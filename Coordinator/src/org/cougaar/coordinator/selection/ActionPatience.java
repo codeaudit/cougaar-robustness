@@ -34,6 +34,11 @@ public class ActionPatience implements NotPersistable {
         this.timeoutTime = timeoutTime;
     }
 
+    public AssetID getAssetID() { return assetID; }
+    public Action getAction() { return action; }
+
+    public long getDuration() { return timeoutTime; }
+
     public boolean expired() {
         return expired;
     }
