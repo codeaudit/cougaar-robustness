@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Communities [
+<!ELEMENT Communities (Community+)>
+<!ELEMENT Community (Attribute*, Entity*)>
+<!ATTLIST Community Name CDATA #REQUIRED>
+<!ELEMENT Entity (Attribute*)>
+<!ATTLIST Entity Name CDATA #REQUIRED>
+<!ELEMENT Attribute EMPTY>
+<!ATTLIST Attribute ID CDATA #REQUIRED>
+<!ATTLIST Attribute Value CDATA #REQUIRED>
+]>
+
+<Communities>
+
+  <Community Name="DisconnectionTest" >
+
+    <Attribute ID="CommunityType"             Value="Robustness" />
+
+    <Attribute ID="CommunityManager"          Value="ManagementAgent" />
+
+    <Attribute ID="RobustnessManager"         Value="ManagementAgent" />
+
+    <Attribute ID="NumberOfAgents"            Value="4" />
+
+    <Entity Name="Node0" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+
+    <Entity Name="Node1" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+
+    <Entity Name="Node2" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+
+    <Entity Name="Node3" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+
+    <Entity Name="ManagementAgent" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="RobustnessManager" />
+    </Entity>
+
+    <Entity Name="AgentA" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+
+    <Entity Name="AgentB" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+
+    <Entity Name="AgentC" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+
+  </Community>
+
+</Communities>

@@ -1,0 +1,163 @@
+log4j.rootCategory=WARN,EVENT 
+#log4j.rootCategory=WARN,SECURITY,EVENT 
+#log4j.rootCategory=WARN,SECURITY
+#log4j.rootCategory=ERROR,SECURITY
+
+# from Ron for UC1
+#### log4j.category.org.cougaar.glm.plugin.completion=INFO
+#### log4j.category.org.cougaar.planning.plugin.completion=INFO
+#log4j.category.org.cougaar.core.naming=WARN
+#log4j.category.org.cougaar.core.agent.SimpleAgent=ERROR
+#log4j.category.org.cougaar.core.mts.DestinationQueueImpl=ERROR
+#### log4j.category.org.cougaar.tools.robustness.ma=INFO
+#log4j.category.org.cougaar.tools.robustness.ma.ldm.CommunityStatus=DEBUG
+#log4j.category.org.cougaar.tools.robustness.ma.LeaderElection=DEBUG
+#log4j.category.org.cougaar.tools.robustness.ma.plugins.NodeHealthMonitorPlugin=DEBUG
+#log4j.category.org.cougaar.tools.robustness.sensors.PingRequesterPlugin=INFO
+#### log4j.category.org.cougaar.community=INFO
+#### log4j.category.org.cougaar.core.service.community=INFO
+#log4j.category.org.cougaar.community.init.CommunityInitializerServiceComponent=WARN
+#log4j.category.org.cougaar.community.CommunityServiceComponent=INFO
+#log4j.category.org.cougaar.community.CommunityPlugin=INFO
+#log4j.category.org.cougaar.community.manager.CommunityManager=INFO
+#log4j.category.org.cougaar.community.CommunityCache=DEBUG
+#log4j.category.org.cougaar.community.CommunityServiceImpl=DEBUG
+#log4j.category.org.cougaar.planning.ldm.lps.AssetTransferLP=DEBUG
+#log4j.category.org.cougaar.planning.ldm.lps.ReceiveAssetLP=FATAL
+#### log4j.category.org.cougaar.lib.rover=INFO
+
+
+
+
+log4j.category.org.cougaar.core.mobility.ping=INFO
+#log4j.category.org.cougaar.core.agent=INFO
+#log4j.category.org.cougaar.core.mts=DEBUG
+#log4j.category.org.cougaar.core.mobility=INFO
+###log4j.category.org.cougaar.core.examples.mobility=INFO
+#log4j.category.org.cougaar.core.wp=INFO
+#log4j.category.org.cougaar.core.wp=DETAIL#org.cougaar.util.log.log4j.DetailPriority
+
+#log4j.category.org.cougaar.core.node.XMLComponentInitializerServiceProvider=DEBUG
+
+# Core classes
+#log4j.category.org.cougaar.core.agent.ClusterImpl=INFO
+#log4j.category.org.cougaar.core.node.NodeAgent=WARN
+#log4j.category.org.cougaar.core.plugin.PluginManager=WARN
+#log4j.category.org.cougaar.core.persist.BasePersistence=WARN
+#log4j.category.org.cougaar.core.mobility.service.RedirectMovePlugin=INFO
+# Community components
+#log4j.category.org.cougaar.community.test.ABATestPlugin=INFO
+#log4j.category.org.cougaar.community.CommunityServiceComponent=DEBUG
+#log4j.category.org.cougaar.community.CommunityServiceImpl=INFO
+#log4j.category.org.cougaar.community.CachedCommunityServiceImpl=INFO
+# Management agent components
+#log4j.category.org.cougaar.tools.robustness.ma.plugins=DEBUG
+#log4j.category.org.cougaar.tools.robustness.ma.plugins.HealthMonitorPlugin=INFO
+#log4j.category.org.cougaar.tools.robustness.ma.plugins.DecisionPlugin=INFO
+#log4j.category.org.cougaar.tools.robustness.ma.plugins.RestartLocatorPlugin=INFO
+#log4j.category.org.cougaar.tools.robustness.ma.plugins.HealthStatus=INFO
+#log4j.category.org.cougaar.tools.robustness.ma.test=DEBUG
+# Robustness sensors
+log4j.category.org.cougaar.tools.robustness.sensors=INFO
+#log4j.category.org.cougaar.tools.robustness.sensors.HeartbeatRequesterPlugin=DEBUG
+#log4j.category.org.cougaar.tools.robustness.sensors.PingRequesterPlugin=INFO
+#log4j.category.org.cougaar.tools.robustness.sensors.HeartbeatServerPlugin=INFO
+#log4j.category.org.cougaar.tools.robustness.sensors.PingServerPlugin=INFO
+#log4j.category.org.cougaar.core.mts.HeartbeatPiggybackerAspect=DEBUG
+
+
+#log4j.category.org.cougaar.core.mts.TraceAspect2=INFO
+
+# set the level to "debug" for all packages under org.cougaar.core.security
+#log4j.category.org.cougaar.core.security=WARN
+#log4j.category.org.cougaar.core.security.crypto=DEBUG
+#log4j.category.org.cougaar.core.security.crypto.AgentIdentityServiceImpl=DEBUG
+#log4j.category.org.cougaar.core.security.monitoring.plugin=INFO
+#log4j.category.org.cougaar.core.mobility= DEBUG
+#log4j.category.org.cougaar.core.agent=INFO
+#log4j.category.org.cougaar.core.examples.mobility.script=WARN
+#log4j.category.org.cougaar.logistics.ui.inventory=WARN
+#log4j.category.org.cougaar.tools.robustness.ma.plugins=WARN
+#log4j.category.org.cougaar.planning.ldm.lps.AssetTransferLP=DEBUG
+#log4j.category.org.cougaar.planning.ldm.lps.ReceiveAssetLP=DEBUG
+#log4j.category.org.cougaar.lib.rover=WARN
+#log4j.category.safe.guard=WARN
+
+#log4j.category.org.cougaar.logistics.plugin.manager=DEBUG
+#log4j.category.org.cougaar.core.mobility=DEBUG
+
+# Sensors
+#log4j.category.org.cougaar.tools.robustness.sensors=DEBUG
+
+# MsgLog
+#log4j.category.org.cougaar.core.mts=INFO
+#log4j.category.org.cougaar.core.mts.AdaptiveLinkSelectionPolicy=DEBUG
+#log4j.category.org.cougaar.core.mts.AdaptiveLinkSelectionPolicy=DETAIL#org.cougaar.util.log.log4j.DetailPriority
+###log4j.category.org.cougaar.core.mts.AgentID=DEBUG
+###log4j.category.org.cougaar.core.mts.AgentIDCallback=DEBUG
+##log4j.category.org.cougaar.core.mts.MessageAuditAspect=INFO
+###log4j.category.org.cougaar.core.mts.MessageNumberingAspect=DEBUG
+###log4j.category.org.cougaar.core.mts.MessageOrderingAspect=DEBUG
+##log4j.category.org.cougaar.core.mts.MessageSendHistoryAspect=DEBUG
+##log4j.category.org.cougaar.core.mts.NameSupportTimeoutAspect=DEBUG
+#log4j.category.org.cougaar.core.mts.NameSupportImpl=DEBUG
+##log4j.category.org.cougaar.core.mts.RMISendTimeoutAspect=DEBUG
+#log4j.category.org.cougaar.core.mts.RMISendTimeoutAspect$RMISocketControlPolicy=DEBUG
+#log4j.category.org.cougaar.core.mts.RTTAspect=DEBUG
+#log4j.category.org.cougaar.core.mts.SocketClosingServiceImpl=INFO
+#log4j.category.org.cougaar.core.mts.StationTraceAspect=INFO
+#log4j.category.org.cougaar.core.mts.TrafficAuditAspect=INFO
+#log4j.category.org.cougaar.core.mts.TrafficAuditAspect=INFO,MSGAUDIT
+#log4j.category.org.cougaar.core.mts.TrafficAuditServiceImpl=INFO
+#log4j.category.org.cougaar.core.mts.acking=DEBUG
+#log4j.category.org.cougaar.core.mts.email=DEBUG
+#log4j.category.org.cougaar.core.mts.socket=DEBUG
+#log4j.category.org.cougaar.core.mts.udp=DEBUG
+#### log4j.category.org.cougaar.core.mts.LastSpokeErrorAspect=DEBUG
+#### log4j.category.org.cougaar.core.mts.MsglogPlugin=DEBUG
+#### log4j.category.org.cougaar.core.mts.MsglogEnablingAspect=DEBUG
+#### log4j.category.org.cougaar.core.mts.GossipAspect=INFO
+#### log4j.category.org.cougaar.core.mts.GossipStatisticsServiceAspect=INFO
+#### log4j.category.org.cougaar.core.mts.SimpleGossipQualifierComponent=INFO
+#### log4j.category.org.cougaar.tools.robustness.deconfliction.CoordinatorPlugin=DEBUG
+#### log4j.category.org.cougaar.tools.robustness.disconnection.DisconnectManagerPlugin=DEBUG
+#### log4j.category.org.cougaar.tools.robustness.disconnection.DisconnectAgentPlugin=DEBUG
+log4j.category.org.cougaar.core.mts.RobustnessManagerFinderPlugin=DEBUG
+log4j.category.org.cougaar.tools.robustness.deconfliction=DEBUG
+log4j.category.org.cougaar.tools.robustness.disconnection=DEBUG
+
+# Log to the console
+log4j.appender.SECURITY=org.apache.log4j.ConsoleAppender
+#log4j.appender.MSGAUDIT=org.apache.log4j.ConsoleAppender
+
+# Log to a file
+#log4j.appender.SECURITY=org.apache.log4j.FileAppender
+#log4j.appender.SECURITY.File=node.log
+
+# Log to a rolling file
+#log4j.appender.SECURITY=org.apache.log4j.RollingFileAppender
+#log4j.appender.SECURITY.File=node.log
+#log4j.appender.SECURITY.MaxFileSize=500KB
+# Keep three backup file
+#log4j.appender.SECURITY.MaxBackupIndex=3
+
+log4j.appender.SECURITY.layout=org.apache.log4j.PatternLayout
+log4j.appender.SECURITY.layout.ConversionPattern=%n%d{ABSOLUTE} %-5p %c{1} %m%n
+#log4j.appender.MSGAUDIT.layout=org.apache.log4j.PatternLayout
+#log4j.appender.MSGAUDIT.layout.ConversionPattern=%n%m%n
+
+# Send CougaarEvents to the Jabber listener to get to the ACME Scripting client 
+log4j.category.EVENT=INFO 
+log4j.appender.EVENT=org.apache.log4j.ConsoleAppender
+log4j.appender.EVENT.layout=org.apache.log4j.PatternLayout
+#log4j.appender.EVENT=org.cougaar.tools.jabberlogger.SocketAppender 
+#log4j.appender.EVENT.layout.ConversionPattern=%d{ABSOLUTE} %-5p - %c{1} - %m%n 
+log4j.appender.EVENT.layout.ConversionPattern=%n%d{ABSOLUTE} %-5p %c{1} %m%n
+
+#log4j.category.com.stdc.CnCcalc.plugin.CnCcalcPlugin=INFO,A4
+#log4j.additivity.com.stdc.CnCcalc.plugin.CnCcalcPlugin=false
+#log4j.appender.A4=org.apache.log4j.FileAppender
+#####log4j.appender.A4.File=/mnt/shared/integ/workspace/log4jlogs/CnCcalc.log
+#log4j.appender.A4.layout=org.apache.log4j.PatternLayout
+#log4j.appender.A4.layout.ConversionPattern=%d{ISO8601} %-5p  %m%n
+
