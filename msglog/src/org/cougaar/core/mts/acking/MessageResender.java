@@ -69,9 +69,37 @@ class MessageResender implements Runnable
 
     //  Add (or remove) the message from the agent state
 
-// sync (agentState)
-//   if (acked) remove from agentState;
-//   else add to agentState;
+    AgentState agentState = aspect.getAgentState (MessageUtils.getOriginatorAgent(msg));
+
+    if (agentState != null)
+    {
+      boolean acked = MessageAckingAspect.wasSuccessfulSend (msg);
+
+      synchronized (agentState)
+      {
+        Vector v = (Vector) agentState.getAttribute (MessageAckingAspect.SENT_BUT_NOT_ACKED_MSGS);
+       
+        if (acked)
+        {
+          if (v != null) 
+          {
+            if (debug()) log.debug ("MessageResender: removing from agentState: " +MessageUtils.toString(msg));
+            v.remove (msg);
+          }
+        }
+        else
+        {
+          if (v == null) 
+          {
+            v = new Vector();
+            agentState.setAttribute (MessageAckingAspect.SENT_BUT_NOT_ACKED_MSGS, v);
+          }
+
+          if (debug()) log.debug ("MessageResender: adding to agentState: " +MessageUtils.toString(msg));
+          v.add (msg);
+        }
+      }
+    }
 
     //  Add the message to the waiting queue
 
@@ -91,9 +119,29 @@ class MessageResender implements Runnable
 
     if (debug()) log.debug ("MessageResender: removing " +MessageUtils.toString(msg));
 
-    //  Remove the message from the agent state
-// sync (agentState)
-//   if (acked || sendCount==0) remove from agentState;
+    //  Possibly remove the message from the agent state
+
+    AgentState agentState = aspect.getAgentState (MessageUtils.getOriginatorAgent(msg));
+
+    if (agentState != null)
+    {
+      boolean acked = MessageAckingAspect.wasSuccessfulSend (msg);
+      Ack ack = MessageUtils.getAck (msg);
+
+      synchronized (agentState)
+      {
+        Vector v = (Vector) agentState.getAttribute (MessageAckingAspect.SENT_BUT_NOT_ACKED_MSGS);
+       
+        if (acked || ack.getSendCount() == 0)
+        {
+          if (v != null) 
+          {
+            if (debug()) log.debug ("MessageResender: removing from agentState: " +MessageUtils.toString(msg));
+            v.remove (msg);
+          }
+        }
+      }
+    }
 
     //  Remove the message from the waiting queue.  This can
     //  raise the minResendDeadline, but doesn't seem like

@@ -194,27 +194,19 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     {
       MessageUtils.setSendProtocolLink (msg, getName(link));
 
-      //  For resends (new messages don't have acks yet) update the ack with
-      //  the new link selection as soon as possible so that the resender
-      //  can know the correct resend timeout for the newly chosen link.  
-      //  Before this occurs, the resender is working with the timeout
-      //  from the last link used - and if the process of getting a new
-      //  link takes long enough will resend based on that timeout.  This
-      //  should be a rare event though, because the time to choose a new
-      //  link should generally always be much less than the average full
-      //  RTT of any link.  Note retrys also use this info, but there the
-      //  message resender is not involved.
-
       Ack ack = MessageUtils.getAck (msg);
 
       if (ack != null)
       {
         ack.setSendLink (getName (link));
+
+// With change of message resender, still do this here?
+
         String targetNode = MessageUtils.getToAgentNode (msg);
         int rtt = rttService.getBestFullRTTForLink (link, targetNode);
         if (rtt <= 0) rtt = getLinkCost (link, msg);
         ack.setRTT (rtt);
-        MessageAckingAspect.dingTheMessageResender();  // calc new deadlines
+        // MessageAckingAspect.dingTheMessageResender();  // calc new deadlines
       }
 
       // if (showTraffic) showProgress (link);
@@ -322,6 +314,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
         MessageUtils.setFromAgent (msg, MessageUtils.getFromAgent (failedMsg)); 
         MessageUtils.setToAgent (msg, MessageUtils.getToAgent (failedMsg)); 
         MessageUtils.setAck (msg, MessageUtils.getAck (failedMsg)); 
+        MessageUtils.setSrcMsgNumber (msg, MessageUtils.getSrcMsgNumber (failedMsg)); 
         MessageUtils.setMessageSize (msg, MessageUtils.getMessageSize (failedMsg)); 
         MessageUtils.setSendTimeout (msg, MessageUtils.getSendTimeout (failedMsg)); 
         MessageUtils.setSendDeadline (msg, MessageUtils.getSendDeadline (failedMsg)); 

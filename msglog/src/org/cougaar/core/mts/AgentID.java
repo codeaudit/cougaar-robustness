@@ -101,6 +101,11 @@ public class AgentID implements java.io.Serializable
     return nodeName+ "/" +agentName+ "/" +agentIncarnation;
   }
 
+  public String getShortID ()
+  {
+    return nodeName+ "/" +agentName;
+  }
+
   public String toString ()
   {
     return getID();
@@ -108,7 +113,17 @@ public class AgentID implements java.io.Serializable
 
   public String toShortString ()
   {
+    return getShortID();
+  }
+
+  public String toAltShortString ()
+  {
     return agentName +"@"+ nodeName;
+  }
+
+  public static String makeAckingSequenceID (AgentID fromAgent, AgentID toAgent)
+  {
+    return fromAgent +"::"+ toAgent;
   }
 
   public static String makeShortSequenceID (AgentID fromAgent, AgentID toAgent)
@@ -116,9 +131,9 @@ public class AgentID implements java.io.Serializable
     return fromAgent.toShortString() +" to "+ toAgent.toShortString();
   }
 
-  public static String makeAckingSequenceID (AgentID fromAgent, AgentID toAgent)
+  public static String makeAltShortSequenceID (AgentID fromAgent, AgentID toAgent)
   {
-    return fromAgent +"::"+ toAgent;
+    return fromAgent.toAltShortString() +" to "+ toAgent.toAltShortString();
   }
 
   public static TopologyReaderService getTopologyReaderService (Object requestor, ServiceBroker sb)

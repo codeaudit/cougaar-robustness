@@ -42,7 +42,6 @@ class AckFrontend extends DestinationLinkDelegateImplBase
   private MessageAckingAspect aspect;
   private LoggingService log;
   private MessageAttributes success;
-private int cnt=0;
 
   public AckFrontend (DestinationLink link, MessageAckingAspect aspect)
   {
@@ -237,9 +236,7 @@ if (n.equals("PerformanceNodeB") && cnt++ > 5) return success;
         }
 
         buf.append (" ");
-        buf.append (MessageUtils.getFromAgent(msg).toShortString());
-        buf.append (" to ");
-        buf.append (MessageUtils.getToAgent(msg).toShortString());
+        buf.append (MessageUtils.toAltShortSequenceID(msg));
         log.info (buf.toString());         
       }
 

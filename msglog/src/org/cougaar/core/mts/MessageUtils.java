@@ -31,103 +31,42 @@ import org.cougaar.core.mts.acking.PureAckAckMessage;
 
 public final class MessageUtils
 {
-  public static final String MSG_NUM = "MessageNumber";
-  public static final String FROM_AGENT = "FromAgent";
-  public static final String TO_AGENT = "ToAgent";
-  public static final String ACK = "Ack";
-  public static final String MSG_TYPE = "MessageType";
-  public static final String MSG_TYPE_LOCAL = "MessageTypeLocal";
-  public static final String MSG_TYPE_HEARTBEAT = "MessageTypeHeartbeat";
-  public static final String MSG_TYPE_PING = "MessageTypePing";
-  public static final String MSG_TYPE_TMASK = "MessageTypeTrafficMasking";
-  public static final String MSG_TYPE_PURE_ACK = "MessageTypePureAck";
+  //  Message attributes
+
+  public static final String MSG_TYPE =              "MessageType";
+  public static final String MSG_NUM =               "MessageNumber";
+  public static final String FROM_AGENT =            "MessageFromAgent";
+  public static final String TO_AGENT =              "MessageToAgent";
+  public static final String ACK =                   "MessageAck";
+  public static final String SEND_TIMEOUT =          "MessageSendTimeout";
+  public static final String SEND_DEADLINE =         "MessageSendDeadline";
+  public static final String SEND_PROTOCOL_LINK =    "MessageSendProtocolLink";
+  public static final String SRC_MSG_NUM =           "MessageSrcMsgNumber";
+  public static final String MSG_SIZE =              "MessageSize";
+
+  //  Message attribute values
+
+  public static final String MSG_TYPE_REGULAR =      "MessageTypeRegular";
+  public static final String MSG_TYPE_LOCAL =        "MessageTypeLocal";
+  public static final String MSG_TYPE_HEARTBEAT =    "MessageTypeHeartbeat";
+  public static final String MSG_TYPE_PING =         "MessageTypePing";
+  public static final String MSG_TYPE_TRAFFIC_MASK = "MessageTypeTrafficMasking";
+  public static final String MSG_TYPE_PURE_ACK =     "MessageTypePureAck";
   public static final String MSG_TYPE_PURE_ACK_ACK = "MessageTypePureAckAck";
-  public static final String MSG_SEND_TIME = "MessageSendTime";
-  public static final String MSG_SIZE = "MessageSize";
-  public static final String SEND_TIMEOUT = "SendTimeout";
-  public static final String SEND_DEADLINE = "SendDeadline";
-  public static final String SEND_PROTOCOL_LINK = "SendProtocolLink";
-  public static final String SRC_MSG_NUM = "SrcMessageNumber";
 
   // from TrafficMaskingGeneratorAspect.java
   private static final String FAKE = "org.cougaar.message.transport.isfake";
 
-
-  public static MessageAddress getOriginatorAgent (AttributedMessage msg)
+  private static final String validMessageTypes[] =
   {
-    return msg.getOriginator();
-  }
-
-  public static String getOriginatorAgentAsString (AttributedMessage msg)
-  {
-    return getOriginatorAgent(msg).toString();
-  }
-
-  public static MessageAddress getTargetAgent (AttributedMessage msg)
-  {
-    return msg.getTarget();
-  }
-
-  public static String getTargetAgentAsString (AttributedMessage msg)
-  {
-    return getTargetAgent(msg).toString();
-  }
-
-  public static boolean hasMessageNumber (AttributedMessage msg)
-  {
-    return (msg.getAttribute (MSG_NUM) != null);
-  }
-
-  public static int getMessageNumber (AttributedMessage msg)
-  {
-    //  If the message does not have a message number we return 0
-
-    Integer num = (Integer) msg.getAttribute (MSG_NUM);
-    if (num != null) return num.intValue();
-    return 0;  // have method hasMessageNumber() if needed
-  }
-
-  public static void setFromAgent (AttributedMessage msg, AgentID fromAgent)
-  {
-    msg.setAttribute (FROM_AGENT, fromAgent);
-  }
-
-  public static AgentID getFromAgent (AttributedMessage msg)
-  {
-    return (AgentID) msg.getAttribute (FROM_AGENT);
-  }
-
-  public static String getFromAgentNode (AttributedMessage msg)
-  {
-    AgentID fromAgent = getFromAgent (msg);
-    return (fromAgent != null ? fromAgent.getNodeName() : null);
-  }
-
-  public static void setToAgent (AttributedMessage msg, AgentID toAgent)
-  {
-    msg.setAttribute (TO_AGENT, toAgent);
-  }
-
-  public static AgentID getToAgent (AttributedMessage msg)
-  {
-    return (AgentID) msg.getAttribute (TO_AGENT);
-  }
-
-  public static String getToAgentNode (AttributedMessage msg)
-  {
-    AgentID toAgent = getToAgent (msg);
-    return (toAgent != null ? toAgent.getNodeName() : null);
-  }
-
-  public static void setAck (AttributedMessage msg, Ack ack)
-  {
-    msg.setAttribute (ACK, ack);
-  }
-
-  public static Ack getAck (AttributedMessage msg)
-  {
-    return (Ack) msg.getAttribute (ACK);
-  }
+    MSG_TYPE_REGULAR,
+    MSG_TYPE_LOCAL,
+    MSG_TYPE_HEARTBEAT,
+    MSG_TYPE_PING,
+    MSG_TYPE_TRAFFIC_MASK,
+    MSG_TYPE_PURE_ACK,
+    MSG_TYPE_PURE_ACK_ACK
+  };
 
   static void setMessageType (AttributedMessage msg, String type)
   {
@@ -137,6 +76,16 @@ public final class MessageUtils
   public static String getMessageType (AttributedMessage msg)
   {
     return (String) msg.getAttribute (MSG_TYPE);
+  }
+
+  public static boolean hasMessageType (AttributedMessage msg)
+  {
+    return (msg.getAttribute (MSG_TYPE) != null);
+  }
+
+  public static String[] getValidMessageTypes ()
+  {
+    return validMessageTypes;
   }
 
   public static String getMessageTypeLetter (AttributedMessage msg)
@@ -153,7 +102,13 @@ public final class MessageUtils
 
   public static boolean isRegularMessage (AttributedMessage msg)
   {
-    return (getMessageType (msg) == null);    
+    String type = getMessageType (msg);
+    return (type != null && type.equals (MSG_TYPE_REGULAR));
+  }
+
+  public static void setMessageTypeToRegular (AttributedMessage msg)
+  {
+    setMessageType (msg, MSG_TYPE_REGULAR);
   }
 
   public static boolean isLocalMessage (AttributedMessage msg)
@@ -191,19 +146,16 @@ public final class MessageUtils
 
   public static boolean isTrafficMaskingMessage (AttributedMessage msg)
   {
-/*
     String type = getMessageType (msg);
-    return (type != null && type.equals (MSG_TYPE_TMASK));
-*/
-    Boolean fake = (Boolean) msg.getAttribute (FAKE);
-    return (fake != null ? fake.booleanValue() : false);
+    if (type != null && type.equals (MSG_TYPE_TRAFFIC_MASK)) return true;
+    return (msg.getAttribute (FAKE) != null);
   }
-/*
+
   public static void setMessageTypeToTrafficMasking (AttributedMessage msg)
   {
-    setMessageType (msg, MSG_TYPE_TMASK);
+    setMessageType (msg, MSG_TYPE_TRAFFIC_MASK);
   }
-*/
+
   public static void setMessageTypeToPureAck (AttributedMessage msg)
   {
     setMessageType (msg, MSG_TYPE_PURE_ACK);
@@ -231,9 +183,87 @@ public final class MessageUtils
     return (isPureAckMessage(msg) || isPureAckAckMessage(msg));
   }
 
-  public static boolean isNewMessage (AttributedMessage msg)
+  public static boolean hasMessageNumber (AttributedMessage msg)
   {
-    return (toString(msg).equals ("Msg [] of null::null"));
+    return (msg.getAttribute (MSG_NUM) != null);
+  }
+
+  public static int getMessageNumber (AttributedMessage msg)
+  {
+    //  If the message does not have a message number we return 0
+
+    Integer num = (Integer) msg.getAttribute (MSG_NUM);
+    if (num != null) return num.intValue();
+    return 0;  // have method hasMessageNumber() if needed
+  }
+
+  public static MessageAddress getOriginatorAgent (AttributedMessage msg)
+  {
+    return msg.getOriginator();
+  }
+
+  public static String getOriginatorAgentAsString (AttributedMessage msg)
+  {
+    return getOriginatorAgent(msg).toString();
+  }
+
+  public static MessageAddress getTargetAgent (AttributedMessage msg)
+  {
+    return msg.getTarget();
+  }
+
+  public static String getTargetAgentAsString (AttributedMessage msg)
+  {
+    return getTargetAgent(msg).toString();
+  }
+
+  public static void setFromAgent (AttributedMessage msg, AgentID fromAgent)
+  {
+    msg.setAttribute (FROM_AGENT, fromAgent);
+  }
+
+  public static AgentID getFromAgent (AttributedMessage msg)
+  {
+    return (AgentID) msg.getAttribute (FROM_AGENT);
+  }
+
+  public static String getFromAgentNode (AttributedMessage msg)
+  {
+    AgentID fromAgent = getFromAgent (msg);
+    return (fromAgent != null ? fromAgent.getNodeName() : null);
+  }
+
+  public static void setToAgent (AttributedMessage msg, AgentID toAgent)
+  {
+    msg.setAttribute (TO_AGENT, toAgent);
+  }
+
+  public static AgentID getToAgent (AttributedMessage msg)
+  {
+    return (AgentID) msg.getAttribute (TO_AGENT);
+  }
+
+  public static String getToAgentNode (AttributedMessage msg)
+  {
+    AgentID toAgent = getToAgent (msg);
+    return (toAgent != null ? toAgent.getNodeName() : null);
+  }
+
+  public static String getAckingSequenceID (AttributedMessage msg)
+  {
+    AgentID fromAgent = getFromAgent (msg);
+    AgentID toAgent = getToAgent (msg);
+    return AgentID.makeAckingSequenceID (fromAgent, toAgent);    
+  }
+
+  public static void setAck (AttributedMessage msg, Ack ack)
+  {
+    msg.setAttribute (ACK, ack);
+  }
+
+  public static Ack getAck (AttributedMessage msg)
+  {
+    return (Ack) msg.getAttribute (ACK);
   }
 
   public static void setMessageSize (AttributedMessage msg, int size)
@@ -245,17 +275,6 @@ public final class MessageUtils
   {
     Integer size = (Integer) msg.getAttribute (MSG_SIZE);  // note LOCAL attribute
     return (size != null ? size.intValue() : -1);
-  }
-
-  public static void setMessageSendTime (AttributedMessage msg, long time)
-  {
-    msg.setAttribute (MSG_SEND_TIME, new Long (time));
-  }
-
-  public static long getMessageSendTime (AttributedMessage msg)
-  {
-    Long time = (Long) msg.getAttribute (MSG_SEND_TIME);
-    return (time != null ? time.longValue() : 0);
   }
 
   public static void setSendTimeout (AttributedMessage msg, int millisecs)
@@ -320,11 +339,16 @@ public final class MessageUtils
     return 0;
   }
 
-  public static String getAckingSequenceID (AttributedMessage msg)
+  public static boolean haveSrcMsgNumber (AttributedMessage msg)
   {
-    AgentID fromAgent = getFromAgent (msg);
-    AgentID toAgent = getToAgent (msg);
-    return AgentID.makeAckingSequenceID (fromAgent, toAgent);    
+    return (msg.getAttribute (SRC_MSG_NUM) != null);
+  }
+
+  public static boolean isNewMessage (AttributedMessage msg)
+  {
+    if (hasMessageNumber (msg)) return false;
+    if (getFromAgent(msg) != null || getToAgent(msg) != null) return false;
+    return true;
   }
 
   public static String toShortString (AttributedMessage msg)
@@ -367,12 +391,19 @@ public final class MessageUtils
     String hdr = toShortString (msg);
     if (msg == null) return hdr;
     String key = AgentID.makeAckingSequenceID (getFromAgent(msg), getToAgent(msg));
-    return hdr + " of " + key;
+    String bonus = (key.equals("null::null")? (" ("+msg.getOriginator()+" to "+msg.getTarget()+")") : "");
+    return hdr + " of " + key + bonus;
   }
 
   public static String toShortSequenceID (AttributedMessage msg)
   {
     if (msg == null) return "[null msg]";
     return AgentID.makeShortSequenceID (getFromAgent(msg), getToAgent(msg));
+  }
+
+  public static String toAltShortSequenceID (AttributedMessage msg)
+  {
+    if (msg == null) return "[null msg]";
+    return AgentID.makeAltShortSequenceID (getFromAgent(msg), getToAgent(msg));
   }
 }

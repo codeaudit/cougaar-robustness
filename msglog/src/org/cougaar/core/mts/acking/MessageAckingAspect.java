@@ -42,6 +42,8 @@ import org.cougaar.core.service.ThreadService;
 
 public class MessageAckingAspect extends StandardAspect
 {
+  public static final String SENT_BUT_NOT_ACKED_MSGS = "SentButNotAckedMessages";
+
   static final String  excludedLinks;
   static final int     resendMultiplier;
   static final float   firstAckPlacingFactor;
@@ -53,6 +55,7 @@ public class MessageAckingAspect extends StandardAspect
   static PureAckSender pureAckSender;
   static PureAckAckSender pureAckAckSender;
 
+  private LoggingService log;
   private ThreadService threadService;
 
   static final Object serializationLock = new Object();
@@ -73,7 +76,7 @@ public class MessageAckingAspect extends StandardAspect
 
     String s = "org.cougaar.message.transport.aspects.acking.excludedLinks";
     String defaultList = "";
-//    String defaultList = "org.cougaar.core.mts.RMILinkProtocol";  // comma separated list
+//  String defaultList = "org.cougaar.core.mts.RMILinkProtocol";  // comma separated list
 //String defaultList = "org.cougaar.core.mts.OutgoingSocketLinkProtocol";  // comma separated list
     excludedLinks = System.getProperty (s, defaultList);
 
@@ -97,9 +100,9 @@ public class MessageAckingAspect extends StandardAspect
   public MessageAckingAspect () 
   {}
 
-  public void initialize () 
+  public void load ()
   {
-    super.initialize();
+    super.load();
 
     synchronized (MessageAckingAspect.class)
     {
@@ -119,6 +122,8 @@ public class MessageAckingAspect extends StandardAspect
         instance = this;
       }
     }
+
+    log = loggingService;
   }
 
   public Object getDelegate (Object delegate, Class type) 
@@ -126,6 +131,10 @@ public class MessageAckingAspect extends StandardAspect
     if (type == SendQueue.class) 
     {
       return new SendMessage ((SendQueue) delegate);
+    }
+    else if (type == SendLink.class) 
+    {
+// return new AgentArrivals ((SendLink) delegate);
     }
     else if (type == DestinationLink.class) 
     {
@@ -152,6 +161,49 @@ public class MessageAckingAspect extends StandardAspect
 	if (threadService != null) return threadService;
 	threadService = (ThreadService) getServiceBroker().getService (this, ThreadService.class, null);
 	return threadService;
+  }
+
+  private class AgentArrivals extends SendLinkDelegateImplBase 
+  {
+    public AgentArrivals (SendLink link)
+    {
+      super (link);
+    }
+
+    public synchronized void registerClient (MessageTransportClient client)
+    {
+      super.registerClient (client);
+
+      //  At this point we may now access the AgentState of the agent.
+      //  Extract any sent-but-not-acked messages he has and send them.
+
+      MessageAddress myAddress = getAddress();
+      AgentState myState = getRegistry().getAgentState (myAddress);
+      Vector v = null;
+
+log.debug ("in AgentArrivals: register client");
+        
+      synchronized (myState) 
+      {
+        v = (Vector) myState.getAttribute (SENT_BUT_NOT_ACKED_MSGS);
+        if (v != null) myState.setAttribute (SENT_BUT_NOT_ACKED_MSGS, null);
+      }
+
+      if (v != null)
+      {
+        for (Enumeration e=v.elements(); e.hasMoreElements(); )
+        {
+          AttributedMessage msg = (AttributedMessage) e.nextElement();
+          if (log.isDebugEnabled()) log.debug ("AgentArrivals: sending " +MessageUtils.toString(msg));
+          sendMessage (msg);
+        }
+      }
+    }
+
+    public void sendMessage (AttributedMessage msg) 
+    {
+      super.sendMessage (msg);
+    }
   }
 
   //  Global data structures
@@ -634,24 +686,34 @@ public class MessageAckingAspect extends StandardAspect
 
   //  Utility methods and classes
 
-  public static void dingTheMessageResender ()
+  AgentState getAgentState (MessageAddress agent)
   {
-    messageResender.ding();
-  }
-
-  public static boolean isExcludedLink (DestinationLink link)
-  {
-    return isExcludedLink (link.getProtocolClass().getName());
-  }
-
-  public static boolean isExcludedLink (String link)
-  {
-    return excludedLinks.indexOf (link) >= 0;
+    return getRegistry().getAgentState (agent);
   }
 
   LoggingService getTheLoggingService ()
   {
     return loggingService;
+  }
+
+  String getThisNode ()
+  {
+    return getRegistry().getIdentifier();
+  }
+
+  static void dingTheMessageResender ()
+  {
+    messageResender.ding();
+  }
+
+  static boolean isExcludedLink (DestinationLink link)
+  {
+    return isExcludedLink (link.getProtocolClass().getName());
+  }
+
+  static boolean isExcludedLink (String link)
+  {
+    return excludedLinks.indexOf (link) >= 0;
   }
 
   static boolean hasNonPureAck (AttributedMessage msg)

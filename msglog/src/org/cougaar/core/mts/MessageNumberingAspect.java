@@ -117,16 +117,18 @@ public class MessageNumberingAspect extends StandardAspect
       {
         //  Local messages are numbered with positive numbers in order to avoid
         //  a race condition where messages from the agent state of a newly 
-        //  arrived message that have now become local (because the agent they
-        //  have been talking to is on this node) are in competition with the
-        //  new agent itself (2 sources of msgs).
+        //  arrived agent have now become local (because the agent they are to
+        //  is on this node) are in competition with any new messages from
+        //  the agent itself (2 sources of msgs from the same agent).  So now
+        //  with agent mobility we must sequence even local messages.
 
         n = getNextMessageNumber (POSITIVE, msg);  
         MessageUtils.setMessageTypeToLocal (msg);
       }
-      else if (MessageUtils.isTrafficMaskingMessage (msg))
+      else if (!MessageUtils.hasMessageType(msg) || MessageUtils.isRegularMessage (msg))
       {
-        n = 0;
+        n = getNextMessageNumber (POSITIVE, msg);
+        MessageUtils.setMessageTypeToRegular (msg);
       }
       else if (MessageUtils.isSomePureAckMessage (msg))
       {
@@ -140,13 +142,14 @@ public class MessageNumberingAspect extends StandardAspect
       {
         n = getNextMessageNumber (NEGATIVE, msg);
       }
-      else if (MessageUtils.isRegularMessage (msg))
+      else if (MessageUtils.isTrafficMaskingMessage (msg))
       {
-        n = getNextMessageNumber (POSITIVE, msg);
+        n = 0;
+        MessageUtils.setMessageTypeToTrafficMasking (msg);
       }
       else
       {
-        //  Unknown message type - should not occur, except during system development
+        //  Has an unknown message type - should not occur, except during system development
 
         loggingService.fatal ("Unknown msg type! : " +MessageUtils.getMessageType(msg));
         n = -1;  // will nearly always result in a duplicate msg on the remote side

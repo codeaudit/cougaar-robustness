@@ -76,8 +76,8 @@ class AckBackend extends MessageDelivererDelegateImplBase
 
     if (ack == null)
     {
-      log.error ("AckBackend: Message has no ack in it! : " +msgString);
-      throw new MisdeliveredMessageException (msg);
+      log.error ("AckBackend: Message has no ack in it! (msg ignored): " +msgString);
+      return success;
     }
 
     //  Get started
@@ -105,9 +105,7 @@ class AckBackend extends MessageDelivererDelegateImplBase
       }
 
       buf.append (" ");
-      buf.append (MessageUtils.getFromAgent(msg).toShortString());
-      buf.append (" to ");
-      buf.append (MessageUtils.getToAgent(msg).toShortString());
+      buf.append (MessageUtils.toAltShortSequenceID(msg));
       log.info (buf.toString());
     }
 
@@ -135,6 +133,94 @@ class AckBackend extends MessageDelivererDelegateImplBase
     //  NOTE:  For now we return success even if we find the message mal-formed and
     //  reject it (ignore it).  If the message came from a legimate source it will
     //  resend it, and perhaps this time be well-formed.
+
+    String type = MessageUtils.getMessageType (msg);
+
+    if (type == null)
+    {
+      log.error ("AckBackend: Missing message type (msg ignored): " +msgString);
+      return success;
+    }
+
+    int i;
+    String validTypes[] = MessageUtils.getValidMessageTypes();
+    for (i=0; i<validTypes.length; i++) if (type.equals (validTypes[i])) break;
+
+    if (i == validTypes.length)
+    {
+      log.error ("AckBackend: Message not a valid type ("+type+") (msg ignored): " +msgString);
+      return success;
+    }
+
+    if (!MessageUtils.hasMessageNumber (msg))
+    {
+      log.error ("AckBackend: Missing message number (msg ignored): " +msgString);
+      return success;
+    }
+
+    int msgNum = MessageUtils.getMessageNumber (msg);
+
+    if (ack.isAck() && msgNum < 0)
+    {
+      if (!MessageUtils.isPingMessage (msg))  // pings are an exception
+      {
+        log.error ("AckBackend: Invalid msg number (msg ignored): " +msgString);
+        return success;
+      }
+    }
+
+    if (ack.isPureAck() && msgNum >= 0)
+    {
+      log.error ("AckBackend: Invalid msg number (pure ack msg ignored): " +msgString);
+      return success;
+    }
+
+    if (ack.isPureAckAck() && msgNum >= 0)
+    {
+      log.error ("AckBackend: Invalid msg number (pure ack-ack msg ignored): " +msgString);
+      return success;
+    }
+
+    if (ack.isSomePureAck() && !MessageUtils.haveSrcMsgNumber(msg))
+    {
+      log.error ("AckBackend: Missing src msg number (some pure ack msg ignored): " +msgString);
+      return success;
+    }
+
+    String fromNode = MessageUtils.getFromAgentNode (msg);
+
+    if (fromNode == null || fromNode.equals(""))
+    {
+      log.error ("AckBackend: Missing from node (msg ignored): " +msgString);
+      return success;
+    }
+
+    String toNode = MessageUtils.getToAgentNode (msg);
+
+    if (toNode == null || toNode.equals(""))
+    {
+      log.error ("AckBackend: Missing to node (msg ignored): " +msgString);
+      return success;
+    }
+
+    if (!aspect.getThisNode().equals (toNode))
+    {
+      log.error ("AckBackend: Message not for this node (msg ignored): " +msgString);
+      return success;
+    }
+    
+    if (ack.getSendCount() < 1)
+    {
+      int sendCount = ack.getSendCount();
+      log.error ("AckBackend: Msg has bad sendCount (" +sendCount+ ") (msg ignored): " +msgString);
+      return success;
+    }
+
+    if (ack.isAck() && ack.getResendMultiplier() < 1)
+    {
+      log.error ("AckBackend: Msg has bad resendMultiplier (msg ignored): " +msgString);
+      return success;
+    }
 
     try
     {
@@ -171,37 +257,6 @@ class AckBackend extends MessageDelivererDelegateImplBase
       }
     }
 */
-    int msgNum = MessageUtils.getMessageNumber (msg);
-
-    if (ack.isAck() && msgNum < 0)
-    {
-      if (!MessageUtils.isPingMessage (msg))  // pings are an exception
-      {
-        log.error ("AckBackend: Invalid msg number (msg ignored): " +msgString);
-        return success;
-      }
-    }
-
-    if (ack.isPureAck() && msgNum >= 0)
-    {
-      log.error ("AckBackend: Invalid msg number (pure ack msg ignored): " +msgString);
-      return success;
-    }
-
-    if (ack.isPureAckAck() && msgNum >= 0)
-    {
-      log.error ("AckBackend: Invalid msg number (pure ack-ack msg ignored): " +msgString);
-      return success;
-    }
-
-    String fromNode = MessageUtils.getFromAgentNode (msg);
-
-    if (fromNode == null || fromNode.equals(""))
-    {
-      log.error ("AckBackend: From node missing (msg ignored): " +msgString);
-      return success;
-    }
-
     if (ack.getSendTime() < now() - MessageAckingAspect.messageAgeWindowInMinutes*60*1000)
     {
       //  Kind of a hack, but the start of something.  May want to do things like set
@@ -231,22 +286,10 @@ class AckBackend extends MessageDelivererDelegateImplBase
       return success;
     }
 
-    if (ack.getSendCount() < 1)
-    {
-      int sendCount = ack.getSendCount();
-      log.error ("AckBackend: Msg has bad sendCount (" +sendCount+ ") (msg ignored): " +msgString);
-      return success;
-    }
-
-    if (ack.isAck() && ack.getResendMultiplier() < 1)
-    {
-      log.error ("AckBackend: Msg has bad resendMultiplier (msg ignored): " +msgString);
-      return success;
-    }
-
     //  Handle messages from out-of-date senders or to out-of-date receivers
     //  NOTE:  May want to send NACKs back for these messages.
 
+// NACK Notes
 // if (regular msg)  not pure ack, ack ack, ping, etc
 // if (not a duplicate) // only send once?
 //   send it or schedule it
@@ -391,8 +434,8 @@ class AckBackend extends MessageDelivererDelegateImplBase
         //  We can set a final send deadline for ack-acks, in case it gets bounced
         //  around by send retries (ack-acks are never resent) or other delays.
 
-//      long deadline = now() + 2*onlyAckAck;        
-//      MessageUtils.setSendDeadline (msg, deadline);
+        // long deadline = now() + 2*onlyAckAck;        
+        // MessageUtils.setSendDeadline (msg, deadline);
       }
     }
 
