@@ -96,7 +96,6 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
   private static final String localhost;
   private static final int idleTimeout;
-  private static final boolean keepConnectionsAlive;
 
   private SocketSpec socketSpecs[];
   private SocketSpec mySocket;
@@ -112,11 +111,8 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     String s = "org.cougaar.message.protocol.socket.localhost";
     localhost = System.getProperty (s, getLocalHost());
 
-    s = "org.cougaar.message.protocol.socket.incoming.idleTimeoutSeconds";
-    idleTimeout = Integer.valueOf(System.getProperty(s,"1")).intValue();
-
-    s = "org.cougaar.message.protocol.socket.incoming.keepConnectionsAlive";
-    keepConnectionsAlive = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
+    s = "org.cougaar.message.protocol.socket.incoming.idleTimeoutMsecs";
+    idleTimeout = Integer.valueOf(System.getProperty(s,"100")).intValue();
   }
  
   public IncomingSocketLinkProtocol ()
@@ -404,7 +400,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     {
       try
       {
-        socket.setSoTimeout (idleTimeout*1000);
+        socket.setSoTimeout (idleTimeout);  // timeout in msecs
         socketIn = new NoHeaderInputStream (socket.getInputStream());
       }
       catch (Exception e)
@@ -435,7 +431,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
           }
           catch (Exception e)
           {
-            if (log.isWarnEnabled()) log.warn ("Got non AttributedMessage msg! (ignored): " +e);
+            if (log.isWarnEnabled()) log.warn ("Got non-AttributedMessage msg! (msg ignored): " +e);
             continue;
           }
 
@@ -455,10 +451,19 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
           quitNow = true;
           break;
         }
-        catch (Exception e)
+        catch (EOFException e)
         { 
           //  Typically a socket exception raised when the party at the  other end 
-          //  closes their socket connection.
+          //  closes their socket connection.  If the OutgoingSocketLinkProtocol has
+          //  oneSendPerConnection set to true, you will get these all the time.
+
+          if (log.isDebugEnabled()) log.debug ("Remote socket closed: " +e);
+          quitNow = true;
+          break;
+        }
+        catch (Exception e)
+        { 
+          //  Some other exception.  Prints the stack trace for more detail.
 
           if (log.isDebugEnabled()) log.debug ("Terminating socket exception: " +stackTraceToString(e));
           quitNow = true;
@@ -479,11 +484,9 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
         { 
           log.error ("Exception delivering " +MessageUtils.toString(msg)+ ": " +stackTraceToString(e));
         }
-
-        //  Quit thread if not keeping socket connection alive for more messages
-
-        if (!keepConnectionsAlive) break;
       }
+
+      //  Cleanup
 
       if (socketIn != null)
       {

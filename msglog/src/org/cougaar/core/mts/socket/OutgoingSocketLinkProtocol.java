@@ -95,6 +95,7 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
   public static final String PROTOCOL_TYPE = "-socket";
 
   private static final int protocolCost;
+  private static final boolean oneSendPerConnection;
   private static final int connectTimeout;
 
   private LoggingService log;
@@ -102,14 +103,15 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
   private Hashtable specCache, addressCache;
   private HashMap links;
 
-private int cnt=0;  // temp
-
   static
   {
     //  Read external properties
 
     String s = "org.cougaar.message.protocol.socket.cost";  // one way
     protocolCost = Integer.valueOf(System.getProperty(s,"5000")).intValue();  // was 1000
+
+    s = "org.cougaar.message.protocol.socket.oneSendPerConnection";
+    oneSendPerConnection = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
 
     s = "org.cougaar.message.protocol.socket.connectTimeoutSecs";
     connectTimeout = Integer.valueOf(System.getProperty(s,"5")).intValue();
@@ -375,6 +377,15 @@ private int cnt=0;  // temp
           socketOut.reset();
           socketOut.writeObject (msgObject);
           socketOut.flush();
+
+          if (oneSendPerConnection)  // useful if retiring threads fast on receive side
+          {
+            if (socketOut != null)
+            {
+              try { socketOut.close(); } catch (Exception ee) {}
+              socketOut = null;
+            } 
+          }
 
           break;  // success
         }

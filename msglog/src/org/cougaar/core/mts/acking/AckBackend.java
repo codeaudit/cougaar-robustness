@@ -217,7 +217,7 @@ if (!MessageAckingAspect.skipIncarnationCheck || ack.getSendLink().equals("org.c
 }
 else
 {
-  if (log.isInfoEnabled()) log.info ("Skipping incarnation check!");
+  if (log.isDebugEnabled()) log.debug ("Skipping incarnation check");
 }
 
     //  At this point we feel the received message is probably ok, so now we deliver
@@ -412,7 +412,7 @@ else
 
     //  Compare data
 
-//if (!topoAgent.getNodeName().equals(agent.getNodeName())) return false;
+    // if (!topoAgent.getNodeName().equals(agent.getNodeName())) return false;
     if (topoAgent.getAgentIncarnationAsLong() > agent.getAgentIncarnationAsLong()) return false;
 
     return true;
