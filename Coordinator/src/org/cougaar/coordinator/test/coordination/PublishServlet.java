@@ -171,7 +171,7 @@ public class PublishServlet extends BaseServletComponent implements BlackboardCl
         if (ActionTechSpecService == null) {
             logger.warn("Unable to obtain tech spec service");
         } else {
-            ActionTechSpecService.addActionTechSpec("org.cougaar.coordinator.test.coordination.TestAction", new TestActionTechSpec());
+//            ActionTechSpecService.addActionTechSpec("org.cougaar.coordinator.test.coordination.TestAction", new TestActionTechSpec());
         }
         //call tech spec service & add diagnosis tech spec        
         // **********************************************get the tect spec service
@@ -180,7 +180,7 @@ public class PublishServlet extends BaseServletComponent implements BlackboardCl
         if (DiagnosisTechSpecService == null) {
             logger.warn("Unable to obtain tech spec service");
         } else {
-            DiagnosisTechSpecService.addDiagnosisTechSpec("org.cougaar.coordinator.test.coordination.TestDiagnosis", new TestDiagnosisTechSpec());
+//            DiagnosisTechSpecService.addDiagnosisTechSpec("org.cougaar.coordinator.test.coordination.TestDiagnosis", new TestDiagnosisTechSpec());
         }
         
     }
