@@ -51,7 +51,7 @@ public class TestAction extends Action {
         super.start(o);
     }
 
-    protected void stop() throws NoStartedActionException  {
-        super.stop();
+    protected void stop(Action.CompletionCode cc) throws NoStartedActionException, IllegalValueException  {
+        super.stop(cc);
     }
 }

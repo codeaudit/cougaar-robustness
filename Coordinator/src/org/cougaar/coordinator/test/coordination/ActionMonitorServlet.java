@@ -40,6 +40,8 @@ import java.util.List;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import javax.servlet.Servlet;
 import javax.servlet.http.HttpServlet;
@@ -200,6 +202,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
 
     Object changes = null; // used to synchronize vector changes
     Vector actions = new Vector();
+    SortedSet assetNames = Collections.synchronizedSortedSet(new TreeSet());
 
     /////////////////////////////////////////////////////////////Actions
     
@@ -224,6 +227,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             //Not found so create it
             actionData = new ActionData(a, state, isWrapper);
             actions.add(actionData);
+            assetNames.add(a.getAssetName());
         //}        
     }
     
@@ -277,6 +281,11 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             shortClsname = setShortName(clsname);
             pValues = t.getPossibleValues();
         }
+        
+        /**
+         * @return asset name
+         */
+        String getAssetName() { return asset; }
         
         /**
          * @return the class name of the Action without the pkg name
@@ -346,6 +355,8 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             //Default refresh rate
             int refreshRate = 50000;
             String ln="SHORTNAME";
+    
+            String assetFilter = "ALL";
             
             String updateResult = null;
             boolean wasUpdated = false;
@@ -397,6 +408,11 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                 //the action is a TestAction
                 String startaction = request.getParameter("STARTACTION");
                 
+                String af = request.getParameter("ASSETFILTER");
+                if (af != null && af.length() >0 ) { 
+                    assetFilter = af;                    
+                }
+                
                 //Start an action
                 if (startaction != null ) {
                 
@@ -409,15 +425,31 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                         startAction(type, uid, actionVal);
                         wasUpdated = true;
                     }
-                } else { //stop an action
-                    String stopaction = request.getParameter("STOPACTION");
-                    if (stopaction != null ) {
-                    
-                        String type = request.getParameter("TYPE");
-                        String uid  = request.getParameter("UID");
+                } else { 
 
-                        stopAction(type, uid);
-                        wasUpdated = true;
+                    String stopaction = request.getParameter("STOPACTION");
+                    String failaction = request.getParameter("FAILACTION");
+                    String abortaction = request.getParameter("ABORTACTION");
+                    
+                    //stop an action
+                    if (stopaction != null ) {
+                        
+                        Action.CompletionCode cc = null;
+                        
+                        if (stopaction.equalsIgnoreCase("Stop")) {
+                            cc = Action.COMPLETED; }
+                        else if (stopaction.equalsIgnoreCase("Abort")) {
+                            cc = Action.ABORTED; }
+                        else if (stopaction.equalsIgnoreCase("Fail")) {
+                            cc = Action.FAILED; }
+
+                        if (cc != null) {
+                            String type = request.getParameter("TYPE");
+                            String uid  = request.getParameter("UID");
+
+                            stopAction(type, uid, cc);
+                            wasUpdated = true;
+                        } 
                     }
                 }
             } 
@@ -435,18 +467,18 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
               out.println("<center><h2>"+i+"</h2></center><br>" );
           } else {
  */
-                emitHeader(out, refreshRate, useShortName, actiondataFilter, updateResult, ln, updateResult, wasUpdated );
+                emitHeader(out, refreshRate, useShortName, actiondataFilter, updateResult, ln, updateResult, wasUpdated, assetFilter );
                 if (error != null) { // then emit the error
                     out.print("<font color=\"#0C15FE\">"+ error + "</h2></font>");
                 }
                 
-                boolean e1 = emitData(out, useShortName, actiondataFilter, refreshRate, ln); //emit actions
+                boolean e1 = emitData(out, useShortName, actiondataFilter, refreshRate, ln, assetFilter); //emit actions
                 //boolean e2 = emitData(out, true); //emit wrappers
                 
                 if (!e1) {
                     out.println("<p><p><p><h2><center>No Data is Available.</center></h2>");
                 }
-                emitFooter(out);
+                emitFooter(out, refreshRate, useShortName, actiondataFilter, updateResult, ln, updateResult, wasUpdated, assetFilter );
                 //out.println("<center><h2>DefenseApplicabilityConditions not emitted - All three values required.</h2></center><br>" );
                 //if (eventService.isEventEnabled()) {
                 //   eventService.event("ERROR: Condition Name or Value not set properly: "+condName+"="+condValue);
@@ -533,7 +565,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
         
 
         //set the value of a TestAction object
-        private void stopAction(String type, String uid) {
+        private void stopAction(String type, String uid, Action.CompletionCode cc) {
 
             ActionData ad;
             Action a;
@@ -549,7 +581,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                         if (a instanceof TestAction) {                            
                             TestAction ta = (TestAction)a;
                             try {
-                               ta.stop();
+                               ta.stop(cc);
                             } catch (NoStartedActionException ive) {
                             }
                         }                        
@@ -561,7 +593,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                         if (a instanceof TestAction) {                            
                             TestAction ta = (TestAction)a;
                             try {
-                               ta.stop();
+                               ta.stop(cc);
                             } catch (NoStartedActionException ive) {
                             }
                         }
@@ -576,7 +608,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
          */
         private void emitHeader(PrintWriter out, int refresh, boolean useShortName, 
                                 String actiondataFilter, String updateResult, String nameformat,
-                                String updateResponse, boolean wasUpdated ) {
+                                String updateResponse, boolean wasUpdated, String assetFilter ) {
             
             out.println("<html><META HTTP-EQUIV=\"PRAGMA\" CONTENT=\"NO-CACHE\"> ");
             out.println("<script type=\"text/javascript\">");
@@ -587,24 +619,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             out.println("<head></head><body onload=\"setTimeout('refreshPage()', " +refresh+");\">");
             out.println("<center><h1>Coordinator Action Monitoring Servlet</h1>");
             out.println("<p>Will refresh every " + (refresh/1000) + " seconds. ");
-            out.println("You can change this rate here: (in milliseconds)");
-            out.print("<form clsname=\"myForm\" method=\"get\" >" );
-            out.println("Refresh Rate: <input type=text name=REFRESH value=\""+refresh+"\" size=7 >");
-
-            out.println("<br><b>Action Name - use:</b><SELECT NAME=\"NAMEFORMAT\" SIZE=\"1\">");
-            out.println("<OPTION VALUE=\"LONGNAME\" "+(!useShortName?"SELECTED":"")+" />Pkg Name");
-            out.println("<OPTION VALUE=\"SHORTNAME\" "+(useShortName?"SELECTED":"")+"/>Class name");
-            out.println("</SELECT>");
-
-            //String assets = if (filter.equals(ASSETS))SELECTED 
-            out.println("<br><b>Include:</b><SELECT NAME=\"FILTER\" SIZE=\"1\">");
-            out.println("<OPTION VALUE=\"ACTIONS\" "+((actiondataFilter!=null&&actiondataFilter.equals("ACTIONS"))?"SELECTED":"")+"/>Only Actions");
-            out.println("<OPTION VALUE=\"WRAPPERS\" "+((actiondataFilter!=null&&actiondataFilter.equals("WRAPPERS"))?"SELECTED":"")+"/>Only Wrappers");
-            out.println("<OPTION VALUE=\"BOTH\" "+((actiondataFilter==null ||actiondataFilter.equals("BOTH"))?"SELECTED":"")+" />Both");
-            out.println("</SELECT>");
-            
-            out.println("<input type=submit name=\"Submit\" value=\"Submit\" size=10 ><br>");
-            out.println("\n</form>");
+            out.println("You can change this rate at the bottom of the page");
             out.println("<a href=\"PublishServlet\">Publish Actions</a>");
             out.println("<a href=\"ActionMonitorServlet\">Actions</a>");
             out.println("<a href=\"DiagnosisMonitorServlet\">Diagnoses</a>");
@@ -621,14 +636,34 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
         /**
          * Output page with disconnect  / reconnect button & reconnect time slot
          */
-        private void emitFooter(PrintWriter out) {
+        private void emitFooter(PrintWriter out, int refresh, boolean useShortName, 
+                                String actiondataFilter, String updateResult, String nameformat,
+                                String updateResponse, boolean wasUpdated, String assetFilter ) {           
+            out.print("<form clsname=\"myForm\" method=\"get\" >" );
+            out.println("Refresh Rate: <input type=text name=REFRESH value=\""+refresh+"\" size=7 >");
+
+            out.println("<br><b>Action Name - use:</b><SELECT NAME=\"NAMEFORMAT\" SIZE=\"1\">");
+            out.println("<OPTION VALUE=\"LONGNAME\" "+(!useShortName?"SELECTED":"")+" />Pkg Name");
+            out.println("<OPTION VALUE=\"SHORTNAME\" "+(useShortName?"SELECTED":"")+"/>Class name");
+            out.println("</SELECT>");
+
+            //String assets = if (filter.equals(ASSETS))SELECTED 
+            out.println("<br><b>Include:</b><SELECT NAME=\"FILTER\" SIZE=\"1\">");
+            out.println("<OPTION VALUE=\"ACTIONS\" "+((actiondataFilter!=null&&actiondataFilter.equals("ACTIONS"))?"SELECTED":"")+"/>Only Actions");
+            out.println("<OPTION VALUE=\"WRAPPERS\" "+((actiondataFilter!=null&&actiondataFilter.equals("WRAPPERS"))?"SELECTED":"")+"/>Only Wrappers");
+            out.println("<OPTION VALUE=\"BOTH\" "+((actiondataFilter==null ||actiondataFilter.equals("BOTH"))?"SELECTED":"")+" />Both");
+            out.println("</SELECT>");
+            out.println("   <input type=hidden name=\"ASSETFILTER\" value=\""+assetFilter+"\" ><br>");
+            
+            out.println("<input type=submit name=\"Submit\" value=\"Submit\" size=10 ><br>");
+            out.println("\n</form>");
             out.println("</html>");
         }
         
         /** Emit data for the given CostBenefitAction vector
          *
          */
-        private boolean emitData(PrintWriter out, boolean useShortName, String actiondataFilter, int refresh, String nameformat) {
+        private boolean emitData(PrintWriter out, boolean useShortName, String actiondataFilter, int refresh, String nameformat, String assetFilter) {
             
             boolean emittedData = false;
             Action a; //action
@@ -643,17 +678,26 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                 emittedData = true;
             } else { return emittedData; }
 
-            
-            tableHeader(out);
+            boolean filterAll = false;
+            if (assetFilter.equals("ALL")) { filterAll = true; }
+                        
+            tableHeader(out, refresh, nameformat, actiondataFilter, assetFilter);
             
             boolean twoRows = actiondataFilter.equals("BOTH");
             //Print out each action
             while (i.hasNext()) {
-
-                out.print("<TR>\n");
-
+                
                 //Get action record
                 ad = (ActionData)i.next();
+
+                //Filter if user selected a specific asset, o.w. print all
+                if (!filterAll) {
+                    if (!assetFilter.equals(ad.getAssetName())) {
+                        continue; //skip printing this one out.
+                    }
+                }
+                
+                out.print("<TR>\n");
                 
                 //Output the asset name
                 out.print("   <TD " + (twoRows ? "ROWSPAN=2":"") + ">"+ ad.getAction().getAssetName() +"</TD>\n");
@@ -662,7 +706,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                 out.print("   <TD " + (twoRows ? "ROWSPAN=2":"") + ">"+ ad.getName(useShortName) +"</TD>\n");
 
                 
-                emitActionData(out, ad, actiondataFilter, refresh, nameformat);
+                emitActionData(out, ad, actiondataFilter, refresh, nameformat, assetFilter);
                 
                 //End of row
                 if (!twoRows) {
@@ -677,14 +721,14 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
         }
         
         
-        private void emitActionData(PrintWriter out, ActionData ad, String what, int refresh, String nameformat) {
+        private void emitActionData(PrintWriter out, ActionData ad, String what, int refresh, String nameformat, String assetFilter) {
 
             boolean twoRows = what.equals("BOTH");  
             
             //emit the action object data
             if (what.equals("BOTH") || what.equals("ACTIONS")) {
                 
-                emitActionDataItem(out, ad, true, twoRows, what, refresh, nameformat);
+                emitActionDataItem(out, ad, true, twoRows, what, refresh, nameformat, assetFilter);
                 
             }
 
@@ -696,14 +740,14 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             //now emit the wrapper data
             if (what.equals("BOTH") || what.equals("WRAPPERS")) {
                 
-                emitActionDataItem(out, ad, false, twoRows, what, refresh, nameformat);
+                emitActionDataItem(out, ad, false, twoRows, what, refresh, nameformat, assetFilter);
                 
             }
             out.print("</TD>");    
         }
         
         private void emitActionDataItem(PrintWriter out, ActionData ad, boolean isActionObject, boolean twoRows, 
-                                        String actiondataFilter, int refresh, String nameformat) {
+                                        String actiondataFilter, int refresh, String nameformat, String assetFilter) {
 
             Object av;
             Object awv;
@@ -728,11 +772,11 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             }
             
             emitSelect(out, action.getPossibleValues());
-            emitModifiableSelect(out, action.getValuesOffered(), ad, isActionObject, actiondataFilter, refresh, nameformat, "SETPERMITTEDVALUES", "Set Permitted", true);
+            emitModifiableSelect(out, action.getValuesOffered(), ad, isActionObject, actiondataFilter, refresh, nameformat, "SETPERMITTEDVALUES", "Set Permitted", true, assetFilter);
 
             //If it's our TestAction object then we can set its value!
             if (action instanceof TestAction) {
-                emitTestActionControl(out, action.getPermittedValues(), ad, isActionObject, actiondataFilter, refresh, nameformat);
+                emitTestActionControl(out, action.getPermittedValues(), ad, isActionObject, actiondataFilter, refresh, nameformat, assetFilter);
             } else { //we can't set the value so use this just to present them.
                emitSelect(out, action.getPermittedValues());
             }        
@@ -772,7 +816,8 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
 
 
         private void emitModifiableSelect(PrintWriter out, Set s, ActionData ad, boolean isActionObject, 
-                                          String actiondataFilter, int refresh, String nameformat, String setName, String buttonStr, boolean selectMultiple) {
+                                          String actiondataFilter, int refresh, String nameformat, String setName, 
+                                          String buttonStr, boolean selectMultiple, String assetFilter) {
                        
             String str;
             if (s != null && s.size() >0 ) {
@@ -789,8 +834,9 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                 out.println("   <input type=hidden name=\"UID\" value=\""+(isActionObject?ad.getAction().getUID():ad.getWrapper().getUID())+"\" >");
                 out.println("   <input type=hidden name=\"REFRESH\" value=\""+refresh+"\" >");
                 out.println("   <input type=hidden name=\"NAMEFORMAT\" value=\""+nameformat+"\" >");
-                out.println("   <input type=hidden name=\"FILTER\" value=\""+actiondataFilter+"\" ><br>");
-                out.println("   <input type=submit name=\"Submit\" value=\"" + buttonStr + "\" size=15 ");
+                out.println("   <input type=hidden name=\"FILTER\" value=\""+actiondataFilter+"\" >");
+                out.println("   <input type=hidden name=\"ASSETFILTER\" value=\""+assetFilter+"\" >");
+                out.println("   <br><input type=submit name=\"Submit\" value=\"" + buttonStr + "\" size=15 ");
                 out.println("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: blue; font-size: 6pt;\">");
                 out.println("   \n</form></TD>");
             } else { //no values
@@ -799,7 +845,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
         }         
 
         private void emitTestActionControl(PrintWriter out, Set s, ActionData ad, boolean isActionObject, 
-                                          String actiondataFilter, int refresh, String nameformat) {
+                                          String actiondataFilter, int refresh, String nameformat, String assetFilter) {
                        
             String str;
             if (s != null && s.size() >0 ) {
@@ -816,11 +862,16 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                 out.println("   <input type=hidden name=\"UID\" value=\""+(isActionObject?ad.getAction().getUID():ad.getWrapper().getUID())+"\" >");
                 out.println("   <input type=hidden name=\"REFRESH\" value=\""+refresh+"\" >");
                 out.println("   <input type=hidden name=\"NAMEFORMAT\" value=\""+nameformat+"\" >");
-                out.println("   <input type=hidden name=\"FILTER\" value=\""+actiondataFilter+"\" ><br>");
-                out.println("   <input type=submit name=\"STARTACTION\" value=\"Start\" size=15 ");
-                out.println("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: blue; font-size: 6pt;\">");
+                out.println("   <input type=hidden name=\"FILTER\" value=\""+actiondataFilter+"\" >");
+                out.println("   <input type=hidden name=\"ASSETFILTER\" value=\""+assetFilter+"\" >");
+                out.println("   <br><input type=submit name=\"STARTACTION\" value=\"Start\" size=15 ");
+                out.print("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: blue; font-size: 6pt;\">");
                 out.println("   <input type=submit name=\"STOPACTION\" value=\"Stop\" size=15 ");
-                out.println("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: blue; font-size: 6pt;\">");
+                out.print("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: blue; font-size: 6pt;\">");
+                out.println("   <input type=submit name=\"STOPACTION\" value=\"Fail\" size=15 ");
+                out.print("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: blue; font-size: 6pt;\">");
+                out.println("   <input type=submit name=\"STOPACTION\" value=\"Abort\" size=15 ");
+                out.print("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: blue; font-size: 6pt;\">");
                 out.println("   \n</form></TD>");
             } else { //no values
                 out.print("   <TD>Null</TD>\n");
@@ -856,7 +907,10 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             }            
         }
         
-        private void tableHeader(PrintWriter out) {
+        private void tableHeader(PrintWriter out, int refresh, String nameformat, String actiondataFilter, String assetFilter) {
+
+            out.print("<h2><font color=\"#891728\">Actions</font></h2>");            
+            generateAssetSelect(out, refresh, nameformat, actiondataFilter, assetFilter);
             
             out.print("<p><p><TABLE cellspacing=\"20\">");
             //out.print("<CAPTION align=left ><font color=\"#891728\">Actions</font></CAPTION>");
@@ -886,6 +940,34 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             out.print("In general, if you see both the A-value and AW-value, they will be the same.");
             out.print("In the agent you should only see the A-value, since the objects that wrap the");
             out.print("Action objects only exist on the node and enclave.");
+        }
+        
+        
+        /*
+         * Generate a select list of all assets, allowing the user to select which 
+         * assets to display.
+         */
+        private void generateAssetSelect(PrintWriter out, int refresh, String nameformat, String actiondataFilter, String assetFilter) {
+
+            out.print("    <form clsname=\"ASSETFILTER\" method=\"get\" >" );
+            out.print("    <SELECT  NAME=\"ASSETFILTER\" size=\"1\" ");
+            out.print("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: red; font-size: 8pt;\">\n");            
+            Iterator iter = assetNames.iterator();
+            String str;
+            while (iter.hasNext()) {
+                str = iter.next().toString();
+                out.print("        <OPTION value=\""+ str +"\" UNSELECTED />" + str + "\n");
+            }
+            out.print("        <OPTION value=\"ALL\" UNSELECTED />ALL\n");
+            out.print("   </SELECT>\n");            
+                out.println("   <input type=hidden name=\"REFRESH\" value=\""+refresh+"\" >");
+                out.println("   <input type=hidden name=\"NAMEFORMAT\" value=\""+nameformat+"\" >");
+                out.println("   <input type=hidden name=\"FILTER\" value=\""+actiondataFilter+"\" >");
+                out.println("   <input type=hidden name=\"ASSETFILTER\" value=\""+assetFilter+"\" >");
+            out.println("   <input type=submit name=\"Submit\" value=\"Set Value\" size=15 ");
+            out.println("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: blue; font-size: 6pt;\">");
+            out.println("   \n</form>");
+            
         }
         
         

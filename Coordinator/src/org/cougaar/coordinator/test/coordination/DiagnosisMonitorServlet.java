@@ -66,6 +66,9 @@ import org.cougaar.core.adaptivity.Condition;
 import org.cougaar.util.log.Logger;
 import org.cougaar.core.persist.NotPersistable;
 
+import java.util.SortedSet;
+import java.util.Collections;
+import java.util.TreeSet;
 
 /**
  *
@@ -205,7 +208,8 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
 
     Object changes = null; // used to synchronize vector changes
     Vector diagnoses = new Vector();
-
+    SortedSet assetNames = Collections.synchronizedSortedSet(new TreeSet());
+    
 /*    
     Vector wrappers = new Vector();
 
@@ -243,6 +247,7 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
             //Not found so create it
             rec = new DiagRecord(d, state, isWrapper);
             diagnoses.add(rec);
+            assetNames.add(d.getAssetName());
         //}        
     }
     
@@ -292,6 +297,11 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
             shortClsname = setShortName(clsname);
             pValues = t.getPossibleValues();
         }
+        
+        /**
+         * @return asset name
+         */
+        String getAssetName() { return asset; }
         
         /**
          * @return the class name of the Diagnosis without the pkg name
@@ -374,6 +384,7 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
             String error = null;
             boolean useShortName = true;
             String ln = "SHORTNAME";
+            String assetFilter = "ALL";
             
             if (request != null) {
                 
@@ -407,6 +418,12 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
 
                     setValue(uid, diagVal);
                 }
+
+                
+                String af = request.getParameter("ASSETFILTER");
+                if (af != null && af.length() >0 ) { 
+                    assetFilter = af;                    
+                }
                 
 /*                
                 String lnf = request.getParameter("LNF");
@@ -435,13 +452,13 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
                     out.print("<font color=\"#0C15FE\">"+ error + "</h2></font>");
                 }
                 
-                boolean e1 = emitData(out, useShortName, ln, refreshRate); //emit diagnoses
+                boolean e1 = emitData(out, useShortName, ln, refreshRate, assetFilter); //emit diagnoses
                 //boolean e2 = emitData(out, true); //emit wrappers
                 
                 if (!e1) {
                     out.println("<p><p><p><h2><center>No Data is Available.</center></h2>");
                 }
-                emitFooter(out, refreshRate, useShortName);
+                emitFooter(out, refreshRate, useShortName, assetFilter);
                 //out.println("<center><h2>DefenseApplicabilityConditions not emitted - All three values required.</h2></center><br>" );
                 //if (eventService.isEventEnabled()) {
                 //   eventService.event("ERROR: Condition Name or Value not set properly: "+condName+"="+condValue);
@@ -485,17 +502,7 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
             out.println("<head></head><body onload=\"setTimeout('location.reload()',"+refreshRate+");\">");
             out.println("<center><h1>Coordinator Diagnosis Monitoring Servlet</h1>");
             out.println("<p>Will refresh every " + (refreshRate/1000) + " seconds. ");
-            out.println("You can change this rate here: (in milliseconds)");
-            out.print("<form clsname=\"myForm\" method=\"get\" >" );
-            out.println("Refresh Rate: <input type=text name=REFRESH value=\""+refreshRate+"\" size=7 >");
-            out.println("<input type=submit name=\"Submit\" value=\"Submit\" size=10 ><br>");
-
-            out.println("<br><b>Asset Name - use:</b><SELECT NAME=\"NAMEFORMAT\" SIZE=\"1\">");
-            out.println("<OPTION VALUE=\"LONGNAME\" "+ (useShortName ? "":"SELECTED") +" />Pkg Name");
-            out.println("<OPTION VALUE=\"SHORTNAME\" "+ (useShortName ? "SELECTED" : "") +" />Class name");
-            out.println("</SELECT>");
-
-            out.println("\n</form>");
+            out.println("You can change this rate at the bottom of the page.");
             out.println("<a href=\"PublishServlet\">Publish Actions</a>");
             out.println("<a href=\"ActionMonitorServlet\">Actions</a>");
             out.println("<a href=\"DiagnosisMonitorServlet\">Diagnoses</a>");
@@ -506,7 +513,7 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
         /**
          * Output page footer 
          */
-        private void emitFooter(PrintWriter out, int refreshRate, boolean useShortName) {
+        private void emitFooter(PrintWriter out, int refreshRate, boolean useShortName, String assetFilter) {
             out.print("<form clsname=\"myForm\" method=\"get\" >" );
             out.println("Refresh Rate: <input type=text name=REFRESH value=\""+refreshRate+"\" size=7 >");
             out.println("<input type=submit name=\"Submit\" value=\"Submit\" size=10 ><br>");
@@ -515,11 +522,9 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
             out.println("<OPTION VALUE=\"LONGNAME\" "+ (useShortName ? "":"SELECTED") +" />Pkg Name");
             out.println("<OPTION VALUE=\"SHORTNAME\" "+ (useShortName ? "SELECTED" : "") +" />Class name");
             out.println("</SELECT>");
+            out.println("    <input type=hidden name=\"ASSETFILTER\" value=\""+assetFilter+"\" >");
 
             out.println("\n</form>");
-            out.println("<a href=\"PublishServlet\">Publish Actions</a>");
-            out.println("<a href=\"ActionMonitorServlet\">Actions</a>");
-            out.println("<a href=\"DiagnosisMonitorServlet\">Diagnoses</a>");
             out.println("</center><hr>");
             out.println("</html>");
         }
@@ -528,7 +533,7 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
         /** Emit data for the given CostBenefitDiagnosis vector
          *
          */
-        private boolean emitData(PrintWriter out, boolean useShortName, String nameformat, int refresh) {
+        private boolean emitData(PrintWriter out, boolean useShortName, String nameformat, int refresh, String assetFilter) {
             
             boolean emittedData = false;
             Diagnosis d; //diagnosis
@@ -545,16 +550,27 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
             } else { return emittedData; }
 
             
-            tableHeader(out);
+            tableHeader(out, refresh, nameformat, assetFilter);
+
+            boolean filterAll = false;
+            if (assetFilter.equals("ALL")) { filterAll = true; }
             
             //Print out each diagnosis
             while (i.hasNext()) {
-
-                out.print("<TR>\n");
+                
 
                 //Get diagnosis record
                 dr = (DiagRecord)i.next();
-                
+
+                //Filter if user selected a specific asset, o.w. print all
+                if (!filterAll) {
+                    if (!assetFilter.equals(dr.getAssetName())) {
+                        continue; //skip printing this one out.
+                    }
+                }
+
+                out.print("<TR>\n");
+
                 //Output the asset name
                 out.print("   <TD>"+ dr.getDiagnosis().getAssetName() +"</TD>\n");
 
@@ -573,7 +589,7 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
                 if (pvalues.size() >0 ) {
                     
                     if (d instanceof TestDiagnosis) { //then we can change the value
-                          emitTestActionControl(out, pvalues, d, refresh, nameformat);                        
+                          emitTestActionControl(out, pvalues, d, refresh, nameformat, assetFilter);                        
                     } else { //we can't change the value, so just display the possible values
                         simpleSelect(out, pv);
                     }
@@ -617,7 +633,7 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
         
         
         //Emit select displaying values - no option to modify
-        private void emitTestActionControl(PrintWriter out, Set s, Diagnosis d, int refresh, String nameformat) {
+        private void emitTestActionControl(PrintWriter out, Set s, Diagnosis d, int refresh, String nameformat, String assetFilter) {
                        
             String str;
             if (s != null && s.size() >0 ) {
@@ -633,6 +649,7 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
                 out.println("    <input type=hidden name=\"UID\" value=\""+d.getUID()+"\" >");
                 out.println("    <input type=hidden name=\"REFRESH\" value=\""+refresh+"\" >");
                 out.println("    <input type=hidden name=\"NAMEFORMAT\" value=\""+nameformat+"\" >");
+               out.println("    <input type=hidden name=\"ASSETFILTER\" value=\""+assetFilter+"\" >");
                 out.println("<br><input type=submit name=\"Submit\" value=\"Set Value\" size=15 ");
                 out.println("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: blue; font-size: 6pt;\">");
                 out.println("   \n</form></TD>");
@@ -643,9 +660,10 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
         
         
         
-        private void tableHeader(PrintWriter out) {
+        private void tableHeader(PrintWriter out, int refresh, String nameformat, String assetFilter) {
             
             out.print("<h2><font color=\"#891728\">Diagnoses</font></h2>");
+            generateAssetSelect(out, refresh, nameformat, assetFilter);
             out.print("<p><p><TABLE cellspacing=\"20\">");
             out.print("<TR align=left>");
             out.print("   <TH>AssetName <sp> </TH>");
@@ -673,6 +691,31 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
             out.print("Diagnosis objects only exist on the node and enclave.");
         }
         
+        /*
+         * Generate a select list of all assets, allowing the user to select which 
+         * assets to display.
+         */
+        private void generateAssetSelect(PrintWriter out, int refresh, String nameformat, String assetFilter) {
+
+            out.print("    <form clsname=\"ASSETFILTER\" method=\"get\" >" );
+            out.print("    <SELECT  NAME=\"ASSETFILTER\" size=\"1\" ");
+            out.print("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: red; font-size: 8pt;\">\n");            
+            Iterator iter = assetNames.iterator();
+            String str;
+            while (iter.hasNext()) {
+                str = iter.next().toString();
+                out.print("        <OPTION value=\""+ str +"\" UNSELECTED />" + str + "\n");
+            }
+            out.print("        <OPTION value=\"ALL\" UNSELECTED />ALL\n");
+            out.print("   </SELECT>\n");            
+            out.println("    <input type=hidden name=\"REFRESH\" value=\""+refresh+"\" >");
+            out.println("    <input type=hidden name=\"NAMEFORMAT\" value=\""+nameformat+"\" >");
+            out.println("    <input type=hidden name=\"ASSETFILTER\" value=\""+assetFilter+"\" >");
+            out.println("    <input type=submit name=\"Submit\" value=\"Set Value\" size=15 ");
+            out.println("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: blue; font-size: 6pt;\">");
+            out.println("   \n</form>");
+            
+        }
         
         private void writeButtons(PrintWriter out) {
             
