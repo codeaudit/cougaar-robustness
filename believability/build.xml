@@ -4,7 +4,7 @@
 
   <description>
   Build file for Telcordia's Believability plugin for Ultralog.
-  CVS: $Id: build.xml,v 1.1 2004-05-20 21:39:49 arc Exp $
+  CVS: $Id: build.xml,v 1.2 2004-06-03 17:22:47 tom Exp $
   </description>
  
   <!-- ============================================================ -->
@@ -96,27 +96,28 @@
   </target>
  
   <!-- ============================================================ -->
-  <!-- TARGET: overlay     ======================================== -->
+  <!-- TARGET: create_cougaar_overlay     ======================================== -->
   <!-- ============================================================ -->
-
-  <!-- ==  FIXME: THIS TARGET DOES NOT YET WORK !!!!!   =========== -->
-
- <target name="overlay" depends="jar">
-
-     <mkdir dir="${stagedir}/lib"/>
-
-     <signjar jar="${jar}" keystore="/var/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
-                <copy file="${jar}" todir="${cougaar}/lib"/>
-                <move file="${jar}"  todir="staging/lib"/>
-		<copy todir="staging/examples/">
-			<fileset dir="examples/"/>
-		</copy>	
-		<copy todir="staging/test/">
-			<fileset dir="test/"/>
-		</copy>	
-                <zip zipfile="AC_objs_coordinator.zip" basedir="staging"/>
-                <delete	dir="staging"/>
-
+ <target name="create_cougaar_overlay">
+    <javac srcdir="src" destdir="${builddir}" debug="true" debuglevel="lines,vars,source">
+      <classpath>
+        <pathelement path="${builddir}"/>
+        <pathelement path="/var/www/html/jars/Robustness_objs_Coordinator_HEAD_B11_0.jar"/>
+        <fileset dir="${env.COUGAAR_INSTALL_PATH}">
+          <include name="**/*.jar"/>
+         </fileset>
+      </classpath>
+    </javac>
+    <jar jarfile="${jarname}" basedir="${builddir}/">
+      <manifest>
+        <attribute name="Main-Class" value="${runclass}"/>
+      </manifest>
+    </jar>
+     <signjar jar="${jarname}" keystore="/var/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
+     <mkdir dir="staging/lib"/>
+     <move file="${jarname}" todir="staging/lib"/>
+    <zip zipfile="AR_telcordia_coordinator.zip" basedir="staging"/>
+     <delete dir="staging"/>
   </target>
  
   <!-- ============================================================ -->
