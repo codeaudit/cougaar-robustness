@@ -23,7 +23,6 @@
     <Entity Name="1BDE" >
       <Attribute ID="EntityType"   Value="Agent"  />
       <Attribute ID="Role"         Value="Member" />
-      <Attribute ID="Role"         Value="TestRole" />
     </Entity>
     <Entity Name="3-69-ARBN"  >
       <Attribute ID="EntityType"   Value="Agent"  />
