@@ -37,7 +37,7 @@ society.each_node do |node|
     node.each_facet("role") do |facet|
       if facet["role"] == "Management"
         enclave = node.host.get_facet("enclave")
-	node.add_agent("1AD" + enclave + "-ARManager")
+	node.add_agent("1AD-" + enclave + "-ARManager")
       end
     end
   end
