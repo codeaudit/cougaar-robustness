@@ -106,14 +106,27 @@ public class RelayAdapter implements Relay.Source {
     myUID = uid;
   }
 
-  public static String targetsToString(Relay.Source cd) {
+  public static String targetsToString(Relay.Source rs) {
     StringBuffer sb = new StringBuffer("[");
-    for (Iterator it = cd.getTargets().iterator(); it.hasNext();) {
-      sb.append(it.next().toString());
-      if (it.hasNext()) sb.append(",");
+    if (rs != null) {
+      for (Iterator it = rs.getTargets().iterator(); it.hasNext(); ) {
+        MessageAddress addr = (MessageAddress)it.next();
+        if (addr != null) {
+          sb.append(addr.toString());
+          if (it.hasNext())
+            sb.append(",");
+        }
+      }
     }
     sb.append("]");
     return sb.toString();
+  }
+
+  public String toString() {
+    return "RelayAdapter:" +
+        " uid=" + myUID +
+        " source=" + source +
+        " content=" + content;
   }
 }
 
