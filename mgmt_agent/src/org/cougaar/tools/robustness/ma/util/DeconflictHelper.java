@@ -393,6 +393,7 @@ public class DeconflictHelper extends BlackboardClientComponent {
       }
       else if(obj instanceof RestartDefenseCondition) {
         RestartDefenseCondition rdc = (RestartDefenseCondition) obj;
+        rdc.setUID(uidService.nextUID());
         blackboard.publishAdd(rdc);
         if(logger.isDebugEnabled())
           logger.debug("publish add " + rdc.getName() + "=" + rdc.getValue());
