@@ -27,6 +27,7 @@ end
 
 society.each_node do |node|
     node.override_parameter("-Dorg.cougaar.coordinator.believability.MAX_PUBLISH_INTERVAL", "60000")
+    node.override_parameter("-Dorg.cougaar.coordinator.believability.INIT_BELIEF_BLUR", "0.10")
     node.append_value_on_parameter("-Dorg.cougaar.config.path", "$COUGAAR_INSTALL_PATH/configs/coordinator")
     node.add_components(nodePlugins)
 end
