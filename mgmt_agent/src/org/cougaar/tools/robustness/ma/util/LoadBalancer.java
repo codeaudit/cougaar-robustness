@@ -46,6 +46,7 @@ import com.boeing.pw.mct.exnihilo.plugin.LoadBalanceRequestPredicate;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Collections;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -67,6 +68,7 @@ public class LoadBalancer extends BlackboardClientComponent {
   private RobustnessController controller;
   //private HashMap origSocietys = new HashMap();
   private CougaarSociety origSociety = null;
+  private List lbReqQueue = Collections.synchronizedList(new ArrayList());
 
   // Subscription to HealthMonitorRequests for load balancing
   private IncrementalSubscription healthMonitorRequests;
@@ -129,6 +131,9 @@ public class LoadBalancer extends BlackboardClientComponent {
   }
 
   public void execute() {
+    // Publish queued LB requests
+    pubishLoadBalancerRequests();
+
     for (Iterator it = healthMonitorRequests.getAddedCollection().iterator(); it.hasNext(); ) {
       HealthMonitorRequest hsm = (HealthMonitorRequest) it.next();
       if (hsm.getRequestType() == HealthMonitorRequest.LOAD_BALANCE) {
@@ -161,8 +166,33 @@ public class LoadBalancer extends BlackboardClientComponent {
     CougaarSociety cs = loadSocietyFromXML(enSociety);
     LoadBalanceRequest loadBalReq = new LoadBalanceRequest(cs);
     logger.debug("publishing LoadBalanceRequest");
-    blackboard.publishAdd(loadBalReq);
+    fireLater(loadBalReq);
     return cs;
+  }
+
+  protected void fireLater(LoadBalanceRequest lbr) {
+    synchronized (lbReqQueue) {
+      lbReqQueue.add(lbr);
+    }
+    if (blackboard != null) {
+      blackboard.signalClientActivity();
+    }
+  }
+
+  private void pubishLoadBalancerRequests() {
+    int n;
+    List l;
+    synchronized (lbReqQueue) {
+      n = lbReqQueue.size();
+      if (n <= 0) {
+        return;
+      }
+      l = new ArrayList(lbReqQueue);
+      lbReqQueue.clear();
+    }
+    for (int i = 0; i < n; i++) {
+      blackboard.publishAdd((LoadBalanceRequest) l.get(i));
+    }
   }
 
   private void moveAgents(CougaarSociety origSociety, CougaarSociety newSociety){
