@@ -72,7 +72,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   class InitialStateController extends StateControllerBase {
     public void enter(String name) {
-      logger.info("New State (INITIAL):" + " agent=" + name + " state=INITIAL");
+      logger.debug("New State (INITIAL):" + " agent=" + name + " state=INITIAL");
       newState(name, HEALTH_CHECK);
     }
     public void expired(String name) {
@@ -596,7 +596,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     long pingTimeout = getLongAttribute(name, "PING_TIMEOUT", PING_TIMEOUT);
     getPingHelper().ping(name, pingTimeout, new PingListener() {
       public void pingComplete(String name, int status) {
-        logger.info("Ping:" +
+        logger.debug("Ping:" +
                      " agent=" + name +
                      " state=" + stateName(model.getCurrentState(name)) +
                      " result=" + (status == PingHelper.SUCCESS ? "SUCCESS" : "FAIL") +
