@@ -19,6 +19,7 @@ parameters:
 #    - $CIP/csmart/config/rules/coordinator/test
 #    - $CIP/csmart/config/rules/robustness/uc1
     - $CIP/csmart/config/rules/robustness/uc2/base_msglog.rule
+    - $CIP/csmart/config/rules/robustness/uc2/email.rule
 #    - $CIP/csmart/config/rules/robustness/uc7
     - $CIP/csmart/config/rules/robustness/uc9
     - $CIP/csmart/config/rules/metrics/basic
@@ -42,9 +43,9 @@ include_scripts:
 #    parameters:
 #      - snapshot_name: $CIP/SAVE-Small-PreStage2-AR.tgz
 #      - snapshot_location: before_stage_2
-#  - script: $CIP/csmart/lib/isat/stop_society.rb
-#    parameters:
-#      - stop_location: after_stage_1
+  - script: $CIP/csmart/lib/isat/stop_society.rb
+    parameters:
+      - stop_location: after_stage_1
   - script: $CIP/csmart/lib/isat/wait_for_ok.rb
     parameters:
       - wait_for_location: after_stage_1
