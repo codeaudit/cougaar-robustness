@@ -111,6 +111,7 @@ public class LeashRequestServlet extends BaseServletComponent implements Blackbo
     catch (IllegalValueException e) { logger.error("Attempt to initialize the LeashRequestDiagnosis to illegal vale: "+ e); }
     catch (TechSpecNotFoundException e) { logger.error("Could not find TechSPec for LeashRequestDiagnosis: "+ e); }
 */
+
     super.load();
   }
 
@@ -198,6 +199,15 @@ public class LeashRequestServlet extends BaseServletComponent implements Blackbo
               out.println("<center><h2>Status Changed - Defense Suppression Requested</h2></center><br>" );
               blackboard.publishChange(ask); 
               blackboard.publishChange(bk); 
+              // persist the knowledge Leash status change
+              try {
+                  blackboard.persistNow();
+              }
+              catch (org.cougaar.core.persist.PersistenceNotEnabledException e)
+              {
+                  logger.error(e.toString());
+              }
+
               if (logger.isDebugEnabled()) logger.debug("Status Changed - Defense Suppression Requested");
           }
           blackboard.closeTransaction();
@@ -229,6 +239,14 @@ public class LeashRequestServlet extends BaseServletComponent implements Blackbo
               out.println("<center><h2>Status Changed - Defenses Allowed Requested</h2></center><br>" );
               blackboard.publishChange(ask); 
               blackboard.publishChange(bk); 
+              // persist the knowledge Leash status change
+              try {
+                  blackboard.persistNow();
+              }
+              catch (org.cougaar.core.persist.PersistenceNotEnabledException e)
+              {
+                  logger.error(e.toString());
+              }
               if (logger.isDebugEnabled()) logger.debug("Status Changed - Defenses Allowed Requested");
           }
               
