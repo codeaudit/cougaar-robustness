@@ -27,9 +27,8 @@ parameters:
 
 include_scripts:
   - script: $CIP/csmart/lib/isat/clearPnLogs.rb
+  - script: $CIP/csmart/lib/robustness/mic/small_kill_mgr.rb
   - script: $CIP/csmart/lib/coordinator/unleash_defenses.rb
-  #- script: $CIP/csmart/lib/robustness/mic/small_kill.rb
-  - script: $CIP/csmart/lib/robustness/mic/small_create_duplicate_agents.rb
 
   - script: $CIP/csmart/lib/isat/stop_society.rb
     parameters:
