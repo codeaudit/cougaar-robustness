@@ -196,11 +196,11 @@
     <delete file="${workspace}/configs/${agent_ini}" />
     <delete file="${workspace}/configs/${node_ini}" />
     <delete file="${workspace}/configs/${prototype}" />
-    <copy file="test/configs/ma/ManagementAgentNode.ini"
+    <copy file="configs/ManagementAgentNode.ini"
           tofile="${workspace}/configs/${node_ini}" />
-    <copy file="test/configs/ma/ManagementAgent.ini"
+    <copy file="configs/ManagementAgent.ini"
           tofile="${workspace}/configs/${agent_ini}" />
-    <copy file="test/configs/ma/ManagementAgent-prototype-ini.dat"
+    <copy file="configs/ManagementAgent-prototype-ini.dat"
           tofile="${workspace}/configs/${prototype}" />
     <replace file="${workspace}/configs/${node_ini}" token="cluster=ManagementAgent" value="cluster=${agent}"/>
     <replace file="${workspace}/configs/${prototype}" token="ManagementAgent" value="${agent}"/>
@@ -500,16 +500,10 @@
     <antcall target="compile"/>
     <antcall target="jar"/>
     <move file="${lib}/${jar}" toDir="staging/lib"/>
+    <copy file="build.xml" toDir="staging/robustness"/>
     <copy file="bin/**" toDir="staging/robustness/bin"/>
-    <copy file="doc/AR-UC1-Readme.html" toDir="staging/robustness/doc"/>
-    <copy file="doc/AR-UC1-Setup.html" toDir="staging/robustness/doc"/>
-    <copy file="test/data/communities.xml" toDir="staging/robustness/configs"/>
-    <copy file="test/data/recipeQueries.q" toDir="staging/robustness/configs"/>
-    <copy file="test/data/recipes/**" toDir="staging/robustness/csmart/recipes"/>
-    <copy file="test/data/experiments/**" toDir="staging/robustness/csmart/experiments"/>
-    <copy file="test/configs/common/debug.properties" toDir="staging/robustness/configs"/>
-    <copy file="test/configs/ma/**" toDir="staging/robustness/configs"/>
-    <copy file="test/configs/minitestconfig/**" toDir="staging/robustness/configs"/>
+    <copy file="configs/**" toDir="staging/robustness/configs"/>
+    <copy file="doc/**" toDir="staging/robustness/doc"/>
     <zip zipfile="Robustness_mic_mgmt_agent_overlay.zip" basedir="staging"/>
     <delete dir="staging"/>
   </target>
