@@ -715,10 +715,10 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
         if (cost == Integer.MAX_VALUE) continue; 
 
-        if (cost == 1 && getName(link).equals ("org.cougaar.core.mts.SSLRMILinkProtocol"))
-        {
-          return linkChoice (link, msg);  //  Temp HACK for UC3
-        }
+//        if (cost == 1 && getName(link).equals ("org.cougaar.core.mts.SSLRMILinkProtocol"))
+//        {
+//          return linkChoice (link, msg);  //  Temp HACK for UC3
+//        }
 
         //  Drop links that cannot handle messages beyond a certain size
 
