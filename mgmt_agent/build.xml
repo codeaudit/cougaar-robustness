@@ -182,6 +182,7 @@
   <target name="manual" depends="html, fo, pdf" description="Create user manual"/>
 
   <target name="html" description="Creates user manual HTML">
+    <delete dir="${doc}/html"/>
     <!-- Generate HTML -->
     <xslt basedir="${basedir}/doc/src"
           extension=".html"
@@ -191,6 +192,7 @@
   </target>
 
   <target name="fo" description="Creates user manual HTML">
+    <delete dir="${doc}/fo"/>
     <xslt basedir="${basedir}/doc/src"
           extension=".fo"
           style="${docbook.dir}/fo/docbook.xsl"
@@ -199,6 +201,7 @@
   </target>
 
   <target name="pdf" depends="fo" description="Creates user manual PDF">
+    <delete dir="${doc}/pdf"/>
     <fop format="application/pdf"
          fofile="${basedir}/doc/fo/main.fo"
          outfile="${basedir}/doc/pdf/main.pdf" />

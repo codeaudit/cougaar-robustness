@@ -29,6 +29,10 @@
         <row>
           <entry>Objs Sensors</entry><entry>Provides Heartbeat and Ping sensors</entry>
         </row>
+        <row>
+          <entry valign="center">Robustness common</entry><entry>Provides ACME rules for
+            creating ARManager and robustness community definition</entry>
+        </row>
       </tbody>
       </tgroup>
     </table>
@@ -51,10 +55,14 @@
       </tfoot>
       <tbody valign="middle">
         <row>
-          <entry>OBJS Coordinator</entry><entry>Defense coordinator components
-            for mediating multiple defenses.</entry>
+          <entry>OBJS Coordinator</entry>
+          <entry morerows="2" valign="middle">Defense coordinator components for mediating multiple defenses.</entry>
         </row>
         <row>
+          <entry>OBJS Common</entry>
+        </row>
+        <row>
+          <entry>Telcordia believability/coordinator</entry>
         </row>
       </tbody>
       </tgroup>
