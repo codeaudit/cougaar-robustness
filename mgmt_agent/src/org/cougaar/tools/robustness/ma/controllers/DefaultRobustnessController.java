@@ -80,7 +80,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
 
     private boolean doInitialPing() {
-      return false;
+      return true;
     }
 
     public void expired(String name) {
