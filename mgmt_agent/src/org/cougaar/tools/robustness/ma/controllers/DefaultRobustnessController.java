@@ -18,6 +18,7 @@
 package org.cougaar.tools.robustness.ma.controllers;
 
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
+import org.cougaar.tools.robustness.ma.CommunityStatusChangeEvent;
 import org.cougaar.tools.robustness.ma.controllers.*;
 import org.cougaar.tools.robustness.ma.HostLossThreatAlertHandler;
 import org.cougaar.tools.robustness.ma.SecurityAlertHandler;
@@ -33,6 +34,8 @@ import org.cougaar.tools.robustness.ma.util.RestartListener;
 import org.cougaar.tools.robustness.ma.util.RestartDestinationLocator;
 
 import org.cougaar.tools.robustness.threatalert.*;
+
+import org.cougaar.tools.robustness.deconfliction.techspec.AgentAssetPropertyChange;
 
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.component.ServiceBroker;
@@ -312,7 +315,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    *   Next state:        HEALTH_CHECK
    * </pre>
    */
-  class MoveStateController extends StateControllerBase implements MoveListener {
+  class MoveStateController extends StateControllerBase implements MoveListener, StatusChangeListener {
     { addMoveListener(this); }
     public void enter(String name) {
       communityReady = false;
@@ -345,6 +348,22 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       }
     }
 
+    public void statusChanged(CommunityStatusChangeEvent[] csce) {
+      for(int i = 0; i < csce.length; i++) {
+        if (csce[i].locationChanged()) {
+          String priorLocation = csce[i].getPriorLocation();
+          // Publish location changes for deconflictor use
+          if (priorLocation != null) {
+            AgentAssetPropertyChange aapc =
+                new AgentAssetPropertyChange(name);
+            String nodeName = csce[i].getCurrentLocation();
+            String hostName = model.getLocation(nodeName);
+            aapc.moveChange(hostName, nodeName);
+            blackboard.publishAdd(aapc);
+          }
+        }
+      }
+    }
   }
 
 

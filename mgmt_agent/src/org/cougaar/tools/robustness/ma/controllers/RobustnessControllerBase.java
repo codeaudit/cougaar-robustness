@@ -609,7 +609,13 @@ public abstract class RobustnessControllerBase
     String agents[] = model.listEntries(CommunityStatusModel.AGENT);
     StringBuffer summary = new StringBuffer("community=" + model.getCommunityName());
     summary.append(" leader=" + model.getLeader());
-    summary.append(" activeNodes=" + activeNodes.length + arrayToString(activeNodes));
+    //summary.append(" activeNodes=" + activeNodes.length + arrayToString(activeNodes));
+    summary.append(" activeNodes=[");
+    for (int i = 0; i < activeNodes.length; i++) {
+      summary.append(activeNodes[i] + "(" + model.getMetric(activeNodes[i], "LoadAverage") + ")");
+      if (i < activeNodes.length - 1) summary.append(",");
+    }
+    summary.append("]");
     summary.append(" agents=" + agents.length);
     for (Iterator it = controllers.values().iterator(); it.hasNext();) {
       int state = ( (ControllerEntry) it.next()).state;
