@@ -86,7 +86,7 @@ public class SecurityAlertPlugin extends ComponentPlugin {
 
     // Subscribe to InterAgentOperatingMode objects
     opModes =
-        (IncrementalSubscription)blackboard.subscribe(_threatConOM);
+        (IncrementalSubscription)blackboard.subscribe(threatConOM);
   }
 
   public void execute() {
@@ -121,13 +121,32 @@ public class SecurityAlertPlugin extends ComponentPlugin {
   }
 
   private IncrementalSubscription opModes;
-  UnaryPredicate _threatConOM = new UnaryPredicate() {
+  /*
+  UnaryPredicate threatConOM = new UnaryPredicate() {
     public boolean execute(Object o) {
       if(o == null || !(o instanceof InterAgentOperatingMode)) {
         return false;
       }
       InterAgentOperatingMode mode = (InterAgentOperatingMode)o;
       return mode.getName().equals("org.cougaar.core.security.monitoring.THREATCON_LEVEL");
+    }
+  };
+  */
+  private final UnaryPredicate threatConOM = new UnaryPredicate() {
+    public boolean execute(Object o) {
+      if (o instanceof OperatingMode) {
+        // used for the robustness of the local agent that publishes
+        // the InterAgentOperatingMode (i.e., PolicyDomainManager)
+        if (o instanceof InterAgentOperatingMode) {
+          InterAgentOperatingMode iaom = (InterAgentOperatingMode)o;
+          return iaom.getName().equals("org.cougaar.core.security.monitoring.THREATCON_LEVEL");
+        }
+      } else if (o instanceof InterAgentCondition) {
+        // all targets of the InterAgentOperatingMode
+        InterAgentCondition iac = (InterAgentCondition)o;
+        return iac.getName().equals("org.cougaar.core.security.monitoring.THREATCON_LEVEL");
+      }
+      return false;
     }
   };
 
