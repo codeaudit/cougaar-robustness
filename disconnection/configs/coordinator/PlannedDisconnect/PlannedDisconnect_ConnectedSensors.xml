@@ -16,11 +16,13 @@
     <Diagnoses>
         <WhenActualStateIs name="WantsToDisconnect" >
             <WillDiagnoseAs name="Disconnect_Request" withProbability="0.998" />
-            <WillDiagnoseAs name="Disconnected" withProbability="0.002" />
+            <WillDiagnoseAs name="Disconnected" withProbability="0.001" />
+            <WillDiagnoseAs name="Connected" withProbability="0.001" />
         </WhenActualStateIs >
         <WhenActualStateIs name="WantsToConnect" >
             <WillDiagnoseAs name="Connect_Request" withProbability="0.998" />
-            <WillDiagnoseAs name="Connected" withProbability="0.002" />
+            <WillDiagnoseAs name="Disconnected" withProbability="0.001" />
+            <WillDiagnoseAs name="Connected" withProbability="0.001" />
         </WhenActualStateIs >
         <WhenActualStateIs name="Connected" >
             <WillDiagnoseAs name="Connected" withProbability="1.0" />
