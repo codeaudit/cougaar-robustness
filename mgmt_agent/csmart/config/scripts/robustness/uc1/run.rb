@@ -31,14 +31,14 @@ Cougaar::ExperimentMonitor.enable_stdout
 
 Cougaar.new_experiment("MyExperiment").run {
   do_action "LoadSocietyFromXML", "aruc1_society.xml"
-  do_action "StartJabberCommunications", "acme_console", "oak"
+  do_action "StartJabberCommunications", "acme_console", "dell8200"
 
 # Print out CougaarEvents as they come in 
   do_action "GenericAction" do |run|  
     run.comms.on_cougaar_event do |event|  
-       if event.component =="NodeHealthMonitorPlugin"
-         puts event  
-       end
+       #if event.component =="NodeHealthMonitorPlugin"
+       puts event  
+       #end
      end  
   end  
 
@@ -49,18 +49,45 @@ Cougaar.new_experiment("MyExperiment").run {
 
   do_action "StartSociety"
   
+  #wait_for  "TINY_1AD_ROBUSTNESS_COMM_READY"
+
   wait_for  "Robustness_Community_Ready"
+  do_action "ShowResult"
+
   do_action "GenericAction" do |run|  
-    print "waiting for persistence"
     sleep 2.minutes
   end  
-  do_action  "KillNodes", "TINY-1AD-2"
+  do_action "KillNodes", "TINY-1AD-3"
+  wait_for  "Robustness_Community_Ready"
+  do_action "ShowResult"
+  do_action "AddNode", "NewNode1", "TINY-1AD-ROBUSTNESS-COMM", "hp"
 
-  #do_action "ShowResult"
+  do_action "GenericAction" do |run|  
+    sleep 2.minutes
+  end  
+  do_action "KillNodes", "TINY-1AD-2"
+  wait_for  "Robustness_Community_Ready"
+  do_action "ShowResult"
+  do_action "AddNode", "NewNode2", "TINY-1AD-ROBUSTNESS-COMM", "dell"
+
+  do_action "GenericAction" do |run|  
+    sleep 2.minutes
+  end  
+  do_action "KillNodes", "TINY-1AD-1"
+  wait_for  "Robustness_Community_Ready"
+  do_action "ShowResult"
+  do_action "AddNode", "NewNode3", "TINY-1AD-ROBUSTNESS-COMM", "dell"
+
+  do_action "GenericAction" do |run|  
+    sleep 2.minutes
+  end  
+  do_action "LoadBalancer"
+  wait_for  "Robustness_Community_Ready"
+  do_action "ShowResult"
+
   #1.upto(5) do |x|
-    #do_action "AddNode", "NewNode#{x}", "1AD-ROBUSTNESS-COMM"
+    #do_action "AddNode", "NewNode#{x}", "TINY-1AD-ROBUSTNESS-COMM"
     #do_action "GenericAction" do |run|  
-      #print "waiting for persistence"
       #sleep 2.minutes
     #end  
     #do_action  "KillNodes", Cougaar::KILLNODE_CONST
