@@ -8,6 +8,7 @@ $:.unshift File.join(CIP, 'csmart', 'config', 'lib')
 require 'cougaar/scripting'
 require 'ultralog/scripting'
 require 'robustness/uc1/aruc1_actions_and_states'
+require 'robustness/uc1/deconfliction'
 
 HOSTS_FILE = Ultralog::OperatorUtils::HostManager.new.get_hosts_file
 
@@ -29,6 +30,8 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
   do_action "StartJabberCommunications"
   do_action "VerifyHosts"
   do_action "DeployCommunitiesFile"
+
+  do_action "DisableDeconfliction"
 
   do_action "CleanupSociety"
 
