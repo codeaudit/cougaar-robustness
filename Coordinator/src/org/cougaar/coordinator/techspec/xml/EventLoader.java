@@ -220,6 +220,10 @@ public class EventLoader extends XMLLoader {
 
                 String whenState = e.getAttribute("WhenActualStateIs");
                 String endState = e.getAttribute("EndStateWillBe");
+                if (whenState == null || endState == null) {
+                    logger.error("Event XML Error - one direct effect asset state is NULL for event["+event.getName()+"]! unknown EndStateWillBe: "+endState+ ", WhenActualStateIs: "+whenState);
+                    return;
+                }
 
                 AssetState when_as;
                 if (whenState.equals("*")) { when_as = AssetState.ANY; } 
