@@ -114,24 +114,85 @@ public class ActionEvaluation implements Comparable {
         // determines whether the selection of one variant for this Action is required
         // this should be based on TechSpecs
         if (this.getAction().getClass().getName().equals("org.cougaar.mts.std.LinksEnablingAction")) return true;
-        else return false;
+        if (this.getAction().getClass().getName().equals("org.cougaar.coordinator.security.AgentCompromiseAction")) return true;
+        if (this.getAction().getClass().getName().equals("org.cougaar.robustness.dos.coordinator.CompressionAction")) return true;
+        if (this.getAction().getClass().getName().equals("org.cougaar.robustness.dos.coordinator.RMIAction")) return true;
+        if (this.getAction().getClass().getName().equals("org.cougaar.robustness.dos.coordinator.FuseResetAction")) return true;
+        if (this.getAction().getClass().getName().equals("org.cougaar.robustness.dos.coordinator.AttackResetAction")) return true;
+        if (this.getAction().getClass().getName().equals("org.cougaar.core.security.coordinator.SecurityLevelAction")) return true;
+        return false;
     }
 
-    public boolean doesNotConflict(VariantEvaluation ve, Collection alreadyActiveActions, Collection alreadySelectedVariants) {   
+    public boolean doesNotConflict(VariantEvaluation ve, Collection activeActions, Collection selectedVariants) {   
         // determines whether the selection of this variant for this Action precludes the selection of some other Action
         // this should be based on TechSpecs
-        if (alreadyActiveActions.isEmpty() && alreadySelectedVariants.isEmpty()) return true;
-        else if (this.getAction().getClass().getName().equals("org.cougaar.mts.std.LinksEnablingAction"))
+        // basic outline is to return TRUE if the action (or variant of the action) cannot conflict with anything
+        //   to teturn FALSE if the action variant conflicts with something already active or selected
+        //   and to return TRUE if neither of the above is true
+        if (activeActions.isEmpty() && selectedVariants.isEmpty()) return true;
+        if (this.getAction().getClass().getName().equals("org.cougaar.coordinator.security.AgentCompromiseAction")) return true;
+        if (this.getAction().getClass().getName().equals("org.cougaar.robustness.dos.coordinator.CompressionAction")) return true;
+        if (this.getAction().getClass().getName().equals("org.cougaar.robustness.dos.coordinator.RMIAction")) return true;
+        if (this.getAction().getClass().getName().equals("org.cougaar.robustness.dos.coordinator.FuseResetAction")) return true;
+        if (this.getAction().getClass().getName().equals("org.cougaar.robustness.dos.coordinator.AttackResetAction")) return true;
+        if (this.getAction().getClass().getName().equals("org.cougaar.core.security.coordinator.SecurityLevelAction")) return true;
+        if (this.getAction().getClass().getName().equals("org.cougaar.mts.std.LinksEnablingAction")) {
             if (ve.getVariantName().equals("Disable")) return true;
-          //  else if (inActiveSets("org.cougaar.tools.robustness.ma.util.AgentRestartAction", "Yes")) return false;
-          //  else if (inActiveSets("org.cougaar.tools.robustness.disconnection.NodeDisconnectAction", "Allow_Disconnect")) return false;
-            else return false;
-        else return false;
+            else {
+                if (conflictWith("org.cougaar.tools.robustness.ma.util.AgentRestartAction", "Yes", activeActions, selectedVariants)) return false;
+                if (conflictWith("org.cougaar.tools.robustness.disconnection.NodeDisconnectAction", "Allow_Disconnect", activeActions, selectedVariants)) return false;
+                if (conflictWith("org.cougaar.coordinator.security.AgentCompromiseAction", "Restart", activeActions, selectedVariants)) return false;
+            }
+        }
+        if (this.getAction().getClass().getName().equals("org.cougaar.tools.robustness.ma.util.AgentRestartAction")) {
+            if (ve.getVariantName().equals("No")) return true;
+            // NOTE - not clear what conflict semantics we want between Restrat & MsgLog
+            else {
+                if (conflictWith("org.cougaar.mts.std.LinksEnablingAction", "Normal", activeActions, selectedVariants)) return false;
+                if (conflictWith("org.cougaar.mts.std.LinksEnablingAction", "AlternateDirect", activeActions, selectedVariants)) return false;
+                if (conflictWith("org.cougaar.mts.std.LinksEnablingAction", "StoreAndForward", activeActions, selectedVariants)) return false;
+                if (conflictWith("org.cougaar.tools.robustness.disconnection.NodeDisconnectAction", "Allow_Disconnect", activeActions, selectedVariants)) return false;
+                if (conflictWith("org.cougaar.coordinator.security.AgentCompromiseAction", "Restart", activeActions, selectedVariants)) return false;
+            }
+        }
+        if (this.getAction().getClass().getName().equals("org.cougaar.coordinator.security.AgentCompromiseAction")) {
+            if (ve.getVariantName().equals("DoNothing")) return true;
+            else {
+                if (conflictWith("org.cougaar.mts.std.LinksEnablingAction", "Normal", activeActions, selectedVariants)) return false;
+                if (conflictWith("org.cougaar.mts.std.LinksEnablingAction", "AlternateDirect", activeActions, selectedVariants)) return false;
+                if (conflictWith("org.cougaar.mts.std.LinksEnablingAction", "StoreAndForward", activeActions, selectedVariants)) return false;
+                if (conflictWith("org.cougaar.tools.robustness.ma.util.AgentRestartAction", "Yes", activeActions, selectedVariants)) return false;
+                if (conflictWith("org.cougaar.tools.robustness.disconnection.NodeDisconnectAction", "Allow_Disconnect", activeActions, selectedVariants)) return false;
+            }
+        }
+        return true;
     }
 
     public boolean hasPositiveBenefit() { return hasOfferedVariant() && (((VariantEvaluation)getOrderedAvaliableVariants().first()).getPredictedBenefit() > 0.0); }
 
     public boolean hasOfferedVariant() { return (getOrderedAvaliableVariants() != null && (!getOrderedAvaliableVariants().isEmpty())); }
 
+    private boolean conflictWith(String actionName, String variantName, Collection activeActions, Collection selectedVariants) {
+        if ((alreadyActive(actionName, variantName, activeActions)) || (alreadySelected(actionName, variantName, selectedVariants))) return true;
+        else return false;
+    }
+
+    private boolean alreadySelected(String actionName, String variantName, Collection selectedVariants) {
+        Iterator iter = selectedVariants.iterator();
+        while (iter.hasNext()) {
+            VariantEvaluation thisVariant = (VariantEvaluation)iter.next();
+            if (thisVariant.getActionEvaluation().getAction().getClass().getName().equals(actionName) && thisVariant.getVariantName().equals(variantName)) return true;
+        }
+        return false;
+    }
+
+    private boolean alreadyActive(String actionName, String variantName, Collection activeActions) {
+        Iterator iter = activeActions.iterator();
+        while (iter.hasNext()) {
+            Action thisAction = (Action) iter.next();
+            if (thisAction.getClass().getName().equals(actionName) && thisAction.getValue().equals(variantName)) return true;
+        }
+        return false;
+    }
 
 }

@@ -227,7 +227,8 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                             // Get TechSpec for this Variant
                             ActionDescription thisVariantDescription = (ActionDescription) variantIter.next();
                             // Add an entry to the current Action containing the information about this Variant
-                            thisActionEvaluation.addVariantEvaluation(createCorrectiveVariantEvaluation(assetID, asd, currentEstimatedStateDimension, thisVariantDescription, knob));
+                            thisActionEvaluation.addVariantEvaluation(createCorrectiveVariantEvaluation(assetID, asd, currentEstimatedStateDimension, thisVariantDescription, thisActionEvaluation, knob)); 
+
                         }
                     }
                     catch (BelievabilityException e) {
@@ -258,9 +259,10 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                             ActionDescription currentVariant = atsi.getActionDescriptionForValue(thisAction, thisAction.getValue().getAction());
                             if (logger.isDebugEnabled()) logger.debug("currentVariant: " + currentVariant.toString());
                             benefitOfStayingTheSame = createCompensatoryVariantEvaluation
-                                                                   (currentVariant,
-                                                                    baseStateDimension,
-                                                                    currentEstimatedBaseStateDimension,
+                                                                   (currentVariant, 
+                                                                    thisActionEvaluation,
+                                                                    baseStateDimension, 
+                                                                    currentEstimatedBaseStateDimension,  
                                                                     compensatedStateDimension,
                                                                     0.0,
                                                                     knob).getPredictedBenefit();
@@ -278,9 +280,10 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                             ActionDescription thisVariantDescription = (ActionDescription) variantIter.next();
                             // Add an entry to the current Action containing the information about this Variant
                             thisActionEvaluation.addVariantEvaluation(createCompensatoryVariantEvaluation
-                                       (thisVariantDescription,
-                                        baseStateDimension,
-                                        currentEstimatedBaseStateDimension,
+                                       (thisVariantDescription, 
+                                        thisActionEvaluation,
+                                        baseStateDimension, 
+                                        currentEstimatedBaseStateDimension,  
                                         compensatedStateDimension,
                                         benefitOfStayingTheSame,
                                         knob)
@@ -334,10 +337,10 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
         return stateBenefit;
     }
 
-   private VariantEvaluation createCorrectiveVariantEvaluation(AssetID assetID, AssetStateDimension asd, StateDimensionEstimation currentStateDimensionEstimation, ActionDescription thisVariantDescription, CostBenefitKnob knob) {
+   private VariantEvaluation createCorrectiveVariantEvaluation(AssetID assetID, AssetStateDimension asd, StateDimensionEstimation currentStateDimensionEstimation, ActionDescription thisVariantDescription, ActionEvaluation thisActionEvaluation, CostBenefitKnob knob) {
         double memorySize = 1000.0; // FIX _ needs to be dynamic
         double bandwidthSize = 1000.0; // FIX -needs to be dynamic
-        double predictedCost = 0.0;
+        double predictedCost = 0.0; // total predicted cost
         double predictedBenefit = 0.0;
         long maxTransitionTime = 0L;
         long horizon = knob.getHorizon();
@@ -394,12 +397,13 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
         }
 
-        return new VariantEvaluation(thisVariantDescription, predictedCost, predictedBenefit, maxTransitionTime);
+        return new VariantEvaluation(thisVariantDescription, thisActionEvaluation, predictedCost, predictedCost/horizon, predictedBenefit, maxTransitionTime);
     }
 
     private VariantEvaluation createCompensatoryVariantEvaluation(ActionDescription thisVariantDescription,
-                                                                  AssetStateDimension baseStateDimension,
-                                                                  StateDimensionEstimation currentEstimatedBaseStateDimension,
+                                                                  ActionEvaluation thisActionEvaluation,
+                                                                  AssetStateDimension baseStateDimension, 
+                                                                  StateDimensionEstimation currentEstimatedBaseStateDimension, 
                                                                   AssetStateDimension compensatedStateDimension,
                                                                   double benefitOfStayingTheSame,
                                                                   CostBenefitKnob knob) {
@@ -434,7 +438,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
         predictedBenefit = knob.horizon * computeBenefit(cumulativeProbVector, compensatedStateDimension, knob) - benefitOfStayingTheSame;
 
-        return new VariantEvaluation(thisVariantDescription, predictedCost, predictedBenefit, maxTransitionTime);
+        return new VariantEvaluation(thisVariantDescription, thisActionEvaluation, predictedCost, predictedCost/knob.getHorizon(), predictedBenefit, maxTransitionTime);
     }
 
     private Vector mapCompensation(String baseStateName, String actionSettingName) {

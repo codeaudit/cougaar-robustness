@@ -170,7 +170,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
             }
         }
       
-    // Get the ActionSelectionKnob for current settings
+        // Get the ActionSelectionKnob for current settings
         iter = knobSubscription.iterator();
         if (iter.hasNext()) 
         {        
@@ -182,24 +182,6 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
             if (logger.isInfoEnabled()) logger.info("Enclave Defenses are LEASHED - no actions will be selected");
             return;
         }
-
-
-/*
-     // Check any changed Actions to see if the change is a change to offeredActions
-     //    and there is a currently open CBE for the asset
-     //    and there are currently fewer then maxActions actions permitted on he asset
-     iter = actionsWrapperSubscription.iterator();
-     while (iter.hasNext()) {
-        ActionsWrapper aw = (ActionsWrapper) iter.next();
-        Action action = aw.getAction();
-        CostBenefitEvaluation thisCBE = findCostBenefitEvaluation(action.getAssetID());
-        if (thisCBE != null) {
-            if (thisCBE.numOpenActions() < knob.getMaxActions()) {
-                selectActions(thisCBE, knob);
-            }
-        }        
-     }
-*/
 
       //********* Process Actions that have Responded ***********
       if (logger.isDetailEnabled()) logger.detail("Ready to Process Action Responses");
@@ -292,22 +274,20 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
     boolean done = false;
     Set alreadyActiveActions = findActiveIrrevocableActions(cbe);
     Set alreadySelectedVariants = new HashSet();
-    if (logger.isInfoEnabled()) logger.info("Irrevocable Actions: " + alreadyActiveActions.toString());
 
     Iterator iter = cbe.getOrderedEvaluations().iterator();
     if (logger.isInfoEnabled()) logger.info(cbe.dumpAvailableVariants());
-    while (iter.hasNext() && !done) {
-        ActionEvaluation thisEvaluation = (ActionEvaluation) iter.next();
-        Action thisAction = thisEvaluation.getAction();
+    while (iter.hasNext()) {
+        ActionEvaluation thisActionEvaluation = (ActionEvaluation) iter.next();
+        Action thisAction = thisActionEvaluation.getAction();
         Set permittedVariants = new HashSet();  
-//        Set currentVariants = thisAction.getPermittedValues();
-        Iterator iter3 = thisEvaluation.getOrderedAvaliableVariants().iterator();
+        Iterator iter3 = thisActionEvaluation.getOrderedAvaliableVariants().iterator();
         boolean pickedSomeVariant = false;
         while (iter3.hasNext() && !pickedSomeVariant) {
             VariantEvaluation proposedVariant = (VariantEvaluation)iter3.next();
-            if (logger.isDebugEnabled()) logger.debug(proposedVariant + " doesNotConflict: " + thisEvaluation.doesNotConflict(proposedVariant, alreadyActiveActions, alreadySelectedVariants));
-            if (thisEvaluation.doesNotConflict(proposedVariant, alreadyActiveActions, alreadySelectedVariants)) {
-                if ((proposedVariant.getPredictedBenefit() > 0.0) || (thisEvaluation.mustSelectOne())) {
+            if (logger.isDebugEnabled()) logger.debug(proposedVariant + " doesNotConflict: " + thisActionEvaluation.doesNotConflict(proposedVariant, alreadyActiveActions, alreadySelectedVariants));
+            if (thisActionEvaluation.doesNotConflict(proposedVariant, alreadyActiveActions, alreadySelectedVariants)) {
+                if ((proposedVariant.getPredictedBenefit() > 0.0) || (thisActionEvaluation.mustSelectOne())) {
                     pickedSomeVariant = true;
                     alreadySelectedVariants.add(proposedVariant);
                     proposedVariant.setChosen();
@@ -318,17 +298,11 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
                                 || !thisAction.getValue().isActive())) {
                         permittedVariants.add(proposedVariant);
                         publishAdd(new SelectedAction(thisAction, permittedVariants, Math.round(knob.getPatienceFactor()*proposedVariant.getExpectedTransitionTime()), cbe));
-                        done = true;
                         if (logger.isInfoEnabled()) logger.info("Enabling: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString());
                     }
                 }
             }
         }
-        //if (!pickedSomeVariant) {                                // no variants were selected, so
-        //    if (!thisAction.getPermittedValues().isEmpty()) {  // if there are any previous permissions
-        //       publishAdd(new RetractedActions(thisAction));  // retract them      
-        //    }                
-        //}
     }
     if (alreadySelectedVariants.isEmpty()) { // could not find anything useful to do
         if (logger.isInfoEnabled()) logger.info("Done processing: " + cbe.dumpAvailableVariants());
@@ -347,6 +321,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
             activeActions.add(thisAction);
         }
     }
+    if (logger.isInfoEnabled()) logger.info("Irrevocable Actions: " + activeActions.toString());
     return activeActions;
   }
 

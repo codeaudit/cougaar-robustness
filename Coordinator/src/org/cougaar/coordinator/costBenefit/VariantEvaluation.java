@@ -22,7 +22,9 @@ import java.util.Enumeration;
 public class VariantEvaluation implements Comparable {
 
     private ActionDescription variantDescription;
+    private ActionEvaluation actionEvaluation;
     private double predictedCost;
+    private double predictedCostPerTimeUnit;
     private double predictedBenefit;
     private boolean chosen = false;
     private boolean active = false;
@@ -32,12 +34,16 @@ public class VariantEvaluation implements Comparable {
 
     /** Creates new VariantEvaluation containing the cost & benefit for this variant under the current StateEstimation */
     public VariantEvaluation(ActionDescription variantDescription, 
-                             double predictedCost, 
+                             ActionEvaluation actionEvaluation,
+                             double predictedCost,
+                             double predictedCostPerTimeUnit,
                              double predictedBenefit,
                              long expectedTransitionTime) {
 
         this.variantDescription = variantDescription;
+        this.actionEvaluation = actionEvaluation;
         this.predictedCost = predictedCost;
+        this.predictedCostPerTimeUnit = predictedCostPerTimeUnit;
         this.predictedBenefit = predictedBenefit;
         this.expectedTransitionTime = expectedTransitionTime;
 
@@ -46,10 +52,16 @@ public class VariantEvaluation implements Comparable {
     public ActionDescription getVariant() { return variantDescription; }
     public String getVariantName() { return variantDescription.name(); }
     public double getPredictedCost() { return predictedCost; }
+    public double getPredictedCostPerTimeUnit() { return predictedCostPerTimeUnit; }
     public double getPredictedBenefit() { return predictedBenefit; }
+    public double getBenefitToCostRatio() {
+        if (predictedCost == 0.0) return predictedBenefit;
+        else return predictedBenefit/predictedCost;
+    }
     public void setFailed() { failed = true; }
     public boolean failedP() { return failed; }
     protected void setFailed(boolean p) { failed = p; }
+    public ActionEvaluation getActionEvaluation() { return actionEvaluation; }
 
     public void setChosen() { chosen = true; }
     public boolean chosenP() { return chosen; }
@@ -75,8 +87,8 @@ public class VariantEvaluation implements Comparable {
             return otherVE.failedP() ? 0 : 1;
         }
         else if (otherVE.failedP()) return -1;
-        else if (otherVE.getPredictedBenefit() < this.getPredictedBenefit()) return -1;
-        else if (otherVE.getPredictedBenefit() == this.getPredictedBenefit()) return 0; 
+        else if (otherVE.getBenefitToCostRatio() < this.getBenefitToCostRatio()) return -1;
+        else if (otherVE.getBenefitToCostRatio() == this.getBenefitToCostRatio()) return 0; 
         else return 1;
     }
 
