@@ -130,7 +130,7 @@ implements NotPersistable {
         while (iter.hasNext()) {
             Action a = (Action)iter.next();
             if (servlet != null) { servlet.addAction(a); }
-            logger.debug("**** Saw new Action["+ActionUtils.getAssetID(a)+"], with ActionRecord = " + a.getValue() + " UID=" + a.getUID());
+            logger.debug("[AgentId="+agentId+"]**** Saw new Action["+ActionUtils.getAssetID(a)+"], with ActionRecord = " + a.getValue() + " UID=" + a.getUID());
         }
         
         //********* Check for changes in our modes ************
@@ -140,8 +140,12 @@ implements NotPersistable {
         while (iter.hasNext()) {
             Action a = (Action)iter.next();
             if (servlet != null) { servlet.changedAction(a); }
-            logger.debug("**** Saw changed Action["+ActionUtils.getAssetID(a)+"], with ActionRecord = " + a.getValue() + " UID=" + a.getUID());
+            logger.debug("[AgentId="+agentId+"]**** Saw changed Action["+ActionUtils.getAssetID(a)+"], with ActionRecord = " + a.getValue() + " UID=" + a.getUID());
         }
+
+        //We have one defense mode, so we only get the one from iter.next();
+        int size = actionsSubscription.getCollection().size();
+        logger.debug("[AgentId="+agentId+"]**** Total # of Action objects on BB right now = "+size);
         
     }
     
