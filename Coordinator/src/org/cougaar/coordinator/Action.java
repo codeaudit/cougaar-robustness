@@ -137,6 +137,9 @@ public abstract class Action
     
     /** The action values the coordinator permits the actuator to take */
     Set permittedValues = null;
+
+    /** A cloned copy of the action values the coordinator permits the actuator to take */
+    Set copyOfPermittedValues = null;
     
     /** The values the action offers to perform */
     Set valuesOffered = null;
@@ -545,11 +548,11 @@ public abstract class Action
     
     //***************************************************PermittedValues
     /*
-     * Get the subset of the PossibleValues that the Coordinator has permitted the Actuator to execute 
+     * Get the (cloned) subset of the PossibleValues that the Coordinator has permitted the Actuator to execute 
      * at the present time  (e.g. 0 gal, 1 gal, 2 gal).  
      * These values are set by the Coordinator.
      */
-    public Set getPermittedValues ( ) { return permittedValues; }
+    public Set getPermittedValues ( ) { return permittedValues; }    
     
     /**
      * The coordinator sets this. 
@@ -562,9 +565,9 @@ public abstract class Action
         }
         Object o;
         Iterator i = values.iterator();
-        permittedValues.clear();
+        permittedValues = new LinkedHashSet(); //eliminate chance that this method was called with permittedValues gotten from getPermittedValues().
         while (i.hasNext()) {
-            o = i.next() ;
+            o = i.next();
             if ( possibleValues.contains(o) ) {
                 permittedValues.add(o);
             } else {
