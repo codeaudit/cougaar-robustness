@@ -1,46 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<!-- Created by Administrator on April 5, 2004, 11:09 AM -->
-
-<!DOCTYPE Event [
-
-<!ELEMENT Event (DirectEffect, TransitiveEffect) >
-
-<!ELEMENT DirectEffect (Transition+) >
-
-<!ELEMENT Transition EMPTY >
-<!ATTLIST Transition
-    WhenActualStateIs CDATA #REQUIRED
-    EndStateWillBe    CDATA #REQUIRED
->
-
-<!ELEMENT TransitiveEffect (CausesEvent, VulnerableAssets) >
-
-<!ELEMENT CausesEvent EMPTY >
-<!ATTLIST CausesEvent
-    name       CDATA #REQUIRED
-    assetType  CDATA #REQUIRED
->
-
-<!ELEMENT VulnerableAssets (ContainmentFilter, EventLikelihood) >
-
-<!ELEMENT EventLikelihood  EMPTY>
-<!ATTLIST EventLikelihood
-    probability ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH ) 'NONE'
->
-
-<!ELEMENT ContainmentFilter  EMPTY>
-<!ATTLIST ContainmentFilter
-    eventAssetContainerName CDATA #REQUIRED
->
-
-]>
+<!DOCTYPE Event > 
 
 <Events>
-<Event name="Compromise" affectsAssetType="Agent" affectsStateDimension="Compromised">
-    <DirectEffect>
-        <Transition WhenActualStateIs="*" EndStateWillBe="Yes" />
-    </DirectEffect>
-</Event>
-
+    <Event name="Compromise" affectsAssetType="Agent" affectsStateDimension="Compromised">
+        <DirectEffect>
+            <Transition WhenActualStateIs="*" EndStateWillBe="Yes" />
+        </DirectEffect>
+    </Event>
 </Events>
