@@ -92,6 +92,7 @@ public class AssetModel extends Loggable
     } // end getAssetID
 
 
+    //************************************************************
     /**
      * Forward a BeliefUpdateTrigger to the belief state window
      * @param but The trigger object to be consumed
@@ -111,6 +112,24 @@ public class AssetModel extends Loggable
 
     }
 
+    //************************************************************
+    /**
+     * Forces immediate updating of the belief state based on the
+     * current set of triggers.  This (more than likely) will result
+     * in this new belief state being published.
+     *
+     */
+    void forceBeliefUpdate( )
+            throws BelievabilityException
+    {
+        // This trigger object will serve as the impetus for updating
+        // the belief state.
+        //
+        _trigger_history.handleBeliefTrigger
+                ( new ForceUpdateTimeTrigger 
+                  ( _asset_id, System.currentTimeMillis() ));
+      
+    } // method forceBeliefUpdate
 
     /**
      * Return a string representation of the asset model

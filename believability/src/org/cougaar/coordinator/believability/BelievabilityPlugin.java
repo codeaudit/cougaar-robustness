@@ -868,6 +868,31 @@ public class BelievabilityPlugin
 
     //************************************************************
     /**
+     * Attempts to force a belief update computation for all known
+     * assets.  This is most useful directly after rehydration and
+     * unleashing to force immediate release of initial belief states.
+     *
+     */
+    void forceAllBeliefUpdates( )
+    {
+        try
+        {
+            if (logger.isDebugEnabled() ) 
+                logger.debug ("Forcing all belief updates." );
+            
+            _trigger_consumer.forceAllBeliefUpdates();
+        }
+        catch (BelievabilityException be)
+        {
+            if (logger.isDebugEnabled() ) 
+                logger.debug ("Problem forcing belief updates: "
+                              + be.getMessage() );
+        }
+
+    } // method forceAllBeliefUpdates
+
+    //************************************************************
+    /**
      * Will query the blackboard for the last diagnosis posted and
      * create initial belief states for each asset.
      *
@@ -908,6 +933,13 @@ public class BelievabilityPlugin
             handleUpdateTriggerObject( trigger_obj );
             
         } // iterator for UNLEASH update trigger
+
+        // Force immediate publishing based on al these triggers.
+        // The delay that usually exists is not needed during
+        // unleashing, since we are catching up on diagnoses
+        // anyway. 
+        //
+        forceAllBeliefUpdates();
 
         _leashing_state = LEASHING_STATE_UNLEASHED;
 
@@ -979,6 +1011,13 @@ public class BelievabilityPlugin
                 handleUpdateTriggerObject( trigger_obj );
                 
             } // iterator for REHYDRATE update trigger
+
+            // Force immediate publishing based on al these triggers.
+            // The delay that usually exists is not needed during
+            // rehydration, since we are catching up on diagnoses
+            // anyway.
+            //
+            forceAllBeliefUpdates();
 
         } // if _leashing_state == LEASHING_STATE_UNLEASHED
 

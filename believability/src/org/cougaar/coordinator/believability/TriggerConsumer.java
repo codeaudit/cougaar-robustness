@@ -25,6 +25,8 @@
 
 package org.cougaar.coordinator.believability;
 
+import java.util.Enumeration;
+
 /**
  * Used to accept new diagnoses or action successes from the blackboard
  * and take the appropriate action.
@@ -117,6 +119,29 @@ public class TriggerConsumer extends Loggable
          
         }
     }
+
+    //************************************************************
+    /**
+     * Forces the trigger history in each asset model to update the
+     * belief set based on their current set of triggers.  This may
+     * also lead to those updated belief states being published.
+     *
+     */
+    void forceAllBeliefUpdates( )
+            throws BelievabilityException
+    {
+        // Method implementation comments go here ...
+        Enumeration asset_model_enum = _asset_container.elements();
+        while (asset_model_enum.hasMoreElements() )
+        {
+            AssetModel asset_model 
+                    = (AssetModel) asset_model_enum.nextElement();
+
+            asset_model.forceBeliefUpdate();
+
+        } // while asset_model_enum
+
+    } // method forceUpdates
 
     // A handle to the believability plugin
     private BelievabilityPlugin _plugin;

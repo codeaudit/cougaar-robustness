@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefTriggerHistory.java,v $
- * $Revision: 1.12 $
- * $Date: 2004-08-05 17:56:09 $
+ * $Revision: 1.13 $
+ * $Date: 2004-08-05 20:58:53 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -99,7 +99,7 @@ import org.cougaar.core.agent.service.alarm.Alarm;
  * an instance of this class: one for each of these.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.12 $Date: 2004-08-05 17:56:09 $
+ * @version $Revision: 1.13 $Date: 2004-08-05 20:58:53 $
  * @see BeliefTriggerManager
  */
 class BeliefTriggerHistory 
@@ -192,10 +192,29 @@ class BeliefTriggerHistory
         //
         if ( trigger instanceof TimeUpdateTrigger )
         {
-            logDetail( "Time-out for alarm type "
+            logDetail( "Time-based update trigger "
                        + trigger.getClass().getName()
                        + ". Updating and publishing for asset "
                        + _asset_id );
+
+            // When we are forcing an update, we want to ensure that
+            // any alarams started to delay the belief computation are
+            // cancelled.
+            //
+            if ( trigger instanceof ForceUpdateTimeTrigger )
+            {
+                cancelAlarm( _delay_alarm );
+                _delay_alarm = null;
+                cancelAlarm( _latency_alarm );
+                _latency_alarm = null;
+
+                // Note that we do not want to cancel the publish
+                // interval alarm, since we are not sure if this
+                // updated belief will actually be published.  If it
+                // will be published, then the code that will publish
+                // it will handle cancleling any outstanding alarm for
+                // that.
+            }
 
             updateBeliefState( );
             publishLatestBelief( );
@@ -503,6 +522,21 @@ class BeliefTriggerHistory
 
     //************************************************************
     /**
+     * Helper routine for cancleling the various alarms associated
+     * with this class.
+     *
+     * @param alarm The alarm to be cancel.  If null, nothing happens.
+     */
+    void cancelAlarm( IntervalAlarm alarm )
+    {
+        if ( alarm == null )
+            return;
+
+        alarm.cancel();
+
+    } // method cancelAlarm
+    //************************************************************
+    /**
      * This should be called right after a new belief state is
      * computed to clear out the current history of triggers that we
      * might have been accumulating.
@@ -512,17 +546,11 @@ class BeliefTriggerHistory
     {
         // Cancel any alarms that might be on-going.
         //
-        if ( _latency_alarm != null )
-        {
-            _latency_alarm.cancel();
-            _latency_alarm = null;
-        } // if have a latency alarm
+        cancelAlarm( _latency_alarm );
+        _latency_alarm = null;
 
-        if ( _delay_alarm != null )
-        {
-            _delay_alarm.cancel();
-            _delay_alarm = null;
-        } // if have a publish delay alarm
+        cancelAlarm( _delay_alarm );
+        _delay_alarm = null;
 
         _current_triggers.clear();
         _current_sensors.clear();
@@ -932,17 +960,11 @@ class BeliefTriggerHistory
         // together into the same belief update. The same goes for
         // any existing publication alarm.
         //
-        if ( _latency_alarm != null )
-        {
-            _latency_alarm.cancel();
-            _latency_alarm = null;
-        }
+        cancelAlarm( _latency_alarm );
+        _latency_alarm = null;
 
-        if ( _publish_alarm != null )
-        {
-            _publish_alarm.cancel();
-            _publish_alarm = null;
-        }
+        cancelAlarm( _publish_alarm );
+        _publish_alarm = null;
 
         _delay_alarm = new IntervalAlarm
                 ( _model_manager.getPublishDelayInterval(), this );
@@ -986,17 +1008,13 @@ class BeliefTriggerHistory
         // sensors to report than the somewhat arbitrary
         // inter-publication interval.
         //
-        if ( _publish_alarm != null )
-        {
-            _publish_alarm.cancel();
-            _publish_alarm = null;
-        }
+        cancelAlarm( _publish_alarm );
+        _publish_alarm = null;
         
         // Just for good luck, make sure any existing alarm gets
         // cancelled. 
         //
-        if ( _latency_alarm != null )
-            _latency_alarm.cancel();
+        cancelAlarm( _latency_alarm );
 
         _latency_alarm = new IntervalAlarm
                 ( _model_manager.getMaxSensorLatency
@@ -1034,8 +1052,7 @@ class BeliefTriggerHistory
         // Just for good luck, make sure any existing alarm gets
         // cancelled. 
         //
-        if ( _publish_alarm != null )
-            _publish_alarm.cancel();
+        cancelAlarm( _publish_alarm );
         
         _publish_alarm = new IntervalAlarm
                 ( _model_manager.getMaxPublishInterval
@@ -1063,7 +1080,7 @@ class BeliefTriggerHistory
             throws BelievabilityException
     {
 
-        logDetail( "Publish belief for" + _asset_id );
+        logDetail( "Publish belief for " + _asset_id );
 
         _consumer.consumeBeliefState( _last_computed_belief );
 
@@ -1074,8 +1091,7 @@ class BeliefTriggerHistory
         // Cancel an outstanding timer (if any) for notifying us when
         // we have not published for a while.
         //
-        if ( _publish_alarm != null )
-            _publish_alarm.cancel();
+        cancelAlarm( _publish_alarm );
 
         // Set a timer to make sure we publish a belief state afer a
         // given amount of time has elpased.
@@ -1098,14 +1114,15 @@ class BeliefTriggerHistory
     public void handleAlarmExpired( Alarm alarm )
             throws BelievabilityException
     {
-        // FIXME: Because multiple alarms can expire at the same time,
-        // you can run into synchronization problems.  Any instance of
-        // this object should only have one active alarm, so this
-        // really shouldn't be a problem. Alas, we have seen some
-        // problems.  Thus, a better way to do this would be to have
-        // the alarm expire() (or this method) simply queue itself up,
-        // and then call the plugin's signalClientActivity() method to
-        // force its execute() method to be invoked. executes() do not
+        // When handling an e\alarm expiration, we may need to do
+        // things differently.
+        //
+        _handling_alarm_expire = true;
+
+        // FIXME: A better way to do this would be to have the alarm
+        // expire() (or this method) simply queue itself up, and then
+        // call the plugin's signalClientActivity() method to force
+        // its execute() method to be invoked. executes() do not
         // happen in parallel.
         //
 
@@ -1148,6 +1165,8 @@ class BeliefTriggerHistory
                       + alarm.getClass().getName() + " for "
                       + _asset_id );
         }
+
+        _handling_alarm_expire = false;
 
     } // method handleAlarmExpired
 
@@ -1252,6 +1271,14 @@ class BeliefTriggerHistory
     // Also keep track of the time that a belief was last published.
     //
     private long _last_publish_time;
+
+    // When handling cougaar alarms, we want to do as little work as
+    // possible in the expire() handler, and are forbidden from
+    // publishing to the blackboard.  Thus, we want the entire class
+    // to be aware of when it is an is not handling and alarm
+    // expire(). 
+    //
+    private boolean _handling_alarm_expire = false;
 
     // A handle to the current alarm (if any) associated with the
     // sensor latency.

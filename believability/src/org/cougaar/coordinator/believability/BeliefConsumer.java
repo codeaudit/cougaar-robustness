@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefConsumer.java,v $
- * $Revision: 1.11 $
- * $Date: 2004-08-05 17:56:09 $
+ * $Revision: 1.15 $
+ * $Date: 2004-08-09 20:46:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -25,8 +25,8 @@ package org.cougaar.coordinator.believability;
  * Simple interface for things that will consume new belief states.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.11 $Date: 2004-08-05 17:56:09 $
- *
+ * @version $Revision: 1.15 $Date: 2004-08-09 20:46:41 $
+ * @see StateEstimationPublisher
  */
 public interface BeliefConsumer
 {
