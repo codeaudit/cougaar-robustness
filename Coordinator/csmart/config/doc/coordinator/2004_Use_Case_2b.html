@@ -285,6 +285,14 @@ to INFO, and then:<br>
   <li>tail -f SMALL-ROB-MGMT-NODE.log | grep -v DoNothing | grep -A1
 Selected:</li>
 </ul>
+To see what is actually enabled (as opposed to selected), do the
+following.&nbsp; Actions "selected" are not "enabled" if they are
+already running, so looking at it this way is a bit easier to follow:<br>
+<ul>
+  <li>&nbsp;tail -f SMALL-ROB-MGMT-NODE.log | grep -v DoNothing | grep
+Enabling:<br>
+  </li>
+</ul>
 You can also see the "remaining resources"&nbsp; during the selection
 process by:<br>
 <ul>
