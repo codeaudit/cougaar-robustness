@@ -333,7 +333,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
     // Shouldn't happen, but just in case ...
     public void expired(String name) {
-      newState(name, DECONFLICT);
+      if (!name.equals(preferredLeader())) {
+        newState(name, DECONFLICT);
+      }
     }
 
   }
