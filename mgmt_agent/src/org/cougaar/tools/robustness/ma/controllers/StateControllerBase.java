@@ -4,10 +4,8 @@ import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.EventService;
-import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.SchedulerService;
 import org.cougaar.core.blackboard.BlackboardClientComponent;
-import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
 
 /**
