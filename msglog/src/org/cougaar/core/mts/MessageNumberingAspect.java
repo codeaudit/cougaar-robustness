@@ -44,6 +44,7 @@ import java.util.Hashtable;
 public class MessageNumberingAspect extends StandardAspect implements MessageNumberingService
 {
   public static final String AGENT_OUTGOING_SEQ_TABLE = "AgentOutgoingMsgNumSequenceTable";
+  public static final String AGENT_OUTGOING_SEQ_TABLE_INC = "AgentOutgoingMsgNumSequenceTableInc";
   private static final Integer ZERO = new Integer (0);
   private static final int POSITIVE = 1;
   private static final int NEGATIVE = -1;
@@ -223,7 +224,7 @@ public class MessageNumberingAspect extends StandardAspect implements MessageNum
     //  it means it is ackable.
 
     MessageAddress agentAddr = MessageUtils.getOriginatorAgent (msg);
-    Hashtable agentTable = getMessageNumberTableForAgent (agentAddr);
+    Hashtable agentTable = getMessageNumberTableForAgent (agentAddr,MessageUtils.getFromAgent(msg).getAgentIncarnation());
   
     synchronized (agentTable)
     {
@@ -234,8 +235,10 @@ public class MessageNumberingAspect extends StandardAspect implements MessageNum
       return (type==POSITIVE ? n.nextPositiveNumber++ : n.nextNegativeNumber--);
     }
   }
-
-  private Hashtable getMessageNumberTableForAgent (MessageAddress agentAddr)
+  
+    //104B added check for incarnation of source agent, so that a new sequence is started
+    //     when an agent restarts (its incarnation changes)
+    private Hashtable getMessageNumberTableForAgent (MessageAddress agentAddr, String incarnation)
     throws CommFailureException
   {
     //  Get agent state for the agent
@@ -252,12 +255,18 @@ public class MessageNumberingAspect extends StandardAspect implements MessageNum
 
     synchronized (agentState)
     {
-      Hashtable agentTable = (Hashtable) agentState.getAttribute (AGENT_OUTGOING_SEQ_TABLE);
+      Hashtable agentTable = null;
 
+      String agentTableInc = (String)agentState.getAttribute(AGENT_OUTGOING_SEQ_TABLE_INC);
+
+      if ((agentTableInc != null) && (agentTableInc.equals(incarnation)))
+        agentTable = (Hashtable) agentState.getAttribute (AGENT_OUTGOING_SEQ_TABLE);
+      
       if (agentTable == null)
       {
         //  If not in state, we create the table
 
+        agentState.setAttribute (AGENT_OUTGOING_SEQ_TABLE_INC, incarnation);
         agentTable = new Hashtable();
         agentState.setAttribute (AGENT_OUTGOING_SEQ_TABLE, agentTable);
       }        
