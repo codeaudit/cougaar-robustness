@@ -36,8 +36,6 @@ import org.cougaar.core.mts.MessageAddress;
  */
 public interface RobustnessController extends StatusChangeListener {
 
-  public BindingSite getBindingSite();
-
   /**
    * Initialize controller.
    * @param agentId    Host agent
@@ -92,6 +90,11 @@ public interface RobustnessController extends StatusChangeListener {
    * Receives notification of change in agent location.
    */
   public void locationChange(String name, String priorLocation, String newLocation);
+
+  /**
+   * Receives notification of change in robustness community membership.
+   */
+  public void membershipChange(String name);
 
   /**
    * Returns a String containing top-level health status of monitored community.

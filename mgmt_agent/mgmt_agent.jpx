@@ -7,6 +7,7 @@
   <property category="javaFormatting" name="extendsOnNewLine" value="0"/>
   <property category="javaFormatting" name="finallyOnNewLine" value="0"/>
   <property category="javaFormatting" name="implementsOnNewLine" value="0"/>
+  <property category="javaFormatting" name="packageThreshold" value="0"/>
   <property category="javaFormatting" name="whileOnNewLine" value="0"/>
   <property category="javadoc" name="custom.tags.1" value="todo;a;To Do:"/>
   <property category="runtime" name="DefaultConfiguration" value="-1"/>
@@ -33,6 +34,20 @@
   <property category="team" name="ignorePath.1" value="classes"/>
   <property category="team" name="ignorePath.2" value="lib"/>
   <property category="team" name="ignorePath.3" value="test"/>
+  <node name="common" type="Folder">
+    <node name="csmart" type="Folder">
+      <node name="config" type="Folder">
+        <node name="rules" type="Folder">
+          <node name="robustness" type="Folder">
+            <node name="communities" type="Folder">
+              <file path="../common/csmart/config/rules/robustness/communities/community.rule"/>
+            </node>
+            <file path="../common/csmart/config/rules/robustness/manager.rule"/>
+          </node>
+        </node>
+      </node>
+    </node>
+  </node>
   <node name="configs" type="Folder">
     <node name="mic-local" type="Folder">
       <file path="configs/mic-local/install_acme_service"/>

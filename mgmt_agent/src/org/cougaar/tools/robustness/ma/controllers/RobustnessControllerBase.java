@@ -36,9 +36,18 @@ import org.cougaar.tools.robustness.ma.util.DeconflictListener;
 import org.cougaar.core.blackboard.BlackboardClientComponent;
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.component.ServiceBroker;
+import org.cougaar.core.service.AgentIdentificationService;
+import org.cougaar.core.service.AlarmService;
+import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.LoggingService;
+import org.cougaar.core.service.SchedulerService;
+
+import org.cougaar.core.qos.metrics.Metric;
+
 import org.cougaar.core.mts.MessageAddress;
+
+import org.cougaar.core.agent.service.alarm.Alarm;
 import java.util.*;
 
 import javax.naming.directory.Attribute;
@@ -52,7 +61,7 @@ import javax.naming.NamingException;
  * CommunityStatysModel.  Also provides a number of utility methods and helper
  * classes for use by state controllers.
  */
-public abstract class RobustnessControllerBase
+public abstract class RobustnessControllerBase extends BlackboardClientComponent
     implements RobustnessController, StatusChangeListener {
 
   protected static final int NEVER = -1;
@@ -66,8 +75,11 @@ public abstract class RobustnessControllerBase
   protected static final long HEARTBEAT_PCT_OUT_OF_SPEC = 50;
 
   public static final String deconflictionProperty = "org.cougaar.tools.robustness.restart.deconfliction";
-  public static final String defaultEnabled = "ENABLED";
+  public static final String defaultEnabled = "enabled";
 
+  public static final String LOAD_AVERAGE_METRIC = "LoadAverage";
+  public static final String COMMUNITY_BUSY_ATTRIBUTE = "COMMUNITY_BUSY_THRESHOLD";
+  public static final String NODE_BUSY_ATTRIBUTE = "NODE_BUSY_THRESHOLD";
 
   /**
    * Inner class used to maintain info about registered state controller.
@@ -98,7 +110,7 @@ public abstract class RobustnessControllerBase
   protected MessageAddress agentId;
   protected LoggingService logger;
   protected EventService eventService;
-  private BindingSite bindingSite;
+  //private BindingSite bindingSite;
 
   // Status model containing current information about monitored community
   protected CommunityStatusModel model;
@@ -113,9 +125,9 @@ public abstract class RobustnessControllerBase
                          final          CommunityStatusModel csm) {
     this.agentId = agentId;
     this.model = csm;
-    this.bindingSite = bs;
+    setBindingSite(bs);
     logger =
-      (LoggingService)bs.getServiceBroker().getService(this, LoggingService.class, null);
+      (LoggingService)getServiceBroker().getService(this, LoggingService.class, null);
     logger = org.cougaar.core.logging.LoggingServiceWithPrefix.add(logger, agentId + ": ");
     eventService = (EventService) bs.getServiceBroker().getService(this, EventService.class, null);
     heartbeatHelper = new HeartbeatHelper(bs);
@@ -123,6 +135,25 @@ public abstract class RobustnessControllerBase
     pingHelper = new PingHelper(bs);
     restartHelper = new RestartHelper(bs);
     loadBalancer = new LoadBalancer(bs, this, model);
+    initialize();
+    load();
+    start();
+  }
+
+  /**
+   * Load required services.
+   */
+  public void load() {
+    setAgentIdentificationService(
+      (AgentIdentificationService)getServiceBroker().getService(this, AgentIdentificationService.class, null));
+    setAlarmService(
+      (AlarmService)getServiceBroker().getService(this, AlarmService.class, null));
+    setSchedulerService(
+      (SchedulerService)getServiceBroker().getService(this, SchedulerService.class, null));
+    setBlackboardService(
+      (BlackboardService)getServiceBroker().getService(this, BlackboardService.class, null));
+    eventService = (EventService) getServiceBroker().getService(this, EventService.class, null);
+    super.load();
   }
 
   /**
@@ -138,8 +169,8 @@ public abstract class RobustnessControllerBase
       new Thread() {
         public void run() {
           try {
-            scb.setBindingSite(bindingSite);
-            scb.initialize(bindingSite, model);
+            scb.setBindingSite(getBindingSite());
+            scb.initialize(getBindingSite(), model);
             scb.load();
             scb.start();
           }
@@ -150,10 +181,6 @@ public abstract class RobustnessControllerBase
       }.start();
     }
     controllers.put(new Integer(state), new ControllerEntry(state, stateName, sc));
-  }
-
-  public BindingSite getBindingSite() {
-    return bindingSite;
   }
 
   /**
@@ -245,6 +272,7 @@ public abstract class RobustnessControllerBase
     if(deconflictHelper != null) {
       deconflictHelper.initObjs();
     }
+    membershipChange(csce.getName());
   }
 
   private static final String ROBUSTNESS_MANAGER = "RobustnessManager";
@@ -261,7 +289,7 @@ public abstract class RobustnessControllerBase
     if(agentId.toString().equals(manager) && deconflictHelper == null) {
       String enable = System.getProperty(deconflictionProperty, defaultEnabled);
       if(enable.equals(defaultEnabled)) {
-        deconflictHelper = new DeconflictHelper(bindingSite, model);
+        deconflictHelper = new DeconflictHelper(getBindingSite(), model);
         if (dl != null)
           deconflictHelper.addListener(dl);
         logger.info("==========deconflictHelper applies to " + agentId);
@@ -601,6 +629,64 @@ public abstract class RobustnessControllerBase
       getDeconflictHelper().addListener(dl);
   }
 
+  /**
+   * Returns true if the CPU load average for a least 1 node in community
+   * exceeds the NodeBusyThreshold or if the aggregate community load average
+   * exceeds the CommunityBusyThreshold.  The threshold values are obtained
+   * from the attributes in the community descriptor.
+   * @return True if a nodes exceeds node threshold or aggreagate exceeds
+   *         community threshold
+   */
+  protected boolean isCommunityBusy() {
+    double communityBusyThreshold = model.getDoubleAttribute(COMMUNITY_BUSY_ATTRIBUTE);
+    double nodeBusyThreshold = model.getDoubleAttribute(NODE_BUSY_ATTRIBUTE);
+    if (communityBusyThreshold == Double.NaN ||
+        nodeBusyThreshold == Double.NaN) return false;
+    double communityLoadAvg = 0.0;
+    String nodes[] = model.listEntries(CommunityStatusModel.NODE, getNormalState());
+    for (int i = 0; i < nodes.length; i++) {
+      double nodeLoadAvg = getNodeLoadAverage(nodes[i]);
+      if (nodeLoadAvg > nodeBusyThreshold) return true;
+      communityLoadAvg += nodeLoadAvg;
+    }
+    if (communityLoadAvg > 0.0 && nodes.length > 0) communityLoadAvg = communityLoadAvg/(double)nodes.length;
+    return communityLoadAvg > communityBusyThreshold;
+  }
+
+  /**
+   * Returns true if the CPU load average for named node exceeds the value
+   * specified in the communities "NodeBusyThreshold" attribute.
+   * @param nodeName
+   * @return True if CPU average exceeds threshold
+   */
+  protected boolean isNodeBusy(String nodeName) {
+    double busyThreshold = model.getDoubleAttribute(NODE_BUSY_ATTRIBUTE);
+    if (busyThreshold == Double.NaN) return false;
+    return getNodeLoadAverage(nodeName) > busyThreshold;
+  }
+
+  /**
+   * Returns "LoadAverage" value from metrics service for specified node.
+   * @param nodeName  Node name
+   * @return          "LoadAverage" value from Metrics Service
+   */
+  protected double getNodeLoadAverage(String nodeName) {
+    return model.getMetricAsDouble(nodeName, LOAD_AVERAGE_METRIC);
+  }
+
+  /**
+   * Returns aggregated CPU "LoadAverage" for all nodes in community.
+   * @return Aggregate CPU "LoadAverage" as obtained from Metrics Service
+   */
+  protected double getCommunityLoadAverage() {
+    double loadAvg = 0.0;
+    String nodes[] = model.listEntries(CommunityStatusModel.NODE, getNormalState());
+      for (int i = 0; i < nodes.length; i++) {
+      loadAvg += getNodeLoadAverage(nodes[i]);
+    }
+    return (nodes.length == 0 || loadAvg == 0.0) ? 0.0 : loadAvg/(double)nodes.length;
+  }
+
  /**
    * Returns a String containing top-level health status of monitored community.
    */
@@ -609,10 +695,11 @@ public abstract class RobustnessControllerBase
     String agents[] = model.listEntries(CommunityStatusModel.AGENT);
     StringBuffer summary = new StringBuffer("community=" + model.getCommunityName());
     summary.append(" leader=" + model.getLeader());
-    //summary.append(" activeNodes=" + activeNodes.length + arrayToString(activeNodes));
+    //summary.append(" busyThreshold=" + model.getDoubleAttribute(COMMUNITY_BUSY_ATTRIBUTE));
+    summary.append(" isBusy=" + isCommunityBusy());
     summary.append(" activeNodes=[");
     for (int i = 0; i < activeNodes.length; i++) {
-      summary.append(activeNodes[i] + "(" + model.getMetric(activeNodes[i], "LoadAverage") + ")");
+      summary.append(activeNodes[i] + "(" + getNodeLoadAverage(activeNodes[i]) + ")");
       if (i < activeNodes.length - 1) summary.append(",");
     }
     summary.append("]");
@@ -774,6 +861,34 @@ public abstract class RobustnessControllerBase
     }
     sb.append("]");
     return sb.toString();
+  }
+
+  /**
+   * Timer used to trigger periodic check for agents to move.
+   */
+  class WakeAlarm implements Alarm {
+    private long expiresAt;
+    private boolean expired = false;
+    public WakeAlarm (long expirationTime) {
+      expiresAt = expirationTime;
+    }
+    public long getExpirationTime() {
+      return expiresAt;
+    }
+    public synchronized void expire() {
+      if (!expired) {
+        expired = true;
+        if (blackboard != null) blackboard.signalClientActivity();
+      }
+    }
+    public boolean hasExpired() {
+      return expired;
+    }
+    public synchronized boolean cancel() {
+      boolean was = expired;
+      expired = true;
+      return was;
+    }
   }
 
 }

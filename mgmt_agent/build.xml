@@ -130,6 +130,15 @@
     <copy file="configs/mic-local/qing-hosts.xml" toDir="${cougaar}/operator"/>
   </target>
 
+  <target name="deploy_common" description="Copies robustness common files to $CIP">
+    <copy todir="${cougaar}/csmart/config/rules/robustness">
+      <fileset dir="../common/csmart/config/rules/robustness" />
+    </copy>
+    <copy todir="${cougaar}/csmart/config/rules/robustness/communities">
+      <fileset dir="../common/csmart/config/rules/robustness/communities" />
+    </copy>
+  </target>
+
   <!-- Deletes generated files -->
   <target name="clean" description="Deletes generated files">
     <delete dir="${classes}"/>

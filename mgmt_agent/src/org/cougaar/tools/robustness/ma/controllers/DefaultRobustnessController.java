@@ -18,8 +18,6 @@
 package org.cougaar.tools.robustness.ma.controllers;
 
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
-import org.cougaar.tools.robustness.ma.CommunityStatusChangeEvent;
-import org.cougaar.tools.robustness.ma.StatusChangeListener;
 import org.cougaar.tools.robustness.ma.controllers.*;
 import org.cougaar.tools.robustness.ma.HostLossThreatAlertHandler;
 import org.cougaar.tools.robustness.ma.SecurityAlertHandler;
@@ -35,8 +33,6 @@ import org.cougaar.tools.robustness.ma.util.RestartListener;
 import org.cougaar.tools.robustness.ma.util.RestartDestinationLocator;
 
 import org.cougaar.tools.robustness.threatalert.*;
-
-//import org.cougaar.tools.robustness.deconfliction.techspec.AgentAssetPropertyChange;
 
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.component.ServiceBroker;
@@ -59,6 +55,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   public static final int FAILED_RESTART = 6;
   public static final int MOVE           = 7;
   public static final int DECONFLICT     = 8;
+
+  public static final long TIMER_INTERVAL = 1 * 60 * 1000;
 
   /**
    * State Controller: INITIAL
@@ -202,13 +200,15 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (thisAgent.equals(preferredLeader()) && isAgent(name)) {
         // Interface point for Deconfliction
         // If Ok'd by Deconflictor set state to RESTART
-        if(getDeconflictHelper() != null)
+        if(getDeconflictHelper() != null) {
           newState(name, DECONFLICT);
-        else
+        } else {
           newState(name, RESTART);
+        }
         setLocation(name, null);
       } else if (isNode(name)) {
         setExpiration(name, NEVER);
+        deadNodes.add(name);
       } else if (isLocal(name)) {
         stopHeartbeats(name);
       }
@@ -217,11 +217,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     public void expired(String name) {
       logger.debug("Expired Status:" + " agent=" + name + " state=DEAD");
       if (isLeader(thisAgent) && isAgent(name)) {
-        if(getDeconflictHelper() != null)
+        if(getDeconflictHelper() != null) {
           newState(name, DECONFLICT);
-        else
+        } else {
           newState(name, RESTART);
-
+        }
       }
     }
   }
@@ -316,7 +316,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    *   Next state:        HEALTH_CHECK
    * </pre>
    */
-  class MoveStateController extends StateControllerBase implements MoveListener, StatusChangeListener {
+  class MoveStateController extends StateControllerBase implements MoveListener {
     { addMoveListener(this); }
     public void enter(String name) {
       communityReady = false;
@@ -348,25 +348,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         newState(name, INITIAL);
       }
     }
-
-    public void statusChanged(CommunityStatusChangeEvent[] csce) {
-      for(int i = 0; i < csce.length; i++) {
-        if (csce[i].locationChanged()) {
-          String priorLocation = csce[i].getPriorLocation();
-          // Publish location changes for deconflictor use
-          /*
-           if (priorLocation != null) {
-            AgentAssetPropertyChange aapc =
-                new AgentAssetPropertyChange(csce[i].getName());
-            String nodeName = csce[i].getCurrentLocation();
-            String hostName = model.getLocation(nodeName);
-            aapc.moveChange(hostName, nodeName);
-            blackboard.publishAdd(aapc);
-          }
-          */
-        }
-      }
-    }
   }
 
 
@@ -385,14 +366,14 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     { addDeconflictListener(this); }
     public void enter(String name) {
       if(getDeconflictHelper() != null) {
-        if(!getDeconflictHelper().isDefenseApplicable(name)) {
+        if (!getDeconflictHelper().isDefenseApplicable(name)) {
           logger.info("change condition of " + name);
           getDeconflictHelper().changeApplicabilityCondition(name);
         }
-        if(getDeconflictHelper().isOpEnabaled(name))
+        if (getDeconflictHelper().isOpEnabaled(name))
           newState(name, RESTART);
       }
-      if(getDeconflictHelper() == null)
+      if (getDeconflictHelper() == null)
         newState(name, RESTART);
     }
     public void expired(String name) {
@@ -401,19 +382,23 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         newState(name, HEALTH_CHECK);
     }
     public void defenseOpModeEnabled(String name){
-      if(getState(name) == DEAD) {
-        if(getDeconflictHelper() != null)
-          if(!getDeconflictHelper().isDefenseApplicable(name))
-            getDeconflictHelper().changeApplicabilityCondition(name);
+      if (getState(name) == DEAD) {
+        if (getDeconflictHelper() != null &&
+            !getDeconflictHelper().isDefenseApplicable(name)) {
+          getDeconflictHelper().changeApplicabilityCondition(name);
+        }
         newState(name, RESTART);
-      }
-      else {
+      } else {
         newState(name, HEALTH_CHECK);
       }
     }
   }
 
+  private List deadNodes = Collections.synchronizedList(new ArrayList());
+  private List newNodes = Collections.synchronizedList(new ArrayList());
   private String thisAgent;
+  private WakeAlarm wakeAlarm;
+  private boolean autoLoadBalance = false;
 
   /**
    * Initializes services and loads state controller classes.
@@ -439,6 +424,23 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   }
 
   boolean communityReady = false;
+
+  public void setupSubscriptions() {
+    wakeAlarm = new WakeAlarm((new Date()).getTime() + TIMER_INTERVAL);
+    alarmService.addRealTimeAlarm(wakeAlarm);
+  }
+
+  public void execute() {
+    if ((wakeAlarm != null) &&
+        ((wakeAlarm.hasExpired()))) {
+      if (thisAgent.equals(preferredLeader())) {
+        logger.info(statusSummary());
+        autoLoadBalance();
+      }
+      wakeAlarm = new WakeAlarm((new Date()).getTime() + TIMER_INTERVAL);
+      alarmService.addRealTimeAlarm(wakeAlarm);
+    }
+  }
 
   /**
    * Send Community Ready event if all expected agents are found and active.
@@ -483,6 +485,16 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                 " active=" + agents.length +
                 (inactiveNode ? " inactiveNode=" + location + " agent=" + agent : ""));
     return !inactiveNode;
+  }
+
+  /**
+   * Receives notification of membership changes.
+   */
+  public void membershipChange(String name) {
+    if (isNode(name)) {
+      newNodes.add(name);
+      logger.info("New node detected: name=" + name);
+    }
   }
 
   /**
@@ -558,4 +570,29 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
     return excludedNodes;
   }
+
+  protected void autoLoadBalance() {
+
+    // Dont load balance if community is not ready or is busy
+    if (autoLoadBalance && communityReady && !isCommunityBusy()) {
+      // Remove occupied nodes from newNodes list
+      if (!newNodes.isEmpty()) {
+        for (Iterator it = newNodes.iterator(); it.hasNext(); ) {
+          if (model.entitiesAtLocation( (String) it.next()).length > 0) {
+            it.remove();
+          }
+        }
+      }
+      // invoke load balancer if there are new (vacant) nodes or dead nodes
+      if (!deadNodes.isEmpty() || !newNodes.isEmpty()) {
+        getLoadBalancer().doLoadBalance(true,
+                                        new ArrayList(newNodes),
+                                        new ArrayList(deadNodes),
+                                        new ArrayList(getExcludedNodes()));
+        newNodes.clear();
+        deadNodes.clear();
+      }
+    }
+  }
+
 }
