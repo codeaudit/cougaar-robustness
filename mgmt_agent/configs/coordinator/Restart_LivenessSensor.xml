@@ -5,7 +5,8 @@
 <SensorType name="org.cougaar.tools.robustness.ma.util.AgentLivenessDiagnosis"
             sensesAssetType="Agent"
             sensesStateDimension="Liveness"
-            sensorLatency="30000">
+            sensorLatency="30000"
+		reportingPolicy="ALWAYS_CURRENT" >
     <PotentialDiagnoses>
         <Diagnosis name="Live" defaultValue="TRUE" />
         <Diagnosis name="Dead" />
