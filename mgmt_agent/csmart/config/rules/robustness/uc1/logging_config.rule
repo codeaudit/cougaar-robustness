@@ -1,3 +1,0 @@
-society.each_node do |node|
-  node.override_parameter("-Dorg.cougaar.core.logging.config.filename", "acmeLoggingConfig.conf")
-end
