@@ -347,7 +347,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
                                            STATE_CHANGE, se));
       }
     } else {
-      logger.warn("setCurrentState: status entry not found, agent=" + name);
+      logger.debug("setCurrentState: status entry not found, agent=" + name);
     }
   }
 
@@ -393,7 +393,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
     if (se != null) {
       return se.currentLocation;
     } else {
-      logger.warn("No StatusEntry found: name=" + name);
+      logger.debug("No StatusEntry found: name=" + name);
       return null;
     }
   }
@@ -407,7 +407,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
     if (se != null) {
       return se.priorLocation;
     } else {
-      logger.warn("No StatusEntry found: name=" + name);
+      logger.debug("No StatusEntry found: name=" + name);
       return null;
     }
   }
@@ -451,7 +451,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
                                            LOCATION_CHANGE, se));
       }
     } else {
-      logger.warn("No StatusEntry found: name=" + name);
+      logger.debug("No StatusEntry found: name=" + name);
     }
   }
 
@@ -498,7 +498,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
                                            LOCATION_CHANGE, se));
       }
     } else {
-      logger.warn("No StatusEntry found: name=" + name);
+      logger.debug("No StatusEntry found: name=" + name);
     }
   }
 
