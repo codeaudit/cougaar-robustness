@@ -116,6 +116,7 @@ public class TransitiveEffectModel implements NotPersistable {
      * @return the list of assets that the transitiveEffect cares about.
      */
     public java.util.Vector getAssetList() {
+// ALERT: potential source of CMEs
         return assets;
     }    
 
@@ -124,11 +125,13 @@ public class TransitiveEffectModel implements NotPersistable {
      * @return TRUE if asset was not already there
      */
     public boolean addAsset(AssetTechSpecInterface asset) {
+      synchronized(assets) {
         if (!containsAsset(asset)) {
             assets.addElement(asset);
             return true;
         }
         return false;
+      }
     }    
     
 
@@ -136,7 +139,9 @@ public class TransitiveEffectModel implements NotPersistable {
      * Remove an asset
      */
     public boolean removeAsset(AssetTechSpecInterface asset) {
+      synchronized(assets) {
         return assets.removeElement(asset);
+      }
     }    
     
     
@@ -199,7 +204,7 @@ public class TransitiveEffectModel implements NotPersistable {
      * @return TRUE if this TransitiveEffect cares about this asset.
      */
     public boolean containsAsset(AssetTechSpecInterface asset) {
-
+      synchronized(assets) {
         AssetTechSpecInterface atsi;
         Iterator iter = assets.iterator();
         while (iter.hasNext()) {
@@ -209,7 +214,7 @@ public class TransitiveEffectModel implements NotPersistable {
             }
         }
         return false;
-        
+      }
     }
     
 }
