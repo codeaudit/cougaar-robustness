@@ -48,10 +48,14 @@ public interface ThreatAlertService extends Service {
   public void sendAlert(ThreatAlert ta, String community, String role);
 
   /**
+   * Used by ThreatAlert originator to cancel a current alert.
+   * @param ta  ThreatAlert to cancel
+   */
+  public void cancelAlert(ThreatAlert ta);
+
+  /**
    * Used by ThreatAlert originator to update alert contents.
    * @param ta  ThreatAlert to update
-   * @param community  Destination community to receive alert
-   * @param role       Agents roles to receive alert
    */
   public void updateAlert(ThreatAlert ta);
 

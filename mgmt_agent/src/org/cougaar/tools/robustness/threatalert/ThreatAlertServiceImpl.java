@@ -59,6 +59,7 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
   private UIDService uidSvc;
   private final List sendQueue = new ArrayList(5);
   private final List updateQueue = new ArrayList(5);
+  private final List cancelQueue = new ArrayList(5);
 
   public void setCommunityService(CommunityService cs) {
     this.commSvc = cs;
@@ -192,6 +193,15 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
   }
 
   /**
+   * Used by ThreatAlert originator to cancel a current alert.
+   * @param ta  ThreatAlert to cancel
+   */
+  public void cancelAlert(ThreatAlert ta) {
+    log.debug("cancelAlert:" + ta);
+    queueForCancel(ta);
+  }
+
+  /**
    * Check for availability of essential services
    * @return True if needed services available
    */
@@ -201,7 +211,6 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
 
   /**
    * Queue new ThreatAlerts.
-   * @param pr
    */
   protected void queueForSend(Object o) {
     synchronized (sendQueue) {
@@ -214,11 +223,22 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
 
   /**
    * Queue updated ThreatAlerts.
-   * @param pr
    */
   protected void queueForUpdate(Object o) {
     synchronized (updateQueue) {
       updateQueue.add(o);
+    }
+    if (servicesReady()) {
+      blackboard.signalClientActivity();
+    }
+  }
+
+  /**
+   * Queue canceled ThreatAlerts.
+   */
+  protected void queueForCancel(Object o) {
+    synchronized (cancelQueue) {
+      cancelQueue.add(o);
     }
     if (servicesReady()) {
       blackboard.signalClientActivity();
@@ -273,6 +293,18 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
         fireListenersForChangedAlert((ThreatAlert)ra.getContent());
       }
     }
+    // Process canceled ThreatAlerts
+    synchronized (cancelQueue) {
+      n = cancelQueue.size();
+      if (n <= 0 || !servicesReady()) {
+        return;
+      }
+      l = new ArrayList(cancelQueue);
+      cancelQueue.clear();
+    }
+    for (int i = 0; i < n; i++) {
+      cancelThreatAlert((ThreatAlert)l.get(i));
+    }
   }
 
   /**
@@ -297,10 +329,14 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
       addThreatAlert((ThreatAlert)it.next());
     }
 
-    // Get changed ThreatAlerts and nofity listeners
+    // Get changed ThreatAlerts and notify listeners
     for(Iterator it = taSub.getChangedCollection().iterator(); it.hasNext();) {
-      ThreatAlert ta = (ThreatAlert)it.next();
-      fireListenersForChangedAlert(ta);
+      fireListenersForChangedAlert((ThreatAlert)it.next());
+    }
+
+    // Get removed ThreatAlerts and notify listeners
+    for(Iterator it = taSub.getRemovedCollection().iterator(); it.hasNext();) {
+      cancelThreatAlert((ThreatAlert)it.next());
     }
 
     // Get Expired alerts.  Notify listeners and remove artifacts
@@ -312,17 +348,8 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
       for (Iterator it = tempAlarms.iterator(); it.hasNext(); ) {
         ThreatAlertAlarm alarm = (ThreatAlertAlarm) it.next();
         if (alarm.hasExpired()) {
-          ThreatAlert alert = alarm.getThreatAlert();
-          fireListenersForRemovedAlert(alert);
           alertAlarms.remove(alarm);
-          // Remove Relay.Source if Alert originated from this agent
-          if (myRelays.containsKey(alert.getUID())) {
-            RelayAdapter ra = (RelayAdapter)myRelays.remove(alert.getUID());
-            blackboard.publishRemove(ra);
-            log.debug("publishRemove ThreatAlert: " + ra);
-          }
-          // Remove from current alert list
-          currentThreatAlerts.remove(alert.getUID());
+          cancelThreatAlert(alarm.getThreatAlert());
         }
       }
     }
@@ -335,6 +362,18 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
     alarmService.addRealTimeAlarm(alarm);
     alertAlarms.add(alarm);
     fireListenersForNewAlert(ta);
+  }
+
+  private void cancelThreatAlert(ThreatAlert alert) {
+    fireListenersForRemovedAlert(alert);
+    // Remove Relay.Source if Alert originated from this agent
+    if (myRelays.containsKey(alert.getUID())) {
+      RelayAdapter ra = (RelayAdapter)myRelays.remove(alert.getUID());
+      blackboard.publishRemove(ra);
+      log.debug("publishRemove ThreatAlert: " + ra);
+    }
+    // Remove from current alert list
+    currentThreatAlerts.remove(alert.getUID());
   }
 
   /**
