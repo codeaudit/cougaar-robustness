@@ -77,7 +77,7 @@ public class RestartDestinationLocator {
     }
     if (preferredRestartLocations.containsKey(agent)) {
       selectedNode = (String)preferredRestartLocations.remove(agent);
-      logger.info("Using preferredRestartLocation: agent=" + agent + " dest=" + selectedNode);
+      logger.debug("Using preferredRestartLocation: agent=" + agent + " dest=" + selectedNode);
     }
     if (selectedNode != null) temp.remove(selectedNode); //this one is already used this time, don't count it.
 
