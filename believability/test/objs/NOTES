@@ -1,0 +1,58 @@
+** Tue Jun 22 00:36:59 CDT 2004 **
+
+Some useful command lines for running and viewing files:
+
+Running the two nodes with unique, ordered names:
+
+  ./run-mgmt-node.sh
+  ./run-t1-node.sh
+
+You will need to wait a while before doing anything after these two
+commands.  There is a discovery propogration delay in the Cougaar
+system that (for some reason) takes on the order of tens of seconds.
+
+After all the test agents have been discovered (you'll see initial
+belief state calculation for each) you can then start poking the
+system with:
+
+  ./inject-asset-objs.sh 
+  ./inject-diagnosis.pl 
+
+The first is a one-time thing that somehow "primes" the system by
+creating the appropriate diagnosis and action objects.
+
+The second can be used repeatedly as it injects diagnoses into the
+system.
+
+Viewing latest ManagementAgentNode log:
+
+  less `ls -1 mgmt-*.out | tail -n 1`
+
+** Fri Jul  2 10:01:19 CDT 2004 **
+
+Notes on running the actions servlet:
+
+  o wait for acquience and all agents known.  (Each should generate an
+    initial belief state due to the initial diagnosis triggering its
+    calculation).
+
+  o In SampleDefenseServlet: set offered actions to Quarantine & Release 
+
+  o In SampleDefenseServlet, observe that Quarantine & Release
+    appear as offered values in "SampleAction".
+
+  o If Quarantine does not become permitted, then issue a diagnosis or
+    two of "Compromised" from the Diagnosis Servlet fpor the sample
+    sensor (inappropriately named SampleDiagnosis).
+
+  o In SampleDefenseServlet selected the permitted Quarantine value,
+    and click "start".
+
+  o In ActionMonitoringServlet, verify that the action's value changes
+    to Quarantine and that it is no longer permitted.
+
+  o After waiting a little while (I waited 30 seconds) us ethe
+    DefenseServlet to declare Quarantine COMPLETED
+
+  o in the ActionMonitoringServlet, see this confirmed in the servlet.
+

@@ -1,0 +1,79 @@
+README for objs SampleDefense Testing
+
+Here are the important files:
+
+  common.sh - place for stuff common to all scripts.
+  logger.cfg - sample log4j configuration file
+  README - this file
+  run-mgmt-node.sh - To run the ManagementAgentNode
+  run-node.sh - General script that sets up running a node
+  run-t1-node.sh - To run the T1 node
+
+NOte that these are not currently used:
+
+  ul-test-01.sh  - not currently used
+  inject-asset-objs.sh - not currently used
+  inject-diagnosis.pl - not currently used
+
+----------------------------------------------------------------------
+How to run the SampleDefense:
+----------------------------------------------------------------------
+
+Need to run two nodes, so need two terminal windows.  Nodes are
+started in this directory with:
+
+  ./run-mgmt-node.sh
+  ./run-t1-node.sh
+
+You should start the 'mgmt' node first, and delay a few seconds from
+starting the 't1' node.  This only matters as far as what port the
+internal web server will grab.  If you start them in the other order,
+then some of the subsequent instructions might not be exactly correct
+for your setup.
+
+Depending on the speed of your machine, you will ned to wait until all
+agents (there are 5) are discoverd and all their threats
+evaluated. This will take at least 30 seconds or so.  
+
+Look for the TestAgent2 and TestAgent initial belief state
+computations and also the subsequent "Handled threat change" from the
+ModelManager. After this, you can proceed.
+
+All interaction happens with the SampleDefense servlet. Navigate your
+web browser to:
+
+  http://localhost:8800
+
+then go to "Agents at the root" and then to "TestAgent".  If you
+started the nodes in thge recommended order, 'TestAgent' will not show
+up until everthing acquieces.  FInally, navigate to the
+'SampleDefense' servlet link.  Here you wil do a 4 step process:
+
+Step 1:  Setting the values offered
+
+  In the "Sample Action" section, under the "Possible Values", use the
+  CTRL or SHIFT key, ands select all the values (quarantine and
+  release). Then click the "Set Values Offered" button.
+
+Step 2: Injecting a diagnosis
+
+  In the "Sample Diagnosis" section, select a sensor reading (choose
+  compromised initially) and then click the "Set Sensor Value" button.
+  You should see a belief state calculation from believability after
+  this.
+
+Step 3: Starting the action
+
+  After some relatively short period of time, the diagnosis injected
+  will cause the "Permitted Values" to be updated (with quarantine
+  initially).  Selected that value and click the "Start" button.
+
+Step 4: Stopping the action
+
+  You need to wait some period of time for the action to start, but
+  you also cannot wait too long before stopping the action (90 seconds
+  and it will timeout I think).  After some time, select the
+  completion code ("COMPLETED" initially) and click the "Stop" button.
+  This should cause an action induce belief state calculation to
+  occur.
+

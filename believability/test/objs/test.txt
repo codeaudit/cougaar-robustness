@@ -1,0 +1,12 @@
+1 TestAgent3 8800 SampleDiagnosis Compromised
+
+5 TestAgent3 8800 RestartDiagnosis Live
+
+
+5 TestAgent3 8800 AggressiveRestartDiagnosis Live
+
+@ Enclave
+
+LeashRequestDiagnosis LeashRequest
+LeashRequestDiagnosis UnleashRequest
+LeashRequestDiagnosis NoRequest

@@ -1,0 +1,25 @@
+# Format:
+#      DelaySeconds AssetName PortNumber SensorName DiagnosisValue
+#
+0 TestAgent 8801 SampleDiagnosis Compromised
+1 TestAgent2 8801 SampleDiagnosis Compromised
+1 TestAgent3 8800 SampleDiagnosis Compromised
+1 TestAgent4 8800 SampleDiagnosis Compromised
+
+5 TestAgent 8801 SampleDiagnosis Compromised
+1 TestAgent2 8801 SampleDiagnosis Compromised
+1 TestAgent3 8800 SampleDiagnosis Compromised
+1 TestAgent4 8800 SampleDiagnosis Compromised
+
+5 TestAgent 8801 SampleDiagnosis Secure
+1 TestAgent2 8801 SampleDiagnosis Secure
+1 TestAgent3 8800 SampleDiagnosis Secure
+1 TestAgent4 8800 SampleDiagnosis Secure
+
+5 TestAgent 8801 SampleDiagnosis Isolated
+1 TestAgent2 8801 SampleDiagnosis Isolated
+1 TestAgent3 8800 SampleDiagnosis Isolated
+1 TestAgent4 8800 SampleDiagnosis Isolated
+
+5 TestAgent 8801 RestartDiagnosis Live
+5 TestAgent 8801 RestartDiagnosis Dead
