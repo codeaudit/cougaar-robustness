@@ -175,23 +175,14 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * @param stateName
    * @param sc        StateController
    */
-  public void addController(int state, final String stateName, StateController sc) {
+  public void addController(int state, String stateName, StateController sc) {
     logger.debug("Adding state controller: state=" + stateName);
     if (sc instanceof StateControllerBase) {
-      final StateControllerBase scb = (StateControllerBase) sc;
-      new Thread() {
-        public void run() {
-          try {
-            scb.setBindingSite(getBindingSite());
-            scb.initialize(getBindingSite(), model);
-            scb.load();
-            scb.start();
-          }
-          catch (Exception ex) {
-            logger.error(ex.getMessage(), ex);
-          }
-        }
-      }.start();
+      StateControllerBase scb = (StateControllerBase) sc;
+      scb.setBindingSite(getBindingSite());
+      scb.initialize(getBindingSite(), model);
+      scb.load();
+      scb.start();
     }
     controllers.put(new Integer(state), new ControllerEntry(state, stateName, sc));
   }
