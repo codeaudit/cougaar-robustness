@@ -304,7 +304,8 @@ public class AgentID implements java.io.Serializable
         AddressEntry ae = wp.get("WP", "alias", -1); // -1 = only try local cache
         if (log.isDebugEnabled())
           log.debug("ae="+ae);
-        wpAgentName = ae.getURI().getPath().substring(1);
+        if (ae != null && ae.getURI() != null)
+          wpAgentName = ae.getURI().getPath().substring(1);
         if (log.isDebugEnabled())
           log.debug("wpAgentName="+wpAgentName);
       }
@@ -355,8 +356,8 @@ public class AgentID implements java.io.Serializable
 	      inc_cbte = new CbTblEntry();
 	      incCbTbl.put(agentName,inc_cbte);
 	  }
-	  if (log.isDebugEnabled())
-	      log.debug("inc_cbte="+inc_cbte+",incCbTbl="+incCbTbl);	  
+	  //if (log.isDebugEnabled())
+	  //    log.debug("inc_cbte="+inc_cbte+",incCbTbl="+incCbTbl);	  
 
 	  // get the callback table entry for this agent's node
 	  node_cbte = (CbTblEntry)nodeCbTbl.get(agentName);
@@ -365,8 +366,8 @@ public class AgentID implements java.io.Serializable
 	      node_cbte = new CbTblEntry();
 	      nodeCbTbl.put(agentName,node_cbte);
 	  }
-	  if (log.isDebugEnabled())
-	      log.debug("node_cbte="+node_cbte+",nodeCbTbl="+nodeCbTbl);
+	  //if (log.isDebugEnabled())
+	  //    log.debug("node_cbte="+node_cbte+",nodeCbTbl="+nodeCbTbl);
 
           // get inc from cbte
 	  if (inc_cbte.result != null) {
@@ -441,9 +442,9 @@ public class AgentID implements java.io.Serializable
         //104B sb.releaseService(requestor, WhitePagesService.class, wp);
     }
     if (node == null || incarnation == null) {
-      if (incarnation == null)
+      if (incarnation == null && inc_cbte != null)
         doCallback(incCbTbl, inc_cbte, agentName, VERSION);
-      if (node == null) 
+      if (node == null && node_cbte != null)
         doCallback(nodeCbTbl, node_cbte, agentName, TOPOLOGY);
       Exception e = new Exception ("Insufficient local information to create an AgentID for agent: " + agent); //104B
       throw new NameLookupException(e);
