@@ -42,6 +42,7 @@ import org.cougaar.core.component.ServiceAvailableEvent;
 import org.cougaar.core.mts.MessageAddress;
 
 import java.util.*;
+import javax.naming.NamingEnumeration;
 
 public class DefaultRobustnessController extends RobustnessControllerBase {
 
@@ -94,6 +95,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       }
     }
     public void expired(String name) {
+      logger.info("Expired Status:" + " agent=" + name + " state=LOCATED");
       if (isLocal(name)) newState(name, HEALTH_CHECK);
     }
     public void heartbeatStarted(String name) {
@@ -122,6 +124,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   class ActiveStateController extends StateControllerBase {
     public void enter(String name) {
+      logger.debug("New state: agent=" + name + " state=ACTIVE");
       if (isLeader(thisAgent)) {
         //for deconflict: the applicability condition of one active agent should
         //be true and the defense op mode should be disabled.
@@ -138,6 +141,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       }
     }
     public void expired(String name) {
+      logger.info("Expired Status:" + " agent=" + name + " state=ACTIVE");
       if ((isLocal(name) || isNode(name)) ||
           (thisAgent.equals(preferredLeader()) && getState(getLocation(name)) == DEAD) ||
           isLeader(name)) {
@@ -189,8 +193,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       logger.info("New state (DEAD):" +
                   " name=" + name +
                   " preferredLeader=" + thisAgent.equals(preferredLeader()) +
-                  " isAgent=" + isAgent(name) +
-                  " priorState=" + model.getpriorState(name));
+                  " isAgent=" + isAgent(name));
       communityReady = false; // For ACME Community Ready Events
       if (thisAgent.equals(preferredLeader()) && isAgent(name)) {
         // Interface point for Deconfliction
@@ -208,6 +211,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
 
     public void expired(String name) {
+      logger.debug("Expired Status:" + " agent=" + name + " state=DEAD");
       if (isLeader(thisAgent) && isAgent(name)) {
         if(getDeconflictHelper() != null)
           newState(name, DECONFLICT);
@@ -257,7 +261,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
     public void expired(String name) {
       if (isLeader(thisAgent)) {
-        logger.info("Expired Status:" + " agent=" + name + " state=RESTART");
         newState(name, FAILED_RESTART);
       }
     }
@@ -270,6 +273,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (status == RestartHelper.SUCCESS) {
         event("Restart complete: agent=" + name + " location=" + dest);
         RestartDestinationLocator.restartSuccess(name);
+        logger.debug("Next Status:" + " agent=" + name + " state=INITIAL");
         newState(name, DefaultRobustnessController.INITIAL);
       } else {
         event("Restart failed: agent=" + name + " location=" + dest);
@@ -524,7 +528,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
   protected Set getExcludedNodes() {
     Set excludedNodes = new HashSet();
-    String allNodes[] = model.listEntries(model.AGENT);
+    String allNodes[] = model.listEntries(model.NODE);
     for (int i = 0; i < allNodes.length; i++) {
       if (model.hasAttribute(model.getAttributes(allNodes[i]), "UseForRestarts", "False")) {
         excludedNodes.add(allNodes[i]);
