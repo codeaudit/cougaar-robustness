@@ -427,16 +427,12 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         newState(name, HEALTH_CHECK);
     }
     public void defenseOpModeEnabled(String name){
-      if (getState(name) == DEAD) {
+      //if (getState(name) == DEAD) {
         if (getDeconflictHelper() != null &&
             !getDeconflictHelper().isDefenseApplicable(name)) {
           getDeconflictHelper().changeApplicabilityCondition(name);
         }
         newState(name, RESTART);
-      } else {
-        //newState(name, HEALTH_CHECK);
-        newState(name, RESTART);
-      }
     }
   }
 
