@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE ActuatorType >
+
+<ActuatorType name="org.cougaar.coordinator.test.defense.PlannedDisconnectActuator" 
+              affectsAssetType="Agent" 
+              affectsStateDimension="ConnectAuthorizationSetting" 
+              actionType="CORRECTIVE">
+
+    <Action name="Allow_Disconnect">
+        <Description value="Allows the Node to Disconnect legally" />
+        <Transition WhenActualStateIs="OK_To_Disconnect" EndStateWillBe="OK_To_Disconnect" IntermediateStateWillBe="OK_To_Disconnect" >
+            <OneTimeCost>
+                <Time duration="1000" />
+            </OneTimeCost>
+        </Transition>
+        <Transition WhenActualStateIs="OK_To_Connect" EndStateWillBe="OK_To_Disconnect" IntermediateStateWillBe="OK_To_Connect" >
+            <OneTimeCost>
+                <Time duration="1000" />
+            </OneTimeCost>
+        </Transition>
+    </Action>
+    
+    <Action name="Allow_Reconnect">
+        <Description value="Allows the Agent/Node to Reconnect" />
+        <Transition WhenActualStateIs="OK_To_Disconnect" EndStateWillBe="OK_To_Connect" IntermediateStateWillBe="OK_To_Disconnect" >
+            <OneTimeCost>
+                <Time duration="1000" />
+            </OneTimeCost>
+        </Transition>
+        <Transition WhenActualStateIs="OK_To_Connect" EndStateWillBe="OK_To_Connect" IntermediateStateWillBe="OK_To_Connect" >
+            <OneTimeCost>
+                <Time duration="1000" />
+            </OneTimeCost>
+        </Transition>
+    </Action>
+
+</ActuatorType>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE Threat >
+<Threats>
+
+<Threat name="Bug_Out" affectsAssetType="Node" causesEvent="Disconnect_Request" defaultEventLikelihoodProb="LOW" />
+<Threat name="Arrival" affectsAssetType="Node" causesEvent="Reconnect_Request" defaultEventLikelihoodProb="LOW" />
+
+</Threats>

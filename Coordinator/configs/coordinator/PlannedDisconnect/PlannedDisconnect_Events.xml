@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!-- Created by Administrator on April 5, 2004, 11:09 AM -->
+
+<!DOCTYPE Event [
+
+<!ELEMENT Event (DirectEffect, TransitiveEffect) >
+
+<!ELEMENT DirectEffect (Transition+) >
+
+<!ELEMENT Transition EMPTY >
+<!ATTLIST Transition
+    WhenActualStateIs CDATA #REQUIRED
+    EndStateWillBe    CDATA #REQUIRED
+>
+
+<!ELEMENT TransitiveEffect (CausesEvent, VulnerableAssets) >
+
+<!ELEMENT CausesEvent EMPTY >
+<!ATTLIST CausesEvent
+    name       CDATA #REQUIRED
+    assetType  CDATA #REQUIRED
+>
+
+<!ELEMENT VulnerableAssets (ContainmentFilter, EventLikelihood) >
+
+<!ELEMENT EventLikelihood  EMPTY>
+<!ATTLIST EventLikelihood
+    probability ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH ) 'NONE'
+>
+
+<!ELEMENT ContainmentFilter  EMPTY>
+<!ATTLIST ContainmentFilter
+    eventAssetContainerName CDATA #REQUIRED
+>
+
+]>
+
+<Events>
+
+<Event name="Disconnect_Request" affectsAssetType="Node" affectsStateDimension="DesireToCommunicateStatus">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="No" />
+    </DirectEffect>
+    <TransitiveEffect>
+        <CausesEvent name="Disconnect_Request" assetType="Agent"/>
+        <VulnerableAssets>
+            <ContainmentFilter eventAssetContainerName="Agent" />
+            <EventLikelihood probability="ALWAYS" />
+        </VulnerableAssets>
+    </TransitiveEffect> 
+</Event>
+
+<Event name="Reconnect_Request" affectsAssetType="Node" affectsStateDimension="DesireToCommunicateStatus">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="Yes" />
+    </DirectEffect>
+    <TransitiveEffect>
+        <CausesEvent name="Reconnect_Request" assetType="Agent"/>
+        <VulnerableAssets>
+            <ContainmentFilter eventAssetContainerName="Agent" />
+            <EventLikelihood probability="ALWAYS" />
+        </VulnerableAssets>
+    </TransitiveEffect> 
+</Event>
+
+<Event name="Disconnect_Request" affectsAssetType="Agent" affectsStateDimension="DesireToCommunicateStatus">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="No" />
+    </DirectEffect>
+</Event>
+
+<Event name="Reconnect_Request" affectsAssetType="Agent" affectsStateDimension="DesireToCommunicateStatus">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="Yes" />
+    </DirectEffect>
+</Event>
+
+
+</Events>

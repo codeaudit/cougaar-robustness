@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE SensorType >
+
+<SensorTypes>
+
+<SensorType name="org.cougaar.coordinator.test.defense.plannedDisconnect.RequestToDisconnectNodeSensor" sensesAssetType="node"
+            sensesStateDimension="DesireToCommunicateStatus" sensorLatency="1000">
+    <PotentialDiagnoses>
+        <Diagnosis name="Disconnect_Request" />
+        <Diagnosis name="Reconnect_Request" />
+        <Diagnosis name="Tardy" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="No" >
+            <WillDiagnoseAs name="Disconnect_Request" withProbability="0.9998" />
+            <WillDiagnoseAs name="Reconnect_Request" withProbability="0.0001" />
+            <WillDiagnoseAs name="Tardy" withProbability="0.0001" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Yes" >
+            <WillDiagnoseAs name="Reconnect_Request" withProbability="0.9998" />
+            <WillDiagnoseAs name="Reconnect_Request" withProbability="0.0001" />
+            <WillDiagnoseAs name="Tardy" withProbability="0.0001" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Tardy" >
+            <WillDiagnoseAs name="Tardy" withProbability="0.9998" />
+            <WillDiagnoseAs name="Reconnect_Request" withProbability="0.0001" />
+            <WillDiagnoseAs name="Disconnect_Request" withProbability="0.0001" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>
+
+<SensorType name="org.cougaar.coordinator.test.defense.plannedDisconnect.RequestToDisconnectAgentSensor" sensesAssetType="agent"
+            sensesStateDimension="DesireToCommunicateStatus" sensorLatency="1000">
+    <PotentialDiagnoses>
+        <Diagnosis name="Disconnect_Request" />
+        <Diagnosis name="Reconnect_Request" />
+        <Diagnosis name="Tardy" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="No" >
+            <WillDiagnoseAs name="Disconnect_Request" withProbability="0.9998" />
+            <WillDiagnoseAs name="Reconnect_Request" withProbability="0.0001" />
+            <WillDiagnoseAs name="Tardy" withProbability="0.0001" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Yes" >
+            <WillDiagnoseAs name="Reconnect_Request" withProbability="0.9998" />
+            <WillDiagnoseAs name="Reconnect_Request" withProbability="0.0001" />
+            <WillDiagnoseAs name="Tardy" withProbability="0.0001" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Tardy" >
+            <WillDiagnoseAs name="Tardy" withProbability="0.9998" />
+            <WillDiagnoseAs name="Reconnect_Request" withProbability="0.0001" />
+            <WillDiagnoseAs name="Disconnect_Request" withProbability="0.0001" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>
+
+
+<SensorType name="org.cougaar.coordinator.test.defense.plannedDisconnect.NodeConnectAuthorizationSetting" sensesAssetType="node"
+            sensesStateDimension="ConnectAuthorizationSetting" sensorLatency="1000">
+    <PotentialDiagnoses>
+        <Diagnosis name="OK_To_Connect" />
+        <Diagnosis name="OK_To_Disconnect" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="OK_To_Connect" >
+            <WillDiagnoseAs name="OK_To_Connect" withProbability="0.9999" />
+            <WillDiagnoseAs name="OK_To_Disconnect" withProbability="0.0001" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="OK_To_Disconnect" >
+            <WillDiagnoseAs name="OK_To_Disconnect" withProbability="0.9999" />
+            <WillDiagnoseAs name="OK_To_Connect" withProbability="0.0001" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>
+
+<SensorType name="org.cougaar.coordinator.test.defense.plannedDisconnect.AgentConnectAuthorizationSetting" sensesAssetType="agent"
+            sensesStateDimension="ConnectAuthorizationSetting" sensorLatency="1000">
+    <PotentialDiagnoses>
+        <Diagnosis name="OK_To_Connect" />
+        <Diagnosis name="OK_To_Disconnect" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="OK_To_Connect" >
+            <WillDiagnoseAs name="OK_To_Connect" withProbability="0.9999" />
+            <WillDiagnoseAs name="OK_To_Disconnect" withProbability="0.0001" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="OK_To_Disconnect" >
+            <WillDiagnoseAs name="OK_To_Disconnect" withProbability="0.9999" />
+            <WillDiagnoseAs name="OK_To_Connect" withProbability="0.0001" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>
+
+<SensorType name="org.cougaar.coordinator.test.defense.plannedDisconnect.NodeConnectedStatus" sensesAssetType="node"
+            sensesStateDimension="ConnectedStatus" sensorLatency="1000">
+    <PotentialDiagnoses>
+        <Diagnosis name="Connected" />
+        <Diagnosis name="Disconnected" />
+        <Diagnosis name="Tardy" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="Connected" >
+            <WillDiagnoseAs name="Connected" withProbability="0.9998" />
+            <WillDiagnoseAs name="Disconnected" withProbability="0.0001" />
+            <WillDiagnoseAs name="Tardy" withProbability="0.0001" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Disconnected" >
+            <WillDiagnoseAs name="Disconnected" withProbability="0.9999" />
+            <WillDiagnoseAs name="Connected" withProbability="0.0001" />
+            <WillDiagnoseAs name="Tardy" withProbability="0.0001" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Tardy" >
+            <WillDiagnoseAs name="Tardy" withProbability="0.9998" />
+            <WillDiagnoseAs name="Connected" withProbability="0.0001" />
+            <WillDiagnoseAs name="Disconnected" withProbability="0.0001" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>
+
+
+</SensorTypes>
