@@ -229,8 +229,8 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
         throws BelievabilityException {
 
         // set up the data structure for the projected state estimation if the Variant is selected
-        StateDimensionEstimation predictedStateDimensionEstimation = 
-            new StateDimensionEstimation(currentStateDimensionEstimation.getAssetModel(), currentStateDimensionEstimation.getStateDimension());
+        StateDimensionEstimation predictedStateDimensionEstimation = null;
+//FIX            new StateDimensionEstimation(currentStateDimensionEstimation.getAssetModel(), currentStateDimensionEstimation.getStateDimension());
         Enumeration stateEnumeration = currentStateDimensionEstimation.getStateNames();
         while (stateEnumeration.hasMoreElements()) {
             predictedStateDimensionEstimation.setProbability((String)stateEnumeration.nextElement(), 0.0);

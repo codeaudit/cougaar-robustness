@@ -186,8 +186,9 @@ public class MyServletTestDefense extends ServiceUserPluginBase {
     }
     
     logger.error(".haveServices - did NOT acquire services.");    
+       */
     return false;
-    */
+    
   }
 
   /** 

@@ -97,9 +97,9 @@ public class DiagnosisTechSpecServiceProvider implements ServiceProvider {
         /**
          * Add a CrossDiagnosis for a class
          */
-        public void addCrossDiagnosis(CrossDiagnosis cd) {
+        public void addCrossDiagnosis(CrossDiagnosis dp) {
             
-            mgr.addCrossDiagnosis(cd);
+            mgr.addCrossDiagnosis(dp);
          
         }
         

@@ -1,13 +1,13 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE attributes PUBLIC "-//NetBeans//DTD DefaultAttributes 1.0//EN" "http://www.netbeans.org/dtds/attributes-1_0.dtd">
 <attributes version="1.0">
-   <fileobject name="CostBenefitKnob.java">
-      <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="CostBenefitKnob"/>
-   </fileobject>
-   <fileobject name="CostBenefitEvaluation.java">
-      <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="CostBenefitEvaluation.ActionBenefit;CostBenefitEvaluation"/>
-   </fileobject>
-   <fileobject name="CostBenefitPlugin.java">
-      <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="CostBenefitPlugin"/>
-      <attr name="class_dependency_org.cougaar.coordinator.DeconflictionPluginBase" stringvalue="CostBenefitPlugin"/>
-   </fileobject>
+    <fileobject name="CostBenefitKnob.java">
+        <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="CostBenefitKnob"/>
+    </fileobject>
+    <fileobject name="CostBenefitEvaluation.java">
+        <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="CostBenefitEvaluation.ActionBenefit;CostBenefitEvaluation"/>
+    </fileobject>
+    <fileobject name="CostBenefitPlugin.java">
+        <attr name="class_dependency_org.cougaar.coordinator.DeconflictionPluginBase" stringvalue="CostBenefitPlugin"/>
+    </fileobject>
 </attributes>
