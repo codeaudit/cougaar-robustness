@@ -1,20 +1,14 @@
+require 'rexml/document'
+
 module Cougaar
 
-  ORIGAGENTS_CONST = Hash.new(0) #records all nodes and child agents number before node restarting
-  CURRENTAGENTS_CONST = Hash.new(0) #records all nodes and child agents number after node restarting
-  PORTS_CONST = Hash.new(0) #record each node and it's port address
-  ALLNODES_CONST = [] #record names of all current running nodes
-  KILLNODE_CONST = "" #which one is being killed right now?
-  ShiftFlag_CONST = "false" #do we need remove the first node in all node list?
-  Times_CONST = [] # record time before and after restarting a node
   KillHost_CONST = "" #the host of the most currently killed node
-  LoadBalancer_CONST = "false"
   Comm_CONST = Hash.new(0)
 
   module States
 
     class CommunitiesReady < Cougaar::State
-      DEFAULT_TIMEOUT = 30.minutes
+      DEFAULT_TIMEOUT = 60.minutes
       PRIOR_STATES = ["SocietyRunning"]
       def initialize(run, community_names, timeout=nil, &block)
         super(run, timeout, &block)
@@ -49,7 +43,6 @@ module Cougaar
 	@nodes.each do |mynode|
 	@run.society.each_node do |node|
           if node.name == mynode
-			   #KillHost_CONST[0..KillHost_CONST.length] = node.host.name
 	    host = node.host.name
 	    if Comm_CONST.has_key?(@commName)
 	      hosts = Comm_CONST[@commName]
@@ -123,10 +116,6 @@ module Cougaar
                puts "Could not start node #{@nodeName} on host #{@hostName}"
              else
                puts "start node #{@nodeName} successfully on host #{@hostName}"
-	       #ORIGAGENTS_CONST[@nodeName] = 0
-               #ORIGAGENTS_CONST.each {|key, value| print key, " is ", value, "\n"}
-               #ALLNODES_CONST[ALLNODES_CONST.length] = @nodeName
-               #PORTS_CONST[@nodeName] = @hostName
              end
           end
         end
@@ -194,77 +183,6 @@ module Cougaar
       end
     end
 
-    class AddTestNode < Cougaar::Action
-      def initialize(run, nodeName, communityName, hostName=KillHost_CONST)
-        super(run)
-	@community = communityName
-        @hostName = hostName
-	@nodeName = nodeName
-      end
-      def perform
-        @run.society.each_host do |host|
-          if host.name == @hostName
-             newNode = host.add_node(@nodeName)
-             newNode.classname = "org.cougaar.bootstrap.Bootstrapper"
-             newNode.add_prog_parameter("org.cougaar.core.node.Node")
-             components = ["org.cougaar.tools.robustness.ma.plugins.NodeHealthMonitorPlugin",
-                "org.cougaar.tools.robustness.sensors.PingServerPlugin",
-                 "org.cougaar.tools.robustness.sensors.PingRequesterPlugin",
-                 "org.cougaar.tools.robustness.sensors.HeartbeatRequesterPlugin",
-                 "org.cougaar.community.CommunityPlugin",
-		 "org.cougaar.community.util.CommunityViewerServlet",
-                 "org.cougaar.tools.robustness.ma.ui.ARServlet",
-		 "com.boeing.pw.mct.exnihilo.plugin.EN4JPlugin",
-                 "org.cougaar.core.mobility.service.RedirectMovePlugin"]
-             newNode.add_components(components)
-             sensorDomain = Cougaar::Model::Component.new("org.cougaar.tools.robustness.sensors.SensorDomain")
-             sensorDomain.agent = @nodeName
-	     sensorDomain.classname = "org.cougaar.tools.robustness.sensors.SensorDomain"
-             sensorDomain.insertionpoint = "Node.AgentManager.Agent.DomainManager.Domain"
-             sensorDomain.add_argument("sensors")
-             newNode.add_component(sensorDomain)
-             @parameters = []
- 	     @run.society.each_node do |node|
-                if @parameters.length == 0
-                   @parameters = node.parameters
-                   break
-                   #node.each_component do |component|
-                    # newNode.add_component(component)
-		   #end
-                end
-             end
-             newNode.add_parameter(@parameters)
-             newNode.override_parameter("-Dorg.cougaar.node.name", @nodeName)
-             newNode.add_parameter("-Dorg.cougaar.tools.robustness.community=#{@community}")
-	     #newNode.override_parameter("-Dorg.cougaar.core.logging.log4j.appender.SECURITY.File","/shares/development/cougaar-b/workspace/log4jlogs/#{@nodeName}.log")
-
-
-             post_node_xml(newNode)
-             msg_body = @nodeName + ".rb"
-             result = @run.comms.new_message(host).set_body("command[start_xml_node]#{msg_body}").request(120)
-	     if result.nil?
-               puts "Could not start node #{@nodeName} on host #{@hostName}"
-             else
-               #puts "start node #{@nodeName} successfully on host #{@hostName}: #{result}"
-	       ORIGAGENTS_CONST[@nodeName] = 0
-               #ORIGAGENTS_CONST.each {|key, value| print key, " is ", value, "\n"}
-               #ALLNODES_CONST[ALLNODES_CONST.length] = @nodeName
-               #PORTS_CONST[@nodeName] = @hostName
-             end
-          end
-        end
-      end
-      def post_node_xml(node)
-        node_society = Cougaar::Model::Society.new( "society-for-#{node.name}" ) do |society|
-          society.add_host( node.host.name ) do |host|
-            host.add_node( node.clone(host) )
-          end
-        end
-        node_society.remove_all_facets
-	result = Cougaar::Communications::HTTP.post("http://#{node.host.host_name}:9444/xmlnode/#{node.name}.rb", node_society.to_ruby, "x-application/ruby")
-        puts result if @debug
-      end
-    end
 
     class RemoveAgents < Cougaar::Action
       PRIOR_STATES = ["SocietyLoaded"]
@@ -330,6 +248,71 @@ module Cougaar
 	    result, uri = Cougaar::Communications::HTTP.get(agent.uri+"/ar?operation=modcommattr&id=PING_TIMEOUT_THREATCON_HIGH_COEFFICIENT&value=100")
 	  end
 	end
+      end
+    end
+
+    #Parse nodestats.xml
+    class AddNodeStatisticsToCommunity < Cougaar::Action
+      DOCUMENTATION = Cougaar.document {
+        @description = "Add node latency statistics to robustness community"
+        @parameters = [
+          {:filename => "required. The name of statistics xml file."}
+        ]
+        @example = "do_action 'TransformStats', 'nodestat.xml'"
+	}
+
+      def initialize(run, filename)
+        super(run)
+	@filename = filename
+      end
+      def perform
+	file = File.new(@filename)
+	doc = REXML::Document.new(file)
+        @run.society.communities.each do |community|
+	  isRobustness = "false"
+	    community.each_attribute do |id, value|
+              if id == "CommunityType" && value == "Robustness"
+                 isRobustness = "true"
+		 break
+	      else
+	         isRobustness = "false"
+		 break
+	      end
+	    end
+	  #only add statics information to robustness community
+	  if isRobustness == "false"
+	    next
+	  end
+	  mean = 0
+	  stddev = 0
+	  high = 0
+          doc.elements.each("NodeLatencyStatistics/Item") do |element|
+	    parent_community = element.attributes['community']
+	    if parent_community == community.name
+	      name = element.attributes['node']
+	      node_mean = element.attributes['mean'].to_i
+	      node_stdev = element.attributes['stdev'].to_i
+	      node_high = element.attributes['high'].to_i
+	      if node_high > high
+	        high = node_high
+	        mean = node_mean
+		stddev = node_stdev
+	      end
+	        community.each do |entity|
+	          if entity.name == name
+	            entity.add_attribute("STATUS_LATENCY_MEAN", node_mean)
+		    entity.add_attribute("STATUS_LATENCY_STDDEV", node_stdev)
+	          end
+	        end
+	    end # ends if parent_community == community.name
+	  end # ends doc.elements.each("NodeLatencyStatistics/Item") do |element|
+	  if mean > 0
+	    community.remove_attribute("DEFAULT_STATUS_LATENCY_MEAN")
+	    community.add_attribute("DEFAULT_STATUS_LATENCY_MEAN", mean)
+	    community.remove_attribute("DEFAULT_STATUS_LATENCY_STDDEV")
+	    community.add_attribute("DEFAULT_STATUS_LATENCY_STDDEV", stddev)
+	  end
+	end # ends @run.society.communities.each do |community|
       end
     end
 
