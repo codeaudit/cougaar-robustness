@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Communities [
+<!ELEMENT Communities (Community+)>
+<!ELEMENT Community (Attribute*, Entity*)>
+<!ATTLIST Community Name CDATA #REQUIRED>
+<!ELEMENT Entity (Attribute*)>
+<!ATTLIST Entity Name CDATA #REQUIRED>
+<!ELEMENT Attribute EMPTY>
+<!ATTLIST Attribute ID CDATA #REQUIRED>
+<!ATTLIST Attribute Value CDATA #REQUIRED>
+]>
+
+<Communities>
+
+  <Community Name="SAMPLE_COMMUNITY" >
+
+    <Attribute ID="CommunityType"             Value="Robustness" />
+    <Attribute ID="CommunityManager"          Value="ManagementAgent" />
+    <Attribute ID="RobustnessManager"         Value="ManagementAgent" />
+    <Attribute ID="NumberOfAgents"            Value="5" />
+    <Attribute ID='PING_TIMEOUT' Value='300000' />
+    <Attribute ID='MIMIMUM_PING_TIMEOUT' Value='120000' />
+
+    <Entity Name="ManagementAgentNode" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" /> 
+    </Entity>
+
+    <Entity Name="ManagementAgentNodeNoAgents" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" /> 
+    </Entity>
+
+    <Entity Name="ManagementAgent" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="RobustnessManager" />
+      <Attribute ID="Role" Value="HealthMonitor" /> 
+    </Entity>
+
+    <Entity Name="T1" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" /> 
+    </Entity>
+
+    <Entity Name="TestAgent" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+
+    <Entity Name="TestAgent2" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+
+    <Entity Name="TestAgent3" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+
+    <Entity Name="TestAgent4" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+
+  </Community>
+
+</Communities>
