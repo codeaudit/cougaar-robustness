@@ -4,11 +4,13 @@
 
 awmp = "org.cougaar.coordinator.test.coordination.ActionsWrapperMonitorPlugin"
 dwmp = "org.cougaar.coordinator.test.coordination.DiagnosesWrapperMonitorPlugin"
+amp  = "org.cougaar.coordinator.test.coordination.ActionMonitorPlugin"
 ams  = "org.cougaar.coordinator.test.coordination.ActionMonitorServlet"
+dmp  = "org.cougaar.coordinator.test.coordination.DiagnosisMonitorPlugin"
 dms  = "org.cougaar.coordinator.test.coordination.DiagnosisMonitorServlet"
 ps   = "org.cougaar.coordinator.test.coordination.PublishServlet"
 
-plugins = [awmp,dwmp,ams,dms,ps]
+plugins = [awmp,dwmp,amp,ams,dmp,dms,ps]
 
 ltsp = "org.cougaar.coordinator.techspec.xml.LoadTechSpecsPlugin"
 

@@ -9,6 +9,7 @@ rmfp = "org.cougaar.coordinator.RobustnessManagerFinderPlugin"
 bp   = "org.cougaar.coordinator.believability.BelievabilityPlugin"
 cbp  = "org.cougaar.coordinator.costBenefit.CostBenefitPlugin"
 cmp  = "org.cougaar.coordinator.housekeeping.CoordinatorManagerPlugin"
+amon = "org.cougaar.coordinator.monitoring.ActionMonitoringPlugin"
 asp  = "org.cougaar.coordinator.selection.ActionSelectionPlugin"
 amp  = "org.cougaar.coordinator.techspec.AssetManagerPlugin"
 tmmp = "org.cougaar.coordinator.techspec.ThreatModelManagerPlugin"
@@ -26,7 +27,7 @@ mgr_node_techspecs = [aasd,nasd,hasd,easd,t,e]
 other_node_techspecs = [aasd,nasd,hasd,easd,    t,e]
 
 nodePlugins = [arm,drm,rmfp]
-mgrPlugins = [bp,cbp,cmp,asp,tmmp]
+mgrPlugins = [bp,cbp,cmp,amon,asp,tmmp]
 
 society.each_agent do |agent|
     if agent.name =~ /.*ARManager.*/
