@@ -115,9 +115,7 @@ module Cougaar
             if response
               @run.info_message "response="+response if @messaging >= 3
             else
-              @run.error_message "Could not connect to #{url}. Experiment aborted." if @messaging >= 1
-              @run['PlannedDisconnectCompleted'] = true
-              return
+              @run.error_message "Could not connect to #{url}." if @messaging >= 1
             end
           end
           node_count = @nodes.length
