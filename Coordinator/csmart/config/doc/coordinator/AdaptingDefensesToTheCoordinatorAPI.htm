@@ -1,0 +1,312 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta http-equiv="Content-Type"
+ content="text/html; charset=windows-1252">
+  <meta name="Generator" content="Microsoft Word 97">
+  <title>Adapting Defenses to the Coordinator API</title>
+</head>
+<body link="#0000ff" vlink="#800080">
+<b><u>
+<p align="center">Adapting Defenses to the Coordinator API</p>
+</u></b>
+<p align="center">David Wells &amp; Steve Ford - OBJS</p>
+<p align="center">6/24/2004</p>
+<p>&nbsp;</p>
+<ol>
+  <b><font face="Arial,Helvetica" color="#808080"><li>A Note on
+TechSpecs</li>
+  </font></b>
+  <p>The TechSpecs for a given Defense are largely independent of those
+for other Defenses with one exception noted later. We use the
+ConfigFinder to locate TechSpecs, so&nbsp; we recommend that all
+TechSpecs for a given Defense be placed in a single subdirectory of
+configs\coordinator (e.g., $CIP/configs/coordinator/SampleDefense), and
+that subdirectory be added to the config.path. Each filename should be
+prefixed with the name of the Defense (e.g.,
+SampleDefense_AgentAssetStateDimensions.xml) to avoid name conflicts. </p>
+  <p>See <a
+ href="https://docs.ultralog.net/dscgi/ds.py/Get/File-5099/2004_TechSpecs_and_Models.doc">https://docs.ultralog.net/dscgi/ds.py/Get/File-5099/2004_TechSpecs_and_Models.doc</a>
+for a comprehensive discussion of the structure and meaning of
+TechSpecs. This is probably only necessary if you plan on generating
+your own TechSpecs from scratch or as background. </p>
+  <p>TechSpecs for the ACUC1 Defenses are already defined. They should
+be reviewed and corrected as necessary. See <a
+ href="https://docs.ultralog.net/dscgi/ds.py/Get/File-5152/CoordinatorUC1.doc">https://docs.ultralog.net/dscgi/ds.py/Get/File-5152/CoordinatorUC1.doc</a>
+and <a
+ href="https://docs.ultralog.net/dscgi/ds.py/Get/File-5153/UC1_Figure.jpg">https://docs.ultralog.net/dscgi/ds.py/Get/File-5153/UC1_Figure.jpg</a>.
+The XML for several of these are already present in
+configs\coordinator\… Our intention is to provide the remainder in the
+next week or so.</p>
+  <p>$CIP/configs/coordinator/SampleDefense contains a simple example
+of a complete set of TechSpecs. While it is not necessary to follow the
+naming conventions for filenames, doing so will generally make it
+easier to follow the structure.</p>
+  <b><font face="Arial,Helvetica" color="#808080"><li>API Overview</li>
+  </font></b>
+  <p>The Coordinator API breaks the existing notion of a Defense (e.g.,
+Sledgehammer, MsgLog, Security) into Sensors and Actuators. While there
+is often a relationship between a Sensor and an Actuator (e.g., the
+Sledgehammer Defense senses and reports that an agent is believed to be
+dead and has an Actuator that ca restart the agent), there are examples
+where this linkage is not present (e.g., the Metrics Service provides
+Sennsors only and Security may have an Actuator to encrypt that is not
+directly tied to any sensor). </p>
+  <p>A <i>Sensor</i> provides information about an asset (agent, node,
+network, enclave, …) to the Coordinator. A sensor is probably tied to
+some analysis process (e.g., monitoring to determine that an agent is
+probably dead), but can also be used to present asserted state (e.g., a
+high security alert state has been declared). </p>
+  <p>An <i>Actuator</i> can take one or more actions to affect the
+state of an asset (agent, node, network, enclave, ..). Actuators can
+take CORRECTIVE (fix a problem), COMPENSATORY (work around an unfixable
+problem), PREVENTIVE (take action to avoid or minimize possible future
+problems), or APPLICATION (do work directly for the application)
+actions. An Actuator is represented in the API by an <u>Action</u>
+object. An Action object is used by the Actuator to <u>offer</u>
+actions it is willing to take w.r.t. a single asset (which again many
+be a container asset like a node or enclave), by the Coordinator to <u>permit</u>
+zero or more of the offered actions to be performed, and again by the
+Actuator to inform which action (if any) of the permitted actions was
+actually performed and status information about progress and the result
+(if any).</p>
+  <b><font face="Arial,Helvetica" color="#808080"><li>Sensor
+Implementation</li>
+  </font></b>
+</ol>
+<p>A SampleDefense Sensor is represented in the API by a <u>SampleDiagnosis</u>
+object which <i>must</i> subclass <u>org.cougaar.coordinator.Diagnosis</u>.
+The sensor name for the SensorType as it appears in the
+SampleDefense_SampleSensor file must match the fully qualified
+classname (including path). E.g., </p>
+<font face="Courier New" size="2"></font>
+<p><font face="Courier New" size="2">&lt;SensorType name="</font><font
+ face="Courier New" size="2" color="#ff0000">org.cougaar.coordinator.examples.SampleDefense.SampleDiagnosis</font><font
+ face="Courier New" size="2">" </font></p>
+<p><font face="Courier New" size="2"> sensesAssetType="Agent"</font></p>
+<p><font face="Courier New" size="2">
+sensesStateDimension="Compromised" </font></p>
+<p><font face="Courier New" size="2"> sensorLatency="1000"&gt;</font></p>
+<p>This part of the TechSpec also defines the asset type (in this case
+"agent" over which the sensor reports. The Defense should publish a
+SampleDiagnosis object for each agent under the jurisdiction of the
+Defense (e.g., each monitored agent in the enclave).</p>
+<p>The possible states that the Diagnosis can take on are defined in
+the SensorTechSpec as follows:</p>
+<font face="Courier New" size="2">
+<p> &lt;PotentialDiagnoses&gt;</p>
+<p> &lt;Diagnosis name="Compromised" /&gt;</p>
+<p> &lt;Diagnosis name="Secure" defaultValue="TRUE" /&gt;</p>
+<p> &lt;Diagnosis name="Isolated" /&gt;</p>
+<p> &lt;/PotentialDiagnoses&gt;</p>
+</font>
+<p>A SampleDiagnosis is constructed with either:</p>
+<font size="3"></font>
+<p><font size="3"> public SampleDiagnosis(String assetName, Object
+initialValue, ServiceBroker serviceBroker) </font></p>
+<p><font size="3"> throws IllegalValueException,
+TechSpecNotFoundException </font></p>
+<p><font size="3">&nbsp;</font></p>
+<p><font size="3"> public SampleDiagnosis(String assetName,
+ServiceBroker serviceBroker) </font></p>
+<p><font size="3"> throws TechSpecNotFoundException</font> </p>
+<p>&nbsp;</p>
+<p>The former allows the initial diagnosis value to be explicitly set,
+while the latter will default to an initial diagnosis based on the
+SensorTechSpec (above). If an initial diagnosis is explicitly set, it
+must come from the set of &lt;PotentialDiagnoses&gt; in the TechSpec.
+This constraint is enforced by the Diagnosis superclass. If the
+TechSpecNotFoundException is thrown, suspect either:</p>
+<ul>
+  <li>The techspec was not provided to the TechSpecManager (discussed
+below)</li>
+  <li>The file did not parse de to XML errors</li>
+  <li>The name of the sensor specified in the file did not match the
+name of the class</li>
+</ul>
+<p>&nbsp;</p>
+<p>When the sensor makes a diagnosis, it announces it by calling:</p>
+<font size="3">
+<p> public void setValue(Object value) throws IllegalValueException </p>
+</font>
+<p>The argument to this method must be one of the
+&lt;PotentialDiagnoses&gt; defined in the Sensor TechSpec and is
+enforced. This method causes a timestamp to be created.</p>
+<p>Relays cause transfer of the Diagnosis object to the Coordinator.
+Everything to do with the relays is transparent to the Defense
+(assuming it works properly).</p>
+<p>&nbsp;</p>
+<p>The diagnoses that can be made by the sensor provide information
+about the underlying state of the asset in some dimension (in the
+example, the Compromised dimension). Because sensors can make errors,
+these mappings are not necessarily 1:1. Below is an example:</p>
+<font face="Courier New" size="2">
+<p> &lt;Diagnoses&gt;</p>
+<p> &lt;WhenActualStateIs name="Yes" &gt;</p>
+<p> &lt;WillDiagnoseAs name="Secure" withProbability="0.4" /&gt;</p>
+<p> &lt;WillDiagnoseAs name="Compromised" withProbability="0.6" /&gt;</p>
+<p> &lt;/WhenActualStateIs &gt;</p>
+<p> &lt;WhenActualStateIs name="No" &gt;</p>
+<p> &lt;WillDiagnoseAs name="Secure" withProbability="0.9" /&gt;</p>
+<p> &lt;WillDiagnoseAs name="Compromised" withProbability="0.1" /&gt;</p>
+<p> &lt;/WhenActualStateIs &gt;</p>
+<p> &lt;WhenActualStateIs name="Isolated" &gt;</p>
+<p> &lt;WillDiagnoseAs name="Isolated" withProbability="1.0" /&gt;</p>
+<p> &lt;/WhenActualStateIs &gt;</p>
+<p> &lt;/Diagnoses&gt;</p>
+</font>
+<p>The meaning of this is that when the agent is actually Compromised
+("Yes"), that with probability= 0.4, the sensor will say the agent is
+Secure (a mistake) and with probability = 0.6 will say that the agent
+is Compromised (a correct diagnosis). The other cases are similar.</p>
+<ol>
+  <b><font face="Arial,Helvetica" color="#808080"><li>Actuator
+Implementation</li>
+  </font></b>
+</ol>
+<p>An Actuator is represented in the API by an <u>SampleAction</u>
+object, which <i>must</i> subclass <u>org.cougaar.coordinator.Action</u>.
+The actuator name for the ActuatorType as it appears in the
+SampleDefense_SampleActuator file must match the fully qualified
+classname (including path). E.g., </p>
+<font face="Courier New" size="2"></font>
+<p><font face="Courier New" size="2">&lt;ActuatorType name="</font><font
+ face="Courier New" size="2" color="#ff0000">org.cougaar.coordinator.examples.SampleDefense.SampleAction</font><font
+ face="Courier New" size="2">" </font></p>
+<p><font face="Courier New" size="2"> affectsAssetType="Agent" </font></p>
+<p><font face="Courier New" size="2">
+affectsStateDimension="Compromised" </font></p>
+<p><font face="Courier New" size="2"> actionType="CORRECTIVE"&gt;</font></p>
+<p>&nbsp;</p>
+<p>This part of the TechSpec also defines the asset type (in this case
+"agent" over which the actuator operates. The Defense should publish a
+SampleAction object for each agent under the jurisdiction of the
+Defense (e.g., each agent in the enclave on which the Defense can act).</p>
+<p>One of the possible actions that the SampleAction can perform is
+defined in the ActuatorTechSpec as follows:</p>
+<font face="Courier New" size="2"></font>
+<p><font face="Courier New" size="2"> &lt;</font><font
+ face="Courier New" size="2" color="#ff0000">Action
+name="Quarantine"&gt;</font></p>
+<font face="Courier New" size="2">
+<p> &lt;Description value="Quarantine the Agent so it can do no harm"
+/&gt;</p>
+<p> &lt;Transition WhenActualStateIs="Yes" EndStateWillBe="Isolated"
+IntermediateStateWillBe="Yes" &gt;</p>
+<p> &lt;OneTimeCost&gt;</p>
+<p> &lt;CPU intensity="MEDIUM" /&gt;</p>
+<p> &lt;Memory intensity="MEDIUM" /&gt;</p>
+<p> &lt;Time duration="10000" /&gt;</p>
+<p> &lt;/OneTimeCost&gt;</p>
+<p> &lt;ContinuingCost&gt;</p>
+<p> &lt;CPU intensity="MEDIUM" msgSizeFactor="TRUE" /&gt;</p>
+<p> &lt;Bandwidth intensity="MEDIUM" msgSizeFactor="TRUE" /&gt;</p>
+<p> &lt;/ContinuingCost&gt;</p>
+<p> &lt;/Transition&gt;</p>
+<p> &lt;Transition WhenActualStateIs="No" EndStateWillBe="Isolated"
+IntermediateStateWillBe="No" &gt;</p>
+<p> &lt;OneTimeCost&gt;</p>
+<p> &lt;CPU intensity="MEDIUM" /&gt;</p>
+<p> &lt;Memory intensity="MEDIUM" /&gt;</p>
+<p> &lt;Time duration="10000" /&gt;</p>
+<p> &lt;/OneTimeCost&gt;</p>
+<p> &lt;ContinuingCost&gt;</p>
+<p> &lt;CPU intensity="MEDIUM" msgSizeFactor="TRUE" /&gt;</p>
+<p> &lt;Bandwidth intensity="MEDIUM" msgSizeFactor="TRUE" /&gt;</p>
+<p> &lt;/ContinuingCost&gt;</p>
+<p> &lt;/Transition&gt;</p>
+<p> &lt;Transition WhenActualStateIs="Isolated"
+EndStateWillBe="Isolated" IntermediateStateWillBe="Isolated" &gt;</p>
+<p> &lt;OneTimeCost&gt;</p>
+<p> &lt;CPU intensity="MEDIUM" /&gt;</p>
+<p> &lt;Memory intensity="MEDIUM" /&gt;</p>
+<p> &lt;Time duration="10000" /&gt;</p>
+<p> &lt;/OneTimeCost&gt;</p>
+<p> &lt;ContinuingCost&gt;</p>
+<p> &lt;CPU intensity="MEDIUM" msgSizeFactor="TRUE" /&gt;</p>
+<p> &lt;Bandwidth intensity="MEDIUM" msgSizeFactor="TRUE" /&gt;</p>
+<p> &lt;/ContinuingCost&gt;</p>
+<p> &lt;/Transition&gt;</p>
+<p> &lt;/Action&gt;</p>
+<p>&nbsp;</p>
+</font>
+<p>This spec defines the action named "Quarantine" and describes what
+the action does as a set of state transitions over the possible states
+over which the actuator operates. The transitions also describe the
+costs associtaed with performing the transition.</p>
+<p>For implementing the Actuator API, the details of the state
+transitions are not necessary although they should be reviewed with us
+as a sanyity check on the TechSpec. What is important is the names of
+the actions that are defined for the Actuator. In this example, they
+are "Quarantine" and "Release" (not shown, but similar in structure). </p>
+<p>A SampleAction is constructed by:</p>
+<font face="Courier New" size="2">
+<p> public SampleAction(String assetName, ServiceBroker serviceBroker)</p>
+<p> throws TechSpecNotFoundException </p>
+<p> </p>
+<p> public SampleAction(String assetName, Set initialValuesOffered,
+ServiceBroker serviceBroker)</p>
+<p> throws IllegalValueException, TechSpecNotFoundException </p>
+</font>
+<p>&nbsp;</p>
+<p>The former creates a SampleDiagnosis in which no actions are
+ititially offered as being availble, while the latter allows a Set of
+offered actions to be provided. These must come from the actions
+defined in the TechSpec and are enforced.</p>
+<p>When an Actuator wishes to offer an action for selection by the
+Coordinator (i.e., is currently capable of performing the action if
+authorized by the Coordinator), it calls:</p>
+<dir>
+<dir>
+<dir><font face="Courier New" size="2">
+<p>protected void setValuesOffered(Set values) throws
+IllegalValueException </p>
+</font></dir>
+</dir>
+</dir>
+<p>As before, the values offered must correspond to thjose defined in
+the TechSpec (in this case "Quarantine" or "Release". An empty set is
+legitimate and means that NONE of the possible actions are currently
+offered.</p>
+<p>The Coordinator exercises control by providing a Set of "permitted
+actions" from the Set of offered actions. An empty Set is allowed and
+means that no actions are permitted. The permitted actions can be
+gotten by the Actuator using:</p>
+<font face="Courier New" size="2">
+<p> public Set getPermittedValues ( )</p>
+</font>
+<p>&nbsp;</p>
+<p>Actions can be enabled as a matter of course. In other words,
+actions can be "pre-authorized" so that an Actuator can take them
+whenever it cooses to do so. This is in addition to the case where
+actions are suppressed until explicitly authorized in response to a
+change in asset state. Which of these options is taken largely depends
+on whether the Actuator needs to respond quickly to a situation and
+whether the action being authorized is heavyweight. Expensive actions
+generally will not be pre-authorized.</p>
+<p>When an Actuator decides to take one of the permitted actions, it
+should make this known to the Coordinator by calling the following:</p>
+<dir>
+<dir>
+<dir><font face="Courier New" size="2">
+<p> protected void start(Object actionValue) throws
+IllegalValueException { </p>
+</font>
+<p>&nbsp;</p>
+</dir>
+</dir>
+</dir>
+<p>When an action completes, the Actuator should call one of the
+following:</p>
+<font face="Courier New" size="2">
+<p> protected void stop() throws NoStartedActionException </p>
+<p> </p>
+<p> protected void stop(CompletionCode completionCode) </p>
+<p> throws IllegalValueException, NoStartedActionException </p>
+</font>
+<p>These inform the Coordinator that the previous action has compleetd
+and sets a timestamp. The former just says that the action has
+completed, the latter allows the optional setting of a completion code.
+</p>
+</body>
+</html>
