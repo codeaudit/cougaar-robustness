@@ -35,4 +35,4 @@ set SOCKET=src\org\cougaar\core\mts\socket\*.java
 set ACKING=src\org\cougaar\core\mts\acking\*.java
 
 @echo on
-javac -deprecation -d lib -classpath %LIBPATHS% %MTS% %EMAIL% %UDP% %SOCKET% %ACKING% && jar cf %COUGAAR_INSTALL_PATH%\sys\msglog.jar -C lib ./org
+javac -deprecation -d lib -classpath %LIBPATHS% %MTS% %EMAIL% %UDP% %SOCKET% %ACKING% && jar cf %COUGAAR_INSTALL_PATH%\lib\Robustness_objs_msglog.jar -C lib ./org
