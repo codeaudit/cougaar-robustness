@@ -30,10 +30,15 @@
 
 package org.cougaar.mts.std;
 
+import java.io.Serializable;
 import java.util.Date;
+import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.Hashtable;
 import java.util.Vector;
 import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.util.log.Logger;
+import org.cougaar.util.log.Logging;
 
 /** 
  *  Store records of the activity of messages as they go thru the MessageTransport 
@@ -48,6 +53,8 @@ class MessageHistory
   static final sendsClass sends = new sendsClass();
   static final receivesClass receives = new receivesClass();
 
+  static final Logger log = Logging.getLogger(MessageHistory.class);
+
   public static class sendsClass
   {
     private static final Hashtable msgTable = new Hashtable();
@@ -60,6 +67,8 @@ class MessageHistory
       if (v == null) v = new Vector();
       else if (v.contains (rec)) return;  // no duplicates
       v.add (rec);
+      if (log.isDebugEnabled())
+	  log.debug("put: rec="+rec);
       if (v.size() > MAX_MESSAGE_HISTORY) v.remove (0); // delete the oldest
       msgTable.put (mkey, v);
 
@@ -190,8 +199,99 @@ class MessageHistory
       MessageHistory.SendRecord rec = getLastRecByTransportID (id);
       return (rec != null ? rec.success : false);
     }      
+
+    /*
+     *  Get a snapshot of the history of sends to each agent over each 
+     *  protocol over the previous millis milliseconds.
+     */
+    private static synchronized Hashtable snapshot (long millis) {
+        long start = System.currentTimeMillis() - millis;
+        Hashtable agentTbl = null;
+	Enumeration e = msgTable.elements();
+	while (e.hasMoreElements()) {
+	    Vector recs = (Vector)e.nextElement();
+	    AgentEntry agentEntry = null;
+	    boolean newAgentEntry = false;
+	    Iterator iter = recs.iterator();
+	    while (iter.hasNext()) {
+		SendRecord rec = (SendRecord)iter.next();
+		if (log.isDebugEnabled())
+		    log.debug("snapshot: rec="+rec);
+		if (rec.sendTimestamp >= start) {
+		    String dest = rec.destination.getAddress();
+		    if (agentTbl != null)
+			agentEntry = (AgentEntry)agentTbl.get(dest);
+		    if (agentEntry == null) {
+			agentEntry = new AgentEntry(dest);
+			newAgentEntry = true;
+		    }
+		    Hashtable protocolTbl = agentEntry.protocolTbl;
+		    int protocolID = rec.transportID;
+		    Integer pI = new Integer(protocolID);
+		    ProtocolEntry protocolEntry = 
+			(ProtocolEntry)protocolTbl.get(pI);
+		    if (protocolEntry == null) {
+			protocolEntry = new ProtocolEntry(protocolID); 
+			protocolTbl.put(pI, protocolEntry);
+		    }
+               	    ++protocolEntry.sends;
+                    if (rec.success) ++protocolEntry.successes;
+		}
+	    }
+	    if (newAgentEntry == true &&
+		agentEntry.protocolTbl.size() > 0) {
+		if (agentTbl == null) 
+		    agentTbl = new Hashtable();
+		agentTbl.put(agentEntry.agent,agentEntry);
+	    }
+	}
+	return agentTbl;
+    }
+
   }
 
+  public static synchronized Hashtable snapshotSendHistory (long millis) {
+      return sendsClass.snapshot(millis);
+  }
+      
+  public static class AgentEntry implements Serializable {
+      String agent;
+      Hashtable protocolTbl;
+      AgentEntry (String addr) {
+	  agent = addr;
+	  protocolTbl = new Hashtable();
+      }
+      public String toString () {
+	  return "<AgentEntry "+agent+","+protocolTbl+">";
+      }
+  }
+	  
+  public static class ProtocolEntry implements Serializable {
+      int protocolID;
+      String protocolName;
+      int sends;
+      int successes;
+      ProtocolEntry (int id) {
+	  protocolID = id;
+	  protocolName = AdaptiveLinkSelectionPolicy.getTransportName(id);
+      }
+      SuccessMetric getMetric () {
+	  return new SuccessMetric(protocolID, sends, successes);
+      }
+      public String toString () {
+	  return "<ProtocolEntry protocol="+protocolName+",sends="+sends+",successes="+successes+">";
+      }
+  }
+
+  public static class SuccessMetric implements Serializable {
+      int protocolID;
+      float successRate;
+      SuccessMetric(int prot, int sends, int successes) {
+	  protocolID = prot;
+	  successRate = ((float)successes)/sends;
+      }
+  }
+	  
   public static class receivesClass
   {
     private static final Hashtable msgTable = new Hashtable();

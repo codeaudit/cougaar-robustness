@@ -1781,9 +1781,19 @@ was new, now old; should be deleted soon
     return getTransportID (protocolClass.getName());
   }
 
+  private static final Hashtable idTbl = new Hashtable();
+
   public static int getTransportID (String protocolClassname)
   {
-    return protocolClassname.hashCode();
+    int id = protocolClassname.hashCode();
+    Integer idI = new Integer(id);
+    if (!idTbl.containsKey(idI))
+	idTbl.put(idI, protocolClassname);
+    return id;
+  }
+
+  public static String getTransportName (int id) {
+      return (String)idTbl.get(new Integer(id));
   }
 
   public static String getLinkLetter (DestinationLink link)
