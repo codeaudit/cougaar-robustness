@@ -91,7 +91,20 @@ public class SecurityAlertPlugin extends ComponentPlugin {
 
   public void execute() {
     Collection requests = opModes.getAddedCollection();
-    requests.addAll(opModes.getChangedCollection());
+    for (Iterator it = requests.iterator(); it.hasNext();) {
+      Object o = it.next();
+      if(o instanceof InterAgentOperatingMode) {
+        InterAgentOperatingMode iaom = (InterAgentOperatingMode) o;
+        generateSecurityAlert(iaom);
+      }
+      if(o instanceof InterAgentCondition) {
+        InterAgentCondition iac = (InterAgentCondition) o;
+        InterAgentOperatingMode iaom = new InterAgentOperatingMode(iac.getName(), iac.getAllowedValues(), iac.getValue());
+        iaom.setUID(iac.getUID());
+        generateSecurityAlert(iaom);
+      }
+    }
+    requests= opModes.getChangedCollection();
     for (Iterator it = requests.iterator(); it.hasNext();) {
       Object o = it.next();
       if(o instanceof InterAgentOperatingMode) {
