@@ -1,0 +1,31 @@
+####################################################
+# Rule to insert components required for
+# Adaptive Robustness Use-Case 4 (ARUC4) defense
+####################################################
+
+threatalert_service = "org.cougaar.tools.robustness.threatalert.ThreatAlertServiceComponent"
+threatalert_servlet = "org.cougaar.tools.robustness.threatalert.ThreatAlertServlet"
+
+#
+# Add components to management agents
+#
+society.each_agent do |agent|
+  if agent.name =~ /.*ARManager.*/          # only apply to robustness managers
+    agent.add_component do |c|
+      c.classname = threatalert_service
+    end
+    agent.add_component do |c|
+      c.classname = threatalert_servlet
+    end
+  end
+end
+
+# Add components to Nodes
+society.each_node_agent do |node_agent|
+  node_agent.add_component do |c|
+    c.classname = threatalert_service
+  end
+  node_agent.add_component do |c|
+    c.classname = threatalert_servlet
+  end
+end
