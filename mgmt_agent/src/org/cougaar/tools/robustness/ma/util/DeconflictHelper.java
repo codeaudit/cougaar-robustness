@@ -279,6 +279,7 @@ public class DeconflictHelper extends BlackboardClientComponent {
         /*fireLater(new RestartDefenseCondition(defenseName + ":" + agents[i], DefenseConstants.BOOL_FALSE));
         fireLater(new RestartDefenseEnabler(defenseName + ":" + agents[i]));
         fireLater(new RestartMonitoringEnabler(defenseName + ":" + agents[i]));*/
+        agentsObjs.add(agents[i]);
       }
     }
   }
