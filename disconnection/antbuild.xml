@@ -7,6 +7,8 @@
 <property name="cougaar" value="${env.COUGAAR_INSTALL_PATH}"/>
     
 	<path id="cougaar.libs">
+		<pathelement location="/var/www/html/jars/Robustness_objs_common_HEAD_B10_4_1BETA.jar"/>
+		<pathelement location="/var/www/html/jars/Robustness_objs_Deconfliction_HEAD_B10_4_1BETA.jar"/>
 		<fileset dir="${cougaar}/lib">
 			<include name="**/*.jar"/>
 		</fileset>
@@ -40,17 +42,21 @@
 		<antcall target="delete"/>
 		<antcall target="compile"/>
 		<antcall target="jar"/>
-		<signjar jar="${jar}" keystore="signingCA.keystore" alias="privileged" storepass="keystore"/>
-                <move file="${jar}" todir="${cougaar}/lib"/>
+		<signjar jar="${jar}" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
+   	<move file="${jar}" todir="staging/lib"/>
+    <copy todir="staging/csmart">
+      <fileset dir="csmart/"/>
+    </copy>
+    <zip zipfile="AR_objs_disconnection.zip" basedir="staging"/>
 	</target>
 
 	<target name="clean" depends="delete,compile,jar"/>
     
-        <target name="jarNMove">
+	<target name="jarNMove">
 		<antcall target="jar"/>
 		<signjar jar="${jar}" keystore="signingCA.keystore" alias="privileged" storepass="keystore"/>
-                <move file="${jar}" todir="${cougaar}/lib"/>
-        </target>
+ 		<move file="${jar}" todir="${cougaar}/lib"/>
+   </target>
         
 </project>
 
