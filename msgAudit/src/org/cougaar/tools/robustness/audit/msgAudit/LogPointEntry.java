@@ -69,6 +69,9 @@ public class LogPointEntry {
         }
     }
 
+    public void setDest(String _to) { to = _to; }
+    public void setFrom(String _from) { from = _from; }
+    
     public String dest() { return to; }
     public String from() { return from; }
     public int seqNumber() { return seqNum; }

@@ -377,9 +377,9 @@ class MessageTableModel extends AbstractTableModel
         static final String GOT_IT     = "[X]";
     
 	public static final ColumnData m_columns[] = {
-		new ColumnData( "Destination Agent", 180, JLabel.LEFT ),
-		new ColumnData( "Send Vector", 250, JLabel.CENTER ),
-		new ColumnData( "Recv Vector", 250, JLabel.CENTER ),
+		new ColumnData( "Destination Agent", 340, JLabel.LEFT ),
+		new ColumnData( "Send Vector", 170, JLabel.CENTER ),
+		new ColumnData( "Recv Vector", 170, JLabel.CENTER ),
 		new ColumnData( "OK", 30, JLabel.CENTER ),
 	};
 

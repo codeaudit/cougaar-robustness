@@ -50,8 +50,11 @@ public class TrafficAuditor {
     //Store for problems during analysis
     private XMLMessageProblems problems; 
     
-    private static Category log;
-    public static Category logger() { return log; }
+    private ProblemMessageManager pmm = null;
+    private EventQueueProcessor qProcessor = null;
+    
+    private static Logger log;
+    public static Logger logger() { return log; }
     
     //Ptr to TrafficAuditor
     TrafficAuditor auditor;
@@ -193,14 +196,14 @@ public class TrafficAuditor {
         //**************************
         
         //Set logging level
-        log = Category.getInstance("LogPointAnalyzer");
+        log = Logger.getLogger("LogPointAnalyzer");
         log.addAppender(new ConsoleAppender(new SimpleLayout()));
-        Priority p = Priority.toPriority(logLevel);
+        Level p = Level.toLevel(logLevel);
         if (p == null) {
             System.out.println("** Logging Level does not exist: " + logLevel);
-            p = Priority.toPriority(DEFAULT_LOG_LEVEL);
+            p = Level.toLevel(DEFAULT_LOG_LEVEL);
         }
-        log.setPriority(p);
+        log.setLevel(p);
         
         //Validate config file
         if (configFile == null) {
@@ -256,8 +259,11 @@ public class TrafficAuditor {
         //Display GUI
         agentSummaryGUI.show();
 
+        //Init ProblemMessageManager
+        pmm = new ProblemMessageManager(this, agentMgmt, agentSummaryGUI);
+        
         //init queue processing
-        EventQueueProcessor qProcessor = new EventQueueProcessor(eq, logPointMgmt, agentMgmt);
+        qProcessor = new EventQueueProcessor(eq, logPointMgmt, agentMgmt, pmm);
         new Thread(qProcessor).start();        
         
         //init socket manager
@@ -266,8 +272,25 @@ public class TrafficAuditor {
         
     }
     
+    /** 
+     * Return the LogPointVectorMgmt
+     */
     public LogPointVectorMgmt getLogPointMgmt() { return logPointMgmt; }
-    
+
+    /** 
+     * Return the ProblemMessageManager
+     */
+    public ProblemMessageManager getProblemMsgMgr() { return pmm; }
+     
+
+    /** 
+     * Return the EventQueueProcessor
+     */
+    public EventQueueProcessor getQueueProcessor() { return qProcessor; }
+
+    /**
+     * Code to process logs via log files & not via streaming sockets
+     */
     void processViaConsole(ConfigData _cd, Agents _agents, File _out) {
 
         //Step 1. Identify & extract all LogPoint msgs

@@ -44,14 +44,16 @@ public class AgentMgmt {
         logPointMgmt = _logpointMgmt;
         logPointMgmt.registerAgentMgmt(this);
         gui = _gui;
-        agents = new Vector(200);
+        agents = new Vector(200, 50);
     }
 
-    
+    /**
+     * Iterator of all agents
+     */
     public Iterator agents() { return agents.iterator(); }
 
     
-    /* 
+    /** 
      * @return Returns a new agent if agent not found
      */
     public AgentData createAgent(String _name) {
@@ -73,7 +75,7 @@ public class AgentMgmt {
         }
     }
 
-    /* 
+    /**
      * @return Returns null if agent not found 
      */
     public AgentData lookupAgent(String _name) {
@@ -104,6 +106,24 @@ public class AgentMgmt {
                 return agent;
         }
         return null;        
+    }
+
+    /*
+     * @return Vector of agents that match (on agent name only) the provided substring.
+     * Returns ALL agents found
+     */
+    public Vector lookupAllAgentNameSubstring(String _name) {
+     
+        Iterator iter = agents();
+        AgentData agent = null;
+        Vector found = new Vector();
+        
+        while (iter.hasNext()) {
+            agent = (AgentData)iter.next();
+            if (agent.name().indexOf(_name)>=0)
+                found.add(agent);
+        }
+        return found;        
     }
     
     /* 

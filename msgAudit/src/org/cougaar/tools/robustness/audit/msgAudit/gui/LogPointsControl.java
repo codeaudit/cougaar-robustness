@@ -238,7 +238,6 @@ public class LogPointsControl extends javax.swing.JFrame {
                     LogLevelsTableModel.m_columns[k].width,
                     renderer, editor);
             recvLogPointsTable.addColumn(column);
-            System.out.println("**Added send column - " + column);
         }
         
         //JTableHeader header = messageTable.getTableHeader();

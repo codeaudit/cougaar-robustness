@@ -373,6 +373,7 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
     return createAuditData(tag, msg, sendp, null, null);
   }
 
+  static int test =1;
   /*
    * @param tag The overall XML tag used to bound this event data
    * @param msg The attributed message
@@ -388,18 +389,25 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
 
 	String to   = null;
 
+String t="";        
 	if (sendp) { //Get Sender data
            to = toAgent.toString();
+t=to;           
 	} else { //This is an incoming msg - Grab node/incarnation # for sender from msg
             try {
                 AgentID agent = AgentID.getAgentID (this, this.getServiceBroker(), toAgent);
                 to = agent.getNodeName() + "." + agent.getAgentName() + "." + agent.getAgentIncarnation();          
+t=agent.getAgentName() ;                
             } catch (NameLookupException nle) {
-                to = "NameLookupException_for_"+toAgent;
+                to = "NameLookupException."+toAgent;
             } catch (Exception e) {
                 to = e.toString()+toAgent;
             }
 	}
+        
+        if (test == 20) { to = "NULL."+t+".NULL"; }
+        if (test == 40) { to = "NameLookupException."+t; }
+        test++;
 
         String from = (String)msg.getAttribute(Constants.AUDIT_ATTRIBUTE_FROM_NODE) + "." + 
  	  fromAgent + "." + 
@@ -410,7 +418,9 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
         numS = (num==null)? "null" : num.toString(); //num HAS been null before **
 
         String msgtype = (String) msg.getAttribute (org.cougaar.core.mts.Constants.MSG_TYPE);
-        
+        if (msgtype == null) {
+            msgtype = "UNTYPED";
+        }
         String[] data = {"TYPE", "TRAFFIC_EVENT", "lpName", tag, "time", ""+now(), "from", from, "to", to, "num", numS, "msgtype", msgtype };
         return new LogEventWrapper(log, LoggingService.DEBUG, data, null, "LP");
   }

@@ -47,7 +47,7 @@ public class EventProcessingAppender extends org.apache.log4j.AppenderSkeleton {
         ///log = LogPointAnalyzer.TrafficAuditor.logger();
         log = Category.getInstance("LogPointAnalyzer");
         log.addAppender(new ConsoleAppender(new SimpleLayout()));
-        Priority p = Priority.toPriority("INFO");
+        Level p = Level.toLevel("INFO");
         
         System.out.println("Initializing EventProcessingAppender: log is " + log);
         processors = new Hashtable(); 
