@@ -200,8 +200,6 @@ public class HealthMonitorPlugin extends SimplePlugin implements
    */
   protected void setupSubscriptions() {
 
-    String value = System.getProperty("org.cougaar.community.caching");
-
     // Setup logger
     log =  (LoggingService) getBindingSite().getServiceBroker().
       getService(this, LoggingService.class, null);
@@ -282,12 +280,12 @@ public class HealthMonitorPlugin extends SimplePlugin implements
    * Robustness community thats being monitored.  This roster will be
    * automatically updated by the CommunityPlugin when changes to community
    * membership occur.
-   * @param communityName Name of community to be monitored
+   * @param String communityName Community to Monitor
    */
   private void sendRosterRequest(String communityName) {
     CommunityRequest cr = new CommunityRequestImpl();
     cr.setVerb("GET_ROSTER_WITH_UPDATES");
-    cr.setTargetCommunityName(communityToMonitor);
+    cr.setTargetCommunityName(communityName);
     bbs.publishAdd(cr);
   }
 
@@ -1214,7 +1212,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     while (!sb.hasService(CommunityService.class)) {
       // Print a message after waiting for 30 seconds
       if (++counter == 60) log.info("Waiting for CommunityService ... ");
-      try { Thread.sleep(500); } catch (Exception ex) {}
+      try { Thread.sleep(500); } catch (Exception ex) {log.error(ex.getMessage());}
     }
     return (CommunityService)sb.getService(this, CommunityService.class, null);
   }
@@ -1228,7 +1226,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     while (!sb.hasService(TopologyReaderService.class)) {
       // Print a message after waiting for 30 seconds
       if (++counter == 60) log.info("Waiting for TopologyReaderService ... ");
-      try { Thread.sleep(500); } catch (Exception ex) {}
+      try { Thread.sleep(500); } catch (Exception ex) {log.error(ex.getMessage());}
     }
     return (TopologyReaderService)sb.getService(this, TopologyReaderService.class, null);
   }

@@ -333,24 +333,6 @@ public class DecisionPlugin extends SimplePlugin {
     bbs.publishAdd(ac);
   }
 
-  /**
-   * Kills an agent.
-   * @param agent  MessageAddress of agent to be killed
-   */
-  private void killAgent(MessageAddress agent, MessageAddress node) {
-    Object ticketId = mobilityFactory.createTicketIdentifier();
-    RemoveTicket removeTicket =
-      new RemoveTicket(ticketId, agent, node);
-
-    UID acUID = getUIDService().nextUID();
-    agentControlUIDs.add(acUID);
-    AgentControl ac =
-      mobilityFactory.createAgentControl(acUID, node, removeTicket);
-
-    if (log.isDebugEnabled())
-      log.debug("Publishing AgentControl(RemoveTicket) for mobility: " + ac);
-    bbs.publishAdd(ac);
-  }
 
   protected void addAgent(String newAgent, String destNode) {
 

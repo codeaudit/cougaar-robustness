@@ -139,7 +139,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
     StringBuffer startMsg = new StringBuffer();
     startMsg.append("RestartLocatorPlugin started: ");
     startMsg.append(paramsToString());
-    log.debug(startMsg.toString());
+    log.info(startMsg.toString());
 
   }
 
@@ -536,15 +536,14 @@ public class RestartLocatorPlugin extends SimplePlugin {
     //  Collection specifiedNodes = new Vector();
     //  StringTokenizer st = new  StringTokenizer(specifiedRestartNodes, " ");
     //  while (st.hasMoreTokens()) specifiedNodes.add(st.nextToken());
-    //Collection candidateNodes = getSpecifiedNodes();
-    //candidateNodes.addAll(nodes.keySet());
-    //selectedNodes = selectNodes(candidateNodes, excludedAgents, excludedNodes, excludedHosts);
-    Collection specifiedNodes = getSpecifiedNodes();
-    if (specifiedNodes.size() > 0) {
-      selectedNodes = selectNodes(specifiedNodes, excludedAgents, excludedNodes, excludedHosts);
-    } else {
-      selectedNodes = selectNodes(nodes.keySet(), excludedAgents, excludedNodes, excludedHosts);
-    }
+    Collection candidateNodes = getSpecifiedNodes();
+    candidateNodes.addAll(nodes.keySet());
+    selectedNodes = selectNodes(candidateNodes, excludedAgents, excludedNodes, excludedHosts);
+    //if (specifiedNodes.size() > 0) {
+    //  selectedNodes = selectNodes(specifiedNodes, excludedAgents, excludedNodes, excludedHosts);
+    //} else {
+    //  selectedNodes = selectNodes(nodes.keySet(), excludedAgents, excludedNodes, excludedHosts);
+    //}
     log.debug("SelectedNodes=" + selectedNodes);
     for (Iterator it = selectedNodes.iterator(); it.hasNext();) {
       Destination dest = new Destination();
@@ -575,36 +574,6 @@ public class RestartLocatorPlugin extends SimplePlugin {
     }
     sb.append("]");
     return sb.toString();
-  }
-
-  /**
-   * Select a destination host for restarting/moving an agent or node.
-   * @param excludedHosts  Collection of host names that should not be
-   *                       considered as a possible destination
-   * @return               Collection of Destination objects
-   */
-  private Collection selectDestinationHosts(Collection excludedHosts) {
-    List destinations = new Vector();
-    Collection selectedHosts = new Vector();
-    if (specifiedHosts.size() > 0) {
-      selectedHosts = selectHosts(specifiedHosts, excludedHosts);
-    } else {
-      selectedHosts = selectHosts(hosts.keySet(), excludedHosts);
-    }
-    int nodeCount = -1;
-    String hostName = null;
-    for (Iterator it = selectedHosts.iterator(); it.hasNext();) {
-      Destination dest = new Destination();
-      dest.host = (String)it.next();
-      Collection nodeNames = (Collection)hosts.get(dest.host);
-      for (Iterator it1 = nodeNames.iterator(); it1.hasNext();) {
-        Collection agents = (Collection)nodes.get((String)it1.next());
-        dest.numAgents += (agents == null) ? 0 : agents.size();
-      }
-      destinations.add(dest);
-    }
-    Collections.sort(destinations);
-    return destinations;
   }
 
 
