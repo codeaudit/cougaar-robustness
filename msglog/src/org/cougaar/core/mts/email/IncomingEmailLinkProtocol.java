@@ -199,9 +199,14 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
       {
         if (MailMan.checkMailBoxAccess (inboxes[i]) == false)
         {
-          log.error ("ALERT: Is your mail server up?  Unable to access mail server: " + 
-                     inboxes[i].toStringDiscreet());
-          continue;
+          if (log.isWarnEnabled()) 
+          {
+            log.warn 
+            (
+              "ALERT: Is your mail server up?  Unable to access mail server: " + 
+              inboxes[i].toStringDiscreet()
+            );
+          }
         }
 
         messageIn = new MessageInThread (inboxes[i]);  // actually a Runnable

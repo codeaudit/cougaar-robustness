@@ -1330,6 +1330,8 @@ if (rn != null) rns = "" + rn;
 
   private Hashtable getLinkSelections (String targetNode)
   {
+    if (targetNode == null) return null;
+
     synchronized (linkSelectionTable)
     {
       return (Hashtable) linkSelectionTable.get (targetNode);

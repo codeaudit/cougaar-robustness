@@ -178,9 +178,15 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     {
       if (MailMan.checkMailServerAccess (outbox) == false)
       {
-        log.error ("ALERT: Is your mail server up?  Unable to access mail server: " +
-                   outbox.toStringDiscreet());
-        return false;
+        if (log.isWarnEnabled())
+        {
+          log.warn 
+          (
+            "ALERT: Is your mail server up?  Unable to access mail server: " +
+            outbox.toStringDiscreet()
+          );
+        }
+return false;
       }
 
       messageOut = createMessageOutStream (outbox);
