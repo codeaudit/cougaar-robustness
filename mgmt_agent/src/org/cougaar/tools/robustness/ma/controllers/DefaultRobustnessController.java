@@ -844,9 +844,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
           deadNodes.remove(name);
         }
       }
-    }
-    if (didRestart && getState(name) == -1 && !suppressPingsOnRestart) {
-      newState(name, HEALTH_CHECK);
+      if (didRestart && getState(name) == -1 && !suppressPingsOnRestart) {
+        newState(name, HEALTH_CHECK);
+      }
     }
   }
 
