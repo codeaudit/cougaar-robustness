@@ -52,7 +52,7 @@ public class RestartDestinationLocator {
     Hashtable temp = new Hashtable();
     for (Iterator it = candidateNodes.iterator(); it.hasNext();) {
       String candidate = (String)it.next();
-      int agentsOnNode = model.agentsOnNode(candidate).length;
+      int agentsOnNode = model.entitiesAtLocation(candidate).length;
       if(logger.isDebugEnabled())
         logger.debug("agents on node: " + candidate + "  " + agentsOnNode);
       if(restartAgents.containsKey(candidate)){
