@@ -582,7 +582,8 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                             TestAction ta = (TestAction)a;
                             try {
                                ta.stop(cc);
-                            } catch (NoStartedActionException ive) {
+                            } catch (NoStartedActionException nsae) {
+                            } catch (IllegalValueException ive) {
                             }
                         }                        
                         break;
@@ -594,7 +595,8 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                             TestAction ta = (TestAction)a;
                             try {
                                ta.stop(cc);
-                            } catch (NoStartedActionException ive) {
+                            } catch (NoStartedActionException nsae) {
+                            } catch (IllegalValueException ive) {
                             }
                         }
                         break;
@@ -625,7 +627,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             out.println("<a href=\"DiagnosisMonitorServlet\">Diagnoses</a>");
             if (wasUpdated) {
                 if (updateResult == null) {
-                    out.println("<p><b>Object Updated.</b><p>");
+                   ///// out.println("<p><b>Object Updated.</b><p>");
                 } else {
                     out.println("<p><b>Update Error: "+updateResult+"</b><p>");
                 }
@@ -864,7 +866,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                 out.println("   <input type=hidden name=\"NAMEFORMAT\" value=\""+nameformat+"\" >");
                 out.println("   <input type=hidden name=\"FILTER\" value=\""+actiondataFilter+"\" >");
                 out.println("   <input type=hidden name=\"ASSETFILTER\" value=\""+assetFilter+"\" >");
-                out.println("   <br><input type=submit name=\"STARTACTION\" value=\"Start\" size=15 ");
+                out.println("<br><input type=submit name=\"STARTACTION\" value=\"Start\" size=15 ");
                 out.print("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: blue; font-size: 6pt;\">");
                 out.println("   <input type=submit name=\"STOPACTION\" value=\"Stop\" size=15 ");
                 out.print("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: blue; font-size: 6pt;\">");
@@ -950,22 +952,22 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
         private void generateAssetSelect(PrintWriter out, int refresh, String nameformat, String actiondataFilter, String assetFilter) {
 
             out.print("    <form clsname=\"ASSETFILTER\" method=\"get\" >" );
+            out.println("    <input type=submit name=\"Submit\" value=\"Show Asset:\" size=15 ");
+            out.println("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: blue; font-size: 6pt;\">");
             out.print("    <SELECT  NAME=\"ASSETFILTER\" size=\"1\" ");
             out.print("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: red; font-size: 8pt;\">\n");            
             Iterator iter = assetNames.iterator();
             String str;
             while (iter.hasNext()) {
                 str = iter.next().toString();
-                out.print("        <OPTION value=\""+ str +"\" UNSELECTED />" + str + "\n");
+                out.print("        <OPTION value=\""+ str +"\" "+(assetFilter.equals(str)?"":"UN")+"SELECTED />" + str + "\n");
             }
-            out.print("        <OPTION value=\"ALL\" UNSELECTED />ALL\n");
+            out.print("        <OPTION value=\"ALL\" "+(assetFilter.equals("ALL")?"":"UN")+"SELECTED />ALL\n");
             out.print("   </SELECT>\n");            
                 out.println("   <input type=hidden name=\"REFRESH\" value=\""+refresh+"\" >");
                 out.println("   <input type=hidden name=\"NAMEFORMAT\" value=\""+nameformat+"\" >");
                 out.println("   <input type=hidden name=\"FILTER\" value=\""+actiondataFilter+"\" >");
-                out.println("   <input type=hidden name=\"ASSETFILTER\" value=\""+assetFilter+"\" >");
-            out.println("   <input type=submit name=\"Submit\" value=\"Set Value\" size=15 ");
-            out.println("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: blue; font-size: 6pt;\">");
+                //out.println("   <input type=hidden name=\"ASSETFILTER\" value=\""+assetFilter+"\" >");
             out.println("   \n</form>");
             
         }
