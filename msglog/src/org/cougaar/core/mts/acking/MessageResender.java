@@ -411,7 +411,8 @@ class MessageResender implements Runnable
           
 	  msg.removeAttribute(MessageAttributes.IS_STREAMING_ATTRIBUTE); //B1041
 	  msg.removeAttribute(MessageAttributes.ENCRYPTED_SOCKET_ATTRIBUTE); //B1041
-	  msg.removeAttribute(FILTERS_ATTRIBUTE); //B1041
+	  //B1045 msg.removeAttribute(FILTERS_ATTRIBUTE); //B1041
+        msg.setAttribute(FILTERS_ATTRIBUTE, new ArrayList()); //B1045
 
           //if (debug()) {
           //    Attributes attrs = msg.cloneAttributes();
