@@ -374,7 +374,7 @@ module Cougaar
       end
     end
 
-    class ReaffiliationNotification < Cougaar::Action
+    class ChangeCommunityAffiliation < Cougaar::Action
       def initialize(run, target, oldComm, newComm)
         super(run)
         @target = target
