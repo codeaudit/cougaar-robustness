@@ -24,6 +24,8 @@ public interface HeartbeatListener {
 
   public void heartbeatStarted(String agentName);
 
+  public void heartbeatStopped(String agentName);
+
   public void heartbeatFailure(String agentName);
 
 }

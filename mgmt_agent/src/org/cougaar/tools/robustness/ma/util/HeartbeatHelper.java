@@ -31,10 +31,7 @@ import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.SchedulerService;
-import org.cougaar.core.service.ThreadService;
 import org.cougaar.core.service.UIDService;
-
-import org.cougaar.core.thread.Schedulable;
 
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.component.ServiceBroker;
@@ -52,6 +49,7 @@ import org.cougaar.util.UnaryPredicate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +65,11 @@ public class HeartbeatHelper extends BlackboardClientComponent {
 
   public static final int SUCCESS = 0;
   public static final int FAIL = 1;
+  public static final int START = 0;
+  public static final int STOP = 1;
 
+  private List heartbeatRequestQueue = new ArrayList();
+  private Map heartbeatRequests = Collections.synchronizedMap(new HashMap());
   private List myUIDs = new ArrayList();
   private LoggingService logger;
   private UIDService uidService = null;
@@ -75,7 +77,7 @@ public class HeartbeatHelper extends BlackboardClientComponent {
   private List listeners = new ArrayList();
   private SensorFactory sensorFactory;
 
-  private IncrementalSubscription heartbeatRequests;
+  private IncrementalSubscription heartbeatRequestSub;
   private UnaryPredicate heartbeatRequestPredicate = new UnaryPredicate() {
     public boolean execute(Object o) {
       if (o instanceof HeartbeatRequest) {
@@ -135,7 +137,7 @@ public class HeartbeatHelper extends BlackboardClientComponent {
 
   public void setupSubscriptions() {
     // Subscribe to HeartbeatRequests to receive heartbeat status
-    heartbeatRequests =
+    heartbeatRequestSub =
       (IncrementalSubscription)blackboard.subscribe(heartbeatRequestPredicate);
     // Subscribe to HeartbeatHealthReports to receive notification of failed
     // heartbeats
@@ -145,16 +147,23 @@ public class HeartbeatHelper extends BlackboardClientComponent {
 
   public void execute() {
     // Get HeartbeatRequests
-    for (Iterator it = heartbeatRequests.getChangedCollection().iterator(); it.hasNext();) {
+    for (Iterator it = heartbeatRequestSub.getChangedCollection().iterator(); it.hasNext();) {
       HeartbeatRequest hbr = (HeartbeatRequest) it.next();
       int status = hbr.getStatus();
       if (status == HeartbeatRequest.ACCEPTED) {
+        heartbeatRequests.put(hbr.getTarget(), hbr);
         heartbeatsStarted(hbr.getTarget());
       } else if (status == HeartbeatRequest.FAILED || status == HeartbeatRequest.REFUSED) {
         logger.info("Heartbeat request failed: agent=" + hbr.getTarget() +
                     " status=" + hbr.statusToString(hbr.getStatus()));
         heartbeatFailure(hbr.getTarget());
       }
+    }
+
+    for (Iterator it = heartbeatRequestSub.getRemovedCollection().iterator(); it.hasNext();) {
+      HeartbeatRequest hbr = (HeartbeatRequest) it.next();
+      heartbeatRequests.remove(hbr.getTarget());
+      heartbeatsStopped(hbr.getTarget());
     }
 
     // Get HeartbeatHealthReports
@@ -177,29 +186,17 @@ public class HeartbeatHelper extends BlackboardClientComponent {
                               final long hbFrequency,
                               final long hbTimeout,
                               final long pctOutOfSpec) {
-    ThreadService ts =
-        (ThreadService) getServiceBroker().getService(this, ThreadService.class, null);
-    Schedulable heartbeatThread = ts.getThread(this, new Runnable() {
-      public void run() {
-        logger.debug("Starting heartbeats:" +
-                    " agent=" + agentName);
-        MessageAddress target = SimpleMessageAddress.getMessageAddress(agentName);
-        HeartbeatRequest hbr =
-            sensorFactory.newHeartbeatRequest(agentId,
-                                              target,
-                                              hbrTimeout,
-                                              hbFrequency,
-                                              hbTimeout,
-                                              true,
-                                              pctOutOfSpec);
-        myUIDs.add(hbr.getUID());
-        blackboard.openTransaction();
-        blackboard.publishAdd(hbr);
-        blackboard.closeTransaction();
-      }
-    }, "HeartbeatThread");
-    getServiceBroker().releaseService(this, ThreadService.class, ts);
-    heartbeatThread.start();
+    fireLater(new QueueEntry(START,
+                             MessageAddress.getMessageAddress(agentName),
+                             hbrTimeout,
+                             hbFrequency,
+                             hbTimeout,
+                             pctOutOfSpec));
+  }
+
+  public void stopHeartbeats(final String agentName) {
+    fireLater(new QueueEntry(STOP,
+                             MessageAddress.getMessageAddress(agentName)));
   }
 
   /**
@@ -237,5 +234,83 @@ public class HeartbeatHelper extends BlackboardClientComponent {
         HeartbeatListener hbl = (HeartbeatListener)it.next();
         hbl.heartbeatStarted(agent.toString());
       }
+  }
+
+  private void heartbeatsStopped(MessageAddress agent) {
+    logger.debug("Heartbeats stopped: agent=" + agent);
+      for (Iterator it = listeners.iterator(); it.hasNext(); ) {
+        HeartbeatListener hbl = (HeartbeatListener)it.next();
+        hbl.heartbeatStopped(agent.toString());
+      }
+  }
+
+
+  protected void fireLater(QueueEntry qe) {
+    synchronized (heartbeatRequestQueue) {
+      heartbeatRequestQueue.add(qe);
+    }
+    if (blackboard != null) {
+      blackboard.signalClientActivity();
+    }
+  }
+
+  private void fireAll() {
+    int n;
+    List l;
+    synchronized (heartbeatRequestQueue) {
+      n = heartbeatRequestQueue.size();
+      if (n <= 0) {
+        return;
+      }
+      l = new ArrayList(heartbeatRequestQueue);
+      heartbeatRequestQueue.clear();
+    }
+    for (int i = 0; i < n; i++) {
+      QueueEntry qe = (QueueEntry) l.get(i);
+      if (qe.action == START) {
+        HeartbeatRequest hbr =
+            sensorFactory.newHeartbeatRequest(agentId,
+                                              qe.agent,
+                                              qe.hbrTimeout,
+                                              qe.hbFrequency,
+                                              qe.hbTimeout,
+                                              true,
+                                              qe.pctOutOfSpec);
+        myUIDs.add(hbr.getUID());
+        blackboard.publishAdd(hbr);
+      } else {  // Stop heartbeats
+        HeartbeatRequest hbr = (HeartbeatRequest)heartbeatRequests.get(qe.agent);
+        if (hbr != null) {
+          blackboard.publishRemove(hbr);
+        }
+      }
+    }
+  }
+
+  static class QueueEntry {
+    int action;
+    MessageAddress agent;
+    long hbrTimeout;
+    long hbFrequency;
+    long hbTimeout;
+    long pctOutOfSpec;
+    QueueEntry(int action,
+               MessageAddress agent) {
+      this.action = action;
+      this.agent = agent;
+    }
+    QueueEntry(int action,
+               MessageAddress agent,
+               long hbrTimeout,
+               long hbFrequency,
+               long hbTimeout,
+               long pctOutOfSpec) {
+      this.action = action;
+      this.agent = agent;
+      this.hbrTimeout = hbrTimeout;
+      this.hbFrequency = hbFrequency;
+      this.hbTimeout = hbTimeout;
+      this.pctOutOfSpec = pctOutOfSpec;
+    }
   }
 }
