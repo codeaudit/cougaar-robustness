@@ -80,6 +80,7 @@ public class SampleActuator extends ComponentPlugin
 	    action = new SampleAction(agentId.toString(), initialValuesOffered, sb);
 	    blackboard.publishAdd(action);
 	    if (log.isDebugEnabled()) log.debug(action + " added.");
+	    if (log.isDebugEnabled()) log.debug(action.dump());
 	    data = new SampleRawActuatorData(agentId.toString(), action.getPossibleValues());
 	    blackboard.publishAdd(data);
 	    if (log.isDebugEnabled()) log.debug(data + " added.");	
@@ -105,6 +106,7 @@ public class SampleActuator extends ComponentPlugin
 			blackboard.publishChange(action);
 			if (log.isDebugEnabled()) 
 			    log.debug(action + " changed.");
+			if (log.isDebugEnabled()) log.debug(action.dump());
 		    } catch (IllegalValueException e) {
 			log.error("Illegal value in valuesOffered = "+valuesOffered,e);	
 		    }
@@ -116,6 +118,7 @@ public class SampleActuator extends ComponentPlugin
 			blackboard.publishChange(action);
 			if (log.isDebugEnabled()) 
 			    log.debug(action + " changed.");
+			if (log.isDebugEnabled()) log.debug(action.dump());
 		    } catch (IllegalValueException e) {
 			log.error("Illegal actionValue = "+actionValue,e);	
 		    }	
@@ -128,6 +131,7 @@ public class SampleActuator extends ComponentPlugin
 			blackboard.publishChange(action);
 			if (log.isDebugEnabled()) 
 			    log.debug(action + " changed.");
+			if (log.isDebugEnabled()) log.debug(action.dump());
 		    } catch (IllegalValueException e) {
 			log.error("Illegal completion code = "+code,e);	
 		    } catch (NoStartedActionException e) {

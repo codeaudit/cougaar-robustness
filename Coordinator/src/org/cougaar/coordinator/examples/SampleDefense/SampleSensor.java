@@ -65,6 +65,7 @@ public class SampleSensor extends ComponentPlugin
 	    blackboard.publishAdd(diagnosis);
 	    if (log.isDebugEnabled()) 
 		log.debug(diagnosis + " added.");
+	    if (log.isDebugEnabled()) log.debug(diagnosis.dump());
 	    SampleRawSensorData data = new SampleRawSensorData(diagnosis.getAssetName(),
 								 diagnosis.getPossibleValues(),
 								 diagnosis.getValue());
@@ -89,6 +90,7 @@ public class SampleSensor extends ComponentPlugin
 		    blackboard.publishChange(diagnosis);
 		    if (log.isDebugEnabled()) 
 			log.debug(diagnosis + " changed.");
+		    if (log.isDebugEnabled()) log.debug(diagnosis.dump());
 		} catch (IllegalValueException e) {
 		    log.error("Illegal value = "+data.value, e);
 		}
@@ -104,6 +106,7 @@ public class SampleSensor extends ComponentPlugin
 		    blackboard.publishChange(diagnosis);
 		    if (log.isDebugEnabled()) 
 			log.debug(diagnosis + " changed.");
+		    if (log.isDebugEnabled()) log.debug(diagnosis.dump());
 		} catch (IllegalValueException e) {
 		    log.error("Illegal value = "+data.value, e);
 		}

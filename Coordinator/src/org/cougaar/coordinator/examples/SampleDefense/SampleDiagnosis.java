@@ -41,5 +41,26 @@ public class SampleDiagnosis extends Diagnosis
     protected void setValue(Object value) throws IllegalValueException {
 	super.setValue(value);
     }
+
+    /**
+     * Returns a verbose pretty-printed representation for a SampleDiagnosis.
+     */
+    public String dump() {
+	return "\n" +
+            "<SampleDiagnosis:\n" +
+	    "   assetID = " + getAssetID() + "\n" +
+	    "   assetName = " + getAssetName() + "\n" +
+	    "   assetStateDimensionName = " + getAssetStateDimensionName() + "\n" +
+	    "   content = " + getContent() + "\n" +
+	    "   lastAssertedTimestamp = " + getLastAssertedTimestamp() + "\n" +
+	    "   lastChangedTimestamp = " + getLastChangedTimestamp() + "\n" +
+	    "   possibleValues = " + getPossibleValues() + "\n" +
+	    "   response = " + getResponse() + "\n" +
+	    "   source = " + getSource() + "\n" +
+	    "   targets = " + getTargets() + "\n" +
+	    "   techSpec = " + getTechSpec() + "\n" +
+	    "   uid = " + getUID() + "\n" +
+	    "   value = " + getValue() + ">";
+    }
     
 }
