@@ -1,40 +1,41 @@
 package org.cougaar.tools.robustness.ma.util;
 
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
+import org.cougaar.tools.robustness.ma.StatusChangeListener;
+import org.cougaar.tools.robustness.ma.CommunityStatusChangeEvent;
+
 import org.cougaar.tools.robustness.ma.controllers.RobustnessController;
 import org.cougaar.tools.robustness.threatalert.*;
-import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.component.BindingSite;
+import org.cougaar.core.mts.MessageAddress;
 
 import java.util.*;
 
 /**
  */
 
-public class ThreatAlertHandler implements ThreatAlertListener {
+public class ThreatAlertHandler extends ThreatAlertHandlerBase {
 
-  private String thisAgent;
   private CommunityStatusModel model;
   private RobustnessController controller;
   private MoveHelper moveHelper;
-  private LoggingService logger;
 
-  public ThreatAlertHandler(String               thisAgent,
+  public ThreatAlertHandler(BindingSite          bs,
+                            MessageAddress       agentId,
                             RobustnessController controller,
                             CommunityStatusModel model) {
-    this.thisAgent = thisAgent;
+    super(bs, agentId);
     this.model = model;
     this.controller = controller;
     this.moveHelper = controller.getMoveHelper();
-    BindingSite bs = controller.getBindingSite();
-    logger =
-      (LoggingService)bs.getServiceBroker().getService(this, LoggingService.class, null);
-    logger = org.cougaar.core.logging.LoggingServiceWithPrefix.add(logger, thisAgent + ": ");
+  }
+
+  private void addChangeListener() {
   }
 
   public void newAlert(ThreatAlert ta) {
-    if (thisAgent.equals(preferredLeader())) {
-      logger.info("Received ThreatAlert: " + ta);
+    logger.info("Received ThreatAlert: " + ta);
+    if (agentId.toString().equals(preferredLeader())) {
       Set nodes = new HashSet();
       if (ta.getSeverityLevel() >= ThreatAlert.MEDIUM_SEVERITY) {
         Asset affectedAssets[] = ta.getAffectedAssets();
@@ -63,15 +64,20 @@ public class ThreatAlertHandler implements ThreatAlertListener {
         agentsToMove.add(agentsOnNode[i]);
       }
     }
-    moveHelper.addListener(new MoveListener() {
-      public void moveInitiated(String agentName, String origNode, String destNode) {}
-
-      public void moveComplete(String agentName, String origNode,
-                               String destNode, int status) {
-        agentsToMove.remove(agentName);
-        if (agentsToMove.isEmpty()) {
-          logger.info("Vacate nodes complete: nodes=" + nodesToVacate);
-          moveHelper.removeListener(this);
+    model.addChangeListener(new StatusChangeListener() {
+      public void statusChanged(CommunityStatusChangeEvent[] csce) {
+        for (int i = 0; i < csce.length; i++) {
+          if (csce[i].locationChanged() &&
+              agentsToMove.contains(csce[i].getName()) &&
+              !nodesToVacate.contains(csce[i].getCurrentLocation())) {
+            agentsToMove.remove(csce[i].getName());
+            if (agentsToMove.isEmpty()) {
+              logger.info("Vacate nodes complete: nodes=" + nodesToVacate);
+              model.removeChangeListener(this);
+              logger.info("Starting Load Balancer");
+              controller.getLoadBalancer().doLoadBalance();
+            }
+          }
         }
       }
     });
@@ -81,6 +87,7 @@ public class ThreatAlertHandler implements ThreatAlertListener {
       String dest =
           RestartDestinationLocator.getRestartLocation(agentToMove,
           nodesToVacate);
+      logger.debug("Move agent: agent=" + agentToMove + " dest=" + dest);
       moveHelper.moveAgent(agentToMove, model.getLocation(agentToMove), dest,
                            model.getCommunityName());
     }
