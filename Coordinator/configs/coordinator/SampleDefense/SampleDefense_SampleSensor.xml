@@ -8,7 +8,7 @@
             sensorLatency="1000">
     <PotentialDiagnoses>
         <Diagnosis name="Compromised" />
-        <Diagnosis name="Secure" />
+        <Diagnosis name="Secure" defaultValue="TRUE" />
         <Diagnosis name="Isolated" />
     </PotentialDiagnoses>
     <Diagnoses>
