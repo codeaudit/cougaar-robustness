@@ -32,12 +32,10 @@ import org.cougaar.core.domain.DomainBindingSite;
 import org.cougaar.tools.manager.Constants;
 
 /**
- * Domain for Ping Sensor, named "ping".
- *
- * @deprecated Use SensorDomain instead.
+ * Domain for Sensors, named "sensors".
  **/
-public class PingDomain extends DomainAdapter {
-  private static final String PING_NAME = "ping".intern();
+public class SensorDomain extends DomainAdapter {
+  private static final String SENSORS_NAME = "sensors".intern();
 
   /**
    * getDomainName - returns the Domain name. Used as domain identifier in 
@@ -46,10 +44,10 @@ public class PingDomain extends DomainAdapter {
    * @return String domain name
    */
   public String getDomainName() {
-    return PING_NAME;
+    return SENSORS_NAME;
   }
 
-  public PingDomain() {
+  public SensorDomain() {
     super();
 
   }
@@ -74,7 +72,7 @@ public class PingDomain extends DomainAdapter {
     getLoggingService().debug("Aggregation domain:: loadfactory");
 
 
-    setFactory(new PingFactory(bindingSite.getClusterServesLogicProvider().getLDM()));
+    setFactory(new SensorFactory(bindingSite.getClusterServesLogicProvider().getLDM()));
   }
 
   protected void loadXPlan() {

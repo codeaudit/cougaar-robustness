@@ -42,7 +42,7 @@ import org.cougaar.core.mts.MessageAddress;
 public class PingTesterPlugin extends ComponentPlugin {
   private IncrementalSubscription sub;
   private BlackboardService bb;
-  private PingFactory pingFactory;
+  private SensorFactory sensorFactory;
 
   private UnaryPredicate pred = new UnaryPredicate() {
     public boolean execute(Object o) {
@@ -57,7 +57,7 @@ public class PingTesterPlugin extends ComponentPlugin {
   protected void setupSubscriptions() {
     DomainService domainService = 
       (DomainService) getBindingSite().getServiceBroker().getService(this, DomainService.class, null);
-    pingFactory = (PingFactory)domainService.getFactory("ping");
+    sensorFactory = (SensorFactory)domainService.getFactory("sensors");
     bb = getBlackboardService();
     sub = (IncrementalSubscription)bb.subscribe(pred);
     MessageAddress source = getBindingSite().getAgentIdentifier();
@@ -71,7 +71,7 @@ public class PingTesterPlugin extends ComponentPlugin {
     if (iter.hasNext()) {
       timeout = Long.parseLong((String)iter.next());
     }
-    PingRequest req = pingFactory.newPingRequest(source, target, timeout);
+    PingRequest req = sensorFactory.newPingRequest(source, target, timeout);
     bb.publishAdd(req);
     System.out.println("PingTesterPlugin.setupSubscriptions: added PingRequest = " + req);
   }

@@ -29,37 +29,58 @@ import java.util.Set;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.blackboard.UniqueObjectSet;
+import org.cougaar.core.util.UID;
+import org.cougaar.core.service.UIDService;
 
 /**
- * This Plugin receives and echoes Pings that originate 
- * from the PingRequesterPlugin.  
- * It should be installed in agents that might be pinged.
+ * This Plugin requests for heartbeats (HbReq) and responds with
+ * HeartbeatRequest.ACCEPTED or HeartbeatRequest.REFUSED.  
+ * It should be installed in agents that might send out heartbeats.
  **/
-public class PingServerPlugin extends ComponentPlugin {
+public class HeartbeatServerPlugin extends ComponentPlugin {
   private IncrementalSubscription sub;
   private BlackboardService bb;
+  private UniqueObjectSet heartbeatTable;
 
-  private UnaryPredicate pingPred = new UnaryPredicate() {
+  private UnaryPredicate hbReqPred = new UnaryPredicate() {
     public boolean execute(Object o) {
-      return (o instanceof Ping);
+      return (o instanceof HbReq);
     }
   };
 
   protected void setupSubscriptions() {
+    heartbeatTable = new UniqueObjectSet();
     bb = getBlackboardService();
-    sub = (IncrementalSubscription)bb.subscribe(pingPred);
+    sub = (IncrementalSubscription)bb.subscribe(hbReqPred);
   }
 
   protected void execute() {
     Iterator iter = sub.getAddedCollection().iterator();
     while (iter.hasNext()) {
-      Ping ping = (Ping)iter.next();
-      //MessageAddress myAddr = getBindingSite().getAgentIdentifier();
-      System.out.println("PingServerPlugin.execute: received Ping = " + ping);
-      ping.updateResponse(null, "Got it!");
-      bb.publishChange(ping);
-      System.out.println("PingServerPlugin.execute: published changed Ping = " + ping);
+      HbReq req = (HbReq)iter.next();
+
+      System.out.println("HeartbeatServerPlugin.execute: received HbReq = " + req);
+      req.updateResponse(null, new HbReqResponse(HeartbeatRequest.ACCEPTED));
+// TODO: add check for dup hb in table
+      MessageAddress myAddr = getBindingSite().getAgentIdentifier();
+      MessageAddress target = req.getSource();
+      Heartbeat hb = new Heartbeat(getUIDService().nextUID(), myAddr, target, null, null);
+      bb.publishChange(req);
+      System.out.println("HeartbeatServerPlugin.execute: published changed HbReq = " + req);
+      heartbeatTable.add(req);   
+      bb.publishChange(heartbeatTable);
     }
+  }
+
+  private UIDService UIDService;
+   
+  public UIDService getUIDService() {
+      return this.UIDService;
+  }
+   
+  public void setUIDService(UIDService UIDService) {
+      this.UIDService = UIDService;
   }
 
 }

@@ -30,14 +30,12 @@ import org.cougaar.core.service.UIDServer;
 import org.cougaar.core.mts.MessageAddress;
 
 /**
- * Factory for PingRequests.
- *
- * @deprecated Use SensorFactory instead.
+ * Factory for PingRequests & HeartbeatRequests.
  **/
-public class PingFactory implements org.cougaar.core.domain.Factory {
+public class SensorFactory implements org.cougaar.core.domain.Factory {
   UIDServer myUIDServer;
 
-  public PingFactory(LDMServesPlugin ldm) {
+  public SensorFactory(LDMServesPlugin ldm) {
     //RootFactory rf = ldm.getFactory();
     myUIDServer = ldm.getUIDServer();
   }
@@ -51,9 +49,37 @@ public class PingFactory implements org.cougaar.core.domain.Factory {
    *
    * @return PingRequest
    */
-  public PingRequest newPingRequest(MessageAddress source, MessageAddress target, long timeout) {
+  public PingRequest newPingRequest(MessageAddress source, 
+                                    MessageAddress target, 
+                                    long timeout) {
     UID uid = myUIDServer.nextUID();
     PingRequest req = new PingRequest(uid, source, target, timeout);
+    return req;
+  }
+
+  /** 
+   * Creates a new HeartbeatRequest.
+   *
+   * @param source MessageAddress of agent requesting the Heartbeat
+   * @param target MessageAddress of agent providing the Heartbeat
+   * @param reqTimeout Request timeout in milliseconds
+   * @param hbFrequency Heartbeat frequency in milliseconds
+   * @param hbTimeout Heartbeat timeout in milliseconds
+   *
+   * @return HeartbeatRequest
+   */
+  public HeartbeatRequest newHeartbeatRequest(MessageAddress source,  
+                                              MessageAddress target, 
+                                              long reqTimeout,
+                                              long hbFrequency,
+                                              long hbTimeout) {
+    UID uid = myUIDServer.nextUID();
+    HeartbeatRequest req = new HeartbeatRequest(uid, 
+                                                source,
+                                                target,
+                                                reqTimeout,
+                                                hbFrequency,
+                                                hbTimeout);
     return req;
   }
 

@@ -34,83 +34,84 @@ import org.cougaar.core.blackboard.UniqueObjectSet;
 import java.util.Date;
 
 /**
- * This Plugin receives PingRequests from the local Blackboard and
- * sends Pings to the target agent's PingServerPlugin.
- * It should be installed in the Agent that is originating the PingRequests.
+ * This Plugin receives HeartbeatRequests from the local Blackboard and
+ * sends HbReqs to the target agent's HeartbeatServerPlugin. It should 
+ * be installed in the Agent that is originating the HeartbeatRequests.
  **/
-public class PingRequesterPlugin extends ComponentPlugin {
-  private IncrementalSubscription pingReqSub;
-  private IncrementalSubscription pingSub;
+public class HeartbeatRequesterPlugin extends ComponentPlugin {
+  private IncrementalSubscription heartbeatRequestSub;
+  private IncrementalSubscription hbReqSub;
   private BlackboardService bb;
   private UniqueObjectSet UIDtable;
 
-  private UnaryPredicate pingReqPred = new UnaryPredicate() {
+  private UnaryPredicate HeartbeatRequestPred = new UnaryPredicate() {
     public boolean execute(Object o) {
-      return (o instanceof PingRequest);
+      return (o instanceof HeartbeatRequest);
     }
   };
 
-  private UnaryPredicate pingPred = new UnaryPredicate() {
+  private UnaryPredicate hbReqPred = new UnaryPredicate() {
     public boolean execute(Object o) {
-      return (o instanceof Ping);
+      return (o instanceof HbReq);
     }
   };
 
-  private void sendPing (PingRequest req) {
+  private void sendHbReq (HeartbeatRequest req) {
     MessageAddress source = getBindingSite().getAgentIdentifier();
     MessageAddress target = req.getTarget();
     UID reqUID = req.getUID();
     UIDtable.add(req);
-    req.setStatus(PingRequest.SENT);
+    req.setStatus(HeartbeatRequest.SENT);
     req.setTimeSent(new Date());
-    PingContent content = new PingContent(reqUID, req.getTimeout());
-    Ping ping = new Ping(getUIDService().nextUID(), source, target, content, null);
-    bb.publishAdd(ping);
+    HbReqContent content = new HbReqContent(reqUID, req.getReqTimeout(), req.getHbFrequency(), req.getHbTimeout());
+    HbReq hbReq = new HbReq(getUIDService().nextUID(), source, target, content, null);
+    bb.publishAdd(hbReq);
     bb.publishChange(req);
-    System.out.println("PingRequesterPlugin.sendPing: published new Ping = " + ping);
-    System.out.println("PingRequesterPlugin.sendPing: published changed PingRequest = " + req);
+    System.out.println("HeartbeatRequesterPlugin.sendHbReq: published new HbReq = " + hbReq);
+    System.out.println("HeartbeatRequesterPlugin.sendHbReq: published changed HeartbeatRequest = " + req);
   }
 
-  private void updatePingRequest (Ping ping) {
-    PingContent content = (PingContent)ping.getContent();
-    UID reqUID = content.getPingReqUID();
-    PingRequest req = (PingRequest)UIDtable.findUniqueObject(reqUID);
+  private void updateHeartbeatRequest (HbReq hbReq) {
+    HbReqContent content = (HbReqContent)hbReq.getContent();
+    UID reqUID = content.getHeartbeatRequestUID();
+    HeartbeatRequest req = (HeartbeatRequest)UIDtable.findUniqueObject(reqUID);
     Date timeReceived = new Date();
     req.setTimeReceived(timeReceived);
-    req.setStatus(PingRequest.RECEIVED);
+    HbReqResponse response = (HbReqResponse)hbReq.getResponse();
+    req.setStatus(response.getStatus());
     req.setRoundTripTime(timeReceived.getTime() - req.getTimeSent().getTime());
     bb.publishChange(req);
-    bb.publishRemove(ping);
-    System.out.println("PingRequesterPlugin.updatePingRequest: published changed PingRequest = " + req);
-    System.out.println("PingRequesterPlugin.updatePingRequest: removed Ping = " + ping);
+    bb.publishRemove(hbReq);
+    System.out.println("HeartbeatRequesterPlugin.updateHeartbeatRequest: published changed HeartbeatRequest = " + req);
+    System.out.println("HeartbeatRequesterPlugin.updateHeartbeatRequest: removed HbReq = " + hbReq);
   }
 
   protected void setupSubscriptions() {
     UIDtable = new UniqueObjectSet();
     bb = getBlackboardService();
-    pingReqSub = (IncrementalSubscription)bb.subscribe(pingReqPred);
-    pingSub = (IncrementalSubscription)bb.subscribe(pingPred);
+    heartbeatRequestSub = (IncrementalSubscription)bb.subscribe(HeartbeatRequestPred);
+    hbReqSub = (IncrementalSubscription)bb.subscribe(hbReqPred);
   }
 
   protected void execute() {
-    // check for new PingRequests
-    Iterator iter = pingReqSub.getAddedCollection().iterator();
+    // check for new HeartbeatRequests
+    Iterator iter = heartbeatRequestSub.getAddedCollection().iterator();
     while (iter.hasNext()) {
-      PingRequest req = (PingRequest)iter.next();
-      System.out.println("PingRequesterPlugin.execute: new PingRequest received = " + req);
+      HeartbeatRequest req = (HeartbeatRequest)iter.next();
+      System.out.println("HeartbeatRequesterPlugin.execute: new HeartbeatRequest received = " + req);
       MessageAddress myAddr = getBindingSite().getAgentIdentifier();
-      if (req.getStatus() == PingRequest.NEW) {   
-        sendPing(req);
+      if (req.getStatus() == HeartbeatRequest.NEW) {   
+        sendHbReq(req);
       }
     }
-    // check for changed Pings
-    iter = pingSub.getChangedCollection().iterator();
+    // check for responses from HeartbeatServerPlugin
+    iter = hbReqSub.getChangedCollection().iterator();
     while (iter.hasNext()) {
-      Ping ping = (Ping)iter.next();
-      System.out.println("PingRequesterPlugin.execute: changed Ping received = " + ping);
+      HbReq hbReq = (HbReq)iter.next();
+      System.out.println("HeartbeatRequesterPlugin.execute: changed HbReq received = " + hbReq);
       MessageAddress myAddr = getBindingSite().getAgentIdentifier();
-      if (ping.getSource().equals(myAddr)) {
-        updatePingRequest(ping);
+      if (hbReq.getSource().equals(myAddr)) {
+        updateHeartbeatRequest(hbReq);
       }
     }
   }
