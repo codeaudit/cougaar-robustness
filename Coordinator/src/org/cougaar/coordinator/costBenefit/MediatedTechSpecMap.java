@@ -84,15 +84,15 @@ public class MediatedTechSpecMap {
             return diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.core.security.coordinator.ThreatConDiagnosis").getStateDimension();
         if (actionName.equals("org.cougaar.robustness.dos.coordinator.CompressionAction")) 
             return diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.coordinator.sensors.load.AvailableBandwidthDiagnosis").getStateDimension();
-        if (actionName.equals("org.cougaar.robustness.dos.coordinator.AttackResetAction") {
+        if (actionName.equals("org.cougaar.robustness.dos.coordinator.AttackResetAction")) {
               if (logger.isInfoEnabled()) logger.info("Ignoring: " + actionName);
               return null;
         }
-        if (actionName.equals("org.cougaar.robustness.dos.coordinator.FuseResetAction") {
+        if (actionName.equals("org.cougaar.robustness.dos.coordinator.FuseResetAction")) {
               if (logger.isInfoEnabled()) logger.info("Ignoring: " + actionName);
               return null;
         }
-        if (actionName.equals("org.cougaar.robustness.dos.coordinator.RMIAction") {
+        if (actionName.equals("org.cougaar.robustness.dos.coordinator.RMIAction")) {
               if (logger.isInfoEnabled()) logger.info("Ignoring: " + actionName);
               return null;
         }
@@ -107,15 +107,15 @@ public class MediatedTechSpecMap {
             return diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.core.security.coordinator.EffectiveSecurityDiagnosis").getStateDimension();
         if (actionName.equals("org.cougaar.robustness.dos.coordinator.CompressionAction")) 
             return diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.robustness.dos.coordinator.Effective_Bandwidth_Status").getStateDimension();
-        if (actionName.equals("org.cougaar.robustness.dos.coordinator.AttackResetAction") {
+        if (actionName.equals("org.cougaar.robustness.dos.coordinator.AttackResetAction")) {
               if (logger.isInfoEnabled()) logger.info("Ignoring: " + actionName);
               return null;
         }
-        if (actionName.equals("org.cougaar.robustness.dos.coordinator.FuseResetAction") {
+        if (actionName.equals("org.cougaar.robustness.dos.coordinator.FuseResetAction")) {
               if (logger.isInfoEnabled()) logger.info("Ignoring: " + actionName);
               return null;
         }
-        if (actionName.equals("org.cougaar.robustness.dos.coordinator.RMIAction") {
+        if (actionName.equals("org.cougaar.robustness.dos.coordinator.RMIAction")) {
               if (logger.isInfoEnabled()) logger.info("Ignoring: " + actionName);
               return null;
         }
