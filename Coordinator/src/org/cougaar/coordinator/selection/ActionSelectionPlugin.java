@@ -396,7 +396,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 
     // a special method in support of controlling RMIAction in tandem with Security_Defense_Setting - for ACUC 2B
     // returns the VariantEValuation or null if not found
-    private VariantEvaluation getRmiVariantEvaluation(CostBenefitEvaluation cbe, ACtion rmiAction, String rmiVariantName) {
+    private VariantEvaluation getRmiVariantEvaluation(CostBenefitEvaluation cbe, Action rmiAction, String rmiVariantName) {
         if (rmiAction == null) return null;
         ActionEvaluation ae = cbe.getActionEvaluation(rmiAction);
         if (ae != null) return ae.getVariantEvaluation(rmiVariantName);
