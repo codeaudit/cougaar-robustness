@@ -113,6 +113,7 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
         log.debug("\nHeartbeatServerPlugin.processHeartbeats: processing HbReq = " + req);
       HbReqContent content = (HbReqContent)req.getContent();
       HbReqResponse response = (HbReqResponse)req.getResponse();
+      if (response == null) break; // a new HbReq not yet processed by execute
       long now = System.currentTimeMillis();
       long lastHbSent = response.getLastHbSent();
       long freq = content.getHbFrequency();
