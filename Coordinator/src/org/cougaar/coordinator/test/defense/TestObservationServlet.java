@@ -27,7 +27,7 @@
 package org.cougaar.coordinator.test.defense;
 //org.cougaar.coordinator.test.defense.TestObservationServlet
 //import org.cougaar.coordinator.DefenseApplicabilityConditionSnapshot;
-import org.cougaar.coordinator.costBenefit.CostBenefitDiagnosis;
+//import org.cougaar.coordinator.costBenefit.CostBenefitDiagnosis;
 //import org.cougaar.coordinator.techspec.DefaultDefenseTechSpec;
 
 import java.io.PrintWriter;
@@ -206,13 +206,13 @@ public class TestObservationServlet extends BaseServletComponent
     Vector activeCostBenefits = new Vector();
     Vector oldCostBenefits = new Vector();
     
-    public void addCostBenefitDiagnosis(CostBenefitDiagnosis cbd) {
+   // public void addCostBenefitDiagnosis(CostBenefitDiagnosis cbd) {
 
    //     activeCostBenefits.addElement(cbd);
-    }
+    //}
 
     
-    public void updateDefenseStatus(CostBenefitDiagnosis cbd, String defenseName, String status) {
+    //public void updateDefenseStatus(CostBenefitDiagnosis cbd, String defenseName, String status) {
 /*
         CostBenefitDiagnosis.DefenseBenefit defenses[] = cbd.getDefenses();
         CostBenefitDiagnosis.DefenseBenefit def;
@@ -231,9 +231,9 @@ public class TestObservationServlet extends BaseServletComponent
            logger.debug("No defense "+defenseName+" found to update status to "+status);   
         }
  */
-    }
+    //}
 
-    public void updateCostBenefitStatus(CostBenefitDiagnosis cbd, String status) {
+//    public void updateCostBenefitStatus(CostBenefitDiagnosis cbd, String status) {
 /*
         //If done, move to old CBD vector
         if (status.equalsIgnoreCase("SUCCEEDED") || status.equalsIgnoreCase("FAILED") || status.startsWith("COMPLETED")) {
@@ -243,9 +243,9 @@ public class TestObservationServlet extends BaseServletComponent
         
         cbd.setStatus(status);
  */
-    }
+  //  }
     
-    public void setTimeout(CostBenefitDiagnosis cbd, String defenseName, long l) {
+   // public void setTimeout(CostBenefitDiagnosis cbd, String defenseName, long l) {
         /*
         CostBenefitDiagnosis.DefenseBenefit defenses[] = cbd.getDefenses();
         CostBenefitDiagnosis.DefenseBenefit def;
@@ -258,9 +258,9 @@ public class TestObservationServlet extends BaseServletComponent
             }
         }
         */
-    }
+    //}
     
-    public void updateDefenseOutcome(CostBenefitDiagnosis cbd, String defenseName, String outcome) {
+//    public void updateDefenseOutcome(CostBenefitDiagnosis cbd, String defenseName, String outcome) {
 /*
         CostBenefitDiagnosis.DefenseBenefit defenses[] = cbd.getDefenses();
         CostBenefitDiagnosis.DefenseBenefit def;
@@ -273,7 +273,7 @@ public class TestObservationServlet extends BaseServletComponent
             }
         }
         */
-    }
+ //   }
     
 
   private class MyServlet extends HttpServlet {

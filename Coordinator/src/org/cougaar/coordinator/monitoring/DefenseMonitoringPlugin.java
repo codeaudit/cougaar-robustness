@@ -32,7 +32,7 @@ import org.cougaar.coordinator.DeconflictionPluginBase;
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.techspec.AssetType;
 import org.cougaar.coordinator.selection.ActionPatience;
-import org.cougaar.coordinator.timedDiagnosis.TimedDefenseDiagnosis;
+//import org.cougaar.coordinator.timedDiagnosis.TimedDefenseDiagnosis;
 import org.cougaar.coordinator.DefenseConstants;
  
 

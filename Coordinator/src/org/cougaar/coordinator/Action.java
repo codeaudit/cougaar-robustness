@@ -269,7 +269,7 @@ public abstract class Action
             throw new TechSpecNotFoundException("TechSpec Service not available.");            
         }
         
-        // **********************************************get the tect spec service
+        // **********************************************get the tech spec service
         ActionTechSpecService ActionTechSpecService =
                 (ActionTechSpecService) serviceBroker.getService(this, ActionTechSpecService.class, null);
         if (ActionTechSpecService == null) {

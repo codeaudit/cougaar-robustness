@@ -26,7 +26,7 @@
 
 package org.cougaar.coordinator.techspec;
 
-import org.cougaar.coordinator.timedDiagnosis.TimedDiagnosisKnob;
+//import org.cougaar.coordinator.timedDiagnosis.TimedDiagnosisKnob;
 
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
 import org.cougaar.tools.robustness.ma.StatusChangeListener;
