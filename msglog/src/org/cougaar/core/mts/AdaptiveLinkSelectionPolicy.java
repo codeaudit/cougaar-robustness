@@ -825,9 +825,7 @@ if (debug) log.debug("cost =" + cost);
         }
       }
 
-      //  We shouldn't get here
-
-      log.error ("Error selecting link for pure ack (dropping ack): " +msgString);
+      log.info("No untried able links for sending this pure ack. Dropping pure ack. Correspondent will resend. " +msgString);
       return blackHoleLink;
     }
 

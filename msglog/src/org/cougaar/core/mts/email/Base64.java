@@ -95,6 +95,7 @@ public class Base64
     {
       Logging.getLogger(Base64.class).warn("in decodeString(): " + stackTraceToString(e));
       Logging.getLogger(Base64.class).warn("A few of these are ok, else lengthen email stream timeouts.");
+      return null;
     }
     
     return (n >= 0 ? buf : null);
