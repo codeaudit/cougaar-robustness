@@ -149,14 +149,14 @@ public class BeliefMonitorServlet extends ComponentPlugin
         AssetID asset_id = se.getAssetID();
 
         String old_se 
-                = (String) _last_estimate.get( asset_id.getName() );
+                = (String) _last_estimate.get( asset_id );
 
         if (old_se == null )
         {
-            _asset_id_list.addElement( asset_id.getName() );
+            _asset_id_list.addElement( asset_id );
         }
 
-        _last_estimate.put( asset_id.getName(), 
+        _last_estimate.put( asset_id, 
                             stateEstimationToHTMLTableString(se) );
 
     } // method handleStateEstimation
@@ -309,10 +309,10 @@ public class BeliefMonitorServlet extends ComponentPlugin
           Enumeration id_enum = _asset_id_list.elements();
           while( id_enum.hasMoreElements() )
           {
-              String id_str = (String) id_enum.nextElement();
-              
+              AssetID id = (AssetID) id_enum.nextElement();
+
               String se_str 
-                      = (String) _last_estimate.get( id_str );
+                      = (String) _last_estimate.get( id );
 
               if ( se_str == null )
                   continue;
