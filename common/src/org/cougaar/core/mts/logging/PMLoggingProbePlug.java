@@ -184,9 +184,12 @@ public class PMLoggingProbePlug {
             }
         }        
         LogEventWrapper evt = createAuditData(_requestor, _sb, logpointname, _attrMsg, isSend);
-        if (evt != null)
-            LogEventRouter.getRouter().routeEvent(evt);
-        
+        try {
+            if (evt != null)
+                LogEventRouter.getRouter().routeEvent(evt);
+        } catch (Exception e) {
+            Logging.currentLogger().warn("PMLoggingProbePlug:: Exception routing event:"+e);
+        }
     }
         
     

@@ -51,7 +51,7 @@ public class LogEventRouter {
     
     static private boolean DEBUG = true;
     
-    static LogEventRouter router;
+    static LogEventRouter router = null;
     private int loggingPort = 0; //0 denotes no Log4J logging.
     private String loggerName;
     private String loggingHost;
@@ -59,10 +59,12 @@ public class LogEventRouter {
     private boolean logToCougaar = true;
     private org.apache.log4j.Logger log4JLogger = null;
     private org.cougaar.util.log.Logger cougaarLogger = null;
+
+    private LoggingService log;
     
-    static {
-        router = new LogEventRouter();
-    }
+    //static {
+    //    router = new LogEventRouter();
+    //}
     
     /* 
      * @return the single instance of LogEventRouter
@@ -72,10 +74,19 @@ public class LogEventRouter {
     /* 
      * Creates a new instance of LogEventRouter 
      */
-    private LogEventRouter() {
+    public LogEventRouter(LoggingService log) {
+      
+        this.log = log;
+    
+        if (router == null) {
+            router = this; //works unless multiple of these are created.
+                        // The probe plug calls getRouter(), so debug
+                        // msgs will be output under the class name 
+                        // of the first class that inits this.
+        }
         
-        if (DEBUG) {
-            Logging.currentLogger().debug("LogEventRouter: Initialization****************");         
+        if (log.isDebugEnabled()) {
+            log.debug("LogEventRouter: Initialization****************");         
         }
         
         try {
@@ -98,13 +109,34 @@ public class LogEventRouter {
                 
                 if ( loggingPort > 0 ) { // then we're going to route to a socket.
 
-                    Logging.currentLogger().debug("**** Initing Msg Traffic Logging Socket ***");
+                    if (log.isDebugEnabled()) {
+                        log.debug("LogEventRouter: **** Initing Msg Traffic Logging Socket ***");
+                    }
                     log4JLogger = org.apache.log4j.Logger.getLogger(loggerName);
                     
                     if (log4JLogger.getAllAppenders() instanceof NullEnumeration) {
-                        Logging.currentLogger().debug("**** Found no other appenders.");
+                        if (log.isDebugEnabled()) {
+                            log.debug("LogEventRouter: **** Found no other appenders.");
+                        }
+                        org.apache.log4j.Logger lg = log4JLogger.getRootLogger();
+                        if (lg != null) {
+                            log.debug("LogEventRouter: **** Found ROOT Looger = " + lg.getName());
+                            Object aps = lg.getAllAppenders();
+                            if (aps instanceof NullEnumeration) {
+                                log.debug("LogEventRouter: **** Found no ROOT appenders.");
+                            } else {
+                                log.debug("LogEventRouter: **** Found other ROOT appenders!");
+                                Enumeration e = (Enumeration)aps;
+                                while (e.hasMoreElements()) {
+                                    Appender a = (Appender)e.nextElement();
+                                    log.debug("    ----> "+ a.getName());                                    
+                                }
+                            }
+                        }
                     } else {
-                        Logging.currentLogger().debug("**** Found other appenders!");
+                        if (log.isDebugEnabled()) {
+                            log.debug("LogEventRouter: **** Found other appenders!");
+                        }
                         log4JLogger.removeAllAppenders();
                     }
                     
@@ -112,13 +144,13 @@ public class LogEventRouter {
                     log4JLogger.setLevel(log4JLevel);
                     logToCougaar = false;
                     
-                    //Logging.currentLogger().debug("**** StreamMagic = "+ ObjectOutputStream.STREAM_MAGIC); 
-                    //Logging.currentLogger().debug("**** StreamVersion = "+ ObjectOutputStream.STREAM_VERSION); 
+                    //log.debug("**** StreamMagic = "+ ObjectOutputStream.STREAM_MAGIC); 
+                    //log.debug("**** StreamVersion = "+ ObjectOutputStream.STREAM_VERSION); 
                     
                 }
             }
         } catch (Exception e) {
-            Logging.currentLogger().warn("Could not initialize. Exception was: "+e);
+            log.warn("LogEventRouter: Could not initialize. Exception was: "+e);
         }
     }
     
@@ -136,20 +168,22 @@ public class LogEventRouter {
             if (log != null) { //use specified logger
                 log.log(event.getLogLevel(), event.toString(), thr);
             } else { //look up any cougaar logger
-                cougaarLogger = Logging.currentLogger();
+                cougaarLogger = log;
                 cougaarLogger.log(event.getLogLevel(), event.toString(), thr);
             }
-            if (DEBUG) { 
-                Logging.currentLogger().debug("LogEventRouter: Logging event to Cougaar w/throwable***********\n"+event.toString() + event.toString()+"\nLogLevel="+event.getLogLevel());         
+            if (log.isDebugEnabled()) { 
+                //log.debug("LogEventRouter: Logging event to Cougaar w/throwable***********\n"+event.toString() + event.toString()+"\nLogLevel="+event.getLogLevel());         
             }            
         } else { //send to Log4J
             
-            if (DEBUG) {
-                Logging.currentLogger().debug("LogEventRouter: Logging event to Socket ************");         
+            if (log.isDebugEnabled()) {
+                //log.debug("LogEventRouter: Logging event to Socket ************");         
             }
             String FQCN = (org.apache.log4j.Logger.class).getName();
             LogEvent evt = new LogEvent(FQCN, log4JLogger, event.getLog4JLevel(), 
                                         (Object)event.getEventData(), (Throwable)null);
+            //log4JLogger.log(event.getLog4JLevel(), 
+            //                            (Object)event.getEventData(), (Throwable)null);
             log4JLogger.callAppenders(evt);
         }
         
