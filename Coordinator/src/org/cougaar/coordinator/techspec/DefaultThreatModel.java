@@ -72,6 +72,9 @@ public class DefaultThreatModel implements ThreatModelInterface, NotPersistable 
     /** All of the DamageDistributions */
     private EventProbability eventProbability = null;
       
+    /** The ThreatDescription that was used to create this object */
+    private ThreatDescription threatDesc;
+    
     /** VulnerabilityFilter */
     private ThreatVulnerabilityFilter filter;
     
@@ -102,6 +105,8 @@ public class DefaultThreatModel implements ThreatModelInterface, NotPersistable 
         this.filter = td.getVulnerabilityFilter(); // not used here, other than to retrieve the prob. below.
         
         this.eventProbability = td.getEventProbability();
+        
+        this.threatDesc = td;
         
     }
 
@@ -156,11 +161,11 @@ public class DefaultThreatModel implements ThreatModelInterface, NotPersistable 
 
     
     /**
-     * @return the ThreatMembershipFilters that the threat cares about.
+     * @return the ThreatDescription techspec for this threat.
      */
-    //public ThreatMembershipFilter[] getMembershipFilters() {
-    //    return filters;
-    //}    
+    public ThreatDescription getThreatDescription() {
+        return threatDesc;
+    }    
     
     /**
      * Set the asset type that the threat cares about.

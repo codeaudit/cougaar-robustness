@@ -101,7 +101,13 @@ public interface ThreatModelInterface extends TechSpecRootInterface {
      * @return TRUE if this Threat cares about this asset.
      */
     public boolean containsAsset(AssetTechSpecInterface asset);
-     
+
+    /**
+     * @return the ThreatDescription techspec for this threat.
+     */
+    public ThreatDescription getThreatDescription();
+    
+    
 }
 
 
