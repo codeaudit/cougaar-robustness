@@ -122,7 +122,7 @@ public class VacatePlugin extends SimplePlugin {
     // Get Parameter changes
     for (Iterator it = mgmtAgentProps.getChangedCollection().iterator();
          it.hasNext();) {
-      ManagementAgentProperties props = (ManagementAgentProperties)it.next();
+      //ManagementAgentProperties props = (ManagementAgentProperties)it.next();
       //updateParams(props);
       log.info("Parameters modified: " + paramsToString());
     }
