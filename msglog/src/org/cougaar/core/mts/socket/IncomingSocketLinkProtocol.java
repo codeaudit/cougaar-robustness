@@ -110,6 +110,8 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
   private static final int minThreads;
   private static final int maxThreads;
   private static final int idleTimeout;
+  private static final int numInvalidMsgs;
+  private static final int timeWindowSecs;
 
   private static LoggingService log;
   private SocketClosingService socketCloser;
@@ -119,7 +121,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
   private SocketSpec socketSpecs[];
   private SocketSpec mySocketSpec;
   private Vector serverSocketListeners;
-  private Vector messageInListeners;
+  private EventWindow serverSocketMoveTrigger;
   private WorkQueue receiverQueue;
   private ThreadService threadService;
   private MessageAddress myAddress;
@@ -169,12 +171,17 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
     s = "org.cougaar.message.protocol.socket.incoming.receiverQueueIdleThreadTimeout";
     idleTimeout = Integer.valueOf(System.getProperty(s,"5000")).intValue();
+
+    s = "org.cougaar.message.protocol.socket.incoming.serverSocketMoveTriggerNumInvalidMsgs";
+    numInvalidMsgs = Integer.valueOf(System.getProperty(s,"10")).intValue();
+
+    s = "org.cougaar.message.protocol.socket.incoming.serverSocketMoveTriggerTimeWindowSecs";
+    timeWindowSecs = Integer.valueOf(System.getProperty(s,"10")).intValue();
   }
  
   public IncomingSocketLinkProtocol ()
   {
     serverSocketListeners = new Vector();
-    messageInListeners = new Vector();
 
     //  Get server socket portnumber(s) from a property?
 
@@ -261,19 +268,12 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
       receiverQueue = null;
     }
 
-    //  Remove and quit all of the server socket listners and message-in threads
+    //  Remove and quit all of the server socket listners
 
     for (Enumeration e = serverSocketListeners.elements(); e.hasMoreElements(); ) 
     {
        ServerSocketListener listener = (ServerSocketListener) e.nextElement();
        serverSocketListeners.remove (listener);
-       listener.quit();
-    }
-
-    for (Enumeration e = messageInListeners.elements(); e.hasMoreElements(); ) 
-    {
-       MessageInListener listener = (MessageInListener) e.nextElement();
-       messageInListeners.remove (listener);
        listener.quit();
     }
   }
@@ -402,11 +402,13 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
   private class ServerSocketListener implements Runnable
   { 
     private ServerSocket serverSock;
+    private EventWindow moveTrigger;
     private boolean quitNow;
 
     public ServerSocketListener (int port) throws IOException
     {
       serverSock = new ServerSocket (port, backlog);
+      moveTrigger = new EventWindow (numInvalidMsgs, timeWindowSecs*1000);
     }
 
     public int getPort ()
@@ -463,24 +465,22 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
         {
           //  If we are getting too many invalid messages, its time to move to another port
 
-          if (false /* nodeID.equals ("PerformanceNodeB") && cnt++ > 5 */)
+          if (moveTrigger.hasTriggered())
           {
-            if (doWarn()) log.warn ("Too many bad messages, moving server socket");
+            if (doWarn()) log.warn ("Too many invalid messages, moving server socket");
             receiverQueue.flush();  // flush any outstanding work (likely more bad msgs)
             quitNow = true;
             break;
           }
 
-          //  Sit and wait for an incoming socket connect request
+          //  Sit and wait for an incoming connection request
 
-          Socket s = serverSock.accept();
-          if (!doInbandAcking) s.shutdownOutput();  // we'll be only reading
+          Socket socket = serverSock.accept();
+          if (!doInbandAcking) socket.shutdownOutput();  // we'll be only reading
 
-          //  Create a message listener and add it to our work queue
+          //  Add a new message listener to our work queue
 
-          MessageInListener listener = new MessageInListener (s);
-          messageInListeners.add (listener);
-          receiverQueue.add (listener);
+          receiverQueue.add (new MessageInListener (socket, moveTrigger));
         }
         catch (Exception e) 
         {
@@ -498,10 +498,6 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
         serverSock = null;
       }
 
-      //  Flush any outstanding work for this server socket
-
-      receiverQueue.flush();
-
       //  Destroy this server socket listener and create another
 
       destroyServerSocketListener (this);
@@ -512,14 +508,16 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
   private class MessageInListener implements QuitableRunnable
   { 
     private Socket socket;
+    private EventWindow serverSocketMoveTrigger;
     private BufferedInputStream socketIn;
     private BufferedOutputStream socketOut;
     private String sockString;
     private boolean quitNow;
 
-    public MessageInListener (Socket s) throws IOException
+    public MessageInListener (Socket socket, EventWindow serverSocketMoveTrigger) throws IOException
     {
-      socket = s;
+      this.socket = socket;
+      this.serverSocketMoveTrigger = serverSocketMoveTrigger;
 
       if (doDebug()) 
       {
@@ -590,9 +588,19 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
           quitNow = true;
           break;
         }
+        catch (DataValidityException e)
+        {
+          //  A non-Cougaar message.  We should not be getting these.  Counts towards the 
+          //  server socket move trigger.
+
+          if (doDebug()) log.debug ("Non-Cougaar message received (msg ignored)");
+          serverSocketMoveTrigger.addEvent();            
+          quitNow = true;
+          break;
+        }
         catch (DataIntegrityException e)
         {
-          if (doWarn()) log.warn ("Non-Cougaar message received (msg ignored)");
+          if (doDebug()) log.debug ("Incomplete or damaged message received (msg ignored): "+e);
           quitNow = true;
           break;
         }
@@ -618,6 +626,19 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
         {
           if (doWarn()) log.warn ("Deserialization exception (msg ignored): " +e);
           exception = e;
+
+          //  Certain kinds of deserialization errors occur to invalid messages being
+          //  received, messages that should not be being sent to us, and so they count
+          //  towards the server socket move trigger.
+
+          Throwable cause = exception.getCause();
+
+          if (cause instanceof DataValidityException)
+          {
+            serverSocketMoveTrigger.addEvent();            
+            quitNow = true;
+            break;
+          }
         }
 
         //  Deliver the message if we have one
@@ -713,8 +734,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
       //  Cleanup
 
       closeSocket();
-      if (doDebug()) log.debug ("Removing msg in listener for " +sockString);
-      messageInListeners.remove (this);
+      if (doDebug()) log.debug ("End of msg in listener for " +sockString);
     }
 
     private byte[] createAck (AttributedMessage msg, long receiveTime, Exception exception) throws Exception

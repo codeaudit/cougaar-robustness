@@ -56,6 +56,8 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
   private static final boolean doInbandRTTUpdates;
   private static final boolean useMessageDigest;
   private static final String messageDigestType;
+  private static final int numInvalidMsgs;
+  private static final int timeWindowSecs;
 
   private static LoggingService log;
   private SocketClosingService socketCloser;
@@ -85,6 +87,12 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 
     s = "org.cougaar.message.protocol.udp.messageDigestType";
     messageDigestType = System.getProperty (s, "MD5");
+
+    s = "org.cougaar.message.protocol.udp.incoming.socketMoveTriggerNumInvalidMsgs";
+    numInvalidMsgs = Integer.valueOf(System.getProperty(s,"10")).intValue();
+
+    s = "org.cougaar.message.protocol.udp.incoming.socketMoveTriggerTimeWindowSecs";
+    timeWindowSecs = Integer.valueOf(System.getProperty(s,"10")).intValue();
   }
  
   public IncomingUDPLinkProtocol ()
@@ -287,6 +295,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
   { 
     private DatagramSocket dsocket;
     private DatagramPacket packet;
+    private EventWindow moveTrigger;
     private boolean quitNow;
     private String dsockString;
     
@@ -301,6 +310,8 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 
       byte[] buf = new byte[MAX_DATAGRAM_PACKET_SIZE];
       packet = new DatagramPacket (buf, buf.length);
+
+      moveTrigger = new EventWindow (numInvalidMsgs, timeWindowSecs*1000);
     }
 
     public int getPort ()
@@ -357,9 +368,9 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
         {
           //  If we are getting too many invalid messages, its time to move to another port
 
-          if (false /* nodeID.equals ("PerformanceNodeB") && cnt++ > 5 */)
+          if (moveTrigger.hasTriggered())
           {
-            if (doWarn()) log.warn ("Too many bad messages, moving server socket");
+            if (doWarn()) log.warn ("Too many invalid messages, moving incoming datagram socket");
             quitNow = true;
             break;
           }
@@ -399,6 +410,18 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
         {
           if (doWarn()) log.warn ("Deserialization exception (msg ignored): " +e);
           exception = e;
+
+          //  Certain kinds of deserialization errors occur to invalid messages being
+          //  received, messages that should not be being sent to us, and so they count
+          //  towards the socket move trigger.
+
+          Throwable cause = exception.getCause();
+
+          if (cause instanceof DataValidityException)
+          {
+            moveTrigger.addEvent();
+            continue;  // no inband acks for these
+          }
         }
 
         //  We handle inband ack-ack messages separately

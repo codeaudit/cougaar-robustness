@@ -33,7 +33,7 @@ public class NameSupportCacheAspect extends StandardAspect
     "org.cougaar.message.transport.aspects.NameSupportCacheAspect.callTimeout";
   private boolean timeoutp;
   private int callTimeout;
-  private Cache cache;
+  private Cache cache = null;
   private boolean calledOnce = false;
 
   public NameSupportCacheAspect() {}
@@ -48,6 +48,8 @@ public class NameSupportCacheAspect extends StandardAspect
         calledOnce = true;
       }
       return (new NameSupportDelegate((NameSupport)delegate));
+    } else if (type == DestinationLink.class) {
+      return new Link ((DestinationLink)delegate);
     }
     return null;
   }
@@ -65,13 +67,14 @@ public class NameSupportCacheAspect extends StandardAspect
   private class NameSupportDelegate extends NameSupportDelegateImplBase 
   {
     private NameSupport nameSupport;
-    private Cache cache;
+    //private Cache cache;
     
     private NameSupportDelegate(NameSupport nameSupport)
     {
       super(nameSupport); 
       this.nameSupport = nameSupport;
-      cache = new Cache(new NameSupportFetcher(nameSupport), "NameSupport");
+      if (cache == null)
+        cache = new Cache(new NameSupportFetcher(nameSupport), "NameSupport");
     }
 
     public MessageAddress getNodeMessageAddress () 
@@ -181,6 +184,8 @@ public class NameSupportCacheAspect extends StandardAspect
     }
 
     public int hashCode() {  return addr.hashCode()+transportType.hashCode(); }
+
+    public String toString() { return addr.getAddress()+transportType; }
   }
 
   public class NameSupportFetcher implements Cache.Fetcher
@@ -203,6 +208,68 @@ public class NameSupportCacheAspect extends StandardAspect
       if (loggingService.isWarnEnabled())
         loggingService.warn("Illegal object = "+o+" returned from fetch",new Exception());
       return null;
+    }
+  }
+
+  private class Link extends DestinationLinkDelegateImplBase 
+  {
+    DestinationLink link;
+
+    private Link (DestinationLink link) 
+    {
+      super (link);
+      this.link = link;
+    }
+            
+    public MessageAttributes forwardMessage (AttributedMessage message) 
+      throws UnregisteredNameException, NameLookupException, 
+             CommFailureException, MisdeliveredMessageException
+    {
+      MessageAttributes attrs = null;
+      try {
+        attrs = link.forwardMessage (message);
+      } catch (UnregisteredNameException une) {
+        if (doDebug()) debug("forwardMessage: caught exception="+une);
+        dirty(message);
+        throw une;
+      } catch (NameLookupException nle) {
+        if (doDebug()) debug("forwardMessage: caught exception="+nle);
+        dirty(message);
+        throw nle;
+      } catch (CommFailureException cfe) {
+        if (doDebug()) debug("forwardMessage: caught exception="+cfe);
+        dirty(message);
+        throw cfe;
+      } catch (MisdeliveredMessageException mme) {
+        if (doDebug()) debug("forwardMessage: caught exception="+mme);
+        dirty(message);
+        throw mme;
+      } catch (Exception e) {
+        if (doDebug()) debug("forwardMessage: caught exception="+e);
+        dirty(message);
+        throw new CommFailureException(e);
+      }
+      return attrs;
+    }
+
+    private void dirty(AttributedMessage message) {
+      MessageAddress address = message.getTarget();
+      Class protocolClass = link.getProtocolClass();
+      String protocolType = null;
+      if (protocolClass.equals(RMILinkProtocol.class))
+        protocolType = "-RMI";
+      else if (protocolClass.equals(SSLRMILinkProtocol.class))
+        protocolType = "-SSLRMI";
+      else if (protocolClass.equals(SerializedRMILinkProtocol.class))
+        protocolType = "-SerializedRMI";
+      else
+        try {
+          protocolType = (String)protocolClass.getField("PROTOCOL_TYPE").get(null);  
+        } catch (Exception ee) { ee.printStackTrace(); }
+      NameSupportKey key = new NameSupportKey(address,protocolType);
+      if (doDebug())
+        debug("calling Cache.dirty on key="+key);
+      cache.dirty(key);
     }
   }
 }

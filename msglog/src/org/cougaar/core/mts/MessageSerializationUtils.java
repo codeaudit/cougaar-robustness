@@ -144,13 +144,13 @@ public final class MessageSerializationUtils
   }
 
   public static Object readObjectFromByteArray (byte[] data) 
-    throws DataIntegrityException, ClassNotFoundException, IOException
+    throws DataValidityException, DataIntegrityException, ClassNotFoundException, IOException
   {
     return readObjectFromByteArray (data, null);
   }
 
   public static Object readObjectFromByteArray (byte[] data, MessageDigest digest) 
-    throws DataIntegrityException, ClassNotFoundException, IOException
+    throws DataValidityException, DataIntegrityException, ClassNotFoundException, IOException
   {
     int digestLength = 16;
     byte embeddedDigest[] = null;
@@ -204,11 +204,12 @@ public final class MessageSerializationUtils
 	return obj;
   }
 
-  public static int readByteArrayHeader (byte[] data) throws DataIntegrityException, IOException
+  public static int readByteArrayHeader (byte[] data) 
+    throws DataValidityException, IOException
   {
     if (convertBytesToInt (data) != MAGIC_NUMBER)
     {
-      throw new DataIntegrityException ("Magic number wrong!");
+      throw new DataValidityException ("Magic number wrong!");
     }
 
     return convertBytesToInt (data, 4);  // embedded size field
@@ -251,13 +252,13 @@ public final class MessageSerializationUtils
   }
 
   public static byte[] readByteArray (InputStream in) 
-    throws DataIntegrityException, IOException
+    throws DataValidityException, DataIntegrityException, IOException
   {
     return readByteArray (in, null);
   }
 
   public static byte[] readByteArray (InputStream in, byte[] buf) 
-    throws DataIntegrityException, IOException
+    throws DataValidityException, DataIntegrityException, IOException
   {
     int hdrLen = getByteArrayHeaderLength();
     if (buf == null || buf.length < hdrLen) buf = new byte[hdrLen];
@@ -283,20 +284,20 @@ public final class MessageSerializationUtils
   }
 
   public static DatagramPacket readByteArrayPacket (DatagramSocket socket, DatagramPacket packet)
-    throws DataIntegrityException, IOException
+    throws DataValidityException, DataIntegrityException, IOException
   {
     packet.setData (readByteArray (socket, packet.getData()));
     return packet;
   }
 
   public static byte[] readByteArray (DatagramSocket socket)
-    throws DataIntegrityException, IOException
+    throws DataValidityException, DataIntegrityException, IOException
   {
     return readByteArray (socket, null);
   }
 
   public static byte[] readByteArray (DatagramSocket socket, byte[] buf)
-    throws DataIntegrityException, IOException
+    throws DataValidityException, DataIntegrityException, IOException
   {
     int hdrLen = getByteArrayHeaderLength();
     if (buf == null || buf.length < hdrLen) buf = new byte[hdrLen];
