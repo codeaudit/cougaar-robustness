@@ -22,8 +22,8 @@ package org.cougaar.tools.robustness.ma.util;
 
 public interface MoveListener {
 
-  public void moveInitiated(String agentName);
+  public void moveInitiated(String agentName, String origNode, String destNode);
 
-  public void moveComplete(String agentName, int status);
+  public void moveComplete(String agentName, String origNode, String destNode, int status);
 
 }

@@ -77,11 +77,14 @@ public class MoveHelper extends BlackboardClientComponent {
   public static final int FAIL = 1;
 
   class MoveQueueEntry {
-    String agent;
-    String destNode;
-    MoveQueueEntry(String a, String n) {
+    MessageAddress agent;
+    MessageAddress origNode;
+    MessageAddress destNode;
+    long expiration;
+    MoveQueueEntry(MessageAddress a, MessageAddress o, MessageAddress d) {
       agent = a;
-      destNode = n;
+      origNode = o;
+      destNode = d;
     }
   }
 
@@ -215,7 +218,7 @@ public class MoveHelper extends BlackboardClientComponent {
               new RelayAdapter(agentId, hmr, hmr.getUID());
           hmrRa.addTarget(SimpleMessageAddress.
                           getSimpleMessageAddress(origNode));
-          if (logger.isInfoEnabled()) {
+          if (logger.isDebugEnabled()) {
             logger.debug("Publishing HealthMonitorRequest:" +
                          " request=" + hmr.getRequestTypeAsString() +
                          " targets=" + targetsToString(hmrRa.getTargets()) +
@@ -235,7 +238,9 @@ public class MoveHelper extends BlackboardClientComponent {
   }
 
   protected void moveAgent(String agentName, String destNode) {
-    moveQueue.add(new MoveQueueEntry(agentName, destNode));
+    moveQueue.add(new MoveQueueEntry(SimpleMessageAddress.getSimpleMessageAddress(agentName),
+                                     agentId,
+                                     SimpleMessageAddress.getSimpleMessageAddress(destNode)));
   }
 
   private long now() { return (new Date()).getTime(); }
@@ -252,36 +257,31 @@ public class MoveHelper extends BlackboardClientComponent {
         logger.debug("MoveNext: " +
                      " MoveQueue=" + moveQueue.size() +
                      " MovesInProcess=" + movesInProcess.size());
-        MoveQueueEntry mqe = (MoveQueueEntry) moveQueue.remove(0);
-        final MessageAddress agent =
-            SimpleMessageAddress.getSimpleMessageAddress(mqe.agent);
-        final MessageAddress destNode =
-            SimpleMessageAddress.getSimpleMessageAddress(mqe.destNode);
-        Long moveExpiration = new Long(now() + MOVE_TIMEOUT);
-        movesInProcess.put(agent, moveExpiration);
+        final MoveQueueEntry mqe = (MoveQueueEntry) moveQueue.remove(0);
         try {
           ThreadService ts =
           (ThreadService) getServiceBroker().getService(this, ThreadService.class, null);
-          Schedulable pingThread = ts.getThread(this, new Runnable() {
+          Schedulable moveRequestThread = ts.getThread(this, new Runnable() {
           public void run() {
-
             Object ticketId = mobilityFactory.createTicketIdentifier();
             MoveTicket moveTicket = new MoveTicket(ticketId,
-                agent, // agent to move
-                agentId, //current node
-                destNode, //destination node
-                false); // forced restart
+                mqe.agent,    // agent to move
+                mqe.origNode, //current node
+                mqe.destNode, //destination node
+                false);       // forced restart
             UID acUID = uidService.nextUID();
             myUIDs.add(acUID);
             AgentControl ac =
                 mobilityFactory.createAgentControl(acUID, agentId, moveTicket);
-            moveInitiated(agent);
-            event("Moving agent: agent=" + agent + " orig=" + agentId +
-                  " dest=" + destNode);
+            mqe.expiration = now() + MOVE_TIMEOUT;
+            movesInProcess.put(mqe.agent, mqe);
+            moveInitiated(mqe.agent, mqe.origNode, mqe.destNode);
+            event("Moving agent: agent=" + mqe.agent + " orig=" + mqe.origNode +
+                  " dest=" + mqe.destNode);
             blackboard.openTransaction();
             blackboard.publishAdd(ac);
             blackboard.closeTransaction();
-            if (logger.isInfoEnabled()) {
+            if (logger.isDebugEnabled()) {
               StringBuffer sb =
                   new StringBuffer("Publishing AgentControl:" +
                                    " myUid=" + myUIDs.contains(ac.getOwnerUID()) +
@@ -295,9 +295,9 @@ public class MoveHelper extends BlackboardClientComponent {
               logger.debug(sb.toString());
             }
           }
-        }, "PingThread");
+        }, "MoveRequestThread");
         getServiceBroker().releaseService(this, ThreadService.class, ts);
-        pingThread.start();
+        moveRequestThread.start();
         } catch (Exception ex) {
           logger.error("Exception in agent move", ex);
         }
@@ -313,11 +313,11 @@ public class MoveHelper extends BlackboardClientComponent {
       for (Iterator it = movesInProcess.entrySet().iterator(); it.hasNext();) {
         Map.Entry me = (Map.Entry)it.next();
         MessageAddress agent = (MessageAddress)me.getKey();
-        long expiration = ((Long)me.getValue()).longValue();
-        if (expiration < now) {
+        MoveQueueEntry mqe = (MoveQueueEntry)me.getValue();
+        if (mqe.expiration < now) {
           it.remove();
           logger.debug("Move timeout: agent=" + agent);
-          moveComplete(agent, FAIL);
+          moveComplete(mqe.agent, mqe.origNode, mqe.destNode, FAIL);
         }
       }
   }
@@ -335,43 +335,60 @@ public class MoveHelper extends BlackboardClientComponent {
           MoveTicket moveTicket = (MoveTicket) ticket;
           switch (ac.getStatusCode()) {
             case AgentControl.CREATED:
+              /*
               event("Move successful:" +
                     " agent=" + moveTicket.getMobileAgent() +
                     " dest=" + moveTicket.getDestinationNode() +
                     " status=" + ac.getStatusCodeAsString());
+              */
               blackboard.publishRemove(ac);
               myUIDs.remove(ac.getOwnerUID());
               moveComplete(moveTicket.getMobileAgent(),
-                              SUCCESS);
+                           moveTicket.getOriginNode(),
+                           moveTicket.getDestinationNode(),
+                           SUCCESS);
               break;
             case AgentControl.ALREADY_EXISTS:
+              /*
               event("Move successful:" +
                     " agent=" + moveTicket.getMobileAgent() +
                     " dest=" + moveTicket.getDestinationNode() +
                     " status=" + ac.getStatusCodeAsString());
+              */
               blackboard.publishRemove(ac);
               myUIDs.remove(ac.getOwnerUID());
               moveComplete(moveTicket.getMobileAgent(),
-                              SUCCESS);
+                           moveTicket.getOriginNode(),
+                           moveTicket.getDestinationNode(),
+                           SUCCESS);
               break;
             case AgentControl.MOVED:
+              /*
               event("Move successful:" +
                     " agent=" + moveTicket.getMobileAgent() +
                     " dest=" + moveTicket.getDestinationNode() +
                     " status=" + ac.getStatusCodeAsString());
+              */
               blackboard.publishRemove(ac);
               myUIDs.remove(ac.getOwnerUID());
               moveComplete(moveTicket.getMobileAgent(),
-                              SUCCESS);
+                           moveTicket.getOriginNode(),
+                           moveTicket.getDestinationNode(),
+                           SUCCESS);
               break;
             case AgentControl.FAILURE:
+              /*
               event("Move failed:" +
                     " agent=" + moveTicket.getMobileAgent() +
                     " dest=" + moveTicket.getDestinationNode() +
                     " status=" + ac.getStatusCodeAsString());
+              */
               blackboard.publishRemove(ac);
               myUIDs.remove(ac.getOwnerUID());
-              moveComplete(moveTicket.getMobileAgent(), FAIL);
+              moveComplete(moveTicket.getMobileAgent(),
+                           moveTicket.getOriginNode(),
+                           moveTicket.getDestinationNode(),
+                           FAIL);
               break;
             case AgentControl.NONE:
               break;
@@ -410,15 +427,14 @@ public class MoveHelper extends BlackboardClientComponent {
   /**
    * Notify move listeners.
    */
-  private void moveInitiated(MessageAddress agent) {
+  private void moveInitiated(MessageAddress agent, MessageAddress orig, MessageAddress dest) {
     logger.debug("MoveInitiated: agent=" + agent);
     synchronized (listeners) {
       for (Iterator it = listeners.iterator(); it.hasNext(); ) {
         MoveListener ml = (MoveListener) it.next();
-        ml.moveInitiated(agent.toString());
+        ml.moveInitiated(agent.toString(), orig.toString(), dest.toString());
       }
     }
-    movesInProcess.remove(agent);
     moveNext();
   }
 
@@ -426,12 +442,12 @@ public class MoveHelper extends BlackboardClientComponent {
   /**
    * Notify move listeners.
    */
-  private void moveComplete(MessageAddress agent, int status) {
+  private void moveComplete(MessageAddress agent, MessageAddress orig, MessageAddress dest, int status) {
     logger.debug("MoveComplete: agent=" + agent);
     synchronized (listeners) {
       for (Iterator it = listeners.iterator(); it.hasNext(); ) {
         MoveListener ml = (MoveListener) it.next();
-        ml.moveComplete(agent.toString(), status);
+        ml.moveComplete(agent.toString(), orig.toString(), dest.toString(), status);
       }
     }
     movesInProcess.remove(agent);
