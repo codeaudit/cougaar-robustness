@@ -36,7 +36,6 @@ import org.cougaar.core.service.ThreadService;
 import org.cougaar.core.component.ServiceBroker;
 
 import org.cougaar.core.service.wp.AddressEntry;
-import org.cougaar.core.service.wp.Application;
 import org.cougaar.core.service.wp.WhitePagesService;
 
 import org.cougaar.core.qos.metrics.MetricsUpdateService;
@@ -251,8 +250,8 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
                                                  HeartbeatPiggybackerAspect.this.getServiceBroker(), 
                                                  toNodeAddr);
                 toNode = agentID.getNodeName();
-            } catch (NameLookupException nle) {
-                log.debug("PB== *** WP Cannot find agent -- NameLookupException encountered with:"+toNodeAddr+" -- fwding msg.");
+            } catch (UnregisteredNameException nle) {
+                log.debug("PB== *** WP Cannot find agent -- UnregisteredNameException encountered with:"+toNodeAddr+" -- fwding msg.");
                 return;
             } catch (Exception e) {
                 log.debug("PB== *** Null Ptr Exception encountered trying to get AgentID. -- fwding msg.");
@@ -298,8 +297,8 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
                                                  HeartbeatPiggybackerAspect.this.getServiceBroker(), 
                                                  toNodeAddr);
                 toNode = agentID.getNodeName();
-            } catch (NameLookupException nle) {
-                log.debug("PB== *** WP Cannot find agent -- NameLookupException encountered with:"+toNodeAddr);
+            } catch (UnregisteredNameException nle) {
+                log.debug("PB== *** WP Cannot find agent -- UnregisteredNameException encountered with:"+toNodeAddr);
                 return;
             }
             if (toNode == null) {
