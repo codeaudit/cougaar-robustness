@@ -23,6 +23,7 @@ import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.service.AlarmService;
 import org.cougaar.core.service.SchedulerService;
+import org.cougaar.core.service.UIDService;
 import org.cougaar.core.service.community.CommunityService;
 import org.cougaar.core.service.community.Community;
 import org.cougaar.core.service.community.Entity;
@@ -55,6 +56,7 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
 
   private LoggingService log;
   private CommunityService commSvc;
+  private UIDService uidSvc;
   private final List sendQueue = new ArrayList(5);
   private final List updateQueue = new ArrayList(5);
 
@@ -107,6 +109,7 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
       (AlarmService)getServiceBroker().getService(this, AlarmService.class, null));
     setSchedulerService(
       (SchedulerService)getServiceBroker().getService(this, SchedulerService.class, null));
+    uidSvc = (UIDService)getServiceBroker().getService(this, UIDService.class, null);
     initialize();
     load();
     start();
@@ -162,6 +165,8 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
               " community=" + community +
               " role=" + role);
     // Send to remote listeners via ABA/Relay
+    ta.setSource(agentId);
+    ta.setUID(uidSvc.nextUID());
     RelayAdapter taRelay = new RelayAdapter(agentId, ta, ta.getUID());
     AttributeBasedAddress target =
         AttributeBasedAddress.getAttributeBasedAddress(community, "Role", role);

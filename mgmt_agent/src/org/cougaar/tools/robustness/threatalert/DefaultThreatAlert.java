@@ -48,64 +48,49 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
 
   /**
    * Create a new ThreatAlert.
-   * @param source         ThreatAlert source
    * @param severityLevel  Severity level of alert
    * @param start          Time at which alert becomes active
    * @param expiration     Time at which alert expires
-   * @param uid            Unique identifier
    */
-  public DefaultThreatAlert(MessageAddress    source,
-                            int               severityLevel,
+  public DefaultThreatAlert(int               severityLevel,
                             Date              start,
-                            Date              expiration,
-                            UID               uid) {
+                            Date              expiration) {
     this();
     this.source = source;
     this.severityLevel = severityLevel;
     this.creationTime = new Date();
     this.startTime = start.getTime();
     this.duration = expiration.getTime() - start.getTime();
-    this.uid = uid;
   }
 
   /**
    * Create a new ThreatAlert.
-   * @param source         ThreatAlert source
    * @param severityLevel  Severity level of alert
    * @param start          Time at which alert becomes active
    * @param duration       Duration of threat period (FOREVER == never expires)
-   * @param uid            Unique identifier
    */
-  public DefaultThreatAlert(MessageAddress  source,
-                            int             severityLevel,
-                            Date            start,
-                            long            duration,
-                            UID             uid) {
+  public DefaultThreatAlert(int  severityLevel,
+                            Date start,
+                            long duration) {
     this();
     this.source = source;
     this.severityLevel = severityLevel;
     this.startTime = start.getTime();
     this.duration = duration;
-    this.uid = uid;
     this.creationTime = new Date();
   }
 
   /**
    * Create a new ThreatAlert using the current time as the threat start time.
-   * @param source         ThreatAlert source
    * @param severityLevel  Severity level of alert
    * @param duration       Duration of threat period (FOREVER == never expires)
-   * @param uid            Unique identifier
    */
-  public DefaultThreatAlert(MessageAddress  source,
-                            int             severityLevel,
-                            long            duration,
-                            UID             uid) {
+  public DefaultThreatAlert(int  severityLevel,
+                            long duration) {
     this();
     this.source = source;
     this.severityLevel = severityLevel;
     this.duration = duration;
-    this.uid = uid;
     this.creationTime = new Date();
     this.startTime = creationTime.getTime();
   }
