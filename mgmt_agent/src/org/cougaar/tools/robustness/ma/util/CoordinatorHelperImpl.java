@@ -125,7 +125,7 @@ public class CoordinatorHelperImpl
       if (logger.isDetailEnabled()) {
         logger.detail("Changed action: " + action);
       }
-      if (newPV.contains(RESTART_ACTION)) {
+      if (newPV != null && newPV.contains(RESTART_ACTION)) {
         opmodeEnabled(action.getAssetName());
       }
     }
