@@ -12,7 +12,7 @@
  * DisconnectAgentPlugin.java
  *
  * <copyright>
- *  Copyright 2003 Object Services and Consulting, Inc.
+ *  Copyright 2003,2004 Object Services and Consulting, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
  *  and the Defense Logistics Agency (DLA).
  * 
@@ -230,10 +230,10 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
               }
               // set the ReconnectTimeCondition for each agent on the node
               if (eventService.isEventEnabled())
-                  if (reconnectInterval == 0) {
+                  if (reconnectInterval > 0) {            // changed from "== 0" sjf 3/22/04
                     eventService.event("Requesting to Disconnect Node: "+getNodeID());
                   }
-                  else if (reconnectInterval > 0) {
+                  else if (reconnectInterval == 0) {      // changed from "> 0" sjf 3/22/04
                       eventService.event("Requesting to Reconnect Node: "+getNodeID());
                   }
               Iterator iter2 = reconnectTimeSubscription.iterator();
@@ -256,10 +256,14 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
                   String defenseMode = dmode.getValue().toString();
                   if (eventService.isEventEnabled()) {
                       if (defenseMode.equals("ENABLED")) {
-                          eventService.event(getNodeID()+" plans to Disconnect for "+reconnectInterval+" sec");
+			  //eventService.event(getNodeID()+" plans to Disconnect for "+reconnectInterval+" sec");
+			  eventService.event("Planned Disconnect ENABLED for "+getNodeID()
+					     +" for "+reconnectInterval+" sec"); // sjf 3/23/04
                       }
                       else if (defenseMode.equals("DISABLED")){
-                          eventService.event(getNodeID()+" has Reconnected");
+			  //eventService.event(getNodeID()+" has Reconnected");
+			  eventService.event("Planned Disconnect DISABLED for "+getNodeID()
+					     +".  "+getNodeID()+" is connected."); // sjf 3/23/04
                       }
                   }
               }

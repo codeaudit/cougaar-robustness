@@ -124,7 +124,7 @@ public class DisconnectServlet extends BaseServletComponent
       }
     }
     
-    if (eventService.isEventEnabled()) eventService.event("Loaded DisconnectServlet");
+    //if (eventService.isEventEnabled()) eventService.event("Loaded DisconnectServlet");
 
     super.load();
   }

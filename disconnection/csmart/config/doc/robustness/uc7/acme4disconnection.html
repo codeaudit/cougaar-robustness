@@ -1,0 +1,395 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>ACME Automation for Adaptive Robustness Use Case #2 - Rolling
+Partition Experiment - OBJS MsgLog</title>
+  <meta http-equiv="content-type"
+ content="text/html; charset=ISO-8859-1">
+  <meta name="author" content="Steve Ford">
+</head>
+<body>
+<div style="text-align: center;"><u><big><span
+ style="font-weight: bold;">ACME Automation for Adaptive Robustness Use
+Case #7</span></big></u><br>
+<u><big><span style="font-weight: bold;">Planned Disconnect Experiment</span></big></u><br>
+<u><big><span style="font-weight: bold;">OBJS' Disconnection module</span></big></u><br>
+</div>
+<br>
+OBJS' Disconnection defense for ARUC7, along with MIC's Sledgehammer
+for ARUC1 and OBJS' Lost Network
+Component
+(MsgLog) for ARUC2, is coordinated by OBJS' Deconfliction module.<br>
+<br>
+These instructions describe the ACME automation
+for
+the Disconnection experiment. For more information about Deconfliction
+experiment, see the docs at <a
+ href="https://cvs.ultralog.net/objs/source/Deconfliction/csmart/config/doc/robustness/uc9/">https://cvs.ultralog.net/objs/source/Deconfliction/csmart/config/doc/robustness/uc9/</a><br>
+<br>
+<br>
+<u><b>Overlays:</b></u>
+<blockquote><b>Planned Disconnect requires the following overlays
+be
+loaded:</b>
+  <blockquote>
+    <table>
+      <tbody>
+        <tr>
+          <td> Robustness </td>
+          <td> <a
+ href="https://cvs.ultralog.net/dist/AR_objs_deconfliction_B11_0_B11_0.zip">Objs
+deconfliction</a> </td>
+        </tr>
+        <tr>
+          <td> Robustness </td>
+          <td> <a
+ href="https://cvs.ultralog.net/dist/AR_common_B11_0_B11_0.zip">Robustness
+common</a> </td>
+        </tr>
+        <tr>
+          <td> Robustness </td>
+          <td> <a
+ href="https://cvs.ultralog.net/dist/AR_objs_disconnection_B11_0_B11_0.zip">Objs
+disconnection</a> </td>
+        </tr>
+      </tbody>
+    </table>
+  </blockquote>
+</blockquote>
+<u><b><br>
+Transformation Rules:</b></u><br>
+<blockquote>To add Disconnection, apply the following to
+the
+society:<br>
+  <br>
+  <b>$CIP/csmart/config/rules/robustness/manager.rule</b><br>
+  <b>$CIP/csmart/config/rules/robustness/uc9/deconfliction.rule</b><br>
+  <b></b><font color="#330033"></font><b>$CIP/csmart/config/rules/robustness/uc7/disconnection.rule<br>
+  <br>
+  </b></blockquote>
+<blockquote>
+  <blockquote>
+    <ul>
+      <ul>
+      </ul>
+    </ul>
+    <ul>
+    </ul>
+  </blockquote>
+  <ul>
+    <ul>
+    </ul>
+  </ul>
+  <blockquote>
+    <ul>
+    </ul>
+  </blockquote>
+</blockquote>
+<u><b>ACME Actions and States</b></u>
+<blockquote> </blockquote>
+<blockquote>Planned Disconnection requires the following actions and
+states::<br>
+  <br>
+  <b>$CIP/csmart/config/lib/robustness/uc9/deconfliction.rb</b><br>
+  <b>$CIP/csmart/config/lib/robustness/uc7/</b><b>disconnection.rb<br>
+  </b><br>
+They are documented at the end of this file.<br>
+  <br>
+</blockquote>
+<span style="text-decoration: underline; font-weight: bold;">Parameterized
+Experiment Definition</span><br>
+<br>
+<div style="margin-left: 40px;">Include the following scriptlet in a
+run script to add a Disconnection experiment to a run:<br>
+</div>
+<div style="margin-left: 40px;"><span style="font-weight: bold;"><br>
+$CIP/csmart/lib/robustness/objs/disconnect.rb<br>
+</span></div>
+<span style="font-weight: bold;"><br>
+<br>
+<span style="text-decoration: underline;">Sample Run Script<br>
+<br>
+</span></span>
+<div style="margin-left: 40px;">The sample run script below is
+annotated with descriptions for the parameters to the <span
+ style="font-weight: bold;">disconnect.rb</span> Experiment Definition:<br>
+<br>
+<span style="font-weight: bold;">$CIP/csmart/lib/robustness/objs/DisconnectionStage1-UC1.rb</span><br>
+</div>
+<div style="margin-left: 40px;"><br style="font-weight: bold;">
+</div>
+<hr style="width: 100%; height: 2px; margin-left: 40px;">
+<div
+ style="margin-left: 40px; font-family: courier new,courier,monospace;"><small>=begin
+experiment<br>
+<br>
+name: DisconnectionStage1wUC1<br>
+description: Disconnection (ARUC7) with UC1 loaded through Stage1<br>
+script: $CIP/csmart/lib/robustness/objs/BaselineTemplateStage1.rb<br>
+parameters:<br>
+</small>
+<div style="margin-left: 40px;"><small>- run_count: 1<br>
+- society_file:
+$CIP/csmart/config/societies/ua/full-tc20-232a703v.plugins.rb<br>
+- layout_file: $CIP/operator/layouts/FULL-UA-MNGR-33H63N-layout.xml<br>
+- archive_dir: $CIP/Logs<br>
+</small></div>
+</div>
+<div style="margin-left: 40px;"><small><span
+ style="font-family: courier new,courier,monospace;">&nbsp; <br>
+</span></small>
+<div
+ style="margin-left: 40px; font-family: courier new,courier,monospace;"><small>-
+rules:<br>
+</small></div>
+<div
+ style="margin-left: 80px; font-family: courier new,courier,monospace;"><small>-
+$CIP/csmart/config/rules/isat<br>
+- $CIP/csmart/config/rules/yp<br>
+- $CIP/csmart/config/rules/logistics<br>
+- $CIP/csmart/config/rules/robustness/manager.rule<br>
+- $CIP/csmart/config/rules/robustness/uc1<br>
+<span style="font-weight: bold;">-
+$CIP/csmart/config/rules/robustness/uc7</span><br
+ style="font-weight: bold;">
+<span style="font-weight: bold;">-
+$CIP/csmart/config/rules/robustness/uc9</span><br>
+- $CIP/csmart/config/rules/metrics/basic<br>
+- $CIP/csmart/config/rules/metrics/sensors<br>
+</small></div>
+<div
+ style="margin-left: 40px; font-family: courier new,courier,monospace;"><small>-
+community_rules:<br>
+</small></div>
+<div
+ style="margin-left: 80px; font-family: courier new,courier,monospace;"><small>-
+$CIP/csmart/config/rules/robustness/communities/community.rule<br>
+</small></div>
+<small><span style="font-family: courier new,courier,monospace;"><br>
+<span style="font-family: courier new,courier,monospace;">include_scripts:</span><br
+ style="font-family: courier new,courier,monospace;">
+</span></small>
+<div
+ style="margin-left: 40px; font-family: courier new,courier,monospace;"><small>-
+script: $CIP/csmart/scripts/definitions/clearPnLogs.rb<br>
+</small>
+<div style="margin-left: 40px;"><small
+ style="font-style: italic; color: rgb(0, 0, 0);"><font size="-1"><span
+ style="font-family: courier new,courier,monospace;">#
+This script inserts the Planned Disconnect Experiment Definition.&nbsp;
+Its parameters are descibed below.</span></font></small><br>
+</div>
+<small><span style="font-weight: bold;">- script:
+$CIP/csmart/lib/robustness/objs/disconnect.rb</span><br>
+</small></div>
+<div
+ style="margin-left: 40px; font-family: courier new,courier,monospace;"><small><span
+ style="font-weight: bold;">parameters:</span><br>
+</small>
+<div style="margin-left: 80px;"><small
+ style="font-style: italic; color: rgb(0, 0, 0);"># the "at" tag in the
+template to insert this script.&nbsp; This must be after Defenses are
+Unleashed by deconfliction.rb (below)</small><br>
+</div>
+<div style="margin-left: 40px;"><small>-<span style="font-weight: bold;">
+location: during_stage_1</span><span style="color: rgb(0, 0, 0);"><span
+ style="font-weight: bold;"> </span><br>
+</span></small><small style="color: rgb(0, 0, 0);"></small>
+<div style="margin-left: 40px; color: rgb(0, 0, 0);"><small
+ style="font-style: italic;"># the nodes to
+be disconnected.&nbsp; Make sure that all nodes are listed for any
+hosts on
+which any nodes will be disconnected, else the ARManager will restart
+the agents on the unlisted nodes.</small><br>
+</div>
+<small style="color: rgb(0, 0, 0);"><span style="font-weight: bold;">-
+nodes: ["UA-FSB-A-NODE", "UA-FSB-B-NODE"] </span><br>
+</small>
+<div style="margin-left: 40px; color: rgb(0, 0, 0);"><small
+ style="font-style: italic;"># the period
+of time that the listed nodes plan to be disconnected.&nbsp; At
+present,
+this should be somewhat longer than the actual_disconnect time to
+compensate for delays reestablishing communications after a
+disconnect.&nbsp; In this example, 4 additional minutes has always
+sufficed.&nbsp; If the disconnect is shorter or longer, less or more
+additional time would be appropriate.</small><br
+ style="color: rgb(0, 0, 0);">
+</div>
+<small style="color: rgb(0, 0, 0);"><span style="font-weight: bold;">-
+planned_disconnect: 12.minutes </span><br>
+</small>
+<div style="margin-left: 40px; color: rgb(0, 0, 0); font-style: italic;"><small>#
+the actual amount of time to disconnect from the network (i.e. ifdown)
+the hosts on which the listed nodes reside.</small></div>
+<small style="color: rgb(0, 0, 0);"><span style="font-weight: bold;">-
+actual_disconnect: 8.minutes </span><br>
+</small>
+<div style="margin-left: 40px; color: rgb(0, 0, 0); font-style: italic;"><font
+ size="-1" style="color: rgb(0, 0, 0);"># </font><font size="-1"
+ style="color: rgb(255, 0, 0);"><span style="color: rgb(0, 0, 0);">the
+verbosity level </span></font><font size="-1"
+ style="color: rgb(0, 0, 0);">(0, 1, 2) </font><font size="-1"
+ style="color: rgb(255, 0, 0);"><span style="color: rgb(0, 0, 0);">of
+ACME messaging to the console. 0 which
+prints no messages; 2 prints lots.</span></font></div>
+<small style="color: rgb(0, 0, 0); font-weight: bold;">- verbose:<font
+ size="-1"> 1</font></small><font size="-1" style="color: rgb(0, 0, 0);"><span
+ style="font-family: courier new,courier,monospace; font-weight: bold;">
+</span><br style="font-family: courier new,courier,monospace;">
+</font>
+<div
+ style="font-family: courier new,courier,monospace; color: rgb(0, 0, 0);"><font
+ size="-1" style="color: rgb(255, 0, 0);"></font><small
+ style="font-style: italic;"><font size="-1"><span
+ style="font-family: courier new,courier,monospace;">#
+This script inserts the UnleashDefenses action, which must be executed
+before the Disconnect experiment.&nbsp; If inserted at the same "at"
+point,
+it must be listed here after disconnect.rb, so that it is ends up before
+it.</span></font></small></div>
+</div>
+<small style="color: rgb(0, 0, 0);"><font size="-1"><span
+ style="font-family: courier new,courier,monospace;"><span
+ style="font-weight: bold;">- script:
+$CIP/csmart/lib/robustness/objs/deconfliction.rb</span><br>
+</span></font></small>
+<div style="margin-left: 40px;"><small
+ style="font-weight: bold; color: rgb(0, 0, 0);"><font size="-1"><span
+ style="font-family: courier new,courier,monospace;"></span></font></small><br>
+</div>
+</div>
+<font size="-1" style="font-family: courier new,courier,monospace;">=end<br>
+<br>
+require 'cougaar/scripting'<br>
+Cougaar::ExperimentDefinition.register(__FILE__)</font><span
+ style="font-weight: bold;"><br>
+</span>
+<hr style="width: 100%; height: 2px;"><span style="font-weight: bold;"><br>
+</span></div>
+<u><b>ACME Actions and States Detail<br>
+<br>
+</b></u>
+<blockquote>
+  <blockquote> </blockquote>
+  <b>$CIP/csmart/config/lib/robustness/uc7/</b><b>disconnection.rb</b>
+defines the ACME Actions and States that the above scripts use..&nbsp; <br>
+  <br>
+Note: All action &amp; states take an optional parameter (0, 1, 2) to
+allow the verbosity of messaging to be set.&nbsp; Default is 0 which
+prints no messages.<br>
+  <tt><b></b></tt><tt><b><br>
+  </b></tt><tt><i># For the rest of the run, prints a message when the
+Robustness<br>
+# Manager determines any node's period of Planned Disconnection<br>
+# expires and the node hasn't reconnected.</i></tt><br>
+  <tt><b>do_action "MonitorPlannedDisconnectExpired", </b></tt><tt><b>["FWD-D",
+"FWD-E"] , 1 <br>
+  <br>
+  </b></tt><tt><i># For the rest of the run, prints a message when
+Reconnected Node <br>
+# receives confirmation of Reconnection from Robustness Manager.<br>
+  </i></tt><tt><b>do_action "MonitorReconnectConfirmed", </b></tt><tt><b>["FWD-D",
+"FWD-E"] , 1 </b></tt><br>
+  <tt><b> <br>
+  </b></tt><tt><i># Nodes FWD-D and FWD-E announce that they plan to be
+disconnected
+for a<br>
+# period of 12 minutes. </i></tt><br>
+  <tt><b>do_action "StartPlannedDisconnect", </b></tt><tt><b>["FWD-D",
+"FWD-E"]</b></tt><tt><b>, 12.minutes, 1<br>
+  <br>
+  </b></tt><tt><i></i></tt><tt><i># This action waits for confirmation
+of the completion of StartPlannedDisconnect.<br>
+# If that is received for all specified nodes, it drops the NICs (i.e.
+ifdown)<br>
+# for the machines on which those nodes reside for the specified time
+(e.g. 8.minutes).<br>
+# If it doesn't get confirmation, it doesn't drop the NICs.</i><b><br>
+wait_for "ActualDisconnectCompleted", </b></tt><tt><b>["FWD-D",
+"FWD-E"] , 8.minutes, 30.minutes, 1<br>
+  </b># The following messages will be emitted in a successful run:<br>
+  </tt><tt># &nbsp; Waiting 1800 seconds for Coordinator's permission
+to disconnect nodes FWD-D, FWD-E.<br>
+  </tt><tt># &nbsp; </tt><tt>FWD-D: Requesting to Disconnect Node:
+FWD-D<br>
+  </tt><tt># &nbsp; </tt><tt>FWD-E: Requesting to Disconnect Node:
+FWD-E<br>
+  </tt><tt># &nbsp; </tt><tt>FWD-D: Planned Disconnect ENABLED for
+UA-FSB-B-NODE for 720 sec</tt><tt></tt><br>
+  <tt># &nbsp; </tt><tt>FWD-E: Planned Disconnect ENABLED for
+UA-FSB-B-NODE for 720 sec</tt><tt><br>
+# &nbsp; </tt><tt>Taking down network for host sv131 that has nodes </tt><tt>FWD-D,
+FWD-E</tt><br>
+  <tt>#&nbsp;&nbsp; </tt><tt>Bringing up network for host sv131 that
+has nodes </tt><tt>FWD-D, FWD-E</tt></blockquote>
+<blockquote><tt><b> </b></tt><tt><b></b></tt><tt><b></b></tt><tt># The
+reconnected nodes announce that they have reconnected. <br>
+  </tt><tt><b>do_action "EndPlannedDisconnect", </b></tt><tt><b>["FWD-D",
+"FWD-E"], 1</b></tt><br>
+  <tt># The following messages will be emitted</tt><tt>, after a delay
+of up to 4 minutes after bringing up the </tt><tt>network:</tt><br>
+  <tt></tt><tt>#&nbsp;&nbsp; UA-FSB-A-NODE: Planned Disconnect DISABLED
+for </tt><tt>FWD-D</tt><tt>.&nbsp; </tt><tt>FWD-D</tt><tt> is
+connected.<br>
+  </tt><tt># &nbsp; UA-FSB-A-NODE: Planned Disconnect DISABLED for </tt><tt>FWD-E</tt><tt>.&nbsp;
+  </tt><tt>FWD-E</tt><tt> is connected.<br>
+  <br>
+  </tt><b>$CIP/csmart/config/lib/robustness/uc9/</b><b>deconfliction.rb</b>
+defines the ACME Actions and States for the deconfliction module.<br>
+  <span style="font-style: italic; font-family: monospace;"><span
+ style="font-weight: bold;"><br>
+  </span># Monitor that the Defenses are no longer Suppressed<br>
+# Should see an event "Defenses Unleashed - Ready to go"</span><br>
+  <span style="font-style: italic; font-family: monospace;"><span
+ style="font-weight: bold;">do_action "MonitorUnleashConfirmed"</span></span><br>
+  <span style="font-style: italic; font-family: monospace;"><span
+ style="font-weight: bold;"> </span><br style="font-weight: bold;">
+  </span><span style="font-style: italic; font-family: monospace;">#
+Unleash Suppressed Defenses<br>
+# If this is not done, the Defenses will not be enabled later on<br>
+  </span><span style="font-style: italic; font-family: monospace;"><span
+ style="font-weight: bold;">do_action "UnleashDefenses"</span></span><br>
+  <tt><i></i></tt><br>
+</blockquote>
+<tt style="font-weight: bold; text-decoration: underline;">Caveat</tt><br>
+<blockquote><tt>If the actual disconnect time (plus four minutes) is
+greater than the <br>
+planned disconnect time, then the following messages will be emitted:<br>
+  <br style="font-weight: bold;">
+  <span style="font-weight: bold;">FWD-D no longer legitimately
+Disconnected</span><br style="font-weight: bold;">
+  </tt><tt style="font-weight: bold;">FWD-E no longer legitimately
+Disconnected<br>
+  <br>
+  </tt><tt>and the ARManager should restart the agents on these nodes
+on other nodes.<br>
+When the actual disconnect concludes, the disconnected nodes and agents
+  <br>
+will return, resulting in duplicate agents.&nbsp; <br>
+  <br>
+Cougaar at present can not tolerate duplicate agents.&nbsp; The run
+will not complete<br>
+successfully.&nbsp; Post PAD-integration, this problem will be
+investigated in depth<br>
+and a solution implemented.</tt><span
+ style="font-style: italic; font-family: monospace;"><span
+ style="font-weight: bold;"></span></span><tt><i><br>
+  </i></tt></blockquote>
+For further information configuring these defenses, see <a
+ href="https://cvs.ultralog.net/ultralog/UltraLogRobustness">https://cvs.ultralog.net/ultralog/UltraLogRobustness</a>.<br>
+<br>
+Send questions or comments to:<br>
+<br>
+<tt>Steve Ford</tt><br>
+<tt> OBJS</tt><br>
+<tt> </tt><tt><a href="mailto:ford@objs.com">ford@objs.com</a></tt><br>
+<tt>610 345 0448</tt>
+<blockquote>
+  <blockquote> </blockquote>
+</blockquote>
+<br>
+<br>
+<br>
+</body>
+</html>
