@@ -500,7 +500,7 @@ public class AgentID implements java.io.Serializable
 		  if ((node_cbte != null) && (node_cbte.result != null)) {
 		      String node_cb = node_cbte.result.getPath().substring(1);
 		      if (!node_cb.equals(id.getNodeName())) {
-			  s = "node:///dummy/" + id.getNodeName();
+			  s = "node://unknown/" + id.getNodeName();
 			  try {
 			      node_cbte.result = new URI(s);
 			  } catch (URISyntaxException e) {
