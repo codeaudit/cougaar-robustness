@@ -408,12 +408,16 @@ class MessageResender implements Runnable
 	  //	    log.debug("MessageResender: Attributes are instances of class " + attrs.getClass());
 	  //    }
 	  //}
+
+	  //1045B
+	  // Clone Message Attributes to keep resend from screwing up incomplete prior send
+          msg = new AttributedMessage(msg);
           
 	  msg.removeAttribute(MessageAttributes.IS_STREAMING_ATTRIBUTE); //B1041
 	  msg.removeAttribute(MessageAttributes.ENCRYPTED_SOCKET_ATTRIBUTE); //B1041
 	  //B1045 msg.removeAttribute(FILTERS_ATTRIBUTE); //B1041
-        msg.setAttribute(FILTERS_ATTRIBUTE, new ArrayList()); //B1045
-
+	  msg.setAttribute(FILTERS_ATTRIBUTE, new ArrayList()); //B1045
+	  
           //if (debug()) {
           //    Attributes attrs = msg.cloneAttributes();
 	  //    if (attrs instanceof SimpleMessageAttributes) {
