@@ -849,6 +849,26 @@ public class CommunityStatusModel extends BlackboardClientComponent
     return value;
   }
 
+  public String getAttribute(String name, String id) {
+    return getAttribute(getAttributes(name), id);
+  }
+
+  public String getAttribute(String id) {
+    return getAttribute(getCommunityAttributes(), id);
+  }
+
+  public String getAttribute(Attributes attrs, String id) {
+    String value = null;
+    try {
+      if (attrs != null && id != null) {
+        Attribute attr = attrs.get(id);
+        if (attr != null)
+          value = ((String)attr.get());
+      }
+    } catch (Exception ex) {}
+    return value;
+  }
+
   public double getDoubleAttribute(String name, String id) {
     return getDoubleAttribute(getAttributes(name), id);
   }
