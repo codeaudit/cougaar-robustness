@@ -30,7 +30,7 @@ import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.SchedulerService;
-import org.cougaar.core.service.ThreadService;
+//import org.cougaar.core.service.ThreadService;
 import org.cougaar.core.service.UIDService;
 
 import org.cougaar.core.component.BindingSite;
@@ -47,7 +47,7 @@ import org.cougaar.core.mobility.ldm.MobilityFactory;
 import org.cougaar.core.service.AlarmService;
 import org.cougaar.core.agent.service.alarm.Alarm;
 
-import org.cougaar.core.thread.Schedulable;
+//import org.cougaar.core.thread.Schedulable;
 
 import org.cougaar.core.util.UID;
 
@@ -64,7 +64,6 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import EDU.oswego.cs.dl.util.concurrent.Semaphore;
 
 /**
  */
@@ -79,7 +78,9 @@ public class RestartHelper extends BlackboardClientComponent {
   public static final long MAX_CONCURRENT_RESTARTS = 1;
 
   private List restartQueue = Collections.synchronizedList(new ArrayList());
-  private Map restartsInProcess = new HashMap();
+  private Map restartsInProcess = Collections.synchronizedMap(new HashMap());
+
+  private WakeAlarm wakeAlarm;
 
   private Set myUIDs = new HashSet();
   private MobilityFactory mobilityFactory;
@@ -139,7 +140,6 @@ public class RestartHelper extends BlackboardClientComponent {
 
   public void start() {
     super.start();
-    alarmService.addRealTimeAlarm(new RestartTimer(TIMER_INTERVAL));
   }
 
   public void setupSubscriptions() {
@@ -147,9 +147,18 @@ public class RestartHelper extends BlackboardClientComponent {
         (IncrementalSubscription)blackboard.subscribe(agentControlPredicate);
     healthMonitorRequests =
         (IncrementalSubscription)blackboard.subscribe(healthMonitorRequestPredicate);
+    // Start timer to periodically check RestartQueue
+    wakeAlarm = new WakeAlarm((new Date()).getTime() + TIMER_INTERVAL);
+    alarmService.addRealTimeAlarm(wakeAlarm);
   }
 
   public void execute() {
+    if (!restartsInProcess.isEmpty()) {
+      removeExpiredRestarts();
+    }
+    if (!restartQueue.isEmpty()) {
+      restartNext();
+    }
     // Get AgentControl objects
     for (Iterator it = agentControlSub.iterator(); it.hasNext();) {
       update(it.next());
@@ -204,65 +213,61 @@ public class RestartHelper extends BlackboardClientComponent {
   protected void restartAgent(String agentName) {
     logger.debug("RestartAgent:" +
                 " agent=" + agentName);
-    if (!restartQueue.contains(agentName)) restartQueue.add(agentName);
+    if (!restartQueue.contains(agentName)) {
+      restartQueue.add(agentName);
+      blackboard.signalClientActivity();
+    }
   }
 
   private long now() { return (new Date()).getTime(); }
 
   private void restartNext() {
-    removeExpiredRestarts();
-    synchronized (restartsInProcess) {
-      if ((!restartQueue.isEmpty()) &&
-          (restartsInProcess.size() <= MAX_CONCURRENT_RESTARTS)) {
-        logger.debug("RestartNext: " +
-                     " RestartQueue=" + restartQueue.size() +
-                     " restartsInProcess=" + restartsInProcess.size());
-        MessageAddress agentToRestart =
-            SimpleMessageAddress.getSimpleMessageAddress((String)
-            restartQueue.remove(0));
-        Long restartExpiration = new Long(now() + RESTART_TIMEOUT);
-        restartsInProcess.put(agentToRestart, restartExpiration);
-        try {
-          Object ticketId = mobilityFactory.createTicketIdentifier();
-          AddTicket addTicket = new AddTicket(ticketId, agentToRestart, agentId);
-          UID acUID = uidService.nextUID();
-          myUIDs.add(acUID);
-          AgentControl ac =
-              mobilityFactory.createAgentControl(acUID, agentId, addTicket);
-          restartInitiated(agentToRestart, agentId);
-          //event("Restarting agent: agent=" + agentToRestart + " dest=" + agentId);
-          blackboard.publishAdd(ac);
-          if (logger.isInfoEnabled()) {
-            StringBuffer sb =
-                new StringBuffer("Publishing AgentControl:" +
-                                 " myUid=" + myUIDs.contains(ac.getOwnerUID()) +
-                                 " status=" + ac.getStatusCodeAsString());
-            if (ac.getAbstractTicket()instanceof AddTicket) {
-              AddTicket at = (AddTicket)ac.getAbstractTicket();
-              sb.append(" agent=" + at.getMobileAgent() +
-                        " destNode=" + at.getDestinationNode());
-            }
-            logger.debug(sb.toString());
+    if ((!restartQueue.isEmpty()) &&
+        (restartsInProcess.size() <= MAX_CONCURRENT_RESTARTS)) {
+      logger.debug("RestartNext: " +
+                   " RestartQueue=" + restartQueue.size() +
+                   " restartsInProcess=" + restartsInProcess.size());
+      MessageAddress agentToRestart =
+          SimpleMessageAddress.getSimpleMessageAddress((String)
+          restartQueue.remove(0));
+      Long restartExpiration = new Long(now() + RESTART_TIMEOUT);
+      restartsInProcess.put(agentToRestart, restartExpiration);
+      try {
+        Object ticketId = mobilityFactory.createTicketIdentifier();
+        AddTicket addTicket = new AddTicket(ticketId, agentToRestart, agentId);
+        UID acUID = uidService.nextUID();
+        myUIDs.add(acUID);
+        AgentControl ac =
+            mobilityFactory.createAgentControl(acUID, agentId, addTicket);
+        restartInitiated(agentToRestart, agentId);
+        //event("Restarting agent: agent=" + agentToRestart + " dest=" + agentId);
+        blackboard.publishAdd(ac);
+        if (logger.isInfoEnabled()) {
+          StringBuffer sb =
+              new StringBuffer("Publishing AgentControl:" +
+                               " myUid=" + myUIDs.contains(ac.getOwnerUID()) +
+                               " status=" + ac.getStatusCodeAsString());
+          if (ac.getAbstractTicket()instanceof AddTicket) {
+            AddTicket at = (AddTicket)ac.getAbstractTicket();
+            sb.append(" agent=" + at.getMobileAgent() +
+                      " destNode=" + at.getDestinationNode());
           }
-        } catch (Exception ex) {
-          logger.error("Exception in agent restart", ex);
+          logger.debug(sb.toString());
         }
+      } catch (Exception ex) {
+        logger.error("Exception in agent restart", ex);
       }
     }
   }
 
   private void removeExpiredRestarts() {
     long now = now();
-    synchronized (restartsInProcess) {
-      for (Iterator it = restartsInProcess.entrySet().iterator(); it.hasNext(); ) {
-        Map.Entry me = (Map.Entry)it.next();
-        MessageAddress agent = (MessageAddress)me.getKey();
-        long expiration = ((Long)me.getValue()).longValue();
-        if (expiration < now) {
-          it.remove();
-          logger.debug("Restart timeout: agent=" + agent);
-          restartComplete(agent, agentId, FAIL);
-        }
+    MessageAddress currentRestarts[] = getRestartsInProcess();
+    for (int i = 0; i < currentRestarts.length; i++) {
+      long expiration = ((Long)restartsInProcess.get(currentRestarts[i])).
+          longValue();
+      if (expiration < now) {
+        restartComplete(currentRestarts[i], agentId, FAIL);
       }
     }
   }
@@ -362,6 +367,11 @@ public class RestartHelper extends BlackboardClientComponent {
      }
    }
 
+  private MessageAddress[] getRestartsInProcess() {
+    synchronized (restartsInProcess) {
+      return (MessageAddress[])restartsInProcess.keySet().toArray(new MessageAddress[0]);
+    }
+  }
 
   /**
    * Notify restart listeners.
@@ -374,9 +384,7 @@ public class RestartHelper extends BlackboardClientComponent {
         rl.restartComplete(agent.toString(), dest.toString(), status);
       }
     }
-    synchronized (restartsInProcess) {
-      restartsInProcess.remove(agent);
-    }
+    restartsInProcess.remove(agent);
     restartNext();
   }
 
@@ -415,37 +423,31 @@ public class RestartHelper extends BlackboardClientComponent {
     }
   }
 
-  /**
-   * Timer used to trigger periodic check for agents to restart.
-   */
-  private class RestartTimer implements Alarm {
-    private long expirationTime = -1;
+  private class WakeAlarm implements Alarm {
+    private long expiresAt;
     private boolean expired = false;
-    public RestartTimer(long delay) {
-      expirationTime = delay + System.currentTimeMillis();
+    public WakeAlarm (long expirationTime) {
+      expiresAt = expirationTime;
     }
-
-    public void expire() {
-      if (!expired) {
-        blackboard.openTransaction();
-        restartNext();
-        blackboard.closeTransaction();
-      }
-      alarmService.addRealTimeAlarm(new RestartTimer(TIMER_INTERVAL));
-    }
-
     public long getExpirationTime() {
-      return expirationTime;
+      return expiresAt;
     }
-
+    public synchronized void expire() {
+      if (!expired) {
+        expired = true;
+        if (blackboard != null) blackboard.signalClientActivity();
+        wakeAlarm = new WakeAlarm((new Date()).getTime() + TIMER_INTERVAL);
+        alarmService.addRealTimeAlarm(wakeAlarm);
+      }
+    }
     public boolean hasExpired() {
       return expired;
     }
-
     public synchronized boolean cancel() {
-      if (!expired)
-        return expired = true;
-      return false;
+      boolean was = expired;
+      expired = true;
+      return was;
     }
   }
+
 }
