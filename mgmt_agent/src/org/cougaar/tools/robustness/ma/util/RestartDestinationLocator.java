@@ -39,10 +39,16 @@ public class RestartDestinationLocator {
 
   public String getRestartLocation(String agent, Set excludedNodes) {
     if (logger.isDebugEnabled()) {
-      logger.debug("getRestartLocation: agent=" + agent + " selectedNodes=" + selectedNodes.keySet());
+      logger.debug("getRestartLocation: agent=" + agent +
+                   " preselectedNodes=" + selectedNodes.get(agent) +
+                   " excludedNodes=" + excludedNodes);
     }
     if (selectedNodes.containsKey(agent)) {
       LinkedList nodes = (LinkedList)selectedNodes.get(agent);
+      nodes.removeAll(excludedNodes);
+      if (logger.isDebugEnabled()) {
+        logger.debug("getRestartLocation: agent=" + agent + " candidates=" + nodes);
+      }
       if (nodes.size() > 0) {
         return (String) nodes.removeFirst();
       } else {
@@ -56,7 +62,7 @@ public class RestartDestinationLocator {
     Set candidateNodes = new HashSet();
     for (int i = 0; i < activeNodes.length; i++) {
       if (!excludedNodes.contains(activeNodes[i])) {
-          candidateNodes.add(activeNodes[i]);
+        candidateNodes.add(activeNodes[i]);
       }
     }
     if (logger.isDebugEnabled()) {
