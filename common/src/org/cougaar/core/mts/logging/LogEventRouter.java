@@ -74,7 +74,7 @@ public class LogEventRouter {
     private LogEventRouter() {
 
         if (DEBUG) {
-            Logging.currentLogger().debug("LogEventRouter: Initialization****************");         
+            System.out.println("LogEventRouter: Initialization****************");         
         }
         
         try {
@@ -97,14 +97,14 @@ public class LogEventRouter {
                 
                 if ( loggingPort > 0 ) { // then we're going to route to a socket.
 
-                    Logging.currentLogger().debug("**** Initing Msg Traffic Logging Socket ***");
+                    System.out.println("**** Initing Msg Traffic Logging Socket ***");
                     log4JLogger = org.apache.log4j.Logger.getLogger(loggerName);
                     log4JLogger.addAppender(new SocketAppender(loggingHost, loggingPort));
                     log4JLogger.setLevel(log4JLevel);
                     logToCougaar = false;
                     
-                    //Logging.currentLogger().debug("**** StreamMagic = "+ ObjectOutputStream.STREAM_MAGIC); 
-                    //Logging.currentLogger().debug("**** StreamVersion = "+ ObjectOutputStream.STREAM_VERSION); 
+                    //System.out.println("**** StreamMagic = "+ ObjectOutputStream.STREAM_MAGIC); 
+                    //System.out.println("**** StreamVersion = "+ ObjectOutputStream.STREAM_VERSION); 
                     
                 }
             }
@@ -131,12 +131,12 @@ public class LogEventRouter {
                 cougaarLogger.log(event.getLogLevel(), event.toString(), thr);
             }
             if (DEBUG) { 
-                Logging.currentLogger().debug("LogEventRouter: Logging event to Cougaar w/throwable***********\n"+event.toString() + event.toString()+"\nLogLevel="+event.getLogLevel());         
+                System.out.println("LogEventRouter: Logging event to Cougaar w/throwable***********\n"+event.toString() + event.toString()+"\nLogLevel="+event.getLogLevel());         
             }            
         } else { //send to Log4J
             
             if (DEBUG) {
-                Logging.currentLogger().debug("LogEventRouter: Logging event to Socket ************");         
+                System.out.println("LogEventRouter: Logging event to Socket ************");         
             }
             String FQCN = (org.apache.log4j.Logger.class).getName();
             LogEvent evt = new LogEvent(FQCN, log4JLogger, event.getLog4JLevel(), 
