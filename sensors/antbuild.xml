@@ -45,7 +45,7 @@
 		<copy todir="staging/doc/Robustness/objs/sensors/">
 			<fileset dir="doc"/>
 		</copy>
-		<zip zipfile="Robustness_objs_sensors_overlay.zip" basedir="staging"/>
+		<zip zipfile="AR_objs_sensors.zip" basedir="staging"/>
 		<delete dir="staging"/>
 	</target>
 

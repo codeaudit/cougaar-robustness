@@ -51,7 +51,7 @@
 				<include name="*.jar"/>
 			</fileset>
 		</copy>
-		<zip zipfile="Robustness_objs_msglog_overlay.zip" basedir="staging"/>
+		<zip zipfile="AR_objs_msglog.zip" basedir="staging"/>
 		<delete dir="staging"/>
 	</target>
 

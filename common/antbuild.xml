@@ -40,7 +40,7 @@
 		<antcall target="jar"/>
 		<signjar jar="${jar}" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
     <move file="${jar}" todir="staging/lib"/>
-    <zip zipfile="Robustness_objs_common_overlay.zip" basedir="staging"/>
+    <zip zipfile="AR_objs_common.zip" basedir="staging"/>
     <delete dir="staging"/>
 	</target>
 
