@@ -592,8 +592,8 @@ logger.debug("///////////////////////////////////Adding permitted value: "+o);
         }
 logger.debug("In getTargets...");        
 logger.debug("Getting target on agent="+agentId+", nodeId="+nodeId);        
-        return Collections.singleton(agentId);
-//        return Collections.singleton(nodeId);
+//        return Collections.singleton(agentId);
+        return Collections.singleton(nodeId);
     }
     
     /**
