@@ -1,0 +1,21 @@
+
+hma = [345, "org.cougaar.mts.std.MobileHostsAspect"]
+
+aspects = [hma]
+
+society.each_node_agent do |node_agent|
+
+    aspects.each { |aspect| 
+        node_agent.add_component do |c|
+            c.order = aspect[0]
+            c.classname = aspect[1]
+            c.insertionpoint = "Node.AgentManager.Agent.MessageTransport.Aspect"
+        end
+    }
+
+end
+
+society.each_node do |node|
+  node.override_parameter("-Dsun.net.inetaddr.ttl","10")
+end
+
