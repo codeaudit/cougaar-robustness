@@ -212,13 +212,11 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
     shutdown();
 
     //  Only using the first inbox at this time
-
     inboxes = parseInboxes (inboxesProp);
     if (inboxes == null || inboxes.length < 1) return false;
 
     //  Start the threads that monitor the inboxes for the incoming
     //  Cougaar message emails.
-
     for (int i=0; i<inboxes.length; i++)
     {
       MessageInThread msgInThread = null;
@@ -243,7 +241,6 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
         // Schedulable thread = threadService().getThread (this, msgInThread, "inbox"+i);
         Thread thread = new Thread (msgInThread, "inbox"+i);
         thread.start();
-
         registerMailData (nodeID, inboxes[i]);
         messageInThreads.add (msgInThread);
       }
@@ -256,7 +253,6 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
 
     //  We can't call it a successful startup unless at least one thread 
     //  was successfully started.
-
     return messageInThreads.size() > 0;
   }
 
@@ -476,7 +472,6 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
     {
       //  HACK - workaround for problem where email messages are read and deserialized
       //  before the node is ready for them (thus causing exceptions).
-
       if (firstTime)
       {
         try { Thread.sleep (initialReadDelaySecs*1000); } catch (Exception e) {}

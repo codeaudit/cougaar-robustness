@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2002 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2002,2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,28 +19,26 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 04 Mar 2003: Ported to 10.2 - replaced TopologyService with WhitePagesService (OBJS)
  * 04 Jun 2002: Created. (OBJS)
  */
 
 package org.cougaar.core.mts;
 
-import java.util.Hashtable;
+import java.net.URI; //102
 
 import org.cougaar.core.component.ServiceBroker;
-import org.cougaar.core.service.ThreadService;
-import org.cougaar.core.service.TopologyReaderService;
-import org.cougaar.core.service.TopologyEntry;
-import org.cougaar.core.thread.Schedulable;
+import org.cougaar.core.service.wp.WhitePagesService; //102
+import org.cougaar.core.service.wp.AddressEntry; //102
+import org.cougaar.core.service.wp.Application; //102
+import org.cougaar.util.log.Logger; //102
 import org.cougaar.util.log.Logging;
-
 
 public class AgentID implements java.io.Serializable
 {
   private static final int callTimeout;
-  private static final Hashtable topologyLookupTable = new Hashtable();
 
-  private static ThreadService threadService;
-  private static TopologyReaderService topologyReaderService;
+  private static WhitePagesService wp; //102
 
   private String nodeName;
   private String agentName;
@@ -50,7 +48,7 @@ public class AgentID implements java.io.Serializable
   {
     //  Read external properties
 
-    String s = "org.cougaar.message.transport.mts.topology.callTimeout";
+    String s = "org.cougaar.message.transport.mts.AgentID.callTimeout";  //102
     callTimeout = Integer.valueOf(System.getProperty(s,"500")).intValue();
   }
 
@@ -59,13 +57,6 @@ public class AgentID implements java.io.Serializable
     this.nodeName = nodeName;
     this.agentName = agentName;
     this.agentIncarnation = agentIncarnation;
-  }
-
-  public AgentID (TopologyEntry entry)
-  {
-    this.nodeName = entry.getNode();
-    this.agentName = entry.getAgent();
-    this.agentIncarnation = "" + entry.getIncarnation();
   }
 
   public AgentID (AgentID aid)
@@ -157,21 +148,6 @@ public class AgentID implements java.io.Serializable
     return true;
   }
 
-  public static TopologyReaderService getTopologyReaderService (Object requestor, ServiceBroker sb)
-  {
-    if (topologyReaderService != null) return topologyReaderService;
-	topologyReaderService = (TopologyReaderService) sb.getService (requestor, TopologyReaderService.class, null);
-    topologyReaderService.setTimeout (callTimeout);
-    return topologyReaderService;
-  }
-
-  private static ThreadService getThreadService (Object requestor, ServiceBroker sb)
-  {
-    if (threadService != null) return threadService;
-    threadService = (ThreadService) sb.getService (requestor, ThreadService.class, null);
-    return threadService;
-  }
-
   public static AgentID getAgentID (Object requestor, ServiceBroker sb, MessageAddress agent) 
     throws NameLookupException
   {
@@ -183,189 +159,38 @@ public class AgentID implements java.io.Serializable
   {
     if (agent == null) return null;
 
-    TopologyEntry entry = null;
+    String node = null; //102
+    String agentName = agent.getAddress();
+    String incarnation = null; //102
 
-    try 
-    {
-      TopologyReaderService svc = getTopologyReaderService (requestor, sb);
-      entry = svc.getEntryForAgent (agent.toString());
-    } 
-    catch (TopologyReaderService.TimeoutException te) 
-    {
+    try {
+      if (wp == null) wp = (WhitePagesService)sb.getService(requestor, WhitePagesService.class, null); //102
+
+      AddressEntry ae = wp.get(agentName, Application.getApplication("topology"), "node", callTimeout); //102
+      URI uri = ae.getAddress();  //102
+      node = uri.getPath().substring(1);  //102
+
+      ae = wp.get(agentName, Application.getApplication("topology"), "version", callTimeout); //102
+      uri = ae.getAddress(); //102
+      String path = uri.getPath(); //102
+      int i = path.indexOf('/', 1); //102
+      incarnation = path.substring(1,i); //102
+
+    } catch (WhitePagesService.TimeoutException te) { //102
       // timeout with no stale value available!
-//Logging.getLogger(AgentID.class).warn (stackTraceToString (te));
+      Logger log = Logging.getLogger(AgentID.class); //102
+      if (log.isDebugEnabled()) //102
+        log.debug(stackTraceToString(te)); //102
+    } catch (Exception e) {
+      Logger log = Logging.getLogger(AgentID.class); //102
+      if (log.isDebugEnabled()) //102
+        log.debug(stackTraceToString(e)); //102
     }
-    catch (Exception e)
-    {
-//Logging.getLogger(AgentID.class).warn (stackTraceToString (e));
+    if (node == null || incarnation ==null) {
+      Exception e = new Exception ("WhitePagesService has no entry for agent: " + agent); //102
+      throw new NameLookupException(e);
     }
-
-    if (entry == null)
-    {
-      Exception e = new Exception ("Topology service blank on agent: " +agent);
-      throw new NameLookupException (e);
-    }
-
-    return new AgentID (entry);
-  }
-
-  public static AgentID oldGetAgentID (Object requestor, ServiceBroker sb, MessageAddress agent, boolean refreshCache) 
-    throws NameLookupException
-  {
-    if (agent == null) return null;
-
-    //  If we are not to refresh the nameserver cache, try our own local cache first
-
-    if (!refreshCache)
-    {
-      TopologyEntry entry = (TopologyEntry) getCachedTopologyLookup (agent);
-      if (entry != null) return new AgentID (entry);
-    }
-
-    //  Make the topology lookup call in another thread
-
-    TopologyReaderService svc = getTopologyReaderService (requestor, sb);
-    TopologyLookup topoLookup = new TopologyLookup (svc, agent, refreshCache);
-    String name = "TopologyLookup_" +agent;
-    Schedulable thread = getThreadService(requestor,sb).getThread (requestor, topoLookup, name);
-    thread.start();
-
-    //  Wait till we get the topology lookup or we time out
-
-    final int POLL_TIME = 100;
-    long callDeadline = now() + callTimeout;
-    TopologyEntry entry = null;
-    boolean hadException = false;
-    boolean timedOut = false;
-
-Logging.getLogger(AgentID.class).warn (now() + " starting timed topology lookup ("+callTimeout+" ms) for agent " +agent);
-
-    while (true)
-    {
-      if (topoLookup.isFinished()) 
-      {
-        entry = topoLookup.getLookup();
-        hadException = topoLookup.hadException();
-        break;
-      }
-
-      try { Thread.sleep (POLL_TIME); } catch (Exception e) {}
-
-      if (now() > callDeadline) 
-      {
-        timedOut = true;
-        break;
-      }
-    }
-
-    //  If the call failed or timed out, try a value from our cache, else set the cache
-
-    if (hadException || timedOut) 
-    {
-      entry = (TopologyEntry) getCachedTopologyLookup (agent);
-String s = (hadException ? "had exception" : "timed out");
-Logging.getLogger(AgentID.class).warn (now()+ " timed topology lookup "+s+", using value from cache for agent "+agent+": " +entry);
-    }
-    else 
-    {
-Logging.getLogger(AgentID.class).warn ("timed topology lookup completed on time for agent " +agent);
-//      cacheTopologyLookup (agent, entry);
-    }
-
-    if (entry == null)
-    {
-      Exception e = new Exception ("Topology service blank on agent: " +agent);
-      throw new NameLookupException (e);
-    }
-
-    return new AgentID (entry);
-  }
-
-  private static class TopologyLookup implements Runnable
-  {
-    private TopologyReaderService topologyService;
-    private MessageAddress agent;
-    private boolean refreshCache;
-    private TopologyEntry entry;
-    private Exception exception;
-    private boolean callFinished;
-
-    public TopologyLookup (TopologyReaderService svc, MessageAddress agent, boolean refreshCache)
-    {
-      this.topologyService = svc;
-      this.agent = agent;
-      this.refreshCache = refreshCache;
-    }
-
-    public void run ()
-    {
-      entry = null;
-      exception = null;
-      callFinished = false;
-
-      try
-      {
-Logging.getLogger(AgentID.class).warn (now()+ " timed topology lookup called: agent=" +agent+ " refreshCache=" +refreshCache);
-
-        if (!refreshCache) entry = topologyService.getEntryForAgent    (agent.getAddress());
-        else               entry = topologyService.lookupEntryForAgent (agent.getAddress());
-
-Logging.getLogger(AgentID.class).warn (now()+ " timed topology lookup returned: agent=" +agent+ " entry=" +entry);
-
-cacheTopologyLookup (agent, entry);
-      }
-      catch (Exception e)
-      {
-Logging.getLogger(AgentID.class).warn ("timed topology lookup exception: " +stackTraceToString(e));
-        exception = e;
-      }
-
-      callFinished = true;
-    }
-
-    public boolean isFinished ()
-    {
-      return callFinished;
-    }
-
-    public boolean hadException ()
-    {
-      return exception != null;
-    }
-
-    public Exception getException ()
-    {
-      return exception;
-    }
-
-    public TopologyEntry getLookup ()
-    {
-      return entry;
-    }
-  }
-
-  private static Object getCachedTopologyLookup (MessageAddress agent)
-  {
-    synchronized (topologyLookupTable)
-    {
-      String key = agent.toString();
-      return topologyLookupTable.get (key);
-    }
-  }
-
-  private static void cacheTopologyLookup (MessageAddress agent, TopologyEntry entry)
-  {
-    synchronized (topologyLookupTable)
-    {
-      String key = agent.toString();
-      if (entry != null) topologyLookupTable.put (key, entry);
-      else topologyLookupTable.remove (key);
-    }
-  }
-
-  private static long now ()
-  {
-    return System.currentTimeMillis();
+    return new AgentID(node, agentName, incarnation); //102
   }
 
   private static String stackTraceToString (Exception e)

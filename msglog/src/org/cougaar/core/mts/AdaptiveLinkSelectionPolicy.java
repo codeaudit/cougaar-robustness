@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 04 Mar  2003: Port to 10.2 - replace CougaarEvent with EventService. (OBJS)
  * 30 Oct  2002: Improve link selection in face of send failures. (OBJS)
  * 18 Aug  2002: Various enhancements for Cougaar 9.4.1 (OBJS)
  * 25 Jul  2002: Added code to avoid UDP link if msg size too big. (OBJS)
@@ -74,9 +75,10 @@ import java.util.*;
 import org.cougaar.core.mts.acking.*;
 import org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol;
 import org.cougaar.core.mts.email.OutgoingEmailLinkProtocol;
-import org.cougaar.util.CougaarEvent;
-import org.cougaar.util.CougaarEventType;
-
+//102 import org.cougaar.util.CougaarEvent;
+//102 import org.cougaar.util.CougaarEventType;
+import org.cougaar.core.service.EventService; //102
+import org.cougaar.core.component.ServiceBroker; //102
 
 /**
  * Adaptive link selection policy that uses transport cost and 
@@ -251,12 +253,24 @@ if (commStartDelaySeconds > 0)
 
           if (!lastLinkName.equals (thisLinkName))
           {
+/* //102
             CougaarEvent.postComponentEvent 
             (
               CougaarEventType.STATUS, MessageUtils.getOriginatorAgent(msg).toString(), this.toString(),
               "Switch from " +lastLinkName+ " to " +thisLinkName+ " for messages from " +thisNode+
               " to " +targetNode
             );
+*/ //102
+            ServiceBroker sb = getServiceBroker();            //102
+            EventService es =                                 //102
+              (EventService)sb.getService(this,               //102
+                                          EventService.class, //102
+                                          null);              //102
+            if (es.isEventEnabled())                          //102
+              es.event("Switch from " +lastLinkName+          //102
+                       " to " +thisLinkName+                  //102
+                       " for messages from " +thisNode+       //102
+                       " to " +targetNode);                   //102
           }
         }
       }
