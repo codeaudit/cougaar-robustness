@@ -206,10 +206,10 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
             index++;
             done = true; // done because can't find anything useful to do
             if ((thisAction.getActionEvaluation().getAction().getTechSpec().getActionType() == ActionTechSpecInterface.CORRECTIVE_ACTIONTYPE) // Because we try only one corrective action at a time
-                    || (outOfResources())
-                    || (index == knob.getMaxActions()))
-               done = true; 
-        }
+		|| (outOfResources())
+		|| (index == knob.getMaxActions()))
+		done = true; 
+        } else done = true;
     }
   }
 
