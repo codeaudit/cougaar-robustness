@@ -10,6 +10,7 @@
 		<pathelement location="sys/activation.jar"/>
 		<pathelement location="sys/mail.jar"/>
 		<pathelement location="/var/www/html/jars/Robustness_objs_common_HEAD_B10_4_4.jar"/>
+		<pathelement location="/var/www/html/jars/Robustness_objs_Deconfliction_HEAD_B10_4_4.jar"/>
 		<fileset dir="${cougaar}/lib">
 			<include name="**/*.jar"/>
 		</fileset>
