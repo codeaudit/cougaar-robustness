@@ -13,8 +13,9 @@ module Cougaar
         @example = "do_action 'SetOutsideLoad', '1-UA', 'High', 1" 
 	}
     
-      def initialize(run, value, messaging=0)
+      def initialize(run, enclave, value, messaging=0)
         super(run)
+        @enclave = enclave
         @value = value
         @messaging = messaging
       end
@@ -46,8 +47,9 @@ module Cougaar
         @example = "do_action 'SetAvailableBandwidth', '1-UA', 'Low', 1" 
 	}
     
-      def initialize(run, value, messaging=0)
+      def initialize(run, enclave, value, messaging=0)
         super(run)
+	@enclave = enclave
         @value = value
         @messaging = messaging
       end
@@ -79,8 +81,9 @@ module Cougaar
         @example = "do_action 'SetThreatcon', '1-UA', 'High', 1" 
 	}
     
-      def initialize(run, value, messaging=0)
+      def initialize(run, enclave, value, messaging=0)
         super(run)
+	@enclave = enclave
         @value = value
         @messaging = messaging
       end
