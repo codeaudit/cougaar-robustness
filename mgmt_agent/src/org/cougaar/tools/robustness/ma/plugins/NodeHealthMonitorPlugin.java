@@ -327,6 +327,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
     return nodes;
   }
 
+  private boolean initialAttributesLogged = false;
   /**
    * Update set of communities to monitor.
    */
@@ -336,13 +337,19 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
       if (model == null) {
         initializeModel(community.getName());
       }
+      if (!initialAttributesLogged) {
+        initialAttributesLogged = true;
+        logger.info("Robustness community attributes:" +
+                    " community=" + community.getName() +
+                    " attributes=" + community.getAttributes());
+      }
       long interval = model.getLongAttribute(CURRENT_STATUS_UPDATE_ATTRIBUTE);
       if (interval <= 0) { // Current status update interval not defined yet
         // Get default interval
         long newInterval = getLongAttribute(STATUS_UPDATE_ATTRIBUTE, updateInterval);
         if (newInterval > 0) {
           // Add to community
-          logger.info("Setting update interval attribute: interval=" + newInterval);
+          logger.debug("Setting update interval attribute: interval=" + newInterval);
           changeAttributes(community,
                            null,
                            new Attribute[]{new BasicAttribute(CURRENT_STATUS_UPDATE_ATTRIBUTE, Long.toString(newInterval))});
