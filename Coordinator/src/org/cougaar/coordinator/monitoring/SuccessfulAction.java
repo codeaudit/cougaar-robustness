@@ -6,6 +6,7 @@
 
 package org.cougaar.coordinator.monitoring;
 
+import org.cougaar.core.persist.NotPersistable;
 import org.cougaar.coordinator.Action;
 
 /**
@@ -13,7 +14,7 @@ import org.cougaar.coordinator.Action;
  * @author  David Wells - OBJS
  * @version 
  */
-public class SuccessfulAction {
+public class SuccessfulAction implements NotPersistable {
 
     private Action a;
 
