@@ -31,7 +31,6 @@ import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.SchedulerService;
 import org.cougaar.core.service.UIDService;
-import org.cougaar.core.node.NodeIdentificationService;
 
 import org.cougaar.core.component.BindingSite;
 
@@ -76,26 +75,13 @@ public class MoveHelper extends BlackboardClientComponent {
   public static final int SUCCESS = 0;
   public static final int FAIL = 1;
 
-  class MoveQueueEntry {
-    MessageAddress agent;
-    MessageAddress origNode;
-    MessageAddress destNode;
-    long expiration;
-    MoveQueueEntry(MessageAddress a, MessageAddress o, MessageAddress d) {
-      agent = a;
-      origNode = o;
-      destNode = d;
-    }
-  }
-
   public static final long TIMER_INTERVAL = 10 * 1000;
-  public static final long MOVE_TIMEOUT = 10 * 60 * 1000;
-  public static final long MAX_CONCURRENT_MOVES = 1;
+  public static final long ACTION_TIMEOUT = 30 * 60 * 1000;
+  public static final long MAX_CONCURRENT_ACTIONS = 5;
 
-  private List moveQueue = Collections.synchronizedList(new ArrayList());
-  private Map movesInProcess = Collections.synchronizedMap(new HashMap());
-  private List remoteMoveRequestQueue = Collections.synchronizedList(new ArrayList());
-  private List moveRequestRelayQueue = Collections.synchronizedList(new ArrayList());
+  private List localActionQueue = Collections.synchronizedList(new ArrayList());
+  private List remoteRequestQueue = new ArrayList();
+  private Map actionsInProcess = Collections.synchronizedMap(new HashMap());
 
   private WakeAlarm wakeAlarm;
 
@@ -105,9 +91,6 @@ public class MoveHelper extends BlackboardClientComponent {
   private UIDService uidService = null;
   protected EventService eventService;
   private List listeners = new ArrayList();
-  private MessageAddress nodeId;
-
-  private CommunityStatusModel model;
   protected RestartDestinationLocator restartLocator;
 
   // Subscription to AgentControl objects used by MobilityService
@@ -140,7 +123,6 @@ public class MoveHelper extends BlackboardClientComponent {
  */
   public MoveHelper(BindingSite bs, CommunityStatusModel model, RestartDestinationLocator rdl) {
     this.setBindingSite(bs);
-    this.model = model;
     this.restartLocator = rdl;
     initialize();
     load();
@@ -167,18 +149,7 @@ public class MoveHelper extends BlackboardClientComponent {
         (DomainService) getServiceBroker().getService(this, DomainService.class, null);
     mobilityFactory = (MobilityFactory) ds.getFactory("mobility");
     uidService = (UIDService) getServiceBroker().getService(this, UIDService.class, null);
-    NodeIdentificationService nis = (NodeIdentificationService)getBindingSite().getServiceBroker().getService(
-      this, NodeIdentificationService.class, null);
-    if (nis != null) {
-      this.nodeId = nis.getMessageAddress();
-      getBindingSite().getServiceBroker().releaseService(this, NodeIdentificationService.class, nis);
-    }
-
     super.load();
-  }
-
-  public void start() {
-    super.start();
   }
 
   /**
@@ -194,42 +165,56 @@ public class MoveHelper extends BlackboardClientComponent {
   }
 
   public void execute() {
-    if ((wakeAlarm != null) &&
-        ((wakeAlarm.hasExpired()))) {
-      moveNext();            // do next local move
-      sendRemoteRequests();  // Send queued move requests to remote agent
-      wakeAlarm = new WakeAlarm((new Date()).getTime() + TIMER_INTERVAL);
-      alarmService.addRealTimeAlarm(wakeAlarm);
+
+    // Remove failed actions
+    if (!actionsInProcess.isEmpty()) {
+      removeExpiredActions();
     }
+
+    // Perform local restarts
+    if (!localActionQueue.isEmpty()) {
+      doNextAction();
+    }
+
+    // Forward non-local restarts to remote agent
+    fireAll();
+
     // Get AgentControl objects
     for (Iterator it = agentControlSub.iterator(); it.hasNext();) {
-      moveUpdate(it.next());
+      update(it.next());
     }
+
     for (Iterator it = healthMonitorRequests.getAddedCollection().iterator(); it.hasNext(); ) {
       HealthMonitorRequest hsm = (HealthMonitorRequest) it.next();
       if (logger.isDebugEnabled()) {
-        logger.debug("Received HealthMonitorRequest:" + hsm);
+        logger.debug("Received " + hsm);
       }
-      if (hsm.getRequestType() == HealthMonitorRequest.MOVE) {
-        String agentNames[] = hsm.getAgents();
-        for (int i = 0; i < agentNames.length; i++) {
-          String orig = hsm.getOriginNode();
-          if (orig.equals("") || orig == null) {
-            orig = model.getLocation(agentNames[i]);
-          }
-          String dest = hsm.getDestinationNode();
-          if (dest.equals("") || dest == null) {
-            HashSet set = new HashSet();
-            set.add(hsm.getOriginNode());
-            dest = restartLocator.getRestartLocation(agentNames[i], set);
-          }
-          if (orig.equals(nodeId.getAddress()))
-            moveAgent(agentNames[i], dest);
-          else {
-            moveAgent(agentNames[i], orig, dest, hsm.getCommunityName());
-          }
-        }
+      doAction(hsm);
+    }
+  }
+
+  protected void fireLater(RemoteRequest rr) {
+    synchronized (remoteRequestQueue) {
+      remoteRequestQueue.add(rr);
+    }
+    if (blackboard != null) {
+      blackboard.signalClientActivity();
+    }
+  }
+
+  private void fireAll() {
+    int n;
+    List l;
+    synchronized (remoteRequestQueue) {
+      n = remoteRequestQueue.size();
+      if (n <= 0) {
+        return;
       }
+      l = new ArrayList(remoteRequestQueue);
+      remoteRequestQueue.clear();
+    }
+    for (int i = 0; i < n; i++) {
+      sendRemoteRequest((RemoteRequest) l.get(i));
     }
   }
 
@@ -237,96 +222,102 @@ public class MoveHelper extends BlackboardClientComponent {
                         final String destNode, final String communityName) {
     if (logger.isDebugEnabled()) {
       logger.debug("MoveAgent:" +
-                   " origNode=" + origNode +
-                   " destNode=" + destNode +
                    " agent=" + agentName +
-                   " community=" + communityName);
+                   " orig=" + origNode +
+                   " dest=" + destNode);
     }
-    if (agentName != null && origNode != null && destNode != null && communityName != null) {
-      if (agentId.toString().equals(origNode)) {
-        moveAgent(agentName, destNode);
-      } else {
-        fireLater(new RemoteMoveRequest(agentName, origNode, destNode,
-                                        communityName));
-      }
+    if (agentId.toString().equals(destNode)) {
+      // Restart locally
+      doLocalAction(agentName, origNode, destNode);
     } else {
-      if (logger.isWarnEnabled()) {
-        logger.warn("Null moveAgent parameter:" +
-                    " origNode=" + origNode +
-                    " destNode=" + destNode +
-                    " agent=" + agentName +
-                    " community=" + communityName);
+      // Queue request to remote agent
+      fireLater(new RemoteRequest(new String[] {agentName},
+                                  HealthMonitorRequest.MOVE,
+                                  origNode,
+                                  destNode,
+                                  communityName));
+    }
+  }
+
+  /**
+   * @param agentName
+   */
+  protected void doAction(HealthMonitorRequest hmr) {
+    String origNode = hmr.getOriginNode();
+    String destNode = hmr.getDestinationNode();
+    if (hmr.getRequestType() == HealthMonitorRequest.MOVE) {
+      if (!agentId.toString().equals(origNode)) {
+        // Forward request to origin node
+        if (logger.isDebugEnabled()) {
+          logger.debug("doAction, forwarding request: " + hmr);
+        }
+        sendRemoteRequest(new RemoteRequest(hmr.getAgents(),
+                                            hmr.getRequestType(),
+                                            origNode,
+                                            destNode,
+                                            hmr.getCommunityName()));
+
+      } else { // local request
+        String agentNames[] = hmr.getAgents();
+        for (int i = 0; i < agentNames.length; i++) {
+          doLocalAction(agentNames[i], hmr.getOriginNode(),
+                        hmr.getDestinationNode());
+        }
       }
     }
   }
 
-  private void moveAgent(String agentName, String destNode) {
+  private void sendRemoteRequest(RemoteRequest rr) {
     if (logger.isDebugEnabled()) {
-      logger.debug("moveAgent: agent=" + agentName + " dest=" + destNode);
+      logger.debug("sendRemoteRequest: " + rr);
     }
-    moveQueue.add(new MoveQueueEntry(SimpleMessageAddress.getSimpleMessageAddress(agentName),
-                                     agentId,
-                                     SimpleMessageAddress.getSimpleMessageAddress(destNode)));
+    UIDService uidService = (UIDService)getServiceBroker().getService(this,
+        UIDService.class, null);
+    if (uidService == null) {
+      logger.warn("Unable to send request, can't get UidService");
+      return;
+    }
+    HealthMonitorRequest hmr =
+        new HealthMonitorRequestImpl(agentId,
+                                     rr.communityName,
+                                     rr.action,
+                                     rr.agentNames,
+                                     rr.origNode,
+                                     rr.destNode,
+                                     uidService.nextUID());
+    RelayAdapter hmrRa = new RelayAdapter(agentId, hmr, hmr.getUID());
+    hmrRa.addTarget(SimpleMessageAddress.getSimpleMessageAddress(rr.origNode));
+    if (logger.isDebugEnabled()) {
+      logger.debug("Publishing HealthMonitorRequest:" +
+                   " request=" + hmr.getRequestTypeAsString() +
+                   " targets=" + targetsToString(hmrRa.getTargets()) +
+                   " community-" + hmr.getCommunityName() +
+                   " agents=" + arrayToString(hmr.getAgents()) +
+                   " origNode=" + hmr.getOriginNode() +
+                   " destNode=" + hmr.getDestinationNode());
+    }
+    blackboard.publishAdd(hmrRa);
+
   }
 
-  protected void fireLater(RemoteMoveRequest rmr) {
-    synchronized (remoteMoveRequestQueue) {
-      remoteMoveRequestQueue.add(rmr);
+  /**
+   * Queue request for local action and trigger execute() method.
+   * @param agentName
+   */
+  protected void doLocalAction(String agentName, String orig, String dest) {
+    if (logger.isDebugEnabled()) {
+      logger.debug("moveAgent:" +
+                   " agent=" + agentName +
+                   " origNode=" + orig +
+                   " destNode=" + dest);
     }
-    if (blackboard != null) {
+    if (!localActionQueue.contains(agentName)) {
+      localActionQueue.add(new LocalRequest(MessageAddress.getMessageAddress(agentName),
+                                            MessageAddress.getMessageAddress(orig),
+                                            MessageAddress.getMessageAddress(dest)) );
       blackboard.signalClientActivity();
     }
   }
-
-  private void sendRemoteRequests() {
-    int n;
-    List l;
-    synchronized (remoteMoveRequestQueue) {
-      n = remoteMoveRequestQueue.size();
-      if (n <= 0) {
-        return;
-      }
-      l = new ArrayList(remoteMoveRequestQueue);
-      remoteMoveRequestQueue.clear();
-    }
-    for (int i = 0; i < n; i++) {
-      sendRemoteRequest((RemoteMoveRequest) l.get(i));
-    }
-  }
-
-  private void sendRemoteRequest(RemoteMoveRequest rmr) {
-    if (logger.isDebugEnabled()) {
-      logger.debug("sendRemoteRequest:" +
-                   " agent=" + rmr.agentName +
-                   " orig=" + rmr.origNode +
-                   " dest=" + rmr.destNode);
-    }
-    UIDService uidService = (UIDService)getServiceBroker().getService(this,
-          UIDService.class, null);
-      HealthMonitorRequest hmr =
-          new HealthMonitorRequestImpl(agentId,
-                                       rmr.communityName,
-                                       HealthMonitorRequest.MOVE,
-                                       new String[] {rmr.agentName},
-                                       rmr.origNode,
-                                       rmr.destNode,
-                                       uidService.nextUID());
-      RelayAdapter hmrRa =
-          new RelayAdapter(agentId, hmr, hmr.getUID());
-      hmrRa.addTarget(SimpleMessageAddress.
-                      getSimpleMessageAddress(rmr.origNode));
-      if (logger.isDebugEnabled()) {
-        logger.debug("Publishing HealthMonitorRequest:" +
-                     " request=" + hmr.getRequestTypeAsString() +
-                     " targets=" + targetsToString(hmrRa.getTargets()) +
-                     " community-" + hmr.getCommunityName() +
-                     " agents=" + arrayToString(hmr.getAgents()) +
-                     " origNode=" + hmr.getOriginNode() +
-                     " destNode=" + hmr.getDestinationNode());
-      }
-      blackboard.publishAdd(hmrRa);
-  }
-
 
   private long now() { return (new Date()).getTime(); }
 
@@ -334,48 +325,40 @@ public class MoveHelper extends BlackboardClientComponent {
    * Move next agent on queue if number of moves in process does not exceed
    * maximum.  Check for moves that have timed out and remove.
    */
-  private void moveNext() {
-    removeExpiredMoves();
-    synchronized (movesInProcess) {
-      if ((!moveQueue.isEmpty()) &&
-          (movesInProcess.size() <= MAX_CONCURRENT_MOVES)) {
+  private void doNextAction() {
+    if ((!localActionQueue.isEmpty()) &&
+        (actionsInProcess.size() < MAX_CONCURRENT_ACTIONS)) {
+      LocalRequest request = (LocalRequest)localActionQueue.remove(0);
+      if (logger.isDebugEnabled()) {
+        logger.debug("doNextAction: " +
+                     " next=[" + request + "]" +
+                     " localActionQueue=" + localActionQueue.size() +
+                     " actionsInProcess=" + actionsInProcess.size());
+      }
+      request.expiration = now() + ACTION_TIMEOUT;
+      actionsInProcess.put(request.agentName.toString(), request);
+      try {
+        UID acUID = uidService.nextUID();
+        myUIDs.add(acUID);
+        Object ticketId = mobilityFactory.createTicketIdentifier();
+        AbstractTicket ticket = new MoveTicket(ticketId,
+                                    request.agentName, // agent to move
+                                    request.origNode, //current node
+                                    request.destNode, //destination node
+                                    false); // forced restart
+        AgentControl ac =
+            mobilityFactory.createAgentControl(acUID, agentId, ticket);
+        moveInitiated(request.agentName, request.origNode, request.destNode);
+        event("Moving agent: agent=" + request.agentName + " orig=" + request.origNode +
+              " dest=" + request.destNode);
+        blackboard.publishAdd(ac);
         if (logger.isDebugEnabled()) {
-          logger.debug("MoveNext: " +
-                       " MoveQueue=" + moveQueue.size() +
-                       " MovesInProcess=" + movesInProcess.size());
+          logger.debug("Publishing AgentControl:" +
+                       " myUid=" + myUIDs.contains(ac.getOwnerUID()) +
+                       " status=" + ac.getStatusCodeAsString());
         }
-        final MoveQueueEntry mqe = (MoveQueueEntry)moveQueue.remove(0);
-        try {
-          Object ticketId = mobilityFactory.createTicketIdentifier();
-          MoveTicket moveTicket = new MoveTicket(ticketId,
-                                                 mqe.agent, // agent to move
-                                                 mqe.origNode, //current node
-                                                 mqe.destNode, //destination node
-                                                 false); // forced restart
-          UID acUID = uidService.nextUID();
-          myUIDs.add(acUID);
-          AgentControl ac =
-              mobilityFactory.createAgentControl(acUID, agentId, moveTicket);
-          mqe.expiration = now() + MOVE_TIMEOUT;
-          movesInProcess.put(mqe.agent, mqe);
-          moveInitiated(mqe.agent, mqe.origNode, mqe.destNode);
-          event("Moving agent: agent=" + mqe.agent + " orig=" + mqe.origNode +
-                " dest=" + mqe.destNode);
-          blackboard.publishAdd(ac);
-          if (logger.isDebugEnabled()) {
-            StringBuffer sb =
-                new StringBuffer("Publishing AgentControl:" +
-                                 " myUid=" + myUIDs.contains(ac.getOwnerUID()) +
-                                 " status=" + ac.getStatusCodeAsString());
-            if (ac.getAbstractTicket()instanceof MoveTicket) {
-              MoveTicket mt = (MoveTicket)ac.getAbstractTicket();
-              sb.append(" agent=" + mt.getMobileAgent() +
-                        " origNode=" + mt.getOriginNode() +
-                        " destNode=" + mt.getDestinationNode());
-            }
-            logger.debug(sb.toString());
-          }
-        } catch (Exception ex) {
+      } catch (Exception ex) {
+        if (logger.isErrorEnabled()) {
           logger.error("Exception in agent move", ex);
         }
       }
@@ -383,31 +366,41 @@ public class MoveHelper extends BlackboardClientComponent {
   }
 
   /**
+   * Returns array of pending requests
+   * @return
+   */
+ private LocalRequest[] getActionsInProcess() {
+   synchronized (actionsInProcess) {
+     return (LocalRequest[])actionsInProcess.values().toArray(new LocalRequest[0]);
+   }
+ }
+
+  /**
    * Removed timed out moves.
    */
-  private void removeExpiredMoves() {
-      long now = now();
-      List l;
-      synchronized(movesInProcess) {
-        l = new ArrayList(movesInProcess.values());
-      }
-      for (Iterator it = l.iterator(); it.hasNext();) {
-        MoveQueueEntry mqe = (MoveQueueEntry)it.next();
-        if (mqe.expiration < now) {
-          movesInProcess.remove(mqe.agent);
-          if (logger.isWarnEnabled()) {
-            logger.warn("Move timeout: agent=" + mqe.agent);
-          }
-          moveComplete(mqe.agent, mqe.origNode, mqe.destNode, FAIL);
+  private void removeExpiredActions() {
+    long now = now();
+    LocalRequest currentActions[] = getActionsInProcess();
+    for (int i = 0; i < currentActions.length; i++) {
+      if (currentActions[i].expiration < now) {
+        if (logger.isInfoEnabled()) {
+          logger.info("Move timeout: agent=" + currentActions[i].agentName);
         }
+        moveComplete(currentActions[i].agentName, currentActions[i].origNode,
+                       currentActions[i].destNode, FAIL);
       }
+    }
   }
 
   /**
    * Evalutes changed AgentControl object for updated move status information.
    * @param o
    */
-  public void moveUpdate(Object o) {
+  /**
+   * Evaluate updates to AgentControl objects used by Mobility.
+   * @param o
+   */
+  public void update(Object o) {
     if (o instanceof AgentControl) {
       AgentControl ac = (AgentControl)o;
       if (myUIDs.contains(ac.getOwnerUID())) {
@@ -520,7 +513,6 @@ public class MoveHelper extends BlackboardClientComponent {
         ml.moveInitiated(agent.toString(), orig.toString(), dest.toString());
       }
     }
-    moveNext();
   }
 
 
@@ -537,8 +529,8 @@ public class MoveHelper extends BlackboardClientComponent {
         ml.moveComplete(agent.toString(), orig.toString(), dest.toString(), status);
       }
     }
-    movesInProcess.remove(agent);
-    moveNext();
+    actionsInProcess.remove(agent);
+    doNextAction();
   }
 
 
@@ -604,16 +596,46 @@ public class MoveHelper extends BlackboardClientComponent {
     }
   }
 
-  private class RemoteMoveRequest {
-    private String agentName;
+  private class RemoteRequest {
+    private String[] agentNames;
+    private int action;
     private String origNode;
     private String destNode;
     private String communityName;
-    RemoteMoveRequest (String agent, String orig, String dest, String community) {
-      this.agentName = agent;
+    RemoteRequest (String[] agents, int action, String orig, String dest, String community) {
+      this.agentNames = agents;
+      this.action = action;
       this.origNode = orig;
       this.destNode = dest;
       this.communityName = community;
+    }
+    public String toString() {
+      StringBuffer sb = new StringBuffer("RemoteRequest");
+      sb.append(" agents=[");
+      for (int i = 0; i < agentNames.length; i++) {
+        sb.append(agentNames[i]);
+        if (i < agentNames.length - 1) sb.append(", ");
+      }
+      sb.append("] action=" + action);
+      sb.append(" orig=" + origNode);
+      sb.append(" dest=" + destNode);
+      sb.append(" comm=" + communityName);
+      return sb.toString();
+    }
+  }
+
+  private class LocalRequest {
+    private MessageAddress agentName;
+    private MessageAddress origNode;
+    private MessageAddress destNode;
+    private long expiration;
+    LocalRequest (MessageAddress agent, MessageAddress orig, MessageAddress dest) {
+      this.agentName = agent;
+      this.origNode = orig;
+      this.destNode = dest;
+    }
+    public String toString() {
+      return "agent=" + agentName + " orig=" + origNode + " dest=" + destNode;
     }
   }
 
