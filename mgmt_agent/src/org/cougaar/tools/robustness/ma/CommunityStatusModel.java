@@ -249,11 +249,21 @@ public class CommunityStatusModel extends BlackboardClientComponent {
 
   /**
    * Returns current state for specified agent/node.
-   * @return curent state
+   * @return current state
    */
   public int getCurrentState(String name) {
       return (name != null && statusMap.containsKey(name))
           ? ((StatusEntry)statusMap.get(name)).currentState
+          : UNDEFINED;
+  }
+
+  /**
+   * Returns prior state for specified agent/node.
+   * @return prior state
+   */
+  public int getpriorState(String name) {
+      return (name != null && statusMap.containsKey(name))
+          ? ((StatusEntry)statusMap.get(name)).priorState
           : UNDEFINED;
   }
 

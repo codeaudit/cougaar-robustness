@@ -161,16 +161,20 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   class HealthCheckStateController extends StateControllerBase {
     public void enter(String name) {
-      if ((isLocal(name) || isNode(name)) ||
-          thisAgent.equals(preferredLeader()) ||
-          isLeader(name)) {
+      if (isLocal(name)) {
+        doPing(name, DefaultRobustnessController.ACTIVE, isLeader(name) ? DEAD : HEALTH_CHECK);
+      } else if (isNode(name) ||
+                 thisAgent.equals(preferredLeader()) ||
+                 isLeader(name)) {
         doPing(name, DefaultRobustnessController.ACTIVE, DEAD);
       }
     }
     public void expired(String name) {
-      if ((isLocal(name) || isNode(name)) ||
-          thisAgent.equals(preferredLeader()) ||
-          isLeader(name)) {
+      if (isLocal(name)) {
+        newState(name, isLeader(name) ? DEAD : HEALTH_CHECK);
+      } else if (isNode(name) ||
+                 thisAgent.equals(preferredLeader()) ||
+                 isLeader(name)) {
         newState(name, DEAD);
       }
     }
@@ -189,7 +193,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       logger.info("New state (DEAD):" +
                   " name=" + name +
                   " preferredLeader=" + thisAgent.equals(preferredLeader()) +
-                  " isAgent=" + isAgent(name));
+                  " isAgent=" + isAgent(name) +
+                  " priorState=" + model.getpriorState(name));
       communityReady = false; // For ACME Community Ready Events
       if (thisAgent.equals(preferredLeader()) && isAgent(name)) {
         // Interface point for Deconfliction
@@ -232,7 +237,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     { addRestartListener(this); }
     public void enter(String name) {
       if (isLeader(thisAgent) && isAgent(name)) {
-        String dest = RestartDestinationLocator.getRestartLocation(name, Collections.EMPTY_SET);
+        String dest = RestartDestinationLocator.getRestartLocation(name, getExcludedNodes());
         logger.info("Restart agent:" +
                     " agent=" + name +
                     " origin=" + getLocation(name) +
@@ -523,5 +528,16 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         }
       }
     });
+  }
+
+  protected Set getExcludedNodes() {
+    Set excludedNodes = new HashSet();
+    String allNodes[] = model.listEntries(model.AGENT);
+    for (int i = 0; i < allNodes.length; i++) {
+      if (model.hasAttribute(model.getAttributes(allNodes[i]), "UseForRestarts", "False")) {
+        excludedNodes.add(allNodes[i]);
+      }
+    }
+    return excludedNodes;
   }
 }
