@@ -132,7 +132,7 @@ public class LeaderElection {
     String selected = null;
     SortedSet topCandidates = null;
     if (allCandidates.size() > 0) {
-      if (allCandidates.contains(preferredCandidate)) {
+      if (preferredCandidate != null && allCandidates.contains(preferredCandidate)) {
         selected = preferredCandidate;
       } else {
         if (votes.size() == 0) {
