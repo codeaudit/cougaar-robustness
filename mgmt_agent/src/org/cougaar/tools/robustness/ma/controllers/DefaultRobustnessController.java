@@ -276,6 +276,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
             }
           }
         }
+      } else {  // I'm not the manager agent
+        if (isNode(name)) {
+          newState(agentsOnNode(name), DEAD);
+        }
       }
 
       /*
@@ -524,6 +528,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   private NodeLatencyStatistics nodeLatencyStats;
   private boolean collectNodeStats = false;
   private boolean suppressPingsOnRestart = false;
+  private int minimumHostsForManagerRestart = 2;
 
   /**
    * Initializes services and loads state controller classes.
@@ -538,6 +543,13 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     propValue = System.getProperty("org.cougaar.tools.robustness.deconfliction.leashOnRestart");
     suppressPingsOnRestart =
         (propValue != null && propValue.equalsIgnoreCase("true"));
+    propValue = System.getProperty("org.cougaar.tools.robustness.minHostsForMgrRestart", "2");
+    if (propValue != null) {
+      try {
+        minimumHostsForManagerRestart = Integer.parseInt(propValue);
+      } catch (Exception ex) {}
+    }
+
     addController(INITIAL,        "INITIAL", new InitialStateController());
     addController(DefaultRobustnessController.ACTIVE, "ACTIVE",  new ActiveStateController());
     addController(HEALTH_CHECK,   "HEALTH_CHECK",  new HealthCheckStateController());
@@ -552,7 +564,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     new HostLossThreatAlertHandler(getBindingSite(), agentId, this, csm);
     new SecurityAlertHandler(getBindingSite(), agentId, this, csm);
     new ReaffiliationNotificationHandler(getBindingSite(), agentId, csm);
-    new DuplicateAgentDetector(csm, getRestartHelper());
   }
 
 /**
@@ -679,7 +690,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
   private boolean canRestartAgent(String name) {
     return isSentinel() ||
-        (isLeader(thisAgent) && name.equals(preferredLeader()) && (getActiveHosts().size() > 1));
+        (isLeader(thisAgent) && name.equals(preferredLeader()) &&
+         (getActiveHosts().size() >= minimumHostsForManagerRestart));
   }
 
   private void restartAgent(String name) {
@@ -867,17 +879,23 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       newState(model.listEntries(model.NODE, -1), HEALTH_CHECK);
     }
     // Setup defense coordination
-    if (isSentinel() && !isCoordinatorEnabled()) {
-      coordinatorHelper = CoordinatorHelperFactory.getCoordinatorHelper(getBindingSite());
-      coordinatorHelper.addListener((DeconflictStateController)getController(DECONFLICT));
-      String enable = System.getProperty(DECONFLICTION, PROPERTY_ENABLED);
-      if (enable.equalsIgnoreCase(PROPERTY_ENABLED)) {
-        if (logger.isInfoEnabled()) {
-          logger.info("Deconfliction enabled: community=" + model.getCommunityName());
-        }
-        String allAgents[] = model.listEntries(CommunityStatusModel.AGENT);
-        for (int i = 0; i < allAgents.length; i++) {
-          coordinatorHelper.addAgent(allAgents[i]);
+    if (isSentinel()) {
+      new DuplicateAgentDetector(model, getRestartHelper());
+      if (!isCoordinatorEnabled()) {
+        coordinatorHelper = CoordinatorHelperFactory.getCoordinatorHelper(
+            getBindingSite());
+        coordinatorHelper.addListener( (DeconflictStateController)
+                                      getController(DECONFLICT));
+        String enable = System.getProperty(DECONFLICTION, PROPERTY_ENABLED);
+        if (enable.equalsIgnoreCase(PROPERTY_ENABLED)) {
+          if (logger.isInfoEnabled()) {
+            logger.info("Deconfliction enabled: community=" +
+                        model.getCommunityName());
+          }
+          String allAgents[] = model.listEntries(CommunityStatusModel.AGENT);
+          for (int i = 0; i < allAgents.length; i++) {
+            coordinatorHelper.addAgent(allAgents[i]);
+          }
         }
       }
     }
