@@ -29,7 +29,6 @@ import org.cougaar.community.Filter;
 import org.cougaar.community.SearchStringParser;
 
 import org.cougaar.tools.robustness.ma.controllers.RobustnessController;
-import org.cougaar.tools.robustness.ma.util.NodeChangeListener;
 
 import org.cougaar.core.mts.MessageAddress;
 
@@ -68,7 +67,7 @@ import javax.naming.directory.BasicAttributes;
  * period.
  */
 public class CommunityStatusModel extends BlackboardClientComponent
-    implements NotPersistable{
+    implements NotPersistable {
 
   public static final int AGENT = 0;
   public static final int NODE  = 1;
@@ -148,7 +147,6 @@ public class CommunityStatusModel extends BlackboardClientComponent
 
   private List eventQueue = new ArrayList();
   private List changeListeners = Collections.synchronizedList(new ArrayList());
-  private List nodeChangeListeners = Collections.synchronizedList(new ArrayList());
 
   /**
    * Constructor.
@@ -353,11 +351,15 @@ public class CommunityStatusModel extends BlackboardClientComponent
         se.priorState = se.currentState;
         se.currentState = state;
         se.expiration = expiration;
-        logger.debug("setCurrentState" +
-                     " agent=" + name +
-                     " newState=" + controller.stateName(se.currentState) +
-                     " priorState=" + controller.stateName(se.priorState) +
-                     " expiration=" + (expiration == NEVER ? "NEVER" : Long.toString(expiration)));
+        if (logger.isDebugEnabled() && controller != null) {
+          logger.debug("setCurrentState" +
+                       " agent=" + name +
+                       " newState=" + controller.stateName(se.currentState) +
+                       " priorState=" + controller.stateName(se.priorState) +
+                       " expiration=" +
+                       (expiration == NEVER ? "NEVER" :
+                        Long.toString(expiration)));
+        }
         if (hasAttribute(se.attrs, "Role", HEALTH_MONITOR)) {
           electLeader();
         }
@@ -624,16 +626,9 @@ public class CommunityStatusModel extends BlackboardClientComponent
               queueChangeEvent(
                   new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
                                                  MEMBERS_ADDED, se));
-              setCurrentState(se.name, INITIAL);
-              if(type == NODE) {
-                for(Iterator iter = nodeChangeListeners.iterator(); iter.hasNext();) {
-                  NodeChangeListener ncl = (NodeChangeListener)iter.next();
-                  ncl.addNode(se.name);
-                }
-              }
+              //setCurrentState(se.name, INITIAL);
             } else {
               StatusEntry se = (StatusEntry) statusMap.get(entity.getName());
-              Attributes entityAttrs = entity.getAttributes();
               if (se.attrs == null) {
                 se.attrs = entity.getAttributes();
               }
@@ -648,12 +643,6 @@ public class CommunityStatusModel extends BlackboardClientComponent
             queueChangeEvent(
                 new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
                                                MEMBERS_REMOVED, se));
-            if(se.type == NODE) {
-              for(Iterator it = nodeChangeListeners.iterator(); it.hasNext();) {
-                NodeChangeListener ncl = (NodeChangeListener)it.next();
-                ncl.removeNode(se.name);
-              }
-            }
           }
         }
       }
@@ -700,6 +689,16 @@ public class CommunityStatusModel extends BlackboardClientComponent
         }
       }
     }
+    queueChangeEvent(
+      new CommunityStatusChangeEvent(CommunityStatusChangeEvent.STATUS_UPDATE_RECEIVED,
+                                     nodeName,
+                                     UNDEFINED,
+                                     UNDEFINED,
+                                     UNDEFINED,
+                                     null,
+                                     null,
+                                     null,
+                                     null));
   }
 
   /**
@@ -893,6 +892,30 @@ public class CommunityStatusModel extends BlackboardClientComponent
     return value;
   }
 
+  public boolean getBooleanAttribute(String name, String id) {
+    return getBooleanAttribute(getAttributes(name), id);
+  }
+
+  public boolean getBooleanAttribute(String id) {
+    return getBooleanAttribute(getCommunityAttributes(), id);
+  }
+
+  public boolean getBooleanAttribute(Attributes attrs, String id) {
+    boolean result = false;
+    try {
+      if (attrs != null && id != null) {
+        Attribute attr = attrs.get(id);
+        if (attr != null) {
+          String attrValue = (String) attr.get();
+          result = attrValue != null &&
+                   ("True".equalsIgnoreCase(attrValue) ||
+                   ("Yes".equalsIgnoreCase(attrValue)));
+        }
+      }
+    } catch (Exception ex) {}
+    return result;
+  }
+
   public String getAttribute(String name, String id) {
     return getAttribute(getAttributes(name), id);
   }
@@ -1000,7 +1023,17 @@ public class CommunityStatusModel extends BlackboardClientComponent
    * Performs leader election using current state and peer votes.
    */
   private void electLeader() {
-    //logger.info("electLeader");
+    if (logger.isDebugEnabled()) {
+      String current = getLeader();
+      String preferred = preferredLeader;
+      int currentLeaderState = current != null
+                                 ? getCurrentState(current)
+                                 : -1;
+      logger.debug("electLeader:" +
+                  " currentLeader=" + current + "(" + currentLeaderState + ")" +
+                  " preferredLeader=" + preferred +
+                  " triggerState=" + triggerState);
+    }
     try {
       if (getLeader() == null ||
           !getLeader().equals(preferredLeader) ||
@@ -1079,7 +1112,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
       MessageAddress addr = MessageAddress.getMessageAddress(allAgents[i]);
       if (nodeControlService.getRootContainer().containsAgent(addr)) {
         if (!thisAgent.equals(getLocation(allAgents[i]))) {
-          setLocationAndState(allAgents[i], thisAgent, LOCATED);
+          setLocationAndState(allAgents[i], thisAgent, INITIAL);
           logger.debug("Found agent " + allAgents[i] + " at node " + thisAgent);
         }
       }
@@ -1109,24 +1142,6 @@ public class CommunityStatusModel extends BlackboardClientComponent
   public void removeChangeListener(StatusChangeListener scl) {
     if (changeListeners.contains(scl))
       changeListeners.remove(scl);
-  }
-
-  /**
-   * Adds a NodeChangeListener to community
-   * @param ncl NodeChangeListener to add
-   */
-  public void addNodeChangeListener(NodeChangeListener ncl) {
-    if(!nodeChangeListeners.contains(ncl))
-      nodeChangeListeners.add(ncl);
-  }
-
-  /**
-   * Removes a NodeChangeListener from community
-   * @param ncl NodeChangeListener to remove
-   */
-  public void removeNodeChangeListener(NodeChangeListener ncl) {
-    if (nodeChangeListeners.contains(ncl))
-      nodeChangeListeners.remove(ncl);
   }
 
   /**
