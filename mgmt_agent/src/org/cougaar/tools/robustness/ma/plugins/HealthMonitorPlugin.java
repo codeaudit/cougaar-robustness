@@ -21,8 +21,6 @@ import java.util.*;
 import javax.naming.*;
 import javax.naming.directory.*;
 
-import org.cougaar.tools.robustness.ma.util.StatCalc;
-
 import org.cougaar.tools.robustness.sensors.SensorFactory;
 import org.cougaar.tools.robustness.sensors.HeartbeatRequest;
 import org.cougaar.tools.robustness.sensors.HeartbeatEntry;
