@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE Threat >
+
+<Threats>
+
+<Threat name="AgentFailure" affectsAssetType="Agent" causesEvent="AgentDeath">
+   <EventLikelihood probability="LOW" />
+</Threat>
+
+<Threat name="AgentCommFailure" affectsAssetType="Agent" causesEvent="AgentNotCommunicating">
+   <EventLikelihood probability="MEDIUM" />
+</Threat>
+
+<Threat name="AgentPlannedDisconnect" affectsAssetType="Agent" causesEvent="AgentDisconnected">
+   <EventLikelihood probability="LOW" />
+</Threat>
+
+</Threats>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE ActuatorType >
+
+<ActuatorType name="org.cougaar.coordinator.test.defense.RestartAgentDefense" affectsAssetType="Agent" affectsStateDimension="Liveness" >
+    <Action name="LocalRestart">
+        <Description value="Restarts agent in node on local host" />
+        <Transition WhenActualStateIs="*" EndStateWillBe="Live" IntermediateStateWillBe="Dead" >
+            <OneTimeCost>
+                <CPU intensity="HIGH" agentSizeFactor="TRUE" />
+            </OneTimeCost>
+            <ContinuingCost>
+                <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
+            </ContinuingCost>
+        </Transition>
+    </Action>
+    
+    <Action name="QuickRemoteRestart">
+        <Description value="Restarts agent in first available node" />
+        <Transition WhenActualStateIs="*" EndStateWillBe="Live" IntermediateStateWillBe="Dead" >
+            <OneTimeCost>
+                <Bandwidth intensity="MEDIUM" agentSizeFactor="TRUE" />
+                <CPU intensity="HIGH" agentSizeFactor="TRUE" />
+            </OneTimeCost>
+        </Transition>
+    </Action>
+
+    <Action name="BalancingRestart">
+        <Description value="Restarts multiple agents with a rebalancing plan" />
+        <Transition WhenActualStateIs="*" EndStateWillBe="Live" IntermediateStateWillBe="Dead" >
+            <OneTimeCost>
+                <Bandwidth intensity="MEDIUM" agentSizeFactor="TRUE" />
+                <CPU intensity="HIGH" agentSizeFactor="TRUE" />
+                <Time duration="120" />
+            </OneTimeCost>
+        </Transition>
+    </Action>
+</ActuatorType>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE AssetStateDimensions >
+
+<AssetStateDimensions assetType="Agent">
+
+  <StateDimension name="Communication" >
+ 	<State name="Communicating" relativeMauCompleteness="0.9" 
+                                    relativeMauSecurity="0.5"
+			            defaultStartState="TRUE" />
+
+ 	<State name="Degraded" relativeMauCompleteness="0.5" 
+                               relativeMauSecurity="0.5" />
+
+ 	<State name="Planned_Disconnect" relativeMauCompleteness="0.9" 
+	                                 relativeMauSecurity="1.0" />
+
+ 	<State name="Not_Communicating" relativeMauCompleteness="0.0" 
+                                        relativeMauSecurity="0.5" />
+
+  </StateDimension>
+
+  <StateDimension name="Liveness" >
+ 	<State name="Live" relativeMauCompleteness="1.0" 
+                         relativeMauSecurity="0.5"
+ 		         defaultStartState="TRUE" />
+ 	<State name="Dead" relativeMauCompleteness="0.0" 
+                           relativeMauSecurity="0.5" />
+
+  </StateDimension>
+
+  <StateDimension name="Encryption" >
+ 	<State name="256_bit" relativeMauCompleteness="0.5" 
+                           relativeMauSecurity="1.0"
+			   defaultStartState="TRUE" />
+ 	<State name="64_bit" relativeMauCompleteness="0.5"
+	                     relativeMauSecurity="0.5" />
+ 	<State name="None" relativeMauCompleteness="0.5"
+	                   relativeMauSecurity="0.1" />
+
+  </StateDimension>
+
+</AssetStateDimensions>
+
+
+

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE ActuatorType >
+
+<ActuatorType name="org.cougaar.coordinator.test.defense.FakeCommDefense" affectsAssetType="Agent" affectsStateDimension="Communication" >
+    <Action name="TryHard">
+        <Description value="Tries Real Hard" />
+        <Transition WhenActualStateIs="*" EndStateWillBe="Communicating" IntermediateStateWillBe="Communicating" >
+            <ContinuingCost>
+                <Bandwidth intensity="MEDIUM" msgSizeFactor="TRUE" />
+            </ContinuingCost>
+        </Transition>
+    </Action>
+    
+    <Action name="Normal">
+        <Description value="Tries Normal Communications" />
+        <Transition WhenActualStateIs="Degraded" EndStateWillBe="NotCommunicating" IntermediateStateWillBe="Degraded" >
+            <ContinuingCost>
+                <Bandwidth intensity="LOW" agentSizeFactor="TRUE" />
+            </ContinuingCost>
+        </Transition>
+        <Transition WhenActualStateIs="Communicating" EndStateWillBe="Communicating" IntermediateStateWillBe="Communicating" >
+            <ContinuingCost>
+                <Bandwidth intensity="LOW" agentSizeFactor="TRUE" />
+            </ContinuingCost>
+        </Transition>
+    </Action>
+
+</ActuatorType>

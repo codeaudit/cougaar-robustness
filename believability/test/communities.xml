@@ -69,6 +69,11 @@
       <Attribute ID="Role" Value="Member" />
     </Entity>
 
+    <Entity Name="T1TestAgent" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+
     <Entity Name="AgentC" >
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="Member" />

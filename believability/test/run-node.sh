@@ -76,13 +76,16 @@ else
   if [ ! -r /u/arcshare/Ultralog/apps/ant/latest/bin/ant ] ; then
     echo "Canot find 'ant' executable."
     exit 1
-  fi
+  fi 
   ANT=/u/arcshare/Ultralog/apps/ant/latest/bin/ant
 fi
 
 # Make sure we have compiled the code using ant:
 #
 cd $TELCORDIA_CODE_BASE/..
+
+echo "PWD: "`pwd`
+echo "EXEC: $ANT compile"
 $ANT compile
 if [ $? -ne 0 ] ; then
   echo "Build error.  Fix code and please try again."
