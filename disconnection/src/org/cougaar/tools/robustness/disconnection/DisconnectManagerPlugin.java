@@ -168,9 +168,13 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             if (sc != null) {
                 if (logger.isDebugEnabled()) logger.debug(sc.getClass()+":"+sc.getAsset() + " set to " + sc.getValue());
             }
-            if (sc.getValue().equals(DefenseConstants.BOOL_FALSE.toString())) {  // cancel the alarm if Coordinator denies permission to disconnect
+            if (sc.getValue().equals(DefenseConstants.DEF_DISABLED.toString())) {  // cancel the alarm if Coordinator denies permission to disconnect
                 OverdueAlarm overdueAlarm = (OverdueAlarm)activeDisconnects.remove(sc.getExpandedName());
                 if (overdueAlarm != null) overdueAlarm.cancel();
+            }
+            else {
+                OverdueAlarm overdueAlarm = (OverdueAlarm)activeDisconnects.get(sc.getExpandedName());
+                if (overdueAlarm != null) getAlarmService().addRealTimeAlarm(overdueAlarm);  // start the previously created alarm because we have permission to disconnect
             }
             propagateDefenseEnablerChange(sc);
         }
@@ -196,7 +200,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             dac.setValue(DefenseConstants.BOOL_TRUE); // disconnected
             OverdueAlarm overdueAlarm = new OverdueAlarm(dac, t > 10000.0 ? t : 10000.0);  // Don't monitor for less than 5 sec
             activeDisconnects.put(dac.getExpandedName(), overdueAlarm);
-            getAlarmService().addRealTimeAlarm(overdueAlarm);
+            //getAlarmService().addRealTimeAlarm(overdueAlarm);  do this after getting permission
         }
         else {
             dac.setValue(DefenseConstants.BOOL_FALSE); // not disconnected
@@ -231,7 +235,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                 item.setValue(DefenseConstants.BOOL_TRUE); // disconnected
                 OverdueAlarm overdueAlarm = new OverdueAlarm(item, t > 10000.0 ? t : 10000.0);  // Don't monitor for less than 5 sec
                 activeDisconnects.put(item.getExpandedName(), overdueAlarm);
-                getAlarmService().addRealTimeAlarm(overdueAlarm);
+                //getAlarmService().addRealTimeAlarm(overdueAlarm);  do this after getting permission
             }
             else {
                 item.setValue(DefenseConstants.BOOL_FALSE); // not disconnected
