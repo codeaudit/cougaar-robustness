@@ -135,7 +135,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     {"pingTimeout",      "600000"},
     {"pingRetries",           "0"},
     {"evalFreq",          "10000"},
-    {"restartTimeout",   "300000"},
+    {"restartTimeout",   "-1"},
     {"restartRetryFreq", "600000"},
     {"numAgents",            "-1"}
   };
@@ -276,7 +276,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
   }
 
   private int checkCtr = 0;
-  private void getCommunityToMonitor() {
+  private boolean getCommunityToMonitor() {
     // Find name of community to monitor
     Collection communities =
         communityService.search("(CommunityManager=" + myAgent.toString() + ")");
@@ -302,6 +302,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       }
       finally {
         bbs.closeTransaction();
+        return true;
       }
     }
     else {
@@ -313,6 +314,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
             "also identified as an Entity within the monitored community with\n" +
             "the attribute \"Role=ManagementAgent\".");
       }
+      return false;
     }
   }
 
@@ -413,7 +415,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     //System.out.print("*");
     // Process any Roster changes
     if (communityToMonitor == null) {
-      //getCommunityToMonitor();
+      communityChanged = getCommunityToMonitor();
     } else {
       if (communityChanged) {
         processRosterChanges();
@@ -558,6 +560,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
               // See if agent has moved
 
               String location = getLocation(hs.getAgentId().toString());
+              /*
               if (!location.equals(hs.getNode())) {
                 log.info("Agent move detected: agent=" + hs.getAgentId() +
                          " priorNode=" + hs.getNode() +
@@ -569,6 +572,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
                 // exceeded
               }
               else {
+              */
                 log.debug("Heartbeat timeout, ping successful:" +
                           " agent=" + hs.getAgentId() +
                           " hBPctLate=" + hs.getHeartbeatEntry().getPercentLate());
@@ -582,7 +586,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
                   hs.setHeartbeatStatus(HealthStatus.HB_NORMAL);
                                }
                  */
-              }
+              //}
               hs.setPingStatus(HealthStatus.UNDEFINED);
               hs.setPingRetryCtr(0);
             }
@@ -1322,9 +1326,9 @@ public class HealthMonitorPlugin extends SimplePlugin implements
 
   public void communityChanged(CommunityChangeEvent cce) {
     //log.info("CommunityChangeEvent: " + cce);
-    if (cce.getType() == cce.ADD_COMMUNITY && communityToMonitor == null)
-      getCommunityToMonitor();
-    if (cce.getCommunityName().equals(communityToMonitor) &&
+    //if (cce.getType() == cce.ADD_COMMUNITY && communityToMonitor == null)
+      //getCommunityToMonitor();
+    if (communityToMonitor != null && cce.getCommunityName().equals(communityToMonitor) &&
         (cce.getType() == cce.ADD_ENTITY || cce.getType() == cce.REMOVE_ENTITY)) {
       communityChanged = true;
     }
