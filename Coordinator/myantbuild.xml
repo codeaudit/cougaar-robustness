@@ -39,6 +39,7 @@
 	<target name="create_cougaar_overlay">
 		<mkdir dir="staging/lib"/>
 		<mkdir dir="staging/configs"/>		
+		<mkdir dir="staging/operator"/>		
 		<mkdir dir="staging/coordinator"/>		
                 <mkdir dir="staging/coordinator/examples"/>
 		<mkdir dir="staging/coordinator/test"/>
@@ -50,6 +51,9 @@
                 <move file="${jar}" todir="staging/lib"/>
                 <copy todir="staging/configs/">
 			<fileset dir="configs/"/>
+		</copy>	
+		<copy todir="staging/operator/">
+			<fileset dir="operator/"/>
 		</copy>	
 		<copy todir="staging/coordinator/examples/">
 			<fileset dir="examples/"/>
