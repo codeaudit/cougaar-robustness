@@ -57,6 +57,8 @@ public class ActionRelayManager extends DeconflictionPluginBase implements NotPe
     private Vector relayFilters = null;
     
     private ActionRelayManagerKnob ActionRelayManagerKnob;
+
+    private Vector newWrappers = null;
     
     /** 
       * Creates a new instance of DefenseActivation 
@@ -64,6 +66,7 @@ public class ActionRelayManager extends DeconflictionPluginBase implements NotPe
     public ActionRelayManager() {
         super();
         relayFilters = new Vector();
+        newWrappers = new Vector();
     }
     
     /**
@@ -190,6 +193,7 @@ public class ActionRelayManager extends DeconflictionPluginBase implements NotPe
                 //registerUID(uid); //record all UIDs so we know what wrappers are out there.
                 a.setWrapper(aw);
                 this.publishAdd(aw);                
+                newWrappers.add(aw);
             }
             
             //Now look at changed Actions
@@ -197,6 +201,8 @@ public class ActionRelayManager extends DeconflictionPluginBase implements NotPe
             Collection wrappers = wrapperSubscription.getCollection();        
             added.addAll(changed);
 
+            wrappers.addAll(newWrappers); //add newly created wrappers (that aren't yet on the BB) to the ones from the BB
+            
             for ( iter = added.iterator(); iter.hasNext() ; ) 
             {
                 Action a = (Action)iter.next();
@@ -209,6 +215,7 @@ public class ActionRelayManager extends DeconflictionPluginBase implements NotPe
                 }
                 
             }
+            newWrappers.clear(); // clear this as these wrappers will now be committed to the BB
             
         }           
     }

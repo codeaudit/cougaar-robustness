@@ -59,12 +59,15 @@ public class DiagnosesRelayManager extends DeconflictionPluginBase implements No
     
     private DiagnosesRelayManagerKnob diagnosesRelayManagerKnob;
     
+    private Vector newWrappers = null;
+
     /** 
       * Creates a new instance of DefenseActivation 
       */
     public DiagnosesRelayManager() {
         super();
         relayFilters = new Vector();
+        newWrappers = new Vector();
     }
     
     /**
@@ -191,12 +194,15 @@ public class DiagnosesRelayManager extends DeconflictionPluginBase implements No
                 //registerUID(uid); //record all UIDs so we know what wrappers are out there.
                 d.setWrapper(dw);
                 this.publishAdd(dw);                
+                newWrappers.add(dw);
             }
             
             //Now look at changed diagnoses
             Collection changed  = diagnosesSubscription.getChangedCollection();        
             Collection wrappers = wrapperSubscription.getCollection();        
             added.addAll(changed);
+
+            wrappers.addAll(newWrappers); //add newly created wrappers (that aren't yet on the BB) to the ones from the BB
 
             for ( iter = added.iterator(); iter.hasNext() ; ) 
             {
@@ -210,6 +216,7 @@ public class DiagnosesRelayManager extends DeconflictionPluginBase implements No
                 }
                 
             }
+            newWrappers.clear(); // clear this as these wrappers will now be committed to the BB
             
         }           
     }
