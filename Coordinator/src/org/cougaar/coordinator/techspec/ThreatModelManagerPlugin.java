@@ -217,11 +217,19 @@ logger.debug("evaluateThreatAssetMembership -- asset types don't match: \n model
 
                 if (changedModels.size() > 0) { 
 
+                    Collection changes;
                     Iterator cModels = changedModels.iterator();
                     while (cModels.hasNext()) {
                         DefaultThreatModel dtm = (DefaultThreatModel) cModels.next();
-                        Collection changes = Collections.singleton( new ThreatModelChangeEvent( dtm, ThreatModelChangeEvent.MEMBERSHIP_CHANGE ) );
-                        this.blackboard.publishChange(dtm, changes);
+                        
+                        //Announce newly added assets
+                        Vector added = dtm.clearNewAssets();
+                        Vector removed = dtm.clearRemovedAssets();
+                        if (added.size() > 0 || removed.size() > 0) { //some assets were added to this threat, so announce it
+                            changes = Collections.singleton( new ThreatModelChangeEvent( dtm, added, removed, ThreatModelChangeEvent.MEMBERSHIP_CHANGE) );
+                            this.blackboard.publishChange(dtm, changes);
+                            logger.debug("Announced "+added.size()+" assets were added, and " +removed.size()+" assets were removed in threat = " + dtm.getName());
+                        }                        
                     }
                 }
 

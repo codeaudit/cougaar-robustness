@@ -63,6 +63,13 @@ public class DefaultThreatModel implements ThreatModelInterface, NotPersistable 
     
     /** The vector containing a list of all assets this threat is concerned about */
     private Vector assets;
+
+    /** The vector containing a list of all newly added assets, since last time clearNewAssets() was called */
+    private Vector newAssets;
+
+    /** The vector containing a list of all newly removed assets, since last time clearRemovedAssets() was called */
+    private Vector removedAssets;
+    
     
     /** The ThreatType of this threat 
      * @deprecated
@@ -108,6 +115,8 @@ public class DefaultThreatModel implements ThreatModelInterface, NotPersistable 
         
         this.threatDesc = td;
         
+        removedAssets = new Vector(5,20);
+        newAssets = new Vector(5, 20);
     }
 
     /** 
@@ -124,6 +133,31 @@ public class DefaultThreatModel implements ThreatModelInterface, NotPersistable 
     public Vector getDamageDistributionVector() { return null;}
     
     
+    /** 
+     * Clear the vector of newly added assets
+     *@return a clone of the vector of newly added assets
+     */
+    public Vector clearNewAssets() {
+        
+        Vector temp = (Vector) newAssets.clone();
+        newAssets.clear();
+        return temp;
+        
+    }
+
+    
+    /** 
+     * Clear the vector of removed assets
+     *@return a clone of the vector of removed assets
+     */
+    public Vector clearRemovedAssets() {
+        
+        Vector temp = (Vector) removedAssets.clone();
+        removedAssets.clear();
+        return temp;
+        
+    }
+    
     /**
      * @return the list of assets that the threat cares about.
      */
@@ -138,6 +172,7 @@ public class DefaultThreatModel implements ThreatModelInterface, NotPersistable 
     public boolean addAsset(AssetTechSpecInterface asset) {
         if (!containsAsset(asset)) {
             assets.addElement(asset);
+            newAssets.add(asset);
             return true;
         }
         return false;
@@ -148,7 +183,12 @@ public class DefaultThreatModel implements ThreatModelInterface, NotPersistable 
      * Remove an asset
      */
     public boolean removeAsset(AssetTechSpecInterface asset) {
-        return assets.removeElement(asset);
+        if (assets.removeElement(asset)) {
+            removedAssets.add(asset);
+            return true;
+        } else {
+            return false;
+        }
     }    
     
     

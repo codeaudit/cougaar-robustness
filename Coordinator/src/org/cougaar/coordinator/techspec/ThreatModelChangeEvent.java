@@ -30,6 +30,7 @@ package org.cougaar.coordinator.techspec;
 //import org.cougaar.util.log.Logger;
 import org.cougaar.core.blackboard.ChangeReport;
 import org.cougaar.core.persist.NotPersistable;
+import java.util.Vector;
 
 /**
  * This class describes a filter that is used to determine membership in a threatModel
@@ -41,15 +42,21 @@ public class ThreatModelChangeEvent implements ChangeReport, NotPersistable {
     public static final EventType DISTRIBUTION_CHANGE = new ThreatModelChangeEvent.EventType();
     public static final EventType LIKELIHOOD_CHANGE = new ThreatModelChangeEvent.EventType();
     public static final EventType MEMBERSHIPFILTER_CHANGE = new ThreatModelChangeEvent.EventType();
+    //public static final EventType MEMBERSHIP_ADD_CHANGE = new ThreatModelChangeEvent.EventType();
+    //public static final EventType MEMBERSHIP_REMOVAL_CHANGE = new ThreatModelChangeEvent.EventType();
     public static final EventType MEMBERSHIP_CHANGE = new ThreatModelChangeEvent.EventType();
 
     private ThreatModelInterface model;
     private EventType eventType;
+    private Vector added_assets;
+    private Vector removed_assets;
     
     /** Creates a new instance of ThreatModelChangeEvent */
-    public ThreatModelChangeEvent(ThreatModelInterface model, EventType eventType) {
+    public ThreatModelChangeEvent(ThreatModelInterface model, Vector added_assets, Vector removed_assets, EventType eventType) {
         this.model = model;
         this.eventType = eventType;
+        this.added_assets = added_assets;
+        this.removed_assets = removed_assets;
     }
     
     public ThreatModelChangeEvent.EventType getEventType() { return eventType; }
@@ -58,5 +65,8 @@ public class ThreatModelChangeEvent implements ChangeReport, NotPersistable {
     static class EventType{
         private EventType() {}
     }
+    
+    public Vector getAddedAssets() { return added_assets; }
+    public Vector getRemovedAssets() { return removed_assets; }
     
 }
