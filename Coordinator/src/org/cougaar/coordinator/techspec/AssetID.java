@@ -54,7 +54,7 @@ public class AssetID  implements NotPersistable, Serializable {
     
     /** Return true if object is equal to this object */
     public boolean equals(Object o) {
-        return true; // ( (o instanceof AssetID) && ((AssetID)o).getName().equals(this.name) && ( (AssetID)o).getType().equals(this.type) );
+        return  ( (o instanceof AssetID) && ((AssetID)o).getName().equals(this.name) && ( (AssetID)o).getType().equals(this.type) );
     }
 
     public int hashCode() { return name.hashCode(); }
