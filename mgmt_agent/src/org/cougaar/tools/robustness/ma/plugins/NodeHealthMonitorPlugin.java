@@ -50,6 +50,7 @@ import org.cougaar.core.service.community.CommunityResponseListener;
 import org.cougaar.core.service.community.CommunityResponse;
 import org.cougaar.core.service.community.Entity;
 
+import org.cougaar.community.requests.CommunityRequest;
 import org.cougaar.community.requests.JoinCommunity;
 import org.cougaar.community.requests.SearchCommunity;
 
@@ -116,6 +117,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
   private String myNode;
   private String myHost;
   private boolean joinedStartupCommunity = false;
+  private boolean getTopologyFlag = true;
 
   // Status model and controller associated with monitored community
   private CommunityStatusModel model;
@@ -190,9 +192,6 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
     healthMonitorRequests =
         (IncrementalSubscription)blackboard.subscribe(healthMonitorRequestPredicate);
 
-    // Determine identify node and host
-    getTopologyInfo();
-
     // Publish SearchCommunity request to look for Robustness Communities
     searchRequests =
       (IncrementalSubscription)blackboard.subscribe(searchCommunityPredicate);
@@ -223,6 +222,12 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
   public void execute() {
     if ((wakeAlarm != null) &&
         ((wakeAlarm.hasExpired()))) {
+      // Determine identify node and host
+      if (myNode == null && getTopologyFlag) {
+        getTopologyFlag = false;
+        getTopologyInfo();
+      }
+
       if (myNode != null && !joinedStartupCommunity) {
         joinStartupCommunity();
       }
@@ -334,7 +339,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
       if (model == null) {
         initializeModel(community.getName());
       }
-      if (nodeStatusRelay == null && myType.equals("Node")) {
+      if (nodeStatusRelay == null && myType.equalsIgnoreCase("Node")) {
         AgentStatus agentStatus[] = getLocalAgentStatus(community.getName());
         NodeStatusRelayImpl nsr =
             new NodeStatusRelayImpl(agentId,
@@ -516,32 +521,30 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
         }
         if (entry != null) {
           try {
-            if (entry != null) {
-              URI uri = entry.getURI();
-              myHost = uri.getHost();
-              myNode = uri.getPath().substring(1);
-              myType = (myName.equals(myNode)) ? "Node" : "Agent";
-              if (logger.isInfoEnabled()) {
-                logger.debug("toplogyInfo:" +
-                            " name=" + myName +
-                            " type=" + myType +
-                            " host=" + myHost +
-                            " node=" + myNode);
-              }
+            URI uri = entry.getURI();
+            myHost = uri.getHost();
+            myNode = uri.getPath().substring(1);
+            myType = (myName.equals(myNode)) ? "Node" : "Agent";
+            if (logger.isInfoEnabled()) {
+              logger.info("topologyInfo:" +
+                          " name=" + myName +
+                          " type=" + myType +
+                          " host=" + myHost +
+                          " node=" + myNode);
             }
-            if (blackboard != null) blackboard.signalClientActivity();
           } catch (Exception ex) {
-            logger.error("Exception in updateLocation:", ex);
-          } finally {
-            resp.removeCallback(this);
+            logger.error("Exception in getTopologyInfo:", ex);
           }
-
+        } else {
+          getTopologyFlag = true;
         }
-        logger.debug("getToplogyInfo callback:" +
-                      " name=" + myName +
-                      " resp.isAvailable=" + isAvailable +
-                      " resp.isSuccess=" + isSuccess +
-                      " entry=" + entry);
+        if (blackboard != null)
+          blackboard.signalClientActivity();
+        logger.debug("getTopologyInfo callback:" +
+                     " name=" + myName +
+                     " resp.isAvailable=" + isAvailable +
+                     " resp.isSuccess=" + isSuccess +
+                     " entry=" + entry);
       }
     };
     whitePagesService.get(myName, "topology", cb);
