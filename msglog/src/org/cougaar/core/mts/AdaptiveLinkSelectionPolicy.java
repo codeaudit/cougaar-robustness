@@ -115,7 +115,7 @@ import org.cougaar.core.service.LoggingService;
 
 public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 {
-  private static final MessageHistory messageHistory = MessageSendHistoryAspect.messageHistory;
+  //102 private static final MessageHistory messageHistory = MessageSendHistoryAspect.messageHistory;
 
   private static LoggingService log;
   private static boolean debug;

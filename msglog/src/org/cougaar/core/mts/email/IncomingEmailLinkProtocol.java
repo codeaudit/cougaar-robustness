@@ -67,8 +67,8 @@ import org.cougaar.core.thread.Schedulable;
 
 
 /**
- * IncomingEmailLinkProtocol is a LinkProtocol which receives Cougaar 
- * messages from other nodes in a society via the POP3 protocol email.
+ * IncomingEmailLinkProtocol is a LinkProtocol which receives 
+ * Cougaar messages via the POP3 protocol.
  * <p>
  * <b>System Properties:</b>
  * <p>
@@ -80,7 +80,7 @@ import org.cougaar.core.thread.Schedulable;
  * <br>(e.g. -Dorg.cougaar.message.protocol.classes=org.cougaar.core.mts.email.OutgoingEmailLinkProtocol,
  * org.cougaar.core.mts.email.IncomingEmailLinkProtocol)
  * <p>
- * <b>org.cougaar.message.protocol.email.inboxes</b> 
+ * <b>org.cougaar.message.protocol.email.inboxes.<node-name></b> 
  * Specify the inbound POP3 mailboxes for a node by setting this property 
  * to a list of URIs delimited by vertical bars, <i>pop3://user:pswd@host:port</i>, where:
  * <pre>
@@ -90,7 +90,8 @@ import org.cougaar.core.thread.Schedulable;
  * user:  The user name for the POP3 mailbox account.
  * pswd:  The password for the POP3 mailbox account
  * </pre>
- * (e.g. -Dorg.cougaar.message.protocol.email.inboxes=pop3://node1:passwd@wally.objs.com:110)
+ * (e.g. for a node named "X":  
+ * -Dorg.cougaar.message.protocol.email.inboxes.X=pop3://node1:passwd@wally.objs.com:110)
  * <p>
  * <b>org.cougaar.message.protocol.email.incoming.mailServerPollTimeSecs</b>
  * The number of seconds waited between polls of the POP3 Servers.  The default is 5 seconds.

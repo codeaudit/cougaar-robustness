@@ -61,8 +61,8 @@ import org.cougaar.core.mts.*;
 import org.cougaar.core.service.LoggingService;
 
 /**
- * OutgoingEmailLinkProtocol is an OutgoingLinkProtocol which uses email to
- * send Cougaar messages from the current node to other nodes in the society.
+ * OutgoingEmailLinkProtocol is a LinkProtocol which sends 
+ * Cougaar messages via the SMTP protocol.
  * <p>
  * <b>System Properties:</b>
  * <p>
@@ -76,42 +76,46 @@ import org.cougaar.core.service.LoggingService;
  * <p>
  * <b>org.cougaar.message.protocol.email.outboxes.<node-name></b> 
  * Specify the outbound SMTP servers for a node by setting this property 
- * to a string of the form <i>smtp,host,port,replyTo,cc,bcc</i>, where:
+ * to a list of URIs delimited by vertical bars, <i>smtp://user:pswd@host:port</i>, where:
  * <pre>
  * smtp:  The literal string "smtp".
+ * user:  The user name for access to the smtp server.
+ * pswd:  The password for access to the smtp server.
  * host:  The fully qualified domain name (FQDN) of the host running the SMTP mail server.
  * port:  The port the SMTP mail server is listening on (typically port 25).
- * replyTo:  Either an email address (e.g. someone@somewhere.com) or a dash ("-"). Use of the "-" 
- * means skip this feature.  If an email address is supplied, it is set as the Reply-To field on all 
- * email sent out via this SMTP server.  This feature is expected to only be used in rare testing 
- * and debugging situations.
- * cc:   Either an email address (e.g. someone@somewhere.com) or a dash ("-").  Use of the "-" means 
- * skip this feature.  If an email address is supplied, it is set as the CC (carbon copy)  field on 
- * all email sent out via this SMTP server.  This feature is expected to only be used in rare testing 
- * and debugging situations.
- * bcc:   Either an email address (e.g. someone@somewhere.com) or a dash ("-").  Use of the "-" means 
- * skip this feature.  If an email address is supplied, it is set as the BCC (blind carbon copy) field 
- * on all email sent out via this SMTP server.  This feature is expected to only be used in rare 
- * testing and debugging situations.
  * </pre>
  * (e.g. for a node named "X": 
- * -Dorg.cougaar.message.transport.email.outboxes.X=smtp,wally.objs.com,25,-,-,-)
- * <br><i>[Note:  Currently, only one outbox per node can be specified. That will change.]</i>
+ * -Dorg.cougaar.message.transport.email.outboxes.X=smtp://node1:kjasd@wally.objs.com:25)
+ * <br>
  * <p>
  * <b>org.cougaar.message.protocol.email.cost</b>
  * The cost function of the DestinationLink inner subclass defaults to 1500, so 
  * that, using the default MinCostLinkSelectionPolicy, it will be chosen after 
- * OutgoingSocketLinkProtocol and RMILinkProtocol, and before NNTPLinkProtocol. 
+ * OutgoingUDPLinkProtocol, OutgoingSocketLinkProtocol and RMILinkProtocol, and 
+ * before NNTPLinkProtocol. 
  * When using AdaptiveLinkSelectionPolicy, cost is
  * one of the factors that are used to select a protocol. To modify the default
  * cost, set the property to an integer 
  * <br>(e.g. org.cougaar.message.protocol.email.cost=750).
  * <p>
- * <b>org.cougaar.message.protocol.email.debug</b> 
- * If true, prints debug information to System.out.
+ * <b>org.cougaar.message.protocol.email.outgoing.socketTimeout</b>
+ * The number of milliseconds to wait before closing an unresponsive SMTP socket.  The default is 10000 milliseconds.
+ * <br>(e.g. -Dorg.cougaar.message.protocol.email.incoming.socketTimeout=10000)
  * <p>
- * <b>mail.debug</b> 
- * If true, JavaMail prints debug information to System.out.
+ * <b>org.cougaar.message.protocol.email.outgoing.maxMessageSizeKB</b>
+ * The upper limit for the size in kilobytes of messages that will be 
+ * sent via this protocol.  The default is 10000KB (10MB).
+ * Decrease or increase this setting depending on the constraints of the smtp server.
+ * <br>(e.g. -org.cougaar.message.protocol.email.outgoing.maxMessageSizeKB=10000)
+ * <p>
+ * <b>org.cougaar.message.protocol.email.outgoing.embedMessageDigest</b>
+ * If true, help insure message integrity by embedding an MD5 hash of the message
+ * in the message.  The default is true.
+ * <br>(e.g. -org.cougaar.message.protocol.email.outgoing.embedMessageDigest=true)
+ * <p>
+ * <b>org.cougaar.message.protocol.email.outgoing.showMailServerInteraction</b>
+ * If true, detailed interaction with the POP3 Server is logged at the DEBUG level.  The default is false.
+ * <br>(e.g. -Dorg.cougaar.message.protocol.email.incoming.showMailServerInteraction=false)
  * */
 
 public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
@@ -146,7 +150,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     socketTimeout = Integer.valueOf(System.getProperty(s,"5000")).intValue();
 
     s = "org.cougaar.message.protocol.email.outgoing.maxMessageSizeKB";
-    maxMessageSizeKB = Integer.valueOf(System.getProperty(s,"1000")).intValue();
+    maxMessageSizeKB = Integer.valueOf(System.getProperty(s,"10000")).intValue();
 
     s = "org.cougaar.message.protocol.email.outgoing.embedMessageDigest";
     embedMessageDigest = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
