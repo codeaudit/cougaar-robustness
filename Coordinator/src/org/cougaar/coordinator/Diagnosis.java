@@ -307,7 +307,7 @@ public abstract class Diagnosis
      * only be called by the diagnosis. The value must be in the set of permittedValues.
      * <p>
      */
-    public void setValue(Object newValue) throws IllegalArgumentException {
+    protected void setValue(Object newValue) throws IllegalValueException {
         
         if (value != newValue) {
             this.setLastChangedTimestamp( System.currentTimeMillis() );            
