@@ -165,7 +165,8 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
 
           // create conditions & opmodes for the NodeAgent
           createLocalCondition(getNodeID(), getNodeAddress(), managerAddress);
-          createConditionsAndOpModes("Node", getNodeID(), getNodeAddress(), managerAddress);
+          createConditionsAndOpModes("Node", getNodeID(), getNodeAddress(), managerAddress);   // so we can disconnect the Node
+          createConditionsAndOpModes("Agent", getNodeID(), getNodeAddress(), managerAddress);  // so the Node Agent is also visble
      
           //********** Check for new agents on the node **********
           // create conditions for all the agents that reported BEFORE we found the ManagerAgent Address
