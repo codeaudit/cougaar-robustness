@@ -22,7 +22,7 @@
  *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
-*/
+*/ 
 
 package org.cougaar.tools.robustness.disconnection;
 

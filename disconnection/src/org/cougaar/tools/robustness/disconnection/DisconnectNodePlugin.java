@@ -30,7 +30,7 @@
  *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
-*/
+*/ 
 
 package org.cougaar.tools.robustness.disconnection;
 
@@ -301,10 +301,10 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
     private void removeConditionsAndOpModes(String assetType, String assetID) {
         // Find and remove the corresponding ReconnectTimeCondition & LocalReconnectTimeCondition
         
-        LocalReconnectTimeCondition lrtc = LocalReconnectTimeCondition.find(assetType, assetID, getBlackboardService());       
-        ReconnectTimeCondition rtc = ReconnectTimeCondition.find(assetType, assetID, getBlackboardService());
-        DisconnectMonitoringAgentEnabler dme = DisconnectMonitoringAgentEnabler.find(assetType, assetID, getBlackboardService());
-        DisconnectDefenseAgentEnabler dde = DisconnectDefenseAgentEnabler.find(assetType, assetID, getBlackboardService());
+        LocalReconnectTimeCondition lrtc = LocalReconnectTimeCondition.findOnBlackboard(assetType, assetID, getBlackboardService());       
+        ReconnectTimeCondition rtc = ReconnectTimeCondition.findOnBlackboard(assetType, assetID, getBlackboardService());
+        DisconnectMonitoringAgentEnabler dme = DisconnectMonitoringAgentEnabler.findOnBlackboard(assetType, assetID, getBlackboardService());
+        DisconnectDefenseAgentEnabler dde = DisconnectDefenseAgentEnabler.findOnBlackboard(assetType, assetID, getBlackboardService());
         
         if (lrtc != null) blackboard.publishRemove(lrtc);
         if (rtc != null) blackboard.publishRemove(rtc);

@@ -25,7 +25,7 @@
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  *
  * </copyright> 
- */
+ */ 
 
 package org.cougaar.tools.robustness.disconnection;
 
@@ -56,16 +56,14 @@ import org.cougaar.core.adaptivity.OMCRangeList;
  */
 public class DisconnectDefenseAgentEnabler extends DefenseOperatingMode {
     
-    public static final UnaryPredicate pred = new UnaryPredicate() {
-        public boolean execute(Object o) {  
-            return 
-                (o instanceof DisconnectDefenseAgentEnabler);
-        }
-    };
-
-        
-        // searches the BB for an object of this type with a given signature 
-    public static DisconnectDefenseAgentEnabler find(String assetType, String assetID, BlackboardService blackboard) {
+    // searches the BB for an object of this type with a given signature 
+    public static DisconnectDefenseAgentEnabler findOnBlackboard(String assetType, String assetID, BlackboardService blackboard) {
+        UnaryPredicate pred = new UnaryPredicate() {
+            public boolean execute(Object o) {  
+                return 
+                    (o instanceof DisconnectDefenseAgentEnabler);
+            }
+        };
 
         DisconnectDefenseAgentEnabler rtc = null;
         Collection c = blackboard.query(pred);

@@ -25,7 +25,7 @@
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright> 
  */
-
+ 
 package org.cougaar.tools.robustness.disconnection;
 
 import org.cougaar.tools.robustness.deconfliction.*;
@@ -36,15 +36,13 @@ import java.util.Iterator;
 
 public class ReconnectTimeCondition extends DefenseTimeCondition {
     
-    public static final UnaryPredicate pred = new UnaryPredicate() {
-        public boolean execute(Object o) {  
-            return 
-                (o instanceof ReconnectTimeCondition);
-        }
-    };
-
-    
-    public static ReconnectTimeCondition find(String assetType, String assetID, BlackboardService blackboard) {
+    public static ReconnectTimeCondition findOnBlackboard(String assetType, String assetID, BlackboardService blackboard) {
+        UnaryPredicate pred = new UnaryPredicate() {
+            public boolean execute(Object o) {  
+                return 
+                    (o instanceof ReconnectTimeCondition);
+            }
+        };
 
         ReconnectTimeCondition rtc = null;
         Collection c = blackboard.query(pred);

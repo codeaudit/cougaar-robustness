@@ -22,7 +22,7 @@
  *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
- */
+ */ 
 
 package org.cougaar.tools.robustness.disconnection;
 
@@ -124,7 +124,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             while (iter.hasNext()) {
                 ReconnectTimeCondition rtc = (ReconnectTimeCondition)iter.next();
                 
-                DefenseApplicabilityCondition item = DefenseApplicabilityCondition.find(DisconnectConstants.DEFENSE_NAME, rtc.getExpandedName(), blackboard);
+                DefenseApplicabilityCondition item = DefenseApplicabilityCondition.findOnBlackboard(DisconnectConstants.DEFENSE_NAME, rtc.getExpandedName(), blackboard);
                 if (item != null) { // the DefenseApplicability condition already exists, so don't make anotherset of conditions & opmodes
                     if (logger.isDebugEnabled()) logger.debug("Not creating redundant modes & conditions for already known "+rtc.getAsset());
                 }
@@ -143,7 +143,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             while (iter.hasNext()) {
                 ReconnectTimeCondition rtc = (ReconnectTimeCondition)iter.next();
                 
-                DefenseApplicabilityCondition item = DefenseApplicabilityCondition.find(DisconnectConstants.DEFENSE_NAME, rtc.getExpandedName(), blackboard);
+                DefenseApplicabilityCondition item = DefenseApplicabilityCondition.findOnBlackboard(DisconnectConstants.DEFENSE_NAME, rtc.getExpandedName(), blackboard);
                 if (item != null) { // the DefenseApplicability condition already exists, so don't make anotherset of conditions & opmodes
                     if (logger.isDebugEnabled()) logger.debug("Not creating redundant modes & conditions for already known "+rtc.getAsset());
                 }
@@ -168,6 +168,10 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             if (sc != null) {
                 if (logger.isDebugEnabled()) logger.debug(sc.getClass()+":"+sc.getAsset() + " set to " + sc.getValue());
             }
+            if (sc.getValue().equals(DefenseConstants.BOOL_FALSE.toString())) {  // cancel the alarm if Coordinator denies permission to disconnect
+                OverdueAlarm overdueAlarm = (OverdueAlarm)activeDisconnects.remove(sc.getExpandedName());
+                if (overdueAlarm != null) overdueAlarm.cancel();
+            }
             propagateDefenseEnablerChange(sc);
         }
         
@@ -191,7 +195,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         if (t > 0.0) {
             dac.setValue(DefenseConstants.BOOL_TRUE); // disconnected
             OverdueAlarm overdueAlarm = new OverdueAlarm(dac, t > 10000.0 ? t : 10000.0);  // Don't monitor for less than 5 sec
-            activeDisconnects.put(dac, overdueAlarm);
+            activeDisconnects.put(dac.getExpandedName(), overdueAlarm);
             getAlarmService().addRealTimeAlarm(overdueAlarm);
         }
         else {
@@ -219,13 +223,11 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         
         double t = ((Double)rtc.getValue()).doubleValue();
         
-        DisconnectApplicabilityCondition item = (DisconnectApplicabilityCondition)DefenseApplicabilityCondition.find(DisconnectConstants.DEFENSE_NAME, rtc.getExpandedName(), blackboard);
+        DisconnectApplicabilityCondition item = (DisconnectApplicabilityCondition)DefenseApplicabilityCondition.findOnBlackboard(DisconnectConstants.DEFENSE_NAME, rtc.getExpandedName(), blackboard);
         if (item != null) {
             if (t > 0.0) {
-
-                OverdueAlarm oldAlarm = (OverdueAlarm) activeDisconnects.get(item.getExpandedName());
+                OverdueAlarm oldAlarm = (OverdueAlarm) activeDisconnects.get(item);
                 if (oldAlarm != null) oldAlarm.cancel();
-
                 item.setValue(DefenseConstants.BOOL_TRUE); // disconnected
                 OverdueAlarm overdueAlarm = new OverdueAlarm(item, t > 10000.0 ? t : 10000.0);  // Don't monitor for less than 5 sec
                 activeDisconnects.put(item.getExpandedName(), overdueAlarm);
@@ -233,7 +235,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             }
             else {
                 item.setValue(DefenseConstants.BOOL_FALSE); // not disconnected
-                OverdueAlarm overdueAlarm = (OverdueAlarm)activeDisconnects.remove(item.getExpandedName());
+                OverdueAlarm overdueAlarm = (OverdueAlarm)activeDisconnects.remove(item);
                 if (overdueAlarm != null) overdueAlarm.cancel();
             }
             if (logger.isDebugEnabled()) logger.debug("DisconnectChange set "
@@ -250,7 +252,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     
     private boolean propagateMonitoringEnablerChange(DisconnectMonitoringEnabler dme) {
         
-        DisconnectMonitoringAgentEnabler item = DisconnectMonitoringAgentEnabler.find(DisconnectConstants.DEFENSE_NAME, dme.getExpandedName(), blackboard);
+        DisconnectMonitoringAgentEnabler item = DisconnectMonitoringAgentEnabler.findOnBlackboard(DisconnectConstants.DEFENSE_NAME, dme.getExpandedName(), blackboard);
         if (item != null) {
             item.setValue(dme.getValue());
             blackboard.publishChange(item);
@@ -263,7 +265,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     
     private boolean propagateDefenseEnablerChange(DisconnectDefenseEnabler dme) {
         
-        DisconnectDefenseAgentEnabler item = DisconnectDefenseAgentEnabler.find(dme.getAssetType(), dme.getAsset(), blackboard);
+        DisconnectDefenseAgentEnabler item = DisconnectDefenseAgentEnabler.findOnBlackboard(dme.getAssetType(), dme.getAsset(), blackboard);
         if (item != null) {
             item.setValue(dme.getValue());
             blackboard.publishChange(item);

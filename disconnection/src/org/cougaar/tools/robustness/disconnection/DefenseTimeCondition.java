@@ -22,20 +22,16 @@
  *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
-*/
+*/ 
 
 package org.cougaar.tools.robustness.disconnection;
 
 import org.cougaar.tools.robustness.deconfliction.*;
+
 import org.cougaar.core.adaptivity.SensorCondition;
 import org.cougaar.core.adaptivity.OMCThruRange;
 import org.cougaar.core.adaptivity.OMCRangeList;
 import org.cougaar.core.adaptivity.OMCPoint;
-
-import org.cougaar.core.service.BlackboardService;
-import org.cougaar.util.UnaryPredicate;
-import java.util.Collection;
-import java.util.Iterator;
 
 import org.cougaar.core.util.UID;
 
@@ -52,11 +48,7 @@ public class DefenseTimeCondition extends DefenseCondition
     public DefenseTimeCondition(String assetType, String assetName, String managerID) {
         super(assetType, assetName, managerID, allowedValues, new Double(0.0));
     }
-    
-    public DefenseTimeCondition(String assetType, String assetName, String managerID, long time) {
-        super(assetType, assetName, managerID, allowedValues, new Double(time));
-    }
-    
+       
     protected void setValue(String newValue) {
         super.setValue(newValue);
     }
@@ -65,6 +57,4 @@ public class DefenseTimeCondition extends DefenseCondition
     protected static class OMCStrPoint extends OMCPoint {
         public OMCStrPoint (String a) { super (a); }
     }
-    
-
 }
