@@ -225,12 +225,23 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     // Find name of community to monitor
     Collection communities = communityService.search("(CommunityManager=" +
       myAgent.toString() + ")");
-    if (!communities.isEmpty())
+    if (!communities.isEmpty()) {
       communityToMonitor = (String)communities.iterator().next();
 
-    // Initialize configurable paramaeters from defaults and plugin arguments.
-    getPropertiesFromCommunityAttributes();
+      // Initialize configurable paramaeters from defaults and plugin arguments.
+      getPropertiesFromCommunityAttributes();
+    } else {
+      log.error("Agent \"" + myAgent.toString() +
+        "\" not identified as a \"CommunityManager\" in any active community!.");
+      log.error("Check that the community to monitor has this agent identified\n");
+      log.error("in its \"CommunityManager\" attribute and that this agent is\n");
+      log.error("also identified as an Entity within the monitored community with\n");
+      log.error("the attribute \"Role=ManagementAgent\".");
+    }
+
+    // Set configurable parameters
     updateParams(healthMonitorProps);
+
     bbs.publishAdd(healthMonitorProps);
 
     // Subscribe to CommunityRequests to get roster (and roster updates)
@@ -1156,17 +1167,19 @@ public class HealthMonitorPlugin extends SimplePlugin implements
    * @param props  Robustness parameters
    */
   private void updateCommunityAttributes(Properties props) {
-    ModificationItem mods[] = new ModificationItem[props.size()];
-    int index = 0;
-    for (Enumeration enum = props.propertyNames(); enum.hasMoreElements();) {
-      String id = (String)enum.nextElement();
-      String value = props.getProperty(id);
-      Attribute attr = new BasicAttribute(id, value);
-      mods[index++] =
-        new ModificationItem(DirContext.REPLACE_ATTRIBUTE, attr);
-    }
-    if (mods.length > 0) {
-      communityService.modifyCommunityAttributes(communityToMonitor, mods);
+    if (communityToMonitor != null) {
+      ModificationItem mods[] = new ModificationItem[props.size()];
+      int index = 0;
+      for (Enumeration enum = props.propertyNames(); enum.hasMoreElements();) {
+        String id = (String)enum.nextElement();
+        String value = props.getProperty(id);
+        Attribute attr = new BasicAttribute(id, value);
+        mods[index++] =
+          new ModificationItem(DirContext.REPLACE_ATTRIBUTE, attr);
+      }
+      if (mods.length > 0) {
+        communityService.modifyCommunityAttributes(communityToMonitor, mods);
+      }
     }
   }
 
