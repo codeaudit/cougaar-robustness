@@ -288,7 +288,7 @@ public class DisconnectionServlet extends BaseServletComponent
 
       if (logger.isDebugEnabled()) {
           logger.debug(MY_APPLICABILITY_CONDITION_NAME+nodeID+" set to "+ cond.getValue());
-          logger.debug(MY_RECONNECT_TIME_NAME+nodeID+" set to "+ cond.getValue());
+          logger.debug(MY_RECONNECT_TIME_NAME+nodeID+" set to "+ rtc.getValue());
       }
       if (eventService.isEventEnabled()) {
           eventService.event(MY_APPLICABILITY_CONDITION_NAME+nodeID+" set to "+ cond.getValue());
