@@ -32,7 +32,7 @@ public class ReconnectTimeCondition extends DefenseTimeCondition
         super(name);
     }
     
-    protected void setValue(Double newValue) {
+    public void setValue(Double newValue) {
         super.setValue(newValue);
     }
 }
