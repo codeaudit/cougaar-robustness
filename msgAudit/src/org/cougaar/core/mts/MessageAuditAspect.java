@@ -38,6 +38,15 @@ import java.net.URI;
  **  This aspect should be the first(inner) aspect if it is expected to
  **  audit all MTS messaging, but can be repositioned to audit specific
  **  situations.  A warning is logged if it is not the inner aspect.
+ *
+ * This class takes two system properties: <p>
+ *
+ * - org.cougaar.message.transport.aspects.messageaudit.includeLocalMsgs <p>
+ * Which controls whether local messages are also included.<p>
+ * - org.cougaar.message.transport.aspects.messageaudit.filterPingsHBs<p>
+ * Which controls whether heartbeats & pings are included. Default is <b>true</b>.
+ *
+ *
  **/
 public class MessageAuditAspect extends StandardAspect implements AttributeConstants {
   private static final String BEFORE_SENDLINK_TAG = "Before:SendLink.sendMessage";
@@ -51,7 +60,8 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
   private static final String BEFORE_MSGDELIVERER_TAG = "After:BeforeMessageDeliverer.deliverMessage";
   private static final String AFTER_MSGDELIVERER_TAG = "After:MessageDeliverer.deliverMessage";
   private static final String AFTER_RECVLINK_TAG = "After:ReceiveLink.deliverMessage";
-  private static final boolean includeLocalMsgs;
+  private static boolean includeLocalMsgs;
+  private static boolean enableFilter;
   private LoggingService log;
   private MessageTransportRegistryService reg;
   //private static final int SEND = 0;
@@ -65,6 +75,9 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
     //  Read external properties
     String s = "org.cougaar.message.transport.aspects.messageaudit.includeLocalMsgs";
     includeLocalMsgs = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
+
+    s = "org.cougaar.message.transport.aspects.messageaudit.filterPingsHBs";
+    enableFilter = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
     
   }
 
@@ -391,6 +404,8 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
 
   
   private boolean filter(AttributedMessage msg) {
+      
+      if (!enableFilter) return false; // do not filter
       
       String type = (String) msg.getAttribute (org.cougaar.core.mts.Constants.MSG_TYPE);
       if ( type == null ) { // no idea what type so do not filter.
