@@ -987,7 +987,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                        " deadNodes=" + deadNodes +
                        " excludedNodes=" + excludedNodes);
         }
-        getLoadBalancer().doLayout( (int) annealTime,
+        getLoadBalancer().doLayout((int)solverMode,
+                                   (int) annealTime,
                                    true,
                                    vacantNodes,
                                    new ArrayList(deadNodes),
@@ -1053,7 +1054,12 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
           if (logger.isInfoEnabled()) {
             logger.info("autoLoadBalance");
           }
-          getLoadBalancer().doLayout(LoadBalancer.DEFAULT_ANNEAL_TIME,
+          long annealTime = getLongAttribute(MINIMUM_ANNEAL_TIME_ATTRIBUTE,
+                                             MINIMUM_ANNEAL_TIME);
+          long solverMode = getLongAttribute(LOAD_BALANCER_MODE_ATTRIBUTE,
+                                             DEFAULT_LOAD_BALANCER_MODE);
+          getLoadBalancer().doLayout((int)solverMode,
+                                     (int)annealTime,
                                      true,
                                      new ArrayList(vacantNodes),
                                      new ArrayList(deadNodes),
