@@ -222,6 +222,8 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         DisconnectApplicabilityCondition item = (DisconnectApplicabilityCondition)DefenseApplicabilityCondition.findOnBlackboard(DisconnectConstants.DEFENSE_NAME, rtc.getExpandedName(), blackboard);
         if (item != null) {
             if (t > 0.0) {
+                OverdueAlarm oldAlarm = (OverdueAlarm) activeDisconnects.get(item);
+                if (oldAlarm != null) oldAlarm.cancel();
                 item.setValue(DefenseConstants.BOOL_TRUE); // disconnected
                 OverdueAlarm overdueAlarm = new OverdueAlarm(item, t > 10000.0 ? t : 10000.0);  // Don't monitor for less than 5 sec
                 activeDisconnects.put(item, overdueAlarm);
