@@ -461,6 +461,23 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
   }
 
   /**
+   * Return name of all agents on specified node.
+   * @param nodeName Name of node
+   * @param state  State filter
+   * @return Set of agent names
+   */
+  protected Set agentsOnNode(String nodeName, int state) {
+    Set agentNames = new HashSet();
+    String agentsOnNode[] = model.entitiesAtLocation(nodeName, model.AGENT);
+    for (int i = 0; i < agentsOnNode.length; i++) {
+      if (getState(agentsOnNode[i]) == state) {
+        agentNames.add(agentsOnNode[i]);
+      }
+    }
+    return agentNames;
+  }
+
+  /**
    * Get current state for specified agent/node.
    * @param name  Agent/node name
    * @return Current state
@@ -484,6 +501,11 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * @param expiration Expiration in milliseconds
    */
   protected void setExpiration(String name, int expiration) {
+    if (logger.isDebugEnabled()) {
+      logger.debug("setExpiration:" +
+                   " name=" + name +
+                   " expiration=" + expiration);
+    }
     model.setStateExpiration(name, expiration);
   }
 

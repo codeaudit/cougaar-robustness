@@ -24,6 +24,8 @@ package org.cougaar.tools.robustness.ma.util;
  */
 public interface CoordinatorListener {
 
+  public void coordinatorEnabled();
+
   public void actionEnabled(String agentName);
 
 }

@@ -23,6 +23,8 @@ public interface CoordinatorHelper {
   public static final String LIVE = "Live";
   public static final String DEAD = "Dead";
 
+  boolean isCoordinatorEnabled();
+
   void addAgent(String agentName);
 
   void removeAgent(String agentName);

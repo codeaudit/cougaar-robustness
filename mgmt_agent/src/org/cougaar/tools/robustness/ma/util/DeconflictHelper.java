@@ -180,6 +180,10 @@ public class DeconflictHelper extends BlackboardClientComponent
     }
   }
 
+  public boolean isCoordinatorEnabled() {
+    return true;
+  }
+
   public void addListener(CoordinatorListener dl) {
     if(!listeners.contains(dl))
       listeners.add(dl);

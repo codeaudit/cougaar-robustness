@@ -72,6 +72,7 @@ public interface RestartManagerConstants {
   // Property for enabling/disabling deconfliction
   public static final String DECONFLICTION = "org.cougaar.tools.robustness.restart.deconfliction";
   public static final String PROPERTY_ENABLED = "enabled";
+  public static final String PROPERTY_DISABLED = "disabled";
 
   // Defines how often status updates are broadcast to peers
   public static final String STATUS_UPDATE_PROPERTY = "org.cougaar.tools.robustness.update.interval";

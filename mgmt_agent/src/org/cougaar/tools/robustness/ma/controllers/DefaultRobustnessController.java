@@ -153,10 +153,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         setExpiration(name, NEVER);
       } else if (isNode(name)) {
         setExpiration(name, (int)getNodeStatusExpiration(name));
-      } else if (isSentinel() && isAgent(name)) {
+      } else if (isAgent(name)) {
         int nodeExpiration = (int)getNodeStatusExpiration(getLocation(name));
         long updateInterval = getLongAttribute(STATUS_UPDATE_PROPERTY, DEFAULT_STATUS_UPDATE_INTERVAL);
-        int agentExpiration = nodeExpiration + (int)updateInterval;
+        int agentExpiration = nodeExpiration + (int)updateInterval * 2;
+        //int agentExpiration = (int)(nodeExpiration * 1.5);
         setExpiration(name, agentExpiration);
       }
     }
@@ -195,21 +196,27 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
           getCoordinatorHelper().setDiagnosis(name, CoordinatorHelper.DEAD);
         }
       } else {
-        newState(name, HEALTH_CHECK);
+        newState(name, RESTART);
       }
     }
 
     public void actionEnabled(String agentName) {
       if (logger.isDetailEnabled()) {
-        logger.detail("deconflictCallback: agent=" + agentName);
+        logger.detail("coordinatorCallback: agent=" + agentName);
       }
-      //if (isCoordinatorEnabled() &&
-      //    !getCoordinatorHelper().isDefenseApplicable(agentName)) {
-      //  getCoordinatorHelper().setDiagnosis(agentName, CoordinatorHelper.DEAD);
-      //}
-      // Verify that agent state hasn't changed while defense was disabled
       if (getState(agentName) == DECONFLICT) {
         newState(agentName, RESTART);
+      }
+    }
+
+    public void coordinatorEnabled() {
+      if (logger.isInfoEnabled()) {
+        logger.info("Coordinator Enabled");
+      }
+      String allAgents[] = model.listEntries(CommunityStatusModel.AGENT);
+      CoordinatorHelper ch = getCoordinatorHelper();
+      for (int i = 0; i < allAgents.length; i++) {
+        ch.addAgent(allAgents[i]);
       }
     }
   }
@@ -265,10 +272,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         } else { // a node
           deadNodes.add(name);
           if (!useGlobalSolver()) {
-            newState(agentsOnNode(name), DEAD);
+            newState(agentsOnNode(name, DefaultRobustnessController.ACTIVE), DEAD);
             removeFromCommunity(name);
           } else {
-            if (agentsOnNode(name).size() > 0) {
+            if (agentsOnNode(name, DefaultRobustnessController.ACTIVE).size() > 0) {
               getLayout(new LoadBalancerListener() {
                 public void layoutReady(Map layout) {
                   if (getState(name) == DEAD) {
@@ -277,7 +284,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                     }
                     RestartDestinationLocator.setPreferredRestartLocations(
                         layout);
-                    newState(agentsOnNode(name), DEAD);
+                    newState(agentsOnNode(name, DefaultRobustnessController.ACTIVE), DEAD);
                     removeFromCommunity(name);
                   } else { // Abort, node no longer classified as DEAD
                     deadNodes.remove(name);
@@ -295,7 +302,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         }
       } else {  // I'm not the manager agent
         if (isNode(name)) {
-          newState(agentsOnNode(name), DEAD);
+          newState(agentsOnNode(name, DefaultRobustnessController.ACTIVE), DEAD);
         }
       }
     }
@@ -702,7 +709,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   }
 
   private boolean isCoordinatorEnabled() {
-   return getCoordinatorHelper() != null;
+    CoordinatorHelper ch = getCoordinatorHelper();
+    return ch != null && ch.isCoordinatorEnabled();
   }
 
   private boolean useGlobalSolver() {
@@ -807,7 +815,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         logger.debug("memberAdded: name=" + name);
       }
       if (isCoordinatorEnabled()) {
-        coordinatorHelper.addAgent(name);
+        getCoordinatorHelper().addAgent(name);
       }
       if (isNode(name)) {
         if (logger.isInfoEnabled()) {
@@ -829,7 +837,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         logger.debug("memberRemoved: name=" + name);
       }
       if (isCoordinatorEnabled()) {
-        coordinatorHelper.removeAgent(name);
+        getCoordinatorHelper().removeAgent(name);
       }
     }
   }
@@ -876,9 +884,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (!isCoordinatorEnabled()) {
         coordinatorHelper = CoordinatorHelperFactory.getCoordinatorHelper(
             getBindingSite());
-        coordinatorHelper.addListener( (DeconflictStateController)
+        coordinatorHelper.addListener((DeconflictStateController)
                                       getController(DECONFLICT));
-        String enable = System.getProperty(DECONFLICTION, PROPERTY_ENABLED);
+        /*String enable = System.getProperty(DECONFLICTION, PROPERTY_ENABLED);
         if (enable.equalsIgnoreCase(PROPERTY_ENABLED)) {
           if (logger.isDebugEnabled()) {
             logger.debug("CoordinationHelper enabled: community=" +
@@ -888,7 +896,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
           for (int i = 0; i < allAgents.length; i++) {
             coordinatorHelper.addAgent(allAgents[i]);
           }
-        }
+        }*/
       }
     }
   }

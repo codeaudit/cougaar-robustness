@@ -18,6 +18,10 @@
 
 package org.cougaar.tools.robustness.ma.util;
 
+import org.cougaar.tools.robustness.ma.RestartManagerConstants;
+
+import org.cougaar.coordinator.costBenefit.CostBenefitKnob;
+
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.service.AlarmService;
 import org.cougaar.core.service.AgentIdentificationService;
@@ -43,7 +47,7 @@ import java.util.Set;
  */
 public class CoordinatorHelperImpl
     extends BlackboardClientComponent
-    implements CoordinatorHelper {
+    implements CoordinatorHelper, RestartManagerConstants {
 
   public static final String INITIAL_DIAGNOSIS = LIVE;
   public static final String RESTART_ACTION = "Yes";
@@ -61,8 +65,16 @@ public class CoordinatorHelperImpl
   private List listeners = new ArrayList();
   private Map agents = Collections.synchronizedMap(new HashMap());
   private List actionsInProcess = Collections.synchronizedList(new ArrayList());
+  private boolean coordinatorEnabled = false;
 
   private List toPublish = new ArrayList(); //queue for objects to be published to blackboard.
+
+  private IncrementalSubscription coordSubscription;
+  private UnaryPredicate coordPred = new UnaryPredicate() {
+    public boolean execute(Object o) {
+      return o instanceof CostBenefitKnob;
+    }
+  };
 
 /**
  * Constructor requires BindingSite to initialize needed services.
@@ -106,6 +118,19 @@ public class CoordinatorHelperImpl
       }
     });
 
+    // Check for evidence of Coordinator
+    coordinatorEnabled = !getBlackboardService().query(coordPred).isEmpty();
+    if (coordinatorEnabled) {
+      for (Iterator it = listeners.iterator(); it.hasNext();) {
+        CoordinatorListener cl = (CoordinatorListener)it.next();
+        cl.coordinatorEnabled();
+      }
+    } else {
+      // No evidence found, watch for BB publication
+      coordSubscription =
+          (IncrementalSubscription)getBlackboardService().subscribe(coordPred);
+    }
+
   }
 
   public void execute() {
@@ -129,11 +154,32 @@ public class CoordinatorHelperImpl
         opmodeEnabled(action.getAssetName());
       }
     }
+
+    // Detected Coordinator presence
+    if (!coordinatorEnabled) {
+      if (!coordSubscription.isEmpty()) {
+        coordinatorEnabled = true;
+        for (Iterator it = listeners.iterator(); it.hasNext();) {
+          CoordinatorListener cl = (CoordinatorListener)it.next();
+          cl.coordinatorEnabled();
+        }
+      }
+    }
+  }
+
+  public boolean isCoordinatorEnabled() {
+    return coordinatorEnabled;
   }
 
   public void addListener(CoordinatorListener cl) {
     if (!listeners.contains(cl)) {
       listeners.add(cl);
+    }
+    if (coordinatorEnabled) {
+      for (Iterator it = listeners.iterator(); it.hasNext(); ) {
+        CoordinatorListener l = (CoordinatorListener) it.next();
+        l.coordinatorEnabled();
+      }
     }
   }
 
