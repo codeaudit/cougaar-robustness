@@ -1796,36 +1796,36 @@ was new, now old; should be deleted soon
       return (String)idTbl.get(new Integer(id));
   }
 
-  public static String getLinkLetter (DestinationLink link)
+  public static char getLinkLetter (DestinationLink link)
   {
     return getLinkLetter (getName (link));
   }
 
-  public static String getLinkLetter (String link)
+  public static char getLinkLetter (String link)
   {
-    if (link == null) link = "";
+    if (link == null) return '\000';
 
-    String letter;
+    char letter;
 
-    if      (link.equals("org.cougaar.mts.base.LoopbackLinkProtocol"))              letter = "L";
-    else if (link.equals("org.cougaar.mts.base.RMILinkProtocol"))                   letter = "R";
-    else if (link.equals("org.cougaar.mts.std.email.OutgoingEmailLinkProtocol"))    letter = "E";
-    else if (link.equals("org.cougaar.mts.std.socket.OutgoingSocketLinkProtocol"))  letter = "T"; //for TCP
-    else if (link.equals("org.cougaar.mts.std.udp.OutgoingUDPLinkProtocol"))        letter = "U";
-    else if (link.equals("org.cougaar.mts.std.NNTPLinkProtocol"))                   letter = "N";
-    else if (link.equals("org.cougaar.mts.std.SSLRMILinkProtocol"))                 letter = "S";
-    else if (link.equals("org.cougaar.mts.std.SerializedRMILinkProtocol"))          letter = "X";
-    else if (link.equals("org.cougaar.mts.std.FutileSerializingLinkProtocol")   )   letter = "F";
-    else if (link.equals("org.cougaar.lib.mquo.CorbaLinkProtocol"))                 letter = "C";
-    else                                                                            letter = "?";
+    if      (link.equals("org.cougaar.mts.base.LoopbackLinkProtocol"))              letter = 'L';
+    else if (link.equals("org.cougaar.mts.base.RMILinkProtocol"))                   letter = 'R';
+    else if (link.equals("org.cougaar.mts.std.email.OutgoingEmailLinkProtocol"))    letter = 'E';
+    else if (link.equals("org.cougaar.mts.std.socket.OutgoingSocketLinkProtocol"))  letter = 'T'; //for TCP
+    else if (link.equals("org.cougaar.mts.std.udp.OutgoingUDPLinkProtocol"))        letter = 'U';
+    else if (link.equals("org.cougaar.mts.std.NNTPLinkProtocol"))                   letter = 'N';
+    else if (link.equals("org.cougaar.mts.std.SSLRMILinkProtocol"))                 letter = 'S';
+    else if (link.equals("org.cougaar.mts.std.SerializedRMILinkProtocol"))          letter = 'X';
+    else if (link.equals("org.cougaar.mts.std.FutileSerializingLinkProtocol")   )   letter = 'F';
+    else if (link.equals("org.cougaar.lib.mquo.CorbaLinkProtocol"))                 letter = 'C';
+    else                                                                            letter = '?';
 
     return letter;
   }
 
   private void showProgress (DestinationLink link)
   {
-    String letter = getLinkLetter (link);
-    System.out.print (letter.toLowerCase());
+    char letter = getLinkLetter (link);
+    System.out.print(Character.toLowerCase(letter));
   }
 
   public static String getLinkType (DestinationLink link)

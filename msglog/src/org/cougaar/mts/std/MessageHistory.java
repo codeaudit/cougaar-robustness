@@ -242,6 +242,7 @@ class MessageHistory
 		agentEntry.protocolTbl.size() > 0) {
 		if (agentTbl == null) 
 		    agentTbl = new Hashtable();
+		agentEntry.timestamp = System.currentTimeMillis();
 		agentTbl.put(agentEntry.agent,agentEntry);
 	    }
 	}
@@ -257,6 +258,7 @@ class MessageHistory
   public static class AgentEntry implements Serializable {
       String agent;
       Hashtable protocolTbl;
+      long timestamp;
       AgentEntry (String addr) {
 	  agent = addr;
 	  protocolTbl = new Hashtable();
@@ -268,18 +270,19 @@ class MessageHistory
 	  
   public static class ProtocolEntry implements Serializable {
       int protocolID;
-      String protocolName;
+      char linkLetter;
       int sends;
       int successes;
       ProtocolEntry (int id) {
 	  protocolID = id;
-	  protocolName = AdaptiveLinkSelectionPolicy.getTransportName(id);
+	  linkLetter = 
+	      AdaptiveLinkSelectionPolicy.getLinkLetter(AdaptiveLinkSelectionPolicy.getTransportName(id));
       }
       SuccessMetric getMetric () {
 	  return new SuccessMetric(protocolID, sends, successes);
       }
       public String toString () {
-	  return "<ProtocolEntry protocol="+protocolName+",sends="+sends+",successes="+successes+">";
+	  return "<ProtocolEntry protocol="+linkLetter+",sends="+sends+",successes="+successes+">";
       }
   }
 
