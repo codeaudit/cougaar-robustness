@@ -134,7 +134,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
             SelectionCompleted sc = (SelectionCompleted)iter.next();
             if (logger.isInfoEnabled()) logger.info(sc.toString());
    
-            AssetID assetID = sc.geAssetID();
+            AssetID assetID = sc.getAssetID();
             StateEstimation se = (StateEstimation) pendingSEs.remove(assetID);
 
 		if ((se != null) && !sc.successfulP()) {

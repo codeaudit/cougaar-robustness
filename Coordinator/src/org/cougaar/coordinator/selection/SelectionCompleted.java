@@ -4,7 +4,7 @@
  * Created on October 27, 2004
  */
 
-package org.cougaar.coordinator.monitoring;
+package org.cougaar.coordinator.selection;
 
 /**
  *
