@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Communities [
+<!ELEMENT Communities (Community+)>
+<!ELEMENT Community (Attribute*, Entity*)>
+<!ATTLIST Community Name CDATA #REQUIRED>
+<!ELEMENT Entity (Attribute*)>
+<!ATTLIST Entity Name CDATA #REQUIRED>
+<!ELEMENT Attribute EMPTY>
+<!ATTLIST Attribute ID CDATA #REQUIRED>
+<!ATTLIST Attribute Value CDATA #REQUIRED>
+]>
+
+<Communities>
+
+  <Community Name="SUPERDUPER_COMMUNITY" >
+
+    <Attribute ID="CommunityType"             Value="Robustness" />
+
+    <Attribute ID="CommunityManager"          Value="ManagementAgent" />
+
+    <Attribute ID="RobustnessManager"         Value="ManagementAgent" />
+
+    <Attribute ID="NumberOfAgents"            Value="3" />
+
+        <Attribute ID='PING_TIMEOUT' Value='30000' />
+        <Attribute ID='MIMIMUM_PING_TIMEOUT' Value='12000' />
+
+
+    <Entity Name="NodeZ" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" /> 
+    </Entity>
+
+    <Entity Name="REAR_NODE" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" /> 
+    </Entity>
+
+    <Entity Name="FWD_NODE" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" /> 
+    </Entity>
+
+    <Entity Name="EnclaveNode" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" /> 
+    </Entity>
+
+    <Entity Name="SomeNode" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" /> 
+    </Entity>
+
+    <Entity Name="ManagementAgent" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="RobustnessManager" />
+      <Attribute ID="Role" Value="HealthMonitor" /> 
+    </Entity>
+
+
+    <Entity Name="TestAgent" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+
+    <Entity Name="AgentC" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+
+  </Community>
+
+</Communities>
