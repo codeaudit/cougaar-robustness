@@ -34,7 +34,6 @@ import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.agent.ClusterIdentifier;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.component.ServiceBroker;
-import org.cougaar.core.agent.service.alarm.Alarm;
 
 /**
  * This Plugin tests HeartbeatRequester and HeartbeatServerPlugin.
@@ -74,67 +73,6 @@ public class HeartbeatTesterMICPlugin extends ComponentPlugin {
     }
   };
 
-  private class KillAndRestart implements Alarm {
-    private long detonate = -1;
-    private boolean expired = false;
-    private long killAfter;
-    private long startAfter; 
-
-    public KillAndRestart (long killAfter, long startAfter) {
-      detonate = killAfter + System.currentTimeMillis();
-      this.killAfter = killAfter;
-      this.startAfter = startAfter;
-    }
-    public long getExpirationTime () {return detonate;
-    }
-    public void expire () {
-      if (!expired) {
-        killAndRestart(startAfter);
-        expired = true;}
-    }
-    public boolean hasExpired () {return expired;
-    }
-    public boolean cancel () {
-      if (!expired)
-        return expired = true;
-      return false;
-    }
-  }
-
-  private void killAndRestart(long startAfter){
-    log.info("killAndRestart:                                Kill all Monitored Nodes now.");
-    log.info("killAndRestart:                                Waiting for " + startAfter + " ms.");
-    try {
-      Thread.sleep(startAfter);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-      System.exit(-1);
-    }
-    log.info("killAndRestart:                                Restart all Monitored Nodes now.");
-    log.info("killAndRestart:                                Waiting for " + startAfter + " ms.");
-    try {
-      Thread.sleep(startAfter);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-      System.exit(-1);
-    }
-/* No need to remove and re-request heartbeats.  Cougaar does it for you.
-    log.info("killAndRestart:                                Removing all HeartbeatRequests now.");
-    bb.openTransaction();
-      Iterator iter = reqSub.getCollection().iterator();
-      while (iter.hasNext()) {
-        HeartbeatRequest req = (HeartbeatRequest)iter.next();
-        log.info("killAndRestart: publishRemove HeartbeatRequest = " + req);
-        bb.publishRemove(req);
-      }
-    bb.closeTransaction();
-    log.info("killAndRestart:                                Re-requesting Heartbeats now.");
-    bb.openTransaction();
-      processParms();
-    bb.closeTransaction();
-*/
-  }
-
   private void processParms() {
     Iterator iter = parms.iterator(); 
     long requestTimeout = Long.parseLong((String)iter.next());
@@ -142,8 +80,6 @@ public class HeartbeatTesterMICPlugin extends ComponentPlugin {
     long heartbeatTimeout = Long.parseLong((String)iter.next());
     boolean onlyOutOfSpec = Boolean.valueOf((String)iter.next()).booleanValue();
     float percentOutOfSpec = Float.parseFloat((String)iter.next());
-    long killAfter = Long.parseLong((String)iter.next());
-    long restartAfter = Long.parseLong((String)iter.next());
     // the rest of the parameters are targets
     MessageAddress source = getAgentIdentifier();
     MessageAddress target = null;
@@ -160,7 +96,6 @@ public class HeartbeatTesterMICPlugin extends ComponentPlugin {
         log.info("processParms: publishAdd HeartbeatRequest = " + req);
       bb.publishAdd(req);
     }
-    alarmService.addRealTimeAlarm(new KillAndRestart(killAfter,restartAfter));
   }
 
   protected void setupSubscriptions() {

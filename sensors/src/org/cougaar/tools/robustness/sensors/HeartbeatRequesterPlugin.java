@@ -41,6 +41,7 @@ import org.cougaar.core.qos.metrics.Metric;
 import org.cougaar.core.qos.metrics.MetricsService;
 import org.cougaar.core.qos.metrics.Constants;
 import org.cougaar.core.component.ServiceBroker;
+import org.cougaar.core.persist.NotPersistable;
 
 /**
  * This Plugin receives HeartbeatRequests from the local Blackboard and
@@ -51,6 +52,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
   private Object lock = new Object();
   private IncrementalSubscription heartbeatRequestSub;
   private IncrementalSubscription hbReqSub;
+  private IncrementalSubscription prepareHealthReportsSub; 
   private BlackboardService bb;
   private LoggingService log;
   private UniqueObjectSet reqTable;
@@ -58,6 +60,9 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
   private Hashtable reportTable;
   private SendHealthReportsAlarm nextAlarm = null;
   private MetricsService metricsService;
+
+  private class PrepareHealthReports implements NotPersistable
+  {}
   
   private class SendHealthReportsAlarm implements Alarm {
     private long detonate = -1;
@@ -69,23 +74,21 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     public long getExpirationTime () {
       return detonate;
     }
-    public void expire () {
-      synchronized (lock) {
-        if (!expired) {
-          bb.openTransaction();
-          prepareHealthReports();
-          bb.closeTransaction();
-          expired = true;
-        }
+    public synchronized void expire () {
+      if (!expired) {
+        bb.openTransaction();
+        bb.publishAdd(new PrepareHealthReports());
+        bb.closeTransaction();
+        expired = true;
       }
     }
     public boolean hasExpired () {
       return expired;
     }
-    public boolean cancel () {
-      synchronized (lock) {
-        if (!expired)
-          return expired = true;
+    public synchronized boolean cancel () {
+      if (!expired) {
+        return expired = true;
+      } else {
         return false;
       }
     }
@@ -102,20 +105,18 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     }
     public long getExpirationTime () {return detonate;
     }
-    public void expire () {
-      synchronized (lock) {
-        if (!expired) {
-          fail(reqUID);
-          expired = true;
-        }
+    public synchronized void expire () {
+      if (!expired) {
+        fail(reqUID);
+        expired = true;
       }
     }
     public boolean hasExpired () {return expired;
     }
-    public boolean cancel () {
-      synchronized (lock) {
-        if (!expired)
-          return expired = true;
+    public synchronized boolean cancel () {
+      if (!expired) {
+        return expired = true;
+      } else {
         return false;
       }
     }
@@ -155,6 +156,12 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
   private UnaryPredicate hbReqPred = new UnaryPredicate() {
     public boolean execute(Object o) {
       return (o instanceof HbReq);
+    }
+  };
+
+  private UnaryPredicate prepareHealthReportsPred = new UnaryPredicate() {
+    public boolean execute(Object o) {
+      return (o instanceof PrepareHealthReports);
     }
   };
 
@@ -264,12 +271,27 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     bb = getBlackboardService();
     heartbeatRequestSub = (IncrementalSubscription)bb.subscribe(HeartbeatRequestPred);
     hbReqSub = (IncrementalSubscription)bb.subscribe(hbReqPred);
+    prepareHealthReportsSub = (IncrementalSubscription)bb.subscribe(prepareHealthReportsPred);
   }
 
   protected void execute() {
-   synchronized (lock) {
+    // prepare HeartbeatHealthReports
+    Iterator iter = prepareHealthReportsSub.getCollection().iterator();
+    boolean didOnce = false;
+    while (iter.hasNext()) {
+      PrepareHealthReports obj = (PrepareHealthReports)iter.next();
+      if (log.isDebugEnabled()) 
+        log.debug("execute: received added PrepareHealthReports = " + obj);
+      if (!didOnce) {
+        prepareHealthReports();
+        didOnce = true;
+      }
+      if (log.isDebugEnabled())
+        log.debug("execute: publishRemove PrepareHealthReports =" + obj);
+      bb.publishRemove(obj);
+    }
     // process REMOVED HeartbeatRequests
-    Iterator iter = heartbeatRequestSub.getRemovedCollection().iterator();
+    iter = heartbeatRequestSub.getRemovedCollection().iterator();
     while (iter.hasNext()) {
       HeartbeatRequest req = (HeartbeatRequest)iter.next();
       if (log.isDebugEnabled()) 
@@ -320,7 +342,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
             } else { // an alarm is already set - figure out if its soon enough
               long fromNowTime = now.getTime() + fromNow;
               if (nextAlarm.getExpirationTime() > fromNowTime) {
-                nextAlarm.cancel();
+                nextAlarm.cancel(); 
                 nextAlarm = new SendHealthReportsAlarm(fromNow);
                 alarmService.addRealTimeAlarm(nextAlarm);
               }
@@ -371,7 +393,6 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
         alarmService.addRealTimeAlarm(new HeartbeatRequestTimeout(req.getReqTimeout(),reqUID));
       }
     }
-   }
   }
 
   private UIDService UIDService;
