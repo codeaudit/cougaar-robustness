@@ -55,6 +55,8 @@ import org.cougaar.util.UnaryPredicate;
  *                  CommunityPlugin.
  * hbReqTimeout     Defines the timeout period (in milliseconds) for a
  *                  Heartbeat Request,
+ * hbReqRetries     Defines the number of times to retry a HeartbeatRequest
+ *                  when a failure is encountered
  * hbFreq           Defines the frequency (in milliseconds) at which the
  *                  monitored agents are to send heartbeats to the management
  *                  agent.
@@ -75,6 +77,8 @@ import org.cougaar.util.UnaryPredicate;
  *                  is defined as a Float number that represents the maximum
  *                  acceptable heartbeat failure rate.
  * pingTimeout      Defines the ping timeout period (in milliseconds).
+ * pingRetries      Defines the number of times to retry a ping
+ *                  when a failure is encountered
  * evalFreq         Defines how often (in milliseconds) the HealthStatus of
  *                  monitored agents is evaluated.
  * </PRE>
@@ -86,12 +90,14 @@ public class HealthMonitorPlugin extends SimplePlugin {
   private static String defaultParams[][] = {
     {"community",    ""},
     {"hbReqTimeout", "20000"},
+    {"hbReqRetries", "2"},
     {"hbFreq",       "10000"},
     {"hbTimeout",    "5000"},
     {"hbPctLate",    "80.0"},
     {"hbWindow",     "120000"},  // Default to 2 minute window
     {"hbFailRate",   "0.5"},
     {"pingTimeout",  "10000"},
+    {"pingRetries",  "2"},
     {"evalFreq",     "1000"}
   };
   ManagementAgentProperties healthMonitorProps =
@@ -102,6 +108,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
   //  Externally configurable parameters
   /////////////////////////////////////////////////////////////////////////
   private long  heartbeatRequestTimeout;
+  private int   heartbeatRequestRetries;
   private long  heartbeatFrequency;
   private long  heartbeatTimeout;
   private float heartbeatPctLateThreshold;
@@ -121,6 +128,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
   private float heartbeatFailureRateThreshold;
 
   private long pingTimeout;
+  private int  pingRetries;
 
   // Determines how often our internal evaluation Thread is run
   private long evaluationFrequency;
@@ -329,15 +337,23 @@ public class HealthMonitorPlugin extends SimplePlugin {
           case HeartbeatRequest.ACCEPTED:
             hs.setState(HealthStatus.NORMAL);
             hs.setHeartbeatStatus(HealthStatus.OK);
+            hs.setHeartbeatRequestRetries(0);
             break;
           case HeartbeatRequest.REFUSED:
             log.warn("HeartbeatRequest for agent '" + hs.getAgentId() + "' REFUSED");
             //doHealthCheck(hs, HealthStatus.NO_RESPONSE);
             break;
           case HeartbeatRequest.FAILED:
-            log.warn("HeartbeatRequest for agent '" + hs.getAgentId() + "' FAILED, resending");
-            hs.setHeartbeatRequestStatus(HealthStatus.UNDEFINED);
-            //doHealthCheck(hs, HealthStatus.NO_RESPONSE);
+            int retries = hs.getHeartbeatRequestRetries();
+            if (retries < heartbeatRequestRetries) {
+              log.debug("HeartbeatRequest for agent '" + hs.getAgentId() + "' FAILED, retrying");
+			  hs.setHeartbeatRequestRetries(++retries);
+              hs.setHeartbeatRequestStatus(HealthStatus.UNDEFINED);
+		    } else {
+              log.warn("HeartbeatRequest for agent '" + hs.getAgentId() + "' FAILED");
+			  hs.setHeartbeatRequestRetries(0);
+              doHealthCheck(hs, HealthStatus.NO_RESPONSE);
+			}
             break;
           default:
         }
@@ -354,6 +370,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
                 doPing(hs.getAgentId());
                 break;
               case PingRequest.RECEIVED:
+            	log.debug("Received ping, agent=" + hs.getAgentId());
                 if (!hs.hbFailureRateInSpec()) {
                   log.error("Exceeded Heartbeat timeout threshold: agent="
                     + hs.getAgentId());
@@ -361,11 +378,20 @@ public class HealthMonitorPlugin extends SimplePlugin {
                 }
                 hs.setPingStatus(HealthStatus.UNDEFINED);
                 hs.setHeartbeatStatus(HealthStatus.OK);
+                hs.setPingRetries(0);
                 break;
               case PingRequest.FAILED:
-                log.error("Ping failed: agent=" + hs.getAgentId());
-                hs.setPingStatus(HealthStatus.UNDEFINED);
-                doHealthCheck(hs, HealthStatus.NO_RESPONSE);
+                int retries = hs.getPingRetries();
+                if (retries < pingRetries) {
+                  log.debug("Ping failed: agent=" + hs.getAgentId() + ", retrying");
+			      hs.setPingRetries(++retries);
+                  hs.setPingStatus(HealthStatus.UNDEFINED);
+		        } else {
+                  log.error("Ping failed: agent=" + hs.getAgentId());
+			      hs.setPingRetries(0);
+                  hs.setPingStatus(HealthStatus.UNDEFINED);
+                  doHealthCheck(hs, HealthStatus.NO_RESPONSE);
+		        }
                 break;
               default:
             }
@@ -471,12 +497,10 @@ public class HealthMonitorPlugin extends SimplePlugin {
               req.setStatus(PingRequest.FAILED);
             break;
           case PingRequest.RECEIVED:
-            log.debug("Received ping, agent=" + req.getTarget());
+          case PingRequest.FAILED:
             bbs.openTransaction();
             bbs.publishRemove(req);
             bbs.closeTransaction();
-            break;
-          case PingRequest.FAILED:
             break;
           default:
             if (log.isDebugEnabled())
@@ -614,12 +638,14 @@ public class HealthMonitorPlugin extends SimplePlugin {
   private void updateParams(Properties props) {
     communityToMonitor = props.getProperty("community");
     heartbeatRequestTimeout = Long.parseLong(props.getProperty("hbReqTimeout"));
+    heartbeatRequestRetries = Integer.parseInt(props.getProperty("hbReqRetries"));
     heartbeatFrequency = Long.parseLong(props.getProperty("hbFreq"));
     heartbeatTimeout = Long.parseLong(props.getProperty("hbTimeout"));
     heartbeatPctLateThreshold = Float.parseFloat(props.getProperty("hbPctLate"));
     heartbeatFailureRateWindow = Long.parseLong(props.getProperty("hbWindow"));
     heartbeatFailureRateThreshold = Float.parseFloat(props.getProperty("hbFailRate"));
     pingTimeout = Long.parseLong(props.getProperty("pingTimeout"));
+    pingRetries = Integer.parseInt(props.getProperty("pingRetries"));
     evaluationFrequency = Long.parseLong(props.getProperty("evalFreq"));
   }
 

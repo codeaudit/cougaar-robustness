@@ -75,6 +75,8 @@ public class HealthStatus implements
   private String communityName;
 
   private HeartbeatRequest hbr;
+  private int heartbeatRequestRetries = 0;
+  private int pingRetries = 0;
 
   private CommunityService commSvc = null;
 
@@ -311,7 +313,7 @@ public class HealthStatus implements
 
 
   /**
-   * Sets flat indicating that a ping has been sent to monitored agent.
+   * Sets flag indicating that a ping has been sent to monitored agent.
    * @param b  Set to true if a ping has been requested.
    */
   protected void setPingRequested(boolean b) {
@@ -324,6 +326,38 @@ public class HealthStatus implements
    */
   protected boolean pingRequested() {
     return this.pingRequested;
+  }
+
+  /**
+   * Sets HeartbeatRequestRetries counter
+   * @param retries  Number of retries to attempt
+   */
+  protected void setHeartbeatRequestRetries(int retries) {
+    this.heartbeatRequestRetries = retries;
+  }
+
+  /**
+   * Gets HeartbeatRequestRetries counter
+   * @return  Number of times HeartbeatRequests have been resent
+   */
+  protected int getHeartbeatRequestRetries() {
+    return this.heartbeatRequestRetries;
+  }
+
+  /**
+   * Sets PingRetries counter
+   * @param retries  Number of retries to attempt
+   */
+  protected void setPingRetries(int retries) {
+    this.pingRetries = retries;
+  }
+
+  /**
+   * Gets PingRetries counter
+   * @return  Number of times Pings have been resent
+   */
+  protected int getPingRetries() {
+    return this.pingRetries;
   }
 
   /**
