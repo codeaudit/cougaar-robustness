@@ -158,7 +158,7 @@ public class DecisionPlugin extends SimplePlugin {
         RestartLocationRequest req = new RestartLocationRequest();
         req.addAgent(hs.getAgentId());
         bbs.publishAdd(req);
-        hs.setState(HealthStatus.NORMAL);
+        hs.setState(HealthStatus.RESTART);
         bbs.publishChange(hs);
         break;
       case HealthStatus.DEGRADED:

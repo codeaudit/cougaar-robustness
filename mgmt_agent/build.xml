@@ -22,6 +22,8 @@
   <property name="doc" value="doc"/>
   <property name="src" value="src"/>
   <property name="test" value="test"/>
+  <property name="lib" value="lib"/>
+  <property name="jar" value="Robustness_mic_${ant.project.name}.jar"/>
   <property name="workspace" value="/tmp"/>
   <property name="release" value="../mic-tic"/>
 
@@ -72,8 +74,8 @@
   <!-- Builds jar file -->
   <target name="jar" description="Creates jar file">
     <!-- Put everything in ${classes} into a jar file -->
-    <delete file="${lib}/${ant.project.name}.jar" />
-    <jar jarfile="${lib}/${ant.project.name}.jar">
+    <delete file="${lib}/${jar}" />
+    <jar jarfile="${lib}/${jar}">
       <fileset dir="${classes}"
         includes="${packageDir}/**"
         excludes="**/cvs/*,**/*.bak"
@@ -111,13 +113,42 @@
     </javadoc>
   </target>
 
+  <!-- initializes community tables in configdb from xmlfile -->
+  <target name="xmltodb" description="Initializes community tables in Config DB from XML file">
+    <java dir="${basedir}" fork="yes"
+      classname="org.cougaar.tools.robustness.ma.test.XmlToCsv">
+      <classpath>
+        <pathelement location="${lib}/${jar}"/>
+        <fileset dir="${cougaar}/sys">
+          <include name="**/*.jar"/>
+        </fileset>
+      </classpath>
+      <arg line="test/data/communities.xml"/>
+    </java>
+    <java dir="${basedir}" fork="yes"
+      classname="org.cougaar.tools.robustness.ma.test.CsvFileLoader">
+      <classpath>
+        <pathelement location="${lib}/${jar}"/>
+        <fileset dir="${cougaar}/lib">
+          <include name="**/*.jar"/>
+        </fileset>
+        <fileset dir="${cougaar}/sys">
+          <include name="**/*.jar"/>
+        </fileset>
+      </classpath>
+      <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
+      <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;$$CWD/test/configs/common;$$INSTALL/configs/common"/>
+      <arg line="community_attribute.csv community_entity_attribute.csv"/>
+    </java>
+  </target>
+
   <!-- creates zip archive of development files -->
   <target name="zip" description="Creates zip archive of development files">
     <tstamp/>
     <zip zipfile="${ant.project.name}-${DSTAMP}.zip"
       basedir="${basedir}"
       includes="src/**,
-	data/**,
+	      data/**,
         doc/**,
         example/**,
         regress/**,
@@ -143,8 +174,8 @@
       <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
       <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
-      <!-- <sysproperty key="org.cougaar.system.path" value="${lib}"/> -->
-      <sysproperty key="org.cougaar.class.path" value="classes:lib/community.jar:lib/Robustness_objs_sensors.jar:lib/Robustness_bbn_bbn.jar"/>
+      <sysproperty key="org.cougaar.system.path" value="${lib}"/>
+      <!-- <sysproperty key="org.cougaar.class.path" value="lib/community.jar:lib/Robustness_objs_sensors.jar:lib/Robustness_bbn_bbn.jar"/> -->
       <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;$$CWD/test/configs/ma;$$CWD/test/configs/common;$$INSTALL/configs/common"/>
       <arg line="org.cougaar.core.node.Node ManagerNode"/>
     </java>
@@ -166,8 +197,8 @@
       <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
       <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
-      <!-- <sysproperty key="org.cougaar.system.path" value="${lib}"/> -->
-      <sysproperty key="org.cougaar.class.path" value="classes:lib/community.jar:lib/Robustness_objs_sensors.jar:lib/Robustness_bbn_bbn.jar"/>
+      <sysproperty key="org.cougaar.system.path" value="${lib}"/>
+      <!-- <sysproperty key="org.cougaar.class.path" value="lib/community.jar:lib/Robustness_objs_sensors.jar:lib/Robustness_bbn_bbn.jar"/> -->
       <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;$$CWD/test/configs/ma;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig;$$INSTALL/configs/common"/>
       <arg line="org.cougaar.core.node.Node MiniTestConfigNode"/>
     </java>
@@ -189,8 +220,8 @@
       <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
       <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
-      <!-- <sysproperty key="org.cougaar.system.path" value="${lib}"/> -->
-      <sysproperty key="org.cougaar.class.path" value="classes:lib/community.jar:lib/Robustness_objs_sensors.jar:lib/Robustness_bbn_bbn.jar"/>
+      <sysproperty key="org.cougaar.system.path" value="${lib}"/>
+      <!-- <sysproperty key="org.cougaar.class.path" value="lib/community.jar:lib/Robustness_objs_sensors.jar:lib/Robustness_bbn_bbn.jar"/> -->
       <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;$$CWD/test/configs/ma;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig;$$INSTALL/configs/common"/>
       <arg line="org.cougaar.core.node.Node MiniNode1"/>
     </java>
@@ -212,12 +243,41 @@
       <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
       <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
+      <!--
       <sysproperty key="org.cougaar.core.persistence.enable" value="true"/>
       <sysproperty key="org.cougaar.core.persistence.lazyInterval" value="30000"/>
-      <!-- <sysproperty key="org.cougaar.system.path" value="${lib}"/> -->
-      <sysproperty key="org.cougaar.class.path" value="classes:lib/community.jar:lib/Robustness_objs_sensors.jar:lib/Robustness_bbn_bbn.jar"/>
+      -->
+      <sysproperty key="org.cougaar.system.path" value="${lib}"/>
+      <!-- <sysproperty key="org.cougaar.class.path" value="lib/community.jar:lib/Robustness_objs_sensors.jar:lib/Robustness_bbn_bbn.jar"/> -->
       <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;$$CWD/test/configs/ma;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig;$$INSTALL/configs/common"/>
       <arg line="org.cougaar.core.node.Node MiniNode2"/>
+    </java>
+  </target>
+
+  <!-- Runs EmptyNode -->
+    <target name="emptynode" description="Starts an empty node">
+    <java dir="${basedir}" fork="yes"
+      maxmemory="350m"
+      classname="org.cougaar.bootstrap.Bootstrapper">
+      <jvmarg value="-Xms100m"/>
+      <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
+      <classpath>
+        <fileset dir="${cougaar}/lib">
+          <include name="bootstrap.jar"/>
+          <include name="core.jar"/>
+        </fileset>
+      </classpath>
+      <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
+      <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
+      <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
+      <!--
+      <sysproperty key="org.cougaar.core.persistence.enable" value="true"/>
+      <sysproperty key="org.cougaar.core.persistence.lazyInterval" value="30000"/>
+      -->
+      <sysproperty key="org.cougaar.system.path" value="${lib}"/>
+      <!-- <sysproperty key="org.cougaar.class.path" value="lib/community.jar:lib/Robustness_objs_sensors.jar:lib/Robustness_bbn_bbn.jar"/> -->
+      <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;$$CWD/test/configs/ma;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig;$$INSTALL/configs/common"/>
+      <arg line="org.cougaar.core.node.Node EmptyNode"/>
     </java>
   </target>
 
@@ -237,8 +297,8 @@
       <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
       <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
-      <!-- <sysproperty key="org.cougaar.system.path" value="${lib}"/> -->
-      <sysproperty key="org.cougaar.class.path" value="classes:lib/community.jar:lib/Robustness_objs_sensors.jar:lib/Robustness_bbn_bbn.jar"/>
+      <sysproperty key="org.cougaar.system.path" value="${lib}"/>
+      <!-- <sysproperty key="org.cougaar.class.path" value="lib/community.jar:lib/Robustness_objs_sensors.jar:lib/Robustness_bbn_bbn.jar"/> -->
       <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;$$CWD/test/configs/ma;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig;$$INSTALL/configs/common"/>
       <arg line="org.cougaar.core.node.Node CombinedNode"/>
     </java>
@@ -247,8 +307,9 @@
   <!-- Runs YellowPages viewer utility -->
     <target name="ypviewer" description="Runs YellowPages viewer utility">
     <java dir="${basedir}" fork="yes"
-      classname="org.cougaar.community.test.YellowPagesViewer">
+      classname="org.cougaar.tools.robustness.ma.test.YellowPagesViewer">
       <classpath>
+        <pathelement location="${lib}/${jar}"/>
         <fileset dir="${cougaar}/lib">
           <include name="**/*.jar"/>
         </fileset>
@@ -264,7 +325,9 @@
     <copy todir="../${ant.project.name}" >
       <fileset dir="${basedir}"
         includes="build.xml,**/*.java,**/*.properties,**/*.dat,**/*.ini,**/*.xml,**/*.csv,**/*.jar,**/*.rc"
-        excludes="test/configs/common/host.xml,
+        excludes="*.jpx,
+                  lib/**,
+                  test/configs/common/host.xml,
                   test/src/org/cougaar/tools/robustness/ma/test/simulator/**" />
     </copy>
   </target>

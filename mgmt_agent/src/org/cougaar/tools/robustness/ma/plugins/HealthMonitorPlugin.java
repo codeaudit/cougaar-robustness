@@ -19,9 +19,6 @@ package org.cougaar.tools.robustness.ma.plugins;
 
 import java.util.*;
 
-//import org.cougaar.tools.robustness.HealthReport;
-//import org.cougaar.tools.robustness.HeartbeatRequest;
-
 import org.cougaar.tools.robustness.sensors.SensorFactory;
 import org.cougaar.tools.robustness.sensors.HeartbeatRequest;
 import org.cougaar.tools.robustness.sensors.HeartbeatEntry;
@@ -294,6 +291,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
         switch (hs.getHeartbeatRequestStatus()) {
           case HealthStatus.UNDEFINED:
             sendHeartbeatRequest(hs);
+            log.info("Sending HeartbeatRequest to agent '" + hs.getAgentId() + "'");
             break;
           case HeartbeatRequest.NEW:
           case HeartbeatRequest.SENT:
@@ -347,6 +345,18 @@ public class HealthMonitorPlugin extends SimplePlugin {
                 break;
               default:
             }
+          default:
+        }
+      } else if (state.equals(HealthStatus.RESTART)) {
+        int pingStatus = hs.getPingStatus();
+        switch (pingStatus) {
+          case PingRequest.RECEIVED:
+            hs.setPingStatus(HealthStatus.UNDEFINED);
+            hs.setHeartbeatRequestStatus(HealthStatus.UNDEFINED);
+            hs.setHeartbeatStatus(HealthStatus.UNDEFINED);
+            hs.setState(HealthStatus.INITIAL);
+            log.info("Reacquired agent: agent=" + hs.getAgentId());
+            break;
           default:
         }
       }
@@ -437,10 +447,12 @@ public class HealthMonitorPlugin extends SimplePlugin {
               req.setStatus(PingRequest.FAILED);
             break;
           case PingRequest.RECEIVED:
-          case PingRequest.FAILED:
+            log.debug("Received ping, agent=" + req.getTarget());
             bbs.openTransaction();
             bbs.publishRemove(req);
             bbs.closeTransaction();
+            break;
+          case PingRequest.FAILED:
             break;
           default:
             if (log.isDebugEnabled())

@@ -260,7 +260,7 @@ public class HealthStatus implements
       timeout = (Date)it.next();
       if (timeout.before(cutoff)) {
         it.remove();
-        System.out.println("Removing timeout: agent=" + getAgentId());
+        //System.out.println("Removing timeout: agent=" + getAgentId());
       }
     }
   }
