@@ -176,12 +176,14 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
     for (Iterator it = searchRequests.getChangedCollection().iterator(); it.hasNext(); ) {
       SearchCommunity cs = (SearchCommunity) it.next();
       Collection robustnessCommunities = (Collection)cs.getResponse().getContent();
-      for (Iterator it1 = robustnessCommunities.iterator(); it1.hasNext();) {
-        Community c = (Community)it1.next();
-        logger.debug("Received changed SearchCommunity:" +
-                    " community=" + (c != null ? c.getName() : null));
+      if (robustnessCommunities != null) {
+        for (Iterator it1 = robustnessCommunities.iterator(); it1.hasNext();) {
+          Community c = (Community)it1.next();
+          logger.debug("Received changed SearchCommunity:" +
+                      " community=" + (c != null ? c.getName() : null));
+        }
+        processCommunityChanges(robustnessCommunities);
       }
-      processCommunityChanges(robustnessCommunities);
     }
     // Get status from other node agents in community
     Collection nsCollection = nodeStatusRelaySub.getAddedCollection();
