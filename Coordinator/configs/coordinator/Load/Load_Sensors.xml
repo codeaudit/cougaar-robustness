@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE SensorTypes SYSTEM "SensorTypeDTD.dtd" >
+
+<SensorTypes>
+
+<SensorType name="org.cougaar.coordinator.sensors.load.OutsideLoadDiagnosis" sensesAssetType="Enclave"
+	sensesStateDimension="Outside_Load_Status" sensorLatency="1000">
+    <PotentialDiagnoses>
+        <Diagnosis name="None" />
+        <Diagnosis name="Moderate" />
+        <Diagnosis name="High" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="None" >
+            <WillDiagnoseAs name="None" withProbability="1.0" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Moderate" >
+            <WillDiagnoseAs name="Moderate" withProbability="1.0" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="High" >
+            <WillDiagnoseAs name="High" withProbability="1.0" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>
+
+<SensorType name="org.cougaar.coordinator.sensors.load.AvailableBandwidthDiagnosis" sensesAssetType="Enclave"
+            sensesStateDimension="Available_Bandwidth_Status" sensorLatency="1000">
+    <PotentialDiagnoses>
+        <Diagnosis name="Low" />
+        <Diagnosis name="Moderate" />
+        <Diagnosis name="High" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="Low" >
+            <WillDiagnoseAs name="Low" withProbability="1.0" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Moderate" >
+            <WillDiagnoseAs name="Moderate" withProbability="1.0" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="High" >
+            <WillDiagnoseAs name="High" withProbability="1.0" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>
+
+</SensorTypes>

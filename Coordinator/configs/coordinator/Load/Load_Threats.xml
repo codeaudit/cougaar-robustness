@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE Threats SYSTEM "ThreatDTD.dtd"  >
+<Threats>
+
+<Threat name="High_Outside_Load" affectsAssetType="Enclave" causesEvent="Big_Load_Stress" defaultEventLikelihoodProb="LOW" probIntervalInMins="100"/>
+<Threat name="Moderate_Outside_Load" affectsAssetType="Enclave" causesEvent="Moderate_Load_Stress" defaultEventLikelihoodProb="MEDIUM" probIntervalInMins="30"/>
+<Threat name="Outside_Load_Subsides" affectsAssetType="Enclave" causesEvent="No_Load_Stress" defaultEventLikelihoodProb="MEDIUM" probIntervalInMins="30"/>
+
+<Threat name="High_Available_Bandwidth" affectsAssetType="Enclave" causesEvent="High_Available_Bandwidth_Stress" defaultEventLikelihoodProb="LOW" probIntervalInMins="100"/>
+<Threat name="Moderate_Available_Bandwidthd" affectsAssetType="Enclave" causesEvent="Moderate_Available_Bandwidth_Stress" defaultEventLikelihoodProb="MEDIUM" probIntervalInMins="30"/>
+<Threat name="Low_Available_Bandwidth" affectsAssetType="Enclave" causesEvent="Low_Available_Bandwidth_Stress" defaultEventLikelihoodProb="MEDIUM" probIntervalInMins="30"/>
+
+</Threats>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE Events SYSTEM "EventDTD.dtd"  >
+
+<Events>
+
+<Event name="Big_Load_Stress" affectsAssetType="Enclave" affectsStateDimension="Outside_Load_Status">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="High" />
+    </DirectEffect>
+</Event>
+
+<Event name="Moderate_Load_Stress" affectsAssetType="Enclave" affectsStateDimension="Outside_Load_Status">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="Moderate" />
+    </DirectEffect>
+    </Event>
+    
+<Event name="No_Load_Stress" affectsAssetType="Enclave" affectsStateDimension="Outside_Load_Status">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="None" />
+    </DirectEffect>
+</Event>
+    
+<Event name="High_Available_Bandwidth_Stress" affectsAssetType="Enclave" affectsStateDimension="Available_Bandwidth_Status">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="High" />
+    </DirectEffect>
+</Event>
+
+<Event name="Moderate_Available_Bandwidth_Stress" affectsAssetType="Enclave" affectsStateDimension="Available_Bandwidth_Status">
+    <DirectEffect>
+	    <Transition WhenActualStateIs="*" EndStateWillBe="Moderate" />
+    </DirectEffect>
+</Event>
+
+<Event name="Low_Available_Bandwidth_Stress" affectsAssetType="Enclave" affectsStateDimension="Available_Bandwidth_Status">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="Low" />
+    </DirectEffect>
+</Event>
+
+</Events>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE AssetStateDimensions SYSTEM "AssetStateDimensionsDTD.dtd" >
+
+<AssetStateDimensions assetType="Enclave">
+
+  <StateDimension name="Outside_Load_Status" >
+ 	<State name="None" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" defaultStartState="TRUE" />
+	<State name="Moderate" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
+	<State name="High" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
+  </StateDimension>
+
+  <StateDimension name="Available_Bandwidth_Status" >
+ 	<State name="Low" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" defaultStartState="TRUE" />
+	<State name="Moderate" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
+	<State name="High" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
+  </StateDimension>
+
+</AssetStateDimensions>
+
+
+
