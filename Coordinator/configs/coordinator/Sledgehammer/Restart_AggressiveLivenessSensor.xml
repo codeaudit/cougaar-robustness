@@ -2,10 +2,10 @@
 
 <!DOCTYPE SensorType SYSTEM "SensorTypeDTD.dtd" >
 
-<SensorType name="org.cougaar.coordinator.test.defense.AggressiveLivenessDiagnosis" 
+<SensorType name="org.cougaar.coordinator.examples.RestartDefense.AggressiveRestartDiagnosis" 
             sensesAssetType="Agent"
             sensesStateDimension="Liveness" 
-		sensorLatency="120000">
+		sensorLatency="15000">
     <PotentialDiagnoses>
         <Diagnosis name="Live" />
         <Diagnosis name="Dead" />

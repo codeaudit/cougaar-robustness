@@ -2,7 +2,7 @@
 
 <!DOCTYPE ActuatorType SYSTEM "ActuatorTypeDTD.dtd">
 
-<ActuatorType name="org.cougaar.coordinator.test.defense.RestartAgentDefense" 
+<ActuatorType name="org.cougaar.coordinator.examples.RestartDefense.RestartAction" 
               affectsAssetType="Agent" 
               affectsStateDimension="Liveness" 
               actionType="CORRECTIVE">
