@@ -326,7 +326,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
                     alreadySelectedVariants.add(proposedVariant);
                     proposedVariant.setChosen();
                     resourcePercentageRemaining = resourcePercentageRemaining - proposedVariant.getPredictedCostPerTimeUnit();
-                    if (logger.isInfoEnabled()) logger.info("Selected: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString() + ", % resources left " + resourcePercentageRemainining);
+                    if (logger.isInfoEnabled()) logger.info("Selected: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString() + ", % resources left " + resourcePercentageRemaining);
                     if (eventService.isEventEnabled()) eventService.event(agentId + " selected " + thisAction.getClass().getName() + ":" + proposedVariant + " for " + thisAction.getAssetID().toString());
                     if ((!thisAction.getPermittedValues().contains(proposedVariant.getVariantName()))
                             && (thisAction.getValue() == null  
