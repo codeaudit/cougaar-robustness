@@ -878,7 +878,7 @@ public class CommunityStatusModel extends BlackboardClientComponent {
           LeaderElection.getLeader(candidates, currentVotes);
       StatusEntry se = (StatusEntry)statusMap.get(thisAgent);
       if (se != null) {
-        if (newLeader == null) {
+        if (newLeader == null || !newLeader.equals(preferredLeader)) {
           se.leaderVote =
               LeaderElection.chooseCandidate(preferredLeader,
                                              candidates,
