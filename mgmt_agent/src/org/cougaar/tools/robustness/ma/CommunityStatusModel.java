@@ -463,19 +463,22 @@ public class CommunityStatusModel extends BlackboardClientComponent
    * @param state New state
    */
   private void setLocationAndState(String name, String loc, int state) {
-    boolean locChange = false;
-    boolean stateChange = false;
+    logger.debug("setLocationAndState" +
+                 " agent=" + name +
+                 " location=" + loc +
+                 " state=" + state);
     StatusEntry se = (StatusEntry)statusMap.get(name);
     se.timestamp = now();
+    int changeFlags = 0;
     if (se != null) {
       if (se.currentLocation == null || !se.currentLocation.equals(loc)) {
-        locChange = true;
+        changeFlags = changeFlags | CommunityStatusChangeEvent.LOCATION_CHANGE;
         se.priorLocation = se.currentLocation;
         se.currentLocation = loc;
         logger.debug("setLocation: agent=" + name + " loc=" + loc);
       }
       if (se.currentState != state) {
-        stateChange = true;
+        changeFlags = changeFlags | CommunityStatusChangeEvent.STATE_CHANGE;
         se.priorState = se.currentState;
         se.currentState = state;
         logger.debug("setCurrentState" +
@@ -484,15 +487,9 @@ public class CommunityStatusModel extends BlackboardClientComponent
                      " priorState=" + se.priorState +
                      " expiration=" + se.expiration);
       }
-      if (stateChange) {
+      if (changeFlags > 0) {
         queueChangeEvent(
-            new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
-                                           STATE_CHANGE, se));
-      }
-      if (locChange) {
-        queueChangeEvent(
-            new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
-                                           LOCATION_CHANGE, se));
+            new CommunityStatusChangeEvent(changeFlags, se));
       }
       if (hasAttribute(se.attrs, "Role", HEALTH_MONITOR)) {
         electLeader();
@@ -978,6 +975,10 @@ public class CommunityStatusModel extends BlackboardClientComponent
     }
   }
 
+  // Contains names of expired agents that have already been included
+  // in a change event.  Used to avoid sending multiple expiration changes events
+  private Set priorExpirations = Collections.synchronizedSet(new HashSet());
+
   /**
    * Check for agents or nodes with expired status.  CommunityStatusChangeEvents
    * are generated when a status expiration is detected.
@@ -988,17 +989,28 @@ public class CommunityStatusModel extends BlackboardClientComponent
     synchronized (statusMap) {
       for (Iterator it = statusMap.values().iterator(); it.hasNext();) {
         StatusEntry se = (StatusEntry)it.next();
-        if (se != null && isExpired(se)) {
-          queueChangeEvent(
-            new CommunityStatusChangeEvent(CommunityStatusChangeEvent.STATE_EXPIRATION,
-                                           se.name,
-                                           se.type,
-                                           se.currentState,
-                                           UNDEFINED,
-                                           null,
-                                           null,
-                                           null,
-                                           null));
+        if (se != null) {
+          boolean isExpired = isExpired(se);
+          if (isExpired) {
+            if (!priorExpirations.contains(se.name)) {
+              priorExpirations.add(se.name);
+              queueChangeEvent(
+                  new CommunityStatusChangeEvent(
+                  CommunityStatusChangeEvent.STATE_EXPIRATION,
+                  se.name,
+                  se.type,
+                  se.currentState,
+                  UNDEFINED,
+                  null,
+                  null,
+                  null,
+                  null));
+            }
+          } else {  // not expired
+            if (priorExpirations.contains(se.name)) {
+              priorExpirations.remove(se.name);
+            }
+          }
         }
       }
     }
