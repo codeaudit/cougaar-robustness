@@ -2,8 +2,8 @@
 
 <!DOCTYPE CrossDiagnosis >
 
-<CrossDiagnosis sensorType="AgentCommunication" isAffectedByStateDimension="UP_DOWN" >
-	<WhenActualStateIs name="DOWN" >
+<CrossDiagnosis sensorType="org.cougaar.coordinator.test.defense.AgentCommunicationDiagnosis1" isAffectedByStateDimension="Liveness" >
+	<WhenActualStateIs name="Dead" >
 	<WillDiagnoseAs name="DEGRADED" withProbability="0.01" />
 	<WillDiagnoseAs name="NOT_COMMUNICATING" withProbability="0.99" />
 	</WhenActualStateIs>

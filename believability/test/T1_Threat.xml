@@ -4,16 +4,13 @@
 
 <Threats>
 
-<Threat name="AgentFailure" affectsAssetType="Agent" causesEvent="AgentDeath">
-   <EventLikelihood probability="LOW" />
+<Threat name="AgentFailure" affectsAssetType="Agent" causesEvent="AgentDeath" defaultEventLikelihoodProb="LOW">
 </Threat>
 
-<Threat name="AgentCommFailure" affectsAssetType="Agent" causesEvent="AgentNotCommunicating">
-   <EventLikelihood probability="MEDIUM" />
+<Threat name="AgentCommFailure" affectsAssetType="Agent" causesEvent="AgentNotCommunicating" defaultEventLikelihoodProb="MEDIUM">
 </Threat>
 
-<Threat name="AgentPlannedDisconnect" affectsAssetType="Agent" causesEvent="AgentDisconnected">
-   <EventLikelihood probability="LOW" />
+<Threat name="AgentPlannedDisconnect" affectsAssetType="Agent" causesEvent="AgentDisconnected" defaultEventLikelihoodProb="LOW">
 </Threat>
 
 </Threats>

@@ -14,7 +14,12 @@
     
     <Action name="Normal">
         <Description value="Tries Normal Communications" />
-        <Transition WhenActualStateIs="Degraded" EndStateWillBe="NotCommunicating" IntermediateStateWillBe="Degraded" >
+        <Transition WhenActualStateIs="Degraded" EndStateWillBe="Communicating" IntermediateStateWillBe="Degraded" >
+            <ContinuingCost>
+                <Bandwidth intensity="LOW" agentSizeFactor="TRUE" />
+            </ContinuingCost>
+        </Transition>
+        <Transition WhenActualStateIs="Not_Communicating" EndStateWillBe="Communicating" IntermediateStateWillBe="Not_communicating" >
             <ContinuingCost>
                 <Bandwidth intensity="LOW" agentSizeFactor="TRUE" />
             </ContinuingCost>
@@ -22,6 +27,11 @@
         <Transition WhenActualStateIs="Communicating" EndStateWillBe="Communicating" IntermediateStateWillBe="Communicating" >
             <ContinuingCost>
                 <Bandwidth intensity="LOW" agentSizeFactor="TRUE" />
+            </ContinuingCost>
+        </Transition>
+        <Transition WhenActualStateIs="Planned_Disconnect" EndStateWillBe="Planned_Disconnect" IntermediateStateWillBe="Planned_Disconnect" >
+            <ContinuingCost>
+                <Bandwidth intensity="LOW" agentSizeFactor="FALSE" />
             </ContinuingCost>
         </Transition>
     </Action>
