@@ -109,6 +109,7 @@
     <copy file="${lib}/${jar}" toDir="${cougaar}/lib"/>
     <mkdir dir="${cougaar}/robustness/configs"/>
     <copy file="${configs}/communities.xml" toDir="${cougaar}/robustness/configs"/>
+    <copy file="${configs}/communities.xml" toDir="${cougaar}/configs/common"/>
     <copy file="${configs}/loggingConfig.conf" toDir="${cougaar}/robustness/configs"/>
   </target>
 

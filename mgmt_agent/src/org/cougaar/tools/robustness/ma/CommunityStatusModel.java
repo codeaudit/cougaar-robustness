@@ -190,19 +190,15 @@ public class CommunityStatusModel {
    * @return curent state
    */
   public int getCurrentState(String name) {
-    synchronized (statusMap) {
       return (name != null && statusMap.containsKey(name))
           ? ((StatusEntry)statusMap.get(name)).currentState
           : -1;
-    }
   }
 
   public long getStateExpiration(String name) {
-    synchronized (statusMap) {
       return (name != null && statusMap.containsKey(name))
           ? ((StatusEntry)statusMap.get(name)).ttl
           : -1;
-    }
   }
 
   /**
@@ -210,11 +206,9 @@ public class CommunityStatusModel {
    * @return AGENT or NODE
    */
   public int getType(String name) {
-    synchronized (statusMap) {
       return (name != null && statusMap.containsKey(name))
           ? ((StatusEntry)statusMap.get(name)).type
           : -1;
-    }
   }
 
   /**
@@ -222,11 +216,9 @@ public class CommunityStatusModel {
    * @return Entity Attributes
    */
   public Attributes getAttributes(String name) {
-    synchronized (statusMap) {
       return (name != null && statusMap.containsKey(name))
           ? ((StatusEntry)statusMap.get(name)).attrs
           : null;
-    }
   }
 
   /**
@@ -531,8 +523,8 @@ public class CommunityStatusModel {
                                                null,
                                                null));
           }
+          se.timestamp = new Date();
         }
-        se.timestamp = new Date();
       }
       //if (leaderVoteChange)
         electLeader();

@@ -252,7 +252,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
 
   private Set getHealthMonitorPeers(String communityName) {
     Community community = commSvc.getCommunity(communityName, null);
-      if (community.getName().equals(communityName)) {
+      if (community != null && community.getName().equals(communityName)) {
         return getHealthMonitorPeers(community);
       }
     return Collections.EMPTY_SET;
@@ -449,12 +449,12 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
           if (!target.equals(agentId))
             nodeStatusRelay.addTarget(target);
         }
-        logger.debug("publishChange NodeStatusRelay:" +
+        logger.info("publishChange NodeStatusRelay:" +
                      " source=" + nsr.getSource() +
                      " targets=" + targetsToString(nodeStatusRelay.getTargets()) +
                      " community=" + nsr.getCommunityName() +
-                     //" agents=" + nsr.getAgentStatus().length +
-                     " agents=" + agentStatusToString(nsr.getAgentStatus()) +
+                     " agents=" + nsr.getAgentStatus().length +
+                     //" agents=" + agentStatusToString(nsr.getAgentStatus()) +
                      " leaderVote=" + nsr.getLeaderVote());
         blackboard.openTransaction();
         blackboard.publishChange(nodeStatusRelay);
