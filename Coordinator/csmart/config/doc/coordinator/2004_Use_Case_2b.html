@@ -263,6 +263,20 @@ via a servlet<br>
 T4 - Coordinator permits ThreatConAction=HighSecurity,
 CompressAction=NoCompress because security is more valuable than
 compresion<br>
+<br>
+You may notice some flipping of Action settings as the Coordinator
+reaches a steady state.&nbsp; In paricular, it may be that
+ThreatConAction
+is temporarily set to LowSecurity before eventually reaching the
+desired state of HighSecurity.&nbsp; This is because it takes a while
+for
+the ThreatConSensor to detect that the ThreatCon is actually
+Severe.&nbsp;
+This is not an ideal situation as atransition stage, but resolving it
+would require more interactions with the developers of the
+ThreatConActuator rthan were possible.&nbsp; This is basically a
+modeling
+issue for the ThreatCon TechSpecs.<br>
 </div>
 <h3>Monitoring</h3>
 To see these results, set the logging level for the Coordinator package
