@@ -38,6 +38,7 @@
 
 	<target name="create_cougaar_overlay">
 		<mkdir dir="staging/lib"/>
+		<mkdir dir="staging/configs"/>		
 		<mkdir dir="staging/coordinator"/>		
                 <mkdir dir="staging/coordinator/examples"/>
 		<mkdir dir="staging/coordinator/test"/>
@@ -47,6 +48,9 @@
 	        <signjar jar="${jar}" keystore="/var/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
                 <copy file="${jar}" todir="${cougaar}/lib"/>
                 <move file="${jar}" todir="staging/lib"/>
+                <copy todir="staging/configs/">
+			<fileset dir="configs/"/>
+		</copy>	
 		<copy todir="staging/coordinator/examples/">
 			<fileset dir="examples/"/>
 		</copy>	
