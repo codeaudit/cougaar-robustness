@@ -209,6 +209,20 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
     updateInterval = Long.parseLong(updateIntervalStr);
     wakeAlarm = new WakeAlarm(now() + updateInterval);
     alarmService.addRealTimeAlarm(wakeAlarm);
+
+    /*commSvc.addListener(new CommunityChangeListener() {
+      public void communityChanged(CommunityChangeEvent cce) {
+        if (cce.getType() == cce.ADD_COMMUNITY) {
+          Collection communityNames =
+              commSvc.listParentCommunities(agentId.toString(),
+                                            "(CommunityType=Robustness)");
+          if (communityNames != null) {
+            logger.info("ParentCommunities=" + communityNames);
+          }
+        }
+      }
+      public String getCommunityName() { return null; }
+    });*/
   }
 
   /**
@@ -380,7 +394,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
       try {
         controller =
             (RobustnessController)Class.forName(controllerClassname).newInstance();
-        controller.initialize(agentId.toString(), getBindingSite(), model);
+        controller.initialize(agentId, getBindingSite(), model);
       } catch (Exception ex) {
         logger.error("Exception creating RobustnessController", ex);
       }

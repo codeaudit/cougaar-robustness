@@ -38,6 +38,7 @@ import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.LoggingService;
+import org.cougaar.core.mts.MessageAddress;
 import java.util.*;
 
 import javax.naming.directory.Attribute;
@@ -94,7 +95,7 @@ public abstract class RobustnessControllerBase
   private DeconflictHelper deconflictHelper = null;
   private DeconflictListener dl = null;
 
-  protected String thisAgent;
+  protected MessageAddress agentId;
   protected LoggingService logger;
   protected EventService eventService;
   private BindingSite bindingSite;
@@ -103,19 +104,19 @@ public abstract class RobustnessControllerBase
   protected CommunityStatusModel model;
 
   /**
-   * @param thisAgent  Agent name
+   * @param agentId    Agent address
    * @param bs         BindingSite
    * @param csm        CommunityStatusModel for monitored community
    */
-  public void initialize(String thisAgent,
-                         final  BindingSite bs,
-                         final  CommunityStatusModel csm) {
-    this.thisAgent = thisAgent;
+  public void initialize(MessageAddress agentId,
+                         final          BindingSite bs,
+                         final          CommunityStatusModel csm) {
+    this.agentId = agentId;
     this.model = csm;
     this.bindingSite = bs;
     logger =
       (LoggingService)bs.getServiceBroker().getService(this, LoggingService.class, null);
-    logger = org.cougaar.core.logging.LoggingServiceWithPrefix.add(logger, thisAgent + ": ");
+    logger = org.cougaar.core.logging.LoggingServiceWithPrefix.add(logger, agentId + ": ");
     eventService = (EventService) bs.getServiceBroker().getService(this, EventService.class, null);
     heartbeatHelper = new HeartbeatHelper(bs);
     moveHelper = new MoveHelper(bs);
@@ -202,34 +203,34 @@ public abstract class RobustnessControllerBase
    * @param csce  Change event
    * @param csm   Status model associated with event
    */
-  public void statusChanged(CommunityStatusChangeEvent[] csce,
-                            CommunityStatusModel csm) {
+  public void statusChanged(CommunityStatusChangeEvent[] csce) {
+                            //CommunityStatusModel csm) {
     boolean interestingChange = false;
     for(int i = 0; i < csce.length; i++) {
       if(logger.isDebugEnabled()) {
         logger.debug(csce[i].toString());
       }
       if(csce[i].membersAdded() || csce[i].membersRemoved()) {
-        processMembershipChanges(csce[i], csm);
+        processMembershipChanges(csce[i]);
         interestingChange = true;
       }
       if(csce[i].stateChanged()) {
-        processStatusChanges(csce[i], csm);
+        processStatusChanges(csce[i]);
         interestingChange = true;
       }
       if(csce[i].leaderChanged()) {
-        processLeaderChanges(csce[i], csm);
+        processLeaderChanges(csce[i]);
         if(!(csce[i].getCurrentLeader() == null && csce[i].getPriorLeader() == null))
           interestingChange = true;
       }
       if(csce[i].locationChanged()) {
-        processLocationChanges(csce[i], csm);
+        processLocationChanges(csce[i]);
       }
       if(csce[i].stateExpired()) {
-        processStatusExpirations(csce[i], csm);
+        processStatusExpirations(csce[i]);
       }
     }
-    if(interestingChange && isLeader(thisAgent) && logger.isInfoEnabled()) {
+    if(interestingChange && isLeader(agentId.toString()) && logger.isInfoEnabled()) {
       logger.info(statusSummary());
     }
   }
@@ -239,8 +240,7 @@ public abstract class RobustnessControllerBase
    * @param csce  Change event
    * @param csm   Status model associated with event
    */
-  protected void processMembershipChanges(CommunityStatusChangeEvent csce,
-                                          CommunityStatusModel csm) {
+  protected void processMembershipChanges(CommunityStatusChangeEvent csce) {
     //robustness manager should publish deconfliction objects for every agent member.
     if(deconflictHelper != null) {
       deconflictHelper.initObjs();
@@ -254,18 +254,17 @@ public abstract class RobustnessControllerBase
    * @param csce  Change event
    * @param csm   Status model associated with event
    */
-  protected void processLeaderChanges(CommunityStatusChangeEvent csce,
-                                      CommunityStatusModel csm) {
-    String manager = csm.getStringAttribute(ROBUSTNESS_MANAGER); //the robustness manager
+  protected void processLeaderChanges(CommunityStatusChangeEvent csce) {
+    String manager = model.getStringAttribute(ROBUSTNESS_MANAGER); //the robustness manager
     //the robustness manager invokes DeconflictHelper object and add necessary deconflict
     //listener.
-    if(thisAgent.equals(manager) && deconflictHelper == null) {
+    if(agentId.toString().equals(manager) && deconflictHelper == null) {
       String enable = System.getProperty(deconflictionProperty, defaultEnabled);
       if(enable.equals(defaultEnabled)) {
         deconflictHelper = new DeconflictHelper(bindingSite, model);
         if (dl != null)
           deconflictHelper.addListener(dl);
-        logger.info("==========deconflictHelper applies to " + thisAgent);
+        logger.info("==========deconflictHelper applies to " + agentId);
       }
     }
 
@@ -290,8 +289,7 @@ public abstract class RobustnessControllerBase
    * @param csce  Change event
    * @param csm   Status model associated with event
    */
-  protected void processStatusChanges(CommunityStatusChangeEvent csce,
-                                      CommunityStatusModel csm) {
+  protected void processStatusChanges(CommunityStatusChangeEvent csce) {
     // Notify controllers of state transition
     logger.debug("State change:" +
                 " name=" + csce.getName() +
@@ -314,12 +312,10 @@ public abstract class RobustnessControllerBase
    * @param csce  Change event
    * @param csm   Status model associated with event
    */
-  protected void processLocationChanges(CommunityStatusChangeEvent csce,
-                                        CommunityStatusModel csm) {
+  protected void processLocationChanges(CommunityStatusChangeEvent csce) {
   }
 
-  protected void processStatusExpirations(CommunityStatusChangeEvent csce,
-                                          CommunityStatusModel csm) {
+  protected void processStatusExpirations(CommunityStatusChangeEvent csce) {
     logger.debug("Status expiration:" +
                 " name=" + csce.getName() +
                 " state=" + stateName(csce.getCurrentState()));
@@ -377,7 +373,7 @@ public abstract class RobustnessControllerBase
    */
   protected boolean isLocal(String name) {
     return (model != null &&
-            thisAgent.equals(model.getLocation(name)));
+            agentId.toString().equals(model.getLocation(name)));
   }
 
   /**
