@@ -34,13 +34,14 @@ import org.cougaar.core.persist.NotPersistable;
 
 public class ActionSelectionKnob implements NotPersistable {
 
-    private int maxActions = 1;
-    private double patienceFactor = 1.5; // how much extra time to give an Action to complete before giving up
+    private int maxActions;
+    private double patienceFactor; // how much extra time to give an Action to complete before giving up
 
 
     /** Creates a new instance of DefenseSelectionKnob */
-    public ActionSelectionKnob() {
-
+    public ActionSelectionKnob(int maxActions, double patienceFactor) {
+        this.maxActions = maxActions;
+        this.patienceFactor = patienceFactor;
     }
 
     public void setMaxActions(int n) { maxActions = n; }

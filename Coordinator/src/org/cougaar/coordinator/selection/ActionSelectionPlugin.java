@@ -72,9 +72,10 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
   
   //private TestObservationServlet testServlet = null;
   
-  long msglogDelay = 10000L; // how long to wait before disabling MsgLog - a default, but can be overridden by a parameter
-  long msglogPatience = 30000L; // how long to let MsgLog try before giving up - a default, but can be overridden by a parameter
-  long otherPatience = 300000L; // how long to let other defenses try before giving up - a default, but can be overridden by a parameter 
+  // Defaults for the Knob - may be overridden by parameters or the Knob may be set by policy
+  int maxActions = 1;
+  double patienceFactor = 1.5; // how much extra time to give an Action to complete before giving up
+
   
   public ActionSelectionPlugin() {
   }
@@ -88,18 +89,18 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
   }
   
   private void getPluginParams() {
-      if (logger.isInfoEnabled() && getParameters().isEmpty()) logger.info("Coordinator not provided a MsgLog delay parameter - defaulting to 10 seconds.");
+    if (logger.isInfoEnabled() && getParameters().isEmpty()) logger.info("Coordinator not provided a MsgLog delay parameter - defaulting to 10 seconds.");
 
-      // FIX - These really should come from TEchSpecs
-      Iterator iter = getParameters().iterator (); 
-      if (iter.hasNext()) {
-          msglogPatience = Long.parseLong((String)iter.next()) * 1000L;
-           logger.debug("Setting msglogPatience = " + msglogPatience);
-      }
-      if (iter.hasNext()) {      
-          otherPatience = Long.parseLong((String)iter.next()) * 1000L;
-           logger.debug("Setting otherPatience = " + otherPatience);
-      }
+    maxActions = DEFAULT_MAX_ACTIONS;
+    patienceFactor = DEFAULT_PATIENCE_FACTOR;
+    for (Iterator i = getParameters().iterator(); i.hasNext();) {
+      String param = (String) i.next();
+      maxActions = parseIntParameter(param, MAX_ACTIONS_PREFIX, maxActions);
+      patienceFactor = parseDoubleParameter(param, PATIENCE_FACTOR_PREFIX, patienceFactor);
+    }
+      /*
+
+*/
   }       
   
  
@@ -127,7 +128,8 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
   //Create a new ActionSelectionKnob for external parameterization
   private void initObjects() {
       // Create the ActionSelectionKnob with default values
-      knob = new ActionSelectionKnob();
+      knob = new ActionSelectionKnob(maxActions, patienceFactor);
+      if (logger.isDebugEnabled()) logger.debug("Created ActionSelectionKnob with maxActions="+maxActions+", patienceFactor="+patienceFactor);
       openTransaction();
       publishAdd(knob);
       closeTransaction();
@@ -290,5 +292,28 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
         // tracks resources allocated to Actions so we can tell whether we can choose more actions
         return false;
     }
+
+  protected static final String MAX_ACTIONS_PREFIX = "maxActions=";
+
+  protected static final String PATIENCE_FACTOR_PREFIX = "patienceFactor=";
+
+  protected static final int DEFAULT_MAX_ACTIONS = 1;
+
+  protected static final double DEFAULT_PATIENCE_FACTOR = 1.5;
+
+  protected int parseIntParameter(String param, String prefix, int dflt) {
+    if (param.startsWith(prefix)) {
+        return Integer.parseInt(param.substring(prefix.length()));
+        }
+    else return dflt;
+  }
+      
+  protected double parseDoubleParameter(String param, String prefix, double dflt) {
+    if (param.startsWith(prefix)) {
+        return Double.parseDouble(param.substring(prefix.length()));
+        }
+    else return dflt;
+  }
+
 
 }
