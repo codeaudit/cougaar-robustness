@@ -63,7 +63,7 @@ public class PlannedDisconnectManagerPlugin extends ServiceUserPluginBase
   private OperatingModeService operatingModeService;
   private UIDService us = null;
   
-  private static String nodeID = "NodeA";
+  private static String nodeID;
   
   private IncrementalSubscription myOpModes;
   private IncrementalSubscription defenseModeSubscription; 
@@ -91,6 +91,10 @@ public class PlannedDisconnectManagerPlugin extends ServiceUserPluginBase
 
   public static final String MY_NODE_APPLICABILITY_CONDITION_NAME
     = "PlannedDisconnect.ScheduledDisconnect.Node.";
+  public static final String MY_NODE_DEFENSE_OPMODE_NAME
+    = "PlannedDisconnect.ManagerDefense.Node.";
+  public static final String MY_NODE_MONITORING_OPMODE_NAME
+    = "PlannedDisconnect.ManagerMonitoring.Node.";
   public static final String MY_RECONNECT_TIME_NAME 
     = "PlannedDisconnect.ScheduledReconnectTime.Node.";
 
@@ -133,15 +137,6 @@ public class PlannedDisconnectManagerPlugin extends ServiceUserPluginBase
         }
     }) ;
 
-     /*defenseModeConditionSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
-        public boolean execute(Object o) {
-            if ( o instanceof MyDefenseEnablerCondition ) {
-                return true ;
-            }
-            return false ;
-        }
-    }) ;
-*/
 
     //Listen for changes in our monitoring enabling mode object
      monitoringModeSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
@@ -153,16 +148,6 @@ public class PlannedDisconnectManagerPlugin extends ServiceUserPluginBase
         }
      });
 
-/*     
-     monitoringModeConditionSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
-        public boolean execute(Object o) {
-            if ( o instanceof MyMonitoringEnablerCondition ) {
-                return true ;
-            }
-            return false ;
-        }
-    }) ;
-*/     
      
      //Listen for changes to Conditions
      conditionSubscription = (IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
@@ -200,6 +185,7 @@ public class PlannedDisconnectManagerPlugin extends ServiceUserPluginBase
      
         /*
     //Listen for changes in TechSpecs for the node & agents on the node
+    // **** Future Feature to handle Scheduled Disconnects ****
      techSpecSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
         public boolean execute(Object o) {
             if ( o instanceof TechSpec ) {
@@ -217,69 +203,120 @@ public class PlannedDisconnectManagerPlugin extends ServiceUserPluginBase
       }
   }
 
+  
   //Create one condition and one of each type of operating mode
   private void initObjects() {
-     MyDefenseApplicabilityCondition dac = 
-        new MyDefenseApplicabilityCondition(MY_APPLICABILITY_CONDITION_NAME + nodeID);
-     MyDefenseApplicabilityOpMode daom = 
-        new MyDefenseApplicabilityOpMode(MY_APPLICABILITY_CONDITION_NAME + nodeID);
-
-     MyDefenseEnabler deom = 
-        new MyDefenseEnabler(MY_DEFENSE_OPMODE_NAME + nodeID);
-     MyDefenseEnablerCondition deomc = 
-        new MyDefenseEnablerCondition(MY_DEFENSE_OPMODE_NAME + nodeID);
-
-     MyMonitoringEnabler meom = 
-        new MyMonitoringEnabler(MY_MONITORING_OPMODE_NAME + nodeID);
-     MyMonitoringEnablerCondition meomc = 
-        new MyMonitoringEnablerCondition(MY_MONITORING_OPMODE_NAME + nodeID);
-
-     MyDefenseApplicabilityCondition ndac = 
-        new MyDefenseApplicabilityCondition(MY_NODE_APPLICABILITY_CONDITION_NAME + nodeID);
-     MyDefenseApplicabilityOpMode ndaom = 
-        new MyDefenseApplicabilityOpMode(MY_NODE_APPLICABILITY_CONDITION_NAME + nodeID);
-
-     ReconnectTimeCondition rtc =
-        new MyReconnectTimeCondition(MY_RECONNECT_TIME_NAME + nodeID);
+    
+     // Find out which Nodes are to be managed
+     if (logger.isInfoEnabled() && getParameters().isEmpty()) logger.error("plugin saw 0 parameters [must supply AE Node name].");
+     
+     Iterator iter = getParameters().iterator (); 
+     while (iter.hasNext()) {
+    
+        nodeID = (String)iter.next();
+        logger.debug("Creating Conditions & OpModes for: " + nodeID);
         
-        
-      System.out.println();
-      System.out.println("ManagementAgent Published:");
+     // Creating the conditions and modes for the Defense of a Node
+    
+        MyDefenseApplicabilityCondition dac = 
+            new MyDefenseApplicabilityCondition(MY_APPLICABILITY_CONDITION_NAME + nodeID);
+        MyDefenseApplicabilityOpMode daom = 
+            new MyDefenseApplicabilityOpMode(MY_APPLICABILITY_CONDITION_NAME + nodeID);
+        daom.setUID(us.nextUID());
+
+        MyDefenseEnabler deom = 
+            new MyDefenseEnabler(MY_DEFENSE_OPMODE_NAME + nodeID);
+        deom.setUID(us.nextUID());
+        MyDefenseEnablerCondition deomc = 
+            new MyDefenseEnablerCondition(MY_DEFENSE_OPMODE_NAME + nodeID);
+
+        MyMonitoringEnabler meom = 
+            new MyMonitoringEnabler(MY_MONITORING_OPMODE_NAME + nodeID);
+        meom.setUID(us.nextUID());
+        MyMonitoringEnablerCondition meomc = 
+            new MyMonitoringEnablerCondition(MY_MONITORING_OPMODE_NAME + nodeID);
+
+        // conditions & modes for the Manager Defense instance
+         
+        MyDefenseApplicabilityCondition ndac = 
+            new MyDefenseApplicabilityCondition(MY_NODE_APPLICABILITY_CONDITION_NAME + nodeID);
+
+        MyDefenseEnabler ndeom = 
+            new MyDefenseEnabler(MY_NODE_DEFENSE_OPMODE_NAME + nodeID);
+        ndeom.setUID(us.nextUID());
+        MyDefenseEnablerCondition ndeomc = 
+            new MyDefenseEnablerCondition(MY_NODE_DEFENSE_OPMODE_NAME + nodeID);
+
+        MyMonitoringEnabler nmeom = 
+            new MyMonitoringEnabler(MY_NODE_MONITORING_OPMODE_NAME + nodeID);
+        nmeom.setUID(us.nextUID());
+        MyMonitoringEnablerCondition nmeomc = 
+            new MyMonitoringEnablerCondition(MY_NODE_MONITORING_OPMODE_NAME + nodeID);
+            
+        ReconnectTimeCondition rtc =
+            new MyReconnectTimeCondition(MY_RECONNECT_TIME_NAME + nodeID);
+            
+            
+        if (logger.isDebugEnabled()) {
+            logger.debug("");
+            logger.debug("ManagementAgent Published:");
+        }
+              
+        getBlackboardService().publishAdd(dac);
+        getBlackboardService().publishAdd(daom);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Condition: " + dac.getName() + " with value = " + dac.getValue());
+            logger.debug(" with allowed values  = " + dac.getAllowedValues());
+            logger.debug("TransferOpMode: " + daom.getName() + " with value = " + daom.getValue());
+            logger.debug(" with allowed values  = " + daom.getAllowedValues());
+        }
+
+        getBlackboardService().publishAdd(deom);
+        getBlackboardService().publishAdd(deomc);
+        if (logger.isDebugEnabled()) {
+            logger.debug("OpMode: " + deom.getName() + " with value = " + deom.getValue());
+            logger.debug(" with allowed values  = " + deom.getAllowedValues());
+            logger.debug("TransferCondition: " + deomc.getName() + " with value = " + deomc.getValue());
+            logger.debug(" with allowed values  = " + deomc.getAllowedValues());
+        }
           
-      getBlackboardService().publishAdd(dac);
-      getBlackboardService().publishAdd(daom);
-      System.out.println("Condition: " + dac.getName() + " with value = " + dac.getValue());
-      System.out.println(" with allowed values  = " + dac.getAllowedValues());
-      System.out.println("TransferOpMode: " + daom.getName() + " with value = " + daom.getValue());
-      System.out.println(" with allowed values  = " + daom.getAllowedValues());
+        getBlackboardService().publishAdd(meom);
+        getBlackboardService().publishAdd(meomc);
+        if (logger.isDebugEnabled()) {
+            logger.debug("OpMode: " + meom.getName() + " with value = " + meom.getValue());
+            logger.debug(" with allowed values  = " + meom.getAllowedValues());
+            logger.debug("TransferCondition: " + meomc.getName() + " with value = " + meomc.getValue());
+            logger.debug(" with allowed values  = " + meomc.getAllowedValues());
+        }
 
-      /*
-      getBlackboardService().publishAdd(rtc);
-      System.out.println("Condition: " + rtc.getName() + " with value = " + rtc.getValue());
-      System.out.println(" with allowed values  = " + rtc.getAllowedValues());
-      */
-      
-      getBlackboardService().publishAdd(deom);
-      getBlackboardService().publishAdd(deomc);
-      System.out.println("OpMode: " + deom.getName() + " with value = " + deom.getValue());
-      System.out.println(" with allowed values  = " + deom.getAllowedValues());
-      System.out.println("TransferCondition: " + deomc.getName() + " with value = " + deomc.getValue());
-      System.out.println(" with allowed values  = " + deomc.getAllowedValues());
-      
-      getBlackboardService().publishAdd(meom);
-      getBlackboardService().publishAdd(meomc);
-      System.out.println("OpMode: " + meom.getName() + " with value = " + meom.getValue());
-      System.out.println(" with allowed values  = " + meom.getAllowedValues());
-      System.out.println("TransferCondition: " + meomc.getName() + " with value = " + meomc.getValue());
-      System.out.println(" with allowed values  = " + meomc.getAllowedValues());
+        getBlackboardService().publishAdd(ndac);
+        getBlackboardService().publishAdd(rtc);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Condition: " + ndac.getName() + " with value = " + ndac.getValue());
+            logger.debug(" with allowed values  = " + ndac.getAllowedValues());
+            logger.debug("Condition: " + rtc.getName() + " with value = " + rtc.getValue());
+            logger.debug(" with allowed values  = " + rtc.getAllowedValues());
+        }
 
-      /*getBlackboardService().publishAdd(ndac);
-      getBlackboardService().publishAdd(ndaom);
-      System.out.println("Condition: " + ndac.getName() + " with value = " + ndac.getValue());
-      System.out.println(" with allowed values  = " + ndac.getAllowedValues());
-      System.out.println("TransferOpMode: " + ndaom.getName() + " with value = " + ndaom.getValue());
-      System.out.println(" with allowed values  = " + ndaom.getAllowedValues());
-      */ 
+        getBlackboardService().publishAdd(ndeom);
+        getBlackboardService().publishAdd(ndeomc);
+        if (logger.isDebugEnabled()) {
+            logger.debug("OpMode: " + ndeom.getName() + " with value = " + ndeom.getValue());
+            logger.debug(" with allowed values  = " + ndeom.getAllowedValues());
+            logger.debug("TransferCondition: " + ndeomc.getName() + " with value = " + ndeomc.getValue());
+            logger.debug(" with allowed values  = " + ndeomc.getAllowedValues());
+        }
+          
+        getBlackboardService().publishAdd(nmeom);
+        getBlackboardService().publishAdd(nmeomc);
+        if (logger.isDebugEnabled()) {
+            logger.debug("OpMode: " + nmeom.getName() + " with value = " + nmeom.getValue());
+            logger.debug(" with allowed values  = " + nmeom.getAllowedValues());
+            logger.debug("TransferCondition: " + nmeomc.getName() + " with value = " + nmeomc.getValue());
+            logger.debug(" with allowed values  = " + nmeomc.getAllowedValues());
+        }
+     }
+
   }      
   
   private boolean haveServices() {
@@ -298,65 +335,76 @@ public class PlannedDisconnectManagerPlugin extends ServiceUserPluginBase
       
       return true;
     }
-    else if (logger.isDebugEnabled()) logger.warn(".haveServices - did NOT acquire services.");
+    else if (logger.isWarnEnabled()) logger.warn(".haveServices - did NOT acquire services.");
     return false;
   }
 
   public void execute() {
 
-      System.out.println();
-      System.out.println(new Date() + " in Community Defense");
+      if (logger.isDebugEnabled()) {
+        logger.debug("");
+        logger.debug(new Date() + " in Community Defense");
+      }
 
       Iterator iter;
       
       //********* Check for changes in Op Modes & transfer to corresponding Conditions **********
-      System.out.println();
-      System.out.println("Transferring OpModes to Conditions");
+      if (logger.isDebugEnabled()) {
+        logger.debug("");
+        logger.debug("Transferring OpModes to Conditions");
+      }
+      
       iter = opModeTransferSubscription.iterator();
       while (iter.hasNext()) {
           DefenseOperatingMode mode = (DefenseOperatingMode)iter.next();
-          System.out.println(mode.getName());
           DefenseCondition cond = (DefenseCondition)conditionService.getConditionByName(mode.getName());
           if (cond instanceof MyDefenseEnablerCondition) {
             MyDefenseEnablerCondition c = (MyDefenseEnablerCondition)cond;
             c.setValue(mode.getValue());
+            if (logger.isDebugEnabled()) logger.debug(mode.getName() + " set to " + mode.getValue());
           }
           else if (cond instanceof MyMonitoringEnablerCondition) {
             MyMonitoringEnablerCondition c = (MyMonitoringEnablerCondition)cond;
             c.setValue(mode.getValue());
+            if (logger.isDebugEnabled()) logger.debug(mode.getName() + " set to " + mode.getValue());
           }
           else if (cond instanceof MyDefenseApplicabilityCondition) {
             MyDefenseApplicabilityCondition c = (MyDefenseApplicabilityCondition)cond;
             c.setValue(mode.getValue());
+            if (logger.isDebugEnabled()) logger.debug(mode.getName() + " set to " + mode.getValue());
           }
-            
       }
           
        
       //********* Check for changes in Condition objects ************
       
-      System.out.println();
-      System.out.println("Conditions");
+      if (logger.isDebugEnabled()) {
+        logger.debug("");
+        logger.debug("Conditions");
+      }
       iter = conditionSubscription.iterator();
       while (iter.hasNext()) {
           Condition sc = (Condition)iter.next();
           if (sc != null) {
-            System.out.println(sc.getName() + " set to " + sc.getValue());
+            if (logger.isDebugEnabled()) logger.debug(sc.getName() + " set to " + sc.getValue());
           }
       }
       
       
       //********* Check for changes in OpMode objects ************
       
-      System.out.println();
-      System.out.println("OpModes");
+      if (logger.isDebugEnabled()) {
+        logger.debug("");
+        logger.debug("OpModes");
+      }
       iter = opModeSubscription.iterator();
       while (iter.hasNext()) {
           DefenseOperatingMode sc = (DefenseOperatingMode)iter.next();
           if (sc != null) {
-            System.out.println(sc.getName() + " set to " + sc.getValue());
+            if (logger.isDebugEnabled()) logger.debug(sc.getName() + " set to " + sc.getValue());
           }
       }
+            
   }
   
 

@@ -269,12 +269,17 @@ public class DisconnectServlet extends BaseServletComponent
             };
             
             DisconnectionApplicabilityCondition cond = null;
-            blackboard.openTransaction();
-            Collection c = blackboard.query(pred);
-            if (c.iterator().hasNext()) {
-               cond = (DisconnectionApplicabilityCondition)c.iterator().next();
+            try {
+                blackboard.openTransaction();
+                Collection c = blackboard.query(pred);
+                if (c.iterator().hasNext()) {
+                   cond = (DisconnectionApplicabilityCondition)c.iterator().next();
+                }
+                blackboard.closeTransaction();
+
+            } finally {
+                blackboard.closeTransactionDontReset();
             }
-            blackboard.closeTransaction();
             
             if (cond == null) { //then create one
                 cond = new DisconnectionApplicabilityCondition(condName);
@@ -303,25 +308,29 @@ public class DisconnectServlet extends BaseServletComponent
             };
             
             ReconnectTimeCondition cond = null;
-            blackboard.openTransaction();
-            Collection c = blackboard.query(pred);
-            if (c.iterator().hasNext()) {
-               cond = (ReconnectTimeCondition)c.iterator().next();
+            try {
+                blackboard.openTransaction();
+                Collection c = blackboard.query(pred);
+                if (c.iterator().hasNext()) {
+                   cond = (ReconnectTimeCondition)c.iterator().next();
+                }
+            } finally {
+                blackboard.closeTransactionDontReset();
             }
-            blackboard.closeTransaction();
             
+            blackboard.closeTransaction();
+
             if (cond == null) { //then create one
                 cond = new ReconnectTimeCondition(condName);
                 System.out.print("Created and ");
             }
 
+            System.out.println("Published ReconnectTimeCondition: "+condName+" = "+ cond.getValue().toString());
 
             blackboard.openTransaction();
             cond.setValue(new Double(d)); //true = disconnected
             blackboard.publishChange(cond);    
             blackboard.closeTransaction();
-
-            System.out.println("Published ReconnectTimeCondition: "+condName+" = "+ cond.getValue().toString() + "[was d="+d+"]");
       }      
         
 

@@ -230,7 +230,7 @@ public class PlannedDisconnectNodePlugin extends ServiceUserPluginBase {
       
       //We have one defense mode, so we only get the one from iter.next();
       iter = defenseModeSubscription.iterator();
-      if (iter.hasNext()) {
+      while (iter.hasNext()) {
           DefenseEnablingOperatingMode dmode = (DefenseEnablingOperatingMode)iter.next();
           if (dmode != null) {
             System.out.println(dmode.getName() + " set to " + dmode.getValue());
@@ -238,7 +238,7 @@ public class PlannedDisconnectNodePlugin extends ServiceUserPluginBase {
       }
       //We have one defense mode, so we only get the one from iter.next();
       iter = monitoringModeSubscription.iterator();
-      if (iter.hasNext()) {      
+      while (iter.hasNext()) {      
           MonitoringEnablingOperatingMode mmode = (MonitoringEnablingOperatingMode)iter.next();
           if (mmode != null) {
             System.out.println(mmode.getName() + " set to " + mmode.getValue());
@@ -283,7 +283,7 @@ public class PlannedDisconnectNodePlugin extends ServiceUserPluginBase {
           if (cond.getValue().equals("FALSE")) {
               cond.setValue(DefenseConstants.BOOL_TRUE);
               logger.debug("** setTestCondition - Condition set to "+ cond.getValue());
-              long reconnectTime = new Date().getTime() + 5000L;
+              long reconnectTime = currentTimeMillis()  + 5000L;
               rtc.setValue(new Double(reconnectTime));
               getBlackboardService().publishChange(rtc);
               System.out.println("Disconnecting Node");
@@ -296,7 +296,6 @@ public class PlannedDisconnectNodePlugin extends ServiceUserPluginBase {
               getBlackboardService().publishChange(rtc);
               System.out.println("Reconnecting Node");
           }
-              
           getBlackboardService().publishChange(cond);
       } else {
 	logger.debug("** Cannot find condition object!");
