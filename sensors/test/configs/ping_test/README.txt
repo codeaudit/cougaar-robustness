@@ -8,11 +8,10 @@ The plugin org.cougaar.tools.robustness.sensors.PingRequestorPlugin is
 loaded, and the sensors Domain is declared, in ManagerAgent.ini.
 
 The sample user plugin PingTesterPlugin is also loaded in ManagerAgent.ini,
-and it is passed two arguments, (MonitoredAgent, 0).  The first is the
-name of the agent to be pinged, and the second is the timeout.  The timeout
-isn't implemented yet, but 0 will mean "no timeout".  A positive integer
-will indicate the number of milliseconds to wait before returning a FAILED
-status to the requestor.  
+and it is passed two arguments, (MonitoredAgent, 5000).  The first is the
+name of the agent to be pinged, and the second is the timeout.  A timeout
+of 0 means "no timeout".  A positive integer indicates the number of 
+milliseconds to wait before returning a FAILED status to the requestor.  
 
 To run the test, open two cmd windows, cd to test\configs\ping_test in each, and
 run "Node MonitoredAgentNode" in one, and "Node ManagerAgentNode" in the other.

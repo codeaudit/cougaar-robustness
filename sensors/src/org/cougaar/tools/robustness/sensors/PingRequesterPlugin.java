@@ -32,6 +32,7 @@ import org.cougaar.core.service.UIDService;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.blackboard.UniqueObjectSet;
 import java.util.Date;
+import org.cougaar.core.agent.service.alarm.Alarm;
 
 /**
  * This Plugin receives PingRequests from the local Blackboard and
@@ -69,6 +70,8 @@ public class PingRequesterPlugin extends ComponentPlugin {
     bb.publishChange(req);
     System.out.println("PingRequesterPlugin.sendPing: published new Ping = " + ping);
     System.out.println("PingRequesterPlugin.sendPing: published changed PingRequest = " + req);
+    // temp hack to timeout a request
+    alarmService.addRealTimeAlarm(new PingRequestTimeout(req.getTimeout(),reqUID));
   }
 
   private void updatePingRequest (Ping ping) {
@@ -124,5 +127,43 @@ public class PingRequesterPlugin extends ComponentPlugin {
   public void setUIDService(UIDService UIDService) {
       this.UIDService = UIDService;
   }
+
+  // temporary implementation of PingRequest timeout.
+  // will be replaced by MTS-based implementation.
+  private class PingRequestTimeout implements Alarm {
+    private long detonate = -1;
+    private boolean expired = false;
+    private UID reqUID;
+
+    public PingRequestTimeout (long timeout, UID reqUID) {
+      detonate = timeout + System.currentTimeMillis();
+      this.reqUID = reqUID;
+    }
+    public long getExpirationTime () {return detonate;
+    }
+    public void expire () {
+      if (!expired) {
+        fail(reqUID);
+        expired = true;}
+    }
+    public boolean hasExpired () {return expired;
+    }
+    public boolean cancel () {
+      if (!expired)
+        return expired = true;
+      return false;}
+  }
+
+  private void fail(UID reqUID) {
+    PingRequest req = (PingRequest)UIDtable.findUniqueObject(reqUID);
+    if (req.getStatus() == PingRequest.SENT) {
+      bb.openTransaction();
+      req.setStatus(PingRequest.FAILED);
+      bb.publishChange(req);
+      bb.closeTransaction();
+      System.out.println("\nPingRequesterPlugin.fail: published changed PingRequest = " + req);
+    }
+  }
+
 
 }
