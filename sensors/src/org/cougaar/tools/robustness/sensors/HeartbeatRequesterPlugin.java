@@ -49,7 +49,6 @@ import org.cougaar.core.persist.NotPersistable;
  * be installed in the agent that is originating the HeartbeatRequests.
  **/
 public class HeartbeatRequesterPlugin extends ComponentPlugin {
-  private Object lock = new Object();
   private IncrementalSubscription heartbeatRequestSub;
   private IncrementalSubscription hbReqSub;
   private IncrementalSubscription prepareHealthReportsSub; 
