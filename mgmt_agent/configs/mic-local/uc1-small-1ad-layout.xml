@@ -5,7 +5,7 @@
     <facet enclave='SMALL'/>
     <node name='1AD-SMALL-MGMT-NODE'>
       <facet role='NameServer'/>
-      <facet role='ARManager'/>
+      <facet role='Management'/>
     </node>
   </host>
   <host name='HOST2'>
