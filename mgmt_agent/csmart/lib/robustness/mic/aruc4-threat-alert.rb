@@ -11,7 +11,7 @@ $:.unshift File.join(CIP, 'csmart', 'config', 'lib')
 require 'robustness/uc4/aruc4_actions_and_states'
 
 insert_after :during_stage_1 do
-  wait_for "NodesPersistedFindProviders", "REAR-A-NODE, REAR-B-NODE"
+wait_for "NodesPersistedFindProviders", "REAR-A-NODE", "REAR-B-NODE"
 assets = {'node' => 'REAR-A-NODE, REAR-B-NODE'}
 do_action "InfoMessage", "########  PublishThreatAlert - MAXIMUM  #########"
 do_action "PublishThreatAlert",
