@@ -295,7 +295,8 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       //  Insure newly local msgs (msgs to formerly remote agents that have now moved to our node)
       //  have the correct msg type designation.
 
-      if (link == loopbackLink) MessageUtils.setMessageTypeToLocal (msg);
+      //1045B if (link == loopbackLink) MessageUtils.setMessageTypeToLocal (msg);
+      MessageUtils.setLocalMessage(msg, (link == loopbackLink)); //1045B
 
       //  Remember selected links
 
@@ -433,6 +434,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
         MessageUtils.setMessageSize (msg, MessageUtils.getMessageSize (failedMsg)); 
         MessageUtils.setSendTimeout (msg, MessageUtils.getSendTimeout (failedMsg)); 
         MessageUtils.setSendDeadline (msg, MessageUtils.getSendDeadline (failedMsg)); 
+        MessageUtils.setLocalMessage (msg, MessageUtils.isLocalMessage(failedMsg)); //1045B 
       }
     }
 

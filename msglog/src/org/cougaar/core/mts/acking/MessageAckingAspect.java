@@ -337,7 +337,8 @@ public class MessageAckingAspect extends StandardAspect
 
           //  Reclassify message as local if needed
 
-          if (isLocalAgent (MessageUtils.getTargetAgent(msg))) MessageUtils.setMessageTypeToLocal (msg);
+          //1045B if (isLocalAgent (MessageUtils.getTargetAgent(msg))) MessageUtils.setMessageTypeToLocal (msg);
+          MessageUtils.setLocalMessage(msg, (isLocalAgent(MessageUtils.getTargetAgent(msg)))); //1045B
 
           //  Send the message
 

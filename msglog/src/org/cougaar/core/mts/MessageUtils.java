@@ -50,11 +50,12 @@ public final class MessageUtils
   public static final String SEND_PROTOCOL_LINK =    "MessageSendProtocolLink";
   public static final String SRC_MSG_NUM =           "MessageSrcMsgNumber";
   public static final String MSG_SIZE =              "MessageSize";
+  public static final String LOCAL_MSG =             "MessageLocal";   
 
   //  Message attribute values
 
   public static final String MSG_TYPE_REGULAR =      "MessageTypeRegular";
-  public static final String MSG_TYPE_LOCAL =        "MessageTypeLocal";
+  //1045B public static final String MSG_TYPE_LOCAL =        "MessageTypeLocal";
   //102B public static final String MSG_TYPE_HEARTBEAT =    "MessageTypeHeartbeat";
   //102B public static final String MSG_TYPE_PING =         "MessageTypePing";
   public static final String MSG_TYPE_TRAFFIC_MASK = "MessageTypeTrafficMasking";
@@ -67,7 +68,7 @@ public final class MessageUtils
   private static final String validMessageTypes[] =
   {
     MSG_TYPE_REGULAR,
-    MSG_TYPE_LOCAL,
+    //1045B MSG_TYPE_LOCAL,
     Constants.MSG_TYPE_HEARTBEAT,
     Constants.MSG_TYPE_PING,
     MSG_TYPE_TRAFFIC_MASK,
@@ -98,7 +99,7 @@ public final class MessageUtils
   public static String getMessageTypeLetter (AttributedMessage msg)
   {
     if (isRegularMessage(msg))        return "n";  // normal
-    if (isLocalMessage(msg))          return "l";
+    //1045B if (isLocalMessage(msg))          return "l";
     if (isHeartbeatMessage(msg))      return "h";
     if (isPingMessage(msg))           return "p";
     if (isTrafficMaskingMessage(msg)) return "t";
@@ -110,7 +111,7 @@ public final class MessageUtils
   public static String getMessageTypeString (AttributedMessage msg)
   {
     if (isRegularMessage(msg))        return "Regular";
-    if (isLocalMessage(msg))          return "Local";
+    //1045B if (isLocalMessage(msg))          return "Local";
     if (isHeartbeatMessage(msg))      return "Heartbeat";
     if (isPingMessage(msg))           return "Ping";
     if (isTrafficMaskingMessage(msg)) return "TrafficMasking";
@@ -130,6 +131,7 @@ public final class MessageUtils
     setMessageType (msg, MSG_TYPE_REGULAR);
   }
 
+/* //1045B 
   public static boolean isLocalMessage (AttributedMessage msg)
   {
     String type = getMessageType (msg);
@@ -139,6 +141,20 @@ public final class MessageUtils
   public static void setMessageTypeToLocal (AttributedMessage msg)
   {
     setMessageType (msg, MSG_TYPE_LOCAL);
+  }
+*/ //1045B 
+
+  //1045B 
+  public static boolean isLocalMessage (AttributedMessage msg)
+  {
+    Boolean islocal = (Boolean)msg.getAttribute(LOCAL_MSG);
+    return (islocal != null && islocal.equals(Boolean.TRUE));
+  }
+
+  //1045B 
+  public static void setLocalMessage (AttributedMessage msg, boolean isLocal)
+  {
+    msg.setAttribute(LOCAL_MSG, new Boolean(isLocal));
   }
 
   public static boolean isHeartbeatMessage (AttributedMessage msg)

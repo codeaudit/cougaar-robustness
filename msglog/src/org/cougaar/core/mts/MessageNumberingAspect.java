@@ -213,6 +213,7 @@ public class MessageNumberingAspect extends StandardAspect implements MessageNum
 
       int n;
 
+/* //1045B 
       if (isLocalMessage (msg))  // every msg needs a number, even local ones
       {
         //  Local messages are numbered with positive numbers in order to avoid
@@ -225,7 +226,14 @@ public class MessageNumberingAspect extends StandardAspect implements MessageNum
         n = getNextMessageNumber (POSITIVE, msg);  
         MessageUtils.setMessageTypeToLocal (msg);
       }
-      else if (!MessageUtils.hasMessageType(msg) || MessageUtils.isRegularMessage (msg))
+      else 
+*/ //1045B
+
+      // just tag local messages - don't change their type and numbering scheme 
+      // else ordering problems occur when a local ping times out.
+      MessageUtils.setLocalMessage(msg, (isLocalMessage(msg))); //1045B
+  
+      if (!MessageUtils.hasMessageType(msg) || MessageUtils.isRegularMessage (msg))
       {
         n = getNextMessageNumber (POSITIVE, msg);
         MessageUtils.setMessageTypeToRegular (msg);
@@ -343,12 +351,13 @@ public class MessageNumberingAspect extends StandardAspect implements MessageNum
   //102B
   public void renumberMessage (AttributedMessage msg) throws CommFailureException
   {
+    // just tag local messages - don't change their type and numbering scheme 
+    // else ordering problems occur when a local ping times out.
+    MessageUtils.setLocalMessage(msg, (isLocalMessage(msg))); //1045B
+
     //  Set the message number based on the type of message
     int n;
-    if (isLocalMessage (msg)) {  // every msg needs a number, even local ones
-      n = getNextMessageNumber (POSITIVE, msg);  
-      MessageUtils.setMessageTypeToLocal (msg);
-    } else if (!MessageUtils.hasMessageType(msg) || MessageUtils.isRegularMessage (msg)) {
+    if (!MessageUtils.hasMessageType(msg) || MessageUtils.isRegularMessage (msg)) {
       n = getNextMessageNumber (POSITIVE, msg);
       MessageUtils.setMessageTypeToRegular (msg);
     } else if (MessageUtils.isSomePureAckMessage (msg)) {
