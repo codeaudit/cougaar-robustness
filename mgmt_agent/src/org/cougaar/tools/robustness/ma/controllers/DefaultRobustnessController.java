@@ -164,6 +164,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if ((isLocal(name) || isNode(name)) ||
           (thisAgent.equals(preferredLeader()) && getState(getLocation(name)) == DEAD) ||
           isLeader(name)) {
+        event("Status expiration: agent=" + name);
         newState(name, HEALTH_CHECK);
       }
     }
@@ -845,32 +846,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                 " result=" + result);
 
     return result;
-  }
-
-  protected Set getExcludedNodes() {
-    Set excludedNodes = new HashSet();
-    String allNodes[] = model.listEntries(model.NODE);
-    for (int i = 0; i < allNodes.length; i++) {
-      if (model.hasAttribute(model.getAttributes(allNodes[i]), "UseForRestarts", "False")) {
-        excludedNodes.add(allNodes[i]);
-      }
-    }
-    return excludedNodes;
-  }
-
-  protected List getVacantNodes() {
-    List vacantNodes = new ArrayList();
-    String allNodes[] = model.listEntries(model.NODE);
-    for (int i = 0; i < allNodes.length; i++) {
-      if (isVacantNode(allNodes[i])) {
-        vacantNodes.add(allNodes[i]);
-      }
-    }
-    return vacantNodes;
-  }
-
-  protected boolean isVacantNode(String name) {
-    return model.entitiesAtLocation(name, model.AGENT).length == 0;
   }
 
   protected void checkLoadBalance() {
