@@ -1,0 +1,201 @@
+/*
+ * ThreatMembershipFilter.java
+ *
+ * Created on September 16, 2003, 4:18 PM
+ * <copyright>
+ *  Copyright 2003 Object Services and Consulting, Inc.
+ *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
+ *  and the Defense Logistics Agency (DLA).
+ * 
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the Cougaar Open Source License as published by
+ *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
+ * 
+ *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
+ *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
+ *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
+ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE, AND WITHOUT
+ *  ANY WARRANTIES AS TO NON-INFRINGEMENT.  IN NO EVENT SHALL COPYRIGHT
+ *  HOLDER BE LIABLE FOR ANY DIRECT, SPECIAL, INDIRECT OR CONSEQUENTIAL
+ *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE OF DATA OR PROFITS,
+ *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ *  PERFORMANCE OF THE COUGAAR SOFTWARE.
+ * </copyright>
+  */
+
+package org.cougaar.coordinator.techspec;
+
+import java.util.Vector;
+import java.util.Iterator;
+
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+import org.cougaar.core.persist.NotPersistable;
+
+/**
+ * This class describes a filter that is used to determine membership in a threatModel
+ *
+ * @author Paul Pazandak, Ph.D. OBJS, Inc.
+ */
+public class ThreatMembershipFilter implements NotPersistable {
+    
+    private String propertyName;
+    private String value;
+    private Object objectValue;
+    private String operator;    
+    private String valueType;
+    private int opCode;
+    
+    private boolean isString = false;
+    private boolean isLong = false;
+    private boolean isDouble = false;
+    private boolean isInteger = false;
+    
+    private static final int  EQ = 0;
+    private static final int  NEQ = 1;
+    private static final int  GT = 2;
+    private static final int  LT = 3;
+    private static final int  GEQ = 4;
+    private static final int  LEQ = 5;
+    private static final int  NOP = 6;
+    
+    /** Logger for error msgs */
+    private Logger logger;
+    
+    
+    /** Creates a new instance of ThreatMembershipFilter. 
+     * @param valType is I, S, D, L - integer, string, double, long - the type of the value
+     */
+    public ThreatMembershipFilter(String propertyName, String value, String valType, String operator) {
+        
+        logger = Logging.getLogger(this.getClass().getName());
+
+        this.propertyName = propertyName;
+        this.value = value;
+        this.operator = operator;
+        this.opCode = genOpCode(operator);
+        
+        if (valType == null) { valType = "S"; } //assign a default
+        this.valueType = valType.substring(0,0); //in case xml used full name, e.g. 'Integer'
+        if (valueType.equalsIgnoreCase("S")) {
+            isString = true;
+            objectValue = value;
+        } else {
+            objectValue = convertValue(valueType, value);
+        }
+        
+    }
+    
+    public String getPropertyName() { return propertyName; }
+    public String getValue() { return value; }
+    public String getOperator() { return operator; }
+    
+    public String toString() {
+
+        return "PropertyName="+propertyName+ "  value="+value+"   operator="+operator;
+    }
+    
+    /**
+     * Looks for the FIRST property of the asset with the same name as this filter,
+     * where the types of both values match.
+     * If found, the asset's property value is compared to this filter's value 
+     * using the filter's operator.
+     *
+     *@return TRUE if the comparison operator returns TRUE. O.w. false.
+     */
+    public boolean qualifies(AssetTechSpecInterface asset) {
+    
+        Vector aProps = asset.getProperties();
+        //If the asset has no properties, it cannot qualify
+        if (aProps == null || aProps.size() == 0 ) {
+            return false;
+        }
+        
+        AssetProperty p;
+        //Now find the property - both property name & value types must match.
+        Iterator list = aProps.iterator();
+        while (list.hasNext()) {
+             
+            p = (AssetProperty)list.next();
+            if (p.getName().equalsIgnoreCase(this.propertyName)) { //found!
+                if (p.getValue().getClass() == this.objectValue.getClass()) { //types match, so we can compare!
+                    return compare(p.getValue());
+                } else {
+                    logger.warn("Threat Membership: type of asset property ["+p.getValue().getClass()+"] does not match the supplied filter's type ["+this.objectValue.getClass()+"]. Ignoring.");
+                }
+            }
+        }
+        return false;
+    }
+    
+    private boolean compare(Object val) {
+        
+        try {
+            int result = ((Comparable)val).compareTo(this.objectValue); 
+            switch(this.opCode) {
+
+                case EQ:
+                    return result == 0;
+                case NEQ:
+                    return result != 0;
+                case GT:
+                    return result > 0; 
+                case LT:
+                    return result < 0;
+                case GEQ:
+                    return result >= 0;
+                case LEQ:
+                    return result <= 0;
+
+                default:
+                    return false;
+
+            }
+        } catch (Exception e) {
+            logger.error("Exception: Could not compare values.",e);
+        }
+        
+        return false;
+    }
+    
+    
+    /** @return a comparison code representing the string value */
+    private int genOpCode(String op) {
+        
+        if (op.equals("=")) return EQ;
+        if (op.equals("!=")) return NEQ;
+        if (op.equals(">")) return GT;
+        if (op.equals("<")) return LT;
+        if (op.equals(">=")) return GEQ;
+        if (op.equals("<=")) return LEQ;
+        return NOP;
+    }
+    
+    
+    private Object convertValue(String valType, String value) {
+        
+        try {
+            if (valType.equalsIgnoreCase("L")) {
+                isLong = true;
+                return Long.valueOf(value);    
+            }
+            if (valType.equalsIgnoreCase("D")) {
+                isDouble = true;             
+                return Double.valueOf(value);
+            }
+            if (valType.equalsIgnoreCase("I")) {
+                isInteger = true;             
+                return Integer.valueOf(value);
+            }
+        } catch (Exception e) {
+            logger.error("Could not convert membership filter value [" + value + "] to type "+valType + ". Resetting to type String.", e);
+        }
+        
+        isString = true;
+        isLong = false;
+        isDouble = false;
+        isInteger = false;            
+        this.valueType = "S";
+        return value;        
+    }
+}

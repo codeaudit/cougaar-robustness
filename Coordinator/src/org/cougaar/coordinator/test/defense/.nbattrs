@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE attributes PUBLIC "-//NetBeans//DTD DefaultAttributes 1.0//EN" "http://www.netbeans.org/dtds/attributes-1_0.dtd">
+<attributes version="1.0">
+    <fileobject name="TestObservationServlet.java">
+        <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="TestObservationServlet"/>
+        <attr name="class_dependency_org.cougaar.core.servlet.BaseServletComponent" stringvalue="TestObservationServlet"/>
+        <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="TestObservationServlet.MyServlet"/>
+        <attr name="class_dependency_org.cougaar.core.blackboard.BlackboardClient" stringvalue="TestObservationServlet"/>
+    </fileobject>
+    <fileobject name="Httpd.java">
+        <attr name="NetBeansAttrArguments" serialvalue="aced0005757200135b4c6a6176612e6c616e672e537472696e673badd256e7e91d7b4702000078700000000174000439303030"/>
+    </fileobject>
+    <fileobject name="TestPlugin.java">
+        <attr name="class_dependency_org.cougaar.core.adaptivity.ServiceUserPluginBase" stringvalue="TestPlugin"/>
+        <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="TestPlugin.MyCondition"/>
+    </fileobject>
+</attributes>

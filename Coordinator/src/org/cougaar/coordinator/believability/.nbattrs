@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE attributes PUBLIC "-//NetBeans//DTD DefaultAttributes 1.0//EN" "http://www.netbeans.org/dtds/attributes-1_0.dtd">
+<attributes version="1.0">
+    <fileobject name="AssetBeliefState.java">
+        <attr name="class_dependency_java.lang.Object" stringvalue="AssetBeliefState"/>
+    </fileobject>
+    <fileobject name="StateEstimation.java">
+        <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="StateEstimation"/>
+        <attr name="class_dependency_java.util.Hashtable" stringvalue="StateEstimation"/>
+    </fileobject>
+</attributes>

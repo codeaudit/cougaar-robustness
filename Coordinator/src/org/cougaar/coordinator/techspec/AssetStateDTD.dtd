@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!ELEMENT AssetStateDescriptors (AssetStates+) >
+<!ELEMENT AssetStates (StateValues+,Transitions+) >
+<!ATTLIST AssetStates
+    stateName CDATA #REQUIRED
+    assetType CDATA #REQUIRED
+  >
+
+<!ELEMENT StateValue EMPTY>
+<!ATTLIST StateValue
+    default CDATA #IMPLIED
+    utility CDATA #REQUIRED
+    name CDATA #REQUIRED
+  >
+
+<!ELEMENT StateValues (StateValue+)>
+
+<!ELEMENT Transition EMPTY>
+<!ATTLIST Transition
+    startStateName CDATA #REQUIRED
+    endStateName CDATA #REQUIRED
+  >
+
+<!ELEMENT Transitions (Transition+)>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE DefenseXML SYSTEM "DefenseXML_DTD.dtd">
+
+<DefenseXML>
+    <Defense name="SledgeHammer" assetType="AGENT" idempotent="TRUE" reversible="TRUE" 
+             abortable="TRUE" tempCost="11" tempBenefit="5" affectsAssetState="EXECUTION" >
+        <Monitoring>
+            <Level name="NORMAL" latency="2000" cost="10">
+                <DiagnosisAccuracy>
+                    <Function diagnosis="Dead" assetStateDescriptor="EXECUTION" assetStateValue="Dead" probability="0.5" />
+                    <Function diagnosis="Dead" assetStateDescriptor="EXECUTION" assetStateValue="OK" probability="0.4" />
+                    <Function diagnosis="Dead" assetType="AGENT" assetStateDescriptor="COMMUNICATION" assetStateValue="NotCommunicating" probability="0.5" />
+                </DiagnosisAccuracy>
+            </Level>
+        </Monitoring>
+    </Defense>
+</DefenseXML>
+

@@ -1,0 +1,16 @@
+<?xml encoding="UTF-8" ?>
+
+<!-- Created by Administrator on August 27, 2003, 4:44 PM -->
+
+<!ELEMENT society (host)* >
+<!ELEMENT host (node)* >
+<!ELEMENT node (agent)* >
+
+<!ATTLIST society
+          name CDATA #REQUIRED>
+          
+<!ATTLIST host
+          name CDATA #REQUIRED>
+
+<!ATTLIST node
+          name CDATA #REQUIRED>                              

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE SAX-bindings PUBLIC "-//XML Module//DTD SAX Bindings 1.0//EN" "">
+<SAX-bindings version='1'>
+	<bind element='node' method='node' type='CONTAINER' ></bind>
+	<bind element='host' method='host' type='CONTAINER' ></bind>
+	<bind element='society' method='society' type='CONTAINER' ></bind>
+</SAX-bindings>
