@@ -51,15 +51,16 @@
     <table border="0" width="98%">
       <tr>
         <form name="myForm"><td align="left" bgcolor="white">
-         <input type="submit" name="communities" value="List Communities" />
+         <input type="submit" name="showcommunity" value="Show Community Data" />
         </td></form>
         <form name="lbForm"><td align="left" bgcolor="white">
           <xsl:element name="input">
             <xsl:attribute name="type">submit</xsl:attribute>
-            <xsl:attribute name="name"><xsl:value-of select="$community" /></xsl:attribute>
+            <xsl:attribute name="name">loadBalance</xsl:attribute>
             <xsl:attribute name="value">Load Balance</xsl:attribute>
           </xsl:element>
         </td></form>
+        <td />
       </tr>
   </table>
   <h2>Create a request:</h2>

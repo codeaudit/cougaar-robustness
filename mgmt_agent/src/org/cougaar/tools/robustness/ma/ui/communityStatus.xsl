@@ -219,7 +219,7 @@ function getParent(el, pTagName) {
   <form name="myForm">
     <table border="0" width="98%">
       <tr><td align="left" bgcolor="white">
-         <input type="submit" name="communities" value="List Communities" />
+         <input type="submit" name="control" value="Community Control" />
       </td></tr>
   </table></form>
     <center>

@@ -135,7 +135,8 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     private HttpServletResponse response;
     private PrintWriter out;
     private String action = "", format = "", dest="";
-    private List communities = new ArrayList();
+    //private List communities = new ArrayList();
+    private String robustnessCommunity = "";
     private String lastop="", lastma="", laston="", lastdn=""; //lastfs="";
 
     public void execute(HttpServletRequest req, HttpServletResponse res)
@@ -144,7 +145,11 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
       this.request = req;
       this.response = res;
       out = response.getWriter();
-      communities = getAllCommunityNames();
+      robustnessCommunity = getRobustnessCommunity();
+      if(robustnessCommunity == null){
+        out.print("<html><body>Can't find robustness community from blackboard.</body></html>");
+        return;
+      }
       parseParams();
     }
 
@@ -163,26 +168,21 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
       ServletUtil.ParamVisitor vis =
         new ServletUtil.ParamVisitor() {
           public void setParam(String name, String value) {
-            if(name.equalsIgnoreCase("communities")) //show all robustness communities
-                action = name;
             if(name.equalsIgnoreCase("format")) //display page in html or xml?
               format = value;
             if(name.equals("community")) //show attributes of seleced community
             {
               action = "community";
-              dest = value;
             }
             if(name.equals("showcommunity")) //detail of the community
             {
               action = "showCommunity";
-              dest = value;
             }
             if(name.equals("node")) //show this community using a remote node
               nodeId = SimpleMessageAddress.getSimpleMessageAddress(value);
             if(name.equals("control")) //show community control page
             {
               action = "control";
-              dest = value;
             }
             if(name.equals("operation")) { //do a move or remove?
               action = value;
@@ -202,9 +202,8 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
               action = "removeTicket";
               dest = name;
             }
-            if(value.equals("Load Balance")) {
+            if(name.equals("loadBalance")) {
               action = "loadBalance";
-              dest = name;
             }
           }
         };
@@ -215,23 +214,21 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
 
     private void displayParams(String command, String value) throws IOException
     {
-      if(command.equals("") || command.equals("communities"))
-        showAllCommunities();
+      if(command.equals("") || command.equals("showCommunity"))
+        showCommunityData(format, robustnessCommunity);
       else if(command.equals("community"))
-        showCommunityAttributes(format, value);
-      else if(command.equals("showCommunity"))
-        showCommunityData(format, value);
+        showCommunityAttributes(format, robustnessCommunity);
       else if(command.equals("control"))
-        controlCommunity(format, value);
+        controlCommunity(format, robustnessCommunity);
       else if(command.equals("Move") || command.equals("Remove")) {
         if(operation.equals(lastop) && mobileAgent.equals(lastma) && origNode.equals(laston)
           && destNode.equals(lastdn))// && forceRestart.equals(lastfs))
           writeSuccess(format); //this is just for refresh, don't do a publishAdd.
         else {
           try {
-              AgentControl ac = createAgentControl(command);
-              addAgentControl(ac);
-              //publishHealthMonitorMove("1AD-ROBUSTNESS-COMM");
+              //AgentControl ac = createAgentControl(command);
+              //addAgentControl(ac);
+              publishHealthMonitorMove(robustnessCommunity);
           } catch (Exception e) {
             writeFailure(e);
             return;
@@ -255,7 +252,10 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
         writeSuccess(format);
       }
       else if(command.equals("loadBalance")) {
-        loadBalance(value);
+        if(currentCommunityXML.equals(""))
+          currentCommunityXML = displayStatus(robustnessCommunity);
+        log.debug("current community status xml: \n" + currentCommunityXML);
+        loadBalance(robustnessCommunity);
         writeSuccess(format);
       }
     }
@@ -264,7 +264,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
      * List names of all robustness communities in the homepage. Every name is a link to show
      * the detail of this community.
      */
-    private void showAllCommunities()
+    /*private void showAllCommunities()
     {
       StringBuffer xmlsb = new StringBuffer();
       xmlsb.append(xmlTitle);
@@ -278,7 +278,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
       String xml = xmlsb.toString();
       String html = getHTMLFromXML(xml, "communities.xsl");
       out.print(html);
-    }
+    }*/
 
     /**
      * Show all agents, their parent nodes and health status in a table. Path is
@@ -536,8 +536,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
    * Get all robustness communities from whit page service and save them in a list.
    * @return the list of all community names
    */
-  private List getAllCommunityNames() {
-    final List list = new ArrayList();
+  private String getRobustnessCommunity() {
     Collection communityDescriptors = null;
     try{
       bb.openTransaction();
@@ -549,11 +548,11 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
         String type = (String)(community.getAttributes().get("CommunityType").get());
         if(type != null)
           if(community.hasEntity(agentId.getAddress()) && type.equals("Robustness"))
-            list.add(community.getName());
+            return community.getName();
       }
     }catch(Exception e)
     {log.error("Try to get robustness community of " + agentId.getAddress() + ":" + e);}
-    return list;
+    return null;
   }
 
 
@@ -642,7 +641,10 @@ if(hmrResp.getStatus() == hmrResp.FAIL)
       sb.append("  <AgentControl>\n");
       sb.append("    <UID>" + ac.getUID() + "</UID>\n");
       sb.append("    <Ticket>\n");
-      sb.append("    " + ac.getAbstractTicket() + "\n");
+      String str = ac.getAbstractTicket().toString();
+      str.replaceAll("<", "");
+      str.replaceAll(">", "");
+      sb.append("    " + str + "\n");
       sb.append("    </Ticket>\n");
       sb.append("    <Status>");
       int status = ac.getStatusCode();
@@ -723,7 +725,7 @@ if(hmrResp.getStatus() == hmrResp.FAIL)
     System.out.println(html);
   }
 
- /* private void publishHealthMonitorMove(String communityName) {
+  private void publishHealthMonitorMove(String communityName) {
     HealthMonitorRequest hmr =
           new HealthMonitorRequestImpl(agentId,
           communityName,
@@ -761,5 +763,5 @@ if(hmrResp.getStatus() == hmrResp.FAIL)
           bb.closeTransactionDontReset();
         }
       }
-  }*/
+  }
 }
