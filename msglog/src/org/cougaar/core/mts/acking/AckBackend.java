@@ -255,7 +255,7 @@ Mobility issue: arriving agent is now local, msg was for it when it was on other
         else
         {
           if (log.isInfoEnabled()) log.info ("AckBackend: Duplicate msg ignored: " +msgString);
-          throw new MisdeliveredMessageException (msg);
+          return success;
         }
       }
     }
