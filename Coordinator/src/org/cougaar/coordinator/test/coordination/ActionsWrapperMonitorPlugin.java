@@ -135,13 +135,13 @@ implements NotPersistable {
             ActionsWrapper a = (ActionsWrapper)iter.next();
             if (servlet != null) { servlet.addActionsWrapper(a); }
             
-            String target = "null";
-            Iterator it = null;
-            Collection c = a.getTargets();
-            if (c != null) it = a.getTargets().iterator();
-            if (it != null && it.hasNext()) target = ((MessageAddress) it.next()).toString();
+            //String target = "null";
+            //Iterator it = null;
+            //Collection c = a.getTargets();
+            //if (c != null) it = a.getTargets().iterator();
+            //if (it != null && it.hasNext()) target = ((MessageAddress) it.next()).toString();
             
-            logger.debug("[AgentId="+agentId+"]**** Saw new ActionsWrapper["+ActionUtils.getAssetID((Action)a.getContent())+"], with ActionRecord = " + ((Action)a.getContent()).getValue()+" src="+a.getSource()+",tgt="+target);
+            logger.debug("[AgentId="+agentId+"]**** Saw new ActionsWrapper["+ActionUtils.getAssetID((Action)a.getContent())+"], with ActionRecord = " + ((Action)a.getContent()).getValue()+" src="+a.getSource()+",tgt="+a.getTargets());
         }
         
         //********* Check for changes in our modes ************

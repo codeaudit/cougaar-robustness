@@ -125,8 +125,41 @@ public class DiagnosesWrapper
   /**
    * @return a factory to convert the content to a Relay Target.
    **/
-  public Relay.TargetFactory getTargetFactory() {
-    return null;
+  //sjf public Relay.TargetFactory getTargetFactory() {
+  //sjf   return null;
+  //sjf }
+
+  private static final class SimpleRelayFactory
+  implements TargetFactory, java.io.Serializable {
+
+    public static final SimpleRelayFactory INSTANCE = 
+      new SimpleRelayFactory();
+
+    private SimpleRelayFactory() {}
+
+    /**
+    * Convert the given content and related information into a Target
+    * that will be published on the target's blackboard. 
+    **/
+    public Relay.Target create(
+        UID uid, 
+        MessageAddress source, 
+        Object content,
+        Token token) {
+      return new DiagnosesWrapper(
+          (Diagnosis)content, source, null, uid);
+    }
+
+    private Object readResolve() {
+      return INSTANCE;
+    }
+  };
+
+  /**
+  * Get a factory for creating the target. 
+  */
+  public TargetFactory getTargetFactory() {
+    return SimpleRelayFactory.INSTANCE;
   }
 
    /**
