@@ -3,5 +3,5 @@
 <!DOCTYPE Threat >
 
 <Threats>
-    <Threat name="BadGuys" affectsAssetType="Agent" causesEvent="Compromise" defaultEventLikelihoodProb="HIGH" probIntervalInMins="1000" />
+    <Threat name="BadGuys" affectsAssetType="Agent" causesEvent="Compromise" defaultEventLikelihoodProb="HIGH" probIntervalInMins="10" />
 </Threats>

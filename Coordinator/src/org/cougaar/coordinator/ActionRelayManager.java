@@ -240,16 +240,16 @@ public class ActionRelayManager extends MinimalPluginBase implements NotPersista
 	while (iter.hasNext()) {
 	    ActionsWrapper aw = (ActionsWrapper)iter.next();
 	    if (aw != null) {
-		Set newPV = (Set)aw.getResponse();
-		if (newPV != null) { // response is cleared after processing
+		Set newPV = aw.getNewPermittedValues();
+		if (newPV != null) { // newPermittedValues is cleared after processing
 		    Action a = aw.getAction();
 		    Set oldPV = (Set)a.getPermittedValues();
 		    if (!newPV.equals(oldPV)) {
 			try {
 			    a.setPermittedValues(newPV);
-			    aw.clearResponse();
-			    logger.debug("publishChange "+a);
-			    logger.debug(a.dump());
+			    aw.clearNewPermittedValues();
+			    if (logger.isDebugEnabled())logger.debug("publishChange "+a);
+			    if (logger.isDetailEnabled())logger.detail(a.dump());
 			    publishChange(a);
 			} catch (IllegalValueException e) {
 			    logger.error("Illegal permittedValues relayed from Coordinator = "+newPV);

@@ -34,6 +34,7 @@ import org.cougaar.core.persist.NotPersistable;
 import org.cougaar.core.service.UIDService;
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.Vector;
 import java.util.Iterator;
@@ -87,6 +88,8 @@ public abstract class Action
 
     /** UID Service */
     private transient UIDService uidService;
+
+    private transient Set newPermittedValues;
 
     /** 
      *  The address of the node agent. May change if the action is moved. 
@@ -176,8 +179,29 @@ public abstract class Action
         
         this.setValuesOffered(initialValuesOffered);
 
-    }        
-
+    }  
+    
+    // just called by create on the target
+    public Action(Action action) {
+	actionTechSpec = action.actionTechSpec;
+	agentId = action.agentId;
+	assetID = action.assetID;
+	assetName = action.assetName;
+	assetStateDimensionName = action.assetStateDimensionName;
+	assetType = action.assetType;
+        inited = action.inited;
+	lastAction = action.lastAction;
+	logger = Logging.getLogger(getClass());         
+	newPermittedValues = null;
+	nodeId = action.nodeId;
+	permittedValues = new HashSet(action.permittedValues);
+	possibleValues = action.possibleValues;
+	prevAction = action.prevAction;
+	serviceBroker = null;
+	uid = action.uid;
+	valuesOffered = action.valuesOffered;
+    }
+    
     /**
       * This method is intended to be called ONLY once when the first instance is created,
       * or more precisely, it is called as many times as required until the necessary attributes are
@@ -519,7 +543,6 @@ public abstract class Action
         while (i.hasNext()) {
             o = i.next() ;
             if ( possibleValues.contains(o) ) {
-logger.debug("///////////////////////////////////Adding permitted value: "+o);                
                 permittedValues.add(o);
             } else {
                 throw new IllegalValueException("The following value is not a permitted value: " + o.toString() );
@@ -617,8 +640,6 @@ logger.debug("///////////////////////////////////Adding permitted value: "+o);
         if (logger == null) {
             logger = Logging.getLogger(getClass());         
         }
-logger.debug("In getTargets...");        
-logger.debug("Getting target on agent="+agentId+", nodeId="+nodeId);        
 //        return Collections.singleton(agentId);
         return Collections.singleton(nodeId);
     }
@@ -632,29 +653,67 @@ logger.debug("Getting target on agent="+agentId+", nodeId="+nodeId);
         return this;
     }
     
+    private static final class SimpleRelayFactory
+	implements TargetFactory, java.io.Serializable {
+
+	public static final SimpleRelayFactory INSTANCE = 
+	    new SimpleRelayFactory();
+
+	private SimpleRelayFactory() {}
+	
+	/**
+	 * Convert the given content and related information into a Target
+	 * that will be published on the target's blackboard. 
+	 **/
+	public Relay.Target create(UID uid, 
+				   MessageAddress source, 
+				   Object content,
+				   Token token) {
+	    try {
+		Class c = content.getClass();
+		Class [] classes = new Class[1];
+		classes[0] = c;
+		Object[] args = new Object[1];
+		args[0] = (Action)content;
+		Object o = c.getConstructor(classes).newInstance(args);
+		return (Relay.Target)o;
+	    } catch (Exception e) {
+		e.printStackTrace();	
+	    }
+	    return null;
+	}
+	
+	private Object readResolve() {
+	    return INSTANCE;
+	}
+    };
+
     /**
-     * @return a factory to convert the content to a Relay Target.
-     **/
-    public Relay.TargetFactory getTargetFactory() {
-        //logger.debug("**** getTargetFactory called.");
-        return null;
+     * Get a factory for creating the target. 
+     */
+    public TargetFactory getTargetFactory() {
+	return SimpleRelayFactory.INSTANCE;
     }
     
-    
     /**
-     * Set the response that was sent from a target.
+     * Receive the new PermittedValues that was sent from the target.
      **/
     public int updateResponse(MessageAddress target, Object response)  {
-        
-        Action a = (Action) response;
-        this.permittedValues = a.getPermittedValues();
+	if (logger.isDebugEnabled())logger.debug("updateResponse: r="+response+",a="+this);        
+	if (!this.getPossibleValues().equals(newPermittedValues)) {
+	    newPermittedValues = (Set)response;
+	    return Relay.RESPONSE_CHANGE;	  
+	}
+	return Relay.NO_CHANGE;
+    }   
 
-        //??this.setActionStartedTimestamp(a.getActionStartedTimestamp() );
-        //??this.setActionStoppedTimestamp(a.getActionStoppedTimestamp() );
-        
-        return Relay.CONTENT_CHANGE;
+    public Set getNewPermittedValues() {
+	return newPermittedValues;
     }
-    
+
+    public void clearNewPermittedValues() {
+	newPermittedValues = null;
+    }
     
     // Relay.Target implementation -----------------------------------------
     /**
@@ -666,11 +725,10 @@ logger.debug("Getting target on agent="+agentId+", nodeId="+nodeId);
     }
     
     /**
-     * Get the current response for this target. Null indicates that
-     * this target has no response.
+     * Only send the permittedValues back to the source.
      **/
     public Object getResponse() {
-        return this;
+        return getPermittedValues();
     }
     
     /**

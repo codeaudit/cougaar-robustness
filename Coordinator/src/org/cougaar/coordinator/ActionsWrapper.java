@@ -54,7 +54,7 @@ public class ActionsWrapper implements NotPersistable, Serializable, Relay.Sourc
     private transient Set targets = Collections.EMPTY_SET;     
     private transient boolean isLocal = false; 
     private Action action;
-    private transient Object response;
+    private transient Set newPermittedValues;
     private UID uid = null;
     MessageAddress source = null;
     private transient Logger log;
@@ -168,16 +168,20 @@ public class ActionsWrapper implements NotPersistable, Serializable, Relay.Sourc
    **/
   public int updateResponse(MessageAddress t, Object response) {
       if (log.isDebugEnabled())log.debug("updateResponse: r="+response+",a="+action);
-      if (!action.getPossibleValues().equals((Set)response)) {
-	  this.response = response;
+      if (!action.getPermittedValues().equals((Set)response)) {
+	  newPermittedValues = (Set)response;
 	  return Relay.RESPONSE_CHANGE;	  
       }
       return Relay.NO_CHANGE;
   }
 
+  public Set getNewPermittedValues () {
+      return newPermittedValues;
+  }
+
   // call after processing by plugin on the source side
-  public void clearResponse () {
-      response = null;
+  public void clearNewPermittedValues () {
+      newPermittedValues = null;
   }
 
   // Relay.Target implementation -----------------------------------------
@@ -193,7 +197,7 @@ public class ActionsWrapper implements NotPersistable, Serializable, Relay.Sourc
    * Only the permitted values make the return trip. 
    **/
   public Object getResponse() {
-    return action.getPermittedValues();
+      return action.getPermittedValues();
   }
 
   /**

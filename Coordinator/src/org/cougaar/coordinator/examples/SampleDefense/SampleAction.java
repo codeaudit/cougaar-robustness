@@ -39,6 +39,10 @@ public class SampleAction extends Action
 	super(assetName, initialValuesOffered, serviceBroker);
     }
 
+    public SampleAction(SampleAction action) {
+	super(action);
+    }
+
     protected void setValuesOffered(Set values) throws IllegalValueException {
 	super.setValuesOffered(values);
     }

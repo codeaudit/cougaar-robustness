@@ -110,12 +110,12 @@ public class SampleActuator extends ComponentPlugin
 	    (IncrementalSubscription)blackboard.subscribe(actionPred);
         rawActuatorDataSub = 
 	    (IncrementalSubscription)blackboard.subscribe(rawActuatorDataPred);
-/*
+/*  move this section back here when believability no longer requires a 2 minute delay
 	try {
 	    action = new SampleAction(agentId.toString(), sb);
 	    blackboard.publishAdd(action);
 	    if (log.isDebugEnabled()) log.debug(action + " added.");
-	    if (log.isDebugEnabled()) log.debug(action.dump());
+	    if (log.isDetailEnabled()) log.detail(action.dump());
 	    data = new SampleRawActuatorData(agentId.toString(), action.getPossibleValues());
 	    blackboard.publishAdd(data);
 	    if (log.isDebugEnabled()) log.debug(data + " added.");	
@@ -133,10 +133,10 @@ public class SampleActuator extends ComponentPlugin
 		action = new SampleAction(agentId.toString(), sb);
 		blackboard.publishAdd(action);
 		if (log.isDebugEnabled()) log.debug(action + " added.");
-		if (log.isDebugEnabled()) log.debug(action.dump());
+                if (log.isDetailEnabled()) log.detail(action.dump());
 		data = new SampleRawActuatorData(agentId.toString(), action.getPossibleValues());
 		blackboard.publishAdd(data);
-		if (log.isDebugEnabled()) log.debug(data + " added.");	
+		if (log.isDebugEnabled()) log.debug(data+" added.");	
 	    } catch (TechSpecNotFoundException e) {
 		log.error("TechSpec not found for SampleAction", e);
 	    }
@@ -156,7 +156,7 @@ public class SampleActuator extends ComponentPlugin
 			blackboard.publishChange(action);
 			if (log.isDebugEnabled()) 
 			    log.debug(action + " changed.");
-			if (log.isDebugEnabled()) log.debug(action.dump());
+			if (log.isDetailEnabled()) log.detail(action.dump());
 		    } catch (IllegalValueException e) {
 			log.error("Illegal value in valuesOffered = "+valuesOffered,e);	
 		    }
@@ -168,7 +168,7 @@ public class SampleActuator extends ComponentPlugin
 			blackboard.publishChange(action);
 			if (log.isDebugEnabled()) 
 			    log.debug(action + " changed.");
-			if (log.isDebugEnabled()) log.debug(action.dump());
+			if (log.isDetailEnabled()) log.detail(action.dump());
 		    } catch (IllegalValueException e) {
 			log.error("Illegal actionValue = "+actionValue,e);	
 		    }	
@@ -181,7 +181,7 @@ public class SampleActuator extends ComponentPlugin
 			blackboard.publishChange(action);
 			if (log.isDebugEnabled()) 
 			    log.debug(action + " changed.");
-			if (log.isDebugEnabled()) log.debug(action.dump());
+			if (log.isDetailEnabled()) log.detail(action.dump());
 		    } catch (IllegalValueException e) {
 			log.error("Illegal completion code = "+code,e);	
 		    } catch (NoStartedActionException e) {
@@ -195,15 +195,21 @@ public class SampleActuator extends ComponentPlugin
 	while (iter.hasNext()) {
 	    SampleAction action = (SampleAction)iter.next();
 	    if (action != null) {
-                data.setPermittedValues(action.getPermittedValues());
-                data.setCommand(SampleRawActuatorData.SET_PERMITTED_VALUES);
-                blackboard.publishChange(data);
-		if (log.isDebugEnabled()) 
-		    log.debug(data + " changed.");
+		Set newPV = action.getNewPermittedValues();
+		if (newPV != null) {
+		    try {
+			action.setPermittedValues(newPV);
+			action.clearNewPermittedValues();
+			data.setPermittedValues(newPV);
+			data.setCommand(SampleRawActuatorData.SET_PERMITTED_VALUES);
+			blackboard.publishChange(data);
+			if (log.isDebugEnabled()) 
+			    log.debug(data + " changed.");
+		    } catch (IllegalValueException e) {
+			log.error("Illegal permittedValues relayed from Node Agent = "+newPV);
+		    }
+		}
 	    }
 	}
-        
     }
 }
-
-
