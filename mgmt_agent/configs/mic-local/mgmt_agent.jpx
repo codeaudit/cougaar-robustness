@@ -19,7 +19,7 @@
   <property category="sys" name="CompanyLabel" value="Company:"/>
   <property category="sys" name="Copyright" value="Copyright (c) 2003"/>
   <property category="sys" name="CopyrightLabel" value="Copyright:"/>
-  <property category="sys" name="DefaultPath" value="src"/>
+  <property category="sys" name="DefaultPath" value="../../../../../../shares/development/cougaar-a/mgmt_agent/src"/>
   <property category="sys" name="Description" value=""/>
   <property category="sys" name="DescriptionLabel" value="Description:"/>
   <property category="sys" name="DocPath" value="doc"/>
@@ -32,8 +32,8 @@
   <property category="sys" name="Libraries" value="cougaar"/>
   <property category="sys" name="MakeStable" value="0"/>
   <property category="sys" name="OutPath" value="../../classes"/>
-  <property category="sys" name="SourcePath" value="src"/>
-  <property category="sys" name="TestPath" value="src"/>
+  <property category="sys" name="SourcePath" value="../../../../../../shares/development/cougaar-a/mgmt_agent/src"/>
+  <property category="sys" name="TestPath" value="../../../../../../shares/development/cougaar-a/mgmt_agent/src"/>
   <property category="sys" name="Title" value=""/>
   <property category="sys" name="TitleLabel" value="Title:"/>
   <property category="sys" name="Version" value="1.0"/>
@@ -46,8 +46,6 @@
       <file path="ron2-hosts.xml"/>
       <file path="uc1-small-1ad-layout.xml"/>
     </node>
-    <file path="../communities-full.xml"/>
-    <file path="../communities-small.xml"/>
     <file path="../loggingConfig.conf"/>
   </node>
   <node name="csmart" type="Folder">
@@ -61,6 +59,8 @@
         <node name="robustness" type="Folder">
           <node name="uc1" type="Folder">
             <file path="../../csmart/config/lib/robustness/uc1/aruc1_actions_and_states.rb"/>
+            <file path="../../csmart/config/lib/robustness/uc1/deconfliction.rb"/>
+            <file path="../../csmart/config/lib/robustness/uc1/ping.rb"/>
           </node>
         </node>
       </node>
@@ -68,8 +68,10 @@
         <node name="robustness" type="Folder">
           <node name="uc1" type="Folder">
             <file path="../../csmart/config/rules/robustness/uc1/aruc1.rule"/>
+            <file path="../../csmart/config/rules/robustness/uc1/deconfliction.rule"/>
             <file path="../../csmart/config/rules/robustness/uc1/manager.rule"/>
             <file path="../../csmart/config/rules/robustness/uc1/mic.rule"/>
+            <file path="../../csmart/config/rules/robustness/uc1/robustness_community.rule"/>
           </node>
         </node>
       </node>
