@@ -180,6 +180,11 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     showTraffic = (getAspectSupport().findAspect(sta) != null);
   }
 
+  public String toString ()
+  {
+    return this.getClass().getName();
+  }
+
   private DestinationLink linkChoice (DestinationLink link, AttributedMessage msg)
   {
     if (debug) log.debug ("Link choice: " +(link != null? getName(link) : "null")+ 
@@ -211,7 +216,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
         MessageAckingAspect.dingTheMessageResender();  // calc new deadlines
       }
 
-      if (showTraffic) showProgress (link);
+      // if (showTraffic) showProgress (link);
 
       //  Shout out some link selection activity for assessment purposes
 
@@ -227,9 +232,17 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
           if (!lastLinkName.equals (thisLinkName))
           {
+/*
+            CougaarEvent.postComponentEvent 
+            (
+              CougaarEventType.STATUS, MessageUtils.getOriginatorAgent(msg).toString(), this,
+              "Switch from " +lastLinkName+ " to " +thisLinkName+ " for messages from " +
+              MessageUtils.getFromAgentNode(msg)+ " to " +targetNode
+            );
+*/
             CougaarEvent.postEvent 
             (
-              CougaarEventType.STATUS,
+              CougaarEventType.STATUS, 
               "Switch from " +lastLinkName+ " to " +thisLinkName+ " for messages from " +
               MessageUtils.getFromAgentNode(msg)+ " to " +targetNode
             );
@@ -386,6 +399,52 @@ if (rn != null) rns = "" + rn;
       return blackHoleLink;  // drop message
     }
 
+//  Check for incorrect from node to detect resend msgs from newly arrived agent
+//  get new to node while at it probably  What about the acks in these msgs?
+
+    //  Get the target node for the message.  If this message is a retry/resend, we try to
+    //  get the latest uncached data because the target node may have changed and thus be
+    //  the cause of our (real or apparent) send failure.
+
+    Ack ack = MessageUtils.getAck (msg);
+    String targetNode = null;
+
+    try
+    {
+      if (ack != null && (ack.getSendTry() > 0 || ack.getSendCount() > 0))
+      {
+        //  Retry/resend: bypass topological caching to get latest target agent info
+
+        AgentID toAgent = AgentID.getAgentID (this, getServiceBroker(), targetAgent, true);
+        MessageUtils.setToAgent (msg, toAgent);
+        targetNode = toAgent.getNodeName();      
+      }
+      else
+      {
+        //  New message: cached info is good enough for now
+
+        targetNode = MessageUtils.getToAgentNode (msg);
+
+        if (targetNode == null)
+        {
+          //  Get cached target agent info
+
+          AgentID toAgent = AgentID.getAgentID (this, getServiceBroker(), targetAgent, false);
+          MessageUtils.setToAgent (msg, toAgent);
+          targetNode = toAgent.getNodeName();
+        }
+      }
+    }
+    catch (Exception e)
+    {
+      if (debug) log.debug ("Unable to get node for agent: " +targetAgent);
+    }
+
+    //  Cannot continue past this point without knowing the name 
+    //  of the target node for the message.
+
+    if (targetNode == null) return linkChoice (null, msg);
+
     //  Normal operation.
     //
     //  First filter the given links into a vector of outgoing links that
@@ -432,58 +491,12 @@ if (rn != null) rns = "" + rn;
       if (link != null) v.add (link);
     }
 
-    Ack ack = MessageUtils.getAck (msg);
     if (ack != null) ack.setNumberOfLinkChoices (v.size());
 
     //  No able outgoing links
 
     if (v.size() == 0) return linkChoice (null, msg);
     
-//  Check for incorrect from node to detect resend msgs from newly arrived agent
-//  get new to node while at it probably  What about the acks in these msgs?
-
-    //  Get the target node for the message.  If this message is a retry/resend, we try to
-    //  get the latest uncached data because the target node may have changed and thus be
-    //  the cause of our (real or apparent) send failure.
-
-    String targetNode = null;
-
-    try
-    {
-      if (ack != null && (ack.getSendTry() > 0 || ack.getSendCount() > 0))
-      {
-        //  Retry/resend: bypass topological caching to get latest target agent info
-
-        AgentID toAgent = AgentID.getAgentID (this, getServiceBroker(), targetAgent, true);
-        MessageUtils.setToAgent (msg, toAgent);
-        targetNode = toAgent.getNodeName();      
-      }
-      else
-      {
-        //  New message: cached info is good enough for now
-
-        targetNode = MessageUtils.getToAgentNode (msg);
-
-        if (targetNode == null)
-        {
-          //  Get cached target agent info
-
-          AgentID toAgent = AgentID.getAgentID (this, getServiceBroker(), targetAgent, false);
-          MessageUtils.setToAgent (msg, toAgent);
-          targetNode = toAgent.getNodeName();
-        }
-      }
-    }
-    catch (Exception e)
-    {
-      if (debug) log.debug ("Unable to get node for agent: " +targetAgent);
-    }
-
-    //  Cannot continue past this point without knowing the name 
-    //  of the target node for the message.
-
-    if (targetNode == null) return linkChoice (null, msg);
-
     //  Rank the links based on the chosen (via property) metric
 
     DestinationLink destLinks[] = (DestinationLink[]) v.toArray (new DestinationLink[v.size()]); 
