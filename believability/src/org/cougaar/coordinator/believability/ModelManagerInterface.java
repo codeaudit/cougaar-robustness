@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManagerInterface.java,v $
- * $Revision: 1.21 $
- * $Date: 2004-08-04 23:45:19 $
+ * $Revision: 1.25 $
+ * $Date: 2004-08-05 20:58:53 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -39,7 +39,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * tech spec information. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.21 $Date: 2004-08-04 23:45:19 $
+ * @version $Revision: 1.25 $Date: 2004-08-05 20:58:53 $
  *
  */
 public interface ModelManagerInterface
@@ -94,8 +94,11 @@ public interface ModelManagerInterface
 
     public void setRehydrationHappening( boolean value );
     public boolean isRehydrationHappening( );
-    public boolean hasBeenRehydrated( );
 
+    public boolean isLeashed( );
+    public void setUnleashingHappening( boolean value );
+    public boolean isUnleashingHappening( );
+ 
     //----------------------------------------
     // POMDP Model methods
     //----------------------------------------
@@ -119,6 +122,19 @@ public interface ModelManagerInterface
      *
      */
     public BeliefState getInitialBeliefState( AssetID asset_id )
+            throws BelievabilityException;
+
+    //************************************************************
+    /**
+     * Gets a belief state with each state dimension set to the
+     * unformation distribution. Used to express complete uncertainty
+     * about the state of an asset.
+     *
+     * @param asset_id The ID of the asset
+     * @return A new belief states set to uniform distributions.
+     *
+     */
+    public BeliefState getUniformBeliefState( AssetID asset_id )
             throws BelievabilityException;
 
     /**

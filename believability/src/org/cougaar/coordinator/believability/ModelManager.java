@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManager.java,v $
- * $Revision: 1.21 $
- * $Date: 2004-08-04 23:45:19 $
+ * $Revision: 1.25 $
+ * $Date: 2004-08-05 20:58:53 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -47,7 +47,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * and provides information via the ModelManagerInterface. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.21 $Date: 2004-08-04 23:45:19 $
+ * @version $Revision: 1.25 $Date: 2004-08-05 20:58:53 $
  *
  */
 public class ModelManager extends Loggable
@@ -683,12 +683,6 @@ public class ModelManager extends Loggable
     {
         _rehydration_happening = value;
 
-        // Also set the global flag to indicate that we have been
-        // rehydrated.
-        //
-        if ( value )
-            _has_been_rehydrated = true;
-
     } // method setRehydrationHappening
 
     //************************************************************
@@ -705,19 +699,48 @@ public class ModelManager extends Loggable
 
     } // method isRehydrationHappening
 
-     //************************************************************
+    //************************************************************
     /**
-     * Checks whether or not we are operating in a rehydrated state.
+     * Checks whether or not we are operating in a leashed state.
      *
-     * @return True if the plugin is rehydrated
+     * @return True if the believability plugin is leashed.
      */
-    public boolean hasBeenRehydrated( )
+    public boolean isLeashed( )
     {
-        return _has_been_rehydrated;
+        return _believability_knob.isLeashed();
 
-    } // method hasBeenRehydrated
+    } // method isLeashed
 
-    //------------------------------------------------------------
+    //************************************************************
+    /**
+     * Sets the current flag for whether or not the unleashing
+     * processis in progress.  This should be set true only when the
+     * plugin is in the process of restoring the local data from the
+     * blackboard. 
+     *
+     * @param value The value to set
+     */
+    public void setUnleashingHappening( boolean value )
+    {
+        _unleashing_happening = value;
+
+    } // method setUnleashingHappening
+
+    //************************************************************
+    /**
+     * Checks whether or not the unleasing processis in progress.
+     * This should be true only when the plugin is in the process of
+     * restoring the local data from the blackboard.
+     *
+     * @return True if the plugin is rehydrating
+     */
+    public boolean isUnleashingHappening( )
+    {
+        return _unleashing_happening;
+
+    } // method isUnleashingHappening
+
+     //------------------------------------------------------------
     // protected interface
     //------------------------------------------------------------
 
@@ -816,9 +839,10 @@ public class ModelManager extends Loggable
     //
     private boolean _rehydration_happening = false;
 
-    // Whether or not we are running in a rehydrated state or not.
+    // Whether or not rehydration is happening (in progress recreation
+    // of state).
     //
-    private boolean _has_been_rehydrated = false;
+    private boolean _unleashing_happening = false;
 
     // This is the place to put externally controllable policy-derived
     // parameters/settings. 
@@ -851,31 +875,6 @@ public class ModelManager extends Loggable
 
         POMDPAssetModel pomdp_model = getPOMDPModel( asset_type );
 
-        // If we are rehydrating the plugin, then using the tech spec
-        // initial belief will not make sense since we have no idea
-        // what the state of the asset was prior to rehydrating.
-        // Thus, the safest thing to use is the uniform distribution
-        // fo rthe initial state whch effectively assumes we have no a
-        // priori information about the current state of the asset.
-        //
-        // FIXME: We use the uniform belief state for *all* assets
-        // after rehydration, even for new assets where the techspec
-        // initial belief might actually make sense.  This is for two
-        // reasons:
-        //
-        //   1) It turns out to be difficult to determine whether an
-        //   asset existed before the rehydration or not.
-        //
-        //   2) Due to the small publishing delay, this call to get
-        //   the initial belief actuallyy happens *after* the
-        //   rehydration process completes.  Thus, just checking
-        //   isRehydrationHappening() here will not quite do the right
-        //   thing because  it'll be finished rehydrating when the
-        //   publish delay timer goes off.
-        //
-        if ( hasBeenRehydrated())
-            return pomdp_model.getUniformBeliefState();
-        
         // If no rehydrating, then we get the techspec based initial
         // belief.
         //
@@ -911,6 +910,39 @@ public class ModelManager extends Loggable
          return belief;
          
      } // method getInitialBeliefState
+
+    //************************************************************
+    /**
+     * Gets a belief state with each state dimension set to the
+     * unformation distribution. Used to express complete uncertainty
+     * about the state of an asset.
+     *
+     * @param asset_id The ID of the asset
+     * @return A new belief states set to uniform distributions.
+     *
+     */
+    public BeliefState getUniformBeliefState( AssetID asset_id )
+           throws BelievabilityException
+     {
+         
+         if (( asset_id == null )
+             || ( asset_id.getType() == null ))
+             throw new BelievabilityException
+                     ( "ModelManager.getUniformBeliefState()",
+                       "NULL asset or asset type passed in." );
+         
+         // The uniform belief is only based on the asset type, so is
+         // the same for all assets of a given type.
+         //
+         POMDPAssetModel pomdp_model = getPOMDPModel( asset_id.getType() );
+         
+         BeliefState belief = pomdp_model.getUniformBeliefState();
+         
+         belief.setAssetID( asset_id );
+         
+         return belief;
+         
+     } // method getUniformBeliefState
 
     //************************************************************
     /**

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefTriggerHistory.java,v $
- * $Revision: 1.9 $
- * $Date: 2004-08-04 23:45:19 $
+ * $Revision: 1.11 $
+ * $Date: 2004-08-05 17:14:19 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -99,7 +99,7 @@ import org.cougaar.core.agent.service.alarm.Alarm;
  * an instance of this class: one for each of these.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.9 $Date: 2004-08-04 23:45:19 $
+ * @version $Revision: 1.11 $Date: 2004-08-05 17:14:19 $
  * @see BeliefTriggerManager
  */
 class BeliefTriggerHistory 
@@ -152,6 +152,24 @@ class BeliefTriggerHistory
         // Method implementation comments go here ...
 
         logDetail( "Handling trigger: " + trigger.toString() );
+
+        // There are two events that can happen which impact the
+        // details about how to deal with triggers: rehydration and
+        // unleashing.  In both cases, these effect what we use for
+        // the initial belief state (the first belief update after
+        // these events.)  The model manager has the status of whether
+        // or not rehydration or unleashing is happening, so we use
+        // this opportunity to check those and arrange our internal
+        // variables so that the right thing will happen when we do a
+        // belief update. Note that because we always delay publishing
+        // a little bit, the belief updating will happen after these
+        // events are complete, even though what we do needs to
+        // account for this.  COnversely, this handleBeliefTrigger()
+        // *is* called while these events are occurring, so now is the
+        // time to handle them in a way that will impact the
+        // subsequent belief state.
+        //
+        handleSpecialEvents();
 
         // First step is to add the trigger (no matter what type of
         // trigger this is, we add it).
@@ -368,8 +386,19 @@ class BeliefTriggerHistory
         //
         if ( _last_computed_belief == null )
         {
-            _last_computed_belief
-                    = _model_manager.getInitialBeliefState( _asset_id );
+            // Some special events might explcitly define what we need
+            // to use for the initial belief state when we have no
+            // record of a last computed belief.  If this happens, we
+            // use that explicitly set value, otherwise, we get the
+            // default techspec-defined a priori belief from the model
+            // manager.
+            //
+            if ( _default_belief != null )
+                _last_computed_belief = _default_belief;
+            else
+                _last_computed_belief
+                        = _model_manager.getInitialBeliefState( _asset_id );
+
             _last_computed_belief.setTimestamp
                     ( getEarliestCurrentTriggerTime() );
         }
@@ -413,6 +442,60 @@ class BeliefTriggerHistory
         //
 
     } // method updateBeliefState
+
+    //************************************************************
+    /**
+     * Part of handleBeliefTrigger() that deals with special events
+     * that can happen that will impact the belief update (e.g.,
+     * rehydration, unleashing)
+     *
+     */
+    void handleSpecialEvents( )
+            throws BelievabilityException
+    {
+
+        // If we are handling a trigger while rehydration is in
+        // progress, then this measn that this is an asset that
+        // existed before rehydration, and thus we want to make sure
+        // we use the uniform distribution for the initial belief
+        // state.
+        //
+        if ( _model_manager.isRehydrationHappening() )
+        {
+
+            // If we are rehydrating the plugin, then using the tech spec
+            // initial belief will not make sense since we have no idea
+            // what the state of the asset was prior to rehydrating.
+            // Thus, the safest thing to use is the uniform distribution
+            // for the initial state whch effectively assumes we have no a
+            // priori information about the current state of the asset.
+            //
+            _default_belief 
+                    = _model_manager.getUniformBeliefState( _asset_id );
+        }
+
+        // If we are processing a trigger during the course of
+        // unleashing, then we essentially want to treat this like a
+        // reset.  Thus, we will use the techspec-defined initial
+        // belief state.  Note that it is possible to be unleashed
+        // after rehydration, so we might well be overriding the
+        // uniform distribution set earlier from a rehydration.  This
+        // is the desired behavior.
+        //
+        else if ( _model_manager.isUnleashingHappening() )
+        {
+            _default_belief 
+                    = _model_manager.getInitialBeliefState( _asset_id );
+
+            // When unleashing, we always want to act as if the first
+            // post-leash diagnosis is the first things we know about
+            // an asset, thus we "forget" about any previously
+            // computed belief state we might have.
+            //
+            _last_computed_belief = null;
+        }
+
+    } // method handleSpecialEvents
 
     //************************************************************
     /**
@@ -1135,7 +1218,16 @@ class BeliefTriggerHistory
     // processing them when updating the belief state.
     //
     private ArrayList _current_triggers = new ArrayList( );
-    
+
+    // This is used as the intial belief state on the first belief
+    // update when the _last_computed_belief is null.  This will
+    // either be the techspec derived initial a priori belief state,
+    // or a belief state that has a uniform distribution for each
+    // state dimension.  The former is the normal case, while the
+    // latter is used after a rehydration.
+    //
+    private BeliefState _default_belief = null;
+
     // Always need to track the last computed belief state, since this
     // is the starting point for the next computed belief state.  An
     // important part of this object is the timestamp of when the

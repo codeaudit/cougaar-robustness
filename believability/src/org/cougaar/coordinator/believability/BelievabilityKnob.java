@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BelievabilityKnob.java,v $
- * $Revision: 1.5 $
- * $Date: 2004-08-04 23:45:19 $
+ * $Revision: 1.10 $
+ * $Date: 2004-08-06 04:18:46 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -23,14 +23,14 @@ package org.cougaar.coordinator.believability;
 
 import java.io.Serializable;
 
-import org.cougaar.core.persist.NotPersistable;
+import org.cougaar.util.UnaryPredicate;
 
 /**
  * This is the home of all parameter values and settings that we may
  * want to have external, dynamic control over.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.5 $Date: 2004-08-04 23:45:19 $
+ * @version $Revision: 1.10 $Date: 2004-08-06 04:18:46 $
  *
  */
 public class BelievabilityKnob implements Serializable 
@@ -49,6 +49,22 @@ public class BelievabilityKnob implements Serializable
     public static final long DEFAULT_MAX_PUBLISH_INTERVAL = 900000;
     public static final long DEFAULT_PUBLISH_DELAY_INTERVAL = 500;
     public static final boolean DEFAULT_IS_LEASHED   = true;
+
+    /**
+     * Convenience predicate for subscriptions for subscribing to this
+     * object on the balckboard.
+     */
+    public static UnaryPredicate pred = new UnaryPredicate() 
+        {
+            public boolean execute(Object o) 
+            {
+                 if ( o instanceof BelievabilityKnob )
+                 {
+                     return true ;
+                 }
+                 return false ;
+            }
+        };
     
     /**
      * Default constructor, where everything just takes default
@@ -113,7 +129,7 @@ public class BelievabilityKnob implements Serializable
     /**
      * For the instances where believability does a utility value
      * determination before publishing, this sets the threshold value to
-     * use to detremine whether to publish or not. 
+     * use to determine whether to publish or not. 
      */
     private double _belief_release_utility_threshold
             = DEFAULT_BELIEF_RELEASE_UTILITY_THRESHOLD;

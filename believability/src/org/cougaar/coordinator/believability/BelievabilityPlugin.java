@@ -33,7 +33,6 @@ import java.util.Vector;
 import org.cougaar.coordinator.Action;
 import org.cougaar.coordinator.DiagnosesWrapper;
 import org.cougaar.coordinator.Diagnosis;
-import org.cougaar.coordinator.leashDefenses.LeashRequestDiagnosis;
 
 import org.cougaar.coordinator.monitoring.SuccessfulAction;
 
@@ -79,8 +78,6 @@ public class BelievabilityPlugin
         implements NotPersistable 
 
 {
-    public static final boolean USE_LEASH_DIAGNOSIS = false;
-
     // We keep a state variable about rehydration status to know what
     // we need to do.  These are the possible state values.
     //
@@ -88,6 +85,14 @@ public class BelievabilityPlugin
     public static final int REHYDRATION_NEEDED        = 1;
     public static final int REHYDRATION_IN_PROGRESS   = 2;
     public static final int REHYDRATION_COMPLETED     = 3;
+
+    // We keep a state variable about leashing status to know what
+    // we need to do.  These are the possible state values.
+    //
+    public static final int LEASHING_STATE_LEASHED                 = 0;
+    public static final int LEASHING_STATE_UNLEASHING_NEEDED       = 1;
+    public static final int LEASHING_STATE_UNLEASHING_IN_PROGRESS  = 2;
+    public static final int LEASHING_STATE_UNLEASHED               = 3;
 
     // We keep a state variable about whether all the techspecs are
     // loaded or not, since the believability plugin could enter the
@@ -137,10 +142,20 @@ public class BelievabilityPlugin
             _rehydration_state = REHYDRATION_NEEDED;
         }
 
+        // If we are not rehydrating, then we need to create and
+        // publish some believability-specific objects.  When
+        // rehydrating, we will pull the previously posted blackboard
+        // objects from the initial load() and thus reconsistute them
+        // through the blackboard (which is why loadForNonRehydrate()
+        // is not called if we are rehydrating.
+        //
+        else
+        {
+            loadForNonRehydrate();
+        }
 
     } // method load
     
-
     // Helper methods to publish objects to the Blackboard
     /**
      * Publish a new object to the Blackboard
@@ -229,14 +244,28 @@ public class BelievabilityPlugin
       **/
     protected void setupSubscriptions() {
 
-     // Check for diagnosis leashing
-     if ( ! USE_LEASH_DIAGNOSIS) {
-      if ( logger.isDebugEnabled() )
-          logger.debug( "INITIAL LEASHING OF DIAGNOSES IS DISABLED" );
-      _dc_enabled = true;
-      _dc_enabled_new = true;
-     }
-
+     // Need to subscribe to the believability knob so we will be
+     // notified when the values are changed...in particular the
+     // leashing is one of the more important changes needed to be
+     // tracked.
+     //
+     _believabilityKnobSub 
+             = ( IncrementalSubscription ) 
+             getBlackboardService().subscribe( BelievabilityKnob.pred );
+        
+     _techspecLoadedSub 
+      = ( IncrementalSubscription ) 
+      getBlackboardService().subscribe
+      ( new UnaryPredicate() 
+          {
+           public boolean execute(Object o) {
+               if ( o instanceof TechSpecsLoadedCondition ) {
+                return true ;
+               }
+               return false ;
+           }
+          }) ;
+     
      // Now subscribe to the threat models and the diagnoses wrappers.
      _threatModelSub 
       = ( IncrementalSubscription ) 
@@ -270,21 +299,7 @@ public class BelievabilityPlugin
            }
           }) ;
      
-     _techspecLoadedSub 
-      = ( IncrementalSubscription ) 
-      getBlackboardService().subscribe
-      ( new UnaryPredicate() 
-          {
-           public boolean execute(Object o) {
-               if ( o instanceof TechSpecsLoadedCondition ) {
-                return true ;
-               }
-               return false ;
-           }
-          }) ;
-     
     } // method setupSubscriptions
-
 
     /** 
      *  Execute method.
@@ -300,11 +315,17 @@ public class BelievabilityPlugin
      *  This method checks everything that may have happened, cleaning
      *  out every new notification
      **/
-    protected void execute() {
+    protected void execute() 
+    {
 
         if (logger.isDetailEnabled()) 
             logger.detail("Believability Plugin in Execute Loop");
 
+        // We choose to do these two things first as they are somewhat
+        // independent of whether there are update triggers to process
+        // or if some special event (like rehydrating or
+        // leashing/unleashing is happening.
+        //
         publishFromQueue();
         handleThreatModel();
 
@@ -323,9 +344,9 @@ public class BelievabilityPlugin
             handleTechSpecLoadedCondition();
 
             // Bail out if the techspecs are still not fully loaded.
-            // Note that we do not want to handle rehydration and/or
-            // any belief update trigger ADD or CHANGE unless we have
-            // all the techspecs.
+            // Note that we do not want to handle rehydration,
+            // unleashing and/or any belief update trigger ADD or
+            // CHANGE unless we have all the techspecs.
             //
             if ( _techspec_load_state != TECHSPECS_LOADED )
                 return;
@@ -335,7 +356,7 @@ public class BelievabilityPlugin
         // This will only be true at most one time for the case where
         // this variable is set in the load() method and this is the
         // first cal to execute().  In this case, we need to recreate
-        // our internal asset data from the blackboard objects.
+        // our internal asset data from the blackboard objects. 
         //
         if ( _rehydration_state == REHYDRATION_NEEDED )
         {
@@ -350,6 +371,22 @@ public class BelievabilityPlugin
             return;
         }
 
+        // This will check for and deal with any changes to the knobs
+        // we are subscribed to.
+        //
+        if ( handleKnobs() )
+        {
+            // It is possible that there are ADD/CHANGED objects
+            // also. Since unleashing handles *ALL* subscription
+            // objects, we have to make sure we do *NOT* call
+            // handleUpdateTriggers() as this would result in
+            // processing these twice.
+            //
+            return;
+        }
+
+        // This is a no-op if we are not unleashed.
+        //
         handleUpdateTriggers();
 
     } // method execute
@@ -417,48 +454,54 @@ public class BelievabilityPlugin
      **/
     private void handleUpdateTriggers()
     {
+        // First and foremost, we ignore all update triggers unless we
+        // are unleashed.
+        //
+        if ( _leashing_state != LEASHING_STATE_UNLEASHED )
+            return;
+
         Iterator iter;
 
-     // Diagnoses are published to the blackboard. Each sensor has
-     // a Diagnosis object on the blackboard that it either asserts
-     // periodically or asserts when some value changes (or both).
-     // The Believability plugin receives a wrapped version of this
-     // object on the blackboard, when something changes.
-     //
-     // Successful actions are published to the blackboard by the 
-     // actuators, at the time of success
+        // Diagnoses are published to the blackboard. Each sensor has
+        // a Diagnosis object on the blackboard that it either asserts
+        // periodically or asserts when some value changes (or both).
+        // The Believability plugin receives a wrapped version of this
+        // object on the blackboard, when something changes.
+        //
+        // Successful actions are published to the blackboard by the 
+        // actuators, at the time of success
      
-     // ------- ADD UpdateTrigger
-     for ( iter = _beliefUpdateTriggerSub.getAddedCollection().iterator();  
+        // ------- ADD UpdateTrigger
+        for ( iter = _beliefUpdateTriggerSub.getAddedCollection().iterator();  
               iter.hasNext() ; ) 
-     {
-         if (logger.isDetailEnabled() ) 
-             logger.detail ("UpdateTrigger ADD");
+        {
+            if (logger.isDetailEnabled() ) 
+                logger.detail ("UpdateTrigger ADD");
 
-         handleUpdateTriggerObject( iter.next() );
+            handleUpdateTriggerObject( iter.next() );
 
-     } // iterator for ADD update trigger
+        } // iterator for ADD update trigger
 
-     // ------- CHANGE UpdateTrigger
-     for ( iter = _beliefUpdateTriggerSub.getChangedCollection().iterator();
-           iter.hasNext() ; ) {
+        // ------- CHANGE UpdateTrigger
+        for ( iter = _beliefUpdateTriggerSub.getChangedCollection().iterator();
+              iter.hasNext() ; ) {
 
-         if (logger.isDetailEnabled() ) 
-             logger.detail ("UpdateTrigger CHANGE");
+            if (logger.isDetailEnabled() ) 
+                logger.detail ("UpdateTrigger CHANGE");
 
-         handleUpdateTriggerObject( iter.next() );
+            handleUpdateTriggerObject( iter.next() );
 
-     } // iterator for CHANGE UpdateTrigger
+        } // iterator for CHANGE UpdateTrigger
         
-     // ----- REMOVE UpdateTrigger
-     // The trigger has been removed successfully,
-     // we do nothing with this since it is controlled elsewhere, and
-     // we have already processed it.
-     for ( iter = _beliefUpdateTriggerSub.getRemovedCollection().iterator(); 
-           iter.hasNext() ; ) {
-         Object o = iter.next();
-         // do absolutely nothing
-     } // for REMOVE UpdateTrigger
+        // ----- REMOVE UpdateTrigger
+        // The trigger has been removed successfully,
+        // we do nothing with this since it is controlled elsewhere, and
+        // we have already processed it.
+        for ( iter = _beliefUpdateTriggerSub.getRemovedCollection().iterator(); 
+              iter.hasNext() ; ) {
+            Object o = iter.next();
+            // do absolutely nothing
+        } // for REMOVE UpdateTrigger
      
     } // method handleUpdateTriggers
 
@@ -482,24 +525,10 @@ public class BelievabilityPlugin
 
          try 
          {
-             // This is for leashing of diagnoses, to be sure that the
-             // LeashRequestDiagnosis is propagated both when it enables
-             // and when it disables the defense controller
-             _dc_enabled_new = _dc_enabled;
-
              but = constructUpdateTrigger( trigger_obj );
           
-             // Check to see whether the defense controller is enabled at
-             // the moment
-             if (_dc_enabled) 
-                 _trigger_consumer.consumeUpdateTrigger( but );
-             else
-             {
-                 if (logger.isDetailEnabled() ) 
-                     logger.detail ("Leashing Enabled: tigger ignored.");
-             }
-             
-             _dc_enabled = _dc_enabled_new;
+             _trigger_consumer.consumeUpdateTrigger( but );
+
          }
          catch ( BelievabilityException be ) 
          {
@@ -628,6 +657,7 @@ public class BelievabilityPlugin
     private IncrementalSubscription _threatModelSub;
     private IncrementalSubscription _beliefUpdateTriggerSub;
     private IncrementalSubscription _techspecLoadedSub;
+    private IncrementalSubscription _believabilityKnobSub;
 
     private EventService eventService = null;
     private static final Class[] requiredServices = {
@@ -673,54 +703,198 @@ public class BelievabilityPlugin
 
     /**
      * Make a BeliefUpdateTrigger from the input object on the blackboard,
-     * copying out relevant information. If this is a diagnosis leashing
-     * related diagnosis, then this also has the side effect of adjusting
-     * the propagation of diagnoses.
+     * copying out relevant information. 
      **/
     private BeliefUpdateTrigger constructUpdateTrigger( Object o ) 
-     throws BelievabilityException {
+            throws BelievabilityException 
+    {
 
         if (logger.isDetailEnabled() ) 
             logger.detail ("Constructing update trigger for: "
                            + o.getClass().getName() );
-
-     if (o instanceof DiagnosesWrapper) {
-         Diagnosis diag = ((DiagnosesWrapper) o).getDiagnosis();
-
-      // First check for leashing of diagnoses
-      if ( o instanceof LeashRequestDiagnosis ) {
-          
-          if (logger.isDetailEnabled() ) 
-              logger.detail ("Handling leashing diagnosis.");
-
-          boolean is_stable =
-           (! ( (LeashRequestDiagnosis)diag).areDefensesLeashed() );
-          if ( is_stable ) _dc_enabled_new = true;
-          else _dc_enabled_new = false;
-      }
-
-      // Now pass on diagnosis
-         return new BelievabilityDiagnosis( diag );
-     }
-
-     else if (o instanceof SuccessfulAction) {
-         Action act = ((SuccessfulAction) o).getAction();
+        
+        if (o instanceof DiagnosesWrapper) 
+        {
+            Diagnosis diag = ((DiagnosesWrapper) o).getDiagnosis();
+            
+            // Now pass on diagnosis
+            return new BelievabilityDiagnosis( diag );
+        }
+        
+        else if (o instanceof SuccessfulAction) 
+        {
+            Action act = ((SuccessfulAction) o).getAction();
             String techspec_key = act.getClass().getName();
-         ActionTechSpecInterface atsi =
-          actionTSService.getActionTechSpec( techspec_key );
+            ActionTechSpecInterface atsi =
+                    actionTSService.getActionTechSpec( techspec_key );
             BelievabilityAction ba = new BelievabilityAction( act, atsi );
-         // BelievabilityAction ba = new BelievabilityAction( act );
-         publishRemove ( o );
-         return ba;
-     }
 
-     else throw new BelievabilityException(
-                 "BelievabilityPlugin.constructUpdateTrigger",
-                 "Cannot create update trigger"
-                 );
+            publishRemove ( o );
+            return ba;
+        }
+
+        else throw new BelievabilityException(
+                "BelievabilityPlugin.constructUpdateTrigger",
+                "Cannot create update trigger"
+                );
     }
 
     //************************************************************
+    /**
+     * This is where we create and publish all the initial objects
+     * needed.
+     */
+    private void loadForNonRehydrate() 
+    {
+
+        // This is the default state when *not* rehydrating.
+        //
+        _leashing_state = LEASHING_STATE_LEASHED;
+
+        // Create the BelievabilityKnob with default values and
+        // publish it.
+        //
+        _believability_knob = new BelievabilityKnob( );
+        
+        getBlackboardService().openTransaction();
+        publishAdd( _believability_knob );
+        getBlackboardService().closeTransaction();
+
+        if (logger.isDetailEnabled()) 
+            logger.detail( "Created and published BelievabilityKnob" );
+        
+    } // method loadForNonRehydrate
+
+    //************************************************************
+    /**
+     * Checks the knob subscriptions for changes.  Deals with each
+     * change found.
+     *
+     * @return Returns true if we call the handleUnleashing()
+     *routine.  This lets callers know when all subscription obejcts
+     *have already been dealt with.
+     */
+    private boolean handleKnobs( )
+    {
+        // Method implementation comments go here ...
+
+        Iterator iter = _believabilityKnobSub.getChangedCollection().iterator();
+        
+        // If nothing changed, then nothing to do.
+        //
+        if ( ! iter.hasNext() )
+            return false;
+
+        if (logger.isDetailEnabled() ) 
+            logger.detail ("Handling BelievabilityKnob CHANGE");
+
+        BelievabilityKnob knob = (BelievabilityKnob) iter.next();
+        
+        // At present, we only need to worry about the leashing
+        // status.
+        //
+        
+        // Simplest case is if we are moving to the leashed state,
+        // since we just have to set the state and this will stop
+        // handling all belief triggers.
+        //
+        if (( _leashing_state != LEASHING_STATE_LEASHED )
+            && knob.isLeashed() )
+        {
+            
+            if (logger.isDetailEnabled() ) 
+                logger.detail ("Moving to Leashed state.");
+            
+            _leashing_state = LEASHING_STATE_LEASHED;
+
+            // FIXME: Should we also clear out all
+            // BeliefTriggerHistory objects here, or even force them
+            // to publish if they have anything pending?
+            //
+
+        } // if moving to leashed state
+
+        // This is the case where we are unleashing and thus need to
+        // do more work in publishing the initial belief states for
+        // each asset.
+        //
+        else if (( _leashing_state == LEASHING_STATE_LEASHED )
+                 && ( ! knob.isLeashed() ))
+        {
+             if (logger.isDetailEnabled() ) 
+                logger.detail ("Moving to Unleashed state.");
+            
+             // Note that setting this state is not useful if you call
+             // handleUnleashing() immediately after, but allows that
+             // call to be moved elsewhere without losing the state
+             // information about where we are at in the process of
+             // unleashing.
+             //
+            _leashing_state = LEASHING_STATE_UNLEASHING_NEEDED;
+
+            handleUnleashing();
+           
+            return true;
+
+        } // if moving to unleashed state
+
+        return false;
+ 
+    } // method handleKnobs
+
+    //************************************************************
+    /**
+     * Will query the blackboard for the last diagnosis posted and
+     * create initial belief states for each asset.
+     *
+     */
+    private void handleUnleashing( )
+    {
+
+        if (logger.isDetailEnabled() ) 
+            logger.detail ("Handling Unleashing");
+
+        _leashing_state = LEASHING_STATE_UNLEASHING_IN_PROGRESS;
+
+        // We set this in the model manager, because when we unleash
+        // we will *always* use the default (techspec) initial
+        // probability distribution: even if we had a different belief
+        // state before we were leashed (as per David Wells on
+        // 8/4/2004).
+        //
+        _model_manager.setUnleashingHappening( true );
+
+        // Loop through all the diagnosis objects on the
+        // blackboard and process them to create an initial
+        // post-leash belief/state estimations.
+            //
+        for ( Iterator iter = _beliefUpdateTriggerSub.getCollection().iterator();  
+              iter.hasNext() ; ) 
+        {
+            Object trigger_obj =  iter.next();
+            
+            // Ignore SuccessfulAction objects on unleashing
+            //
+            if ( trigger_obj instanceof SuccessfulAction )
+                continue;
+                
+            if (logger.isDetailEnabled() ) 
+                logger.detail ("UpdateTrigger UNLEASH");
+            
+            handleUpdateTriggerObject( trigger_obj );
+            
+        } // iterator for UNLEASH update trigger
+
+        _leashing_state = LEASHING_STATE_UNLEASHED;
+
+        _model_manager.setUnleashingHappening( false );
+
+        if (logger.isDetailEnabled() ) 
+            logger.detail ("Finished Handling Unleashing");
+
+    } // method handleUnleashing
+
+   //************************************************************
     /**
      * Will query the blackboard for data that was previously posted
      * before the plugin was rehydrated.  This allows us to recreate the
@@ -738,32 +912,58 @@ public class BelievabilityPlugin
 
         // We set this in the model manager, because when we rehydrate
         // we will use the uniform probability distribution as the a
-        // rpiori beliewf state, rather than the techspec derived one.
+        // priori belief state, rather than the techspec derived one.
         //
         _model_manager.setRehydrationHappening( true );
 
-//        zzz Handle reading leashing state from believability knob on blackboard;
-
-        // Loop through all the diagnosis and action objects on the
-        // blackboard and process them to create the initial
-        // belief/state estimations.
+        // When rehydrating, the BelievabilityKnob may indicate that
+        // we are leashed or unleashed.  If leashed, then we do not go
+        // through the rehydration process of processing the last
+        // diagnosis starting at the uniform belief state.  We will
+        // handle the subsequent unleashing like we would any other
+        // mid-run leash/unleash.  But if we arer unleashed upon
+        // hydration, then we deal with this "normally" and iterate
+        // over all diagnoses and generate some reasonable initial
+        // sttae estimation for each asset.
         //
-        for ( Iterator iter = _beliefUpdateTriggerSub.getCollection().iterator();  
-              iter.hasNext() ; ) 
+        reestablishKnobs();
+
+        // Only do the main rehydration steps if not leashed.
+        //
+        if ( _leashing_state != LEASHING_STATE_LEASHED )
         {
-            Object trigger_obj =  iter.next();
-
-            // Ignore SuccessfulAction objects on rehydration
-            //
-            if ( trigger_obj instanceof SuccessfulAction )
-                continue;
-
             if (logger.isDetailEnabled() ) 
-                logger.detail ("UpdateTrigger REHYDRATE");
+                logger.detail ("Rebhydrating in unleashed state. Processing.");
 
-            handleUpdateTriggerObject( trigger_obj );
+             // Loop through all the diagnosis and action objects on the
+            // blackboard and process them to create the initial
+            // belief/state estimations.
+            //
+            for ( Iterator iter = _beliefUpdateTriggerSub.getCollection().iterator();  
+                  iter.hasNext() ; ) 
+            {
+                Object trigger_obj =  iter.next();
+                
+                // Ignore SuccessfulAction objects on rehydration
+                //
+                if ( trigger_obj instanceof SuccessfulAction )
+                    continue;
+                
+                if (logger.isDetailEnabled() ) 
+                    logger.detail ("UpdateTrigger REHYDRATE");
+                
+                handleUpdateTriggerObject( trigger_obj );
+                
+            } // iterator for REHYDRATE update trigger
 
-        } // iterator for REHYDRATE update trigger
+        } // if _leashing_state == LEASHING_STATE_UNLEASHED
+
+        else
+        {
+            if (logger.isDetailEnabled() ) 
+                logger.detail ("Rebhydrating in leashed state. No action.");
+            
+        }
 
         _rehydration_state = REHYDRATION_COMPLETED;
 
@@ -779,12 +979,58 @@ public class BelievabilityPlugin
 
     } // method handleRehydration
 
-    // Boolean saying whether this functionality is enabled or not.
-    private boolean _dc_enabled = false;
+    //************************************************************
+    /**
+     * Part of handleRehydration(), will look at blackboard objects
+     * that are knobs and reestablish the local variable to be the
+     * same as the blackboard object.  These knobs are first posted by
+     * this plugin, but may need to be reestablished if the plugin
+     * restarts or moves, since we do not want to lose the knob state.
+     *
+     */
+    private void reestablishKnobs( )
+    {
 
-    // Flag to indicate what the new value of _dc_enabled should be at the
-    // end of the execute run
-    private boolean _dc_enabled_new = false;
+        // This collection should have exactly one object.
+        //
+        Iterator iter = _believabilityKnobSub.getCollection().iterator();
+
+        // Only need to see one thing in this collection to know that
+        // the techspec load condition object has been published.
+        //
+        if ( iter.hasNext()) 
+        {
+            if (logger.isDetailEnabled() ) 
+                logger.detail ("Reestablishing BelievabilityKnob from BB.");
+            
+            _believability_knob = (BelievabilityKnob) iter.next();
+            
+            if ( iter.hasNext() ) 
+            { 
+                if (logger.isWarnEnabled() ) 
+                    logger.warn("Too many BelievabilityKnobs on blackboard.");
+            }
+        } // if found knob on BB
+        
+        else
+        { 
+            if (logger.isWarnEnabled() ) 
+                logger.warn("No BelievabilityKnob found on blackboard.");
+            
+            // Do something sane: create a knob with default values.
+            _believability_knob = new BelievabilityKnob();
+        } // if no knob on BB
+
+        // Now set the initial leashing state to recreate the state.
+        //
+        if ( _believability_knob.isLeashed() )
+            _leashing_state = LEASHING_STATE_LEASHED;
+        else
+            _leashing_state = LEASHING_STATE_UNLEASHED;
+
+    } // method reestablishKnobs
+
+
 
     // The time the system started up.
     private long _system_start_time = System.currentTimeMillis();
@@ -814,5 +1060,16 @@ public class BelievabilityPlugin
     // variable to keep track of this state.
     //
     private int _techspec_load_state = TECHSPECS_NOT_LOADED;
+
+    // Keep a state variable about the leashing status.  We start out
+    // leashed, then will move to the 'needs unleashing' state, and
+    // finally to the 'unleashed' state.
+    //
+    private int _leashing_state = LEASHING_STATE_LEASHED;
+
+    // Use this for externally controllable policy-based
+    // settings/parameters.
+    //
+    private BelievabilityKnob _believability_knob;
 
 }  // class BelievabilityPlugin
