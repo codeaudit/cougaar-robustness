@@ -335,7 +335,8 @@ public class HealthMonitorPlugin extends SimplePlugin {
             //doHealthCheck(hs, HealthStatus.NO_RESPONSE);
             break;
           case HeartbeatRequest.FAILED:
-            log.warn("HeartbeatRequest for agent '" + hs.getAgentId() + "' FAILED");
+            log.warn("HeartbeatRequest for agent '" + hs.getAgentId() + "' FAILED, resending");
+            hs.setHeartbeatRequestStatus(HealthStatus.UNDEFINED);
             //doHealthCheck(hs, HealthStatus.NO_RESPONSE);
             break;
           default:
@@ -570,7 +571,9 @@ public class HealthMonitorPlugin extends SimplePlugin {
       hs.setHeartbeatRequestTime(new Date());
       Set targets = new HashSet();
       targets.add(hs.getAgentId());
-      HeartbeatRequest hbr = sensorFactory.newHeartbeatRequest(
+      HeartbeatRequest hbr = hs.getHeartbeatRequest();
+      if (hbr == null) {
+      	hbr = sensorFactory.newHeartbeatRequest(
                   myAgent,                  // Source address
                   targets,                  // Target addresses
                   heartbeatRequestTimeout,  // Request timeout
@@ -578,14 +581,19 @@ public class HealthMonitorPlugin extends SimplePlugin {
                   heartbeatTimeout,         // Heartbeat timeout
                   true,                     // Only out of spec.
                   heartbeatPctLateThreshold // Percent out of spec
-      );
+      	);
+      	hs.setHeartbeatRequest(hbr);
+      	bbs.openTransaction();
+      	bbs.publishAdd(hbr);
+      	bbs.closeTransaction();
+      } else {
+      	bbs.openTransaction();
+      	bbs.publishChange(hbr);
+      	bbs.closeTransaction();
+	  }
       hs.setHeartbeatRequestStatus(hbr.getStatus());
-      bbs.openTransaction();
-      bbs.publishAdd(hbr);
-      bbs.closeTransaction();
     }
   }
-
 
   /**
    * Sends a ping to a monitored agent.

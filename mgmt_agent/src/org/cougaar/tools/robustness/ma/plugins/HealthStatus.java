@@ -23,6 +23,7 @@ import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.service.community.CommunityService;
 import org.cougaar.core.blackboard.Publishable;
+import org.cougaar.tools.robustness.sensors.HeartbeatRequest;
 
 import javax.naming.directory.*;
 
@@ -72,6 +73,8 @@ public class HealthStatus implements
 
   private MessageAddress agentId;
   private String communityName;
+
+  private HeartbeatRequest hbr;
 
   private CommunityService commSvc = null;
 
@@ -206,12 +209,29 @@ public class HealthStatus implements
   }
 
   /**
-   * sets current Heartbeat status.
+   * Sets current Heartbeat status.
    * @param status Status code associated with heartbeat status.
    * (refer to org.cougaar.tools.robustness.sensors.HeartbeatEntry for values)
    */
   protected void setHeartbeatStatus(int status) {
     this.heartbeatStatus = status;
+  }
+
+
+  /**
+   * Returns HeartbeatRequest associated with this agent.
+   * @return HeartbeatRequest
+   */
+  protected HeartbeatRequest getHeartbeatRequest() {
+    return this.hbr;
+  }
+
+  /**
+   * Sets HeartbeatRequest
+   * @param hbr HeartbeatRequest associated with this agent
+   */
+  protected void setHeartbeatRequest(HeartbeatRequest hbr) {
+    this.hbr = hbr;
   }
 
 
