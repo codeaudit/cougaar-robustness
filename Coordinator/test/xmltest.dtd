@@ -1,0 +1,8 @@
+<?xml encoding="UTF-8" ?>
+<!ELEMENT OneTimeCost (CPU, Time?, Bandwidth?, Memory? )  >
+
+<!ELEMENT CPU EMPTY> 
+<!ELEMENT Time EMPTY> 
+<!ELEMENT Bandwidth EMPTY> 
+<!ELEMENT Memory EMPTY> 
+

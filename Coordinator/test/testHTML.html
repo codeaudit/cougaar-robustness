@@ -1,0 +1,51 @@
+<html>
+<script type="text/javascript">
+function refreshPage(){
+     var szURL = "?REFRESH=500000&NAMEFORMAT=SHORTNAME&FILTER=BOTH ";
+     self.location.replace(szURL);
+}</script>
+<head></head><body onload="setTimeout('refreshPage()', 5000000);">
+<center><h1>Coordinator Action Monitoring Servlet</h1>
+<p>Will refresh every 5 seconds. 
+You can change this rate here: (in milliseconds)
+<form clsname="myForm" method="get" >Refresh Rate: <input type=text name=REFRESH value="5000" size=7 >
+<br><b>Action Name - use:</b><SELECT NAME="NAMEFORMAT" SIZE="1">
+<OPTION VALUE="LONGNAME"  />Pkg Name
+<OPTION VALUE="SHORTNAME" SELECTED/>Class name
+</SELECT>
+<br><b>Include:</b><SELECT NAME="FILTER" SIZE="1">
+<OPTION VALUE="ACTIONS" />Only Actions
+<OPTION VALUE="WRAPPERS" />Only Wrappers
+<OPTION VALUE="BOTH" SELECTED />Both
+</SELECT>
+<input type=submit name="Submit" value="Submit" size=10 ><br>
+
+</form>
+<a href="PublishServlet">Publish Actions</a>
+<a href="ActionMonitorServlet">Actions</a>
+<a href="DiagnosisMonitorServlet">Diagnoses</a>
+</center><hr>
+<p><p><TABLE cellspacing="20"><TR align=left>   <TH>AssetName <sp> </TH>   <TH>Action <sp> </TH>   <TH>Type</TH>   <TH>Poss. Values</TH>   <TH>Permitted</TH>   <TH>Offered</TH>   <TH>Value / Completed?</TH>   <TH>Status</TH></TR><TR>
+   <TD ROWSPAN=2>nameOfAsset</TD>
+   <TD ROWSPAN=2>TestAction</TD>
+   <TD>Action</TD>
+    <TD><form clsname="UPDATEVALUE" method="get" > <br><br>   <SELECT MULTIPLE NAME="NEWVALUE" size="3"   STYLE="margin: 0em 0 0 0em; color: white; background-color: red; font-size: 8pt;">
+        <OPTION value="NoEncryption" UNSELECTED />NoEncryption
+        <OPTION value="256Encryption" UNSELECTED />256Encryption
+        <OPTION value="128Encryption" UNSELECTED />128Encryption
+        <OPTION value="64Encryption" UNSELECTED />64Encryption
+   </SELECT>
+   <input type=hidden name="TYPE" value="ACTIONS" >
+   <input type=hidden name="UID" value="TestAgent/1078784606359" >
+   <input type=hidden name="REFRESH" value="5000" >
+   <input type=hidden name="NAMEFORMAT" value="SHORTNAME" >
+   <input type=hidden name="FILTER" value="BOTH" ><br>
+   <input type=submit name="Submit" value="Submit" size=10   STYLE="margin: -1.25em 0 0 0em; color: white; background-color: blue; font-size: 6pt;">
+   
+</form></TD>
+   <TD><SELECT size="3"   STYLE="margin: 0em 0 0 0em; color: white; background-color: red; font-size: 8pt;">
+        <OPTION value="NoEncryption" />NoEncryption
+        <OPTION value="256Encryptions" />256Encryptions
+   </SELECT></TD>
+   <TD>Null</TD>
+   <TD><TABLE>   <TR><TD><b>last:</b>null</TD><TD>N/A</TD></TR>   <TR><TD><b>prev:</b>null</TD><TD>N/A</TD></TR>   </TABLE></TD>   <TD><font color="#0000ff">Added</font></TD></TR><TR>   <TD>Wrapper</TD>

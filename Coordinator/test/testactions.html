@@ -1,0 +1,63 @@
+<html><head></head><body onload="setTimeout('location.reload()',10000);">
+<center><h1>Coordinator Action Monitoring Servlet</h1>
+<p>Will refresh every 10 seconds. 
+You can change this rate here: (in milliseconds)
+<form clsname="myForm" method="get" >Refresh Rate: <input type=text name=REFRESH value="10000" size=7 >
+<br><b>Asset Name - use:</b><SELECT NAME="NAMEFORMAT" SIZE="1">
+<OPTION VALUE="LONGNAME" SELECTED />Pkg Name
+<OPTION VALUE="SHORTNAME" />Class name
+</SELECT>
+<br><b>Include:</b><SELECT NAME="FILTER" SIZE="1">
+<OPTION VALUE="ASSETS" />Only Assets
+<OPTION VALUE="WRAPPERS" />Only Wrappers
+<OPTION VALUE="BOTH" SELECTED />Both
+</SELECT>
+<input type=submit name="Submit" value="Submit" size=10 ><br>
+
+</form>
+</center><hr>
+<p><p><TABLE cellspacing="20"><CAPTION align=left ><font color="#891728">Actions</font></CAPTION>
+
+<TR align=left>        <TH>AssetName <sp> </TH>   <TH>Action <sp> </TH>   <TH>Type</TH>   <TH>Poss. Values</TH>   	         <TH>Permitted</TH>   <TH>Offered</TH>   <TH>Last/Prev Values</TH>   <TH>Code</TH>   <TH>Status</TH>
+</TR>
+
+<TR>
+   <TD rowspan=2>Foo</TD>
+   <TD rowspan=2>TestAction</TD>
+      <TD>Action</TD>
+      <TD><SELECT size="5" >
+        <OPTION value="NoEncryption" />NoEncryption
+        <OPTION value="256Encryption" />256Encryption
+        <OPTION value="128Encryption" />128Encryption
+        <OPTION value="64Encryption" />64Encryption
+       </SELECT>
+      </TD>
+      <TD>PERM1</TD>
+      <TD>OFF</TD>
+      <TD>
+	<TABLE width=30>
+	<TR>old val</TR>
+	<TR>new val</TR>
+	</TABLE>
+      </TD>
+      <TD>
+	<TABLE>
+	<TR>yes</TR>
+	<TR>yes</TR>
+	</TABLE>
+      </TD>
+      <TD>OFF</TD>
+ 
+</TR>
+<TR>   
+      <TD>ActionW</TD>
+      <TD><SELECT size="5" >
+        <OPTION value="NoEncryption" />NoEncryption
+        <OPTION value="256Encryption" />256Encryption
+        <OPTION value="128Encryption" />128Encryption
+        <OPTION value="64Encryption" />64Encryption
+       </SELECT>
+      </TD>
+</TR>
+
+</table>

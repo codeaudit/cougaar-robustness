@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!-- Created by Administrator on April 5, 2004, 11:09 AM -->
+
+<!DOCTYPE CrossDiagnosis null> 
+
+<CrossDiagnosis sensorType=”AgentCommunication” isAffectedByStateDimension=”Liveness” >
+	<WhenActualStateIs name=”DEAD” >
+<WillDiagnoseAs name=”DEGRADED” withProbability=”0.01” />
+<WillDiagnoseAs name=”NOT_COMMUNICATING” withProbability=”0.99” />
+</WhenActualStateIs>
+</CrossDiagnosis>
