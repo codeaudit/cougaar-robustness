@@ -2,7 +2,9 @@
  * ActionTechSpecImpl.java
  *
  * Created on April 5, 2004, 3:15 PM
+ * 
  * <copyright>
+ * 
  *  Copyright 2004 Object Services and Consulting, Inc.
  *  under sponsorship of the Defense Advanced Research Projects
  *  Agency (DARPA).
@@ -22,9 +24,10 @@
  *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  * </copyright>
  */
+
 
 package org.cougaar.coordinator.techspec;
 
