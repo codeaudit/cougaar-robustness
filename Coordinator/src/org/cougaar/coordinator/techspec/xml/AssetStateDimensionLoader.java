@@ -96,7 +96,7 @@ public class AssetStateDimensionLoader extends XMLLoader {
                         continue;
                     }
                 }
-                logger.debug(asd.toString());
+                if (logger.isDebugEnabled()) logger.debug(asd.toString());
 
             } //else, likely a text element - ignore
         }

@@ -131,7 +131,7 @@ public class CrossDiagnosisLoader extends XMLLoader {
 
         diagnosisTechSpecService.addCrossDiagnosis(crossD);
         
-        logger.debug("Added new Cross Diagnosis for sensor: \n"+sensorType.toString() );
+        if (logger.isDebugEnabled()) logger.debug("Added new Cross Diagnosis for sensor: \n"+sensorType.toString() );
             
         return null;
     }

@@ -106,7 +106,7 @@ public class ActionManagerPlugin extends ComponentPlugin implements NotPersistab
         if (iter.hasNext()) {
             fileParams.add( (String) iter.next() );
         }
-        logger.debug("Total # of action file arguments = " + fileParams.size());
+        if (logger.isDebugEnabled()) logger.debug("Total # of action file arguments = " + fileParams.size());
     }
     
     /** Read in the Actions from the XML tech spec files */
@@ -145,7 +145,7 @@ public class ActionManagerPlugin extends ComponentPlugin implements NotPersistab
                 logger.error("Exception while importing Action!",e);
             }
 
-            logger.debug("Imported "+allActions.size()+" Actions!");
+            if (logger.isDebugEnabled()) logger.debug("Imported "+allActions.size()+" Actions!");
             
         }
     }

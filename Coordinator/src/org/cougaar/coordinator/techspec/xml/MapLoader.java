@@ -100,7 +100,7 @@ public class MapLoader {
         
         Hashtable map = processMap(root, filename);
         maps.put(filename, map);
-        logger.debug("Added new map: \n" + filename);
+        if (logger.isDebugEnabled()) logger.debug("Added new map: \n" + filename);
         return map;
     }
 

@@ -156,7 +156,7 @@ public class EventLoader extends XMLLoader {
 
         if (!error) {
             events.add(event);
-            logger.debug("Added new Event: \n"+event.toString() );
+            if (logger.isDebugEnabled()) logger.debug("Added new Event: \n"+event.toString() );
         }
         
         return events;
@@ -244,7 +244,7 @@ public class EventLoader extends XMLLoader {
                 
                 //Add transition to Event
                 event.addDirectEffectTransition(when_as, end_as);
-                logger.debug("Saw direct transition: "+whenState+", "+endState);
+                if (logger.isDebugEnabled()) logger.debug("Saw direct transition: "+whenState+", "+endState);
             } //else, likely a text element - ignore
         }
                 
@@ -279,7 +279,7 @@ public class EventLoader extends XMLLoader {
             } else if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("VulnerableAssets") ) {
                 e = (Element)child;
 
-                //logger.debug("Calling TransitiveEffectVulnerabilityFilter, element name = " + e.getNodeName());
+                //if (logger.isDebugEnabled()) logger.debug("Calling TransitiveEffectVulnerabilityFilter, element name = " + e.getNodeName());
                 vf = TransitiveEffectVulnerabilityLoader.parseElement(e,  probabilityMap, event);
                 if (vf == null) {
                     logger.error("Error parsing XML file for event [" + event.getName() + "]. TransitiveEffectVulnerabilityFilter was null for element = "+e.getNodeName() );

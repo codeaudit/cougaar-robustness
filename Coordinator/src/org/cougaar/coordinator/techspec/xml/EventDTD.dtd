@@ -1,8 +1,15 @@
-<?xml encoding="UTF-8" ?>
+﻿<?xml encoding="UTF-8" ?>
 
 <!-- Created by Administrator on May 3, 2004, 2:55 PM -->
 
+<!ELEMENT Events (Event+) >
+
 <!ELEMENT Event (DirectEffect, TransitiveEffect?) >
+<!ATTLIST Event
+    name CDATA #REQUIRED
+    affectsAssetType CDATA #REQUIRED
+    affectsStateDimension CDATA #REQUIRED
+>
 
 <!ELEMENT DirectEffect (Transition+) >
 
@@ -20,18 +27,17 @@
     assetType  CDATA #REQUIRED
 >
 
-<!ELEMENT VulnerableAssets ContainmentFilter, EventLikelihood >
+<!ELEMENT VulnerableAssets (ContainmentFilter, EventLikelihood) >
 
 <!ELEMENT EventLikelihood  EMPTY>
 <!ATTLIST EventLikelihood
-    probability ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH ) 'NONE'
+    probability ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH | ALWAYS ) 'NONE'
 >
 
 <!ELEMENT ContainmentFilter  EMPTY>
 <!ATTLIST ContainmentFilter
     eventAssetContainerName CDATA #REQUIRED
 >
-
 
 
 <!-- Example Event XML
@@ -45,7 +51,7 @@
         <CausesEvent name=”NodeDeath” assetType=”Node”/>
         <VulnerableAssets>
             <ContainmentFilter eventAssetContainerName=”Node” >
-            <EventLikelihood probability=“VERY_HIGH” />
+            <EventLikelihood probability=“ALWAYS” />
         </VulnerableAssets>
     </TransitiveEffect> 
 </Event>

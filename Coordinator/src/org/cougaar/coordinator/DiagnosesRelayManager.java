@@ -201,7 +201,7 @@ public class DiagnosesRelayManager extends MinimalPluginBase implements NotPersi
             {
                 Diagnosis d = (Diagnosis)iter.next();                
                 if (d.getWrapper() == null) { //Make sure it wasn't already wrapped... just a precaution
-                    logger.debug("============= Saw new Diagnosis (with UID="+d.getUID()+") -- Wrapping it.");
+                    if (logger.isDebugEnabled()) logger.debug("============= Saw new Diagnosis (with UID="+d.getUID()+") -- Wrapping it.");
                     UID uid = this.us.nextUID(); //gen UID for this wrapper
                     DiagnosesWrapper dw = new DiagnosesWrapper(d, this.agentId, managerAddress, uid); //wrap the diagnosis
                     //registerUID(uid); //record all UIDs so we know what wrappers are out there.

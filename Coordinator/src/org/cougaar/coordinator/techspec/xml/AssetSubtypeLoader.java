@@ -87,7 +87,7 @@ public class AssetSubtypeLoader extends XMLLoader {
         try {
             //Register new asset subtype
             AssetType.addAssetSubtype(superType, newtype);        
-            logger.debug("Created new AssetSubtype = " + newtype);
+            if (logger.isDebugEnabled()) logger.debug("Created new AssetSubtype = " + newtype);
         } catch (DupWithDifferentSuperTypeException dwd) {
             logger.warn("AssetSubtype XML Error - Asset sub type already exists, but declared with different superType!: \n"+dwd.toString());
         }

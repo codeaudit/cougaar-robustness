@@ -79,11 +79,11 @@ public class ThreatProbabilityInterval implements NotPersistable {
         double x = (double)intervalLength / (double)interval ;
         double lambda = prob / (x);
         
-        logger.debug("poisson for lambda = " + lambda);
-        logger.debug("poisson for prob = " + prob);
-        logger.debug("poisson for x = " + x);
-        logger.debug("poisson for intervalLength = " + intervalLength);
-        logger.debug("poisson for interval = " + interval);
+        if (logger.isDebugEnabled()) logger.debug("poisson for lambda = " + lambda);
+        if (logger.isDebugEnabled()) logger.debug("poisson for prob = " + prob);
+        if (logger.isDebugEnabled()) logger.debug("poisson for x = " + x);
+        if (logger.isDebugEnabled()) logger.debug("poisson for intervalLength = " + intervalLength);
+        if (logger.isDebugEnabled()) logger.debug("poisson for interval = " + interval);
         
         double result = 0.0;
 

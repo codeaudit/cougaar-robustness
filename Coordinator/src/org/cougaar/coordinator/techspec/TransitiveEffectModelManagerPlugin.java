@@ -140,7 +140,7 @@ public class TransitiveEffectModelManagerPlugin extends ComponentPlugin {
             
             Vector changedModels = new Vector(); //keep track so we can publish change them to the BB.
 
-            logger.debug("evaluateAssetMembership called with " + changesToProcess.size() + " events");
+            if (logger.isDebugEnabled()) logger.debug("evaluateAssetMembership called with " + changesToProcess.size() + " events");
 
             //Iterate over transitiveEffectDescriptions
             if ( (transitiveEffectDescriptions != null && transitiveEffectDescriptions.size() > 0) ) {
@@ -183,12 +183,12 @@ public class TransitiveEffectModelManagerPlugin extends ComponentPlugin {
                                 }
 
                                 if (qualifies) {
-                                    logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] Qualifies! Adding to the transitive effect for event: "+transitiveEffectDesc.getTransitiveEventName()+" transitiveEffectModel ["+transitiveEffectDesc.getTransitiveAssetType().getName()+"]");
+                                    if (logger.isDebugEnabled()) logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] Qualifies! Adding to the transitive effect for event: "+transitiveEffectDesc.getTransitiveEventName()+" transitiveEffectModel ["+transitiveEffectDesc.getTransitiveAssetType().getName()+"]");
                                     transitiveEffectModel = addAssetAsMember(asset, transitiveEffectDesc);
                                 } else { //remove the asset from the threat model's membership, if it's there                         
                                     transitiveEffectModel = removeAssetAsMember(asset, transitiveEffectDesc);                                                        
                                     if (transitiveEffectModel != null) {
-                                        logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] was REMOVED from the transitive effect for event: "+transitiveEffectDesc.getTransitiveEventName()+" transitiveEffectModel ["+transitiveEffectDesc.getTransitiveAssetType().getName()+"]");
+                                        if (logger.isDebugEnabled()) logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] was REMOVED from the transitive effect for event: "+transitiveEffectDesc.getTransitiveEventName()+" transitiveEffectModel ["+transitiveEffectDesc.getTransitiveAssetType().getName()+"]");
                                     }
                                 }
                                 
@@ -196,7 +196,7 @@ public class TransitiveEffectModelManagerPlugin extends ComponentPlugin {
                             } else if (event.assetRemovedEvent() ) {
                                     transitiveEffectModel = removeAssetAsMember(asset, transitiveEffectDesc);                                                       
                                     if (transitiveEffectModel != null) {
-                                        logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] was REMOVED from "+transitiveEffectDesc.getTransitiveEventName()+" transitiveEffectModel ["+transitiveEffectDesc.getTransitiveAssetType().getName()+"]");
+                                        if (logger.isDebugEnabled()) logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] was REMOVED from "+transitiveEffectDesc.getTransitiveEventName()+" transitiveEffectModel ["+transitiveEffectDesc.getTransitiveAssetType().getName()+"]");
                                     }
                             }
 
@@ -237,7 +237,7 @@ public class TransitiveEffectModelManagerPlugin extends ComponentPlugin {
         boolean createdModel = false;
         TransitiveEffectModel dtm = transitiveEffectDesc.getInstantiation();
         if (dtm == null) {
-            //logger.debug("========================================== 6 ==> Creating threat model!");
+            //if (logger.isDebugEnabled()) logger.debug("========================================== 6 ==> Creating threat model!");
             dtm = transitiveEffectDesc.instantiate(us.nextUID());
             
             this.blackboard.publishAdd(dtm);
@@ -313,7 +313,7 @@ public class TransitiveEffectModelManagerPlugin extends ComponentPlugin {
                 //they changed in some way. Since the threat descriptions are published in a setupSubscription, this should not occur.
             }
             transitiveEffectDescriptions = transitiveEffectDescriptionsSub.getCollection();
-            logger.debug("Got " + transitiveEffectDescriptions.size() + " ThreatDescriptions from the blackboard.");
+            if (logger.isDebugEnabled()) logger.debug("Got " + transitiveEffectDescriptions.size() + " ThreatDescriptions from the blackboard.");
         }
         
         //Get the asset manager plugin

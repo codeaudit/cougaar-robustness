@@ -188,12 +188,12 @@ logger.warn("!!!! **********************************************************");
                         //Make sure we haven't seen this agent before we create a new one!
                         agentAsset = DefaultAssetTechSpec.findAssetByID(new AssetID(agentName, AssetType.AGENT));
                         if (agentAsset != null) {
-                            logger.debug("************************>>> Saw DUPLICATE agent asset ["+agentName+"] with host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
+                            if (logger.isDebugEnabled()) logger.debug("************************>>> Saw DUPLICATE agent asset ["+agentName+"] with host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
                             continue;
                         }                    
                         
                         
-                        logger.debug("============>>> Saw new agent asset ["+agentName+"] with host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
+                        if (logger.isDebugEnabled()) logger.debug("============>>> Saw new agent asset ["+agentName+"] with host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
                         agentAsset = new DefaultAssetTechSpec( hostAsset, nodeAsset,  agentName, AssetType.AGENT, us.nextUID());
                         //Use NODE name to assign FWD / REAR property -- doing this also for nodes in getNode()
                         if (nodeName.startsWith("REAR")) {
@@ -287,7 +287,7 @@ logger.warn("!!!! **********************************************************");
                 
 
         getServices();
-        logger.debug("************************ AssetManagerPlugin loaded...");
+        if (logger.isDebugEnabled()) logger.debug("************************ AssetManagerPlugin loaded...");
 
         allAssets = new Vector(100,100);
         
@@ -350,7 +350,7 @@ logger.warn("!!!! **********************************************************");
         if (!emittedAssetCountCondition && assetCount >= expectedAssetCount) {
             blackboard.publishAdd(new AllAssetsSeenCondition());
             emittedAssetCountCondition = true;
-            logger.debug("Published AllAssetsSeenCondition.");
+            if (logger.isDebugEnabled()) logger.debug("Published AllAssetsSeenCondition.");
         }
         
         
@@ -457,7 +457,7 @@ logger.warn("!!!! **********************************************************");
         if (hostAsset == null) {
             hostAsset = new DefaultAssetTechSpec( null, null,  hostName, AssetType.HOST, us.nextUID() );
             queueChangeEvent(new AssetChangeEvent( hostAsset, AssetChangeEvent.NEW_ASSET));
-            logger.debug("===============================================>Queued new host asset");
+            if (logger.isDebugEnabled()) logger.debug("===============================================>Queued new host asset");
         }
         return hostAsset;
     }
@@ -474,7 +474,7 @@ logger.warn("!!!! **********************************************************");
             queueChangeEvent(new AssetChangeEvent( nodeAsset, AssetChangeEvent.NEW_ASSET));
             
             
-            logger.debug("===============================================>Queued new node asset");
+            if (logger.isDebugEnabled()) logger.debug("===============================================>Queued new node asset");
             
             //Use NODE name to assign FWD / REAR property
             if (nodeName.startsWith("REAR")) {
@@ -548,7 +548,7 @@ logger.warn("!!!! **********************************************************");
         if (!eventQueue.isEmpty()) {
             AssetChangeEvent[] events = new AssetChangeEvent[0];
             synchronized (eventQueue) {
-                logger.debug("AssetChangeEvent -- sendEvents(): numEvents=" + eventQueue.size());
+                if (logger.isDebugEnabled()) logger.debug("AssetChangeEvent -- sendEvents(): numEvents=" + eventQueue.size());
                 allAssets.addAll(eventQueue); //add current set into permanent set                
                 events =
                    (AssetChangeEvent[]) eventQueue.toArray(new AssetChangeEvent[0]);
@@ -583,7 +583,7 @@ logger.warn("!!!! **********************************************************");
     protected void queueChangeEvent(AssetChangeEvent ace) {
         synchronized (eventQueue) {
             eventQueue.add(ace);
-            logger.debug("queueEvent: (" + eventQueue.size() + ") " + ace.toString());
+            if (logger.isDebugEnabled()) logger.debug("queueEvent: (" + eventQueue.size() + ") " + ace.toString());
         }
         // Could potentially delay & announce every x seconds
         // IF there has been new events added to the queue

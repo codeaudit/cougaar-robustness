@@ -150,7 +150,7 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
             while (itr.hasNext()) {
                 event = (AssetChangeEvent)itr.next();
                 asset = (DefaultAssetTechSpec) event.getAsset();
-                logger.debug("evaluateThreatAssetMembership looking at asset " + asset.getName() + "["+asset.getAssetType()+"]");
+                if (logger.isDebugEnabled()) logger.debug("evaluateThreatAssetMembership looking at asset " + asset.getName() + "["+asset.getAssetType()+"]");
                 if (asset.getAssetType().equals(AssetType.HOST)) { hosts.add(asset); }
                 else if (asset.getAssetType().equals(AssetType.NODE)) { nodes.add(asset); }
                 else if (asset.getAssetType().equals(AssetType.AGENT)) { agents.add(asset); }
@@ -159,18 +159,18 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
             
             Vector changedModels = new Vector(); //keep track so we can publish change them to the BB.
 
-            logger.debug("evaluateThreatAssetMembership called with " + changesToProcess.size() + " events");
+            if (logger.isDebugEnabled()) logger.debug("evaluateThreatAssetMembership called with " + changesToProcess.size() + " events");
 
             //Iterate over threatDescriptions
             if ( (threatDescriptions != null && threatDescriptions.size() > 0) ) {
 
-//logger.debug("evaluateThreatAssetMembership has " + threatDescriptions.size() + " threatDescriptions to examine.");
+//if (logger.isDebugEnabled()) logger.debug("evaluateThreatAssetMembership has " + threatDescriptions.size() + " threatDescriptions to examine.");
 
                 Iterator i = threatDescriptions.iterator();
                 while (i.hasNext()) {
 
                     metaModel = (ThreatDescription)i.next();
-//logger.debug("evaluateThreatAssetMembership looking at threat " + metaModel.getName() );
+//if (logger.isDebugEnabled()) logger.debug("evaluateThreatAssetMembership looking at threat " + metaModel.getName() );
 
                         
                         Iterator ctp = changesToProcess.iterator();
@@ -186,7 +186,7 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
 
                                 //** First check type of asset against type of threatModel. Ignore if they don't match
                                 if (!(metaModel.getAffectedAssetType().equals(asset.getAssetType()))) {
-//logger.debug("evaluateThreatAssetMembership -- asset types don't match: \n modelAssetType="+metaModel.getAffectedAssetType()+"\nasset's type["+asset.getName()+"] = "+asset.getAssetType());
+//if (logger.isDebugEnabled()) logger.debug("evaluateThreatAssetMembership -- asset types don't match: \n modelAssetType="+metaModel.getAffectedAssetType()+"\nasset's type["+asset.getName()+"] = "+asset.getAssetType());
                                     continue;
                                 }
 
@@ -208,15 +208,15 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
                                 if (qualifies) {
                                     threatModel = addAssetAsMember(asset, metaModel);
                                     if (threatModel == null) {
-                                        logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] Qualifies! But already exists in the "+metaModel.getName()+" threatModel ["+metaModel.getAffectedAssetType().getName()+"]");
+                                        if (logger.isDebugEnabled()) logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] Qualifies! But already exists in the "+metaModel.getName()+" threatModel ["+metaModel.getAffectedAssetType().getName()+"]");
                                     } else {
-                                        logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] Qualifies! Adding to the "+metaModel.getName()+" threatModel ["+metaModel.getAffectedAssetType().getName()+"], memberCount="+threatModel.getAssetList().size());
+                                        if (logger.isDebugEnabled()) logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] Qualifies! Adding to the "+metaModel.getName()+" threatModel ["+metaModel.getAffectedAssetType().getName()+"], memberCount="+threatModel.getAssetList().size());
                                     }
                                 } else { //remove the asset from the threat model's membership, if it's there                         
-//logger.debug("evaluateThreatAssetMembership - doesn't qualify.");
+//if (logger.isDebugEnabled()) logger.debug("evaluateThreatAssetMembership - doesn't qualify.");
                                     threatModel = removeAssetAsMember(asset, metaModel);                                                        
                                     if (threatModel != null) {
-                                        logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] was REMOVED from "+metaModel.getName()+" threatModel ["+metaModel.getAffectedAssetType().getName()+"]");
+                                        if (logger.isDebugEnabled()) logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] was REMOVED from "+metaModel.getName()+" threatModel ["+metaModel.getAffectedAssetType().getName()+"]");
                                     }
                                 }
                                 
@@ -224,7 +224,7 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
                             } else if (event.assetRemovedEvent() ) {
                                     threatModel = removeAssetAsMember(asset, metaModel);                                                       
                                     if (threatModel != null) {
-                                        logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] was REMOVED from "+metaModel.getName()+" threatModel ["+metaModel.getAffectedAssetType().getName()+"]");
+                                        if (logger.isDebugEnabled()) logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] was REMOVED from "+metaModel.getName()+" threatModel ["+metaModel.getAffectedAssetType().getName()+"]");
                                     }
                             }
 
@@ -251,7 +251,7 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
                         if (added.size() > 0 || removed.size() > 0) { //some assets were added to this threat, so announce it
                             changes = Collections.singleton( new ThreatModelChangeEvent( dtm, added, removed, ThreatModelChangeEvent.MEMBERSHIP_CHANGE) );
                             this.blackboard.publishChange(dtm, changes);
-                            logger.debug("Announced "+added.size()+" assets were added, and " +removed.size()+" assets were removed in threat = " + dtm.getName());
+                            if (logger.isDebugEnabled()) logger.debug("Announced "+added.size()+" assets were added, and " +removed.size()+" assets were removed in threat = " + dtm.getName());
                         }                        
                     }
                 }
@@ -282,7 +282,7 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
     private void processEnclaveTransitiveEffects(Vector hosts, Vector nodes, Vector agents) {
      
         if (hosts.size() == 0 && nodes.size() == 0 && agents.size() == 0) { 
-            logger.debug("========================================== 11 ==> processEnclaveTransitiveEffects - no assets to process");
+            if (logger.isDebugEnabled()) logger.debug("========================================== 11 ==> processEnclaveTransitiveEffects - no assets to process");
             return; 
         }
         
@@ -350,14 +350,14 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
             if (hostTransEffect != null && hosts.size() > 0) {
                 TransitiveEffectModel tem = hostTransEffect.getInstantiation();
                 if (tem == null) {
-                    logger.debug("========================================== 7 ==> Creating host transitive effect model!");
+                    if (logger.isDebugEnabled()) logger.debug("========================================== 7 ==> Creating host transitive effect model!");
                     tem = hostTransEffect.instantiate(us.nextUID());
                     this.blackboard.publishAdd(tem);
                 }
                         
                 Iterator it = hosts.iterator();
                 while (it.hasNext()) {
-                    logger.debug("========================================== 8 ==> Adding host to transitive effect model!");
+                    if (logger.isDebugEnabled()) logger.debug("========================================== 8 ==> Adding host to transitive effect model!");
                     tem.addAsset((AssetTechSpecInterface)it.next());
                 }        
             }
@@ -366,14 +366,14 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
             if (nodeTransEffect != null && nodes.size() > 0) {
                 TransitiveEffectModel tem = nodeTransEffect.getInstantiation();
                 if (tem == null) {
-                    logger.debug("========================================== 7 ==> Creating node transitive effect model!");
+                    if (logger.isDebugEnabled()) logger.debug("========================================== 7 ==> Creating node transitive effect model!");
                     tem = nodeTransEffect.instantiate(us.nextUID());
                     this.blackboard.publishAdd(tem);
                 }
                         
                 Iterator it = nodes.iterator();
                 while (it.hasNext()) {
-                    logger.debug("========================================== 8 ==> Adding node to transitive effect model!");
+                    if (logger.isDebugEnabled()) logger.debug("========================================== 8 ==> Adding node to transitive effect model!");
                     tem.addAsset((AssetTechSpecInterface)it.next());
                 }        
             }
@@ -382,14 +382,14 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
             if (agentTransEffect != null && agents.size() > 0) {
                 TransitiveEffectModel tem = agentTransEffect.getInstantiation();
                 if (tem == null) {
-                    logger.debug("========================================== 7 ==> Creating agent transitive effect model!");
+                    if (logger.isDebugEnabled()) logger.debug("========================================== 7 ==> Creating agent transitive effect model!");
                     tem = agentTransEffect.instantiate(us.nextUID());
                     this.blackboard.publishAdd(tem);
                 }
                         
                 Iterator it = agents.iterator();
                 while (it.hasNext()) {
-                    logger.debug("========================================== 8 ==> Adding agent to transitive effect model!");
+                    if (logger.isDebugEnabled()) logger.debug("========================================== 8 ==> Adding agent to transitive effect model!");
                     tem.addAsset((AssetTechSpecInterface)it.next());
                 }        
             }
@@ -406,7 +406,7 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
     private void processHostTransitiveEffects(Vector nodes, Vector agents) {
      
         if (nodes.size() == 0 && agents.size() == 0) { 
-            logger.debug("========================================== 11 ==> processHostTransitiveEffects - no assets to process");
+            if (logger.isDebugEnabled()) logger.debug("========================================== 11 ==> processHostTransitiveEffects - no assets to process");
             return; 
         }
         
@@ -454,7 +454,7 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
             if (nodeTransEffect != null) { //get its instantiation
                 node_tem = nodeTransEffect.getInstantiation();
                 if (node_tem == null) {
-                    logger.debug("========================================== 7 ==> Creating node transitive effect model!");
+                    if (logger.isDebugEnabled()) logger.debug("========================================== 7 ==> Creating node transitive effect model!");
                     node_tem = nodeTransEffect.instantiate(us.nextUID());
                     this.blackboard.publishAdd(node_tem);
                 }
@@ -463,13 +463,13 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
                 while (it.hasNext()) {                
                     AssetTechSpecInterface node = (AssetTechSpecInterface)it.next();
                     if (dtm.containsAsset(node.getHost()) ) { // then this node should be added to the transitive effect
-                        logger.debug("========================================== 9 ==> Adding node["+node.getName()+"] to transitive effect model!");
+                        if (logger.isDebugEnabled()) logger.debug("========================================== 9 ==> Adding node["+node.getName()+"] to transitive effect model!");
                         node_tem.addAsset(node);
                     } else {
-//                        logger.debug("========================================== 9.5 ==> Node not added to transitive effect model! Host Threat="+dtm.getName()+" did not contain this node's["+node.getName()+"] host="+node.getHost().getName());
-                        logger.debug("############################################ 9.5 ==> Node not added to transitive effect model! Host Threat="+dtm.getName());
-                        logger.debug("############################################ 9.5 did not contain this node's["+node.getName()+"] host");
-                        logger.debug("############################################ 9.5  host="+node.getHost().getName());
+//                        if (logger.isDebugEnabled()) logger.debug("========================================== 9.5 ==> Node not added to transitive effect model! Host Threat="+dtm.getName()+" did not contain this node's["+node.getName()+"] host="+node.getHost().getName());
+                        if (logger.isDebugEnabled()) logger.debug("############################################ 9.5 ==> Node not added to transitive effect model! Host Threat="+dtm.getName());
+                        if (logger.isDebugEnabled()) logger.debug("############################################ 9.5 did not contain this node's["+node.getName()+"] host");
+                        if (logger.isDebugEnabled()) logger.debug("############################################ 9.5  host="+node.getHost().getName());
                     }
                 }   
             }
@@ -478,7 +478,7 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
             if (agentTransEffect != null) { //get its instantiation
                 agent_tem = agentTransEffect.getInstantiation();
                 if (agent_tem == null) {
-                    logger.debug("========================================== 7 ==> Creating a child agent transitive effect model!");
+                    if (logger.isDebugEnabled()) logger.debug("========================================== 7 ==> Creating a child agent transitive effect model!");
                     agent_tem = agentTransEffect.instantiate(us.nextUID());
                     this.blackboard.publishAdd(agent_tem);
                 }
@@ -489,13 +489,13 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
                     //Add this agent ONLY if its node is in the parent (node) transEffect. If no node transEffect
                     //exists, then add only if its host is in the threat.
                     if (node_tem != null && node_tem.containsAsset(agent.getNode()) ) { 
-                        logger.debug("========================================== 9.1 ==> Adding agent["+agent.getName()+"] to transitive effect model! Agent's Node is in parent transEffect");
+                        if (logger.isDebugEnabled()) logger.debug("========================================== 9.1 ==> Adding agent["+agent.getName()+"] to transitive effect model! Agent's Node is in parent transEffect");
                         agent_tem.addAsset(agent);
                     } else if (dtm.containsAsset(agent.getHost()) ) { // then this node should be added to the transitive effect
-                        logger.debug("========================================== 9.1 ==> Adding agent["+agent.getName()+"] to transitive effect model! Agent's host is in threat");
+                        if (logger.isDebugEnabled()) logger.debug("========================================== 9.1 ==> Adding agent["+agent.getName()+"] to transitive effect model! Agent's host is in threat");
                         agent_tem.addAsset(agent);
                     } else {
-                        logger.debug("========================================== 9.5 ==> Agent not added to transitive effect model! Host Threat="+dtm.getName()+" did not contain this agent's["+agent.getName()+"] host="+agent.getHost().getName());
+                        if (logger.isDebugEnabled()) logger.debug("========================================== 9.5 ==> Agent not added to transitive effect model! Host Threat="+dtm.getName()+" did not contain this agent's["+agent.getName()+"] host="+agent.getHost().getName());
                     }
                 }   
             }
@@ -510,7 +510,7 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
     private void processNodeTransitiveEffects(Vector agents) {
      
         if (agents.size() == 0) { 
-            logger.debug("========================================== 11 ==> processNodeTransitiveEffects - no assets to process");
+            if (logger.isDebugEnabled()) logger.debug("========================================== 11 ==> processNodeTransitiveEffects - no assets to process");
             return; 
         }
 
@@ -539,7 +539,7 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
             if (transEffect != null) { //get its instantiation
                 tem = transEffect.getInstantiation();
                 if (tem == null) {
-                    logger.debug("========================================== 7 ==> Creating a child agent transitive effect model!");
+                    if (logger.isDebugEnabled()) logger.debug("========================================== 7 ==> Creating a child agent transitive effect model!");
                     tem = transEffect.instantiate(us.nextUID());
                     this.blackboard.publishAdd(tem);
                 }
@@ -548,10 +548,10 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
                 while (it.hasNext()) {                
                     AssetTechSpecInterface agent = (AssetTechSpecInterface)it.next();
                     if (dtm.containsAsset(agent.getNode()) ) { // then this agent should be added to the transitive effect
-                        logger.debug("========================================== 10 ==> Adding agent["+agent.getName()+"] to transitive effect model!");
+                        if (logger.isDebugEnabled()) logger.debug("========================================== 10 ==> Adding agent["+agent.getName()+"] to transitive effect model!");
                         tem.addAsset(agent);
                     } else {
-                        logger.debug("========================================== 10.5 ==> Agent not added to transitive effect model! Node Threat="+dtm.getName()+" did not contain this agent's node="+agent.getNode().getName());
+                        if (logger.isDebugEnabled()) logger.debug("========================================== 10.5 ==> Agent not added to transitive effect model! Node Threat="+dtm.getName()+" did not contain this agent's node="+agent.getNode().getName());
                     }
                 }   
             }
@@ -569,7 +569,7 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
         boolean createdModel = false;
         DefaultThreatModel dtm = metaModel.getInstantiation();
         if (dtm == null) {
-            logger.debug("========================================== 6 ==> Creating threat model!");
+            if (logger.isDebugEnabled()) logger.debug("========================================== 6 ==> Creating threat model!");
             dtm = metaModel.instantiate(us.nextUID());
             
             this.blackboard.publishAdd(dtm);
@@ -645,7 +645,7 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
                 //they changed in some way. Since the threat descriptions are published in a setupSubscription, this should not occur.
             }
             threatDescriptions = threatDescriptionsSub.getCollection();
-            logger.debug("Got " + threatDescriptions.size() + " ThreatDescriptions from the blackboard.");
+            if (logger.isDebugEnabled()) logger.debug("Got " + threatDescriptions.size() + " ThreatDescriptions from the blackboard.");
         }
         
         //Get the asset manager plugin

@@ -165,9 +165,9 @@ public class LoadTechSpecsPlugin extends ServiceUserPluginBase implements NotPer
             
             isMgmtAgent = (!nodeId.equals(agentId) );
             if (isMgmtAgent) {
-                logger.debug("*****************************************************************************Loaded on mgmt agent.");
+                if (logger.isDebugEnabled()) logger.debug("*****************************************************************************Loaded on mgmt agent.");
             } else {            
-                logger.debug("*****************************************************************************Loaded on node.");
+                if (logger.isDebugEnabled()) logger.debug("*****************************************************************************Loaded on node.");
             }
             
             

@@ -131,7 +131,7 @@ public class SensorTypeLoader extends XMLLoader {
             //Add diagnosis to service
             diagnosisTechSpecService.addDiagnosisTechSpec( sensorName, sensor );
             
-            logger.debug("Added new Sensor: \n"+sensor.toString() );
+            if (logger.isDebugEnabled()) logger.debug("Added new Sensor: \n"+sensor.toString() );
             
         } catch (NumberFormatException nfe) { //converting string to int
             logger.warn("SensorType XML Error for ["+sensorName+"]- Bad integer in latency: " + lat);

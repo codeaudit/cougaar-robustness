@@ -165,7 +165,7 @@ public class ThreatLoader extends XMLLoader {
             } //else, likely a text element - ignore
         }
 
-        logger.debug("Added new Threat (default) with no filter: \n"+threat.toString() );
+        if (logger.isDebugEnabled()) logger.debug("Added new Threat (default) with no filter: \n"+threat.toString() );
             
         return threats;
     }
@@ -210,20 +210,20 @@ public class ThreatLoader extends XMLLoader {
                 blackboard.publishAdd(td);
             } 
         }
-        logger.debug("Published "+threats.size()+" threats to the blackboard.");
+        if (logger.isDebugEnabled()) logger.debug("Published "+threats.size()+" threats to the blackboard.");
     }
     
 
     /** Parse sub kinds of threats & create new ThreatDescriptions for each entry */
     private void parseVulnerableAssets(Element element, ThreatDescription threat) {
 
-        logger.debug("Calling ThreatVulnerabilityLoader.parseElement...");
+        if (logger.isDebugEnabled()) logger.debug("Calling ThreatVulnerabilityLoader.parseElement...");
         
         ThreatVulnerabilityFilter vf = ThreatVulnerabilityLoader.parseElement(element, probabilityMap);
         if (vf != null) {
             ThreatDescription td = new ThreatDescription(threat, vf);
             threats.add(td);
-            logger.debug("Added new Threat (with filter): \n"+td.toString() );
+            if (logger.isDebugEnabled()) logger.debug("Added new Threat (with filter): \n"+td.toString() );
         } else {
             logger.error("Error parsing XML file for threat [" + threat.getName() + "]. ThreatVulnerabilityFilter was null for element = "+element.getNodeName() );
         }

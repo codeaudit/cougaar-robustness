@@ -167,7 +167,7 @@ public class ActuatorTypeLoader extends XMLLoader {
         //Add action to service
         actionTechSpecService.addActionTechSpec( actuatorName, actuator );
         
-        logger.debug("Added new Actuator: \n"+actuator.toString() );
+        if (logger.isDebugEnabled()) logger.debug("Added new Actuator: \n"+actuator.toString() );
         return null;
     }
     
