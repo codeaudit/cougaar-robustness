@@ -131,8 +131,8 @@ public class StatCalc implements Cloneable {
                   "node=\"" + node + "\" " +
                   "samples=\"" + df.format(samples) + "\" " +
                   "sum=\"" + df.format(sum) + "\" " +
-                  "sumSquares=\"" + df.format(sumSquares) + " \" " +
-                  "low=\"" + df.format(low) + " \" " +
+                  "sumSquares=\"" + df.format(sumSquares) + "\" " +
+                  "low=\"" + df.format(low) + "\" " +
                   "high=\"" + df.format(high) + "\" " +
                   "mean=\"" + df.format(getMean()) + "\" " +
                   "stdev=\"" + df.format(getStandardDeviation()) + "\" " +

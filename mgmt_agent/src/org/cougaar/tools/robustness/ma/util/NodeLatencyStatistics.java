@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -28,7 +29,6 @@ import java.util.Iterator;
 
 import org.xml.sax.XMLReader;
 import org.xml.sax.InputSource;
-import org.xml.sax.helpers.XMLReaderFactory;
 import org.xml.sax.helpers.DefaultHandler;
 import org.xml.sax.Attributes;
 
@@ -46,23 +46,33 @@ public class NodeLatencyStatistics {
   public NodeLatencyStatistics() {
   }
 
-  public void put(StatCalc sc) {
+  public NodeLatencyStatistics(Collection values) {
+    for (Iterator it = values.iterator(); it.hasNext();) {
+      put((StatCalc)it.next());
+    }
+  }
+
+  public synchronized void put(StatCalc sc) {
     scMap.put(sc.getNodeName(), sc);
   }
 
-  public StatCalc get(String nodeName) {
+  public synchronized StatCalc get(String nodeName) {
     return (StatCalc)scMap.get(nodeName);
   }
 
-  public List list() {
+  public synchronized List list() {
     return new ArrayList(scMap.keySet());
+  }
+
+  public synchronized Collection values() {
+    return new ArrayList(scMap.values());
   }
 
   public boolean contains(String id) {
     return scMap.containsKey(id);
   }
 
-  public void remove(String id) {
+  public synchronized void remove(String id) {
     if (scMap.containsKey(id)) {
       scMap.remove(id);
     }
