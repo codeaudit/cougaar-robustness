@@ -11,40 +11,48 @@
     <NodeID Name="Enclave4-RestartNode-1" />
   </Host>
   <Host Name="net2" >
-    <NodeID Name="NCA-NODE" >
+    <NodeID Name="NCA-NODE"/>
   </Host>
   <Host Name="net4" >
-    <NodeID Name="FWD-A" >
+    <NodeID Name="FWD-A"/>
   </Host>
   <Host Name="net5" >
-    <NodeID Name="TRANSCOM-NODE" >
-    <NodeID Name="AIR-NODE" >
-    <NodeID Name="SEA-NODE" >
-    <NodeID Name="THEATERTRANS-NODE" >
-    <NodeID Name="CONUSTRANS-NODE" >
-    <NodeID Name="CONUS-NODE" >
+    <NodeID Name="TRANSCOM-NODE"/>
+    <NodeID Name="AIR-NODE"/>
+    <NodeID Name="SEA-NODE"/>
+    <NodeID Name="THEATERTRANS-NODE"/>
+    <NodeID Name="CONUSTRANS-NODE"/>
+    <NodeID Name="CONUS-NODE"/>
   </Host>
   <Host Name="taper" >
-    <NodeID Name="FWD-B" >
-    <NodeID Name="FWD-C" >
-    <NodeID Name="FWD-D" >
-    <NodeID Name="FWD-E" >
-    <NodeID Name="FWD-F" >
-    <NodeID Name="AGG-NODE" >
-    <NodeID Name="PLAN-NODE" >
+    <NodeID Name="FWD-B"/>
+    <NodeID Name="FWD-C"/>
+    <NodeID Name="FWD-D"/>
+    <NodeID Name="FWD-E"/>
+    <NodeID Name="FWD-F"/>
+    <NodeID Name="AGG-NODE"/>
+    <NodeID Name="PLAN-NODE"/>
   </Host>
   <Host Name="wayne" >
-    <NodeID Name="REAR-A" >
-    <NodeID Name="REAR-B" >
-    <NodeID Name="REAR-C" >
-    <NodeID Name="REAR-D" >
-    <NodeID Name="REAR-E" >
+    <NodeID Name="REAR-A"/>
+    <NodeID Name="REAR-B"/>
+    <NodeID Name="REAR-C"/>
+    <NodeID Name="REAR-D"/>
+    <NodeID Name="REAR-E"/>
   </Host>
 
-  <Node Name="1AD-Enclave1-RobustnessManagerNode" />
-  <Node Name="1AD-Enclave2-RobustnessManagerNode" />
-  <Node Name="1AD-Enclave3-RobustnessManagerNode" />
-  <Node Name="1AD-Enclave4-RobustnessManagerNode" />
+  <Node Name="1AD-Enclave1-RobustnessManagerNode" >
+    <Agent Name="1AD-Enclave1-RobustnessManager" />
+  </Node>
+  <Node Name="1AD-Enclave2-RobustnessManagerNode" >
+    <Agent Name="1AD-Enclave2-RobustnessManager" />
+  </Node>
+  <Node Name="1AD-Enclave3-RobustnessManagerNode" >
+    <Agent Name="1AD-Enclave3-RobustnessManager" />
+  </Node>
+  <Node Name="1AD-Enclave4-RobustnessManagerNode" >
+    <Agent Name="1AD-Enclave4-RobustnessManager" />
+  </Node>
   <Node Name="Enclave1-RestartNode-1" />
   <Node Name="Enclave2-RestartNode-1" />
   <Node Name="Enclave3-RestartNode-1" />

@@ -32,6 +32,7 @@ require 'ultralog/scripting'
 Cougaar::ExperimentMonitor.enable_stdout
 
 Cougaar.new_experiment("MyExperiment").run {
+  #do_action "LoadSocietyFromCSmart", "TINY-1AD-TRANS", "net3", "admin", "admin", "CSMART10_0"
   do_action "LoadSocietyFromXML", "aruc1_society.xml"
   do_action "StartJabberCommunications", "acme_console", "oak"
 
