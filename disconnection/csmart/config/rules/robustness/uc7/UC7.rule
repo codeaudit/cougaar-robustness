@@ -12,7 +12,6 @@ ds = "org.cougaar.tools.robustness.disconnection.test.disconnection.Disconnectio
 mgrPlugins = [omsp, ompm, csp, cp]
 agentPlugins = [omsp, ompm, csp, dap, ds]
 
-society.each_enclave do |enclave|
 society.each_agent do |agent|
     if agent.name =~ /.*ARManager.*/
         agent.add_components(mgrPlugins)
