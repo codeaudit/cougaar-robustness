@@ -68,6 +68,8 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
   private IncrementalSubscription knobSubscription;
   private IncrementalSubscription testServletSubscription;
   private IncrementalSubscription actionsWrapperSubscription;
+  private IncrementalSubscription outsideLoadDiagnosisSubscription;
+  
 
   private Hashtable alarmTable = new Hashtable();
   private ActionSelectionKnob knob;
@@ -136,6 +138,8 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
         }
      }) ;
      
+     //Listen OutsideLoadDiagnosis - currently a stipulated value for an enclave controlled by a servlet
+     outsideLoadDiagnosisSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(OutsideLoadDiagnosis.pred);
   }
 
   
@@ -264,12 +268,20 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
   }
 
   private double getCurrentEnclaveResources() {
-    return 100.0;  // for now
+    // now uses a stipulated value based on an AVailableResourcesDiagnosis if present, else 65% avail for defenses
+    Iterator iter = outsideLoadDiagnosisSubscription.iterator();
+    if (iter.hasNext()) {
+       OutsideLoadDiagnosis diag = (OutsideLoadDiagnosis) iter.next();
+       if (diag.getValue().equals("None")) return 65.0;
+       if (diag.getValue().equals("Moderate")) return 55.0;
+       if (diag.getValue().equals("High")) return 45.0;
+       if (logger.isErrorEnabled()) logger.error("Bad value: " + diagn.getValue().toString() + " for OutsideLoadDiagnosis");
+       return 100.0;
+    }
+    else return 100.0;  
   }
 
-  private double getCostForAction(Action thisAction) { 
-    return 1.0; // for now
-  }
+
   
   private void selectActions(CostBenefitEvaluation cbe, ActionSelectionKnob knob) {
 
@@ -281,6 +293,8 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
     double resourcePercentageRemaining = getCurrentEnclaveResources();
     Set alreadyActiveActions = findActiveActions(cbe);
 
+    /* assume for now that all Compensatory actionss are revokable - so there is no sunk cost
+
     // deduct the cost of actions that we can't terminate
     iter = alreadyActiveActions.iterator();
     while (iter.hasNext()) {
@@ -288,6 +302,8 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
         double thisCost = getCostForAction(thisAction);
         resourcePercentageRemaining = resourcePercentageRemaining - thisCost;
     }
+
+    */
 
     Set alreadySelectedVariants = new HashSet();
 
@@ -304,11 +320,13 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
             if (logger.isDebugEnabled()) logger.debug("Considering conflict for Action: " +thisActionEvaluation.getAction().getClass().getName() + "Variant: " + proposedVariant.toString());
             if (logger.isDebugEnabled()) logger.debug(proposedVariant + " doesNotConflict: " + thisActionEvaluation.doesNotConflict(proposedVariant, alreadyActiveActions, alreadySelectedVariants));
             if (thisActionEvaluation.doesNotConflict(proposedVariant, alreadyActiveActions, alreadySelectedVariants)) {
-                if ((proposedVariant.getPredictedBenefit() > 0.0) || (thisActionEvaluation.mustSelectOne())) {
+                if ((proposeVariant.getPredictedCostPerTimeUnit() <= resourcePercentageRemaining) &&
+                        (proposedVariant.getPredictedBenefit() > 0.0) || (thisActionEvaluation.mustSelectOne())) {
                     pickedSomeVariant = true;
                     alreadySelectedVariants.add(proposedVariant);
                     proposedVariant.setChosen();
-                    if (logger.isInfoEnabled()) logger.info("Selected: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString());
+                    resourcePercentageRemaining = resourcePercentageRemaining - proposedVariant.getPredictedCostPerTimeUnit();
+                    if (logger.isInfoEnabled()) logger.info("Selected: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString() + ", % resources left " + resourcePercentageRemainaining);
                     if (eventService.isEventEnabled()) eventService.event(agentId + " selected " + thisAction.getClass().getName() + ":" + proposedVariant + " for " + thisAction.getAssetID().toString());
                     if ((!thisAction.getPermittedValues().contains(proposedVariant.getVariantName()))
                             && (thisAction.getValue() == null  
@@ -379,7 +397,9 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 	while (iter.hasNext()) {
 	    ActionsWrapper thisWrapper = (ActionsWrapper) iter.next();
 	    Action thisAction = thisWrapper.getAction();
-	    if ((thisAction.getValue() != null && thisAction.getValue().isActive())) {
+	    if ((thisAction.getValue() != null && thisAction.getValue().isActive()) 
+                    && (thisAction.getValuesOffered()==null 
+                              || (thisAction.getValuesOffered().size==1 && thisAction.getValuesOffered().contains(thisAction.getValue().getAction()))) {
 		activeActions.add(thisAction);
 	    }
 	}
