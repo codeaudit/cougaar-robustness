@@ -1,0 +1,256 @@
+//***PLAYS FOR SMALL
+
+//PLAYS FOR "TRANSCOM-NODE" *********************************************************
+
+// Combine local conditions to set the DefenseApplicable condition for the Coordinator
+
+(PlannedDisconnect.UnscheduledDisconnect.Node.TRANSCOM-NODE == TRUE)
+	: ApplicableTRANSCOM-NODE = TRUE;
+
+(PlannedDisconnect.ScheduledDisconnect.Node.TRANSCOM-NODE == TRUE)
+	: ApplicableTRANSCOM-NODE = TRUE;
+
+
+(PlannedDisconnect.ScheduledDisconnect.Node.TRANSCOM-NODE == FALSE) & 
+(PlannedDisconnect.UnscheduledDisconnect.Node.TRANSCOM-NODE == FALSE)
+	: ApplicableTRANSCOM-NODE = FALSE;
+
+
+ApplicableTRANSCOM-NODE == TRUE
+	: PlannedDisconnect.Applicable.Node.TRANSCOM-NODE = TRUE;
+
+ApplicableTRANSCOM-NODE == FALSE
+	: PlannedDisconnect.Applicable.Node.TRANSCOM-NODE = FALSE;
+
+
+
+
+// Coordinator logic says this Defense always gets to do what it wants
+
+ApplicableTRANSCOM-NODE == TRUE 
+	: DefenseTRANSCOM-NODE = ENABLED
+	: MonitoringTRANSCOM-NODE = ENABLED;
+
+ApplicableTRANSCOM-NODE == FALSE 
+	: DefenseTRANSCOM-NODE = DISABLED
+	: MonitoringTRANSCOM-NODE = DISABLED;
+
+
+DefenseTRANSCOM-NODE == ENABLED
+	: PlannedDisconnect.Defense.Node.TRANSCOM-NODE = ENABLED;
+
+DefenseTRANSCOM-NODE == DISABLED
+	: PlannedDisconnect.Defense.Node.TRANSCOM-NODE = DISABLED;
+
+MonitoringTRANSCOM-NODE == ENABLED
+	: PlannedDisconnect.Monitoring.Node.TRANSCOM-NODE = ENABLED;
+
+MonitoringTRANSCOM-NODE == DISABLED
+	: PlannedDisconnect.Monitoring.Node.TRANSCOM-NODE = DISABLED;
+
+
+
+
+// Transfer OpModes back to the right Defense instances
+
+(MonitoringTRANSCOM-NODE == ENABLED)  &
+(PlannedDisconnect.UnscheduledDisconnect.Node.TRANSCOM-NODE == TRUE) & 
+(PlannedDisconnect.UnscheduledReconnectTime.Node.TRANSCOM-NODE > 0)
+	: [agent.TRANSCOM-NODE]PlannedDisconnect.NodeMonitoring.Node.TRANSCOM-NODE = DISABLED
+	: PlannedDisconnect.NodeMonitoring.Node.TRANSCOM-NODE = ENABLED;
+
+(MonitoringTRANSCOM-NODE == ENABLED) &
+(PlannedDisconnect.ScheduledDisconnect.Node.TRANSCOM-NODE == TRUE) & 
+(PlannedDisconnect.ScheduledReconnectTime.Node.TRANSCOM-NODE > 0)
+	: [agent.TRANSCOM-NODE]PlannedDisconnect.NodeMonitoring.Node.TRANSCOM-NODE = DISABLED
+	: PlannedDisconnect.ManagerMonitoring.Node.TRANSCOM-NODE = ENABLED;
+
+(MonitoringTRANSCOM-NODE == DISABLED)
+	: PlannedDisconnect.ManagerMonitoring.Node.TRANSCOM-NODE = DISABLED
+	: [agent.TRANSCOM-NODE]PlannedDisconnect.NodeMonitoring.Node.TRANSCOM-NODE = DISABLED;
+
+(PlannedDisconnect.ScheduledReconnectTime.Node.TRANSCOM-NODE == 0)
+	: PlannedDisconnect.ManagerMonitoring.Node.TRANSCOM-NODE = DISABLED;
+
+(PlannedDisconnect.UnscheduledReconnectTime.Node.TRANSCOM-NODE == 0)
+	: PlannedDisconnect.NodeMonitoring.TRANSCOM-NODE = DISABLED;
+
+(DefenseTRANSCOM-NODE == ENABLED)
+	: PlannedDisconnect.ManagerDefense.Node.TRANSCOM-NODE = ENABLED
+	: [agent.TRANSCOM-NODE]PlannedDisconnect.NodeDefense.Node.TRANSCOM-NODE = ENABLED;
+
+(DefenseTRANSCOM-NODE == DISABLED)
+	: PlannedDisconnect.ManagerDefense.Node.TRANSCOM-NODE = DISABLED
+	: [agent.TRANSCOM-NODE]PlannedDisconnect.NodeDefense.Node.TRANSCOM-NODE = DISABLED;
+
+
+
+//PLAYS FOR "REAR" ******************************************************************
+
+// Combine local conditions to set the DefenseApplicable condition for the Coordinator
+
+(PlannedDisconnect.UnscheduledDisconnect.Node.REAR == TRUE)
+	: ApplicableREAR = TRUE;
+
+(PlannedDisconnect.ScheduledDisconnect.Node.REAR == TRUE)
+	: ApplicableREAR = TRUE;
+
+
+(PlannedDisconnect.ScheduledDisconnect.Node.REAR == FALSE) & 
+(PlannedDisconnect.UnscheduledDisconnect.Node.REAR == FALSE)
+	: ApplicableREAR = FALSE;
+
+
+ApplicableREAR == TRUE
+	: PlannedDisconnect.Applicable.Node.REAR = TRUE;
+
+ApplicableREAR == FALSE
+	: PlannedDisconnect.Applicable.Node.REAR = FALSE;
+
+
+
+
+// Coordinator logic says this Defense always gets to do what it wants
+
+ApplicableREAR == TRUE 
+	: DefenseREAR = ENABLED
+	: MonitoringREAR = ENABLED;
+
+ApplicableREAR == FALSE 
+	: DefenseREAR = DISABLED
+	: MonitoringREAR = DISABLED;
+
+
+DefenseREAR == ENABLED
+	: PlannedDisconnect.Defense.Node.REAR = ENABLED;
+
+DefenseREAR == DISABLED
+	: PlannedDisconnect.Defense.Node.REAR = DISABLED;
+
+MonitoringREAR == ENABLED
+	: PlannedDisconnect.Monitoring.Node.REAR = ENABLED;
+
+MonitoringREAR == DISABLED
+	: PlannedDisconnect.Monitoring.Node.REAR = DISABLED;
+
+
+
+
+// Transfer OpModes back to the right Defense instances
+
+(MonitoringREAR == ENABLED)  &
+(PlannedDisconnect.UnscheduledDisconnect.Node.REAR == TRUE) & 
+(PlannedDisconnect.UnscheduledReconnectTime.Node.REAR > 0)
+	: [agent.REAR]PlannedDisconnect.NodeMonitoring.Node.REAR = DISABLED
+	: PlannedDisconnect.NodeMonitoring.Node.REAR = ENABLED;
+
+(MonitoringREAR == ENABLED) &
+(PlannedDisconnect.ScheduledDisconnect.Node.REAR == TRUE) & 
+(PlannedDisconnect.ScheduledReconnectTime.Node.REAR > 0)
+	: [agent.REAR]PlannedDisconnect.NodeMonitoring.Node.REAR = DISABLED
+	: PlannedDisconnect.ManagerMonitoring.Node.REAR = ENABLED;
+
+(MonitoringREAR == DISABLED)
+	: PlannedDisconnect.ManagerMonitoring.Node.REAR = DISABLED
+	: [agent.REAR]PlannedDisconnect.NodeMonitoring.Node.REAR = DISABLED;
+
+(PlannedDisconnect.ScheduledReconnectTime.Node.REAR == 0)
+	: PlannedDisconnect.ManagerMonitoring.Node.REAR = DISABLED;
+
+(PlannedDisconnect.UnscheduledReconnectTime.Node.REAR == 0)
+	: PlannedDisconnect.NodeMonitoring.REAR = DISABLED;
+
+(DefenseREAR == ENABLED)
+	: PlannedDisconnect.ManagerDefense.Node.REAR = ENABLED
+	: [agent.REAR]PlannedDisconnect.NodeDefense.Node.REAR = ENABLED;
+
+(DefenseREAR == DISABLED)
+	: PlannedDisconnect.ManagerDefense.Node.REAR = DISABLED
+	: [agent.REAR]PlannedDisconnect.NodeDefense.Node.REAR = DISABLED;
+
+
+//PLAYS FOR "FWD" ***********************************************
+
+// Combine local conditions to set the DefenseApplicable condition for the Coordinator
+
+(PlannedDisconnect.UnscheduledDisconnect.Node.FWD == TRUE)
+	: ApplicableFWD = TRUE;
+
+(PlannedDisconnect.ScheduledDisconnect.Node.FWD == TRUE)
+	: ApplicableFWD = TRUE;
+
+
+(PlannedDisconnect.ScheduledDisconnect.Node.FWD == FALSE) & 
+(PlannedDisconnect.UnscheduledDisconnect.Node.FWD == FALSE)
+	: ApplicableFWD = FALSE;
+
+
+ApplicableFWD == TRUE
+	: PlannedDisconnect.Applicable.Node.FWD = TRUE;
+
+ApplicableFWD == FALSE
+	: PlannedDisconnect.Applicable.Node.FWD = FALSE;
+
+
+
+
+// Coordinator logic says this Defense always gets to do what it wants
+
+ApplicableFWD == TRUE 
+	: DefenseFWD = ENABLED
+	: MonitoringFWD = ENABLED;
+
+ApplicableFWD == FALSE 
+	: DefenseFWD = DISABLED
+	: MonitoringFWD = DISABLED;
+
+
+DefenseFWD == ENABLED
+	: PlannedDisconnect.Defense.Node.FWD = ENABLED;
+
+DefenseFWD == DISABLED
+	: PlannedDisconnect.Defense.Node.FWD = DISABLED;
+
+MonitoringFWD == ENABLED
+	: PlannedDisconnect.Monitoring.Node.FWD = ENABLED;
+
+MonitoringFWD == DISABLED
+	: PlannedDisconnect.Monitoring.Node.FWD = DISABLED;
+
+
+
+
+// Transfer OpModes back to the right Defense instances
+
+(MonitoringFWD == ENABLED)  &
+(PlannedDisconnect.UnscheduledDisconnect.Node.FWD == TRUE) & 
+(PlannedDisconnect.UnscheduledReconnectTime.Node.FWD > 0)
+	: [agent.FWD]PlannedDisconnect.NodeMonitoring.Node.FWD = DISABLED
+	: PlannedDisconnect.NodeMonitoring.Node.FWD = ENABLED;
+
+(MonitoringFWD == ENABLED) &
+(PlannedDisconnect.ScheduledDisconnect.Node.FWD == TRUE) & 
+(PlannedDisconnect.ScheduledReconnectTime.Node.FWD > 0)
+	: [agent.FWD]PlannedDisconnect.NodeMonitoring.Node.FWD = DISABLED
+	: PlannedDisconnect.ManagerMonitoring.Node.FWD = ENABLED;
+
+(MonitoringFWD == DISABLED)
+	: PlannedDisconnect.ManagerMonitoring.Node.FWD = DISABLED
+	: [agent.FWD]PlannedDisconnect.NodeMonitoring.Node.FWD = DISABLED;
+
+(PlannedDisconnect.ScheduledReconnectTime.Node.FWD == 0)
+	: PlannedDisconnect.ManagerMonitoring.Node.FWD = DISABLED;
+
+(PlannedDisconnect.UnscheduledReconnectTime.Node.FWD == 0)
+	: PlannedDisconnect.NodeMonitoring.FWD = DISABLED;
+
+(DefenseFWD == ENABLED)
+	: PlannedDisconnect.ManagerDefense.Node.FWD = ENABLED
+	: [agent.FWD]PlannedDisconnect.NodeDefense.Node.FWD = ENABLED;
+
+(DefenseFWD == DISABLED)
+	: PlannedDisconnect.ManagerDefense.Node.FWD = DISABLED
+	: [agent.FWD]PlannedDisconnect.NodeDefense.Node.FWD = DISABLED;
+
+
+
