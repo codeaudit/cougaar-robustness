@@ -41,18 +41,15 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   public static final int RESTART        = 4;
   public static final int FAILED_RESTART = 5;
   public static final int MOVE           = 6;
-  public static final int FAILED_MOVE    = 7;
 
   public static long DEFAULT_EXPIRATION = 1 * 60 * 1000;
 
-  // Default timeouts, may be overridden by community attributes
-  public static final long PING_TIMEOUT = 10 * 1000;
-  public static final long RESTART_TIMEOUT = 300 * 1000;
-
-  public static final long HEARTBEAT_REQUEST_TIMEOUT = 30 * 1000;
-  public static final long HEARTBEAT_FREQUENCY = 30 * 1000;
-  public static final long HEARTBEAT_TIMEOUT = 60 * 1000;
-  public static final long HEARTBEAT_PCT_OUT_OF_SPEC = 50;
+  // Default parameter values, may be overridden by community/entity attributes
+  public static final long PING_TIMEOUT              =  10 * 1000;
+  public static final long HEARTBEAT_REQUEST_TIMEOUT =  30 * 1000;
+  public static final long HEARTBEAT_FREQUENCY       =  30 * 1000;
+  public static final long HEARTBEAT_TIMEOUT         =  60 * 1000;
+  public static final long HEARTBEAT_PCT_OUT_OF_SPEC =  50;
 
   /**
    * State Controller: INITIAL
@@ -62,38 +59,30 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    *   Next state:  HEALTH_CHECK if status expired
    * </pre>
    */
-  class InitialStateController extends StateControllerBase
-      implements HeartbeatListener {
-    { getHeartbeater().addListener(this); }
+  class InitialStateController extends    StateControllerBase
+                               implements HeartbeatListener {
+    { addHeartbeatListener(this); }
     public void enter(String name) {
-      //logger.info("enter: state=INITIAL agent=" + name + " loc=" + model.getLocation(name));
-      if(isLocalAgent(name)) {
-        if(model.getType(name) == model.AGENT) {
-          getHeartbeater().startHeartbeats(name,
-                                           HEARTBEAT_REQUEST_TIMEOUT,
-                                           HEARTBEAT_FREQUENCY,
-                                           HEARTBEAT_TIMEOUT,
-                                           HEARTBEAT_PCT_OUT_OF_SPEC);
-        } else {
+      if (isLocal(name)) {
+        if (isAgent(name)) {
+          startHeartbeats(name);
+        } else { // is node
           model.setCurrentState(name, DefaultRobustnessController.ACTIVE, NEVER);
         }
       }
     }
     public void expired(String name) {
-      //logger.info("expired: state=INITIAL agent=" + name + " loc=" + model.getLocation(name));
-      if (isLocalAgent(name)){
-        newState(name, HEALTH_CHECK);
-      }
+      if (isLocal(name)) newState(name, HEALTH_CHECK);
     }
     public void heartbeatStarted(String name) {
-      if (isLocalAgent(name)) {
-        //logger.info("Heartbeats started: agent=" + name);
-        model.setCurrentState(name, DefaultRobustnessController.ACTIVE, NEVER);
+      if (isLocal(name)) {
+        logger.debug("Heartbeats started: agent=" + name);
+        newState(name, DefaultRobustnessController.ACTIVE);
       }
     }
     public void heartbeatFailure(String name) {
-      if (model.getCurrentState(name) == DefaultRobustnessController.ACTIVE &&
-          isLocalAgent(name)) {
+      if (getState(name) == DefaultRobustnessController.ACTIVE &&
+          isLocal(name)) {
         logger.info("Heartbeat failure: agent=" + name);
         newState(name, HEALTH_CHECK);
       }
@@ -114,17 +103,19 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (isLeader()) {
         if (communityReady == false && liveAgents() == expectedAgents()) {
           communityReady = true;
-          event("Community Ready");
+          event("Community " + model.getCommunityName() + " Ready");
         }
       }
       //logger.info("enter: state=ACTIVE agent=" + name);
-      if (isLocalAgent(name)) {
-        model.setStateTTL(name, NEVER);  // Set expiration to never, let
-                                         // heartbeatListener maintain state
+      if (isLocal(name)) {
+        setExpiration(name, NEVER);  // Set expiration to never, let
+                                     // heartbeatListener maintain state status
       }
     }
     public void expired(String name) {
-      logger.info("expired: state=ACTIVE agent=" + name);
+      if (isLocal(name) || isLeader()) {
+        logger.info("expired: state=ACTIVE agent=" + name);
+      }
       newState(name, HEALTH_CHECK);
     }
   }
@@ -137,17 +128,13 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    *                DEAD on failed ping or expired status
    * </pre>
    */
-  class HealthCheckStateController
-      extends StateControllerBase {
+  class HealthCheckStateController extends StateControllerBase {
     public void enter(String name) {
-      //logger.info("enter: state=HEALTH_CHECK agent=" + name);
-      //if(isLeader() || isLocalAgent(name) || isNode(name)) {
-      if(isLocalAgent(name) || isNode(name)) {
-        doPing(name, PING_TIMEOUT, DefaultRobustnessController.ACTIVE, DEAD);
+      if(isLocal(name) || isNode(name)) {
+        doPing(name, DefaultRobustnessController.ACTIVE, DEAD);
       }
     }
     public void expired(String name) {
-      //logger.info("expired: state=HEALTH_CHECK agent=" + name);
       if(isLeader() || isNode(name)) {
         newState(name, DEAD);
       }
@@ -164,19 +151,16 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   class DeadStateController extends StateControllerBase {
     public void enter(String name) {
       if (isLeader() && isAgent(name)){
-        communityReady = false;
-        //logger.info("enter: state=DEAD agent=" + name);
-          // Interface point for UC9
-          // If Ok'd by UC9 set state to RESTART
+        communityReady = false;  // For ACME Community Ready Events
+          // Interface point for Deconfliction
+          // If Ok'd by Deconflictor set state to RESTART
         newState(name, RESTART);
+        setLocation(name, "");
       } else if (isNode(name)) {
-        model.setStateTTL(name, NEVER);  // Never expires
-      } else if (isLocalAgent(name)) {
-        model.setLocation(name, null);
+        setExpiration(name, NEVER);  // Never expires
+      } else if (isLocal(name)) {
+        setLocation(name, null);
       }
-    }
-    public void expired(String name) {
-      // No action on expired status ??
     }
   }
 
@@ -190,34 +174,30 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    * </pre>
    */
   class RestartStateController extends StateControllerBase implements RestartListener {
-
-    { getRestarter().addListener(this); }
-
+    { addRestartListener(this); }
     public void enter(String name) {
-      //logger.info("enter: state=RESTART agent=" + name);
       if (isLeader() && isAgent(name)) {
         String dest = getRestartLocation();
-        //logger.info("Restarting agent=" + name + " dest=" + dest);
         restartAgent(name, dest);
       }
     }
 
     public void expired(String name) {
-      //logger.info("expired: state=RESTART agent=" + name);
       if (isLeader()) {
         newState(name, FAILED_RESTART);
       }
     }
 
-    public void restartInitiated(String name) {
+    public void restartInitiated(String name, String dest) {
+      event("Restarting agent=" + name + " dest=" + dest);
     }
 
-    public void restartComplete(String name, int status) {
+    public void restartComplete(String name, String dest, int status) {
       if (status == RestartHelper.SUCCESS) {
-        setLocation(name, thisAgent.toString());
-        newState(name, INITIAL);
-        logger.info("Restart complete: agent=" + name + " location=" + model.getLocation(name));
+        event("Restart complete: agent=" + name + " location=" + dest);
+        updateLocationAndSetState(name, INITIAL);
       } else {
+        event("Restart failed: agent=" + name + " location=" + dest);
         newState(name, FAILED_RESTART);
       }
     }
@@ -233,15 +213,13 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   class FailedRestartStateController extends StateControllerBase {
 
     public void enter(String name) {
-      //logger.info("enter: state=FAILED_RESTART agent=" + name);
       if (isLeader() && isAgent(name)) {
-        newState(name, HEALTH_CHECK);
+        //newState(name, HEALTH_CHECK);
       }
     }
     public void expired(String name) {
-      //logger.info("expired: state=FAILED_RESTART agent=" + name);
       if (isLeader() && isAgent(name)) {
-        newState(name, HEALTH_CHECK);
+        //newState(name, HEALTH_CHECK);
       }
     }
   }
@@ -254,13 +232,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    * </pre>
    */
   class MoveStateController extends StateControllerBase implements MoveListener {
-
-    { getMover().addListener(this); }
-
+    { addMoveListener(this); }
     public void enter(String name) {
-      if (isLeader() && isAgent(name)) {
-        newState(name, HEALTH_CHECK);
-      }
     }
     public void expired(String name) {
       if (isLeader() && isAgent(name)) {
@@ -268,19 +241,27 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       }
     }
 
-    public void moveInitiated(String name) {
+    public void moveInitiated(String name, String orig, String dest) {
+      event("Move initiated:" +
+            " agent=" + name +
+            " orig=" + orig +
+            " dest=" + dest);
+      newState(name, MOVE);
     }
 
-    public void moveComplete(String name, int status) {
-      if(status == MoveHelper.SUCCESS) {
-        newState(name, INITIAL);
-        setLocation(name, thisAgent.toString());
-      } else {
-        newState(name, FAILED_MOVE);
+    public void moveComplete(String name, String orig, String dest, int status) {
+      event("Move complete:" +
+            " agent=" + name +
+            " orig=" + orig +
+            " dest=" + dest +
+            " status=" + (status == MoveHelper.SUCCESS ? "SUCCESS" : "FAIL"));
+      if (status == MoveHelper.FAIL) {
+        newState(name, HEALTH_CHECK);
       }
     }
 
   }
+
 
   /**
    * Constructor initializes services and loads state controller classes.
@@ -290,7 +271,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                                      final CommunityStatusModel csm) {
     super(thisAgent, bs, csm);
     addController(INITIAL,        "INITIAL", new InitialStateController());
-    addController(DefaultRobustnessController.ACTIVE,         "ACTIVE",  new ActiveStateController());
+    addController(DefaultRobustnessController.ACTIVE, "ACTIVE",  new ActiveStateController());
     addController(HEALTH_CHECK,   "HEALTH_CHECK",  new HealthCheckStateController());
     addController(DEAD,           "DEAD",  new DeadStateController());
     addController(RESTART,        "RESTART", new RestartStateController());
@@ -322,13 +303,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   }
 
   public long expectedAgents() {
-    Attributes attrs = model.getCommunityAttributes();
-    if (attrs != null && model.hasAttribute(attrs, "NumberOfAgents")) {
-      return model.getLongAttribute(attrs, "NumberOfAgents");
-    } else {
-      return -1;
-    }
-  }
+    return getLongProperty("NumberOfAgents", -1);  }
 
   /**
    * Selects destination node for agent to be restarted.
