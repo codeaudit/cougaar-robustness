@@ -1,8 +1,8 @@
 =begin experiment
 
-name: UR-Stage-4-Save-ARUC7
+name: UR-Stage-2-Save-ARUC7
 group: Save
-description: UR save Stage4 + ARUC7
+description: UR save Stage2 + ARUC7
 script: $CIP/csmart/scripts/definitions/UR-BaselineTemplate-ExtOplan.rb
 parameters:
   - run_count: 1
@@ -14,6 +14,7 @@ parameters:
     - $CIP/csmart/config/rules/isat
     - $CIP/csmart/config/rules/yp
     - $CIP/csmart/config/rules/logistics
+    - $CIP/csmart/config/rules/robustness
     - $CIP/csmart/config/rules/robustness/common
     - $CIP/csmart/config/rules/robustness/uc8
     - $CIP/csmart/config/rules/coordinator
@@ -35,8 +36,8 @@ include_scripts:
   - script: $CIP/csmart/lib/isat/initialize_network.rb
   - script: $CIP/csmart/lib/isat/save_snapshot.rb
     parameters:
-      - snapshot_name: $CIP/SAVE-PreStage4-ARUC7.tgz
-      - snapshot_location: before_stage_4
+      - snapshot_name: $CIP/SAVE-PreStage2-ARUC7.tgz
+      - snapshot_location: before_stage_2
   - script: $CIP/csmart/lib/coordinator/unleash_defenses.rb 
 =end
 
