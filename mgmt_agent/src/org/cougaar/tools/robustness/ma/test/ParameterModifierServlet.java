@@ -130,20 +130,25 @@ public class ParameterModifierServlet extends BaseServletComponent implements Bl
 
       if(doSubmit)
       {
-        String[][] params = new String[prop.size()][2];
+        //String[][] params = new String[prop.size()][2];
         int i=0;
         for(Enumeration enums = prop.keys(); enums.hasMoreElements();)
         {
-          params[i][0] = (String)enums.nextElement();
-          params[i][1] = (String)newParams[i];
+          //params[i][0] = (String)enums.nextElement();
+          //params[i][1] = (String)newParams[i];
+          String key = (String)enums.nextElement();
+          String value = (String)newParams[i];
+          prop.setProperty(key, value);
           i++;
         }
         //newParams.clear();
-        ManagementAgentProperties newProp = ManagementAgentProperties.makeProps(packageName + pluginName, params);
+        //ManagementAgentProperties newProp = ManagementAgentProperties.makeProps(packageName + pluginName, params);
+
         try{
           blackboard.openTransaction();
-          blackboard.publishRemove(prop);//System.out.println("remove old props: " + prop);
-          blackboard.publishAdd(newProp);//System.out.println("add new props: " + newProp);
+          blackboard.publishChange(prop);
+          //blackboard.publishRemove(prop);//System.out.println("remove old props: " + prop);
+          //blackboard.publishAdd(newProp);//System.out.println("add new props: " + newProp);
         }finally
         { blackboard.closeTransaction(); }
       }

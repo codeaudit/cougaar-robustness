@@ -208,12 +208,22 @@ public class HealthMonitorPlugin extends SimplePlugin {
     // Print informational message defining current parameters
     StringBuffer startMsg = new StringBuffer();
     startMsg.append("HealthMonitorPlugin started: agent=" + myAgent);
+    startMsg.append(" " + paramsToString());
+    log.info(startMsg.toString());
+  }
+
+  /**
+   * Creates a printable representation of current parameters.
+   * @return  Text string of current parameters
+   */
+  private String paramsToString() {
+    StringBuffer sb = new StringBuffer();
     for (Enumeration enum = healthMonitorProps.propertyNames(); enum.hasMoreElements();) {
       String propName = (String)enum.nextElement();
-      startMsg.append(" " + propName + "=" +
-        healthMonitorProps.getProperty(propName));
+      sb.append(propName + "=" +
+        healthMonitorProps.getProperty(propName) + " ");
     }
-    log.info(startMsg.toString());
+    return sb.toString();
   }
 
   /**
@@ -223,10 +233,11 @@ public class HealthMonitorPlugin extends SimplePlugin {
   public void execute() {
 
     // Get Parameter changes
-    for (Iterator it = mgmtAgentProps.getAddedCollection().iterator();
+    for (Iterator it = mgmtAgentProps.getChangedCollection().iterator();
          it.hasNext();) {
       ManagementAgentProperties props = (ManagementAgentProperties)it.next();
       updateParams(props);
+      log.info("Parameters modified: " + paramsToString());
     }
 
     // Get HeartbeatRequests
@@ -481,7 +492,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
    * Utility method for calculating difference between 2 time values.
    * @param start
    * @param end
-   * @return
+   * @return Difference (in ms) between two Date objects
    */
   private long elapsedTime(Date start, Date end) {
     return end.getTime() - start.getTime();
@@ -525,7 +536,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
   /**
    * Returns the HealthStatus object associated with a specified agent.
    * @param agentId
-   * @return
+   * @return  HealthStatus object associated with specified agent ID
    */
   private HealthStatus getHealthStatus(MessageAddress agentId) {
     for (Iterator it = membersHealthStatus.iterator(); it.hasNext();) {
@@ -642,17 +653,16 @@ public class HealthMonitorPlugin extends SimplePlugin {
   /**
    * Predicate for Management Agent properties
    */
+  String myPluginName = getClass().getName();
   private IncrementalSubscription mgmtAgentProps;
   private UnaryPredicate propertiesPredicate = new UnaryPredicate() {
     public boolean execute(Object o) {
       if (o instanceof ManagementAgentProperties) {
         ManagementAgentProperties props = (ManagementAgentProperties)o;
-        String myName = this.getClass().getName();
         String forName = props.getPluginName();
-        return (myName.equals(forName) || myName.endsWith(forName));
+        return (myPluginName.equals(forName) || myPluginName.endsWith(forName));
       }
       return false;
   }};
-
 
 }

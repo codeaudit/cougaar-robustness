@@ -9,7 +9,10 @@
   <!-- set global properties for this build -->
   <property environment="env"/>
   <property name="cougaar" value="${env.COUGAAR_INSTALL_PATH}"/>
-  <property name="host" value="localhost"/>
+  <property name="host" value="${env.HOST}"/>
+  <property name="node" value="RestartNode"/>
+  <property name="persistenceEnabled" value="false"/>
+  <property name="persistenceInterval" value="30000"/>
   <property name="packageDir" value="org/cougaar/tools/robustness"/>
 
   <!-- Define location of 3rd-party libraries -->
@@ -164,160 +167,87 @@
   </target>
 
   <!-- Runs ManagementAgent -->
-    <target name="manager" description="Runs ManagementAgent">
-    <java dir="${basedir}" fork="yes"
-      maxmemory="350m"
-      classname="org.cougaar.bootstrap.Bootstrapper">
-      <jvmarg value="-Xms100m"/>
-      <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
-      <classpath>
-        <fileset dir="${cougaar}/lib">
-          <include name="**/*.jar" />
-        </fileset>
-        <fileset dir="${cougaar}/sys">
-          <include name="**/*.jar" />
-        </fileset>
-        <fileset dir="${lib}">
-          <include name="**/*.jar" />
-        </fileset>
-      </classpath>
-      <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
-      <!-- <sysproperty key="org.cougaar.community.caching" value="off"/> -->
-      <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
-      <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
-      <sysproperty key="org.cougaar.system.path" value="${lib}"/>
-      <!-- <sysproperty key="org.cougaar.class.path" value="lib/community.jar:lib/Robustness_objs_sensors.jar:lib/Robustness_bbn_bbn.jar"/> -->
-      <sysproperty key="org.cougaar.config.path" value="$$INSTALL/configs/common;$$CWD/test/data;$$CWD/test/configs/ma;$$CWD/test/configs/common"/>
-      <arg line="org.cougaar.core.node.Node ManagerNode"/>
-    </java>
+  <target name="manager" description="Runs ManagementAgent">
+    <antcall target="startnode" >
+      <param name="node" value="ManagerNode" />
+    </antcall>
   </target>
 
   <!-- Runs MiniTestConfig on one node -->
     <target name="minitestconfig" description="Runs MiniTestConfig society on a single node">
-    <java dir="${basedir}" fork="yes"
-      maxmemory="350m"
-      classname="org.cougaar.bootstrap.Bootstrapper">
-      <jvmarg value="-Xms100m"/>
-      <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
-      <classpath>
-        <fileset dir="${cougaar}/lib">
-          <include name="**/*.jar" />
-        </fileset>
-        <fileset dir="${cougaar}/sys">
-          <include name="**/*.jar" />
-        </fileset>
-        <fileset dir="${lib}">
-          <include name="**/*.jar" />
-        </fileset>
-      </classpath>
-      <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
-      <!-- <sysproperty key="org.cougaar.community.caching" value="off"/> -->
-      <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
-      <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
-      <sysproperty key="org.cougaar.system.path" value="${lib}"/>
-      <!-- <sysproperty key="org.cougaar.class.path" value="lib/community.jar:lib/Robustness_objs_sensors.jar:lib/Robustness_bbn_bbn.jar"/> -->
-      <sysproperty key="org.cougaar.config.path" value="$$INSTALL/configs/common;$$CWD/test/data;$$CWD/test/configs/ma;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig"/>
-      <arg line="org.cougaar.core.node.Node MiniTestConfigNode"/>
-    </java>
+    <antcall target="startnode" >
+      <param name="node" value="MiniTestConfigNode" />
+    </antcall>
   </target>
 
-  <!-- Runs partial MiniTestConfig society on one node -->
-    <target name="mininode1" description="Runs Partial MiniTestConfig society (1BDE, 3-69-ARBN, MCCGlobalMode) on a single node">
-    <java dir="${basedir}" fork="yes"
-      maxmemory="350m"
-      classname="org.cougaar.bootstrap.Bootstrapper">
-      <jvmarg value="-Xms100m"/>
-      <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
-      <classpath>
-        <fileset dir="${cougaar}/lib">
-          <include name="**/*.jar" />
-        </fileset>
-        <fileset dir="${cougaar}/sys">
-          <include name="**/*.jar" />
-        </fileset>
-        <fileset dir="${lib}">
-          <include name="**/*.jar" />
-        </fileset>
-      </classpath>
-      <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
-      <!-- <sysproperty key="org.cougaar.community.caching" value="off"/> -->
-      <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
-      <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
-      <sysproperty key="org.cougaar.system.path" value="${lib}"/>
-      <!-- <sysproperty key="org.cougaar.class.path" value="lib/community.jar:lib/Robustness_objs_sensors.jar:lib/Robustness_bbn_bbn.jar"/> -->
-      <sysproperty key="org.cougaar.config.path" value="$$INSTALL/configs/common;$$CWD/test/data;$$CWD/test/configs/ma;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig"/>
-      <arg line="org.cougaar.core.node.Node MiniNode1"/>
-    </java>
+  <!-- Runs a mininode1-->
+  <target name="mininode1" description="Runs Partial MiniTestConfig society (1BDE, 3-69-ARBN, MCCGlobalMode) on a single node" >
+    <antcall target="startnode" >
+      <param name="node" value="MiniNode1" />
+    </antcall>
   </target>
 
-  <!-- Runs partial MiniTestConfig society on one node -->
-    <target name="mininode2" description="Runs Partial MiniTestConfig society (3ID) on a single node">
-    <java dir="${basedir}" fork="yes"
-      maxmemory="350m"
-      classname="org.cougaar.bootstrap.Bootstrapper">
-      <jvmarg value="-Xms100m"/>
-      <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
-      <classpath>
-        <fileset dir="${cougaar}/lib">
-          <include name="**/*.jar" />
-        </fileset>
-        <fileset dir="${cougaar}/sys">
-          <include name="**/*.jar" />
-        </fileset>
-        <fileset dir="${lib}">
-          <include name="**/*.jar" />
-        </fileset>
-      </classpath>
-      <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
-      <!-- <sysproperty key="org.cougaar.community.caching" value="off"/> -->
-      <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
-      <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
-      <sysproperty key="org.cougaar.core.persistence.enable" value="true"/>
-      <sysproperty key="org.cougaar.core.persistence.lazyInterval" value="30000"/>
-      <sysproperty key="org.cougaar.system.path" value="${lib}"/>
-      <!-- <sysproperty key="org.cougaar.class.path" value="lib/community.jar:lib/Robustness_objs_sensors.jar:lib/Robustness_bbn_bbn.jar"/> -->
-      <sysproperty key="org.cougaar.config.path" value="$$INSTALL/configs/common;$$CWD/test/data;$$CWD/test/configs/ma;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig"/>
-      <arg line="org.cougaar.core.node.Node MiniNode2"/>
-    </java>
+  <!-- Runs a mininode2-->
+  <target name="mininode2" description="Runs Partial MiniTestConfig society (3ID) on a single node" >
+    <antcall target="startnode" >
+      <param name="node" value="MiniNode2" />
+      <param name="persistenceEnabled" value="true" />
+    </antcall>
   </target>
 
-  <!-- Runs EmptyNode -->
-    <target name="emptynode" description="Starts an empty node">
-    <mkdir dir="${workspace}/configs" />
-    <copy file="test/configs/ma/EmptyNode.ini" tofile="${workspace}/configs/${host}-EmptyNode.ini" />
-    <echo message="Starting node: ${host}-EmptyNode" />
-    <java dir="${basedir}" fork="yes"
-      maxmemory="350m"
-      classname="org.cougaar.bootstrap.Bootstrapper">
-      <jvmarg value="-Xms100m"/>
-      <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
-      <classpath>
-        <fileset dir="${cougaar}/lib">
-          <include name="**/*.jar" />
-        </fileset>
-        <fileset dir="${cougaar}/sys">
-          <include name="**/*.jar" />
-        </fileset>
-        <fileset dir="${lib}">
-          <include name="**/*.jar" />
-        </fileset>
-      </classpath>
-      <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
-      <!-- <sysproperty key="org.cougaar.community.caching" value="off"/> -->
-      <sysproperty key="org.cougaar.node.name" value="${host}-EmptyNode"/>
-      <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
-      <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
-      <sysproperty key="org.cougaar.core.persistence.enable" value="true"/>
-      <sysproperty key="org.cougaar.core.persistence.lazyInterval" value="30000"/>
-      <sysproperty key="org.cougaar.system.path" value="${lib}"/>
-      <!-- <sysproperty key="org.cougaar.class.path" value="lib/community.jar:lib/Robustness_objs_sensors.jar:lib/Robustness_bbn_bbn.jar"/> -->
-      <sysproperty key="org.cougaar.config.path" value="$$INSTALL/configs/common;${workspace}/configs;$$CWD/test/data;$$CWD/test/configs/ma;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig"/>
-      <arg line="org.cougaar.core.node.Node"/>
-    </java>
+  <!-- Runs a mininode3-->
+  <target name="mininode3" description="Runs Partial MiniTestConfig society (1BDE) on a single node" >
+    <antcall target="startnode" >
+      <param name="node" value="MiniNode3" />
+      <param name="persistenceEnabled" value="true" />
+    </antcall>
+  </target>
+
+  <!-- Runs a mininode4-->
+  <target name="mininode4" description="Runs Partial MiniTestConfig society (3-69-ARBN, MCCGlobalMode) on a single node" >
+    <antcall target="startnode" >
+      <param name="node" value="MiniNode4" />
+    </antcall>
   </target>
 
   <!-- Runs ManagementAgent and MiniTestConfig on one node -->
     <target name="combinednode" description="Runs ManagementAgent and MiniTestConfig society on a single node">
+    <antcall target="startnode" >
+      <param name="node" value="CombinedNode" />
+    </antcall>
+  </target>
+
+  <!-- Runs a node without persistence enabled-->
+  <target name="node" description="Runs a test node without persistence enabled (use -Dnode=XXX to specify node name)" >
+    <antcall target="startnode" >
+      <param name="node" value="${node}" />
+    </antcall>
+  </target>
+
+  <!-- Runs a node with persistence enabled-->
+  <target name="pnode" description="Runs a test node with persistence enabled (use -Dnode=XXX to specify node name)" >
+    <antcall target="startnode" >
+      <param name="node" value="${node}" />
+      <param name="persistenceEnabled" value="true" />
+    </antcall>
+  </target>
+
+  <target name="newrestartnode" description="Starts an empty restart node" >
+    <mkdir dir="${workspace}/configs" />
+    <copy file="test/configs/ma/${node}.ini" tofile="${workspace}/configs/${host}-${node}.ini" />
+    <echo message="Starting node: ${host}-${node}" />
+    <antcall target="node" >
+      <param name="node" value="${host}-${node}" />
+      <param name="persistenceEnabled" value="true" />
+    </antcall>
+  </target>
+
+  <!-- Runs an empty node -->
+  <target name="emptynode" depends="newrestartnode">
+  </target>
+
+  <!-- Starts a node -->
+    <target name="startnode">
     <java dir="${basedir}" fork="yes"
       maxmemory="350m"
       classname="org.cougaar.bootstrap.Bootstrapper">
@@ -335,13 +265,14 @@
         </fileset>
       </classpath>
       <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
-      <!-- <sysproperty key="org.cougaar.community.caching" value="off"/> -->
+      <sysproperty key="org.cougaar.node.name" value="${node}"/>
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
       <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
+      <sysproperty key="org.cougaar.core.persistence.enable" value="${persistenceEnabled}"/>
+      <sysproperty key="org.cougaar.core.persistence.lazyInterval" value="${persistenceInterval}"/>
       <sysproperty key="org.cougaar.system.path" value="${lib}"/>
-      <!-- <sysproperty key="org.cougaar.class.path" value="lib/community.jar:lib/Robustness_objs_sensors.jar:lib/Robustness_bbn_bbn.jar"/> -->
-      <sysproperty key="org.cougaar.config.path" value="$$INSTALL/configs/common;$$CWD/test/data;$$CWD/test/configs/ma;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig"/>
-      <arg line="org.cougaar.core.node.Node CombinedNode"/>
+      <sysproperty key="org.cougaar.config.path" value="${workspace}/configs;$$INSTALL/configs/common;$$CWD/test/data;$$CWD/test/configs/ma;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig"/>
+      <arg line="org.cougaar.core.node.Node"/>
     </java>
   </target>
 

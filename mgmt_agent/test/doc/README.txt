@@ -2,7 +2,7 @@
 
 README file for Robustness Management Agent
 
-Date: 11-June-2002
+Date: 13-June-2002
 
 ###############################################################################
 
@@ -180,9 +180,9 @@ TESTS:
            > ant manager
 
        2 - In the second console start an empty node to be used as the
-           destination for the restarted agent.  Use the ant target "emptynode".
+           destination for the restarted agent.  Use the ant target "newrestartnode".
 
-           > ant emptynode
+           > ant newrestartnode
 
        3 - Start agents 1BDE, 3-69-ARBN and MCCGlobalMode on the node
            MiniNode1.  Use the ant target "mininode1" for this.
@@ -208,15 +208,15 @@ TESTS:
            to 3ID to confirm its status.  At this point the DecisionPlugin will
            obtain a hostname (localhost for this test) from the
            RestartLocatorPlugin and will initiate a restart of 3ID on the
-           EmptyNode using the AgentActionPlugin.
+           RestartNode using the AgentActionPlugin.
 
-       6 - If all goes well agent 3ID should restart on the EmptyNode.  This
+       6 - If all goes well agent 3ID should restart on the RestartNode.  This
            will be evident by the generation of the dialog boxes used by 3ID.
 
 
     b) Multi computer test.  This test uses 2 or more comupters.  While
        various combinations are possible the best setup would be to run the
-       ManagerNode, MiniNode1, MiniNode2, and EmptyNode(s) on separate
+       ManagerNode, MiniNode1, MiniNode2, and RestartNode(s) on separate
        computers.  At a minimum MiniNode2 should run alone to simulate the
        loss of a computer.
 
@@ -247,7 +247,7 @@ TESTS:
            host name of the computer.  This name must match one of the names
            specified as an argument to the RestartLocatorPlugin.
 
-           > ant -Dhost=XXXX emptynode
+           > ant -Dhost=XXXX newrestartnode
 
        3 - Start agents 1BDE, 3-69-ARBN and MCCGlobalMode on the node
            MiniNode1.
@@ -264,9 +264,9 @@ TESTS:
            window.
 
        6 - If all goes well agent 3ID should restart on one of the computers
-           running an EmptyNode.  If multiple EmptyNodes were started, 3ID can
-           be killed in its new location and it will be restarted by the
-           ManagementAgent on another computer with an EmptyNode.
+           running an RestartNode.  If multiple RestartNodes were started, 3ID
+           can be killed in its new location and it will be restarted by the
+           ManagementAgent on another computer with an RestartNode.
 
 
   2) Using 1AD society and CSMART.

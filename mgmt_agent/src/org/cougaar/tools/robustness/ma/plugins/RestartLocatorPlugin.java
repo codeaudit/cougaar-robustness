@@ -17,6 +17,7 @@
  */
 package org.cougaar.tools.robustness.ma.plugins;
 
+import org.cougaar.robustness.restart.plugin.*;
 import java.util.*;
 
 import org.cougaar.core.blackboard.IncrementalSubscription;
@@ -27,6 +28,9 @@ import org.cougaar.core.mts.MessageAddress;
 
 import org.cougaar.util.UnaryPredicate;
 
+import org.cougaar.tools.server.*;
+import org.cougaar.tools.server.system.ProcessStatus;
+
 /**
  * This plugin ...
  */
@@ -35,10 +39,14 @@ public class RestartLocatorPlugin extends SimplePlugin {
   private LoggingService log;
   private BlackboardService bbs = null;
 
+  private String restartNodeName;
+
   // Defines default values for configurable parameters.
   private static String defaultParams[][] = {
-    {"hosts",        "localhost"}
+    {"hosts",           "localhost"},
+    {"restartNodeName", "RestartNode"}
   };
+
   ManagementAgentProperties restartLocatorProps =
     ManagementAgentProperties.makeProps(this.getClass().getName(), defaultParams);
 
@@ -65,39 +73,43 @@ public class RestartLocatorPlugin extends SimplePlugin {
 
     // Print informational message defining current parameters
     StringBuffer startMsg = new StringBuffer();
-    startMsg.append("RestartLocatorPlugin started: availHosts=");
-    for (Iterator it = availHosts.keySet().iterator(); it.hasNext();) {
-      startMsg.append((String)it.next());
-      if (it.hasNext()) startMsg.append(",");
-    }
+    startMsg.append("RestartLocatorPlugin started: ");
+    startMsg.append(paramsToString());
     log.info(startMsg.toString());
   }
 
   public void execute() {
 
     // Get Parameter changes
-    for (Iterator it = mgmtAgentProps.getAddedCollection().iterator();
+    for (Iterator it = mgmtAgentProps.getChangedCollection().iterator();
          it.hasNext();) {
       ManagementAgentProperties props = (ManagementAgentProperties)it.next();
       updateParams(props);
+      log.info("Parameters modified: " + paramsToString());
     }
 
     // Get RestartLocationRequests
     for (Iterator it = restartRequests.getAddedCollection().iterator();
          it.hasNext();) {
       RestartLocationRequest req = (RestartLocationRequest)it.next();
-      req.setHost(getAvailHost());
-      req.setStatus(RestartLocationRequest.SUCCESS);
-      if (log.isInfoEnabled()) {
-        StringBuffer msg =
-          new StringBuffer("Received a RestartLocation request: agent(s)=[");
-        for (Iterator it1 = req.getAgents().iterator(); it1.hasNext();) {
-          msg.append(((MessageAddress)it1.next()).toString());
-          if (it.hasNext()) msg.append(" ");
+      String selectedHost = getAvailHost();
+      req.setHost(selectedHost);
+      if (selectedHost != null) {
+        req.setStatus(RestartLocationRequest.SUCCESS);
+        if (log.isInfoEnabled()) {
+          StringBuffer msg =
+            new StringBuffer("Received a RestartLocation request: agent(s)=[");
+          for (Iterator it1 = req.getAgents().iterator(); it1.hasNext();) {
+            msg.append(((MessageAddress)it1.next()).toString());
+            if (it.hasNext()) msg.append(" ");
+          }
+          msg.append("], selectedHost=" + req.getHost());
+          msg.append(", useCount=" + (Integer)availHosts.get(req.getHost()));
+          log.info(msg.toString());
         }
-        msg.append("], selectedHost=" + req.getHost());
-        msg.append(", useCount=" + (Integer)availHosts.get(req.getHost()));
-        log.info(msg.toString());
+      } else {
+        req.setStatus(RestartLocationRequest.FAIL);
+        log.error("No host/node available for restart");
       }
       bbs.publishChange(req);
     }
@@ -120,22 +132,56 @@ public class RestartLocatorPlugin extends SimplePlugin {
 
   /**
    * Sets externally configurable parameters using supplied Properties object.
-   * @param props Propertie object defining paramater names and values.
+   * @param props Properties object defining paramater names and values.
    */
   private void updateParams(Properties props) {
     String hosts = props.getProperty("hosts");
+    restartNodeName = props.getProperty("restartNodeName");
     StringTokenizer st = new StringTokenizer(hosts, " ");
+    List newHostsList = new Vector();
     while (st.hasMoreTokens()) {
-      String hostName = (String)st.nextToken();
-      Integer useCount = new Integer(0);
-      availHosts.put(hostName, useCount);
+      newHostsList.add((String)st.nextToken());
+    }
+    // Remove deleted hosts
+    for (Iterator it = availHosts.keySet().iterator(); it.hasNext();) {
+      if (!newHostsList.contains((String)it.next())) it.remove();
+    }
+    // Add new hosts
+    for (Iterator it = newHostsList.iterator(); it.hasNext();) {
+      String hostName = (String)it.next();
+      if (!availHosts.containsKey(hostName)) {
+        Integer useCount = new Integer(0);
+        availHosts.put(hostName, useCount);
+      }
+    }
+  }
+
+  /**
+   * Creates a printable representation of current parameters.
+   * @return  Text string of current parameters
+   */
+  private String paramsToString() {
+    StringBuffer sb = new StringBuffer();
+    for (Enumeration enum = restartLocatorProps.propertyNames(); enum.hasMoreElements();) {
+      String propName = (String)enum.nextElement();
+      sb.append(propName + "=" +
+        restartLocatorProps.getProperty(propName) + " ");
+    }
+    return sb.toString();
+  }
+
+  private void startNode(String hostName) {
+    String nodeName = hostName + "-" + restartNodeName;
+    if (!nodeRunning(hostName, nodeName)) {
+      NodeStart ns = new NodeStart(hostName, nodeName);
+      bbs.publishAdd(ns);
     }
   }
 
   /**
    * Returns the name of a host from the collection of available hosts.  The
    * host is selected based on the fewest number of times it was previously used.
-   * @return
+   * @return  Name of selected host
    */
   private String getAvailHost() {
     String hostName = null;
@@ -144,7 +190,9 @@ public class RestartLocatorPlugin extends SimplePlugin {
       Map.Entry me = (Map.Entry)it.next();
       String tmpHost = (String)me.getKey();
       int tmpUse = ((Integer)me.getValue()).intValue();
-      if (hostName == null || tmpUse < useCount) {
+      if ((hostName == null || tmpUse < useCount)
+          // && nodeRunning(hostName, restartNodeName)
+         ) {
         hostName = tmpHost;
         useCount = tmpUse;
       }
@@ -152,6 +200,37 @@ public class RestartLocatorPlugin extends SimplePlugin {
     // Increment use count of selected host
     if (hostName != null) availHosts.put(hostName, new Integer(++useCount));
     return hostName;
+  }
+
+	private boolean nodeRunning(String hostName, String nodeName) {
+
+    // create a remote-host-registry instance
+    RemoteHostRegistry hostReg = RemoteHostRegistry.getInstance();
+
+    try {
+    // contact the host
+    RemoteHost rhost =  hostReg.lookupRemoteHost(hostName, 8484, true);
+
+    // verify that hosts exists, it has a running appserver, and a node
+    // process is running
+    return (rhost.ping() != 0 &&
+            hasProcess(rhost, hostName + "-" + nodeName));
+
+    } catch (Exception ex) {
+      log.debug("Exception checking node status, " + ex);
+    }
+    return false;
+  }
+
+  private boolean hasProcess(RemoteHost rhost, String name) throws Exception {
+    // list the running processes on the server
+    List runningProcs =
+      rhost.listProcessDescriptions();
+    for (Iterator it = runningProcs.iterator(); it.hasNext();) {
+      ProcessDescription pd = (ProcessDescription)it.next();
+      if(pd.getName().equals(name)) return true;
+    }
+    return false;
   }
 
   /**
@@ -170,14 +249,14 @@ public class RestartLocatorPlugin extends SimplePlugin {
   /**
    * Predicate for Management Agent properties
    */
+  String myPluginName = getClass().getName();
   private IncrementalSubscription mgmtAgentProps;
   private UnaryPredicate propertiesPredicate = new UnaryPredicate() {
     public boolean execute(Object o) {
       if (o instanceof ManagementAgentProperties) {
         ManagementAgentProperties props = (ManagementAgentProperties)o;
-        String myName = this.getClass().getName();
         String forName = props.getPluginName();
-        return (myName.equals(forName) || myName.endsWith(forName));
+        return (myPluginName.equals(forName) || myPluginName.endsWith(forName));
       }
       return false;
   }};

@@ -39,9 +39,11 @@ public class DecisionPlugin extends SimplePlugin {
   private LoggingService log;
   private BlackboardService bbs = null;
 
+  private String restartNodeName;
+
   // Defines default values for configurable parameters.
   private static String defaultParams[][] = {
-    {}
+    {"restartNodeName", "RestartNode"}
   };
   ManagementAgentProperties decisionProps =
     ManagementAgentProperties.makeProps(this.getClass().getName(), defaultParams);
@@ -74,15 +76,21 @@ public class DecisionPlugin extends SimplePlugin {
     agentStartStatus =
       (IncrementalSubscription)bbs.subscribe(agentStartStatusPredicate);
 
+    // Print informational message defining current parameters
+    StringBuffer startMsg = new StringBuffer();
+    startMsg.append("DecisionPlugin started: ");
+    startMsg.append(" " + paramsToString());
+    log.info(startMsg.toString());
   }
 
   public void execute() {
 
     // Get Parameter changes
-    for (Iterator it = mgmtAgentProps.getAddedCollection().iterator();
+    for (Iterator it = mgmtAgentProps.getChangedCollection().iterator();
          it.hasNext();) {
       ManagementAgentProperties props = (ManagementAgentProperties)it.next();
-      //updateParams(props);
+      updateParams(props);
+      log.info("Parameters modified: " + paramsToString());
     }
 
      // Get HealthStatus objects
@@ -118,12 +126,7 @@ public class DecisionPlugin extends SimplePlugin {
       int status = req.getStatus();
       switch (status) {
         case RestartLocationRequest.SUCCESS:
-          String nodeName = "EmptyNode";
-          Iterator nodeIt = req.getAgents().iterator();
-          if (nodeIt.hasNext())
-            nodeName = getNodeName((MessageAddress)nodeIt.next());
-          restartAgents(req.getAgents(), req.getHost() + "-" + nodeName);
-          //restartNode(nodeName, req.getHost());
+          restartAgents(req.getAgents(), req.getHost() + "-" + restartNodeName);
           bbs.publishRemove(req);
           break;
         case RestartLocationRequest.FAIL:
@@ -133,15 +136,6 @@ public class DecisionPlugin extends SimplePlugin {
         default:
       }
     }
-  }
-
-  /**
-   * Retrieves the name of the node that the specified agent was running on.
-   */
-  private String getNodeName(MessageAddress agent) {
-    // Hard-coded to "EmptyNode" for now.  Will need to get the name for the
-    // TopologyService at some point.
-    return "EmptyNode";
   }
 
   /**
@@ -195,22 +189,6 @@ public class DecisionPlugin extends SimplePlugin {
   }
 
   /**
-   * Initiates a restart.
-   * @param agents  Set of MessageAddresses of agents to be restarted
-   * @param host    Name of restart host
-   */
-  private void restartNode(String nodeName, String hostName) {
-    if (log.isInfoEnabled()) {
-      StringBuffer msg = new StringBuffer("Initiating node restart: ");
-      msg.append("hostName=" + hostName);
-      msg.append(", nodeName=" + nodeName);
-      log.info(msg.toString());
-    }
-    NodeStart nodeStart = new NodeStart(hostName, nodeName);
-    bbs.publishAdd(nodeStart);
-  }
-
-  /**
    * Increase the HeartbeatFailureRateThreshold by specified value.
    * @param hs    HealthStatus object associated with monitored agent
    * @param value Adjustment value
@@ -243,11 +221,25 @@ public class DecisionPlugin extends SimplePlugin {
   }
 
   /**
+   * Creates a printable representation of current parameters.
+   * @return  Text string of current parameters
+   */
+  private String paramsToString() {
+    StringBuffer sb = new StringBuffer();
+    for (Enumeration enum = decisionProps.propertyNames(); enum.hasMoreElements();) {
+      String propName = (String)enum.nextElement();
+      sb.append(propName + "=" +
+        decisionProps.getProperty(propName) + " ");
+    }
+    return sb.toString();
+  }
+
+  /**
    * Sets externally configurable parameters using supplied Properties object.
    * @param props Propertie object defining paramater names and values.
    */
   private void updateParams(Properties props) {
-    // Nothing defined for now
+     restartNodeName = props.getProperty("restartNodeName");
   }
 
  /**
@@ -284,14 +276,14 @@ public class DecisionPlugin extends SimplePlugin {
   /**
    * Predicate for Management Agent properties
    */
+  String myPluginName = getClass().getName();
   private IncrementalSubscription mgmtAgentProps;
   private UnaryPredicate propertiesPredicate = new UnaryPredicate() {
     public boolean execute(Object o) {
       if (o instanceof ManagementAgentProperties) {
         ManagementAgentProperties props = (ManagementAgentProperties)o;
-        String myName = this.getClass().getName();
         String forName = props.getPluginName();
-        return (myName.equals(forName) || myName.endsWith(forName));
+        return (myPluginName.equals(forName) || myPluginName.endsWith(forName));
       }
       return false;
   }};

@@ -120,7 +120,7 @@ public class XmlToCsv extends DefaultHandler
   {
     try{
       RandomAccessFile file  = new RandomAccessFile(filename, "rw");
-      file.write("COMMUNITY_ID,ATTRIBUTE_ID,ATTRIBUTE_VALUE\n".getBytes());
+      file.write("COMMUNITY_ID,ATTRIBUTE_ID,ATTRIBUTE_VALUE,BLANK\n".getBytes());
       for(Enumeration enums = attributes.keys(); enums.hasMoreElements();)
       {
         String communityName = (String)enums.nextElement();
@@ -138,7 +138,7 @@ public class XmlToCsv extends DefaultHandler
   {
     try{
       RandomAccessFile file = new RandomAccessFile(filename, "rw");
-      file.write("COMMUNITY_ID,ENTITY_ID,ATTRIBUTE_ID,ATTRIBUTE_VALUE\n".getBytes());
+      file.write("COMMUNITY_ID,ENTITY_ID,ATTRIBUTE_ID,ATTRIBUTE_VALUE,BLANK\n".getBytes());
       for(Enumeration enums = entitys.keys(); enums.hasMoreElements();)
       {
         String communityName = (String)enums.nextElement();

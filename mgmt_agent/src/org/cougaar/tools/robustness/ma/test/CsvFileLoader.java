@@ -114,7 +114,9 @@ public class CsvFileLoader
         StringTokenizer tokens = new StringTokenizer(str, ",");
         while(tokens.hasMoreTokens())
         {
-          createTable += tokens.nextToken() + " varchar(100), ";
+          String token = tokens.nextToken();
+          if(!token.equals("BLANK"))
+            createTable += token + " varchar(100), ";
         }
         createTable = createTable.substring(0, createTable.length()-2);
         createTable += ")";
