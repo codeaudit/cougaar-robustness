@@ -65,7 +65,7 @@ public class CommunityStatusChangeEvent {
 
   public String toString() {
     StringBuffer sb = new StringBuffer("CommunityStatusChangeEvent:");
-    sb.append(" changeFlags=" + changeFlags);
+    sb.append(" changeFlags=" + changeFlagsToString());
     sb.append(" name=" + name);
     sb.append(" type=" + type);
     sb.append(" currentState=" + currentState);
@@ -74,6 +74,29 @@ public class CommunityStatusChangeEvent {
     if (priorLocation != null) sb.append(" priorLocation=" + priorLocation);
     if (currentLeader != null) sb.append(" currentLeader=" + currentLeader);
     if (priorLeader != null) sb.append(" priorLeader=" + priorLeader);
+    return sb.toString();
+  }
+
+  public String changeFlagsToString() {
+    StringBuffer sb = new StringBuffer();
+    if ((changeFlags & MEMBERS_ADDED) != 0) {
+      sb.append(sb.length() > 0 ? "|MEMBERS_ADDED" : "MEMBERS_ADDED");
+    }
+    if ((changeFlags & MEMBERS_REMOVED) != 0) {
+      sb.append(sb.length() > 0 ? "|MEMBERS_REMOVED" : "MEMBERS_REMOVED");
+    }
+    if ((changeFlags & LEADER_CHANGE) != 0) {
+      sb.append(sb.length() > 0 ? "|LEADER_CHANGE" : "LEADER_CHANGE");
+    }
+    if ((changeFlags & STATE_CHANGE) != 0) {
+      sb.append(sb.length() > 0 ? "|STATE_CHANGE" : "STATE_CHANGE");
+    }
+    if ((changeFlags & LOCATION_CHANGE) != 0) {
+      sb.append(sb.length() > 0 ? "|LOCATION_CHANGE" : "LOCATION_CHANGE");
+    }
+    if ((changeFlags & STATE_EXPIRATION) != 0) {
+      sb.append(sb.length() > 0 ? "|STATE_EXPIRATION" : "STATE_EXPIRATION");
+    }
     return sb.toString();
   }
 
