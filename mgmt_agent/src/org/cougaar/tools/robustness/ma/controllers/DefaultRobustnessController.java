@@ -355,15 +355,20 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                                implements DeconflictListener {
     { addDeconflictListener(this); }
     public void enter(String name) {
-      if(getDeconflictHelper() != null && getDeconflictHelper().isOpEnabaled(name)) {
-        if(!getDeconflictHelper().isDefenseApplicable(name))
+      if(getDeconflictHelper() != null) {
+        if(!getDeconflictHelper().isDefenseApplicable(name)) {
+          //logger.info("change condition of " + name);
           getDeconflictHelper().changeApplicabilityCondition(name);
-        newState(name, RESTART);
+        }
+        if(getDeconflictHelper().isOpEnabaled(name))
+          newState(name, RESTART);
       }
       if(getDeconflictHelper() == null)
         newState(name, RESTART);
     }
     public void expired(String name) {
+      //logger.info("Expired Status:" + " agent=" + name + " state=DECONFLICT");
+        //getDeconflictHelper().test();
         newState(name, HEALTH_CHECK);
     }
     public void defenseOpModeEnabled(String name){
