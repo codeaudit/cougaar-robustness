@@ -88,8 +88,6 @@ Cougaar.new_experiment("ARUC4_HostLossThreatAlert").run(1) {
             10.minutes,
             assets
 
-  wait_for "CommunitiesReady", ["CONUS-REAR-COMM"]
-
   wait_for  "SocietyQuiesced"  do
     wait_for  "Command", "shutdown"
     do_action "SaveSocietyCompletion", "completion_#{experiment.name}.xml"
