@@ -2,24 +2,30 @@
 # Adds Disconnection components to society definition
 # 
 
+comm = "org.cougaar.community.CommunityPlugin"
 omsp = "org.cougaar.core.adaptivity.OperatingModeServiceProvider"
 ompm = "org.cougaar.core.adaptivity.OperatingModePolicyManager"
-csp = "org.cougaar.core.adaptivity.ConditionServiceProvider"
-cp = "org.cougaar.tools.robustness.deconfliction.CoordinatorPlugin"
-dap = "org.cougaar.tools.robustness.disconnection.DisconnectAgentPlugin"
-dnp = "org.cougaar.tools.robustness.disconnection.DisconnectNodePlugin"
-dmp = "org.cougaar.tools.robustness.disconnection.DisconnectManagerPlugin"
-ds = "org.cougaar.tools.robustness.disconnection.test.disconnection.DisconnectionServlet"
+csp  = "org.cougaar.core.adaptivity.ConditionServiceProvider"
+cp   = "org.cougaar.tools.robustness.deconfliction.CoordinatorPlugin"
+dap  = "org.cougaar.tools.robustness.disconnection.DisconnectAgentPlugin"
+dnp  = "org.cougaar.tools.robustness.disconnection.DisconnectNodePlugin"
+dmp  = "org.cougaar.tools.robustness.disconnection.DisconnectManagerPlugin"
+ds   = "org.cougaar.tools.robustness.disconnection.DisconnectServlet"
+rmfp = "org.cougaar.tools.robustness.disconnection.RobustnessManagerFinderPlugin"
 
-agentPlugins = [omsp, ompm, csp, dap]
-nodePlugins = [omsp, ompm, csp, dnp, ds]
-mgrPlugins = [omsp, ompm, csp, cp, dmp]
+agentPlugins = [comm, omsp, ompm, csp, dap, rmfp]
+nodePlugins = [comm, omsp, ompm, csp, dnp, ds, rmfp]
+mgrPlugins = [comm, omsp, ompm, csp, dmp, rmfp]
 
 society.each_agent do |agent|
     if agent.name =~ /.*ARManager.*/
         agent.add_components(mgrPlugins)
+        agent.add_component do |c|
+            c.classname = cp
+            c.add_argument("10")
+        end	
     else
-	  agent.add_components(agentPlugins)
+        agent.add_components(agentPlugins)
     end
 end
 
