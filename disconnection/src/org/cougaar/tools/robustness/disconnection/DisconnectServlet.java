@@ -211,8 +211,7 @@ public class DisconnectServlet extends BaseServletComponent
                   out.println("<center><h2>Failed to Disconnect - NumberFormatException!</h2></center><br>" );            
                   if (logger.isErrorEnabled()) logger.error("Failed to Disconnect - NumberFormatException!");
               }
-          } else {
-          }
+          } 
         }
 
  

@@ -83,9 +83,6 @@ public abstract class DisconnectPluginBase extends ServiceUserPluginBase {
       cancelTimer();
   }
   
-  private void initObjects() {
-  }
-     
      
   protected UIDService getUIDService() {
       return us;

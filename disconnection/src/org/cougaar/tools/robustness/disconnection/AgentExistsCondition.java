@@ -10,10 +10,11 @@ import org.cougaar.tools.robustness.deconfliction.*;
 
 /**
  *
- * @author  administrator
+ * @author  David Wells - OBJS
  * @version 
  */
-public class AgentExistsCondition extends DefenseApplicabilityBinaryCondition {
+public class AgentExistsCondition extends DefenseApplicabilityBinaryCondition
+                                  implements java.io.Serializable {
 
     /** Creates new AgentExistsCondition */
     public AgentExistsCondition(String assetType, String assetID) {

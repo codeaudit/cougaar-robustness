@@ -45,7 +45,7 @@ public class DisconnectAgentPlugin extends DisconnectPluginBase {
   
   public void load() {
       super.load();
-      initObjects(); //create & publish condition and op mode objectscancelTimer();
+      initObjects(); 
   }
   
   

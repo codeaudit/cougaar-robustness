@@ -248,7 +248,10 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
                   if (eventService.isEventEnabled()) {
                       if (defenseMode.equals("ENABLED")) {
                           eventService.event(getNodeID()+" plans to Disconnect for "+reconnectInterval+" sec");
-                     } 
+                      }
+                      else {
+                          eventService.event(getNodeID()+" has Reconnected");
+                      }
                   }
               }
           }

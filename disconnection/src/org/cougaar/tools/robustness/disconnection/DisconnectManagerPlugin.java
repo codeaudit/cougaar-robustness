@@ -41,7 +41,6 @@ import org.cougaar.util.UnaryPredicate;
 public class DisconnectManagerPlugin extends DisconnectPluginBase {
     
     private MessageAddress managerAddress;
-    private String managerID;
     
     private IncrementalSubscription reconnectTimeConditionSubscription;
     private IncrementalSubscription defenseOpModeSubscription;
