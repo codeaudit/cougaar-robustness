@@ -336,6 +336,16 @@ public class NumberList implements java.io.Serializable
       else remove (numbers.list[i]);
     }
   }
+
+  public void dump (String tag)
+  {
+    System.out.println (tag+ " NumberList: n=" +n+ " length=" +list.length);
+
+    for (int i=0; i<list.length; i++) 
+    {
+      System.out.println (tag+ " NumberList: list[" +i+ "] =" +list[i]);
+    }
+  }
     
   public boolean debugAdd (int number)
   {

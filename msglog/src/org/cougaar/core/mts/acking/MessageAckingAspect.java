@@ -56,7 +56,6 @@ public class MessageAckingAspect extends StandardAspect
   static final float   interAckSpacingFactor;
   static final float   ackAckPlacingFactor;
   static final int     runningAveragePoolSize;
-  static final int     maxMessageResends;
 
   static AckWaiter ackWaiter;
   static PureAckSender pureAckSender;
@@ -83,8 +82,7 @@ public class MessageAckingAspect extends StandardAspect
     //  Read external properties
 
     String s = "org.cougaar.message.transport.aspects.acking.debug";
-//    debug = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
-debug = true;
+    debug = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
 
     s = "org.cougaar.message.transport.aspects.acking.showTraffic";
     showTraffic = debug || Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
@@ -119,9 +117,6 @@ debug = true;
 
     s = "org.cougaar.message.transport.aspects.acking.runningAvgPoolSize";
     runningAveragePoolSize = Integer.valueOf(System.getProperty(s,"5")).intValue();
-
-    s = "org.cougaar.message.transport.aspects.acking.maxMessageResends";
-    maxMessageResends = Integer.valueOf(System.getProperty(s,"1000")).intValue();
   }
 
   public MessageAckingAspect () 
@@ -216,6 +211,7 @@ debug = true;
         table = new Hashtable();
         receivedAcksTable.put (node, table);
       }
+//System.out.println ("adding received acks: node=" +node);
 
       //  Add and prune
 
@@ -225,7 +221,7 @@ debug = true;
 
         AgentID fromAgent = ackList.getFromAgent();
         AgentID toAgent = ackList.getToAgent();
-        String key = AgentID.makePairKey (fromAgent, toAgent);
+        String key = AgentID.makeSequenceID (fromAgent, toAgent);
 
         Vector currentAcks = (Vector) table.get (key);        
         
@@ -235,21 +231,22 @@ debug = true;
           table.put (key, currentAcks);
         }
         
-        currentAcks.add (ackList);
+        currentAcks.add (new AckList (ackList));  // a copy because we prune it
 
         //  Prune the all the current acks against messages already acked
 
-        Vector prunedAcks = new Vector();
         NumberList alreadyAckedMsgs = getSuccessfulSends (fromAgent, toAgent);
+        Vector prunedAcks = new Vector();
 
         for (Enumeration c=currentAcks.elements(); c.hasMoreElements(); )
         {
           AckList cackList = (AckList) c.nextElement();
           cackList.remove (alreadyAckedMsgs);
-          if (cackList.size() > 0) prunedAcks.add (cackList);
+//System.out.println ("adding received acks: pruned acks: " +cackList);
+          if (!cackList.isEmpty()) prunedAcks.add (cackList);
         }
-
-        if (prunedAcks.size() > 0) table.put (key, prunedAcks);
+//System.out.println ("adding received acks: prunedAcks size = " +prunedAcks.size());
+        table.put (key, prunedAcks);
       }
     }
 
@@ -271,12 +268,14 @@ debug = true;
 
     synchronized (receivedAcksTable)
     {
-      String node = fromAgent.getNodeName();
+      String node = toAgent.getNodeName();  // where the ack came from
       Hashtable table = (Hashtable) receivedAcksTable.get (node);
+//System.out.println ("getReceivedAcks: node="+node+" table="+table);
       if (table == null) return new Vector();
 
-      String key = AgentID.makePairKey (fromAgent, toAgent);
+      String key = AgentID.makeSequenceID (fromAgent, toAgent);
       Vector acks = (Vector) table.get (key);
+//System.out.println ("getReceivedAcks: key="+key+" acks="+acks);
       if (acks == null) acks = new Vector();
       return acks;
     }
@@ -310,6 +309,7 @@ debug = true;
 
   static boolean addAckToSend (AttributedMessage msg)
   {
+//System.out.println ("addAckToSend: "+MessageUtils.toString(msg));
     AgentID fromAgent = MessageUtils.getFromAgent (msg);
     AgentID toAgent = MessageUtils.getToAgent (msg);
     int msgNum = MessageUtils.getMessageNumber (msg);
@@ -329,7 +329,7 @@ debug = true;
         acksToSendTable.put (node, table);
       }
 
-      String key = AgentID.makePairKey (fromAgent, toAgent);
+      String key = AgentID.makeSequenceID (fromAgent, toAgent);
       AckList acks = (AckList) table.get (key);
 
       if (acks == null) 
@@ -346,6 +346,9 @@ debug = true;
   {
     if (acks == null || acks.isEmpty()) return;
 
+//System.out.println ("removeAcksToSend:  node="+node+" :");
+//AckList.printAcks (acks);
+
     synchronized (acksToSendTable)
     {
       Hashtable table = (Hashtable) acksToSendTable.get (node);
@@ -354,16 +357,14 @@ debug = true;
       for (Enumeration a=acks.elements(); a.hasMoreElements(); )
       {
         AckList removals = (AckList) a.nextElement();
-        String key = removals.getPairKey();
-        Vector currentAcks = (Vector) table.get (key);
-        if (currentAcks == null) continue;
+        AckList current = (AckList) table.get (removals.getSequenceID());
 
-        for (Enumeration c=currentAcks.elements(); c.hasMoreElements(); )
+        if (current != null)
         {
-          AckList current = (AckList) c.nextElement();
           try { current.remove (removals); }
           catch (Exception e) { e.printStackTrace(); }
-          if (current.isEmpty()) currentAcks.remove (current);
+
+          if (current.isEmpty()) table.remove (removals.getSequenceID());
         }
       }
     }
@@ -375,7 +376,18 @@ debug = true;
     {
       Hashtable table = (Hashtable) acksToSendTable.get (node);
       if (table == null) return new Vector();
-      return new Vector (table.values());  // return copy
+
+      Vector acks = new Vector (table.size());
+
+      for (Enumeration a=table.elements(); a.hasMoreElements(); ) 
+      {
+        //  Return copies, not actual table entries!
+
+        AckList ackList = (AckList) a.nextElement();
+        acks.add (new AckList (ackList));
+      }
+
+      return acks;
     }
   }
 
@@ -387,6 +399,14 @@ debug = true;
     return findAckToSend (fromAgent, toAgent, msgNum);
   }
 
+  static boolean findAckToSend (PureAckMessage pam)
+  {
+    AgentID srcFromAgent = MessageUtils.getToAgent (pam);
+    AgentID srcToAgent = MessageUtils.getFromAgent (pam);
+    int srcMsgNum = MessageUtils.getSrcMsgNumber (pam);
+    return findAckToSend (srcFromAgent, srcToAgent, srcMsgNum);
+  }
+
   static boolean findAckToSend (AgentID fromAgent, AgentID toAgent, int msgNum)
   {
     synchronized (acksToSendTable)
@@ -395,7 +415,7 @@ debug = true;
       Hashtable table = (Hashtable) acksToSendTable.get (node);
       if (table == null) return false;
 
-      String key = AgentID.makePairKey (fromAgent, toAgent);
+      String key = AgentID.makeSequenceID (fromAgent, toAgent);
       AckList acks = (AckList) table.get (key);
       if (acks == null) return false;
 
@@ -427,7 +447,7 @@ debug = true;
         successfulReceivesTable.put (node, table);
       }
 
-      String key = AgentID.makePairKey (fromAgent, toAgent);
+      String key = AgentID.makeSequenceID (fromAgent, toAgent);
       NumberList receives = (NumberList) table.get (key);
 
       if (receives == null) 
@@ -443,7 +463,7 @@ debug = true;
 
   //  successfulSendsTable
 
-  static boolean addSuccessfulSend (AttributedMessage msg)
+  public static boolean addSuccessfulSend (AttributedMessage msg)
   {
     AgentID fromAgent = MessageUtils.getFromAgent (msg);
     AgentID toAgent = MessageUtils.getToAgent (msg);
@@ -464,7 +484,7 @@ debug = true;
         successfulSendsTable.put (node, table);
       }
 
-      String key = AgentID.makePairKey (fromAgent, toAgent);
+      String key = AgentID.makeSequenceID (fromAgent, toAgent);
       NumberList sends = (NumberList) table.get (key);
 
       if (sends == null) 
@@ -485,7 +505,7 @@ debug = true;
       Hashtable table = (Hashtable) successfulSendsTable.get (node);
       if (table == null) return new NumberList();
 
-      String key = AgentID.makePairKey (fromAgent, toAgent);
+      String key = AgentID.makeSequenceID (fromAgent, toAgent);
       NumberList sends = (NumberList) table.get (key);
       return new NumberList (sends);  // return copy (may be empty)
     }
@@ -832,12 +852,13 @@ debug = true;
 
   public static int getRoundtripTimeForAck (DestinationLink link, PureAck pureAck)
   {
-    String node = MessageUtils.getToAgent(pureAck.getMsg()).getNodeName();
+    String node = MessageUtils.getToAgentNode (pureAck.getMsg());
 
     String sendLinkType = getLinkType (link.getProtocolClass());
 
     Classname lastReceiveLink = getLastReceiveLink (node);
     if (lastReceiveLink == null) lastReceiveLink = pureAck.getSendLink();
+    if (lastReceiveLink == null) return -1;  // no round trip for ack yet
     String receiveLinkType = getLinkType (lastReceiveLink);
 
     return getRoundtripTimeMeasurement (node, sendLinkType, receiveLinkType);

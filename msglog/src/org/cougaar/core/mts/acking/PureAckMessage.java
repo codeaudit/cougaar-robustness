@@ -24,24 +24,46 @@
 
 package org.cougaar.core.mts.acking;
 
+import java.io.*;
+
 import org.cougaar.core.mts.*;
 
 
-public class PureAckMessage extends AttributedMessage
+public class PureAckMessage extends AttributedMessage // implements Externalizable
 {
-  public PureAckMessage (AttributedMessage srcMsg, PureAck pureAck)
+  public PureAckMessage () {}  // needed for incoming de-serialization
+
+  public PureAckMessage (AttributedMessage msg, PureAck pureAck)
   {
-    //  Set pure ack msg to head back to where the srcMsg came
+    //  Set pure ack msg to head back to where the source message came from
 
-    setOriginator (srcMsg.getTarget());
-    setTarget (srcMsg.getOriginator());
+    super (new NullMessage (msg.getTarget(), msg.getOriginator()));
 
-    MessageUtils.setFromAgent (this, MessageUtils.getToAgent (srcMsg));
-    MessageUtils.setToAgent (this, MessageUtils.getFromAgent (srcMsg));
+    //  Set key attributes
 
-    MessageUtils.setSrcMsgNumber (this, MessageUtils.getMessageNumber (srcMsg));
-    
+    MessageUtils.setFromAgent (this, MessageUtils.getToAgent (msg));
+    MessageUtils.setToAgent (this, MessageUtils.getFromAgent (msg));
+    MessageUtils.setSrcMsgNumber (this, MessageUtils.getMessageNumber (msg));
     MessageUtils.setAck (this, pureAck);
+
+    //  Set back pointer
+
     pureAck.setMsg (this);
   }
+
+  public String toString ()
+  {
+    return MessageUtils.toString (this);
+  }
+/*
+  public void writeExternal (ObjectOutput rawOut) throws java.io.IOException
+  {
+    super.writeExternal (rawOut);
+  }
+
+  public void readExternal (ObjectInput rawIn) throws java.io.IOException, ClassNotFoundException
+  {
+    super.readExternal (rawIn);
+  }
+*/
 }

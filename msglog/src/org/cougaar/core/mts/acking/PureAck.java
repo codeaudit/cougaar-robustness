@@ -24,7 +24,7 @@
 
 package org.cougaar.core.mts.acking;
 
-import org.cougaar.core.mts.MessageUtils;
+import org.cougaar.core.mts.*;
 
 
 //  Child of Ack
@@ -35,7 +35,9 @@ public class PureAck extends Ack
   private transient long sendDeadline;
 
   public PureAck ()
-  {}
+  {
+    super (null);  // msg gets set by PureAckMessage
+  }
 
   public void setAckSendableTime (long time)
   {
@@ -59,6 +61,11 @@ public class PureAck extends Ack
 
   public boolean stillAckingSrcMsg ()
   {
-    return AckList.find (getAcks(), MessageUtils.getSrcMsgNumber(getMsg()));
+/*
+System.err.println ("stillAckingSrcMsg: src num = "+MessageUtils.getSrcMsgNumber(getMsg()));
+System.err.println ("stillAckingSrcMsg: acks =");
+AckList.printAcks (getAcks());
+*/
+    return AckList.find (getLatestAcks(), MessageUtils.getSrcMsgNumber(getMsg()));
   }
 }

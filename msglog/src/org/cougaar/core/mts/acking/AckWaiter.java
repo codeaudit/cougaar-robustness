@@ -53,7 +53,12 @@ class AckWaiter implements Runnable
 
   public void add (AttributedMessage msg) 
   {
-    if (!MessageAckingAspect.hasRegularAck (msg)) return;  // CYA
+    //  Sanity checks
+
+    if (!MessageUtils.isAckableMessage (msg)) return;
+    if (!MessageAckingAspect.hasRegularAck (msg)) return;
+
+    //  Add the message
 
     synchronized (queue) 
     {
@@ -84,6 +89,8 @@ class AckWaiter implements Runnable
 
   public void run() 
   {
+    int len;
+
     while (true) 
     {
       //  Wait until we have some new messages or acks or we have timed out to 
@@ -117,27 +124,29 @@ class AckWaiter implements Runnable
 
           //  Wait for a specified time or until notify
 
-System.err.println ("\nAckWaiter: WAIT waitTime= " +waitTime+ " start= "+now());
+          // System.err.println ("\nAckWaiter: WAIT waitTime= " +waitTime+ " start= "+now());
           CougaarThread.wait (queue, waitTime);
-System.err.println ("\nAckWaiter: WAIT end= "+now());
+          // System.err.println ("\nAckWaiter: WAIT end= "+now());
         }
 
         messages = (AttributedMessage[]) queue.toArray (messages);  // try array reuse
+        len = queue.size();
       }
 
       //  Next we try to match the messages with the acks we've collected so far.
       //  Possible many-to-many relationship between the messages and the acks.
 
-      AttributedMessage msg;
-      Ack ack = null;
-
-      for (int i=0; i<messages.length; i++)
+      for (int i=0; i<len; i++)
       {
-        msg = messages[i];
-
+        AttributedMessage msg = messages[i];
+        
         //  Avoid already successful sends (when a message is acked it is
         //  declared (and recorded as) a successful send).
-
+/*
+System.err.println ("ackwaiter: msg"+i+" = "+MessageUtils.toString(msg));
+System.err.println ("ackwaiter: msg"+i+" contains acks:");
+AckList.printAcks (MessageUtils.getAck(msg).getAcks());
+*/
         if (MessageAckingAspect.wasSuccessfulSend (msg))
         {
           if (MessageAckingAspect.debug) 
@@ -152,6 +161,9 @@ System.err.println ("\nAckWaiter: WAIT end= "+now());
 
         //  Search for match of message with current received ack data
 
+//System.err.println ("ackwaiter: recv'd acks: ");
+//AckList.printAcks(MessageAckingAspect.getReceivedAcks(msg));
+
         int msgNum = MessageUtils.getMessageNumber (msg);
         AckList ackList = AckList.findFirst (MessageAckingAspect.getReceivedAcks(msg), msgNum);
 
@@ -164,13 +176,13 @@ System.err.println ("\nAckWaiter: WAIT end= "+now());
             System.err.println ("\nAckWaiter: Got ack for " +MessageUtils.toString(msg));
           }
 
-          ack = MessageUtils.getAck (msg);
+          Ack ack = MessageUtils.getAck (msg);
           String toNode = MessageUtils.getToAgentNode (msg);
 
           MessageAckingAspect.addSuccessfulSend (msg);                
           MessageAckingAspect.updateRoundtripTimeMeasurement (ack, ackList);
           MessageAckingAspect.updateMessageHistory (ack, ackList);
-          MessageAckingAspect.removeAcksToSend (toNode, ack.getAcks()); // acks now acked
+          MessageAckingAspect.removeAcksToSend (toNode, ack.getSpecificAcks()); // acks now acked
 
           remove (msg); // remove from waiting queue
           messages[i] = null;
@@ -182,10 +194,10 @@ System.err.println ("\nAckWaiter: WAIT end= "+now());
 
       minResendDeadline = Long.MAX_VALUE;
 
-      for (int i=0; i<messages.length; i++) if (messages[i] != null)
+      for (int i=0; i<len; i++) if (messages[i] != null)
       {
-        msg = messages[i];
-        ack = MessageUtils.getAck (msg);
+        AttributedMessage msg = messages[i];
+        Ack ack = MessageUtils.getAck (msg);
 
         //  See if time to resend message
 
@@ -194,8 +206,8 @@ System.err.println ("\nAckWaiter: WAIT end= "+now());
 
         if (MessageAckingAspect.debug)
         {
-          System.err.println ("AckWaiter: "+msg+": ackWindow="+
-            ack.getResendAckWindow()+" timeLeft="+timeLeft);
+          // System.err.println ("AckWaiter: msg " +MessageUtils.getMessageNumber(msg)+
+          //  ": ackWindow="+ack.getResendAckWindow()+" timeLeft="+timeLeft);
         }
 
         if (timeLeft <= 0)
@@ -208,7 +220,11 @@ System.err.println ("\nAckWaiter: WAIT end= "+now());
           //  message through.  How this works may change when the message history 
           //  is better integrated with message acking. 
 
-          if (MessageAckingAspect.debug) System.err.println ("AckWaiter: Resending " +msg);
+          if (MessageAckingAspect.debug) 
+          {
+            // System.err.println ("AckWaiter: Resending " +MessageUtils.toString(msg));
+          }
+
           remove (msg);  // remove first to avoid race condition with send
           MessageSender.sendMsg (msg);
         }

@@ -29,10 +29,21 @@ package org.cougaar.core.mts.acking;
 
 public class PureAckAck extends PureAck
 {
-  public PureAckAck (PureAck ack)
+  public PureAckAck (PureAck pureAck)
   {
-    setReceiveTime (ack.getReceiveTime());
-    setSenderRoundtripTime (ack.getSenderRoundtripTime());
+    super();
+
+    //  Unlike regular messages or pure acks, the acks contained in a pure
+    //  ack-ack message are simply those from the pure ack that caused the
+    //  creation of the ack-ack, and these acks are never changed (updated).
+
+    setSpecificAcks (pureAck.getLatestAcks());
+
+//System.err.println ("PureAckAck: setting acks from pure ack: " +pureAck);
+//AckList.printAcks ("specific", pureAck.getLatestAcks());
+
+    setReceiveTime (pureAck.getReceiveTime());
+    setSenderRoundtripTime (pureAck.getSenderRoundtripTime());
   }
 }
 

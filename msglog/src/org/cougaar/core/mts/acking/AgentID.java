@@ -63,7 +63,7 @@ public class AgentID implements java.io.Serializable
     return getID();
   }
 
-  public static String makePairKey (AgentID fromAgent, AgentID toAgent)
+  public static String makeSequenceID (AgentID fromAgent, AgentID toAgent)
   {
     return fromAgent +"::"+ toAgent;
   }

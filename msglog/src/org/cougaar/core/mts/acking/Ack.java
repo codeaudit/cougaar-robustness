@@ -35,7 +35,8 @@ import org.cougaar.core.mts.*;
 
 public class Ack implements Serializable
 {
-  private Vector acks;
+  private Vector specificAcks;
+  private Vector latestAcks;
   private Classname lastReceiveLink;
   private Classname sendLink;
   private Classname predictedReceiveLink;
@@ -56,16 +57,6 @@ public class Ack implements Serializable
     linksUsed = new Vector();
   }
 
-  Ack (Ack ack)
-  {
-    setMsg (ack.msg);
-    sendCount = ack.sendCount;
-    linksUsed = ack.linksUsed;
-  }
-
-  Ack ()
-  {}
-
   void setMsg (AttributedMessage msg)
   {
     this.msg = msg;
@@ -76,14 +67,24 @@ public class Ack implements Serializable
     return msg;
   }
 
-  void setAcks (Vector acks)
+  void setSpecificAcks (Vector acks)
   {
-    this.acks = acks;
+    specificAcks = acks;
   }
 
-  public Vector getAcks ()
+  public Vector getSpecificAcks ()
   {
-    return acks;      
+    return specificAcks;      
+  }
+
+  void setLatestAcks (Vector acks)
+  {
+    latestAcks = acks;
+  }
+
+  public Vector getLatestAcks ()
+  {
+    return latestAcks;      
   }
 
   public void setLastReceiveLink (Class link)
@@ -279,6 +280,6 @@ public class Ack implements Serializable
     
   public String toString ()
   {
-    return getType() + " for " + MessageUtils.toString (getMsg());
+    return getType() + " in " + MessageUtils.toString (getMsg());
   }
 }

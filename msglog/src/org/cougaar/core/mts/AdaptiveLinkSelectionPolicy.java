@@ -149,7 +149,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     {
       if (useMeasuredPerfMetric)
       {
-        System.err.println ("FYI: Adaptive Policy measured performance usage turned off due to acking off.");
+        System.err.println ("FYI: ALSPolicy measured performance usage turned off due to acking off.");
         useMeasuredPerfMetric = false;
       }
     }
@@ -158,9 +158,12 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
   public synchronized DestinationLink selectLink (Iterator links, AttributedMessage msg, 
          AttributedMessage failedMsg, int retryCount, Exception last)
   {
-System.err.println ("**** selectLink called");
+//System.err.println ("**** selectLink called");
 
     if (links == null || msg == null) return null;
+
+//System.err.println ("msg "+msg.hashCode()+" ="+MessageUtils.toString(msg));
+//System.err.println ("failedMsg "+failedMsg.hashCode()+" ="+MessageUtils.toString(failedMsg));
 
     //  Return if the node is not yet ready
 
@@ -183,14 +186,16 @@ System.err.println ("**** selectLink called");
       
       if (MessageUtils.hasMessageNumber (failedMsg))
       {
-        //  Transfer message number and associated from/to agents
+        //  Transfer known persistent attributes
 
+        MessageUtils.setMessageType (msg, MessageUtils.getMessageType (failedMsg));
         MessageNumberingAspect.setMessageNumber (msg, MessageUtils.getMessageNumber (failedMsg));
         MessageUtils.setFromAgent (msg, MessageUtils.getFromAgent (failedMsg)); 
         MessageUtils.setToAgent (msg, MessageUtils.getToAgent (failedMsg)); 
+        MessageUtils.setAck (msg, MessageUtils.getAck (failedMsg)); 
       }
 
-System.err.println ("selectLink: RETRY: set msg to " +MessageUtils.toString(msg));
+//System.err.println ("selectLink: RETRY "+retryCount+": set msg arg to msg "+msg.hashCode()+" ="+MessageUtils.toString(msg));
     }
 
     //  Handle the special case of local messages  
@@ -221,6 +226,36 @@ System.err.println ("selectLink: RETRY: set msg to " +MessageUtils.toString(msg)
 
       if (showTraffic) showProgress (loopbackLink);
       return loopbackLink;      
+    }
+
+    //  Get started
+
+    String msgString = MessageUtils.toString (msg);
+
+    if (debug)
+    {
+      System.err.println ("ALSPolicy: Processing msg " +msgString);
+    }
+
+    /**
+     **  Special case:  Message has passed it's send deadline so we just drop it
+     **/
+
+    if (MessageUtils.getSendDeadline (msg) < now())
+    {
+      if (debug) 
+      {
+        System.out.println ("\nALSPolicy: Dropping msg past its send deadline: " +msgString);
+      }
+
+      //  Semi-HACK.  Declare message as successfully sent so that any incoming
+      //  acks for it are ignored.  Maybe put this in a dropped msg table?
+
+      MessageAckingAspect.addSuccessfulSend (msg);
+
+      //  Drop message
+
+      return blackHoleLink;
     }
 
     //  Normal operation.
@@ -274,12 +309,14 @@ System.err.println ("selectLink: RETRY: set msg to " +MessageUtils.toString(msg)
     }
 
     DestinationLink topLink = destLinks[0];
-System.err.println ("topLink = " +topLink.getProtocolClass());
-
+//System.err.println ("topLink = " +topLink.getProtocolClass());
 
     //  If this message is a resend, we dump its agent to node mapping in case
     //  that is the reason for the resend (ie. we sent the last send to the 
     //  wrong place).
+
+// Near Future:  Need to force the link protocols to drop their
+// cached info on the destination as well.
 
     String targetNode = null;
     Ack ack = MessageUtils.getAck (msg);
@@ -288,6 +325,8 @@ System.err.println ("topLink = " +topLink.getProtocolClass());
     {
       if (ack != null && ack.getSendCount() > 0)
       {
+        //  Bypass topological caching to get latest target agent info
+
         AgentID toAgent = getAgentID (targetAgent, true);
         MessageUtils.setToAgent (msg, toAgent);
         targetNode = toAgent.getNodeName();      
@@ -298,6 +337,8 @@ System.err.println ("topLink = " +topLink.getProtocolClass());
 
         if (targetNode == null)
         {
+          //  Get cached target agent info
+
           AgentID toAgent = getAgentID (targetAgent, false);
           MessageUtils.setToAgent (msg, toAgent);
           targetNode = toAgent.getNodeName();
@@ -308,44 +349,57 @@ System.err.println ("topLink = " +topLink.getProtocolClass());
     {
       if (debug)
       {
-        System.err.println ("Policy:  Unable to get node for agent: " +targetAgent);
+        System.err.println ("ALSPolicy: Unable to get node for agent: " +targetAgent);
       }
     }
 
     if (targetNode == null) return null;  // try again later
 
-
     //  HACK!
 
     if (MessageUtils.isTrafficMaskingMessage (msg))
     {
-      // Link selection for these messages is limited to whatever link was last used
-      // successfully to its target node.  It the link doesn't work, tough beans.
+      //  Link selection for these messages is limited to whatever link was last used
+      //  successfully to its target node.
       
       Class linkClass = MessageAckingAspect.getLastSuccessfulLinkUsed (targetNode);
       DestinationLink link = pickLinkByClass (destLinks, linkClass);
       if (link == null) link = topLink;  // just in case
+
+      if (debug)
+      {
+        System.err.println ("ALSPolicy: Chose link for traffic masking msg: " +msgString);
+      }
+
+      if (showTraffic) showProgress (link);
       return link;
     }
 
     //  Special Case:  Sending pure acks-acks.  For ack-acks we will just chose
     //  the last link that successfully sent to the target node.
 
-    if (ack != null && ack.isPureAckAck())
+    if (MessageUtils.isPureAckAckMessage (msg))
     {
-      // Link selection for these messages is limited to whatever link was last used
-      // successfully to its target node.  It the link doesn't work, tough beans.
+      //  Link selection for these messages is limited to whatever link was last used
+      //  successfully to its target node.
       
       Class linkClass = MessageAckingAspect.getLastSuccessfulLinkUsed (targetNode);
       DestinationLink link = pickLinkByClass (destLinks, linkClass);
       if (link == null) link = topLink;  // just in case
+
+      if (debug)
+      {
+        System.err.println ("ALSPolicy: Chose link for pure ack-ack msg: " +msgString);
+      }
+
+      if (showTraffic) showProgress (link);
       return link;
     }
 
     //  Special Case:  Sending pure acks.  For pure ack messages we try all possible 
     //  links until we run out or we determine we no longer need to send the message.
 
-    if (ack != null && ack.isPureAck())
+    if (MessageUtils.isPureAckMessage (msg))
     {
       PureAck pureAck = (PureAck) ack;
 
@@ -353,28 +407,34 @@ System.err.println ("topLink = " +topLink.getProtocolClass());
       //  If there are any, then we may not be needing to send a pure ack this time - we may
       //  wait till sometime after the farthest out response to these sends is expected.
 
+      DestinationLink link;
       boolean newLink = false;
       long latestDeadline = 0;
 
       for (int i=0; i<destLinks.length; i++)
       {
-        if (pureAck.haveLinkSelection (destLinks[i])) continue;
+        link = destLinks[i];
 
-        long lastSendTime = MessageAckingAspect.getLastSendTime (destLinks[i], targetNode);
+        if (pureAck.haveLinkSelection (link)) continue;
+
+        long lastSendTime = MessageAckingAspect.getLastSendTime (link, targetNode);
 
         if (lastSendTime > pureAck.getAckSendableTime())
         {
-          newLink = pureAck.addLinkSelection (destLinks[i]);
+          newLink = pureAck.addLinkSelection (link);
 
           if (newLink)
           {
             //  Ok, here's a link that we'll not be needing to send an ack over because
-            //  its already been done for us.
+            //  its already been done for us.  Update the latestDeadline for when we
+            //  need to attempt to send this ack over another link.
 
-            int roundtrip = MessageAckingAspect.getRoundtripTimeForAck (destLinks[i], pureAck);
+            int roundtrip = MessageAckingAspect.getRoundtripTimeForAck (link, pureAck);
+            if (roundtrip < 0) roundtrip = MessageAckingAspect.getBestRoundtripTimeForLink (link, targetNode);
+
             float spacingFactor = MessageAckingAspect.getInterAckSpacingFactor();
             long deadline = lastSendTime + (long)((float)roundtrip * spacingFactor);
-            if (deadline > latestDeadline) latestDeadline = deadline;            
+            if (deadline > latestDeadline) latestDeadline = deadline;
           }
         }
       }
@@ -383,10 +443,13 @@ System.err.println ("topLink = " +topLink.getProtocolClass());
       {
         //  Reschedule the ack and don't send it now
 
-        if (debug) System.out.println ("Policy: rescheduling " +pureAck);
-
         pureAck.setSendDeadline (latestDeadline);
         MessageAckingAspect.addToPureAckSender ((PureAckMessage)msg);
+
+        if (debug) 
+        {
+          System.out.println ("ALSPolicy: Rescheduling pure ack msg: " +msgString);
+        }
 
         return blackHoleLink;  // msgs go in, but never come out!
       }
@@ -396,19 +459,29 @@ System.err.println ("topLink = " +topLink.getProtocolClass());
 
       for (int i=0; i<destLinks.length; i++)
       {
-        if (!pureAck.haveLinkSelection (destLinks[i])) 
-        {
-          pureAck.addLinkSelection (destLinks[i]);
+        link = destLinks[i];
 
-          if (debug) System.out.println ("Policy: chose link for "+pureAck+": link= "+
-                                         destLinks[i].getProtocolClass());
-          return destLinks[i];
+        if (!pureAck.haveLinkSelection (link)) 
+        {
+          pureAck.addLinkSelection (link);
+
+          if (debug)
+          {
+            System.err.println ("ALSPolicy: Chose link for pure ack msg: " +msgString);
+          }
+
+          if (showTraffic) showProgress (link);
+          return link;
         }
       }
 
       //  Final case: No untried links left - we are done sending pure ack
 
-      if (debug) System.out.println ("Policy: final abort of " +pureAck);
+      if (debug) 
+      {
+        System.out.println ("ALSPolicy: No need to send pure ack msg: " +msgString);
+      }
+
       return blackHoleLink;
     }
 
@@ -431,7 +504,13 @@ System.err.println ("topLink = " +topLink.getProtocolClass());
 
         if (newLink)
         {
-          if (debug) System.out.println ("\nPolicy: chose last successful link used: " + link.getProtocolClass());
+
+          if (debug)
+          {
+            System.err.println ("ALSPolicy: Chose last successful link used for resending msg: " +msgString);
+          }
+
+          if (showTraffic) showProgress (link);
           return link;
         }
 
@@ -453,7 +532,11 @@ System.err.println ("topLink = " +topLink.getProtocolClass());
 
         if (link == null)
         {
-          if (debug) System.out.println ("\nPolicy: starting over with first choice");
+          if (debug)
+          {
+            System.out.println ("\nALSPolicy: Starting over with first choice for msg resend");
+          }
+
           link = pickLinkByClass (destLinks, ack.getFirstLinkSelection());
           ack.clearLinkSelections();
         }
@@ -462,59 +545,33 @@ System.err.println ("topLink = " +topLink.getProtocolClass());
 
         if (link == null)
         {
-          if (debug) System.out.println ("\nPolicy: unexpected failures, chosing top link");
+          if (debug) System.out.println ("\nALSPolicy: unexpected failures, chosing top link");
           link = topLink;
         }
 
-        if (debug) System.out.println ("\nPolicy: made resend msg link choice: " + link.getProtocolClass());
+        if (debug) 
+        {
+          System.out.println ("\nALSPolicy: Made link choice for resend msg: " + msgString);
+        }
+
         ack.addLinkSelection (link);
+        if (showTraffic) showProgress (link);
         return link;
       }   
     }
 
     /**
-     **  Special case:  Message has passed it's send deadline so we just drop it
-     **/
-
-    if (MessageUtils.getSendDeadline (msg) < now())
-    {
-      if (debug) 
-      {
-        System.out.println ("\nPolicy: dropping msg past send deadline: " +MessageUtils.toString(msg));
-      }
-
-      return blackHoleLink;
-    }
-
-    /**
      *  Choose a link based on its metric, history of sending messages, and policy (tbd). The
-     *  algorithm here now is trivial compared to what will be able to be done with a rich 
+     *  algorithm here now is less advanced compared to what will be able to be done with a rich 
      *  message history (incl. sends and receives) and the Cougaar Messaging Policy system.
-     *
-     *  NOTE: Message traffic in Cougaar is pair-wise at the node level: from an agent 
-     *  in this node to the remote destination node that hosts the agent that we want
-     *  to send a message to.  Since it is expected that the transports will generally 
-     *  be insensitive in regards to errors at the agent level, and will be very sensitive 
-     *  to communications pathway and node endpoint errors and problems, the link selection 
-     *  history maintained here is indexed by remote nodes, and not remote agents.
     **/
 
     //  Get the last link choice made for the destination node for this message
 
-    if (targetNode == null)
-    {
-      //  The ? mark in this error message refers to the fact that we have already
-      //  tested above that we can send a message to the remote agent, and thus
-      //  it has been registered recently, though it appears to not be now...
-
-      System.err.println ("\nAdaptiveLinkSelectionPolicy: Moving agent!?: " +targetAgent);
-      return null;
-    }
-
     SelectionChoice lastChoice = (SelectionChoice) selectionHistory.get (targetNode);
 
-System.err.println ("last choice = " + lastChoice);
-if (lastChoice != null) System.err.println ("last choice was successful = " + lastChoice.wasSuccessful());
+//System.err.println ("last choice = " + lastChoice);
+//if (lastChoice != null) System.err.println ("last choice was successful = " + lastChoice.wasSuccessful());
 
     //  Special cases: First time a message is sent to this destination
     //  or there is only one link to choose from.  In these cases we always 
@@ -591,7 +648,7 @@ if (lastChoice != null) System.err.println ("last choice was successful = " + la
     {
       //  This is a HACK needed until we write our own version of DestinationQueue
 
-      System.err.print ("\nAdaptiveLinkSelectionPolicy: maxRetries reached ");
+      System.err.println ("\nALSPolicy: maxRetries reached");
     }
 */
     //  Ok, we are still in the game.  We respond based on the category the last
@@ -611,7 +668,7 @@ if (lastChoice != null) System.err.println ("last choice was successful = " + la
         upgrade = pickUpgradeChoice (lastChoice, destLinks, msg);
       }
 
-      if (debug) System.err.println ("\nUpgrade choice failed: new upgrade= " +upgrade);
+      if (debug) System.err.println ("\nALSPolicy: Upgrade choice failed: new upgrade= " +upgrade);
 
       if (upgrade != null)
       {
@@ -650,7 +707,7 @@ if (lastChoice != null) System.err.println ("last choice was successful = " + la
     {
       //  What?  How did we get here?  Make a note of it and move on.
 
-      System.err.println ("\nAdaptiveLinkSelectionPolicy: FYI Invalid state reached!");
+      System.err.println ("\nALSPolicy: FYI Invalid state reached!");
 
       DestinationLink replacement = pickReplacementChoice (lastChoice, destLinks, msg);
       return setReplacementChoice (lastChoice, replacement, msg);
@@ -761,8 +818,8 @@ if (lastChoice != null) System.err.println ("last choice was successful = " + la
     int msgNum = MessageUtils.getMessageNumber (msg);
     choice.makeUpgradeChoice (link, msgNum);
 
+    if (debug) System.err.println ("\nALSPolicy: Upgrade selected: " + link.getProtocolClass());
     if (showTraffic) showProgress (link);
-    if (debug) System.err.println ("\nAdaptiveLinkSelection: Upgrade selected: " + link.getProtocolClass());
 
     return link;
   }
@@ -774,8 +831,8 @@ if (lastChoice != null) System.err.println ("last choice was successful = " + la
     int msgNum = MessageUtils.getMessageNumber (msg);
     choice.makeReplacementChoice (link, msgNum);
 
+    if (debug) System.err.println ("\nALSPolicy: Replacement selected: " + link.getProtocolClass());
     if (showTraffic) showProgress (link);
-    if (debug) System.err.println ("\nAdaptiveLinkSelection: Replacement selected: " + link.getProtocolClass());
 
     return link;
   }

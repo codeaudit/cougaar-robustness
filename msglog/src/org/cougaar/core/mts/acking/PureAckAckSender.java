@@ -19,7 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 09 Jun 2002: Revamped for 9.2.x. (OBJS)
+ * 08 Jun 2002: Revamped and streamlined for 9.2.x. (OBJS)
  * 23 Apr 2001: Split out from MessageAckingAspect. (OBJS)
  */
 
@@ -30,37 +30,44 @@ import java.util.*;
 import org.cougaar.core.mts.MessageUtils;
 import org.cougaar.core.thread.CougaarThread;
 
+/**
+ **  Pure ack-acks are sent to stop the flow of pure acks
+ **  in the situation when the receiving node is not ordinarily
+ **  going to be sending back any traffic to the node (and thus
+ **  have acks piggybacked on it.  Only one ack-ack at most is
+ **  sent in response to pure acks.
+ **/
 
 class PureAckAckSender implements Runnable
 {
   private Vector queue;
   private PureAckAckMessage messages[];
   private boolean haveNewMessages;
-  private long maxWait;
+  private long minSendDeadline;
 
   public PureAckAckSender () 
   {
     queue = new Vector();
-    messages = new PureAckAckMessage[16];
+    messages = new PureAckAckMessage[32];
     haveNewMessages = false;
-    maxWait = 0;
+    minSendDeadline = Long.MAX_VALUE;
   }
 
-  public void add (PureAckAckMessage ackMsg) 
+  public void add (PureAckAckMessage paam) 
   {
     synchronized (queue) 
     {
-      queue.add (ackMsg);
+      queue.add (paam);
       haveNewMessages = true;
       queue.notify();
     }
   }
   
-  private void remove (PureAckAckMessage ackMsg) 
+  private void remove (PureAckAckMessage paam) 
   {
     synchronized (queue) 
     {
-      queue.remove (ackMsg);
+      queue.remove (paam);
     }
   }
   
@@ -70,18 +77,11 @@ class PureAckAckSender implements Runnable
 
     while (true) 
     {
+      //  Wait until we have some new messages or we have timed out to 
+      //  re-examine old messages.
+
       synchronized (queue) 
       {
-        //  Wait until we have some new messages or we have timed out to 
-        //  re-examine old messages.
-
-        long waitTime, elapsedTime, waitStart;
-
-        long minMaxWait = 200;   // HACK - should calc this
-        maxWait = Math.max (minMaxWait, maxWait); 
-
-        waitStart = now();
-
         while (true)
         {
           //  Check for new messages before waiting.  They can come
@@ -93,69 +93,81 @@ class PureAckAckSender implements Runnable
             if (queue.size() > 0) break;
           }
 
+          //  Check how long to wait before we need to satisfy a send deadline
+
+          long waitTime = 0;  // 0 = wait till notify (or interrupt)
+
           if (queue.size() > 0)
           {
-            //  If we have waited long enough, break out; otherwise
-            //  recalculate how much longer to wait.
-
-            elapsedTime = now() - waitStart;
-            if (elapsedTime >= maxWait) break;
-            else waitTime = maxWait - elapsedTime;
+            waitTime = minSendDeadline - now();
+            if (waitTime <= 0) break;
           }
-          else waitTime = 0;  // 0 = wait till notify (or interrupt)
 
           //  Wait until timeout, notify, or interrupt
 
-          //System.err.println ("\nPureAckAckSender: WAIT waitTime= "+waitTime);
+          // System.err.println ("\nPureAckAckSender: WAIT waitTime= "+waitTime);
           CougaarThread.wait (queue, waitTime);
-          //System.err.println ("\nPureAckAckSender: RUN");
+          // System.err.println ("\nPureAckAckSender: RUN");
         }
 
         messages = (PureAckAckMessage[]) queue.toArray (messages);  // try array reuse
         len = queue.size();
+//System.err.println ("PureAckAckSender: len="+len);
       }
 
-      //  Send one ack-ack when and if needed
+      //  Check if it is time to send a pure ack-ack message
 
-      int minTimeLeft = Integer.MAX_VALUE;
+      minSendDeadline = Long.MAX_VALUE;
 
       for (int i=0; i<len; i++)
       {
-        PureAckAckMessage ackMsg = messages[i];
-        PureAckAck pureAckAck = (PureAckAck) MessageUtils.getAck (ackMsg);
+        PureAckAckMessage paam = messages[i];
+//System.err.println ("PureAckAckSender: msg="+MessageUtils.toString(paam));
+        PureAckAck pureAckAck = (PureAckAck) MessageUtils.getAck (paam);
 
-        String node = MessageUtils.getToAgentNode (ackMsg);
+        String node = MessageUtils.getToAgentNode (paam);
         long lastSendTime = MessageAckingAspect.getLastSendTime (node);
+
+        //  We sent at most one ack-ack, and then only if there has
+        //  not been any traffic back to the sending node since the
+        //  time we received a pure ack from it.
 
         if (lastSendTime < pureAckAck.getReceiveTime())
         {
-          int timeLeft = (int)(pureAckAck.getSendDeadline() - now());
+          long sendDeadline = pureAckAck.getSendDeadline();
+          long timeLeft = sendDeadline - now();
 
           if (MessageAckingAspect.debug)
           {
-            System.err.println ("PureAckAckSender: "+pureAckAck+": timeLeft="+timeLeft);
+            String m = MessageUtils.toShortString (paam);
+//          System.err.println ("PureAckAckSender: "+m+": timeLeft="+timeLeft);
           }
 
           if (timeLeft <= 0)
           {
-            //  Time to send the ackAck
+            //  Time to send the ack-ack
 
-            remove (ackMsg);  // remove first to avoid race condition with send
-            MessageSender.sendMsg (ackMsg);
+            if (MessageAckingAspect.debug) 
+            {
+//            System.err.println ("PureAckAckSender: Launching " +paam);
+            }
+
+            remove (paam);  // remove first to avoid race condition with send
+            MessageSender.sendMsg (paam);
           }
           else 
           {
-            if (timeLeft < minTimeLeft) minTimeLeft = timeLeft;
+            if (sendDeadline < minSendDeadline) minSendDeadline = sendDeadline;
           }
         }
-        else remove (ackMsg);  // no need to send this AckAck message
+        else
+        {
+//System.err.println ("PureAckAckSender: removing " +paam);
+          remove (paam);  // done sending this pure ack-ack message
+        }
       }
 
-      Arrays.fill (messages, null);  // remove references
-
-      //  Figure a reasonable time to wait until we re-examine any remaining messages
-
-      maxWait = (minTimeLeft != Integer.MAX_VALUE ? minTimeLeft : 0);
+      Arrays.fill (messages, null);  // release references
     }
   }
 

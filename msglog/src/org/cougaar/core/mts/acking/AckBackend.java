@@ -54,15 +54,16 @@ class AckBackend extends MessageDelivererDelegateImplBase
       throw new MisdeliveredMessageException (msg);
     }
 
-    //  Get the ack from the message and handle the case when there is no ack
+    //  Sanity check: Message must have ack in it!
 
     Ack ack = MessageUtils.getAck (msg);
+    String msgString = MessageUtils.toString (msg);
 
     if (ack == null)
     {
       if (MessageAckingAspect.isAckingOn()) 
       {
-        System.err.println ("ERROR: Message has no ack in it! : " + msg);
+        System.err.println ("ERROR: Message has no ack in it! : " +msgString);
         throw new MisdeliveredMessageException (msg);
       }
 
@@ -72,20 +73,21 @@ class AckBackend extends MessageDelivererDelegateImplBase
     ack.setReceiveTime (now());  // establish message delivery time
     ack.setMsg (msg);            // reset transient msg field
 
-    int msgNum = MessageUtils.getMessageNumber (msg);
-    String fromNode = MessageUtils.getFromAgentNode (msg);
-    String hdr = "\nReceived " + MessageUtils.toString (msg);
+    //  Show message reception
+
+    String msgShortStr = MessageUtils.toShortString (msg);
 
     if (MessageAckingAspect.showTraffic) 
     {
-      String lnk = MessageAckingAspect.getLinkType (ack.getSendLink());  // HACK - need this from system, not msg
-      System.err.println (hdr+ " via " +lnk);
+      String lnk = MessageAckingAspect.getLinkType (ack.getSendLink());  // HACK: should be from system, not msg!
+      String sequence = MessageUtils.getSequenceID (msg);
+      System.err.println ("\nReceived " +msgShortStr+ " via " +lnk+ " of " +sequence);
     }
 
     //  Here we do integrity checks on the received message.  Who knows where
     //  this "message" really came from, where it has been, and what happened on
-    //  the way...  These are only some basic checks, certainly when message
-    //  security is implemented things will get even tighter.
+    //  the way...  These are only some basic checks, other message security
+    //  entities may do more.
 
     //  NOTE: We are currently limited to throwing MisdeliveredMessageException's,
     //  may want to create new exceptions in the future.
@@ -98,22 +100,24 @@ class AckBackend extends MessageDelivererDelegateImplBase
     result.setAttribute (MessageAttributes.DELIVERY_ATTRIBUTE, status);
 
 /*
-    Can't do this important integrity check yet - msg system architecture wrong for it
+    Can't do this integrity check yet - msg system architecture wrong for it
 
     if (getLinkType (ack.getSendLink()) != actual receive link type)
     {
       if (MessageAckingAspect.debug) 
       {
-        System.err.println ("ALERT msg " +msgNum+ ": came in on wrong link - msg ignored."); 
+        System.err.println ("ALERT msg came in on wrong link - msg ignored: " +msgString); 
         return result;
       }
     }
 */
+    int msgNum = MessageUtils.getMessageNumber (msg);
+
     if (ack.isRegularAck() && msgNum <= 0)
     {
       if (MessageAckingAspect.debug) 
       {
-        System.err.println (hdr+ ": invalid msg number - msg ignored.");
+        System.err.println ("Invalid msg number (msg ignored): " +msgString);
       }
 
       return result;
@@ -123,7 +127,7 @@ class AckBackend extends MessageDelivererDelegateImplBase
     {
       if (MessageAckingAspect.debug) 
       {
-        System.err.println (hdr+ ": invalid msg number - ack msg ignored.");
+        System.err.println ("Invalid msg number (pure ack msg ignored): " +msgString);
       }
 
       return result;
@@ -133,17 +137,19 @@ class AckBackend extends MessageDelivererDelegateImplBase
     {
       if (MessageAckingAspect.debug) 
       {
-        System.err.println (hdr+ ": invalid msg number - ack-ack msg ignored.");
+        System.err.println ("Invalid msg number (pure ack-ack msg ignored): " +msgString);
       }
 
       return result;
     }
 
+    String fromNode = MessageUtils.getFromAgentNode (msg);
+
     if (fromNode == null || fromNode.equals(""))
     {
       if (MessageAckingAspect.debug) 
       {
-        System.err.println (hdr+ " from unknown node - msg ignored.");
+        System.err.println ("From node missing (msg ignored): " +msgString);
       }
 
       return result;
@@ -156,7 +162,7 @@ class AckBackend extends MessageDelivererDelegateImplBase
       
       if (MessageAckingAspect.debug) 
       {
-        System.err.println (hdr+ " is too far in the past - msg ignored.");
+        System.err.println ("Msg too old (msg ignored): " +msgString);
       }
 
       return result;
@@ -169,7 +175,7 @@ class AckBackend extends MessageDelivererDelegateImplBase
       
       if (MessageAckingAspect.debug) 
       {
-        System.err.println (hdr+ " is too far in the future - msg ignored.");
+        System.err.println ("Msg too far in the future (msg ignored): " +msgString);
       }
 
       return result;
@@ -181,23 +187,35 @@ class AckBackend extends MessageDelivererDelegateImplBase
       {
         if (MessageAckingAspect.debug) 
         {
-          System.err.println (hdr.substring(1)+ " contains acks: ");
-          AckList.printAcks (ack.getAcks());
+          System.err.println ("Received " +msgShortStr+ " contains acks: ");
+          AckList.printAcks ("specific", ack.getSpecificAcks());
+          AckList.printAcks ("  latest", ack.getLatestAcks());
           System.err.println ("Inbound roundtrip time: " + ack.getSenderRoundtripTime());
         }
 
-        for (Enumeration a=ack.getAcks().elements(); a.hasMoreElements(); )
+        if (ack.getSpecificAcks() != null)
         {
-          NumberList.checkListValidity ((AckList) a.nextElement());
+          for (Enumeration a=ack.getSpecificAcks().elements(); a.hasMoreElements(); )
+          {
+            NumberList.checkListValidity ((AckList) a.nextElement());
+          }
+        }
+
+        if (ack.getLatestAcks() != null)
+        {
+          for (Enumeration a=ack.getLatestAcks().elements(); a.hasMoreElements(); )
+          {
+            NumberList.checkListValidity ((AckList) a.nextElement());
+          }
         }
       }
       catch (Exception e)
       {
-        //  NOTE:  Maybe just throw out back acks?
+        //  NOTE: Maybe just throw out bad acks?
 
         if (MessageAckingAspect.debug) 
         {
-          System.err.println (hdr+ " has bad ack list - msg ignored.");
+          System.err.println ("Msg contains invalid acks (msg ignored): " +msgString);
         }
 
         return result;
@@ -207,7 +225,7 @@ class AckBackend extends MessageDelivererDelegateImplBase
       {
         if (MessageAckingAspect.debug) 
         {
-          System.err.println (hdr+ " has bad sendCount - msg ignored.");
+          System.err.println ("Msg has bad sendCount (msg ignored): " +msgString);
         }
 
         return result;
@@ -217,7 +235,7 @@ class AckBackend extends MessageDelivererDelegateImplBase
       {
         if (MessageAckingAspect.debug) 
         {
-          System.err.println (hdr+ " has bad resendMultiplier - msg ignored.");
+          System.err.println ("Msg has bad resendMultiplier (msg ignored): " +msgString);
         }
 
         return result;
@@ -230,13 +248,13 @@ class AckBackend extends MessageDelivererDelegateImplBase
     //  MessageOrderingAspect, but that is ok because message ordering is orthogonal to 
     //  acking and is not required to be active.
 
-    if (msgNum != 0)
+    if (MessageUtils.isAckableMessage (msg))  // skip non-acked msgs like heartbeats & traffic masking
     {
       if (MessageAckingAspect.addSuccessfulReceive (msg) == false)
       {
-        if (MessageAckingAspect.debug) 
+        if (MessageAckingAspect.showTraffic) 
         {
-          System.err.println (hdr+ " is a duplicate - msg ignored.");
+          System.err.println ("Duplicate msg ignored: " +MessageUtils.toString (msg));
         }
 
         return result;
@@ -259,34 +277,26 @@ class AckBackend extends MessageDelivererDelegateImplBase
 
       MessageAckingAspect.setLastReceiveLink (fromNode, ack.getSendLink());
 
-      //  Deal with the acks contained in the message
+      //  Handle the acks contained within the message
 
-      Vector acks = ack.getAcks();
+      Vector latestAcks = updateFields (ack.getLatestAcks(), ack);
+      MessageAckingAspect.addReceivedAcks (fromNode, latestAcks);
+
       long ackSendableTime = 0;
 
       if (ack.isRegularAck() || ack.isPureAck())
       {
-        //  Update the fields of the individual acks (ackLists)
-
-        long rtime = ack.getReceiveTime();
-        String rlink = MessageAckingAspect.getLinkType (ack.getLastReceiveLink());
-        String slink = MessageAckingAspect.getLinkType (ack.getSendLink());
-
-        for (Enumeration a=acks.elements(); a.hasMoreElements(); )
-        {
-          AckList ackList = (AckList) a.nextElement();
-          ackList.setReceiveTime (rtime);
-          ackList.setSendLinkType (rlink);
-          ackList.setReceiveLinkType (slink);
-        }
-
-        //  Record the acks contained within this message.  Used to acknowledge 
+        //  Record the specific acks contained within this message.  Used to acknowledge 
         //  sent messages waiting for acks and measuring transport roundtrip times.
         //  This call also dings the ack waiter to announce new ack data has arrived.
 
-        MessageAckingAspect.addReceivedAcks (fromNode, acks);
-
         if (ack.isRegularAck())
+        {
+          Vector specificAcks = updateFields (ack.getSpecificAcks(), ack);
+          MessageAckingAspect.addReceivedAcks (fromNode, specificAcks);
+        }
+
+        if (MessageUtils.isAckableMessage(msg) && ack.isRegularAck())
         {
           //  Add the message to our outbound acks list (we send back acks for all 
           //  regular messages received, until those acks are acked).  We record
@@ -295,6 +305,11 @@ class AckBackend extends MessageDelivererDelegateImplBase
       
           MessageAckingAspect.addAckToSend (msg);
           ackSendableTime = now();
+/*
+System.out.println ("ackBackend: added ack to send for "+msgString);
+System.out.println ("ackBackend: acks to send now:");
+AckList.printAcks (MessageAckingAspect.getAcksToSend(MessageUtils.getFromAgentNode(msg)));
+*/
         }
       }
       else if (ack.isPureAckAck())
@@ -302,13 +317,13 @@ class AckBackend extends MessageDelivererDelegateImplBase
         //  Remove the acks contained within this message from our sending list, 
         //  as they are now officially acked.
 
-        MessageAckingAspect.removeAcksToSend (fromNode, acks);
+        MessageAckingAspect.removeAcksToSend (fromNode, ack.getSpecificAcks());
       }
 
       //  Handle setting up possible return messages for the message received -
       //  for regular messages pure acks, and for pure acks pure ack-acks.
 
-      if (ack.isRegularAck())
+      if (MessageUtils.isAckableMessage(msg) && ack.isRegularAck())
       {
         //  Create a pure ack for this message add it to our pure ack sender.  The sender ensures
         //  pure acks for received  messages get sent if there is not enough regular message 
@@ -318,6 +333,7 @@ class AckBackend extends MessageDelivererDelegateImplBase
         pureAck.setAckSendableTime (ackSendableTime);
         int firstAck = (int)((float)ack.getAckWindowUnitTimeSlot() * MessageAckingAspect.firstAckPlacingFactor);
         pureAck.setSendDeadline (ack.getReceiveTime() + firstAck);
+//pureAck.setSendDeadline (ack.getReceiveTime() + 15);  // testing
         PureAckMessage pureAckMsg = new PureAckMessage (msg, pureAck);
         MessageAckingAspect.pureAckSender.add (pureAckMsg);
       }
@@ -332,7 +348,8 @@ class AckBackend extends MessageDelivererDelegateImplBase
         PureAckAck pureAckAck = new PureAckAck ((PureAck)ack);
         int onlyAckAck = (int)((float)ack.getSenderRoundtripTime() * MessageAckingAspect.ackAckPlacingFactor);
         pureAckAck.setSendDeadline (ack.getReceiveTime() + onlyAckAck);
-        PureAckAckMessage pureAckAckMsg = new PureAckAckMessage (msg, pureAckAck);
+//pureAckAck.setSendDeadline (ack.getReceiveTime() + 5);  // testing
+        PureAckAckMessage pureAckAckMsg = new PureAckAckMessage ((PureAckMessage)msg, pureAckAck);
         MessageAckingAspect.pureAckAckSender.add (pureAckAckMsg);
       }
     }
@@ -351,6 +368,27 @@ class AckBackend extends MessageDelivererDelegateImplBase
       result.setAttribute (MessageAttributes.DELIVERY_ATTRIBUTE, status);
       return result;
     }
+  }
+
+  private Vector updateFields (Vector acks, Ack ack)
+  {
+    if (acks == null) return new Vector();
+
+    //  Update the fields of the individual acks
+
+    long rtime = ack.getReceiveTime();
+    String rlink = MessageAckingAspect.getLinkType (ack.getLastReceiveLink());
+    String slink = MessageAckingAspect.getLinkType (ack.getSendLink());
+
+    for (Enumeration a=acks.elements(); a.hasMoreElements(); )
+    {
+      AckList ackList = (AckList) a.nextElement();
+      ackList.setReceiveTime (rtime);
+      ackList.setSendLinkType (rlink);
+      ackList.setReceiveLinkType (slink);
+    }
+
+    return acks;
   }
 
   private static long now ()

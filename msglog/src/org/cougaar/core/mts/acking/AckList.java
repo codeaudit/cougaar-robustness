@@ -45,6 +45,16 @@ public class AckList extends NumberList
     this.toAgent = toAgent;
   }
 
+  public AckList (AckList original)
+  {
+    super (original);
+    this.fromAgent = original.getFromAgent();
+    this.toAgent = original.getToAgent();
+    this.sendLinkType = original.sendLinkType;
+    this.receiveLinkType = original.receiveLinkType;
+    this.receiveTime = original.receiveTime;
+  }
+
   public AgentID getFromAgent ()
   {
     return fromAgent;
@@ -55,9 +65,9 @@ public class AckList extends NumberList
     return toAgent;
   }
 
-  public String getPairKey ()
+  public String getSequenceID ()
   {
-    return AgentID.makePairKey (fromAgent, toAgent);
+    return AgentID.makeSequenceID (fromAgent, toAgent);
   }
 
   public void setSendLinkType (String sendLinkType)
@@ -92,13 +102,20 @@ public class AckList extends NumberList
     
   public String toString ()
   {
-    return "from: " +fromAgent+ " to: " +toAgent+ " acks: " +super.toString();
+    return super.toString();
+  }
+
+  public String toStringFull ()
+  {
+    return "acks: " +super.toString()+ " sequence: " + getSequenceID();
   }
 
   //  Utility methods
 
   public static boolean find (Vector acks, int msgNum)
   {
+    if (acks == null) return false;
+
     for (Enumeration a=acks.elements(); a.hasMoreElements(); )
     {
       AckList ackList = (AckList) a.nextElement();
@@ -110,6 +127,8 @@ public class AckList extends NumberList
 
   public static AckList findFirst (Vector acks, int msgNum)
   {
+    if (acks == null) return null;
+
     //  Ack lists are added to the vector on the end, so the
     //  earlist list will be the first.
 
@@ -122,11 +141,25 @@ public class AckList extends NumberList
     return null;
   }
 
-  public static void printAcks (Vector acks)
+  public static void printAcks (String tag, Vector acks)
   {
+    if (acks == null) return;
+
+    if (tag == null) tag = "";
+    String blank = blankString (tag.length());
+    boolean firstTime = true;
+
     for (Enumeration a=acks.elements(); a.hasMoreElements(); )
     {
-      System.err.println ((AckList) a.nextElement());
+      String marker = (firstTime ? tag : blank);  firstTime = false;
+      System.err.println ("  " +marker+ " " +((AckList) a.nextElement()).toStringFull());
     }
+  }
+
+  private static String blankString (int len)
+  {
+    StringBuffer buf = new StringBuffer (len);
+    for (int i=0; i<len; i++) buf.append (" ");
+    return buf.toString();
   }
 }

@@ -147,6 +147,7 @@ private int cnt = 0;
     private MessageAddress destination;
     private DatagramSocketSpec spec, savedSpec;
     private DatagramSocket datagramSocket;
+    private boolean connected;
 
     Link (MessageAddress dest) 
     {
@@ -231,7 +232,9 @@ private int cnt = 0;
 /*
 //  Testing hack
 String toNode = MessageUtils.getToAgentNode(msg);
-if (toNode.equals("PerformanceNodeB") && cnt++ == 4) success = false;
+cnt++;
+boolean isRegMsg = MessageUtils.isRegularAckMessage (msg);
+if (toNode.equals("PerformanceNodeB") && isRegMsg && (cnt > 4 && cnt < 7)) success = true;
 else
 */
           success = sendMessage (msg);
@@ -245,6 +248,7 @@ else
         {
           spec = null;            // force name server recache
           datagramSocket = null;  // force new socket creation
+          connected = false;      // force new connection
 
           Exception e = (save==null ? new Exception ("UDP sendMessage unsuccessful") : save);
           throw new CommFailureException (e);
@@ -274,16 +278,17 @@ else
       //  Since UDP datagram sockets are unconnected (unlike TCP sockets), we
       //  just send the message on its way and maybe it gets there (UDP is 
       //  unreliable by design, we only know by acking).
+      //  UPDATE: Now in Java 1.4 datagram sockets can be connected.
 
-long start = System.currentTimeMillis();
+//long start = System.currentTimeMillis();
 
       byte msgBytes[] = toBytes (msg);
       if (msgBytes == null) return false;
 
-//  HACK!!! Need better way to handle UDP 64kb packet length limitation
-
 if (msgBytes.length >= 64*1024)
 {
+  //  HACK!!! Need better way to handle UDP 64kb packet length limitation
+
   if (debug)
   {
     System.err.println ("\nOutgoingUDP: msg exceeds 64kb limit! : " +msg);
@@ -297,10 +302,17 @@ if (msgBytes.length >= 64*1024)
       DatagramPacket dp = new DatagramPacket (msgBytes, msgBytes.length, addr, port); 
 
       if (datagramSocket == null) datagramSocket = new DatagramSocket();
+/*
+      if (!connected)
+      {
+        datagramSocket.connect (addr, port);
+        connected = true;
+      }
+*/
       datagramSocket.send (dp);
 
-long end = System.currentTimeMillis();
-System.out.println ("UDP transmit (ms): " +(end-start));
+//long end = System.currentTimeMillis();
+//System.out.println ("UDP transmit (ms): " +(end-start));
 
       return true;  // send successful
     }

@@ -38,7 +38,7 @@ public class MessageOrderingAspect extends StandardAspect
 {
   private static final Hashtable sequenceTable = new Hashtable();
 
-  private static boolean debug = true;
+  private static boolean debug = false;
 
   public MessageOrderingAspect () 
   {}
@@ -75,7 +75,6 @@ public class MessageOrderingAspect extends StandardAspect
 
       if (MessageUtils.hasMessageNumber (msg) == false)
       {
-System.err.println ("MessageOrderingAspect: Msg missing number!");
         throw new RuntimeException ("Msg missing number!");
       }
 
@@ -104,7 +103,6 @@ System.err.println ("MessageOrderingAspect: Msg missing number!");
         {
           //  Duplicate message!
         
-System.err.println ("MessageOrderingAspect: Got duplicate msg!");
           status = MessageAttributes.DELIVERY_STATUS_DROPPED_DUPLICATE;
         }
         else if (num == nextNum)
@@ -219,7 +217,7 @@ System.err.println ("MessageOrderingAspect: Got duplicate msg!");
   {
     synchronized (sequenceTable)
     {
-      String key = AgentID.makePairKey (fromAgent, toAgent);
+      String key = AgentID.makeSequenceID (fromAgent, toAgent);
       Int num = (Int) sequenceTable.get (key);
       if (num != null) return num.value;
 
@@ -239,7 +237,7 @@ System.err.println ("MessageOrderingAspect: Got duplicate msg!");
   {
     synchronized (sequenceTable)
     {
-      String key = AgentID.makePairKey (fromAgent, toAgent);
+      String key = AgentID.makeSequenceID (fromAgent, toAgent);
       Int num = (Int) sequenceTable.get (key);
       if (num == null) sequenceTable.put (key, new Int (msgNum));
       else num.value = msgNum;

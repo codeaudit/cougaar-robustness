@@ -159,6 +159,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
   {
     //  Update the name server
   
+    unregisterDatagramSocketSpec();  // HACK! re-register clients & mts too?????
     myDatagramSocketSpec = new DatagramSocketSpec (host, port);
     MessageAddress nodeAddress = getNameSupport().getNodeMessageAddress();
     getNameSupport().registerAgentInNameServer (myDatagramSocketSpec, nodeAddress, PROTOCOL_TYPE);
@@ -234,12 +235,10 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
       listener = new DatagramSocketListener (port);
       port = listener.getPort();  // port possibly updated
 
-      // Thread thread = getThread (listener, "DatagramIncomingSock_"+port);
       Schedulable thread = threadService().getThread (this, listener, "DatagramIncomingSock_"+port);
       thread.start();
 
       registerDatagramSocketSpec (localhost, port);
-
       datagramSocketListeners.add (listener);
 
       if (debug) 
@@ -337,7 +336,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 
           datagramSocket.receive (datagramPacket);
 
-long start = System.currentTimeMillis();
+//long start = System.currentTimeMillis();
 
           //  Convert packet into a Cougaar message
 
@@ -355,8 +354,8 @@ long start = System.currentTimeMillis();
             continue;
           }
 
-long end = System.currentTimeMillis();
-System.out.println ("UDP receive (ms): " +(end-start));
+//long end = System.currentTimeMillis();
+//System.out.println ("UDP receive (ms): " +(end-start));
 
           if (showTraffic) System.err.print ("<S");
 
@@ -378,12 +377,16 @@ System.out.println ("UDP receive (ms): " +(end-start));
         }
         catch (Exception e)
         { 
-// ????????
           //  Typically a socket exception raised when the party at the
           //  other end closes their socket connection.
 
-          if (debug) System.err.println ("\nIncomingUDP: Terminating socket exception: " + e);
+// not with udp sockets!
 
+        if (debug) System.err.println ("\nIncomingUDP: Terminating socket exception: " + e);
+/*
+System.err.println ("\nIncomingUDP: Terminating socket exception: ");
+e.printStackTrace();
+*/
           quitNow = true;
           break;
         }
@@ -399,7 +402,7 @@ System.out.println ("UDP receive (ms): " +(end-start));
       //  Will work this out better later.
 
       destroyDatagramSocket (this);
-      createDatagramSocket (0);  //  HACK!!! port num should come from orig
+      createDatagramSocket (0);  // port num should come from orig?
     }
   }
 
@@ -436,10 +439,14 @@ System.out.println ("UDP receive (ms): " +(end-start));
 	} 
     catch (ClassNotFoundException cnfe) 
     {
+System.err.println ("\nIncomingUDP: fromBytes cnfe exception: ");
+cnfe.printStackTrace();
 	    return null;
 	}
     catch (Exception e) 
     {
+System.err.println ("\nIncomingUDP: fromBytes exception: ");
+e.printStackTrace();
 	    return null;
 	}
 	

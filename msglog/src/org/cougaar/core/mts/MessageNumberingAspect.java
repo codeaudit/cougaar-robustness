@@ -76,27 +76,27 @@ public class MessageNumberingAspect extends StandardAspect
       throws UnregisteredNameException, NameLookupException, 
   	         CommFailureException, MisdeliveredMessageException
     {
-      //  Assign a number to the message as needed
-
       int n;
 
-System.err.println ("MessageNumberingAspect: msg="+MessageUtils.toString(msg));
+//System.err.println ("MessageNumberingAspect: incoming msg= "+MessageUtils.toString(msg));
 
-      if (MessageUtils.hasMessageNumber (msg) == false)
+      //  Assign a number to the message if it doesn't already have one
+
+      if (!MessageUtils.hasMessageNumber (msg))
       {
         if (isLocalMessage (msg))
         {
-          //  On the message ordering side messages without numbers are
+          //  NOTE: In acking and message ordering messages without numbers are
           //  considered errors, so we give even local messages a number.
 
-          n = 0;
           MessageUtils.setMessageTypeToLocal (msg);
+          n = 0;
         }
-        else if (MessageUtils.isRegularMessage (msg))
+        else if (MessageUtils.isTrafficMaskingMessage (msg))
         {
-          n = getNextPositiveMessageNumber (msg);
+          n = 0;
         }
-        else if (MessageUtils.isAckMessage (msg))
+        else if (MessageUtils.isSomePureAckMessage (msg))
         {
           n = getNextNegativeMessageNumber (msg);
         }
@@ -104,30 +104,28 @@ System.err.println ("MessageNumberingAspect: msg="+MessageUtils.toString(msg));
         {
           n = 0;
         }
-        else if (MessageUtils.isTrafficMaskingMessage (msg))
-        {
-          n = 0;
-        }
         else if (MessageUtils.isPingMessage (msg))
         {
           n = getNextNegativeMessageNumber (msg);
+        }
+        else if (MessageUtils.isRegularMessage (msg))
+        {
+          n = getNextPositiveMessageNumber (msg);
         }
         else
         {
           //  Unknown message type - should not occur, except during system development
 
           String mtype = MessageUtils.getMessageType (msg);
-System.err.println ("MessageNumberingAspect: Unknown msg type! : " +mtype);
           throw new RuntimeException ("MessageNumberingAspect: Unknown msg type! : " +mtype);
 
-          //  log error, set msg num to 1 
+          //  log error, set msg num to 1 ?
         }
 
         setMessageNumber (msg, n);
-
-System.err.println ("MessageNumberingAspect: set "+MessageUtils.toString(msg));
       }
-else System.err.println ("MessageNumberingAspect: msg already has number!");
+
+//System.err.println ("MessageNumberingAspect: outgoing msg= "+MessageUtils.toString(msg));
 
       return link.forwardMessage (msg);
     }
@@ -181,7 +179,7 @@ else System.err.println ("MessageNumberingAspect: msg already has number!");
   
     synchronized (positiveNumberTable)
     {
-      String key = AgentID.makePairKey (fromAgent, toAgent);
+      String key = AgentID.makeSequenceID (fromAgent, toAgent);
       Int n = (Int) positiveNumberTable.get (key);
       if (n == null) { n = new Int (1); positiveNumberTable.put (key, n); }
       return n.value++;
@@ -222,7 +220,7 @@ else System.err.println ("MessageNumberingAspect: msg already has number!");
   
     synchronized (negativeNumberTable)
     {
-      String key = AgentID.makePairKey (fromAgent, toAgent);
+      String key = AgentID.makeSequenceID (fromAgent, toAgent);
       Int n = (Int) negativeNumberTable.get (key);
       if (n == null) { n = new Int (-1); negativeNumberTable.put (key, n); }
       return n.value--;

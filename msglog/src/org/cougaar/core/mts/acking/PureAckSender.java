@@ -56,26 +56,28 @@ class PureAckSender implements Runnable
     minSendDeadline = Long.MAX_VALUE;
   }
 
-  public void add (PureAckMessage ackMsg) 
+  public void add (PureAckMessage pam) 
   {
     synchronized (queue) 
     {
-      queue.add (ackMsg);
+      queue.add (pam);
       haveNewMessages = true;
       queue.notify();
     }
   }
   
-  private void remove (PureAckMessage ackMsg) 
+  private void remove (PureAckMessage pam) 
   {
     synchronized (queue) 
     {
-      queue.remove (ackMsg);
+      queue.remove (pam);
     }
   }
   
   public void run() 
   {
+    int len;
+
     while (true) 
     {
       //  Wait until we have some new messages or we have timed out to 
@@ -106,47 +108,64 @@ class PureAckSender implements Runnable
 
           //  Wait until timeout, notify, or interrupt
 
-          //System.err.println ("\nPureAckSender: WAIT waitTime= "+waitTime);
+          // System.err.println ("\nPureAckSender: WAIT waitTime= "+waitTime);
           CougaarThread.wait (queue, waitTime);
-          //System.err.println ("\nPureAckSender: RUN");
+          // System.err.println ("\nPureAckSender: RUN");
         }
 
         messages = (PureAckMessage[]) queue.toArray (messages);  // try array reuse
+        len = queue.size();
+//System.err.println ("PureAckSender: len="+len);
       }
 
-      //  See if it's time to send an ack.  Purge any acks that are no
-      //  longer needed to be sent.
+      //  Check if it is time to send a pure ack message
 
       minSendDeadline = Long.MAX_VALUE;
 
-      for (int i=0; i<messages.length; i++)
+      for (int i=0; i<len; i++)
       {
-        PureAckMessage ackMsg = messages[i];
-        PureAck pureAck = (PureAck) MessageUtils.getAck (ackMsg);
+        //  We only consider sending a pure ack message as long as there is
+        //  a need to send an ack for the src message we received that created
+        //  this pure ack message.  If that is no longer the case, we can
+        //  drop this pure ack message.
 
-        if (MessageAckingAspect.findAckToSend (pureAck))
+        PureAckMessage pam = messages[i];
+//System.err.println ("PureAckSender: msg="+MessageUtils.toString(pam));
+
+        if (MessageAckingAspect.findAckToSend (pam))
         {
+          PureAck pureAck = (PureAck) MessageUtils.getAck (pam);
           long sendDeadline = pureAck.getSendDeadline();
           long timeLeft = sendDeadline - now();
 
           if (MessageAckingAspect.debug)
           {
-            System.err.println ("PureAckSender: "+ackMsg+": timeLeft="+timeLeft);
+            String m = MessageUtils.toShortString (pam);
+//          System.err.println ("PureAckSender: "+m+": timeLeft="+timeLeft);
           }
 
           if (timeLeft <= 0)
           {
             //  Time to send/resend the ack
 
-            remove (ackMsg);  // remove first to avoid race condition with send
-            MessageSender.sendMsg (ackMsg);
+            if (MessageAckingAspect.debug) 
+            {
+//            System.err.println ("PureAckSender: Launching " +pam);
+            }
+
+            remove (pam);  // remove first to avoid race condition with send
+            MessageSender.sendMsg (pam);
           }
           else 
           {
             if (sendDeadline < minSendDeadline) minSendDeadline = sendDeadline;
           }
         }
-        else remove (ackMsg);  // done sending this ack
+        else
+        {
+          // System.err.println ("PureAckSender: removing " +pam);
+          remove (pam);  // done sending this pure ack message
+        }
       }
 
       Arrays.fill (messages, null);  // release references
