@@ -165,13 +165,24 @@ public class LinksEnablingActuator extends ComponentPlugin
 	while (iter.hasNext()) {
 	    LinksEnablingAction action = (LinksEnablingAction)iter.next();
 	    if (action != null) {
-		Set pvs = action.getPermittedValues();
+		Set pvs = action.getNewPermittedValues();
 		if (pvs != null) {
 		    action.clearNewPermittedValues();
-		    String pv = NONE;
+		    if (pvs.size() != 1) {
+			if (log.isErrorEnabled()) 
+			    log.error("execute: getNewPermittedValues() for action="+action
+				      +" didn't return exactly one value. newPermittedValues="+pvs);
+			continue;
+		    }
+		    String pv = null;
 		    Iterator iter2 = pvs.iterator();
-		    if (iter2.hasNext()) {  // there's 0 or 1 permitted values
+		    if (iter2.hasNext())  // there's only 1 permitted value
 			pv = (String)iter2.next();
+		    if (pv == null) {
+			if (log.isErrorEnabled()) 
+			    log.error("execute: getNewPermittedValues() for action="+action
+				      +" returned null permittedValue. permittedValue="+pv);
+			continue;
 		    }
 		    String agent = action.getAssetName();
 		    String key = "Agent"+KEY_SEPR+agent+KEY_SEPR+"MsglogLinksEnable";
@@ -183,19 +194,18 @@ public class LinksEnablingActuator extends ComponentPlugin
 		    if (log.isDebugEnabled()) 
 			log.debug("execute: Updating MetricsService:key="+key+",value="+metric);
 		    updateSvc.updateValue(key, metric);
-		    boolean startOK = true;
-		    if (!pv.equals(NONE)) {
-			try {
-			    action.start(pv);
-			} catch (IllegalValueException e) {
-			    if (log.isErrorEnabled())
-				log.error("start called with illegal action value="+pv+"=. "
-					  +"action="+action+" was not started.");
-			    startOK = false;
-			}
+		    boolean startOK = false;
+		    try {
+			action.start(pv);
+			startOK = true;
+		    } catch (IllegalValueException e) {
+			if (log.isErrorEnabled())
+			    log.error("start called with illegal action value="+pv+". "
+				      +"action="+action+" was not started.");
 		    }
 		    if (startOK) {
-			Action.CompletionCode cc = pv.equals(NONE) ? Action.COMPLETED : Action.ACTIVE;
+//			Action.CompletionCode cc = pv.equals(NONE) ? Action.COMPLETED : Action.ACTIVE;
+			Action.CompletionCode cc = Action.ACTIVE;
 			try {
 			    action.stop(cc);
 			    bb.publishChange(action);

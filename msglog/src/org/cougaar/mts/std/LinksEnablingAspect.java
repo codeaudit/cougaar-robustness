@@ -206,6 +206,8 @@ public class LinksEnablingAspect extends StandardAspect
 	        entry = new AgentEntry(agent, defaultAdvice);
                 agents.put(agent, entry);
 		entry.observer = new AgentObserver(agent);
+		if (log.isDebugEnabled()) 
+		    log.debug("Agent "+agent+" registered with the LinksEnablingService with advice="+defaultAdvice);
 	    }
 	    return entry;
 	}   
@@ -300,13 +302,18 @@ public class LinksEnablingAspect extends StandardAspect
 	}
 	public void update(Observable obs, Object obj) {
 	    Metric metric = (Metric)obj; 
-	    if (metric != null) {
-		if (log.isDebugEnabled()) {
-		    log.debug("AgentObserver.update: metric.getRawValue() = "+metric.getRawValue());
-		    log.debug("AgentObserver.update: metric.getRawValue().getClass() = "+metric.getRawValue().getClass());
-		}
-		if (metric.getRawValue() instanceof String) {
-		    String advice = (String)metric.getRawValue();
+	    if (log.isDetailEnabled()) {
+		log.detail("AgentObserver.update: metric.getRawValue()            = "+metric.getRawValue());
+		log.detail("AgentObserver.update: metric.getRawValue().getClass() = "+metric.getRawValue().getClass());
+		log.detail("AgentObserver.update: metric.getCredibility()         = "+metric.getCredibility());
+		log.detail("AgentObserver.update: metric.getUnits()               = "+metric.getUnits());
+		log.detail("AgentObserver.update: metric.getTimestamp()           = "+metric.getTimestamp());
+		log.detail("AgentObserver.update: metric.getProvenance()          = "+metric.getProvenance());
+		log.detail("AgentObserver.update: metric.getHalflife()            = "+metric.getHalflife());
+	    }
+	    if (metric.getRawValue() instanceof String) {
+		if (metric != null) {
+		    String advice = metric.stringValue();
 		    if (log.isDebugEnabled()) 
 			log.debug("AgentObserver.update: agent="+agent
 				  +",advice="+advice);
