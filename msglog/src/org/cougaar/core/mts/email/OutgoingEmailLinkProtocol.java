@@ -19,7 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 18 Jun 2002: Restored Node name to outboxes properties due to facilitate
+ * 18 Jun 2002: Restored Node name to outboxes properties to facilitate
                 CSMART test configuration. (OBJS)
  * 11 Apr 2002: Removed Node name from outboxes property (2 reasons -
  *              no longer able to get Node name, and, more importantly,
@@ -47,13 +47,13 @@
 
 package org.cougaar.core.mts.email;
 
+import java.io.*;
 import java.util.*;
-import java.io.IOException;
 import java.net.InetAddress;
 import javax.mail.URLName;
 
-import org.cougaar.util.*;
 import org.cougaar.core.mts.*;
+import org.cougaar.core.service.LoggingService;
 
 /**
  * OutgoingEmailLinkProtocol is an OutgoingLinkProtocol which uses email to
@@ -113,15 +113,11 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
 {
   public static final String PROTOCOL_TYPE = "-email";
 
-//  public static final Date transportBirthday = new Date();
-
+  private static final int protocolCost;
+  private static final boolean debugMail;
   private static final Object sendLock = new Object();
 
-  private static boolean debug;
-  private static boolean debugMail = false;
-
-  private static final int protocolCost;
-
+  private LoggingService log;
   private HashMap links;
   private MailBox outboxes[];
   private EmailMessageOutputStream messageOut;
@@ -130,59 +126,41 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
   {
     //  Read external properties
 
-    String s = "org.cougaar.message.protocol.email.cost";
-    protocolCost = Integer.valueOf(System.getProperty(s,"10000")).intValue();
+    String s = "org.cougaar.message.protocol.email.cost";  // one way
+    protocolCost = Integer.valueOf(System.getProperty(s,"5000")).intValue();
+
+    s = "org.cougaar.message.protocol.email.debugMail";
+    debugMail = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
   }
 
   public OutgoingEmailLinkProtocol ()
   {
-    System.err.println ("Creating " + this);
     links = new HashMap();
   }
 
-  public String toString ()
+  public void load ()
   {
-    return this.getClass().getName();
-  }
+    super_load();
 
-  public void initialize () 
-  {
-    super.initialize();
-
-// registry is avail
-/*
-    if (getRegistry() == null)
-    {
-      System.err.println ("OutgoingEmailLinkProtocol: Registry not available!");
-    }
-    else System.err.println ("OutgoingEmailLinkProtocol: "+getRegistry().getIdentifier());
-*/
-  }
-
-  public void setNameSupport (NameSupport nameSupport) 
-  {
-    //  HACK! Registry not available in constructor above
-
-    if (getRegistry() == null)
-    {
-      throw new RuntimeException ("OutgoingEmailLinkProtocol: Registry not available!");
-    }
+    log = loggingService;
+    if (log.isInfoEnabled()) log.info ("Creating " + this);
 
     String nodeID = getRegistry().getIdentifier();
-
     String s = "org.cougaar.message.protocol.email.outboxes." + nodeID;
     String outboxesProp = System.getProperty (s);
 
     if (outboxesProp == null || outboxesProp.equals(""))
     {
-      throw new RuntimeException ("Bad or missing property: " +s);
+      String str = "Bad or missing property: " +s;
+      log.error (str);
+      throw new RuntimeException (str);
     }
-
-    //  Initialize the outgoing email link protocol
 
     if (startup (outboxesProp) == false)
     {
-      throw new RuntimeException ("Failure starting up OutgoingEmailLinkProtocol!");
+      String str = "Failure starting up " + this;
+      log.error (str);
+      throw new RuntimeException (str);
     }
   }
 
@@ -200,18 +178,17 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     {
       if (MailMan.checkMailServerAccess (outbox) == false)
       {
-        System.err.println ("\nOutgoingEmailLinkProtocol ALERT: Is your mail server up?");
-        System.err.println ("Unable to access mail server:\n" + outbox.toStringDiscreet());
+        log.error ("ALERT: Is your mail server up?  Unable to access mail server: " +
+                   outbox.toStringDiscreet());
         return false;
       }
 
       messageOut = createMessageOutStream (outbox);
-
       return true;
     }
     catch (Exception e)
     {
-      e.printStackTrace();
+      log.error (stackTraceToString (e));
       return false;
     }
   }
@@ -274,8 +251,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
             }
             catch (Exception e)
             {
-              System.err.println ("Error: bad outbox spec in " +spec);
-              System.err.println ("Bad outbox spec ignored");
+              log.error ("Bad outbox spec: " +spec+ " (ignored)");
             }
           }
           else break;
@@ -293,29 +269,42 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     }
     else
     {
-      System.err.println ("Error: No outboxes defined in " +outboxesProp);
+      log.error ("No outboxes defined in " +outboxesProp);
       return null;
     }
   }
 
+  public String toString ()
+  {
+    return this.getClass().getName();
+  }
+
   private String getFQDN (String host)
   {
-    //  Not till Java 1.4 can we get the fully qualified domain name
+    //  Now with Java 1.4 we can get the fully qualified domain name
     //  (FQDN) for hosts (via the new InetAddress getCanonicalHostname())
-    //  when running on Windows.  So for now we will require that the 
-    //  hostnames in email .props files are FQDN names.
+    //  when running on Windows.  So we will no longer require that the 
+    //  hostnames in mailbox properties are FQDN names, although this
+    //  is not exactly clearly working, so we will still complain about
+    //  the hostname 'localhost'.
 
     if (host.equals ("localhost"))
     {
-      System.err.println ("ERROR: Only fully qualified domain names allowed as mailhost names: " +host);
-      throw new RuntimeException ("Only fully qualified domain names allowed as mailhost names: " +host);
-    }
-    else if (host.indexOf ('.') == -1)
-    {
-//    System.err.println ("WARNING: Only fully qualified domain names allowed as mailhost names: " +host);
+      String s = "Only fully qualified domain names allowed as mailhost names: " +host;
+      log.error (s);
+      throw new RuntimeException (s);
     }
 
-    return host;
+    try
+    {
+      String FQDN = InetAddress.getByName(host).getCanonicalHostName();
+      if (log.isDebugEnabled()) log.debug ("FDQN for " +host+ " is " +FQDN);
+      return FQDN;
+    }
+    catch (Exception e)
+    {
+      throw new RuntimeException (e.toString());
+    }
   }
 
   private String nextParm (StringTokenizer st)
@@ -330,9 +319,9 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
   private EmailMessageOutputStream createMessageOutStream (MailBox mbox) throws IOException
   {
     EmailOutputStream emailOut = new EmailOutputStream (mbox);
-    emailOut.setInfoDebug (debug);      // informative progress debug
-    emailOut.setDebug (false);          // low-level debug
-    emailOut.setDebugMail (debugMail);  // low-level mail debug
+    emailOut.setInfoDebug (log.isDebugEnabled());  // informative progress debug
+    emailOut.setDebug (false);                     // low-level debug
+    emailOut.setDebugMail (debugMail);             // low-level mail server debug
     return new EmailMessageOutputStream (emailOut);
   }
 
@@ -344,17 +333,11 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     {
       if (obj instanceof MailData)
       {
-        if (debug) 
-        {
-//        System.err.print ("\nOutgoingEmail: looked up email data in name "); 
-//        System.err.println ("server:\n"+ (MailData)obj);
-        }
-
         return (MailData) obj;
       }
       else
       {
-        System.err.println ("\nOutgoingEmail: Invalid data in name server!");
+        log.error ("Invalid data in name server!");
       }
     }
 
@@ -369,8 +352,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     } 
     catch (Exception e) 
     {
-      // System.err.println ("Failed in addressKnown: " +e);
-      // e.printStackTrace();
+      log.error (stackTraceToString (e));
     }
 
     return false;
@@ -442,11 +424,11 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
 
       //  Calling lookupMailData() is a hack to perform the canSendMessage()
       //  kind of method within the cost function rather than in the adaptive
-      //  link selection policy code, where we believe it makes more sense.
+      //  link selection policy code, where we think it makes more sense.
 
       try 
       {
-        lookupMailData (msg.getTarget());
+        if (msg != null) lookupMailData (msg.getTarget());
         return protocolCost;
       } 
       catch (Exception e) 
@@ -499,10 +481,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
    
     private final boolean sendMessage (AttributedMessage msg, MailData destAddr)
     {
-      if (debug) 
-      {
-        System.err.println ("\nOutgoingEmail: send " +MessageUtils.toString(msg));
-      }
+      if (log.isDebugEnabled()) log.debug ("sending " +MessageUtils.toString(msg));
 
       boolean success = false;
 
@@ -542,10 +521,10 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
       }
       catch (Exception e)
       {
-        if (debug) 
+        if (log.isDebugEnabled()) 
         {
-          System.err.println ("\nOutgoingEmail: sendMessage exception: ");
-          e.printStackTrace();
+          String msgString = MessageUtils.toString (msg);
+          log.debug ("Failure sending " +msgString+ ":\n" +stackTraceToString(e));
         }
         
         success = false;
@@ -558,5 +537,13 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     {
       return s.replace (' ', '_');  // replace spaces with underscores
     }
+  }
+
+  private String stackTraceToString (Exception e)
+  {
+    StringWriter stringWriter = new StringWriter();
+    PrintWriter printWriter = new PrintWriter (stringWriter);
+    e.printStackTrace (printWriter);
+    return stringWriter.getBuffer().toString();
   }
 }

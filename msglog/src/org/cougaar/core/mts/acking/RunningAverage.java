@@ -19,7 +19,8 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 25 Jul 2001: Add startDelay and getLastSampleTimestamp(). (OBJS)
+ * 15 Aug 2002: Add setAverage() and isStartDelaySatisfied(). (OBJS)
+ * 25 Jul 2002: Add startDelay and getLastSampleTimestamp(). (OBJS)
  * 23 Apr 2001: Split out from MessageAckingAspect. (OBJS)
  */
 
@@ -32,7 +33,7 @@ public class RunningAverage
   private long lastSampleTimestamp;
   private double data[];
   private int n, point;
-  private int startDelay, changeLimitDelay, delayCount;
+  private int startDelay, fillCount, changeLimitDelay, delayCount;
   private boolean hasChangeLimit;
   private double changeLimit;
 
@@ -63,6 +64,7 @@ public class RunningAverage
     point = 0;
 
     this.startDelay = startDelay;
+    fillCount = 0;
 
     hasChangeLimit = (percentChangeLimit > 0.001);  // avoid zero comparison
     if (hasChangeLimit) changeLimit = percentChangeLimit;
@@ -90,6 +92,7 @@ public class RunningAverage
       startDelay--;
       return;
     }
+    else if (fillCount < data.length) fillCount++;
 
     //  Special case - first entry
 
@@ -137,7 +140,7 @@ public class RunningAverage
     if (n < data.length) n++;
     return;
   }
-
+  
   public synchronized double boundEntry (int entry, double percentWithinAverage)
   {
     return boundEntry ((double)entry, percentWithinAverage);
@@ -159,6 +162,29 @@ public class RunningAverage
     } 
   }
 
+  public synchronized void setAverage (int value)
+  {
+    setAverage ((double) value);
+  }
+
+  public synchronized void setAverage (double value)
+  {
+    //  Preserve startDelay, and bypass any changeLimit, zero fillCount
+
+    int startDelay_save = startDelay;
+    boolean hasChangeLimit_save = hasChangeLimit;
+    
+    startDelay = 0;
+    hasChangeLimit = false;
+    n = 0;
+    point = 0;
+    for (int i=0; i<data.length; i++) add (value);
+    
+    startDelay = startDelay_save;
+    hasChangeLimit = hasChangeLimit_save;
+    fillCount = 0;
+  }
+
   public synchronized double getAverage ()
   {
     if (n == 0) return 0.0;
@@ -168,9 +194,14 @@ public class RunningAverage
     return sum/((double)n);
   }
 
-  public int getNumSamples ()
+  public boolean isStartDelaySatisfied ()
   {
-    return n;  // only returning int - method does not need to be synchronized
+    return (startDelay == 0);
+  }
+
+  public float percentFilled ()
+  {
+    return (float)fillCount/(float)data.length;  // 0 to 100
   }
 
   public synchronized double getLastSample ()  // sync because of double

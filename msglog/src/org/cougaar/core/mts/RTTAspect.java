@@ -55,10 +55,14 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
   private static final float c_percentChangeLimit, n_percentChangeLimit;
   private static final int c_changeLimitDelay, n_changeLimitDelay;
 
-  private static final ServiceImpl serviceImpl = new ServiceImpl();
+  private final ServiceImpl serviceImpl = new ServiceImpl();
+
+  private static final Hashtable initialCommRTTsTable = new Hashtable();
   private static final Hashtable latestReceptionsTable = new Hashtable();
   private static final Hashtable roundtripTable = new Hashtable();
   private static final Comparator timeSort = new TimeSort();
+
+  private static int initialNodeTime = 0;
 
   static
   {
@@ -143,8 +147,43 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
     {}
   }
 
-  private static class ServiceImpl implements RTTService
+  private class ServiceImpl implements RTTService, Serializable  // enclosing classes must be serializable too
   {
+    public void setInitialCommRTTForLinkPair (DestinationLink sendLink, DestinationLink recvLink, int rtt)
+    {
+      setTheInitialCommRTTForLinkPair (getName(sendLink), getName(recvLink), rtt);
+    }
+  
+    public void setInitialCommRTTForLinkPair (String sendLink, String recvLink, int rtt)
+    {
+      setTheInitialCommRTTForLinkPair (sendLink, recvLink, rtt);
+    }
+
+    public boolean isSomeCommRTTStartDelaySatisfied (DestinationLink sendLink, String node)
+    {
+      return isThereSomeCommRTTStartDelaySatisfied (getName(sendLink), node);
+    }
+
+    public boolean isCommRTTStartDelaySatisfied (DestinationLink sendLink, String node, DestinationLink recvLink)
+    {
+      return isTheCommRTTStartDelaySatisfied (getName(sendLink), node, getName(recvLink));
+    }
+
+    public float getHighestCommRTTPercentFilled (DestinationLink sendLink, String node)
+    {
+      return highestCommRTTPercentFilled (getName(sendLink), node);
+    }
+
+    public float getCommRTTPercentFilled (DestinationLink sendLink, String node, DestinationLink recvLink)
+    {
+      return commRTTPercentFilled (getName(sendLink), node, getName(recvLink));
+    }
+
+    public void setInitialNodeTime (int nodeTime)
+    {
+      setTheInitialNodeTime (nodeTime);
+    }
+  
     public int getBestCommRTTForLink (DestinationLink link, String node)
     {
       return getTheBestCommRTTForLink (link, node);
@@ -252,7 +291,7 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
     }
   }
 
-  private class HalfRTT implements Serializable  // enclosing class must be serializable too
+  private class HalfRTT implements Serializable  // enclosing classes must be serializable too
   {
     private final String sendLink;
     private final long sendTime;
@@ -394,7 +433,7 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
       if (v != null)
       {
         String destinationNode = sendNode;
-        String receiveLink = convertSplitLinks (sendLink);
+        String receiveLink = convertSplitLink (sendLink);
         long secondHalfSendTime = sendTime;
 
         for (Enumeration e=v.elements(); e.hasMoreElements(); )
@@ -455,6 +494,10 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
         RunningAverage commRTT = new RunningAverage (c_samplePoolsize, c_startDelay, c_percentChangeLimit, c_changeLimitDelay);
         RunningAverage nodeTme = new RunningAverage (n_samplePoolsize, n_startDelay, n_percentChangeLimit, n_changeLimitDelay);
 
+        int initialCommRTT = getInitialCommRTT (sendLink, receiveLink);
+        if (initialCommRTT > 0)  commRTT.setAverage (initialCommRTT);
+        if (initialNodeTime > 0) nodeTme.setAverage (initialNodeTime);
+
         avgs = new Averages (commRTT, nodeTme);
         table.put (key, avgs);
       }
@@ -491,10 +534,137 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
 
         buf.append ("\n   commRTT= " +b11+commLast+ " avg= " +b12+commAvg);
         buf.append ("\n  nodeTime= " +b21+nodeLast+ " avg= " +b22+nodeAvg + "\n");
-
+//buf.append ("commRTT percent filled = " +avgs.commRTT.percentFilled() +"\n");
         loggingService.debug (buf.toString());
       }
     }    
+  }
+
+  private boolean isSomeCommRTTStartDelaySatisfied (String sendLink, String node)
+  {
+    //  Determine if some combination of the given send link with any receive link is satisfied
+
+    synchronized (roundtripTable)
+    {
+      String key = sendLink +"-"+ node;
+      Hashtable table = (Hashtable) roundtripTable.get (key);
+      if (table == null) return false;
+
+      for (Enumeration e=table.elements(); e.hasMoreElements(); )
+      {
+        Averages avgs = (Averages) e.nextElement();
+        if (avgs.commRTT.isStartDelaySatisfied()) return true;
+      }
+      
+      return false;
+    }
+  }
+
+  private boolean isCommRTTStartDelaySatisfied (String sendLink, String node, String receiveLink)
+  {
+    synchronized (roundtripTable)
+    {
+      String key = sendLink +"-"+ node;
+      Hashtable table = (Hashtable) roundtripTable.get (key);
+      if (table == null) return false;
+
+      key = receiveLink;
+      Averages avgs = (Averages) table.get (key);
+      if (avgs == null) return false;
+
+      return avgs.commRTT.isStartDelaySatisfied();
+    }
+  }
+
+  private float theHighestCommRTTPercentFilled (String sendLink, String node)
+  {
+    //  Determine the highest percent filled of any combination of the given send link with any receive link
+
+    synchronized (roundtripTable)
+    {
+      String key = sendLink +"-"+ node;
+      Hashtable table = (Hashtable) roundtripTable.get (key);
+      if (table == null) return 0.0f;
+
+      float highestPF = 0.0f;
+
+      for (Enumeration e=table.elements(); e.hasMoreElements(); )
+      {
+        Averages avgs = (Averages) e.nextElement();
+        float pf = avgs.commRTT.percentFilled();
+        if (pf > highestPF) highestPF = pf;
+      }
+      
+      return highestPF;
+    }
+  }
+
+  private float theCommRTTPercentFilled (String sendLink, String node, String receiveLink)
+  {
+    synchronized (roundtripTable)
+    {
+      String key = sendLink +"-"+ node;
+      Hashtable table = (Hashtable) roundtripTable.get (key);
+      if (table == null) return 0.0f;
+
+      key = receiveLink;
+      Averages avgs = (Averages) table.get (key);
+      if (avgs == null) return 0.0f;
+
+      return avgs.commRTT.percentFilled();
+    }
+  }
+
+  //  RTTService interface fulfillment methods
+
+  private void setTheInitialCommRTTForLinkPair (String sendLink, String recvLink, int rtt)
+  {
+    if (loggingService.isDebugEnabled())
+    {
+      loggingService.debug ("Setting initial commRTT to " +rtt+ " for pair: " +sendLink+ ", " +recvLink);
+    }
+
+    synchronized (initialCommRTTsTable)
+    {
+      String key = sendLink +"-"+ recvLink;
+      initialCommRTTsTable.put (key, new Integer (rtt));
+    }
+  }  
+
+  private static int getInitialCommRTT (String sendLink, String recvLink)
+  {
+    synchronized (initialCommRTTsTable)
+    {
+      String key = sendLink +"-"+ recvLink;
+      Integer rtt = (Integer) initialCommRTTsTable.get (key);
+      if (rtt != null) return rtt.intValue();
+      return 0;
+    }
+  }
+
+  private static void setTheInitialNodeTime (int nodeTime)
+  {
+    initialNodeTime = nodeTime;
+  }
+  
+  public boolean isThereSomeCommRTTStartDelaySatisfied (String sendLink, String node)
+  {
+    return isSomeCommRTTStartDelaySatisfied (sendLink, node);
+  }
+
+  public boolean isTheCommRTTStartDelaySatisfied (String sendLink, String node, String recvLink)
+  {
+    return isCommRTTStartDelaySatisfied (sendLink, node, recvLink);
+  }
+
+  public float highestCommRTTPercentFilled (String sendLink, String node)
+  {
+    return theHighestCommRTTPercentFilled (sendLink, node);
+  }
+
+  public float commRTTPercentFilled (String sendLink, String node, String recvLink)
+  {
+    return theCommRTTPercentFilled (sendLink, node, recvLink);
   }
 
   private static int getTheBestCommRTTForLink (DestinationLink link, String node)
@@ -511,7 +681,7 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
   {
     synchronized (roundtripTable)
     {
-      String sendLink = link.getProtocolClass().getName();
+      String sendLink = getName (link);
       String key = sendLink +"-"+ node;
       Hashtable table = (Hashtable) roundtripTable.get (key);
 
@@ -563,13 +733,18 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
     }
   }
 
-  private String convertSplitLinks (String link)
+  private static String getName (DestinationLink link)
   {
-    //  Turn Outgoing links into Incoming ones (depends on link naming convention)
+    return link.getProtocolClass().getName();
+  }
+
+  private static String convertSplitLink (String link)
+  {
+    //  Turn Outgoing link into Incoming one (depends on link naming convention)
 
     int i = link.indexOf (".Outgoing");
     if (i > 0) return link.substring(0,i)+ ".Incoming" +link.substring(i+9);
-    else return link;
+    else return link;  // not a split link
   }
 
   private static long now ()

@@ -71,6 +71,8 @@ import java.util.*;
 
 import org.cougaar.core.mts.acking.*;
 import org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol;
+import org.cougaar.util.CougaarEvent;
+import org.cougaar.util.CougaarEventType;
 
 
 /**
@@ -117,6 +119,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
   private static boolean showTraffic; 
 
   private static final boolean useRTTService; 
+  private static final int initialNodeTime;
   private static final int tryOtherLinksInterval;
   private static final int upgradeMetricMultiplier;
   private static final int maxUpgradeTries;
@@ -129,6 +132,8 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
   private static final Hashtable topLinkSteadyStateCountTable = new Hashtable();
   private static final Random random = new Random();
 
+  private static boolean firstTime = true;
+
   private final LinkRanker linkRanker = new LinkRanker();
 
   private RTTService rttService;
@@ -139,6 +144,9 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
     String s = "org.cougaar.message.transport.policy.adaptive.useRTTService";
     useRTTService = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
+
+    s = "org.cougaar.message.transport.policy.adaptive.initialNodeTime";
+    initialNodeTime = Integer.valueOf(System.getProperty(s,"1000")).intValue();
 
     s = "org.cougaar.message.transport.policy.adaptive.tryOtherLinksInterval";
     tryOtherLinksInterval = Integer.valueOf(System.getProperty(s,"50")).intValue();
@@ -178,7 +186,6 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
                           " for " +MessageUtils.toString(msg));
     if (link != null)
     {
-      recordLinkSelection (link, msg);
       MessageUtils.setSendProtocolLink (msg, getName(link));
 
       //  For resends (new messages don't have acks yet) update the ack with
@@ -199,14 +206,38 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
         ack.setSendLink (getName (link));
         String targetNode = MessageUtils.getToAgentNode (msg);
         int rtt = rttService.getBestFullRTTForLink (link, targetNode);
-System.err.println ("service rtt="+rtt);
         if (rtt <= 0) rtt = link.cost (msg);
-System.err.println ("Adaptive setRTT="+rtt+" for "+MessageUtils.toString(msg));
         ack.setRTT (rtt);
         MessageAckingAspect.dingTheMessageResender();  // calc new deadlines
       }
 
       if (showTraffic) showProgress (link);
+
+      //  Shout out some link selection activity for assessment purposes
+
+      if (MessageUtils.isRegularMessage (msg))
+      {
+        String targetNode = MessageUtils.getToAgentNode (msg);
+        DestinationLink lastLink = getLastLinkSelection (targetNode);
+
+        if (lastLink != null)
+        {
+          String lastLinkName = getName (lastLink);
+          String thisLinkName = getName (link);
+
+          if (!lastLinkName.equals (thisLinkName))
+          {
+            CougaarEvent.postEvent 
+            (
+              CougaarEventType.STATUS,
+              "Switch from " +lastLinkName+ " to " +thisLinkName+ " for messages from " +
+              MessageUtils.getFromAgentNode(msg)+ " to " +targetNode
+            );
+          }
+        }
+      }
+
+      recordLinkSelection (link, msg);
     }
 
     return link;
@@ -229,6 +260,44 @@ System.err.println ("Adaptive setRTT="+rtt+" for "+MessageUtils.toString(msg));
     catch (Exception e) 
     {
       return null;
+    }
+
+    //  One time initial RTT initializations
+
+    if (useRTTService && firstTime)
+    {
+      //  Node time
+
+      rttService.setInitialNodeTime (initialNodeTime);
+
+      //  Comm RTTs
+
+      Vector v = new Vector();
+
+      while (links.hasNext())
+      {
+        DestinationLink link = (DestinationLink) links.next();
+        if (isOutgoingLink(link) && !isLoopbackLink(link)) v.add (link);
+      }
+
+      DestinationLink l[] = new DestinationLink[v.size()];
+      l = (DestinationLink[]) v.toArray (l); 
+
+      for (int i=0; i<l.length; i++)
+      {
+        String sendLink = getName (l[i]);
+        int sendTime = getInitialOneWayTripTime (l[i]);
+
+        for (int j=0; j<l.length; j++)
+        {
+          String recvLink = convertOutgoingToIncomingLink (getName(l[j]));
+          int recvTime = getInitialOneWayTripTime (l[j]);
+          rttService.setInitialCommRTTForLinkPair (sendLink, recvLink, sendTime+recvTime);
+        }
+      }
+
+      firstTime = false;
+      return null;  // used up interator
     }
 
     //  Handle message attribute transfers in the case of send retries
@@ -266,9 +335,8 @@ msg.setAttribute ("RsndNum", msg.getAttribute ("RsndNum"));
         while (links.hasNext()) 
         {
           DestinationLink link = (DestinationLink) links.next(); 
-          Class transportClass = link.getProtocolClass();
 
-          if (transportClass == org.cougaar.core.mts.LoopbackLinkProtocol.class)
+          if (isLoopbackLink (link))
           {
             loopbackLink = link;
             break;
@@ -336,15 +404,14 @@ if (rn != null) rns = "" + rn;
       try
       {
         link = (DestinationLink) links.next(); 
-        String protocol = getName (link);
 
-        if (protocol.equals ("org.cougaar.core.mts.LoopbackLinkProtocol")) continue;
+        if (isLoopbackLink (link)) continue;
 
-        if (!isOutgoingTransport (protocol)) continue;
+        if (!isOutgoingLink (link)) continue;
 
         if (link.cost (msg) == Integer.MAX_VALUE) continue; 
 
-        if (protocol.equals ("org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol"))
+        if (getName(link).equals ("org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol"))
         {
           //  Avoid UDP if the message exceeds the datagram size limit
 
@@ -439,7 +506,6 @@ if (rn != null) rns = "" + rn;
       //  wait till sometime after the farthest out response to these sends is expected.
 
       DestinationLink link;
-      boolean newLink = false;
       long latestDeadline = 0;
 
       for (int i=0; i<destLinks.length; i++)
@@ -451,7 +517,7 @@ if (rn != null) rns = "" + rn;
 
         if (lastSendTime > pureAck.getAckSendableTime())
         {
-          newLink = pureAck.addLinkSelection (link);
+          boolean newLink = pureAck.addLinkSelection (link);
 
           if (newLink)
           {
@@ -471,14 +537,14 @@ if (rn != null) rns = "" + rn;
         }
       }
 
-      if (newLink && latestDeadline > now())
+      if (latestDeadline > now())
       {
         //  Reschedule the ack and don't send it now
 
         if (debug) 
         {
           long t = latestDeadline - now();
-          log.debug ("Rescheduling pure ack msg with new timeout of " +t+ ": " +msgString);
+          log.debug ("Rescheduling pure ack msg with timeout of " +t+ ": " +msgString);
         }
 
         pureAck.setSendDeadline (latestDeadline);
@@ -662,17 +728,20 @@ if (rn != null) rns = "" + rn;
       {
 //log.debug ("\n** trying OTHER LINKS");
 
-        //  Look for the highest ranking link left that still has a RTT of 0 (which means
-        //  there are not enough samples to establish a RTT for the link-node combo).
+        //  Look for the highest ranking link left that still is lacking a minimum number of
+        //  data points in its average commRTT measurement.
+
+        float MIN_FILL = 0.5f;  // HACK: arbitrary for now
 
         for (int i=0; i<destLinks.length; i++)
         {
-          if (rttService.getBestCommRTTForLink (destLinks[i], targetNode) == 0) 
+          if (rttService.getHighestCommRTTPercentFilled (destLinks[i], targetNode) < MIN_FILL) 
           {
-//log.debug ("\n** chose link with RTT = 0");
+//log.debug ("\n** chose link still lacking a minimum number of data points in commRTT average");
             return linkChoice (setReplacementChoice (lastChoice, destLinks[i], msg), msg);
           }
         }
+//log.debug ("\n** !!all links above the minimum number of data points in commRTT average");
 
         //  Otherwise, choose the link that was last chosen the longest ago that
         //  is currently available/valid.
@@ -1267,6 +1336,31 @@ if (rn != null) rns = "" + rn;
     }
   }
 
+  private DestinationLink getLastLinkSelection (String targetNode)
+  {
+    synchronized (linkSelectionTable)
+    {
+      Hashtable linkSelections = getLinkSelections (targetNode);
+      if (linkSelections == null) return null;
+
+      DestinationLink newestLink = null;
+      long newestTime = 0;
+
+      for (Enumeration e=linkSelections.elements(); e.hasMoreElements(); )
+      {
+        LinkSelectionRecord rec = (LinkSelectionRecord) e.nextElement();
+
+        if (rec.selectionTime > newestTime)
+        {
+          newestLink = rec.link;
+          newestTime = rec.selectionTime;
+        }
+      }
+
+      return newestLink;
+    }
+  }
+
   private DestinationLink pickLinkByClass (DestinationLink links[], Class linkClass)
   {
     if (links == null || linkClass == null) return null;
@@ -1284,6 +1378,42 @@ if (rn != null) rns = "" + rn;
   private static String getName (DestinationLink link)
   {
     return link.getProtocolClass().getName();
+  }
+
+  private static boolean isLoopbackLink (DestinationLink link)
+  {
+    return getName(link).equals("org.cougaar.core.mts.LoopbackLinkProtocol");
+  }
+
+  public static boolean isOutgoingLink (DestinationLink link)
+  {
+    //  A hack, based on link naming conventions
+
+    return (getName(link).indexOf(".Incoming") == -1);  // all links but incoming
+  }
+
+  private String convertOutgoingToIncomingLink (String link)
+  {
+    //  A hack, based on link naming conventions
+
+    int i = link.indexOf (".Outgoing");
+    if (i > 0) return link.substring(0,i)+ ".Incoming" +link.substring(i+9);
+    else return link;
+  }
+
+  private int getInitialOneWayTripTime (DestinationLink link)
+  {
+    if (getName(link).equals("org.cougaar.core.mts.RMILinkProtocol")) return 500;  // yep, a HACK
+    int cost = link.cost (null);  // another HACK
+
+    if (cost == Integer.MAX_VALUE)  // watch for problems
+    {
+      String s = "Link has unexpected max cost: " +getName(link);
+      log.error (s);
+      throw new RuntimeException (s);
+    }
+
+    return cost;
   }
 
   public boolean canSendMessage (Class protocolClass, AttributedMessage msg)
@@ -1312,23 +1442,6 @@ if (rn != null) rns = "" + rn;
     return transportClass.hashCode();
   }
 
-  public static boolean isOutgoingTransport (String protocol)
-  {
-    //  A hack, hopefully temporary
-
-         if (protocol.equals ("org.cougaar.core.mts.udp.IncomingUDPLinkProtocol"))       return false;   
-    else if (protocol.equals ("org.cougaar.core.mts.socket.IncomingSocketLinkProtocol")) return false;   
-    else if (protocol.equals ("org.cougaar.core.mts.email.IncomingEmailLinkProtocol"))   return false;
-
-    return true;
-  }
-
-  private void showProgress (DestinationLink link)
-  {
-    String letter = getLinkLetter (link);
-    System.out.print (letter.toLowerCase());
-  }
-
   public static String getLinkLetter (DestinationLink link)
   {
     return getLinkLetter (getName (link));
@@ -1353,6 +1466,12 @@ if (rn != null) rns = "" + rn;
     else                                                                            letter = "?";
 
     return letter;
+  }
+
+  private void showProgress (DestinationLink link)
+  {
+    String letter = getLinkLetter (link);
+    System.out.print (letter.toLowerCase());
   }
 
   public static String getLinkType (String classname)

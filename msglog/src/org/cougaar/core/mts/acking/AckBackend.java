@@ -26,6 +26,7 @@ package org.cougaar.core.mts.acking;
 
 import java.io.*;
 import java.util.*;
+import java.text.DateFormat;
 
 import org.cougaar.core.mts.*;
 import org.cougaar.core.service.LoggingService;
@@ -51,7 +52,7 @@ class AckBackend extends MessageDelivererDelegateImplBase
   public MessageAttributes deliverMessage (AttributedMessage msg, MessageAddress dest) throws MisdeliveredMessageException
   {
     String msgString = MessageUtils.toString (msg);
-    if (log.isDebugEnabled()) log.debug ("AckBackend: entered with " +msgString);
+    if (log.isDebugEnabled()) log.debug ("AckBackend: entered by " +msgString);
 
     //  Special Case:  Local messages are completely excluded from acking
 
@@ -206,7 +207,13 @@ class AckBackend extends MessageDelivererDelegateImplBase
       //  Kind of a hack, but the start of something.  May want to do things like set
       //  max age based on transport type ...
 
-      if (log.isWarnEnabled()) log.warn ("AckBackend: Msg too old (msg ignored): " +msgString);
+      if (log.isWarnEnabled()) 
+      {
+        long mins = (now()-ack.getSendTime()) / (60*1000);
+        String date = (new Date (ack.getSendTime())).toString();
+        log.warn ("AckBackend: Msg too old [" +mins+ "minutes: " +date+ "] (msg ignored): " +msgString);
+      }
+
       return success;
     }
 
@@ -214,8 +221,13 @@ class AckBackend extends MessageDelivererDelegateImplBase
     {
       //  Kind of a hack, but the start of something.  May want to do things like set
       //  max age based on transport type ...
-      
-      if (log.isWarnEnabled()) log.warn ("AckBackend: Msg too far in the future (msg ignored): " +msgString);
+
+      if (log.isWarnEnabled()) 
+      {
+        String date = (new Date(ack.getSendTime())).toString();
+        log.warn ("AckBackend: Msg too far in the future [" +date+ "] (msg ignored): " +msgString);
+      }
+
       return success;
     }
 
@@ -344,7 +356,13 @@ class AckBackend extends MessageDelivererDelegateImplBase
         pureAck.setSendDeadline (ack.getReceiveTime() + firstAck);
 //pureAck.setSendDeadline (ack.getReceiveTime() + 15);  // testing
         PureAckMessage pureAckMsg = new PureAckMessage (msg, pureAck);
-        if (log.isDebugEnabled()) log.debug ("AckBackend: Starting new pure ack msg: " +pureAckMsg);
+
+        if (log.isDebugEnabled()) 
+        {
+          long t = pureAck.getSendDeadline() - now();
+          log.debug ("AckBackend: Created new pure ack msg with timeout of " +t+ ": " +pureAckMsg);
+        }
+
         MessageAckingAspect.pureAckSender.add (pureAckMsg);
       }
       else if (ack.isPureAck())
@@ -361,7 +379,13 @@ class AckBackend extends MessageDelivererDelegateImplBase
         pureAckAck.setSendDeadline (ack.getReceiveTime() + onlyAckAck);
 //pureAckAck.setSendDeadline (ack.getReceiveTime() + 5);  // testing
         PureAckAckMessage pureAckAckMsg = new PureAckAckMessage ((PureAckMessage)msg, pureAckAck);
-        if (log.isDebugEnabled()) log.debug ("AckBackend: Starting new pure ack-ack msg: " +pureAckAckMsg);
+
+        if (log.isDebugEnabled()) 
+        {
+          long t = pureAckAck.getSendDeadline() - now();
+          log.debug ("AckBackend: Created new pure ack-ack msg with timeout of " +t+ ": " +pureAckAckMsg);
+        }
+
         MessageAckingAspect.pureAckAckSender.add (pureAckAckMsg);
 
         //  We can set a final send deadline for ack-acks, in case it gets bounced
@@ -417,16 +441,11 @@ class AckBackend extends MessageDelivererDelegateImplBase
     return System.currentTimeMillis();
   }
 
-  private static String toDate (long time)
+  private static String toDateString (long time)
   {
-    if (time == 0) return "0";
-
-    //  Return date string with milliseconds
-
-    String date = (new Date(time)).toString();
-    String d1 = date.substring (0, 19);
-    String d2 = date.substring (19);
-    long ms = time % 1000;
-    return d1 + "." + ms + d2;
+    TimeZone tz = TimeZone.getDefault();
+    Calendar cal = Calendar.getInstance (tz);
+    Date date = new Date (time);
+    return DateFormat.getDateTimeInstance().format (date);        
   }
 }

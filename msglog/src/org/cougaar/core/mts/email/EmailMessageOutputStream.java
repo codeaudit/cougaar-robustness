@@ -45,11 +45,10 @@ public class EmailMessageOutputStream extends NoHeaderOutputStream
 
   public void writeMsg (Message msg) throws IOException
   {
-    //  Important!!! Reset the output stream so that subsequent
+    //  Important!!!  Reset the output stream so that subsequent
     //  writes do not refer to objects written previously.
 
     reset();
-
     writeObject (msg);
   }
 

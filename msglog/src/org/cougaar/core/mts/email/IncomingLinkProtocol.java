@@ -43,12 +43,12 @@ public abstract class IncomingLinkProtocol extends LinkProtocol
   {
     dummyDestLink = new DummyDestinationLink (null);
   }
-/*
+
   public DestinationLink getDestinationLink (MessageAddress destination) 
   {
     return dummyDestLink;
   }
-*/
+
   public boolean addressKnown (MessageAddress address) 
   {
     return false;  // we are not an Outgoing transport

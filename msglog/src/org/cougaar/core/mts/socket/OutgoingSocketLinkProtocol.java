@@ -111,8 +111,8 @@ private int cnt=0;  // temp
   {
     //  Read external properties
 
-    String s = "org.cougaar.message.protocol.socket.cost";
-    protocolCost = Integer.valueOf(System.getProperty(s,"3000")).intValue();
+    String s = "org.cougaar.message.protocol.socket.cost";  // one way
+    protocolCost = Integer.valueOf(System.getProperty(s,"1000")).intValue();
 
     s = "org.cougaar.message.protocol.socket.connectTimeoutSecs";
     connectTimeout = Integer.valueOf(System.getProperty(s,"5")).intValue();
@@ -230,7 +230,7 @@ private int cnt=0;  // temp
       return OutgoingSocketLinkProtocol.class;
     }
    
-    public int cost (AttributedMessage message) 
+    public int cost (AttributedMessage msg) 
     {
       // return protocolCost;  // pre 8.6.1
 
@@ -240,7 +240,7 @@ private int cnt=0;  // temp
 
       try 
       {
-        lookupSocketSpec (destination);
+        if (msg != null) lookupSocketSpec (destination);
         return protocolCost;
       } 
       catch (Exception e) 

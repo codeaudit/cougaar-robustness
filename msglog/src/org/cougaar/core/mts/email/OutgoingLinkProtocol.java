@@ -36,10 +36,8 @@ import org.cougaar.core.mts.*;
 
 public abstract class OutgoingLinkProtocol extends LinkProtocol
 {
-  public OutgoingLinkProtocol () // (AspectSupport aspectSupport)
-  {
-    // super (aspectSupport);
-  }
+  public OutgoingLinkProtocol ()
+  {}
 
   public void registerClient (MessageTransportClient client) 
   {}

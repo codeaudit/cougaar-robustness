@@ -28,6 +28,13 @@ import org.cougaar.core.component.Service;
 
 public interface RTTService extends Service
 {
+  public void setInitialCommRTTForLinkPair (DestinationLink sendLink, DestinationLink recvLink, int rtt);
+  public void setInitialCommRTTForLinkPair (String sendLink, String recvLink, int rtt);
+  public void setInitialNodeTime (int nodeTime);
+  public boolean isSomeCommRTTStartDelaySatisfied (DestinationLink sendLink, String node);
+  public boolean isCommRTTStartDelaySatisfied (DestinationLink sendLink, String node, DestinationLink recvLink);
+  public float getHighestCommRTTPercentFilled (DestinationLink sendLink, String node);
+  public float getCommRTTPercentFilled (DestinationLink sendLink, String node, DestinationLink recvLink);
   public int getBestCommRTTForLink (DestinationLink link, String node);
   public int getBestFullRTTForLink (DestinationLink link, String node);
 }

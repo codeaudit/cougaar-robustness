@@ -243,13 +243,18 @@ public class EmailInputStream extends InputStream
 
         filters.set (fromFilter, subjectFilter);
 
+//System.err.println ("\nPolling mail server\n");
+
         msgs = MailMan.readMessages (mbox, filters, 0);
 
         if (msgs != null)
         {
           if (msgs.length == 0 && pollTime > 0)
           {
+//long start = now();
+//System.err.println ("\nPolling sleep\n");
             try { Thread.sleep (pollTime); } catch (Exception e) {}
+//System.err.println ("\nPolling wake: "+(now()-start)+"\n");
             if (streamClosed) return;
           }
 

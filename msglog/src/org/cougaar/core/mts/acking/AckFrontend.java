@@ -61,7 +61,7 @@ private int cnt=0;
            CommFailureException, MisdeliveredMessageException
   {
     String msgString = MessageUtils.toString (msg);
-    if (log.isDebugEnabled()) log.debug ("AckFrontend: entered with " +msgString);
+    if (log.isDebugEnabled()) log.debug ("AckFrontend: entered by " +msgString);
 
     //  Sanity Check:  All messages must have a number
 
@@ -328,13 +328,13 @@ if (n.equals("PerformanceNodeB") && cnt++ > 5) return success;
 
       if (MessageAckingAspect.isExcludedLink (link))
       {
-        //  Manufacture an ack for the message
+        //  Manufacture an ack for the message and add it to our received acks list
 
-        if (log.isDebugEnabled()) log.debug ("AckFrontend: Making ack for excluded link msg: " +msgString);
         AckList ackList = new AckList (MessageUtils.getFromAgent(msg), MessageUtils.getToAgent(msg));
         ackList.add (MessageUtils.getMessageNumber (msg));
         Vector v = new Vector();
         v.add (ackList);
+        if (log.isDebugEnabled()) log.debug ("AckFrontend: Adding ack for excluded link msg: " +msgString);
         MessageAckingAspect.addReceivedAcks (toNode, v);
       }
     }
@@ -342,12 +342,18 @@ if (n.equals("PerformanceNodeB") && cnt++ > 5) return success;
     {
       //  We reschedule pure acks so they will be sent again if needed
 
-      if (log.isDebugEnabled()) log.debug ("AckFrontend: Resched next pure ack msg: " +msgString);
       PureAck pureAck = (PureAck) ack;
       long lastSendTime = pureAck.getSendTime();
       float rtt = (float) ack.getRTT();
       long deadline = lastSendTime + (long)(rtt * MessageAckingAspect.interAckSpacingFactor);
       pureAck.setSendDeadline (deadline);
+
+      if (log.isDebugEnabled()) 
+      {
+        long t = pureAck.getSendDeadline() - now();
+        log.debug ("AckBackend: Resched next pure ack msg with timeout of " +t+ ": " +msgString);
+      }
+
       MessageAckingAspect.pureAckSender.add ((PureAckMessage)msg);
     }
 

@@ -50,13 +50,12 @@
 
 package org.cougaar.core.mts.email;
 
+import java.io.*;
 import java.util.*;
 import java.net.InetAddress;
 
 import org.cougaar.core.mts.*;
-import org.cougaar.core.component.Service;
-import org.cougaar.core.component.ServiceBroker;
-import org.cougaar.core.component.ServiceProvider;
+import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.ThreadService;
 import org.cougaar.core.thread.Schedulable;
 
@@ -116,62 +115,34 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
 
   private static final MailMessageCache cache = new MailMessageCache();
 
-  private boolean debug;
-  private boolean debugMail = false;
-  private boolean showTraffic;
+  private static final int mailServerPollTime;
+  private static final boolean debugMail;
+  private static boolean showTraffic;
 
+  private LoggingService log;
   private String nodeID;
   private String inboxesProp;
   private MailBox inboxes[];
   private MailData myMailData;
   private Vector messageInThreads;
   private ThreadService threadService;
-  private boolean startedMailReadingThreads;
   private MessageAddress myAddress;
-  private boolean ignoreOldMessages;
-  private int gracePeriod, mailServerPollTime;
   private boolean firstTime = true;
-private boolean hasStartedUp = false;  
+
+  static
+  {
+    //  Read external properties
+
+    String s = "org.cougaar.message.protocol.email.mailServerPollTimeSecs";
+    mailServerPollTime = Integer.valueOf(System.getProperty(s,"5")).intValue();
+
+    s = "org.cougaar.message.protocol.email.debugMail";
+    debugMail = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
+  }
 
   public IncomingEmailLinkProtocol ()
   {
-    System.err.println ("Creating " + this);
-
     messageInThreads = new Vector();
-
-    //  Read external properties
-
-    String s = "org.cougaar.message.protocol.email.debug";
-    debug = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
-/*
-    s = "org.cougaar.message.protocol.email.inboxes";
-    inboxesProp = System.getProperty (s);
-
-    if (inboxesProp == null || inboxesProp.equals(""))
-    {
-      throw new RuntimeException ("Bad or missing property: " +s);
-    }
-*/
-    s = "org.cougaar.message.protocol.email.mailServerPollTimeSecs";
-    mailServerPollTime = Integer.valueOf(System.getProperty(s,"5")).intValue();
-  }
-
-  public void load () 
-  {
-    super_load();
-    String sta = "org.cougaar.core.mts.ShowTrafficAspect";
-    showTraffic = (getAspectSupport().findAspect(sta) != null);
-  }
-
-  public DestinationLink getDestinationLink (MessageAddress destination) 
-  {
-    //  HACK! Attempt start the mail reading threads at the right time (not too early!)
-
-    if (!startedMailReadingThreads) startMailReadingThreads();
-
-    //  Incoming links don't have destination links like outgoing links do
-
-    return dummyDestLink;  // inherited from superclass
   }
 
   public String toString ()
@@ -179,37 +150,33 @@ private boolean hasStartedUp = false;
     return this.getClass().getName();
   }
 
-  public void setNameSupport (NameSupport nameSupport) 
+  public void load ()
   {
-    //  HACK! Name support & registry not available in constructor above
+    super_load();
 
-    if (getNameSupport() == null)
-    {
-      throw new RuntimeException ("IncomingEmailLinkProtocol: Name server not available!");
-    }
+    log = loggingService;
+    if (log.isInfoEnabled()) log.info ("Creating " + this);
 
-    if (getRegistry() == null)
-    {
-      throw new RuntimeException ("IncomingEmailLinkProtocol: Registry not available!");
-    }
+    String sta = "org.cougaar.core.mts.ShowTrafficAspect";
+    showTraffic = (getAspectSupport().findAspect(sta) != null);
 
     nodeID = getRegistry().getIdentifier();
-
-    String prop = "org.cougaar.message.protocol.email.inboxes." +nodeID;
-    inboxesProp = System.getProperty (prop);
+    String s = "org.cougaar.message.protocol.email.inboxes." +nodeID;
+    inboxesProp = System.getProperty (s);
 
     if (inboxesProp == null || inboxesProp.equals(""))
     {
-      throw new RuntimeException ("Bad or missing property: " +prop);
+      String str = "Bad or missing property: " +s;
+      log.error (str);
+      throw new RuntimeException (str);
     }
 
-if (!hasStartedUp)
-{
     if (startup (inboxesProp) == false)
     {
-      throw new RuntimeException ("Failure starting up IncomingEmailLinkProtocol!");
+      String str = "Failure starting up " + this;
+      log.error (str);
+      throw new RuntimeException (str);
     }
-}
   }
 
   public synchronized boolean startup (String inboxesProp)
@@ -232,34 +199,28 @@ if (!hasStartedUp)
       {
         if (MailMan.checkMailBoxAccess (inboxes[i]) == false)
         {
-          System.err.println ("\nIncomingEmailLinkProtocol ALERT: Is your mail server up?");
-          System.err.println ("Unable to access mailbox:\n" + inboxes[i].toStringDiscreet());
-
+          log.error ("ALERT: Is your mail server up?  Unable to access mail server: " + 
+                     inboxes[i].toStringDiscreet());
           continue;
         }
 
         messageIn = new MessageInThread (inboxes[i]);  // actually a Runnable
         Schedulable thread = threadService().getThread (this, messageIn, "inbox"+i);
         messageIn.setThread (thread);
-//      thread.start();
+        thread.start();
 
         registerMailData (nodeID, inboxes[i]);
         messageInThreads.add (messageIn);
       }
       catch (Exception e)
       {
-        System.err.println ("IncomingEmailLinkProtocol.startup inbox"+i+" exception: ");
-        e.printStackTrace();
-
+        log.error ("startup inbox"+i+" exception: " +stackTraceToString(e));
         if (messageIn != null) messageIn.quit();
       }
     }
 
     //  We can't call it a successful startup unless at least one thread 
     //  was successfully started.
-// created?
-
-hasStartedUp = true;  // kind of hack for now
 
     return messageInThreads.size() > 0;
   }
@@ -283,22 +244,6 @@ hasStartedUp = true;  // kind of hack for now
     //  Halt and get rid of all the inbox threads
 
     stopMailReadingThreads();
-
-hasStartedUp = false;
-  }
-
-  private void startMailReadingThreads ()
-  {
-    if (!startedMailReadingThreads)
-    {
-      for (Enumeration e=messageInThreads.elements(); e.hasMoreElements(); ) 
-      {
-        MessageInThread messageIn = (MessageInThread) e.nextElement();
-        messageIn.getThread().start();
-      }
-        
-      startedMailReadingThreads = true;
-    }
   }
 
   private void stopMailReadingThreads ()
@@ -310,7 +255,6 @@ hasStartedUp = false;
     }
 
     messageInThreads.removeAllElements();
-    startedMailReadingThreads = false;
   }
 
   public MailBox[] parseInboxes (String inboxesProp)
@@ -353,8 +297,7 @@ hasStartedUp = false;
             }
             catch (Exception e)
             {
-              System.err.println ("Error: bad inbox spec in " +spec);
-              System.err.println ("Bad inbox spec ignored");
+              log.error ("Bad inbox spec: " +spec+ " (ignored)");
             }
           }
           else break;
@@ -372,29 +315,37 @@ hasStartedUp = false;
     }
     else
     {
-      System.err.println ("Error: No inboxes defined in " +inboxesProp);
+      log.error ("No inboxes defined in " +inboxesProp);
       return null;
     }
   }
 
   private String getFQDN (String host)
   {
-    //  Not till Java 1.4 can we get the fully qualified domain name
+    //  Now with Java 1.4 we can get the fully qualified domain name
     //  (FQDN) for hosts (via the new InetAddress getCanonicalHostname())
-    //  when running on Windows.  So for now we will require that the 
-    //  hostnames in email .props files are FQDN names.
+    //  when running on Windows.  So we will no longer require that the 
+    //  hostnames in mailbox properties are FQDN names, although this
+    //  is not exactly clearly working, so we will still complain about
+    //  the hostname 'localhost'.
 
     if (host.equals ("localhost"))
     {
-      System.err.println ("ERROR: Only fully qualified domain names allowed as mailhost names: " +host);
-      throw new RuntimeException ("Only fully qualified domain names allowed as mailhost names: " +host);
-    }
-    else if (host.indexOf ('.') == -1)
-    {
-//    System.err.println ("WARNING: Only fully qualified domain names allowed as mailhost names: " +host);
+      String s = "Only fully qualified domain names allowed as mailhost names: " +host;
+      log.error (s);
+      throw new RuntimeException (s);
     }
 
-    return host;
+    try
+    {
+      String FQDN = InetAddress.getByName(host).getCanonicalHostName();
+      if (log.isDebugEnabled()) log.debug ("FDQN for " +host+ " is " +FQDN);
+      return FQDN;
+    }
+    catch (Exception e)
+    {
+      throw new RuntimeException (e.toString());
+    }
   }
 
   private String nextParm (StringTokenizer st)
@@ -414,7 +365,6 @@ hasStartedUp = false;
 
     MailBox myMailBox = new MailBox (mbox.getServerHost(), mbox.getUsername());  
     myMailData = new MailData (nodeID, myMailBox);
-
     MessageAddress nodeAddress = getNameSupport().getNodeMessageAddress();
     getNameSupport().registerAgentInNameServer (myMailData, nodeAddress, PROTOCOL_TYPE);
   }
@@ -422,69 +372,55 @@ hasStartedUp = false;
   private void unregisterMailData ()
   {
     if (myMailData == null) return;  // no data to unregister
-
-    //  Name support not available till after transport construction  -- still, in 9.0.0?
-
-    if (getNameSupport() == null) return;  
-
-    //  Update the name server
-
     MessageAddress nodeAddress = getNameSupport().getNodeMessageAddress();
     getNameSupport().unregisterAgentInNameServer (myMailData, nodeAddress, PROTOCOL_TYPE);
   }
 
   public final void registerClient (MessageTransportClient client) 
   {
-    if (myMailData == null) return;  // no data to register
-
     try 
     {
+      if (myMailData == null) return;  // no data to register
       MessageAddress clientAddress = client.getMessageAddress();
       getNameSupport().registerAgentInNameServer (myMailData, clientAddress, PROTOCOL_TYPE);
     } 
     catch (Exception e) 
     {
-      System.err.println ("IncomingEmailLinkProtocol: registerClient");
-      e.printStackTrace();
+      log.error (stackTraceToString (e));
     }
   }
 
   public final void unregisterClient (MessageTransportClient client) 
   { 
-    if (myMailData == null) return;  // no data to unregister
-
     try 
     {
+      if (myMailData == null) return;  // no data to unregister
       MessageAddress clientAddress = client.getMessageAddress();
       getNameSupport().unregisterAgentInNameServer (myMailData, clientAddress, PROTOCOL_TYPE);
     } 
     catch (Exception e) 
     {
-      System.err.println ("IncomingEmailLinkProtocol: unregisterClient");
-      e.printStackTrace();
+      log.error (stackTraceToString (e));
     }
   }
 
   public final void registerMTS (MessageAddress addr)
   {
-    if (myMailData == null) return;  // no data to register
-
     try 
     {
+      if (myMailData == null) return;  // no data to register
       getNameSupport().registerAgentInNameServer (myMailData, addr, PROTOCOL_TYPE);
     } 
     catch (Exception e) 
     {
-      System.err.println ("IncomingEmailLinkProtocol: registerMTS");
-      e.printStackTrace();
+      log.error (stackTraceToString (e));
     }
   }
 
   private ThreadService threadService () 
   {
 	if (threadService != null) return threadService;
-	ServiceBroker sb = getServiceBroker();
-	threadService = (ThreadService) sb.getService (this, ThreadService.class, null);
+	threadService = (ThreadService) getServiceBroker().getService (this, ThreadService.class, null);
 	return threadService;
   }
 
@@ -534,7 +470,7 @@ hasStartedUp = false;
           }
           catch (Exception e)
           {
-            System.err.println ("IncomingEmailLinkProtocol: Checking inbox access: " + e);
+            log.error ("Checking inbox access: " + e);
           }
 
           if (access == false)
@@ -547,23 +483,21 @@ hasStartedUp = false;
             if (n < 20)       waitTime = 15;
             else if (n < 100) waitTime = 30;
             else              waitTime = 60;
-            
-            if (debug)
+         
+            if (log.isInfoEnabled())    
             {
-              try
-              {
-                String s =  "\nALERT: Unable to access mail inbox:\n" +inbox.toStringDiscreet();
-                s += "\nTry " +n+ ": Will try to access it again in " +waitTime+ " seconds...";
-                System.err.println (s);
-              } 
-              catch (Exception e) {}
+              log.info 
+              (
+                "ALERT: Unable to access mail inbox:\n" +inbox.toStringDiscreet()+
+                "Try " +n+ ": Will try to access it again in " +waitTime+ " seconds..."
+              );
             }
 
             try { Thread.sleep (waitTime*1000); } catch (Exception e) {}
           }
           else
           {
-            if (n > 0 && debug) System.err.println ("\nIncomingEmail: Inbox is accessible again.");
+            if (n > 0 && log.isInfoEnabled()) log.info ("Inbox is accessible again");
             break;
           }
         }
@@ -632,9 +566,9 @@ hasStartedUp = false;
       try
       {
         emailIn = new EmailInputStream (inbox, pollTime, cache);
-        emailIn.setInfoDebug (debug);      // informative progress debug
-        emailIn.setDebug (false);          // low-level debug
-        emailIn.setDebugMail (debugMail);  // low-level mail debug
+        emailIn.setInfoDebug (log.isDebugEnabled());  // informative progress debug
+        emailIn.setDebug (false);                     // low-level debug
+        emailIn.setDebugMail (debugMail);             // low-level mail debug
         emailIn.setFromFilter ("EmailStream#");
         emailIn.setSubjectFilter ("To: " + nodeID);
         emailIn.setPollTime (pollTime);
@@ -642,7 +576,7 @@ hasStartedUp = false;
       }
       catch (Exception e) 
       { 
-        System.err.println ("\nIncomingEmailLinkProtocol: Error creating email input stream: " +e);
+        log.error ("Error creating email input stream: " +e);
         if (emailIn != null) try { emailIn.close(); } catch (Exception e2) {}
         return null;
       }
@@ -668,7 +602,7 @@ hasStartedUp = false;
         {  
            messageIn = new NoHeaderInputStream (emailIn);
 
-           if (!firstTime && debug) System.err.println ("\nIncomingEmail: Email instream restored.");
+           if (!firstTime && log.isInfoEnabled()) log.info ("Email instream restored");
            firstTime = false;
         }
 
@@ -679,12 +613,11 @@ hasStartedUp = false;
 
         if (showTraffic) System.err.print ("<E");
 
-        if (debug) 
-        {
-          System.err.println ("\nIncomingEmail: read " +MessageUtils.toString(msg));
-        }
+        if (log.isDebugEnabled()) log.debug ("reading " +MessageUtils.toString(msg));
 
         //  Deliver the message
+
+//TODO separate out delivery in another try block?
       
         if (msg != null) getDeliverer().deliverMessage (msg, msg.getTarget());
 
@@ -694,14 +627,12 @@ hasStartedUp = false;
       } 
       catch (Exception e) 
       {
-        if (debug)
+        if (log.isInfoEnabled())
         {
-          if (msg == null) System.err.println ("\nIncomingEmail: Email instream lost...");
-          else System.err.println ("\nIncomingEmail: Problem delivering msg " +MessageUtils.toString(msg));
-e.printStackTrace();
+          if (msg == null) log.info ("Email instream lost...");
+          else log.info ("Problem delivering msg " +MessageUtils.toString(msg));
+//e.printStackTrace();
         }
-
-        // if (debug) e.printStackTrace();
       
         //  It's important to close the message stream due to its
         //  underlying polling email stream.
@@ -717,5 +648,13 @@ e.printStackTrace();
         return false;
       }
     }
+  }
+
+  private String stackTraceToString (Exception e)
+  {
+    StringWriter stringWriter = new StringWriter();
+    PrintWriter printWriter = new PrintWriter (stringWriter);
+    e.printStackTrace (printWriter);
+    return stringWriter.getBuffer().toString();
   }
 }

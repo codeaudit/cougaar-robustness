@@ -53,8 +53,8 @@ private int cnt = 0;
   {
     //  Read external properties
 
-    String s = "org.cougaar.message.protocol.udp.cost";
-    protocolCost = Integer.valueOf(System.getProperty(s,"2000")).intValue();
+    String s = "org.cougaar.message.protocol.udp.cost";  // one way
+    protocolCost = Integer.valueOf(System.getProperty(s,"750")).intValue();
   }
  
   public OutgoingUDPLinkProtocol ()
@@ -71,7 +71,9 @@ private int cnt = 0;
 
     if (startup() == false)
     {
-      throw new RuntimeException ("Failure starting up " +this);
+      String str = "Failure starting up " + this;
+      log.error (str);
+      throw new RuntimeException (str);
     }
   }
 
@@ -177,7 +179,7 @@ private int cnt = 0;
       return OutgoingUDPLinkProtocol.class;
     }
    
-    public int cost (AttributedMessage message) 
+    public int cost (AttributedMessage msg) 
     {
       //  Calling lookup spec is a hack to perform a name server lookup
       //  kind of method within the cost function rather than in the adaptive
@@ -185,7 +187,7 @@ private int cnt = 0;
 
       try 
       {
-        lookupDatagramSocketSpec (destination);
+        if (msg != null) lookupDatagramSocketSpec (destination);
         return protocolCost;
       } 
       catch (Exception e) 
