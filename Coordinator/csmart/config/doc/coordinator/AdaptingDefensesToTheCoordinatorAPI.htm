@@ -1,799 +1,1009 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
+<html xmlns:v="urn:schemas-microsoft-com:vml"
+xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:w="urn:schemas-microsoft-com:office:word"
+xmlns="http://www.w3.org/TR/REC-html40">
+
 <head>
-  <meta http-equiv="Content-Type"
- content="text/html; charset=windows-1252">
-  <meta name="Generator" content="Microsoft Word 97">
-  <title>Adapting Defenses to the Coordinator API</title>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=ProgId content=Word.Document>
+<meta name=Generator content="Microsoft Word 9">
+<meta name=Originator content="Microsoft Word 9">
+<link rel=File-List
+href="./AdaptingDefensesToTheCoordinatorAPI_files/filelist.xml">
+<link rel=Edit-Time-Data
+href="./AdaptingDefensesToTheCoordinatorAPI_files/editdata.mso">
+<!--[if !mso]>
+<style>
+v\:* {behavior:url(#default#VML);}
+o\:* {behavior:url(#default#VML);}
+w\:* {behavior:url(#default#VML);}
+.shape {behavior:url(#default#VML);}
+</style>
+<![endif]-->
+<title>Adapting Defenses to the Coordinator API</title>
+<!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:Zoom>70</w:Zoom>
+ </w:WordDocument>
+</xml><![endif]-->
+<style>
+<!--
+ /* Font Definitions */
+@font-face
+	{font-family:Wingdings;
+	panose-1:5 0 0 0 0 0 0 0 0 0;
+	mso-font-charset:2;
+	mso-generic-font-family:auto;
+	mso-font-pitch:variable;
+	mso-font-signature:0 268435456 0 0 -2147483648 0;}
+ /* Style Definitions */
+p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{mso-style-parent:"";
+	margin:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"Times New Roman";}
+p.MsoBodyTextIndent, li.MsoBodyTextIndent, div.MsoBodyTextIndent
+	{margin-top:0in;
+	margin-right:0in;
+	margin-bottom:12.0pt;
+	margin-left:.5in;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"Times New Roman";}
+a:link, span.MsoHyperlink
+	{color:blue;
+	text-decoration:underline;
+	text-underline:single;}
+a:visited, span.MsoHyperlinkFollowed
+	{color:purple;
+	text-decoration:underline;
+	text-underline:single;}
+p
+	{font-size:12.0pt;
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"Times New Roman";}
+@page Section1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.25in 1.0in 1.25in;
+	mso-header-margin:.5in;
+	mso-footer-margin:.5in;
+	mso-paper-source:0;}
+div.Section1
+	{page:Section1;}
+ /* List Definitions */
+@list l0
+	{mso-list-id:46615633;
+	mso-list-type:hybrid;
+	mso-list-template-ids:453001290 -584141864 -435751808 1698834182 -2146255680 -1692117148 46188312 -2018897716 -1605859222 -442756046;}
+@list l0:level1
+	{mso-level-start-at:6;
+	mso-level-tab-stop:.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l1
+	{mso-list-id:353117336;
+	mso-list-type:hybrid;
+	mso-list-template-ids:755952076 -863501102 629057104 -383469542 1906203118 1355165914 -1891233980 563777114 -1964473528 77791170;}
+@list l1:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l1:level2
+	{mso-level-number-format:bullet;
+	mso-level-text:o;
+	mso-level-tab-stop:1.0in;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	mso-ansi-font-size:10.0pt;
+	font-family:"Courier New";
+	mso-bidi-font-family:"Times New Roman";}
+@list l2
+	{mso-list-id:455485959;
+	mso-list-type:hybrid;
+	mso-list-template-ids:346998066 -1251328770 1066856540 -1160224538 -629773398 -1161287404 1047816174 -1633617786 -231830004 -602088678;}
+@list l3
+	{mso-list-id:563371386;
+	mso-list-type:hybrid;
+	mso-list-template-ids:-673314126 -991234190 -2038555240 -933886318 1507645332 -884465166 -1741140824 640075864 2105457402 2066764382;}
+@list l4
+	{mso-list-id:764880184;
+	mso-list-type:hybrid;
+	mso-list-template-ids:778236138 -63155070 1775766024 1037098158 -1636929968 1856547468 653961370 -1266674284 1385696004 505815094;}
+@list l4:level1
+	{mso-level-start-at:6;
+	mso-level-tab-stop:.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l5
+	{mso-list-id:855312277;
+	mso-list-type:hybrid;
+	mso-list-template-ids:198358166 1841055102 1927020614 -681948546 1498557940 1658121206 -1039268532 -1479363604 -132324928 752261868;}
+@list l5:level1
+	{mso-level-start-at:4;
+	mso-level-tab-stop:.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l6
+	{mso-list-id:1032268822;
+	mso-list-type:hybrid;
+	mso-list-template-ids:567705868 798500504 -622832242 -2114574042 -253731402 1908573302 836671370 158356816 1258719492 -7431232;}
+@list l6:level1
+	{mso-level-start-at:2;
+	mso-level-tab-stop:.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l7
+	{mso-list-id:1203445100;
+	mso-list-type:hybrid;
+	mso-list-template-ids:-1170551432 322181544 -1177546232 -31408564 127455942 -1782399026 -315558230 -1851478458 1262116444 1791018628;}
+@list l8
+	{mso-list-id:1343894671;
+	mso-list-type:hybrid;
+	mso-list-template-ids:-4972730 1105248606 -567256060 1513360682 1628748192 -1660909968 -588449294 1335125058 -1714546986 -1974669458;}
+@list l8:level1
+	{mso-level-start-at:3;
+	mso-level-tab-stop:.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l9
+	{mso-list-id:1760518358;
+	mso-list-type:hybrid;
+	mso-list-template-ids:1542342882 1430015506 -2133688782 -588359022 300292290 1002630858 1630825786 -770687396 -619438064 1391916894;}
+@list l9:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l10
+	{mso-list-id:1784105216;
+	mso-list-type:hybrid;
+	mso-list-template-ids:-1999482386 -1598531894 -188597248 774927868 -523462858 1940653460 2082884678 1841049198 -1401119428 -1620288892;}
+@list l10:level1
+	{mso-level-start-at:5;
+	mso-level-tab-stop:.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l11
+	{mso-list-id:1851408191;
+	mso-list-type:hybrid;
+	mso-list-template-ids:325329112 1368653850 1336961880 -1786867696 635759340 393241212 -1463931198 922381246 -894646856 -914462522;}
+@list l11:level1
+	{mso-level-start-at:6;
+	mso-level-tab-stop:.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+@list l12
+	{mso-list-id:1858425200;
+	mso-list-type:hybrid;
+	mso-list-template-ids:-691222164 -988616294 2141087268 47056272 -1506356676 -598559230 97298552 -2032087968 -113052372 778071716;}
+@list l12:level1
+	{mso-level-start-at:2;
+	mso-level-tab-stop:.5in;
+	mso-level-number-position:left;
+	text-indent:-.25in;}
+ol
+	{margin-bottom:0in;}
+ul
+	{margin-bottom:0in;}
+-->
+</style>
 </head>
-<body link="#0000ff" vlink="#800080">
-<div style="text-align: center;"><b><u><b><u>Adapting Defenses to the
-Coordinator API</u></b></u></b><b><u>
-</u></b></div>
-&nbsp;
-<ol>
-  <b style="color: rgb(0, 0, 0);"><font face="Arial,Helvetica"><li>A
-Note on
-TechSpecs</li>
-  </font></b><br>
-  <b style="color: rgb(0, 0, 0);"><font face="Arial,Helvetica"> </font></b>
-  <p>The TechSpecs for a given Defense are largely independent of those
-for other Defenses with one exception noted later. We use the
-ConfigFinder to locate TechSpecs, so&nbsp; we recommend that all
-TechSpecs for a given Defense be placed in a single subdirectory of
-$CIP/configs/coordinator (e.g.,
-$CIP/configs/coordinator/SampleDefense), and
-that subdirectory be added to the config.path. Each filename should be
-prefixed with the name of the Defense (e.g.,
+
+<body lang=EN-US link=blue vlink=purple style='tab-interval:.5in'>
+
+<div class=Section1>
+
+<p class=MsoNormal align=center style='text-align:center'><b><u>Adapting
+Defenses to the Coordinator API </u></b></p>
+
+<p class=MsoNormal>&nbsp; </p>
+
+<ol start=1 type=1>
+ <li class=MsoNormal style='color:black;mso-margin-top-alt:auto;mso-margin-bottom-alt:
+     auto;mso-list:l7 level1 lfo1;tab-stops:list .5in'><b><span
+     style='font-family:Arial'>A Note on TechSpecs<o:p></o:p></span></b></li>
+</ol>
+
+<p class=MsoNormal style='margin-left:.5in'><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p style='margin-left:.5in'>The TechSpecs for a given Defense are largely
+independent of those for other Defenses with one exception noted later. We use
+the ConfigFinder to locate TechSpecs, so&nbsp; we recommend that all TechSpecs
+for a given Defense be placed in a single subdirectory of
+$CIP/configs/coordinator (e.g., $CIP/configs/coordinator/SampleDefense), and
+that subdirectory be added to the config.path. Each filename should be prefixed
+with the name of the Defense (e.g.,
 SampleDefense_AgentAssetStateDimensions.xml) to avoid name conflicts. </p>
-  <p>See <a
- href="https://docs.ultralog.net/dscgi/ds.py/Get/File-5099/2004_TechSpecs_and_Models.doc">https://docs.ultralog.net/dscgi/ds.py/Get/File-5099/2004_TechSpecs_and_Models.doc</a>
-for a comprehensive discussion of the structure and meaning of
-TechSpecs. This is probably only necessary if you plan on generating
-your own TechSpecs from scratch or as background. </p>
-  <p>TechSpecs for the ACUC1 Defenses are already defined. They should
-be reviewed and corrected as necessary. See <a
- href="https://docs.ultralog.net/dscgi/ds.py/Get/File-5152/CoordinatorUC1.doc">https://docs.ultralog.net/dscgi/ds.py/Get/File-5152/CoordinatorUC1.doc</a>
-and <a
- href="https://docs.ultralog.net/dscgi/ds.py/Get/File-5153/UC1_Figure.jpg">https://docs.ultralog.net/dscgi/ds.py/Get/File-5153/UC1_Figure.jpg</a>.
-The TechSpecs for several of these are already present in
-subdirectories of $CIP/configs/coordinator.&nbsp; Our intention is to
-provide the remainder in the
-next week or so.</p>
-  <p>$CIP/configs/coordinator/SampleDefense contains a simple example
-of a complete set of TechSpecs. While it is not necessary to follow the
-naming conventions for filenames, doing so will generally make it
+
+<p style='margin-left:.5in'>See <a
+href="https://docs.ultralog.net/dscgi/ds.py/Get/File-5099/2004_TechSpecs_and_Models.doc">https://docs.ultralog.net/dscgi/ds.py/Get/File-5099/2004_TechSpecs_and_Models.doc</a>
+for a comprehensive discussion of the structure and meaning of TechSpecs. This
+is probably only necessary if you plan on generating your own TechSpecs from
+scratch or as background. </p>
+
+<p style='margin-left:.5in'>TechSpecs for the ACUC1 Defenses are already
+defined. They should be reviewed and corrected as necessary. See <a
+href="https://docs.ultralog.net/dscgi/ds.py/Get/File-5152/CoordinatorUC1.doc">https://docs.ultralog.net/dscgi/ds.py/Get/File-5152/CoordinatorUC1.doc</a>
+and <a href="https://docs.ultralog.net/dscgi/ds.py/Get/File-5153/UC1_Figure.jpg">https://docs.ultralog.net/dscgi/ds.py/Get/File-5153/UC1_Figure.jpg</a>.
+The TechSpecs for several of these are already present in subdirectories of
+$CIP/configs/coordinator.&nbsp; Our intention is to provide the remainder in
+the next week or so.</p>
+
+<p style='margin-left:.5in'>$CIP/configs/coordinator/SampleDefense contains a
+simple example of a complete set of TechSpecs. While it is not necessary to
+follow the naming conventions for filenames, doing so will generally make it
 easier to follow the structure.</p>
-  <b style="color: rgb(0, 0, 0);"><font face="Arial,Helvetica"><li>API
-Overview</li>
-  </font></b>
-  <p>The Coordinator API breaks the existing notion of a Defense (e.g.,
-Sledgehammer, MsgLog, Security) into Sensors and Actuators. While there
-is often a relationship between a Sensor and an Actuator (e.g., the
-Sledgehammer Defense senses and reports that an agent is believed to be
-dead and has an Actuator that can restart the agent), there are
-examples
-where this linkage is not present (e.g., the Metrics Service provides
-Sensors only and Security may have an Actuator to encrypt that is not
-directly tied to any sensor). </p>
-  <p>A <i>Sensor</i> provides information about an asset (agent, node,
-network, enclave, …) to the Coordinator. A sensor is probably tied to
-some analysis process (e.g., monitoring to determine that an agent is
-probably dead), but can also be used to present asserted state (e.g., a
-high security alert state has been declared). </p>
-  <p>An <i>Actuator</i> can take one or more actions to affect the
-state of an asset (agent, node, network, enclave, ..). Actuators can
+
+<ol start=2 type=1>
+ <li class=MsoNormal style='color:black;mso-margin-top-alt:auto;mso-margin-bottom-alt:
+     auto;mso-list:l7 level1 lfo1;tab-stops:list .5in'><b><span
+     style='font-family:Arial'>API Overview<o:p></o:p></span></b></li>
+</ol>
+
+<p style='margin-left:.5in'>The Coordinator API breaks the existing notion of a
+Defense (e.g., Sledgehammer, MsgLog, Security) into Sensors and Actuators.
+While there is often a relationship between a Sensor and an Actuator (e.g., the
+Sledgehammer Defense senses and reports that an agent is believed to be dead
+and has an Actuator that can restart the agent), there are examples where this
+linkage is not present (e.g., the Metrics Service provides Sensors only and
+Security may have an Actuator to encrypt that is not directly tied to any
+sensor). </p>
+
+<p style='margin-left:.5in'>A <i>Sensor</i> provides information about an asset
+(agent, node, network, enclave, …) to the Coordinator. A sensor is probably
+tied to some analysis process (e.g., monitoring to determine that an agent is
+probably dead), but can also be used to present asserted state (e.g., a high
+security alert state has been declared). </p>
+
+<p style='margin-left:.5in'>An <i>Actuator</i> can take one or more actions to
+affect the state of an asset (agent, node, network, enclave, ..). Actuators can
 take CORRECTIVE (fix a problem), COMPENSATORY (work around an unfixable
 problem), PREVENTIVE (take action to avoid or minimize possible future
-problems), or APPLICATION (do work directly for the application)
-actions. An Actuator is represented in the API by an <u>Action</u>
-object. An Action object is used by the Actuator to <u>offer</u>
-actions it is willing to take w.r.t. a single asset (which again many
-be a container asset like a node or enclave), by the Coordinator to <u>permit</u>
-zero or more of the offered actions to be performed, and again by the
-Actuator to inform which action (if any) of the permitted actions was
-actually performed and status information about progress and the result
-(if any).</p>
-  <font face="Arial,Helvetica" color="#808080"
- style="font-weight: bold; color: rgb(0, 0, 0);"><li>Sensor
-Implementation<br>
-    <font face="Arial,Helvetica" color="#808080"
- style="font-weight: bold; color: rgb(0, 0, 0);"> </font></li>
-  </font>
+problems), or APPLICATION (do work directly for the application) actions. An
+Actuator is represented in the API by an <u>Action</u> object. An Action object
+is used by the Actuator to <u>offer</u> actions it is willing to take w.r.t. a
+single asset (which again may be a container asset like a node or enclave), by
+the Coordinator to <u>permit</u> zero or more of the offered actions to be
+performed, and again by the Actuator to inform which action (if any) of the
+permitted actions was actually performed and status information about progress
+and the result (if any).</p>
+
+<ol start=3 type=1>
+ <li class=MsoNormal style='color:black;mso-margin-top-alt:auto;mso-margin-bottom-alt:
+     auto;mso-list:l7 level1 lfo1;tab-stops:list .5in'><b><span
+     style='font-family:Arial'>Sensor Implementation<o:p></o:p></span></b></li>
 </ol>
-<p style="margin-left: 40px;">A SampleDefense Sensor is represented in
-the API by a <u>SampleDiagnosis</u>
-object which <i>must</i> subclass <u>org.cougaar.coordinator.Diagnosis</u>.
+
+<p style='margin-left:30.0pt'>A SampleDefense Sensor is represented in the API
+by a <u>SampleDiagnosis</u> object which <i>must</i> subclass <u>org.cougaar.coordinator.Diagnosis</u>.
 The sensor name for the SensorType as it appears in the
-SampleDefense_SampleSensor.xml TechSpec file must match the fully
-qualified
+SampleDefense_SampleSensor.xml TechSpec file must match the fully qualified
 classname (including path). E.g., </p>
-<div style="margin-left: 40px;">
-</div>
-<p style="margin-left: 80px;"><font face="Courier New" size="2">&lt;SensorType
-name="</font><font face="Courier New" size="2" color="#ff0000">org.cougaar.coordinator.examples.SampleDefense.SampleDiagnosis</font><font
- face="Courier New" size="2">" </font></p>
-<div style="margin-left: 80px;"></div>
-<p style="margin-left: 120px;"><font face="Courier New" size="2">
-sensesAssetType="Agent"</font></p>
-<div style="margin-left: 120px;"></div>
-<p style="margin-left: 120px;"><font face="Courier New" size="2">sensesStateDimension="Compromised"
-</font></p>
-<div style="margin-left: 120px;"></div>
-<p style="margin-left: 120px;"><font face="Courier New" size="2">
-sensorLatency="1000"&gt;</font></p>
-<div style="margin-left: 40px;"></div>
-<p style="margin-left: 40px;">This part of the TechSpec also defines
-the asset type (in this case
-"agent" over which the sensor reports. The Defense should publish a
-SampleDiagnosis object for each agent under the jurisdiction of the
-Defense (e.g., each monitored agent in the enclave).</p>
-<div style="margin-left: 40px;"></div>
-<p style="margin-left: 40px;">The possible states that the Diagnosis
-can take on are defined in
-the SensorTechSpec as follows:</p>
-<div style="margin-left: 40px;">
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> &lt;PotentialDiagnoses&gt;</p>
-</font>
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> &lt;Diagnosis name="Compromised" /&gt;</p>
-<p> &lt;Diagnosis name="Secure" defaultValue="TRUE" /&gt;</p>
-<p> &lt;Diagnosis name="Isolated" /&gt;</p>
-</font></div>
-<font face="Courier New" size="2">
-<p> &lt;/PotentialDiagnoses&gt;</p>
-</font></div>
-<font face="Courier New" size="2"></font>
-</div>
-<p style="margin-left: 40px;">A SampleDiagnosis is constructed with
-either of the following:</p>
-<div style="margin-left: 40px;">
-</div>
-<div style="margin-left: 80px; font-family: monospace;"></div>
-<p style="margin-left: 80px; font-family: monospace;"><font size="3">
-public SampleDiagnosis(String assetName, Object
-initialValue, ServiceBroker serviceBroker) </font></p>
-<p style="margin-left: 120px; font-family: monospace;"><font size="3">
-throws IllegalValueException,
-TechSpecNotFoundException </font></p>
-<p style="margin-left: 80px; font-family: monospace;"><font size="3">
-public SampleDiagnosis(String assetName,
-ServiceBroker serviceBroker) </font></p>
-<div style="margin-left: 120px; font-family: monospace;"><font size="3">
-throws TechSpecNotFoundException</font></div>
-<p> </p>
-<p style="margin-left: 40px;">The former allows the initial diagnosis
-value to be explicitly set,
-while the latter will default to an initial diagnosis based on the
-SensorTechSpec (above). If an initial diagnosis is explicitly set, it
-must come from the set of <span style="font-family: monospace;">&lt;PotentialDiagnoses&gt;</span>
-in the TechSpec.
-This constraint is enforced by the Diagnosis superclass. If the
-<span style="font-family: monospace;">TechSpecNotFoundException</span>
-is thrown, suspect either:</p>
-<div style="margin-left: 40px;"></div>
-<ul>
-  <ul>
-    <li>The techspec was not provided to the TechSpecManager (discussed
-below)</li>
-    <li>The file did not parse do to XML errors</li>
-    <li>The name of the sensor specified in the file did not match the
-name of the class</li>
-  </ul>
+
+<p style='margin-left:60.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;SensorType
+name=&quot;<span style='color:red'>org.cougaar.coordinator.examples.SampleDefense.SampleDiagnosis</span>&quot;
+</span></p>
+
+<p style='margin-left:1.25in'><span style='font-size:10.0pt;font-family:"Courier New"'>sensesAssetType=&quot;Agent&quot;</span></p>
+
+<p style='margin-left:1.25in'><span style='font-size:10.0pt;font-family:"Courier New"'>sensesStateDimension=&quot;Compromised&quot;
+</span></p>
+
+<p style='margin-left:1.25in'><span style='font-size:10.0pt;font-family:"Courier New"'>sensorLatency=&quot;1000&quot;&gt;</span></p>
+
+<p style='margin-left:30.0pt'>This part of the TechSpec also defines the asset
+type (in this case &quot;agent&quot; over which the sensor reports. The Defense
+should publish a SampleDiagnosis object for each agent under the jurisdiction
+of the Defense (e.g., each monitored agent in the enclave).</p>
+
+<p style='margin-left:30.0pt'>The possible states that the Diagnosis can take
+on are defined in the SensorTechSpec as follows:</p>
+
+<p style='margin-left:60.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;PotentialDiagnoses&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:1.25in'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;Diagnosis
+name=&quot;Compromised&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:1.25in'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;Diagnosis
+name=&quot;Secure&quot; defaultValue=&quot;TRUE&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:1.25in'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;Diagnosis
+name=&quot;Isolated&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:60.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;/PotentialDiagnoses&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:30.0pt'>A SampleDiagnosis is constructed with either of
+the following:</p>
+
+<p style='margin-left:60.0pt'><span style='font-size:10.0pt;mso-bidi-font-size:
+12.0pt;font-family:"Courier New"'>public SampleDiagnosis(String assetName,
+Object initialValue, ServiceBroker serviceBroker) <o:p></o:p></span></p>
+
+<p style='margin-left:1.25in'><span style='font-size:10.0pt;mso-bidi-font-size:
+12.0pt;font-family:"Courier New"'>throws IllegalValueException,
+TechSpecNotFoundException <o:p></o:p></span></p>
+
+<p style='margin-left:60.0pt'><span style='font-size:10.0pt;mso-bidi-font-size:
+12.0pt;font-family:"Courier New"'>public SampleDiagnosis(String assetName,
+ServiceBroker serviceBroker) <o:p></o:p></span></p>
+
+<p class=MsoNormal style='margin-left:1.25in'><span style='font-size:10.0pt;
+mso-bidi-font-size:12.0pt;font-family:"Courier New"'>throws
+TechSpecNotFoundException<o:p></o:p></span></p>
+
+<p style='margin-left:30.0pt'>The former allows the initial diagnosis value to
+be explicitly set, while the latter will default to an initial diagnosis based
+on the SensorTechSpec (above). If an initial diagnosis is explicitly set, it
+must come from the set of <span style='font-family:"Courier New"'>&lt;PotentialDiagnoses&gt;</span>
+in the TechSpec. This constraint is enforced by the Diagnosis superclass. If
+the <span style='font-family:"Courier New"'>TechSpecNotFoundException</span> is
+thrown, suspect either:</p>
+
+<ul type=disc>
+ <ul type=circle>
+  <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:
+      auto;mso-list:l1 level2 lfo2;tab-stops:list 1.0in'>The techspec was not
+      provided to the TechSpecManager (discussed below)</li>
+  <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:
+      auto;mso-list:l1 level2 lfo2;tab-stops:list 1.0in'>The file did not parse
+      do to XML errors</li>
+  <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:
+      auto;mso-list:l1 level2 lfo2;tab-stops:list 1.0in'>The name of the sensor
+      specified in the file did not match the name of the class</li>
+ </ul>
 </ul>
-<p style="margin-left: 40px;">When the sensor makes a diagnosis, it
-announces it by calling:</p>
-<div style="margin-left: 80px;"><font size="3">
-<p><span style="font-family: monospace;"> public void setValue(Object
-value) throws IllegalValueException</span> </p>
-</font></div>
-<font size="3"></font>
-<p style="margin-left: 40px;">The argument to this method must be one
-of the
-&lt;PotentialDiagnoses&gt; defined in the Sensor TechSpec and is
-enforced. This method causes a timestamp to be created.</p>
-<div style="margin-left: 40px;"></div>
-<p style="margin-left: 40px;">Relays cause transfer of the Diagnosis
-object to the Coordinator.
-Everything to do with the relays is transparent to the Defense.</p>
-<div style="margin-left: 40px;">
-</div>
-<p style="margin-left: 40px;">The diagnoses that can be made by the
-sensor provide information
-about the underlying state of the asset in some dimension (in the
-example, the Compromised dimension). Because sensors can make errors,
+
+<p style='margin-left:30.0pt'>When the sensor makes a diagnosis, it announces
+it by calling:</p>
+
+<p style='margin-left:60.0pt'><span style='font-family:"Courier New"'>public
+void setValue(Object value) throws IllegalValueException</span> </p>
+
+<p style='margin-left:30.0pt'>The argument to this method must be one of the
+&lt;PotentialDiagnoses&gt; defined in the Sensor TechSpec and is enforced. This
+method causes a timestamp to be created.</p>
+
+<p style='margin-left:30.0pt'>Relays cause transfer of the Diagnosis object to
+the Coordinator. Everything to do with the relays is transparent to the
+Defense.</p>
+
+<p style='margin-left:30.0pt'>The diagnoses that can be made by the sensor
+provide information about the underlying state of the asset in some dimension
+(in the example, the Compromised dimension). Because sensors can make errors,
 these mappings are not necessarily 1:1. Below is an example:</p>
-<div style="margin-left: 40px;">
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> &lt;Diagnoses&gt;</p>
-</font>
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> &lt;WhenActualStateIs name="Yes" &gt;</p>
-</font>
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> &lt;WillDiagnoseAs name="Secure" withProbability="0.4" /&gt;</p>
-<p> &lt;WillDiagnoseAs name="Compromised" withProbability="0.6" /&gt;</p>
-</font></div>
-<font face="Courier New" size="2">
-<p> &lt;/WhenActualStateIs &gt;</p>
-</font>
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> &lt;WhenActualStateIs name="No" &gt;</p>
-<p> &lt;WillDiagnoseAs name="Secure" withProbability="0.9" /&gt;</p>
-<p> &lt;WillDiagnoseAs name="Compromised" withProbability="0.1" /&gt;</p>
-</font></div>
-<font face="Courier New" size="2">
-<p> &lt;/WhenActualStateIs &gt;</p>
-</font>
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> &lt;WhenActualStateIs name="Isolated" &gt;</p>
-<p> &lt;WillDiagnoseAs name="Isolated" withProbability="1.0" /&gt;</p>
-</font></div>
-<font face="Courier New" size="2">
-<p> &lt;/WhenActualStateIs &gt;</p>
-</font></div>
-<font face="Courier New" size="2">
-<p> &lt;/Diagnoses&gt;</p>
-</font></div>
-<font face="Courier New" size="2"></font>
-</div>
-<p style="margin-left: 40px;">The meaning of this is that when the
-agent is actually Compromised
-("Yes"), that with probability= 0.4, the sensor will say the agent is
-Secure (a mistake) and with probability = 0.6 will say that the agent
-is Compromised (a correct diagnosis). The other cases are similar.</p>
-<ol start="4" style="color: rgb(0, 0, 0);">
-  <b><font face="Arial,Helvetica"><li>Actuator
-Implementation</li>
-  </font></b>
+
+<p style='margin-left:60.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;Diagnoses&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:1.25in'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;WhenActualStateIs
+name=&quot;Yes&quot; &gt;<o:p></o:p></span></p>
+
+<p style='margin-left:120.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;WillDiagnoseAs
+name=&quot;Secure&quot; withProbability=&quot;0.4&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:120.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;WillDiagnoseAs
+name=&quot;Compromised&quot; withProbability=&quot;0.6&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:1.25in'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;/WhenActualStateIs
+&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:120.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;WhenActualStateIs
+name=&quot;No&quot; &gt;<o:p></o:p></span></p>
+
+<p style='margin-left:120.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;WillDiagnoseAs
+name=&quot;Secure&quot; withProbability=&quot;0.9&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:120.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;WillDiagnoseAs
+name=&quot;Compromised&quot; withProbability=&quot;0.1&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:1.25in'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;/WhenActualStateIs
+&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:120.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;WhenActualStateIs
+name=&quot;Isolated&quot; &gt;<o:p></o:p></span></p>
+
+<p style='margin-left:120.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;WillDiagnoseAs
+name=&quot;Isolated&quot; withProbability=&quot;1.0&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:1.25in'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;/WhenActualStateIs
+&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:60.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;/Diagnoses&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:30.0pt'>The meaning of this is that when the agent is
+actually Compromised (&quot;Yes&quot;), that with probability= 0.4, the sensor
+will say the agent is Secure (a mistake) and with probability = 0.6 will say
+that the agent is Compromised (a correct diagnosis). The other cases are
+similar.</p>
+
+<ol start=4 type=1>
+ <li class=MsoNormal style='color:black;mso-margin-top-alt:auto;mso-margin-bottom-alt:
+     auto;mso-list:l5 level1 lfo3;tab-stops:list .5in'><b><span
+     style='font-family:Arial'>Actuator Implementation<o:p></o:p></span></b></li>
 </ol>
-<p style="margin-left: 40px;">An Actuator is represented in the API by
-an <u>SampleAction</u>
-object, which <i>must</i> subclass <u>org.cougaar.coordinator.Action</u>.
-The actuator name for the ActuatorType as it appears in the
-SampleDefense_SampleActuator file must match the fully qualified
-classname (including path). E.g., </p>
-<div style="margin-left: 40px;">
-</div>
-<p style="margin-left: 80px;"><font face="Courier New" size="2">&lt;ActuatorType
-name="</font><font face="Courier New" size="2" color="#ff0000">org.cougaar.coordinator.examples.SampleDefense.SampleAction</font><font
- face="Courier New" size="2">" </font></p>
-<div style="margin-left: 80px;"></div>
-<p style="margin-left: 120px;"><font face="Courier New" size="2">
-affectsAssetType="Agent" </font></p>
-<div style="margin-left: 120px;"></div>
-<p style="margin-left: 120px;"><font face="Courier New" size="2">affectsStateDimension="Compromised"
-</font></p>
-<div style="margin-left: 80px;"></div>
-<p style="margin-left: 80px;"><font face="Courier New" size="2">
-actionType="CORRECTIVE"&gt;</font></p>
-<div style="margin-left: 40px;"></div>
-<div style="margin-left: 40px;"></div>
-<p style="margin-left: 40px;">&nbsp;This part of the TechSpec also
-defines the asset type (in this case
-"agent" over which the actuator operates. The Defense should publish a
-SampleAction object for each agent under the jurisdiction of the
-Defense (e.g., each agent in the enclave on which the Defense can act).</p>
-<div style="margin-left: 40px;"></div>
-<p style="margin-left: 40px;">One of the possible actions that the
-SampleAction can perform is
-defined in the ActuatorTechSpec as follows:</p>
-<div style="margin-left: 40px;">
-</div>
-<p style="margin-left: 80px;"><font face="Courier New" size="2"> &lt;</font><font
- face="Courier New" size="2" color="#ff0000">Action
-name="Quarantine"&gt;</font></p>
-<div style="margin-left: 40px;">
-<div style="margin-left: 40px;">
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> &lt;Description value="Quarantine the Agent so it can do no harm"
-/&gt;</p>
-</font></div>
-<font face="Courier New" size="2"></font>
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> &lt;Transition WhenActualStateIs="Yes" EndStateWillBe="Isolated"
-IntermediateStateWillBe="Yes" &gt;</p>
-</font>
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> &lt;OneTimeCost&gt;</p>
-</font>
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> &lt;CPU intensity="MEDIUM" /&gt;</p>
-<p> &lt;Memory intensity="MEDIUM" /&gt;</p>
-<p> &lt;Time duration="10000" /&gt;</p>
-</font></div>
-<font face="Courier New" size="2">
-<p> &lt;/OneTimeCost&gt;</p>
-</font>
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> &lt;ContinuingCost&gt;</p>
-<p> &lt;CPU intensity="MEDIUM" msgSizeFactor="TRUE" /&gt;</p>
-<p> &lt;Bandwidth intensity="MEDIUM" msgSizeFactor="TRUE" /&gt;</p>
-</font></div>
-<font face="Courier New" size="2">
-<p> &lt;/ContinuingCost&gt;</p>
-</font></div>
-<font face="Courier New" size="2">
-<p> &lt;/Transition&gt;</p>
-</font></div>
-<font face="Courier New" size="2"></font>
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> &lt;Transition WhenActualStateIs="No" EndStateWillBe="Isolated"
-IntermediateStateWillBe="No" &gt;</p>
-</font></div>
-<div style="margin-left: 80px;"><font face="Courier New" size="2">
-<p> &lt;OneTimeCost&gt;</p>
-</font>
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> &lt;CPU intensity="MEDIUM" /&gt;</p>
-<p> &lt;Memory intensity="MEDIUM" /&gt;</p>
-<p> &lt;Time duration="10000" /&gt;</p>
-</font></div>
-<font face="Courier New" size="2">
-<p> &lt;/OneTimeCost&gt;</p>
-</font>
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> &lt;ContinuingCost&gt;</p>
-<p> &lt;CPU intensity="MEDIUM" msgSizeFactor="TRUE" /&gt;</p>
-<p> &lt;Bandwidth intensity="MEDIUM" msgSizeFactor="TRUE" /&gt;</p>
-</font></div>
-<font face="Courier New" size="2">
-<p> &lt;/ContinuingCost&gt;</p>
-</font></div>
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> &lt;/Transition&gt;</p>
-</font></div>
-<font face="Courier New" size="2"></font>
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> &lt;Transition WhenActualStateIs="Isolated"
-EndStateWillBe="Isolated" IntermediateStateWillBe="Isolated" &gt;</p>
-</font>
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> &lt;OneTimeCost&gt;</p>
-</font>
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> &lt;CPU intensity="MEDIUM" /&gt;</p>
-<p> &lt;Memory intensity="MEDIUM" /&gt;</p>
-<p> &lt;Time duration="10000" /&gt;</p>
-</font></div>
-<font face="Courier New" size="2">
-<p> &lt;/OneTimeCost&gt;</p>
-</font></div>
-<font face="Courier New" size="2"></font>
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> &lt;ContinuingCost&gt;</p>
-</font>
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> &lt;CPU intensity="MEDIUM" msgSizeFactor="TRUE" /&gt;</p>
-<p> &lt;Bandwidth intensity="MEDIUM" msgSizeFactor="TRUE" /&gt;</p>
-</font></div>
-<font face="Courier New" size="2">
-<p> &lt;/ContinuingCost&gt;</p>
-</font></div>
-<font face="Courier New" size="2">
-<p> &lt;/Transition&gt;</p>
-</font></div>
-<font face="Courier New" size="2">
-<p> &lt;/Action&gt;</p>
-</font></div>
-<font face="Courier New" size="2">
-</font></div>
-<p style="margin-left: 40px;">This spec defines the action named
-"Quarantine" and describes what
-the action does as a set of state transitions over the possible states
-over which the actuator operates. The transitions also describe the
-costs associtaed with performing the transition.</p>
-<div style="margin-left: 40px;"></div>
-<p style="margin-left: 40px;">For implementing the Actuator API, the
-details of the state
-transitions are not necessary although they should be reviewed with us
-as a sanity check on the TechSpec. What is important is the names of
-the actions that are defined for the Actuator. In this example, they
-are "Quarantine" and "Release" (not shown, but similar in structure). </p>
-<div style="margin-left: 40px;"></div>
-<p style="margin-left: 40px;">A SampleAction is constructed by:</p>
-<div style="margin-left: 40px;">
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> public SampleAction(String assetName, ServiceBroker serviceBroker)</p>
-</font>
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> throws TechSpecNotFoundException </p>
-</font></div>
-<font face="Courier New" size="2">
-<p> </p>
-<p> public SampleAction(String assetName, Set initialValuesOffered,
-ServiceBroker serviceBroker)</p>
-</font>
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> throws IllegalValueException, TechSpecNotFoundException </p>
-</font><font face="Courier New" size="2"></font>
-</div>
-</div>
-</div>
-<div style="margin-left: 40px;"></div>
-<p style="margin-left: 40px;">The former creates a SampleDiagnosis in
-which no actions are
-initially offered as being available, while the latter allows a Set of
-offered actions to be provided. These must come from the actions
-defined in the TechSpec and are enforced.</p>
-<div style="margin-left: 40px;"></div>
-<div style="margin-left: 40px;">When an Actuator wishes to offer an
-action for selection by the
-Coordinator (i.e., is currently capable of performing the action if
-authorized by the Coordinator), it calls:<br>
-</div>
-<div style="margin-left: 80px;"><br>
-<span style="font-family: monospace;">protected void
-setValuesOffered(Set values) throws
-IllegalValueException</span><br>
-</div>
-<div style="margin-left: 40px;"></div>
-<dir style="margin-left: 40px;">
-<dir>
-<dir><font face="Courier New" size="2"></font><font face="Courier New"
- size="2"></font></dir>
-</dir>
-</dir>
-<div style="margin-left: 40px;"></div>
-<div style="margin-left: 40px;"></div>
-<p style="margin-left: 40px;">As before, the values offered must
-correspond to those defined in
-the TechSpec (in this case "Quarantine" or "Release"). An empty set is
-legitimate and means that NONE of the possible actions are currently
-offered.<br>
+
+<p style='margin-left:30.0pt'>An Actuator is represented in the API by an <u>SampleAction</u>
+object, which <i>must</i> subclass <u>org.cougaar.coordinator.Action</u>. The
+actuator name for the ActuatorType as it appears in the
+SampleDefense_SampleActuator file must match the fully qualified classname
+(including path). E.g., </p>
+
+<p style='margin-left:60.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;ActuatorType
+name=&quot;<span style='color:red'>org.cougaar.coordinator.examples.SampleDefense.SampleAction</span>&quot;
+</span></p>
+
+<p style='margin-left:1.25in'><span style='font-size:10.0pt;font-family:"Courier New"'>affectsAssetType=&quot;Agent&quot;
+</span></p>
+
+<p style='margin-left:1.25in'><span style='font-size:10.0pt;font-family:"Courier New"'>affectsStateDimension=&quot;Compromised&quot;
+</span></p>
+
+<p style='margin-left:60.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>actionType=&quot;CORRECTIVE&quot;&gt;</span></p>
+
+<p style='margin-left:30.0pt'>&nbsp;This part of the TechSpec also defines the
+asset type (in this case &quot;agent&quot;) over which the actuator operates.
+The Defense should publish a SampleAction object for each agent under the
+jurisdiction of the Defense (e.g., each agent in the enclave on which the
+Defense can act).</p>
+
+<p style='margin-left:30.0pt'>One of the possible actions that the SampleAction
+can perform is defined in the ActuatorTechSpec as follows:</p>
+
+<p style='margin-left:60.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;<span
+style='color:red'>Action name=&quot;Quarantine&quot;&gt;</span></span></p>
+
+<p style='margin-left:1.25in'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;Description
+value=&quot;Quarantine the Agent so it can do no harm&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:1.25in'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;Transition
+WhenActualStateIs=&quot;Yes&quot; EndStateWillBe=&quot;Isolated&quot;
+IntermediateStateWillBe=&quot;Yes&quot; &gt;<o:p></o:p></span></p>
+
+<p style='margin-left:120.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;OneTimeCost&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:150.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;CPU
+intensity=&quot;MEDIUM&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:150.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;Memory
+intensity=&quot;MEDIUM&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:150.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;Time
+duration=&quot;10000&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:120.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;/OneTimeCost&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:150.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;ContinuingCost&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:150.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;CPU
+intensity=&quot;MEDIUM&quot; msgSizeFactor=&quot;TRUE&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:150.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;Bandwidth
+intensity=&quot;MEDIUM&quot; msgSizeFactor=&quot;TRUE&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:120.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;/ContinuingCost&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:1.25in'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;/Transition&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:1.25in'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;Transition
+WhenActualStateIs=&quot;No&quot; EndStateWillBe=&quot;Isolated&quot; IntermediateStateWillBe=&quot;No&quot;
+&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:120.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;OneTimeCost&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:150.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;CPU
+intensity=&quot;MEDIUM&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:150.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;Memory
+intensity=&quot;MEDIUM&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:150.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;Time
+duration=&quot;10000&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:120.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;/OneTimeCost&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:150.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;ContinuingCost&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:150.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;CPU
+intensity=&quot;MEDIUM&quot; msgSizeFactor=&quot;TRUE&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:150.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;Bandwidth
+intensity=&quot;MEDIUM&quot; msgSizeFactor=&quot;TRUE&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:120.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;/ContinuingCost&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:1.25in'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;/Transition&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:1.25in'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;Transition
+WhenActualStateIs=&quot;Isolated&quot; EndStateWillBe=&quot;Isolated&quot;
+IntermediateStateWillBe=&quot;Isolated&quot; &gt;<o:p></o:p></span></p>
+
+<p style='margin-left:120.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;OneTimeCost&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:150.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;CPU
+intensity=&quot;MEDIUM&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:150.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;Memory
+intensity=&quot;MEDIUM&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:150.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;Time
+duration=&quot;10000&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:120.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;/OneTimeCost&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:120.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;ContinuingCost&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:150.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;CPU
+intensity=&quot;MEDIUM&quot; msgSizeFactor=&quot;TRUE&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:150.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;Bandwidth
+intensity=&quot;MEDIUM&quot; msgSizeFactor=&quot;TRUE&quot; /&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:120.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;/ContinuingCost&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:1.25in'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;/Transition&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:60.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>&lt;/Action&gt;<o:p></o:p></span></p>
+
+<p style='margin-left:30.0pt'>This spec defines the action named
+&quot;Quarantine&quot; and describes what the action does as a set of state
+transitions over the possible states(defined in an AssetType TechSpec) <span
+style="mso-spacerun: yes"> </span>over which the actuator operates. The
+transitions also describe the costs associtaed with performing the transition.</p>
+
+<p style='margin-left:30.0pt'>For implementing the Actuator API, the details of
+the state transitions are not necessary although they should be reviewed with
+us as a sanity check on the TechSpec. What is important is the names of the
+actions that are defined for the Actuator. In this example, they are
+&quot;Quarantine&quot; and &quot;Release&quot; (not shown, but similar in structure).
 </p>
-<p style="margin-left: 40px;">The Coordinator exercises control by
-providing a Set of "permitted
-actions" from the Set of offered actions. An empty Set is allowed and
-means that no actions are permitted. The permitted actions can be
-gotten by the Actuator using:</p>
-<div style="margin-left: 40px;">
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> public Set getPermittedValues ( )</p>
-</font></div>
-<font face="Courier New" size="2"></font>
-</div>
-<div style="margin-left: 40px;"></div>
-<p style="margin-left: 40px;">Actions can be enabled as a matter of
-course. In other words,
-actions can be "pre-authorized" so that an Actuator can take them
-whenever it chooses to do so. This is in addition to the case where
-actions are suppressed until explicitly authorized in response to a
-change in asset state. Which of these options is taken largely depends
-on whether the Actuator needs to respond quickly to a situation and
-whether the action being authorized is heavyweight. Expensive actions
-generally will not be pre-authorized.</p>
-<div style="margin-left: 40px;"></div>
-<div style="margin-left: 40px;">When an Actuator decides to take one of
-the permitted actions, it
-should make this known to the Coordinator by calling the following:<br>
-</div>
-<div style="margin-left: 80px;"><span style="font-family: monospace;"><br>
-protected void start(Object actionValue) throws
-IllegalValueException {</span> </div>
-<div style="margin-left: 40px;"></div>
-<dir style="margin-left: 40px;">
-<dir>
-<dir><font face="Courier New" size="2"></font><font face="Courier New"
- size="2"></font>
-</dir>
-</dir>
-</dir>
-<div style="margin-left: 40px;"></div>
-<p style="margin-left: 40px;">When an action completes, the Actuator
-should call one of the
-following:</p>
-<div style="margin-left: 40px;">
-<div style="margin-left: 40px;"><font face="Courier New" size="2">
-<p> protected void stop() throws NoStartedActionException </p>
-<p> </p>
-<p> protected void stop(CompletionCode completionCode) throws
-IllegalValueException, NoStartedActionException </p>
-</font></div>
-<font face="Courier New" size="2"></font>
-</div>
-<p style="margin-left: 40px;">These inform the Coordinator that the
-previous action has completed
-and sets a timestamp. The former just says that the action has
-completed, the latter allows the optional setting of a completion code.</p>
-<ol start="5">
-  <li><span style="font-family: arial,helvetica;"><span
- style="font-weight: bold;">Overlays</span></span></li>
+
+<p style='margin-left:30.0pt'>A SampleAction is constructed by:</p>
+
+<p style='margin-left:60.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>public
+SampleAction(String assetName, ServiceBroker serviceBroker)<o:p></o:p></span></p>
+
+<p style='margin-left:1.25in'><span style='font-size:10.0pt;font-family:"Courier New"'>throws
+TechSpecNotFoundException <o:p></o:p></span></p>
+
+<p style='margin-left:60.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>public
+SampleAction(String assetName, Set initialValuesOffered, ServiceBroker
+serviceBroker)<o:p></o:p></span></p>
+
+<p style='margin-left:1.25in'><span style='font-size:10.0pt;font-family:"Courier New"'>throws
+IllegalValueException, TechSpecNotFoundException <o:p></o:p></span></p>
+
+<p style='margin-left:30.0pt'>The former creates a SampleDiagnosis in which no
+actions are initially offered as being available, while the latter allows a Set
+of offered actions to be provided. These must come from the actions defined in
+the TechSpec and are enforced.</p>
+
+<p class=MsoNormal style='margin-left:30.0pt'>When an Actuator wishes to offer
+an action for selection by the Coordinator (i.e., is currently capable of
+performing the action if authorized by the Coordinator), it calls:</p>
+
+<p class=MsoNormal style='margin-left:60.0pt'><br>
+<span style='font-size:10.0pt;mso-bidi-font-size:12.0pt;font-family:"Courier New"'>protected
+void setValuesOffered(Set values) throws IllegalValueException</span><span
+style='font-size:10.0pt;mso-bidi-font-size:12.0pt'><o:p></o:p></span></p>
+
+<p style='margin-left:30.0pt'>As before, the values offered must correspond to
+those defined in the TechSpec (in this case &quot;Quarantine&quot; or
+&quot;Release&quot;). An empty set is legitimate and means that NONE of the
+possible actions are currently offered.</p>
+
+<p style='margin-left:30.0pt'>The Coordinator exercises control by providing a
+Set of &quot;permitted actions&quot; from the Set of offered actions. An empty
+Set is allowed and means that no actions are permitted. The permitted actions
+can be gotten by the Actuator using:</p>
+
+<p style='margin-left:60.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>public
+Set getPermittedValues ( )<o:p></o:p></span></p>
+
+<p style='margin-left:30.0pt'>Actions can be enabled as a matter of course. In
+other words, actions can be &quot;pre-authorized&quot; so that an Actuator can
+take them whenever it chooses to do so. This is in addition to the case where
+actions are suppressed until explicitly authorized in response to a change in
+asset state. Which of these options is taken largely depends on whether the
+Actuator needs to respond quickly to a situation and whether the action being
+authorized is heavyweight. Expensive actions generally will not be
+pre-authorized.</p>
+
+<p class=MsoNormal style='margin-left:30.0pt'>When an Actuator decides to take
+one of the permitted actions, it should make this known to the Coordinator by
+calling the following:</p>
+
+<p class=MsoNormal style='margin-left:60.0pt'><span style='font-family:"Courier New"'><br>
+protected void start(Object actionValue) throws IllegalValueException {</span> </p>
+
+<p style='margin-left:30.0pt'>When an action completes, the Actuator should
+call one of the following:</p>
+
+<p style='margin-left:60.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>protected
+void stop() throws NoStartedActionException <o:p></o:p></span></p>
+
+<p style='margin-left:60.0pt'><span style='font-size:10.0pt;font-family:"Courier New"'>protected
+void stop(CompletionCode completionCode) throws IllegalValueException,
+NoStartedActionException <o:p></o:p></span></p>
+
+<p style='margin-left:30.0pt'>These inform the Coordinator that the previous
+action has completed and sets a timestamp. The former just says that the action
+has completed, the latter allows the optional setting of a completion code.</p>
+
+<ol start=5 type=1>
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l10 level1 lfo4;tab-stops:list .5in'><b><span style='font-family:
+     Arial'>Overlays</span></b></li>
 </ol>
-<div style="margin-left: 40px;">The Coordinator is provided in two
-overlays:<br>
-<br>
-<div style="margin-left: 40px;"><a
- href="https://cvs.ultralog.net/dist/AR_telcordia_coordinator_HEAD_B11_0.zip">https://cvs.ultralog.net/dist/AR_telcordia_coordinator_HEAD_B11_0.zip</a><br>
-<a
- href="https://cvs.ultralog.net/dist/AR_objs_Coordinator_HEAD_B11_0.zip">https://cvs.ultralog.net/dist/AR_objs_Coordinator_HEAD_B11_0.zip</a><br>
-<br>
-</div>
-Because the Coordinator currently depends on the CommunityStatusModel,
-which is
-populated by MIC's ARUC1 defense, the following overlays are also
-required:<br>
-<br>
-<div style="margin-left: 40px;"><a
- href="https://cvs.ultralog.net/dist/AR_mic_B11_0_B11_0.zip">https://cvs.ultralog.net/dist/AR_mic_B11_0_B11_0.zip</a><br>
+
+<p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:12.0pt;
+margin-left:30.0pt'>The Coordinator is provided in two overlays:</p>
+
+<p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:12.0pt;
+margin-left:60.0pt'><a
+href="https://cvs.ultralog.net/dist/AR_telcordia_coordinator_HEAD_B11_0.zip">https://cvs.ultralog.net/dist/AR_telcordia_coordinator_HEAD_B11_0.zip</a><br>
+<a href="https://cvs.ultralog.net/dist/AR_objs_Coordinator_HEAD_B11_0.zip">https://cvs.ultralog.net/dist/AR_objs_Coordinator_HEAD_B11_0.zip</a></p>
+
+<p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:12.0pt;
+margin-left:30.0pt'>Because the Coordinator currently depends on the
+CommunityStatusModel, which is populated by MIC's ARUC1 defense, the following
+overlays are also required:</p>
+
+<p class=MsoNormal style='margin-left:60.0pt'><a
+href="https://cvs.ultralog.net/dist/AR_mic_B11_0_B11_0.zip">https://cvs.ultralog.net/dist/AR_mic_B11_0_B11_0.zip</a><br>
 <a href="https://cvs.ultralog.net/dist/AR_objs_sensors_B11_0_B11_0.zip">https://cvs.ultralog.net/dist/AR_objs_sensors_B11_0_B11_0.zip</a><br>
 <a href="https://cvs.ultralog.net/dist/AR_objs_common_B11_0_B11_0.zip">https://cvs.ultralog.net/dist/AR_objs_common_B11_0_B11_0.zip</a><br>
-<a
- href="https://cvs.ultralog.net/dist/AR_boeing_exnihilo_B11_0_B11_0.zip">https://cvs.ultralog.net/dist/AR_boeing_exnihilo_B11_0_B11_0.zip</a><br>
-<a
- href="https://cvs.ultralog.net/dist/AR_objs_deconfliction_B11_0_B11_0.zip">https://cvs.ultralog.net/dist/AR_objs_deconfliction_B11_0_B11_0.zip</a><br>
-</div>
+<a href="https://cvs.ultralog.net/dist/AR_boeing_exnihilo_B11_0_B11_0.zip">https://cvs.ultralog.net/dist/AR_boeing_exnihilo_B11_0_B11_0.zip</a><br>
+<a href="https://cvs.ultralog.net/dist/AR_objs_deconfliction_B11_0_B11_0.zip">https://cvs.ultralog.net/dist/AR_objs_deconfliction_B11_0_B11_0.zip</a></p>
+
+<p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:12.0pt;
+margin-left:30.0pt'><br>
+In addition to overlays above, if running under ACME with a 1-AD or 1-UA
+society, the following additional overlays are required:</p>
+
+<p class=MsoNormal style='margin-left:60.0pt'><a
+href="https://ultraforge.ultralog.net/dist/AR_common_B11_0_B11_0.zip">https://ultraforge.ultralog.net/dist/AR_common_B11_0_B11_0.zip</a><br>
 <br>
-In addition to overlays above, if running under ACME with a 1-AD or
-1-UA society, the following additional overlays are required:<br>
-<br>
-<div style="margin-left: 40px;">
-</div>
-</div>
-<div style="margin-left: 80px;"> <a
- href="https://ultraforge.ultralog.net/dist/AR_common_B11_0_B11_0.zip">https://ultraforge.ultralog.net/dist/AR_common_B11_0_B11_0.zip</a><br>
-<br>
-<a
- href="https://ultraforge.ultralog.net/dist/isat_plugins_HEAD_B11_0.zip">https://ultraforge.ultralog.net/dist/isat_plugins_HEAD_B11_0.zip</a><br>
+<a href="https://ultraforge.ultralog.net/dist/isat_plugins_HEAD_B11_0.zip">https://ultraforge.ultralog.net/dist/isat_plugins_HEAD_B11_0.zip</a><br>
 <a href="https://ultraforge.ultralog.net/dist/isat_acme_HEAD_B11_0.zip">https://ultraforge.ultralog.net/dist/isat_acme_HEAD_B11_0.zip</a><br>
-<a
- href="https://ultraforge.ultralog.net/dist/BBN_ulconfigs_B11_0_B11_0.zip">https://ultraforge.ultralog.net/dist/BBN_ulconfigs_B11_0_B11_0.zip</a><br>
+<a href="https://ultraforge.ultralog.net/dist/BBN_ulconfigs_B11_0_B11_0.zip">https://ultraforge.ultralog.net/dist/BBN_ulconfigs_B11_0_B11_0.zip</a><br>
 <a href="https://ultraforge.ultralog.net/dist/AL_bbn_PAD_B11_0.zip">https://ultraforge.ultralog.net/dist/AL_bbn_PAD_B11_0.zip</a><br>
-<a
- href="https://ultraforge.ultralog.net/dist/AL_datagrabber_PAD_B11_0.zip">https://ultraforge.ultralog.net/dist/AL_datagrabber_PAD_B11_0.zip</a><br>
-<a
- href="https://ultraforge.ultralog.net/dist/bbn_commons_HEAD_B11_0.zip">https://ultraforge.ultralog.net/dist/bbn_commons_HEAD_B11_0.zip</a><br>
-</div>
-<br style="font-weight: bold;">
-<div style="margin-left: 40px;"><span
- style="color: rgb(255, 0, 0); font-weight: bold;">At present, the
-Coordinator has only been tested with Cougaar B11_0 and B11_0
-overlays.&nbsp; Testing under 11.2 will begin shortly.</span><br>
-</div>
-<ol start="6">
-  <li><span style="font-family: arial,helvetica;"><span
- style="font-weight: bold;">Configuration</span></span></li>
+<a href="https://ultraforge.ultralog.net/dist/AL_datagrabber_PAD_B11_0.zip">https://ultraforge.ultralog.net/dist/AL_datagrabber_PAD_B11_0.zip</a><br>
+<a href="https://ultraforge.ultralog.net/dist/bbn_commons_HEAD_B11_0.zip">https://ultraforge.ultralog.net/dist/bbn_commons_HEAD_B11_0.zip</a></p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal style='margin-left:30.0pt'><b><span style='color:red'>At
+present, the Coordinator has only been tested with Cougaar B11_0 and B11_0
+overlays.&nbsp; Testing under 11.2 will begin shortly.</span></b></p>
+
+<ol start=6 type=1>
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l11 level1 lfo5;tab-stops:list .5in'><b><span style='font-family:
+     Arial'>Configuration</span></b></li>
 </ol>
-<div style="margin-left: 40px;">Two configurations for the
-SampleDefense are provided, one for running from ini files, one for
-running under ACME.<br>
+
+<p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:12.0pt;
+margin-left:30.0pt'>Two configurations for the SampleDefense are provided, one
+for running from ini files, one for running under ACME.<br>
 <br>
-<span style="font-weight: bold; text-decoration: underline;">INI files</span><br>
-<br>
-<div style="margin-left: 40px;">In the directory
-$CIP/coordinator/examples/SampleDefense are definitions for 5 agents, a
-ManagementAgent, and three Nodes, and a communities.xml community
-definition file.&nbsp; There are also two bat files.&nbsp; runNodes.bat
-and
-runOneNode.bat (Linus users roll your own sh scripts).&nbsp; The former
-starts two nodes, ManagementAgentNode and T1, each with two test
-agents, and the former also containing the ManagementAgent. The latter
-starts only one node ManagementAgentNodeNoAgents, containing only a
+<b><u>INI files</u></b></p>
+
+<p class=MsoNormal style='margin-left:60.0pt'>In the directory $CIP/coordinator/examples/SampleDefense
+are definitions for 5 agents, a ManagementAgent, and three Nodes, and a
+communities.xml community definition file.&nbsp; There are also two bat
+files.&nbsp; runNodes.bat and runOneNode.bat (Linus users roll your own sh
+scripts).&nbsp; The former starts two nodes, ManagementAgentNode and T1, each
+with two test agents, and the former also containing the ManagementAgent. The
+latter starts only one node ManagementAgentNodeNoAgents, containing only a
 single agent, the ManagementAgent.&nbsp; <br>
 <br>
 The Coordinator currently depends on the CommunityStatusModel, which is
-populated by MIC's ARUC1 defense, so you'll notice that the ARUC1
-defense is partially installed in these ini files.<br>
+populated by MIC's ARUC1 defense, so you'll notice that the ARUC1 defense is
+partially installed in these ini files.<br>
 <br>
-Other than an up-to-date installation of Cougaar B11_0 and the first
-two sets of overlays listed above, the only config changes required to
-run the ini file configuration are to prepend the following directories
-to your <span style="font-family: monospace;">org.cougaar.config.path</span>
-property:<br>
-</div>
-</div>
-<ul style="font-family: monospace; margin-left: 80px;">
-  <li>$COUGAAR_INSTALL_PATH/coordinator/examples/SampleDefense <br>
-  </li>
-  <li>$COUGAAR_INSTALL_PATH/configs/coordinator</li>
-  <li>$COUGAAR_INSTALL_PATH/configs/coordinator/SampleDefense</li>
-</ul>
-<div style="margin-left: 80px;">Windows users can set the config path
-as follows in your <span style="font-family: monospace;">$CIP/bin/setarguments.bat.</span><br>
-<span style="font-family: monospace;"></span><br>
-<span style="font-family: monospace;"></span>
-</div>
-<div style="margin-left: 120px;">&nbsp;-Dorg.cougaar.config.path="%COUGAAR_INSTALL_PATH%\coordinator\examples/SampleDefense\;%COUGAAR_INSTALL_PATH%\configs\coordinator\;%COUGAAR_INSTALL_PATH%\configs\coordinator\SampleDefense\;%COUGAAR_INSTALL_PATH%\configs\common\;%COUGAAR_INSTALL_PATH%\configs\glmtrans\;"<br>
-</div>
-<div style="margin-left: 80px;"><br>
-To see maximum debug output, add the following to your logging config
-file (e.g. $CIP/configs/common/loggingConfig.conf):<br>
-<br>
-<div style="margin-left: 40px;"><span style="font-family: monospace;">log4j.category.org.cougaar.coordinator=DETAIL#org.cougaar.util.log.log4j.DetailPriority</span><br>
-</div>
-</div>
-<span style="font-family: monospace;"><br>
-</span>
-<div style="margin-left: 40px;"><span
- style="font-weight: bold; text-decoration: underline;">ACME</span><br>
-</div>
-<br>
-<div style="margin-left: 80px;">Assuming all the overlays above have
-been loaded, configuration under ACME requires the following rules be
+Other than an up-to-date installation of Cougaar B11_0 and the first two sets
+of overlays listed above, the only config changes required to run the ini file
+configuration are to prepend the following directories to your <span
+style='font-family:"Courier New"'>org.cougaar.config.path</span> property:</p>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:60.0pt;text-indent:-.25in;mso-list:l9 level1 lfo6;tab-stops:list .5in'><![if !supportLists]><span
+style='font-size:10.0pt;mso-bidi-font-size:12.0pt;font-family:Symbol;
+mso-bidi-font-family:"Courier New"'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><![endif]><span style='font-family:"Courier New"'>$COUGAAR_INSTALL_PATH/coordinator/examples/SampleDefense
+<o:p></o:p></span></p>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:60.0pt;text-indent:-.25in;mso-list:l9 level1 lfo6;tab-stops:list .5in'><![if !supportLists]><span
+style='font-size:10.0pt;mso-bidi-font-size:12.0pt;font-family:Symbol;
+mso-bidi-font-family:"Courier New"'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><![endif]><span style='font-family:"Courier New"'>$COUGAAR_INSTALL_PATH/configs/coordinator<o:p></o:p></span></p>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:60.0pt;text-indent:-.25in;mso-list:l9 level1 lfo6;tab-stops:list .5in'><![if !supportLists]><span
+style='font-size:10.0pt;mso-bidi-font-size:12.0pt;font-family:Symbol;
+mso-bidi-font-family:"Courier New"'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><![endif]><span style='font-family:"Courier New"'>$COUGAAR_INSTALL_PATH/configs/coordinator/SampleDefense<o:p></o:p></span></p>
+
+<p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:12.0pt;
+margin-left:60.0pt'>Windows users can set the config path as follows in your <span
+style='font-family:"Courier New"'>$CIP/bin/setarguments.bat.</span></p>
+
+<p class=MsoNormal style='margin-left:1.25in'>&nbsp;-Dorg.cougaar.config.path=&quot;%COUGAAR_INSTALL_PATH%\coordinator\examples/SampleDefense\;%COUGAAR_INSTALL_PATH%\configs\coordinator\;%COUGAAR_INSTALL_PATH%\configs\coordinator\SampleDefense\;%COUGAAR_INSTALL_PATH%\configs\common\;%COUGAAR_INSTALL_PATH%\configs\glmtrans\;&quot;</p>
+
+<p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:12.0pt;
+margin-left:60.0pt'><br>
+To see maximum debug output, add the following to your logging config file
+(e.g. $CIP/configs/common/loggingConfig.conf):</p>
+
+<p class=MsoNormal style='margin-left:1.25in'><span style='font-family:"Courier New"'>log4j.category.org.cougaar.coordinator=DETAIL#org.cougaar.util.log.log4j.DetailPriority</span></p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal style='margin-left:30.0pt'><b><u>ACME</u></b></p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal style='margin-left:60.0pt'>Assuming all the overlays above
+have been loaded, configuration under ACME requires the following rules be
 applied:<br>
 <br>
-<span style="font-family: monospace;">&nbsp; - rules:</span><br
- style="font-family: monospace;">
-<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; -
-$CIP/csmart/config/rules/isat</span><br style="font-family: monospace;">
-<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; -
-$CIP/csmart/config/rules/yp</span><br style="font-family: monospace;">
-<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; -
-$CIP/csmart/config/rules/logistics</span><br
- style="font-family: monospace;">
-<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; -
-$CIP/csmart/config/rules/robustness<br>
-</span><span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; -
-$CIP/csmart/config/rules/robustness/uc1</span><br
- style="font-family: monospace;">
-<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; -
-$CIP/csmart/config/rules/robustness/uc9</span><br>
-<span style="font-family: monospace;"><br>
-</span><span style="font-family: monospace;"># this one loads the
-Coordinator's plugins into each ARManager and a subset into each Node.</span><br
- style="font-family: monospace;">
-<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; -
-$CIP/csmart/config/rules/coordinator&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<span style='font-family:"Courier New"'>&nbsp; - rules:<br>
+&nbsp;&nbsp;&nbsp; - $CIP/csmart/config/rules/isat<br>
+&nbsp;&nbsp;&nbsp; - $CIP/csmart/config/rules/yp<br>
+&nbsp;&nbsp;&nbsp; - $CIP/csmart/config/rules/logistics<br>
+&nbsp;&nbsp;&nbsp; - $CIP/csmart/config/rules/robustness<br>
+&nbsp;&nbsp;&nbsp; - $CIP/csmart/config/rules/robustness/uc1<br>
+&nbsp;&nbsp;&nbsp; - $CIP/csmart/config/rules/robustness/uc9</span><br>
+<span style='font-family:"Courier New"'><br>
+# this one loads the Coordinator's plugins into each ARManager and a subset
+into each Node.<br>
+&nbsp;&nbsp;&nbsp; -
+$CIP/csmart/config/rules/coordinator&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br>
 <br>
-<br>
-# this one loads the SampleDefense's plugins and servlet into all
-Agents (incl. the ARManager) and Nodes, and its TechSpecs into the
-ARManager and each Node.
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><br
- style="font-family: monospace;">
-<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; -
+# this one loads the SampleDefense's plugins and servlet into all Agents (incl.
+the ARManager) and Nodes, and its TechSpecs into the ARManager and each Node.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br>
+&nbsp;&nbsp;&nbsp; -
 $CIP/csmart/config/rules/coordinator/examples/sample_defense<br>
 <br>
-# this one loads several plugins, servlets and TechSpecs we find useful
-for testing and debugging the defenses.&nbsp; These are not required to
-run Coordinator or the SampleDefense. <br
- style="font-family: monospace;">
-</span><span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; -
-$CIP/csmart/config/rules/coordinator/test</span><br
- style="font-family: monospace;">
-<span style="font-family: monospace;"></span><br
- style="font-family: monospace;">
-<span style="font-family: monospace;">&nbsp; - community_rules:</span><br
- style="font-family: monospace;">
-<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; -
-$CIP/csmart/config/rules/robustness/communities</span><br>
-</div>
-<ol start="6">
-  <li style="font-weight: bold;">Running the SampleDefense</li>
+# this one loads several plugins, servlets and TechSpecs we find useful for
+testing and debugging the defenses.&nbsp; These are not required to run
+Coordinator or the SampleDefense. <br>
+&nbsp;&nbsp;&nbsp; - $CIP/csmart/config/rules/coordinator/test<br>
+<br>
+&nbsp; - community_rules:<br>
+&nbsp;&nbsp;&nbsp; - $CIP/csmart/config/rules/robustness/communities</span></p>
+
+<ol start=6 type=1>
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l4 level1 lfo7;tab-stops:list .5in'><b>Running the SampleDefense<o:p></o:p></b></li>
 </ol>
-<div style="margin-left: 40px;">To start the SampleDefense using the
-ini file config, just run one of the bat files in <span
- style="font-family: monospace;">$CIP/coordinator/examples/SampleDefens</span>e.<br>
+
+<p class=MsoNormal style='margin-left:45.0pt'>To start the SampleDefense using
+the ini file config, just run one of the bat files in <span style='font-family:
+"Courier New"'>$CIP/coordinator/examples/SampleDefens</span>e.<br>
 <br>
-To start under ACME, run a script with the rules above included.&nbsp;
-The following sample script is provided for Small 1-AD:<br>
-<div style="margin-left: 40px;"><br>
-<span style="font-family: monospace;">$CIP/csmart/scripts/definitions/robustness/objsSmall-Stop-PostStage1-Coordinator.rb</span><br>
-</div>
-</div>
-<div style="margin-left: 40px;"><br>
-Once the agents are up and registered with the CommunityService
-(normally 2-5 minutes in our ini file runs, or after planning is
-started and defenses unleashed with 1-AD/UA societies under ACME),
-bring up the SampleServlet in your browser as
-follows:<br>
-<br>
-<div style="margin-left: 40px;"><a
- href="http://localhost:8800/$TestAgent/SampleDefense">http://localhost:8800/$TestAgent/SampleDefense</a><br>
-</div>
-<br>
+To start under ACME, run a script with the rules above included.&nbsp; The
+following sample script is provided for Small 1-AD:</p>
+
+<p class=MsoNormal style='margin-left:60.0pt'><br>
+<span style='font-family:"Courier New"'>$CIP/csmart/scripts/definitions/robustness/objsSmall-Stop-PostStage1-Coordinator.rb</span></p>
+
+<p class=MsoBodyTextIndent style='margin-left:45.0pt'><br>
+Once the agents are up and registered with the CommunityService (normally 2-5
+minutes in our ini file runs, or after planning is started and defenses
+unleashed with 1-AD/UA societies under ACME), bring up the SampleServlet in
+your browser as follows:</p>
+
+<p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:12.0pt;
+margin-left:1.5in'><a href="http://localhost:8800/$TestAgent/SampleDefense">http://localhost:8800/$TestAgent/SampleDefense</a></p>
+
+<p class=MsoNormal style='margin-top:0in;margin-right:0in;margin-bottom:12.0pt;
+margin-left:30.0pt'><br>
 The servlet should look like::<br>
 <br>
-<img src="SampleServlet.jpg" title="" alt=""
- style="width: 766px; height: 1010px;"><br>
+<img border=0 width=766 height=1010 id="_x0000_i1025" src=SampleServlet.jpg
+title=""><br>
 <br>
-To exercise it try the following in sequnce:<br>
-<br>
-<ol>
-  <li>Select both of the items in the Sample Action's (bottom 1/2 of
-servlet) PossibleValues menu and press the "Set Values Offered"
-button.&nbsp; The two values should be displayed in the ValuesOffered
-menu along with the phrase <b><font color="Blue">"Values Offered
-updated."</font></b>, and the Coordinator will be notified that the
-SampleAction in this agent is able and willing to execute those
-actions.&nbsp; (Note: the servlet updates every 10 seconds, so make
-sure your selections are still highlighted when you press the button.)<br>
-  </li>
-  <li>The current value of the SampleDiagnosis is "Secure".&nbsp; Given
-that and the current TechSpecs, the Coordinator will not decide any
-action by the SampleActuator is appropriate, so no PermittedValues will
-be set.</li>
-  <li>Now select "Compromised" from the Sample Diagnosis's (top half of
-servlet) PossibleValues menu and press the "Set Sensor Value"
-button.&nbsp; Immediately. t<span style="color: rgb(0, 0, 0);">he </span><font
- color="Blue" style="color: rgb(0, 0, 0);">phrase </font><b><font
- color="Blue">"Sensor Value updated."</font></b><font color="Blue"><span
- style="color: rgb(0, 0, 0);"> will be displayed, the </span></font><b>"Current
-Sensor Value" </b>will change to&nbsp; "Compromised" and the new
-Sensor value will be relayed to Coordinator.&nbsp; (Note, the <b><font
- color="Blue">"Sensor Value updated." </font></b><font color="Blue"><span
- style="color: rgb(0, 0, 0);">will disappear after the next refresh.)</span><br>
-    </font></li>
-  <li>Given the probabilities in the TechSpecs, and the current
-ValuesOffered, the Coordinator should select a new PermittedValue,
-"Quarantine", and relay it back to the SampleAction in this
-agent.&nbsp; When the servlet refreshes, it should be displayed in the
-list of PermittedValues.&nbsp; [Note: depending on the timing values in
-the TechSpecs and how long you waiting to press the buttons, its
-possible that the Coordinator will not believe the diagnosis
-sufficiently to recommend "Quarantine".&nbsp; If "Quarantine" is not
-displayed, try diagnosing is again by repeating Step #3.</li>
-  <li>Now indicate to the Coordinator that the Actuator is executing
-the Permitted Action by selecting "Quarantine" from the list of
-PermittedValues and pressing the Start button. <br>
-  </li>
-  <li><b><font color="Blue">"Action Quarantine Started.</font></b><b>" </b>will
-be displayed immediately and "<b>Current Action:" </b>will display<b> "</b>Quarantine".</li>
-  <li>Now select "COMPLETED" from the Completion Codes menu and press
-the Stop button.</li>
-  <li><b><font color="Blue">"Action COMPLETED." </font></b><font
- color="Blue" style="color: rgb(0, 0, 0);">will be displayed
-immediately and </font><b><font color="Blue">"</font></b><b>Current
-CompletionCode:" </b>will display <b>"</b>COMPLETED".</li>
-  <li>You're on your own.&nbsp; You might try setting the Diagnosis to
-"Secure" and see if the Coordinator believes you and recommends
-"Release".&nbsp; It might take several attempts before it does.</li>
+To exercise it try the following in sequnce:</p>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:66.0pt;text-indent:-.25in;mso-list:l2 level1 lfo8;tab-stops:list .5in'><![if !supportLists]>1.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><![endif]>Select
+both of the items in the Sample Action's (bottom 1/2 of servlet) PossibleValues
+menu and press the &quot;Set Values Offered&quot; button.&nbsp; The two values
+should be displayed in the ValuesOffered menu along with the phrase <b><span
+style='color:blue'>&quot;Values Offered updated.&quot;</span></b>, and the
+Coordinator will be notified that the SampleAction in this agent is able and
+willing to execute those actions.&nbsp; (Note: the servlet updates every 10
+seconds, so make sure your selections are still highlighted when you press the
+button.)</p>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:66.0pt;text-indent:-.25in;mso-list:l2 level1 lfo8;tab-stops:list .5in'><![if !supportLists]>2.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><![endif]>The
+current value of the SampleDiagnosis is &quot;Secure&quot;.&nbsp; Given that
+and the current TechSpecs, the Coordinator will not decide any action by the
+SampleActuator is appropriate, so no PermittedValues will be set.</p>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:66.0pt;text-indent:-.25in;mso-list:l2 level1 lfo8;tab-stops:list .5in'><![if !supportLists]>3.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><![endif]>Now
+select &quot;Compromised&quot; from the Sample Diagnosis's (top half of
+servlet) PossibleValues menu and press the &quot;Set Sensor Value&quot;
+button.&nbsp; Immediately. t<span style='color:black'>he phrase </span><b><span
+style='color:blue'>&quot;Sensor Value updated.&quot;</span></b><span
+style='color:black'> will be displayed, the </span><b>&quot;Current Sensor
+Value&quot; </b>will change to&nbsp; &quot;Compromised&quot; and the new Sensor
+value will be relayed to Coordinator.&nbsp; (Note, the <b><span
+style='color:blue'>&quot;Sensor Value updated.&quot; </span></b><span
+style='color:black'>will disappear after the next refresh.)</span></p>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:66.0pt;text-indent:-.25in;mso-list:l2 level1 lfo8;tab-stops:list .5in'><![if !supportLists]>4.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><![endif]>Given
+the probabilities in the TechSpecs, and the current ValuesOffered, the
+Coordinator should select a new PermittedValue, &quot;Quarantine&quot;, and
+relay it back to the SampleAction in this agent.&nbsp; When the servlet
+refreshes, it should be displayed in the list of PermittedValues.&nbsp; [Note:
+depending on the timing values in the TechSpecs and how long you waiting to
+press the buttons, its possible that the Coordinator will not believe the
+diagnosis sufficiently to recommend &quot;Quarantine&quot;.&nbsp; If
+&quot;Quarantine&quot; is not displayed, try diagnosing is again by repeating
+Step #3.</p>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:66.0pt;text-indent:-.25in;mso-list:l2 level1 lfo8;tab-stops:list .5in'><![if !supportLists]>5.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><![endif]>Now
+indicate to the Coordinator that the Actuator is executing the Permitted Action
+by selecting &quot;Quarantine&quot; from the list of PermittedValues and
+pressing the Start button. </p>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:66.0pt;text-indent:-.25in;mso-list:l2 level1 lfo8;tab-stops:list .5in'><![if !supportLists]>6.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><![endif]><b><span
+style='color:blue'>&quot;Action Quarantine Started.</span>&quot; </b>will be
+displayed immediately and &quot;<b>Current Action:&quot; </b>will display<b>
+&quot;</b>Quarantine&quot;.</p>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:66.0pt;text-indent:-.25in;mso-list:l2 level1 lfo8;tab-stops:list .5in'><![if !supportLists]>7.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><![endif]>Now
+select &quot;COMPLETED&quot; from the Completion Codes menu and press the Stop
+button.</p>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:66.0pt;text-indent:-.25in;mso-list:l2 level1 lfo8;tab-stops:list .5in'><![if !supportLists]>8.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><![endif]><b><span
+style='color:blue'>&quot;Action COMPLETED.&quot; </span></b><span
+style='color:black'>will be displayed immediately and </span><b><span
+style='color:blue'>&quot;</span>Current CompletionCode:&quot; </b>will display <b>&quot;</b>COMPLETED&quot;.</p>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:66.0pt;text-indent:-.25in;mso-list:l2 level1 lfo8;tab-stops:list .5in'><![if !supportLists]>9.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><![endif]>You're
+on your own.&nbsp; You might try setting the Diagnosis to &quot;Secure&quot;
+and see if the Coordinator believes you and recommends
+&quot;Release&quot;.&nbsp; It might take several attempts before it does.</p>
+
+<ol start=6 type=1>
+ <li class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+     mso-list:l0 level1 lfo9;tab-stops:list .5in'><b><span style='font-family:
+     Arial'>Notes</span></b></li>
 </ol>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:30.0pt;text-indent:-.25in;mso-list:l3 level1 lfo10;tab-stops:list .5in'><![if !supportLists]>1.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span><![endif]>All the source for the SampleDefense is
+src/examples/SampleDefense directory. Get it from the Dashboard:</p>
+
+<p class=MsoNormal style='margin-left:60.0pt'>&nbsp; <a
+href="https://cvs.ultralog.net/src/Robustness_objs_Coordinator_HEAD_B11_0_src.zip">https://cvs.ultralog.net/src/Robustness_objs_Coordinator_HEAD_B11_0_src.zip</a></p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal style='margin-left:60.0pt'>or cvs
+(root=/cvs/robustness/objs, module=Coordinator).&nbsp; As mentioned above, the
+SampleDefense TechSpecs are in $CIP/configs/coordinator/SampleDefense. Our
+claim is that no knowledge of or changes to any other Coordinator code should
+be required to implement other Defenses conforming to the Coordinator
+API.&nbsp; Changes to the TechSpecs are likely however.&nbsp; We've taken a
+first crack at sets for the Restart, PlannedDisconnect, and MsgLog Defenses (in
+$CIP/configs/coordinator), just to give developers an idea.&nbsp; We'll work
+with you to get them, and your implementation, correct.</p>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:30.0pt;text-indent:-.25in;mso-list:l6 level1 lfo11;tab-stops:list .5in'><![if !supportLists]>2.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span><![endif]>In the SampleDefense implementation, raw sensor data and raw
+actuator data originates in the SampleServlet and is posted to the Agent's
+blackboard as instances of SampleRawSensorData and SampleRawActuatorData.&nbsp;
+This has nothing to do with the Coordinator or its API.&nbsp;&nbsp; Its an
+attempt to separate the implementation of the Coordinator API from the
+mechanism by which the data is provided.&nbsp; Each Defense already has its own
+mechanism for providing that data.</p>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:30.0pt;text-indent:-.25in;mso-list:l8 level1 lfo12;tab-stops:list .5in'><![if !supportLists]>3.<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span><![endif]>The Coordinator Team is:</p>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:66.0pt;text-indent:-.25in;mso-list:l12 level2 lfo13;tab-stops:list 1.0in'><![if !supportLists]><span
+style='font-family:"Courier New"'>1.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><![endif]><span style='font-family:"Courier New"'>Shilpa Bondale
+&nbsp;&nbsp; <a href="mailto:shilpa@research.telcordia.com">mailto:shilpa@research.telcordia.com</a><o:p></o:p></span></p>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:66.0pt;text-indent:-.25in;mso-list:l12 level2 lfo13;tab-stops:list 1.0in'><![if !supportLists]><span
+style='font-family:"Courier New"'>2.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><![endif]><span style='font-family:"Courier New"'>Marshall
+Brinn&nbsp; &nbsp; <a href="mailto:mbrinn@bbn.com">mailto:mbrinn@bbn.com</a><o:p></o:p></span></p>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:66.0pt;text-indent:-.25in;mso-list:l12 level2 lfo13;tab-stops:list 1.0in'><![if !supportLists]><span
+style='font-family:"Courier New"'>3.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><![endif]><span style='font-family:"Courier New"'>Tony Cassandra
+&nbsp;&nbsp; <a href="mailto:arc@research.telcordia.com">mailto:arc@research.telcordia.com</a><o:p></o:p></span></p>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:66.0pt;text-indent:-.25in;mso-list:l12 level2 lfo13;tab-stops:list 1.0in'><![if !supportLists]><span
+style='font-family:"Courier New"'>4.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><![endif]><span style='font-family:"Courier New"'>Steve
+Ford&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; <a href="mailto:ford@objs.com">mailto:ford@objs.com</a><o:p></o:p></span></p>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:66.0pt;text-indent:-.25in;mso-list:l12 level2 lfo13;tab-stops:list 1.0in'><![if !supportLists]><span
+style='font-family:"Courier New"'>5.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><![endif]><span style='font-family:"Courier New"'>Aaron Helsinger
+&nbsp; <a href="mailto:ahelsing@bbn.com">mailto:ahelsing@bbn.com</a><o:p></o:p></span></p>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:66.0pt;text-indent:-.25in;mso-list:l12 level2 lfo13;tab-stops:list 1.0in'><![if !supportLists]><span
+style='font-family:"Courier New"'>6.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><![endif]><span style='font-family:"Courier New"'>Misty
+Nodine&nbsp;&nbsp; &nbsp;&nbsp; <a href="mailto:nodine@research.telcordia.com">mailto:nodine@research.telcordia.com</a><o:p></o:p></span></p>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:66.0pt;text-indent:-.25in;mso-list:l12 level2 lfo13;tab-stops:list 1.0in'><![if !supportLists]><span
+style='font-family:"Courier New"'>7.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><![endif]><span style='font-family:"Courier New"'>Paul
+Pazandak&nbsp; &nbsp;&nbsp; <a href="mailto:pazandak@objs.com">mailto:pazandak@objs.com</a><o:p></o:p></span></p>
+
+<p class=MsoNormal style='mso-margin-top-alt:auto;mso-margin-bottom-alt:auto;
+margin-left:66.0pt;text-indent:-.25in;mso-list:l12 level2 lfo13;tab-stops:list 1.0in'><![if !supportLists]><span
+style='font-family:"Courier New"'>8.<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span><![endif]><span style='font-family:"Courier New"'>David
+Wells&nbsp;&nbsp; &nbsp; &nbsp; <a href="mailto:wells@objs.com">mailto:wells@objs.com</a><o:p></o:p></span></p>
+
+<p class=MsoNormal style='margin-left:60.0pt'>Please send questions and
+comments to our team's mailing list <a
+href="mailto:ul-architecture@ultralog.net"><span style='font-family:"Courier New"'>mailto:ul-architecture@ultralog.net</span></a></p>
+
+<p class=MsoNormal style='margin-bottom:12.0pt'><br>
+<br>
+<br>
+<br>
+<br>
+<br style='mso-special-character:line-break'>
+<![if !supportLineBreakNewLine]><br style='mso-special-character:line-break'>
+<![endif]></p>
+
 </div>
-<ol start="6">
-  <li><span style="font-family: arial,helvetica;"><span
- style="font-weight: bold;">Notes</span></span><br>
-  </li>
-</ol>
-<ol style="margin-left: 40px;">
-  <li>All the source for the SampleDefense is
-src/examples/SampleDefense directory. Get it from the Dashboard:</li>
-</ol>
-<div style="margin-left: 80px;">&nbsp;
-<a
- href="https://cvs.ultralog.net/src/Robustness_objs_Coordinator_HEAD_B11_0_src.zip">https://cvs.ultralog.net/src/Robustness_objs_Coordinator_HEAD_B11_0_src.zip</a><br>
-</div>
-<br>
-<div style="margin-left: 80px;">or cvs (root=/cvs/robustness/objs,
-module=Coordinator).&nbsp;
-As mentioned above, the SampleDefense TechSpecs are in
-$CIP/configs/coordinator/SampleDefense. Our claim is that no knowledge
-of or changes to any other Coordinator code should be required to
-implement other Defenses conforming to the Coordinator API.&nbsp;
-Changes to
-the TechSpecs are likely however.&nbsp; We've taken a first crack at
-sets
-for the Restart, PlannedDisconnect, and MsgLog Defenses (in
-$CIP/configs/coordinator), just to give developers an idea.&nbsp; We'll
-work
-with you to get them, and your implementation, correct.</div>
-<ol style="margin-left: 40px;" start="2">
-  <li>In the SampleDefense implementation, raw sensor data and raw
-actuator data originates in the SampleServlet and is posted to the
-Agent's blackboard as instances of SampleRawSensorData and
-SampleRawActuatorData.&nbsp; This has nothing to do with the
-Coordinator or its API.&nbsp;&nbsp; Its an attempt to separate the
-implementation of the Coordinator API from the mechanism by which the
-data is provided.&nbsp; Each Defense already has its own mechanism for
-providing that data.<br>
-  </li>
-</ol>
-<ol style="margin-left: 40px;" start="3">
-  <li>The Coordinator Team is:</li>
-</ol>
-<ol style="margin-left: 40px;" start="2">
-  <ol>
-    <li style="font-family: monospace;">Shilpa Bondale &nbsp;&nbsp; <a
- href="mailto:shilpa@research.telcordia.com">mailto:shilpa@research.telcordia.com</a></li>
-    <li style="font-family: monospace;">Marshall Brinn&nbsp; &nbsp; <a
- href="mailto:mbrinn@bbn.com">mailto:mbrinn@bbn.com</a></li>
-    <li style="font-family: monospace;">Tony Cassandra &nbsp;&nbsp; <a
- href="mailto:arc@research.telcordia.com">mailto:arc@research.telcordia.com</a><br>
-    </li>
-    <li style="font-family: monospace;">Steve
-Ford&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; <a
- href="mailto:ford@objs.com">mailto:ford@objs.com</a></li>
-    <li style="font-family: monospace;">Aaron Helsinger &nbsp; <a
- href="mailto:ahelsing@bbn.com">mailto:ahelsing@bbn.com</a></li>
-    <li style="font-family: monospace;">Misty Nodine&nbsp;&nbsp;
-&nbsp;&nbsp; <a href="mailto:nodine@research.telcordia.com">mailto:nodine@research.telcordia.com</a></li>
-    <li style="font-family: monospace;">Paul Pazandak&nbsp;
-&nbsp;&nbsp; <a href="mailto:pazandak@objs.com">mailto:pazandak@objs.com</a></li>
-    <li style="font-family: monospace;">David Wells&nbsp;&nbsp; &nbsp;
-&nbsp; <a href="mailto:wells@objs.com">mailto:wells@objs.com</a></li>
-  </ol>
-</ol>
-<div style="margin-left: 80px;">Please send questions and comments to
-our team's mailing list <a href="mailto:ul-architecture@ultralog.net"
- style="font-family: monospace;">mailto:ul-architecture@ultralog.net</a></div>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
+
 </body>
+
 </html>
