@@ -64,6 +64,10 @@ import java.io.ByteArrayInputStream;
  */
 public class LoadBalancer extends BlackboardClientComponent {
 
+  public static final int DEFAULT_SOLVER_MODE = LoadBalanceRequest.SOLVER_MODE_LOAD_BALANCE;
+  public static final int DEFAULT_ANNEAL_TIME = -1;
+  public static final boolean DEFAULT_HAMMING = true;
+
   private LoggingService logger;
   private MoveHelper moveHelper;
   private RobustnessController controller;
@@ -159,7 +163,28 @@ public class LoadBalancer extends BlackboardClientComponent {
     // submit request to EN plugin and send move requests to moveHelper
     //       upon receipt of EN response
     logger.info("doLoadBalance");
-    LoadBalanceRequest loadBalReq = new LoadBalanceRequest();
+    List newNodes = Collections.EMPTY_LIST;
+    List killedNodes = Collections.EMPTY_LIST;
+    List leaveAsIsNodes = Collections.EMPTY_LIST;
+    doLoadBalance(DEFAULT_HAMMING, newNodes, killedNodes, leaveAsIsNodes);
+    logger.debug("publishing LoadBalanceRequest");
+  }
+
+  public void doLoadBalance(boolean useHamming, List newNodes, List killedNodes, List leaveAsIsNodes) {
+    int solverMode = DEFAULT_SOLVER_MODE;
+    logger.info("doLoadBalance:" +
+                " solverMode=" + solverMode +
+                " useHamming=" + useHamming +
+                " newNodes=" + newNodes +
+                " killedNodes=" + killedNodes +
+                " leaveAsIsNodes=" + leaveAsIsNodes);
+    LoadBalanceRequest loadBalReq =
+        new LoadBalanceRequest(DEFAULT_ANNEAL_TIME,
+                               DEFAULT_SOLVER_MODE,
+                               useHamming,
+                               newNodes,
+                               killedNodes,
+                               leaveAsIsNodes);
     logger.debug("publishing LoadBalanceRequest");
     fireLater(loadBalReq);
   }
