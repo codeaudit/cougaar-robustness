@@ -29,10 +29,10 @@ import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.SchedulerService;
-import org.cougaar.core.service.ThreadService;
+//import org.cougaar.core.service.ThreadService;
 import org.cougaar.core.service.UIDService;
 
-import org.cougaar.core.thread.Schedulable;
+//import org.cougaar.core.thread.Schedulable;
 
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.component.ServiceBroker;
@@ -49,6 +49,7 @@ import org.cougaar.util.UnaryPredicate;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Collections;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -66,7 +67,9 @@ public class PingHelper extends BlackboardClientComponent {
   public static final int SUCCESS = 0;
   public static final int FAIL = 1;
 
+
   private Map myUIDs = new HashMap();
+  private List pingQueue = new ArrayList();
   private LoggingService logger;
   private UIDService uidService = null;
   protected EventService eventService;
@@ -128,6 +131,8 @@ public class PingHelper extends BlackboardClientComponent {
   }
 
   public void execute() {
+    fireAll();
+
     // Get PingRequests
     for (Iterator it = pingRequests.getChangedCollection().iterator(); it.hasNext();) {
       PingRequest pr = (PingRequest) it.next();
@@ -149,22 +154,48 @@ public class PingHelper extends BlackboardClientComponent {
   }
 
   public void ping(final String agentName, final long timeout, final PingListener pl) {
-    ThreadService ts =
-        (ThreadService) getServiceBroker().getService(this, ThreadService.class, null);
-    Schedulable pingThread = ts.getThread(this, new Runnable() {
-      public void run() {
-        logger.debug("PingAgent:" +
-                    " agent=" + agentName);
-        PingRequest pr = sensorFactory.newPingRequest(agentId,
-                            SimpleMessageAddress.getMessageAddress(agentName),
-                            timeout);
-        myUIDs.put(pr.getUID(), pl);
-        blackboard.openTransaction();
-        blackboard.publishAdd(pr);
-        blackboard.closeTransaction();
-      }
-    }, "PingThread");
-    getServiceBroker().releaseService(this, ThreadService.class, ts);
-    pingThread.start();
+    fireLater(new QueueEntry(MessageAddress.getMessageAddress(agentName), timeout, pl));
   }
+
+  protected void fireLater(QueueEntry qe) {
+    synchronized (pingQueue) {
+      pingQueue.add(qe);
+    }
+    if (blackboard != null) {
+      blackboard.signalClientActivity();
+    }
+  }
+
+  private void fireAll() {
+    int n;
+    List l;
+    synchronized (pingQueue) {
+      n = pingQueue.size();
+      if (n <= 0) {
+        return;
+      }
+      l = new ArrayList(pingQueue);
+      pingQueue.clear();
+    }
+    for (int i = 0; i < n; i++) {
+      QueueEntry qe = (QueueEntry) l.get(i);
+      PingRequest pr = sensorFactory.newPingRequest(agentId,
+                                                    qe.agent,
+                                                    qe.timeout);
+      myUIDs.put(pr.getUID(), qe.listener);
+      blackboard.publishAdd(pr);
+    }
+  }
+
+  static class QueueEntry {
+    MessageAddress agent;
+    long timeout;
+    PingListener listener;
+    QueueEntry(MessageAddress agent, long to, PingListener l) {
+      this.agent = agent;
+      this.timeout = to;
+      this.listener = l;
+    }
+  }
+
 }
