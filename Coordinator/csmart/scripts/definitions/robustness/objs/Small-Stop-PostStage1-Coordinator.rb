@@ -20,6 +20,10 @@ parameters:
     - $CIP/csmart/config/rules/robustness/uc1
 #    - $CIP/csmart/config/rules/robustness/uc7
     - $CIP/csmart/config/rules/robustness/uc9
+    - $CIP/csmart/config/rules/metrics/basic
+    - $CIP/csmart/config/rules/metrics/sensors
+    - $CIP/csmart/config/rules/metrics/serialization/metrics-only-serialization.rule
+    - $CIP/csmart/config/rules/metrics/rss/tic
   - community_rules:
     - $CIP/csmart/config/rules/robustness/communities
 
