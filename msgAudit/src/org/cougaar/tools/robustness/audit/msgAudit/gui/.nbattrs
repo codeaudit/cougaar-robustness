@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE attributes PUBLIC "-//NetBeans//DTD DefaultAttributes 1.0//EN" "http://www.netbeans.org/dtds/attributes-1_0.dtd">
+<attributes version="1.0">
+    <fileobject name="AgentMessageList.java">
+        <attr name="class_dependency_javax.swing.table.AbstractTableModel" stringvalue="MessageTableModel"/>
+        <attr name="class_dependency_javax.swing.JCheckBox" stringvalue="CheckCellRenderer"/>
+        <attr name="class_dependency_javax.swing.table.TableCellRenderer" stringvalue="CheckCellRenderer"/>
+        <attr name="class_dependency_javax.swing.JFrame" stringvalue="AgentMessageList"/>
+    </fileobject>
+    <fileobject name="MessageDetail.java">
+        <attr name="class_dependency_javax.swing.table.AbstractTableModel" stringvalue="LogPointTableModel"/>
+        <attr name="class_dependency_javax.swing.JFrame" stringvalue="MessageDetail"/>
+        <attr name="class_dependency_javax.swing.table.DefaultTableCellRenderer" stringvalue="LogPointCellRenderer"/>
+    </fileobject>
+    <fileobject name="LogPointsControl.java">
+        <attr name="class_dependency_javax.swing.table.AbstractTableModel" stringvalue="LogLevelsTableModel"/>
+        <attr name="class_dependency_javax.swing.JFrame" stringvalue="LogPointsControl"/>
+        <attr name="class_dependency_javax.swing.table.DefaultTableCellRenderer" stringvalue="LogPointLevelCellRenderer"/>
+    </fileobject>
+</attributes>

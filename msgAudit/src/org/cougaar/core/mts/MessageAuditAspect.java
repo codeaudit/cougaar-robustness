@@ -172,9 +172,9 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
               agentID = AgentID.getAgentID (MessageAuditAspect.this, MessageAuditAspect.this.getServiceBroker(), fromAgent);
               fromNode = agentID.getNodeName();
               fromIncarnation = agentID.getAgentIncarnationAsLong();          
-          } catch (NameLookupException nle) {
+          } catch (UnregisteredNameException nle) {
               fromNode = "NameLookupException_for_"+fromAgent;
-              log.warn("NameLookupException looking up name for "+fromAgent+"\n"+nle);
+              log.warn("UnregisteredNameException looking up name for "+fromAgent+"\n"+nle);
           } catch (Exception e) {
               fromNode = "Exception_for_"+fromAgent;
               log.warn("Exception looking up name for "+fromAgent+"\n"+e);
@@ -395,7 +395,7 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
             try {
                 AgentID agent = AgentID.getAgentID (this, this.getServiceBroker(), toAgent);
                 to = agent.getNodeName() + "." + agent.getAgentName() + "." + agent.getAgentIncarnation();          
-            } catch (NameLookupException nle) {
+            } catch (UnregisteredNameException nle) {
                 to = "NameLookupException."+toAgent.toString();
             } catch (Exception e) {
                 to = e.toString()+toAgent;
