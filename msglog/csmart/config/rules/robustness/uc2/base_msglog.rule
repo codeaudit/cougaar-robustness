@@ -1,57 +1,68 @@
 #############################
 # Add basic MsgLog to society
 #
-# Warning: Protocols and, especially aspects, have order dependencies.
-#          Care must be taken to apply rules that add other protocols
-#          or aspects in a compatible order.  
+# Warning: Aspects have order dependencies as encoded below by order numbers.
+#          The authoritative source for the order numbers is 
+#          https://cvs.ultralog.net/ultralog/AspectConfiguration.  
+#          Changes made there must be propagated here.  
 #
-# Warning: Security's org.cougaar.core.security.crypto.MessageProtectionAspectImpl
-#          should be loaded last, after all of MsgLog's aspects.
-#
-# Warning: org.cougaar.core.mts.LoopbackLinkProtocol should be loaded first.       
+# Warning: org.cougaar.core.mts.LoopbackLinkProtocol should be loaded 
+#          before all other protocols.       
 #
 # Warning: If deconfliction.rule is applied, it must be applied BEFORE this rule
 #
 
 policy = "org.cougaar.core.mts.AdaptiveLinkSelectionPolicy"
 
-rsca = "org.cougaar.core.mts.RMISocketControlAspect"
-sta  = "org.cougaar.core.mts.ShowTrafficAspect"
-sa   = "org.cougaar.core.mts.StatisticsAspect"
-rsta = "org.cougaar.core.mts.RMISendTimeoutAspect"
-msha = "org.cougaar.core.mts.MessageSendHistoryAspect"
-maa  = "org.cougaar.core.mts.acking.MessageAckingAspect"
-rtta = "org.cougaar.core.mts.RTTAspect"
-mna  = "org.cougaar.core.mts.MessageNumberingAspect"
-moa  = "org.cougaar.core.mts.MessageOrderingAspect"
+# this one will eventually be built in
+mta  = [ 10, "org.cougaar.core.mts.MessageTimeoutAspect"]
+
+rsca = [325, "org.cougaar.core.mts.RMISocketControlAspect"]
+sta  = [330, "org.cougaar.core.mts.ShowTrafficAspect"]
+sa   = [140, "org.cougaar.core.mts.StatisticsAspect"]
+rsta = [335, "org.cougaar.core.mts.RMISendTimeoutAspect"]
+msha = [340, "org.cougaar.core.mts.MessageSendHistoryAspect"]
+maa  = [350, "org.cougaar.core.mts.acking.MessageAckingAspect"]
+rtta = [360, "org.cougaar.core.mts.RTTAspect"]
+mna  = [370, "org.cougaar.core.mts.MessageNumberingAspect"]
+moa  = [380, "org.cougaar.core.mts.MessageOrderingAspect"]
 
 # not sure about this aspect's position or necessity
 nsta = "org.cougaar.core.mts.NameSupportTimeoutAspect" 
 
-aspects = [rsca, sta, sa, rsta, msha, maa, rtta, mna, moa]
+aspects = [mta, rsca, sta, sa, rsta, msha, maa, rtta, mna, moa]
 
 loopback = "org.cougaar.core.mts.LoopbackLinkProtocol"
 rmi      = "org.cougaar.core.mts.RMILinkProtocol"
 
 protocols = [loopback, rmi]
 
-society.each_node_agent do |node|
+society.each_node_agent do |node_agent|
+
+    #aspects.each { |aspect| 
+    #    node_agent.add_component do |c|
+    #        c.classname = aspect
+    #        c.insertionpoint = "Node.AgentManager.Agent.MessageTransport.Aspect"
+    #    end
+    #}
 
     aspects.each { |aspect| 
-        node.add_component do |c|
-            c.classname = aspect
+        node_agent.add_component do |c|
+            c.order = aspect[0]
+            c.classname = aspect[1]
             c.insertionpoint = "Node.AgentManager.Agent.MessageTransport.Aspect"
         end
     }
+
     protocols.each { |protocol|
-        node.add_component do |c|
+        node_agent.add_component do |c|
             c.classname = protocol
             c.insertionpoint = "Node.AgentManager.Agent.MessageTransport.Component"
         end
     }
      
     # There's a bug that keeps this from loading as a component.
-    #node.add_component do |c|
+    #node_agent.add_component do |c|
     #    c.classname = policy
     #    c.insertionpoint = "Node.AgentManager.Agent.MessageTransport.Component"
     #end

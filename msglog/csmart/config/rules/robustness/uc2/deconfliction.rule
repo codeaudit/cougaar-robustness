@@ -1,14 +1,16 @@
 #########################################################
 # Adds UC2 Deconfliction components to Robustness Manager
 # 
-# Warning: If this rule is applied, it must be applied BEFORE base_msglog.rule
-#
+# Warning: Aspects have order dependencies as encoded below by order numbers.
+#          The authoritative source for the order numbers is 
+#          https://cvs.ultralog.net/ultralog/AspectConfiguration.  
+#          Changes made there must be propagated here.  
 
 omsp = "org.cougaar.core.adaptivity.OperatingModeServiceProvider"
 ompm = "org.cougaar.core.adaptivity.OperatingModePolicyManager"
-csp = "org.cougaar.core.adaptivity.ConditionServiceProvider"
-cp = "org.cougaar.tools.robustness.deconfliction.CoordinatorPlugin"
-mp = "org.cougaar.core.mts.MsglogPlugin"
+csp  = "org.cougaar.core.adaptivity.ConditionServiceProvider"
+cp   = "org.cougaar.tools.robustness.deconfliction.CoordinatorPlugin"
+mp   = "org.cougaar.core.mts.MsglogPlugin"
 
 plugins = [omsp, ompm, csp, cp, mp]
 
@@ -18,17 +20,18 @@ society.each_agent do |agent|
     end
 end
 
-mea  = "org.cougaar.core.mts.MsglogEnablingAspect"
-lsea = "org.cougaar.core.mts.LastSpokeErrorAspect"
-ga   = "org.cougaar.core.mts.GossipAspect"
-gssa = "org.cougaar.core.mts.GossipStatisticsServiceAspect"
+mea  = [310, "org.cougaar.core.mts.MsglogEnablingAspect"]
+lsea = [320, "org.cougaar.core.mts.LastSpokeErrorAspect"]
+ga   = [230, "org.cougaar.core.mts.GossipAspect"]
+gssa = [240, "org.cougaar.core.mts.GossipStatisticsServiceAspect"]
 
 aspects = [mea, lsea, ga, gssa]
 
-society.each_node_agent do |node|
+society.each_node_agent do |node_agent|
     aspects.each { |aspect| 
-        node.add_component do |c|
-            c.classname = aspect
+        node_agent.add_component do |c|
+            c.order = aspect[0]
+            c.classname = aspect[1]
             c.insertionpoint = "Node.AgentManager.Agent.MessageTransport.Aspect"
         end
     }
