@@ -43,6 +43,7 @@ import org.cougaar.core.qos.metrics.MetricsService;
 import org.cougaar.core.qos.metrics.Metric;
 import org.cougaar.core.blackboard.BlackboardClientComponent;
 import org.cougaar.core.component.ServiceBroker;
+import org.cougaar.core.persist.NotPersistable;
 
 import org.cougaar.core.node.NodeControlService;
 
@@ -65,7 +66,8 @@ import javax.naming.directory.BasicAttributes;
  * be generated if a status update is not received within the expiration
  * period.
  */
-public class CommunityStatusModel extends BlackboardClientComponent {
+public class CommunityStatusModel extends BlackboardClientComponent
+    implements NotPersistable{
 
   public static final int AGENT = 0;
   public static final int NODE  = 1;
@@ -1085,20 +1087,32 @@ public class CommunityStatusModel extends BlackboardClientComponent {
   /**
    * Get metrics information of the given node.
    */
-  public double getMetric(String nodeName, String searchString) {
+  public double getMetricAsDouble(String nodeName, String searchString) {
+    Metric metric = getMetric(nodeName, searchString);
+    return metric != null ? metric.doubleValue() : 0.0;
+  }
+
+  /**
+   * Get metrics information of the given node.
+   */
+  public long getMetricAsLong(String nodeName, String searchString) {
+    Metric metric = getMetric(nodeName, searchString);
+    return metric != null ? metric.longValue() : 0;
+  }
+
+  public Metric getMetric(String nodeName, String searchString) {
+    Metric metric = null;
     int tryCount = 0;
     double cred = org.cougaar.core.qos.metrics.Constants.NO_CREDIBILITY;
     double desiredMetricsCredibility = org.cougaar.core.qos.metrics.Constants.USER_BASE_CREDIBILITY;
-    double value = 0.0;
-    while (tryCount<2 && cred<desiredMetricsCredibility) {
+    while (tryCount < 2 && cred < desiredMetricsCredibility) {
       tryCount ++;
       String basePath = "Node(" + nodeName + ")" +
           org.cougaar.core.qos.metrics.Constants.PATH_SEPR;
-      Metric metric = metricsService.getValue(basePath + searchString);
-      value = metric.doubleValue();
-      cred = metric.getCredibility();
+      metric = metricsService.getValue(basePath + searchString);
+      if (metric != null) metric.getCredibility();
     }
-    return value;
+    return metric;
   }
 
   private class WakeAlarm implements Alarm {
