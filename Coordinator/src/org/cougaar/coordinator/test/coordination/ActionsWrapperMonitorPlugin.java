@@ -65,7 +65,7 @@ implements NotPersistable {
     private ActionMonitorServlet servlet = null;
     private IncrementalSubscription servletSubscription;
     private IncrementalSubscription actionWrappersSubscription;
-    private Logger logger = null;
+    private LoggingService logger = null;
    
     /** Create a new ActionsWrapperMonitorPlugin instance */
     public ActionsWrapperMonitorPlugin() {

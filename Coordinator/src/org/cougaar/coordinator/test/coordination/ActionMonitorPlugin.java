@@ -42,6 +42,8 @@ import org.cougaar.util.log.Logger;
 import org.cougaar.core.persist.NotPersistable;
 
 import org.cougaar.core.plugin.ComponentPlugin;
+import org.cougaar.core.adaptivity.ServiceUserPluginBase;
+
 
 import org.cougaar.core.service.ConditionService;
 import org.cougaar.core.service.OperatingModeService;
@@ -54,6 +56,8 @@ import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.service.AgentIdentificationService;
 
+import java.util.Collection;
+
 
 /**
  * This class watches the actions being published and relayed, and reports when the
@@ -65,7 +69,7 @@ implements NotPersistable {
     private ActionMonitorServlet servlet = null;
     private IncrementalSubscription servletSubscription;
     private IncrementalSubscription actionsSubscription;
-    private Logger logger = null;
+    private LoggingService logger = null;
    
     /** Create a new ActionMonitorPlugin instance */
     public ActionMonitorPlugin() {
@@ -75,12 +79,21 @@ implements NotPersistable {
     public void load() {
         super.load();
 
-        logger =
-        (LoggingService) getServiceBroker().getService(this, LoggingService.class, null);        
     }
     
+    public synchronized void unload() {
+	getServiceBroker().releaseService(this, LoggingService.class, logger);
+	super.unload();
+    }
+
     /** Set up needed subscriptions */
     public void setupSubscriptions() {
+
+        logger =
+        (LoggingService) getServiceBroker().getService(this, LoggingService.class, null);        
+
+        
+         logger.debug("****)))))))))))))))))&&&&&&&&&&&&&&&&&*************** ActionMonitorPlugin loaded on "+agentId);
         
         
         //logger.debug("setupSubscriptions called.");
@@ -130,9 +143,15 @@ implements NotPersistable {
         while (iter.hasNext()) {
             Action a = (Action)iter.next();
             if (servlet != null) { servlet.addAction(a); }
-            //At least temp for testing -- next 2 lines
-            String target = ((MessageAddress) a.getTargets().iterator().next()).toString();
+            
+            //At least temp for testing -- next 7 lines
+            String target = "null";
+            Iterator it = null;
+            Collection c = a.getTargets();
+            if (c != null) it = a.getTargets().iterator();
+            if (it != null && it.hasNext()) target = ((MessageAddress) it.next()).toString();
             logger.debug("[AgentId="+agentId+"]**** Saw new Action["+ActionUtils.getAssetID(a)+"], with ActionRecord = " + a.getValue() + " UID=" + a.getUID()+" src="+a.getSource()+",tgt="+target);
+
         }
         
         //********* Check for changes in our modes ************        

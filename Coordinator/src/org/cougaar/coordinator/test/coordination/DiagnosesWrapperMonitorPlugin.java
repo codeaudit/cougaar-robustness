@@ -68,7 +68,7 @@ implements NotPersistable {
     private DiagnosisMonitorServlet servlet = null;
     private IncrementalSubscription servletSubscription;
     private IncrementalSubscription diagnosesWrappersSubscription;
-    private Logger logger = null;
+    private LoggingService logger = null;
    
     /** Create a new DiagnosesWrapperMonitorPlugin instance */
     public DiagnosesWrapperMonitorPlugin() {
