@@ -21,8 +21,8 @@ module Cougaar
           if event.component == "DisconnectNodePlugin" &&
             (event.data.include?("Requesting to Disconnect Node") ||
 	     event.data.include?("Requesting to Connect Node") ||
-            event.data.include?("has received permission to Reconnect") ||
-            event.data.include?("is denied permission to Reconnect"))
+             event.data.include?("has received permission to Reconnect") ||
+             event.data.include?("is denied permission to Reconnect"))
             @run.info_message event.data if @messaging >= 2
           elsif event.component == "DisconnectManagerPlugin" && 
                 event.data.include?("is Tardy")

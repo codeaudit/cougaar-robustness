@@ -25,6 +25,7 @@ parameters:
     - $CIP/csmart/config/rules/metrics/sensors
     - $CIP/csmart/config/rules/metrics/serialization/metrics-only-serialization.rule
     - $CIP/csmart/config/rules/metrics/rss/tic
+#    - $CIP/csmart/config/rules/robustness/debug_rules/messageTrace.rule
   - community_rules:
     - $CIP/csmart/config/rules/robustness/communities
 
@@ -44,7 +45,6 @@ include_scripts:
   - script: $CIP/csmart/lib/robustness/objs/planned_disconnect.rb
     parameters:
       - location: during_stage_1
-      - start_delay: 60
       - wait_location: after_stage_1
       - nodes: ["UA-FSB-A-NODE", "UA-FSB-C-NODE"]
       - planned_disconnect: 12.minutes
@@ -52,6 +52,14 @@ include_scripts:
       - timeout: 30.minutes
       - verbose: 2
   - script: $CIP/csmart/lib/coordinator/unleash_defenses.rb 
+    parameters:
+      - location: during_stage_1
+      - verbose: 1
+  - script: $CIP/csmart/lib/robustness/objs/nodes_persisted_find_providers.rb 
+    parameters:
+      - location: during_stage_1
+      - start_delay: 60
+      - nodes: ["UA-FSB-A-NODE", "UA-FSB-C-NODE"]
 
 =end
 
