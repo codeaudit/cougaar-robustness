@@ -66,8 +66,8 @@ public class LeashRequestDiagnosis extends Diagnosis {
      **/
     public boolean areDefensesLeashed() {
 	String diagnosis_value = (String) this.getValue();
-        System.out.println("areDefensesEnabled() returns: " + diagnosis_value.equalsIgnoreCase( LEASH ) + " for: " + diagnosis_value );
-	return (diagnosis_value.equalsIgnoreCase( UNLEASH ) );
+        System.out.println("areDefensesLeashed() returns: " + diagnosis_value.equalsIgnoreCase( LEASH ) + " for: " + diagnosis_value );
+	return (diagnosis_value.equalsIgnoreCase( LEASH ) );
     }
 
 } 
