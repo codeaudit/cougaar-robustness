@@ -58,6 +58,10 @@ public class DuplicateAgentDetector implements StatusChangeListener {
         locationChanged(csce[i].getName(),
                         csce[i].getPriorLocation(),
                         csce[i].getCurrentLocation());
+      } else if (csce[i].statusReceived()) {
+        if (suspectedDuplicates.containsKey(csce[i].getName())) {
+          suspectedDuplicates.remove(csce[i].getName());
+        }
       }
     }
   }

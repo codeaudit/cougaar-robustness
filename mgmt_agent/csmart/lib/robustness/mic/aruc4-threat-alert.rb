@@ -19,7 +19,7 @@ do_action "PublishThreatAlert",
           "community",
           "REAR-COMM",
           "maximum",
-          10.minutes,
+          5.minutes,
           assets,
           "HealthMonitor"
 end

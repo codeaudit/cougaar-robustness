@@ -520,8 +520,18 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
         names.add(agent);
         if (!agentVersions.containsKey(agent)) {
           agentVersions.put(agent, new Long(now()));
-          if (logger.isDebugEnabled()) {
-            logger.debug("New agent detected: agent=" + agent);
+          if (logger.isInfoEnabled()) {
+            logger.info("New agent detected: agent=" + agent);
+          }
+        }
+      }
+      for (Iterator it = agentVersions.keySet().iterator(); it.hasNext(); ) {
+        MessageAddress agentAddr = MessageAddress.getMessageAddress(it.next().toString());
+        if (!ncs.getRootContainer().containsAgent(agentAddr)) {
+          //agentVersions.remove(agentAddr.toString());
+          it.remove();
+          if (logger.isInfoEnabled()) {
+            logger.info("Agent removed: agent=" + agentAddr.toString());
           }
         }
       }

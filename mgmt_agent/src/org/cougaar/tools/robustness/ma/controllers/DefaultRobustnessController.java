@@ -30,6 +30,8 @@ import org.cougaar.tools.robustness.ma.util.LoadBalancerListener;
 import org.cougaar.tools.robustness.ma.util.PingHelper;
 import org.cougaar.tools.robustness.ma.util.RestartHelper;
 import org.cougaar.tools.robustness.ma.util.RestartListener;
+import org.cougaar.tools.robustness.ma.util.MoveHelper;
+import org.cougaar.tools.robustness.ma.util.MoveListener;
 import org.cougaar.tools.robustness.ma.util.RestartDestinationLocator;
 import org.cougaar.tools.robustness.ma.util.StatCalc;
 import org.cougaar.tools.robustness.ma.util.NodeStatistics;
@@ -143,7 +145,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    *   Next state:        DEAD on expired status
    * </pre>
    */
-  class ActiveStateController extends StateControllerBase {
+  class ActiveStateController extends StateControllerBase implements MoveListener {
+    { addMoveListener(this); }
     public void enter(String name) {
       if (isSentinel()) {
         if (isCoordinatorEnabled()) {
@@ -186,6 +189,20 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         newState(name, DEAD);
       }
     }
+    
+    public void moveInitiated(String agentName,
+    		                  String origNode,
+							  String destNode) {
+    	
+    }
+    
+    public void moveComplete(String agentName, 
+    		                 String origNode, 
+							 String destNode, 
+							 int status) {
+      if (thisAgent.equals(origNode)) stopHeartbeats(agentName);
+    }
+    
   }
 
   /**
@@ -906,7 +923,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                    " priorLoc=" + priorLocation);
     }
     // If agent has moved off this node stop heartbeats
-    //if (thisAgent.equals(priorLocation)) stopHeartbeats(name);
+    if (thisAgent.equals(priorLocation)) stopHeartbeats(name);
     checkCommunityReady();
   }
 
