@@ -72,8 +72,6 @@ public class LogEventRouter {
      * Creates a new instance of LogEventRouter 
      */
     private LogEventRouter() {
-
-        Thread.currentThread().dumpStack();
         
         if (DEBUG) {
             Logging.currentLogger().debug("LogEventRouter: Initialization****************");         
