@@ -93,6 +93,11 @@ public abstract class IncomingLinkProtocol extends LinkProtocol
       return Integer.MAX_VALUE;
     }
 
+    public boolean isValid () 
+    {
+      return true;
+    }
+
     public Object getRemoteReference ()
     {
       return null;

@@ -1505,6 +1505,11 @@ was new, now old; should be deleted soon
       return Integer.MAX_VALUE;
     }
 
+    public boolean isValid () 
+    {
+      return true;
+    }
+
     public Object getRemoteReference ()
     {
       return null;

@@ -304,6 +304,11 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
       return (addressKnown(destination) ? linkCost : Integer.MAX_VALUE);
     }
 
+    public boolean isValid () 
+    {
+      return true;
+    }
+
     public Object getRemoteReference ()
     {
       return null;

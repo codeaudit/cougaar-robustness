@@ -468,6 +468,11 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
       return (addressKnown(destination) ? protocolCost : Integer.MAX_VALUE);
     }
 
+    public boolean isValid () 
+    {
+      return true;
+    }
+
     public Object getRemoteReference ()
     {
       return null;
