@@ -137,18 +137,22 @@ public class PingHelper extends BlackboardClientComponent {
     for (Iterator it = pingRequests.getChangedCollection().iterator(); it.hasNext();) {
       PingRequest pr = (PingRequest) it.next();
       int status = pr.getStatus();
-      if (status == PingRequest.RECEIVED || status == PingRequest.FAILED) {
-        PingListener pl = (PingListener)myUIDs.remove(pr.getUID());
-        logger.debug("PingAgent:" +
-                    " agent=" + pr.getTarget().toString() +
-                    " status=" + (status == PingRequest.RECEIVED
-                                    ? "SUCCESS"
-                                    : "FAIL"));
-        pl.pingComplete(pr.getTarget().toString(),
-                        (status == PingRequest.RECEIVED
-                             ? SUCCESS
-                             : FAIL));
-        blackboard.publishRemove(pr);
+      switch (status) {
+        case PingRequest.RECEIVED:
+          logger.debug("PingAgent:" +
+                      " agent=" + pr.getTarget().toString() +
+                      " status=SUCCESS");
+          ((PingListener)myUIDs.remove(pr.getUID())).
+              pingComplete(pr.getTarget().toString(), SUCCESS);
+          blackboard.publishRemove(pr);
+          break;
+        case PingRequest.FAILED:
+          logger.debug("PingAgent:" +
+                      " agent=" + pr.getTarget().toString() +
+                      " status=FAIL");
+          ((PingListener)myUIDs.get(pr.getUID())).
+              pingComplete(pr.getTarget().toString(), FAIL);
+          break;
       }
     }
   }
