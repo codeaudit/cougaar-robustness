@@ -49,7 +49,7 @@ public class ThreatAlertImpl implements ThreatAlert, java.io.Serializable {
     return this.severityLevel;
   }
 
-  public void setCreateionTime(Date creation) {
+  public void setCreationTime(Date creation) {
     this.create = creation;
   }
 
