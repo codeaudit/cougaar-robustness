@@ -123,7 +123,7 @@ public class SampleActuator extends ComponentPlugin
 	    log.error("TechSpec not found for SampleAction", e);
 	}
 */
-	alarmService.addRealTimeAlarm(new DelayedStartAlarm(120000));
+	alarmService.addRealTimeAlarm(new DelayedStartAlarm(0));
     } 
     
     public synchronized void execute() {

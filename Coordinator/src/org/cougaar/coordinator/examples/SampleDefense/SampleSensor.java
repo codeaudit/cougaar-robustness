@@ -109,7 +109,7 @@ public class SampleSensor extends ComponentPlugin
 	    log.error("TechSpec not found for SampleDiagnosis", e);
 	}
 */
-	alarmService.addRealTimeAlarm(new DelayedStartAlarm(120000));
+	alarmService.addRealTimeAlarm(new DelayedStartAlarm(0));
     } 
 
     public synchronized void execute() {
