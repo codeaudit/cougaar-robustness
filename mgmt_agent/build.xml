@@ -389,6 +389,23 @@
     </java>
   </target>
 
+  <!-- Runs YellowPagesViewer UI application -->
+    <target name="ypviewer" description="Runs YellowPagesViewer application">
+    <java dir="${basedir}" fork="yes"
+      classname="org.cougaar.community.test.YellowPagesViewer">
+      <classpath>
+        <pathelement location="${lib}/${jar}"/>
+        <fileset dir="${cougaar}/lib">
+          <include name="**/*.jar"/>
+        </fileset>
+        <fileset dir="${cougaar}/sys">
+          <include name="**/*.jar"/>
+        </fileset>
+      </classpath>
+      <arg line="${host} ${port} ${agent}"/>
+    </java>
+  </target>
+
   <!-- Runs Robustness UI application -->
     <target name="ui" description="Runs Robustness UI application">
     <java dir="${basedir}" fork="yes"
@@ -403,6 +420,21 @@
         </fileset>
       </classpath>
       <arg line="${host} ${port} ${agent}"/>
+    </java>
+  </target>
+
+  <!-- Runs LogFactor5 logger ui -->
+    <target name="lf5" description="Runs LogFactor5 UI">
+    <java dir="${basedir}" fork="yes"
+      classname="org.apache.log4j.lf5.StartLogFactor5">
+      <classpath>
+        <fileset dir="${lib}">
+          <include name="**/*.jar"/>
+        </fileset>
+        <fileset dir="${cougaar}/sys">
+          <include name="**/*.jar"/>
+        </fileset>
+      </classpath>
     </java>
   </target>
 
@@ -483,7 +515,6 @@
 		<antcall target="init"/>
 		<antcall target="compile"/>
 		<antcall target="jar"/>
-		<signjar jar="${lib}/${jar}" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
 		<move file="${lib}/${jar}" toDir="staging/lib"/>
     <copy file="test/data/communities.xml" toDir="staging/configs/mic"/>
 		<zip zipfile="Robustness_mic_mgmt_agent_overlay.zip" basedir="staging"/>
