@@ -68,6 +68,7 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
   //private static final int RECEIVE = 1;
   private int seqnum = 0; 
 
+  private LogEventRouter eventRouter = null;
 
   private static MessageAuditAspect thisIns = null;
  
@@ -95,6 +96,8 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
     log = loggingService;
     reg = getRegistry();
     thisIns = this;
+    
+    eventRouter = new LogEventRouter(log);
     
     if ( !log.isInfoEnabled() ) {
         log.warn("** INFO logging level not enabled, this aspect is not active **");        
@@ -179,7 +182,7 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
           msg.setAttribute(Constants.AUDIT_ATTRIBUTE_NUMSEQ, new Integer(seqnum++));
           msg.setAttribute(Constants.AUDIT_ATTRIBUTE_FROM_INCARNATION, new Long(fromIncarnation));
           msg.setAttribute(Constants.AUDIT_ATTRIBUTE_FROM_NODE, fromNode);
-          LogEventRouter.getRouter().routeEvent(createAuditData(BEFORE_SENDLINK_TAG, msg, true));
+          eventRouter.routeEvent(createAuditData(BEFORE_SENDLINK_TAG, msg, true));
       }
       super.sendMessage (msg);
     }
@@ -198,7 +201,7 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
       if (!includeLocalMsgs && reg.isLocalClient(msg.getTarget()) ) 
         doit = false;
       if (doit && log.isInfoEnabled() && !filter(msg) )
-        LogEventRouter.getRouter().routeEvent(createAuditData(BEFORE_SENDQ_TAG, msg, true));
+        eventRouter.routeEvent(createAuditData(BEFORE_SENDQ_TAG, msg, true));
       super.sendMessage(msg);
     }
   }
@@ -216,7 +219,7 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
       if (!includeLocalMsgs && reg.isLocalClient(msg.getTarget())) 
         doit = false;
       if (doit && log.isInfoEnabled() && !filter(msg) )
-        LogEventRouter.getRouter().routeEvent(createAuditData(BEFORE_ROUTER_TAG, msg, true));
+        eventRouter.routeEvent(createAuditData(BEFORE_ROUTER_TAG, msg, true));
       super.routeMessage(msg);
     }
   }
@@ -236,7 +239,7 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
       if (!includeLocalMsgs && reg.isLocalClient(msg.getTarget())) 
         doit = false;
       if (doit && log.isInfoEnabled() && !filter(msg) )
-        LogEventRouter.getRouter().routeEvent(createAuditData(BEFORE_DESTQ_HOLD_TAG, msg, true, "q", queue.getDestination().toString()));
+        eventRouter.routeEvent(createAuditData(BEFORE_DESTQ_HOLD_TAG, msg, true, "q", queue.getDestination().toString()));
       super.holdMessage(msg);
     }
 
@@ -245,7 +248,7 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
       if (!includeLocalMsgs && reg.isLocalClient(msg.getTarget())) 
         doit = false;
       if (doit && log.isInfoEnabled() && !filter(msg) )
-        LogEventRouter.getRouter().routeEvent(createAuditData(BEFORE_DESTQ_DISPATCH_TAG, msg, true, "q", queue.getDestination().toString()));
+        eventRouter.routeEvent(createAuditData(BEFORE_DESTQ_DISPATCH_TAG, msg, true, "q", queue.getDestination().toString()));
       super.dispatchNextMessage(msg);
    }
   }
@@ -269,7 +272,7 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
       if (!includeLocalMsgs && reg.isLocalClient(msg.getTarget())) 
         doit = false;
       if (doit && log.isInfoEnabled() && !filter(msg) )
-        LogEventRouter.getRouter().routeEvent(createAuditData(BEFORE_DESTLINK_TAG, msg, true, "link", link.getProtocolClass().toString()));
+        eventRouter.routeEvent(createAuditData(BEFORE_DESTLINK_TAG, msg, true, "link", link.getProtocolClass().toString()));
       return super.forwardMessage(msg);
     }
   }
@@ -294,7 +297,7 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
       if (!includeLocalMsgs && reg.isLocalClient(msg.getTarget())) 
         doit = false;
       if (doit && log.isInfoEnabled() && !filter(msg) )
-        LogEventRouter.getRouter().routeEvent(createAuditData(BEFORE_MSGWRITER_FINOUT_TAG, msg, true));
+        eventRouter.routeEvent(createAuditData(BEFORE_MSGWRITER_FINOUT_TAG, msg, true));
       super.finishOutput();
     }
   }
@@ -313,7 +316,7 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
       if (!includeLocalMsgs && reg.isLocalClient(msg.getTarget())) 
         doit = false;
       if (doit && log.isInfoEnabled() && !filter(msg) )
-        LogEventRouter.getRouter().routeEvent(createAuditData(AFTER_MSGREADER_FINATTR_TAG, msg, false));
+        eventRouter.routeEvent(createAuditData(AFTER_MSGREADER_FINATTR_TAG, msg, false));
     }
   }
 
@@ -333,7 +336,7 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
       if (!includeLocalMsgs && reg.isLocalClient(msg.getOriginator()))
         doit = false;
       if (doit && log.isInfoEnabled() && !filter(msg) )
-        LogEventRouter.getRouter().routeEvent(createAuditData(AFTER_MSGDELIVERER_TAG, msg, false, "dest", dest.toString()));
+        eventRouter.routeEvent(createAuditData(AFTER_MSGDELIVERER_TAG, msg, false, "dest", dest.toString()));
       return attrs;
     }  
   }
@@ -355,7 +358,7 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
           !filter(msg) &&
           attrs != null &&
           attrs.getAttribute(DELIVERY_ATTRIBUTE).equals(DELIVERY_STATUS_DELIVERED))
-        LogEventRouter.getRouter().routeEvent(createAuditData(AFTER_RECVLINK_TAG, msg, false));
+        eventRouter.routeEvent(createAuditData(AFTER_RECVLINK_TAG, msg, false));
       return attrs;
     }
   }
@@ -406,8 +409,10 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
         String numS;
         numS = (num==null)? "null" : num.toString(); //num HAS been null before **
 
-        String[] data = {"TYPE", "TRAFFIC_EVENT", "lpName", tag, "time", ""+now(), "from", from, "to", to, "num", numS};
-        return new LogEventWrapper(log, LoggingService.INFO, data, null, "LP");
+        String msgtype = (String) msg.getAttribute (org.cougaar.core.mts.Constants.MSG_TYPE);
+        
+        String[] data = {"TYPE", "TRAFFIC_EVENT", "lpName", tag, "time", ""+now(), "from", from, "to", to, "num", numS, "msgtype", msgtype };
+        return new LogEventWrapper(log, LoggingService.DEBUG, data, null, "LP");
   }
 
   
@@ -417,14 +422,19 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
       
       String type = (String) msg.getAttribute (org.cougaar.core.mts.Constants.MSG_TYPE);
       if ( type == null ) { // no idea what type so do not filter.
+          msg.setAttribute (org.cougaar.core.mts.Constants.MSG_TYPE, 
+                            org.cougaar.core.mts.Constants.MSG_TYPE_UNKNOWN);
           return false;
       }
       
       if (type.equals (org.cougaar.core.mts.Constants.MSG_TYPE_HEARTBEAT) || 
-          type.equals (org.cougaar.core.mts.Constants.MSG_TYPE_PING)) {
+          type.equals (org.cougaar.core.mts.Constants.MSG_TYPE_PING) ||
+          type.equals (org.cougaar.core.mts.Constants.MSG_TYPE_TRAFFIC_MASK) ||
+          type.equals (org.cougaar.core.mts.Constants.MSG_TYPE_PURE_ACK) ||
+          type.equals (org.cougaar.core.mts.Constants.MSG_TYPE_PURE_ACK_ACK) ) {
               return true;
       }
-      
+     
       return false;
       
   }

@@ -83,7 +83,7 @@ public class EventProcessingAppender extends org.apache.log4j.AppenderSkeleton {
                     log.warn("Event Data is wrong type!! (Event not processed): " + o.getClass().getName());
                 }
             } else {
-                log.warn("Event object is WRONG type!!!");
+                log.warn("Event object is WRONG type!!! [" + loggingEvent.getClass().getName() + "]");
             }
         } catch (Exception e) {
             log.warn("Exception processing event"+e);            

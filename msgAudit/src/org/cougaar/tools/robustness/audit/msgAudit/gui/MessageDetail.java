@@ -49,7 +49,7 @@ public class MessageDetail extends javax.swing.JFrame implements EventListener {
         setHeaders();
         initSelectionModel();
         
-        setSize(400,450);
+        setSize(660,450);
 
         //Register for events
         EventHandler.handler().addListener(this);
@@ -112,7 +112,7 @@ public class MessageDetail extends javax.swing.JFrame implements EventListener {
         lTitle.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         lTitle.setText("Message Detail");
         getContentPane().add(lTitle);
-        lTitle.setBounds(130, 10, 150, 30);
+        lTitle.setBounds(260, 10, 150, 30);
 
         lFrom.setText("From:");
         getContentPane().add(lFrom);
@@ -141,7 +141,7 @@ public class MessageDetail extends javax.swing.JFrame implements EventListener {
         jScrollPane1.setViewportView(logPointsTable);
 
         getContentPane().add(jScrollPane1);
-        jScrollPane1.setBounds(43, 123, 320, 230);
+        jScrollPane1.setBounds(43, 123, 580, 230);
 
         bOK.setText("OK");
         bOK.addActionListener(new java.awt.event.ActionListener() {
@@ -151,7 +151,7 @@ public class MessageDetail extends javax.swing.JFrame implements EventListener {
         });
 
         getContentPane().add(bOK);
-        bOK.setBounds(110, 360, 51, 26);
+        bOK.setBounds(240, 360, 51, 26);
 
         bRefresh.setText("Refresh");
         bRefresh.addActionListener(new java.awt.event.ActionListener() {
@@ -161,7 +161,7 @@ public class MessageDetail extends javax.swing.JFrame implements EventListener {
         });
 
         getContentPane().add(bRefresh);
-        bRefresh.setBounds(230, 360, 79, 26);
+        bRefresh.setBounds(360, 360, 79, 26);
 
         pack();
     }//GEN-END:initComponents
@@ -203,6 +203,9 @@ public class MessageDetail extends javax.swing.JFrame implements EventListener {
                     renderer = logpointRenderer;
                     break;
 
+            case LogPointTableModel.COL_TYPE:
+                    renderer = labelRenderer;
+                    break;
             }
             if (renderer instanceof JLabel)
                     ((JLabel)renderer).setHorizontalAlignment(
@@ -245,7 +248,12 @@ public class MessageDetail extends javax.swing.JFrame implements EventListener {
      *
      */
     void rowSelected(int _row, int _col) {
-        LogPointEntry lpe = (LogPointEntry)tableModel.getValueAt(_row, 0);
+        Object o = tableModel.getValueAt(_row, 0);
+        if (o instanceof LogPointEntry) {
+            LogPointEntry lpe = (LogPointEntry)tableModel.getValueAt(_row, 0);
+        } else {
+            System.out.println("Error:: MessageDetail:rowSelected() - object instance of "+o.getClass().getName());
+        }
     }
     
 
@@ -297,14 +305,16 @@ class LogPointTableModel extends AbstractTableModel
 {
 	public static final ColumnData m_columns[] = {
 		new ColumnData( "Time", 110, JLabel.LEFT ),
-		new ColumnData( "Log Point Event", 250, JLabel.LEFT ),
+		new ColumnData( "Log Point Event", 350, JLabel.LEFT ),
+		new ColumnData( "MsgType", 160, JLabel.LEFT ),
 	};
 
 	public static final int COL_TIME = 0;
 	public static final int COL_LOGPOINT = 1;
+	public static final int COL_TYPE = 2;
 
 	public static final String[] CATEGORIES = {
-            "Time", "Log Point Event"
+            "Time", "Log Point Event", "MsgType"
         };
 
 	protected MessageDetail m_parent;
@@ -340,6 +350,8 @@ class LogPointTableModel extends AbstractTableModel
 				return row.time();
 			case COL_LOGPOINT:
 				return "[" + row.getLogPointLevel()+ "]" + row.logPointName();
+			case COL_TYPE:
+				return row.msgtype();
 		}
 		return "???";
 	}
@@ -396,14 +408,15 @@ class LogPointCellRenderer extends javax.swing.table.DefaultTableCellRenderer {
         //If this is a receive log point & the "final" point, color it red.
         if (!lpe.isSend().booleanValue()) {
             
-        if (lpe.logPointName().startsWith("Bef"))
-            System.out.println("Log point name starts with Bef!!!: " + lpe.logPointName());
-                
-            
+            if (lpe.logPointName().startsWith("Bef"))
+                System.out.println("Log point name starts with Bef!!!: " + lpe.logPointName());
+                            
             if (lpe.isFinalLogPoint()) {
                 this.setForeground(java.awt.Color.red);
+                this.setToolTipText("This is the Final Log Point");
             } else {
                 this.setForeground(java.awt.Color.blue);
+                this.setToolTipText("Receive-side message");
             }
         } else
             this.setForeground(java.awt.Color.black);
