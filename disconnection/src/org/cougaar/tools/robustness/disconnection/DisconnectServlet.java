@@ -61,6 +61,7 @@ import org.cougaar.planning.servlet.BlackboardServletComponent;
 
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.util.log.Logger;
+import org.cougaar.core.service.EventService;
 
 
 public class DisconnectServlet extends BaseServletComponent
@@ -74,6 +75,7 @@ public class DisconnectServlet extends BaseServletComponent
   
   private BlackboardService blackboard = null;
   private Logger logger = null;
+  private EventService eventService = null;
   
   private String assetType = "Node";
   private String assetID = null;
@@ -113,7 +115,16 @@ public class DisconnectServlet extends BaseServletComponent
       if (assetID == null) {
           throw new RuntimeException("Unable to obtain node id");
       }
+      
+      // get the EventService
+      this.eventService = (EventService)
+          serviceBroker.getService(this, EventService.class, null);
+      if (eventService == null) {
+          throw new RuntimeException("Unable to obtain EventService");
+      }
     }
+    
+    if (eventService.isEventEnabled()) eventService.event("Loaded DisconnectServlet");
 
     super.load();
   }
@@ -195,6 +206,9 @@ public class DisconnectServlet extends BaseServletComponent
                         else {
                             out.println("<center><h2>Failed to Disconnect - Defense not initialized: can't find ManagementAgent address</h2></center><br>");
                             if (logger.isErrorEnabled()) logger.error("Failed to Disconnect - Defense not initialized: can't find ManagementAgent address");
+                            if (eventService.isEventEnabled()) {
+                                eventService.event("Defense not initialized");
+                            }
                         }
                         blackboard.closeTransaction();
                     } finally {
