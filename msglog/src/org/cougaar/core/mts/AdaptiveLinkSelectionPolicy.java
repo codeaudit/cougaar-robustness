@@ -1403,8 +1403,12 @@ if (rn != null) rns = "" + rn;
 
   private int getInitialOneWayTripTime (DestinationLink link)
   {
-    if (getName(link).equals("org.cougaar.core.mts.RMILinkProtocol")) return 500;  // yep, a HACK
-    int cost = link.cost (null);  // another HACK
+    if (getName(link).equals("org.cougaar.core.mts.RMILinkProtocol"))         return 500;   // yep, a HACK
+    if (getName(link).equals("org.cougaar.core.mts.SerialedRMILinkProtocol")) return 500;   // yep, a HACK
+    if (getName(link).equals("org.cougaar.core.mts.CorbaLinkProtocol"))       return 500;   // yep, a HACK
+    if (getName(link).equals("org.cougaar.core.mts.SSLRMILinkProtocol"))      return 1000;  // yep, a HACK
+
+    int cost = link.cost (null);  // another HACK (note null msg)
 
     if (cost == Integer.MAX_VALUE)  // watch for problems
     {
