@@ -57,14 +57,14 @@ class BelievabilityAction extends BeliefUpdateTrigger {
     {
         super( action.getAssetID() );
         //_blackboard_action = action;
-     _actuator_info = tech;
-     _action_ts = action.getValue().getEndTime();
-     _action_state_dim = action.getAssetStateDimensionName();
-     _actuator_name = tech.getName();
-     _action_status = action.getValue().getCompletionCodeString();
-     _action_has_completed = action.getValue().hasCompleted();
-     //_action_description = " ";
-     _action_description = tech.getActionDescriptionForValue(action,(Object)action.getValue().getAction());
+	_actuator_info = tech;
+	_action_ts = action.getValue().getEndTime();
+	_action_state_dim = action.getAssetStateDimensionName();
+	_actuator_name = tech.getName();
+	_action_status = action.getValue().getCompletionCodeString();
+	_action_has_completed = action.getValue().hasCompleted();
+	//_action_description = " ";
+	_action_description = tech.getActionDescriptionForValue(action,(Object)action.getValue().getAction()).name();
         logError( "Got time stamp frmo Actuator Tech Spec Handle.\n BelievabilitAction constructor done." );
     } // constructor BelievabilityAction
     
@@ -80,15 +80,16 @@ class BelievabilityAction extends BeliefUpdateTrigger {
         StringBuffer buff = new StringBuffer();
 
         buff.append( "BelievabilityAction:" + _action_description + "\n");
-     buff.append( "\t Actuator Name:" + _actuator_name + "\n");
-     buff.append( "\tAction Status:" + _action_description + "\n");
-     buff.append( "\tAction Completion Time:" + _action_ts + "\n");
-     buff.append( "\tAction State Dimension Name" + _action_state_dim + "\n");
-     
-     /*for (int dim_count = 0; dim_count < _action_state_dim.length; dim_count++){
-          buff.append(_action_state_dim[dim_count].toString());
-     }*/
-     
+	buff.append( "\t Actuator Name:" + _actuator_name + "\n");
+	buff.append( "\tAction Description:" + _action_description + "\n");
+	buff.append( "\tAction State Dimension Name" + _action_state_dim + "\n");
+	buff.append( "\tAction Completion Time:" + _action_ts + "\n");
+	buff.append( "\tAction Status:" + _action_status + "\n");
+	
+	/*for (int dim_count = 0; dim_count < _action_state_dim.length; dim_count++){
+		buff.append(_action_state_dim[dim_count].toString());
+	}*/
+	
         return buff.toString();
     } // method toString
 
@@ -103,12 +104,12 @@ class BelievabilityAction extends BeliefUpdateTrigger {
     public long getTriggerTimestamp() 
     {
         try {
-         logError( "Getting TriggerTimeStamp for action record :" + _blackboard_action.getValue().toString() );
-         return _action_ts; 
-     } catch (Exception e){
-         logError( "Error getting Trigger Timestamp for the action record :" + _blackboard_action.getValue().toString());
-         return 0;
-     }
+	    logError( "Getting TriggerTimeStamp for action record :" + _blackboard_action.getValue().toString() );
+	    return _action_ts; 
+	} catch (Exception e){
+	    logError( "Error getting Trigger Timestamp for the action record :" + _blackboard_action.getValue().toString());
+	    return 0;
+	}
     } // method getTriggerTimestamp
 
 
@@ -118,12 +119,12 @@ class BelievabilityAction extends BeliefUpdateTrigger {
      */
     public String getStateDimensionName()
     {
-     try{
-         logError("Getting StateDimensionName for :" + _asset_id.toString()); 
-         return _action_state_dim;
-     } catch (Exception e){
-         return null;
-     }
+	try{
+	    logError("Getting StateDimensionName for :" + _asset_id.toString()); 
+	    return _action_state_dim;
+	} catch (Exception e){
+	    return null;
+	}
     } // method getStateDimensionName
     
     /**
@@ -131,24 +132,24 @@ class BelievabilityAction extends BeliefUpdateTrigger {
      *@return status of BelievabilityAction 
      */
     public String getBelivabilityActionStatus(){
-     logError("Believability Action status for " + _asset_id.toString() + " is " + _blackboard_action.getValue().getCompletionCodeString());
-      return _action_status;
+	logError("Believability Action status for " + _asset_id.toString() + " is " + _blackboard_action.getValue().getCompletionCodeString());
+	 return _action_status;
     }
     /**
      *
      *
      */
     public boolean getBelievabilityActionSuccessStatus(){
-     try {
-         if ((_action_has_completed) && 
-          (_action_status.compareToIgnoreCase("COMPLETED") == 0)){
-          logError("Believability Action  for " + _asset_id.toString() + " is  successfully completed");
-          return true;
-         } else {return false; } 
-     } catch (Exception e){
-         return false;
-     }
-     
+	try {
+	    if ((_action_has_completed) && 
+		(_action_status.compareToIgnoreCase("COMPLETED") == 0)){
+		logError("Believability Action  for " + _asset_id.toString() + " is  successfully completed");
+		return true;
+	    } else {return false; } 
+	} catch (Exception e){
+	    return false;
+	}
+	
     }
     
     
@@ -159,7 +160,7 @@ class BelievabilityAction extends BeliefUpdateTrigger {
      * @return the actuator name
      */
      public String getActuatorName( ){
-      return _actuator_name;
+	 return _actuator_name;
      }
      
     /**
@@ -167,7 +168,7 @@ class BelievabilityAction extends BeliefUpdateTrigger {
      * @return the ActionDescription
      */
      public String getActionValue( ){
-      return _action_description.name();
+	 return _action_description;
      }
     
     //---------------------------------------------------------------
@@ -182,7 +183,7 @@ class BelievabilityAction extends BeliefUpdateTrigger {
     private String _action_status;
     private boolean _action_has_completed;
     private String _action_state_dim;
-    private ActionDescription _action_description;
+    private String _action_description;
     private String _actuator_name;
     private AssetID _asset_id;
 

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ProbabilityUtils.java,v $
- * $Revision: 1.6 $
- * $Date: 2004-06-24 16:36:56 $
+ * $Revision: 1.7 $
+ * $Date: 2004-06-29 22:43:18 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -28,7 +28,7 @@ import java.util.Random;
  * Utilities for dealing with probabilities.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.6 $Date: 2004-06-24 16:36:56 $
+ * @version $Revision: 1.7 $Date: 2004-06-29 22:43:18 $
  */
 public class ProbabilityUtils
 {
@@ -346,21 +346,21 @@ public class ProbabilityUtils
         return buff.toString();
     }
 
-    static String arrayToString( double[][] a )
+   static String arrayToString( double[][] a, String prefix )
     {
         if ( a == null )
-            return "null";
+            return prefix + "null";
 
         StringBuffer buff = new StringBuffer();
 
-        buff.append( "[ " );
+        buff.append( prefix + "[ " );
         for ( int i = 0; i < a.length; i++ )
         {
             buff.append( a[i][0] );
             for ( int j = 1; j < a[i].length; j++ )
                 buff.append( ", " + a[i][j] );
             if ( i != (a.length-1))
-                buff.append( " ;\n  " );
+                buff.append( " ;\n" + prefix + "  " );
             
         }
         buff.append( " ]" );
@@ -368,21 +368,31 @@ public class ProbabilityUtils
         return buff.toString();
     }
 
-     static String arrayToString( double[][][] a )
+    static String arrayToString( double[][] a )
+    {
+        return arrayToString( a, "" );
+    }
+
+    static String arrayToString( double[][][] a, String prefix )
     {
         if ( a == null )
-            return "null";
+            return prefix + "null";
 
         StringBuffer buff = new StringBuffer();
 
         for ( int k = 0; k < a.length; k++ )
         {
-            buff.append( "Array " + k + ":\n" );
+            buff.append( prefix + "Array " + k + ":\n" );
 
-            buff.append( arrayToString( a[k] ));
+            buff.append( arrayToString( a[k], prefix + "\t" ));
         }
 
         return buff.toString();
+    }
+
+    static String arrayToString( double[][][] a )
+    {
+        return arrayToString( a, "" );
     }
 
     static boolean isEquals( double[][] a1, double[][] a2 )

@@ -55,6 +55,7 @@ import java.sql.Timestamp;
      private AssetID _asset_id;
      private AssetType _asset_type;
      private AssetAlarm a_alarm = null; 
+     private long _initial_timestamp;   //used only in constructor --- may be removed?
      /**
       * Handle for POMDPModelInterface on Diagnosis receipt updated Belief State is obtained from POMDPModelInterce 
       */
@@ -79,9 +80,62 @@ import java.sql.Timestamp;
        */
       private LinkedList _bst_queue;
       private LinkedList _diag_queue;
+      /**
+      * Constructor, sets the length of window. AssetStateWindow is created from AssetModel
+      * @param ast_model an instance of AssteModel which represents thresholds for an asset.
+      */
+     public BeliefStateWindow(AssetID ast_id, double max_diag_latency,long bs_timestamp, POMDPModelInterface _pmdp_mif, 
+                         StateEstimationPublisher _se_publisher, BelievabilityPlugin blv_plugin)
+          throws BelievabilityException {
+         // Argument assignment
+         try {
+          _se_pub = _se_publisher;
+          _asset_id = ast_id;
+          _asset_type = _asset_id.getType();
+          _max_window_length = max_diag_latency;
+          _pmdp_mi =  _pmdp_mif;
+          _blv_plugin = blv_plugin;
+	  _initial_timestamp = bs_timestamp;
+         } catch (Exception e){
+          throw new BelievabilityException("BeliefStateWindow - constructor","Argument assignment error");
+         }
+         // Get defualt BeliefState from POMDPModel, set it as first element of the linked list and apply a timer to it.
+         // this try block can be in consumeDiagnosis
+         try {
+          _apriori_state = _pmdp_mi.getInitialBeliefState(_asset_type);
+          _apriori_state.setAssetID(ast_id);  //set assetid for retrieved initial belief state
+	  _apriori_state.setTimestamp(_initial_timestamp);
+          //Belief State queue
+          _bst_queue = new LinkedList();
+          _bst_queue.addFirst(_apriori_state);
+          //Diagosis queue
+          _diag_queue = new LinkedList();
+          _diag_queue.addFirst(null);
+          try {
+              this.publishBeliefState(_apriori_state);
+          } catch (BelievabilityException e){
+              logDebug("Error Publishing BeliefState" + e.getMessage());
+              throw new BelievabilityException("BeliefStateWindow - constructor","Error publishing to the StateEstimation Publisher " + e.getMessage());
+          }
+         } catch (Exception e){
+          logDebug(e.getMessage());
+          throw new BelievabilityException("BeliefStateWindow - constructor","Error retrieving and/or publishing initial BeliefState " + e.getMessage());
+         }
+         // Set cougaar timer options.
+         try {
+          logDebug("Setting cougaar timer options for AssetID:" + _asset_id.toString());
+          if (! initiateTimer((long)_max_window_length)){
+              throw new BelievabilityException("BeliefStateWindow - constructor" , "Error setting timer");
+          }
+         } catch (Exception e){
+          throw new BelievabilityException("BeliefStateWindow - constructor" , "Error setting timer");
+         }
+     }
      /**
       * Constructor, sets the length of window. AssetStateWindow is created from AssetModel
       * @param ast_model an instance of AssteModel which represents thresholds for an asset.
+      * @deprecated BeliefStateWindow constructor requires initial belief state timestamp as one of the arguments
+      * @see #BeliefStateWindow(AssetID, double,long, POMDPModelInterface, StateEstimationPublisher, BelievabilityPlugin)throws BelievabilityException
       */
      public BeliefStateWindow(AssetID ast_id, double max_diag_latency, POMDPModelInterface _pmdp_mif, 
                          StateEstimationPublisher _se_publisher, BelievabilityPlugin blv_plugin)

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/AssetTypeModel.java,v $
- * $Revision: 1.10 $
- * $Date: 2004-06-24 16:36:56 $
+ * $Revision: 1.11 $
+ * $Date: 2004-06-29 22:43:18 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -48,7 +48,7 @@ import org.cougaar.coordinator.techspec.ThreatModelChangeEvent;
  * be notified is there is a change.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.10 $Date: 2004-06-24 16:36:56 $
+ * @version $Revision: 1.11 $Date: 2004-06-29 22:43:18 $
  *
  */
 class AssetTypeModel extends Model
@@ -494,36 +494,41 @@ class AssetTypeModel extends Model
 
     //************************************************************
     /**
-     * Adds a threat variation model to this asset. 
+     * Adds a stress instance that is relevant to this asset type.
      *
-     * @param threat_var The threat variation model to be added
+     * @param stress The stress to add
      */
-    ThreatVariationModel addThreatVariationModel
-            ( ThreatModelInterface threat_mi )
+    void addStressInstance( StressInstance stress )
             throws BelievabilityException
     {
-        if ( threat_mi == null )
+        // Just relay the stress the the appropriate aset dimension
+        // model.
+
+        if ( stress == null )
             throw new BelievabilityException
-                    ( "AssetTypeModel.addThreatVariationModel()",
-                      "Cannot add null ThreatModelInterface" );
+                    ( "AssetTypeModel.addStressInstance()",
+                      "Cannot add null stress instance" );
 
-        String state_dim_name
-                = threat_mi.getThreatDescription().getEventThreatCauses
-                ().getAffectedStateDimensionName(); 
-
-        int dim_idx = getStateDimIndex( state_dim_name );
+        if ( stress.getStateDimension() == null )
+            throw new BelievabilityException
+                    ( "AssetTypeModel.addStressInstance()" 
+                      + stress + ")",
+                      "Stress has NULL state dimension." );
         
+        int dim_idx = getStateDimIndex
+                ( stress.getStateDimension().getStateName() );
+
         if (( dim_idx < 0 ) || ( dim_idx >= _dim_model.length ))
             throw new BelievabilityException
-                    ( "AssetTypeModel.addThreatVariationModel()",
-                      "Threat has unknown state dimension : "
-                      + state_dim_name );
+                    ( "AssetTypeModel.addStressInstance()",
+                      "Actuator has unknown state dimension : "
+                      + stress.getStateDimension().getStateName() );
 
-        return _dim_model[dim_idx].addThreatVariationModel( threat_mi );
-        
-    } // method addThreatVariationModel
+        _dim_model[dim_idx].addStressInstance( stress );
 
-    //************************************************************
+    } // method addStressInstance
+ 
+   //************************************************************
     /**
      * Handle the situation where a threat model has changed the set
      * of assets it pertains to.  This could be the addition and/or
@@ -546,8 +551,6 @@ class AssetTypeModel extends Model
         
         ThreatModelInterface threat_model = tm_change.getThreatModel();
         
-        ThreatDescription td = threat_model.getThreatDescription();
-        
         if ((threat_model == null )
             || ( threat_model.getThreatDescription() == null )
             || ( threat_model.getThreatDescription
@@ -556,6 +559,8 @@ class AssetTypeModel extends Model
                     ( "AssetTypeModel.handleThreatModelChange()",
                       "Found NULL while trying to retrieve state dimension." );
 
+        ThreatDescription td = threat_model.getThreatDescription();
+        
         EventDescription ed
                 = threat_model.getThreatDescription().getEventThreatCauses();
         

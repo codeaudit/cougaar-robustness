@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetModel.java,v $
- * $Revision: 1.9 $
- * $Date: 2004-06-24 16:36:56 $
+ * $Revision: 1.10 $
+ * $Date: 2004-06-29 22:43:18 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.9 $Date: 2004-06-24 16:36:56 $
+ * @version $Revision: 1.10 $Date: 2004-06-29 22:43:18 $
  *
  */
 class POMDPAssetModel extends Model
@@ -39,8 +39,33 @@ class POMDPAssetModel extends Model
     // Class implmentation comments go here ...
 
     //------------------------------------------------------------
+    // Testing area
+    //------------------------------------------------------------
+
+    // For testing purposes only.
+    //
+    private static final boolean USE_FAKE_TRIGGER_TIME = true;
+
+    private static long FAKE_TIME_INCREMENT_MS = 600000;
+
+    private static long _cur_fake_time = System.currentTimeMillis();
+
+    private static long nextFakeTime()
+    {
+        _cur_fake_time += FAKE_TIME_INCREMENT_MS;
+        return _cur_fake_time;
+    }
+
+    //------------------------------------------------------------
     // package interface
     //------------------------------------------------------------
+
+
+    // Set this to be the smallest interval (in milliseconds) for
+    // which we will consider threats over.  We'll round and ignore
+    // anything not at least this large.  
+    //
+    static final long SMALLEST_THREAT_INTERVAL_MS = 1000;
 
     /**
      * Main constructor which extracts all the needed information out
@@ -189,6 +214,15 @@ class POMDPAssetModel extends Model
                     ( "POMDPModelManager.updateBeliefState()",
                       "NULL starting belief passed in." );
 
+        // For testing to increase the time intervals so that I do not
+        // have to idle for minutes.
+        //
+        if ( USE_FAKE_TRIGGER_TIME )
+        {
+            logWarning( "USING FAKE TIME FOR TESTING ! (FIXME)" );
+            end_time = nextFakeTime(); 
+        }
+   
         logDebug( "Belief before threats: " + start_belief.toString() );
 
         BeliefState next_belief = (BeliefState) start_belief.clone();
@@ -215,7 +249,26 @@ class POMDPAssetModel extends Model
             return next_belief;
         }
 
-        // Here we will be updating all the state dimensions.
+        if ( (end_time - start_time) < SMALLEST_THREAT_INTERVAL_MS/2 )
+        {
+            logWarning( "updateBeliefState(): Found miniscule update interval."
+                     + "[ " + start_time + ", " + end_time + "]"
+                     + " for asset " + start_belief.getAssetID()
+                     + ". Rounding to zero and ignoring threats." );
+            return next_belief;
+        }
+
+        if ( (end_time - start_time) < SMALLEST_THREAT_INTERVAL_MS )
+        {
+            logWarning( "updateBeliefState(): Found small update interval."
+                     + "[ " + start_time + ", " + end_time + "]"
+                     + " for asset " + start_belief.getAssetID()
+                     + ". Rounding to " 
+                        + SMALLEST_THREAT_INTERVAL_MS + "." );
+            start_time = end_time - SMALLEST_THREAT_INTERVAL_MS;
+        }
+
+         // Here we will be updating all the state dimensions.
         //
 
         for ( int dim_idx = 0;

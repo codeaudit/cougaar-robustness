@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManager.java,v $
- * $Revision: 1.9 $
- * $Date: 2004-06-24 16:36:56 $
+ * $Revision: 1.10 $
+ * $Date: 2004-06-29 22:43:18 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -50,7 +50,7 @@ import org.cougaar.util.log.Logger;
  * and provides information via the ModelManagerInterface. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.9 $Date: 2004-06-24 16:36:56 $
+ * @version $Revision: 1.10 $Date: 2004-06-29 22:43:18 $
  *
  */
 public class ModelManager extends Loggable
@@ -266,17 +266,80 @@ public class ModelManager extends Loggable
      *
      * @param threat_model Threat type to be added
      */
-    public void addThreatType( ThreatModelInterface threat_model )
+    public void addThreatType( ThreatModelInterface threat_mi )
     {
-        logDebug( "addThreatType() called" );
+        logDebug( "==== Add Threat Model ====" );
 
-        if ( threat_model == null )
+        if ( threat_mi == null )
         {
             logError( "addThreatType() sent NULL ThreatModelInterface. " );
             return;
         }
 
-        addThreatVariation( threat_model );
+        // Here we need to walk the threat model to find all the
+        // transitive effects that this threat will have.  We build a
+        // graph of all these stresses, connecting them where there is
+        // a causal relationship.  The causality can span state
+        // dimensions as well as asset types, so the complete graph
+        // needs to be built up here, above all the specific
+        // AssetTypeModel and AssetTypeDimensionModels.
+        //
+        Vector new_stress_set = new Vector();
+
+        _stress_graph.add( threat_mi, new_stress_set );
+
+        logDebug( "Added " + new_stress_set.size()
+                  + " new stresses. Current Stress Graph: " 
+                  + _stress_graph.toString() );
+
+        // However, when constructing the stress model graph for a
+        // particular asset state dimension, the
+        // AssetStateDimensionModel only needs to look at those
+        // stresses on that particular state dimension.  It will
+        // build a set of direct effects on that asset but uses
+        // the linking structure in the larger stress graph to
+        // compute the probbailities.  For this reason, we need to
+        // make sure the asset models have a cache of the stresses
+        // for their asset type and state dimension.
+        //
+
+        Enumeration stress_enum = new_stress_set.elements();
+        while ( stress_enum.hasMoreElements() )
+        {
+
+            StressInstance stress = (StressInstance) stress_enum.nextElement();
+
+            // Do not make the assumption that the asset type model
+            // exists.  First attempt to add, or simply retrieve the asset
+            // model.  
+            //
+            AssetType asset_type = stress.getAffectedAssetType();
+            AssetTypeModel asset_type_model 
+                    = getOrCreateAssetTypeModel( asset_type );
+
+            if ( asset_type_model == null )
+            {
+                logError( "Cannot find AssetTypeModel for asset type: "
+                          + asset_type.getName() );
+                continue;
+            }
+
+            try
+            {
+                logDebug( "Adding new stress to asset model: "
+                          + stress.getName() );
+            
+                asset_type_model.addStressInstance( stress );
+
+            }
+            catch (BelievabilityException be)
+            {
+                logError( "Cannot add stress "
+                          + stress.getName() + " to asset model : " 
+                          + be.getMessage() );
+                return;
+            }
+        } // while stress_enum
 
     } // method addThreatModel
 
@@ -300,7 +363,8 @@ public class ModelManager extends Loggable
         // for this actuator.  Try to add and/or fetch the model first.
         //
         AssetType asset_type = actuator_ts.getAssetType();
-        AssetTypeModel asset_type_model = getOrCreateAssetTypeModel( asset_type );
+        AssetTypeModel asset_type_model 
+                = getOrCreateAssetTypeModel( asset_type );
 
         if ( asset_type_model == null )
             return;
@@ -455,7 +519,7 @@ public class ModelManager extends Loggable
                       + be.getMessage() );
         }
 
-    } // method handleThreatModelChange
+    } // method handleThreatModelChangxe
 
     //************************************************************
     /**
@@ -567,61 +631,7 @@ public class ModelManager extends Loggable
     
     private POMDPModelManager _pomdp_manager = new POMDPModelManager(this);
 
-    //************************************************************
-    /**
-     * Creates a new threat variation model from a threat description,
-     * which must have a valid event description contined in it.
-     *
-     * @param threat_desc The threat description to add.
-     */
-    private void addThreatVariation( ThreatModelInterface threat_mi )
-    {
-        // Important note: There may be many ThreatModelInterface
-        // objects with the same name published.  Each will have a
-        // different filter for the vulerable assets that the threat
-        // is defining.  Locally in the believability package, we only
-        // keep one ThreatRootModel for a given threat name, but many
-        // ThreatVariationModels for each. We also keep the mapping
-        // from AssetID to the threat models based on the vulerability
-        // filter, but that is handled by the asset type model for the
-        // initial creation and elsewhere for the dynamically changing
-        // membership of which threats affect which assets.
-        //
-
-        logDebug( "Starting call to: addThreatVariation()" );
-
-        // Do not make the assumption that the asset type model
-        // exists.  First attempt to add, or simply retrieve the asset
-        // model.  
-        //
-        AssetType asset_type 
-                = threat_mi.getThreatDescription().getAffectedAssetType();
-        AssetTypeModel asset_type_model 
-                = getOrCreateAssetTypeModel( asset_type );
-
-        if ( asset_type_model == null )
-            return;
-
-        logDebug( "==== Add Threat Variation ====" );
-
-        try
-        {
-            ThreatVariationModel threat_var
-                    = asset_type_model.addThreatVariationModel( threat_mi );
-            
-            logDebug( "Added New ThreatVariationModel:\n"
-                      + threat_var.getName() );
-            
-        }
-        catch (BelievabilityException be)
-        {
-            logError( "Cannot add ThreatModelInterface "
-                      + threat_mi.getName() + ": " 
-                      + be.getMessage() );
-            return;
-        }
-
-    } // method addThreatVariation
+    private StressGraph _stress_graph = new StressGraph();
 
     //------------------------------------------------------------
     // Test code section

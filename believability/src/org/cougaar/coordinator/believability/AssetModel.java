@@ -57,35 +57,39 @@ public class AssetModel extends Loggable {
      * @param se_publisher The publisher that will create and publish
      *                     StateEstimations to the blackboard as needed.
      * @param bel_plugin A handle to the believability plugin
+     * @param initial_time Timestamp to use to mark the start of the
+     * asset's existence.
      **/
     public AssetModel( AssetID asset_id,
-		       BelievabilityPlugin bel_plugin,
-		       ModelManagerInterface model_manager,
-		       StateEstimationPublisher se_publisher ) {
+                       BelievabilityPlugin bel_plugin,
+                       ModelManagerInterface model_manager,
+                       StateEstimationPublisher se_publisher,
+                       long initial_time ) {
 
-	// Save construction parameters and information
-	_asset_id = asset_id;
-	_model_manager = model_manager;
-	_se_publisher = se_publisher;
+     // Save construction parameters and information
+     _asset_id = asset_id;
+     _model_manager = model_manager;
+     _se_publisher = se_publisher;
 
-	POMDPModelInterface pmif = model_manager.getPOMDPModel();
-	
-	try {
-	    // Set up with a longer window length 
-	    long window_length = 
-		_model_manager.getMaxSensorLatency( _asset_id.getType() );
-	    window_length = window_length * 5;
-	    _belief_state_window = 
-		new BeliefStateWindow( asset_id, 
-				       window_length,
-				       pmif,
-				       se_publisher,
-				       bel_plugin );
-	}
-	catch( BelievabilityException be ) {
-	    logDebug( "Failed to create belief state window -- " 
-		      + be.getMessage() );
-	}
+     POMDPModelInterface pmif = model_manager.getPOMDPModel();
+     
+     try {
+         // Set up with a longer window length 
+         long window_length = 
+          _model_manager.getMaxSensorLatency( _asset_id.getType() );
+         window_length = window_length * 5;
+         _belief_state_window = 
+          new BeliefStateWindow( asset_id, 
+                                 window_length,
+                                 initial_time,   
+                                 pmif,
+                                 se_publisher,
+                                 bel_plugin );
+     }
+     catch( BelievabilityException be ) {
+         logDebug( "Failed to create belief state window -- " 
+                + be.getMessage() );
+     }
     } // constructor AssetModel
 
 
@@ -103,7 +107,7 @@ public class AssetModel extends Loggable {
      * @return the asset state window
      **/
     public BeliefStateWindow getBeliefStateWindow() {
-	return _belief_state_window;
+     return _belief_state_window;
     }
 
 
@@ -114,12 +118,12 @@ public class AssetModel extends Loggable {
      * @return the current belief state for the asset
      **/
     public BeliefState getCurrentBeliefState() throws BelievabilityException {
-	if ( getBeliefStateWindow() == null ) {
-	    logError( "Null BeliefStateWindow for asset " + getAssetID() );
-	    return null;
-	}
+     if ( getBeliefStateWindow() == null ) {
+         logError( "Null BeliefStateWindow for asset " + getAssetID() );
+         return null;
+     }
 
-	else return _belief_state_window.getCurrentBeliefState();
+     else return _belief_state_window.getCurrentBeliefState();
     }
 
 
@@ -130,14 +134,14 @@ public class AssetModel extends Loggable {
      *                                with the belief update trigger
      **/
     public void consumeBeliefUpdateTrigger( BeliefUpdateTrigger but )
-	throws BelievabilityException {
+     throws BelievabilityException {
 
-	if ( getBeliefStateWindow() == null ) 
-	    logError( "Null BeliefStateWindow for asset " + getAssetID() );
+     if ( getBeliefStateWindow() == null ) 
+         logError( "Null BeliefStateWindow for asset " + getAssetID() );
 
-	else 
-	    // May throw BelievabilityException
-	    getBeliefStateWindow().consumeBeliefUpdateTrigger( but );
+     else 
+         // May throw BelievabilityException
+         getBeliefStateWindow().consumeBeliefUpdateTrigger( but );
     }
 
 
@@ -147,9 +151,9 @@ public class AssetModel extends Loggable {
      * @return a string representation of the asset model
      **/
     public String toString() {
-	return ( "< Asset model for asset ID:"
-		 + getAssetID().toString()
-		 + " >" );
+     return ( "< Asset model for asset ID:"
+           + getAssetID().toString()
+           + " >" );
     } // method toString
 
 

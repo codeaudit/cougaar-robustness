@@ -92,9 +92,10 @@ public class DiagnosisConsumer extends Loggable
          AssetModel am = _asset_container.getAssetModel( but.getAssetID() );
          if ( am == null ) {
           am = new AssetModel( but.getAssetID(),
-                         _plugin,
-                         _model_manager, 
-                         _se_publisher );
+                               _plugin,
+                               _model_manager, 
+                               _se_publisher,
+                               but.getTriggerTimestamp() );
           _asset_container.addAssetModel( am );
          }
      

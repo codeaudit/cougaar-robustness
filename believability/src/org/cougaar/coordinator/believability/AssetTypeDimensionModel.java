@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/AssetTypeDimensionModel.java,v $
- * $Revision: 1.8 $
- * $Date: 2004-06-24 16:36:56 $
+ * $Revision: 1.9 $
+ * $Date: 2004-06-29 22:43:18 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -44,23 +44,16 @@ import org.cougaar.coordinator.techspec.ThreatModelChangeEvent;
  * corresponds to the tech-spec AssetSatteDimension objects.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.8 $Date: 2004-06-24 16:36:56 $
+ * @version $Revision: 1.9 $Date: 2004-06-29 22:43:18 $
  * @see AssetTypeModel
  * @see AssetStateDimension
  */
 class AssetTypeDimensionModel extends Model
 {
 
-    // Class implmentation comments go here ...
-
-    // This is for testing to ignore any event probability that comes
-    // from the tech-specs.  If 'true' this will force it to have a
-    // small non-zero probility to help debug the belief update
-    // calculations.  The tech spec derived probabilities are
-    // time-dependent making testing difficult.
+    // Turn off this optimization until it proves to be a problem.
     //
-    private static final boolean OVERRIDE_EVENT_PROBABILITIES = false;
-    private static final boolean USE_THREAT_VARIATION_CACHING = false;
+    private static final boolean USE_EVENT_COLLECTION_CACHING = false;
 
     //------------------------------------------------------------
     // public interface
@@ -301,14 +294,66 @@ class AssetTypeDimensionModel extends Model
 
     //************************************************************
     /**
+     * Adds a stress instance that is relevant to this asset state
+     * dimension.
+     *
+     * @param stress The stress to add
+     */
+    void addStressInstance( StressInstance stress )
+            throws BelievabilityException
+    {
+        // Just relay the stress the the appropriate aset dimension
+        // model.
+
+        if ( stress == null )
+            throw new BelievabilityException
+                    ( "AssetTypeDimensionModel.addStressInstance()",
+                      "Cannot add null stress instance" );
+
+        // Just add this to the set of applicable stresses for this
+        // state dimension.  We use a lazy evaluation scheme so that
+        // only when we need to compute a belief state will we walk
+        // this list and build the right structure for a given asset
+        // type.
+        //
+        _stress_set.add( stress );
+
+        // We need to also treat this addition as a change.  It is
+        // possible that we will create a cache of applicable stresses
+        // before we actually see any stresses, or before we have seen
+        // the addition of some other stress.  If we have a cache of
+        // applicable stresses and a new stress is added that afects
+        // that asset, then we need to reconstruct the data structure
+        // of applicable threats.
+        //
+        purgeEventCollectionsCache( stress.getAssetList() );
+      
+    } // method addStressInstance
+ 
+    //************************************************************
+    /**
      * This method will purge the cached set of threat variations for
      * every aset instance in the list sent in.  
      *
      * @param asset_ts_list A vector of AssetTechSpecInterface objects
      * of the assets to remove
      */
-    void purgeThreatVariationCache( Vector asset_ts_list )
+    void purgeEventCollectionsCache( Vector asset_ts_list )
     {
+
+        if ( asset_ts_list == null )
+        {
+            logDebug( "No event collections to purge (NULL list)"
+                      + " in state dimension " + _state_dim_name );
+            return;
+       }
+
+        if ( asset_ts_list.size() < 1 )
+        {
+            logDebug( "No event collections to purge (empty list)"
+                      + " in state dimension " + _state_dim_name );
+            return;
+       }
 
         Enumeration asset_enum = asset_ts_list.elements();
         while( asset_enum.hasMoreElements() )
@@ -316,93 +361,36 @@ class AssetTypeDimensionModel extends Model
             AssetTechSpecInterface asset_ts
                     = (AssetTechSpecInterface) asset_enum.nextElement();
 
-            // We choose to keep the management of the mapping from asset
-            // IDs to applicable threats simple.  In this way, on a threat
-            // model change, we do not attempt the surgical manuevers
-            // required to bring the data structure into compliance.
-            // Instead, we simply wipe out the existence of any mapping
-            // for this asset ID to the threats, and rely on a lazy
-            // evaluation scheme of building the mapping only at the point
-            // we need it and find it does not exist.  Note that this
-            // implies that we ignore the 'change_type parameter.
+            // We choose to keep the management of the mapping from
+            // asset IDs to stresses simple.  In this way, on a stress
+            // change (THreatModelChange), we do not attempt the
+            // surgical manuevers required to bring the data structure
+            // into compliance.  Instead, we simply wipe out the
+            // existence of any mapping for this asset ID to the
+            // stresses, and rely on a lazy evaluation scheme of
+            // building the mapping only at the point we need it and
+            // find it does not exist.  Note that this implies that we
+            // ignore the 'change_type parameter and do this whether
+            // the asset was added or removed from the stress.
             //
-            logDebug( "Removing applicable threat variations for "
-                      + asset_ts.getAssetID() 
-                      + " in state dimension " + _state_dim_name );
-
-            // Because we build the threat variation set on the fly, it is
-            // very possible that we may try to remove things that were
-            // never created. In this case, we will do nothing silently.
-            //
-            _asset_threat_var_table.remove( asset_ts.getAssetID() );
+            if ( _asset_event_collection_table.contains
+                 ( asset_ts.getAssetID() ))
+            {
+                logDebug( "Purging event collection from cache for "
+                          + asset_ts.getAssetID() 
+                          + " in state dimension " + _state_dim_name );
+                _asset_event_collection_table.remove( asset_ts.getAssetID() );
+            }
+            else
+            {
+                logDebug( "No event collection to purge from cache for "
+                          + asset_ts.getAssetID() 
+                          + " in state dimension " + _state_dim_name );
+            }
 
         } // while enum */
 
-    } // method purgeThreatVariationCache
-    //************************************************************
-    /**
-     * Adds a threat variation model to this asset dimension. 
-     *
-     * @param threat_var The threat variation model to be added
-     */
-    ThreatVariationModel addThreatVariationModel
-            ( ThreatModelInterface threat_mi )
-            throws BelievabilityException
-    {
-        if ( threat_mi == null )
-            throw new BelievabilityException
-                    ( "AssetTypeModel.addThreatVariationModel()",
-                      "Cannot add null ThreatModelInterface model" );
-
-        
-        // Need to first check if common threat information
-        // (ThreatRootModel) exists.  If not, we create it.
-        //
-        ThreatRootModel threat_root_model 
-                = (ThreatRootModel) _threat_model_set.get( threat_mi.getName());
-        
-        if ( threat_root_model == null )
-        {
-            threat_root_model = new ThreatRootModel
-                    ( threat_mi.getThreatDescription(), 
-                      this );
-
-            _threat_model_set.put( threat_mi.getName(),
-                                   threat_root_model );
-
-            logDebug( "Created new ThreatRootModel: " 
-                      + threat_root_model.toString() );
-
-        } // if didn't have threat root model
-
-        // Now we can add this variation safely to the root.
-        //
-        ThreatVariationModel threat_var
-                =  threat_root_model.addThreatVariation( threat_mi );
-
-        logDebug( "Created new ThreatVariationModel: " 
-                  + threat_var.toString() );
-
-        // Finally, if this Threat involves assets we already have
-        // built up a set of threat variations for, then we will need
-        // to invalidate (by deleting) that set.  Note that we could
-        // alternatively add this to the existing set, but prefer to
-        // allow our lazy reconstruction to rebuild this set when it
-        // odes not exist.  The performance impact of this will likely
-        // not mater given the infrequency of adding threat models.
-        //
-
-        Vector asset_list = threat_var.getAssetList();
-        if ( asset_list == null )
-            throw new BelievabilityException
-                    ( "AssetTypeModel.addThreatVariationModel()",
-                      "Found null asset list." );
-            
-        purgeThreatVariationCache( asset_list );
-
-        return threat_var;
-
-    } // method addThreatVariationModel
+    } // method purgeEventCollectionsCache
 
     //************************************************************
     /**
@@ -411,14 +399,15 @@ class AssetTypeDimensionModel extends Model
      *
      * @param asset_id The aset id whose threat variations we want.
      */
-    ThreatVariationCollection getThreatVariations( AssetID asset_id )
+    EventInstanceCollection getEventInstanceCollection( AssetID asset_id )
+            throws BelievabilityException
     {
         // We use lazy evaluation for building the data structure, so
         // construct the set if it does not already exist.
 
-        ThreatVariationCollection threat_var_set 
-                = (ThreatVariationCollection) 
-                _asset_threat_var_table.get( asset_id );
+        EventInstanceCollection event_collection 
+                = (EventInstanceCollection) 
+                _asset_event_collection_table.get( asset_id );
 
         // This should evaluate to true and return in the normal case
         // where we just return the threat variation set.  We only
@@ -426,60 +415,50 @@ class AssetTypeDimensionModel extends Model
         // the set (should be the first time we have seen this asset
         // ID, or the asset membership in a threat has changed.)
         //
-        if ( threat_var_set != null )
-            return threat_var_set;
+        if ( event_collection != null )
+        {
+            logDebug( "Found existing event collection for asset '" 
+                      + asset_id.getName() 
+                      + "' in dimension '" 
+                      + _state_dim_name );
+
+            return event_collection;
+        }
 
         // Else, we need to construct the set.
 
-        logDebug( "Threat variation collection not found for asset '" 
+        logDebug( "Event collection not found for asset '" 
                   + asset_id.getName() 
                   + "' in dimension '" 
                   + _state_dim_name
                   + "'. Creating." );
-        
-        threat_var_set = new ThreatVariationCollection();
 
-        if ( USE_THREAT_VARIATION_CACHING )
+        // The constructor here does a fair bit of work in gathering
+        // applicable stresses into groups of events.  It is this
+        // EventInstanceCollection data structure that defines the
+        // stresses applicable to this asset as well as capturing the
+        // relationships between the stresses (in the case where
+        // stresses can cause other stresses.)
+        //
+        event_collection = new EventInstanceCollection( asset_id,
+                                                        _stress_set,
+                                                        this );
+        
+        // Optionall turn off caching for testing and debugging, or if
+        // the cache managemrnt turns out to be buggy.
+        //
+        if ( USE_EVENT_COLLECTION_CACHING )
         {
-            _asset_threat_var_table.put( asset_id, threat_var_set );
+            _asset_event_collection_table.put( asset_id, event_collection );
         }
         else
         {
-            logDebug( "NOTE: Threat variation caching disabled." );
+            logDebug( "NOTE: Event collection caching disabled." );
         }
 
-        // Loop over all the threat root models and all their threat
-        // variations, finding the ones that are applicable for this
-        // state dimension.
-        //
-        Enumeration tm_enum = _threat_model_set.elements();
-        while ( tm_enum.hasMoreElements() )
-        {
-            ThreatRootModel tm = (ThreatRootModel) tm_enum.nextElement();
+        return event_collection;
 
-            Iterator tv_iter = tm.getThreatVariationSet().iterator();
-
-            while ( tv_iter.hasNext() )
-            {
-                ThreatVariationModel tv
-                        = (ThreatVariationModel) tv_iter.next();
-
-                if ( ! tv.isApplicable( asset_id ))
-                    continue;
-
-                threat_var_set.add( tv );
-
-            } // while tv_iter
-            
-        } // while tm_enum
-        
-        logDebug( "Found " + threat_var_set.getNumThreatVariations() 
-                  + " applicable threat variations for "
-                  + asset_id.getName() );
-
-        return threat_var_set;
-
-    } // method getThreatVariations
+    } // method getEventInstanceCollection
 
     //************************************************************
     /**
@@ -498,14 +477,21 @@ class AssetTypeDimensionModel extends Model
                     ( "AssetTypeDimensionModel.handleThreatModelChange()",
                       "Found NULL for threat change object." );
 
+        // FIXME: Do I need to to walk the transitive effects and
+        // purge all assets connected with those effects?  If so, it
+        // seems like this threatModelChangeEvent is silly, since the
+        // getAddedAssets() and getRemovedAssets() isn't telling me
+        // everything. 
+        //
+
         ThreatModelInterface threat_model = tm_change.getThreatModel();
         
         // We deal with the removed and added assets the same.  Just
         // purge the cahce to force it to be recalculated.
         //
-        purgeThreatVariationCache( tm_change.getAddedAssets() );
+        purgeEventCollectionsCache( tm_change.getAddedAssets() );
 
-        purgeThreatVariationCache(  tm_change.getRemovedAssets() );
+        purgeEventCollectionsCache(  tm_change.getRemovedAssets() );
         
     } // method handleThreatModelChange
 
@@ -718,135 +704,47 @@ class AssetTypeDimensionModel extends Model
 
     //************************************************************
     /**
-     * Computes the threat probability for a given instance of an
-     * asset.  This needs to account for all threats acting on this
-     * asset's state dimension.
-     *
-     * @param threat_var_set The set of ThreatVariationModel objects
-     * that define the threats that can lead to an event (assumes all
-     * ThreatVariationModel in this set cause the same event.)
-     * @param start_time time of last belief update
-     * @param end_time time desired for new belief
-     */
-    double getEventProbability( Set threat_var_set,
-                                long start_time,
-                                long end_time )
-            throws BelievabilityException
-    {
-
-        // Some assumptions:
-        //
-        //  o For a given coordinator event, there may be multiple
-        //  threats defined for the asset that can cause this
-        //  coordinator event.
-        //
-        //  o If multiple threats exist, then they occur independently
-        //  from one another.
-        //
-        //  o If there are more than three threats causing the same
-        //  event for this given asset state dimension, then this
-        //  routine will only estimate the transition probability.
-        //  This results from the computeEventUnionProbability()
-        //  routine, which contains a comment explaining the
-        //  rationale.
-        // 
-
-        // Having no threats implies no threat-induced event can
-        // happen.
-        //
-        if (( threat_var_set == null )
-            || ( threat_var_set.size() < 1 ))
-            return 0.0;
-
-        int num_threats = threat_var_set.size();
-
-        double[] prob = new double[num_threats];
-        
-        // This loop will get the individual event probabilities for
-        // each threat.
-        //
-        Iterator threat_var_iter = threat_var_set.iterator();
-        for ( int idx = 0; threat_var_iter.hasNext(); idx++ )
-        {
-            ThreatVariationModel threat_var 
-                    = (ThreatVariationModel) threat_var_iter.next();
-        
-            prob[idx] = threat_var.getEventProbability( start_time, end_time );
-
-            logDebug( "Event prob. due to threat "
-                      + threat_var.getName() + " is "
-                      + prob[idx] );
-
-            
-        } // for idx
-
-        return ProbabilityUtils.computeEventUnionProbability( prob );
-
-    } // method getEventProbability
-
-    //************************************************************
-    /**
      * Returns the transition probability matix resulting from all
      * threats and all events that could affect this asset state
-     * dimension.
+     * dimension (either directly or through trabnsitive events).
      *
      * @param asset_id The ID of the asset instance
+     * @param start_time Start time (transitions are time-dependent)
+     * @param end_time End time (transitions are time-dependent)
      */
     double[][] getThreatTransitionMatrix( AssetID asset_id,
                                           long start_time,
                                           long end_time )
             throws BelievabilityException
     {
-        // Note that because of the parameterize-by-time nature of
-        // the threat probabilities and the dynamic asset
-        // membership of the threats, we *cannopt* precompute this
-        // transition matrix. 
+        // See the extensive comments in EventInstanceCollection's
+        // method getTransitionMatrix() for the gorey details of how
+        // this is computed.
         //
 
-        // Getting the transition probability matrix at the most
-        // abstract is a two step process.  We have to find all the
-        // unique events that are acting on this asset state
-        // dimension, and blend their individual transition matrices
-        // according to the probability of each event.  But to do
-        // this, requires us to blend together all the possible
-        // threats that can cause each event event.
+        // First, get the event collection object for this asset
+        // instance so we can see how many *different* events exist.
         //
-        
-        // General algorithm: Find each event, and compute the
-        // probability of each event (possibly factoring in multiple
-        // threats.)  Blending the threats together is done in
-        // ProbabilityUtils.computeEventUnionProbability(). Then,
-        // consider all possible combinations of the events occurring
-        // and not occurring, building up the transition matrix from
-        // the individual event components.  This blending of events
-        // occurs in the ProbabilityUtils.mergeMultiEventTransitions()
-        // method.
-        //
+        EventInstanceCollection event_collection
+                = getEventInstanceCollection( asset_id );
 
-        // First, get the threat variation set so we can see how many
-        // *different* events exist.
-        //
-        ThreatVariationCollection threat_var_collection
-                = getThreatVariations( asset_id );
-
-        logDebug( "Threat collection for asset '" + asset_id.getName() 
-                  + "', state dim. '"
-                  + _state_dim_name + "'\n"
-                  + threat_var_collection.toString() );
-
-        // The nature of the getThreatVariations() code should never
-        // result in a NULL being returned, but it never hurts to
-        // check (it is supposed to create the set when it finds there
-        // is none).  Also, if there are no threats, then the
-        // probability of the threat should be zero.  However, rather
+        // The nature of the getEventInstanceCollection() code should
+        // never result in a NULL being returned, but it never hurts
+        // to check (it is supposed to create the set when it finds
+        // there is none).  Also, if there are no events, then the
+        // probability due to threats should be zero.  However, rather
         // than couting on that, we will assume that the absence of a
         // threat means that the "threat transition" effect is to not
         // change state, so we return the indentity matrix.
         //
         //
-        if (( threat_var_collection == null )
-            || ( threat_var_collection.getNumEvents() < 1 ))
+        if (( event_collection == null )
+            || ( event_collection.getNumEvents() < 1 ))
         {
+            logDebug( "Event collection for asset '" + asset_id.getName() 
+                      + "', state dim. '"
+                      + _state_dim_name  + " is null or has no events." );
+
             double[][] probs = new double[_possible_states.length]
                     [_possible_states.length];
             
@@ -856,88 +754,16 @@ class AssetTypeDimensionModel extends Model
             return probs;
         } // if no threats acting on this asset state dimension
 
-        // This array will hold (for each event) the transition matrix
-        // *given* the event occurs. (We will assume the transitions
-        // are the identity matrix for the case when the event does
-        // not occur.) First index: the event, second index: the 'from'
-        // asset state, third index: the 'to' asset state.
+        logDebug( "Event collection for asset '" + asset_id.getName() 
+                  + "', state dim. '"
+                  + _state_dim_name + "'\n"
+                  + event_collection.toString() );
+
+        // All the hard work is done in here.
         //
-        double event_trans[][][]
-                = new double[threat_var_collection.getNumEvents()][][];
-
-        // This will hold (for each event) the probability that the
-        // event occurs (independent of all others).  This may need to
-        // factor in one or more threats by computing the probability
-        // of the union of all the threats that can cause a given
-        // event.
-        //
-        double event_probs[]
-                = new double[threat_var_collection.getNumEvents()];
-
-        // Fill out the arrays by looping over each event.
-        //
-        Enumeration event_name_enum 
-                = threat_var_collection.eventNameEnumeration();
-        for ( int idx = 0; event_name_enum.hasMoreElements(); idx++ )
-        {
-            String event_name = (String) event_name_enum.nextElement();
-            
-            HashSet threat_var_set 
-                    = (HashSet) threat_var_collection.getThreatVariationSet
-                    ( event_name );
-
-            //  The nature of this threat variation set is such that
-            //  it should not be empty (we would not consider an event
-            //  unless some threat could cause it), and every threat
-            //  variation in there should refer to the same event.
-            //  Because of that, we can get the first item and get the
-            //  event transition from that.
-            //
-            ThreatVariationModel threat_var 
-                    = (ThreatVariationModel) threat_var_set.iterator().next();
-            
-            event_trans[idx] = threat_var.getEventTransitionMatrix();
-
-            event_probs[idx] = getEventProbability( threat_var_set,
-                                                    start_time,
-                                                    end_time );
-            logDebug( "Event prob for  " + event_name 
-                      + " is " + event_probs[idx] );
-            
-            if ( OVERRIDE_EVENT_PROBABILITIES )
-            {
-                logError( "OVERRIDE EVENT PROBS.  THIS IS FOR TESTING ONLY!");
-                
-                if ( event_probs[idx] < 0.0001 )
-                    event_probs[idx] = 0.1;
-                else if ( event_probs[idx] > 0.9999 )
-                    event_probs[idx] = 0.9;
-                else
-                    event_probs[idx] = 0.5;
-
-                logDebug( "New event prob for  " + event_name 
-                          + " is " + event_probs[idx] );
-            }
-
-        } // for idx
-
-        logDebug( "Event probs: " 
-                  + ProbabilityUtils.arrayToString( event_probs ));
+        return event_collection.getTransitionMatrix( start_time,
+                                                     end_time );
         
-        logDebug( "Event transitions: " 
-                  + ProbabilityUtils.arrayToString( event_trans ));
-        
-        // Ok, so now we have the individual state transition
-        // probabilities for each event and the individual
-        // probabilities that each event will occur.  Next up is
-        // merging these into a single transition matrix. Note the
-        // assumption that if an event does not occur, then the state
-        // remains unchanged. Or more accurately, if no events occurs,
-        // there is no state change.
-        //
-        return ProbabilityUtils.mergeMultiEventTransitions( event_probs,
-                                                            event_trans );
-
     } // method getThreatTransitionMatrix
 
     //------------------------------------------------------------
@@ -961,23 +787,23 @@ class AssetTypeDimensionModel extends Model
     //
     private Hashtable _actuator_model_set = new Hashtable();
 
-    // Contains all the threat type models that affect this state
-    // dimension.  Note however that just because a threat is defined
-    // to affect a particular state dimension, this does not mean this
-    // threat is applicable to all assets of this type. Further, the
-    // exact set of threats that affect a particular asset instance
-    // can change over time.
+    // Contains all the stresses that affect this state dimension.
+    // Note however that just because a stress is defined to affect a
+    // particular state dimension, this does not mean this stress is
+    // applicable to all assets of this type. Further, the exact set
+    // of stress that affect a particular asset instance can change
+    // over time.
     //
-    private Hashtable _threat_model_set = new Hashtable();
+    private HashSet _stress_set = new HashSet();
 
-    // This maps asset IDs into a hashtable of threat variation
-    // collections.  This uses lazy evaluation, so that we add a
-    // threat variation at the first time we are asked for the
-    // probability of an event.  Further, on threat model change
-    // events, we do not try to pluck out the one changed threat, but
-    // rather delete the asset ID from this tabel and allow the lazy
-    // evaluation to reconstruct the set for the asset.
+    // This maps asset ID keysinto EventInstanceCollection objects.
+    // This uses lazy evaluation, so that we add an event collection
+    // at the first time we are asked to cmpute a belief update.
+    // Further, on cougaar CHANGE events, we do not try to pluck out
+    // the thing that changed, but rather delete the asset ID from
+    // this tabel and allow the lazy evaluation to reconstruct this
+    // event collection for the asset.
     //
-    private Hashtable _asset_threat_var_table = new Hashtable();
+    private Hashtable _asset_event_collection_table = new Hashtable();
 
 } // class AssetTypeDimensionModel

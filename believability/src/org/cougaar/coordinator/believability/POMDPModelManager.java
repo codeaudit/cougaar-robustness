@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/Attic/POMDPModelManager.java,v $
- * $Revision: 1.9 $
- * $Date: 2004-06-24 16:36:56 $
+ * $Revision: 1.10 $
+ * $Date: 2004-06-29 22:43:18 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -32,7 +32,7 @@ import org.cougaar.coordinator.techspec.AssetType;
  * manage and access them all. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.9 $Date: 2004-06-24 16:36:56 $
+ * @version $Revision: 1.10 $Date: 2004-06-29 22:43:18 $
  */
 public class POMDPModelManager 
         extends Loggable implements POMDPModelInterface
@@ -113,20 +113,20 @@ public class POMDPModelManager
 
     //************************************************************
     /**
-     * Used to update the belief state using the given diagnosis.
+     * Used to update the belief state using the given trigger.
      *
      * @param start_belief initial belief state
-     * @param diagnosis the diagnosis to use to determine new belief
+     * @param trigger the trigger to use to determine new belief
      * state
      * @return the update belief state
      *
      */
     public BeliefState updateBeliefState( BeliefState start_belief,
-                                          BeliefUpdateTrigger diagnosis )
+                                          BeliefUpdateTrigger trigger )
             throws BelievabilityException
     {
         if (( start_belief == null )
-            || ( diagnosis == null ))
+            || ( trigger == null ))
             throw new BelievabilityException
                     ( "POMDPModelManager.updateBeliefState()",
                       "NULL parameters(s) passed in." );
@@ -134,9 +134,8 @@ public class POMDPModelManager
         POMDPAssetModel pomdp_model
                 = getModel( start_belief.getAssetType() );
 
-
         return pomdp_model.updateBeliefState( start_belief,
-                                              diagnosis );
+                                              trigger );
 
     } // method updateBeliefState
 
