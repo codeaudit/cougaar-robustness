@@ -80,6 +80,7 @@ public class ActionRecord implements NotPersistable, Serializable {
         if (this.completionCode == Action.ENDED_UNKNOWN) {return "ENDED UNKNOWN";}
         if (this.completionCode == Action.FAILED) {return "FAILED";}
         if (this.completionCode == Action.ABORTED) {return "ABORTED";}
+        if (this.completionCode == Action.ACTIVE) {return "ACTIVE";}
         return "NULL"; //not assigned yet
      }
     

@@ -494,7 +494,7 @@ public abstract class Action
 
     /**
      * Call to indicate that an action that was started has finished. The CompletionCode can
-     * be COMPLETED, ABORTED, or FAILED.
+     * be COMPLETED, ABORTED, FAILED, or ACTIVE.
      *<p>
      * @exception IllegalValueException if the completionCode is not Action.COMPLETED, Action.FAILED, or Action.ABORTED.
      * @exception NoStartedActionException if this method is not called AFTER a call to {@link Action#start start()}.
@@ -506,7 +506,8 @@ public abstract class Action
         
         if (completionCode != Action.COMPLETED && 
             completionCode != Action.ABORTED &&
-            completionCode != Action.FAILED ) {
+            completionCode != Action.FAILED &&
+            completionCode != Action.ACTIVE ) {
                 
             throw new IllegalValueException("Illegal completionCode: " + completionCode);
         }

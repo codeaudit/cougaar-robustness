@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE CrossDiagnosis SYSTEM "CrossDiagnosisDTD.dtd">
+
+<CrossDiagnosis sensorType="org.cougaar.tools.robustness.ma.util.AgentLivenessDiagnosis" 
+                isAffectedByStateDimension="Connectedness" >
+	<WhenActualStateIs name="Disconnected" >
+		<WillDiagnoseAs name="Dead" withProbability="0.99" />
+		<WillDiagnoseAs name="Live" withProbability="0.01" />
+	</WhenActualStateIs>
+</CrossDiagnosis>
+
