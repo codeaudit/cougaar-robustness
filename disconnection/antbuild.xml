@@ -7,8 +7,8 @@
 <property name="cougaar" value="${env.COUGAAR_INSTALL_PATH}"/>
     
 	<path id="cougaar.libs">
-		<pathelement location="/var/www/html/jars/Robustness_objs_common_HEAD_B10_4_1BETA.jar"/>
-		<pathelement location="/var/www/html/jars/Robustness_objs_Deconfliction_HEAD_B10_4_1BETA.jar"/>
+		<pathelement location="/var/www/html/jars/Robustness_objs_common_HEAD_B10_4_1.jar"/>
+		<pathelement location="/var/www/html/jars/Robustness_objs_Deconfliction_HEAD_B10_4_1.jar"/>
 		<fileset dir="${cougaar}/lib">
 			<include name="**/*.jar"/>
 		</fileset>
