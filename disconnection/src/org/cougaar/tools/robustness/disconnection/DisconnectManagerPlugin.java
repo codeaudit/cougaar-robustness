@@ -87,15 +87,19 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     // index of nodes that are disconnected and must be monitored to make sure they repoort back on time
     private Hashtable activeAlarms = new Hashtable();
 
-    private boolean restoring = false;
+    private boolean rehydrating = false;
 
     // A Record of info that needs to survive moves and rehydrations
-    private AgentStatus agentStatus;
     private NodeStatus nodeStatus;
 
     // an indicator that at least 1 Tardyness alarm has expired
-    private boolean somethingExpired = false;
-    private Set expiredAlarms = new HashSet();
+    private boolean somethingOverdueExpired = false;
+    private Set expiredOverdueAlarms = new HashSet();
+
+    // an indicator that at least one permission request has timed out
+    private boolean somethingRequestedExpired = false;
+    private Set expiredRequestedAlarms = new HashSet();
+    
 
     public DisconnectManagerPlugin() {
         super();
@@ -113,68 +117,32 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         ALLOW_CONNECT_SET.add(ALLOW_CONNECT);
         NULL_SET = new HashSet();
 
-/*        requestToDisconnectAgentDiagnosisIndex = new RequestToDisconnectAgentDiagnosisIndex();
-        requestToDisconnectNodeDiagnosisIndex = new RequestToDisconnectNodeDiagnosisIndex();
-        disconnectActionIndex = new DisconnectActionIndex();
-
-        blackboard.openTransaction();
-        agentStatus = new AgentStatus();
-        blackboard.publishAdd(agentStatus);
-        nodeStatus = new NodeStatus();
-        blackboard.publishAdd(nodeStatus);
-        blackboard.closeTransaction();
-*/
         blackboard.openTransaction();
 
         Collection c;
         Iterator iter;
+        Iterator iter2;
+        Iterator iter3;
 
-        c = blackboard.query(RequestToDisconnectAgentDiagnosisIndex.pred);
-        iter = c.iterator();
-        if (iter.hasNext()) {
-            requestToDisconnectAgentDiagnosisIndex = (RequestToDisconnectAgentDiagnosisIndex)iter.next();
-        }
-        else {
-            requestToDisconnectAgentDiagnosisIndex = new RequestToDisconnectAgentDiagnosisIndex();
-            blackboard.publishAdd(requestToDisconnectAgentDiagnosisIndex);
-        }
-
-        c = blackboard.query(RequestToDisconnectNodeDiagnosisIndex.pred);
-        iter = c.iterator();
-        if (iter.hasNext()) {
-            requestToDisconnectNodeDiagnosisIndex = (RequestToDisconnectNodeDiagnosisIndex)iter.next();
-        }
-        else {
-            requestToDisconnectNodeDiagnosisIndex = new RequestToDisconnectNodeDiagnosisIndex();
-            blackboard.publishAdd(requestToDisconnectNodeDiagnosisIndex);
-        }
-
-        c = blackboard.query(DisconnectActionIndex.pred);
-        iter = c.iterator();
-        if (iter.hasNext()) {
-            disconnectActionIndex = (DisconnectActionIndex)iter.next();
-        }
-        else {
-            disconnectActionIndex = new DisconnectActionIndex();
-            blackboard.publishAdd(disconnectActionIndex);
-        }
+        requestToDisconnectAgentDiagnosisIndex = new RequestToDisconnectAgentDiagnosisIndex();
+        blackboard.publishAdd(requestToDisconnectAgentDiagnosisIndex);
+        requestToDisconnectNodeDiagnosisIndex = new RequestToDisconnectNodeDiagnosisIndex();
+        blackboard.publishAdd(requestToDisconnectNodeDiagnosisIndex);
+        disconnectActionIndex = new DisconnectActionIndex();
+        blackboard.publishAdd(disconnectActionIndex);
         
         c = blackboard.query(NodeStatus.pred);
         iter = c.iterator();
         if (iter.hasNext()) {
-            nodeStatus = (NodeStatus)iter.next();
-            restoring = true;
+            rehydrating = true;
         }
         else {
-            restoring = false;
+            rehydrating = false;
             nodeStatus = new NodeStatus();
+            if (logger.isDebugEnabled()) logger.debug("Creating new NodeStatus object");
             blackboard.publishAdd(nodeStatus);
         }
 
-//        iter = nodeStatus.values().iterator();
-//        while (iter.hasNext()) {
-//            NodeStatusRecord nsr = (NodeStatusRecord
-//        }
 
         blackboard.closeTransaction();
 
@@ -238,42 +206,50 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
 
         Iterator iter;
 
-        // if restoring, publish all the existing Diagnosis & Action objects
-        if (restoring) {
-            iter = requestToDisconnectAgentDiagnosisIndex.values().iterator();
-            while (iter.hasNext()) {
-                RequestToDisconnectAgentDiagnosis d = (RequestToDisconnectAgentDiagnosis)iter.next();
-                if (logger.isDebugEnabled()) logger.debug("Restoring: " + d.dump());
-                blackboard.publishChange(d);
+        if (rehydrating) {
+            Collection c = blackboard.query(NodeStatus.pred);
+            iter = c.iterator();
+            if (iter.hasNext()) {
+                nodeStatus = (NodeStatus)iter.next();
+                if (logger.isDebugEnabled()) logger.debug(nodeStatus.toString());
+                Iterator iter2 = nodeStatus.values().iterator();
+                while (iter2.hasNext()) {
+                   NodeStatusRecord nsr = (NodeStatusRecord)iter2.next();
+                   createNodeDiagnosisAndAction(nsr.getNodeID(), nsr.getDiagnosis());
+                   Iterator iter3 = nsr.getAgents().iterator();
+                   while (iter3.hasNext()) {
+                       createAgentDiagnosisAndAction(new AssetID((String)iter3.next(), AssetType.findAssetType("Agent")), nsr.getDiagnosis());
+                   }
+                }
+                rehydrating = false;
             }
-            iter = requestToDisconnectNodeDiagnosisIndex.values().iterator();
-            while (iter.hasNext()) {
-                RequestToDisconnectNodeDiagnosis d = (RequestToDisconnectNodeDiagnosis)iter.next();
-                if (logger.isDebugEnabled()) logger.debug("Restoring: " + d.dump());
-                blackboard.publishChange(d);
-            }
-             iter = disconnectActionIndex.values().iterator();
-            while (iter.hasNext()) {
-                DisconnectAction a = (DisconnectAction)iter.next();
-                if (logger.isDebugEnabled()) logger.debug("Restoring: " + a.dump());
-                blackboard.publishChange(a);
-            }
-            restoring = false;
         }
-          
 
+        // Handle timed-out requests & deny permission 
+         if (somethingRequestedExpired) {
+            iter = expiredRequestedAlarms.iterator();
+            while(iter.hasNext()) {
+                RequestedAlarm thisAlarm = (RequestedAlarm)iter.next();
+                if (thisAlarm.hasExpired()) {
+                    thisAlarm.handleExpiration();
+                }
+            }
+        expiredRequestedAlarms.clear();
+        somethingRequestedExpired = false;
+        }
         
+
         // Handle expired Alarms for overdue nodes
-        if (somethingExpired) {
-            iter = expiredAlarms.iterator();
+        if (somethingOverdueExpired) {
+            iter = expiredOverdueAlarms.iterator();
             while(iter.hasNext()) {
                 OverdueAlarm thisAlarm = (OverdueAlarm)iter.next();
                 if (thisAlarm.hasExpired()) {
                     thisAlarm.handleExpiration();
                 }
             }
-        expiredAlarms.clear();
-        somethingExpired = false;
+        expiredOverdueAlarms.clear();
+        somethingOverdueExpired = false;
         }
         
         if (managerAddress != null) {// already know the ManagerAgent, so create Diagnoes & Actions for newly announced Nodes & Agents
@@ -323,34 +299,30 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                 try {
                     action.setPermittedValues(newPV);
                     action.clearNewPermittedValues();
-                    RequestRecord rr = (RequestRecord)pendingRequests.get(action);
+
+                    Iterator iter3 = pendingRequests.values().iterator();
+                    while (iter3.hasNext()) {
+                        RequestRecord rr = (RequestRecord)iter3.next();
                         if (rr != null) { // processing a request
-                            if (logger.isDebugEnabled()) logger.debug("Requested Action is: " + rr.getRequest().toString());
-                            if (action.getPermittedValues().contains(rr.getRequest())) {
-                                boolean deleted = rr.getRemainingActions().remove(action);
-                                if (logger.isDebugEnabled()) logger.debug("Removal of Action: " + action.dump() + " is " + deleted);
-                                pendingRequests.remove(action);
-                                if (rr.getRemainingActions().isEmpty()) {   
-                                    propagateChange(rr, true);
+                            Iterator iter2 = rr.getOriginalActions().iterator();
+                            boolean allPermittedSoFar = true;
+                            while (iter2.hasNext()) {
+                                Action thisAction = (Action)iter2.next();
+                                if ((thisAction.getPermittedValues() != null ) && (thisAction.getPermittedValues().contains(rr.getRequest()))) {
+                                    if (logger.isDebugEnabled()) logger.debug(rr.getRequest() + " of: " + thisAction.getAssetID().toString() + " is permitted");
                                 }
+                                else {
+                                    if (logger.isDebugEnabled()) logger.debug(rr.getRequest() + " of: " + thisAction.getAssetID().toString() + " is NOT permitted");
+                                    allPermittedSoFar = false;
+                                }                            
                             }
-                            else {
-                                if (logger.isInfoEnabled()) logger.info("Permission NOT granted for: " + action.dump());
-                               // Iterator iter2 = (rr.getOriginalActions()).removeAll(rr.getRemainingActions()).iterator();
-                               // while (iter2.hasNext()) {
-                                //    DisconnectAction thisAction = (DisconnectAction)iter.next();
-                                //    thisAction.setPermittedValues(new HashSet());
-                                //    blackboard.publishChange(thisAction);
-                                //    pendingRequests.remove(thisAction); 
-                              // }
-                                propagateChange(rr, false);
-                            }
-                            if (logger.isDebugEnabled()) logger.debug("RequestRecord after getting permission for: " + action.dump() + " is " + rr.dump());
+                            if (allPermittedSoFar) propagatePermissions(rr, true);
                         }
-                    } catch (IllegalValueException e)  {
-                    logger.error("Attempt to set: "+action.dump()+" with illegal value "+e.toString());
-                    return;
-                    } 
+                    }                    
+                } catch (IllegalValueException e)  {
+                logger.error("Attempt to set: "+action.dump()+" with illegal value "+e.toString());
+                return;
+                } 
             } 
             else { // do not want to do anything
             }
@@ -368,6 +340,10 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
 
 
     private boolean createNodeDiagnosisAndAction(AssetID id) {
+       return createNodeDiagnosisAndAction(id, CONNECTED);
+    }
+
+    private boolean createNodeDiagnosisAndAction(AssetID id, String currentDiagnosis) {
         // create the Defense-Level Diagnosis & Action seen by the Coordinator
 
         RequestToDisconnectNodeDiagnosis diag = requestToDisconnectNodeDiagnosisIndex.getDiagnosis(id);
@@ -379,7 +355,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         try {
             diag = new RequestToDisconnectNodeDiagnosis(id.getName(), sb);
             try {
-                diag.setValue(CONNECTED); // not disconnected
+                diag.setValue(currentDiagnosis); // not disconnected
                 requestToDisconnectNodeDiagnosisIndex.putDiagnosis(diag);
                 blackboard.publishAdd(diag);
                 if (logger.isDebugEnabled()) { logger.debug("Created: "+diag.dump()); }
@@ -411,6 +387,10 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     }
 
     private boolean createAgentDiagnosisAndAction(AssetID id) {
+        return createAgentDiagnosisAndAction(id, CONNECTED);
+    }
+
+    private boolean createAgentDiagnosisAndAction(AssetID id, String currentDiagnosis) {
         // create the Defense-Level Diagnosis & Action seen by the Coordinator
 
         RequestToDisconnectAgentDiagnosis diag = requestToDisconnectAgentDiagnosisIndex.getDiagnosis(id);
@@ -421,7 +401,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
 
         try {
             diag = new RequestToDisconnectAgentDiagnosis(id.getName(), sb);
-            diag.setValue(CONNECTED); // wants to disconnect
+            diag.setValue(currentDiagnosis); // wants to disconnect
             requestToDisconnectAgentDiagnosisIndex.putDiagnosis(diag);
             blackboard.publishAdd(diag);
             if (logger.isDebugEnabled()) { logger.debug("Created: "+diag.dump()); }
@@ -460,7 +440,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         String response =  time > 0.0 ? ALLOW_DISCONNECT : ALLOW_CONNECT;
         RequestRecord rr = new RequestRecord();
         Set originalActions = new HashSet();
-        Set remainingActions = new HashSet();
+        Set originalDiagnoses = new HashSet();
         Set whichToOffer;
 
         RequestToDisconnectNodeDiagnosis diag = requestToDisconnectNodeDiagnosisIndex.getDiagnosis(new AssetID(rtc.getAsset(), AssetType.findAssetType("Node")));
@@ -473,20 +453,25 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             whichToOffer = ALLOW_CONNECT_SET;
         }
 
+
         try {
             diag.setValue(request); 
             if (logger.isDebugEnabled()) logger.debug("DisconnectChange set "
                     +diag.dump()+ " "+time
                     +" for the Coordinator");
             blackboard.publishChange(diag);
-            DisconnectAction Action = disconnectActionIndex.getAction(new AssetID(rtc.getAsset(), AssetType.findAssetType("Node")));
+            AssetID assetID = new AssetID(rtc.getAsset(), AssetType.findAssetType("Node"));
+            NodeStatusRecord nsr = (NodeStatusRecord)nodeStatus.get(assetID);
+            nsr.setReconnectTime(0.0);
+            nsr.setDiagnosis(request);
+            blackboard.publishChange(nodeStatus);
+            DisconnectAction Action = disconnectActionIndex.getAction(assetID);
             Action.setValuesOffered(whichToOffer);
             if (logger.isDebugEnabled()) logger.debug(Action.dump());
             blackboard.publishChange(Action);
             rr.setAssetID(Action.getAssetID());
             originalActions.add(Action);
-            remainingActions.add(Action);
-            pendingRequests.put(Action, rr);
+            originalDiagnoses.add(diag);
         } catch (IllegalValueException e) {
             logger.error("Attempt to set: "+diag.toString()+" with illegal value "+e.toString());
             return false;
@@ -503,20 +488,24 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                         +agentDiag.dump()+ " "+time
                         +" for the Coordinator");
                 blackboard.publishChange(agentDiag);
+//                NodeStatusRecord nsr = (NodeStatusRecord)nodeStatus.get(id);
+//                nsr.setReconnectTime(0.0);
+//                nsr.setDiagnosis(CONNECT_REQUEST);
+//                blackboard.publishChange(nodeStatus);
                 DisconnectAction Action = disconnectActionIndex.getAction(id);
                 Action.setValuesOffered(whichToOffer);
                 blackboard.publishChange(Action);
                 if (logger.isDebugEnabled()) logger.debug(Action.dump());
                 originalActions.add(Action);
-                remainingActions.add(Action);
-                pendingRequests.put(Action, rr);
+                originalDiagnoses.add(agentDiag);
             } catch (IllegalValueException e) {
                 logger.error("Attempt to set: "+diag.toString()+" with illegal value "+e.toString());
                 return false;
             }
         }
+        rr.setAlarm(createRequestedAlarm(rr, 120000.0));
         rr.setOriginalActions(originalActions);
-        rr.setRemainingActions(remainingActions);
+        rr.setOriginalDiagnoses(originalDiagnoses);
         rr.setRequest(response); 
        
         if (logger.isInfoEnabled()) { logger.info(rr.dump()); }
@@ -532,13 +521,14 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         if (logger.isDebugEnabled()) logger.debug("Searching for: " + rtc.getAsset() +" in: " + disconnectActionIndex.toString());
         if (logger.isDebugEnabled()) logger.debug(action.dump());
 
-        if (action.getValue().getAction() != null) { // i.e., this isn't the initial connection
+        if (action.getValue() != null) { // i.e., this isn't the initial connection
             if (logger.isDebugEnabled()) logger.debug("Value: " + action.getValue());
             if (action.getValue().getAction().equals(ALLOW_CONNECT)) {
                 // Reconnected, so cancel any outstanding alarms
-                cancelOverdueAlarm_Returned(action.getAssetID());
+                cancelOverdueAlarm_Returned(assetID);
                 try {
                     action.stop(Action.COMPLETED); // ACK the completion
+                    action.setValuesOffered(NULL_SET);
                     if (logger.isDebugEnabled()) logger.debug("**** " + action.dump());
                     blackboard.publishChange(action);
                     // Assert a new Diagnosis
@@ -556,10 +546,10 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                 Iterator iter = rtc.getAgents().iterator();
                 while (iter.hasNext()) {
                     String agentName = (String) iter.next();
-                    if (logger.isDebugEnabled()) logger.debug("Searching for: " + agentName +" in: " + disconnectActionIndex.toString());
                     DisconnectAction agentAction = disconnectActionIndex.getAction(new AssetID(agentName, AssetType.findAssetType("Agent")));
                     try {
                         agentAction.stop(Action.COMPLETED); // ACK the completion
+                        agentAction.setValuesOffered(NULL_SET);
                         if (logger.isDebugEnabled()) logger.debug(agentAction.dump());
                         blackboard.publishChange(agentAction);
                         // Assert a new Diagnosis
@@ -575,17 +565,24 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                         return false;
                     }
                 }
+                cancelRequestedAlarm((RequestRecord)pendingRequests.get(action.getAssetID()));
+
                 return true;            
             } 
             if (action.getValue().getAction().equals(ALLOW_DISCONNECT)) {
                 // Reconnected, so cancel any outstanding alarms
                try {
-                    action.stop(Action.COMPLETED); // ACK the completion
+                    action.stop(Action.ACTIVE); // ACK the completion
+                    action.setPermittedValues(NULL_SET);
                     if (logger.isDebugEnabled()) logger.debug(action.dump());
                     blackboard.publishChange(action);
                     // Assert a new Diagnosis
                     RequestToDisconnectNodeDiagnosis diag = requestToDisconnectNodeDiagnosisIndex.getDiagnosis(assetID);
                     diag.setValue(DISCONNECTED);
+                    NodeStatusRecord nsr = (NodeStatusRecord)nodeStatus.get(assetID);
+                    nsr.setReconnectTime(((Double)rtc.getValue()).doubleValue());
+                    nsr.setDiagnosis(DISCONNECTED);
+                    blackboard.publishChange(nodeStatus);
                 if (logger.isDebugEnabled()) logger.debug(diag.dump());
                     blackboard.publishChange(diag);
                 } catch (IllegalValueException e) {
@@ -602,7 +599,8 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                     if (logger.isDebugEnabled()) logger.debug("Searching for: " + agentName +" in: " + disconnectActionIndex.toString());
                     DisconnectAction agentAction = disconnectActionIndex.getAction(assetID);
                     try {
-                        agentAction.stop(Action.COMPLETED); // ACK the completion
+                        agentAction.stop(Action.ACTIVE); // ACK the completion
+                        agentAction.setPermittedValues(NULL_SET);
                         if (logger.isDebugEnabled()) logger.debug(agentAction.dump());
                         blackboard.publishChange(agentAction);
                         // Assert a new Diagnosis
@@ -618,6 +616,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                         return false;
                     }
                 }
+                cancelRequestedAlarm((RequestRecord)pendingRequests.get(action.getAssetID()));
                 return true;
             }
             if (logger.isInfoEnabled()) logger.info("progapateChange() failed to match: " + action.getValue().getAction() + " when compared to " + ALLOW_DISCONNECT + " & " + ALLOW_CONNECT);
@@ -625,14 +624,31 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         return false;
     }
 
-    private boolean propagateChange(RequestRecord rr, boolean allowed) {
+    private boolean propagatePermissions(RequestRecord rr, boolean allowed) {
 
         if (logger.isDebugEnabled()) logger.debug("Starting propagateChange() for: " + rr.getAssetID().toString());
         
         DisconnectDefenseAgentEnabler item = DisconnectDefenseAgentEnabler.findOnBlackboard(rr.getAssetID().getType().toString(), rr.getAssetID().getName().toString(), blackboard);
         if (item != null) {
-            if (allowed) item.setValue(rr.getRequest().equals(ALLOW_DISCONNECT) ? "ENABLED" : "DISABLED");  // Tell the node it can do what it requested
-            else item.setValue(rr.getRequest().equals(ALLOW_CONNECT) ? "DISABLED" : "ENABLED");  // Tell the node it can NOT do what it requested
+            if (allowed) {
+                item.setValue(rr.getRequest().equals(ALLOW_DISCONNECT) ? "ENABLED" : "DISABLED");  // Tell the node it can do what it requested
+            }
+            else {
+                item.setValue(rr.getRequest().equals(ALLOW_DISCONNECT) ? "DISABLED" : "ENABLED");  // Tell the node it can NOT do what it requested
+                // change the Diagnosis back to its value before the denied request
+                Iterator iter = rr.getOriginalDiagnoses().iterator();
+                while (iter.hasNext()) {
+                    Diagnosis diag = (Diagnosis)iter.next();
+                    try {
+                        diag.setValue(rr.getRequest().equals(ALLOW_DISCONNECT) ? "CONNECTED" : "DISCONNECTED");
+                        blackboard.publishChange(diag);
+                    } catch (IllegalValueException e) {
+                        logger.error("Attempt to set: "+diag.toString()+" with illegal value "+e.toString());
+                        return false;
+                    }
+                }
+            }
+
             blackboard.publishChange(item);
             if (logger.isDebugEnabled()) logger.debug("Sent back to Node: " + item.toString());
 
@@ -649,6 +665,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                     }
                 }
             }
+
             return true;
         }
         else {
@@ -659,10 +676,10 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
 
 
     private void createOverdueAlarm(RequestToDisconnectNodeDiagnosis diag, ReconnectTimeCondition rtc, double time) {
-        OverdueAlarm overdueAlarm = new OverdueAlarm(diag, rtc.getAgents(), time > 10000.0 ? (time + lateReportingForgiveness) : (10000.0 + lateReportingForgiveness));  // Don't monitor for less than 10 sec
+        OverdueAlarm overdueAlarm = new OverdueAlarm(diag, rtc.getAgents(), time > 60000.0 ? (time + lateReportingForgiveness) : (60000.0 + lateReportingForgiveness));  // Don't monitor for less than 10 sec
         activeAlarms.put(diag.getAssetID(), overdueAlarm);
         getAlarmService().addRealTimeAlarm(overdueAlarm);     
-        nodeStatus.put(diag.getAssetID(), new NodeStatusRecord(diag.getAssetID(), rtc.getAgents(), time));
+        nodeStatus.put(diag.getAssetID(), new NodeStatusRecord(diag.getAssetID(), rtc.getAgents(), time, DISCONNECT_REQUEST));
         blackboard.publishChange(nodeStatus);
         if (logger.isDebugEnabled()) logger.debug("Added alarm from handleNodeRequest()");
     }
@@ -671,7 +688,9 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         OverdueAlarm overdueAlarm = (OverdueAlarm)activeAlarms.remove(assetID);
         if (overdueAlarm != null) {
             overdueAlarm.cancel();
-            nodeStatus.remove(assetID);
+            NodeStatusRecord nsr = (NodeStatusRecord)nodeStatus.get(assetID);
+            nsr.setReconnectTime(0.0);
+            nsr.setDiagnosis(CONNECTED);
             blackboard.publishChange(nodeStatus);
         }
     }
@@ -682,6 +701,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             overdueAlarm.cancel();
             NodeStatusRecord nsr = (NodeStatusRecord)nodeStatus.get(assetID);
             nsr.setReconnectTime(-1.0);
+            nsr.setDiagnosis(TARDY);
             blackboard.publishChange(nodeStatus);
         }
     }
@@ -709,8 +729,8 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             if (!expired) {
                 if (logger.isDebugEnabled()) logger.debug("expire(): Alarm expired for: " + diag.getAssetID());
                 expired = true;
-                somethingExpired=true;
-                expiredAlarms.add(this);
+                somethingOverdueExpired=true;
+                expiredOverdueAlarms.add(this);
                 blackboard.signalClientActivity();
             }
         }
@@ -750,5 +770,60 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         
     }
     
+
+    private RequestedAlarm createRequestedAlarm(RequestRecord rr, double time) {
+        RequestedAlarm requestedAlarm = new RequestedAlarm(rr, time);  
+        getAlarmService().addRealTimeAlarm(requestedAlarm); 
+        pendingRequests.put(rr.getAssetID(), rr);
+        if (logger.isDebugEnabled()) logger.debug("Adding RequestedAlarm for: " + rr.getAssetID());
+        return requestedAlarm;
+    }
+
+    private void cancelRequestedAlarm(RequestRecord rr) {
+        pendingRequests.remove(rr.getAssetID());
+        rr.getAlarm().cancel();
+        if (logger.isDebugEnabled()) logger.debug("Removing RequestedAlarm for: " + rr.getAssetID());
+    }
+
     
+    public class RequestedAlarm implements Alarm {
+        private long detonate;
+        private boolean expired;
+        private RequestRecord rr;
+        
+        public RequestedAlarm(RequestRecord rr, double t) {
+            detonate = System.currentTimeMillis() + (long) t;
+            this.rr = rr;
+            if (logger.isDebugEnabled()) logger.debug("RequestedAlarm created : "+rr.toString() + " at time "+detonate + " for " + t/1000L + " seconds");
+        }
+        
+        public long getExpirationTime() {return detonate;
+        }
+        
+        public void expire() {
+            if (!expired) {
+                if (logger.isDebugEnabled()) logger.debug("expire(): RequestedAlarm expired for: " + rr.getAssetID());
+                expired = true;
+                somethingRequestedExpired=true;
+                expiredRequestedAlarms.add(this);
+                blackboard.signalClientActivity();
+            }
+        }
+
+        public void handleExpiration() {
+            if (logger.isDebugEnabled()) logger.debug("RequestAlarm expired for: " + rr.toString() + ". Request denied");
+            propagatePermissions(rr, false);
+            cancel();
+        }
+        
+        public boolean hasExpired() {return expired;
+        }
+
+        public boolean cancel() {
+            if (!expired)
+                return expired = true;
+            return false;
+        }
+        
+    }
 }

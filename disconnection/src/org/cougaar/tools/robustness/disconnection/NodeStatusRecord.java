@@ -20,17 +20,21 @@ public class NodeStatusRecord implements Serializable {
     AssetID nodeID;
     AgentVector agents;
     double reconnectTime;
+    String diagnosis;
 
     /** Creates new ActiveDisconnect */
-    public NodeStatusRecord(AssetID nodeID, AgentVector agents, double reconnectTime) {
+    public NodeStatusRecord(AssetID nodeID, AgentVector agents, double reconnectTime, String diagnosis) {
         this.nodeID = nodeID;
         this.agents = agents;
         this.reconnectTime = reconnectTime;
+        this.diagnosis = diagnosis;
     }
 
     public AssetID getNodeID() { return nodeID; }
     public AgentVector getAgents() { return agents; }
     public double getReconnectTime() { return reconnectTime; }
     public void setReconnectTime(double reconnectTime) { this.reconnectTime = reconnectTime; }
+    public String getDiagnosis() { return diagnosis; }
+    public void setDiagnosis(String diagnosis) { this.diagnosis = diagnosis; }
 
 }

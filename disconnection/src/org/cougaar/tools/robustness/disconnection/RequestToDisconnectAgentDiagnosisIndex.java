@@ -14,11 +14,11 @@ import java.util.Hashtable;
 
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.coordinator.techspec.AssetID;
-//import org.cougaar.core.persist.NotPersistable;
-import java.io.Serializable;
+import org.cougaar.core.persist.NotPersistable;
+//import java.io.Serializable;
 
 
-public class RequestToDisconnectAgentDiagnosisIndex extends Hashtable implements Serializable {
+public class RequestToDisconnectAgentDiagnosisIndex extends Hashtable implements NotPersistable {
 
     /** Creates new StateEstimationIndex */
     public RequestToDisconnectAgentDiagnosisIndex() {

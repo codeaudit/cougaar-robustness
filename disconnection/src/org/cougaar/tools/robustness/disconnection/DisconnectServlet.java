@@ -79,6 +79,7 @@ public class DisconnectServlet extends BaseServletComponent
   
   private String assetType = "Node";
   private String assetID = null;
+  private long lastRequestTime = 0;
   
   
   protected Servlet createServlet() {
@@ -188,13 +189,23 @@ public class DisconnectServlet extends BaseServletComponent
 
       /** User is disconnecting the node */
       private void disconnect(HttpServletRequest request, PrintWriter out) {
+      
+          if ( (System.currentTimeMillis() - lastRequestTime) < 120000)  {
+                out.println("<center><h2>Failed to Disconnect - Requests must be at least 2 minutes apart. </h2></center><br>");
+                if (logger.isErrorEnabled()) logger.error("Failed to Disconnect - Requests must be at least 2 minutes apart.");
+                if (eventService.isEventEnabled()) {
+                    eventService.event("Failed to Disconnect - Requests must be at least 2 minutes apart.");
+                }
+                return;
+          }
+          lastRequestTime = System.currentTimeMillis();
 
           String expire = request.getParameter(EXPIRE);
           Double d;
           if (expire != null) {
               try {
                   double t = Double.parseDouble(expire);
-                  t = t>60L ? t : 60.0;
+                  t = t>120L ? t : 120.0;
                   d = new Double(t*1000.0);                  
                   try {
                         blackboard.openTransaction();
@@ -226,6 +237,17 @@ public class DisconnectServlet extends BaseServletComponent
  
       /** User is reconnecting the node */
       private void reconnect(PrintWriter out) {
+
+           if ( (System.currentTimeMillis() - lastRequestTime) < 120000)  {
+                out.println("<center><h2>Failed to Connect - Requests must be at least 2 minutes apart. </h2></center><br>");
+                if (logger.isErrorEnabled()) logger.error("Failed to Connect - Requests must be at least 2 minutes apart.");
+                if (eventService.isEventEnabled()) {
+                    eventService.event("Failed to Connect - Requests must be at least 2 minutes apart.");
+                }
+                return;
+          }
+          lastRequestTime = System.currentTimeMillis();
+
           try {
               blackboard.openTransaction();
               LocalReconnectTimeCondition lrtc = LocalReconnectTimeCondition.findOnBlackboard(assetType, assetID, blackboard);
