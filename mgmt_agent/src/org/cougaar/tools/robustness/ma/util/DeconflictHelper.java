@@ -223,9 +223,9 @@ public class DeconflictHelper extends BlackboardClientComponent {
     String[] agents = model.listEntries(CommunityStatusModel.AGENT);
     for(int i=0; i<agents.length; i++) {
       if(!agentsObjs.contains(agents[i])) {
-        fireLater(new RestartDefenseCondition(MYCONDITION + agents[i], assetType, defenseName, DefenseConstants.BOOL_FALSE));
-        fireLater(new RestartDefenseEnabler(MYDEF_OPMODE + agents[i], assetType, defenseName));
-        fireLater(new RestartMonitoringEnabler(MYMONITOR_OPMODE + agents[i], assetType, defenseName));
+        fireLater(new RestartDefenseCondition(assetType, agents[i], defenseName, DefenseConstants.BOOL_FALSE));
+        fireLater(new RestartDefenseEnabler(assetType, agents[i], defenseName));
+        fireLater(new RestartMonitoringEnabler(assetType, agents[i], defenseName));
       }
     }
   }
@@ -346,14 +346,14 @@ public class DeconflictHelper extends BlackboardClientComponent {
   }
 
   public class RestartDefenseEnabler extends DefenseEnablingOperatingMode {
-    public RestartDefenseEnabler(String name, String assetType, String defenseName) {
-      super (name, assetType, defenseName);
+    public RestartDefenseEnabler(String assetType, String asset, String defenseName) {
+      super (assetType, asset, defenseName);
     }
   }
 
   public class RestartMonitoringEnabler extends MonitoringEnablingOperatingMode {
-    public RestartMonitoringEnabler (String name, String assetType, String defenseName) {
-      super (name, assetType, defenseName);
+    public RestartMonitoringEnabler (String assetType, String asset, String defenseName) {
+      super (assetType, asset, defenseName);
     }
   }
 
@@ -361,8 +361,8 @@ public class DeconflictHelper extends BlackboardClientComponent {
     /*public RestartDefenseCondition(String name) {
       super(name);
     }*/
-    public RestartDefenseCondition(String name, String assetType, String defenseName, DefenseConstants.OMCStrBoolPoint pt) {
-      super(name, assetType, defenseName, pt);
+    public RestartDefenseCondition(String assetType, String asset, String defenseName, DefenseConstants.OMCStrBoolPoint pt) {
+      super(assetType, asset, defenseName, pt);
     }
     protected void setValue(DefenseConstants.OMCStrBoolPoint newValue) {
       super.setValue(newValue);
