@@ -322,8 +322,8 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 
                     // special code to activate/deactivate RMIAction in tandem with SecurityDefenseAction - a special case for ACUC #2B
                     if (thisAction.getClass().getName().equals("org.cougaar.core.security.coordinator.Security_Defense_Setting")) {
-                        Action rmiAction = findAction(thisAction.getAssetID(), "org.cougaar.robustness.dos.coordinator.RMIAction");
-                        if (proposedVariant.getVariantName().equals(cbe, "High")) {
+                        Action rmiAction = findAction(thisAction.getAssetID(), "org.cougaar.robustness.dos.coordinator.RMIAction").getAction;
+                        if (proposedVariant.getVariantName().equals("High")) {
                             String rmiVariantName = "Disabled";
                             VariantEvaluation rmiVariant = getRmiVariantEvaluation(cbe, rmiVariantName);
                             if (rmiVariant != null && rmiAction != null && rmiAction.getValuesOffered().contains(rmiVariantName)) {
@@ -342,11 +342,11 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
                              else if (eventService.isEventEnabled()) eventService.event(rmiVariantName + " was not offered");
                         }
                         if(proposedVariant.getVariantName().equals("Low")) {
-                            VariantEvaluation rmiVariant = getRmiVariantEvaluation(cbe, "Enabled");
+                            String rmiVariantName = "Enabled";
                             VariantEvaluation rmiVariant = getRmiVariantEvaluation(cbe, rmiVariantName);
                             if (rmiVariant != null && rmiAction != null && rmiAction.getValuesOffered().contains(rmiVariantName)) {
                                 if (logger.isInfoEnabled()) logger.info("Selected: " + rmiVariant.toString() + "for: " + rmiAction.getAssetID().toString());
-                                if (logger.isEventEnabled()) logger.event(agentId + " selected " + rmiAction.getClass().getName() + ":" + rmiVariant.getVariantName() + " for " + rmiAction.getAssetID().toString());
+                                if (eventService.isEventEnabled()) eventService.event(agentId + " selected " + rmiAction.getClass().getName() + ":" + rmiVariant.getVariantName() + " for " + rmiAction.getAssetID().toString());
                                 Set rmiPermittedVariants = new HashSet();  
                                 if ((!rmiAction.getPermittedValues().contains(rmiVariant.getVariantName()))
                                         && (thisAction.getValue() == null  
