@@ -44,7 +44,11 @@ import org.cougaar.core.service.community.*;
 import org.cougaar.community.*;
 
 /**
- * This plugin ...
+ * This plugin selects a destination node or host for an agent restart
+ * or move.  By default any host or node currently used by a community
+ * member is a candidate destination.  Additional nodes and hosts may
+ * be specified using the "restartNodes" and/or "restartHosts" plugin
+ * arguments.  Each argument accepts a space separated list of names.
  */
 public class RestartLocatorPlugin extends SimplePlugin {
 
