@@ -27,6 +27,8 @@ package org.cougaar.coordinator.costBenefit;
 
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.persist.NotPersistable;
+import org.cougaar.util.log.Logger;
+import org.cougaar.util.log.Logging;
 
 /**
  *  Used to control aspects of the cost benefit plugin
@@ -45,15 +47,20 @@ public class CostBenefitKnob implements NotPersistable {
     public void setHorizon(long horizon) { this.horizon = horizon; }   
     public long getHorizon() { return horizon; }
 
-    public void setWeights(double completnessWeight, double securityWeight, double timelinessWeight) throws BadWeightsException {
-        double totalWeight = completnessWeight + securityWeight + timelinessWeight;
+    public void setWeights(double securityWeight, double completenessWeight, double timelinessWeight) throws BadWeightsException {
+        double totalWeight = completenessWeight + securityWeight + timelinessWeight;
         if ((totalWeight > 1.000000001) || (totalWeight < 0.999999999))
             throw new BadWeightsException(securityWeight, completenessWeight, timelinessWeight);
         else {
             this.completenessWeight = completenessWeight;
             this.securityWeight = securityWeight;
             this.timelinessWeight = timelinessWeight;
-            }
+	}
+	Logger logger = Logging.getLogger(getClass());
+        if (logger.isDebugEnabled()) logger.debug("MAU weights changed to: " 
+						  + "Security=" + this.securityWeight 
+						  + ", Completeness=" + this.completenessWeight
+						  + ", Timeliness=" + this.timelinessWeight);
     }
 
     protected double getCompletenessWeight() { return completenessWeight; }
