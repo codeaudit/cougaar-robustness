@@ -2,7 +2,7 @@
 
 name: ARUC8
 description: Mobile Hosts Test (Steve)
-script: $CIP/csmart/scripts/definitions/BaselineTemplate-ExtOplan.rb
+script: $CIP/csmart/scripts/definitions/UR-BaselineTemplate-ExtOplan.rb
 parameters:
   - run_count: 1
   - society_file: $CIP/csmart/config/societies/ua/full-tc20-avn-162a208v.plugins.rb
@@ -22,7 +22,10 @@ include_scripts:
   - script: $CIP/csmart/lib/isat/migrate.rb
     parameters:
     - migrate_location: during_stage_1
-    - host_name: sv175
+# on S4    
+#   - host_name: sv175
+# on S3
+    - host_name: sv125
     - target_network: 1-UA
   - script: $CIP/csmart/lib/isat/stop_society.rb
     parameters:

@@ -9,6 +9,7 @@ society.each_node_agent do |node_agent|
         node_agent.add_component do |c|
             c.order = aspect[0]
             c.classname = aspect[1]
+            c.add_argument("period=10000")
             c.insertionpoint = "Node.AgentManager.Agent.MessageTransport.Aspect"
         end
     }
