@@ -93,7 +93,9 @@ public class ReconnectTimeCondition extends DefenseTimeCondition
     
      public int updateContent(Object content, Relay.Token token) {
         ReconnectTimeCondition newRTC = (ReconnectTimeCondition) content;
-        if (getValue().compareTo(newRTC.getValue()) != 0 ||
+        if (getValue()==null && newRTC.getValue()==null) return Relay.NO_CHANGE;
+        if (getValue()==null ||
+            getValue().compareTo(newRTC.getValue()) != 0 ||
             !newRTC.getAgents().equals(agents)) {
           setValue(newRTC.getValue());
           agents = newRTC.getAgents();
