@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
+                  "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd" [
+<!ENTITY overview SYSTEM "overview.xml">
+<!ENTITY setup SYSTEM "setup.xml">
+]>
+<article>
+<articleinfo>
+  <title>Adaptive Robustness Management Agent</title>
+  <releaseinfo role="CVS">$Id: main.xml,v 1.1 2004-08-17 18:16:39 rsnyder Exp $</releaseinfo>
+  <author>
+    <firstname>Ronald</firstname>
+    <surname>Snyder</surname>
+    <affiliation>
+      <address>
+        <email>ron@mobile-intelligence.com</email>
+      </address>
+    </affiliation>
+  </author>
+</articleinfo>
+
+&overview;
+&setup;
+
+</article>

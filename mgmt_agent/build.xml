@@ -176,14 +176,23 @@
 
   <!-- Generates user manual -->
   <target name="manual" description="Creates user manual">
+    <!-- Generate HTML -->
+    <xslt basedir="${basedir}/doc/src"
+          extension=".html"
+          style="${docbook.dir}/xhtml/docbook.xsl"
+          destdir="doc/html"
+          includes="main.xml" />
+    <!-- Generate PDF -->
     <xslt basedir="${basedir}/doc/src"
           extension=".fo"
           style="${docbook.dir}/fo/docbook.xsl"
           destdir="doc/fo"
-          includes="test.xml" />
+          includes="main.xml" />
     <fop format="application/pdf"
-         fofile="${basedir}/doc/fo/test.fo"
-         outfile="${basedir}/doc/pdf/test.pdf" />
+         fofile="${basedir}/doc/fo/main.fo"
+         outfile="${basedir}/doc/pdf/main.pdf" />
+    <!-- Remove intermediate FO files -->
+    <delete dir="doc/fo"/>
   </target>
 
   <!-- creates zip archive of development files -->
