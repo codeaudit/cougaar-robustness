@@ -64,12 +64,17 @@ import org.cougaar.tools.robustness.ma.ldm.NodeStatusRelayImpl;
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorRequest;
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorResponse;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+import javax.naming.NamingException;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.ModificationItem;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.BasicAttribute;
@@ -217,7 +222,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
         joinStartupCommunity();
       }
       updateAndSendNodeStatus();
-      long tmp = getLongAttribute(STATUS_UPDATE_ATTRIBUTE, updateInterval);
+      long tmp = getLongAttribute(CURRENT_STATUS_UPDATE_ATTRIBUTE, updateInterval);
       if (tmp != updateInterval) {
         logger.info("Changing update interval: old=" + updateInterval + " new=" + tmp);
         updateInterval = tmp;
@@ -331,6 +336,19 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
       if (model == null) {
         initializeModel(community.getName());
       }
+      long interval = model.getLongAttribute(CURRENT_STATUS_UPDATE_ATTRIBUTE);
+      if (interval <= 0) { // Current status update interval not defined yet
+        // Get default interval
+        long newInterval = getLongAttribute(STATUS_UPDATE_ATTRIBUTE, updateInterval);
+        if (newInterval > 0) {
+          // Add to community
+          logger.info("Setting update interval attribute: interval=" + newInterval);
+          changeAttributes(community,
+                           null,
+                           new Attribute[]{new BasicAttribute(CURRENT_STATUS_UPDATE_ATTRIBUTE, Long.toString(newInterval))});
+        }
+      }
+      long tmp = getLongAttribute(CURRENT_STATUS_UPDATE_ATTRIBUTE, updateInterval);
       if (nodeStatusRelay == null && myType.equalsIgnoreCase("Node")) {
         AgentStatus agentStatus[] = getLocalAgentStatus(community.getName());
         NodeStatusRelayImpl nsr =
@@ -559,6 +577,68 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
       }
     };
     whitePagesService.get(myName, "topology", cb);
+  }
+
+  /**
+   * Modify one or more attributes of a community or entity.
+   * @param communityName  Target community
+   * @param entityName     Name of entity or null to modify community attributes
+   * @param newAttrs       New attributes
+   */
+  protected void changeAttributes(String communityName, final String entityName, final Attribute[] newAttrs) {
+    Community community =
+      commSvc.getCommunity(communityName, new CommunityResponseListener() {
+        public void getResponse(CommunityResponse resp) {
+          changeAttributes((Community) resp.getContent(), entityName, newAttrs);
+        }
+      }
+    );
+    if (community != null) {
+      changeAttributes(community, entityName, newAttrs);
+    }
+  }
+
+  /**
+   * Modify one or more attributes of a community or entity.
+   * @param community      Target community
+   * @param entityName     Name of entity or null to modify community attributes
+   * @param newAttrs       New attributes
+   */
+  protected void changeAttributes(final Community community, final String entityName, Attribute[] newAttrs) {
+    if (community != null) {
+      List mods = new ArrayList();
+      for (int i = 0; i < newAttrs.length; i++) {
+        try {
+          Attributes attrs = community.getAttributes();
+          Attribute attr = attrs.get(newAttrs[i].getID());
+          if (attr == null || !attr.contains(newAttrs[i].get())) {
+            int type = attr == null
+                ? DirContext.ADD_ATTRIBUTE
+                : DirContext.REPLACE_ATTRIBUTE;
+            mods.add(new ModificationItem(type, newAttrs[i]));
+          }
+        } catch (NamingException ne) {
+          logger.error("Error setting community attribute:" +
+                       " community=" + community.getName() +
+                       " attribute=" + newAttrs[i]);
+        }
+      }
+      if (!mods.isEmpty()) {
+        CommunityResponseListener crl = new CommunityResponseListener() {
+          public void getResponse(CommunityResponse resp) {
+            if (resp.getStatus() != CommunityResponse.SUCCESS) {
+              logger.warn("Unexpected status from CommunityService modifyAttributes request:" +
+                          " status=" + resp.getStatusAsString() +
+                          " community=" + community.getName());
+            }
+          }
+      };
+        commSvc.modifyAttributes(community.getName(),
+                            entityName,
+                            (ModificationItem[])mods.toArray(new ModificationItem[0]),
+                            crl);
+      }
+    }
   }
 
   private class WakeAlarm implements Alarm {
