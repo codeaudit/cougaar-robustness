@@ -26,11 +26,15 @@
 package org.cougaar.coordinator.believability;
 
 import org.cougaar.core.persist.NotPersistable;
+import org.cougaar.util.UnaryPredicate;
+
 import org.cougaar.coordinator.techspec.AssetStateDimension;
 import org.cougaar.coordinator.techspec.AssetID;
+import org.cougaar.coordinator.techspec.AssetType;
 
 import java.util.Hashtable;
 import java.util.Enumeration;
+import java.util.Vector;
 
 /**
  * This object is a hashtable that collects together, for an asset, the 
@@ -42,37 +46,36 @@ import java.util.Enumeration;
 
 public class StateEstimation extends Hashtable implements NotPersistable 
 {
-    /** 
-     * Create a new instance of StateEstimation. It is empty, with no 
-     * diagnoses and a current timestamp.
-     **/
-    public StateEstimation() { }
-    
-
-    /** 
-     * Create a new instance of StateEstimation, based on the input 
-     * diagnosis. This is meant to be used for times when the state
-     * estimation is in response to a new diagnosis being received.
-     * @param diagnosis The input diagnosis to the StateEstimation
-     **/
-    //    public StateEstimation( BelievabilityDiagnosis diagnosis ) {
-    //	_diagnosis = diagnosis;
-    //	_asset_id = diagnosis.getAssetID();
-    //	_timestamp = diagnosis.getTimestamp();
-    //    }
-
-
     /**
      * Create a new state estimation for an asset. This is done when
      * the state estimation is being made as of some time, without
      * any diagnoses being received explicitly.
-     * @param asset_id The identifier of the asset that the 
-     *                 state estimation is for.
-     * @param timestamp The time when the state estimation was made.
+     * @param belief_state Some belief state for the asset
+     * @throws BelievabilityException if it has a problem
      **/
-    public StateEstimation( AssetID asset_id, long timestamp ) {
-	_asset_id = asset_id;
-	_timestamp = timestamp; 
+    public StateEstimation( BeliefState belief_state, 
+                   ModelManagerInterface model_manager ) 
+     throws BelievabilityException {
+
+     _belief_state = belief_state;
+     _model_manager = model_manager;
+
+     Vector _belief_state_dims = _belief_state.getAllBeliefStateDimensions();
+     Enumeration bsd_enum = _belief_state_dims.elements();
+     while( bsd_enum.hasMoreElements() ) {
+         BeliefStateDimension bsd =
+          (BeliefStateDimension) bsd_enum.nextElement();
+
+         // Get the utility weights 
+         double[] _mau_weighted_utilities = 
+          model_manager.getWeightedAssetUtilities( getAssetType(), 
+                                    bsd.getAssetStateDimension() );
+
+         // Make a state dimension estimation object for this state dimension
+         StateDimensionEstimation sde 
+          = new StateDimensionEstimation( bsd, _mau_weighted_utilities );
+         setStateDimensionEstimation( bsd.getAssetStateDimension(), sde );
+     }
     }
 
 
@@ -80,7 +83,14 @@ public class StateEstimation extends Hashtable implements NotPersistable
      * Get the identifier of the asset
      * @return the asset identifier
      **/
-    public AssetID getAssetID() { return _asset_id; }
+    public AssetID getAssetID() { return _belief_state.getAssetID(); }
+
+
+    /**
+     * Get the identifier of the asset
+     * @return the asset identifier
+     **/
+    public AssetType getAssetType() { return getAssetID().getType(); }
 
 
     /**
@@ -88,7 +98,7 @@ public class StateEstimation extends Hashtable implements NotPersistable
      * as of when the estimation was made.
      * @return The time when the diagnosis was received.
      **/
-    public long getTimestamp() { return _timestamp; }
+    public long getTimestamp() { return _belief_state.getTimestamp(); }
 
 
     /**
@@ -100,18 +110,19 @@ public class StateEstimation extends Hashtable implements NotPersistable
      * @return the StateDimensionEstimation
      **/
     public StateDimensionEstimation 
-	getStateDimensionEstimation( AssetStateDimension state_dimension ) 
-	throws BelievabilityException {
+     getStateDimensionEstimation( AssetStateDimension state_dimension ) 
+     throws BelievabilityException {
 
-	StateDimensionEstimation sde = 
-	    (StateDimensionEstimation) get( state_dimension );
-	if ( sde == null ) {
-	    throw new BelievabilityException( 
+     StateDimensionEstimation sde = 
+         (StateDimensionEstimation) get( state_dimension );
+
+     if ( sde == null ) {
+         throw new BelievabilityException( 
                 "StateEstimation.getStateDimensionEstimation",
-		"No belief information for state " + 
-		      state_dimension.getStateName());
-	}
-	else return sde;
+          "No belief information for state " + 
+                state_dimension.getStateName());
+     }
+     else return sde;
     }
 
 
@@ -120,7 +131,7 @@ public class StateEstimation extends Hashtable implements NotPersistable
      * @return an enumeration of the StateDimensionEstimation elements.
      **/
     public Enumeration getStateDimensionEstimations() {
-	return this.elements();
+     return this.elements();
     }
 
 
@@ -130,20 +141,12 @@ public class StateEstimation extends Hashtable implements NotPersistable
      *                        the belief state
      * @param estimate the StateDimensionEstimation for the state dimension
      **/
-    public void	
-	setStateDimensionEstimation( AssetStateDimension state_dimension,
-				     StateDimensionEstimation estimate ) {
+    public void     
+     setStateDimensionEstimation( AssetStateDimension state_dimension,
+                         StateDimensionEstimation estimate ) {
 
-	put( state_dimension, estimate );
+     put( state_dimension, estimate );
     }
-
-
-    /**
-     * Get the diagnosis that caused the StateEstimation to happen.
-     * May be null.
-     * @return The diagnosis
-     **/
-    //    public BelievabilityDiagnosis getDiagnosis() { return _diagnosis; }
 
 
     /**
@@ -158,15 +161,16 @@ public class StateEstimation extends Hashtable implements NotPersistable
      **/
     public double getStateUtility() throws BelievabilityException {
 
-	double return_utility = 0;
+        double state_utility = 0.0;
 
-	Enumeration sde_enum = this.getStateDimensionEstimations();
-	while ( sde_enum.hasMoreElements() ) {
-	    StateDimensionEstimation sde = 
-		(StateDimensionEstimation) sde_enum.nextElement();
-	    return_utility += sde.getUtility();
-	}
-	return return_utility;
+     Enumeration sde_enum = this.getStateDimensionEstimations();
+     while ( sde_enum.hasMoreElements() ) {
+         StateDimensionEstimation sde = 
+          (StateDimensionEstimation) sde_enum.nextElement();
+         state_utility += sde.getUtility();
+     }
+
+     return state_utility;
     }
 
 
@@ -183,25 +187,11 @@ public class StateEstimation extends Hashtable implements NotPersistable
      * @return the utility for that state dimension.
      **/
     public double 
-	getStateDimensionUtility( AssetStateDimension state_dimension ) 
-	throws BelievabilityException {
+     getStateDimensionUtility( AssetStateDimension state_dimension ) 
+     throws BelievabilityException {
 
-	// This may throw a BelievabilityException
-	return this.getStateDimensionEstimation(state_dimension).getUtility();
-    }
-
-
-    /**
-     * Clone the shell of this StateEstimation, so that it can be used to
-     * try repair options and compare the utilities in a consistent manner.
-     * @param timestamp the timestamp for the new clone.
-     * @return A clone of all of this StateEstimation, except for the 
-     *         actual StateDimensionEstimations.
-     **/
-    public StateEstimation cloneSEShell( long timestamp ) 
-	throws BelievabilityException {
-
-	return new StateEstimation( getAssetID(), timestamp );
+     // This may throw a BelievabilityException
+     return this.getStateDimensionEstimation(state_dimension).getUtility();
     }
 
 
@@ -212,63 +202,31 @@ public class StateEstimation extends Hashtable implements NotPersistable
      * @return A clone of all of this StateEstimation
      **/
     public StateEstimation cloneSE() throws BelievabilityException {
-	StateEstimation se =
-	    new StateEstimation( getAssetID(), getTimestamp() );
-	Enumeration sd_enum = this.keys();
-	while ( sd_enum.hasMoreElements() ) {
-	    AssetStateDimension asd = 
-		(AssetStateDimension) sd_enum.nextElement();
-	    se.setStateDimensionEstimation( asd,
-					    this.getStateDimensionEstimation( asd ) );
-	}
-	return se;
-    }
-
-
-    /**
-     * Accessing whether or not there was an error encountered while
-     * trying to create this state estimation object.
-     *
-     * @return true if an error was logged, and false if everything
-     * went ok.
-     */
-    public boolean hasError() { return this._error; }
-
-
-    /*
-     * Returns the accumulated error messages when an error exists.
-     *
-     * @return The list of error messages, or an empty String if there
-     * were no errors.
-     */
-    public String getErrorMessage() { return _error_msg_buff.toString(); }
-
-
-    /**
-     * Sets the error condition of the object and adds a message.
-     *
-     * @param err_msg The message to append to the fulle S.E. error
-     * message.  
-     */
-    public void logError( String err_msg )
-    {
-        this._error = true;
-        _error_msg_buff.append( err_msg );
+     BeliefState bs_clone = (BeliefState) _belief_state.clone();
+     return new StateEstimation( bs_clone, _model_manager );
     }
 
 
     //************************************************************
-    // Asset that this state estimation concerns
-    private AssetID _asset_id = null;
+    // Static methods 
+    
+    public static UnaryPredicate pred = new UnaryPredicate() {
+            public boolean execute(Object o) {
+                if ( o instanceof StateEstimation ) return true ;
+                return false ;
+            }
+	};
 
-    // Timestamp for the state estimation
-    private long _timestamp = System.currentTimeMillis();
- 
-    // The diagnosis that caused the state estimation to be made
-    // private BelievabilityDiagnosis _diagnosis = null;
 
-    // Useful to track errors so we can pass them along.
-    private boolean _error = false;
-    private StringBuffer _error_msg_buff = new StringBuffer();
 
+
+    //************************************************************
+    // Belief state related to this StateEstimation
+    private BeliefState _belief_state = null;
+
+    // Utility weight vector to use in computing utilities.
+    private double[] _mau_weighted_utilities = null;
+
+    // Model manager, to get utility information from.
+    private ModelManagerInterface _model_manager = null;
 }

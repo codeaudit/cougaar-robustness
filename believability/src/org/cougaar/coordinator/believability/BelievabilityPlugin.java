@@ -26,12 +26,15 @@
 package org.cougaar.coordinator.believability;
 
 import org.cougaar.coordinator.DiagnosesWrapper;
+import org.cougaar.coordinator.Diagnosis;
 
 import org.cougaar.coordinator.techspec.AssetTechSpecInterface;
 import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
+import org.cougaar.coordinator.techspec.DiagnosisTechSpecService;
 import org.cougaar.coordinator.techspec.ThreatModelInterface;
 
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.Iterator;
 
 import org.cougaar.core.agent.service.alarm.Alarm;
@@ -52,8 +55,10 @@ import org.cougaar.util.UnaryPredicate;
  * significant problems.
  *
  */
-public class BelievabilityPlugin extends ServiceUserPluginBase 
-                                 implements NotPersistable {
+public class BelievabilityPlugin 
+        extends ServiceUserPluginBase
+        implements NotPersistable 
+{
     
 
     /** 
@@ -63,6 +68,12 @@ public class BelievabilityPlugin extends ServiceUserPluginBase
 
         super(requiredServices);
 
+     // Initialize various classes
+     _model_manager = new ModelManager();
+     _se_publisher = new StateEstimationPublisher( this, _model_manager );
+     _diagnosis_consumer = new DiagnosisConsumer( _model_manager,
+                                   _se_publisher );
+     
     } // constructor BelievabilityPlugin
     
 
@@ -70,9 +81,11 @@ public class BelievabilityPlugin extends ServiceUserPluginBase
      * Called from outside. Should contain plugin initialization code.
      **/
     public void load() {
+
         super.load();
         getPluginParams();
         haveServices();
+
     } // method load
     
 
@@ -95,7 +108,7 @@ public class BelievabilityPlugin extends ServiceUserPluginBase
      * @return true always
      **/
     public boolean publishChange( Object o ) {
-	getBlackboardService().publishChange( o );
+     getBlackboardService().publishChange( o );
         return true;
     } // method publishChange
 
@@ -106,7 +119,7 @@ public class BelievabilityPlugin extends ServiceUserPluginBase
      * @return true always
      **/
     public boolean publishRemove( Object o ) {
-	getBlackboardService().publishRemove( o );
+     getBlackboardService().publishRemove( o );
         return true;
     } // method publishRemove
     
@@ -114,6 +127,68 @@ public class BelievabilityPlugin extends ServiceUserPluginBase
     //------------------------------------------------------------
     // protected interface
     //------------------------------------------------------------
+
+    /** 
+      * Called from outside once after initialization, as a
+      * "pre-execute()". This method sets up the subscriptions to
+      * objects that we are interested in -- models and diagnoses.
+      * It also tries to read all of the sensor and asset tech spec
+      * information that should have loaded during the load() phase.
+      **/
+    protected void setupSubscriptions() {
+
+     // First read in sensor type and asset type information. The
+     // asset types are found from the sensor types.
+     try {
+         readInSensorTypeInformation();
+     }
+     catch ( BelievabilityException be ) {
+         if ( logger.isDebugEnabled() )
+          logger.debug( " Believability plugin did not find sensor techspecs -- " + be.getMessage() );
+     }
+
+     // Now subscribe to the threat models and the diagnoses wrappers.
+     _threatModelSub 
+	 = ( IncrementalSubscription ) 
+	 getBlackboardService().subscribe
+	 ( new UnaryPredicate() 
+	     {
+		 public boolean execute(Object o) {
+		     if ( o instanceof ThreatModelInterface) {
+			 return true ;
+		     }
+		     return false ;
+		 }
+	     }) ;
+        
+     _diagnosisSub 
+	 = ( IncrementalSubscription ) 
+	 getBlackboardService().subscribe
+	 ( new UnaryPredicate() 
+	     {
+		 public boolean execute(Object o) {
+		     if ( o instanceof Diagnosis ) {
+			 return true ;
+		     }
+		     return false ;
+		 }
+	     }) ;
+     
+     //     _diagnosisSub 
+     //	 = ( IncrementalSubscription ) 
+     //	 getBlackboardService().subscribe
+     //	 ( new UnaryPredicate() 
+     //	     {
+     //		 public boolean execute(Object o) {
+     //		     if ( o instanceof DiagnosesWrapper ) {
+     //			 return true ;
+     //		     }
+     //		     return false ;
+     //		 }
+     //	     }) ;
+     
+    } // method setupSubscriptions
+
 
     /** 
      *  Execute method.
@@ -134,170 +209,16 @@ public class BelievabilityPlugin extends ServiceUserPluginBase
         if (logger.isDebugEnabled()) 
             logger.debug("Believability Plugin in Execute Loop");
 
-        handleAssetTS();
-        handleSensorTS();
         handleThreatModel();
-        handleDiagnosisWrapper();
+	handleDiagnosis();
+	//        handleiagnosisWrapper();
 
     } // method execute
-
-
-    /** 
-      * Called from outside once after initialization, as a
-      * "pre-execute()". This method sets up the subscriptions to
-      * objects that we are interested in -- tech specs and models
-      * and diagnoses
-      **/
-    protected void setupSubscriptions() {
-
-        _assetSub 
-            = ( IncrementalSubscription ) 
-            getBlackboardService().subscribe
-            ( new UnaryPredicate() 
-                {
-                    public boolean execute(Object o) {
-                        if ( o instanceof AssetTechSpecInterface) {
-                            return true ;
-                        }
-                        return false ;
-                    }
-                }) ;
-        
-        _sensorSub 
-            = ( IncrementalSubscription ) 
-            getBlackboardService().subscribe
-            ( new UnaryPredicate() 
-                {
-                    public boolean execute(Object o) {
-                        if ( o instanceof DiagnosisTechSpecInterface) {
-                            return true ;
-                        }
-                        return false ;
-                    }
-                }) ;
-        
-        _threatModelSub 
-            = ( IncrementalSubscription ) 
-            getBlackboardService().subscribe
-            ( new UnaryPredicate() 
-                {
-                    public boolean execute(Object o) {
-                        if ( o instanceof ThreatModelInterface) {
-                            return true ;
-                        }
-                        return false ;
-                    }
-                }) ;
-        
-        _diagnosisSub 
-            = ( IncrementalSubscription ) 
-            getBlackboardService().subscribe
-            ( new UnaryPredicate() 
-                {
-                    public boolean execute(Object o) {
-                        if ( o instanceof DiagnosesWrapper ) {
-                            return true ;
-                        }
-                        return false ;
-                    }
-                }) ;
-        
-    } // method setupSubscriptions
 
 
     //------------------------------------------------------------
     // private interface
     //------------------------------------------------------------
-
-    /**
-     * Invoked via execute() in response to some Blackboard activity.
-     *
-     * This routine checks and handle BB events for
-     * AssetTechSpecInterface objects.  
-     *
-     */
-    private void handleAssetTS()
-    {
-        AssetTechSpecInterface asset_ts = null;
-
-        // ADD AssetTechSpecInterface
-        for ( Iterator iter = _assetSub.getAddedCollection().iterator();
-              iter.hasNext() ; ) 
-        {
-            // Add the asset to the intermediate model
-            asset_ts = (AssetTechSpecInterface) iter.next(); 
-//***            _intermediate_model.addAsset( asset_ts );
-
-        } // for ADD AssetTechSpecInterface
-
-        //--------------------
-        //      CHANGE AssetTechSpecInterface
-        //--------------------
-
-        for ( Iterator iter = _assetSub.getChangedCollection().iterator();  
-          iter.hasNext() ; ) 
-        {
-            asset_ts = (AssetTechSpecInterface) iter.next(); 
-//***         _intermediate_model.changeAsset( asset_ts );
-            
-        } // for CHANGE AssetTechSpecInterface
-        
-        //--------------------
-        //      REMOVE AssetTechSpecInterface
-        //--------------------
-
-        for ( Iterator iter = _assetSub.getRemovedCollection
-                  ().iterator();  
-          iter.hasNext() ; ) 
-        {
-            asset_ts = (AssetTechSpecInterface) iter.next(); 
-//***            _intermediate_model.removeAsset( asset_ts );
-
-        } // for REMOVE AssetTechSpecInterface
-
-    } // method handleAsset
-
-
-    /**
-     * Invoked via execute() in response to some Blackboard activity.
-     *
-     * This routine checks and handle BB events for
-     * DiagnosisTechSpecInterface objects.  A diagnosis is related to one or
-     * more threat types that may affect the same asset. 
-     *
-     */
-    private void handleSensorTS()
-    {
-        DiagnosisTechSpecInterface sensor_ts = null;
-
-        //------- ADD DiagnosisTechSpecInterface
-        for ( Iterator iter = _diagnosisSub.getAddedCollection().iterator();  
-              iter.hasNext() ; ) 
-        {
-            sensor_ts = (DiagnosisTechSpecInterface) iter.next(); 
-	    _intermediate_model.consumeSensorType( sensor_ts );
-        } // for ADD DiagnosisTechSpecInterface
-
-
-        //------- CHANGE DiagnosisTechSpecInterface
-        for ( Iterator iter = _diagnosisSub.getChangedCollection().iterator(); 
-              iter.hasNext() ; ) 
-        {
-            sensor_ts = (DiagnosisTechSpecInterface) iter.next(); 
-	    _intermediate_model.consumeSensorType( sensor_ts );
-        } // for CHANGE DiagnosisTechSpecInterface
-        
-
-        //------- REMOVE DiagnosisTechSpecInterface
-        for ( Iterator iter = _diagnosisSub.getRemovedCollection().iterator();
-              iter.hasNext() ; ) 
-        {
-            sensor_ts = (DiagnosisTechSpecInterface) iter.next(); 
-	    _intermediate_model.removeSensorType( sensor_ts );
-        } // for REMOVE DiagnosisTechSpecInterface
-
-    } // method handleDiagnosis
-
 
     /**
      * Invoked via execute() in response to some Blackboard activity.
@@ -316,24 +237,24 @@ public class BelievabilityPlugin extends ServiceUserPluginBase
               iter.hasNext() ; ) 
         {
             threat_ts = (ThreatModelInterface) iter.next(); 
-	    _intermediate_model.consumeThreatModel( threat_ts );
+	    _model_manager.addThreatType( threat_ts );
         } // for ADD ThreatModelInterface
 
 
         //------- CHANGE ThreatModelInterface
         for ( Iterator iter = _threatModelSub.getChangedCollection().iterator();  
-	      iter.hasNext() ; ) 
+           iter.hasNext() ; ) 
         {
             threat_ts = (ThreatModelInterface) iter.next(); 
-	    _intermediate_model.consumeThreatModel( threat_ts );
+	    _model_manager.updateThreatType( threat_ts );
         } // for CHANGE ThreatModelInterface
         
         //------- REMOVE ThreatModelInterface
         for ( Iterator iter = _threatModelSub.getRemovedCollection().iterator();  
-	      iter.hasNext() ; ) 
+           iter.hasNext() ; ) 
         {
             threat_ts = (ThreatModelInterface) iter.next(); 
-	    _intermediate_model.removeThreatModel( threat_ts );
+	    _model_manager.removeThreatType( threat_ts );
         } // for REMOVE ThreatModelInterface
     } // method handleThreatModel
 
@@ -346,75 +267,142 @@ public class BelievabilityPlugin extends ServiceUserPluginBase
     private void handleDiagnosisWrapper()
     {
         DiagnosesWrapper dw = null;
+	Diagnosis diag = null;
 
         // Diagnoses are published to the blackboard. Each sensor has
 	// a Diagnosis object on the blackboard that it either asserts
 	// periodically or asserts when some value changes (or both).
 	// The Believability plugin receives a wrapped version of this
 	// object on the blackboard, when something changes.
-
+	
 	// ------- ADD DiagnosesWrapper
 	// Update the belief state for each asset
 	for ( Iterator iter = _diagnosisSub.getAddedCollection().iterator();  
-              iter.hasNext() ; ) 
-        {
-	    if (logger.isDebugEnabled() ) logger.debug ("Diagnosis ADD");
+              iter.hasNext() ; ) {
+         if (logger.isDebugEnabled() ) logger.debug ("Diagnosis ADD");
 
-	    try {
-		dw = (DiagnosesWrapper) iter.next(); 
-		processAssertedDiagnosis( dw );
-	    }
-	    catch ( BelievabilityException be ) {
-		logger.warn( "Problem processing added diagnosis "
-			     + be.getMessage() );
-	    }
-        } // iterator for ADD DiagnosesWrapper
+         try {
+          dw = (DiagnosesWrapper) iter.next(); 
+	  diag = dw.getDiagnosis();
 
-        // ------- CHANGE DiagnosesWrapper
-	// DiagnosesWrapper objects have changed.
-	// This indicates some new diagnosis information has been asserted.
-        for ( Iterator iter = _diagnosisSub.getChangedCollection().iterator();
-	      iter.hasNext() ; ) 
-        {
-	    if (logger.isDebugEnabled() ) logger.debug ("Diagnosis CHANGE");
+          // Check to see whether the defense controller is enabled at
+          // the moment
+          if ( _dc_enabled ) _diagnosis_consumer.consumeDiagnosis( diag );
+         }
+         catch ( BelievabilityException be ) {
+          logger.warn( "Problem processing added diagnosis "
+                 + be.getMessage() );
+         }
+     } // iterator for ADD DiagnosesWrapper
 
-	    try {
-		dw = (DiagnosesWrapper) iter.next(); 
-		processAssertedDiagnosis( dw );
-	    }
-	    catch ( BelievabilityException be ) {
-		logger.warn( "Problem processing updated diagnosis "
-			     + be.getMessage() );
-	    }
-	} // iterator for CHANGE DiagnosesWrapper
+     // ------- CHANGE DiagnosesWrapper
+     // DiagnosesWrapper objects have changed.
+     // This indicates some new diagnosis information has been asserted.
+     for ( Iterator iter = _diagnosisSub.getChangedCollection().iterator();
+           iter.hasNext() ; ) {
+
+         if (logger.isDebugEnabled() ) logger.debug ("Diagnosis CHANGE");
+
+         try {
+          dw = (DiagnosesWrapper) iter.next(); 
+	  diag = dw.getDiagnosis();
+
+          // Check to see whether the defense controller is enabled at
+          // the moment
+          if ( _dc_enabled ) _diagnosis_consumer.consumeDiagnosis( diag );
+         }
+         catch ( BelievabilityException be ) {
+          logger.warn( "Problem processing updated diagnosis "
+                 + be.getMessage() );
+         }
+     } // iterator for CHANGE DiagnosesWrapper
         
-        // ----- REMOVE DiagnosesWrapper
-	// The DiagnosesWrapper has been removed successfully,
-	// we do nothing with this since it is controlled elsewhere, and
-	// we have already processed it.
-        for ( Iterator iter = _diagnosisSub.getRemovedCollection().iterator(); 
-	      iter.hasNext() ; ) 
-        {
-            dw = (DiagnosesWrapper) iter.next(); 
-	    // do absolutely nothing
-        } // for REMOVE DiagnosesWrapper
-
+     // ----- REMOVE DiagnosesWrapper
+     // The DiagnosesWrapper has been removed successfully,
+     // we do nothing with this since it is controlled elsewhere, and
+     // we have already processed it.
+     for ( Iterator iter = _diagnosisSub.getRemovedCollection().iterator(); 
+	   iter.hasNext() ; ) {
+	 dw = (DiagnosesWrapper) iter.next(); 
+         // do absolutely nothing
+     } // for REMOVE DiagnosesWrapper
+	
     } // method handleDiagnosisWrapper
 
-
     /**
-     * Accessor method for the MAU weight information
-     * @return The current MAU weights
+     * Invoked via execute() in response to some Blackboard activity.
+     *
+     * This routine checks and handle BB events for Diagnosis
      **/
-    public MAUWeights getMAUWeights() { return _mau_weights; }
+    private void handleDiagnosis()
+    {
+        Diagnosis diag = null;
 
-    
+        // Diagnoses are published to the blackboard. Each sensor has
+	// a Diagnosis object on the blackboard that it either asserts
+	// periodically or asserts when some value changes (or both).
+	// The Believability plugin receives a wrapped version of this
+	// object on the blackboard, when something changes.
+	
+	// ------- ADD Diagnosis
+	// Update the belief state for each asset
+	for ( Iterator iter = _diagnosisSub.getAddedCollection().iterator();  
+              iter.hasNext() ; ) {
+         if (logger.isDebugEnabled() ) logger.debug ("Diagnosis ADD");
+
+         try {
+	     diag = (Diagnosis) iter.next(); 
+
+          // Check to see whether the defense controller is enabled at
+          // the moment
+          if ( _dc_enabled ) _diagnosis_consumer.consumeDiagnosis( diag );
+         }
+         catch ( BelievabilityException be ) {
+          logger.warn( "Problem processing added diagnosis "
+                 + be.getMessage() );
+         }
+     } // iterator for ADD Diagnosis
+
+     // ------- CHANGE Diagnosis
+     // Diagnosis objects have changed.
+     // This indicates some new diagnosis information has been asserted.
+     for ( Iterator iter = _diagnosisSub.getChangedCollection().iterator();
+           iter.hasNext() ; ) {
+
+         if (logger.isDebugEnabled() ) logger.debug ("Diagnosis CHANGE");
+
+         try {
+          diag = (Diagnosis) iter.next(); 
+
+          // Check to see whether the defense controller is enabled at
+          // the moment
+          if ( _dc_enabled ) _diagnosis_consumer.consumeDiagnosis( diag );
+         }
+         catch ( BelievabilityException be ) {
+          logger.warn( "Problem processing updated diagnosis "
+                 + be.getMessage() );
+         }
+     } // iterator for CHANGE Diagnosis
+        
+     // ----- REMOVE Diagnosis
+     // The Diagnosis has been removed successfully,
+     // we do nothing with this since it is controlled elsewhere, and
+     // we have already processed it.
+     for ( Iterator iter = _diagnosisSub.getRemovedCollection().iterator(); 
+	   iter.hasNext() ; ) {
+	 diag = (Diagnosis) iter.next(); 
+         // do absolutely nothing
+     } // for REMOVE Diagnosis
+	
+    } // method handleDiagnosis
+
+
     /**
      * Set an alarm
      * @param The Alarm object for the alarm
      **/
     public void setAlarm( Alarm alarm_to_set ) {
-	getAlarmService().addRealTimeAlarm( alarm_to_set );
+     getAlarmService().addRealTimeAlarm( alarm_to_set );
     }
     
 
@@ -423,9 +411,9 @@ public class BelievabilityPlugin extends ServiceUserPluginBase
     //-------------------------------------------------------------------
 
     /**
-      * Demonstrates how to read in parameters passed in via
-      * configuration files. Use/remove as needed.
-      **/
+     * Demonstrates how to read in parameters passed in via
+     * configuration files. Use/remove as needed.
+     **/
     private void getPluginParams() {
         
         //The 'logger' attribute is inherited. Use it to emit data for
@@ -445,7 +433,8 @@ public class BelievabilityPlugin extends ServiceUserPluginBase
      **/
     private boolean haveServices() {
 
-        if (eventService != null) return true;
+        if ( (eventService != null) && (diagnosisTSService == null) )
+	    return true;
 
         if (acquireServices()) 
         {
@@ -453,19 +442,29 @@ public class BelievabilityPlugin extends ServiceUserPluginBase
                 logger.debug(".haveServices - acquiredServices.");
 
             ServiceBroker sb = getServiceBroker();
+	    if ( sb == null ) 
+		throw new RuntimeException ( "No service broker found." );
                 
+	    // Get the event service
             eventService 
                 = (EventService ) sb.getService( this, 
                                                  EventService.class, 
                                                  null ) ;      
-
             if (eventService == null) 
-            {
                 throw new RuntimeException("Unable to obtain EventService");
-            }
 
-            return true;
+	    // Get the diagnosis tech spec service
+	    diagnosisTSService = (DiagnosisTechSpecService)
+		sb.getService( this,
+			       DiagnosisTechSpecService.class, 
+			       null );
+	
+	    if ( diagnosisTSService == null )
+		throw new RuntimeException( "Unable to obtain DiagnosisTechSpecService." );
+
+	    return true;
         }
+
         else if (logger.isDebugEnabled()) 
             logger.debug(".haveServices - did NOT acquire services.");
 
@@ -477,8 +476,6 @@ public class BelievabilityPlugin extends ServiceUserPluginBase
     // These are the subscriptions we need to monitor the BB activity.
 
     private IncrementalSubscription _threatModelSub;
-    private IncrementalSubscription _assetSub;
-    private IncrementalSubscription _sensorSub;
     private IncrementalSubscription _diagnosisSub;
 
     private IncrementalSubscription pluginControlSubscription;
@@ -487,44 +484,8 @@ public class BelievabilityPlugin extends ServiceUserPluginBase
     private static final Class[] requiredServices = {
         EventService.class
     };
+    private DiagnosisTechSpecService diagnosisTSService = null;
 
-
-
-    /**
-     * Process a diagnosis that has been asserted as either an add or a change.
-     * @param dw The diagnosis wrapper from the blackboard
-     * @throws BelievabilityException if there is a problem processing
-     **/
-    private void processAssertedDiagnosis( DiagnosesWrapper dw ) 
-	throws BelievabilityException {
-
-	// First check to see whether the defense controller is enabled at
-	// the moment
-	if ( ! _dc_enabled ) return;
-
-	// Copy out the diagnosis information
-	BelievabilityDiagnosis bd = new BelievabilityDiagnosis( dw );
-	
-	if (logger.isDebugEnabled()) 
-	    logger.debug("Updating BelievabilityDiagnosis " + bd.toString() );
-	
-	// Find the AssetModel and AssetStateWindow that this diagnosis
-	// concerns.
-	AssetModel am = _asset_container.getAssetModel( bd.getAssetID() );
-	DiagnosisConsumerInterface dci = am.getAssetStateWindow();
-
-	// Update the asset state window with the new diagnosis
-	try {
-	    dci.consumeDiagnosis( bd );
-	}
-	catch( Exception e ) {
-	    System.out.println( "***Need to code what to do with exceptions in BelievabilityPlugin.processAssertedDiagnosis");
-	}
-	
-	// Check to see whether or not the new state should be forwarded
-	// to the blackboard. 
-	if ( am.forwardStateP( ) ) publishAdd( am.getCurrentState() );
-    }
 
 
     /**
@@ -532,21 +493,40 @@ public class BelievabilityPlugin extends ServiceUserPluginBase
      * This is used to prevent thrashing during startup.
      **/
     private void setDCEnabled( boolean dc_enabled ) {
-	_dc_enabled = dc_enabled;
+     _dc_enabled = dc_enabled;
+    }
+
+
+    // Method to read in the sensor types. Used during setup.
+    // Throws BelievabilityException if it has a problem finding the techspecs
+    private void readInSensorTypeInformation() throws BelievabilityException {
+	logger.debug("About to enter sensor tech spec read loop " );
+
+	// Get all of the sensor tech specs from the service.
+	Iterator ts_enum = 
+	    diagnosisTSService.getAllDiagnosisTechSpecs().iterator();
+	while ( ts_enum.hasNext() ) {
+	    DiagnosisTechSpecInterface dtsi = 
+		(DiagnosisTechSpecInterface) ts_enum.next();
+
+	    logger.debug("plugin adding a sensor tech spec " );
+	    _model_manager.addSensorType( dtsi );
+	}
     }
 
 
     // Boolean saying whether this functionality is enabled or not.
     private boolean _dc_enabled = true;
 
-    // This is the intermediate model that has all of the information
+    // This is the model manager that has all of the information
     // from the techspecs.
-    private TechSpecConsumerInterface _intermediate_model = null; //****new IntermediateModel();
+    private ModelManagerInterface _model_manager = null;
+
+    // This is the state estimation publisher that will be making decisions
+    // about publishing state estimations.
+    private StateEstimationPublisher _se_publisher = null;
 
     // This is the asset index for the AssetModels. It is indexed by AssetID
-    private AssetContainer _asset_container = new AssetContainer();
-
-    // This is the pointer to the MAU Weights object.
-    private MAUWeights _mau_weights = new MAUWeights();
+    private DiagnosisConsumer _diagnosis_consumer = null;
 
 }  // class BelievabilityPlugin

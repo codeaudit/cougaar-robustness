@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE SensorType >
+
+<SensorTypes>
+<SensorType name="AgentCommunication" sensesAssetType="Agent" sensesStateDimension="COMMUNICATION" sensorLatency="1000">
+    <PotentialDiagnoses>
+        <Diagnosis name="OK" />
+        <Diagnosis name="DEGRADED" />
+        <Diagnosis name="NOT_COMMUNICATING" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="GOOD" >
+            <WillDiagnoseAs name="OK" withProbability="0.9" />
+            <WillDiagnoseAs name="DEGRADED" withProbability="0.1" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="DEGRADED" >
+            <WillDiagnoseAs name="OK" withProbability="0.1" />
+            <WillDiagnoseAs name="DEGRADED" withProbability="0.8" />
+            <WillDiagnoseAs name="NOT_COMMUNICATING" withProbability="0.1" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="PLANNED_DISCONNECT" >
+            <WillDiagnoseAs name="DEGRADED" withProbability="0.01" />
+            <WillDiagnoseAs name="NOT_COMMUNICATING" withProbability="0.99" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="NOT_COMMUNICATING" >
+            <WillDiagnoseAs name="DEGRADED" withProbability="0.01" />
+            <WillDiagnoseAs name="NOT_COMMUNICATING" withProbability="0.99" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>
+<SensorType name="AgentCommunication2" sensesAssetType="Agent" sensesStateDimension="COMMUNICATION2" sensorLatency="1000">
+    <PotentialDiagnoses>
+        <Diagnosis name="OK" />
+        <Diagnosis name="DEGRADED" />
+        <Diagnosis name="NOT_COMMUNICATING" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="GOOD" >
+            <WillDiagnoseAs name="OK" withProbability="0.9" />
+            <WillDiagnoseAs name="DEGRADED" withProbability="0.1" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="DEGRADED" >
+            <WillDiagnoseAs name="OK" withProbability="0.1" />
+            <WillDiagnoseAs name="DEGRADED" withProbability="0.8" />
+            <WillDiagnoseAs name="NOT_COMMUNICATING" withProbability="0.1" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="PLANNED_DISCONNECT" >
+            <WillDiagnoseAs name="DEGRADED" withProbability="0.01" />
+            <WillDiagnoseAs name="NOT_COMMUNICATING" withProbability="0.99" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="NOT_COMMUNICATING" >
+            <WillDiagnoseAs name="DEGRADED" withProbability="0.01" />
+            <WillDiagnoseAs name="NOT_COMMUNICATING" withProbability="0.99" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>
+</SensorTypes>

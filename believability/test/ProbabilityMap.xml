@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE Map >
+
+<Map>
+   <Mapping name="VERY_LOW"  value=".1" />
+   <Mapping name="LOW"       value=".3" />
+   <Mapping name="MEDIUM"    value=".5" />
+   <Mapping name="HIGH"      value=".7" />
+   <Mapping name="VERY_HIGH" value=".9" />
+   <Mapping name="ALWAYS"    value="1" />
+   <Mapping name="NONE"      value="0" />
+</Map>

@@ -25,7 +25,6 @@
 
 package org.cougaar.coordinator.believability;
 
-import org.cougaar.coordinator.DiagnosesWrapper;
 import org.cougaar.coordinator.Diagnosis;
 import org.cougaar.coordinator.DiagnosisUtils;
 
@@ -47,20 +46,15 @@ public class BelievabilityDiagnosis
 
     /**
      * Constructor, from a diagnosis on the blackboard
-     * @param bb_diagnosis The DiagnosesWrapper from the blackboard
+     * @param diag The diagnosis from the blackboard
      **/
-    public BelievabilityDiagnosis( DiagnosesWrapper bb_diagnosis ) {
-	
-	// Pull the diagnosis from the blackboard
-	_blackboard_diagnosis = bb_diagnosis.getDiagnosis();
+    public BelievabilityDiagnosis( Diagnosis diag ) {
+     
+	_blackboard_diagnosis = diag;
 
 	// Copy relevant information from the diagnosis, as it may change
 	_diagnosis_value = (String) _blackboard_diagnosis.getValue();
 	_diagnosis_TS = _blackboard_diagnosis.getTechSpec();
-
-	//****** Note that in the tech spec, the method
-	//    getDiagnosisProbabilities returns a Vector of DiagnosisProbability objects
-	//    getCrossDiagnosisProbabilities returns a Vector of CrossDiagnosis objects
 
 	_last_asserted_timestamp = 
 	    _blackboard_diagnosis.getLastAssertedTimestamp();
@@ -79,11 +73,18 @@ public class BelievabilityDiagnosis
 
 
     /**
+     * Return the tech spec for the diagnosis, as published by the sensor
+     * @return the diagnosis tech spec
+     **/
+    public DiagnosisTechSpecInterface 
+            getDiagnosisTechSpec() { return _diagnosis_TS; }
+
+    /**
      * Return the last time the sensor asserted a value
      * @return the timestamp
      **/
     public long getLastAssertedTimestamp() { 
-	return _last_asserted_timestamp; 
+     return _last_asserted_timestamp; 
     }
 
 
@@ -93,7 +94,7 @@ public class BelievabilityDiagnosis
      * @return the timestamp
      **/
     public long getLastChangedTimestamp() { 
-	return _last_changed_timestamp; 
+     return _last_changed_timestamp; 
     }
 
 
@@ -102,7 +103,7 @@ public class BelievabilityDiagnosis
      * @return the AssetID for the affected asset
      **/
     public AssetID getAssetID() { 
-	return _asset_id; 
+     return _asset_id; 
     }
 
 
@@ -111,7 +112,7 @@ public class BelievabilityDiagnosis
      * @return the AssetType of the affected asset
      **/
     public AssetType getAssetType() { 
-	return _asset_type; 
+     return _asset_type; 
     }
 
 
@@ -119,13 +120,13 @@ public class BelievabilityDiagnosis
      * Return the believability diagnosis as a string
      **/
     public String toString() {
-	StringBuffer sb = new StringBuffer();
-	sb.append( "BelievabilityDiagnosis: asset " );
-	sb.append( _asset_id.toString() );
-	sb.append( " asserted diagnosis " );
-	sb.append( _diagnosis_value );
-	sb.append( " at time " + _last_asserted_timestamp );
-	return sb.toString();
+     StringBuffer sb = new StringBuffer();
+     sb.append( "BelievabilityDiagnosis: asset " );
+     sb.append( _asset_id.toString() );
+     sb.append( " asserted diagnosis " );
+     sb.append( _diagnosis_value );
+     sb.append( " at time " + _last_asserted_timestamp );
+     return sb.toString();
     }
 
 
@@ -158,4 +159,5 @@ public class BelievabilityDiagnosis
     // Logger for error messages
     private Logger _logger;
 
-} // class BeliefUpdate
+} // class BelievabilityDiagnosis
+

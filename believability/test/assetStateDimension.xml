@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE AssetStateDimensions >
+
+
+<AssetStateDimensions assetType="agent">
+
+  <StateDimension name="Foo1" >
+ 	<State name="good" relativeMauCompleteness="0.1" 
+				   defaultStartState="TRUE" 
+                           relativeMauSecurity="0.9" />
+ 	<State name="bad" relativeMauCompleteness="0.1" 
+                           relativeMauSecurity="0.1" />
+
+
+  </StateDimension>
+  <StateDimension name="Foo2" >
+ 	<State name="good" relativeMauCompleteness="0.1" 
+				   defaultStartState="TRUE" 
+                           relativeMauSecurity="0.9" />
+ 	<State name="bad" relativeMauCompleteness="0.1" 
+                           relativeMauSecurity="0.1" />
+
+
+  </StateDimension>
+  <StateDimension name="Foo3" >
+ 	<State name="good" relativeMauCompleteness="0.1" 
+                           relativeMauSecurity="0.9" />
+ 	<State name="bad" relativeMauCompleteness="0.1" 
+                           relativeMauSecurity="0.1"
+				   defaultStartState="TRUE" />
+
+
+  </StateDimension>
+
+
+</AssetStateDimensions>
+

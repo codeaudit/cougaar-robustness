@@ -1,0 +1,162 @@
+<?xml version='1.0'?>
+
+<project name="TelcordiaBelievability" default="compile" basedir=".">
+
+  <description>
+  Build file for Telcordia's Believability plugin for Ultralog.
+  CVS: $Id: build.xml,v 1.1 2004-05-20 21:39:49 arc Exp $
+  </description>
+ 
+  <!-- ============================================================ -->
+  <!-- PROPERTIES          ======================================== -->
+  <!-- ============================================================ -->
+
+  <property name="version" value="1.1"/>
+  <property name="srcdir" value="src"/>
+  <property name="builddir" value="build"/>
+  <property name="libdir"  value="lib"/>
+  <property name="jarname" value="believability.jar"/>
+  <property name="stagedir" value="staging"/>
+  <property name="javadocsdir" value="javadoc"/>
+  <property name="includedir" value="include"/>
+  <property name="runclass"
+            value="org.cougaar.coordinator.believability.BelievabilityPlugin"/>
+
+  <!-- ==  FIXME: Need to add something to check for these   ====== -->
+  <property environment="env"/>
+  <property name="cougaardir" value="${env.COUGAAR_INSTALL_PATH}"/>
+  <property name="objsdir" value="${env.OBJS_CODE_BASE}"/>
+
+  <!-- ============================================================ -->
+  <!-- TARGET: init        ======================================== -->
+  <!-- ============================================================ -->
+
+  <!-- Make sure all needed directories exist -->
+  <target name="init">
+    <mkdir dir="${builddir}" />
+    <mkdir dir="${libdir}" />
+    <mkdir dir="${javadocsdir}" />
+    <mkdir dir="${includedir}" />
+  </target>
+
+  <!-- ============================================================ -->
+  <!-- TARGET: compile     ======================================== -->
+  <!-- ============================================================ -->
+
+  <target name="compile" depends="init">
+
+    <copy todir="${builddir}/">
+      <fileset dir="${objsdir}" includes="org/cougaar/coordinator/**/*.java"/>
+      <fileset dir="${srcdir}" includes="org/cougaar/coordinator/**/*.java"/>
+    </copy>
+
+    <javac srcdir="${builddir}" destdir="${builddir}"
+           debug="true" debuglevel="lines,vars,source">
+
+      <classpath id="project.class.path">
+
+        <pathelement path="${objsdir}"/>
+        <pathelement path="${builddir}"/>
+
+        <fileset dir="${includedir}">
+          <include name="**/*.jar"/>
+        </fileset>
+
+        <fileset dir="${cougaardir}/lib">
+          <include name="core.jar"/>
+          <include name="util.jar"/>
+          <include name="planning.jar"/>
+          <include name="Robustness_mic_mgmt_agent_HEAD_HEAD.jar"/>
+        </fileset>
+
+        <fileset dir="${cougaardir}/sys">
+          <include name="JSci_Poisson_For_Deconfliction.jar"/>
+          <include name="servlet.jar"/>
+         </fileset>
+
+      </classpath>
+
+    </javac>
+ 
+  </target>
+
+  <!-- ============================================================ -->
+  <!-- TARGET: jar         ======================================== -->
+  <!-- ============================================================ -->
+
+  <target name="jar" depends="compile">
+
+    <jar jarfile="${libdir}/${jarname}" basedir="${builddir}/">
+      <manifest>
+        <attribute name="Main-Class"
+                   value="${runclass}"/>
+      </manifest>
+    </jar>
+
+  </target>
+ 
+  <!-- ============================================================ -->
+  <!-- TARGET: overlay     ======================================== -->
+  <!-- ============================================================ -->
+
+  <!-- ==  FIXME: THIS TARGET DOES NOT YET WORK !!!!!   =========== -->
+
+ <target name="overlay" depends="jar">
+
+     <mkdir dir="${stagedir}/lib"/>
+
+     <signjar jar="${jar}" keystore="/var/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
+                <copy file="${jar}" todir="${cougaar}/lib"/>
+                <move file="${jar}"  todir="staging/lib"/>
+		<copy todir="staging/examples/">
+			<fileset dir="examples/"/>
+		</copy>	
+		<copy todir="staging/test/">
+			<fileset dir="test/"/>
+		</copy>	
+                <zip zipfile="AC_objs_coordinator.zip" basedir="staging"/>
+                <delete	dir="staging"/>
+
+  </target>
+ 
+  <!-- ============================================================ -->
+  <!-- TARGET: docs        ======================================== -->
+  <!-- ============================================================ -->
+
+  <target name="docs" depends="compile">
+
+     <javadoc packagenames="org.cougaar.coordinator.believability.*"
+           sourcepath="${builddir}"
+           defaultexcludes="yes"
+           destdir="${javadocsdir}"
+           author="true"
+           version="true"
+           use="true"
+           windowtitle="Telcordia's Believability Plugin for Ultralog: ${version}">
+     </javadoc>
+  </target>
+ 
+  <!-- ============================================================ -->
+  <!-- TARGET: run         ======================================== -->
+  <!-- ============================================================ -->
+
+  <!-- FIXME: This target is not quite working right. -->
+
+  <target name="run" depends="jar">
+    <java classname="${runclass}" fork="true">
+      <classpath refid="project.class.path"/>
+
+    </java>
+  </target>
+ 
+  <!-- ============================================================ -->
+  <!-- TARGET: clean       ======================================== -->
+  <!-- ============================================================ -->
+
+  <target name="clean">
+    <delete dir="${builddir}"/>
+    <delete dir="${libdir}"/>
+    <delete dir="${javadocsdir}"/>
+  </target>
+
+</project>

@@ -28,20 +28,18 @@ package org.cougaar.coordinator.believability;
 import org.cougaar.coordinator.Diagnosis;
 
 /**
- * Used to accept new diagnoses from the blackboard
- * and take the appropriate action.
+ * Used to accept new diagnoses and take the appropriate action.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.4 $Date: 2004-06-09 17:32:49 $
- * 
+ * @version $Revision: 1.11 $Date: 2004-07-02 21:49:33 $
  */
-public interface DiagnosisConsumerInterface {
+public interface BelievabilityDiagnosisConsumerInterface {
 
     //------------------------------------------------------------
     // public interface
     //------------------------------------------------------------
 
-    public void consumeDiagnosis( Diagnosis diag ) 
+    public void consumeBelievabilityDiagnosis( BelievabilityDiagnosis diag ) 
 	throws BelievabilityException;
 
 } // class DiagnosisConsumerInterface

@@ -49,20 +49,20 @@ public class UtilityWeights extends Hashtable {
      *                    the computation. 
      **/
     public UtilityWeights( AssetTechSpecInterface asset_ts,
-			   MAUWeights mau_weights ) {
+                           double[] mau_weights ) {
 
-	// Iterate through the state dimensions, computing the utility
-	// information for each dimension.
+     // Iterate through the state dimensions, computing the utility
+     // information for each dimension.
         Enumeration asset_sd_enum = asset_ts.getAssetStates().elements();
         while ( asset_sd_enum.hasMoreElements() ) {
 
             // Compute the utility weights for the state dimension and add
-	    // them to the hashtable
+         // them to the hashtable
             AssetStateDimension asd =
-		(AssetStateDimension) asset_sd_enum.nextElement();
+          (AssetStateDimension) asset_sd_enum.nextElement();
             String asd_name = asd.getStateName();
             double[] multipliers = computeSDUtilityMultipliers( asd,
-								mau_weights );
+                                        mau_weights );
             put( asd_name, multipliers );
         }
     }
@@ -76,14 +76,14 @@ public class UtilityWeights extends Hashtable {
      * @return the array of multipliers, as a double[]
      **/
     public double [] getSDUtilityMultipliers( String asd_name )
-	throws BelievabilityException {
+     throws BelievabilityException {
 
         Object retval = get( asd_name );
-	if ( retval != null ) return (double[]) retval;
+     if ( retval != null ) return (double[]) retval;
         else 
-	    throw new BelievabilityException(
-			   "UtilityWeights.getSDUtilityMultipliers",
-			   "No utility multipliers for state " + asd_name );
+         throw new BelievabilityException(
+                  "UtilityWeights.getSDUtilityMultipliers",
+                  "No utility multipliers for state " + asd_name );
     }
 
 
@@ -95,7 +95,7 @@ public class UtilityWeights extends Hashtable {
      * @return The utility of the StateDimension, as a double
      **/
     public double computeSDUtility( StateDimensionEstimation sde ) 
-	throws BelievabilityException {
+     throws BelievabilityException {
 
         String sd_name = sde.getAssetStateDimensionName();
 
@@ -104,11 +104,11 @@ public class UtilityWeights extends Hashtable {
         double[] multipliers = getSDUtilityMultipliers( sd_name );
 
         // Get the belief state for the state dimension, as an array of
-	// size num_states
+     // size num_states
         double[] sd_estimation = sde.toArray();
 
         // Compute the utility
-	double utility = 0.0;
+     double utility = 0.0;
         for ( int i = 0; i < multipliers.length; i++ ) {
             utility += multipliers[i] * sd_estimation[i];
         }
@@ -125,29 +125,26 @@ public class UtilityWeights extends Hashtable {
      * Compute the utility multipliers related to one StateDimension
      **/
     private double[] computeSDUtilityMultipliers( AssetStateDimension asd,
-						  MAUWeights mau_weights ) {
-
-	// Get the MAU weights as an array
-	double[] mau_weight_array = mau_weights.getMAUArray();
+                                double[] mau_weight_array ) {
 
         // Initialize the return array
-	int num_states = asd.getNumStates( );
-	double[] utility_multipliers = new double[num_states];
+     int num_states = asd.getNumStates( );
+     double[] utility_multipliers = new double[num_states];
         for (int i = 0; i < utility_multipliers.length; i++ ) 
-	    utility_multipliers[i] = 0.0;
+         utility_multipliers[i] = 0.0;
  
-	// Now set the multipliers from tthe mau weights, tech specs, etc.
+     // Now set the multipliers from tthe mau weights, tech specs, etc.
         for ( Iterator i = asd.getPossibleStates().iterator(); i.hasNext(); ) {
             AssetState as = (AssetState) i.next();
             int state_index = asd.StateNameToStateIndex( as.getName() );
 
             double utility_weight = 0.0;
-            utility_weight += ( mau_weight_array[MAUWeights.COMPLETENESS]
-				* as.getRelativeMauCompleteness() );
-            utility_weight += ( mau_weight_array[MAUWeights.SECURITY]
-				* as.getRelativeMauSecurity() );
-            utility_weight += ( mau_weight_array[MAUWeights.TIMELINESS]
-				* this.getRelativeMauTimeliness( as ) );
+            utility_weight += ( mau_weight_array[MAUWeightModel.COMPLETENESS_IDX]
+                    * as.getRelativeMauCompleteness() );
+            utility_weight += ( mau_weight_array[MAUWeightModel.SECURITY_IDX]
+                    * as.getRelativeMauSecurity() );
+            utility_weight += ( mau_weight_array[MAUWeightModel.TIMELINESS_IDX]
+                    * this.getRelativeMauTimeliness( as ) );
 
             utility_multipliers[state_index] = utility_weight;
         }

@@ -42,16 +42,18 @@ public class AssetAlarm implements Alarm {
      * Constructor. Starts the alarm
      * @param asset_model the model for the associated asset.
      * @param alarm_period the length of the alarm.
+     * @param callback the object to call back to when the alarm expires
      **/
-    public AssetAlarm ( AssetModel asset_model, long alarm_period ) {
-	_asset_model = asset_model;
+    public AssetAlarm ( AssetID asset_id, long alarm_period, StateEstimationPublisher callback ) {
+	_asset_id = asset_id;
+	_callback = callback;
 	_expired = false;
 	_start_time = System.currentTimeMillis();
 	_expiration_time = _start_time + alarm_period;
 
 	if (_logger.isInfoEnabled())
 	    _logger.info("Asset alarm set for asset " 
-			 + _asset_model.getAssetID().toString() 
+			 + _asset_id.toString() 
 			 + " for time "
 			 + _expiration_time );
     }
@@ -75,9 +77,9 @@ public class AssetAlarm implements Alarm {
 	_expired = true;
 	if (_logger.isInfoEnabled()) 
 	    _logger.info("Alarm expired for: " 
-			 + _asset_model.getAssetID().toString());
+			 + _asset_id.toString());
 
-	_asset_model.timerCallback( true );
+	_callback.timerCallback( _asset_id, true );
     }
 
 
@@ -107,15 +109,18 @@ public class AssetAlarm implements Alarm {
 	_canceled = true;
 	if (_logger.isInfoEnabled()) 
 	    _logger.info("Alarm canceled for: " 
-			 + _asset_model.getAssetID().toString());
+			 + _asset_id.toString());
 
-	_asset_model.timerCallback( false );
+	_callback.timerCallback( _asset_id, false );
 	return true;
     }
 
  
-    // The asset model for the asset that this alarm is attached to
-    private AssetModel _asset_model;
+    // The asset id for the asset that this alarm is attached to
+    private AssetID _asset_id;
+
+    // The object to call back to
+    private StateEstimationPublisher _callback;
 
     // The start time of the alarm
     private long _start_time;

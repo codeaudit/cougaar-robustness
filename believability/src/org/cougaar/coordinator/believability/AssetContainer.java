@@ -45,7 +45,7 @@ public class AssetContainer extends Hashtable {
      * Constructor
      **/
     public AssetContainer( ) {
-	super();
+     super();
     } // constructor AssetContainer
 
 
@@ -57,16 +57,16 @@ public class AssetContainer extends Hashtable {
      *                                model.
      **/
     public void addAssetModel( AssetModel asset_model ) 
-	throws BelievabilityException {
+     throws BelievabilityException {
 
-	if ( asset_model == null ) return;
-	
-	AssetID aid = asset_model.getAssetID();
-	if ( aid == null ) 
-	    throw new BelievabilityException( "AssetContainer.addAssetModel",
-					      "No valid asset ID for input model" );
+     if ( asset_model == null ) return;
+     
+     AssetID aid = asset_model.getAssetID();
+     if ( aid == null ) 
+         throw new BelievabilityException( "AssetContainer.addAssetModel",
+                               "No valid asset ID for input model" );
 
-	this.put( aid, asset_model );
+     this.put( aid, asset_model );
     } // method addAssetModel
 
 
@@ -78,16 +78,16 @@ public class AssetContainer extends Hashtable {
      *                                model.
      **/
     public void removeAssetModel( AssetModel asset_model ) 
-	throws BelievabilityException {
+     throws BelievabilityException {
 
-	if ( asset_model == null ) return;
-	
-	AssetID aid = asset_model.getAssetID();
-	if ( aid == null ) 
-	    throw new BelievabilityException( "AssetContainer.removeAssetModel",
-					      "No valid asset ID for input model" );
+     if ( asset_model == null ) return;
+     
+     AssetID aid = asset_model.getAssetID();
+     if ( aid == null ) 
+         throw new BelievabilityException( "AssetContainer.removeAssetModel",
+                               "No valid asset ID for input model" );
 
-	this.remove( aid );
+     this.remove( aid );
     } // method removeAssetModel
 
 
@@ -98,8 +98,8 @@ public class AssetContainer extends Hashtable {
      **/
     public AssetModel getAssetModel( AssetID asset_id ) {
 
-	if ( asset_id == null ) return null;
-	else return (AssetModel) this.get( asset_id );
+     if ( asset_id == null ) return null;
+     else return (AssetModel) super.get( asset_id );
     } // method getAssetModel
 
 } // class AssetContainer

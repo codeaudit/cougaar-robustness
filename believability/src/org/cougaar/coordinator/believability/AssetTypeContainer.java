@@ -33,68 +33,86 @@ import java.util.Hashtable;
  * type. There is one AssetTypeContainer for the whole believability plugin.
  * @author Misty Nodine
  */
-public class AssetTypeContainer extends Hashtable {
+class AssetTypeContainer extends Hashtable 
+{
 
     //------------------------------------------------------------
-    // public interface
+    // package interface
     //------------------------------------------------------------
 
+    //************************************************************
     /**
      * Constructor
-     **/
-    public AssetTypeContainer( ) {
-	super();
+     */
+    AssetTypeContainer( ) 
+    {
+        super();
     } // constructor AssetTypeContainer
 
 
+    //************************************************************
     /**
      * Add a new AssetTypeModel to the index. Does nothing if the input is
      * null. Does not check for duplicates.
+     *
      * @param asset_type_model The AssetTypeModel to add
      * @throws BelievabilityException if there is no valid name in the model.
-     **/
-    public void addAssetTypeModel( AssetTypeModel asset_type_model ) 
-	throws BelievabilityException {
+     */
+    void add( AssetTypeModel asset_type_model ) 
+            throws BelievabilityException 
+    {
 
-	if ( asset_type_model == null ) return;
-	
-	String name = asset_type_model.getName();
-	if ( name == null ) 
-	    throw new BelievabilityException( "AssetTypeContainer.addAssetTypeModel",
-					      "No valid name for input model" );
+        if ( asset_type_model == null ) 
+            return;
+        
+        String name = asset_type_model.getName();
+        if ( name == null ) 
+            throw new BelievabilityException
+                    ( "AssetTypeContainer.add",
+                      "No valid name for input model" );
 
-	this.put( name, asset_type_model );
-    } // method addAssetTypeModel
+        super.put( name, asset_type_model );
+    } // method add
 
 
+    //************************************************************
     /**
      * Remove an AssetTypeModel from the index. Does nothing if the input is
      * null or if the AssetTypeModel is not there.
+     *
      * @param asset_type_model The AssetTypeModel to remove
      * @throws BelievabilityException if there is no valid name in the model.
-     **/
-    public void removeAssetTypeModel( AssetTypeModel asset_type_model ) 
-	throws BelievabilityException {
+     */
+    void remove( AssetTypeModel asset_type_model ) 
+            throws BelievabilityException 
+    {
 
-	if ( asset_type_model == null ) return;
-	
-	String name = asset_type_model.getName();
-	if ( name == null ) 
-	    throw new BelievabilityException( "AssetTypeContainer.removeAssetTypeModel",
-					      "No valid name for input model" );
+        if ( asset_type_model == null ) 
+            return;
+     
+        String name = asset_type_model.getName();
+        if ( name == null ) 
+            throw new BelievabilityException
+                    ( "AssetTypeContainer.remove",
+                      "No valid name for input model" );
 
-	this.remove( name );
-    } // method removeAssetTypeModel
+        super.remove( name );
+    } // method remove
 
 
+    //************************************************************
     /**
      * Get the AssetTypeModel for the input asset type name.
      * Returns null if there isn't such an AssetModel in the index.
      * @param asset_type_name The name the asset type you are concerned with
-     **/
-    public AssetTypeModel getAssetTypeModel( String asset_type_name ) {
-	if ( asset_type_name == null ) return null;
-	else return (AssetTypeModel) this.get( asset_type_name );
+     */
+    AssetTypeModel get( String asset_type_name ) 
+    {
+        if ( asset_type_name == null ) 
+            return null;
+        
+        return (AssetTypeModel) super.get( asset_type_name );
+
     } // method getAssetTypeModel
 
 } // class AssetTypeContainer
