@@ -558,7 +558,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
                                      AgentStatus[] agentStatus,
                                      String leader,
                                      String host) {
-    if (model != null && controller != null) {
+    if (model != null && model.getController() != null) {
       model.applyUpdates(nodeName,
                          nodeStatus,
                          agentStatus,

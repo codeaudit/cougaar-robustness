@@ -212,6 +212,10 @@ public class CommunityStatusModel extends BlackboardClientComponent
     triggerState = controller.getLeaderElectionTriggerState();
   }
 
+  public RobustnessController getController() {
+    return controller;
+  }
+
   /**
    * Returns list of all monitored entities at specified location.
    * @return Entity names
