@@ -344,7 +344,11 @@ public abstract class Diagnosis
      */
     //protected -- SHOULD be public, but we cannot use our servlet tool to test the system!!
     public void setValue(Object newValue) throws IllegalValueException {
-        
+
+        if (newValue == null) {
+              throw new IllegalValueException("The following value is not a possible value: NULL" );
+        }
+
         if (value != newValue) {
             this.setLastChangedTimestamp( System.currentTimeMillis() );            
         

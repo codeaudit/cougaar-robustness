@@ -399,6 +399,10 @@ public abstract class Action
      */
     protected void start(Object actionValue) throws IllegalValueException {
         
+        if (actionValue == null) {
+            throw new IllegalValueException ("Action to be started is NULL!");
+        }
+        
         if ( !permittedValues.contains(actionValue) ) {
             throw new IllegalValueException ("Action to be started is not in permittedValues set.");
         }
