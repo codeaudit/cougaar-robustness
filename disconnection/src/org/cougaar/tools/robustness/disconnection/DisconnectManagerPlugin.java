@@ -76,6 +76,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     // Legal Action Values
     private final static String ALLOW_DISCONNECT = DisconnectConstants.ALLOW_DISCONNECT;
     private final static String ALLOW_CONNECT = DisconnectConstants.ALLOW_CONNECT;
+    private final static String AUTONOMOUS_RESTART = DisconnectConstants.AUTONOMOUS_RESTART;  // only performed when agent is restarted 
 
     private static Set ALLOW_DISCONNECT_SET;
     private static Set ALLOW_CONNECT_SET;
@@ -345,7 +346,25 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
 
         RequestToDisconnectNodeDiagnosis diag = requestToDisconnectNodeDiagnosisIndex.getDiagnosis(id);
         if (diag != null) { // the DefenseApplicability condition already exists, so don't make anotherset of conditions & opmodes
-            if (logger.isDebugEnabled()) logger.debug("Not creating redundant modes & conditions for already known "+id.toString());
+            if (logger.isDebugEnabled()) logger.debug("Not creating redundant modes & conditions for already known "+id.toString() + ", resetting Diagnosis");
+            try {
+                diag.setValue(CONNECTED);
+            } catch (IllegalValueException e) {
+                logger.error (e.toString());
+            }
+            blackboard.publishChange(diag);
+/*
+            DisconnectAction action = disconnectActionIndex.getAction(id);
+            try {
+                action.start(AUTONOMOUS_RESTART);
+                action.stop(Action.COMPLETED);
+            } catch (IllegalValueException e) {
+                logger.error (e.toString());
+            } catch (NoStartedActionException e) {
+                logger.error (e.toString());
+            }
+            blackboard.publishChange(action);
+*/
             return diag;
         }
 
@@ -392,7 +411,23 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
 
         RequestToDisconnectAgentDiagnosis diag = requestToDisconnectAgentDiagnosisIndex.getDiagnosis(id);
         if (diag != null) { // the DefenseApplicability condition already exists, so don't make anotherset of conditions & opmodes
-            if (logger.isDebugEnabled()) logger.debug("Not creating redundant modes & conditions for already known "+id.toString());
+            try {
+                diag.setValue(CONNECTED);
+            } catch (IllegalValueException e) {
+                logger.error (e.toString());
+            }
+            blackboard.publishChange(diag);
+/*            DisconnectAction action = disconnectActionIndex.getAction(id);
+            try {
+                action.start(AUTONOMOUS_RESTART);
+                action.stop(Action.COMPLETED);
+            } catch (IllegalValueException e) {
+                logger.error (e.toString());
+            } catch (NoStartedActionException e) {
+                logger.error (e.toString());
+            }
+            blackboard.publishChange(action);
+*/
             return diag;
         }
 
@@ -482,23 +517,24 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             RequestToDisconnectAgentDiagnosis agentDiag = requestToDisconnectAgentDiagnosisIndex.getDiagnosis(id);
             try {
                 agentDiag.setValue(request); // wants to disconnect
+                originalDiagnoses.add(agentDiag);
                 if (logger.isDebugEnabled()) logger.debug("DisconnectChange set "
                         +agentDiag.dump()+ " "+time
                         +" for the Coordinator");
                 blackboard.publishChange(agentDiag);
-//                NodeStatusRecord nsr = (NodeStatusRecord)nodeStatus.get(id);
-//                nsr.setReconnectTime(0.0);
-//                nsr.setDiagnosis(CONNECT_REQUEST);
-//                blackboard.publishChange(nodeStatus);
-                DisconnectAction Action = disconnectActionIndex.getAction(id);
-                Action.setValuesOffered(whichToOffer);
-                blackboard.publishChange(Action);
-                if (logger.isDebugEnabled()) logger.debug(Action.dump());
-                originalActions.add(Action);
-                originalDiagnoses.add(agentDiag);
-                agentVector.add(id);
             } catch (IllegalValueException e) {
-                logger.error("Attempt to set: "+diag.dump()+" with illegal value "+e.toString());
+                logger.error("Attempt to set: "+agentDiag.dump()+" with illegal value "+e.toString());
+                return false;
+            }
+            DisconnectAction action = disconnectActionIndex.getAction(id);
+            try {
+                action.setValuesOffered(whichToOffer);
+                originalActions.add(action);
+                agentVector.add(id);
+                blackboard.publishChange(action);
+                if (logger.isDebugEnabled()) logger.debug(action.dump());
+            } catch (IllegalValueException e) {
+                logger.error("Attempt to set: "+action.dump()+" with illegal value "+e.toString());
                 return false;
             }
         }
@@ -538,6 +574,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                 completionCode = Action.COMPLETED;
                 enablerValue = "DISABLED";
                 finalState = CONNECTED;
+                cancelOverdueAlarm_Returned(nodeID);
             }
             // persist the knowledge Disconnect status change
             try {
@@ -562,6 +599,8 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                 try {
                     action.start(request);
                     action.stop(completionCode);
+                    action.setValuesOffered(NULL_SET); // remove offers - this has the added effect that the action will be considered by the Coord to be irrecocable
+                    if (logger.isDebugEnabled()) logger.debug("Setting Action: " +  action.dump());
                     blackboard.publishChange(action);
                 } catch (IllegalValueException e) {
                     logger.error("Attempt to start: "+action.dump()+" with illegal value "+e.toString());
@@ -592,11 +631,28 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         DisconnectDefenseAgentEnabler enabler = DisconnectDefenseAgentEnabler.findOnBlackboard(rr.getNodeID().getType().toString(), rr.getNodeID().getName().toString(), blackboard);
         String request = rr.getRequest();
         AssetID nodeID = rr.getNodeID();
+        // tell the Coord that all Actions have stopped FAILED
+        Iterator iter = rr.getOriginalActions().iterator();
+        while (iter.hasNext()) {
+            DisconnectAction action = (DisconnectAction)iter.next();
+            try {
+                action.start(request);
+                action.stop(Action.FAILED);
+                action.setValuesOffered(NULL_SET); // remove offers - this has the added effect that the action will be considered by the Coord to be irrecocable
+                blackboard.publishChange(action);
+            } catch (IllegalValueException e) {
+                logger.error("Attempt to start: "+action.dump()+" with illegal value "+e.toString());
+                return false;
+            } catch (NoStartedActionException e) {
+                logger.error("Attempt to stop: "+action.dump()+" with illegal value "+e.toString());
+                return false;
+            }
+        }
         if (enabler != null) {
             enabler.setValue(request.equals(ALLOW_DISCONNECT) ? "DISABLED" : "ENABLED");  // Tell the node it can NOT do what it requested
             blackboard.publishChange(enabler);
             // change the Diagnosis back to its value before the denied request
-            Iterator iter = rr.getOriginalDiagnoses().iterator();
+            iter = rr.getOriginalDiagnoses().iterator();
             while (iter.hasNext()) {
                 Diagnosis diag = (Diagnosis)iter.next();
                 try {
@@ -685,26 +741,50 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
 
         public void handleExpiration() {
             AssetID assetID = diag.getAssetID();
-            if (logger.isDebugEnabled()) logger.debug("Alarm expired for: " + assetID + " with agents " + agentsAffected + " no longer legitimately Disconnected");
-            if (eventService.isEventEnabled()) eventService.event(diag.getAssetID()+" is no longer legitimately Disconnected");
-            try {
-                diag.setValue(TARDY);
-            } catch (IllegalValueException e) {
-                logger.error("Attempt to set: "+diag.toString()+" to illegal value " + TARDY);
+            if (logger.isDebugEnabled()) logger.debug("Alarm expired for: " + assetID + " with agents " + agentsAffected);
+            DisconnectAction action = disconnectActionIndex.getAction(assetID);
+            if (!action.getValue().isActive()) {
+                if (logger.isDebugEnabled()) logger.debug("BUT - The Node made it back just before timing out");
+                return;
             }
-            blackboard.publishChange(diag);
-            Iterator iter = agentsAffected.iterator();
-            while (iter.hasNext()) {
-                AssetID agentID = (AssetID)iter.next();
-                RequestToDisconnectAgentDiagnosis agentDiag = requestToDisconnectAgentDiagnosisIndex.getDiagnosis(agentID);
+            else {
+                if (eventService.isEventEnabled()) eventService.event(diag.getAssetID()+" is no longer legitimately Disconnected");
                 try {
-                    agentDiag.setValue(TARDY);
+                    diag.setValue(TARDY);
                 } catch (IllegalValueException e) {
                     logger.error("Attempt to set: "+diag.toString()+" to illegal value " + TARDY);
                 }
-            blackboard.publishChange(agentDiag);
+                try {
+                    action.stop(Action.FAILED);
+                } catch (IllegalValueException e) {
+                    logger.error("Attempt to set: "+action.toString()+" to illegal value " + Action.FAILED);
+                } catch (NoStartedActionException e) {
+                    logger.error(e.toString());
+                }
+                blackboard.publishChange(diag);
+                blackboard.publishChange(action);
+                Iterator iter = agentsAffected.iterator();
+                while (iter.hasNext()) {
+                    AssetID agentID = (AssetID)iter.next();
+                    RequestToDisconnectAgentDiagnosis agentDiag = requestToDisconnectAgentDiagnosisIndex.getDiagnosis(agentID);
+                    DisconnectAction agentAction = disconnectActionIndex.getAction(agentID);
+                    try {
+                        agentDiag.setValue(TARDY);
+                    } catch (IllegalValueException e) {
+                        logger.error("Attempt to set: "+diag.toString()+" to illegal value " + TARDY);
+                    }
+                    try {
+                        agentAction.stop(Action.FAILED);
+                    } catch (IllegalValueException e) {
+                        logger.error("Attempt to set: "+agentAction.toString()+" to illegal value " + Action.FAILED);
+                    } catch (NoStartedActionException e) {
+                    logger.error(e.toString());
+                    }
+                    blackboard.publishChange(agentDiag);
+                    blackboard.publishChange(agentAction);
+                }
+                cancelOverdueAlarm_Tardy(assetID);
             }
-            cancelOverdueAlarm_Tardy(assetID);
         }
         
         public boolean hasExpired() {return expired;

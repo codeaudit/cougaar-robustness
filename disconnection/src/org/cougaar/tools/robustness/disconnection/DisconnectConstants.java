@@ -47,5 +47,6 @@ public class DisconnectConstants {
     // The Possible Actions
     public final static String ALLOW_DISCONNECT = "Allow_Disconnect";
     public final static String ALLOW_CONNECT = "Allow_Connect";
+    public final static String AUTONOMOUS_RESTART = "Autonomous_Restart";
 
 }

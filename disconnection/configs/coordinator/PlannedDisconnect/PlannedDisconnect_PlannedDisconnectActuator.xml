@@ -68,6 +68,31 @@
         <Transition WhenActualStateIs="Tardy" EndStateWillBe="Tardy" IntermediateStateWillBe="Tardy" />
     </Action>
 
+    <Action name="Autonomous_Restart">
+        <Description value="Automatically happens when an agent is restarted - cannot happen otherwise" />
+        <Transition WhenActualStateIs="Tardy" EndStateWillBe="Connected" IntermediateStateWillBe="Tardy" />
+        <Transition WhenActualStateIs="WantsToConnect" EndStateWillBe="WantsToConnect" IntermediateStateWillBe="WantsToConnect" >
+            <OneTimeCost>
+                <Time duration="1000" />
+            </OneTimeCost>
+        </Transition>
+        <Transition WhenActualStateIs="Connected" EndStateWillBe="Connected" IntermediateStateWillBe="Connected" >
+            <OneTimeCost>
+                <Time duration="4000000" />
+            </OneTimeCost>
+        </Transition>
+        <Transition WhenActualStateIs="WantsToDisconnect" EndStateWillBe="WantsToDisconnect" IntermediateStateWillBe="WantsToDisconnect" >
+            <OneTimeCost>
+                <Time duration="4000000" />
+            </OneTimeCost>
+        </Transition>
+        <Transition WhenActualStateIs="Disconnected" EndStateWillBe="Disconnected" IntermediateStateWillBe="Disconnected" >
+            <OneTimeCost>
+                <Time duration="4000000" />
+            </OneTimeCost>
+        </Transition>
+    </Action>
+    
 </ActuatorType>
 
 </ActuatorTypes>

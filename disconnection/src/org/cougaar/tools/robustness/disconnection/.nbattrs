@@ -5,7 +5,7 @@
       <attr name="class_dependency_org.cougaar.tools.robustness.deconfliction.DefenseEnablingOperatingMode" stringvalue="DisconnectDefenseEnabler"/>
    </fileobject>
    <fileobject name="NodeStatus.java">
-      <attr name="class_dependency_java.io.Serializable" stringvalue="PersistableState"/>
+      <attr name="class_dependency_java.io.Serializable" stringvalue="NodeStatus"/>
       <attr name="class_dependency_org.cougaar.core.persist.Persistable" stringvalue="NodeStatus"/>
       <attr name="class_dependency_java.util.HashSet" stringvalue="PersistableState"/>
       <attr name="class_dependency_java.util.Set" stringvalue="PersistableState"/>
@@ -121,7 +121,7 @@
       <attr name="class_dependency_org.cougaar.tools.robustness.deconfliction.MonitoringEnablingOperatingMode" stringvalue="DisconnectManagerPlugin.MyMonitoringEnabler"/>
       <attr name="class_dependency_org.cougaar.tools.robustness.disconnection.ReconnectTimeCondition" stringvalue="DisconnectManagerPlugin.MyReconnectTimeCondition"/>
       <attr name="class_dependency_org.cougaar.tools.robustness.deconfliction.DefenseCondition" stringvalue="DisconnectManagerPlugin.MyDefenseEnablerCondition;DisconnectManagerPlugin.MyMonitoringEnablerCondition"/>
-      <attr name="class_dependency_org.cougaar.core.agent.service.alarm.Alarm" stringvalue="DisconnectManagerPlugin.OverdueAlarm"/>
+      <attr name="class_dependency_org.cougaar.core.agent.service.alarm.Alarm" stringvalue="DisconnectManagerPlugin.RequestedAlarm;DisconnectManagerPlugin.OverdueAlarm"/>
       <attr name="class_dependency_org.cougaar.tools.robustness.deconfliction.DefenseEnablingOperatingMode" stringvalue="DisconnectManagerPlugin.MyDefenseEnabler"/>
       <attr name="class_dependency_org.cougaar.tools.robustness.disconnection.DisconnectPluginBase" stringvalue="DisconnectManagerPlugin"/>
    </fileobject>
