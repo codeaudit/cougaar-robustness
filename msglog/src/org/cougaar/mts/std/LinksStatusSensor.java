@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2003,2004 Object Services and Consulting, Inc.
+ *  Copyright 2004 Object Services and Consulting, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
