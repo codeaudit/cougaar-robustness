@@ -62,7 +62,7 @@ import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.blackboard.BlackboardClient;
 import org.cougaar.core.mts.MessageAddress;
-import org.cougaar.core.service.AgentIdentificationService;
+import org.cougaar.core.node.NodeIdentificationService;
 
 import org.cougaar.core.servlet.BaseServletComponent;
 //import org.cougaar.core.servlet.BlackboardServletSupport;
@@ -105,22 +105,22 @@ public class DisconnectServlet extends BaseServletComponent
     }
 
     // get the agentId
-    AgentIdentificationService agentIdService = 
-      (AgentIdentificationService)
+    NodeIdentificationService nodeIdService = 
+      (NodeIdentificationService)
       serviceBroker.getService(
           this,
-          AgentIdentificationService.class,
+          NodeIdentificationService.class,
           null);
-    if (agentIdService == null) {
+    if (nodeIdService == null) {
       throw new RuntimeException(
-          "Unable to obtain agent-id service");
+          "Unable to obtain node-id service");
     }
     
-    this.assetType = "Agent";  // for now - later may be other kinds of assets
-    if (assetType.equals("Agent")) {
-        this.assetID = agentIdService.getMessageAddress().toString();
+    this.assetType = "Node";  // for now - later may be other kinds of assets
+    if (assetType.equals("Node")) {
+        this.assetID = nodeIdService.getMessageAddress().toString();
         serviceBroker.releaseService(
-            this, AgentIdentificationService.class, agentIdService);
+            this, NodeIdentificationService.class, nodeIdService);
         if (assetID == null) {
           throw new RuntimeException(
               "Unable to obtain agent id");
@@ -211,11 +211,11 @@ public class DisconnectServlet extends BaseServletComponent
                   d = new Double(Double.parseDouble(expire)*1000.0);
                   try {
                         blackboard.openTransaction();
-                        ReconnectTimeCondition rtc = setReconnectTimeConditionValue(d);
-                        if (rtc != null) {
+                        LocalReconnectTimeCondition lrtc = setReconnectTimeConditionValue(d);
+                        if (lrtc != null) {
                            out.println("<center><h2>Status Changed - Disconnected</h2></center><br>" );
-                           blackboard.publishChange(rtc); 
-                           if (logger.isDebugEnabled()) logger.debug("DisconnectServlet published ReconnectTimeCondition: "+rtc.getAsset()+" = "+ rtc.getValue().toString());
+                           blackboard.publishChange(lrtc); 
+                           if (logger.isDebugEnabled()) logger.debug("DisconnectServlet published ReconnectTimeCondition: "+lrtc.getAsset()+" = "+lrtc.getValue().toString());
                         }
                         else {
                             out.println("<center><h2>Failed to Disconnect - No Condition Objects</h2></center><br>");
@@ -236,11 +236,11 @@ public class DisconnectServlet extends BaseServletComponent
       private void reconnect(HttpServletRequest request, PrintWriter out) {
           try {
               blackboard.openTransaction();
-              ReconnectTimeCondition rtc = setReconnectTimeConditionValue(new Double(0.0));
-              if (rtc != null) {
+              LocalReconnectTimeCondition lrtc = setReconnectTimeConditionValue(new Double(0.0));
+              if (lrtc != null) {
                   out.println("<center><h2>Status Changed - Reconnected</h2></center><br>" );
-                  blackboard.publishChange(rtc); 
-                  if (logger.isDebugEnabled()) logger.debug("DisconnectServlet published DisconnectCondition: "+rtc.getAsset()+" = "+ rtc.getValue().toString());
+                  blackboard.publishChange(lrtc); 
+                  if (logger.isDebugEnabled()) logger.debug("DisconnectServlet published DisconnectCondition: "+lrtc.getAsset()+" = "+lrtc.getValue().toString());
                   }
               else {
                   out.println("<center><h2>Failed to Reset</h2></center><br>");
@@ -277,22 +277,23 @@ public class DisconnectServlet extends BaseServletComponent
         
         
       /** Publish reconnect time */
-      private ReconnectTimeCondition setReconnectTimeConditionValue(Double d) {
+      private LocalReconnectTimeCondition setReconnectTimeConditionValue(Double d) {
             
             UnaryPredicate pred = new UnaryPredicate() {
               public boolean execute(Object o) {  
                 return 
-                  (o instanceof ReconnectTimeCondition);
+                  (o instanceof LocalReconnectTimeCondition);
               }
             };
             
-            ReconnectTimeCondition cond = null;
+            if (logger.isDebugEnabled()) logger.debug("setReconnectTimeConditionValue");
+            LocalReconnectTimeCondition cond = null;
             Collection c = blackboard.query(pred);
             if (c.iterator().hasNext()) {
-               cond = (ReconnectTimeCondition)c.iterator().next();
-               //System.out.println(cond.getAssetType()+" "+cond.getAsset()+" " +cond.getDefenseName());
+               cond = (LocalReconnectTimeCondition)c.iterator().next();
+               if (logger.isDebugEnabled()) logger.debug(assetType+" "+cond.getAssetType()+" "+assetID+" "+cond.getAsset()+" "+DisconnectConstants.DEFENSE_NAME+" "+cond.getDefenseName());
                if (cond.compareSignature(assetType, assetID, DisconnectConstants.DEFENSE_NAME)) {
-                    cond.setValue(d); //true = disconnected
+                    cond.setTime(d); //true = disconnected
                     return cond;
                }
             }

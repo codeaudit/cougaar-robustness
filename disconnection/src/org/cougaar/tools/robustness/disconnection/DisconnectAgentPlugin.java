@@ -28,6 +28,7 @@ import org.cougaar.tools.robustness.deconfliction.*;
 
 import java.util.Iterator;
 import java.util.Date;
+import java.util.Collection;
 
 import org.cougaar.core.adaptivity.*;
 import org.cougaar.core.adaptivity.OMCRangeList;
@@ -69,20 +70,7 @@ public class DisconnectAgentPlugin extends ServiceUserPluginBase {
   
   private MessageAddress assetAddress;
   private String assetID;
-  private MessageAddress managerAddress;
-  private String managerID;
-  private String MANAGER_NAME;
-
-  //private IncrementalSubscription myOpModes;
-  private IncrementalSubscription reconnectTimeSubscription;
-  private IncrementalSubscription applicabilityConditionSubscription;
-  private IncrementalSubscription defenseModeSubscription;      
-  private IncrementalSubscription monitoringModeSubscription;
-  private IncrementalSubscription conditionSubscription;
-    
-  private long reconnectInterval;
-  private String defenseMode;
-  private String monitoringMode;
+  private MessageAddress nodeAddress;
 
   private static final Class[] requiredServices = {
     ConditionService.class,
@@ -104,58 +92,34 @@ public class DisconnectAgentPlugin extends ServiceUserPluginBase {
       cancelTimer();
   }
   
+  
+    public void unload() {
+        // Remove the AgentExistsCondition so that the DisconnectNodePlugin will know the Agent has left the Node
+        super.unload();
+        UnaryPredicate pred = new UnaryPredicate() {
+          public boolean execute(Object o) {
+            return 
+              (o instanceof AgentExistsCondition);
+          }
+        };
+
+        AgentExistsCondition cond = null;
+
+        Collection c = blackboard.query(pred);
+        if (c.iterator().hasNext()) {
+           cond = (AgentExistsCondition)c.iterator().next();
+           getBlackboardService().publishRemove(cond); //lets the NodeAgent learn that the Agent has unloaded
+        }      
+        cancelTimer();
+    }
+  
   public void setupSubscriptions() {
     
      haveServices(); 
      if (logger.isDebugEnabled()) logger.debug("setupSubscriptions called.");
-
-     getPluginParams();
      
      initObjects(); //create & publish condition and op mode objects
-
-     //Listen for changes in out defense mode object
-     defenseModeSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
-        public boolean execute(Object o) {
-            if ( o instanceof DisconnectDefenseAgentEnabler ) {
-                return true ;
-            }
-            return false ;
-        }
-    }) ;
-
-    //Listen for changes in our enabling mode object
-     monitoringModeSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
-        public boolean execute(Object o) {
-            if ( o instanceof DisconnectMonitoringAgentEnabler ) {
-                return true ;
-            }
-            return false ;
-        }
-      
-     }) ;
-
-     reconnectTimeSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
-        public boolean execute(Object o) {
-            if ( o instanceof ReconnectTimeCondition ) {
-                return true ;
-            }
-            return false ;
-        }
-      
-     }) ;  
   }
-
-
-    // Takes the Name of the Manager Agent as a required String parameter
-    private void getPluginParams() {
-      if (logger.isInfoEnabled() && getParameters().isEmpty()) logger.error("plugin saw 0 parameters [must supply the name of the Manager Agent].");
-
-      Iterator iter = getParameters().iterator (); 
-      if (iter.hasNext()) {
-           MANAGER_NAME = (String)iter.next();
-           logger.debug("Setting Maneger Agent Name = " + MANAGER_NAME);
-      }
-  }       
 
   
   //Create one condition and one of each type of operating mode
@@ -164,29 +128,17 @@ public class DisconnectAgentPlugin extends ServiceUserPluginBase {
       
      assetAddress = agentIdentificationService.getMessageAddress();
      assetID = agentIdentificationService.getName();
-     managerAddress = MessageAddress.getMessageAddress(MANAGER_NAME);
+     nodeAddress = nodeIdentificationService.getMessageAddress();
 
-     ReconnectTimeCondition rtc =
-        new ReconnectTimeCondition("Agent", assetID);
-     rtc.setUID(us.nextUID());
-     rtc.setSourceAndTarget(assetAddress, managerAddress);
+     AgentExistsCondition aec =
+        new AgentExistsCondition("Agent", assetID);
+     aec.setUID(us.nextUID());
+     aec.setSourceAndTarget(assetAddress, nodeAddress);
+     if (logger.isDebugEnabled()) logger.debug("Source: "+assetAddress+", Target: "+nodeAddress);
 
-     DisconnectDefenseAgentEnabler dde = 
-        new DisconnectDefenseAgentEnabler("Agent", assetID);
-     dde.setUID(us.nextUID());
-     dde.setSourceAndTarget(assetAddress, managerAddress);
+     getBlackboardService().publishAdd(aec);
 
-     DisconnectMonitoringAgentEnabler dme = 
-        new DisconnectMonitoringAgentEnabler("Agent", assetID);
-     dme.setUID(us.nextUID());
-     dme.setSourceAndTarget(assetAddress, managerAddress);
-
-     if (logger.isDebugEnabled()) logger.debug(assetID+" "+assetAddress+" "+MANAGER_NAME+" "+managerAddress);
-     getBlackboardService().publishAdd(rtc);
-     getBlackboardService().publishAdd(dde);
-     getBlackboardService().publishAdd(dme);
-      
-     if (logger.isDebugEnabled()) logger.debug("Published Conditions & OpModes for "+assetID);
+     if (logger.isDebugEnabled()) logger.debug("Announced existence of "+assetID);
    
   }      
   
@@ -211,6 +163,12 @@ public class DisconnectAgentPlugin extends ServiceUserPluginBase {
           throw new RuntimeException("Unable to obtain EventService");
       }
 
+      this.nodeIdentificationService = (NodeIdentificationService)
+          sb.getService(this, NodeIdentificationService.class, null);
+      if (nodeIdentificationService == null) {
+          throw new RuntimeException("Unable to obtain EventService");
+      }
+      
       agentIdentificationService = (AgentIdentificationService)
         sb.getService(this, AgentIdentificationService.class, null);
       if (agentIdentificationService == null) {
@@ -224,60 +182,6 @@ public class DisconnectAgentPlugin extends ServiceUserPluginBase {
   }
 
   public void execute() {
-
-     Iterator iter;
-    
-      
-      //********* Check for changes in our modes ************
-      
-      //We have one defense mode, so we only get the one from iter.next();
-      iter = defenseModeSubscription.iterator();
-      if (iter.hasNext()) {
-          DisconnectDefenseAgentEnabler dmode = (DisconnectDefenseAgentEnabler)iter.next();
-          if (dmode != null) {
-              defenseMode = dmode.getValue().toString();
-              if (logger.isDebugEnabled()) logger.debug("Saw: "+
-                 dmode.getClass()+":"+
-                 dmode.getName() + " set to " + dmode.getValue());
-          }
-      };
-
-      //We have one defense mode, so we only get the one from iter.next();
-      iter = monitoringModeSubscription.iterator();
-      if (iter.hasNext()) {      
-          DisconnectMonitoringAgentEnabler mmode = (DisconnectMonitoringAgentEnabler)iter.next();
-          if (mmode != null) {
-              monitoringMode = mmode.getValue().toString();
-              if (logger.isDebugEnabled()) logger.debug("Saw: "+
-                mmode.getClass()+":"+
-                mmode.getName() + " set to " + mmode.getValue());
-          }
-      }
-
-      //We have one time condition, so we only get the one from iter.next();
-      iter = reconnectTimeSubscription.iterator();
-      if (iter.hasNext()) {      
-          ReconnectTimeCondition rtc = (ReconnectTimeCondition)iter.next();
-          if (rtc != null) {
-                reconnectInterval = (long) Double.parseDouble(rtc.getValue().toString()) / 1000L;
-          }
-
-      }
-
-      // announce changes to the defenseEnabler as Cougaar Events to allow actual disconnection from ACME
-      iter = defenseModeSubscription.getChangedCollection().iterator();
-      if (iter.hasNext()) {
-          DisconnectDefenseAgentEnabler dmode = (DisconnectDefenseAgentEnabler)iter.next();
-          if (dmode != null) {
-              defenseMode = dmode.getValue().toString();
-          }
-          if (eventService.isEventEnabled()) {
-              if (defenseMode.equals("ENABLED")) {
-                  eventService.event(assetID+" plans to Disconnect for "+reconnectInterval+" sec");
-                 } 
-          }
-      };
-
   }
   
 }

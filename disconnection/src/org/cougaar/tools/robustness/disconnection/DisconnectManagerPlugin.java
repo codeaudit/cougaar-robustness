@@ -47,6 +47,8 @@ import org.cougaar.core.service.OperatingModeService;
 import org.cougaar.core.service.UIDService;
 import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.service.EventService;
+import org.cougaar.core.service.community.CommunityService;
+
 
 import org.cougaar.core.adaptivity.InterAgentCondition;
 import org.cougaar.core.relay.Relay;
@@ -72,6 +74,7 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
   private NodeIdentificationService nodeIdentificationService;
   private AgentIdentificationService agentIdentificationService;
   private EventService eventService;
+  private CommunityService communityService;
   
   private MessageAddress assetAddress;
   private String assetID;
@@ -90,7 +93,8 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
     ConditionService.class,
     OperatingModeService.class,
     UIDService.class,
-    EventService.class
+    EventService.class,
+    CommunityService.class
   };
   
 
@@ -148,6 +152,8 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
   
   //Create one condition and one of each type of operating mode
   private void initObjects() {
+      // Find the ManagerAgent
+      //communityService.searchCommunity(
   }
   
   private boolean haveServices() {
@@ -171,6 +177,12 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
           throw new RuntimeException("Unable to obtain EventService");
       }
       
+      this.communityService = (CommunityService)
+          sb.getService(this, CommunityService.class, null);
+      if (communityService == null) {
+          throw new RuntimeException("Unable to obtain CommunityService");
+      }
+          
       agentIdentificationService = (AgentIdentificationService)
         sb.getService(this, AgentIdentificationService.class, null);
       if (agentIdentificationService == null) {
@@ -193,7 +205,7 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
       Iterator iter = getParameters().iterator (); 
       if (iter.hasNext()) {
            MANAGER_NAME = (String)iter.next();
-           logger.debug("Setting Maneger Agent Name = " + MANAGER_NAME);
+           logger.debug("Setting Manager Agent Name = " + MANAGER_NAME);
       }
   }  
   
@@ -282,15 +294,12 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
               }
             };
             
-            if (logger.isDebugEnabled()) logger.debug("handleDisconnectChange "+rtc.getAssetType()+" "+rtc.getAsset()+" "+rtc.getDefenseName());
             double t = ((Double)rtc.getValue()).doubleValue();
             DisconnectApplicabilityCondition cond = null;
             Collection c = blackboard.query(pred);
             Iterator iter = c.iterator();
-            if (logger.isDebugEnabled()) logger.debug(new Integer(c.size()).toString());
             while (iter.hasNext()) {
                cond = (DisconnectApplicabilityCondition)iter.next();
-               if (logger.isDebugEnabled()) logger.debug(cond.getAssetType()+" "+cond.getAsset()+" "+cond.getDefenseName());
                if (cond.compareSignature(rtc.getAssetType(), rtc.getAsset(), rtc.getDefenseName())) {
                     if (t > 0.0) {
                         cond.setValue(DefenseConstants.BOOL_TRUE); // disconnected
@@ -317,7 +326,7 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
 
       private boolean propagateMonitoringEnablerChange(DisconnectMonitoringEnabler dme) {
           
-          // Find the corresponding DisconnectApplicabilityCondition
+          // Find the corresponding DisconnectMonitoringAgentEnabler
             UnaryPredicate pred = new UnaryPredicate() {
               public boolean execute(Object o) {  
                 return 
@@ -325,17 +334,19 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
               }
             };
             
+            //if (logger.isDebugEnabled()) logger.debug("Starting to PROGPAGATE MonitoringEnabler");
             DisconnectMonitoringAgentEnabler cond = null;
             Collection c = blackboard.query(pred);
             Iterator iter = c.iterator();
+            //if (logger.isDebugEnabled()) logger.debug(new Integer(c.size()).toString());
             while (iter.hasNext()) {
                cond = (DisconnectMonitoringAgentEnabler)iter.next();
+               //if (logger.isDebugEnabled()) logger.debug(cond.getAssetType()+" "+cond.getAsset());
                if (cond.compareSignature(dme.getAssetType(), dme.getAsset(), dme.getDefenseName())) {
                    cond.setValue(dme.getValue());
-                    if (logger.isDebugEnabled()) logger.debug("DisconnectChange set "
+                    if (logger.isDebugEnabled()) logger.debug("Propagating "
                             +cond.getClass()+" "
-                            +cond.getAssetType()+" "+cond.getAsset()+" " +cond.getDefenseName()+" " +cond.getValue()
-                            +" for the Coordinator");
+                            +cond.getAssetType()+" "+cond.getAsset()+" " +cond.getDefenseName()+" " +cond.getValue());
                    blackboard.publishChange(cond);
                    return true;
                }
@@ -346,7 +357,7 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
       
       private boolean propagateDefenseEnablerChange(DisconnectDefenseEnabler dme) {
           
-          // Find the corresponding DisconnectApplicabilityCondition
+          // Find the corresponding DisconnectDefenseAgentEnabler
             UnaryPredicate pred = new UnaryPredicate() {
               public boolean execute(Object o) {  
                 return 
@@ -361,7 +372,9 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
                cond = (DisconnectDefenseAgentEnabler)iter.next();
                if (cond.compareSignature(dme.getAssetType(), dme.getAsset(), dme.getDefenseName())){ 
                    cond.setValue(dme.getValue());
-                   if (logger.isDebugEnabled()) logger.debug("DisconnectPropagation "+cond.getClass()+" "+cond.getAssetType()+" "+cond.getAsset()+" " +cond.getDefenseName()+" " +cond.getValue());
+                   if (logger.isDebugEnabled()) logger.debug("Propagating "
+                            +cond.getClass()+" "
+                            +cond.getAssetType()+" "+cond.getAsset()+" " +cond.getDefenseName()+" " +cond.getValue());
                    blackboard.publishChange(cond);
                    return true;
                }
@@ -388,7 +401,7 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
             if (!expired) {
                 expired = true;
                 if (logger.isDebugEnabled()) logger.debug("Alarm expired for: " + cond.getAsset()+" no longer legitimately Disconnected");
-                if (eventService.isEventEnabled()) eventService.event(assetID+" is no longer legitimately Disconnected");
+                if (eventService.isEventEnabled()) eventService.event(cond.getAsset()+" is no longer legitimately Disconnected");
                 blackboard.openTransaction();
                 cond.setValue(DefenseConstants.BOOL_FALSE);
                 blackboard.publishChange(cond);
