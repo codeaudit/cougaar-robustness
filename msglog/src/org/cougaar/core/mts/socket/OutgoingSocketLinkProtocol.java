@@ -105,6 +105,8 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
   private HashMap links, sockets;
   private MyThreadService myThreadService;
 
+private int cnt=0;  // temp
+
   static
   {
     //  Read external properties
@@ -269,6 +271,14 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
         throws NameLookupException, UnregisteredNameException,
                CommFailureException, MisdeliveredMessageException
     {
+/*
+if (cnt++ == 5)
+{
+  int delay = 30;
+  System.err.println ("TEST: Pausing Socket send for "+delay+" seconds");
+  try { Thread.sleep (delay*1000); } catch (Exception e) {}
+}
+*/
       //  Get socket address of destination 
 
       SocketSpec destSpec = lookupSocketSpec (destination);

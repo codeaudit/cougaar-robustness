@@ -55,6 +55,7 @@ import org.cougaar.core.mts.*;
 import org.cougaar.core.component.Service;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.component.ServiceProvider;
+import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.ThreadService;
 import org.cougaar.core.thread.Schedulable;
 
@@ -89,11 +90,11 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 {
   public static final String PROTOCOL_TYPE = "-socket";
 
-  private static final boolean debug;
+  private static LoggingService log;
+  private static boolean showTraffic;
+
   private static final String localhost;
   private static final int idleTimeout;
-
-  private static boolean showTraffic;
 
   private SocketSpec socketSpecs[];
   private SocketSpec mySocket;
@@ -106,10 +107,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
   {
     //  Read external properties
 
-    String s = "org.cougaar.message.protocol.socket.debug";
-    debug = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
-
-    s = "org.cougaar.message.protocol.socket.localhost";
+    String s = "org.cougaar.message.protocol.socket.localhost";
     localhost = System.getProperty (s, getLocalHost());
 
     s = "org.cougaar.message.protocol.socket.incoming.idleTimeoutSecs";
@@ -118,8 +116,6 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
  
   public IncomingSocketLinkProtocol ()
   {
-    System.err.println ("Creating " + this);
-
     serverSocketListeners = new Vector();
     messageInListeners = new Vector();
 
@@ -131,46 +127,21 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
     socketSpecs = new SocketSpec[1];
     socketSpecs[0] = new SocketSpec (localhost, port);
-
-/*
-    //  HACK!!!  See setNameSupport() as to why this is commented out 
-
-    //  Start things going
-
-    if (startup() == false)
-    {
-      throw new RuntimeException ("Problem starting IncomingSocketLinkProtocol");
-    }
-*/
   }
 
   public void load () 
   {
     super_load();
+
+    log = loggingService;
+    if (log.isInfoEnabled()) log.info ("Creating " + this);
+
     String sta = "org.cougaar.core.mts.ShowTrafficAspect";
     showTraffic = (getAspectSupport().findAspect(sta) != null);
-  }
-
-  public String toString ()
-  {
-    return this.getClass().getName();
-  }
-
-  public void setNameSupport (NameSupport nameSupport) 
-  {
-    //  HACK - shortcoming of transport construction - name support not avail till
-    //  after transport constructor called - (name support should be universal 
-    //  service) - a problem with an incoming transport as the only method called
-    //  is the constructor basically.
-
-    if (getNameSupport() == null)
-    {
-      throw new RuntimeException ("IncomingSocketLinkProtocol: nameSupport is null!");
-    }
 
     if (startup() == false)
     {
-      throw new RuntimeException ("Problem starting IncomingSocketLinkProtocol");
+      throw new RuntimeException ("Failure starting " +this);
     }
   }
 
@@ -216,6 +187,11 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     }
   }
 
+  public String toString ()
+  {
+    return this.getClass().getName();
+  }
+
   private void registerSocketSpec (String host, int port)
   {
     //  Update the name server
@@ -227,14 +203,9 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
   private void unregisterSocketSpec ()
   {
-    if (mySocket == null) return;  // no socket spec to unregister
-
-    //  Name support not available till after transport construction  -- still in 9.0.0?
-
-    if (getNameSupport() == null) return;  
-
     //  Update the name server
 
+    if (mySocket == null) return;  // no socket spec to unregister
     MessageAddress nodeAddress = getNameSupport().getNodeMessageAddress();
     getNameSupport().unregisterAgentInNameServer (mySocket, nodeAddress, PROTOCOL_TYPE);
   }
@@ -311,14 +282,11 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
       serverSocketListeners.add (listener);
 
-      if (debug) 
-      {
-        System.err.println ("IncomingSocket: Server socket created on port " +port);
-      }
+      if (log.isDebugEnabled()) log.debug ("Server socket created on port " +port);
     }
     catch (Exception e)
     {
-      System.err.println ("\nError creating server socket on port " +port+ ": ");
+      if (log.isWarnEnabled()) log.warn ("Error creating server socket on port " +port+ ": ");
       e.printStackTrace();
 
       if (listener != null) listener.quit();
@@ -344,10 +312,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
       serverSocketListeners.remove (listener);
 
-      if (debug) 
-      {
-        System.err.println ("IncomingSocket: Server socket destroyed on port " +port);
-      }
+      if (log.isDebugEnabled()) log.debug ("Server socket destroyed on port " +port);
     }
     catch (Exception e)
     {
@@ -407,8 +372,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
         }
         catch (Exception e) 
         {
-          if (debug) System.err.println ("IncomingSocket: server socket: " +e);
-
+          if (log.isDebugEnabled()) log.debug ("Server socket: " +e);
           quitNow = true;
           break;
         }
@@ -436,12 +400,8 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
     public MessageInListener (Socket s)
     {
+      if (log.isDebugEnabled()) log.debug ("new MessageInListener created on socket " +s);
       socket = s;
-
-      if (debug) 
-      {
-        System.err.println ("\nIncomingSocket: new MessageInListener created on socket " +socket);
-      }
     }
 
     public void quit ()
@@ -480,23 +440,14 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
           if (showTraffic) System.err.print ("<S");
 
-          if (debug) 
-          {
-            System.out.println ("\nIncomingSocket: socket= " + socket);
-            System.out.println ("IncomingSocket: read " +MessageUtils.toString(msg));
-          }
+          if (log.isDebugEnabled()) log.debug ("Socket= " +socket+ "\nRead " +MessageUtils.toString(msg));
         }
         catch (InterruptedIOException e)
         {
           //  Socket SO timeout (set above).  Socket still good, but we will close
           //  it as it has not been used in a while.
 
-          if (debug) 
-          {
-            System.out.print ("\nIncomingSocket: socket timeout: " + e);
-            System.out.println (" (closing socket due to lack of use)");
-          }
-
+          if (log.isDebugEnabled()) log.debug ("Closing socket due to lack of use: SO timeout: " +e);
           quitNow = true;
           break;
         }
@@ -505,8 +456,10 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
           //  Typically a socket exception raised when the party at the
           //  other end closes their socket connection.
 
-          if (debug) System.err.println ("\nIncomingSocket: Terminating socket exception: " + e);
-//e.printStackTrace();
+          if (log.isInfoEnabled()) 
+          {
+            log.info ("Terminating datagram socket exception:\n" +stackTraceToString(e));
+          }
 
           quitNow = true;
           break;
@@ -520,12 +473,11 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
         }
         catch (MisdeliveredMessageException e)
         { 
-          loggingService.error ("Got MisdeliveredMessageException: " + e);
+          log.error ("Got MisdeliveredMessageException for " +MessageUtils.toString(msg)+ ": " +e);
         }
         catch (Exception e)
         { 
-//          loggingService.error ("Got exception while delivering msg: " + e);
-System.err.println ("Got exception while delivering msg: " + e);
+          log.error ("Exception delivering " +MessageUtils.toString(msg)+ ": " +stackTraceToString(e));
         }
       }
 
@@ -557,5 +509,13 @@ System.err.println ("Got exception while delivering msg: " + e);
     {
       throw new RuntimeException (e.toString());
     }
+  }
+
+  private String stackTraceToString (Exception e)
+  {
+    StringWriter stringWriter = new StringWriter();
+    PrintWriter printWriter = new PrintWriter (stringWriter);
+    e.printStackTrace (printWriter);
+    return stringWriter.getBuffer().toString();
   }
 }

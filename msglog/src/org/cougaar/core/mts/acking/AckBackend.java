@@ -78,9 +78,27 @@ class AckBackend extends MessageDelivererDelegateImplBase
     ack.setReceiveTime (now());  // establish our own message reception time
     ack.setMsg (msg);            // reset transient msg field
 
-    if (MessageAckingAspect.showTraffic)
+    if (true) // MessageAckingAspect.showTraffic)
     {
       if (log.isInfoEnabled())
+      {
+        StringBuffer buf = new StringBuffer();
+        buf.append ("\n\n<");
+        buf.append (AdaptiveLinkSelectionPolicy.getLinkLetter(ack.getSendLink()));
+        buf.append (" ");
+        buf.append (MessageUtils.getMessageNumber(msg));
+        buf.append (".");
+        buf.append (ack.getSendCount());
+        buf.append (" ");
+        buf.append (MessageUtils.getMessageTypeLetter(msg));
+        buf.append (" ");
+        buf.append (MessageUtils.getFromAgent(msg).toShortString());
+        buf.append (" to ");
+        buf.append (MessageUtils.getToAgent(msg).toShortString());
+        buf.append ("\n");
+        log.info (buf.toString());
+      }
+      else if (log.isDebugEnabled())
       {
         StringBuffer buf = new StringBuffer();
         buf.append ("\n\n");
@@ -319,8 +337,8 @@ class AckBackend extends MessageDelivererDelegateImplBase
 
         PureAck pureAck = new PureAck();
         pureAck.setAckSendableTime (ackSendableTime);
-        float myDeadline = (float)(ack.getMsgResendDeadline() - ack.getRTT());
-        int firstAck = (int)(myDeadline * MessageAckingAspect.firstAckPlacingFactor);
+        float myTimeout = (float)(ack.getMsgResendTimeout() - ack.getRTT());
+        int firstAck = (int)(myTimeout * MessageAckingAspect.firstAckPlacingFactor);
         pureAck.setSendDeadline (ack.getReceiveTime() + firstAck);
 //pureAck.setSendDeadline (ack.getReceiveTime() + 15);  // testing
         PureAckMessage pureAckMsg = new PureAckMessage (msg, pureAck);

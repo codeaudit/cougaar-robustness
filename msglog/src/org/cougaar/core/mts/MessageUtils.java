@@ -137,6 +137,18 @@ public final class MessageUtils
     return (String) msg.getAttribute (MSG_TYPE);
   }
 
+  public static String getMessageTypeLetter (AttributedMessage msg)
+  {
+    if (isPureAckMessage(msg))        return "a";
+    if (isPureAckAckMessage(msg))     return "k";
+    if (isRegularMessage(msg))        return "n";  // normal
+    if (isLocalMessage(msg))          return "l";
+    if (isHeartbeatMessage(msg))      return "h";
+    if (isPingMessage(msg))           return "p";
+    if (isTrafficMaskingMessage(msg)) return "t";
+                                      return "?";  // unknown
+  }
+
   public static boolean isRegularMessage (AttributedMessage msg)
   {
     return (getMessageType (msg) == null);    
@@ -190,6 +202,25 @@ public final class MessageUtils
     setMessageType (msg, MSG_TYPE_TMASK);
   }
 */
+  public static boolean isPureAckMessage (AttributedMessage msg)
+  {
+    return (msg.getClass() == PureAckMessage.class);
+  }
+
+  public static boolean isPureAckAckMessage (AttributedMessage msg)
+  {
+    return (msg.getClass() == PureAckAckMessage.class);
+  }
+
+  public static boolean isSomePureAckMessage (AttributedMessage msg)
+  {
+    return (isPureAckMessage(msg) || isPureAckAckMessage(msg));
+  }
+
+  public static boolean isNewMessage (AttributedMessage msg)
+  {
+    return (toString(msg).equals ("Msg [] of null::null"));
+  }
 
   public static void setMessageSize (AttributedMessage msg, int size)
   {
@@ -211,26 +242,6 @@ public final class MessageUtils
   {
     Long time = (Long) msg.getAttribute (MSG_SEND_TIME);
     return (time != null ? time.longValue() : 0);
-  }
-
-  public static boolean isPureAckMessage (AttributedMessage msg)
-  {
-    return (msg.getClass() == PureAckMessage.class);
-  }
-
-  public static boolean isPureAckAckMessage (AttributedMessage msg)
-  {
-    return (msg.getClass() == PureAckAckMessage.class);
-  }
-
-  public static boolean isSomePureAckMessage (AttributedMessage msg)
-  {
-    return (isPureAckMessage(msg) || isPureAckAckMessage(msg));
-  }
-
-  public static boolean isNewMessage (AttributedMessage msg)
-  {
-    return (toString(msg).equals ("Msg [] of null::null"));
   }
 
   public static void setSendTimeout (AttributedMessage msg, int millisecs)

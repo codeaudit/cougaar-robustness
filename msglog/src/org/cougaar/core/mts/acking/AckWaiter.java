@@ -49,8 +49,6 @@ class AckWaiter implements Runnable
   public AckWaiter (MessageAckingAspect aspect) 
   {
     this.aspect = aspect;
-    log = aspect.getTheLoggingService();
-
     queue = new Vector();
     messages = new AttributedMessage[32];
     haveNewData = false;
@@ -64,11 +62,15 @@ class AckWaiter implements Runnable
     if (!MessageAckingAspect.hasNonPureAck (msg)) return;
     if (MessageUtils.getMessageNumber(msg) == 0) return;
 
+    if (debug()) log.debug ("AckWaiter: adding " +MessageUtils.toString(msg));
+
+    //  Add (or remove) the message from the agent state
+
 // sync (agentState)
 //   if (acked) remove from agentState;
 //   else add to agentState;
 
-    //  Add the message
+    //  Add the message to the waiting queue
 
     synchronized (queue) 
     {
@@ -77,23 +79,58 @@ class AckWaiter implements Runnable
     }
   }
 
+  public void remove (AttributedMessage msg) 
+  {
+    if (debug()) log.debug ("AckWaiter: removing " +MessageUtils.toString(msg));
+
+    //  Remove the message from the agent state
+// sync (agentState)
+//   remove from agentState;
+
+    //  Remove the message from the waiting queue.  This can
+    //  raise the minResendDeadline, but doesn't seem like
+    //  enough to do a ding().
+
+    synchronized (queue) 
+    {
+      queue.remove (msg);
+    }
+  }
+
+  public boolean scheduleImmediateResend (AttributedMessage msg) 
+  {
+    boolean sched = false;
+
+    synchronized (queue) 
+    {
+      sched = queue.contains (msg);  // msg must already be on queue
+    }
+
+    if (debug()) // don't want to log inside sync (log has alien methods)
+    {
+      String s = (sched ? "S" : "DID NOT s") + "chedule immediate resend ";
+      log.debug ("AckWaiter: " + s + MessageUtils.toString(msg));
+    }
+
+    if (sched)
+    {
+      Ack ack = MessageUtils.getAck (msg);
+      ack.setSendTime (now() - (ack.getMsgResendTimeout() + 1));
+      ding();
+    }
+
+    return sched;
+  }
+
   public void ding ()
   {
-    //  We get dinged when new messages are added to the ack waiter and when
+    //  We get dinged when new messages are added to our queue and when
     //  new acks are received by the ack backend.
 
     synchronized (queue) 
     {
       haveNewData = true;  // new msgs or acks
       queue.notify();
-    }
-  }
-
-  private void remove (AttributedMessage msg) 
-  {
-    synchronized (queue) 
-    {
-      queue.remove (msg);
     }
   }
 
@@ -156,13 +193,9 @@ class AckWaiter implements Runnable
       {
         AttributedMessage msg = messages[i];
         
-        //  Avoid already successful sends (when a message is acked it is
-        //  declared (and recorded as) a successful send).
-/*
-System.err.println ("ackwaiter: msg"+i+" = "+MessageUtils.toString(msg));
-System.err.println ("ackwaiter: msg"+i+" contains acks:");
-AckList.printAcks (MessageUtils.getAck(msg).getAcks());
-*/
+        //  Avoid already successful sends (when a message is acked it is declared
+        //  and recorded as a successful send).
+
         if (MessageAckingAspect.wasSuccessfulSend (msg))
         {
           if (debug()) log.debug ("AckWaiter: Dropping already successful " +MessageUtils.toString(msg));
@@ -173,9 +206,6 @@ AckList.printAcks (MessageUtils.getAck(msg).getAcks());
 
         //  Search for match of message with current received ack data
 
-//System.err.println ("ackwaiter: recv'd acks: ");
-//AckList.printAcks(MessageAckingAspect.getReceivedAcks(msg));
-
         int msgNum = MessageUtils.getMessageNumber (msg);
         AckList ackList = AckList.findFirst (MessageAckingAspect.getReceivedAcks(msg), msgNum);
 
@@ -184,17 +214,12 @@ AckList.printAcks (MessageUtils.getAck(msg).getAcks());
           //  We have an ack!!
 
           if (debug()) log.debug ("AckWaiter: Got ack for " +MessageUtils.toString(msg));
-
           Ack ack = MessageUtils.getAck (msg);
           String toNode = MessageUtils.getToAgentNode (msg);
-
-// remove from agent state
-
           MessageAckingAspect.addSuccessfulSend (msg);                
           MessageAckingAspect.updateMessageHistory (ack, ackList);
           MessageAckingAspect.removeAcksToSend (toNode, ack.getSpecificAcks()); // acks now acked
-
-          remove (msg); // remove from waiting queue
+          remove (msg);
           messages[i] = null;
         }
       }
@@ -211,11 +236,14 @@ AckList.printAcks (MessageUtils.getAck(msg).getAcks());
 
         //  See if time to resend message
 
-        long resendDeadline = ack.getSendTime() + ack.getMsgResendDeadline();
+//System.err.println ("get sendTime = " + ack.getSendTime());
+//System.err.println ("get      now = " + now());
+
+        long resendDeadline = ack.getSendTime() + ack.getMsgResendTimeout();
         long timeLeft = resendDeadline - now();
 
-System.err.println ("AckWaiter: msg " +MessageUtils.getMessageNumber(msg)+
- ": ackWindow="+ack.getMsgResendDeadline()+" timeLeft="+timeLeft);
+        if (debug()) log.debug ("AckWaiter: Msg " +MessageUtils.getMessageNumber(msg)+
+          ": timeout="+ack.getMsgResendTimeout()+" timeLeft="+timeLeft);
 
         if (timeLeft <= 0)
         {
@@ -224,17 +252,33 @@ System.err.println ("AckWaiter: msg " +MessageUtils.getMessageNumber(msg)+
           //  again on its way out to a outgoing link.  The link selection policy has 
           //  been modified to try a different link with each message resend, as it
           //  wants to try every possbile transport link in its efforts to get a 
-          //  message through.  How this works may change when the message history 
-          //  is better integrated with message acking. 
+          //  message through.
 
           if (debug()) log.debug ("AckWaiter: Resending " +MessageUtils.toString(msg));
-          remove (msg);  // remove first to avoid race condition with send
+          ack.setSendTime (now());
+//System.err.println ("set sendTime = " + ack.getSendTime());
+//System.err.println ("get      now = " + now());
           MessageSender.sendMsg (msg);
+
+          //  Calculate the new message resend deadline.  Note that we do not know at
+          //  this point what new link will be chosen for the message we just resent,
+          //  so all we can do at this point is use the timeout we currently have.
+          //  At the end of link selection the ack is updated with the new link timing
+          //  information and so then the timeout will be correct, and it is expected
+          //  that this update will occur before a resend based on the old link info.
+          //  Note that with each resend we add some delay to the message resend timeout 
+          //  if the message send count is getting high (num links + 1), so that will
+          //  also affect the time available for the link selection to occur.  Note that 
+          //  the delay is limited by the max delay time set in the ack, with a current
+          //  default of 1 minute.
+
+          int highSendCount = ack.getNumberOfLinkChoices() + 1;
+          if (ack.getSendCount() > highSendCount) ack.addMsgResendDelay (500);
+          resendDeadline = ack.getSendTime() + ack.getMsgResendTimeout();
+//System.err.println ("temp timeout = " + ack.getMsgResendTimeout());
         }
-        else
-        {
-          if (resendDeadline < minResendDeadline) minResendDeadline = resendDeadline;
-        }
+
+        if (resendDeadline < minResendDeadline) minResendDeadline = resendDeadline;
       }
 
       Arrays.fill (messages, null);  // release references

@@ -74,10 +74,11 @@ class AckFrontend extends DestinationLinkDelegateImplBase
 
     if (MessageUtils.isLocalMessage (msg)) return super.forwardMessage (msg);
 
-    //  Deal with new & resending messages
+    //  Deal with new & retry/resend messages
 
     Ack ack = MessageUtils.getAck (msg);
-    int msgNum = MessageUtils.getMessageNumber (msg);
+    String msgString = MessageUtils.toString (msg);
+    String toNode = MessageUtils.getToAgentNode (msg);
 
     if (ack == null)
     {
@@ -85,29 +86,34 @@ class AckFrontend extends DestinationLinkDelegateImplBase
 
       ack = new Ack (msg);
       MessageUtils.setAck (msg, ack);
+      ack.setResendMultiplier (MessageAckingAspect.resendMultiplier);
+
+      //  This info is updated by the AdaptiveLinkSelection on retrys/resends
+
       ack.addLinkSelection (link);  // the first selection (already made)
+      ack.setSendLink (link.getProtocolClass().getName());
+      ack.setRTT (MessageAckingAspect.getBestFullRTTForLink (link, toNode, msg));
     }
     else
     {
-      //  We have a message being resent.  If it has been acked in the
-      //  meantime we can send it to the ackWaiter for final processing.
+      //  We have a message being retried or resent.  If it has been acked in the meantime
+      //  we can just return success.
 
-      if (MessageAckingAspect.hasMessageBeenAcked (msg)) 
+      if (MessageAckingAspect.hasMessageBeenAcked (msg))
       {
-        MessageAckingAspect.ackWaiter.add (msg);
+        if (log.isDebugEnabled()) log.debug ("AckFrontend: Dropping acked resend " +msgString);
+        return success;
+      }
+
+      //  We drop any resends over excluded links as they manage their own resends
+
+      if (ack.getSendCount() > 0 && MessageAckingAspect.isExcludedLink(link))
+      {
+        if (log.isDebugEnabled()) log.debug ("AckFrontend: Dropping resend over excluded link " +msgString);
         return success;
       }
     }
 
-    //  Prep the message for sending
-
-    String msgString = MessageUtils.toString (msg);
-    String toNode = MessageUtils.getToAgentNode (msg);
-
-    ack.setSendLink (link.getProtocolClass().getName());
-    ack.setRTT (MessageAckingAspect.getBestFullRTTForLink (link, toNode, msg));
-    ack.setResendMultiplier (MessageAckingAspect.resendMultiplier);
-    
     //  Set the specific acks based on the ack type
 
     if (ack.isAck())
@@ -189,7 +195,7 @@ class AckFrontend extends DestinationLinkDelegateImplBase
 
     if (MessageAckingAspect.hasMessageBeenAcked (msg)) 
     {
-      MessageAckingAspect.ackWaiter.add (msg);
+      if (log.isDebugEnabled()) log.debug ("AckFrontend: Dropping acked resend " +msgString);
       return success;
     }
 
@@ -197,59 +203,107 @@ class AckFrontend extends DestinationLinkDelegateImplBase
 
     try
     {
-      if (MessageAckingAspect.showTraffic)
+      if (true) // MessageAckingAspect.showTraffic)
       {
         if (log.isInfoEnabled())
         {
           StringBuffer buf = new StringBuffer();
+          buf.append ("\n\n>");
+          buf.append (AdaptiveLinkSelectionPolicy.getLinkLetter(link));
+          buf.append (" ");
+          buf.append (MessageUtils.getMessageNumber(msg));
+          buf.append (".");
+          buf.append (ack.getSendCount()+1);  // what gets sent
+          buf.append (" ");
+          buf.append (MessageUtils.getMessageTypeLetter(msg));
+          buf.append (" ");
+          buf.append (MessageUtils.getFromAgent(msg).toShortString());
+          buf.append (" to ");
+          buf.append (MessageUtils.getToAgent(msg).toShortString());
+          buf.append ("\n");
+          log.info (buf.toString());         
+        }
+        else if (log.isDebugEnabled())
+        {
+          StringBuffer buf = new StringBuffer();
           buf.append ("\n\n");
-          String hdr = (ack.getSendCount()==0 ? "Sending  " : "REsending ") + MessageUtils.toShortString (msg);
-          buf.append (hdr);
+          buf.append (ack.getSendCount()==0 ? "Sending  " : "REsending ");
+          buf.append (MessageUtils.toShortString (msg));
           buf.append (" via ");
           buf.append (MessageAckingAspect.getLinkType (ack.getSendLink()));
           buf.append (" of ");
           buf.append (MessageUtils.getAckingSequenceID (msg));
           buf.append ("\n");
-          buf.append (hdr);
-          buf.append (" contains acks: \n");
           AckList.printAcks (buf, "specific", ack.getSpecificAcks());
           AckList.printAcks (buf, "  latest", ack.getLatestAcks());
           // System.err.println ("Outbound roundtrip time: " +ack.getSenderRoundtripTime());
-          log.info (buf.toString());         
+          log.debug (buf.toString());         
         }
       }
 
-      ack.incrementSendCount();
-      ack.setSendTime (now());
+      //  If the message has not yet been successfully sent on its first leg,
+      //  we set its send time and add it to the ack waiter.  The ack waiter
+      //  manages resending the message as needed.  We do this even for excluded links,
+      //  as we are doing this here before the send to handle the case where this
+      //  first send gets stuffed up down the line for some reason (a frozen socket?) 
+      //  thus preventing the message to make it onto the ack waiter to enable it
+      //  to be resent around the obstruction if we did this after the send.  Above
+      //  we make sure than any resends don't go out on any excluded links in case
+      //  one is chosen.
 
-      //  NOTE - will put msg on ack waiter queue HERE before send in the near future
+      if (ack.getSendCount() == 0)
+      {
+        ack.setSendTime (now());  // resends get their send time set in the ack waiter
+        MessageAckingAspect.ackWaiter.add (msg);
+      }  
+
+      ack.incrementSendTry();
+      ack.incrementSendCount();
 
       success = link.forwardMessage (msg);  // message send
     }
     catch (Exception e)
     {
-      //  Ok, the send failed.  We throw an exception and a new link is selected
-      //  by the policy and we come back to the ack frontend and try it all again.
+      //  Ok, the send failed.  If this is the first send leg for this message, we 
+      //  remove the message from the message resender and throw an exception, otherwise
+      //  we notify the message resender to reschedule the send.  Either way, a new link 
+      //  selection will be made and the message will comes back thru and try again.
 
+      if (log.isInfoEnabled()) log.info ("Failure sending " +msgString+ ":\n" +stackTraceToString(e));
       ack.decrementSendCount();  // didn't actually send
-      if (log.isWarnEnabled()) log.warn ("Failure sending " +msgString+ ":\n" +stackTraceToString(e));
-      throw new CommFailureException (e);
+
+      if (ack.getSendCount() == 0) 
+      {
+        //  Cougaar is in control of retries
+
+        MessageAckingAspect.ackWaiter.remove (msg);
+        throw new CommFailureException (e);  
+      }
+      else 
+      {
+        //  We are in control of resends (over non-excluded links)
+
+        MessageAckingAspect.ackWaiter.scheduleImmediateResend (msg);
+        return success;  // not really of course
+      }
     }
 
-    //  Ok, the first (and possibly only) leg of the message send has completed successfuly
+    //  Ok, the first (and possibly only) leg of the message send has completed successfully
 
     MessageAckingAspect.setLastSendTime (ack.getSendLink(), toNode, ack.getSendTime());
     MessageAckingAspect.setLastSuccessfulLinkUsed (toNode, link.getProtocolClass());
 
     if (ack.isAck() && MessageUtils.getMessageNumber(msg) != 0)
     {
-      //  We put ackable messages on the ack waiter queue to wait for their acks and
-      //  possibly be resent.  If the protocol link used to send the message is being 
-      //  excluded from acking, we first declare that the ack has arrived. 
+      //  If the protocol link used to send the message is excluded from acking, we create
+      //  an ack for it so the ack waiter can process the message and not resend it.  It is
+      //  certainly a race to put this ack out there before the message gets resent, but in
+      //  most cases no resend should occur unless it really needed to.  Of course the 
+      //  receiver is protecting himself from duplicates, so only some effort would be lost.
 
       if (MessageAckingAspect.isExcludedLink (link))
       {
-        //  Manufacture an ack for our message over an apparently separately acked link
+        //  Manufacture an ack for the message
 
         AckList ackList = new AckList (MessageUtils.getFromAgent(msg), MessageUtils.getToAgent(msg));
         ackList.add (MessageUtils.getMessageNumber (msg));
@@ -257,8 +311,6 @@ class AckFrontend extends DestinationLinkDelegateImplBase
         v.add (ackList);
         MessageAckingAspect.addReceivedAcks (toNode, v);
       }
-
-      MessageAckingAspect.ackWaiter.add (msg);
     }
     else if (ack.isPureAck())
     {

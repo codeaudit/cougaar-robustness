@@ -32,11 +32,14 @@ import java.io.Serializable;
 import java.util.*;
 
 /**
- **  Measure the round trip time (RTT) for messages.  The RTT is defined to
+ **  Measure the round trip time (RTT) for messages.  The commRTT is defined to
  **  be the time a message takes to travel from this node to its destination
  **  node plus the time it takes for another message (of no necessary relation
- **  to the first) to travel from the destination node back to this one.
- **  
+ **  to the first) to travel from the destination node back to this one.  The
+ **  nodeRTT is defined to be commRTT + nodeTime, where nodeTime is defined to
+ **  be the average time between the last arriving and first leaving messages
+ **  of a node.
+ **
  **  Note: There is basically a "one network" assumption here currently, ie.
  **  that all messages to all agents on a node travel over the same network
  **  (although if extra networks are confined to individual protocols then no
@@ -253,13 +256,13 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
   {
     private final String sendLink;
     private final long sendTime;
-    private final long nodeTime;
+    private final long receiveTime;
 
-    public HalfRTT (String sendLink, long sendTime, long nodeTime)
+    public HalfRTT (String sendLink, long sendTime, long receiveTime)
     {
       this.sendLink = sendLink;
       this.sendTime = sendTime;
-      this.nodeTime = nodeTime;
+      this.receiveTime = receiveTime;
     }
 
     public String getSendLink ()
@@ -272,14 +275,14 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
       return sendTime;
     }
 
-    public long getNodeTime ()
+    public long getReceiveTime ()
     {
-      return nodeTime;
+      return receiveTime;
     }
 
     public String toString ()
     {
-      return "sendLink=" +sendLink+ " sendTime=" +sendTime+ " nodeTime=" +nodeTime;
+      return "sendLink=" +sendLink+ " sendTime=" +sendTime+ " receiveTime=" +receiveTime;
     }
   }
 
@@ -325,12 +328,21 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
 
       if (times.length > 0)
       {
-        v = new Vector();
+        //  NOTE:  We sort the latest receptions so that are ordered latest
+        //  first.  This is so if we cannot send them all (MAX_RTTs limit),
+        //  we send the freshest.  Also, the other side is depending that
+        //  the first entry is the latest of all, as it uses that for the
+        //  "real" nodeTime - the nodeTime that exists between the latest
+        //  msg receive and latest send (this msg).  All other node times,
+        //  while good for calculating commRTTs, are considered "virtual",
+        //  and not representative of the best "response" time of the node.
+
         Arrays.sort (times, timeSort);  // latest receives first
+        v = new Vector();
 
         for (int i=0; i<MAX_RTTs && i<times.length; i++) // at most MAX_RTTs
         {
-          v.add (new HalfRTT (times[i].sendLink, times[i].sendTime, sendTime-times[i].receiveTime));
+          v.add (new HalfRTT (times[i].sendLink, times[i].sendTime, times[i].receiveTime));
         }
       }
 
@@ -360,7 +372,7 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
 
       //  Record the receive time for the message.  Like with the send time above, kind
       //  of a hack, but need BBN support to have link protocols set the receive time
-      //  at the time a message is actually received.  Also again, on the other hand, 
+      //  at the time a message is actually received.  Again, on the other hand, 
       //  travel time thru MTS can be considered a legitimate part of the RTT. 
 
       long receiveTime = now();
@@ -383,15 +395,17 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
       {
         String destinationNode = sendNode;
         String receiveLink = convertSplitLinks (sendLink);
+        long secondHalfSendTime = sendTime;
 
         for (Enumeration e=v.elements(); e.hasMoreElements(); )
         {
           HalfRTT firstHalf = (HalfRTT) e.nextElement();
           sendLink = firstHalf.getSendLink();
           sendTime = firstHalf.getSendTime();
-          long nodeTime = firstHalf.getNodeTime();
+          long firstHalfReceiveTime = firstHalf.getReceiveTime();
+          long nodeTime = secondHalfSendTime - firstHalfReceiveTime;
           int rtt = (int) (receiveTime - (sendTime + nodeTime));
-          updateRTT (sendLink, destinationNode, receiveLink, rtt, sendTime, nodeTime);
+          updateRTT (sendLink, destinationNode, receiveLink, rtt, firstHalfReceiveTime, nodeTime);
         }
       }
 
@@ -415,7 +429,7 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
   }
 
   private void updateRTT (String sendLink, String node, String receiveLink, int rtt,
-                          long sendTime, long nodeTime)
+                          long receiveTime, long nodeTime)
   {
     synchronized (roundtripTable)
     {
@@ -447,16 +461,17 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
 
       if (rtt >= 0) avgs.commRTT.add (rtt);  // 0 RTTs are possible (ie. RTTs < 1 millisecond)
 
-      if (sendTime > avgs.lastNodeTime)
+      if (receiveTime > avgs.lastNodeTime)   // only the latest once (no virtuals skewing)
       {
-        //  Only first-response-to-lastest-send node times used; other
-        //  node times are "virtual" in a way, and only suitable for
-        //  calculating comm RTTs.
+        //  Only first-response-to-latest-send node times used; earlier receive times 
+        //  and later send times are "virtual" in a way, and only suitable for calculating 
+        //  comm RTTs (where node time is factored out).  Granted that the first message
+        //  to reach us may not be the first to leave the sending node, but that is ok, as
+        //  that is the real "response" time that we are looking for.
 
         avgs.nodeTme.add (nodeTime);
-        avgs.lastNodeTime = sendTime;  
+        avgs.lastNodeTime = receiveTime;  
       }
-else System.err.println ("#############################  sendTime not greater");
 
       if (loggingService.isDebugEnabled())
       {
@@ -475,7 +490,7 @@ else System.err.println ("#############################  sendTime not greater");
         String b21 = blank2 (commLast, nodeLast);  String b22 = blank2 (commAvg, nodeAvg);
 
         buf.append ("\n   commRTT= " +b11+commLast+ " avg= " +b12+commAvg);
-        buf.append ("\n  nodeTime= " +b21+nodeLast+ " avg= " +b22+nodeAvg);
+        buf.append ("\n  nodeTime= " +b21+nodeLast+ " avg= " +b22+nodeAvg + "\n");
 
         loggingService.debug (buf.toString());
       }

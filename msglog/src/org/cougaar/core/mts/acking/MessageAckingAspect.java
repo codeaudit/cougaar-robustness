@@ -83,8 +83,9 @@ public class MessageAckingAspect extends StandardAspect
     showTraffic = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
 
     s = "org.cougaar.message.transport.aspects.acking.excludedLinks";
-// not yet  String defaultList = "org.cougaar.core.mts.RMILinkProtocol";  // comma separated list
     String defaultList = "";
+//    String defaultList = "org.cougaar.core.mts.RMILinkProtocol";  // comma separated list
+//String defaultList = "org.cougaar.core.mts.OutgoingSocketLinkProtocol";  // comma separated list
     excludedLinks = System.getProperty (s, defaultList);
 
     s = "org.cougaar.message.transport.aspects.acking.initEmailRndTrip";
@@ -234,9 +235,9 @@ public class MessageAckingAspect extends StandardAspect
       }
     }
 
-    //  Ding the ack waiter to let him know that new ack data has arrived
+    //  Ding the message resender to let him know that new ack data has arrived
 
-    ackWaiter.ding();
+    dingTheMessageResender();
   }
 
   static Vector getReceivedAcks (AttributedMessage msg)
@@ -656,6 +657,11 @@ public class MessageAckingAspect extends StandardAspect
     int rtt = rttService.getBestFullRTTForLink (link, node);
     if (rtt <= 0) rtt = link.cost (msg);
     return rtt;
+  }
+
+  public static void dingTheMessageResender ()
+  {
+    ackWaiter.ding();
   }
 
   public static boolean isExcludedLink (DestinationLink link)

@@ -310,8 +310,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 
           if (log.isDebugEnabled()) 
           {
-            log.debug ("Datagram packet is from " +showAddress(datagramPacket)+
-                     "\nRead " +MessageUtils.toString(msg));
+            log.debug ("From " +showAddress(datagramPacket)+ " read " +MessageUtils.toString(msg));
           }
         }
         catch (Exception e)
@@ -337,11 +336,11 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
         }
         catch (MisdeliveredMessageException e)
         { 
-          log.error ("Got MisdeliveredMessageException: " + e);
+          log.error ("Got MisdeliveredMessageException for " +MessageUtils.toString(msg)+ ": " +e);
         }
         catch (Exception e)
         { 
-          log.error ("Got exception while delivering msg: " + e);
+          log.error ("Exception delivering " +MessageUtils.toString(msg)+ ": " +stackTraceToString(e));
         }
       }
 
@@ -420,6 +419,6 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 
   private static String showAddress (DatagramPacket dp)
   {
-    return dp.getSocketAddress().toString();
+    return dp.getSocketAddress().toString().substring(1);  // drop leading '/'
   }
 }

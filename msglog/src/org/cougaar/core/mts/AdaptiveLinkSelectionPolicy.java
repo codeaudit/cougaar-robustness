@@ -174,10 +174,39 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
   private DestinationLink linkChoice (DestinationLink link, AttributedMessage msg)
   {
-    recordLinkSelection (link, msg);
-    MessageUtils.setSendProtocolLink (msg, getName (link));
-    if (showTraffic) showProgress (link);
-//log.debug ("Chose link = "+ getName (link));
+    if (debug) log.debug ("Link choice: " +(link != null? getName(link) : "null")+ 
+                          " for " +MessageUtils.toString(msg));
+    if (link != null)
+    {
+      recordLinkSelection (link, msg);
+      MessageUtils.setSendProtocolLink (msg, getName(link));
+
+      //  For resends (new messages don't have acks yet) update the ack with
+      //  the new link selection as soon as possible so that the resender
+      //  can know the correct resend timeout for the newly chosen link.  
+      //  Before this occurs, the resender is working with the timeout
+      //  from the last link used - and if the process of getting a new
+      //  link takes long enough will resend based on that timeout.  This
+      //  should be a rare event though, because the time to choose a new
+      //  link should generally always be much less than the average full
+      //  RTT of any link.  Note retrys also use this info, but there the
+      //  message resender is not involved.
+
+      Ack ack = MessageUtils.getAck (msg);
+
+      if (ack != null)
+      {
+        ack.setSendLink (getName (link));
+        String targetNode = MessageUtils.getToAgentNode (msg);
+        int rtt = rttService.getBestFullRTTForLink (link, targetNode);
+        if (rtt <= 0) rtt = link.cost (msg);
+        ack.setRTT (rtt);
+        MessageAckingAspect.dingTheMessageResender();  // calc new deadlines
+      }
+
+      if (showTraffic) showProgress (link);
+    }
+
     return link;
   }
 
@@ -186,9 +215,9 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
   {
     debug = log.isDebugEnabled();
 
-    if (links == null || msg == null) return null;
+    //  Return if things not right
 
-    //  Return if the node is not yet ready
+    if (links == null || msg == null) return null;
 
     try
     {
@@ -328,45 +357,38 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       if (link != null) v.add (link);
     }
 
-    //  No able outgoing links
+    Ack ack = MessageUtils.getAck (msg);
+    if (ack != null) ack.setNumberOfLinkChoices (v.size());
 
-    if (v.size() == 0) return null;
+    //  No able outgoing links - bail
 
-    //  If this message is a resend, we dump its agent to node mapping in case
-    //  that is the reason for the resend (ie. we sent the last send to the 
-    //  wrong place).
-
-// Near Future:  Need to force the link protocols to drop their
-// cached info on the destination as well.
+    if (v.size() == 0) return linkChoice (null, msg);
+    
+    //  Get the target node for the message.  If this message is a retry/resend, we try to
+    //  get the latest uncached data because the target node may have changed and thus be
+    //  the cause of our (real or apparent) send failure.
 
     String targetNode = null;
-    Ack ack = MessageUtils.getAck (msg);
 
     try
     {
-      if (ack != null && ack.getSendCount() > 0)
+      if (ack != null && (ack.getSendTry() > 0 || ack.getSendCount() > 0))
       {
-        //  Bypass topological caching to get latest target agent info
-
-//  NOTE: now we do not renumber as numbers are node-independent.  Need new
-//  node info though
-
-// log INFO that msg num/seq is changing from/to
+        //  Retry/resend: bypass topological caching to get latest target agent info
 
         AgentID toAgent = AgentID.getAgentID (this, getServiceBroker(), targetAgent, true);
         MessageUtils.setToAgent (msg, toAgent);
-
         targetNode = toAgent.getNodeName();      
       }
       else
       {
+        //  New message: cached info is good enough for now
+
         targetNode = MessageUtils.getToAgentNode (msg);
 
         if (targetNode == null)
         {
           //  Get cached target agent info
-
-// fix as needed like above
 
           AgentID toAgent = AgentID.getAgentID (this, getServiceBroker(), targetAgent, false);
           MessageUtils.setToAgent (msg, toAgent);
@@ -382,7 +404,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     //  Cannot continue past this point without knowing the name 
     //  of the target node for the message.
 
-    if (targetNode == null) return null;  // send will automatically be tried again later
+    if (targetNode == null) return linkChoice (null, msg); // send will automatically be tried again later
 
     //  Rank the links based on the chosen metric
 
@@ -393,7 +415,74 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     DestinationLink topLink = destLinks[0];
 //log.debug ("\ntopLink = " +geName(topLink));
 
-    //  HACK!
+    //  Special Case:  Message retrying (first send attempt generated an exception)
+    //  or resending (message did not get an ack).  What's special here is that we avoid 
+    //  (if possible) choosing any link that the message has already tried and actually
+    //  or seemingly failed with.  
+
+    if (ack != null)
+    {
+      if (ack.getSendTry() > 0 || ack.getSendCount() > 0)
+      {
+        //  First try the last link successfully used to send a message to this destination
+
+        Class linkClass = MessageAckingAspect.getLastSuccessfulLinkUsed (targetNode);
+        DestinationLink link = pickLinkByClass (destLinks, linkClass);
+        boolean newLink = (link != null ? ack.addLinkSelection (link) : false); 
+
+        if (newLink)
+        {
+          if (debug) log.debug ("Chose last successful link for retry/resend of " +msgString);
+          return linkChoice (link, msg);
+        }
+
+        //  Otherwise choose the highest ranking transport link not yet chosen (if any)
+
+        link = null;
+
+        for (int i=0; i<destLinks.length; i++)
+        {
+          if (!ack.haveLinkSelection (destLinks[i])) 
+          {
+            link = destLinks[i];
+            break;
+          }
+        }
+
+        //  Tried them all
+
+        if (link == null)
+        {
+          if (ack.getSendCount() == 0)  // Retry
+          {
+            //  If we still don't have a choice at this point, we clear all our previous
+            //  selections and return null.  This allows the retry to slow down (there
+            //  will be an increasing delay with each null), and start the link selection
+            //  cycle anew when the message comes back thru again.
+
+            if (debug) log.debug ("Exhausted retry link choices; will cycle thru again after delay");
+            ack.clearLinkSelections();
+            link = null;
+          }
+          else  // Resend
+          {
+            //  Since resends are managed by the acking message resender, including their
+            //  timing with any delays, we start the link recycling now and don't induce
+            //  any extra delay here like with retries.
+
+            if (debug) log.debug ("Exhausted resend link choices; starting recycle now");
+            link = pickLinkByClass (destLinks, ack.getFirstLinkSelection());
+            if (link == null) link = topLink;
+            ack.clearLinkSelections();
+          }
+        }
+
+        if (link != null) ack.addLinkSelection (link);
+        return linkChoice (link, msg);
+      }   
+    }
+
+    //  Special Case:  Sending traffic masking messages.
 
     if (MessageUtils.isTrafficMaskingMessage (msg))
     {
@@ -403,13 +492,10 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       Class linkClass = MessageAckingAspect.getLastSuccessfulLinkUsed (targetNode);
       DestinationLink link = pickLinkByClass (destLinks, linkClass);
       if (link == null) link = topLink;  // linkClass may not be currently available
-
-      if (debug) log.debug ("Chose link for traffic masking msg: " +msgString);
       return linkChoice (link, msg);
     }
 
-    //  Special Case:  Sending pure acks-acks.  For ack-acks we will just chose
-    //  the last link that successfully sent to the target node.
+    //  Special Case:  Sending pure acks-acks.
 
     if (MessageUtils.isPureAckAckMessage (msg))
     {
@@ -419,8 +505,6 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       Class linkClass = MessageAckingAspect.getLastSuccessfulLinkUsed (targetNode);
       DestinationLink link = pickLinkByClass (destLinks, linkClass);
       if (link == null) link = topLink;  // linkClass may not be currently available
-
-      if (debug) log.debug ("Chose link for pure ack-ack msg: " +msgString);
       return linkChoice (link, msg);
     }
 
@@ -451,6 +535,8 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
         {
           newLink = pureAck.addLinkSelection (link);
 
+// HACK - modify when pure acks are self-scheduling
+
           if (newLink)
           {
             //  Ok, here's a link that we'll not be needing to send an ack over because
@@ -473,7 +559,6 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
         pureAck.setSendDeadline (latestDeadline);
         MessageAckingAspect.addToPureAckSender ((PureAckMessage)msg);
-
         if (debug) log.debug ("Rescheduling pure ack msg: " +msgString);
         return blackHoleLink;  // msgs go in, but never come out!
       }
@@ -488,76 +573,14 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
         if (!pureAck.haveLinkSelection (link)) 
         {
           pureAck.addLinkSelection (link);
-
-          if (debug) log.debug ("Chose link for pure ack msg: " +msgString);
           return linkChoice (link, msg);
         }
       }
 
       //  Final case: No untried links left - we are done sending pure ack
 
-      if (debug) log.debug ("No untried links left to send pure ack msg: " +msgString);
+      if (debug) log.debug ("No untried links left to send pure ack, dropping it: " +msgString);
       return blackHoleLink;
-    }
-
-    //  Special Case: Resending of messages (due to no acks received for it).
-    //  What's special here is that we avoid (if possible) choosing any link
-    //  that the message has already tried and (essentially) failed with.  
-    //  When message history and acking are better integrated the need for this 
-    //  may go away.
-
-    if (ack != null)
-    {
-      if (ack.getSendCount() > 0) // right now only resends are regular messages w/ acks
-      {
-        //  First try the last link used to send a message to this destination
-
-        Class linkClass = MessageAckingAspect.getLastSuccessfulLinkUsed (targetNode);
-        DestinationLink link = pickLinkByClass (destLinks, linkClass);
-        
-        boolean newLink = (link != null ? ack.addLinkSelection (link) : false); 
-
-        if (newLink)
-        {
-          if (debug) log.debug ("Chose last successful link used for resending msg: " +msgString);
-          return linkChoice (link, msg);
-        }
-
-        //  Otherwise choose the highest ranking transport link not yet chosen (if any)
-
-        link = null;
-
-        for (int i=0; i<destLinks.length; i++)
-        {
-          if (!ack.haveLinkSelection (destLinks[i])) 
-          {
-            link = destLinks[i];
-            break;
-          }
-        }
-
-        //  If we still don't have a choice at this point, we start over with our
-        //  previous first choice.
-
-        if (link == null)
-        {
-          if (debug) log.debug ("Starting over with first link choice for msg resend");
-          link = pickLinkByClass (destLinks, ack.getFirstLinkSelection());
-          ack.clearLinkSelections();
-        }
-
-        //  In case our previous first choice is not available
-
-        if (link == null)
-        {
-          if (debug) log.debug ("First link choice not available, chosing top link");
-          link = topLink;
-        }
-
-        if (debug) log.debug ("Made link choice for resend msg: " + msgString);
-        ack.addLinkSelection (link);
-        return linkChoice (link, msg);
-      }   
     }
 
     /**
@@ -1272,35 +1295,36 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     return true;
   }
 
-  /**
-   *  Prints the second character (after the dash(-)) from  
-   *  the static field PROTOCOL_TYPE in the LinkProtocol  
-   *  class in which a DestinationLink is embedded as an 
-   *  indicator for which protocol was selected. 
-  **/
-
   private void showProgress (DestinationLink link)
   {
-    try 
-    { 
-      String name = getName (link);
-      String statusChar;
+    String letter = getLinkLetter (link);
+    System.out.print (letter.toLowerCase());
+  }
 
-           if (name.equals("org.cougaar.core.mts.LoopbackLinkProtocol")) statusChar = "l";             
-      else if (name.equals("org.cougaar.core.mts.RMILinkProtocol")) statusChar = "r";                  
-      else if (name.equals("org.cougaar.core.mts.email.OutgoingEmailLinkProtocol")) statusChar = "e";  
-      else if (name.equals("org.cougaar.core.mts.socket.OutgoingSocketLinkProtocol")) statusChar = "s";
-      else if (name.equals("org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol")) statusChar = "u";
-      else if (name.equals("org.cougaar.core.mts.NNTPLinkProtocol")) statusChar = "n";                 
-      else if (name.equals("org.cougaar.core.mts.SSLRMILinkProtocol")) statusChar = "v";               
-      else if (name.equals("org.cougaar.core.mts.SerializedRMILinkProtocol")) statusChar = "z";        
-      else if (name.equals("org.cougaar.core.mts.FutileSerializingRMILinkProtocol")) statusChar = "f"; 
-      else if (name.equals("org.cougaar.lib.quo.CorbaLinkProtocol")) statusChar = "c";                 
-      else statusChar = "?";                                                                           
+  public static String getLinkLetter (DestinationLink link)
+  {
+    return getLinkLetter (getName (link));
+  }
 
-      System.out.print (statusChar);
-    } 
-    catch (Exception e) { e.printStackTrace(); }
+  public static String getLinkLetter (String link)
+  {
+    if (link == null) link = "";
+
+    String letter;
+
+         if (link.equals("org.cougaar.core.mts.LoopbackLinkProtocol"))              letter = "L";             
+    else if (link.equals("org.cougaar.core.mts.RMILinkProtocol"))                   letter = "R";                  
+    else if (link.equals("org.cougaar.core.mts.email.OutgoingEmailLinkProtocol"))   letter = "E";  
+    else if (link.equals("org.cougaar.core.mts.socket.OutgoingSocketLinkProtocol")) letter = "S";
+    else if (link.equals("org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol"))       letter = "U";
+    else if (link.equals("org.cougaar.core.mts.NNTPLinkProtocol"))                  letter = "N";                 
+    else if (link.equals("org.cougaar.core.mts.SSLRMILinkProtocol"))                letter = "V";               
+    else if (link.equals("org.cougaar.core.mts.SerializedRMILinkProtocol"))         letter = "Z";        
+    else if (link.equals("org.cougaar.core.mts.FutileSerializingRMILinkProtocol"))  letter = "F"; 
+    else if (link.equals("org.cougaar.lib.quo.CorbaLinkProtocol"))                  letter = "C";                 
+    else                                                                            letter = "?";
+
+    return letter;
   }
 
   public static String getLinkType (String classname)

@@ -36,6 +36,8 @@ import org.cougaar.core.mts.*;
 
 public class Ack implements Serializable
 {
+  private static final int DEFAULT_MAX_RESEND_DELAY = 60*1000;
+
   private long sendTime;
   private String sendLink;
   private int sendCount;
@@ -44,6 +46,10 @@ public class Ack implements Serializable
   private int roundTripTime;
   private int resendMultiplier;
 
+  private transient int sendTry;
+  private transient int numLinkChoices;
+  private transient int resendDelay;
+  private transient int maxResendDelay;
   private transient AttributedMessage msg;
   private transient Vector linksUsed;
   private transient long receiveTime;
@@ -51,16 +57,19 @@ public class Ack implements Serializable
   public Ack (AttributedMessage msg)
   {
     setMsg (msg);
+    sendTry = 0;
     sendCount = 0;
+    resendDelay = 0;
+    maxResendDelay = DEFAULT_MAX_RESEND_DELAY;
     linksUsed = new Vector();
   }
 
-  public void setSendTime (long time)
+  public synchronized void setSendTime (long time)
   {
     sendTime = time;
   }
 
-  public long getSendTime ()
+  public synchronized long getSendTime ()
   {
     return sendTime;
   }
@@ -73,6 +82,16 @@ public class Ack implements Serializable
   public String getSendLink ()
   {
     return sendLink;
+  }
+
+  public int getSendTry ()
+  {
+    return sendTry;
+  }
+
+  public void incrementSendTry ()
+  {
+    sendTry++;
   }
 
   public int getSendCount ()
@@ -130,6 +149,11 @@ public class Ack implements Serializable
     return roundTripTime;
   }
 
+  public int getAckWindow ()
+  {
+    return getRTT();
+  }
+
   public void setResendMultiplier (int x)
   {
     resendMultiplier = x;
@@ -140,14 +164,42 @@ public class Ack implements Serializable
     return resendMultiplier;
   }
 
-  public int getAckWindow ()
+  public int getMsgResendTimeout ()
   {
-    return roundTripTime;
+    return (getAckWindow() * resendMultiplier) + resendDelay;
   }
 
-  public int getMsgResendDeadline ()
+  public void setMaxMsgResendDelay (int max)
   {
-    return getAckWindow() * resendMultiplier;
+    maxResendDelay = max;
+  }
+
+  public int getMaxMsgResendDelay ()
+  {
+    return maxResendDelay;
+  }
+
+  public int getMsgResendDelay ()
+  {
+    return resendDelay;
+  }
+
+  public void addMsgResendDelay (int delay)
+  {
+    int newDelay = resendDelay + delay;
+    if (newDelay < 0) newDelay = 0;
+    if (newDelay > maxResendDelay) newDelay = maxResendDelay;
+    resendDelay = newDelay;  // atomic update w/ valid value
+  }
+
+  public void setNumberOfLinkChoices (int n)
+  {
+    numLinkChoices = n;
+  }
+
+  public int getNumberOfLinkChoices ()
+  {
+    return numLinkChoices;
   }
 
   public boolean haveLinkSelection (DestinationLink link)
@@ -197,12 +249,12 @@ public class Ack implements Serializable
     }
   }
 
-  public void setReceiveTime (long time)
+  public synchronized void setReceiveTime (long time)
   {
     receiveTime = time;
   }
 
-  public long getReceiveTime ()
+  public synchronized long getReceiveTime ()
   {
     return receiveTime;
   }
@@ -227,7 +279,7 @@ public class Ack implements Serializable
     if (isAck())        return "Ack";
     if (isPureAck())    return "PureAck";
     if (isPureAckAck()) return "PureAckAck";
-    return                     "<unknown>Ack";
+    return                     "<unknown!>Ack";
   }
     
   public String toString ()
