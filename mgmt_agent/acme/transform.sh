@@ -2,7 +2,7 @@
 ACMEDIR='/shares/development/acme'
 WRKDIR=`pwd`
 
-java -cp ../lib/Robustness_mic_mgmt_agent.jar org.cougaar.tools.robustness.ma.util.ACMEXmlTransformer $1 $2 tmp.xml ../aruc.xsl
+java -cp ../lib/Robustness_mic_mgmt_agent.jar org.cougaar.tools.robustness.ma.util.ACMEXmlTransformer $1 $2 tmp.xml ../aruc1.xsl
 
 cd $ACMEDIR/acme_scripting/bin
 ruby transform_society.rb -i $WRKDIR/tmp.xml -r $WRKDIR/transform_rules

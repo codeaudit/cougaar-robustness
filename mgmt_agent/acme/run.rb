@@ -19,28 +19,23 @@
 # </copyright>
 #
 
-#DCM: change to match our paths
-#$:.unshift "../src/lib"
-$:.unshift "/shares/development/acme/acme_scripting/src/lib"
-
-#$:.unshift "../../acme_service/src/redist"
-$:.unshift "/shares/development/acme/acme_service/src/redist"
-
 require 'cougaar/scripting'
 require 'ultralog/scripting'
+require 'aruc1_actions_and_states'
 
 Cougaar::ExperimentMonitor.enable_stdout
 
 Cougaar.new_experiment("MyExperiment").run {
-  #do_action "LoadSocietyFromCSmart", "TINY-1AD-TRANS", "net3", "admin", "admin", "CSMART10_0"
-  do_action "LoadSocietyFromXML", "aruc1_society.xml"
+  do_action "LoadSocietyFromCSmart", "TINY-1AD-TRANS-AR", "net3", "admin", "admin", "CSMART10_2"
+  #do_action "LoadSocietyFromXML", "TINY-1AD-TRANS-AR.xml"
   do_action "StartJabberCommunications", "acme_console", "oak"
 
 # Print out CougaarEvents as they come in 
   do_action "GenericAction" do |run|  
      run.comms.on_cougaar_event do |event|  
-       puts event  
-       # or print whatever  
+       if event.cluster_identifier=="1AD-Enclave1-RobustnessManager"
+         puts event  
+       end
      end  
   end  
 
@@ -51,8 +46,14 @@ Cougaar.new_experiment("MyExperiment").run {
   #
   do_action "StartSociety"
   #
+
+  wait_for  "CommunityReady"
+  do_action "KillNodes", "1AD_TINY-KILL"
+  wait_for  "CommunityReady"
+
   wait_for  "OPlanReady"
   do_action "SendOPlan"
+
   wait_for  "GLSReady"
   do_action "PublishGLSRoot"
   wait_for  "PlanningComplete"
