@@ -63,13 +63,11 @@ import java.text.DecimalFormat;
 public class DefaultRobustnessController extends RobustnessControllerBase {
 
   public static final int INITIAL        = 0;
-  //public static final int LOCATED        = 1;
   public static final int ACTIVE         = 2;
   public static final int HEALTH_CHECK   = 3;
   public static final int DEAD           = 4;
   public static final int RESTART        = 5;
   public static final int FAILED_RESTART = 6;
-  //public static final int MOVE           = 7;
   public static final int DECONFLICT     = 8;
   public static final int FORCED_RESTART = 9;
 
