@@ -12,8 +12,10 @@ import org.cougaar.core.service.community.Community;
 import org.cougaar.core.service.community.CommunityResponseListener;
 import org.cougaar.core.service.community.CommunityResponse;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
@@ -121,10 +123,15 @@ public class ServiceChecker {
           providerStatus.add(new ProviderEntry((String)it1.next(), PingResult.UNDEFINED));
         }
         providerMap.put(serviceName, providerStatus);
-        serviceMaps.put(serviceCategory, new ServiceEntry(community.getName(),
-                                                          serviceCategory,
-                                                          providerMap,
-                                                          csl));
+        ServiceEntry se = (ServiceEntry)serviceMaps.get(serviceCategory);
+        if (se != null) {
+          se.listeners.add(csl);
+        } else {
+          serviceMaps.put(serviceCategory, new ServiceEntry(community.getName(),
+              serviceCategory,
+              providerMap,
+              csl));
+        }
         agentSet.addAll(providerNames);
       }
       if (logger.isDebugEnabled()) {
@@ -138,8 +145,8 @@ public class ServiceChecker {
       PingListener pl = new PingListener() {
         public void pingComplete(PingResult[] result) {
           for (int i = 0; i < result.length; i++) {
-            if (logger.isDetailEnabled()) {
-                logger.detail("pingResult:" +
+            if (logger.isDebugEnabled()) {
+                logger.debug("pingResult:" +
                             " agent=" + result[i].getName() +
                             " result=" + result[i].statusAsString(result[i].getStatus()));
             }
@@ -150,8 +157,8 @@ public class ServiceChecker {
       for (Iterator it = agentSet.iterator(); it.hasNext();) {
         String agentName = (String)it.next();
         if (!pingHelper.pingInProcess(agentName)) {
-          if (logger.isDetailEnabled()) {
-            logger.detail("pinging agent: agent=" + agentName + " timeout=" +
+          if (logger.isDebugEnabled()) {
+            logger.debug("pinging agent: agent=" + agentName + " timeout=" +
                           timeout);
           }
           pingHelper.ping(new String[] {agentName}, timeout, pl);
@@ -203,13 +210,16 @@ public class ServiceChecker {
           complete = false;
         }
         if (complete) {
-          message = "No provider found for service " + service;
+          message = "No provider found for service '" + service + "'";
         }
       }
     }
     if (avail || complete) {
       serviceMaps.remove(se.category);
-      se.csl.execute(se.cname, se.category, avail, message);
+      for (Iterator it1 = se.listeners.iterator(); it1.hasNext();) {
+        CheckServicesListener csl = (CheckServicesListener)it1.next();
+        csl.execute(se.cname, se.category, avail, message);
+      }
     }
   }
 
@@ -251,12 +261,13 @@ public class ServiceChecker {
     String cname;
     String category;
     Map providers;
-    CheckServicesListener csl;
+    List listeners;
     ServiceEntry (String comm, String cat, Map p, CheckServicesListener l) {
       cname = comm;
       category = cat;
       providers = p;
-      csl = l;
+      listeners = new ArrayList();
+      listeners.add(l);
     }
   }
 

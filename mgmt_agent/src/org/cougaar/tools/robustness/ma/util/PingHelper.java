@@ -29,7 +29,7 @@ import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.SchedulerService;
-import org.cougaar.core.service.UIDService;
+//import org.cougaar.core.service.UIDService;
 
 import org.cougaar.core.component.BindingSite;
 
@@ -64,9 +64,9 @@ public class PingHelper extends BlackboardClientComponent {
   private Map pingsInProcess = Collections.synchronizedMap(new HashMap());
 
   private LoggingService logger;
-  private UIDService uidService = null;
+  //private UIDService uidService = null;
   protected EventService eventService;
-  private List listeners = new ArrayList();
+  //private List listeners = new ArrayList();
   private SensorFactory sensorFactory;
 
   private IncrementalSubscription pingRequests;
@@ -101,7 +101,7 @@ public class PingHelper extends BlackboardClientComponent {
     logger = org.cougaar.core.logging.LoggingServiceWithPrefix.add(logger, agentId + ": ");
     DomainService ds =
         (DomainService) getServiceBroker().getService(this, DomainService.class, null);
-    uidService = (UIDService) getServiceBroker().getService(this, UIDService.class, null);
+    //uidService = (UIDService) getServiceBroker().getService(this, UIDService.class, null);
     super.load();
   }
 
@@ -169,6 +169,9 @@ public class PingHelper extends BlackboardClientComponent {
     List activePings = new ArrayList();
     synchronized (pingsInProcess) {
       activePings.addAll(pingsInProcess.values());
+    }
+    synchronized (pingQueue) {
+      activePings.addAll(pingQueue);
     }
     for (Iterator it = activePings.iterator(); it.hasNext();) {
       QueueEntry activePing = (QueueEntry)it.next();
