@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE SensorType >
+
+<SensorType name="org.cougaar.coordinator.examples.SampleDefense.SampleDiagnosis" 
+            sensesAssetType="Agent"
+            sensesStateDimension="Compromised" 
+		sensorLatency="47">
+    <PotentialDiagnoses>
+        <Diagnosis name="Compromised" />
+        <Diagnosis name="Secure" />
+        <Diagnosis name="Isolated" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="Yes" >
+            <WillDiagnoseAs name="Secure" withProbability="0.4" />
+            <WillDiagnoseAs name="Compromised" withProbability="0.6" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="No" >
+            <WillDiagnoseAs name="Secure" withProbability="0.9" />
+            <WillDiagnoseAs name="Compromised" withProbability="0.1" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Isolated" >
+            <WillDiagnoseAs name="Isolated" withProbability="1.0" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>

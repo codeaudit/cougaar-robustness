@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE ActuatorType >
+
+<ActuatorType name="org.cougaar.coordinator.examples.SampleDefense.SampleAction" 
+              affectsAssetType="Agent" 
+              affectsStateDimension="Compromised" 
+              actionType="CORRECTIVE">
+
+    <Action name="Quaranteen">
+        <Description value="Quaranteen the Agent so it can do no harm" />
+        <Transition WhenActualStateIs="Yes" EndStateWillBe="Isolated" IntermediateStateWillBe="Yes" >
+            <OneTimeCost>
+                <CPU intensity="MEDIUM" />
+                <Memory intensity="MEDIUM" />
+                <Time duration="10000" />
+            </OneTimeCost>
+            <ContinuingCost>
+                <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
+                <Bandwidth intensity="MEDIUM" msgSizeFactor="TRUE" />
+            </ContinuingCost>
+        </Transition>
+        <Transition WhenActualStateIs="No" EndStateWillBe="Isolated" IntermediateStateWillBe="No" >
+            <OneTimeCost>
+                <CPU intensity="MEDIUM" />
+                <Memory intensity="MEDIUM" />
+                <Time duration="10000" />
+            </OneTimeCost>
+            <ContinuingCost>
+                <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
+                <Bandwidth intensity="MEDIUM" msgSizeFactor="TRUE" />
+            </ContinuingCost>
+        </Transition>
+        <Transition WhenActualStateIs="Isolated" EndStateWillBe="Isolated" IntermediateStateWillBe="Isolated" >
+            <OneTimeCost>
+                <CPU intensity="MEDIUM" />
+                <Memory intensity="MEDIUM" />
+                <Time duration="10000" />
+            </OneTimeCost>
+            <ContinuingCost>
+                <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
+                <Bandwidth intensity="MEDIUM" msgSizeFactor="TRUE" />
+            </ContinuingCost>
+        </Transition>
+    </Action>
+
+    <Action name="Release">
+        <Description value="Release the (presumably sanitized) Agent so it can do work" />
+        <Transition WhenActualStateIs="Yes" EndStateWillBe="Yes" IntermediateStateWillBe="Yes" >
+            <OneTimeCost>
+                <CPU intensity="MEDIUM" />
+                <Memory intensity="MEDIUM" />
+                <Time duration="10000" />
+            </OneTimeCost>
+        </Transition>
+        <Transition WhenActualStateIs="No" EndStateWillBe="No" IntermediateStateWillBe="No" >
+            <OneTimeCost>
+                <CPU intensity="MEDIUM" />
+                <Memory intensity="MEDIUM" />
+                <Time duration="10000" />
+            </OneTimeCost>
+        </Transition>
+        <Transition WhenActualStateIs="Isolated" EndStateWillBe="No" IntermediateStateWillBe="Isolated" >
+            <OneTimeCost>
+                <CPU intensity="MEDIUM" />
+                <Memory intensity="MEDIUM" />
+                <Time duration="10000" />
+            </OneTimeCost>
+        </Transition>
+    </Action>
+    
+</ActuatorType>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE Threat >
+<Threats>
+
+<Threat name="BadGuys" affectsAssetType="Agent" causesEvent="Compromise" defaultEventLikelihoodProb="VERY_LOW" />
+
+</Threats>
