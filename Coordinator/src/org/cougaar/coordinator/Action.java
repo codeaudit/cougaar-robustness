@@ -477,7 +477,7 @@ public abstract class Action
      * The coordinator sets this. 
      * @see #getPermittedValues
      */
-    void setPermittedValues (Set values) throws IllegalValueException { 
+    public void setPermittedValues (Set values) throws IllegalValueException { 
     
         Object o;
         Iterator i = values.iterator();
@@ -509,7 +509,7 @@ logger.debug("///////////////////////////////////Adding permitted value: "+o);
     /**
      * @return AssetID
      */
-    AssetID getAssetID() { return assetID; }
+    public AssetID getAssetID() { return assetID; }
 
     /**
      * @return the (read-only) tech spec for this action type
