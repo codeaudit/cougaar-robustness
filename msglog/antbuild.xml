@@ -63,7 +63,9 @@
 		<copy todir="staging/configs">
 			<fileset dir="configs/"/>
 		</copy>
-		<zip zipfile="AR_objs_msglog.zip" basedir="staging"/>
+    <exec dir="." executable="./overlayhelper.sh" os="Linux">
+    	<arg line=" AR_objs_msglog.zip "/>
+    </exec>
 		<delete dir="staging"/>
 	</target>
 
