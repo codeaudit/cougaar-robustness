@@ -2,86 +2,16 @@ module Cougaar
 
   module Actions
 
-    class StartPlannedDisconnect < Cougaar::Action
+    class MonitorPlannedDisconnectEvents < Cougaar::Action
       PRIOR_STATES = ["SocietyLoaded"]
       DOCUMENTATION = Cougaar.document {
-        @description = "Start a Planned Disconnect"
+        @description = "Print event when Planned Disconnect emits events of interest."
         @parameters = [
-          {:nodes => "required, The nodes that plan to be disconnected."},
-          {:seconds => "required, The number of seconds the nodes plan to be disconnected."},
-	    {:messaging => "0 is no messages (the default), 1 is normal messages, 2 is verbose."}
+          {:nodes => "The nodes that have will be monitored."},
+          {:messaging => "0 is no messages (the default), 1 is normal messages, 2 is verbose."}
         ]
-        @example = "do_action 'StartPlannedDisconnect', ['FWD-C', 'FWD-D'] 60, 1" 
-	}
-
-	@@nodes = nil
-
-      def initialize(run, nodes, seconds, messaging=0)
-        super(run) 
-	@nodes = nodes
-	@seconds = seconds
-        @messaging = messaging
-      end
-
-      def perform 
-        for i in 0 ... @nodes.length
-          node = @nodes[i]
-	  nodeObj = @run.society.nodes[node]
-          host = nodeObj.host
-          url = "#{nodeObj.uri}/$#{node}/Disconnect?Disconnect=Disconnect&expire=#{@seconds.to_s}"
-	  response, uri = Cougaar::Communications::HTTP.get(url)
-          raise "Could not connect to #{url}" unless response
-          Cougaar.logger.info "#{response}" if response
-	end
-      end
-    end
-
-    class EndPlannedDisconnect < Cougaar::Action
-      PRIOR_STATES = ["SocietyLoaded"]
-      DOCUMENTATION = Cougaar.document {
-        @description = "End a Planned Disconnect"
-        @parameters = [
-          {:nodes => "required, The nodes that have reconnected."},
-	  {:messaging => "0 is no messages (the default), 1 is normal messages, 2 is verbose."}
-        ]
-        @example = "do_action 'EndPlannedDisconnect', ['FWD-C','FWD-D'], 1"
-	}
-
-	@@nodes = nil
-
-      def initialize(run, nodes, messaging=0)
-        super(run) 
-	@nodes = nodes
-        @messaging = messaging
-      end
-
-      def perform 
-        for i in 0 ... @nodes.length
-          node = @nodes[i]
- 	  nodeObj = @run.society.nodes[node]
-          host = nodeObj.host
-          url = "#{nodeObj.uri}/$#{node}/Disconnect?Reconnect=Reconnect"
-          @run.info_message "EndPlannedDisconnect url="+url  if @messaging >= 1
-          response, uri = Cougaar::Communications::HTTP.get(url)
-          if (response && @messaging >= 2) 
-              @run.info_message "response="+response
-          end
-          raise "Could not connect to #{url}" unless response
-          Cougaar.logger.info "#{response}" if response
-	end
-      end
-    end
-
-    class MonitorPlannedDisconnectExpired < Cougaar::Action
-      PRIOR_STATES = ["SocietyLoaded"]
-      DOCUMENTATION = Cougaar.document {
-        @description = "Print event when disconnected nodes should have reconnected."
-        @parameters = [
-          {:nodes => "The disconnected nodes that should have reconnected."},
-	    {:messaging => "0 is no messages (the default), 1 is normal messages, 2 is verbose."}
-        ]
-        @example = "do_action 'MonitorPlannedDisconnectExpired', ['FWD-C', 'FWD-D'], 1"
-	}
+        @example = "do_action 'MonitorPlannedDisconnectEvents', ['FWD-C', 'FWD-D']"
+        }
       def initialize(run, nodes=nil, messaging=0)
         super(run)
         @nodes = nodes
@@ -89,46 +19,19 @@ module Cougaar
       end
       def perform
         @run.comms.on_cougaar_event do |event|
-          if event.component=="DisconnectManagerPlugin" && event.data.include?("is Tardy")
-	    if @nodes==nil
-              @run.info_message event.data if @messaging >= 1
-            else 
-              for i in 0 ... @nodes.length
-                node = @nodes[i]
-                if event.data.include?(node)
-                  @run.info_message event.data if @messaging >= 1
-                end
-              end
-            end
-          end
-        end
-      end
-    end    
-
-    class MonitorReconnectConfirmed < Cougaar::Action
-      PRIOR_STATES = ["SocietyLoaded"]
-      DOCUMENTATION = Cougaar.document {
-        @description = "Print event when Reconnected Node receives confirmation of Reconnection from Robustness Manager."
-        @parameters = [
-          {:nodes => "The nodes that have reconnected."},
-	  {:messaging => "0 is no messages (the default), 1 is normal messages, 2 is verbose."}
-        ]
-        @example = "do_action 'ReconnectConfirmed', ['FWD-C', 'FWD-D']"
-	}
-      def initialize(run, nodes=nil, messaging=0)
-        super(run)
-        @nodes = nodes
-        @messaging = messaging
-      end
-      def perform
-        @run.comms.on_cougaar_event do |event|
-          if event.component=="DisconnectNodePlugin" && event.data.include?(" has received permission to Reconnect")
-            if @nodes==nil
+          if( ( (event.component == "DisconnectNodePlugin") &&
+                (event.data.include?("has received permission to Reconnect") ||
+                 event.data.include?("is denied permission to Reconnect") ||
+                 event.data.include?("Requesting to Connect") ||
+                 event.data.include?("Not allowed to Disconnect ManagementAgent"))) ||
+              (event.component == "DisconnectServlet" && event.data.include?("Failed to Connect")) ||
+              (event.component == "DisconnectManagerPlugin" && event.data.include?("is Tardy")))
+            if @nodes == nil
               @run.info_message event.data if @messaging >= 1
             else
               for i in 0 ... @nodes.length
                 node = @nodes[i]
-                if event.data.include?(node)
+                if (event.node == node) || event.data.include?(node)
                   @run.info_message event.data if @messaging >= 1
                 end
               end
@@ -138,150 +41,154 @@ module Cougaar
       end
     end
 
-    class MonitorDisconnectionEvents < Cougaar::Action
-      PRIOR_STATES = ["SocietyLoaded"]
+    class PlannedDisconnect < Cougaar::Action
+      PRIOR_STATES = ["SocietyRunning"]
       DOCUMENTATION = Cougaar.document {
-        @description = "Print all events emitted by Disconnection."
+        @description = "Performs the Planned Disconnect experiment."
         @parameters = [
-	    {:messaging => "0 is no messages (the default), 1 is normal messages, 2 is verbose."}
+           {:nodes => "required, The nodes that plan to disconnect."},
+           {:planned => "required, The number of seconds they plan to be disconnected."},
+           {:actual => "required, The actual amount of time to actually disconnect them."},
+           {:messaging => "0 is no messages (the default), 1 is normal messages, 2 is verbose."}
         ]
-        @example = "do_action 'MonitorDisconnectionEvents'"
-	}
-      def initialize(run, messaging=0)
+        @example = "do_action 'PlannedDisconnect', ['FWD-C','FWD-D'], 8.minutes, 12.minutes, 1"
+      }
+              
+      def initialize(run, nodes, planned, actual, messaging=0)
         super(run)
+        @nodes = nodes
+        @planned = planned
+        @actual = actual
         @messaging = messaging
+        @result = false
+        @thread = nil
       end
+     
       def perform
-        @run.comms.on_cougaar_event do |event|
-          if (event.component=="DisconnectNodePlugin") || (event.component=="DisconnectManagerPlugin") || (event.component=="DisconnectServlet")
-            @run.info_message event.data if @messaging >= 1
+        @run['PlannedDisconnectCompleted'] = false 
+        @run.info_message "Performing Planned Disconnect of nodes "+@nodes.join(", ")+" for "+@planned.to_s+" secs. Actually disconnecting for "+@actual.to_s+" secs." if @messaging >= 1
+        @thread = Thread.new {
+          for i in 0 ... @nodes.length
+            node = @nodes[i]
+            @run.info_message "Starting Planned Disconnect of node "+node+" for "+@planned.to_s+" secs" if @messaging >= 1
+            nodeObj = @run.society.nodes[node]
+            host = nodeObj.host
+            url = "#{nodeObj.uri}/$#{node}/Disconnect?Disconnect=Disconnect&expire=#{@planned.to_s}"
+            response, uri = Cougaar::Communications::HTTP.get(url)
+            if !response 
+              raise "Could not connect to #{url}" 
+              @run.info_message "Could not connect to #{url}. Planned Disconnect Experiment aborted. No disconnects will occur." if @messaging >= 1
+              @run['PlannedDisconnectCompleted'] = true
+	      return
+	    else
+              Cougaar.logger.info "#{response}" if response
+            end
           end
-        end
+          node_count = @nodes.length
+          requestsSeen = {}
+          results = {}
+          while results.length < node_count
+            event = @run.get_next_event
+            node = event.node
+            if event.component == "DisconnectNodePlugin" && event.data.include?("Requesting to Disconnect Node: ")
+              requestsSeen[node] = true
+              @run.info_message event.data if @messaging >= 1
+            elsif requestsSeen[node] == true
+              if event.component == "DisconnectServlet" && event.data.include?("Failed to Disconnect")
+                results[node] = 'failed'
+                @run.error_message "Node "+node+" "+event.data if @messaging >= 0
+              elsif event.component == "DisconnectNodePlugin" && 
+                    event.data.include?("has received permission to Disconnect")
+                results[node] = 'enabled'
+                @run.info_message event.data if @messaging >= 1
+              elsif event.component == "DisconnectNodePlugin" && event.data.include?("is denied permission to Disconnect")
+                results[node] = 'disabled'
+                @run.info_message event.data if @messaging >= 1
+              end
+            end
+          end
+          @result = true
+          results.each_value do |value|
+            if value != 'enabled'
+              @run.info_message "Permission to Disconnect was denied for some requesting Nodes. Experiment aborted. No disconnects will occur." if @messaging >= 1
+              @run['PlannedDisconnectCompleted'] = true
+              return
+            end
+          end
+          @nodes.each do |node|
+            cougaar_node = @run.society.nodes[node]
+            cougaar_host = cougaar_node.host
+            node_names = cougaar_host.nodes.collect { |node| node.name }
+            @run.info_message "Taking down network for host #{cougaar_host.name} that has nodes #{node_names.join(', ')}"
+            if cougaar_node
+              @run.comms.new_message(cougaar_node.host).set_body("command[nic]trigger").send
+            else
+              raise_failure "Cannot disable nic on node #{node}, node unknown."
+            end
+          end
+          sleep @actual 
+          @nodes.each do |node|
+            cougaar_node = @run.society.nodes[node]
+            cougaar_host = cougaar_node.host
+            node_names = cougaar_host.nodes.collect { |node| node.name }
+            @run.info_message "Bringing up network for host #{cougaar_host.name} that has nodes #{node_names.join(', ')}"    
+            if cougaar_node
+              @run.comms.new_message(cougaar_node.host).set_body("command[nic]reset").send
+            else
+              raise_failure "Cannot enable nic on node #{node}, node unknown."
+            end
+          end
+          for i in 0 ... @nodes.length
+            node = @nodes[i]
+            @run.info_message "Ending Planned Disconnect of node "+node if @messaging >= 1
+            nodeObj = @run.society.nodes[node]
+            host = nodeObj.host
+            url = "#{nodeObj.uri}/$#{node}/Disconnect?Reconnect=Reconnect"
+            @run.info_message "EndPlannedDisconnect url="+url  if @messaging >= 2
+            response, uri = Cougaar::Communications::HTTP.get(url)
+            if (response && @messaging >= 2) 
+                @run.info_message "response="+response
+            end
+            raise "Could not connect to #{url}" unless response
+            Cougaar.logger.info "#{response}" if response
+          end
+        }
+        @run['PlannedDisconnectCompleted'] = true
       end
-    end	
 
+    end
+  
   end
 
   module States
-    class ActualDisconnectCompleted < Cougaar::State
-      DEFAULT_TIMEOUT = 2.minutes
-      PRIOR_STATES = ["SocietyPlanning"] #,"PlannedDisconnectSignalled"]
+    class PlannedDisconnectCompleted < Cougaar::State
+      DEFAULT_TIMEOUT = 20.minutes
+      PRIOR_STATES = ["SocietyPlanning"]
       DOCUMENTATION = Cougaar.document {
-        @description = "Waits for all Disconnecting Nodes to receive permission from Coordinator."
+        @description = "Waits for Completion of Planned Disconnect Experiment."
         @parameters = [
-           {:nodes => "required, The nodes that plan to disconnect."},
-           {:actual => "required, The actual amount of time to disconnect."},
            {:timeout => "default=nil, Amount of time to wait in seconds."},
            {:messaging => "0 is no messages (the default), 1 is normal messages, 2 is verbose."},
            {:block => "The timeout handler (unhandled: StopSociety, StopCommunications)"}
         ]
-        @example = "wait_for 'ActualDisconnectCompleted', ['FWD-C','FWD-D'], 2.minutes, 3.minutes, 1"
+        @example = "wait_for 'PlannedDisconnectCompleted', ['FWD-C','FWD-D'], 2.minutes, 3.minutes, 1"
       }
-	      
-      def initialize(run, nodes, actual, timeout=2.minutes, messaging=0, &block)
+      def initialize(run, timeout=20.minutes, messaging=0, &block)
         super(run, timeout, &block)
-        @nodes = nodes
-        @actual = actual
         @messaging = messaging
-        @result = false
       end
-     
       def process
-        @run.info_message "Waiting " + @timeout.to_s + " seconds for Coordinator's permission to disconnect node "+@nodes.join(", ")+"." if @messaging >= 1
-        loop = true
-	node_count = @nodes.length
-        requestsSeen = {}
-        results = {}
-        while results.length < node_count
-          event = @run.get_next_event
-          node = event.node
-          if event.component=="DisconnectNodePlugin" && event.data.include?("Requesting to Disconnect Node: ")
-            requestsSeen[node] = true
-            @run.info_message event.data if @messaging >= 1
-          elsif requestsSeen[node] == true
-            if event.component=="DisconnectServlet" && event.data.include?("Failed to Disconnect")
-	      results[node] = 'failed'
-              @run.error_message "Node "+node+" "+event.data if @messaging >= 0
-            elsif event.component=="DisconnectNodePlugin" && event.data.include?("has received permission to Disconnect")
-	      results[node] = 'enabled'
-              @run.info_message event.data if @messaging >= 1
-            elsif event.component=="DisconnectNodePlugin" && event.data.include?("is denied permission to Disconnect")
-              results[node] = 'disabled'
-              @run.info_message event.data if @messaging >= 1
-            end
-          end
+        @run.info_message "Waiting " + @timeout.to_s + " seconds for Completion of the Planned Disconnect Experiment." if @messaging >= 1
+	while @run['PlannedDisconnectCompleted'] == false 
         end
-	@result = true
-        results.each_value do |value|
-	  if value != 'enabled'
-            @run.info_message "Permission to Disconnect was denied for some requesting Nodes. Experiment aborted. No disconnects will occur." if @messaging >= 1
-            return
-          end
-        end
-        @nodes.each do |node|
-          cougaar_node = @run.society.nodes[node]
-          cougaar_host = cougaar_node.host
-          node_names = cougaar_host.nodes.collect { |node| node.name }
-          @run.info_message "Taking down network for host #{cougaar_host.name} that has nodes #{node_names.join(', ')}"
-          if cougaar_node
-            @run.comms.new_message(cougaar_node.host).set_body("command[nic]trigger").send
-          else
-            raise_failure "Cannot disable nic on node #{node}, node unknown."
-          end
-        end
-        sleep @actual 
-        @nodes.each do |node|
-          cougaar_node = @run.society.nodes[node]
-          cougaar_host = cougaar_node.host
-          node_names = cougaar_host.nodes.collect { |node| node.name }
-          @run.info_message "Bringing up network for host #{cougaar_host.name} that has nodes #{node_names.join(', ')}"    
-          if cougaar_node
-            @run.comms.new_message(cougaar_node.host).set_body("command[nic]reset").send
-          else
-            raise_failure "Cannot enable nic on node #{node}, node unknown."
-          end
-        end
-      end
-      
-      def unhandled_timeout
-        @run.info_message "Timed out after "+@timeout.to_s+" seconds waiting for Coordinator's permission to disconnect nodes "+@nodes.join(", ")+"."
-      end
-    end
-
-    class PlannedDisconnectExpired < Cougaar::State
-      DEFAULT_TIMEOUT = 2.minutes
-      DOCUMENTATION = Cougaar.document {
-        @description = "Waits for Planned Disconnect to expire."
-        @parameters = [
-           {:node => "required, The node that is disconnected."},
-           {:timeout => "default=nil, Amount of time to wait in seconds."},
-	     {:messaging => "0 is no messages (the default), 1 is normal messages, 2 is verbose."},
-           {:block => "The timeout handler (unhandled: StopSociety, StopCommunications)"}
-        ]
-        @example = "wait_for 'PlannedDisconnectExpired', 'FWD-C', 3.minutes"
-     }
-     def initialize(run, node, timeout=2.minutes, messaging=0, &block)
-       super(run, timeout, messaging, &block)
-       @node = node
-       @messaging = messaging
-     end
-     def process
-        @run.info_message "Waiting " + @timeout.to_s + " seconds for node "+@node+"'s PlannedDisconnect to expire." if @messaging >= 1
-        loop = true
-        while loop
-          event = @run.get_next_event
-          #@run.info_message event.data if @messaging >= 2
-          if event.component=="DisconnectManagerPlugin" && event.data.include?(@node+" is Tardy and is no longer legitimately Disconnected")
-            loop = false
-            @run.info_message event.data
-          end
-        end
+        @run.info_message "Planned Disconnect Experiment Completed." if @messaging >= 1        
       end
       def unhandled_timeout
-        @run.info_message "Timed out after "+@timeout.to_s+" seconds waiting for nodes "+@nodes+"'s PlannedDisconnect to expire." if @messaging >= 1
+        @run.info_message "Timed out after "+@timeout.to_s+" seconds waiting for Completion of the Planned Disconnect Experiment."
+        @run.do_action "StopSociety"
+        @run.do_action "StopCommunications"
       end
     end
-
   end
 
 end
