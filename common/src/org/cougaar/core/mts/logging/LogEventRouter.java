@@ -59,6 +59,7 @@ public class LogEventRouter {
     private boolean logToCougaar = true;
     private org.apache.log4j.Logger log4JLogger = null;
     private org.cougaar.util.log.Logger cougaarLogger = null;
+    private SocketAppender socketAppender;
 
     private LoggingService log;
     
@@ -114,33 +115,9 @@ public class LogEventRouter {
                     }
                     log4JLogger = org.apache.log4j.Logger.getLogger(loggerName);
                     
-                    if (log4JLogger.getAllAppenders() instanceof NullEnumeration) {
-                        if (log.isDebugEnabled()) {
-                            log.debug("LogEventRouter: **** Found no other appenders.");
-                        }
-                        org.apache.log4j.Logger lg = log4JLogger.getRootLogger();
-                        if (lg != null) {
-                            log.debug("LogEventRouter: **** Found ROOT Looger = " + lg.getName());
-                            Object aps = lg.getAllAppenders();
-                            if (aps instanceof NullEnumeration) {
-                                log.debug("LogEventRouter: **** Found no ROOT appenders.");
-                            } else {
-                                log.debug("LogEventRouter: **** Found other ROOT appenders!");
-                                Enumeration e = (Enumeration)aps;
-                                while (e.hasMoreElements()) {
-                                    Appender a = (Appender)e.nextElement();
-                                    log.debug("    ----> "+ a.getName());                                    
-                                }
-                            }
-                        }
-                    } else {
-                        if (log.isDebugEnabled()) {
-                            log.debug("LogEventRouter: **** Found other appenders!");
-                        }
-                        log4JLogger.removeAllAppenders();
-                    }
                     
-                    log4JLogger.addAppender(new SocketAppender(loggingHost, loggingPort));
+                    socketAppender = new SocketAppender(loggingHost, loggingPort);
+                    log4JLogger.addAppender(socketAppender);
                     log4JLogger.setLevel(log4JLevel);
                     logToCougaar = false;
                     
@@ -184,7 +161,9 @@ public class LogEventRouter {
                                         (Object)event.getEventData(), (Throwable)null);
             //log4JLogger.log(event.getLog4JLevel(), 
             //                            (Object)event.getEventData(), (Throwable)null);
-            log4JLogger.callAppenders(evt);
+            ///log4JLogger.callAppenders(evt);
+            
+            socketAppender.doAppend(evt);
         }
         
         

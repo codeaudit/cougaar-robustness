@@ -248,12 +248,7 @@ public class MessageDetail extends javax.swing.JFrame implements EventListener {
      *
      */
     void rowSelected(int _row, int _col) {
-        Object o = tableModel.getValueAt(_row, 0);
-        if (o instanceof LogPointEntry) {
-            LogPointEntry lpe = (LogPointEntry)tableModel.getValueAt(_row, 0);
-        } else {
-            System.out.println("Error:: MessageDetail:rowSelected() - object instance of "+o.getClass().getName());
-        }
+        LogPointEntry lpe = (LogPointEntry)tableModel.getValueAt(_row);
     }
     
 

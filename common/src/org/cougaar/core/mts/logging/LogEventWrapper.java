@@ -141,6 +141,10 @@ public class LogEventWrapper {
             else { //no value!
                 val = "NO_ATTR_VALUE";
             }
+            if (val == null) {
+                System.out.println("=====================> LogEventWrapper: val is null. Key = "+key);
+                val = "NO_ATTR_VALUE";
+            }
             props.put(key,val);
         }
         
