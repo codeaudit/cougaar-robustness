@@ -29,13 +29,11 @@ public class AgentStatus implements java.io.Serializable {
 
   protected String name;
   protected long version;
-  protected String location;
   protected int status;
 
-  public AgentStatus(String name, long version, String location, int status) {
+  public AgentStatus(String name, long version, int status) {
     this.name = name;
     this.version = version;
-    this.location = location;
     this.status = status;
   }
 
@@ -53,13 +51,6 @@ public class AgentStatus implements java.io.Serializable {
     this.version = version;
   }
 
-  public String getLocation() {
-    return location;
-  }
-  public void setLocation(String location) {
-    this.location = location;
-  }
-
   public int getStatus() {
     return status;
   }
@@ -68,7 +59,7 @@ public class AgentStatus implements java.io.Serializable {
   }
 
   public String toString() {
-    return name + ":" + location + ":" + status;
+    return name + ":" + status;
   }
 
   public String toXML() {
@@ -78,8 +69,6 @@ public class AgentStatus implements java.io.Serializable {
   public String toXML(String indent) {
     return indent + "<agent" +
         " name=\"" + name + "\"" +
-        " status=\"" + status + "\"" +
-        " location=\"" + location + "\"" +
-        "/>";
+        " status=\"" + status + "\"/>";
   }
 }

@@ -31,8 +31,6 @@ import org.cougaar.community.SearchStringParser;
 import org.cougaar.tools.robustness.ma.controllers.RobustnessController;
 import org.cougaar.tools.robustness.ma.util.NodeChangeListener;
 
-import org.cougaar.core.mts.MessageAddress;
-
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.service.AlarmService;
 import org.cougaar.core.service.AgentIdentificationService;
@@ -44,8 +42,6 @@ import org.cougaar.core.qos.metrics.Metric;
 import org.cougaar.core.blackboard.BlackboardClientComponent;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.persist.NotPersistable;
-
-import org.cougaar.core.node.NodeControlService;
 
 import org.cougaar.tools.robustness.ma.ldm.*;
 
@@ -95,7 +91,6 @@ public class CommunityStatusModel extends BlackboardClientComponent
   // Services used
   private LoggingService logger;
   private ServiceBroker serviceBroker;
-  private NodeControlService nodeControlService;
   private MetricsService metricsService;
 
   /**
@@ -193,8 +188,6 @@ public class CommunityStatusModel extends BlackboardClientComponent
     setAlarmService((AlarmService)serviceBroker.getService(this, AlarmService.class, null));
     setBlackboardService(
       (BlackboardService)getServiceBroker().getService(this, BlackboardService.class, null));
-    nodeControlService =
-      (NodeControlService)serviceBroker.getService(this, NodeControlService.class, null);
     metricsService = (MetricsService)serviceBroker.getService(this, MetricsService.class, null);
     super.load();
   }
@@ -214,7 +207,6 @@ public class CommunityStatusModel extends BlackboardClientComponent
 
   public void doPeriodicTasks() {
     checkExpirations();
-    findLocalAgents();
   }
 
   /**
@@ -680,7 +672,6 @@ public class CommunityStatusModel extends BlackboardClientComponent
               queueChangeEvent(
                   new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
                                                  MEMBERS_ADDED, se));
-              //setCurrentState(se.name, INITIAL);
               if (type == NODE) {
                 for (Iterator iter = nodeChangeListeners.iterator(); iter.hasNext();) {
                   NodeChangeListener ncl = (NodeChangeListener)iter.next();
@@ -740,7 +731,6 @@ public class CommunityStatusModel extends BlackboardClientComponent
         StatusEntry se = new StatusEntry(nodeName, NODE, null);
         statusMap.put(se.name, se);
         setCurrentState(se.name, controller.getNormalState());
-        //setCurrentState(se.name, INITIAL);
         queueChangeEvent(
           new CommunityStatusChangeEvent(CommunityStatusChangeEvent.MEMBERS_ADDED, se));
       }
@@ -748,14 +738,9 @@ public class CommunityStatusModel extends BlackboardClientComponent
       for (int i = 0; i < as.length; i++) {
         String agentName = as[i].getName();
         if (statusMap.containsKey(agentName)) {
-          //logger.info(agentStatusToString(as[i]));
-          //if (isLocalAgent(agentName)) {
-          //  setLocation(agentName, thisAgent);
-          //} else {
-            setVersion(agentName, as[i].getVersion());
-            setLocation(agentName, as[i].getLocation());
-            setCurrentState(agentName, as[i].getStatus());
-          //}
+          setVersion(agentName, as[i].getVersion());
+          setLocation(agentName, nodeName);
+          setCurrentState(agentName, as[i].getStatus());
         }
       }
     }
@@ -774,7 +759,6 @@ public class CommunityStatusModel extends BlackboardClientComponent
   private String agentStatusToString(AgentStatus as) {
     StringBuffer sb = new StringBuffer("AgentStatus:");
     sb.append(" name=" + as.getName());
-    sb.append(" loc=" + as.getLocation());
     sb.append(" state=" + controller.stateName(as.getStatus()));
     return sb.toString();
   }
@@ -1179,34 +1163,6 @@ public class CommunityStatusModel extends BlackboardClientComponent
                     " triggerState=" + triggerState));
     }
     electLeader();
-  }
-
-  private void findLocalAgents() {
-    if (nodeControlService != null) {
-      Set agentAddresses = nodeControlService.getRootContainer().
-          getAgentAddresses();
-      for (Iterator it = agentAddresses.iterator(); it.hasNext(); ) {
-        String agent = it.next().toString();
-        if (getType(agent) == AGENT) {
-          if (logger.isDebugEnabled() && getCurrentState(agent) < INITIAL) {
-            logger.debug("Found agent " + agent + " at node " + thisAgent);
-          }
-          if (!thisAgent.equals(getLocation(agent))) {
-            setLocation(agent, thisAgent);
-          }
-          if (getCurrentState(agent) < INITIAL) {
-            setCurrentState(agent, INITIAL);
-          }
-        }
-      }
-    }
-  }
-
-  private boolean isLocalAgent(String name) {
-    return (nodeControlService != null &&
-            nodeControlService.getRootContainer().containsAgent(MessageAddress.getMessageAddress(name)) &&
-            thisAgent.equals(getLocation(name)));
-
   }
 
   /**

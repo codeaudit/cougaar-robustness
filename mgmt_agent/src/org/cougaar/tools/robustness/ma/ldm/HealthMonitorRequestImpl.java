@@ -177,7 +177,11 @@ public class HealthMonitorRequestImpl
   }
 
   public String getRequestTypeAsString() {
-    switch (requestType) {
+    return getRequestTypeAsString(requestType);
+  }
+
+  public static String getRequestTypeAsString(int type) {
+    switch (type) {
       case HealthMonitorRequest.UNDEFINED: return "UNDEFINED";
       case HealthMonitorRequest.RESTART: return "RESTART";
       case HealthMonitorRequest.KILL: return "KILL";

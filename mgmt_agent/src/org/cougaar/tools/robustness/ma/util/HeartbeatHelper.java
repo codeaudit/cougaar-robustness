@@ -205,6 +205,10 @@ public class HeartbeatHelper extends BlackboardClientComponent {
   }
 
   public void stopHeartbeats(final String agentName) {
+    if (logger.isDebugEnabled()) {
+      logger.debug("stopHeartbeats:" +
+                   " agent=" + agentName);
+    }
     fireLater(new QueueEntry(STOP,
                              MessageAddress.getMessageAddress(agentName)));
   }

@@ -94,6 +94,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         }
       }
     }
+    public void expired(String name) {
+      if (isLocal(name)) {
+        doPing(name, DefaultRobustnessController.ACTIVE, DEAD);
+      }
+    }
     public void heartbeatStarted(String name) {
       if (logger.isDebugEnabled()) {
         logger.debug("Heartbeats started: agent=" + name);
@@ -143,20 +148,27 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         }
         checkCommunityReady();
       }
-      if (isAgent(name) || thisAgent.equals(name)) {
-        setExpiration(name, NEVER);  // Set expiration to NEVER for all agents,
-                                     // let heartbeatListener maintain status
+      if (isLocal(name) || thisAgent.equals(name)) {
+        setExpiration(name, NEVER);
       } else if (isNode(name)) {
         setExpiration(name, (int)getNodeStatusExpiration(name));
+      } else if (isSentinel() && isAgent(name)) {
+        int nodeExpiration = (int)getNodeStatusExpiration(getLocation(name));
+        long updateInterval = getLongAttribute(STATUS_UPDATE_PROPERTY, DEFAULT_STATUS_UPDATE_INTERVAL);
+        int agentExpiration = nodeExpiration + (int)updateInterval;
+        setExpiration(name, agentExpiration);
       }
     }
     public void expired(String name) {
-      if (logger.isInfoEnabled()) {
-        logger.info("Expired Status:" + " agent=" + name + " state=ACTIVE");
-      }
-      if ((isLocal(name) || isNode(name)) ||
-          (isSentinel() && getState(getLocation(name)) == DEAD) ||
-          isLeader(name)) {
+      if ((isLocal(name) ||
+           isNode(name)) ||
+           isSentinel() ||
+           isLeader(name)) {
+         if (logger.isInfoEnabled()) {
+           logger.info("Expired Status:" +
+                       " agent=" + name +
+                       " state=" + model.getCurrentState(name));
+         }
         newState(name, DEAD);
       }
     }
@@ -231,6 +243,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   class DeadStateController extends StateControllerBase {
 
     public void enter(final String name) {
+      if (logger.isInfoEnabled()) {
+        logger.info("Dead agent detected: agent=" + name);
+      }
       setExpiration(name, NEVER);
       communityReady = false; // For ACME Community Ready Events
 
@@ -242,7 +257,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
           } else {
             if (logger.isWarnEnabled()) {
               logger.warn("Unexpected transition to DEAD state: agent=" + name +
-                          " priorState=" + stateName(getPriorState(name)));
+                          " priorState=" + stateName(getPriorState(name)) +
+                          " loc=" + getLocation(name));
             }
           }
         } else { // a node
@@ -331,9 +347,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         }
       }*/
 
-      if (isLocal(name)) {
-        stopHeartbeats(name);
-      }
+      //if (isLocal(name)) {
+      //  stopHeartbeats(name);
+      //}
     }
   }
 
@@ -385,6 +401,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                 " community=" + community);
           newState(name, FAILED_RESTART);
         }
+      } else if (action == HealthMonitorRequest.KILL) {
+        event("Kill complete: agent=" + name);
+        stopHeartbeats(name);
       }
     }
   }
@@ -681,8 +700,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     long expiration = updateInterval +
                       nodeMean +
                       (nodeStdDev * restartConf);
-    if (logger.isInfoEnabled()) {
-      logger.info("getNodeStateExpiration: node=" + nodeName + " expiration=" +
+    if (logger.isDebugEnabled()) {
+      logger.debug("getNodeStateExpiration: node=" + nodeName + " expiration=" +
                   expiration);
     }
     return expiration;
@@ -891,8 +910,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                                       getController(DECONFLICT));
         String enable = System.getProperty(DECONFLICTION, PROPERTY_ENABLED);
         if (enable.equalsIgnoreCase(PROPERTY_ENABLED)) {
-          if (logger.isInfoEnabled()) {
-            logger.info("Deconfliction enabled: community=" +
+          if (logger.isDebugEnabled()) {
+            logger.debug("CoordinationHelper enabled: community=" +
                         model.getCommunityName());
           }
           String allAgents[] = model.listEntries(CommunityStatusModel.AGENT);
@@ -908,8 +927,14 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    * Receives notification of change in agent location.
    */
   public void locationChange(String name, String priorLocation, String newLocation) {
+    if (logger.isDebugEnabled()) {
+      logger.debug("locationChange:" +
+                   " agent=" + name +
+                   " newLoc=" + newLocation +
+                   " priorLoc=" + priorLocation);
+    }
     // If agent has moved off this node stop heartbeats
-    if (thisAgent.equals(priorLocation)) stopHeartbeats(name);
+    //if (thisAgent.equals(priorLocation)) stopHeartbeats(name);
     checkCommunityReady();
   }
 

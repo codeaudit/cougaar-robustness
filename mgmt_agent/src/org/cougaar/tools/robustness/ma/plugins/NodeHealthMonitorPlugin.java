@@ -415,22 +415,17 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
             nodeStatusRelay.addTarget(target);
           }
         }
-        //blackboard.openTransaction();
         blackboard.publishAdd(nodeStatusRelay);
-        //blackboard.closeTransaction();
-        if(logger.isDebugEnabled()) {
+        if (logger.isDetailEnabled()) {
+          logger.detail("publishAdd NodeStatusRelay:" +
+                       " targets=" + targetsToString(nodeStatusRelay.getTargets()) +
+                       " community=" + community.getName() +
+                       " agents=" + detailedAgentStatus(nsr.getAgentStatus()));
+        } else if (logger.isDebugEnabled()) {
           logger.debug("publishAdd NodeStatusRelay:" +
                        " targets=" + targetsToString(nodeStatusRelay.getTargets()) +
                        " community=" + community.getName() +
                        " agents=" + agentStatus.length);
-        }
-        if (logger.isDetailEnabled()) {
-          StringBuffer detailedStatus = new StringBuffer("<AgentStatus>\n");
-          for (int i = 0; i < agentStatus.length; i++) {
-            detailedStatus.append("  " + agentStatus[i].toString() + "\n");
-          }
-          detailedStatus.append("</AgentStatus>");
-          logger.detail(detailedStatus.toString());
         }
       }
     }
@@ -477,31 +472,43 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
     List l = new ArrayList();
     Community community = commSvc.getCommunity(communityName, null);
     if (community != null) {
-      String agents[] = listLocalAgents();
-      for (int i = 0; i < agents.length; i++) {
-        if (community.hasEntity(agents[i]) && !myName.equals(agents[i])) {
-          l.add(new AgentStatus(agents[i],
-                                ((Long)agentVersions.get(agents[i])).longValue(),
-                                myName,
-                                model.getCurrentState(agents[i])));
+      // Agents found using NodeControlService
+      Set agents = listLocalAgents();
+      for (Iterator it = agents.iterator(); it.hasNext();) {
+        String agentName = (String)it.next();
+        if (community.hasEntity(agentName) && !myName.equals(agentName)) {
+          int state = model.getCurrentState(agentName);
+          state = state < model.INITIAL ? model.INITIAL : state;
+          l.add(new AgentStatus(agentName,
+                                ((Long)agentVersions.get(agentName)).longValue(),
+                                state));
         }
       }
+      // Agents found in model showing this node as current location
+      /*String agentsFromModel[] = model.entitiesAtLocation(myName);
+      for (int i = 0; i < agentsFromModel.length; i++) {
+        if (!agents.contains(agentsFromModel[i])) {
+          int state = model.getCurrentState(agentsFromModel[i]);
+          state = state < model.INITIAL ? model.INITIAL : state;
+          l.add(new AgentStatus(agentsFromModel[i],
+                                ((Long)agentVersions.get(agentsFromModel[i])).longValue(),
+                                state));
+        }
+      }*/
     }
     return (AgentStatus[])l.toArray(new AgentStatus[0]);
   }
 
   Map agentVersions = Collections.synchronizedMap(new HashMap());
 
-  private String[] listLocalAgents() {
-    String names[] = new String[0];
+  private Set listLocalAgents() {
+    Set names = new HashSet();
     NodeControlService ncs = getNodeControlService();
     if (ncs != null) {
       Set agentAddresses = ncs.getRootContainer().getAgentAddresses();
-      names = new String[agentAddresses.size()];
-      int index = 0;
       for (Iterator it = agentAddresses.iterator(); it.hasNext(); ) {
         String agent = it.next().toString();
-        names[index++] = agent;
+        names.add(agent);
         if (!agentVersions.containsKey(agent)) {
           agentVersions.put(agent, new Long(now()));
           if (logger.isDebugEnabled()) {
@@ -605,7 +612,16 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
             StatusListener listener = (StatusListener)it1.next();
             listener.update(nsr);
           }
-          if (logger.isDebugEnabled()) {
+          if (logger.isDetailEnabled()) {
+            logger.detail("publishChange NodeStatusRelay:" +
+                         " source=" + nsr.getSource() +
+                         " targets=" +
+                         targetsToString(nodeStatusRelay.getTargets()) +
+                         " community=" + nsr.getCommunityName() +
+                         " agents=" + detailedAgentStatus(nsr.getAgentStatus()) +
+                         " leaderVote=" + nsr.getLeaderVote() +
+                         " location=" + nsr.getLocation());
+          } else if (logger.isDebugEnabled()) {
             logger.debug("publishChange NodeStatusRelay:" +
                          " source=" + nsr.getSource() +
                          " targets=" +
@@ -615,18 +631,22 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
                          " leaderVote=" + nsr.getLeaderVote() +
                          " location=" + nsr.getLocation());
           }
-          if (logger.isDetailEnabled()) {
-            StringBuffer detailedStatus = new StringBuffer("<AgentStatus>\n");
-            for (int i = 0; i < agentStatus.length; i++) {
-              detailedStatus.append("  " + agentStatus[i].toString() + "\n");
-            }
-            detailedStatus.append("</AgentStatus>");
-            logger.detail(detailedStatus.toString());
-          }
           blackboard.publishChange(nodeStatusRelay);
         }
       }
     }
+  }
+
+  private String detailedAgentStatus(AgentStatus[] as) {
+    StringBuffer sb = new StringBuffer("[");
+    for (int i = 0; i < as.length; i++) {
+      sb.append(as[i].getName() + ":" + controller.stateName(as[i].getStatus()));
+      if (i < as.length - 1) {
+        sb.append(", ");
+      }
+    }
+    sb.append("]");
+    return sb.toString();
   }
 
   /** Find component info using white pages */

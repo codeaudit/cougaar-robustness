@@ -140,6 +140,9 @@
           <file path="csmart/lib/robustness/mic/aruc1-small-fr.rb"/>
           <file path="csmart/lib/robustness/mic/aruc1-small-w-mgr.rb"/>
           <file path="csmart/lib/robustness/mic/aruc1-small.rb"/>
+          <file path="csmart/lib/robustness/mic/aruc1-ua-as-s.rb"/>
+          <file path="csmart/lib/robustness/mic/aruc1-ua-mgr.rb"/>
+          <file path="csmart/lib/robustness/mic/aruc1-ua-s.rb"/>
           <file path="csmart/lib/robustness/mic/aruc1-ua-w-mgr.rb"/>
           <file path="csmart/lib/robustness/mic/aruc1-ua.rb"/>
           <file path="csmart/lib/robustness/mic/ASMT-1000-UA-AR-AS.rb"/>
@@ -147,10 +150,20 @@
           <file path="csmart/lib/robustness/mic/BaselineTemplate.rb"/>
           <file path="csmart/lib/robustness/mic/BaselineTemplateStage1.rb"/>
           <file path="csmart/lib/robustness/mic/forced_restart.rb"/>
+          <file path="csmart/lib/robustness/mic/prepare_kills.rb"/>
+          <file path="csmart/lib/robustness/mic/small_create_duplicate_agents.rb"/>
+          <file path="csmart/lib/robustness/mic/small_create_duplicate_mgr.rb"/>
           <file path="csmart/lib/robustness/mic/small_kill.rb"/>
+          <file path="csmart/lib/robustness/mic/small_kill_agents.rb"/>
+          <file path="csmart/lib/robustness/mic/small_kill_mgr.rb"/>
           <file path="csmart/lib/robustness/mic/small_kill_w_mgr.rb"/>
+          <file path="csmart/lib/robustness/mic/small_reaffiliation.rb"/>
           <file path="csmart/lib/robustness/mic/ua_big_kill.rb"/>
+          <file path="csmart/lib/robustness/mic/ua_big_kill_m.rb"/>
+          <file path="csmart/lib/robustness/mic/ua_big_kill_s.rb"/>
           <file path="csmart/lib/robustness/mic/ua_kill.rb"/>
+          <file path="csmart/lib/robustness/mic/ua_kill_mgr_s.rb"/>
+          <file path="csmart/lib/robustness/mic/ua_kill_s.rb"/>
           <file path="csmart/lib/robustness/mic/ua_kill_w_mgr.rb"/>
         </node>
       </node>
@@ -163,6 +176,14 @@
             <file path="csmart/scripts/definitions/robustness/mic/ALARAS-MOAS-II-Kills-PreStage2.rb"/>
             <file path="csmart/scripts/definitions/robustness/mic/ALARAS-MOAS-II-SAVE-PreStage2.rb"/>
             <file path="csmart/scripts/definitions/robustness/mic/ALARAS-RESTORE-KILLS-Prestage2-Stressed.rb"/>
+            <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-dup-agent.rb"/>
+            <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-dup-agents.rb"/>
+            <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-dup-mgr.rb"/>
+            <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-kill-agents.rb"/>
+            <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-kill-mgr.rb"/>
+            <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-kill-node.rb"/>
+            <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-kill.rb"/>
+            <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-w-mgr.rb"/>
             <file path="csmart/scripts/definitions/robustness/mic/aruc1-small.rb"/>
           </node>
         </node>

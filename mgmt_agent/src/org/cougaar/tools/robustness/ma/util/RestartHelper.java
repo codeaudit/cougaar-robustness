@@ -426,13 +426,14 @@ public class RestartHelper extends BlackboardClientComponent {
    */
   private void doNextAction() {
     if ((!localActionQueue.isEmpty()) &&
-        (actionsInProcess.size() <= MAX_CONCURRENT_ACTIONS)) {
+        (actionsInProcess.size() < MAX_CONCURRENT_ACTIONS)) {
+      LocalRequest request = (LocalRequest)localActionQueue.remove(0);
       if (logger.isDebugEnabled()) {
         logger.debug("doNextAction: " +
+                     " next=[" + request + "]" +
                      " localActionQueue=" + localActionQueue.size() +
                      " actionsInProcess=" + actionsInProcess.size());
       }
-      LocalRequest request = (LocalRequest)localActionQueue.remove(0);
       MessageAddress agent = MessageAddress.getMessageAddress(request.agentName);
       request.expiration = now() + ACTION_TIMEOUT;
       actionsInProcess.put(agent.toString(), request);
@@ -525,6 +526,34 @@ public class RestartHelper extends BlackboardClientComponent {
               actionComplete(addTicket.getMobileAgent().toString(),
                              HealthMonitorRequest.RESTART,
                              addTicket.getDestinationNode(),
+                             FAIL);
+              break;
+            case AgentControl.NONE:
+              break;
+            default:
+              if (logger.isInfoEnabled()) {
+                logger.info("Unexpected restart status" +
+                            " statucCode=" + ac.getStatusCodeAsString() +
+                            ", blackboard object not removed");
+              }
+          }
+        } else if (ticket instanceof RemoveTicket) {
+          RemoveTicket removeTicket = (RemoveTicket) ticket;
+          switch (ac.getStatusCode()) {
+            case AgentControl.REMOVED:
+              blackboard.publishRemove(ac);
+              myUIDs.remove(ac.getOwnerUID());
+              actionComplete(removeTicket.getMobileAgent().toString(),
+                             HealthMonitorRequest.KILL,
+                             removeTicket.getDestinationNode(),
+                             SUCCESS);
+              break;
+            case AgentControl.FAILURE:
+              blackboard.publishRemove(ac);
+              myUIDs.remove(ac.getOwnerUID());
+              actionComplete(removeTicket.getMobileAgent().toString(),
+                             HealthMonitorRequest.KILL,
+                             removeTicket.getDestinationNode(),
                              FAIL);
               break;
             case AgentControl.NONE:
@@ -706,6 +735,10 @@ public class RestartHelper extends BlackboardClientComponent {
     LocalRequest (String agent, int action) {
       this.agentName = agent;
       this.action = action;
+    }
+    public String toString() {
+      return "agent=" + agentName + " action=" +
+          HealthMonitorRequestImpl.getRequestTypeAsString(action);
     }
   }
 

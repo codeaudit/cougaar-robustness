@@ -76,15 +76,15 @@ public class DuplicateAgentDetector implements StatusChangeListener {
           priorLocations.put(priorLoc, new Long(model.getVersion(agent)));
         }
         if (priorLocations.containsKey(newLoc)) {
-          String newest = getOldest(priorLocations);
+          String agentToRemove = selectAgentToRemove(priorLocations);
           if (logger.isWarnEnabled()) {
-            logger.warn("Duplicate agent detected, killing oldest:" +
+            logger.warn("Duplicate agent detected, removing duplicate:" +
                         " agent=" + agent +
                         " locations=" + priorLocations.keySet() +
-                        " oldest=" + newest);
+                        " removingFrom=" + agentToRemove);
           }
           suspectedDuplicates.remove(agent);
-          restartHelper.killAgent(agent, newest, model.getCommunityName());
+          restartHelper.killAgent(agent, agentToRemove, model.getCommunityName());
         }
       } else {
         Map priorLocations = new HashMap();
@@ -94,7 +94,7 @@ public class DuplicateAgentDetector implements StatusChangeListener {
     }
   }
 
-  protected String getOldest(Map locationMap) {
+  protected String selectAgentToRemove(Map locationMap) {
     String location = null;
     long timestamp = 0;
     for (Iterator it = locationMap.entrySet().iterator(); it.hasNext();) {
