@@ -9,10 +9,6 @@
   </host>
   <host name='HOST2'>
     <facet enclave='SMALL'/>
-    <node name='SMALL-MGMT-NODE'>
-      <facet role='NameServer'/>
-      <facet role='AR-Management'/>
-    </node>
     <node name='FWD-NODE'>
       <facet role="NameServer"/>
       <agent name='1-35-ARBN.2-BDE.1-AD.ARMY.MIL'/>

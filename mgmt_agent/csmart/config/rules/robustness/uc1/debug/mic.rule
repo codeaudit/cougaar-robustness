@@ -1,0 +1,20 @@
+# For debugging
+cvs     = "org.cougaar.community.util.CommunityViewerServlet"
+
+managerPluginsToAdd = []
+agentPluginsToAdd = [cvs]
+nodePluginsToAdd = [cvs]
+
+society.each_agent do |agent|
+  agent.add_components(agentPluginsToAdd)
+  if agent.name =~ /.*ARManager.*/
+    agent.add_components(managerPluginsToAdd)
+  end
+end
+
+society.each_node do |node|
+  node.override_parameter("-Dorg.cougaar.core.agent.heartbeat", "false")
+  node.override_parameter("-Dorg.cougaar.core.agent.showTraffic", "false")
+  node.add_components(nodePluginsToAdd)
+end
+

@@ -32,21 +32,24 @@ import org.xml.sax.InputSource;
 import org.xml.sax.helpers.DefaultHandler;
 import org.xml.sax.Attributes;
 
-import org.cougaar.util.ConfigFinder;
-
 /**
  */
 
 public class NodeLatencyStatistics {
 
-  protected static final String FILENAME = "nodestats.xml";
+  public static final String statsDir = "nodestats";
+  public static final String fileExtension = ".nodestats";
+
   protected String path;
   protected Map scMap = new HashMap();
 
-  public NodeLatencyStatistics() {
+  public NodeLatencyStatistics(String communityName) {
+    this.path = getPath(communityName);
   }
 
-  public NodeLatencyStatistics(Collection values) {
+  public NodeLatencyStatistics(String communityName,
+                               Collection values) {
+    this(communityName);
     for (Iterator it = values.iterator(); it.hasNext();) {
       put((StatCalc)it.next());
     }
@@ -79,23 +82,13 @@ public class NodeLatencyStatistics {
   }
 
   public void load() {
-    File xmlFile = ConfigFinder.getInstance().locateFile(FILENAME);
-    if (xmlFile != null) {
-      path = xmlFile.getAbsolutePath();
+    File f = new File(path);
+    if (f.exists() && f.canRead()) {
       parse(path);
     }
   }
 
   public void save() {
-    if (path == null) {
-      List dirList = ConfigFinder.getInstance().getConfigPath();
-      if (!dirList.isEmpty()) {
-        path = dirList.get(0) + FILENAME;
-        path = path.replaceAll("file:", "");
-      } else {
-        path = FILENAME;
-      }
-    }
     write(path);
   }
 
@@ -109,6 +102,16 @@ public class NodeLatencyStatistics {
     } catch (Exception ex) {
       System.out.println("Unable to write NodeLatencyStatistics to file " + path);
     }
+  }
+
+  protected String getPath(String communityName) {
+    File baseDir = new File(System.getProperty("org.cougaar.workspace"));
+    File fullDir = new File(baseDir + File.separator + statsDir);
+    if (!fullDir.exists() && baseDir.canWrite()) {
+      fullDir.mkdir();
+    }
+    File xmlFile = new File(fullDir + File.separator + communityName + fileExtension);
+    return xmlFile.getAbsolutePath();
   }
 
   protected void parse(String path) {

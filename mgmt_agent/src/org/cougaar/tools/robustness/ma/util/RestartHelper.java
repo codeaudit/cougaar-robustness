@@ -73,7 +73,7 @@ public class RestartHelper extends BlackboardClientComponent {
 
   public static final long TIMER_INTERVAL = 10 * 1000;
   public static final long ACTION_TIMEOUT = 30 * 60 * 1000;
-  public static final long MAX_CONCURRENT_ACTIONS = 1;
+  public static final long MAX_CONCURRENT_ACTIONS = 5;
 
   private List localActionQueue = Collections.synchronizedList(new ArrayList());
   private List remoteRequestQueue = new ArrayList();
@@ -295,7 +295,7 @@ public class RestartHelper extends BlackboardClientComponent {
     String destNode = hmr.getDestinationNode();
     switch (hmr.getRequestType()) {
       case HealthMonitorRequest.RESTART:
-        if (origNode != null && destNode != null) {
+        if (destNode != null) {
           if (!agentId.toString().equals(destNode)) {
             // Forward request to destination node
             logger.debug("doAction, forwarding request: " + hmr);
@@ -319,8 +319,8 @@ public class RestartHelper extends BlackboardClientComponent {
           logger.debug("doAction, forwarding request: " + hmr);
           sendRemoteRequest(new RemoteRequest(hmr.getAgents(),
                                               hmr.getRequestType(),
-                                              origNode,
                                               destNode,
+                                              origNode,
                                               hmr.getCommunityName()));
 
         } else { // local request

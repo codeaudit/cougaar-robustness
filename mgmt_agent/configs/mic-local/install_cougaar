@@ -1,27 +1,27 @@
 #!/bin/sh
 
-COUGAAR_VERS="HEAD"
+COUGAAR_VERS="B11_0"
 
 COUGAAR_PACKAGES="cougaar.zip cougaar-support.zip cougaar-src.zip cougaar-api.zip"
 #COUGAAR_PACKAGES="cougaar.zip cougaar-support.zip"
 
-UL_PACKAGES="AL_bbn_HEAD_HEAD.zip \
+UL_PACKAGES="AL_bbn_PAD_B11_0.zip \
 AR_bbn_HEAD_HEAD.zip \
-AR_common_HEAD_HEAD.zip \
-AR_objs_common_HEAD_HEAD.zip \
-AR_objs_msglog_HEAD_HEAD.zip \
-AR_objs_disconnection_HEAD_HEAD.zip \
+AR_common_B11_0_B11_0.zip \
+AR_objs_common_B11_0_B11_0.zip \
+AR_objs_disconnection_B11_0_B11_0.zip \
 AR_objs_deconfliction_B11_0_B11_0.zip \
-AR_objs_sensors_HEAD_HEAD.zip \
-AR_boeing_exnihilo_HEAD_HEAD.zip \
-AR_mic_HEAD_HEAD.zip \
+AR_objs_sensors_B11_0_B11_0.zip \
+AR_boeing_exnihilo_B11_0_B11_0.zip \
+AR_mic_B11_0_B11_0.zip \
 bbn_commons_HEAD_B11_0.zip \
 BBN_ulconfigs_HEAD_B11_0.zip \
 isat_plugins_HEAD_B11_0.zip \
 isat_acme_HEAD_B11_0.zip \
 isat_oplan_HEAD_B11_0.zip \
-AS_csi_secserv_HEAD_HEAD.zip \
-AS_csi_overlay_HEAD_HEAD.zip \
+AS_csi_secserv_HEAD_B11_0.zip \
+AS_csi_overlay_HEAD_B11_0.zip \
+AS_csi_mop_secserv_HEAD_B11_0.zip \
 SRI_cnc_HEAD_B11_0.zip \
 SRI_auto_HEAD_B11_0.zip"
 

@@ -1,7 +1,0 @@
-####################################################
-# Add VM parameters to nodes
-society.each_node do |node|
-  node.override_parameter("-Dorg.cougaar.core.agent.heartbeat", "false")
-  node.override_parameter("-Dorg.cougaar.core.agent.showTraffic", "false")
-end
-

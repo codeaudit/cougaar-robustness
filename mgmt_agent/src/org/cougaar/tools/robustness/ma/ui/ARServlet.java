@@ -71,8 +71,6 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
    * Load the servlet and get necessary services.
    */
   public void load() {
-    // get the logging service
-    log =  (LoggingService) serviceBroker.getService(this, LoggingService.class, null);
     uidService =  (UIDService) serviceBroker.getService(this, UIDService.class, null);
     super.load();
   }
@@ -107,12 +105,9 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
       this.agentId = ais.getMessageAddress();
       serviceBroker.releaseService(this, AgentIdentificationService.class, ais);
     }
-    /*NodeIdentificationService nis = (NodeIdentificationService)serviceBroker.getService(
-        this, NodeIdentificationService.class, null);
-    if (nis != null) {
-      this.nodeId = nis.getMessageAddress();
-      serviceBroker.releaseService(this, NodeIdentificationService.class, nis);
-    }*/
+    // get the logging service
+    log =  (LoggingService) serviceBroker.getService(this, LoggingService.class, null);
+    log = org.cougaar.core.logging.LoggingServiceWithPrefix.add(log, agentId + ": ");
     return new MyServlet();
   }
 
@@ -220,24 +215,18 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
             origNode = value;
           if (name.equals("destinationnode")) //move to where?
             destNode = value;
-            //if(name.equals("forcerestart")) //
-            //forceRestart = value;
           if (value.equals("refresh")) //refresh the page
             action = "refresh";
           if (value.equals("remove")) { //remove selected ticket
             action = "removeTicket";
             dest = name;
           }
-          if (value.equals("kill")) { //kill agent
-            action = "kill";
-            dest = name;
-          }
-          if (value.equals("restart")) { //Forced restart
-            action = "restart";
-            dest = name;
-          }
-          if (name.equals("loadBalance")) {
-            action = "loadBalance";
+          if (value.equalsIgnoreCase("Kill") || value.equalsIgnoreCase("Restart") || value.equalsIgnoreCase("ForcedRestart")
+              || value.equals("loadBalance") || value.equals("Move")) {
+            if(value.equalsIgnoreCase("ForcedRestart"))
+              action = "restart";
+            else
+              action = value.toLowerCase();
           }
           if (name.equalsIgnoreCase("modCommAttr")) {
             action = "modCommAttr";
@@ -290,15 +279,16 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
         showCommunityAttributes(format, robustnessCommunity);
       else if(command.equals("control"))
         controlCommunity(format, robustnessCommunity);
-      else if(command.equals("Move") || command.equals("Remove")) {
+      else if(command.equals("move") || command.equals("Remove") || command.equals("kill") ||
+              command.equals("restart") || command.equals("loadbalance")) {
         if(operation.equals(lastop) && mobileAgent.equals(lastma) && origNode.equals(laston)
           && destNode.equals(lastdn)) {
           writeSuccess(format); //this is just for refresh, don't do a publishAdd.
         }
         else {
           try {
-            if(command.equals("Move")) {
-              publishHealthMonitorMove(robustnessCommunity);
+            if(command.equals("move") || command.equals("kill") || command.equals("restart") || command.equals("loadbalance")) {
+              publishHealthMonitorRequest(robustnessCommunity, command);
             }
             else { //publish remove tickets to remove agents
               AgentControl ac = createAgentControl(command);
@@ -324,17 +314,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
             return;
         }
         writeSuccess(format);
-      } else if(command.equals("loadBalance")) {
-        if(currentCommunityXML.equals(""))
-          currentCommunityXML = displayStatus(robustnessCommunity);
-        log.debug("current community status xml: \n" + currentCommunityXML);
-        loadBalance(robustnessCommunity);
-        writeSuccess(format);
-      } else if(command.equals("kill")) {
-        publishHealthMonitorKill(robustnessCommunity);
-      } else if(command.equals("restart")) {
-        publishHealthMonitorRestart(robustnessCommunity);
-      } else if(command.equals("showAgent")) {
+      }  else if(command.equals("showAgent")) {
         showAgentAttributes(format, value);
       } else if (command.equalsIgnoreCase("modCommAttr")) {
         modifyCommunityAttribute(robustnessCommunity, attrId, attrValue);
@@ -447,36 +427,17 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
    * @return
    */
   private AgentControl createAgentControl(String op) {
-    boolean isForceRestart = false;
     MessageAddress mobileAgentAddr = MessageAddress.getMessageAddress(mobileAgent);
-    //MessageAddress destNodeAddr = MessageAddress.getMessageAddress(destNode);
     MessageAddress originNodeAddr = MessageAddress.getMessageAddress(origNode);
     MessageAddress target;
     AbstractTicket ticket;
-    //boolean isForceRestart = (forceRestart.equals("true") ? true : false);
-    /*if(op.equals("Move")) {
-      target = (originNodeAddr != null ? (originNodeAddr) : mobileAgentAddr);
-      if (destNodeAddr == null && originNodeAddr != null) {
-        destNodeAddr = originNodeAddr;
-      }
-      ticket =
-        new MoveTicket(
-                null,
-                mobileAgentAddr,
-                originNodeAddr,
-                destNodeAddr,
-                isForceRestart);
-    } else {*/
-       //target = (destNodeAddr != null ? destNodeAddr : mobileAgentAddr);
        target = (originNodeAddr != null ? originNodeAddr : mobileAgentAddr);
        ticket =
          new RemoveTicket(
                   null,
                   mobileAgentAddr,
-                  //destNodeAddr);
                   originNodeAddr);
-    //}
-    AgentControl ac = ARServlet.this.createAgentControl(null, target, ticket);
+     AgentControl ac = ARServlet.this.createAgentControl(null, target, ticket);
     return ac;
   }
 
@@ -565,56 +526,6 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     return ret;
   }
 
-  /**
-   * Load balance of given community.
-   * @param communityName
-   */
-  private void loadBalance(String communityName) {
-    HealthMonitorRequest hmr =
-        new HealthMonitorRequestImpl(agentId,
-                                     communityName,
-                                     HealthMonitorRequest.LOAD_BALANCE,
-                                     null,
-                                     null,
-                                     null,
-                                     uidService.nextUID());
-    /*MessageAddress target = nodeId != null
-        ? nodeId
-        : agentId;*/
-    AttributeBasedAddress target = AttributeBasedAddress.getAttributeBasedAddress(
-        communityName,
-        "Role",
-        "RobustnessManager");
-
-
-    if (target.equals(agentId)) {
-        if (log.isInfoEnabled()) {
-          log.info("publishing HealthMonitorRequest: " + hmr.getRequestTypeAsString());
-        }
-        try {
-          bb.openTransaction();
-          bb.publishAdd(hmr);
-        } finally {
-          bb.closeTransactionDontReset();
-        }
-    } else {
-      // send to remote agent using Relay
-      RelayAdapter hmrRa =
-          new RelayAdapter(agentId, hmr, hmr.getUID());
-      hmrRa.addTarget(target);
-      if (log.isInfoEnabled()) {
-        log.info("publishing HealthMonitorRequest: " +
-                 hmr.getRequestTypeAsString() + ", remote node is " + target.getAddress());
-      }
-      try {
-        bb.openTransaction();
-        bb.publishAdd(hmrRa);
-      }
-      finally {
-        bb.closeTransactionDontReset();
-      }
-   }
-  }
 
   /**
    * Modify specified community attribute.  Attribute is created if it doesn't
@@ -634,8 +545,9 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
       changeAttributes(communityName,
                        new Attribute[] {new BasicAttribute(attrId, attrValue)});
     }
-
   }
+
+
   /**
    * Modify one or more attributes of a community or entity.
    * @param community      Target community
@@ -794,92 +706,57 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
         "a \"trigger\" event: "+event);
   }
 
-  /**
-   * Publish a health monitor move request.
-   * @param communityName
-   */
-  private void publishHealthMonitorMove(String communityName) {
-    HealthMonitorRequest hmr =
-          new HealthMonitorRequestImpl(agentId,
-          communityName,
-          HealthMonitorRequest.MOVE,
-          new String[]{mobileAgent},
-          origNode,
-          destNode,
-          uidService.nextUID());
-      MessageAddress target = MessageAddress.getMessageAddress(destNode);
-      MessageAddress orig = MessageAddress.getMessageAddress(origNode);
-      /*if (orig.equals(agentId)) {
-        if (log.isInfoEnabled()) {
-          log.info("Publishing HealthMonitorRequest: " + hmr.getRequestTypeAsString());
-        }
-        try {
-          bb.openTransaction();
-          bb.publishAdd(hmr);
-        } finally {
-          bb.closeTransactionDontReset();
-        }
-      } else {
-        // send to remote agent using Relay
-        RelayAdapter hmrRa =
-            new RelayAdapter(agentId, hmr, hmr.getUID());
-        hmrRa.addTarget(orig);
-        if (log.isInfoEnabled()) {
-          log.info("Publishing HealthMonitorRequest Relay:" +
-                   " target=" + hmrRa.getTargets() + " " +
-                   hmr.getRequestTypeAsString());
-        }
-        try {
-          bb.openTransaction();
-          bb.publishAdd(hmrRa);
-        } finally {
-          bb.closeTransactionDontReset();
-        }
-      }*/
-
-    try {
-          bb.openTransaction();
-          bb.publishAdd(hmr);
-        } finally {
-          bb.closeTransactionDontReset();
-        }
-
-  }
 
   /**
-   * Publish a health monitor kill request.
-   * @param communityName
+   * Publish a health monitor request: kill, forced restart, move or load balancing.
+   * @param communityName String
+   * @param command String
    */
-  private void publishHealthMonitorKill(String communityName) {
-    publishRequest(new HealthMonitorRequestImpl(agentId,
-                                     communityName,
-                                     HealthMonitorRequest.KILL,
-                                     new String[] {mobileAgent},
-                                     null,
-                                     null,
-                                     uidService.nextUID()));
+  private void publishHealthMonitorRequest(String communityName, String command) {
+    int request = command.equals("kill") ? HealthMonitorRequest.KILL :
+          (command.equals("restart") ? HealthMonitorRequest.FORCED_RESTART :
+          (command.equals("loadbalance") ? HealthMonitorRequest.LOAD_BALANCE :
+                                           HealthMonitorRequest.MOVE));
+    String orig = origNode;
+    String dest = destNode;
+    if(origNode.equals("")) orig = null;
+    if(destNode.equals("")) dest = null;
+    HealthMonitorRequestImpl hmr = new HealthMonitorRequestImpl(agentId,
+                                            communityName,
+                                            request,
+                                            new String[] {mobileAgent},
+                                            orig,
+                                            dest,
+                                            uidService.nextUID());
+    publishRequest(hmr);
   }
 
+
   /**
-   * Publish forced restart request.
-   * @param communityName
+   * Get manager of one robustness community. This method should can be done using:
+   *     AttributeBasedAddress.getAttributeBasedAddress(community,
+   *                                                    "Role",
+   *                                                    "RobustnessManager");
+   * Well, at the time of coding, AttributeBasedAddress doesn't work as expected.
+   * @param community String
+   * @return MessageAddress
    */
-  private void publishHealthMonitorRestart(String communityName) {
-    publishRequest(new HealthMonitorRequestImpl(agentId,
-                                     communityName,
-                                     HealthMonitorRequest.FORCED_RESTART,
-                                     new String[] {mobileAgent},
-                                     null,
-                                     null,
-                                     uidService.nextUID()));
+  private MessageAddress getRobustnessManager(String community) {
+    MessageAddress target = null;
+    Community comm = commSvc.getCommunity(community, null);
+    if(comm != null) {
+      try{
+        Attribute attr = comm.getAttributes().get("RobustnessManager");
+        target = MessageAddress.getMessageAddress( (String) attr.get());
+      }catch(Exception e) {}
+    }
+    return target;
   }
+
 
   protected void publishRequest(HealthMonitorRequest hmr) {
+    MessageAddress target = getRobustnessManager(hmr.getCommunityName());
     log.info("publishRequest: " + hmr);
-    AttributeBasedAddress target =
-        AttributeBasedAddress.getAttributeBasedAddress(hmr.getCommunityName(),
-                                                       "Role",
-                                                       "RobustnessManager");
     Object request = hmr;
     if (!target.equals(agentId)) {
       // send to remote agent using Relay
@@ -1090,7 +967,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     sb.append("       <input type=\"submit\" name=\"showcommunity\" value=\"Show Community Data\" />\n");
     sb.append("      </td></form>\n");
     sb.append("        <form name=\"lbForm\"><td align=\"left\" bgcolor=\"white\">\n");
-    sb.append("          <input type=\"submit\" name=\"loadBalance\" value=\"Load Balance\" />\n");
+    sb.append("          <input type=\"submit\" name=\"operation\" value=\"loadBalance\" />\n");
     sb.append("      </td></form>\n");
     sb.append("      <td width=\"65%\" />\n");
     sb.append("    </tr>\n  </table>\n\n");
@@ -1101,6 +978,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     sb.append("     <td><select name=\"operation\" onchange=\"changeOp()\">\n");
     sb.append(addOption("Move", operation, ""));
     sb.append(addOption("Remove", operation, ""));
+    sb.append(addOption("ForcedRestart", operation, ""));
     sb.append("    </select></td></tr>\n");
     sb.append("    <tr><td>Mobile Agent</td>\n");
     sb.append("    <td><select name=\"mobileagent\" size=\"1\" onclick=\"changeAgent()\">\n");

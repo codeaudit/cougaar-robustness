@@ -12,11 +12,11 @@
   <host name='wayne'>
     <facet service="acme"/>
   </host>
-  <host name='net3'>
-    <facet service="acme"/>
-  </host>
   <host name='net5'>
     <facet service="jabber"/>
+    <facet service="acme"/>
+  </host>
+  <host name='net3'>
     <facet service="acme"/>
   </host>
   <host name='net4'>

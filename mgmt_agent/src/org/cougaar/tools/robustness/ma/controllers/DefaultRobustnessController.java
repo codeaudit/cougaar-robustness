@@ -162,24 +162,24 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     { addDeconflictListener(this); }
     public void enter(String name) {
       if (isDeconflictionEnabled()) {
-        if (!getDeconflictHelper().isDefenseApplicable(name)) {
-          getDeconflictHelper().changeApplicabilityCondition(name);
-        }
         if (getDeconflictHelper().isOpEnabled(name)) {
           newState(name, RESTART);
+        } else if (!getDeconflictHelper().isDefenseApplicable(name)) {
+          getDeconflictHelper().changeApplicabilityCondition(name);
         }
       } else {
-        newState(name, RESTART);
+        newState(name, HEALTH_CHECK);
       }
     }
 
     public void defenseOpModeEnabled(String name) {
+      logger.debug("deconflictCallback: agent=" + name);
       if (isDeconflictionEnabled() &&
           !getDeconflictHelper().isDefenseApplicable(name)) {
         getDeconflictHelper().changeApplicabilityCondition(name);
       }
       // Verify that agent state hasn't changed while defense was disabled
-      if (getState(name) != DefaultRobustnessController.ACTIVE) {
+      if (getState(name) == DECONFLICT) {
         newState(name, RESTART);
       }
     }
@@ -216,11 +216,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     public void enter(final String name) {
       setExpiration(name, NEVER);
       communityReady = false; // For ACME Community Ready Events
-      if (isAgent(name)) {
-        if (thisAgent.equals(preferredLeader()) ||
-          name.equals(preferredLeader()) && isLeader(thisAgent)) {
-          newState(name, DECONFLICT);
-        }
+      if (isAgent(name) &&
+          thisAgent.equals(preferredLeader()) &&
+          (getPriorState(name) == DefaultRobustnessController.ACTIVE ||
+          getPriorState(name) < INITIAL || getPriorState(name) == HEALTH_CHECK)) {
+        newState(name, DECONFLICT);
       } else if (isNode(name)) {
         deadNodes.add(name);
         if (!useGlobalSolver()) {
@@ -228,22 +228,31 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
           if (thisAgent.equals(preferredLeader())) { removeFromCommunity(name); }
         } else {
           if (isLeader(thisAgent)) {
-            getLayout(new LoadBalancerListener() {
-              public void layoutReady(Map layout) {
-                if (getState(name) == DEAD) {
-                  logger.info("layout from EN4J: " + layout);
-                  RestartDestinationLocator.setPreferredRestartLocations(layout);
-                  newState(agentsOnNode(name), DEAD);
-                  if (thisAgent.equals(preferredLeader())) { removeFromCommunity(name); }
-                } else { // Abort, node no longer classified as DEAD
-                  deadNodes.remove(name);
-                  if (logger.isInfoEnabled()) {
-                    logger.info("Restart aborted: node=" + name +
-                                " state=" + stateName(getState(name)));
+            if (agentsOnNode(name).size() > 0) {
+              final long minAnnealTime = getLongAttribute("MINIMUM_ANNEAL_TIME", MINIMUM_ANNEAL_TIME);
+                getLayout(new LoadBalancerListener() {
+                public void layoutReady(Map layout) {
+                  if (getState(name) == DEAD) {
+                    logger.info("layout from EN4J: " + layout);
+                    RestartDestinationLocator.setPreferredRestartLocations(layout);
+                    newState(agentsOnNode(name), DEAD);
+                    if (thisAgent.equals(preferredLeader())) {
+                      removeFromCommunity(name);
+                    }
+                  } else { // Abort, node no longer classified as DEAD
+                    deadNodes.remove(name);
+                    if (logger.isInfoEnabled()) {
+                      logger.info("Restart aborted: node=" + name +
+                                  " state=" + stateName(getState(name)));
+                    }
                   }
                 }
-              }
-            });
+              });
+            } else {
+              removeFromCommunity(name);
+            }
+          } else {
+            newState(agentsOnNode(name), DEAD);
           }
         }
       }
@@ -303,6 +312,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
   }
 
+  // Track restart timeouts on nodes that are thought to be alive.  In these
+  // cases a retry is only attempted on the second timeout.
+  private List retries = Collections.synchronizedList(new ArrayList());
+
   /**
    * State Controller: FAILED_RESTART
    * <pre>
@@ -316,13 +329,25 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     public void enter(String name) {
       logger.info("New state (FAILED_RESTART):" +
                   " name=" + name);
-      if (isLeader(thisAgent) && isAgent(name)) {
-        newState(name, HEALTH_CHECK);
+      if (isLeader(thisAgent) &&
+          isAgent(name)) {
+        if (getState(model.getLocation(name)) == DefaultRobustnessController.ACTIVE) {
+          if (retries.contains(name)) {
+            // Retry the restart on second timeout if destination node is alive
+            retries.remove(name);
+            newState(name, RESTART);
+          } else {
+            retries.add(name);
+          }
+        } else {
+          // If destination node isn't alive retry restart immediately
+          newState(name, RESTART);
+        }
       }
     }
     public void expired(String name) {
       if (isLeader(thisAgent) && isAgent(name)) {
-        newState(name, HEALTH_CHECK);
+        newState(name, RESTART);
       }
     }
   }
@@ -419,6 +444,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   private NodeLatencyStatistics originalStats;
   private NodeLatencyStatistics nodeLatencyStats;
   private boolean collectNodeStats = false;
+  private boolean suppressPingsOnRestart = false;
 
   /**
    * Initializes services and loads state controller classes.
@@ -429,7 +455,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     super.initialize(agentId, bs, csm);
     thisAgent = agentId.toString();
     String propValue = System.getProperty(COLLECT_NODE_STATS_PROPERTY);
-    collectNodeStats = propValue != null && propValue.equalsIgnoreCase("true");
+    collectNodeStats = (propValue != null && propValue.equalsIgnoreCase("true"));
+    propValue = System.getProperty("org.cougaar.tools.robustness.deconfliction.leashOnRestart");
+    suppressPingsOnRestart =
+        (propValue != null && propValue.equalsIgnoreCase("true"));
     addController(INITIAL,        "INITIAL", new InitialStateController());
     //addController(LOCATED,        "LOCATED", new LocatedStateController());
     addController(DefaultRobustnessController.ACTIVE, "ACTIVE",  new ActiveStateController());
@@ -482,7 +511,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (thisAgent.equals(preferredLeader()) &&
           !source.equals(getLocation(thisAgent))) {
         StatsEntry se = (StatsEntry) runStats.get(source);
-        if (se.samples >= MIN_SAMPLES && se.high >= MIN_SAMPLE_VALUE) {
+        if (se.samples >= MIN_SAMPLES) {
+          if (se.high < MIN_SAMPLE_VALUE) {
+            se.high = MIN_SAMPLE_VALUE;
+          }
           StatCalc newSc = (StatCalc) nodeLatencyStats.get(source);
             if (se.samples == MIN_SAMPLES ||                    // Take snapshot at MIN_SAMPLES
                newSc == null ||
@@ -507,7 +539,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   }
 
   protected void saveNodeStats() {
-    NodeLatencyStatistics all = new NodeLatencyStatistics(nodeLatencyStats.values());
+    NodeLatencyStatistics all =
+        new NodeLatencyStatistics(model.getCommunityName(),
+                                  nodeLatencyStats.values());
     for (Iterator it = originalStats.list().iterator(); it.hasNext();) {
       String id = (String)it.next();
       if (!all.contains(id)) all.put(originalStats.get(id));
@@ -517,10 +551,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
   // load persisted node stats from file and make a copy
   protected void initializeNodeStats() {
-    originalStats = new NodeLatencyStatistics();
-    nodeLatencyStats = new NodeLatencyStatistics();
+    originalStats = new NodeLatencyStatistics(model.getCommunityName());
+    nodeLatencyStats = new NodeLatencyStatistics(model.getCommunityName());
     originalStats.load();
-    logger.detail("initializeNodeStats: " + nodeLatencyStats.toXML());
+    logger.detail("initializeNodeStats: " + originalStats.toXML());
   }
 
   /**
@@ -570,6 +604,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                 " agent=" + name +
                 " origin=" + getLocation(name) +
                 " dest=" + dest);
+    if (retries.contains(name)) {
+      retries.remove(name);
+    }
     if (name != null && dest != null) {
       restartAgent(name, dest);
       RestartDestinationLocator.restartOneAgent(dest);
@@ -634,14 +671,13 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   }
 
   public void execute() {
-    if ((wakeAlarm != null) &&
-        ((wakeAlarm.hasExpired()))) {
+    if ((wakeAlarm != null) && ((wakeAlarm.hasExpired()))) {
       if (thisAgent.equals(preferredLeader())) {
         logger.info(statusSummary());
         checkCommunityReady();
         checkLoadBalance();
       }
-      wakeAlarm = new WakeAlarm((new Date()).getTime() + STATUS_INTERVAL);
+      wakeAlarm = new WakeAlarm(now() + STATUS_INTERVAL);
       alarmService.addRealTimeAlarm(wakeAlarm);
     }
   }
@@ -655,12 +691,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         communityReady == false &&
         agentsAndLocationsActive()) {
       communityReady = true;
-      /*if (!didRestart) {
-        didRestart = true;
-        if (doInitialPing()) {
-          pingAll();
-        }
-      }*/
       event("Community " + model.getCommunityName() + " Ready");
       RestartDestinationLocator.clearRestarts();
     }
@@ -705,9 +735,12 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   public void membershipChange(String name) {
     if (isNode(name)) {
       logger.info("New node detected: name=" + name);
+      if (deadNodes.contains(name)) {
+        deadNodes.remove(name);
+      }
     }
-    if (didRestart && getState(name) != DefaultRobustnessController.ACTIVE) {
-      doPing(name, DefaultRobustnessController.ACTIVE, DEAD);
+    if (didRestart && getState(name) == -1 && !suppressPingsOnRestart) {
+      newState(name, HEALTH_CHECK);
     }
   }
 
@@ -720,6 +753,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       newState(preferredLeader(), RESTART);
     }
     checkCommunityReady();
+    if (didRestart && !suppressPingsOnRestart) {
+      newState(model.listEntries(model.AGENT, -1), HEALTH_CHECK);
+      newState(model.listEntries(model.NODE, -1), HEALTH_CHECK);
+    }
   }
 
   /**
@@ -754,44 +791,25 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     return System.currentTimeMillis();
   }
 
+  private List pendingLBRequests = Collections.synchronizedList(new ArrayList());
   /**
    * Get layout from EN4J load balancer.  Check node status prior to submitting
    * request to EN4J.
    * @param lbl Listener method invoked after layout has been returned by EN4J
    */
   protected void getLayout(final LoadBalancerListener lbl) {
-    logger.info("getLayout:");
-    // Ping "ACTIVE" nodes to verify they're still alive before invoking EN4J
-    String allNodes[] = model.listEntries(model.NODE);
-    Set excludedNodes = getExcludedNodes();
-    Set nodesToPing = new HashSet();
-    for (int i = 0; i < allNodes.length; i++) {
-      if (!deadNodes.contains(allNodes[i]) &&
-          !excludedNodes.contains(allNodes[i]))
-        nodesToPing.add(allNodes[i]);
-    }
-    final long pingTimeout = getLongAttribute(PING_TIMEOUT_ATTRIBUTE, DEFAULT_PING_TIMEOUT);
-    PingListener pl = new PingListener() {
-      public void pingComplete(PingResult[] pingResults) {
-        // Update list of DEAD nodes
-        String deadNodesFromModel[] = model.listEntries(model.NODE, DEAD);
-        for (int i = 0; i < deadNodesFromModel.length; i++) {
-          deadNodes.add(deadNodesFromModel[i]);
-        }
-        for (int i = 0; i < pingResults.length; i++) {
-          if (pingResults[i].getStatus() == PingResult.FAIL) {
-            deadNodes.add(pingResults[i].getName());
-            logger.info("Found new DEAD node during LoadBalance node check: " +
-                        pingResults[i].getName());
-            model.setCurrentState(pingResults[i].getName(), DEAD);
-          }
-        }
+    synchronized (pendingLBRequests) {
+      // Guard against overlapping doLayout requests
+      if (loadBalanceInProcess) {
+        pendingLBRequests.add(lbl);
+      } else {
+        loadBalanceInProcess = true;
         List excludedNodes = new ArrayList(getExcludedNodes());
         List vacantNodes = getVacantNodes();
         // Update list of NEW nodes
         if (!vacantNodes.isEmpty()) {
           for (Iterator it = vacantNodes.iterator(); it.hasNext(); ) {
-            String newNode = (String)it.next();
+            String newNode = (String) it.next();
             if (!isVacantNode(newNode) ||
                 excludedNodes.contains(newNode) ||
                 deadNodes.contains(newNode)) {
@@ -799,39 +817,31 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
             }
           }
         }
-        if (!loadBalanceInProcess) {
-          // Guard against overlapping doLayout requests
-          loadBalanceInProcess = true;
-          LoadBalancerListener newLbl = new LoadBalancerListener() {
-            public void layoutReady(Map layout) {
-              lbl.layoutReady(layout);
-              loadBalanceInProcess = false;
+        LoadBalancerListener newLbl = new LoadBalancerListener() {
+          public void layoutReady(Map layout) {
+            loadBalanceInProcess = false;
+            lbl.layoutReady(layout);
+            if (!pendingLBRequests.isEmpty()) {
+              getLayout( (LoadBalancerListener) pendingLBRequests.remove(0));
             }
-          };
-          // Use ping timeout to calculate annealTime:
-          //  - convert ms to secs
-          //  - divide by 2 to provide some margin
-          //  - divide by 9 for EN multi-pass
-          long annealTime = pingTimeout > 0 ? pingTimeout / 1000 / 2 / 9 :
-              LoadBalancer.DEFAULT_ANNEAL_TIME;
-          long minAnnealTime = getLongAttribute("MINIMUM_ANNEAL_TIME", MINIMUM_ANNEAL_TIME);
-          if (annealTime < minAnnealTime) annealTime = minAnnealTime;
-          logger.debug("doLayout:" +
-                      " annealTime=" + annealTime +
-                      " newNodes=" + vacantNodes +
-                      " deadNodes=" + deadNodes +
-                      " excludedNodes=" + excludedNodes);
-          getLoadBalancer().doLayout( (int) annealTime,
-                                     true,
-                                     vacantNodes,
-                                     new ArrayList(deadNodes),
-                                     excludedNodes,
-                                     newLbl);
+          }
+        };
+        long annealTime = getLongAttribute("MINIMUM_ANNEAL_TIME",
+                                           MINIMUM_ANNEAL_TIME);
+        logger.debug("doLayout:" +
+                     " annealTime=" + annealTime +
+                     " newNodes=" + vacantNodes +
+                     " deadNodes=" + deadNodes +
+                     " excludedNodes=" + excludedNodes);
+        getLoadBalancer().doLayout( (int) annealTime,
+                                   true,
+                                   vacantNodes,
+                                   new ArrayList(deadNodes),
+                                   excludedNodes,
+                                   newLbl);
 
-        }
       }
-    };
-    getPingHelper().ping((String[])nodesToPing.toArray(new String[0]), pingTimeout, pl);
+    }
   }
 
   /**
@@ -849,6 +859,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     } else {
       doPing(new String[]{agent}, stateOnSuccess, stateOnFail);
     }
+  }
+
+  protected void pingAll(final int stateOnSuccess,
+                         final int stateOnFail) {
+    doPing(model.listEntries(model.AGENT), stateOnSuccess, stateOnFail);
   }
 
   protected void checkLoadBalance() {

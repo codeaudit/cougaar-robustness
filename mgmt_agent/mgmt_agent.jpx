@@ -21,7 +21,7 @@
   <property category="sys" name="ExcludeClassEnabled" value="0"/>
   <property category="sys" name="IncludeTestPath" value="1"/>
   <property category="sys" name="InstanceVisibility" value="2"/>
-  <property category="sys" name="JDK" value="java version 1.4.1_02-b06"/>
+  <property category="sys" name="JDK" value="java version 1.4.2_01-b06"/>
   <property category="sys" name="JvmVersion" value="1.2"/>
   <property category="sys" name="LastTag" value="0"/>
   <property category="sys" name="Libraries" value="cougaar"/>
@@ -40,7 +40,7 @@
         <node name="rules" type="Folder">
           <node name="robustness" type="Folder">
             <node name="communities" type="Folder">
-              <file path="../common/csmart/config/rules/robustness/communities/community.rule"/>
+              <file path="../common-B11_0/csmart/config/rules/robustness/communities/community.rule"/>
             </node>
             <file path="../common/csmart/config/rules/robustness/manager.rule"/>
           </node>
@@ -76,12 +76,14 @@
       <node name="rules" type="Folder">
         <node name="robustness" type="Folder">
           <node name="uc1" type="Folder">
+            <node name="debug" type="Folder">
+              <file path="csmart/config/rules/robustness/uc1/debug/mic.rule"/>
+            </node>
+            <node name="tuning" type="Folder">
+              <file path="csmart/config/rules/robustness/uc1/tuning/add_tuning_parameters.rule"/>
+              <file path="csmart/config/rules/robustness/uc1/tuning/collect_stats.rule"/>
+            </node>
             <file path="csmart/config/rules/robustness/uc1/aruc1.rule"/>
-            <file path="csmart/config/rules/robustness/uc1/collect_stats.rule"/>
-            <file path="csmart/config/rules/robustness/uc1/deconfliction.rule"/>
-            <file path="csmart/config/rules/robustness/uc1/manager.rule"/>
-            <file path="csmart/config/rules/robustness/uc1/mic.rule"/>
-            <file path="csmart/config/rules/robustness/uc1/msglog.rule"/>
           </node>
           <node name="uc4" type="Folder">
             <file path="csmart/config/rules/robustness/uc4/aruc4.rule"/>
@@ -100,8 +102,6 @@
             <file path="csmart/config/scripts/robustness/uc1/kill_1_node-small.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/kill_mgr-small.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/kill_mgr_plus_1-small.rb"/>
-            <file path="csmart/config/scripts/robustness/uc1/restart_agent-small.rb"/>
-            <file path="csmart/config/scripts/robustness/uc1/RunARsmall-1AD.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/uc1-disconnect-moas.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/uc1-full.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/uc1-lb.rb"/>
@@ -121,6 +121,27 @@
             <file path="csmart/config/scripts/robustness/uc4/uc4-small-iaom.rb"/>
             <file path="csmart/config/scripts/robustness/uc4/uc4-small.rb"/>
           </node>
+        </node>
+      </node>
+    </node>
+    <node name="lib" type="Folder">
+      <node name="robustness" type="Folder">
+        <node name="mic" type="Folder">
+          <file path="csmart/lib/robustness/mic/aruc1-small-fr.rb"/>
+          <file path="csmart/lib/robustness/mic/aruc1-small-w-mgr.rb"/>
+          <file path="csmart/lib/robustness/mic/aruc1-small.rb"/>
+          <file path="csmart/lib/robustness/mic/aruc1-ua-w-mgr.rb"/>
+          <file path="csmart/lib/robustness/mic/aruc1-ua.rb"/>
+          <file path="csmart/lib/robustness/mic/ASMT-1000-UA-AR-AS.rb"/>
+          <file path="csmart/lib/robustness/mic/ASMT-1000-UA-AR.rb"/>
+          <file path="csmart/lib/robustness/mic/BaselineTemplate.rb"/>
+          <file path="csmart/lib/robustness/mic/BaselineTemplateStage1.rb"/>
+          <file path="csmart/lib/robustness/mic/forced_restart.rb"/>
+          <file path="csmart/lib/robustness/mic/small_kill.rb"/>
+          <file path="csmart/lib/robustness/mic/small_kill_w_mgr.rb"/>
+          <file path="csmart/lib/robustness/mic/ua_big_kill.rb"/>
+          <file path="csmart/lib/robustness/mic/ua_kill.rb"/>
+          <file path="csmart/lib/robustness/mic/ua_kill_w_mgr.rb"/>
         </node>
       </node>
     </node>

@@ -100,8 +100,8 @@
     <copy todir="${cougaar}/csmart/config/rules/robustness/uc4">
       <fileset dir="csmart/config/rules/robustness/uc4" />
     </copy>
-    <copy todir="${cougaar}/csmart/config/scripts/robustness/uc1">
-      <fileset dir="csmart/config/scripts/robustness/uc1" />
+    <copy todir="${cougaar}/csmart/lib/robustness/mic">
+      <fileset dir="csmart/lib/robustness/mic" />
     </copy>
     <copy todir="${cougaar}/csmart/config/scripts/robustness/uc4">
       <fileset dir="csmart/config/scripts/robustness/uc4" />
@@ -170,7 +170,7 @@
       excludes="**/*.sql,**/cvs/**,doc/api/**,**/*.bak,.cvsignore"
     />
   </target>
-  
+
 	<target name="overlay-compile" description="Compile source code">
     <!-- Compile the java code into ${classes} -->
     <mkdir dir="${classes}" />
@@ -200,18 +200,18 @@
     <mkdir dir="staging/sys"/>
 
     <!-- ACME and CSMART -->
-    <!-- <mkdir dir="staging/csmart/config/doc/robustness/uc1"/> -->
-    <!-- <mkdir dir="staging/csmart/config/rules/robustness/communities"/> -->
     <mkdir dir="staging/robustness/configs/mic-local"/>
     <!-- UC1 -->
     <mkdir dir="staging/csmart/config/lib/robustness/uc1"/>
     <mkdir dir="staging/csmart/config/rules/robustness/uc1"/>
-    <mkdir dir="staging/csmart/config/scripts/robustness/uc1"/>
     <!-- UC4 -->
     <mkdir dir="staging/csmart/config/lib/robustness/uc4"/>
     <mkdir dir="staging/csmart/config/rules/robustness/uc4"/>
-    <mkdir dir="staging/csmart/config/scripts/robustness/uc4"/>
     <mkdir dir="staging/operator"/>
+
+    <!-- Experiment scripts -->
+    <mkdir dir="staging/csmart/lib/robustness/mic"/>
+    <mkdir dir="staging/csmart/scripts/definitions/robustness/mic"/>
 
     <antcall target="init"/>
     <antcall target="overlay-compile"/>
@@ -234,9 +234,7 @@
          <include name="uc1-small-1ad-layout.xml" />
       </fileset>
     </copy>
-    <!-- <copy toDir="staging/csmart/config/doc/robustness/uc1">
-      <fileset dir="csmart/config/doc/robustness/uc1"/>
-    </copy> -->
+
     <copy toDir="staging/csmart/config/lib/robustness/uc1">
       <fileset dir="csmart/config/lib/robustness/uc1">
          <include name="aruc1_actions_and_states.rb" />
@@ -244,19 +242,12 @@
          <include name="ping.rb" />
       </fileset>
     </copy>
-    <!-- <copy toDir="staging/csmart/config/rules/robustness/communities">
-      <fileset dir="csmart/config/rules/robustness/communities">
-         <include name="community.rule" />
-      </fileset>
-    </copy> -->
+
     <copy toDir="staging/csmart/config/rules/robustness/uc1">
       <fileset dir="csmart/config/rules/robustness/uc1"/>
     </copy>
     <copy toDir="staging/robustness/configs/mic-local">
       <fileset dir="csmart/config/rules/robustness/uc1"/>
-    </copy>
-    <copy toDir="staging/csmart/config/scripts/robustness/uc1">
-      <fileset dir="csmart/config/scripts/robustness/uc1"/>
     </copy>
     <copy toDir="staging/csmart/config/lib/robustness/uc4">
       <fileset dir="csmart/config/lib/robustness/uc4"/>
@@ -264,8 +255,11 @@
     <copy toDir="staging/csmart/config/rules/robustness/uc4">
       <fileset dir="csmart/config/rules/robustness/uc4"/>
     </copy>
-    <copy toDir="staging/csmart/config/scripts/robustness/uc4">
-      <fileset dir="csmart/config/scripts/robustness/uc4"/>
+    <copy toDir="staging/csmart/lib/robustness/mic">
+      <fileset dir="csmart/lib/robustness/mic"/>
+    </copy>
+    <copy toDir="staging/csmart/scripts/definitions/robustness/mic">
+      <fileset dir="csmart/scripts/definitions/robustness/mic"/>
     </copy>
     <copy toDir="staging/robustness/doc">
       <fileset dir="doc"/>

@@ -101,8 +101,10 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
   private String myType = "Agent";
   private String myNode;
   private String myHost;
+  private String myCommunity;
   private boolean joinedStartupCommunity = false;
   private boolean getTopologyFlag = true;
+  public boolean communityChanged = false;
 
   // Status model and controller associated with monitored community
   private CommunityStatusModel model;
@@ -176,14 +178,22 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
     healthMonitorRequests =
         (IncrementalSubscription)blackboard.subscribe(healthMonitorRequestPredicate);
 
+    Collection communities = commSvc.searchCommunity(null,
+                                             "(CommunityType=Robustness)",
+                                             false,
+                                             Community.COMMUNITIES_ONLY,
+                                             null);
+    if (communities != null && !communities.isEmpty()) {
+      processCommunityChanges(communities);
+    }
     commSvc.addListener(new CommunityChangeListener() {
       public String getCommunityName() { return null; }
       public void communityChanged(CommunityChangeEvent cce) {
-        //logger.info(cce.toString());
         Attributes attrs = cce.getCommunity().getAttributes();
         Attribute attr = attrs.get("CommunityType");
         if (attr != null && attr.contains("Robustness")) {
-          processCommunityChanges(Collections.singleton(cce.getCommunity()));
+           myCommunity = cce.getCommunityName();
+           communityChanged = true;
         }
       }
     });
@@ -216,11 +226,21 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
       if (myNode != null && !joinedStartupCommunity) {
         joinStartupCommunity();
       }
+      if (communityChanged && commSvc != null) {
+        communityChanged = false;
+        Community community = commSvc.getCommunity(myCommunity, null);
+        if (community != null) {
+          processCommunityChanges(Collections.singleton(community));
+        }
+      }
       updateAndSendNodeStatus();
       long tmp = getLongAttribute(CURRENT_STATUS_UPDATE_ATTRIBUTE, updateInterval);
       if (tmp != updateInterval) {
         logger.info("Changing update interval: old=" + updateInterval + " new=" + tmp);
         updateInterval = tmp;
+      }
+      if (model != null) {
+        model.doPeriodicTasks();
       }
       wakeAlarm = new WakeAlarm(now() + getLongAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE, updateInterval));
       alarmService.addRealTimeAlarm(wakeAlarm);
@@ -315,10 +335,11 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
     for(Iterator it = communities.iterator(); it.hasNext(); ) {
       Community community = (Community)it.next();
       if (model == null) {
-        blackboard.openTransaction();
+        //blackboard.openTransaction();
         initializeModel(community.getName());
-        blackboard.closeTransaction();
+        //blackboard.closeTransaction();
       }
+      model.update(community);
       if (!initialAttributesLogged) {
         initialAttributesLogged = true;
         logger.info("Robustness community attributes:" +
@@ -358,22 +379,30 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
             nodeStatusRelay.addTarget(target);
           }
         }
-        blackboard.openTransaction();
+        //blackboard.openTransaction();
         blackboard.publishAdd(nodeStatusRelay);
-        blackboard.closeTransaction();
+        //blackboard.closeTransaction();
         if(logger.isDebugEnabled()) {
           logger.debug("publishAdd NodeStatusRelay:" +
                        " targets=" + targetsToString(nodeStatusRelay.getTargets()) +
                        " community=" + community.getName() +
                        " agents=" + agentStatus.length);
         }
+        if (logger.isDetailEnabled()) {
+          StringBuffer detailedStatus = new StringBuffer("<AgentStatus>\n");
+          for (int i = 0; i < agentStatus.length; i++) {
+            detailedStatus.append("  " + agentStatus[i].toString() + "\n");
+          }
+          detailedStatus.append("</AgentStatus>");
+          logger.detail(detailedStatus.toString());
+        }
       }
-      model.update(community);
     }
   }
 
   private synchronized void initializeModel(String communityName) {
     if (model == null) {
+      logger.debug("Initialize CommunityStatusModel");
       model = new CommunityStatusModel(myName,
                                        communityName,
                                        getBindingSite());
@@ -506,6 +535,14 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
                      " agents=" + nsr.getAgentStatus().length +
                      " leaderVote=" + nsr.getLeaderVote() +
                      " location=" + nsr.getLocation());
+        if (logger.isDetailEnabled()) {
+          StringBuffer detailedStatus = new StringBuffer("<AgentStatus>\n");
+          for (int i = 0; i < agentStatus.length; i++) {
+            detailedStatus.append("  " + agentStatus[i].toString() + "\n");
+          }
+          detailedStatus.append("</AgentStatus>");
+          logger.detail(detailedStatus.toString());
+        }
         blackboard.publishChange(nodeStatusRelay);
       }
     }
@@ -527,6 +564,8 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
             myHost = uri.getHost();
             myNode = uri.getPath().substring(1);
             myType = (myName.equals(myNode)) ? "Node" : "Agent";
+            communityChanged = true;
+            wakeAlarm.expire();
             if (logger.isInfoEnabled()) {
               logger.info("topologyInfo:" +
                           " name=" + myName +

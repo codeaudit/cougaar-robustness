@@ -24,13 +24,13 @@ package org.cougaar.tools.robustness.ma.ldm;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.util.UID;
 import org.cougaar.core.relay.Relay;
-
-import java.util.*;
+import org.cougaar.core.persist.NotPersistable;
 
 /**
  * Implementation of NodeStatusRelay interface.
  **/
-public class NodeStatusRelayImpl implements NodeStatusRelay, java.io.Serializable {
+public class NodeStatusRelayImpl
+    implements NodeStatusRelay, NotPersistable, java.io.Serializable {
 
   private MessageAddress source;
   private String communityName;

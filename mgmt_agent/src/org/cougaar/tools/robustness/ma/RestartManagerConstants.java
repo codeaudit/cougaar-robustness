@@ -80,6 +80,7 @@ public interface RestartManagerConstants {
   public static final long DEFAULT_HEARTBEAT_FREQUENCY = 60 * 1000;
   public static final long DEFAULT_HEARTBEAT_TIMEOUT = 2 * 60 * 1000;
   public static final long DEFAULT_HEARTBEAT_PCT_OUT_OF_SPEC = 80;
+  public static final long DEFAULT_PERSISTENCE_INTERVAL = 5 * 60 * 1000;
 
   public static final String COLLECT_NODE_STATS_PROPERTY = "org.cougaar.tools.robustness.collect.stats";
   public static final long MIN_SAMPLES = 10;

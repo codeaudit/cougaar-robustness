@@ -263,9 +263,6 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
         processStatusExpirations(csce[i]);
       }
     }
-    if(interestingChange && isLeader(agentId.toString()) && logger.isInfoEnabled()) {
-      logger.info(statusSummary());
-    }
   }
 
   /**
@@ -432,12 +429,23 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
 
   /**
    * Change state for ass specified agents/nodes.
-   * @param name  Set of agent/node names
+   * @param names  Set of agent/node names
    * @param state New state
    */
   protected void newState(Set names, int state) {
     for (Iterator it = names.iterator(); it.hasNext(); ) {
       newState((String)it.next(), state);
+    }
+  }
+
+  /**
+   * Change state for ass specified agents/nodes.
+   * @param names  Array of agent/node names
+   * @param state New state
+   */
+  protected void newState(String[] names, int state) {
+    for (int i = 0; i < names.length; i++) {
+      newState(names[i], state);
     }
   }
 
@@ -448,9 +456,9 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    */
   protected Set agentsOnNode(String nodeName) {
     Set agentNames = new HashSet();
-    String agentsOnDeadNode[] = model.entitiesAtLocation(nodeName, model.AGENT);
-    for (int i = 0; i < agentsOnDeadNode.length; i++) {
-      agentNames.add(agentsOnDeadNode[i]);
+    String agentsOnNode[] = model.entitiesAtLocation(nodeName, model.AGENT);
+    for (int i = 0; i < agentsOnNode.length; i++) {
+      agentNames.add(agentsOnNode[i]);
     }
     return agentNames;
   }
@@ -462,6 +470,15 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    */
   protected int getState(String name) {
     return model.getCurrentState(name);
+  }
+
+  /**
+   * Get prior state for specified agent/node.
+   * @param name  Agent/node name
+   * @return Current state
+   */
+  protected int getPriorState(String name) {
+    return model.getPriorState(name);
   }
 
   /**
@@ -795,8 +812,8 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
   /**
    * Set state expiration using attribute information obtained from community
    * descriptor.
-   * If the agent/node has the XXX_EXPIRATION attribute defined this value
-   * is used for the expiration.  If the attribute is not defined for the
+   * If the agent/node has the XXX_EXPIRATION or XXX_TIMEOUT attribute defined
+   * this value is used for the expiration.  If the attribute is not defined for the
    * agent/node the community-level attribute is used if it exists.  If neither
    * the community or agent/node defines the attribute, the value defined by
    * DEFAULT_EXPIRATION is used.
@@ -804,25 +821,22 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * @param stateName  State name
    */
   protected void setExpiration(String name, String stateName) {
-    String propertyName = stateName + "_EXPIRATION";
     long expiration = DEFAULT_EXPIRATION;
-    if (model.hasAttribute(name, propertyName)) {
-      expiration = model.getLongAttribute(name, propertyName);
-    } else if (model.hasAttribute(propertyName)){
-      expiration = model.getLongAttribute(propertyName);
+    if (model.hasAttribute(name, stateName + "_EXPIRATION")) {
+      expiration = model.getLongAttribute(name, stateName + "_EXPIRATION");
+    } else if (model.hasAttribute(name, stateName + "_TIMEOUT")) {
+      expiration = model.getLongAttribute(name, stateName + "_TIMEOUT");
+    } else if (model.hasAttribute(stateName + "_EXPIRATION")){
+      expiration = model.getLongAttribute(stateName + "_EXPIRATION");
+    } else if (model.hasAttribute(stateName + "_TIMEOUT")){
+      expiration = model.getLongAttribute(stateName + "_TIMEOUT");
     }
     model.setStateExpiration(name, expiration);
   }
 
   protected void setExpiration(String name) {
-    String propertyName = stateName(model.getCurrentState(name)) + "_EXPIRATION";
-    long expiration = DEFAULT_EXPIRATION;
-    if (model.hasAttribute(name, propertyName)) {
-      expiration = model.getLongAttribute(name, propertyName);
-    } else if (model.hasAttribute(propertyName)){
-      expiration = model.getLongAttribute(propertyName);
-    }
-    model.setStateExpiration(name, expiration);
+    String stateName = stateName(model.getCurrentState(name));
+    setExpiration(name, stateName);
   }
 
   /**

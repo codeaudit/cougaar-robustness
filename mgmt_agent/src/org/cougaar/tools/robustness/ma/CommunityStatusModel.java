@@ -86,13 +86,6 @@ public class CommunityStatusModel extends BlackboardClientComponent
   public static final String MANAGER_ATTR = "RobustnessManager";
   public static final String HEALTH_MONITOR = "HealthMonitor";
 
-  // Defines how often expirations are checked and events are dissemminated
-  public static final long TIMER_INTERVAL = 10 * 1000;
-  private WakeAlarm wakeAlarm;        // Event notification alarm
-
-  // Defines how often the local node is check for new/removed agents
-  public static final long LOCATION_UPDATE_INTERVAL = 15 * 1000;
-
   // Services used
   private LoggingService logger;
   private ServiceBroker serviceBroker;
@@ -129,7 +122,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
   private String communityName;
 
   private Attributes communityAttrs;  // Community-level attributes
-  private SortedMap statusMap = new TreeMap();  // Agent/node status entries
+  private Map statusMap = Collections.synchronizedMap(new TreeMap());  // Agent/node status entries
 
   // Agent identified by "RobustnessManager=" attribute in community
   private String preferredLeader = null;
@@ -149,6 +142,16 @@ public class CommunityStatusModel extends BlackboardClientComponent
   private List eventQueue = new ArrayList();
   private List changeListeners = Collections.synchronizedList(new ArrayList());
   private List nodeChangeListeners = Collections.synchronizedList(new ArrayList());
+
+  public String collectionSize() {
+    StringBuffer sb = new StringBuffer("communityStatusModel:");
+    sb.append(" eventQueue=" + (eventQueue == null ? 0 : eventQueue.size()));
+    sb.append(" changeListeners=" + (changeListeners == null ? 0 : changeListeners.size()));
+    sb.append(" nodeChangeListeners=" + (nodeChangeListeners == null ? 0 : nodeChangeListeners.size()));
+    sb.append(" statusMap=" + (statusMap == null ? 0 : statusMap.size()));
+    sb.append(" communityAttrs=" + (communityAttrs == null ? 0 : communityAttrs.size()));
+    return sb.toString();
+  }
 
   /**
    * Constructor.
@@ -193,25 +196,18 @@ public class CommunityStatusModel extends BlackboardClientComponent
    * Setup wakeAlarm.
    */
   public void setupSubscriptions() {
-    wakeAlarm = new WakeAlarm(now() + TIMER_INTERVAL);
-    alarmService.addRealTimeAlarm(wakeAlarm);
   }
 
   /**
    * Performs periodic tasks when wakeAlarm fires.
    */
   public void execute() {
-    if ((wakeAlarm != null) &&
-        ((wakeAlarm.hasExpired()))) {
-      logger.debug("Perform periodic tasks");
-      checkExpirations();
-      sendEvents();
-      if (getType(thisAgent) == NODE) {
-        findLocalAgents();
-      }
-      wakeAlarm = new WakeAlarm(now() + TIMER_INTERVAL);
-      alarmService.addRealTimeAlarm(wakeAlarm);
-    }
+    sendEvents();
+  }
+
+  public void doPeriodicTasks() {
+    checkExpirations();
+    findLocalAgents();
   }
 
   /**
@@ -294,7 +290,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
    * Returns prior state for specified agent/node.
    * @return prior state
    */
-  public int getpriorState(String name) {
+  public int getPriorState(String name) {
       return (name != null && statusMap.containsKey(name))
           ? ((StatusEntry)statusMap.get(name)).priorState
           : UNDEFINED;
@@ -1108,26 +1104,26 @@ public class CommunityStatusModel extends BlackboardClientComponent
         }
       }
     }
-    //logger.info("Status: leader=" + getLeader() + " expired=" + isExpired(getLeader()));
-    //if (getLeader() == null ||
-    //    getCurrentState(getLeader()) == triggerState) {
-      String currentLeader = getLeader();
-      logger.debug("electLeader:" +
-                  " leader=" + leader +
-                  " leaderState=" + (currentLeader == null ? null : getCurrentState(currentLeader) +
+    String currentLeader = getLeader();
+    logger.debug("electLeader:" +
+                 " leader=" + leader +
+                 " leaderState=" +
+                 (currentLeader == null ? null : getCurrentState(currentLeader) +
                   " triggerState=" + triggerState));
-      electLeader();
-    //}
+    electLeader();
   }
 
   private void findLocalAgents() {
-    String allAgents[] = listAllEntries();
-    for (int i = 0; i < allAgents.length; i++) {
-      MessageAddress addr = MessageAddress.getMessageAddress(allAgents[i]);
-      if (nodeControlService.getRootContainer().containsAgent(addr)) {
-        if (!thisAgent.equals(getLocation(allAgents[i]))) {
-          setLocationAndState(allAgents[i], thisAgent, INITIAL);
-          logger.debug("Found agent " + allAgents[i] + " at node " + thisAgent);
+    if (getType(thisAgent) == NODE) {
+      String allAgents[] = listAllEntries();
+      for (int i = 0; i < allAgents.length; i++) {
+        MessageAddress addr = MessageAddress.getMessageAddress(allAgents[i]);
+        if (nodeControlService.getRootContainer().containsAgent(addr)) {
+          if (!thisAgent.equals(getLocation(allAgents[i]))) {
+            setLocationAndState(allAgents[i], thisAgent, INITIAL);
+            logger.debug("Found agent " + allAgents[i] + " at node " +
+                         thisAgent);
+          }
         }
       }
     }
@@ -1183,6 +1179,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
   protected void queueChangeEvent(CommunityStatusChangeEvent csce) {
     synchronized (eventQueue) {
       eventQueue.add(csce);
+      blackboard.signalClientActivity();
       logger.debug("queueEvent: (" + eventQueue.size() + ") " + csce);
     }
   }
@@ -1257,31 +1254,6 @@ public class CommunityStatusModel extends BlackboardClientComponent
       if (metric != null) metric.getCredibility();
     }
     return metric;
-  }
-
-  private class WakeAlarm implements Alarm {
-    private long expiresAt;
-    private boolean expired = false;
-    public WakeAlarm (long expirationTime) {
-      expiresAt = expirationTime;
-    }
-    public long getExpirationTime() {
-      return expiresAt;
-    }
-    public synchronized void expire() {
-      if (!expired) {
-        expired = true;
-        if (blackboard != null) blackboard.signalClientActivity();
-      }
-    }
-    public boolean hasExpired() {
-      return expired;
-    }
-    public synchronized boolean cancel() {
-      boolean was = expired;
-      expired = true;
-      return was;
-    }
   }
 
 }

@@ -24,6 +24,7 @@ package org.cougaar.tools.robustness.ma.ldm;
 import org.cougaar.core.util.UID;
 import org.cougaar.core.relay.*;
 import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.persist.NotPersistable;
 
 import java.util.Collections;
 import java.util.Set;
@@ -33,7 +34,7 @@ import java.util.Iterator;
 /**
  */
 
-public class RelayAdapter implements Relay.Source {
+public class RelayAdapter implements Relay.Source, NotPersistable {
   protected Set myTargetSet = new HashSet();
   MessageAddress source;
   Object content;

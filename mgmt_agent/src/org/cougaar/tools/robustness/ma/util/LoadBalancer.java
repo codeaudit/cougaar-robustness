@@ -367,8 +367,10 @@ public class LoadBalancer
       }
     }
 
-    boolean needChange = true;
-    String lastChangeNode = "";
+    boolean needChange = true; //if the result of compare of two sets need be changed?
+    String lastChangeNode = ""; //what is the last result of the comparison?
+    int checkDiffCount = 0; //how many times we get a "useless" result?
+    int nodeSize = oldnodes.size() > newnodes.size() ? oldnodes.size() : newnodes.size();
     /**
      * This loop does the following jobs to keep node balancing during agents moving:
      * 1. Find the node who has the most number of agents need to be moved out.
@@ -377,6 +379,10 @@ public class LoadBalancer
      */
     while (!temp.isEmpty()) {
       String node = getBiggestDifference(oldnodes, newnodes, needChange, lastChangeNode);
+      if(needChange)
+        checkDiffCount = checkDiffCount + 1;
+      else
+        checkDiffCount = 0;
       int count = 0;
       lastChangeNode = node;
       needChange = true;
@@ -388,7 +394,7 @@ public class LoadBalancer
         String newNode = (String) temp.get(agent);
         String currentNode = model.getLocation(agent);
         if ( (currentNode.equals(node) && ! (newNode.equals(currentNode))) ||
-            node.equals("")) {
+            node.equals("") || checkDiffCount >= nodeSize) {
           logger.debug("move agent " + agent + " from " + currentNode + " to " +
                        newNode + " in comm " + communityName);
           moveHelper.moveAgent(agent, currentNode, newNode, communityName);
@@ -412,6 +418,13 @@ public class LoadBalancer
 
   /**
    * Fetch the element who has the most number of difference between the two given maps.
+   * @param a map to be compared
+   * @param b map to be compared
+   * @param needChange If the result returned same as last time and no agent is moved based on this
+   *                   result, the function will fall in one endless loop. To avoid this, set this
+   *                   boolean value to indicate if the result need to differ with the one got from
+   *                   last time.
+   * @param lastChangeNode the result got from last comparation.
    */
   private String getBiggestDifference(Map a, Map b, boolean needChange, String lastChangeNode) {
     int diff = 0;
@@ -432,7 +445,6 @@ public class LoadBalancer
         result = node;
       }
     }
-//logger.info("get current biggest difference: node=" + result + ", difference=" + diff);
     return result;
   }
 

@@ -90,7 +90,9 @@ public class SecurityAlertHandler extends RobustnessThreatAlertHandlerBase
   protected void adjustRobustnessParameters(SecurityAlert sa, boolean resetToDefault) {
     logger.info("Adjusting robustness parameters: securityLevel=" + sa.getSeverityLevelAsString() +
                 " reset=" + resetToDefault);
-    long persistenceInterval = model.getLongAttribute(PERSISTENCE_INTERVAL_ATTRIBUTE);
+    long persistenceInterval = model.hasAttribute(PERSISTENCE_INTERVAL_ATTRIBUTE)
+                           ? model.getLongAttribute(PERSISTENCE_INTERVAL_ATTRIBUTE)
+                           : DEFAULT_PERSISTENCE_INTERVAL;
     double persistenceAdjustmentCoefficient = 1.0;
     if (!resetToDefault && sa.getSeverityLevel() > sa.MEDIUM_SEVERITY) {
       persistenceAdjustmentCoefficient = model.getDoubleAttribute(PERSISTENCE_INTERVAL_THREATCON_HIGH_COEFFICIENT);
@@ -100,7 +102,9 @@ public class SecurityAlertHandler extends RobustnessThreatAlertHandlerBase
     controls.setProperty("lazyInterval", Long.toString(persistenceInterval));
     persistenceHelper.controlPersistence(model.listEntries(model.AGENT), true, controls);
 
-    long statusUpdateInterval = model.getLongAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE);
+    long statusUpdateInterval = model.hasAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE)
+                          ? model.getLongAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE)
+                          : DEFAULT_STATUS_UPDATE_INTERVAL;
     double pingThreatconCoefficient = 1.0;
     double statusUpdateAdjustmentCoefficient = 1.0;
     if (!resetToDefault && sa.getSeverityLevel() > sa.MEDIUM_SEVERITY) {

@@ -165,7 +165,7 @@ module Cougaar
           result, uri = Cougaar::Communications::HTTP.get(node.uri+"/$"+node.name+"/communityViewer")
           if result and result.include?("community=#{@community}>")
 			 print node.uri, "/$", node.name, "/ar?loadBalance=Load+Balance", "\n"
-            Cougaar::Communications::HTTP.get(node.uri+"/$"+node.name+"/ar?loadBalance=Load+Balance")
+            Cougaar::Communications::HTTP.get(node.uri+"/$"+node.name+"/ar?operation=loadBalance")
             return
           end
         end

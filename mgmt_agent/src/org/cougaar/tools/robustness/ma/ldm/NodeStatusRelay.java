@@ -22,17 +22,13 @@
 package org.cougaar.tools.robustness.ma.ldm;
 
 import org.cougaar.core.relay.Relay;
-import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.persist.NotPersistable;
 import org.cougaar.core.util.UniqueObject;
-import org.cougaar.core.util.UID;
-
-import java.util.Date;
-import java.util.Set;
 
 /**
  **/
 public interface NodeStatusRelay
-  extends Relay.Target, UniqueObject {
+  extends Relay.Target, UniqueObject, NotPersistable {
 
   /**
    */
