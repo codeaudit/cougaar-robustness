@@ -36,7 +36,7 @@ import org.cougaar.core.service.TopologyEntry;
  **  audit all MTS messaging, but can be repositioned to audit specific
  **  situations.  A warning is logged if it is not the inner aspect.
  **/
-public class TrafficAuditAspect5 extends StandardAspect implements AttributeConstants {
+public class TrafficAuditAspect extends StandardAspect implements AttributeConstants {
   private static final String BEFORE_SENDLINK_TAG = "Before:SendLink.sendMessage";
   private static final String BEFORE_SENDQ_TAG = "Before:SendQueue.sendMessage";
   private static final String BEFORE_ROUTER_TAG = "Before:Router.routeMessage";
@@ -61,11 +61,11 @@ public class TrafficAuditAspect5 extends StandardAspect implements AttributeCons
 
   static {
     //  Read external properties
-    String s = "org.cougaar.message.transport.aspects.trafficaudit5.includeLocalMsgs";
+    String s = "org.cougaar.message.transport.aspects.trafficaudit.includeLocalMsgs";
     includeLocalMsgs = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
   }
 
-  public TrafficAuditAspect5 () {}
+  public TrafficAuditAspect () {}
 
   public void load () {
     super.load();
