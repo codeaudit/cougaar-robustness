@@ -1,0 +1,14 @@
+<!-- Configuration Data for the OBJS Traffic Auditor -->
+<ConfigData>
+<LogPointInfo SEQ_NUM="0" SEND_STACK="TRUE" USER_VISIBLE_NAME="BEFORE_SENDLINK" ID="Before:SendLink.sendMessage" />
+<LogPointInfo SEQ_NUM="1" SEND_STACK="TRUE" USER_VISIBLE_NAME="BEFORE_SENDQ" ID="Before:SendQueue.sendMessage" />
+<LogPointInfo SEQ_NUM="2" SEND_STACK="TRUE" USER_VISIBLE_NAME="BEFORE_ROUTER" ID="Before:Router.routeMessage" />
+<LogPointInfo SEQ_NUM="3" SEND_STACK="TRUE" USER_VISIBLE_NAME="BEFORE_DESTQ_HOLD" ID="Before:DestinationQueue.holdMessage" />
+<LogPointInfo SEQ_NUM="4" SEND_STACK="TRUE" USER_VISIBLE_NAME="BEFORE_DESTQ_DISPATCH" ID="Before:DestinationQueue.dispatchNextMessage" />
+<LogPointInfo SEQ_NUM="5" SEND_STACK="TRUE" USER_VISIBLE_NAME="BEFORE_DESTLINK" ID="Before:DestinationLink.forwardMessage" />
+<LogPointInfo SEQ_NUM="6" SEND_STACK="TRUE" USER_VISIBLE_NAME="BEFORE_MSGWRITER" ID="Before:MessageWriter.finishOutput" />
+<LogPointInfo SEQ_NUM="0" SEND_STACK="FALSE" USER_VISIBLE_NAME="AFTER_MSGREADER" ID="After:MessageReader.finalizeAttributes" />
+<LogPointInfo SEQ_NUM="1" SEND_STACK="FALSE" USER_VISIBLE_NAME="AFTER_RECVLINK" ID="After:ReceiveLink.deliverMessage" />
+<LogPointInfo SEQ_NUM="2" SEND_STACK="FALSE" USER_VISIBLE_NAME="AFTER_MSGDELIVERER" ID="After:MessageDeliverer.deliverMessage" />
+</ConfigData>
+
