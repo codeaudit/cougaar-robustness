@@ -37,18 +37,36 @@ import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.UIDService;
 import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.node.NodeIdentificationService;
-
 import org.cougaar.core.mts.MessageAddress;
-import org.cougaar.core.blackboard.IncrementalSubscription;
+import org.cougaar.coordinator.techspec.ActionTechSpecService;
+import org.cougaar.coordinator.techspec.TechSpecNotFoundException;
 
+import org.cougaar.core.blackboard.IncrementalSubscription;
+import org.cougaar.core.persist.NotPersistable;
 import org.cougaar.util.UnaryPredicate;
+import org.cougaar.coordinator.housekeeping.IndexKey;
+
+import org.cougaar.coordinator.costBenefit.CostBenefitEvaluation;
+import org.cougaar.coordinator.believability.StateEstimation;
+import org.cougaar.coordinator.techspec.AssetID;
+
+import java.util.Hashtable;
+import java.util.Collection;
+import java.util.Iterator;
 
 public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
+
+    /* 
+    Provides access to basic Services required by various Coordinator plugIns.
+    Also provides predicates and index access for the various BB object types 
+    used by Coordinator plugIns.
+    */
 
   protected UIDService us = null;
   protected NodeIdentificationService nodeIdentificationService;
   protected AgentIdentificationService agentIdentificationService;
   protected EventService eventService;
+  protected ActionTechSpecService actionTechSpecService;
 
   private static final Class[] requiredServices = {
     UIDService.class,
@@ -88,7 +106,15 @@ public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
       if (nodeIdentificationService == null) {
           throw new RuntimeException("Unable to obtain noe-id service");
       }
-      return true;
+
+      actionTechSpecService = (ActionTechSpecService) 
+        sb.getService(this, ActionTechSpecService.class, null);
+      if (actionTechSpecService == null) {
+          throw new RuntimeException("TechSpec Service not available.");            
+        }
+        
+        
+        return true;
     }
     else if (logger.isDebugEnabled()) logger.warn(".haveServices - did NOT acquire services.");
     return false;
@@ -146,6 +172,97 @@ public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
     public void closeTransaction() {
         getBlackboardService().closeTransaction();
     }
+
+
+    // Access to Indices
+          
+
+
+
+   
+    // Indexing for Diagnosis objects
+       
+    protected DiagnosesWrapper indexDiagnosis(DiagnosesWrapper dw, IndexKey key) {
+        return getDiagnosisIndex().indexDiagnosis(dw, key);
+    }
+    
+    protected DiagnosesWrapper findDiagnosis(AssetID assetID, String sensorType) {
+        return getDiagnosisIndex().findDiagnosis(assetID, sensorType);
+    }
+    
+    protected Collection findDiagnosisCollection(AssetID assetID) {
+        return getDiagnosisIndex().findDiagnosisCollection(assetID);
+    }
+
+    private DiagnosisIndex getDiagnosisIndex() {
+        Collection c = blackboard.query(DiagnosisIndex.pred);
+        Iterator iter = c.iterator();
+        if (iter.hasNext())
+           return (DiagnosisIndex)iter.next();
+        else
+           return null;
+    }    
     
     
+    // Indexing for Action objects
+        
+    protected ActionsWrapper indexAction(ActionsWrapper aw, IndexKey key) {
+        return getActionIndex().indexAction(aw, key);
+    }
+
+    protected ActionsWrapper findAction(AssetID assetID, String actuatorType) {
+        return getActionIndex().findAction(assetID, actuatorType);
+    }
+
+    protected Collection findActionCollection(AssetID assetID) {
+        return getActionIndex().findActionCollection(assetID);
+    }
+
+    private ActionIndex getActionIndex() {
+        Collection c = blackboard.query(ActionIndex.pred);
+        Iterator iter = c.iterator();
+        if (iter.hasNext())
+           return (ActionIndex)iter.next();
+        else
+           return null;
+    } 
+
+    
+    // Indexing for CostBenefitEvaluations objects
+           
+    protected CostBenefitEvaluation indexCostBenefitEvaluation(CostBenefitEvaluation cbe, IndexKey key) {
+        return getCostBenefitEvaluationIndex().indexCostBenefitEvaluation(cbe, key);
+    }
+              
+    protected CostBenefitEvaluation findCostBenefitEvaluation(AssetID assetID) {
+        return getCostBenefitEvaluationIndex().findCostBenefitEvaluation(assetID);
+    }
+    
+    private CostBenefitEvaluationIndex getCostBenefitEvaluationIndex() {
+        Collection c = blackboard.query(CostBenefitEvaluationIndex.pred);
+        Iterator iter = c.iterator();
+        if (iter.hasNext())
+           return (CostBenefitEvaluationIndex)iter.next();
+        else
+           return null;
+    }    
+
+    // Indexing for Statestimation objects
+           
+    protected StateEstimation indexStateEstimation(StateEstimation se, IndexKey key) {
+        return getStateEstimationIndex().indexStateEstimation(se, key);
+    }
+              
+    protected StateEstimation findStateEstimation(AssetID assetID) {
+        return getStateEstimationIndex().findStateEstimation(assetID);
+    }
+    
+    private StateEstimationIndex getStateEstimationIndex() {
+        Collection c = blackboard.query(StateEstimationIndex.pred);
+        Iterator iter = c.iterator();
+        if (iter.hasNext())
+           return (StateEstimationIndex)iter.next();
+        else
+           return null;
+    }    
 }
