@@ -1,16 +1,30 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE attributes PUBLIC "-//NetBeans//DTD DefaultAttributes 1.0//EN" "http://www.netbeans.org/dtds/attributes-1_0.dtd">
+<?xml version="1.0" encoding="UTF-8" ?>
 <attributes version="1.0">
-    <fileobject name="ActionMonitorServlet.java">
-        <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="ActionMonitorServlet.MyServlet"/>
-    </fileobject>
-    <fileobject name="DiagnosisMonitorServlet.java">
-        <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="DiagnosisMonitorServlet.MyServlet"/>
-    </fileobject>
-    <fileobject name="PublishServlet.java">
-        <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="PublishServlet.MyServlet"/>
-    </fileobject>
-    <fileobject name="TestDiagnosis.java">
-        <attr name="class_dependency_org.cougaar.coordinator.Diagnosis" stringvalue="TestDiagnosis"/>
-    </fileobject>
+   <fileobject name="ActionsWrapperMonitorPlugin.java">
+      <attr name="class_dependency_org.cougaar.core.plugin.ComponentPlugin" stringvalue="ActionsWrapperMonitorPlugin"/>
+   </fileobject>
+   <fileobject name="ActionMonitorServlet.java">
+      <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="ActionMonitorServlet"/>
+      <attr name="class_dependency_org.cougaar.core.servlet.BaseServletComponent" stringvalue="ActionMonitorServlet"/>
+      <attr name="class_dependency_org.cougaar.core.blackboard.BlackboardClient" stringvalue="ActionMonitorServlet"/>
+      <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="ActionMonitorServlet.MyServlet"/>
+   </fileobject>
+   <fileobject name="DiagnosisMonitorServlet.java">
+      <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="DiagnosisMonitorServlet"/>
+      <attr name="class_dependency_org.cougaar.core.servlet.BaseServletComponent" stringvalue="DiagnosisMonitorServlet"/>
+      <attr name="class_dependency_org.cougaar.core.blackboard.BlackboardClient" stringvalue="DiagnosisMonitorServlet"/>
+      <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="DiagnosisMonitorServlet.MyServlet"/>
+   </fileobject>
+   <fileobject name="DiagnosisMonitorPlugin.java">
+      <attr name="class_dependency_org.cougaar.core.plugin.ComponentPlugin" stringvalue="DiagnosisMonitorPlugin"/>
+   </fileobject>
+   <fileobject name="TestDiagnosisTechSpec.java">
+      <attr name="class_dependency_org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface" stringvalue="TestDiagnosisTechSpec"/>
+   </fileobject>
+   <fileobject name="PublishServlet.java">
+      <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="PublishServlet"/>
+      <attr name="class_dependency_org.cougaar.core.servlet.BaseServletComponent" stringvalue="PublishServlet"/>
+      <attr name="class_dependency_org.cougaar.core.blackboard.BlackboardClient" stringvalue="PublishServlet"/>
+      <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="PublishServlet.MyServlet"/>
+   </fileobject>
 </attributes>

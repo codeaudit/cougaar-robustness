@@ -148,8 +148,8 @@ public class CoordinatorManagerPlugin extends DeconflictionPluginBase implements
       costBenefitEvaluationSubscription = 
         ( IncrementalSubscription ) getBlackboardService().subscribe( CostBenefitEvaluation.pred );
 
-      stateEstimationSubscription = null;
-//FIX        ( IncrementalSubscription ) getBlackboardService().subscribe( StateEstimation.pred );
+      stateEstimationSubscription = 
+        ( IncrementalSubscription ) getBlackboardService().subscribe( StateEstimation.pred );
 }
     
 

@@ -16,33 +16,42 @@ import java.util.Hashtable;
 import java.util.Collection;
 
 import org.cougaar.coordinator.Action;
+import org.cougaar.coordinator.techspec.ActionDescription;
 
 
 public class ActionEvaluation {
 
     private Action action;
-    private Hashtable variants;
-    private double selectionScore;
+    private Hashtable variantEvals;
+    private double selectionScore = -100000000.0;
+    private VariantEvaluation bestAvailableVariant = null;
 
     /** Creates new ActionEvaluation */
     public ActionEvaluation(Action action) {
         this.action = action;
-        variants = new Hashtable();
+        variantEvals = new Hashtable();
     }
 
     public Action getAction() { return action; }
 
     
     protected void addVariantEvaluation(VariantEvaluation ve) { 
-        variants.put(ve.getVariantName(), ve);
+        variantEvals.put(ve.getVariantName(), ve);
+    }
+    
+    public VariantEvaluation getVariantEvaluation(Object variant) {
+        return (VariantEvaluation)variantEvals.get(variant);
     }
 
-
-    public Collection getVariants() {
-        return variants.values();
+    public Hashtable getVariantEvaluations() {
+        return variantEvals;
     }
 
     public void setSelectionScore(double score) { selectionScore = score; }
     public double getSelectionScore() { return selectionScore; }
-
+/*
+    public void setBestAvailableVariant(VariantEvaluation ve) { bestAvailableVariant = ve; }
+    public VariantEvaluation getBestAvailableVariant() { return bestAvailableVariant; }
+*/
+    public String actionType() { return "Corrective"; }  // FIX - needs a new slot in the ATSI
 }

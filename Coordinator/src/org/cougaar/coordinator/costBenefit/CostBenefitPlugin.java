@@ -64,8 +64,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
     private ActionTechSpecService ActionTechSpecService;    
     private IncrementalSubscription stateEstimationSubscription;    
-    private IncrementalSubscription actionTechSpecsSubscription;
-    private IncrementalSubscription threatModelSubscription;
+//    private IncrementalSubscription threatModelSubscription;
     private IncrementalSubscription knobSubscription;
     
     private Hashtable actions;
@@ -110,53 +109,25 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
         {
             StateEstimation se = (StateEstimation)iter.next();
 
-            // Produce a CBE containing the benefits for each offered action on the Asset
-            CostBenefitEvaluation cbe = createCostBenefitEvaluation(se, knob);
-
             // Clean up the old SE & CBE
             CostBenefitEvaluation old_cbe = findCostBenefitEvaluation(se.getAssetID());
             StateEstimation old_se = old_cbe.getStateEstimation();
             publishRemove(old_se);
             publishRemove(old_cbe);
 
-            // Publish the new CBE
+            // Produce and publish a CBE containing the benefits for each offered action on the Asset
+            CostBenefitEvaluation cbe = createCostBenefitEvaluation(se, knob);
             publishAdd(cbe);
   
-        }
-
-        //***************************************************ThreatModelInterface
-        //Handle the addition of new ThreatModels
-        /*
-        for ( Iterator iter = threatModelSubscription.getAddedCollection().iterator();  
-          iter.hasNext() ; ) 
-        {
-            ThreatModelInterface tma = (ThreatModelInterface)iter.next();
-            //Process
-        }
-
-        //Handle the modification of ThreatModels
-        for ( Iterator iter = threatModelSubscription.getChangedCollection().iterator();  
-          iter.hasNext() ; ) 
-        {
-            ThreatModelInterface tmc = (ThreatModelInterface)iter.next();
-            //Process
-        }
-        
-        //Handle the removal of ThreatModels
-        for ( Iterator iter = threatModelSubscription.getRemovedCollection().iterator();  
-          iter.hasNext() ; ) 
-        {
-            ThreatModelInterface tmr = (ThreatModelInterface)iter.next();
-            //Process
-        }
-        */
-           
+        }           
     }
     
     /** 
-      * Sets up local subscriptions - in this case for the control Knob 
+      * Sets up local subscriptions - in this case for the control Knob containing the default settings
       */
-    protected void setupSubscriptions() {
+    protected void setupSubscriptions() { 
+        stateEstimationSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(StateEstimation.pred);    
+        // threatModelSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(ThreatModel.pred);
         knobSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(CostBenefitKnob.pred);
         publishAdd(knob);
     }
@@ -166,9 +137,9 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
         AssetID assetID = se.getAssetID();
         CostBenefitEvaluation cbe = 
-                new CostBenefitEvaluation(assetID, knob.getCalcMethod(), knob.getHorizon(), se);
+                new CostBenefitEvaluation(assetID, knob.getHorizon(), se);
 
-        Collection actions = findActionCollection(se.getAssetID());
+        Collection actions = findActionCollection(assetID);
         Iterator actionsIter = actions.iterator();
 
         // iterate over all applicable Actions for this asset
@@ -185,29 +156,28 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                 }
                 // Which StateDimension does this Action apply to?
                 AssetStateDimension asd = atsi.getStateDimension();
-                // Get the StateDimensionEstimation for that dimension
-                try {
-                    // Throws an exception if SDE not found
+                
+                try { 
+                    // Get the StateDimensionEstimation for that dimension - Throws an exception if SDE not found
                     StateDimensionEstimation currentEstimatedStateDimension = se.getStateDimensionEstimation(asd);
 
-                    // Find the Variants of this Action currently being offered
-                    Set offeredVariants = thisAction.getValuesOffered();
-                    // Get the TechSpec data for all the Variants
-                    Vector actionDescriptions = atsi.getActions();
                     // create the Action container that will hold the evaluations of all offered Variants
                     ActionEvaluation thisActionEvaluation = new ActionEvaluation(thisAction);
+
+                    /* Evaluate ALL variants of this Action, not just the ones currently offered
+                     * Selection will down-select to only the offered variants
+                     * We compute for all variants because the set of offered variants may change during the process of addressing a problem
+                     */
+
+                    // Get the TechSpec data for all the Variants
+                    Collection variantDescriptions = atsi.getActions();
                     // iterate thru all offered Variants of this Action
-                    Iterator variantIter = offeredVariants.iterator();                    
+                    Iterator variantIter = variantDescriptions.iterator();                    
                     while (variantIter.hasNext()) {
-                        ActionDescription thisVariantDescription = (ActionDescription) actionDescriptions.get(actionDescriptions.indexOf(variantIter.next()));
-                        StateDimensionEstimation predictedStateDimensionEstimation = 
-                                computePredictedStateDimensionEstimation(assetID, currentEstimatedStateDimension, thisVariantDescription);
-                        PredictedCost predictedCost = 
-                                computePredictedCost(assetID, currentEstimatedStateDimension, thisVariantDescription, knob);
-                        double predictedBenefit = 
-                                computePredictedBenefit(assetID, currentEstimatedStateDimension, predictedStateDimensionEstimation, knob);
-                        thisActionEvaluation.addVariantEvaluation(
-                                new VariantEvaluation(thisVariantDescription, predictedStateDimensionEstimation, predictedCost, predictedBenefit));  
+                        // Get TechSpec for this Variant
+                        ActionDescription thisVariantDescription = (ActionDescription) variantIter.next();
+                        // Add an entry to the current Action containing the information about this Variant
+                        thisActionEvaluation.addVariantEvaluation(createVariantEvaluation(assetID, currentEstimatedStateDimension, thisVariantDescription, knob)); 
                     }
                 }
                 catch (BelievabilityException e) {
@@ -224,110 +194,17 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
         return cbe;
     }
 
-    private StateDimensionEstimation computePredictedStateDimensionEstimation 
-            (AssetID assetID, StateDimensionEstimation currentStateDimensionEstimation, ActionDescription variantDescription) 
-        throws BelievabilityException {
 
-        // set up the data structure for the projected state estimation if the Variant is selected
-        StateDimensionEstimation predictedStateDimensionEstimation = null;
-//FIX            new StateDimensionEstimation(currentStateDimensionEstimation.getAssetModel(), currentStateDimensionEstimation.getStateDimension());
-        Enumeration stateEnumeration = currentStateDimensionEstimation.getStateNames();
-        while (stateEnumeration.hasMoreElements()) {
-            predictedStateDimensionEstimation.setProbability((String)stateEnumeration.nextElement(), 0.0);
-        }
-        
-        // compute the probability of each end state (in this dimension) based on estimate of current state & the variant's transitions
-        Enumeration startStateEnumeration = currentStateDimensionEstimation.getStateNames();
-        while (startStateEnumeration.hasMoreElements()) {
-            String startStateName = (String) startStateEnumeration.nextElement();
-            double startStateProb;
-            double endStateProb;
-            try {
-                startStateProb = currentStateDimensionEstimation.getProbability(startStateName);
-                }
-            catch (BelievabilityException e) {
-                // Should be impossible to get here if the ActionDescription is correctly populated
-                throw new RuntimeException("Could not find an AssetState that the ActionDescription said t had");
-                }
-            AssetTransitionWithCost atwc = variantDescription.getTransitionForState(startStateName);
-            AssetState endState = atwc.getEndValue();
-            String endStateName = endState.getName();
-            try {
-                endStateProb = predictedStateDimensionEstimation.getProbability(endStateName);
-                }
-            catch (BelievabilityException e) {
-                // Should be impossible to get here if the ActionDescription is correctly populated
-                throw new RuntimeException("Could not find an AssetState that the ActionDescription said t had");
-                }            
-            predictedStateDimensionEstimation.setProbability(endStateName, endStateProb+startStateProb);
-        }
 
-      return predictedStateDimensionEstimation;
-    }
-       
-
-    private PredictedCost computePredictedCost 
-            (AssetID assetID, StateDimensionEstimation currentStateDimensionEstimation, ActionDescription variantDescription, CostBenefitKnob knob) {
-        
-        double horizon = knob.getHorizon();
-        
-        PredictedCost predictedCost = new PredictedCost();
-        Enumeration stateEnumeration = currentStateDimensionEstimation.getStateNames();
-
-        // FAKE METHODS TO GET DYNAMIC ASSET STATS - HOW IS THIS ACTUALLY DONE?????
-        double memorySize = FOO(assetID);
-        double bandwidthSize = BAR(assetID);
-        
-        while (stateEnumeration.hasMoreElements()) {
-            String stateName = (String) stateEnumeration.nextElement();
-            AssetTransitionWithCost atwc = variantDescription.getTransitionForState(stateName);
-            double transitionProb;
-            try {
-                transitionProb = currentStateDimensionEstimation.getProbability(stateName);
-                }
-            catch (BelievabilityException e) {
-                // Should be impossible to get here if the ActionDescription is correctly populated
-                throw new RuntimeException("Could not find an AssetState that the ActionDescription said t had");
-                }  
-
-            double c;  //  a reuseable variable
-
-            ActionCost.Cost oneTimeBandwidthCost = atwc.getOneTimeCost().getBandwidthCost();
-            ActionCost.Cost continuingBandwidthCost = atwc.getContinuingCost().getBandwidthCost();
-            c = computeIncrementalCost(oneTimeBandwidthCost, memorySize, bandwidthSize) 
-                    + horizon * computeIncrementalCost(continuingBandwidthCost, memorySize, bandwidthSize);
-            predictedCost.incrementBandwidthCost(transitionProb * c);
-
-            ActionCost.Cost oneTimeMemoryCost = atwc.getOneTimeCost().getMemoryCost();
-            ActionCost.Cost continuingMemoryCost = atwc.getContinuingCost().getMemoryCost();
-            c = computeIncrementalCost(oneTimeMemoryCost, memorySize, bandwidthSize) 
-                    + horizon * computeIncrementalCost(continuingMemoryCost, memorySize, bandwidthSize);
-            predictedCost.incrementMemoryCost(transitionProb * c);
-
-            ActionCost.Cost oneTimeCPUCost = atwc.getOneTimeCost().getCPUCost();
-            ActionCost.Cost continuingCPUCost = atwc.getContinuingCost().getCPUCost();
-            c = computeIncrementalCost(oneTimeCPUCost, memorySize, bandwidthSize) 
-                    + horizon * computeIncrementalCost(continuingCPUCost, memorySize, bandwidthSize);
-            predictedCost.incrementCPUCost(transitionProb * c);
-            
-            long oneTimeTimeCost = atwc.getOneTimeCost().getTimeCost();
-            predictedCost.incrementTimeCost(transitionProb * oneTimeTimeCost);
-        }
-        
-        return predictedCost;
+    private double aggregateCost(ActionCost actionCost, double memSize, double bandwidthSize) {
+        double memoryComponent = computeCostComponent(actionCost.getMemoryCost(), memSize, bandwidthSize);
+        double bandwidthComponent = computeCostComponent(actionCost.getBandwidthCost(), memSize, bandwidthSize);
+        double cpuComponent = computeCostComponent(actionCost.getCPUCost(), memSize, bandwidthSize);
+        return (0.6*memoryComponent + 0.3*bandwidthComponent+0.1*cpuComponent);
     }
 
-   private double computePredictedBenefit
-            (AssetID assetID, StateDimensionEstimation currentStateDimensionEstimation, StateDimensionEstimation predictedStateDimensionEstimation, CostBenefitKnob knob) {
 
-        return 0.0;
-    }
-
-    private double FOO(AssetID assetID) { return 1.0; }
-    private double BAR(AssetID assetID) { return 1.0; }
-
-
-    private double computeIncrementalCost(ActionCost.Cost thisCost, double memSize, double bandwidthSize) {
+    private double computeCostComponent(ActionCost.Cost thisCost, double memSize, double bandwidthSize) {
         double c = thisCost.getIntensity();
         if (!(thisCost.isAgentSizeAFactor()) || thisCost.isMessageSizeAFactor()) return c;
         double outCost = 0.0;
@@ -336,6 +213,57 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
         return outCost;
     }
 
-      
-}
+    private double computeStateBenefit(AssetState state, CostBenefitKnob knob) {
+        return (knob.getCompletenessWeight()*state.getRelativeMauCompleteness() 
+              + knob.getSecurityWeight()*state.getRelativeMauSecurity() 
+              + knob.getTimelinessWeight()*1.0);  // FIX - need a way to determine MauTimeliness (the 1.0 factor in the preceeding)
+    }
+
+   private VariantEvaluation createVariantEvaluation
+            (AssetID assetID, StateDimensionEstimation currentStateDimensionEstimation, ActionDescription thisVariantDescription, CostBenefitKnob knob) {
+        double memorySize = 1000.0; // FIX _ needs to be dynamic
+        double bandwidthSize = 1000.0; // FIX -needs to be dynamic
+        double predictedCost = 0.0;
+        double predictedBenefit = 0.0;
+        long maxTransitionTime = 0L;
+        long horizon = knob.getHorizon();
+        Enumeration startStateEnumeration = currentStateDimensionEstimation.getStateNames();
+        while (startStateEnumeration.hasMoreElements()) {
+            String startStateName = (String) startStateEnumeration.nextElement();
+            double startStateProb;
+            double startStateBenefit;
+            double intermediateStateBenefit;
+            double endStateBenefit;
+            long transitionTime;
+            ActionCost oneTimeCost;
+            ActionCost continuingCost;
+            try {
+                startStateProb = currentStateDimensionEstimation.getProbability(startStateName);
+                AssetTransitionWithCost atwc = thisVariantDescription.getTransitionForState(startStateName);
+                startStateBenefit = computeStateBenefit(atwc.getStartValue(), knob);
+                intermediateStateBenefit = computeStateBenefit(atwc.getIntermediateValue(), knob);
+                endStateBenefit = computeStateBenefit(atwc.getEndValue(), knob);
+                transitionTime = atwc.getOneTimeCost().getTimeCost(); // assume for now that 1-time costs are all expressed in terms of time (and maybe other factors also)
+                oneTimeCost = atwc.getOneTimeCost();
+                continuingCost = atwc.getContinuingCost();
+                }
+            catch (BelievabilityException e) {
+                // Should be impossible to get here if the ActionDescription is correctly populated
+                throw new RuntimeException("Could not find an AssetState that the ActionDescription said it had");
+                }
+
+            if (horizon >= transitionTime)  { // the normal case
+                predictedBenefit = predictedBenefit + startStateProb*(transitionTime*intermediateStateBenefit + (horizon-transitionTime)*endStateBenefit - horizon*startStateBenefit);
+                predictedCost = predictedCost + startStateProb*(transitionTime
+                        * aggregateCost(oneTimeCost, memorySize, bandwidthSize) + (horizon-transitionTime)*aggregateCost(continuingCost, memorySize, bandwidthSize));
+            }
+            else  { // transition takes longer than the planning horizon, so action transition will not complete
+                predictedBenefit = predictedBenefit + startStateProb*(horizon*intermediateStateBenefit - horizon*startStateBenefit);
+                predictedCost = predictedCost + startStateProb*(horizon*aggregateCost(oneTimeCost, memorySize, bandwidthSize));
+            }
+            maxTransitionTime = Math.max(maxTransitionTime, transitionTime);
+        }
+
+        return new VariantEvaluation(thisVariantDescription, predictedCost, predictedBenefit, maxTransitionTime);
+    }}
 

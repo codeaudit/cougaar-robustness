@@ -31,7 +31,7 @@ package org.cougaar.coordinator.selection;
 
 import org.cougaar.coordinator.Diagnosis;
 import org.cougaar.coordinator.DeconflictionPluginBase;
-import org.cougaar.coordinator.monitoring.FailedAction;
+import org.cougaar.coordinator.monitoring.FailedActionWrapper;
 
 import org.cougaar.coordinator.costBenefit.CostBenefitEvaluation;
 import org.cougaar.coordinator.costBenefit.ActionEvaluation;
@@ -46,6 +46,7 @@ import org.cougaar.coordinator.techspec.AssetID;
 import java.util.Iterator;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.Hashtable;
 import java.util.Collection;
 
@@ -53,25 +54,18 @@ import org.cougaar.core.agent.service.alarm.Alarm;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.persist.NotPersistable;
 import org.cougaar.util.UnaryPredicate;
+import org.cougaar.coordinator.Action;
 
 
 public class ActionSelectionPlugin extends DeconflictionPluginBase
 {  
-/*
-  private String BOOL_TRUE = DefenseConstants.BOOL_TRUE.toString();
-  private String BOOL_FALSE = DefenseConstants.BOOL_FALSE.toString();    
-  private String DEF_ENABLED = DefenseConstants.DEF_ENABLED.toString();
-  private String MON_ENABLED = DefenseConstants.MON_ENABLED.toString();
-  private String DEF_DISABLED = DefenseConstants.DEF_DISABLED.toString();
-  private String MON_DISABLED = DefenseConstants.MON_DISABLED.toString();
-
-  */
   private IncrementalSubscription costBenefitSubscription;
   private IncrementalSubscription failedActionSubscription;
-  private IncrementalSubscription selectionKnobSubscription;
+  private IncrementalSubscription knobSubscription;
   private IncrementalSubscription testServletSubscription;
  
   private Hashtable alarmTable = new Hashtable();
+  private ActionSelectionKnob knob;
   
   //private TestObservationServlet testServlet = null;
   
@@ -110,14 +104,14 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
      getPluginParams();
      initObjects(); 
       
-     //Listen for changes to Conditions
+     //Listen for new CostBenefitEvaluations
      costBenefitSubscription = (IncrementalSubscription ) getBlackboardService().subscribe(CostBenefitEvaluation.pred);
 
      //Listen for Failed Actions
-     failedActionSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(FailedAction.pred);
+     failedActionSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(FailedActionWrapper.pred);
 
      //Access to the SelectionKnob
-     selectionKnobSubscription = (IncrementalSubscription) getBlackboardService().subscribe(ActionSelectionKnob.pred);
+     knobSubscription = (IncrementalSubscription) getBlackboardService().subscribe(ActionSelectionKnob.pred);
 
 /*     // Does this really belong here?  Shouldn't the Servlet subscribe to the BB and pick up whatever it needs itself?
      testServletSubscription = (IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
@@ -137,10 +131,11 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
   }
 
   
-  //Create one condition and one of each type of operating mode
+  //Create a new ActionSelectionKnob for external parameterization
   private void initObjects() {
-      // All Conditions & OpModes used by the Coordiator are published by the Defenses
-      
+      // Create the ActionSelectionKnob with default values
+      knob = new ActionSelectionKnob();
+      publishAdd(knob);
   }
  
 
@@ -149,7 +144,11 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
       Iterator iter;    
   
       // Get the ActionSelectionKnob for current settings
-      ActionSelectionKnob knob = (ActionSelectionKnob) selectionKnobSubscription.iterator().next();
+        iter = knobSubscription.iterator();
+        if (iter.hasNext()) 
+        {        
+            knob = (ActionSelectionKnob) iter.next();
+        }      
 
 /*      
       if (testServlet == null) {
@@ -172,38 +171,35 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
               testServlet.updateCostBenefitStatus(cbd,"RUNNING");
           }
 */
-          boolean running = selectAction(cbe, knob.getRankingPolicy(), knob.getMultiplicityPolicy());
+          selectActions(cbe, knob);
+
 /*          if (testServlet != null) { 
               if (!running) testServlet.updateCostBenefitStatus(cbd,"NOTHING TO DO");
           }
 */
       }
 
-/*  NOT CONVERTED YET
       //********* Process Actions that have Timed Out ***********
       if (logger.isDebugEnabled()) logger.debug("Ready to Process Timeouts");
-      iter = defenseTimeoutSubscription.getAddedCollection().iterator();
-      // Mark the resolution of all the defenses that just reported back (for now it will just be one defense)
+      iter = failedActionSubscription.getAddedCollection().iterator();
+      // Mark the resolution of all the Actions that just reported back (for now it will just be one Action)
       while (iter.hasNext()) {
-          ActionTimeoutCondition atc = (ActionTimeoutCondition)iter.next();
-                    
-          publishRemove(atc);    // we have the info we want, so get rid of it 
-          String assetName = atc.getExpandedName();
-          String actionName = atc.getActionName();
-          CostBenefitDiagnosis cbd = findCostBenefitDiagnosis(assetName);  
-          if (logger.isDebugEnabled()) logger.debug(assetName);
-          String outcome = null;
-          if (atc.getResult().toString().equals("TRUE")) {
-              outcome = "TIMED OUT";
-              if (logger.isDebugEnabled()) logger.debug(actionName+":"+assetName + " has timed out w/o succeeding");
-          }
-          else {
-              outcome = "SUCCEEDED";
-              if (logger.isDebugEnabled()) logger.debug(actionName+":"+assetName + " has succeeded");
-          }
-          
+          FailedActionWrapper faw = (FailedActionWrapper)iter.next();
+          publishRemove(faw);    // we have the info we want, so get rid of it 
+          Action action = faw.getAction();
+
+          // get the CBE associated with the failed Action
+          CostBenefitEvaluation cbe = findCostBenefitEvaluation(action.getAssetID());
+          if (logger.isDebugEnabled()) logger.debug(action + " has timed out w/o succeeding");
+          Object variantAttempted = action.getValue().getAction();
+          VariantEvaluation variantAttemptedEvaluation = cbe.getActionEvaluation(action).getVariantEvaluation(variantAttempted);
+          variantAttemptedEvaluation.setTried();
+          selectActions(cbe, knob);  // try to find a new action
+      }
+
+/*          
           //mark what the defense did & DISABLE it
-          CostBenefitDiagnosis.ActionBenefit[] dbArray = cbd.getActions();
+          CostBenefitDiagnosis.ActionBenefit[] dbArray = cbe.getActions();
           CostBenefitDiagnosis.ActionBenefit actionBenefit;       
           for (int i=0; i<dbArray.length; i++) {
              actionBenefit = dbArray[i];
@@ -222,7 +218,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
                  }
              }          
           }
-
+/*
           // fixed the problem, so announce the result, clean up & exit
           if (logger.isDebugEnabled()) logger.debug("***** "+outcome+" *****");
           if (outcome.equals("SUCCEEDED")) {   // whatever we just tried worked (at least its own defense thinks it did)
@@ -252,97 +248,112 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
                   if (testServlet != null) testServlet.updateCostBenefitStatus(cbd, resolution); 
              }
           }
-      }
+*/
       if (logger.isDebugEnabled()) logger.debug("Done processing TimeOuts");
 
-*/
+
   }
 
-  private void rankVariants(ActionEvaluation actionEval, String rankingPolicy) {
-    return;
+
+  
+  private void selectActions(CostBenefitEvaluation cbe, ActionSelectionKnob knob) {
+    // compute the score for each Action/Variant given that it may force some other action to be changed
+    // for now, this just copies the original CB values
+       //scoreActionsInCombination(cbe, knob);
+    // at this point, we may want to make a choice between several selection policies based on the Knob
+    // for now, we just select the best score
+    boolean done = false;
+    int index = 0;
+    while (!done) {
+        SelectedAction thisAction = selectBest(cbe, knob); 
+        publishAdd(thisAction);
+        index++;
+        if ((thisAction.getActionEvaluation().actionType().equals("Corrective"))
+         || (outOfResources())
+         || (index == knob.getMaxActions()))
+                done = true;
+    }
   }
 
-  private void rankActions(CostBenefitEvaluation cbe, String rankingPolicy) {
+
+  private SelectedAction selectBest(CostBenefitEvaluation cbe, ActionSelectionKnob knob) {
+        ActionEvaluation bestActionEvaluation = null;
+        VariantEvaluation bestVariantEvaluation = null;
+        double bestBenefit = -1000000.0;
+        SelectedAction sa =  null;
+        // iterate thru all Actions & Variants
+        Collection actionEvaluations = cbe.getActionEvaluations().values();
+        Iterator actionIter = actionEvaluations.iterator();
+        while (actionIter.hasNext()) {
+            ActionEvaluation thisActionEvaluation = (ActionEvaluation) actionIter.next();
+            Action thisAction = thisActionEvaluation.getAction();
+            Collection variantEvaluations = thisActionEvaluation.getVariantEvaluations().values();
+            Iterator variantIter = variantEvaluations.iterator();
+            while (variantIter.hasNext()) {
+                VariantEvaluation thisVariantEvaluation = (VariantEvaluation) variantIter.next();
+                if ((thisVariantEvaluation.getPredictedBenefit() > bestBenefit)
+                  && (!thisVariantEvaluation.triedP())) {
+                    bestBenefit = thisVariantEvaluation.getPredictedBenefit();
+                    bestActionEvaluation = thisActionEvaluation;    
+                    bestVariantEvaluation = thisVariantEvaluation;
+                }
+            }
+        }
+        if (bestBenefit > 0) {
+            HashSet permittedVariants = new HashSet();
+            permittedVariants.add(bestVariantEvaluation);
+            sa = new SelectedAction(cbe.getAssetID(), bestActionEvaluation, permittedVariants);
+        }
+        
+        return sa;
+    }
+
+
+    private boolean outOfResources() {
+        // tracks resources allocated to Actions so we can tell whether we can choose more actions
+        return false;
+    }
+
+
+/*  private void scoreActionsInCombination(CostBenefitEvaluation cbe, ActionSelectionKnob knob) {
+        // For now, we only consider the direct effect of an action when choosing
+        // eventually, we need to also consider what it precludes   \
+        // we still enforce deconfliction, just don't consider it when choosing
+        Collection actionEvaluations = cbe.getActionEvaluations().values();
+        Iterator iter = actionEvaluations.iterator();
+        return;
+  }*/
+
+
+/*  NOT CURRENTLY BEING USED - MAYBE NEVER WILL BE
+  private VariantEvaluation scoreVariants(ActionEvaluation actionEval) {
+    Collection variantEvals = actionEval.getVariantEvaluations().values();
+    Iterator iter = variantEvals.iterator();
+    Collection offeredVariants = actionEval.getAction().getValuesOffered();
+    double bestScore = -100000000.0;
+    VariantEvaluation bestVariant = null;
+    while (iter.hasNext()) {
+        VariantEvaluation thisVariantEval = (VariantEvaluation) iter.next();
+        double score = 1.0; //FIX
+        // double score = thisVariantEval.getPredictedBenefit()/thisVariantEval.getPredictedCost().getAggregateCost();
+        thisVariantEval.setSelectionScore(score);
+        if ((offeredVariants.contains(thisVariantEval)) && (thisVariantEval.triedP() == false)) { // the variant is avialbe & has not yet been tried
+            if (score > bestScore) {
+                bestScore = score;
+                bestVariant = thisVariantEval;
+            }
+        }
+    }    
+    return bestVariant;
+  }
+
+  private void scoreActions(CostBenefitEvaluation cbe) {
     Collection actionEvals = cbe.getActionEvaluations().values();
     Iterator iter = actionEvals.iterator();
     while (iter.hasNext()) {
         ActionEvaluation thisActionEval = (ActionEvaluation) iter.next();
-        rankVariants(thisActionEval, rankingPolicy);
+        thisActionEval.setBestAvailableVariant(scoreVariants(thisActionEval));
     }
   }
- 
-  
-  private boolean selectAction(CostBenefitEvaluation cbe, String rankingPolicy, String multiplicityPolicy) {
-
-    rankActions(cbe, rankingPolicy);
-      
-    AssetID assetID = cbe.getAssetID(); 
-      if (logger.isDebugEnabled()) logger.debug(cbe.toString());
-
-      Hashtable actions = cbe.getActionEvaluations();
-//      CostBenefitEvaluation.ActionBenefit[] dbArray = new ActionBenefit[actions.size()];
-      if (logger.isDebugEnabled()) logger.debug(cbe.getAssetName()+" has "+actions.size()+" Possible Actions, using policy "+rankingPolicy+":"+multiplicityPolicy);
- 
-      // find the best defense based on expected benefit (> 0.0)
-      double maxBenefit = -100000000.0;
-      Iterator iter = actions.values().iterator();
-
-  return true;
-  }
-   //   while (iter.hasNext()) {
-        
-/*      int index = -1;
-      for (int i=0; i<dbArray.length; i++) {
-          CostBenefitEvaluation.ActionBenefit db = (CostBenefitEvaluation.ActionBenefit)dbArray[i];
-          if (db.getBenefit() > maxBenefit) {    // this defense is more beneficial than any seen so far
-                  maxBenefit = db.getBenefit();
-                  logger.info(db.getAction().getName()+"="+db.getBenefit());
-                  index = i;
-          }
-      }
-      
-     // enable the best defense (if there is one), disable the others - evntually may want to consider enabling more thanone at a time, but not yet
-      if (index >= 0) {
-          for (int i=0; i<dbArray.length; i++) {
-              CostBenefitEvaluation.ActionBenefit db = (CostBenefitDiagnosis.ActionBenefit)dbArray[i];
-              String thisAction = db.getAction().getName();
-              if (i == index) { // this is the chosen defense
-                  long patience = ((thisAction.equals("Msglog")) ? msglogPatience : otherPatience );  // a hack because the TechSpecs do not currently contain how long to allow a defense
-                  setAction(thisAction, assetName, assetType, DEF_ENABLED, MON_ENABLED, patience, null);
-                  if (testServlet != null) { 
-                      testServlet.updateDefenseStatus(cbd, thisAction, "EXECUTING"); 
-                      testServlet.setTimeout(cbd, thisAction, patience);
-                  }
-
-              }
-              else {  // this defense was not chosen, so disable it
-                  setAction(thisAction, assetName, assetType, DEF_DISABLED, MON_DISABLED, 0L, null);            
-                  //if (testServlet != null) { testServlet.updateDefenseStatus(cbd, thisAction, "DISABLED"); }
-              }
-
-          }
-      }
-      
-      if (index >= 0) {
-          return true; // still trying
-      }
-      else {
-        return false;  // ran out of defenses to try
-      }
-     
-  }
-      
-
-
-  
-  private void setAction(String actionName, String assetName, String assetType, String defAction, String monAction, long patience, Precondition pred) {
-      blackboard.publishAdd(new SelectedAction(actionName, assetName, defAction, monAction, pred));
-      if (logger.isDebugEnabled()) logger.debug("setAction() created new SelectedAction: d="+actionName+" expandedName="+assetName+" "+defAction+" "+patience);
-      if (patience > 0L) {
-          ActionPatience ap = new ActionPatience(actionName, assetName, assetType, patience);
-          ap.setUID(getUIDService().nextUID());
-          blackboard.publishAdd(ap);
-      }
-  }
-*/
+ */ 
 }

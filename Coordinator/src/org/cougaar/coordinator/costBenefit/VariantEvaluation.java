@@ -22,39 +22,42 @@ import java.util.Enumeration;
 public class VariantEvaluation {
 
     private ActionDescription variantDescription;
-    private StateDimensionEstimation predictedStateDimensionEstimation;
-    private PredictedCost predictedCost;
+    private double predictedCost;
     private double predictedBenefit;
     private boolean alreadyTried = false;
-    private double selectionScore;
+    private long expectedTransitionTime;
+    private double selectionScore = -100000000.0;
 
     /** Creates new VariantEvaluation containing the cost & benefit for this variant under the current StateEstimation */
     public VariantEvaluation(ActionDescription variantDescription, 
-                             StateDimensionEstimation predictedStateDimensionEstimation, 
-                             PredictedCost predictedCost, 
-                             double predictedBenefit) {
+                             double predictedCost, 
+                             double predictedBenefit,
+                             long expectedTransitionTime) {
 
         this.variantDescription = variantDescription;
-        this.predictedStateDimensionEstimation = predictedStateDimensionEstimation;
         this.predictedCost = predictedCost;
         this.predictedBenefit = predictedBenefit;
+        this.expectedTransitionTime = expectedTransitionTime;
 
     }
 
 
     public ActionDescription getVariant() { return variantDescription; }
     public String getVariantName() { return variantDescription.name(); }
-    public PredictedCost getPredictedCost() { return predictedCost; }
+    public double getPredictedCost() { return predictedCost; }
     public double getPredictedBenefit() { return predictedBenefit; }
+    public void setTried() { alreadyTried = true; }
     public boolean triedP() { return alreadyTried; }
     protected void setAlreadyTried(boolean p) { alreadyTried = p; }
     
     public void setSelectionScore(double score) { selectionScore = score; }
     public double getSelectionScore() { return selectionScore; }
 
+    public long getExpectedTransitionTime() { return expectedTransitionTime; }
+
     
     public String toString() {
-        return "Variant: "+variantDescription.name().toString()+", Cost="+predictedCost.toString()+", Benefit="+predictedBenefit+"\n";
+        return "Variant: "+variantDescription.name().toString()+", Predicted Aggregate Cost="+predictedCost+", Benefit="+predictedBenefit+"\n";
     }
 
 }

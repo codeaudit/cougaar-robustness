@@ -27,6 +27,7 @@ package org.cougaar.coordinator.test.coordination;
 
 import org.cougaar.coordinator.*;
 import org.cougaar.coordinator.techspec.*;
+import org.cougaar.coordinator.test.defense.*;
 
 import java.io.PrintWriter;
 import java.io.IOException;
@@ -230,9 +231,7 @@ public class PublishServlet extends BaseServletComponent implements BlackboardCl
         //Publish the Action and Diagnosis test objects
         blackboard.openTransaction();
         try {
-            Diagnosis d = createDiagnosis(assetname); 
-            blackboard.publishAdd(d);
-            logger.debug("**** Published Diagnosis["+DiagnosisUtils.getAssetID(d)+" UID=" + d.getUID());
+            createDiagnoses(assetname); 
         } catch (Exception e) {
             error = e.toString();
         }
@@ -249,9 +248,11 @@ public class PublishServlet extends BaseServletComponent implements BlackboardCl
     }        
 
     
-    private Diagnosis createDiagnosis(String s) throws IllegalValueException, TechSpecNotFoundException {
-        TestDiagnosis d = new TestDiagnosis(s, serviceBroker);        
-        return d;
+    private void createDiagnoses(String s) throws IllegalValueException, TechSpecNotFoundException {
+        blackboard.publishAdd( new AgentCommunicationDiagnosis1(s, serviceBroker));        
+        blackboard.publishAdd( new AgentCommunicationDiagnosis2(s, serviceBroker));        
+        logger.debug("**** Published Diagnoses for: "+s);
+        return;
     }
     
     private Action createAction(String s) throws IllegalValueException, TechSpecNotFoundException {

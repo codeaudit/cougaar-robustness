@@ -1,4 +1,13 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE attributes PUBLIC "-//NetBeans//DTD DefaultAttributes 1.0//EN" "http://www.netbeans.org/dtds/attributes-1_0.dtd">
+<?xml version="1.0" encoding="UTF-8" ?>
 <attributes version="1.0">
+   <fileobject name="ActionActivationPlugin.java">
+      <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="ActionActivationPlugin"/>
+      <attr name="class_dependency_org.cougaar.coordinator.DeconflictionPluginBase" stringvalue="ActionActivationPlugin"/>
+      <attr name="class_dependency_org.cougaar.core.agent.service.alarm.Alarm" stringvalue="ActionActivationPlugin.DelayedActionAlarm"/>
+   </fileobject>
+   <fileobject name="ActionEnablingPlugin.java">
+      <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="ActionEnablingPlugin"/>
+      <attr name="class_dependency_org.cougaar.coordinator.DeconflictionPluginBase" stringvalue="ActionEnablingPlugin"/>
+      <attr name="class_dependency_org.cougaar.core.agent.service.alarm.Alarm" stringvalue="ActionEnablingPlugin.DelayedActionAlarm"/>
+   </fileobject>
 </attributes>

@@ -27,6 +27,8 @@ package org.cougaar.coordinator.test.coordination;
 
 import org.cougaar.coordinator.*;
 import org.cougaar.coordinator.techspec.*;
+import org.cougaar.coordinator.test.defense.*;
+
 
 import java.io.PrintWriter;
 import java.io.IOException;
@@ -481,13 +483,20 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
                 dr = (DiagRecord)i.next();                
                 d = (Diagnosis)dr.getDiagnosis();
                 if (d.getUID().toString().equals(uid)) {
-                    if (d instanceof TestDiagnosis) {                            
-                        TestDiagnosis td = (TestDiagnosis)d;
+                    if (d instanceof AgentCommunicationDiagnosis1) {                            
+                        AgentCommunicationDiagnosis1 td = (AgentCommunicationDiagnosis1)d;
                         try {
                            td.setValue(newvalue);
                         } catch (IllegalValueException ive) {
                         }
-                    }                        
+                    } 
+                    else if (d instanceof AgentCommunicationDiagnosis2) {                            
+                        AgentCommunicationDiagnosis2 td = (AgentCommunicationDiagnosis2)d;
+                        try {
+                           td.setValue(newvalue);
+                        } catch (IllegalValueException ive) {
+                        }
+                    } 
                     break;
                 } 
             }
@@ -587,13 +596,7 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
                 String s;
                 Iterator pv = pvalues.iterator();
                 if (pvalues.size() >0 ) {
-                    
-                    if (d instanceof TestDiagnosis) { //then we can change the value
-                          emitTestActionControl(out, pvalues, d, refresh, nameformat, assetFilter);                        
-                    } else { //we can't change the value, so just display the possible values
-                        simpleSelect(out, pv);
-                    }
-                    
+                    emitTestActionControl(out, pvalues, d, refresh, nameformat, assetFilter);                                            
                 } else { //no values
                     out.print("   <TD>Values Unknown</TD>\n");    //per unit time
                 }

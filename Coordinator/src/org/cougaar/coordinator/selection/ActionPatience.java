@@ -43,7 +43,7 @@ public class ActionPatience implements NotPersistable {
         return expired;
     }
     
-    private static final UnaryPredicate pred = new UnaryPredicate() {
+    public static final UnaryPredicate pred = new UnaryPredicate() {
             public boolean execute(Object o) {  
                 return 
                     (o instanceof ActionPatience);

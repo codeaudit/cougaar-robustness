@@ -29,13 +29,10 @@ import java.util.Hashtable;
 import java.util.Collection;
 import java.util.Iterator;
 
-import org.cougaar.coordinator.techspec.AssetTechSpecInterface;
-import org.cougaar.coordinator.techspec.ActionTechSpecInterface;
-//import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
 import org.cougaar.coordinator.techspec.AssetID;
-import org.cougaar.coordinator.techspec.AssetType;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.coordinator.believability.StateEstimation;
+import org.cougaar.coordinator.Action;
 
 import org.cougaar.core.persist.NotPersistable;
 
@@ -48,35 +45,25 @@ import org.cougaar.core.persist.NotPersistable;
 public class CostBenefitEvaluation implements NotPersistable {
     
     private AssetID assetID;
-    private String calcMethod;
     private long horizon;
     private StateEstimation se;
-    private Hashtable actions;
-//    private String status = null;
+    private Hashtable actionEvaluations;
         
     /** Creates a new instance of CostBenefitDiagnosis */
-    protected CostBenefitEvaluation(AssetID assetID, String calcMethod, long horizon, StateEstimation se) {
+    protected CostBenefitEvaluation(AssetID assetID, long horizon, StateEstimation se) {
         
         this.assetID = assetID;
-        calcMethod = calcMethod;
         this.horizon = horizon;
         this.se = se;
-        actions = new Hashtable();
+        actionEvaluations = new Hashtable();
     }
         
-    protected void addActionEvaluation(ActionEvaluation ae) { actions.put(ae.getAction(), ae); }    
-    public String getAssetName() { return assetID.getName(); }
-    public AssetType getAssetType() { return assetID.getType(); }
+    protected void addActionEvaluation(ActionEvaluation ae) { actionEvaluations.put(ae.getAction(), ae); }    
     public AssetID getAssetID() { return assetID; }
-    public String getCalcMethod() { return calcMethod; }
     public double getHorizon() { return horizon; }
     public StateEstimation getStateEstimation() { return se; }
-
-
-    //
-    public Hashtable getActionEvaluations() {
-        return actions;
-    }
+    public Hashtable getActionEvaluations() { return actionEvaluations; }
+    public ActionEvaluation getActionEvaluation(Action action) { return (ActionEvaluation)actionEvaluations.get(action); }
     
     public String toString() {
         String result = assetID.toString()+"\n";

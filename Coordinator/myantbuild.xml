@@ -1,10 +1,11 @@
-<project name="coordinator" default="create_cougaar_overlay" basedir=".">
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." default="create_cougaar_overlay" name="coordinator">
 
-<property name="src" value="src"/>
-<property name="build" value="build"/>
-<property name="jar" value="coordinator.jar"/>
-<property environment="env"/>
-<property name="cougaar" value="${env.COUGAAR_INSTALL_PATH}"/>
+        <property name="src" value="src"/>
+        <property name="build" value="build"/>
+        <property name="jar" value="coordinator.jar"/>
+        <property environment="env"/>
+        <property name="cougaar" value="${env.COUGAAR_INSTALL_PATH}"/>
     
 	<path id="cougaar.libs">
 		<fileset dir="${cougaar}/lib">
@@ -21,24 +22,20 @@
 
         </path>
 
-	<target name="delete">
-        <delete dir="${build}"/>
-        <mkdir dir="${build}"/>
-  </target>
+        <target name="delete">
+                <delete dir="${build}"/>
+                <mkdir dir="${build}"/>
+        </target>
 
-  <target name="compile">
-        <javac  deprecation="true" 
-                debug="true" 
-                optimize="false" 
-                srcdir="${src}" 
-                destdir="${build}">
-                <classpath refid="cougaar.libs"/>
-        </javac>
-	</target>
+        <target name="compile">
+                <javac debug="true" deprecation="true" destdir="${build}" optimize="false" srcdir="${src}">
+                    <classpath refid="cougaar.libs"/>
+                </javac>
+        </target>
 
-	<target name="jar" depends="compile">
-		<jar jarfile="${jar}" baseDir="${build}"/>
-	</target>
+        <target depends="compile" name="jar">
+                <jar baseDir="${build}" jarfile="${jar}"/>
+        </target>
 
 	<target name="create_cougaar_overlay">
 		<mkdir dir="staging/lib"/>
@@ -46,22 +43,19 @@
 		<mkdir dir="staging/test"/>
 		<antcall target="delete"/>
 		<antcall target="jar"/>
-		<signjar jar="${jar}" keystore="/var/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
+		<signjar alias="privileged" jar="${jar}" keystore="signingCA_keystore" storepass="keystore"/>
                 <copy file="${jar}" todir="${cougaar}/lib"/>
-                <move file="${jar}"  todir="staging/lib"/>
+                <move file="${jar}" todir="staging/lib"/>
 		<copy todir="staging/examples/">
 			<fileset dir="examples/"/>
 		</copy>	
 		<copy todir="staging/test/">
 			<fileset dir="test/"/>
 		</copy>	
-                <zip zipfile="AC_objs_coordinator.zip" basedir="staging"/>
-                <delete	dir="staging"/>
+                <zip basedir="staging" zipfile="AC_objs_coordinator.zip"/>
+                <delete dir="staging"/>
 	</target>
 
-	<target name="clean" depends="delete,compile,jar"/>
+	<target depends="delete,compile,jar" name="clean"/>
     
 </project>
-
-
-

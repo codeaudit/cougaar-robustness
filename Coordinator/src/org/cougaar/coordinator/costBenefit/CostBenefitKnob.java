@@ -34,24 +34,31 @@ import org.cougaar.core.persist.NotPersistable;
  */
 public class CostBenefitKnob implements NotPersistable {
     
-    long horizon = 10L;
-    String calcMethod = "default";
+    long horizon = 1000L * 60L * 60L; // 1 hour
+    double completenessWeight = 0.4;
+    double securityWeight = 0.3;
+    double timelinessWeight = 0.3;
     
     /** Creates a new instance of CostBenefitKnob */
     public CostBenefitKnob() { }
-    
-    public CostBenefitKnob(long horizon) { this.horizon = horizon; }
- 
-    
-    public void setHorizon(long horizon) { this.horizon = horizon; }
-    
+        
+    public void setHorizon(long horizon) { this.horizon = horizon; }   
     public long getHorizon() { return horizon; }
-    
 
-    public void setCalcMethod (String calcMethod) { this.calcMethod = calcMethod; }
-    
-    public String getCalcMethod() { return calcMethod; }
-    
+    public void setWeights(double completnessWeight, double securityWeight, double timelinessWeight) throws BadWeightsException {
+        if ((completnessWeight + securityWeight + timelinessWeight) != 1.0) 
+            throw new BadWeightsException();
+        else {
+            this.completenessWeight = completenessWeight;
+            this.securityWeight = securityWeight;
+            this.timelinessWeight = timelinessWeight;
+            }
+    }
+
+    protected double getCompletenessWeight() { return completenessWeight; }
+    protected double getSecurityWeight() { return securityWeight; }
+    protected double getTimelinessWeight() { return timelinessWeight; }
+
     public final static UnaryPredicate pred = new UnaryPredicate() {
         public boolean execute(Object o) {  
             return 

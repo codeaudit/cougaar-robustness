@@ -206,7 +206,9 @@ public class ActuatorTypeLoader extends XMLLoader {
         //desc.setEndStateWillBe(endState);
           
         AssetTransitionWithCost atwc = new AssetTransitionWithCost(assetType, stateDim, whenState, endState, interState );
+
         desc.addTransition(atwc);
+
         //Creating ActionCosts
         Element e;
         ActionCost ac;

@@ -26,21 +26,25 @@
 package org.cougaar.coordinator.selection;
 
 /**
- *  Used to control aspects of the Defense Selection plugin
- * 
+ *  Used to control aspects of the Action Selection plugin
  */
 
 import org.cougaar.util.UnaryPredicate;
 
+
 public class ActionSelectionKnob {
-    
+
+    private int maxActions = 10;
+
+
     /** Creates a new instance of DefenseSelectionKnob */
     public ActionSelectionKnob() {
+
     }
 
-    protected String getMultiplicityPolicy() { return "Single"; }
+    public void setMaxActions(int n) { maxActions = n; }
+    public int getMaxActions() { return maxActions; }
 
-    protected String getRankingPolicy() { return "ExpectedCBRatio"; }
 
     public static UnaryPredicate pred = new UnaryPredicate() {
             public boolean execute(Object o) {

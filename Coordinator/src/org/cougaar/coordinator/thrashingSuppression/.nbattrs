@@ -1,10 +1,11 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE attributes PUBLIC "-//NetBeans//DTD DefaultAttributes 1.0//EN" "http://www.netbeans.org/dtds/attributes-1_0.dtd">
+<?xml version="1.0" encoding="UTF-8" ?>
 <attributes version="1.0">
-    <fileobject name="Class.java">
-        <attr name="class_dependency_org.cougaar.core.adaptivity.ServiceUserPluginBase" stringvalue="DisconnectPluginBase;ThrashingSuppressionPluginBase"/>
-    </fileobject>
-    <fileobject name="ThrashingSuppressionServlet.java">
-        <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="ThrashingSuppressionServlet.MyServlet"/>
-    </fileobject>
+   <fileobject name="Class.java">
+      <attr name="class_dependency_org.cougaar.core.adaptivity.ServiceUserPluginBase" stringvalue="DisconnectPluginBase;ThrashingSuppressionPluginBase"/>
+   </fileobject>
+   <fileobject name="ThrashingSuppressionServlet.java">
+      <attr name="class_dependency_org.cougaar.core.servlet.BaseServletComponent" stringvalue="ThrashingSuppressionServlet"/>
+      <attr name="class_dependency_org.cougaar.core.blackboard.BlackboardClient" stringvalue="ThrashingSuppressionServlet"/>
+      <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="ThrashingSuppressionServlet.MyServlet"/>
+   </fileobject>
 </attributes>

@@ -27,6 +27,8 @@ package org.cougaar.coordinator.selection;
 
 import org.cougaar.core.persist.NotPersistable;
 import org.cougaar.util.UnaryPredicate;
+import org.cougaar.coordinator.techspec.AssetID;
+import org.cougaar.coordinator.costBenefit.ActionEvaluation;
 
 import java.util.Set;
 import java.util.HashSet;
@@ -38,33 +40,26 @@ import java.util.HashSet;
 public class SelectedAction implements NotPersistable {
     /** Base class for SelectedAction(s) with varius kinds of preconditions */
     
-    private String actionName;
-    private String expandedAssetName;
+    private AssetID assetID;
+    private ActionEvaluation actionEval;
     private Set actionVariants;
     private Precondition precondition;
     
-    public SelectedAction(String expandedAssetName, String actionName, Set actionVariants) {
-        this.actionName = actionName;
-        this.expandedAssetName = expandedAssetName;
+    public SelectedAction(AssetID assetID, ActionEvaluation actionEval, Set actionVariants) {
+        this.assetID = assetID;
+        this.actionEval = actionEval;
         this.actionVariants = actionVariants;
         this.precondition = null;
     }
-    
-    public SelectedAction(String expandedAssetName, String actionName, Set actionVariants, Precondition precondition) {
-        this.actionName = actionName;
-        this.expandedAssetName = expandedAssetName;
-        this.actionVariants = actionVariants;
-        this.precondition = precondition;
+
+    public AssetID getAssetID() {
+        return assetID;
     }
-    
-    public String getActionName() {
-        return actionName;
+
+    public ActionEvaluation getActionEvaluation() {
+        return actionEval;
     }
-    
-    public String getExpandedAssetName() {
-        return expandedAssetName;
-    }
-    
+        
     public Set getActionVariants() {
         return actionVariants;
     }

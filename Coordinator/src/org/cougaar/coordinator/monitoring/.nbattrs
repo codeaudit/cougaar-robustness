@@ -1,4 +1,11 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE attributes PUBLIC "-//NetBeans//DTD DefaultAttributes 1.0//EN" "http://www.netbeans.org/dtds/attributes-1_0.dtd">
+<?xml version="1.0" encoding="UTF-8" ?>
 <attributes version="1.0">
+   <fileobject name="ActionTimeoutCondition.java">
+      <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="ActionTimeoutCondition"/>
+   </fileobject>
+   <fileobject name="ActionMonitoringPlugin.java">
+      <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="ActionMonitoringPlugin"/>
+      <attr name="class_dependency_org.cougaar.coordinator.DeconflictionPluginBase" stringvalue="ActionMonitoringPlugin"/>
+      <attr name="class_dependency_org.cougaar.core.agent.service.alarm.Alarm" stringvalue="ActionMonitoringPlugin.DefenseTimeoutAlarm;ActionMonitoringPlugin.ActionTimeoutAlarm"/>
+   </fileobject>
 </attributes>

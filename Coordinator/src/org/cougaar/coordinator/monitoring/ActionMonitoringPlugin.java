@@ -25,17 +25,11 @@
 
 package org.cougaar.coordinator.monitoring;
 
-//import org.cougaar.coordinator.DefenseApplicabilityCondition;
-//import org.cougaar.coordinator.DefenseApplicabilityConditionSnapshot;
 import org.cougaar.coordinator.DeconflictionPluginBase;
 
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.selection.ActionPatience;
 import org.cougaar.coordinator.Action;
-
-//import org.cougaar.coordinator.timedDiagnosis.TimedDefenseDiagnosis;
-//import org.cougaar.coordinator.DefenseConstants;
- 
 
 import java.util.Iterator;
 import java.util.Collection;
@@ -97,9 +91,9 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
             DefenseApplicabilityCondition dc = (DefenseApplicabilityCondition)iter.next();
             if (dc.getValue().toString().equalsIgnoreCase("TRUE")) { continue; } //ignore unless false
             //Make sure this is a defense that we have a timer for!
-            DefenseTimeoutAlarm alarm = (DefenseTimeoutAlarm)monitoredActions.get(dc.getExpandedName());
+            ActionTimeoutAlarm alarm = (ActionTimeoutAlarm)monitoredActions.get(dc.getExpandedName());
             if (!alarm.defense.equalsIgnoreCase(dc.getDefenseName()) ) {
-                if (logger.isDebugEnabled()) logger.debug("DefenseTimeoutAlarm *-* Ignored DefCon we don't care about *-*");
+                if (logger.isDebugEnabled()) logger.debug("ActionTimeoutAlarm *-* Ignored DefCon we don't care about *-*");
                 continue; // not the defense we'return watching for! Ignore it!
             }
             //Remove it... it's the right one...    
@@ -116,14 +110,7 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
 
     protected void setupSubscriptions() {
 
-        monitoredActionSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
-            public boolean execute(Object o) {
-                if ( o instanceof ActionPatience) {
-                    return true ;
-                }
-                return false ;
-            }
-        }) ;
+        monitoredActionSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( ActionPatience.pred);
 
 /*        diagnosisSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
             public boolean execute(Object o) {
@@ -150,29 +137,29 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
     }
 
     private void startTimerIfNone(ActionPatience ap) {
-        DefenseTimeoutAlarm alarm = (DefenseTimeoutAlarm) monitoredActions.get(ap.getAssetID());
+        ActionTimeoutAlarm alarm = (ActionTimeoutAlarm) monitoredActions.get(ap.getAssetID());
         if (alarm != null) {
             alarm.cancel(); //changed our minds - no longer want this timeout, may want a different one
         }
-        alarm = new DefenseTimeoutAlarm(ap);
+        alarm = new ActionTimeoutAlarm(ap);
         monitoredActions.put(ap.getAssetID(), alarm);
         getAlarmService().addRealTimeAlarm(alarm);            
         }
 
     
-    private class DefenseTimeoutAlarm implements Alarm {
+    private class ActionTimeoutAlarm implements Alarm {
         private long detonate;
         private boolean expired;
         private AssetID assetID;
         private Action action;
        // private UID uid;
         
-        public DefenseTimeoutAlarm (ActionPatience ap) {
+        public ActionTimeoutAlarm (ActionPatience ap) {
             detonate = ap.getDuration() + System.currentTimeMillis();
             this.assetID = ap.getAssetID();
             this.action = ap.getAction();
             //this.uid = ap.getUID();
-            if (logger.isDebugEnabled()) logger.debug("DefenseTimeoutAlarm created : " + detonate + " " + assetID);
+            if (logger.isDebugEnabled()) logger.debug("ActionTimeoutAlarm created : " + detonate + " " + assetID);
         }
         
         public long getExpirationTime () {
@@ -195,7 +182,7 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
 /*        protected void sendBackResults(DefenseApplicabilityCondition dac) {
             if (!expired) {
                 expired = true;
-                if (logger.isDebugEnabled()) logger.debug("DefenseTimeoutAlarm expired for: " + asset+":"+assetType);
+                if (logger.isDebugEnabled()) logger.debug("ActionTimeoutAlarm expired for: " + assetID);
                 // Did the Defense succeed?
                 try {
                     if (dac == null) {
