@@ -20,6 +20,9 @@ package org.cougaar.tools.robustness.ma.util;
 
 public interface CoordinatorHelper {
 
+  public static final String LIVE = "Live";
+  public static final String DEAD = "Dead";
+
   void addAgent(String agentName);
 
   void removeAgent(String agentName);
@@ -33,6 +36,8 @@ public interface CoordinatorHelper {
   boolean isDefenseApplicable(String agentName);
 
   void changeApplicabilityCondition(String agentName);
+
+  void setDiagnosis(String agentName, String state);
 
   void opmodeDisabled(String agentName);
 

@@ -45,8 +45,6 @@ public class CoordinatorHelperImpl
     extends BlackboardClientComponent
     implements CoordinatorHelper {
 
-  public static final String LIVE = "Live";
-  public static final String DEAD = "Dead";
   public static final String INITIAL_DIAGNOSIS = LIVE;
   public static final String RESTART_ACTION = "Yes";
 
@@ -169,14 +167,14 @@ public class CoordinatorHelperImpl
     if (logger.isDetailEnabled()) {
       logger.detail("opmodeEnabled: agent=" + agentName);
     }
-    for (Iterator it = listeners.iterator(); it.hasNext();) {
-      CoordinatorListener cl = (CoordinatorListener)it.next();
-      cl.actionEnabled(agentName);
-    }
     if (!actionsInProcess.contains(agentName)) {
       actionsInProcess.add(agentName);
       Coordination coordObj = (Coordination)agents.get(agentName);
       if (coordObj != null) {
+        for (Iterator it = listeners.iterator(); it.hasNext();) {
+          CoordinatorListener cl = (CoordinatorListener)it.next();
+          cl.actionEnabled(agentName);
+        }
         try {
           coordObj.action.start(RESTART_ACTION);
         } catch (Exception ex) {
@@ -280,6 +278,27 @@ public class CoordinatorHelperImpl
                      " agent=" + agentName +
                      " priorState=" + priorState +
                      " newState=" + newState);
+      }
+    }
+  }
+
+  public void setDiagnosis(String agentName, String newState) {
+    Coordination coordObj = (Coordination)agents.get(agentName);
+    if (coordObj != null && coordObj.diagnosis != null) {
+      Object priorState = coordObj.diagnosis.getValue();
+      if (!newState.equals(priorState)) {
+        try {
+          coordObj.diagnosis.setValue(newState);
+          fireLater(CHANGE, coordObj.diagnosis);
+        } catch (Exception ex) {
+          logger.error("Exception in setDiagnosis, " + ex);
+        }
+        if (logger.isDebugEnabled()) {
+          logger.debug("setDiagnosis:" +
+                       " agent=" + agentName +
+                       " priorState=" + priorState +
+                       " newState=" + newState);
+        }
       }
     }
   }

@@ -257,15 +257,30 @@ public class DeconflictHelper extends BlackboardClientComponent
       l = new ArrayList(conditionEnabled);
     }
     Iterator it = l.iterator();
-    while(it.hasNext()) {
+    while (it.hasNext()) {
       RestartDefenseCondition rdc = (RestartDefenseCondition)it.next();
-      if(rdc != null && rdc.getAssetType().equals(assetType) && rdc.getAsset().equals(name)) {
-        if(rdc.getValue().toString().equalsIgnoreCase("true"))
-          rdc.setValue(DefenseConstants.BOOL_FALSE);
-        else
-          rdc.setValue(DefenseConstants.BOOL_TRUE);
+      if (rdc != null && rdc.getAssetType().equals(assetType) && rdc.getAsset().equals(name)) {
+        setDiagnosis(name, rdc.getValue().toString().equalsIgnoreCase("true")
+                     ? LIVE
+                     : DEAD);
+      }
+    }
+  }
+
+  public void setDiagnosis(String agentName, String state) {
+    List l;
+    synchronized(conditionEnabled) {
+      l = new ArrayList(conditionEnabled);
+    }
+    Iterator it = l.iterator();
+    while (it.hasNext()) {
+      RestartDefenseCondition rdc = (RestartDefenseCondition)it.next();
+      if (rdc != null && rdc.getAssetType().equals(assetType) && rdc.getAsset().equals(agentName)) {
+        rdc.setValue(state.equalsIgnoreCase(LIVE)
+                     ? DefenseConstants.BOOL_FALSE
+                     : DefenseConstants.BOOL_TRUE);
         if (logger.isDebugEnabled())
-          logger.debug("** setRestartCondition - " + rdc.getName() + "=" + rdc.getValue());
+          logger.debug("** setRestartCondition - " + agentName + "=" + rdc.getValue());
         defenseConditionQueue.add(rdc);
       }
     }

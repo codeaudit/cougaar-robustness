@@ -23,6 +23,7 @@ import org.cougaar.tools.robustness.ma.ReaffiliationNotificationHandler;
 import org.cougaar.tools.robustness.ma.HostLossThreatAlertHandler;
 import org.cougaar.tools.robustness.ma.SecurityAlertHandler;
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorRequest;
+import org.cougaar.tools.robustness.ma.util.CoordinatorHelper;
 import org.cougaar.tools.robustness.ma.util.CoordinatorHelperFactory;
 import org.cougaar.tools.robustness.ma.util.CoordinatorListener;
 import org.cougaar.tools.robustness.ma.util.HeartbeatListener;
@@ -59,7 +60,7 @@ import java.util.Set;
 public class DefaultRobustnessController extends RobustnessControllerBase {
 
   public static final int INITIAL        = 0;
-  public static final int LOCATED        = 1;
+  //public static final int LOCATED        = 1;
   public static final int ACTIVE         = 2;
   public static final int HEALTH_CHECK   = 3;
   public static final int DEAD           = 4;
@@ -133,15 +134,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   class ActiveStateController extends StateControllerBase {
     public void enter(String name) {
-      if (thisAgent.equals(preferredLeader())) {
-        //for deconflict: the applicability condition of one active agent should
-        //be true and the defense op mode should be disabled.
-        if (isCoordinatorEnabled()) {
-          if (getCoordinatorHelper().isDefenseApplicable(name)) {
-            getCoordinatorHelper().changeApplicabilityCondition(name);
-          }
-          getCoordinatorHelper().opmodeDisabled(name);
-        }
+      if (isSentinel()) {
+        // Cleanup previous restart
+        getCoordinatorHelper().opmodeDisabled(name);
+        // Set current diagnosis to "Live"
+        getCoordinatorHelper().setDiagnosis(name, CoordinatorHelper.LIVE);
         checkCommunityReady();
       }
       if (isAgent(name) || thisAgent.equals(name)) {
@@ -156,7 +153,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         logger.info("Expired Status:" + " agent=" + name + " state=ACTIVE");
       }
       if ((isLocal(name) || isNode(name)) ||
-          (thisAgent.equals(preferredLeader()) && getState(getLocation(name)) == DEAD) ||
+          (isSentinel() && getState(getLocation(name)) == DEAD) ||
           isLeader(name)) {
         newState(name, DEAD);
       }
@@ -180,7 +177,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         if (getCoordinatorHelper().isOpEnabled(name)) {
           newState(name, RESTART);
         } else if (!getCoordinatorHelper().isDefenseApplicable(name)) {
-          getCoordinatorHelper().changeApplicabilityCondition(name);
+          getCoordinatorHelper().setDiagnosis(name, CoordinatorHelper.DEAD);
         }
       } else {
         newState(name, HEALTH_CHECK);
@@ -188,12 +185,12 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
 
     public void actionEnabled(String agentName) {
-      if (logger.isDebugEnabled()) {
-        logger.debug("deconflictCallback: agent=" + agentName);
+      if (logger.isDetailEnabled()) {
+        logger.detail("deconflictCallback: agent=" + agentName);
       }
       if (isCoordinatorEnabled() &&
           !getCoordinatorHelper().isDefenseApplicable(agentName)) {
-        getCoordinatorHelper().changeApplicabilityCondition(agentName);
+        getCoordinatorHelper().setDiagnosis(agentName, CoordinatorHelper.DEAD);
       }
       // Verify that agent state hasn't changed while defense was disabled
       if (getState(agentName) == DECONFLICT) {
@@ -214,7 +211,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   class HealthCheckStateController extends StateControllerBase {
     public void enter(String name) {
       if (isNode(name) ||
-          thisAgent.equals(preferredLeader()) ||
+          isSentinel() ||
           isLeader(name)) {
         doPing(name, DefaultRobustnessController.ACTIVE, DEAD);
       }
@@ -234,7 +231,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       setExpiration(name, NEVER);
       communityReady = false; // For ACME Community Ready Events
       if (isAgent(name) &&
-          thisAgent.equals(preferredLeader()) &&
+          isSentinel() &&
           (getPriorState(name) == DefaultRobustnessController.ACTIVE ||
           getPriorState(name) < INITIAL || getPriorState(name) == HEALTH_CHECK)) {
         newState(name, DECONFLICT);
@@ -242,7 +239,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         deadNodes.add(name);
         if (!useGlobalSolver()) {
           newState(agentsOnNode(name), DEAD);
-          if (thisAgent.equals(preferredLeader())) { removeFromCommunity(name); }
+          if (isSentinel()) { removeFromCommunity(name); }
         } else {
           if (isLeader(thisAgent)) {
             if (agentsOnNode(name).size() > 0) {
@@ -255,7 +252,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                     }
                     RestartDestinationLocator.setPreferredRestartLocations(layout);
                     newState(agentsOnNode(name), DEAD);
-                    if (thisAgent.equals(preferredLeader())) {
+                    if (isSentinel()) {
                       removeFromCommunity(name);
                     }
                   } else { // Abort, node no longer classified as DEAD
@@ -532,10 +529,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
   }
 
-  protected void collectNodeStats(String source) {
+  private void collectNodeStats(String source) {
     if (collectNodeStats) {
       if (nodeLatencyStats == null) { initializeNodeStats(); }
-      if (thisAgent.equals(preferredLeader()) &&
+      if (isSentinel() &&
           !source.equals(getLocation(thisAgent))) {
         StatsEntry se = (StatsEntry) runStats.get(source);
         if (se.samples >= MIN_SAMPLES) {
@@ -565,7 +562,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
   }
 
-  protected void saveNodeStats() {
+  private void saveNodeStats() {
     NodeLatencyStatistics all =
         new NodeLatencyStatistics(model.getCommunityName(),
                                   nodeLatencyStats.values());
@@ -577,7 +574,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   }
 
   // load persisted node stats from file and make a copy
-  protected void initializeNodeStats() {
+  private void initializeNodeStats() {
     originalStats = new NodeLatencyStatistics(model.getCommunityName());
     nodeLatencyStats = new NodeLatencyStatistics(model.getCommunityName());
     originalStats.load();
@@ -594,7 +591,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    * @param nodeName String  Name of node
    * @return long Expiration in milliseconds
    */
-  protected long getNodeStatusExpiration(String nodeName) {
+  private long getNodeStatusExpiration(String nodeName) {
 
     // Community-wide default values
     long defaultMean = getLongAttribute("DEFAULT_STATUS_LATENCY_MEAN",
@@ -625,11 +622,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   }
 
   private boolean canRestartAgent(String name) {
-    return thisAgent.equals(preferredLeader()) ||
+    return isSentinel() ||
         (isLeader(thisAgent) && name.equals(preferredLeader()) && (getActiveHosts().size() > 1));
   }
 
-  protected void restartAgent(String name) {
+  private void restartAgent(String name) {
     String dest =
         RestartDestinationLocator.getRestartLocation(name, getExcludedNodes());
     if (logger.isInfoEnabled()) {
@@ -708,7 +705,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
   public void execute() {
     if ((wakeAlarm != null) && ((wakeAlarm.hasExpired()))) {
-      if (thisAgent.equals(preferredLeader())) {
+      if (isSentinel()) {
         if (logger.isInfoEnabled()) {
           logger.info(statusSummary());
         }
@@ -723,8 +720,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   /**
    * Send Community Ready event if all expected agents are found and active.
    */
-  protected void checkCommunityReady() {
-    if (thisAgent.equals(preferredLeader()) &&
+  private void checkCommunityReady() {
+    if (isSentinel() &&
         isLeader(thisAgent) &&
         communityReady == false &&
         agentsAndLocationsActive()) {
@@ -766,15 +763,18 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   public void memberAdded(String name) {
     //robustness manager should publish deconfliction objects for every agent member.
-    if (coordinatorHelper != null) {
-      coordinatorHelper.addAgent(name);
-    }
-    if (isNode(name)) {
+    if (isSentinel()) {
       if (logger.isInfoEnabled()) {
-        logger.info("New node detected: name=" + name);
+        logger.info("memberAdded: name=" + name);
       }
-      if (deadNodes.contains(name)) {
-        deadNodes.remove(name);
+      coordinatorHelper.addAgent(name);
+      if (isNode(name)) {
+        if (logger.isInfoEnabled()) {
+          logger.info("New node detected: name=" + name);
+        }
+        if (deadNodes.contains(name)) {
+          deadNodes.remove(name);
+        }
       }
     }
     if (didRestart && getState(name) == -1 && !suppressPingsOnRestart) {
@@ -783,6 +783,12 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   }
 
   public void memberRemoved(String name) {
+    if (isSentinel()) {
+      if (logger.isInfoEnabled()) {
+        logger.info("memberRemoved: name=" + name);
+      }
+      coordinatorHelper.removeAgent(name);
+    }
   }
 
   /**
@@ -800,9 +806,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       newState(model.listEntries(model.AGENT, -1), HEALTH_CHECK);
       newState(model.listEntries(model.NODE, -1), HEALTH_CHECK);
     }
-
     // Setup defense coordination
-    if (agentId.toString().equals(preferredLeader()) && coordinatorHelper == null) {
+    if (isSentinel() && !isCoordinatorEnabled()) {
       coordinatorHelper = CoordinatorHelperFactory.getCoordinatorHelper(getBindingSite());
       coordinatorHelper.addListener((DeconflictStateController)getController(DECONFLICT));
       String enable = System.getProperty(DECONFLICTION, PROPERTY_ENABLED);
@@ -837,16 +842,20 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   public int getLeaderElectionTriggerState() { return DEAD; }
 
-  public long expectedAgents() {
+  private long expectedAgents() {
     return getLongAttribute(EXPECTED_AGENTS_ATTRIBUTE, -1);  }
 
-  public String preferredLeader() {
+  private String preferredLeader() {
     return model.getStringAttribute(model.MANAGER_ATTR);
+  }
+
+  private boolean isSentinel() {
+    return thisAgent.equals(preferredLeader());
   }
 
   boolean loadBalanceInProcess = false;
 
-  protected long now() {
+  private long now() {
     return System.currentTimeMillis();
   }
 
@@ -856,7 +865,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    * request to EN4J.
    * @param lbl Listener method invoked after layout has been returned by EN4J
    */
-  protected void getLayout(final LoadBalancerListener lbl) {
+  private void getLayout(final LoadBalancerListener lbl) {
     synchronized (pendingLBRequests) {
       // Guard against overlapping doLayout requests
       if (loadBalanceInProcess) {
@@ -911,7 +920,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    * @param stateOnSuccess  New state if ping succeeds
    * @param stateOnFail     New state if ping fails
    */
-  protected void doPing(String agent,
+  private void doPing(String agent,
                         final int stateOnSuccess,
                         final int stateOnFail) {
     PingHelper pinger = getPingHelper();
@@ -925,12 +934,12 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
   }
 
-  protected void pingAll(final int stateOnSuccess,
+  private void pingAll(final int stateOnSuccess,
                          final int stateOnFail) {
     doPing(model.listEntries(model.AGENT), stateOnSuccess, stateOnFail);
   }
 
-  protected void checkLoadBalance() {
+  private void checkLoadBalance() {
     // Don't load balance if community is not ready
     if (autoLoadBalance() && communityReady) {
       List vacantNodes = getVacantNodes();
