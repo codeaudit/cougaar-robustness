@@ -1,0 +1,67 @@
+###################################################
+# Adds Email support to nodes in different enclaves
+# 
+# Warning: This rule, if applied, should be AFTER base_msglog.rule
+#
+# Warning: This rule has laydown-specific info in it.
+#
+#          Change the range of mailusers on different societies (e.g. socA, socB, socC).
+#          At present, there are 45 users defined on each of the five mail servers
+#          and less than 15 nodes per enclave.  I normally assign users 1-15 to socA,
+#          16-30 to socB, and 31-45 to socC.  If more nodes are added, more users will
+#          have to be defined, and these ranges will have to change.
+#
+#          This is set up for use on socC. Change range for other societies.
+#
+
+mailusers = (31..45).to_a
+
+mailhosts = []
+society.each_host do |host|
+    host.each_facet(:service) do |facet|
+        if (facet[:service]=='smtp' || facet[:service]=='SMTP')
+            mailhosts << host.name 
+        end
+    end
+end
+
+emailOut = "org.cougaar.core.mts.email.OutgoingEmailLinkProtocol"
+emailIn  = "org.cougaar.core.mts.email.IncomingEmailLinkProtocol"
+
+protocols = [emailOut, emailIn]
+
+society.each_node_agent do |node|
+    protocols.each { |protocol|
+        node.add_component do |c|
+            c.classname = protocol
+            c.insertionpoint = "Node.AgentManager.Agent.MessageTransport.Component"
+        end
+    }
+end
+
+i = 0
+society.each_enclave do |enclave|
+    j = 0
+    society.each_enclave_node(enclave) do |node|
+
+      node.override_parameter("-Dorg.cougaar.message.protocol.email.inboxes." + node.name,
+                              "pop3://node" + mailusers[j].to_s + ":passwd@" + mailhosts[i] + ":110")
+
+      node.override_parameter("-Dorg.cougaar.message.protocol.email.outboxes." + node.name, 
+                              "smtp://node" + mailusers[j].to_s + ":passwd@" + mailhosts[i] + ":25")
+    
+      # to avoid security exception when it tries to read .mailcap
+      node.override_parameter("-Duser.home","/home/asmt/") 
+
+    # msglog tuning 
+
+      # conus enclave email server pop3 connection is timing out at 10000ms
+      node.override_parameter("-Dorg.cougaar.message.protocol.email.incoming.socketTimeout", "20000")
+
+      j = j + 1
+    end
+    i = i + 1
+end
+
+
+

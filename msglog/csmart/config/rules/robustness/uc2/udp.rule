@@ -1,0 +1,22 @@
+######################################
+# Adds UDP protocol support to society
+# 
+# Warning: This rule, if applied, should be AFTER base_msglog.rule
+#          and after any other rule that adds the LoopbackLinkProtocol
+#
+
+udpOut = "org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol"
+udpIn  = "org.cougaar.core.mts.udp.IncomingUDPLinkProtocol"
+
+protocols = [udpOut, udpIn]
+
+society.each_node_agent do |node|
+    protocols.each { |protocol|
+        node.add_component do |c|
+            c.classname = protocol
+            c.insertionpoint = "Node.AgentManager.Agent.MessageTransport.Component"
+        end
+    }
+end
+
+

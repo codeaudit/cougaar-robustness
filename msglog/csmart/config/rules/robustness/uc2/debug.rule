@@ -1,0 +1,14 @@
+###############################
+# Adds debug support for MsgLog
+# 
+
+msgAuditLog = "$COUGAAR_INSTALL_PATH/workspace/log4jlogs/$HOSTNAME-events.log"
+
+society.each_node do |node|
+    node.override_parameter("-Dorg.cougaar.core.logging.config.filename", "loggingConfig.steve")
+    node.override_parameter("-Dorg.cougaar.core.logging.log4j.appender.EVENT.File", msgAuditLog)
+end
+
+
+
+

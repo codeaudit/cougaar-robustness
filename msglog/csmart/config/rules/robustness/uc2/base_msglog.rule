@@ -1,0 +1,64 @@
+#############################
+# Add basic MsgLog to society
+#
+# Warning: Protocols and, especially aspects, have order dependencies.
+#          Care must be taken to apply rules that add other protocols
+#          or aspects in a compatible order.  
+#
+# Warning: Security's org.cougaar.core.security.crypto.MessageProtectionAspectImpl
+#          should be loaded last, after all of MsgLog's aspects.
+#
+# Warning: org.cougaar.core.mts.LoopbackLinkProtocol should be loaded first.       
+#
+# Warning: If deconfliction.rule is applied, it must be applied BEFORE this rule
+#
+
+policy = "org.cougaar.core.mts.AdaptiveLinkSelectionPolicy"
+
+rsca = "org.cougaar.core.mts.RMISocketControlAspect"
+sta  = "org.cougaar.core.mts.ShowTrafficAspect"
+sa   = "org.cougaar.core.mts.StatisticsAspect"
+rsta = "org.cougaar.core.mts.RMISendTimeoutAspect"
+msha = "org.cougaar.core.mts.MessageSendHistoryAspect"
+maa  = "org.cougaar.core.mts.acking.MessageAckingAspect"
+rtta = "org.cougaar.core.mts.RTTAspect"
+mna  = "org.cougaar.core.mts.MessageNumberingAspect"
+moa  = "org.cougaar.core.mts.MessageOrderingAspect"
+
+nsta = "org.cougaar.core.mts.NameSupportTimeoutAspect" # not sure about this aspect's position or necessity
+
+aspects = [rsca, sta, sa, rsta, msha, maa, rtta, mna, moa]
+
+loopback = "org.cougaar.core.mts.LoopbackLinkProtocol"
+rmi      = "org.cougaar.core.mts.RMILinkProtocol"
+
+protocols = [loopback, rmi]
+
+society.each_node_agent do |node|
+
+    aspects.each { |aspect| 
+        node.add_component do |c|
+            c.classname = aspect
+            c.insertionpoint = "Node.AgentManager.Agent.MessageTransport.Aspect"
+        end
+    }
+    protocols.each { |protocol|
+        node.add_component do |c|
+            c.classname = protocol
+            c.insertionpoint = "Node.AgentManager.Agent.MessageTransport.Component"
+        end
+    }
+    node.add_component do |c|
+        c.classname = policy
+        c.insertionpoint = "Node.AgentManager.Agent.MessageTransport.Component"
+    end
+
+    # I don't think this is needed anymore, but I'm keeping it just in case.
+    # need this for disconnected nodes
+    #node.override_parameter("-Dorg.cougaar.tools.server.swallowOutputConnectionException", "true")
+
+end
+
+
+
+

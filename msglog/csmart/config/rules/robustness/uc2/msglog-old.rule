@@ -1,0 +1,96 @@
+#######################################################
+# Adds MsgLog properties to nodes in different enclaves
+#
+# Warning: This rule has laydown-specific info in it.
+#
+#   Change the range of mailusers on different societies (e.g. socA, socB, socC).
+#   At present, there are 45 users defined on each of the five mail servers
+#   and less than 15 nodes per enclave.  I normally assign users 1-15 to socA,
+#   16-30 to socB, and 31-45 to socC.  If more nodes are added, more users will
+#   have to be defined, and these ranges will have to change.
+#
+#   Also, this rule sets aspects and protocols, which will override
+#   any previous settings.
+
+# This is set up for use on socC. Change range for other societies.
+mailusers = (31..45).to_a
+
+mailhosts = []
+society.each_host do |host|
+    host.each_facet(:service) do |facet|
+        if (facet[:service]=='smtp' || facet[:service]=='SMTP')
+            mailhosts << host.name 
+        end
+    end
+end
+
+policy = "org.cougaar.core.mts.AdaptiveLinkSelectionPolicy"
+
+aspects = "org.cougaar.core.mts.MsglogEnablingAspect," +
+          "org.cougaar.core.mts.LastSpokeErrorAspect," +
+          "org.cougaar.core.mts.GossipAspect," +
+          "org.cougaar.core.mts.GossipStatisticsServiceAspect," +
+          "org.cougaar.core.mts.RMISocketControlAspect," + 
+          "org.cougaar.core.mts.ShowTrafficAspect," +
+          "org.cougaar.core.mts.StatisticsAspect," + 
+          "org.cougaar.core.mts.RMISendTimeoutAspect," + 
+          "org.cougaar.core.mts.MessageSendHistoryAspect," + 
+          "org.cougaar.core.mts.acking.MessageAckingAspect," + 
+          "org.cougaar.core.mts.RTTAspect," + 
+          "org.cougaar.core.mts.MessageNumberingAspect," +
+          "org.cougaar.core.mts.MessageOrderingAspect"
+
+#         "org.cougaar.core.mts.NameSupportTimeoutAspect," + 
+
+protocols = "org.cougaar.core.mts.LoopbackLinkProtocol," +
+            "org.cougaar.core.mts.RMILinkProtocol," +
+            "org.cougaar.core.mts.email.OutgoingEmailLinkProtocol," +
+            "org.cougaar.core.mts.email.IncomingEmailLinkProtocol"
+
+#           "org.cougaar.core.mts.socket.OutgoingSocketLinkProtocol," +
+#           "org.cougaar.core.mts.socket.IncomingSocketLinkProtocol," +
+#           "org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol," +
+#           "org.cougaar.core.mts.udp.IncomingUDPLinkProtocol," +
+
+i = 0
+society.each_enclave do |enclave|
+    j = 0
+    society.each_enclave_node(enclave) do |node|
+
+# msglog required
+      node.override_parameter("-Dorg.cougaar.message.protocol.email.inboxes." + node.name,
+                              "pop3://node" + mailusers[j].to_s + ":passwd@" + mailhosts[i] + ":110")
+
+      node.override_parameter("-Dorg.cougaar.message.protocol.email.outboxes." + node.name, 
+                              "smtp://node" + mailusers[j].to_s + ":passwd@" + mailhosts[i] + ":25")
+    
+      node.override_parameter("-Dorg.cougaar.message.transport.policy", policy)
+      node.override_parameter("-Dorg.cougaar.message.transport.aspects", aspects)
+      node.override_parameter("-Dorg.cougaar.message.protocol.classes", protocols)
+
+      # to avoid security exception when it tries to read .mailcap
+      node.override_parameter("-Duser.home","/home/asmt/") 
+
+      # need this for disconnected nodes
+      node.override_parameter("-Dorg.cougaar.tools.server.swallowOutputConnectionException", "true")
+
+# msglog tuning 
+      # conus enclave email server pop3 connection is timing out at 10000ms
+      node.override_parameter("-Dorg.cougaar.message.protocol.email.incoming.socketTimeout", "20000")
+
+# msglog debug
+      #node.override_parameter("-Dorg.cougaar.core.logging.config.filename", "loggingConfig.steve")
+      #node.override_parameter("-Dorg.cougaar.core.logging.log4j.appender.EVENT.File", "$COUGAAR_INSTALL_PATH/workspace/log4jlogs/$HOSTNAME-events.log")
+
+# misc
+      # to aggregate more community updates before sending a message (default is 5000 - 5 secs)
+      #node.override_parameter("-Dorg.cougaar.community.updateInterval", "10000")
+
+      #node.override_parameter("-Dorg.cougaar.core.agent.heartbeat", "false")
+      #node.override_parameter("-Dorg.cougaar.core.agent.showTraffic", "false")
+
+      j = j + 1
+    end
+    i = i + 1
+end
+

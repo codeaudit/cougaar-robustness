@@ -1,6 +1,8 @@
 #########################################################
 # Adds UC2 Deconfliction components to Robustness Manager
 # 
+# Warning: If this rule is applied, it must be applied BEFORE base_msglog.rule
+#
 
 omsp = "org.cougaar.core.adaptivity.OperatingModeServiceProvider"
 ompm = "org.cougaar.core.adaptivity.OperatingModePolicyManager"
@@ -14,4 +16,20 @@ society.each_agent do |agent|
     if agent.name =~ /.*ARManager.*/
         agent.add_components(plugins)
     end
+end
+
+mea  = "org.cougaar.core.mts.MsglogEnablingAspect"
+lsea = "org.cougaar.core.mts.LastSpokeErrorAspect"
+ga   = "org.cougaar.core.mts.GossipAspect"
+gssa = "org.cougaar.core.mts.GossipStatisticsServiceAspect"
+
+aspects = [mea, lsea, ga, gssa]
+
+society.each_node_agent do |node|
+    aspects.each { |aspect| 
+        node.add_component do |c|
+            c.classname = aspect
+            c.insertionpoint = "Node.AgentManager.Agent.MessageTransport.Aspect"
+        end
+    }
 end
