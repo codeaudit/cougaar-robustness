@@ -1,0 +1,29 @@
+#####################################################
+# Adds Disconnection components to society definition
+# 
+
+dap  = "org.cougaar.tools.robustness.disconnection.DisconnectAgentPlugin"
+dnp  = "org.cougaar.tools.robustness.disconnection.DisconnectNodePlugin"
+dmp  = "org.cougaar.tools.robustness.disconnection.DisconnectManagerPlugin"
+ds   = "org.cougaar.tools.robustness.disconnection.DisconnectServlet"
+rmfp = "org.cougaar.tools.robustness.disconnection.RobustnessManagerFinderPlugin"
+
+agentPlugins = [dap, rmfp, ds]
+nodePlugins = [dnp, ds, rmfp]
+mgrPlugins = [dmp, rmfp]
+
+society.each_agent do |agent|
+    if agent.name =~ /.*ARManager.*/
+        agent.add_components(mgrPlugins)
+        #agent.add_component do |c|
+         #   c.classname = cp
+         #   c.add_argument("10")
+        #end	
+    else
+        agent.add_components(agentPlugins)
+    end
+end
+
+society.each_node_agent do |node|
+    node.add_components(nodePlugins)
+end
