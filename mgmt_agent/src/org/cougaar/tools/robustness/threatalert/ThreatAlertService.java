@@ -48,8 +48,16 @@ public interface ThreatAlertService extends Service {
   public void sendAlert(ThreatAlert ta, String community, String role);
 
   /**
+   * Used by ThreatAlert originator to update alert contents.
+   * @param ta  ThreatAlert to update
+   * @param community  Destination community to receive alert
+   * @param role       Agents roles to receive alert
+   */
+  public void updateAlert(ThreatAlert ta);
+
+  /**
    * Get all current ThreatAlerts.
    * @return Array of current ThreatAlerts
    */
-  public ThreatAlert[] getCurrentThreats();
+  public ThreatAlert[] getCurrentAlerts();
 }

@@ -26,7 +26,9 @@ import org.cougaar.core.component.ServiceAvailableListener;
 import org.cougaar.core.component.ServiceAvailableEvent;
 
 /**
- * Base class for handling ThreatAlerts.
+ * Base class for handling ThreatAlerts.  A listener is added to the
+ * ThreatAlertService.  Classes extending this must implement the "newAlert" and
+ * "expiredAlert" abstract methods to receive alert notifications.
  */
 public abstract class ThreatAlertHandlerBase implements ThreatAlertListener {
 
@@ -65,5 +67,7 @@ public abstract class ThreatAlertHandlerBase implements ThreatAlertListener {
   }
 
   public abstract void newAlert(ThreatAlert ta);
+  public abstract void changedAlert(ThreatAlert ta);
+  public abstract void removedAlert(ThreatAlert ta);
 
 }

@@ -42,7 +42,6 @@ import org.cougaar.core.service.LoggingService;
  * Agent-level component that loads the ThreatAlertService provider and adds
  * initial threat alert relationships for agent to Name Server.
  */
-
 public class ThreatAlertServiceComponent extends ComponentSupport {
 
   private LoggingService log = null;
@@ -74,7 +73,7 @@ public class ThreatAlertServiceComponent extends ComponentSupport {
   private ThreatAlertService loadThreatAlertService(MessageAddress agentId) {
     ServiceBroker sb = getBindingSite().getServiceBroker();
     ThreatAlertServiceProvider tasp =
-        new ThreatAlertServiceProvider(getBindingSite(), agentId);
+        new ThreatAlertServiceProvider(getBindingSite());
     sb.addService(ThreatAlertService.class, tasp);
     return (ThreatAlertService)sb.getService(this, ThreatAlertService.class,
       new ServiceRevokedListener() {

@@ -186,7 +186,7 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
         " class=" + this.getClass().getName() +
         " severityLevel=" + getSeverityLevelAsString() +
         " start=" + startTime +
-        " expired=" + getExpirationTime() +
+        " expires=" + getExpirationTime() +
         " asset=" + assets;
   }
 

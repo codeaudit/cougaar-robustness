@@ -18,7 +18,30 @@
 
 package org.cougaar.tools.robustness.threatalert;
 
+/**
+ * ThreatAlert listener that is notified when a ThreatAlert is received
+ * changed, or removed (expired).
+ */
 public interface ThreatAlertListener {
 
+  /**
+   * Callback method invoked when a new ThreatAlert is received by
+   * ThreatAlertService.  Note that receipt of the alert does not necessarily mean
+   * the alert is active as the alerts start time could be for some time in
+   * the future.
+   * @param ta  New ThreatAlert
+   */
   public void newAlert(ThreatAlert ta);
+
+  /**
+   * Callback method invoked when an existing alert is modified by sender.
+   */
+  public void changedAlert(ThreatAlert ta);
+
+  /**
+   * Callback method invoked when an existing alert is removed by sender.  An
+   * alert is removed when it has reached its expiration time.
+   */
+  public void removedAlert(ThreatAlert ta);
+
 }

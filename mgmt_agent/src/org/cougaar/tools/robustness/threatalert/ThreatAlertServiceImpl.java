@@ -23,8 +23,6 @@ import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.service.AlarmService;
 import org.cougaar.core.service.SchedulerService;
-import org.cougaar.core.service.DomainService;
-import org.cougaar.core.service.UIDService;
 import org.cougaar.core.service.community.CommunityService;
 import org.cougaar.core.service.community.Community;
 import org.cougaar.core.service.community.Entity;
@@ -37,8 +35,6 @@ import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.component.ServiceAvailableListener;
 import org.cougaar.core.component.ServiceAvailableEvent;
 
-import org.cougaar.core.mts.MessageAddress;
-
 import org.cougaar.core.agent.service.alarm.Alarm;
 import org.cougaar.core.util.UID;
 
@@ -46,7 +42,7 @@ import org.cougaar.util.UnaryPredicate;
 
 import org.cougaar.multicast.AttributeBasedAddress;
 
-import org.cougaar.community.RelayAdapter;
+import org.cougaar.tools.robustness.ma.ldm.RelayAdapter;
 
 import java.util.*;
 
@@ -57,26 +53,32 @@ import java.util.*;
 
 public class ThreatAlertServiceImpl extends BlackboardClientComponent implements ThreatAlertService{
 
-  private LoggingService log; //logging service
-  private UIDService uidService; //uid service
+  private LoggingService log;
   private CommunityService commSvc;
-  private static Map instances = Collections.synchronizedMap(new HashMap()); //
+  private final List sendQueue = new ArrayList(5);
+  private final List updateQueue = new ArrayList(5);
 
   public void setCommunityService(CommunityService cs) {
     this.commSvc = cs;
   }
 
-  //save active current threat alerts
-  private static Map threatAlerts = Collections.synchronizedMap(new HashMap());
+  //Un-expired threat alerts
+  private Map currentThreatAlerts = Collections.synchronizedMap(new HashMap());
+
+  private Map myRelays = Collections.synchronizedMap(new HashMap());
 
   //save all alerts and their alarms. The alarm is used to remove the alert when it is expired.
-  private static List alertAlarms = Collections.synchronizedList(new ArrayList());
+  private List alertAlarms = Collections.synchronizedList(new ArrayList());
 
   private IncrementalSubscription taSub; //subscirptions to threat alert
 
   private List listeners = new ArrayList();
 
-  protected ThreatAlertServiceImpl(BindingSite bs, MessageAddress addr) {
+  /**
+   * ThreatAlertService Implementation.
+   * @param bs
+   */
+  public ThreatAlertServiceImpl(BindingSite bs) {
     setBindingSite(bs);
     ServiceBroker sb = getServiceBroker();
     setAgentIdentificationService(
@@ -97,7 +99,7 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
   }
 
   /**
-   * Fetch all necessary services.
+   * Get all required services.
    */
   public void init() {
     setBlackboardService((BlackboardService)getServiceBroker().getService(this, BlackboardService.class, null));
@@ -105,35 +107,9 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
       (AlarmService)getServiceBroker().getService(this, AlarmService.class, null));
     setSchedulerService(
       (SchedulerService)getServiceBroker().getService(this, SchedulerService.class, null));
-    DomainService ds =
-      (DomainService) getServiceBroker().getService(this, DomainService.class, null);
-    uidService = (UIDService) getServiceBroker().getService(this, UIDService.class, null);
-
     initialize();
     load();
     start();
-  }
-
-  /**
-   * Returns ThreatAlertService instance.
-   */
-  public static ThreatAlertService getInstance(BindingSite    bs,
-                                             MessageAddress addr) {
-    ThreatAlertService tas = (ThreatAlertService)instances.get(addr);
-    if (tas == null) {
-      tas = new ThreatAlertServiceImpl(bs, addr);
-      instances.put(addr, tas);
-    }
-    return tas;
-  }
-
-  /**
-   * Add a threat alert listener.
-   * @param tal
-   */
-  public void addListener(ThreatAlertListener tal) {
-    if(!listeners.contains(tal))
-      listeners.add(tal);
   }
 
   /**
@@ -154,6 +130,26 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
     return commSvc;
   }
 
+  private boolean sendToLocalAgent(String community, String role) {
+    boolean result = false;
+    CommunityService cs = getCommunityService();
+    if (cs != null) {
+      Collection members =
+          commSvc.searchCommunity(community, "(Role=" + role + ")", false,
+                                  Community.AGENTS_ONLY, null);
+      if (members != null && !members.isEmpty()) {
+        for (Iterator it = members.iterator(); it.hasNext(); ) {
+          Entity entity = (Entity) it.next();
+          if (entity.getName().equals(agentId.toString())) {
+            result = true;
+            break;
+          }
+        }
+      }
+    }
+    return result;
+  }
+
   /**
    * Publish the threat alert to all agents in given community with the given role.
    * @param ta
@@ -165,53 +161,117 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
               " alert=" + ta +
               " community=" + community +
               " role=" + role);
-    CommunityService cs = getCommunityService();
-    if (cs != null) {
-      Collection members =
-          commSvc.searchCommunity(community, "(Role=" + role + ")", false,
-                                  Community.AGENTS_ONLY, null);
-      log.debug("members=" + members);
-      if (members != null && !members.isEmpty()) {
-        for (Iterator it = members.iterator(); it.hasNext(); ) {
-          Entity entity = (Entity) it.next();
-          if (entity.getName().equals(agentId.toString())) {
-            addThreatAlert(ta); // add locally and notify local listeners
-            log.debug("add ThreatAlert locally");
-          }
-        }
-      }
-    }
-    // Send to remote listeners
-    RelayAdapter taiRelay = new RelayAdapter(agentId, ta, ta.getUID());
+    // Send to remote listeners via ABA/Relay
+    RelayAdapter taRelay = new RelayAdapter(agentId, ta, ta.getUID());
     AttributeBasedAddress target =
         AttributeBasedAddress.getAttributeBasedAddress(community, "Role", role);
-    taiRelay.addTarget(target);
-    if (log.isDebugEnabled()) {
-      log.debug("publish ThreatAlert, remote agent is " + target.toString() +
-                " " + ta.toString());
+    taRelay.addTarget(target);
+    // Add local agent to target set if community/role matches
+    if (sendToLocalAgent(community, role)) {
+      taRelay.addTarget(agentId);
     }
-    try {
-      blackboard.openTransaction();
-      blackboard.publishAdd(taiRelay);
-    } catch (Exception ex) {
-      log.error(ex.getMessage(), ex);
-    } finally {
-      blackboard.closeTransactionDontReset();
+    queueForSend(taRelay);
+  }
+
+  /**
+   * Used by ThreatAlert originator to update alert contents.
+   * @param ta  ThreatAlert to update
+   */
+  public void updateAlert(ThreatAlert ta) {
+    log.debug("updateAlert:" + ta);
+    RelayAdapter taRelay = (RelayAdapter)myRelays.get(ta.getUID());
+    if (taRelay != null) {
+      queueForUpdate(taRelay);
     }
   }
 
-  public ThreatAlert[] getCurrentThreats() {
-    ThreatAlert[] alerts = new ThreatAlert[threatAlerts.size()];
-    int i=0;
-    Map temp = new HashMap();
-    synchronized(threatAlerts) {
-      temp.putAll(threatAlerts);
+  /**
+   * Check for availability of essential services
+   * @return True if needed services available
+   */
+  private boolean servicesReady() {
+    return blackboard != null;
+  }
+
+  /**
+   * Queue new ThreatAlerts.
+   * @param pr
+   */
+  protected void queueForSend(Object o) {
+    synchronized (sendQueue) {
+      sendQueue.add(o);
     }
-    for(Iterator it = temp.values().iterator(); it.hasNext();) {
-      alerts[i] = (ThreatAlert)it.next();
-      i++;
+    if (servicesReady()) {
+      blackboard.signalClientActivity();
     }
-    return alerts;
+  }
+
+  /**
+   * Queue updated ThreatAlerts.
+   * @param pr
+   */
+  protected void queueForUpdate(Object o) {
+    synchronized (updateQueue) {
+      updateQueue.add(o);
+    }
+    if (servicesReady()) {
+      blackboard.signalClientActivity();
+    }
+  }
+
+  /**
+   * Process queued ThreatAlerts.
+   */
+  private void sendQueuedAlerts() {
+    int n;
+    List l;
+    // Publish new ThreatAlerts
+    synchronized (sendQueue) {
+      n = sendQueue.size();
+      if (n <= 0 || !servicesReady()) {
+        return;
+      }
+      l = new ArrayList(sendQueue);
+      sendQueue.clear();
+    }
+    for (int i = 0; i < n; i++) {
+      RelayAdapter ra = (RelayAdapter)l.get(i);
+      blackboard.publishAdd(l.get(i));
+      myRelays.put(ra.getUID(), ra);
+      if (log.isDebugEnabled()) {
+        log.debug("publishAdd ThreatAlert: " + ra);
+      }
+      if (ra.getTargets().contains(agentId)) {
+        addThreatAlert((ThreatAlert)ra.getContent());
+      }
+    }
+    // Publish updated ThreatAlerts
+    synchronized (updateQueue) {
+      n = updateQueue.size();
+      if (n <= 0 || !servicesReady()) {
+        return;
+      }
+      l = new ArrayList(updateQueue);
+      updateQueue.clear();
+    }
+    for (int i = 0; i < n; i++) {
+      RelayAdapter ra = (RelayAdapter)l.get(i);
+      blackboard.publishChange(l.get(i));
+      if (log.isDebugEnabled()) {
+        log.debug("publishChange ThreatAlert: " + ra);
+      }
+      if (ra.getTargets().contains(agentId)) {
+        fireListenersForChangedAlert((ThreatAlert)ra.getContent());
+      }
+    }
+  }
+
+  /**
+   * Returns an array of all un-expired ThreatAlerts.
+   * @return  Array of ThreatAlerts
+   */
+  public ThreatAlert[] getCurrentAlerts() {
+    return (ThreatAlert[])currentThreatAlerts.values().toArray(new ThreatAlert[0]);
   }
 
   public void setupSubscriptions() {
@@ -219,45 +279,94 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
   }
 
   public void execute() {
+
+    // Publish ThreatAlerts queued for send to remote agents (via Relay)
+    sendQueuedAlerts();
+
+    // Get ThreatAlerts sent from remote agents
     for(Iterator it = taSub.getAddedCollection().iterator(); it.hasNext();) {
       addThreatAlert((ThreatAlert)it.next());
     }
 
+    // Get changed ThreatAlerts and nofity listeners
+    for(Iterator it = taSub.getChangedCollection().iterator(); it.hasNext();) {
+      ThreatAlert ta = (ThreatAlert)it.next();
+      fireListenersForChangedAlert(ta);
+    }
+
+    // Get Expired alerts.  Notify listeners and remove artifacts
     if(!alertAlarms.isEmpty()) {
-      List tempalarms = new ArrayList();
+      List tempAlarms = new ArrayList();
       synchronized(alertAlarms) {
-        tempalarms.addAll(alertAlarms);
+        tempAlarms.addAll(alertAlarms);
       }
-      for (Iterator it = tempalarms.iterator(); it.hasNext(); ) {
+      for (Iterator it = tempAlarms.iterator(); it.hasNext(); ) {
         ThreatAlertAlarm alarm = (ThreatAlertAlarm) it.next();
         if (alarm.hasExpired()) {
           ThreatAlert alert = alarm.getThreatAlert();
-          log.info("publish remove alert: " + alert.toString());
-          blackboard.publishRemove(alert);
+          fireListenersForRemovedAlert(alert);
           alertAlarms.remove(alarm);
-          for (Iterator iter = threatAlerts.keySet().iterator(); iter.hasNext(); ) {
-            UID uid = (UID) iter.next();
-            if (uid.toString().equals(alert.getUID().toString())) {
-              threatAlerts.remove(uid);
-            }
+          // Remove Relay.Source if Alert originated from this agent
+          if (myRelays.containsKey(alert.getUID())) {
+            RelayAdapter ra = (RelayAdapter)myRelays.remove(alert.getUID());
+            blackboard.publishRemove(ra);
+            log.debug("publishRemove ThreatAlert: " + ra);
           }
+          // Remove from current alert list
+          currentThreatAlerts.remove(alert.getUID());
         }
       }
     }
   }
 
+  // Add new alert
   private void addThreatAlert(ThreatAlert ta) {
-    threatAlerts.put(ta.getUID(), ta);
+    currentThreatAlerts.put(ta.getUID(), ta);
     ThreatAlertAlarm alarm = new ThreatAlertAlarm(ta);
     alarmService.addRealTimeAlarm(alarm);
     alertAlarms.add(alarm);
-    fireListeners(ta);
+    fireListenersForNewAlert(ta);
   }
 
-  private void fireListeners(ThreatAlert ta) {
+  /**
+   * Notify listeners of new alert.
+   * @param ta  New ThreatAlert
+   */
+  private void fireListenersForNewAlert(ThreatAlert ta) {
     for(Iterator iter = listeners.iterator(); iter.hasNext();) {
       ThreatAlertListener listener = (ThreatAlertListener)iter.next();
       listener.newAlert(ta);
+    }
+  }
+
+  /**
+   * Add a threat alert listener.
+   * @param tal
+   */
+  public void addListener(ThreatAlertListener tal) {
+    if(!listeners.contains(tal))
+      listeners.add(tal);
+  }
+
+  /**
+   * Notify listeners of changed alert.
+   * @param ta  Changed ThreatAlert
+   */
+  private void fireListenersForChangedAlert(ThreatAlert ta) {
+    for(Iterator iter = listeners.iterator(); iter.hasNext();) {
+      ThreatAlertListener listener = (ThreatAlertListener)iter.next();
+      listener.changedAlert(ta);
+    }
+  }
+
+  /**
+   * Notify listeners of expired alert.
+   * @param ta  Expired ThreatAlert
+   */
+  private void fireListenersForRemovedAlert(ThreatAlert ta) {
+    for(Iterator iter = listeners.iterator(); iter.hasNext();) {
+      ThreatAlertListener listener = (ThreatAlertListener)iter.next();
+      listener.removedAlert(ta);
     }
   }
 
@@ -267,7 +376,9 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
   }};
 
 
-
+  /**
+   * Alert expiration alarm.
+   */
   private class ThreatAlertAlarm implements Alarm {
     private long expirationTime = -1;
     private boolean expired = false;

@@ -237,15 +237,16 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
     if (conditions.containsKey("class")) {
       alertClass = (String) conditions.get("class");
     }
-    ThreatAlert ta = makeThreatAlert(alertClass, level, start, expire);
+    List assets = new ArrayList();
     //add assets to this alert
     for (int i = 0; i < 5; i++) {
       if (conditions.containsKey("type" + i)) {
         String type = (String) conditions.get("type" + i);
         String id = (String) conditions.get("id" + i);
-        ta.addAsset(new AssetImpl(type, id));
+        assets.add(new AssetImpl(type, id));
       }
     }
+    ThreatAlert ta = makeThreatAlert(alertClass, level, start, expire, assets);
     threatAlertService.sendAlert(ta, (String) conditions.get("community"),
                                  (String) conditions.get("role"));
 
@@ -256,17 +257,31 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
    * @param className
    * @param level
    * @param start
-   * @param duration
+   * @param expiration
+   * @param assets
    * @return
    */
-  private ThreatAlert makeThreatAlert(String className, int level, Date start, Date expiration) {
-    ThreatAlert ta = null;
+  private ThreatAlert makeThreatAlert(String className,
+                                      int level,
+                                      Date start,
+                                      Date expiration,
+                                      List assets) {
+    DefaultThreatAlert ta = null;
     try {
-      ta = (ThreatAlert) Class.forName(className).newInstance();
+      Object obj = Class.forName(className).newInstance();
+      if (obj instanceof DefaultThreatAlert) {
+          ta = (DefaultThreatAlert) obj;
+      } else {
+        log.warn("Unable to create ThreatAlert, using DefaultThreatAlert: class=" + className);
+        ta = new DefaultThreatAlert();
+      }
       ta.setSource(agentId);
       ta.setSeverityLevel(level);
       ta.setStartTime(start);
       ta.setExpirationTime(expiration);
+      for (Iterator it = assets.iterator(); it.hasNext(); ) {
+        ta.addAsset( (Asset) it.next());
+      }
       ta.setUID(uidService.nextUID());
     } catch (Exception ex) {
       log.error("Unable to create ThreatAlert: class=" + className, ex);

@@ -18,7 +18,10 @@
 
 package org.cougaar.tools.robustness.threatalert;
 
-public class AssetImpl implements Asset,java.io.Serializable {
+/**
+ * Interface for a simple asset class consisting of a type and identifier.
+ */
+public class AssetImpl implements Asset, java.io.Serializable {
 
   private String type;
   private String identifier;

@@ -33,8 +33,8 @@ public class ThreatAlertServiceProvider implements ServiceProvider {
 
   private ThreatAlertService ts;
 
-  public ThreatAlertServiceProvider (BindingSite bs, MessageAddress agentId) {
-    ts = ThreatAlertServiceImpl.getInstance(bs, agentId);
+  public ThreatAlertServiceProvider (BindingSite bs) {
+    ts = new ThreatAlertServiceImpl(bs);
   }
 
   public Object getService(ServiceBroker sb, Object requestor,

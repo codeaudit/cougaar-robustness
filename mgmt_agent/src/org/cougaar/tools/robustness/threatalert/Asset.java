@@ -18,11 +18,12 @@
 
 package org.cougaar.tools.robustness.threatalert;
 
-
+/**
+ * Interface for a simple asset class consisting of a type and identifier.
+ */
 public interface Asset {
 
   public String getAssetType();
   public String getAssetIdentifier();
-  public String toString();
 
 }
