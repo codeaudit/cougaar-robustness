@@ -14,8 +14,9 @@ package org.cougaar.coordinator.selection;
 
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.coordinator.techspec.AssetID;
+import org.cougaar.core.persist.NotPersistable;
 
-public class SelectionCompleted {
+public class SelectionCompleted implements NotPersistable {
 
     private AssetID assetID;
     private boolean successful;
