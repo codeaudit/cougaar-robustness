@@ -25,14 +25,27 @@
 
 package org.cougaar.coordinator.techspec;
 
+import java.util.Vector;
+import java.util.Iterator;
+
 /**
  *
  * @author  Administrator
  */
 public class EventProbability {
     
+    Vector intervals;
+    
     /** Creates a new instance of EventProbability */
     public EventProbability() {
+        intervals = new Vector();
+    }
+    
+    /**
+     * Add a EventProbabilityInterval
+     */
+    public void addInterval(EventProbabilityInterval epi) {
+        intervals.add(epi);
     }
     
 }

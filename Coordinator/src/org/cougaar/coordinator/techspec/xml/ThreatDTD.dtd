@@ -8,29 +8,30 @@
     name CDATA #REQUIRED
     affectsAssetType CDATA #REQUIRED
     causesEvent CDATA #REQUIRED
-    defaultEventLikelihoodProb CDATA #REQUIRED
+    defaultEventLikelihoodProb CDATA ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH )
 >
 
-<!ELEMENT VulnerableAssets ((AssetFilter|ContainmentFilter)+, (EventLikelihoodInterval|EventLikelihood)? >
+<!ELEMENT VulnerableAssets ((AssetFilter|ContainmentFilter), (EventLikelihoodInterval|EventLikelihood)? >
+<!-- It will have exactly one filter element above -->
 
 <!ELEMENT AssetFilter (Term | CorruptHostExistsOnNetwork | CorruptHostExists)+ >
 <!ELEMENT EventLikelihoodInterval (ClockInterval)+ >
 
 <!ELEMENT EventLikelihood  EMPTY>
 <!ATTLIST EventLikelihood
-    probability CDATA #REQUIRED
+    probability CDATA ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH )
 >
 
 <!ELEMENT ClockInterval  EMPTY>
 <!ATTLIST ClockInterval
     intervalStart CDATA #REQUIRED
     durationHrs CDATA #REQUIRED
-    probability CDATA #REQUIRED
+    probability CDATA ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH )
 >
 
 <!ELEMENT EventLikelihood  EMPTY>
 <!ATTLIST EventLikelihood
-    probability CDATA #REQUIRED
+    probability CDATA ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH )
 >
 
 <!ELEMENT ContainmentFilter  EMPTY>
@@ -59,24 +60,24 @@
 <!-- Example
 <Threat name="Bomb" affectsAssetType="Host" causesEvent="HostDeath" defaultEventLikelihoodProb="NONE" />
 
-<VulnerableAssets>
-    <AssetFilter>
-        <Term propName="location" propValue="HiWay" op="=" />
-    </AssetFilter >
-    <EventLikelihoodInterval>
-        <ClockInterval intervalStart="1800" durationHrs="12" probability="VERY_LOW" />
-    </EventLikelihoodInterval>
-</VulnerableAssets>
+    <VulnerableAssets>
+        <AssetFilter>
+            <Term propName="location" propValue="HiWay" op="=" />
+        </AssetFilter >
+        <EventLikelihoodInterval>
+            <ClockInterval intervalStart="1800" durationHrs="12" probability="VERY_LOW" />
+        </EventLikelihoodInterval>
+    </VulnerableAssets>
 
-<VulnerableAssets>
-    <AssetFilter>
-        <Term propName="location" propValue="OffRoad" op="=" />
-    </AssetFilter>
-    <EventLikelihoodInterval>
-        <ClockInterval intervalStart="1800" durationHrs="12" probability="MEDIUM" />
-        <ClockInterval intervalStart="1800" durationHrs="12" probability="LOW" />
-    </EventLikelihoodInterval>
-</VulnerableAssets>
+    <VulnerableAssets>
+        <AssetFilter>
+            <Term propName="location" propValue="OffRoad" op="=" />
+        </AssetFilter>
+        <EventLikelihoodInterval>
+            <ClockInterval intervalStart="1800" durationHrs="12" probability="MEDIUM" />
+            <ClockInterval intervalStart="1800" durationHrs="12" probability="LOW" />
+        </EventLikelihoodInterval>
+    </VulnerableAssets>
 
 </Threat>
 

@@ -47,28 +47,45 @@ public class AssetFilter implements NotPersistable {
     private static final int  NOP = 6;
     
     private Vector terms;
+    private Vector specialTerms;
     
     /** Creates a new instance of AssetFilter */
     public AssetFilter() {
         
         logger = Logging.getLogger(this.getClass().getName());
         terms = new Vector();
+        specialTerms = new Vector();
         
     }
     
     /**
      * Add a term to filter on
      */
-    public void addTerm() {
-        
+    public void addTerm(String propertyName, String value, String valType, String operator) {        
+        terms.add( new Term( propertyName, value, valType, operator) );        
     }
     
+
+    /**
+     * Add CorruptHostTerm to filter on
+     */
+    public void addCorruptHostTerm(String value) {        
+        specialTerms.add( new CorruptHostTerm( value ) );        
+    }
+
+
+    /**
+     * Add CorruptHostOnNetworkTerm to filter on
+     */
+    public void addCorruptHostOnNetworkTerm(String value) {        
+        specialTerms.add( new CorruptHostOnNetworkTerm( value ) );        
+    }
+
     
     
+
     /** Logger for error msgs */
     private Logger logger;
-    
-    
     
     /**
      * Looks for the FIRST property of the asset with the same name as this filter,
@@ -96,6 +113,19 @@ public class AssetFilter implements NotPersistable {
             qualifies = qualifyTerm((Term)termsIter.next(), assetProps);            
             
         }
+
+        if (qualifies) {
+            
+            ///
+                //compare against any special filters that exist
+            ///
+            
+            ///
+            
+            ///
+            
+        }
+        
         
         return qualifies;
         
@@ -243,5 +273,51 @@ public class AssetFilter implements NotPersistable {
         }
         
     }
+    
+    /////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    // SPECIAL CASE FILTERS
+    
+    interface SpecialTerm {
+     
+        public boolean qualifies(AssetTechSpecInterface asset);
+        
+    }
+
+    
+    /**
+     *
+     */
+    class CorruptHostTerm implements SpecialTerm {
+        
+        CorruptHostTerm(String value) {
+            
+        }
+
+        public boolean qualifies(AssetTechSpecInterface asset) {
+            
+            return true; //IMPLEMENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            
+        }
+        
+    }
+    
+    /**
+     *
+     */
+    class CorruptHostOnNetworkTerm implements SpecialTerm {
+        
+        CorruptHostOnNetworkTerm(String value) {
+            
+        }
+
+        public boolean qualifies(AssetTechSpecInterface asset) {
+            
+            return true; //IMPLEMENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            
+        }
+        
+    }
+    
     
 }
