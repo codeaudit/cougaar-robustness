@@ -41,5 +41,10 @@ class SendMessage extends SendQueueDelegateImplBase
   {
     staticQueue.sendMessage (msg);
   }
+
+  public static int getSendQueueLength ()
+  {
+    return staticQueue.size();
+  }
 }
 

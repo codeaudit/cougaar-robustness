@@ -205,8 +205,8 @@ class AckBackend extends MessageDelivererDelegateImplBase
     {
       //  Kind of a hack, but the start of something.  May want to do things like set
       //  max age based on transport type ...
-      
-      log.error ("AckBackend: Msg too old (msg ignored): " +msgString);
+
+      if (log.isWarnEnabled()) log.warn ("AckBackend: Msg too old (msg ignored): " +msgString);
       return success;
     }
 
@@ -215,7 +215,7 @@ class AckBackend extends MessageDelivererDelegateImplBase
       //  Kind of a hack, but the start of something.  May want to do things like set
       //  max age based on transport type ...
       
-      log.error ("AckBackend: Msg too far in the future (msg ignored): " +msgString);
+      if (log.isWarnEnabled()) log.warn ("AckBackend: Msg too far in the future (msg ignored): " +msgString);
       return success;
     }
 

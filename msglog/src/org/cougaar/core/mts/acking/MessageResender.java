@@ -48,6 +48,8 @@ class MessageResender implements Runnable
   private Comparator deadlineSort;
   private long minResendDeadline;
 
+private static int rsndNum=0;
+
   public MessageResender (MessageAckingAspect aspect) 
   {
     this.aspect = aspect;
@@ -139,6 +141,7 @@ class MessageResender implements Runnable
     {
       haveNewData = true;  // new msgs or acks
       queue.notify();
+      Thread.yield();      // give queue a chance to run
     }
   }
 
@@ -248,6 +251,7 @@ class MessageResender implements Runnable
 
         //  See if time to resend message
 
+if (debug()) log.debug ("MessageResender: rsndTimeout="+ack.getResendTimeout()+" rsndDelay="+ack.getResendDelay());
         int timeout = ack.getResendTimeout() + ack.getResendDelay();
         long resendDeadline = ack.getSendTime() + timeout;
         long timeLeft = resendDeadline - now();
@@ -264,9 +268,13 @@ class MessageResender implements Runnable
           //  wants to try every possbile transport link in its efforts to get a 
           //  message through.
 
-          if (debug()) log.debug ("MessageResender: Resending " +MessageUtils.toString(msg));
+rsndNum++;
+
+          if (debug()) log.debug ("MessageResender: Resending #"+rsndNum+" " +MessageUtils.toString(msg));
           ack.setSendTime (now());
+msg.setAttribute ("RsndNum", new Integer(rsndNum));
           SendMessage.sendMsg (msg);
+          if (debug()) log.debug ("MessageResender: SendQueue len = " +SendMessage.getSendQueueLength());
 
           //  Calculate the new message resend deadline.  Note that we do not know at
           //  this point what new link will be chosen for the message we just resent,

@@ -148,13 +148,15 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
   public void initialize () 
   {
     super.initialize();
-System.err.println ("OutgoingEmailLinkProtocol: initialize called");
 
+// registry is avail
+/*
     if (getRegistry() == null)
     {
       System.err.println ("OutgoingEmailLinkProtocol: Registry not available!");
     }
     else System.err.println ("OutgoingEmailLinkProtocol: "+getRegistry().getIdentifier());
+*/
   }
 
   public void setNameSupport (NameSupport nameSupport) 

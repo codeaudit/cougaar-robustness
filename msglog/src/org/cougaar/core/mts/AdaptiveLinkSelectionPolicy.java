@@ -199,7 +199,9 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
         ack.setSendLink (getName (link));
         String targetNode = MessageUtils.getToAgentNode (msg);
         int rtt = rttService.getBestFullRTTForLink (link, targetNode);
+System.err.println ("service rtt="+rtt);
         if (rtt <= 0) rtt = link.cost (msg);
+System.err.println ("Adaptive setRTT="+rtt+" for "+MessageUtils.toString(msg));
         ack.setRTT (rtt);
         MessageAckingAspect.dingTheMessageResender();  // calc new deadlines
       }
@@ -248,6 +250,8 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
         MessageUtils.setMessageSize (msg, MessageUtils.getMessageSize (failedMsg)); 
         MessageUtils.setSendTimeout (msg, MessageUtils.getSendTimeout (failedMsg)); 
         MessageUtils.setSendDeadline (msg, MessageUtils.getSendDeadline (failedMsg)); 
+
+msg.setAttribute ("RsndNum", msg.getAttribute ("RsndNum"));
       }
     }
 
@@ -284,7 +288,11 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
     String msgString = MessageUtils.toString (msg);
 
-    if (debug && !MessageUtils.isNewMessage(msg)) log.debug ("Processing " +msgString);
+String rns = "-";
+Integer rn = (Integer) msg.getAttribute ("RsndNum");
+if (rn != null) rns = "" + rn;
+
+    if (debug && !MessageUtils.isNewMessage(msg)) log.debug ("Processing #" +rns+" " +msgString);
 
     /**
      **  Special case:  Check on a possible message send deadline.  If the message has 
@@ -451,6 +459,8 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
             //  its already been done for us.  Update the latestDeadline for when we
             //  need to attempt to send this ack over another link.
 
+            if (debug) log.debug ("Dropping used " +getName(link)+ " for " +msgString);
+
             int rtt = rttService.getBestFullRTTForLink (link, targetNode);
             if (rtt <= 0) rtt = link.cost (msg);
 
@@ -465,7 +475,12 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       {
         //  Reschedule the ack and don't send it now
 
-        if (debug) log.debug ("Rescheduling pure ack msg: " +msgString);
+        if (debug) 
+        {
+          long t = latestDeadline - now();
+          log.debug ("Rescheduling pure ack msg with new timeout of " +t+ ": " +msgString);
+        }
+
         pureAck.setSendDeadline (latestDeadline);
         MessageAckingAspect.addToPureAckSender ((PureAckMessage)msg);
         return blackHoleLink;

@@ -53,6 +53,8 @@ public class MessageAckingAspect extends StandardAspect
   static PureAckSender pureAckSender;
   static PureAckAckSender pureAckAckSender;
 
+  private ThreadService threadService;
+
   static final Object serializationLock = new Object();
 
   private static final Hashtable receivedAcksTable = new Hashtable();
@@ -64,9 +66,6 @@ public class MessageAckingAspect extends StandardAspect
   private static final Hashtable lastSendTimeTable = new Hashtable();
 
   private static MessageAckingAspect instance;
-
-  private static RTTService rttService;
-  private ThreadService threadService;
 
   static
   {
@@ -82,8 +81,8 @@ public class MessageAckingAspect extends StandardAspect
     resendMultiplier = Integer.valueOf(System.getProperty(s,"4")).intValue();
 
     s = "org.cougaar.message.transport.aspects.acking.firstAckPlacingFactor";
-    float def = ((float)resendMultiplier)/2.0f;
-    firstAckPlacingFactor = Float.valueOf(System.getProperty(s,""+def)).floatValue();
+//  float def = ((float)resendMultiplier)/2.0f;  ??? where'd this value come from?  .7 sounds better
+    firstAckPlacingFactor = Float.valueOf(System.getProperty(s,"0.7")).floatValue();
 
     s = "org.cougaar.message.transport.aspects.acking.interAckSpacingFactor";
     interAckSpacingFactor = Float.valueOf(System.getProperty(s,"1.5")).floatValue();
@@ -101,8 +100,6 @@ public class MessageAckingAspect extends StandardAspect
   public void initialize () 
   {
     super.initialize();
-
-    rttService = (RTTService) getServiceBroker().getService (this, RTTService.class, null);
 
     synchronized (MessageAckingAspect.class)
     {
@@ -636,13 +633,6 @@ public class MessageAckingAspect extends StandardAspect
   }
 
   //  Utility methods and classes
-
-  static int getBestFullRTTForLink (DestinationLink link, String node, AttributedMessage msg)
-  {
-    int rtt = rttService.getBestFullRTTForLink (link, node);
-    if (rtt <= 0) rtt = link.cost (msg);
-    return rtt;
-  }
 
   public static void dingTheMessageResender ()
   {

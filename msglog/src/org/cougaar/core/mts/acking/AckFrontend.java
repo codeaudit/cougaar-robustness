@@ -99,7 +99,8 @@ private int cnt=0;
 
       ack.addLinkSelection (link);  // the first selection (already made)
       ack.setSendLink (link.getProtocolClass().getName());
-      ack.setRTT (MessageAckingAspect.getBestFullRTTForLink (link, toNode, msg));
+      ack.setRTT (getBestFullRTTForLink (link, toNode, msg));
+ log.debug ("AckFrontend: setRTT to "+ack.getRTT()+" for " +msgString);
     }
     else if (ack.isAck())
     {
@@ -354,6 +355,15 @@ if (n.equals("PerformanceNodeB") && cnt++ > 5) return success;
   }
 
   //  Utility methods
+
+  private int getBestFullRTTForLink (DestinationLink link, String node, AttributedMessage msg)
+  {
+    int rtt = 0;
+    RTTService rttService = (RTTService) aspect.getServiceBroker().getService (aspect, RTTService.class, null);
+    if (rttService != null) rtt = rttService.getBestFullRTTForLink (link, node);
+    if (rtt <= 0) rtt = link.cost (msg);
+    return rtt;
+  }
 
   private String stackTraceToString (Exception e)
   {
