@@ -30,7 +30,7 @@ mgr_techspecs = []
 node_techspecs = []
 
 nodePlugins = [arm,drm,rmfp]
-mgrPlugins = [arm,drm,rmfp,bp,cbp,cmp,amon,asp,amp,tmmp]
+mgrPlugins = [arm,drm,rmfp,aep,bp,cbp,cmp,amon,asp,amp,tmmp]
 
 society.each_agent do |agent|
     if agent.name =~ /.*ARManager.*/
