@@ -338,6 +338,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
                                     publishAdd(new SelectedAction(thisAction, permittedVariants, Math.round(knob.getPatienceFactor()*proposedVariant.getExpectedTransitionTime()), cbe));
                                     if (logger.isInfoEnabled()) logger.info("Enabling: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString());
                                 }
+                             }
                              else if (logger.isEventEnabled()) logger.event(rmiVariantName + " was not offered");
                         }
                         if(proposedVariant.getVariantName().equals("Low")) {
@@ -355,6 +356,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
                                     publishAdd(new SelectedAction(thisAction, permittedVariants, Math.round(knob.getPatienceFactor()*proposedVariant.getExpectedTransitionTime()), cbe));
                                     if (logger.isInfoEnabled()) logger.info("Enabling: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString());
                                 }
+                             }
                              else if (logger.isEventEnabled()) logger.event(rmiVariantName + " was not offered");
                         }
                     }
