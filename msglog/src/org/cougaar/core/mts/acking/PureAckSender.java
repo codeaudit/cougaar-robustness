@@ -108,14 +108,14 @@ class PureAckSender implements Runnable
 
           //  Wait until timeout, notify, or interrupt
 
-System.err.println ("\nPureAckSender: WAIT waitTime= "+waitTime);
+//System.err.println ("\nPureAckSender: WAIT waitTime= "+waitTime);
           CougaarThread.wait (queue, waitTime);
-System.err.println ("\nPureAckSender: RUN");
+//System.err.println ("\nPureAckSender: RUN");
         }
 
         messages = (PureAckMessage[]) queue.toArray (messages);  // try array reuse
         len = queue.size();
-System.err.println ("PureAckSender: len="+len);
+//System.err.println ("PureAckSender: len="+len);
       }
 
       //  Check if it is time to send a pure ack message
@@ -130,7 +130,7 @@ System.err.println ("PureAckSender: len="+len);
         //  drop this pure ack message.
 
         PureAckMessage pam = messages[i];
-System.err.println ("PureAckSender: msg="+MessageUtils.toString(pam));
+//System.err.println ("PureAckSender: msg="+MessageUtils.toString(pam));
 
         if (MessageAckingAspect.findAckToSend (pam))
         {
@@ -141,7 +141,7 @@ System.err.println ("PureAckSender: msg="+MessageUtils.toString(pam));
           if (MessageAckingAspect.debug)
           {
             String m = MessageUtils.toShortString (pam);
-System.err.println ("PureAckSender: "+m+": timeLeft="+timeLeft);
+//System.err.println ("PureAckSender: "+m+": timeLeft="+timeLeft);
           }
 
           if (timeLeft <= 0)
@@ -150,7 +150,7 @@ System.err.println ("PureAckSender: "+m+": timeLeft="+timeLeft);
 
             if (MessageAckingAspect.debug) 
             {
-System.err.println ("PureAckSender: Launching " +pam);
+              System.err.println ("PureAckSender: Launching " +pam);
             }
 
             remove (pam);  // remove first to avoid race condition with send
@@ -163,7 +163,7 @@ System.err.println ("PureAckSender: Launching " +pam);
         }
         else
         {
-System.err.println ("PureAckSender: removing " +pam);
+//System.err.println ("PureAckSender: removing " +pam);
           remove (pam);  // done sending this pure ack message
         }
       }
