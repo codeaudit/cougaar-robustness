@@ -11,6 +11,7 @@
     <facet enclave='SMALL'/>
     <node name='FWD-NODE'>
       <facet role="NameServer"/>
+      <facet restartAggressiveness="4" />
       <agent name='1-35-ARBN.2-BDE.1-AD.ARMY.MIL'/>
       <agent name='1-6-INFBN.2-BDE.1-AD.ARMY.MIL'/>
       <agent name='1-AD.ARMY.MIL'/>
