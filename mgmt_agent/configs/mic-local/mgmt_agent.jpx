@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--JBuilder XML Project-->
+<project>
+  <property category="javaFormatting" name="catchOnNewLine" value="0"/>
+  <property category="javaFormatting" name="elseOnNewLine" value="0"/>
+  <property category="javaFormatting" name="finallyOnNewLine" value="0"/>
+  <property category="javaFormatting" name="packageThreshold" value="0"/>
+  <property category="javaFormatting" name="spaceAfterTypecast" value="0"/>
+  <property category="javaFormatting" name="spaceBeforeLparen" value="0"/>
+  <property category="javadoc" name="custom.tags.1" value="todo;a;To Do:"/>
+  <property category="runtime" name="DefaultConfiguration" value="-1"/>
+  <property category="runtime" name="ExcludeDefaultForZero" value="1"/>
+  <property category="serverservices" name="disabled.services" value=""/>
+  <property category="serverservices" name="single.server.name" value="Tomcat 4.0"/>
+  <property category="sys" name="AuthorLabel" value="@author"/>
+  <property category="sys" name="BackupPath" value="../../bak"/>
+  <property category="sys" name="CheckStable" value="1"/>
+  <property category="sys" name="Company" value=""/>
+  <property category="sys" name="CompanyLabel" value="Company:"/>
+  <property category="sys" name="Copyright" value="Copyright (c) 2003"/>
+  <property category="sys" name="CopyrightLabel" value="Copyright:"/>
+  <property category="sys" name="DefaultPath" value="src"/>
+  <property category="sys" name="Description" value=""/>
+  <property category="sys" name="DescriptionLabel" value="Description:"/>
+  <property category="sys" name="DocPath" value="doc"/>
+  <property category="sys" name="ExcludeClassEnabled" value="0"/>
+  <property category="sys" name="IncludeTestPath" value="1"/>
+  <property category="sys" name="InstanceVisibility" value="2"/>
+  <property category="sys" name="JDK" value="java version 1.4.1_02-b06"/>
+  <property category="sys" name="JvmVersion" value="1.4"/>
+  <property category="sys" name="LastTag" value="0"/>
+  <property category="sys" name="Libraries" value="cougaar"/>
+  <property category="sys" name="MakeStable" value="0"/>
+  <property category="sys" name="OutPath" value="../../classes"/>
+  <property category="sys" name="SourcePath" value="src"/>
+  <property category="sys" name="TestPath" value="src"/>
+  <property category="sys" name="Title" value=""/>
+  <property category="sys" name="TitleLabel" value="Title:"/>
+  <property category="sys" name="Version" value="1.0"/>
+  <property category="sys" name="VersionLabel" value="@version"/>
+  <property category="sys" name="WorkingDirectory" value="../../"/>
+  <node name="configs" type="Folder">
+    <node name="mic-local" type="Folder">
+      <file path="qing-hosts.xml"/>
+      <file path="ron1-hosts.xml"/>
+      <file path="ron2-hosts.xml"/>
+      <file path="uc1-small-1ad-layout.xml"/>
+    </node>
+    <file path="../communities-full.xml"/>
+    <file path="../communities-small.xml"/>
+    <file path="../loggingConfig.conf"/>
+  </node>
+  <node name="csmart" type="Folder">
+    <node name="config" type="Folder">
+      <node name="doc" type="Folder">
+        <node name="robustness" type="Folder">
+          <node name="uc1" type="Folder"/>
+        </node>
+      </node>
+      <node name="lib" type="Folder">
+        <node name="robustness" type="Folder">
+          <node name="uc1" type="Folder">
+            <file path="../../csmart/config/lib/robustness/uc1/aruc1_actions_and_states.rb"/>
+          </node>
+        </node>
+      </node>
+      <node name="rules" type="Folder">
+        <node name="robustness" type="Folder">
+          <node name="uc1" type="Folder">
+            <file path="../../csmart/config/rules/robustness/uc1/aruc1.rule"/>
+            <file path="../../csmart/config/rules/robustness/uc1/manager.rule"/>
+            <file path="../../csmart/config/rules/robustness/uc1/mic.rule"/>
+          </node>
+        </node>
+      </node>
+      <node name="scripts" type="Folder">
+        <node name="robustness" type="Folder">
+          <node name="uc1" type="Folder">
+            <file path="../../csmart/config/scripts/robustness/uc1/uc1-full.rb"/>
+            <file path="../../csmart/config/scripts/robustness/uc1/uc1-lb.rb"/>
+            <file path="../../csmart/config/scripts/robustness/uc1/uc1-small.rb"/>
+          </node>
+        </node>
+      </node>
+    </node>
+  </node>
+  <node name="xsl" type="Folder">
+    <file path="../../src/org/cougaar/tools/robustness/ma/ui/communities.xsl"/>
+    <file path="../../src/org/cougaar/tools/robustness/ma/ui/communityAttributes.xsl"/>
+    <file path="../../src/org/cougaar/tools/robustness/ma/ui/communityControl.xsl"/>
+    <file path="../../src/org/cougaar/tools/robustness/ma/ui/communityStatus.xsl"/>
+  </node>
+  <node name="org.cougaar.tools.robustness.ma" type="Package"/>
+  <file path="../../build.xml"/>
+</project>
