@@ -40,7 +40,6 @@ import org.cougaar.core.persist.NotPersistable;
 public class HeartbeatServerPlugin extends ComponentPlugin {
   private Object lock = new Object();
   private IncrementalSubscription sub;
-  private IncrementalSubscription processHeartbeatsSub; 
   private BlackboardService bb;
   private LoggingService log;
   private ProcessHeartbeatsAlarm nextAlarm = null;
@@ -50,15 +49,6 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
       return (o instanceof HbReq);
     }
   };
-
-  private UnaryPredicate processHeartbeatsPred = new UnaryPredicate() {
-    public boolean execute(Object o) {
-      return (o instanceof ProcessHeartbeats);
-    }
-  };
-
-  private class ProcessHeartbeats implements NotPersistable
-  {}
 
   private class ProcessHeartbeatsAlarm implements Alarm {
     private long detonate = -1;
@@ -84,20 +74,10 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
      * Called by the cluster clock when clock-time >= getExpirationTime().
      **/
     public synchronized void expire () {
-      //synchronized (lock) {
         if (!expired) {
-          try {
-            bb.openTransaction();
-            //processHeartbeats();
-            bb.publishAdd(new ProcessHeartbeats());
-          } catch (Exception e) {
-            e.printStackTrace();
-          } finally {
             expired = true;
-            bb.closeTransaction();
-          }
-        }
-      //}
+            bb.signalClientActivity();
+	}
     }
 
     /** @return true IFF the alarm has expired or was canceled. **/
@@ -179,30 +159,16 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
         getService(this, LoggingService.class, null);
       bb = getBlackboardService();
       sub = (IncrementalSubscription)bb.subscribe(hbReqPred);
-      processHeartbeatsSub = (IncrementalSubscription)bb.subscribe(processHeartbeatsPred);
       processHeartbeats();
     }
   }
 
   protected void execute() {
-   //synchronized (lock) {
     // process Heartbeats
-    Iterator iter = processHeartbeatsSub.getCollection().iterator();
-    boolean didOnce = false;
-    while (iter.hasNext()) {
-      ProcessHeartbeats obj = (ProcessHeartbeats)iter.next();
-      if (log.isDebugEnabled()) 
-        log.debug("execute: received added ProcessHeartbeats = " + obj);
-      if (!didOnce) {
-        processHeartbeats();
-        didOnce = true;
-      }
-      if (log.isDebugEnabled())
-        log.debug("execute: publishRemove ProcessHeartbeats =" + obj);
-      bb.publishRemove(obj);
-    }
+    if ((nextAlarm != null) && (nextAlarm.expired == true)) 
+	processHeartbeats();
     long minFreq = Long.MAX_VALUE;  // milliseconds until next heartbeat should be sent
-    iter = sub.getAddedCollection().iterator();
+    Iterator iter = sub.getAddedCollection().iterator();
     while (iter.hasNext()) {
       HbReq req = (HbReq)iter.next();
       if (!req.getSource().getPrimary().equals(getAgentIdentifier().getPrimary())) {  //100 added getPrimary

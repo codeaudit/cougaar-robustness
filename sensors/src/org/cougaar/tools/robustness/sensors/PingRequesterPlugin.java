@@ -74,7 +74,7 @@ public class PingRequesterPlugin extends ComponentPlugin {
     if (log.isDebugEnabled())
       log.debug("sendPing: publishChange PingRequest = " + req);
     bb.publishChange(req);
-    alarmService.addRealTimeAlarm(new PingRequestTimeout(req.getTimeout(),reqUID));
+    alarmService.addRealTimeAlarm(new PingRequestTimeout(req.getTimeout()));
   }
 
   private void updatePingRequest (Ping ping) {
@@ -110,7 +110,6 @@ public class PingRequesterPlugin extends ComponentPlugin {
       PingRequest req = (PingRequest)iter.next();
       if (log.isDebugEnabled()) 
         log.debug("execute: added PingRequest received = " + req);
-      //MessageAddress myAddr = getAgentIdentifier();
       if (req.getStatus() == PingRequest.NEW) {   
         sendPing(req);
       }
@@ -126,6 +125,23 @@ public class PingRequesterPlugin extends ComponentPlugin {
         updatePingRequest(ping);
       }
     }
+    // check for expired PingRequests
+    iter = pingReqSub.getCollection().iterator();
+    while (iter.hasNext()) {
+	PingRequest req = (PingRequest)iter.next();
+	if ((req != null) &&
+	    (req.getStatus() == PingRequest.SENT) &&
+	    ((req.getTimeSent().getTime() + req.getTimeout()) <= System.currentTimeMillis())) {
+	  fail(req);
+	}
+    }
+  }
+
+  private void fail(PingRequest req) {
+      req.setStatus(PingRequest.FAILED);
+      if (log.isDebugEnabled()) 
+	  log.debug("fail: publishChange PingRequest = " + req);
+      bb.publishChange(req);
   }
 
   private UIDService UIDService;
@@ -138,43 +154,28 @@ public class PingRequesterPlugin extends ComponentPlugin {
       this.UIDService = UIDService;
   }
 
-  // temporary implementation of PingRequest timeout.
-  // will be replaced by MTS-based implementation.
   private class PingRequestTimeout implements Alarm {
     private long detonate = -1;
     private boolean expired = false;
-    private UID reqUID;
 
-    public PingRequestTimeout (long timeout, UID reqUID) {
+    public PingRequestTimeout (long timeout) {
       detonate = timeout + System.currentTimeMillis();
-      this.reqUID = reqUID;
     }
     public long getExpirationTime () {return detonate;
     }
     public void expire () {
-      if (!expired) {
-        fail(reqUID);
-        expired = true;}
+	if (!expired) {
+	    expired = true;
+	    bb.signalClientActivity();
+	}
     }
     public boolean hasExpired () {return expired;
     }
     public boolean cancel () {
       if (!expired)
         return expired = true;
-      return false;}
-  }
-
-  private void fail(UID reqUID) {
-    PingRequest req = (PingRequest)UIDtable.findUniqueObject(reqUID);
-    if (req.getStatus() == PingRequest.SENT) {
-      bb.openTransaction();
-      req.setStatus(PingRequest.FAILED);
-      if (log.isDebugEnabled()) 
-        log.debug("fail: publishChange PingRequest = " + req);
-      bb.publishChange(req);
-      bb.closeTransaction();
+      return false;
     }
   }
-
 
 }
