@@ -57,7 +57,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
   private long evaluationInterval = 5000;
 
   private RobustnessFactory robustnessFactory;
-  private PingFactory pingFactory;
+  private SensorFactory sensorFactory;
   private ClusterIdentifier myAgent = null;
   private LoggingService log;
   private BlackboardService bbs = null;
@@ -101,10 +101,10 @@ public class HealthMonitorPlugin extends SimplePlugin {
       log.error("Unable to get 'robustness' domain");
     }
 
-    pingFactory =
-      ((PingFactory) domainService.getFactory("ping"));
-    if (pingFactory == null) {
-      log.error("Unable to get 'ping' domain");
+    sensorFactory =
+      ((SensorFactory) domainService.getFactory("sensors"));
+    if (sensorFactory == null) {
+      log.error("Unable to get 'sensors' domain");
     }
 
     bbs = getBlackboardService();
@@ -174,7 +174,8 @@ public class HealthMonitorPlugin extends SimplePlugin {
       for (Iterator it = cmList.iterator(); it.hasNext();) {
         CommunityMember cm = (CommunityMember)it.next();
         if (cm.isAgent()) {
-          HealthStatus hs = new HealthStatus(cm.getAgentId());
+          //HealthStatus hs = new HealthStatus(getAgentId());
+          HealthStatus hs = new HealthStatus(new ClusterIdentifier(cm.getName()));
           membersHealthStatus.add(hs);
           log.warn("Adding " + cm.getName());
         }
@@ -185,8 +186,10 @@ public class HealthMonitorPlugin extends SimplePlugin {
       Collection newMembers = new Vector();
       for (Iterator it = cmList.iterator(); it.hasNext();) {
         CommunityMember cm = (CommunityMember)it.next();
-        if (cm.isAgent() && !hasHealthStatus(cm.getAgentId())) {
-          HealthStatus hs = new HealthStatus(cm.getAgentId());
+        //if (cm.isAgent() && !hasHealthStatus(cm.getAgentId())) {
+        //  HealthStatus hs = new HealthStatus(cm.getAgentId());
+        if (cm.isAgent() && !hasHealthStatus(new ClusterIdentifier(cm.getName()))) {
+          HealthStatus hs = new HealthStatus(new ClusterIdentifier(cm.getName()));
           membersHealthStatus.add(hs);
           newMembers.add(hs);
           log.warn("Adding " + cm.getName());
@@ -199,7 +202,8 @@ public class HealthMonitorPlugin extends SimplePlugin {
         boolean found = false;
         for (Iterator it1 = cmList.iterator(); it1.hasNext();) {
           CommunityMember cm = (CommunityMember)it1.next();
-          if (hs.getAgentId().equals(cm.getAgentId())) {
+          //if (hs.getAgentId().equals(cm.getAgentId())) {
+          if (hs.getAgentId().equals(new ClusterIdentifier(cm.getName()))) {
             found = true;
             break;
           }
@@ -456,7 +460,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
 
 
   private void doPing(MessageAddress target) {
-    PingRequest req = pingFactory.newPingRequest(myAgent, target, pingTimeout);
+    PingRequest req = sensorFactory.newPingRequest(myAgent, target, pingTimeout);
     log.warn("Sending ping: " + req);
     bbs.openTransaction();
     bbs.publishAdd(req);

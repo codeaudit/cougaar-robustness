@@ -17,7 +17,7 @@
   <property category="sys" name="IncludeTestPath" value="1"/>
   <property category="sys" name="JDK" value="java 1.4.0-b92"/>
   <property category="sys" name="LastTag" value="0"/>
-  <property category="sys" name="Libraries" value="CommunityServiceIntf;cougaar;objs"/>
+  <property category="sys" name="Libraries" value="cougaar;objs"/>
   <property category="sys" name="MakeStable" value="0"/>
   <property category="sys" name="OutPath" value="classes"/>
   <property category="sys" name="SourcePath" value="src;test/src"/>
@@ -31,6 +31,8 @@
   <property category="team" name="ignorePath.1" value="classes"/>
   <property category="team" name="ignorePath.2" value="test/data"/>
   <property category="team" name="ignorePath.3" value="test/src/org/cougaar/tools/robustness"/>
+  <property category="team" name="ignorePath.4" value="lib"/>
+  <property category="team" name="ignorePath.5" value="mic-tic.jpx"/>
   <node name="test" type="Folder">
     <node name="configs" type="Folder">
       <node name="common" type="Folder">
