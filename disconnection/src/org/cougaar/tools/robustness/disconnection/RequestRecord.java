@@ -18,9 +18,10 @@ import org.cougaar.coordinator.techspec.AssetID;
 
 public class RequestRecord extends java.util.Hashtable {
 
-    private AssetID assetID;;
+    private AssetID nodeID;;
     private Set originalActions;
     private Set originalDiagnoses;
+    private AgentVector agentVector;
     private String request;
     private DisconnectManagerPlugin.RequestedAlarm alarm;
 
@@ -28,8 +29,11 @@ public class RequestRecord extends java.util.Hashtable {
     public RequestRecord() {
     }
 
-    public AssetID getAssetID() { return assetID; }
-    public void setAssetID(AssetID assetID) { this.assetID = assetID; }
+    public AssetID getNodeID() { return nodeID; }
+    public void setNodeID(AssetID nodeID) { this.nodeID = nodeID; }
+
+    public void setAgentVector(AgentVector agentVector) { this.agentVector = agentVector; }
+    public AgentVector getAgentVector() { return agentVector; }
 
     public Set getOriginalActions() { return originalActions; }
     public void setOriginalActions(Set originalActions) {this.originalActions = originalActions; }
@@ -46,8 +50,10 @@ public class RequestRecord extends java.util.Hashtable {
     public void setAlarm(DisconnectManagerPlugin.RequestedAlarm alarm) { this.alarm = alarm; }
     public DisconnectManagerPlugin.RequestedAlarm getAlarm() { return alarm; }
 
+    public long getReconnectTime() { return alarm.getExpirationTime(); }
+
     public String dump() {
-        return "Request: " + request + ":" +assetID.toString() + "\n"
+        return "Request: " + request + ":" +nodeID.toString() + "\n"
             + "Original Actions: " + originalActions + "\n";
 //            + "RemainingActions: " + remainingActions + "\n";
     }

@@ -241,21 +241,9 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
               if (eventService.isEventEnabled()) {
                   if ((defenseMode.equals("ENABLED")) && (reconnectInterval > 0L)) {
                       eventService.event(getNodeID()+" plans to Disconnect for "+reconnectInterval/1000L+" sec");
-                      // ACK that the Node has seen the action value
-                      ReconnectTimeCondition rtc = ReconnectTimeCondition.findOnBlackboard("Node", getNodeID(),  blackboard);
-                      rtc.setTime(new Double(-1.0));
-                      rtc.setAgents(localAgents);
-                      getBlackboardService().publishChange(rtc);
-                      if (logger.isDebugEnabled()) logger.debug("Set the (ACK) Condition for "+rtc.toString());   
                   }
                   else if ((defenseMode.equals("DISABLED")) && (reconnectInterval == 0L)) {
                       eventService.event(getNodeID()+" has Reconnected");
-                      // ACK that the Node has seen the action value
-                      ReconnectTimeCondition rtc = ReconnectTimeCondition.findOnBlackboard("Node", getNodeID(),  blackboard);
-                      rtc.setTime(new Double(-1.0));
-                      rtc.setAgents(localAgents);
-                      getBlackboardService().publishChange(rtc);
-                      if (logger.isDebugEnabled()) logger.debug("Set the (ACK) Condition for "+rtc.toString());   
                   }
                   else {
                       eventService.event(getNodeID()+" permission Denied");

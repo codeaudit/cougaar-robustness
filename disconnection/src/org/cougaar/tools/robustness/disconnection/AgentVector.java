@@ -8,16 +8,19 @@ package org.cougaar.tools.robustness.disconnection;
 
 /**
  *
- * @author  administrator
+ * @author  David Wells - OBJS
  * @version 
  */
+
+import org.cougaar.coordinator.techspec.AssetID;
+
 public class AgentVector extends java.util.Vector implements java.io.Serializable {
 
     /** Creates new AgentVector */
     public AgentVector() {
     }
 
-    public void addAgent(String agentName) { super.add(agentName); }
-    public void removeAgent(String agentName) { super.remove(agentName); }
+    public void addAgent(AssetID agentID) { super.add(agentID); }
+    public void removeAgent(AssetID agentID) { super.remove(agentID); }
 
 }
