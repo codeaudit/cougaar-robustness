@@ -38,8 +38,8 @@ import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.component.ServiceRevokedListener;
 import org.cougaar.core.component.ServiceRevokedEvent;
 
-import org.cougaar.core.service.TopologyEntry;
-import org.cougaar.core.service.TopologyReaderService;
+//import org.cougaar.core.service.TopologyEntry;
+//import org.cougaar.core.service.TopologyReaderService;
 
 import org.cougaar.core.service.AlarmService;
 import org.cougaar.core.agent.service.alarm.Alarm;
@@ -53,10 +53,14 @@ import org.cougaar.core.thread.Schedulable;
 import org.cougaar.core.service.community.*;
 import org.cougaar.community.*;
 
-import org.cougaar.util.CougaarEvent;
-import org.cougaar.util.CougaarEventType;
+//import org.cougaar.util.CougaarEvent;
+//import org.cougaar.util.CougaarEventType;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.util.UID;
+
+import org.cougaar.core.service.wp.WhitePagesService;
+import org.cougaar.core.service.wp.AddressEntry;
+import org.cougaar.core.service.wp.Application;
 
 /**
  * This plugin monitors a set of agents and publishes HealthStatus
@@ -189,6 +193,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
   private MessageAddress myAgent;
   private LoggingService log;
   private BlackboardService bbs;
+  private WhitePagesService wps;
 
   // UIDs associated with pending pings
   private Collection pingUIDs = new Vector();
@@ -197,7 +202,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
   private Map membersHealthStatus = new HashMap();
 
   private CommunityService communityService = null;
-  private TopologyReaderService topologyService = null;
+  //private TopologyReaderService topologyService = null;
 
   private CommunityRoster roster = null;
   private Object rosterLock = new Object();
@@ -232,7 +237,8 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     myAgent = getMessageAddress();
 
     communityService = getCommunityService();
-    topologyService = getTopologyReaderService();
+    //topologyService = getTopologyReaderService();
+    wps = getWhitePagesService();
 
     // Find name of community to monitor
     Collection communities = communityService.search("(CommunityManager=" +
@@ -431,20 +437,20 @@ public class HealthMonitorPlugin extends SimplePlugin implements
               log.debug("HeartbeatRequest ACCEPTED: agent=" + hs.getAgentId());
               if (hs.getStatus() == HealthStatus.RESTARTED) {
                 //log.info("Reacquired agent: agent=" + hs.getAgentId());
-                CougaarEvent.postComponentEvent(CougaarEventType.END,
+                /*CougaarEvent.postComponentEvent(CougaarEventType.END,
                                                 getAgentIdentifier().toString(),
                                                 this.getClass().getName(),
                                                 "Restart succeeded:" +
                                                 " agent=" + hs.getAgentId() +
-                                                " node=" + hs.getNode());
+                                                " node=" + hs.getNode());*/
               } else if (hs.getStatus() == HealthStatus.MOVED) {
                 //log.info("Move complete: agent=" + hs.getAgentId());
-                CougaarEvent.postComponentEvent(CougaarEventType.END,
+                /*CougaarEvent.postComponentEvent(CougaarEventType.END,
                                                 getAgentIdentifier().toString(),
                                                 this.getClass().getName(),
                                                 "Move succeeded:" +
                                                 " agent=" + hs.getAgentId() +
-                                                " node=" + hs.getNode());
+                                                " node=" + hs.getNode());*/
               }
               hs.setState(HealthStatus.NORMAL);
               hs.setStatus(HealthStatus.OK);
@@ -481,20 +487,20 @@ public class HealthMonitorPlugin extends SimplePlugin implements
                     " agent=" + hs.getAgentId());
                   if (hs.getStatus() == HealthStatus.RESTARTED) {
                     //log.info("Reacquired agent: agent=" + hs.getAgentId());
-                    CougaarEvent.postComponentEvent(CougaarEventType.END,
+                    /*CougaarEvent.postComponentEvent(CougaarEventType.END,
                                                 getAgentIdentifier().toString(),
                                                 this.getClass().getName(),
                                                 "Restart succeeded:" +
                                                 " agent=" + hs.getAgentId() +
-                                                " node=" + hs.getNode());
+                                                " node=" + hs.getNode());*/
                   } else if (hs.getStatus() == HealthStatus.MOVED) {
                     //log.info("Move complete: agent=" + hs.getAgentId());
-                    CougaarEvent.postComponentEvent(CougaarEventType.END,
+                    /*CougaarEvent.postComponentEvent(CougaarEventType.END,
                                                 getAgentIdentifier().toString(),
                                                 this.getClass().getName(),
                                                 "Move succeeded:" +
                                                 " agent=" + hs.getAgentId() +
-                                                " node=" + hs.getNode());
+                                                " node=" + hs.getNode());*/
                   }
                   hs.setState(HealthStatus.NORMAL);
                   hs.setStatus(HealthStatus.OK);
@@ -665,10 +671,10 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       } else if (state.equals(HealthStatus.FAILED_RESTART)) {
         if (!state.equals(hs.getPriorState())) {
           log.error("Agent restart failed: agent=" + hs.getAgentId());
-          CougaarEvent.postComponentEvent(CougaarEventType.END,
+          /*CougaarEvent.postComponentEvent(CougaarEventType.END,
                                           getAgentIdentifier().toString(),
                                           this.getClass().getName(),
-                                          "Restart failed: agent=" + hs.getAgentId());
+                                          "Restart failed: agent=" + hs.getAgentId());*/
         }
         // While in this state periodically ping agent to see if it responds.
         //   If a response is received put agent back into NORMAL state.  Otherwise,
@@ -708,10 +714,10 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       } else if (state.equals(HealthStatus.FAILED_MOVE)) {
         // Move failed resume normal monitoring
         log.warn("Agent move failed: agent=" + hs.getAgentId());
-        CougaarEvent.postComponentEvent(CougaarEventType.END,
+        /*CougaarEvent.postComponentEvent(CougaarEventType.END,
                                         getAgentIdentifier().toString(),
                                         this.getClass().getName(),
-                                        "Move failed: agent=" + hs.getAgentId());
+                                        "Move failed: agent=" + hs.getAgentId());*/
         hs.setState(HealthStatus.NORMAL);
         hs.setHeartbeatStatus(HealthStatus.HB_NORMAL);
       //************************************************************************
@@ -897,11 +903,23 @@ public class HealthMonitorPlugin extends SimplePlugin implements
    * @return True if node agent
    */
   private boolean isNodeAgent(String agentName) {
-    try {
+    /*try {
       TopologyEntry te = topologyService.getEntryForAgent(agentName);
       return (te != null && te.getType() == te.NODE_AGENT_TYPE);
     } catch (Exception ex) {
       log.error("Exception getting agent location from TopologyReaderService", ex);
+    }
+    return false;*/
+    try {
+      AddressEntry[] entrys = wps.get("MTS");
+      for(int i=0; i<entrys.length; i++) {
+        String nodeName = entrys[i].getApplication().toString();
+        nodeName = nodeName.substring(0, nodeName.indexOf("(MTS)"));
+        if(agentName.equals(nodeName))
+          return true;
+      }
+    }catch(Exception e){
+      log.error("Exception getting agent location from WhitePagesService", e);
     }
     return false;
   }
@@ -915,10 +933,20 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     // Get agents current location
     String node = "";
     try {
-      TopologyEntry te = topologyService.getEntryForAgent(agentName);
-      node = te.getNode();
+      /*TopologyEntry te = topologyService.getEntryForAgent(agentName);
+      node = te.getNode();*/
+      AddressEntry entrys[] = wps.get(agentName);
+      for(int i=0; i<entrys.length; i++) {
+        if(entrys[i].getApplication().toString().equals("topology")) {
+          String uri = entrys[i].getAddress().toString();
+          if(uri.startsWith("node:")) {
+            node = uri.substring(uri.lastIndexOf("/")+1, uri.length());
+            break;
+          }
+        }
+      }
     } catch (Exception ex) {
-      log.error("Exception getting agent location for TopologyReaderService", ex);
+      log.error("Exception getting agent location for WhitePagesService", ex);
     }
     return node;
   }
@@ -1311,7 +1339,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
    * Gets reference to TopologyReaderService.
    * @return Reference to TopolotyReaderService
    */
-  private TopologyReaderService getTopologyReaderService() {
+ /* private TopologyReaderService getTopologyReaderService() {
     int counter = 0;
     ServiceBroker sb = getBindingSite().getServiceBroker();
     while (!sb.hasService(TopologyReaderService.class)) {
@@ -1320,6 +1348,22 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       try { Thread.sleep(500); } catch (Exception ex) {log.error(ex.getMessage());}
     }
     return (TopologyReaderService)sb.getService(this, TopologyReaderService.class, null);
+  }*/
+
+  /**
+   * Gets reference to WhitePagesService.
+   * @return Reference to WhitePagesService.
+   */
+  //modified at Mar.04, 2003 to match cougaar-10.2 by qing
+  private WhitePagesService getWhitePagesService() {
+    int counter = 0;
+    ServiceBroker sb = getBindingSite().getServiceBroker();
+    while (!sb.hasService(WhitePagesService.class)) {
+      // Print a message after waiting for 30 seconds
+      if (++counter == 60) log.info("Waiting for WhitePagesService ... ");
+      try { Thread.sleep(500); } catch (Exception ex) {log.error(ex.getMessage());}
+    }
+    return (WhitePagesService)sb.getService(this, WhitePagesService.class, null);
   }
 
 

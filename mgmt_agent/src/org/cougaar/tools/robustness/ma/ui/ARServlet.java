@@ -14,8 +14,8 @@ import org.cougaar.core.servlet.ServletUtil;
 import org.cougaar.core.service.NamingService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.BlackboardService;
-import org.cougaar.core.service.TopologyReaderService;
-import org.cougaar.core.service.TopologyEntry;
+//import org.cougaar.core.service.TopologyReaderService;
+//import org.cougaar.core.service.TopologyEntry;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.util.PropertyNameValue;
@@ -28,6 +28,10 @@ import org.cougaar.util.ConfigFinder;
 import javax.xml.transform.*;
 import javax.xml.transform.stream.*;
 
+import org.cougaar.core.service.wp.WhitePagesService;
+import org.cougaar.core.service.wp.AddressEntry;
+import org.cougaar.core.service.wp.Application;
+
 /**
  * This servlet provides community information.
  */
@@ -36,8 +40,9 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
   private BlackboardService bb;
   private DomainService ds;
   private LoggingService log;
-  private TopologyReaderService trs;
-  private MessageAddress agentId;
+  //private TopologyReaderService trs;
+  private WhitePagesService wps;
+  //private MessageAddress agentId;
   private String indexName = "Communities";
 
   /**
@@ -50,9 +55,9 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
   public void load() {
     // get the logging service
     log =  (LoggingService) serviceBroker.getService(this, LoggingService.class, null);
-    org.cougaar.planning.plugin.legacy.PluginBindingSite pbs =
-      (org.cougaar.planning.plugin.legacy.PluginBindingSite) bindingSite;
-    this.agentId = pbs.getAgentIdentifier();
+    //org.cougaar.planning.plugin.legacy.PluginBindingSite pbs =
+      //(org.cougaar.planning.plugin.legacy.PluginBindingSite) bindingSite;
+    //this.agentId = pbs.getAgentIdentifier();
     super.load();
   }
 
@@ -72,9 +77,13 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     if (ns == null) {
       throw new RuntimeException("no naming service?!");
     }
-    trs = (TopologyReaderService)serviceBroker.getService(this, TopologyReaderService.class, null);
+    /*trs = (TopologyReaderService)serviceBroker.getService(this, TopologyReaderService.class, null);
     if(trs == null) {
       throw new RuntimeException("no topology reader service.");
+    }*/
+    wps = (WhitePagesService)serviceBroker.getService(this, WhitePagesService.class, null);
+    if(wps == null) {
+      throw new RuntimeException("no WhitePagesService.");
     }
     return new MyServlet();
   }
@@ -408,11 +417,14 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
              {
                NameClassPair ncp = (NameClassPair)entityEnums.next();
                String entityName = ncp.getName();
-               if(ncp.getClassName().equals("org.cougaar.core.agent.ClusterIdentifier"))
+               if(ncp.getClassName().equals("org.cougaar.core.mts.SimpleMessageAddress"))
                {
-                   String nodeName = trs.getParentForChild(trs.NODE, trs.AGENT, ncp.getName());
+                  String uri = getEntityURI(entityName);
+                  String nodeName = uri.substring(uri.lastIndexOf("/")+1);
+                   //String nodeName = trs.getParentForChild(trs.NODE, trs.AGENT, ncp.getName());
                    entityName += "  (" + nodeName + ")";
-                   String hostName = trs.getEntryForAgent(ncp.getName()).getHost();
+                   //String hostName = trs.getEntryForAgent(ncp.getName()).getHost();
+                  String hostName = uri.substring(7, uri.lastIndexOf("/"));
                    if(hosts.containsKey(hostName))
                    {
                      Hashtable nodes = (Hashtable)hosts.get(hostName);
@@ -649,6 +661,23 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
       xmlsb.append("</community>\n");
      return xmlsb.toString();
   }
+
+  private String getEntityURI(String entityName){
+    String uri = "";
+    try{
+      AddressEntry entrys[] = wps.get(entityName);
+      for(int i=0; i<entrys.length; i++) {
+        if(entrys[i].getApplication().toString().equals("topology") && entrys[i].getAddress().toString().startsWith("node:")) {
+          uri = entrys[i].getAddress().toString();
+          return uri;
+        }
+      }
+    }catch(Exception e){
+      log.error("Try to get location from WhitePagesService: " + e);
+    }
+    return uri;
+  }
+
 
     // odd BlackboardClient method:
   public String getBlackboardClientName() {

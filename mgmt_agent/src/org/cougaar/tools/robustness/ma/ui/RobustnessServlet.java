@@ -34,8 +34,8 @@ import org.cougaar.core.service.ServletService;
 import org.cougaar.core.service.NamingService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.BlackboardService;
-import org.cougaar.core.service.TopologyReaderService;
-import org.cougaar.core.service.TopologyEntry;
+//import org.cougaar.core.service.TopologyReaderService;
+//import org.cougaar.core.service.TopologyEntry;
 import org.cougaar.core.service.UIDService;
 import org.cougaar.core.service.DomainService;
 //import org.cougaar.core.agent.ClusterIdentifier;
@@ -64,6 +64,10 @@ import org.cougaar.tools.robustness.ma.ldm.VacateRequest;
 import org.cougaar.tools.robustness.ma.ldm.RestartLocationRequest;
 import org.cougaar.tools.robustness.ma.ldm.VacateRequestRelay;
 
+import org.cougaar.core.service.wp.WhitePagesService;
+import org.cougaar.core.service.wp.AddressEntry;
+import org.cougaar.core.service.wp.Application;
+
 /**
  * This servlet provides an interface to the ManagementAgent for the
  * RobustnessUI.  This servlet is used to retrieve community information
@@ -76,7 +80,8 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
   private BlackboardService bb;
   private DomainService ds;
   private LoggingService log;
-  private TopologyReaderService trs;
+  //private TopologyReaderService trs;
+  private WhitePagesService wps;
   private UIDService uids;
   private MobilityFactory mobilityFactory;
   protected AgentIdentificationService agentIdService;
@@ -96,11 +101,7 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
   public void load() {
     // get the logging service
     log =  (LoggingService) serviceBroker.getService(this, LoggingService.class, null);
-    /*org.cougaar.planning.plugin.legacy.PluginBindingSite pbs =
-      (org.cougaar.planning.plugin.legacy.PluginBindingSite) bindingSite;
-    this.agentId = pbs.getAgentIdentifier();*/
     uids = (UIDService)serviceBroker.getService(this, UIDService.class, null);
-    mobilityFactory = (MobilityFactory) ds.getFactory("mobility");
     if (mobilityFactory == null) {
       log.info("Unable to get 'mobility' domain");
     }
@@ -127,6 +128,7 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
 
   public void setDomainService(DomainService ds) {
     this.ds = ds;
+    mobilityFactory = (MobilityFactory) ds.getFactory("mobility");
     //this.rootFactory = ds.getFactory();
   }
 
@@ -138,9 +140,14 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
     if (ns == null) {
       throw new RuntimeException("no naming service?!");
     }
-    trs = (TopologyReaderService)serviceBroker.getService(this, TopologyReaderService.class, null);
+   /* trs = (TopologyReaderService)serviceBroker.getService(this, TopologyReaderService.class, null);
     if(trs == null) {
       throw new RuntimeException("no topology reader service.");
+    }*/
+
+    wps = (WhitePagesService)serviceBroker.getService(this, WhitePagesService.class, null);
+    if(wps == null) {
+      throw new RuntimeException("no white pages service.");
     }
     return new MyServlet();
   }
@@ -228,8 +235,10 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
       }
       else if(command.equals("getParentHost"))
       {
-        result = trs.getParentForChild(TopologyReaderService.HOST,
-           TopologyReaderService.NODE, (String)vs.get(1));
+        /*result = trs.getParentForChild(TopologyReaderService.HOST,
+           TopologyReaderService.NODE, (String)vs.get(1));*/
+        String uri = getEntityURI((String)vs.get(1));
+        result = uri.substring(7, uri.lastIndexOf("/"));
       }
 
       ServletOutputStream outs = res.getOutputStream();
@@ -263,8 +272,8 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
         InitialDirContext idc = ns.getRootContext();
         Hashtable communities = buildCommunitiesTable(idc, indexName);
         totalList.put("Communities", communities);
-        Hashtable topology = getTopology();
-        totalList.put("Topology", topology);
+        //Hashtable topology = getTopology();
+        //totalList.put("Topology", topology);
         oout.writeObject(totalList);
       }catch(NamingException e){log.error(e.getMessage());}
     }
@@ -306,9 +315,12 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
                String entityName = ncp.getName();
                if(ncp.getClassName().equals("org.cougaar.core.mts.SimpleMessageAddress"))
                {
-                   String nodeName = trs.getParentForChild(trs.NODE, trs.AGENT, ncp.getName());
+                  String uri = getEntityURI(entityName);
+                  String nodeName = uri.substring(uri.lastIndexOf("/")+1);
+                   //String nodeName = trs.getParentForChild(trs.NODE, trs.AGENT, ncp.getName());
                    entityName += "  (" + nodeName + ")";
-                   String hostName = trs.getEntryForAgent(ncp.getName()).getHost();
+                   //String hostName = trs.getEntryForAgent(ncp.getName()).getHost();
+                  String hostName = uri.substring(7, uri.lastIndexOf("/"));
                    if(hosts.containsKey(hostName))
                    {
                      Hashtable nodes = (Hashtable)hosts.get(hostName);
@@ -416,7 +428,7 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
     return doc;
   }
 
-  private Hashtable getTopology()
+ /* private Hashtable getTopology()
   {
     Hashtable topology = new Hashtable();
     Set hosts = trs.getAll(TopologyReaderService.HOST);
@@ -434,6 +446,22 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
       topology.put(host, nodes_agents);
     }
     return topology;
+  }*/
+
+  private String getEntityURI(String entityName){
+    String uri = "";
+    try{
+      AddressEntry entrys[] = wps.get(entityName);
+      for(int i=0; i<entrys.length; i++) {
+        if(entrys[i].getApplication().toString().equals("topology") && entrys[i].getAddress().toString().startsWith("node:")) {
+          uri = entrys[i].getAddress().toString();
+          return uri;
+        }
+      }
+    }catch(Exception e){
+      log.error("Try to get location from WhitePagesService: " + e);
+    }
+    return uri;
   }
 
   // odd BlackboardClient method:

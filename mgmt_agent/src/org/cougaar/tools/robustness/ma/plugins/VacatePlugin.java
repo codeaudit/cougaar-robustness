@@ -27,8 +27,8 @@ import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.planning.plugin.legacy.SimplePlugin;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.BlackboardService;
-import org.cougaar.core.service.TopologyReaderService;
-import org.cougaar.core.service.TopologyEntry;
+//import org.cougaar.core.service.TopologyReaderService;
+//import org.cougaar.core.service.TopologyEntry;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.NamingService;
 import org.cougaar.core.service.community.*;
@@ -43,10 +43,14 @@ import org.cougaar.core.mobility.ldm.AgentControl;
 
 import org.cougaar.util.UnaryPredicate;
 
-import org.cougaar.util.CougaarEvent;
-import org.cougaar.util.CougaarEventType;
+//import org.cougaar.util.CougaarEvent;
+//import org.cougaar.util.CougaarEventType;
 
 import org.cougaar.core.util.UID;
+
+import org.cougaar.core.service.wp.WhitePagesService;
+import org.cougaar.core.service.wp.AddressEntry;
+import org.cougaar.core.service.wp.Application;
 
 
 /**
@@ -56,10 +60,11 @@ import org.cougaar.core.util.UID;
 public class VacatePlugin extends SimplePlugin {
 
   private LoggingService log;
-  private TopologyReaderService trs;
+  //private TopologyReaderService trs;
   private BlackboardService bbs = null;
   private CommunityService cs;
   private MobilityFactory mobilityFactory;
+  private WhitePagesService wps;
 
   // My unique ID
   UID myUID;
@@ -76,8 +81,11 @@ public class VacatePlugin extends SimplePlugin {
     log =  (LoggingService) getBindingSite().getServiceBroker().
       getService(this, LoggingService.class, null);
 
-    trs = (TopologyReaderService)getBindingSite().getServiceBroker().
-      getService(this, TopologyReaderService.class, null);
+    //trs = (TopologyReaderService)getBindingSite().getServiceBroker().
+      //getService(this, TopologyReaderService.class, null);
+
+    wps = (WhitePagesService)getBindingSite().getServiceBroker().
+      getService(this, WhitePagesService.class, null);
 
     cs = (CommunityService)getBindingSite().getServiceBroker().
       getService(this, CommunityService.class, null);
@@ -187,12 +195,12 @@ public class VacatePlugin extends SimplePlugin {
               if (hs != null) hs.setState(HealthStatus.MOVE);
               publishChange(hs);
               bbs.publishAdd(ac);
-              CougaarEvent.postComponentEvent(CougaarEventType.START,
+              /*CougaarEvent.postComponentEvent(CougaarEventType.START,
                                               getAgentIdentifier().toString(),
                                               this.getClass().getName(),
                                               "Moving agent:" +
                                               " agent=" + hs.getAgentId() +
-                                              " destNode=" + newNodeName);
+                                              " destNode=" + newNodeName);*/
               log.info("Moving agent: agent=" + agent + " destHost=" + destHost +
                 " destNode=" + newNodeName);
               log.debug("Published AgentControl: " + ac);
@@ -317,10 +325,26 @@ public class VacatePlugin extends SimplePlugin {
       Collection agentIds = roster.getMemberAgents();
       for (Iterator it = agentIds.iterator(); it.hasNext();) {
         MessageAddress aid = (MessageAddress)it.next();
-        TopologyEntry te = trs.getEntryForAgent(aid.toString());
-        if (te.getHost().equals(hostName)) {
+        //TopologyEntry te = trs.getEntryForAgent(aid.toString());
+        String uri = "";
+        try{
+          AddressEntry entrys[] = wps.get(aid.toString());
+          for(int i=0; i<entrys.length; i++) {
+            if(entrys[i].getApplication().equals("topology") && entrys[i].getAddress().toString().startsWith("node:")) {
+              uri = entrys[i].getAddress().toString();
+              break;
+            }
+          }
+        }catch(Exception e){
+          log.error("Try to get location from WhitePagesService: " + e);
+        }
+        String host = uri.substring(7, uri.lastIndexOf("/"));
+        /*if (te.getHost().equals(hostName)) {
           String node = te.getNode();
-          String agent = te.getAgent();
+          String agent = te.getAgent();*/
+        if(host.equals(hostName)) {
+          String node = uri.substring(uri.lastIndexOf("/")+1);
+          String agent = aid.toString();
           if (!nodes.containsKey(node)) nodes.put(node, new Vector());
           List agentList = (List)nodes.get(node);
           if(!agentList.contains(agent)) agentList.add(agent);

@@ -41,8 +41,8 @@ import org.cougaar.core.agent.service.alarm.Alarm;
 
 import org.cougaar.core.util.UID;
 
-import org.cougaar.util.CougaarEvent;
-import org.cougaar.util.CougaarEventType;
+//import org.cougaar.util.CougaarEvent;
+//import org.cougaar.util.CougaarEventType;
 
 import org.cougaar.util.UnaryPredicate;
 
@@ -332,10 +332,10 @@ public class DecisionPlugin extends SimplePlugin {
     AgentControl ac =
       mobilityFactory.createAgentControl(acUID, destNodeAddr, addTicket);
 
-    CougaarEvent.postComponentEvent(CougaarEventType.START,
+    /*CougaarEvent.postComponentEvent(CougaarEventType.START,
                                     getAgentIdentifier().toString(),
                                     this.getClass().getName(),
-                                    "Restarting agent: agent=" + agent);
+                                    "Restarting agent: agent=" + agent);*/
     if (log.isDebugEnabled()) {
       StringBuffer sb = new StringBuffer("AgentControl publication:" +
         " myUid=" + agentControlUIDs.contains(ac.getOwnerUID()) +

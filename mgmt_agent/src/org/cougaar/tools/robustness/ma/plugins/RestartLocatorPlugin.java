@@ -33,8 +33,8 @@ import org.cougaar.planning.plugin.legacy.SimplePlugin;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.BlackboardService;
-import org.cougaar.core.service.TopologyEntry;
-import org.cougaar.core.service.TopologyReaderService;
+//import org.cougaar.core.service.TopologyEntry;
+//import org.cougaar.core.service.TopologyReaderService;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.mts.SimpleMessageAddress;
 
@@ -50,6 +50,10 @@ import org.cougaar.tools.server.system.ProcessStatus;
 
 import org.cougaar.core.service.community.*;
 import org.cougaar.community.*;
+
+import org.cougaar.core.service.wp.WhitePagesService;
+import org.cougaar.core.service.wp.AddressEntry;
+import org.cougaar.core.service.wp.Application;
 
 /**
  * This plugin selects a destination node for an agent restart
@@ -70,7 +74,8 @@ public class RestartLocatorPlugin extends SimplePlugin {
   private BlackboardService bbs = null;
   private MessageAddress myAgent = null;
   private CommunityService communityService = null;
-  private TopologyReaderService topologyService = null;
+  //private TopologyReaderService topologyService = null;
+  private WhitePagesService wps = null;
 
   private SensorFactory sensorFactory;
 
@@ -122,7 +127,8 @@ public class RestartLocatorPlugin extends SimplePlugin {
     myAgent = getMessageAddress();
 
     communityService = getCommunityService();
-    topologyService = getTopologyReaderService();
+    //topologyService = getTopologyReaderService();
+    wps = getWhitePagesService();
 
     // Find name of community to monitor
     Collection communities = communityService.search("(CommunityManager=" +
@@ -377,8 +383,8 @@ public class RestartLocatorPlugin extends SimplePlugin {
     hosts = new HashMap();
     nodes = new HashMap();
     specifiedHosts = new Vector();
-    if (topologyService == null) {
-      log.error("TopologyService is null");
+    if (wps == null) {
+      log.error("WhitePagesService is null");
     } else {
       try {
         CommunityRoster roster = communityService.getRoster(communityToMonitor);
@@ -388,13 +394,27 @@ public class RestartLocatorPlugin extends SimplePlugin {
           CommunityMember cm = (CommunityMember)it.next();
           if (cm.isAgent()) {
             String agentName = cm.getName();
-            TopologyEntry te = topologyService.getEntryForAgent(agentName);
+            /*TopologyEntry te = topologyService.getEntryForAgent(agentName);
             if (te == null) {
               log.debug("Null TopologyEntry: agent =" + agentName);
               continue;
             }
             String hostName = te.getHost();
-            String nodeName = te.getNode();
+            String nodeName = te.getNode();*/
+            //modified at Mar.04, 2003 to match cougaar-10.2
+            String hostName = "";
+            String nodeName = "";
+            AddressEntry entrys[] = wps.get(agentName);
+            for(int i=0; i<entrys.length; i++) {
+              if(entrys[i].getApplication().toString().equals("topology")) {
+                String uri = entrys[i].getAddress().toString();
+                if(uri.startsWith("node:")) {
+                  nodeName = uri.substring(uri.lastIndexOf("/")+1, uri.length());
+                  hostName = uri.substring(7, uri.lastIndexOf("/"));
+                  break;
+                }
+              }
+            }
             if (!hosts.containsKey(hostName)) hosts.put(hostName, new Vector());
             Collection c = (Collection)hosts.get(hostName);
             if (!c.contains(nodeName)) c.add(nodeName);
@@ -432,16 +452,51 @@ public class RestartLocatorPlugin extends SimplePlugin {
     for (Iterator it = candidateNodes.iterator(); it.hasNext();) {
       String nodeName = (String)it.next();
       if (excludedNodes != null && !excludedNodes.contains(nodeName)) {
-        String hostName =
+        /*String hostName =
           topologyService.getParentForChild(topologyService.HOST,
                                             topologyService.NODE,
-                                            nodeName);
+                                            nodeName);*/
+        String hostName = "";
+        try{
+          AddressEntry entrys[] = wps.get(nodeName);
+          for(int i=0; i<entrys.length; i++) {
+              if(entrys[i].getApplication().toString().equals("topology")) {
+                String uri = entrys[i].getAddress().toString();
+                if(uri.startsWith("node:")) {
+                  hostName = uri.substring(7, uri.lastIndexOf("/"));
+                  break;
+                }
+              }
+          }
+        }catch(Exception e){
+          log.error("Try to get host of node " + nodeName + " from WhitePagesService: " + e);
+        }
         if (hostName != null &&
             (excludedHosts == null || !excludedHosts.contains(hostName))) {
-          Set agents =
+          /*Set agents =
             topologyService.getChildrenOnParent(topologyService.AGENT,
                                               topologyService.NODE,
-                                              nodeName);
+                                              nodeName);*/
+          List agents = new ArrayList();
+          try{
+            String uri = "node://" + hostName + "/" + nodeName;
+            Set set = wps.list(".");
+            for(Iterator iter = set.iterator(); iter.hasNext();) {
+              String name = (String)iter.next();
+              if(!name.equals(nodeName)) {
+                AddressEntry[] entrys = wps.get(name);
+                for(int i=0; i<entrys.length; i++) {
+                  if(entrys[i].getAddress().equals(uri)) {
+                    agents.add(name);
+                    break;
+                  }
+                }
+              }
+            }
+          }catch(Exception e){
+            log.error("Try to get agents from WhitePagesService: " + e);
+          }
+
           if (agents == null || excludedAgents == null) {
             selectedNodes.add(nodeName);
           } else {
@@ -575,7 +630,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
    * Gets reference to TopologyReaderService.
    * @return Reference to TopologyReaderService
    */
-  private TopologyReaderService getTopologyReaderService() {
+  /*private TopologyReaderService getTopologyReaderService() {
     ServiceBroker sb = getBindingSite().getServiceBroker();
     if (sb.hasService(TopologyReaderService.class)) {
       return (TopologyReaderService)sb.getService(this, TopologyReaderService.class,
@@ -586,6 +641,22 @@ public class RestartLocatorPlugin extends SimplePlugin {
       log.error("TopologyReaderService not available");
       return null;
     }
+  }*/
+
+  /**
+   * Gets reference to WhitePagesService.
+   * @return Reference to WhitePagesService.
+   */
+  //modified at Mar.04, 2003 to match cougaar-10.2 by qing
+  private WhitePagesService getWhitePagesService() {
+    int counter = 0;
+    ServiceBroker sb = getBindingSite().getServiceBroker();
+    while (!sb.hasService(WhitePagesService.class)) {
+      // Print a message after waiting for 30 seconds
+      if (++counter == 60) log.info("Waiting for WhitePagesService ... ");
+      try { Thread.sleep(500); } catch (Exception ex) {log.error(ex.getMessage());}
+    }
+    return (WhitePagesService)sb.getService(this, WhitePagesService.class, null);
   }
 
   /**

@@ -82,7 +82,7 @@ public class RobustnessUI extends JPanel
 
   /** Save topology of the whole society. This list is used to check if one node is contained
    *  in a host or one agent is contained in a node.*/
-  private static Hashtable topology;
+  //private static Hashtable topology;
 
   /** Save all elements been relocated but still not executed in the real society. */
   private static Hashtable dndList = new Hashtable();
@@ -192,7 +192,7 @@ public class RobustnessUI extends JPanel
     java.util.List nodes = new ArrayList();
     path.clear(); //empty the expanded list of the tree
     nodeandpath.clear(); //empty the node and path list.
-    topology = (Hashtable)table.get("Topology"); //get topology list of the society.
+    //topology = (Hashtable)table.get("Topology"); //get topology list of the society.
     DefaultMutableTreeNode root = new DefaultMutableTreeNode();
     final Hashtable c = (Hashtable)table.get("Communities");
     DefaultMutableTreeNode communities = buildCommunitySubTree(c, nodes);
@@ -705,7 +705,8 @@ public class RobustnessUI extends JPanel
     Vector clusterNames = new Vector();
     try{
      //generate a plain text, one agent name each line.
-     URL url1 = new URL("http://" + host + ":" + port + "/agents?scope=all");
+     //URL url1 = new URL("http://" + host + ":" + port + "/agents?scope=all");
+     URL url1 = new URL("http://" + host + ":" + port + "/agents?scope=all&format=text");
      URLConnection connection = url1.openConnection();
      ((HttpURLConnection)connection).setRequestMethod("PUT");
      connection.setDoInput(true);
@@ -716,7 +717,7 @@ public class RobustnessUI extends JPanel
      boolean flag = false;
      while(name != null)
      {
-        if(name.indexOf("</ol>") != -1) {
+       /* if(name.indexOf("</ol>") != -1) {
           break;
         }
         if(flag)
@@ -729,7 +730,8 @@ public class RobustnessUI extends JPanel
         }
         if(name.indexOf("<ol>") != -1) {
           flag = true;
-        }
+        }*/
+       clusterNames.add(name);
        name = in.readLine();
      }
     }catch(Exception o){o.printStackTrace();}
@@ -1030,37 +1032,6 @@ public class RobustnessUI extends JPanel
       timer.start();
    }
 
-   /**
-    * Is given node is contained in the host?
-    * @param hostName the host
-    * @param nodeName the node
-    * @return a boolean value
-    */
-   public static boolean isNodeInHost(String hostName, String nodeName)
-   {
-     Hashtable nodes = (Hashtable)topology.get(hostName);
-     return nodes.containsKey(nodeName);
-   }
-
-   /**
-    * Is given agent is contained in the node
-    * @param nodeName the node be checked
-    * @param agentName the agent
-    * @return a boolean value
-    */
-   public static boolean isAgentInNode(String nodeName, String agentName)
-   {
-     for(Iterator it = topology.values().iterator(); it.hasNext();)
-     {
-       Hashtable nodes = (Hashtable)it.next();
-       if(nodes.containsKey(nodeName))
-       {
-         Set agents = (Set)nodes.get(nodeName);
-         return agents.contains(agentName);
-       }
-     }
-     return false;
-   }
 
    /**
     * Get a list of all hosts who contain empty nodes.
