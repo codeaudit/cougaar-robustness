@@ -82,7 +82,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
 
     public void expired(String name) {
-      logger.info("Expired Status:" + " agent=" + name + " state=INITIAL" +
+      logger.debug("Expired Status:" + " agent=" + name + " state=INITIAL" +
                   " expiration=" + model.getStateExpiration(name));
       newState(name, HEALTH_CHECK);
     }
@@ -112,7 +112,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       }
     }
     public void expired(String name) {
-      logger.info("Expired Status:" + " agent=" + name + " state=LOCATED");
+      logger.debug("Expired Status:" + " agent=" + name + " state=LOCATED");
       if (isLocal(name)) newState(name, HEALTH_CHECK);
     }
     public void heartbeatStarted(String name) {
@@ -382,7 +382,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       communityReady = false;
     }
     public void expired(String name) {
-      logger.info("Expired Status:" + " agent=" + name + " state=MOVE");
+      logger.debug("Expired Status:" + " agent=" + name + " state=MOVE");
       if (isLeader(thisAgent) || isLocal(name)) {
         newState(name, HEALTH_CHECK);
       }
@@ -426,7 +426,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     public void enter(String name) {
       if(getDeconflictHelper() != null) {
         if (!getDeconflictHelper().isDefenseApplicable(name)) {
-          logger.info("change condition of " + name);
+          logger.debug("change condition of " + name);
           getDeconflictHelper().changeApplicabilityCondition(name);
         }
         if (getDeconflictHelper().isOpEnabaled(name)) {
@@ -760,7 +760,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         if (!newNodes.isEmpty()) {
           LoadBalancerListener lbl = new LoadBalancerListener() {
             public void layoutReady(Map layout) {
-              logger.info("layout from EN4J: " + layout);
+              logger.debug("layout from EN4J: " + layout);
               getLoadBalancer().moveAgents(layout);
             }
           };

@@ -209,7 +209,7 @@ public class DeconflictHelper extends BlackboardClientComponent {
     Iterator it = opModeSubscription.getChangedCollection().iterator();
     while(it.hasNext()) {
       RestartDefenseEnabler rde = (RestartDefenseEnabler)it.next();
-      logger.info("get opmode change: " + rde.getAsset() + " -- " + rde.getValue());
+      logger.debug("get opmode change: " + rde.getAsset() + " -- " + rde.getValue());
       if(rde.getValue().equals(DefenseConstants.DEF_ENABLED.toString())) {
         if(rde.getAssetType().equals(assetType)) {
           String agent = rde.getAsset();
@@ -259,7 +259,7 @@ public class DeconflictHelper extends BlackboardClientComponent {
   public void opmodeDisabled(String name) {
     if(opModeEnabled.contains(name)) {
       opModeEnabled.remove(name);
-      //logger.info("remove " + name + " from opModeEnabled queue");
+      logger.debug("remove " + name + " from opModeEnabled queue");
     }
   }
 
@@ -350,7 +350,7 @@ public class DeconflictHelper extends BlackboardClientComponent {
     for(int i=0; i<defenseConditionQueue.size(); i++) {
       RestartDefenseCondition rdc = (RestartDefenseCondition)defenseConditionQueue.get(i);
       blackboard.publishChange(rdc);
-      logger.info("** publish RestartCondition - " + rdc.getName() + "=" + rdc.getValue());
+      logger.debug("** publish RestartCondition - " + rdc.getName() + "=" + rdc.getValue());
     }
     defenseConditionQueue.clear();
   }
