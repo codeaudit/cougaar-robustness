@@ -94,7 +94,7 @@ public class LinksStatusSensor extends ComponentPlugin
     private static final String FAIR      = "Fair";
     private static final String POOR      = "Poor";
     private static final String NONE      = "None";
-    private static final String NO_DATA   = "No_Data";
+    private static final String NODATA    = "NoData";
     
     public void load() {
 	super.load();
@@ -186,7 +186,7 @@ public class LinksStatusSensor extends ComponentPlugin
 		rmiDiag = new RMILinksStatusDiagnosis(agentName,sb);
 		sfDiag  = new StoreAndForwardLinksStatusDiagnosis(agentName,sb);
 		altDiag = new AlternateDirectLinksStatusDiagnosis(agentName,sb);
-		allDiag = new CombinedLinksStatusDiagnosis(agentName,sb);
+		allDiag = new AllLinksStatusDiagnosis(agentName,sb);
 	    } catch  (TechSpecNotFoundException e) {
 		if (tsLookupCnt > 10) {
 		    log.warn("TechSpec not found for LinksStatusDiagnosis.  Will retry.", e);
@@ -320,7 +320,7 @@ public class LinksStatusSensor extends ComponentPlugin
     }
 
     private String calcDiag (int sends, int successes) {
-	if (sends == 0) return NO_DATA;
+	if (sends == 0) return NODATA;
 	if (successes == 0) return NONE;
 	int rate = (successes*100)/sends;
 	if (rate >= excellent) return EXCELLENT;
