@@ -90,7 +90,7 @@ module Cougaar
       def perform
         @run.comms.on_cougaar_event do |event|
           if event.component=="DisconnectManagerPlugin" && event.data.include?("is Tardy")
-	    if nodes==nil
+	    if @nodes==nil
               @run.info_message event.data if @messaging >= 1
             else 
               for i in 0 ... @nodes.length
@@ -123,7 +123,7 @@ module Cougaar
       def perform
         @run.comms.on_cougaar_event do |event|
           if event.component=="DisconnectNodePlugin" && event.data.include?(" has received permission to Reconnect")
-            if nodes==nil
+            if @nodes==nil
               @run.info_message event.data if @messaging >= 1
             else
               for i in 0 ... @nodes.length
@@ -270,7 +270,7 @@ module Cougaar
         loop = true
         while loop
           event = @run.get_next_event
-          #@run.info_message event.data id @messaging >= 2
+          #@run.info_message event.data if @messaging >= 2
           if event.component=="DisconnectManagerPlugin" && event.data.include?(@node+" is Tardy and is no longer legitimately Disconnected")
             loop = false
             @run.info_message event.data
