@@ -2,14 +2,14 @@
 
 <!DOCTYPE ActuatorType SYSTEM "ActuatorTypeDTD.dtd">
 
-<ActuatorType name="org.cougaar.coordinator.test.defense.MsgLogActuator" 
+<ActuatorType name="org.cougaar.mts.std.LinksEnablingAction" 
               affectsAssetType="Agent" 
-              affectsStateDimension="MsgLogSetting" 
+              affectsStateDimension="MsglogSetting" 
               actionType="COMPENSATORY">
 
-    <Action name="Suppress_Communications">
+    <Action name="SuppressCommunications">
         <Description value="Suppresses attempts to communicate" />
-        <Transition WhenActualStateIs="*" EndStateWillBe="Suppress_Communications" IntermediateStateWillBe="Suppress_Communications" >
+        <Transition WhenActualStateIs="*" EndStateWillBe="SuppressCommunications" IntermediateStateWillBe="SuppressCommunications" >
             <OneTimeCost>
                 <Time duration="100" />
             </OneTimeCost>
@@ -18,7 +18,7 @@
     
     <Action name="Normal">
         <Description value="Tries Normal RMI Communications only" />
-        <Transition WhenActualStateIs="*" EndStateWillBe="Normal_RMI_Protocol" IntermediateStateWillBe="Suppress_Communications" >
+        <Transition WhenActualStateIs="*" EndStateWillBe="NormalRMIProtocol" IntermediateStateWillBe="SuppressCommunications" >
             <OneTimeCost>
                 <Time duration="100" />
             </OneTimeCost>
@@ -28,9 +28,9 @@
         </Transition>
     </Action>
 
-    <Action name="Alternate_Direct_Protocols">
+    <Action name="AlternateDirectProtocols">
         <Description value="Adds other Direct Protocols to RMI" />
-        <Transition WhenActualStateIs="*" EndStateWillBe="Alternate_Direct_Protocols" IntermediateStateWillBe="Suppress_Communications">
+        <Transition WhenActualStateIs="*" EndStateWillBe="AlternateDirectProtocols" IntermediateStateWillBe="SuppressCommunications">
             <OneTimeCost>
                 <Time duration="100" />
             </OneTimeCost>
@@ -41,9 +41,9 @@
         </Transition>
     </Action>
 
-    <Action name="Store_And_Forward_Protocols">
+    <Action name="StoreAndForwardProtocols">
         <Description value="Adds the use of Store and Forward Protocols" />
-        <Transition WhenActualStateIs="*" EndStateWillBe="Store_And_Forward_Protocols" IntermediateStateWillBe="Suppress_Communications" >
+        <Transition WhenActualStateIs="*" EndStateWillBe="StoreAndForwardProtocols" IntermediateStateWillBe="SuppressCommunications" >
             <OneTimeCost>
                 <Time duration="1000" />
             </OneTimeCost>
