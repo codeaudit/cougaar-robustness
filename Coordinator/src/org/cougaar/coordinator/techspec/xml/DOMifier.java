@@ -60,7 +60,7 @@ public class DOMifier {
 
         DocumentBuilderFactory factory = DocumentBuilderFactoryImpl.newInstance();
         //Can customize factory before getting domBuilder.
-        factory.setValidating(true);
+        //factory.setValidating(true);
         
         try {
             domBuilder = factory.newDocumentBuilder();
