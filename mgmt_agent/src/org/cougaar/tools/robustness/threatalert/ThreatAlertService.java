@@ -20,9 +20,36 @@ package org.cougaar.tools.robustness.threatalert;
 
 import org.cougaar.core.component.Service;
 
+/**
+ * Service providing the ability to send and receive ThreatAlert relays.
+ *
+ */
 public interface ThreatAlertService extends Service {
+
+  /**
+   * Add a listener to receive new ThreatAlerts.
+   * @param tal  ThreatAlertListener to receive ThreatAlert notifications
+   */
   public void addListener(ThreatAlertListener tal);
+
+ /**
+  * Remove ThreatAlert listener.
+  * @param tal  ThreatAlertListener
+  */
   public void removeListener(ThreatAlertListener tal);
+
+  /**
+   * Broadcast a new ThreatAlert message.  The ThreatAlert is sent to all
+   * agents in the specified community with the specified role.
+   * @param ta  ThreatAlert to broadcast
+   * @param community  Destination community to receive alert
+   * @param role       Agents roles to receive alert
+   */
   public void sendAlert(ThreatAlert ta, String community, String role);
+
+  /**
+   * Get all current ThreatAlerts.
+   * @return Array of current ThreatAlerts
+   */
   public ThreatAlert[] getCurrentThreats();
 }

@@ -23,21 +23,53 @@ import org.cougaar.core.util.UniqueObject;
 
 import java.util.Date;
 
+/**
+ * Basic ThreatAlert defining alert level and affected assets.
+ */
 public interface ThreatAlert extends UniqueObject, Relay.Target {
 
-  public static final int MAX_SERVERITY      = 4;
+  // ThreatAlert severity levels
+  public static final int MAXIMUM_SERVERITY  = 4;
   public static final int HIGH_SEVERITY      = 3;
   public static final int MEDIUM_SEVERITY    = 2;
   public static final int LOW_SEVERITY       = 1;
-  public static final int MIN_SEVERITY       = 0;
+  public static final int MINIMUM_SEVERITY   = 0;
   public static final int UNDEFINED_SEVERITY = -1;
 
+  /**
+   * Get severity level associated with this alert.
+   * @return SeverityLevel
+   */
   public int getSeverityLevel();
-  public Date getCreationTime();
-  public Date getStartTime();
-  public Date getExpirationTime();
-  public Asset[] getAffectedAssets();
+
+  /**
+   * Get severity level associated with this alert.
+   * @return SeverityLevel as String
+   */
   public String getSeverityLevelAsString();
-  public String toString();
+
+  /**
+   * Get time alert was created.
+   * @return ThreatAlert creation time.
+   */
+  public Date getCreationTime();
+
+  /**
+   * Get time that alert becomes active.
+   * @return ThreatAlert activation time.
+   */
+  public Date getStartTime();
+
+  /**
+   * Get time that alert expires.
+   * @return ThreatAlert expiration time.
+   */
+  public Date getExpirationTime();
+
+  /**
+   * Get Assets that are affected by the alert.
+   * @return Array of Assets affected by alert.
+   */
+  public Asset[] getAffectedAssets();
 
 }

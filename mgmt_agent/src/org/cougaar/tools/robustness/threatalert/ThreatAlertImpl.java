@@ -81,9 +81,9 @@ public class ThreatAlertImpl implements ThreatAlert, java.io.Serializable {
     switch (severityLevel) {
       case ThreatAlert.HIGH_SEVERITY: return "HIGH";
       case ThreatAlert.LOW_SEVERITY: return "LOW";
-      case ThreatAlert.MAX_SERVERITY: return "MAX";
+      case ThreatAlert.MAXIMUM_SERVERITY: return "MAXIMUM";
       case ThreatAlert.MEDIUM_SEVERITY: return "MEDIUM";
-      case ThreatAlert.MIN_SEVERITY: return "MIN";
+      case ThreatAlert.MINIMUM_SEVERITY: return "MINIMUM";
       case ThreatAlert.UNDEFINED_SEVERITY: return "UNDEFINED";
     }
     return "Invalid Value";
