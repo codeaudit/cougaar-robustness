@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManager.java,v $
- * $Revision: 1.28 $
- * $Date: 2004-08-09 20:46:41 $
+ * $Revision: 1.29 $
+ * $Date: 2004-09-10 17:25:31 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -47,7 +47,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * and provides information via the ModelManagerInterface. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.28 $Date: 2004-08-09 20:46:41 $
+ * @version $Revision: 1.29 $Date: 2004-09-10 17:25:31 $
  *
  */
 public class ModelManager extends Loggable
@@ -933,6 +933,17 @@ public class ModelManager extends Loggable
          BeliefState belief = getInitialBeliefState( asset_id.getType() );
          
          belief.setAssetID( asset_id );
+
+         // The techspecs are currently set up to define a single
+         // initial state, which transaltes into an initial belief of
+         // certainty of that state.  Starting off believing that
+         // every other state has zero probability can cause trouble,
+         // because there is indeed some chance that these states
+         // might happen, though it is relkatively small.
+         //
+         belief.blurProbabilities
+                 ( _believability_knob.getInitialBeliefBlurAmount() );
+         
          
          return belief;
          
@@ -979,7 +990,7 @@ public class ModelManager extends Loggable
          // This is the routine that does the main work here.
          //
          belief.blurProbabilities
-                 ( _believability_knob.getInitialBeliefBlurAmount() );
+                 ( _believability_knob.getNoInformationBeliefBlurAmount() );
          
          return belief;
          

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BelievabilityKnob.java,v $
- * $Revision: 1.13 $
- * $Date: 2004-08-31 14:44:36 $
+ * $Revision: 1.14 $
+ * $Date: 2004-09-10 17:25:31 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.util.UnaryPredicate;
  * want to have external, dynamic control over.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.13 $Date: 2004-08-31 14:44:36 $
+ * @version $Revision: 1.14 $Date: 2004-09-10 17:25:31 $
  *
  */
 public class BelievabilityKnob implements Serializable 
@@ -49,7 +49,8 @@ public class BelievabilityKnob implements Serializable
     public static final long DEFAULT_MAX_PUBLISH_INTERVAL = 900000;
     public static final long DEFAULT_PUBLISH_DELAY_INTERVAL = 500;
     public static final boolean DEFAULT_IS_LEASHED   = true;
-    public static final double DEFAULT_INITIAL_BELIEF_BLUR_AMOUNT = 0.10;
+    public static final double DEFAULT_INIT_BELIEF_BLUR_AMOUNT = 0.01;
+    public static final double DEFAULT_NO_INFO_BELIEF_BLUR_AMOUNT = 0.10;
 
     /**
      * Convenience predicate for subscriptions for subscribing to this
@@ -104,6 +105,11 @@ public class BelievabilityKnob implements Serializable
         return _init_belief_blur_amount;
     }
 
+    public double getNoInformationBeliefBlurAmount()
+    {
+        return _no_info_belief_blur_amount;
+    }
+
     //------------------------------------------------------------
     // Mutators
     //------------------------------------------------------------
@@ -133,6 +139,11 @@ public class BelievabilityKnob implements Serializable
         _init_belief_blur_amount = value;
     }
 
+    public void setNoInformationBeliefBlurAmount( double value )
+    {
+        _no_info_belief_blur_amount = value;
+    }
+
     //------------------------------------------------------------
     // private interface
     //------------------------------------------------------------
@@ -154,7 +165,7 @@ public class BelievabilityKnob implements Serializable
      */
     private long _max_publish_interval = Long.valueOf(
         System.getProperty( "org.cougaar.coordinator.believability.MAX_PUBLISH_INTERVAL",
-			    String.valueOf(DEFAULT_MAX_PUBLISH_INTERVAL) )
+                   String.valueOf(DEFAULT_MAX_PUBLISH_INTERVAL) )
                           ).longValue();
 
     /**
@@ -179,8 +190,26 @@ public class BelievabilityKnob implements Serializable
     //    private boolean _is_leashed = DEFAULT_IS_LEASHED;
     private boolean _is_leashed = Boolean.valueOf(
         System.getProperty( "org.cougaar.coordinator.believability.IS_LEASHED",
-			    String.valueOf( DEFAULT_IS_LEASHED ) )
+                   String.valueOf( DEFAULT_IS_LEASHED ) )
                           ).booleanValue();
+
+    /**
+     * Assuming that something has probbaility is zero is generally a
+     * bad idea in a formal probabilistic model, since more than
+     * likely, most anything is possible, though often very
+     * unprobable.  But unlikely is infinitely different from not
+     * possible in the way the math gets done.  For this reason, on
+     * startup, though we are pretty sure of the initial state, we do
+     * not want to be so arrogant that we will not evenm consider
+     * other possible worlds, else the math wil punish us for our
+     * close-mindedness. Thus, we use this quantity to blur the
+     * initial believe state to ensure that we have at least some
+     * probability of being in an unexpected state.
+    */
+    private double _init_belief_blur_amount = Double.valueOf
+             ( System.getProperty
+               ( "org.cougaar.coordinator.believability.INIT_BELIEF_BLUR",
+                 String.valueOf(DEFAULT_INIT_BELIEF_BLUR_AMOUNT))).doubleValue();
 
     /**
      * In certain circumstances (such as rehydrating) the
@@ -200,7 +229,9 @@ public class BelievabilityKnob implements Serializable
      * Note that we spread this across all states, not just the zero
      * probability states.  We also need to renormalize afterwards.
      */
-    private double _init_belief_blur_amount 
-            = DEFAULT_INITIAL_BELIEF_BLUR_AMOUNT;
+    private double _no_info_belief_blur_amount = Double.valueOf
+             ( System.getProperty
+               ( "org.cougaar.coordinator.believability.NO_INFO_BELIEF_BLUR",
+                 String.valueOf(DEFAULT_NO_INFO_BELIEF_BLUR_AMOUNT))).doubleValue();
 
 } // class BelievabilityKnob

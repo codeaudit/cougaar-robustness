@@ -103,6 +103,14 @@ public class BelievabilityPlugin
     public static final int TECHSPECS_NOT_LOADED      = 0;
     public static final int TECHSPECS_LOADED          = 1;
 
+    // Addition to allow Leashing on restart to be controlled by a system property for TIC testing - dlw - 9/7/04
+    private static final boolean leashOnRestart;
+    static
+    {
+     String s = "org.cougaar.coordinator.leashOnRestart";
+     leashOnRestart = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
+    }
+
     /** 
      * Creates a new instance of BelievabilityPlugin 
      **/
@@ -151,6 +159,7 @@ public class BelievabilityPlugin
             if (logger.isDetailEnabled()) 
                 logger.detail("Believability Plugin is rehydrating.");
             _rehydration_state = REHYDRATION_NEEDED;
+
         }
 
         // If we are not rehydrating, then we need to create and
@@ -1027,6 +1036,9 @@ public class BelievabilityPlugin
 
         if (logger.isDetailEnabled() ) 
             logger.detail ("Finished Handling Unleashing");
+        
+        if (eventService.isEventEnabled())  
+            eventService.event("Finished Handling Unleashing");
 
     } // method handleUnleashing
 
@@ -1163,6 +1175,15 @@ public class BelievabilityPlugin
             // Do something sane: create a knob with default values.
             _believability_knob = new BelievabilityKnob();
         } // if no knob on BB
+
+        // leash the defenses on rehydration if leashOnRestart is TRUE, otherwise leave as-is - dlw - 9/7/04
+        if (leashOnRestart) {
+            _believability_knob.setIsLeashed(true);
+            blackboard.publishChange(_believability_knob);
+            if (logger.isDebugEnabled()) 
+                logger.debug("rehydrate detected && leashOnRestart==true - enabling ThrashingSuppression");       
+        }
+
 
         // Now set the initial leashing state to recreate the state.
         //
