@@ -210,7 +210,7 @@ public class RobustnessUI extends JPanel
     });
     tree.setCellRenderer(new ElementTreeCellRenderer());
     tree.expandRow(1); //expand the root
-    final JPopupMenu popup = new JPopupMenu();
+    final JPopupMenu popup1 = new JPopupMenu();
     //command 'vacate': only the host in management community can do a vacate. After
     //a host receives a vacate command, it will send a vacate request to blackboard,
     //the blackboard will choose one host and move all nodes of this host to the
@@ -223,11 +223,24 @@ public class RobustnessUI extends JPanel
           parentCommunityOfSelectedHost = parentCommunityOfSelectedHost.substring(
             parentCommunityOfSelectedHost.indexOf(" "), parentCommunityOfSelectedHost.length()).trim();
           String mgmtAgent = getMgmtAgentOfCommunity(parentCommunityOfSelectedHost, c);
-          String selectedHost = (String)selectedNode.getUserObject();
+          //String selectedHost = (String)selectedNode.getUserObject();
+          String selectedHost = ((EntityInfo)selectedNode.getUserObject()).getName();
           publishRequest("vacateHost", selectedHost, mgmtAgent, null);
         }
       });
-      popup.add(command);
+      popup1.add(command);
+
+    final JMenuItem kill = new JMenuItem("kill");
+    kill.addActionListener(new ActionListener(){
+      public void actionPerformed(ActionEvent e)
+      {
+        EntityInfo ei = (EntityInfo)selectedNode.getUserObject();
+        String parentNode = ei.getParent().getName();
+        publishRequest("removeAgent", ei.getName(), parentNode, null);
+      }
+    });
+    final JPopupMenu popup2 = new JPopupMenu();
+    popup2.add(kill);
 
       tree.addMouseListener(new MouseAdapter(){
         public void mousePressed(MouseEvent e) {
@@ -255,7 +268,11 @@ public class RobustnessUI extends JPanel
                 communityName = communityName.substring(communityName.indexOf(" "), communityName.length()).trim();
                 String mgmt = getMgmtAgentOfCommunity(communityName, c);
                 if(mgmt != null)
-                  popup.show(e.getComponent(), e.getX(), e.getY());
+                  popup1.show(e.getComponent(), e.getX(), e.getY());
+              }
+              else if(((EntityInfo)((EntityNode)selectedNode).getUserObject()).getType() == EntityInfo.AGENT)
+              {
+                popup2.show(e.getComponent(), e.getX(), e.getY());
               }
             }
           }
@@ -690,6 +707,11 @@ public class RobustnessUI extends JPanel
         vs.add(param2); //source node name
         vs.add(param3); //destination node name
       }
+      else if(command.equals("removeAgent"))
+      {
+        vs.add(param1);
+        vs.add(param2);
+      }
       oos.writeObject(vs);
       oos.close();
       //need to fix: if conn.setDoInput(false) and don't request the InputStream,
@@ -928,7 +950,28 @@ public class RobustnessUI extends JPanel
       if(obj instanceof EntityInfo)
         str = ((EntityInfo)obj).toString();
       else
+      {
         str = ((String)obj).trim();
+        //set color to different health status
+        try{
+         if(((String)((DefaultMutableTreeNode)node.getParent()).getUserObject()).equals("entities"))
+         {
+          for(int i=0; i<node.getChildCount(); i++)
+          {
+            DefaultMutableTreeNode child = (DefaultMutableTreeNode)node.getChildAt(i);
+            String child_uo = (String)child.getUserObject();
+            if(child_uo.startsWith("RunState"))
+            {
+              if(!child_uo.endsWith("NORMAL"))
+                ((JLabel)result).setForeground(Color.MAGENTA);
+              else
+                ((JLabel)result).setForeground(Color.black);
+              return this;
+            }
+          }
+         }
+        }catch(Exception e){return this; }
+      }
       if(str.startsWith("Community:"))
       {
         this.setFont(new Font("Dialog", Font.BOLD, 12));

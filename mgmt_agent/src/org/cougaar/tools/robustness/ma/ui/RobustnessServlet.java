@@ -49,6 +49,7 @@ import org.cougaar.lib.web.arch.root.GlobalEntry;
 import org.cougaar.core.mts.MTImpl;
 import org.cougaar.core.node.NodeIdentifier;
 import org.cougaar.core.mobility.MoveTicket;
+import org.cougaar.core.mobility.RemoveTicket;
 import org.cougaar.core.mobility.ldm.AgentControl;
 import org.cougaar.core.mobility.ldm.MobilityFactory;
 
@@ -185,6 +186,13 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
         String sourceNode = (String)vs.get(2);
         String destNode = (String)vs.get(3);
         moveAgent(agentName, sourceNode, destNode);
+        result = "succeed";
+      }
+      else if(command.equals("removeAgent")) //kill the agent
+      {
+        String agentName = (String)vs.get(1);
+        String nodeName = (String)vs.get(2);
+        removeAgent(agentName, nodeName);
         result = "succeed";
       }
 
@@ -330,6 +338,22 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
     }finally
     {bb.closeTransaction();}
     log.info("RobustnessServlet:: Move agent " + agentName + " from " + sourceNode + " to " + destNode);
+  }
+
+  private void removeAgent(String agentName, String sourceNode)
+  {
+    Object ticketId = mobilityFactory.createTicketIdentifier();
+    RemoveTicket ticket = new RemoveTicket(
+          ticketId,
+          new MessageAddress(agentName),
+          new MessageAddress(sourceNode));
+    AgentControl ma = mobilityFactory.createAgentControl(null, new MessageAddress(sourceNode), ticket);
+    try{
+      bb.openTransaction();
+      bb.publishAdd(ma);
+    }finally
+    {bb.closeTransaction();}
+    log.info("RobustnessServlet:: Remove agent " + agentName + " from " + sourceNode);
   }
 
   private Hashtable getTopology()

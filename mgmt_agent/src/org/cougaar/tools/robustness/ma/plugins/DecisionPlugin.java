@@ -51,6 +51,9 @@ public class DecisionPlugin extends SimplePlugin {
   // Unique ID assiciated with this plugin
   private UID myUID;
 
+  // Collection of UIDs associated with my AgentControl objects
+  private Collection agentControlUIDs = new Vector();
+
   // Defines default values for configurable parameters.
   private static String defaultParams[][] = new String[0][0];
 
@@ -71,7 +74,7 @@ public class DecisionPlugin extends SimplePlugin {
 
   protected void setupSubscriptions() {
 
-    myUID = this.getUIDService().nextUID();
+    myUID = getUIDService().nextUID();
 
     log =  (LoggingService) getBindingSite().getServiceBroker().
       getService(this, LoggingService.class, null);
@@ -338,8 +341,10 @@ public class DecisionPlugin extends SimplePlugin {
     RemoveTicket removeTicket =
       new RemoveTicket(ticketId, agent, node);
 
+    UID acUID = getUIDService().nextUID();
+    agentControlUIDs.add(acUID);
     AgentControl ac =
-      mobilityFactory.createAgentControl(myUID, node, removeTicket);
+      mobilityFactory.createAgentControl(acUID, node, removeTicket);
 
     if (log.isDebugEnabled())
       log.debug("Publishing AgentControl(RemoveTicket) for mobility: " + ac);
@@ -359,8 +364,10 @@ public class DecisionPlugin extends SimplePlugin {
     Object ticketId = mobilityFactory.createTicketIdentifier();
     AddTicket addTicket = new AddTicket(ticketId, newAgentAddr, destNodeAddr);
 
+    UID acUID = getUIDService().nextUID();
+    agentControlUIDs.add(acUID);
     AgentControl ac =
-      mobilityFactory.createAgentControl(myUID, destNodeAddr, addTicket);
+      mobilityFactory.createAgentControl(acUID, destNodeAddr, addTicket);
 
     if (log.isDebugEnabled())
       log.debug("Publishing AgentControl(AddTicket) for mobility: " + ac);
@@ -373,9 +380,9 @@ public class DecisionPlugin extends SimplePlugin {
    * @param value Adjustment value
    */
   private void adjustHbSensitivity(HealthStatus hs, float value) {
-    float hbFailureRateThreshold = hs.getHbFailRate();
+    float hbFailureRateThreshold = hs.getHbFailRateThreshold();
     hbFailureRateThreshold = hbFailureRateThreshold * (1.0f + value);
-    hs.setHbFailRate(hbFailureRateThreshold);
+    hs.setHbFailRateThreshold(hbFailureRateThreshold);
     if (log.isInfoEnabled()) {
       StringBuffer msg = new StringBuffer("Adjusting heartbeat sensitivity: ");
       msg.append("agent=" + hs.getAgentId());
@@ -429,7 +436,7 @@ public class DecisionPlugin extends SimplePlugin {
 	  public boolean execute(Object o) {
 	    if (o instanceof AgentControl) {
         AgentControl ac = (AgentControl)o;
-        return (myUID.equals(ac.getOwnerUID()));
+        return (agentControlUIDs.contains(ac.getOwnerUID()));
       }
       return false;
   }};

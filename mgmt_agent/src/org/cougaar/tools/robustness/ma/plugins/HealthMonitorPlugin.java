@@ -39,6 +39,9 @@ import org.cougaar.core.component.ServiceRevokedEvent;
 import org.cougaar.core.service.TopologyEntry;
 import org.cougaar.core.service.TopologyReaderService;
 
+import org.cougaar.core.service.AlarmService;
+import org.cougaar.core.agent.service.alarm.Alarm;
+
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.BlackboardService;
@@ -173,9 +176,9 @@ public class HealthMonitorPlugin extends SimplePlugin implements
 
 
   private SensorFactory sensorFactory;
-  private ClusterIdentifier myAgent = null;
+  private ClusterIdentifier myAgent;
   private LoggingService log;
-  private BlackboardService bbs = null;
+  private BlackboardService bbs;
 
   // UIDs associated with pending pings
   private Collection pingUIDs = new Vector();
@@ -185,6 +188,9 @@ public class HealthMonitorPlugin extends SimplePlugin implements
 
   private CommunityService communityService = null;
   private TopologyReaderService topologyService = null;
+
+  // Alarm for periodically retrieving new rosters from CommunityService
+  private RosterUpdateAlarm nextAlarm;
 
   /**
    * This method obtains a roster for the community to be monitored and sends
@@ -384,8 +390,6 @@ public class HealthMonitorPlugin extends SimplePlugin implements
         processRosterChanges(roster);
       }
     }
-
-
   }
 
 
@@ -421,6 +425,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
             //  log.info("Sending HeartbeatRequest to agent '" + hs.getAgentId() + "'");
             //  sendHeartbeatRequest(hs);
             //  break;
+            case HeartbeatRequest.NEW:
             case HeartbeatRequest.SENT:
               if (elapsedTime(hs.getHeartbeatRequestTime(), now()) > (hs.getHbReqTimeout() * 2)) {
                 log.warn("HeartbeatRequest timeout: agent=" + hs.getAgentId());
@@ -457,6 +462,12 @@ public class HealthMonitorPlugin extends SimplePlugin implements
                 int pingStatus = hs.getPingStatus();
                 if (pingStatus == HealthStatus.PING_REQUIRED) {
                   doPing(hs);
+                } else if (pingStatus == PingRequest.NEW ||
+                           pingStatus == PingRequest.SENT) {
+                  if (elapsedTime(hs.getPingTimestamp(), now()) > (hs.getPingTimeout() * 2)) {
+                    log.warn("PingRequest timeout: agent=" + hs.getAgentId());
+                    hs.setPingStatus(PingRequest.FAILED);
+                  }
                 } else if (pingStatus == PingRequest.RECEIVED) {
                   log.info("HeartbeatRequest timeout, ping successful:" +
                     " agent=" + hs.getAgentId());
@@ -495,9 +506,15 @@ public class HealthMonitorPlugin extends SimplePlugin implements
           if (pingStatus == HealthStatus.PING_REQUIRED) {
             // Late heartbeat, ping agent to see if agent is alive
             doPing(hs);
+          } else if (pingStatus == PingRequest.NEW ||
+                     pingStatus == PingRequest.SENT) {
+            if (elapsedTime(hs.getPingTimestamp(), now()) > (hs.getPingTimeout() * 2)) {
+                log.warn("PingRequest timeout: agent=" + hs.getAgentId());
+                hs.setPingStatus(PingRequest.FAILED);
+              }
           } else if (pingStatus == PingRequest.RECEIVED) {
             // See if agent has moved
-            /*
+
             String location = getLocation(hs.getAgentId().toString());
             if (!location.equals(hs.getNode())) {
               log.info("Agent move detected: agent=" + hs.getAgentId() +
@@ -508,7 +525,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
             // Agent hasn't moved, log timeout and see if threshold was
             // exceeded
             } else {
-            */
+
               log.info("Heartbeat timeout, ping successful:" +
                 " agent=" + hs.getAgentId() +
                 " hBPctLate=" + hs.getHeartbeatEntry().getPercentLate());
@@ -521,7 +538,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
                 //hs.setState(HealthStatus.INITIAL);
                 hs.setHeartbeatStatus(HealthStatus.HB_NORMAL);
               }
-            //}
+            }
             hs.setPingStatus(HealthStatus.UNDEFINED);
             hs.setPingRetryCtr(0);
           } else if (pingStatus == PingRequest.FAILED) {
@@ -555,6 +572,12 @@ public class HealthMonitorPlugin extends SimplePlugin implements
           if (pingStatus == HealthStatus.PING_REQUIRED) {
             log.debug("Active Ping: agent=" + hs.getAgentId());
             doPing(hs);
+          } else if (pingStatus == PingRequest.NEW ||
+                     pingStatus == PingRequest.SENT) {
+            if (elapsedTime(hs.getPingTimestamp(), now()) > (hs.getPingTimeout() * 2)) {
+                log.warn("Active Ping Timeout: agent=" + hs.getAgentId());
+                hs.setPingStatus(PingRequest.FAILED);
+              }
           } else if (pingStatus == PingRequest.RECEIVED) {
             // As expected
             if (hs.getPingRetryCtr() > 0) {
@@ -739,6 +762,9 @@ public class HealthMonitorPlugin extends SimplePlugin implements
         }
       }
     }
+    if (nextAlarm != null) nextAlarm.cancel();
+    nextAlarm =  new RosterUpdateAlarm(120000);
+    getAlarmService().addRealTimeAlarm(nextAlarm);
   }
 
   /**
@@ -748,7 +774,8 @@ public class HealthMonitorPlugin extends SimplePlugin implements
    */
   private HealthStatus newHealthStatus(MessageAddress agentId) {
     // Create a HealthStatus object with default parameters
-    HealthStatus hs = new HealthStatus(agentId,
+    HealthStatus hs = new HealthStatus(getUIDService().nextUID(),
+                         agentId,
                          communityToMonitor,
                          getLocation(agentId.toString()),
                          getBindingSite().getServiceBroker(),
@@ -783,7 +810,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
         } else if (attr.getID().equalsIgnoreCase("hbWindow")) {
           hs.setHbWindow(Long.parseLong((String)attr.get()));
         } else if (attr.getID().equalsIgnoreCase("hbFailRate")) {
-          hs.setHbFailRate(Float.parseFloat((String)attr.get()));
+          hs.setHbFailRateThreshold(Float.parseFloat((String)attr.get()));
         } else if (attr.getID().equalsIgnoreCase("pingTimeout")) {
           hs.setPingTimeout(Long.parseLong((String)attr.get()));
         } else {
@@ -995,6 +1022,9 @@ public class HealthMonitorPlugin extends SimplePlugin implements
                                  "RESTART", "RESTART_COMPLETE", "FAILED_RESTART",
                                  "MOVE", "FAILED_MOVE", "ROBUSTNESS_INIT_FAIL"};
 
+  /**
+   * Print agent/state information.
+   */
   private void printStats() {
     Collection agents = findMonitoredAgents();
     Map stateMap = new HashMap();
@@ -1006,6 +1036,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       List l = (List)stateMap.get(hs.getState());
       l.add(hs.getAgentId());
     }
+    // Determine if anything has changed since last time
     boolean changed = (previousStateMap == null);
     if (previousStateMap != null) {
       for (Iterator it = stateMap.entrySet().iterator(); it.hasNext();) {
@@ -1151,33 +1182,30 @@ public class HealthMonitorPlugin extends SimplePlugin implements
    * Gets reference to CommunityService.
    */
   private CommunityService getCommunityService() {
+    int counter = 0;
     ServiceBroker sb = getBindingSite().getServiceBroker();
-    if (sb.hasService(CommunityService.class)) {
-      return (CommunityService)sb.getService(this, CommunityService.class,
-        new ServiceRevokedListener() {
-          public void serviceRevoked(ServiceRevokedEvent re) {}
-      });
-    } else {
-      log.error("CommunityService not available");
-      return null;
+    while (!sb.hasService(CommunityService.class)) {
+      // Print a message after waiting for 30 seconds
+      if (++counter == 60) log.info("Waiting for CommunityService ... ");
+      try { Thread.sleep(500); } catch (Exception ex) {}
     }
+    return (CommunityService)sb.getService(this, CommunityService.class, null);
   }
 
   /**
    * Gets reference to TopologyReaderService.
    */
   private TopologyReaderService getTopologyReaderService() {
+    int counter = 0;
     ServiceBroker sb = getBindingSite().getServiceBroker();
-    if (sb.hasService(TopologyReaderService.class)) {
-      return (TopologyReaderService)sb.getService(this, TopologyReaderService.class,
-        new ServiceRevokedListener() {
-          public void serviceRevoked(ServiceRevokedEvent re) {}
-      });
-    } else {
-      log.error("TopologyReaderService not available");
-      return null;
+    while (!sb.hasService(TopologyReaderService.class)) {
+      // Print a message after waiting for 30 seconds
+      if (++counter == 60) log.info("Waiting for TopologyReaderService ... ");
+      try { Thread.sleep(500); } catch (Exception ex) {}
     }
+    return (TopologyReaderService)sb.getService(this, TopologyReaderService.class, null);
   }
+
 
   /**
    * Predicate for Management Agent properties
@@ -1194,4 +1222,62 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       return false;
   }};
 
+  /**
+   * This alarm is used to periodically retrieve the current roster associated
+   * with the monitored community.  Although the roster obtained via a
+   * subscription should be automatically updated by the CommunityService when
+   * changes occur, during periods of high activity (such as society startup)
+   * this roster may not receive all updates.
+   */
+  private class RosterUpdateAlarm implements Alarm {
+    private long expirationTime = -1;
+    private boolean expired = false;
+
+    /**
+     * Create an Alarm to go off in the milliseconds specified,.
+     **/
+    public RosterUpdateAlarm (long delay) {
+      expirationTime = delay + System.currentTimeMillis();
+    }
+
+    /** @return absolute time (in milliseconds) that the Alarm should
+     * go off.
+     * This value must be implemented as a fixed value.
+     **/
+    public long getExpirationTime () {
+      return expirationTime;
+    }
+
+    /**
+     * Called by the cluster clock when clock-time >= getExpirationTime().
+     **/
+    public void expire () {
+      if (!expired) {
+        try {
+          bbs.openTransaction();
+          processRosterChanges(communityService.getRoster(communityToMonitor));
+        } catch (Exception e) {
+          e.printStackTrace();
+        } finally {
+         expired = true;
+         bbs.closeTransaction();
+        }
+      }
+    }
+
+    /** @return true IFF the alarm has expired or was canceled. **/
+    public boolean hasExpired () {
+      return expired;
+    }
+
+    /** can be called by a client to cancel the alarm.  May or may not remove
+     * the alarm from the queue, but should prevent expire from doing anything.
+     * @return false IF the the alarm has already expired or was already canceled.
+     **/
+    public synchronized boolean cancel () {
+      if (!expired)
+        return expired = true;
+      return false;
+    }
+  }
 }

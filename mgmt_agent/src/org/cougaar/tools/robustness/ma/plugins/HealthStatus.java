@@ -23,19 +23,28 @@ import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.service.community.CommunityService;
 import org.cougaar.core.blackboard.Publishable;
+import org.cougaar.core.persist.NotPersistable;
 import org.cougaar.tools.robustness.sensors.HeartbeatRequest;
 import org.cougaar.tools.robustness.sensors.HeartbeatEntry;
 import org.cougaar.tools.robustness.sensors.PingRequest;
 import org.cougaar.util.log.*;
+import org.cougaar.core.util.XMLizable;
+import org.cougaar.core.util.XMLize;
+
+import org.cougaar.core.util.UniqueObject;
+import org.cougaar.core.util.UID;
 
 import javax.naming.directory.*;
+
+import org.w3c.dom.Element;
+import org.w3c.dom.Document;
 
 /**
  * Class for tracking status of a monitored agent.
  */
 
 public class HealthStatus implements
-  Publishable, org.cougaar.core.persist.NotPersistable {
+   UniqueObject, NotPersistable, XMLizable {
 
   private Logger log =
     Logging.getLogger(org.cougaar.tools.robustness.ma.plugins.HealthStatus.class.getName());
@@ -69,6 +78,8 @@ public class HealthStatus implements
   public static final int PING_REQUIRED = 1008;  // Make sure its out of the
                                                  // range used by the PingRequest
                                                  // class
+
+  private UID myUID;
 
   private String currentState = INITIAL;
   private String priorState   = INITIAL;
@@ -150,7 +161,8 @@ public class HealthStatus implements
    * @param pingTimeout    Timeout period for pings
    * @param pingRetries    Number of times to retry a ping
    */
-  protected HealthStatus(MessageAddress agentId,
+  protected HealthStatus(UID uid,
+                         MessageAddress agentId,
                          String communityName,
                          String node,
                          ServiceBroker sb,
@@ -163,6 +175,7 @@ public class HealthStatus implements
                          float hbFailRate,
                          long pingTimeout,
                          long pingRetries) {
+    this.myUID = uid;
     this.agentId = agentId;
     this.communityName = communityName;
     this.node = node;
@@ -184,7 +197,7 @@ public class HealthStatus implements
    * Returns agents location.
    * @return Node name
    */
-  protected String getNode() {
+  public String getNode() {
     return this.node;
   }
 
@@ -192,7 +205,7 @@ public class HealthStatus implements
    * Sets agents location.
    * @param node Node name
    */
-  protected void setNode(String node) {
+  public void setNode(String node) {
     this.node = node;
   }
 
@@ -201,7 +214,7 @@ public class HealthStatus implements
    * Returns current Heartbeat frequency.
    * @return Heartbeat frequency
    */
-  protected long getHbFrequency() {
+  public long getHbFrequency() {
     return hbFreq;
   }
 
@@ -209,7 +222,7 @@ public class HealthStatus implements
    * Sets agents Heartbeat frequency.
    * @param freq New frequency
    */
-  protected void setHbFrequency(long freq) {
+  public void setHbFrequency(long freq) {
     this.hbFreq = freq;
   }
 
@@ -217,7 +230,7 @@ public class HealthStatus implements
    * Returns Heartbeat Request timeout.
    * @return Heartbeat request timeout
    */
-  protected long getHbReqTimeout() {
+  public long getHbReqTimeout() {
     return hbReqTimeout;
   }
 
@@ -225,7 +238,7 @@ public class HealthStatus implements
    * Sets agents Heartbeat request timeout.
    * @param timeout New timeout
    */
-  protected void setHbReqTimeout(long timeout) {
+  public void setHbReqTimeout(long timeout) {
     this.hbReqTimeout = timeout;
   }
 
@@ -233,7 +246,7 @@ public class HealthStatus implements
    * Returns Heartbeat Request retries.
    * @return Heartbeat request retries
    */
-  protected long getHbReqRetries() {
+  public long getHbReqRetries() {
     return hbReqRetries;
   }
 
@@ -241,7 +254,7 @@ public class HealthStatus implements
    * Sets agents Heartbeat request retries.
    * @param retries Number of retries to perform
    */
-  protected void setHbReqRetries(long retries) {
+  public void setHbReqRetries(long retries) {
     this.hbReqRetries = retries;
   }
 
@@ -249,7 +262,7 @@ public class HealthStatus implements
    * Returns current Heartbeat failure rate threshold.
    * @return Heartbeat failure rate threshold
    */
-  protected float getHbFailRate() {
+  public float getHbFailRateThreshold() {
     return hbFailRate;
   }
 
@@ -257,7 +270,7 @@ public class HealthStatus implements
    * Sets agents Heartbeat failure rate threshold.
    * @param rate New rate.
    */
-  protected void setHbFailRate(float rate) {
+  public void setHbFailRateThreshold(float rate) {
     this.hbFailRate = rate;
   }
 
@@ -266,7 +279,7 @@ public class HealthStatus implements
    * Heartbeat failure rate.
    * @return Duration of failure rate period (in milliseconds)
    */
-  protected float getHbWindow() {
+  public float getHbWindow() {
     return hbWindow;
   }
 
@@ -283,7 +296,7 @@ public class HealthStatus implements
    * Returns Heartbeat timeout value.
    * @return Heartbeat timeout
    */
-  protected long getHbTimeout() {
+  public long getHbTimeout() {
     return hbTimeout;
   }
 
@@ -291,7 +304,7 @@ public class HealthStatus implements
    * Sets agents Heartbeat timeout value
    * @param timeout Heartbeat timeout
    */
-  protected void setHbTimeout(long timeout) {
+  public void setHbTimeout(long timeout) {
     this.hbTimeout = timeout;
   }
 
@@ -299,7 +312,7 @@ public class HealthStatus implements
    * Returns Heartbeat pct late value.
    * @return Heartbeat pct late
    */
-  protected float getHbPctLate() {
+  public float getHbPctLate() {
     return hbPctLate;
   }
 
@@ -307,7 +320,7 @@ public class HealthStatus implements
    * Sets agents Heartbeat pct late value
    * @param pct  Pct late tolerance
    */
-  protected void setHbPctLate(float pct) {
+  public void setHbPctLate(float pct) {
     this.hbPctLate = pct;
   }
 
@@ -315,7 +328,7 @@ public class HealthStatus implements
    * Returns ping timeout.
    * @return Ping timeout
    */
-  protected long getPingTimeout() {
+  public long getPingTimeout() {
     return pingTimeout;
   }
 
@@ -323,7 +336,7 @@ public class HealthStatus implements
    * Sets agents ping timeout.
    * @param timeout New timeout
    */
-  protected void setPingTimeout(long timeout) {
+  public void setPingTimeout(long timeout) {
     this.pingTimeout = timeout;
   }
 
@@ -331,7 +344,7 @@ public class HealthStatus implements
    * Returns Ping retries.
    * @return Ping retries
    */
-  protected long getPingRetries() {
+  public long getPingRetries() {
     return pingRetries;
   }
 
@@ -339,7 +352,7 @@ public class HealthStatus implements
    * Sets agents Ping retries.
    * @param retries Number of retries to perform
    */
-  protected void setPingRetries(long retries) {
+  public void setPingRetries(long retries) {
     this.pingRetries = retries;
   }
 
@@ -349,7 +362,7 @@ public class HealthStatus implements
    * @return True if rate is above limit established by
    *         HeartbeatFailureRateThreshold
    */
-  protected boolean hbFailureRateInSpec() {
+  public boolean hbFailureRateInSpec() {
     return getFailureRate() < hbFailRate;
   }
 
@@ -357,7 +370,7 @@ public class HealthStatus implements
    * Returns monitored agents current status.
    * @return  Status code
    */
-  protected int getStatus() {
+  public int getStatus() {
     return currentStatus;
   }
 
@@ -366,7 +379,7 @@ public class HealthStatus implements
    * Returns monitored agents prior state.
    * @return  State string
    */
-  protected String getPriorState() {
+  public String getPriorState() {
     return priorState;
   }
 
@@ -375,7 +388,7 @@ public class HealthStatus implements
    * Sets monitored agents prior state.
    * @param  status State string
    */
-  protected void setPriorState(String state) {
+  public void setPriorState(String state) {
     this.priorState = state;
   }
 
@@ -384,7 +397,7 @@ public class HealthStatus implements
    * Sets monitored agents status.
    * @param status Status code
    */
-  protected void setStatus(int status) {
+  public void setStatus(int status) {
     this.currentStatus = status;
     statusTimestamp = new Date();
   }
@@ -394,8 +407,20 @@ public class HealthStatus implements
    * @return HeartbeatRequest status
    * (refer to org.cougaar.tools.robustness.sensors.HeartbeatRequest for values)
    */
-  protected int getHeartbeatRequestStatus() {
+  public int getHeartbeatRequestStatus() {
     return heartbeatRequestStatus;
+  }
+
+  /**
+   * Returns current status of HeartbeatRequest associated with monitored agent.
+   * @return HeartbeatRequest status
+   * (refer to org.cougaar.tools.robustness.sensors.HeartbeatRequest for values)
+   */
+  public String getHeartbeatRequestStatusAsString() {
+    switch (heartbeatRequestStatus) {
+      case UNDEFINED: return "UNDEFINED";
+      default: return HeartbeatRequest.statusToString(heartbeatRequestStatus);
+    }
   }
 
   /**
@@ -403,7 +428,7 @@ public class HealthStatus implements
    * @param status HeartbeatRequest status
    * (refer to org.cougaar.tools.robustness.sensors.HeartbeatRequest for values)
    */
-  protected void setHeartbeatRequestStatus(int status) {
+  public void setHeartbeatRequestStatus(int status) {
     this.heartbeatRequestStatus = status;
   }
 
@@ -411,7 +436,7 @@ public class HealthStatus implements
    * Returns the time that the HeartbeatRequest was published.
    * @return Time that the HeartbeatRequest was issued
    */
-  protected Date getHeartbeatRequestTime() {
+  public Date getHeartbeatRequestTime() {
     return heartbeatRequestTime;
   }
 
@@ -419,7 +444,7 @@ public class HealthStatus implements
    * Records the time that the agent was put into HEALTH_CHECK state.
    * @param time Time that the agents state was changed to HEALTH_CHECK
    */
-  protected void setHealthCheckTime(Date time) {
+  public void setHealthCheckTime(Date time) {
     this.healthCheckTime = time;
   }
 
@@ -427,7 +452,7 @@ public class HealthStatus implements
    * Returns the time that the agent was put into HEALTH_CHECK state.
    * @return Time that the HEALTH_CHECK state was entered
    */
-  protected Date getHealthCheckTime() {
+  public Date getHealthCheckTime() {
     return healthCheckTime;
   }
 
@@ -435,7 +460,7 @@ public class HealthStatus implements
    * Records the time that the HeartbeatRequest was published.
    * @param time Time that the HeartbeatRequest was issued
    */
-  protected void setHeartbeatRequestTime(Date time) {
+  public void setHeartbeatRequestTime(Date time) {
     this.heartbeatRequestTime = time;
   }
 
@@ -444,7 +469,7 @@ public class HealthStatus implements
    * @return Status code associated with heartbeat status.
    * (refer to org.cougaar.tools.robustness.sensors.HeartbeatEntry for values)
    */
-  protected int getHeartbeatStatus() {
+  public int getHeartbeatStatus() {
     return heartbeatStatus;
   }
 
@@ -453,7 +478,7 @@ public class HealthStatus implements
    * @param status Status code associated with heartbeat status.
    * (refer to org.cougaar.tools.robustness.sensors.HeartbeatEntry for values)
    */
-  protected void setHeartbeatStatus(int status) {
+  public void setHeartbeatStatus(int status) {
     this.heartbeatStatus = status;
   }
 
@@ -462,7 +487,7 @@ public class HealthStatus implements
    * Returns the HeartbeatEntry object associated with this Agent.
    * @return HeartbeatEntry for this agent.
    */
-  protected HeartbeatEntry getHeartbeatEntry() {
+  public HeartbeatEntry getHeartbeatEntry() {
     return heartbeatEntry;
   }
 
@@ -470,7 +495,7 @@ public class HealthStatus implements
    * Sets HeartbeatEntry.
    * @param hbe HeartbeatEntry object associated with this agent.
    */
-  protected void setHeartbeatEntry(HeartbeatEntry hbe) {
+  public void setHeartbeatEntry(HeartbeatEntry hbe) {
     this.heartbeatEntry = hbe;
   }
 
@@ -479,7 +504,7 @@ public class HealthStatus implements
    * Returns HeartbeatRequest associated with this agent.
    * @return HeartbeatRequest
    */
-  protected HeartbeatRequest getHeartbeatRequest() {
+  public HeartbeatRequest getHeartbeatRequest() {
     return this.hbr;
   }
 
@@ -487,7 +512,7 @@ public class HealthStatus implements
    * Sets HeartbeatRequest
    * @param hbr HeartbeatRequest associated with this agent
    */
-  protected void setHeartbeatRequest(HeartbeatRequest hbr) {
+  public void setHeartbeatRequest(HeartbeatRequest hbr) {
     this.hbr = hbr;
   }
 
@@ -496,7 +521,7 @@ public class HealthStatus implements
    * Returns PingRequest associated with this agent.
    * @return PingRequest
    */
-  protected PingRequest getPingRequest() {
+  public PingRequest getPingRequest() {
     return this.pr;
   }
 
@@ -504,7 +529,7 @@ public class HealthStatus implements
    * Sets PingRequest
    * @param pr PingRequest associated with this agent
    */
-  protected void setPingRequest(PingRequest pr) {
+  public void setPingRequest(PingRequest pr) {
     this.pr = pr;
   }
 
@@ -513,7 +538,7 @@ public class HealthStatus implements
    * Returns the ID (MessageAddress) associated with this monitored agent.
    * @return Agents MessageAddress
    */
-  protected MessageAddress getAgentId() {
+  public MessageAddress getAgentId() {
     return agentId;
   }
 
@@ -521,7 +546,7 @@ public class HealthStatus implements
    * Get a list of the current Heartbeat timeouts.
    * @return Current Heartbeat timeouts
    */
-  private List getHeartbeatTimeouts() {
+  public List getHeartbeatTimeouts() {
     return heartbeatTimeouts;
   }
 
@@ -537,7 +562,7 @@ public class HealthStatus implements
    * Sets time of last restart attempt.
    * @param restartAttempted Time of last attempted restart
    */
-  protected Date setLastRestartAttempt(Date restartAttempted) {
+  public Date setLastRestartAttempt(Date restartAttempted) {
     return lastRestartAttempt = restartAttempted;
   }
 
@@ -578,7 +603,7 @@ public class HealthStatus implements
    * of late heartbeats vs. expected heartbeats within lookback period.
    * @return  Percent of late heartbeats in evaluation period
    */
-  protected float getFailureRate() {
+  public float getFailureRate() {
     pruneTimeoutList();
     float lateHeartbeats = heartbeatTimeouts.size();
     if (lateHeartbeats == 0) return 0.0f;
@@ -588,7 +613,7 @@ public class HealthStatus implements
   }
 
 
-  protected String failureRateData() {
+  public String failureRateData() {
     pruneTimeoutList();
     float lateHeartbeats = heartbeatTimeouts.size();
     float totalHeartbeats = hbWindow/hbFreq;
@@ -604,7 +629,7 @@ public class HealthStatus implements
    * Sets flag indicating that a ping has been sent to monitored agent.
    * @param b  Set to true if a ping has been requested.
    */
-  protected void setPingRequested(boolean b) {
+  public void setPingRequested(boolean b) {
     this.pingRequested = b;
   }
 
@@ -612,7 +637,7 @@ public class HealthStatus implements
    * Indicates whether there is a pending ping request.
    * @return  True if a ping request has been issued.
    */
-  protected boolean pingRequested() {
+  public boolean pingRequested() {
     return this.pingRequested;
   }
 
@@ -620,7 +645,7 @@ public class HealthStatus implements
    * Sets HeartbeatRequestRetries counter
    * @param retries  Number of retries to attempt
    */
-  protected void setHbReqRetryCtr(int retries) {
+  public void setHbReqRetryCtr(int retries) {
     this.hbReqRetryCtr = retries;
   }
 
@@ -628,7 +653,7 @@ public class HealthStatus implements
    * Gets HeartbeatRequestRetries counter
    * @return  Number of times HeartbeatRequests have been resent
    */
-  protected int getHbReqRetryCtr() {
+  public int getHbReqRetryCtr() {
     return this.hbReqRetryCtr;
   }
 
@@ -636,7 +661,7 @@ public class HealthStatus implements
    * Sets PingRetries counter
    * @param retries  Number of retries to attempt
    */
-  protected void setPingRetryCtr(int retries) {
+  public void setPingRetryCtr(int retries) {
     this.pingRetryCtr = retries;
   }
 
@@ -644,7 +669,7 @@ public class HealthStatus implements
    * Gets PingRetries counter
    * @return  Number of times Pings have been resent
    */
-  protected int getPingRetryCtr() {
+  public int getPingRetryCtr() {
     return this.pingRetryCtr;
   }
 
@@ -658,7 +683,7 @@ public class HealthStatus implements
    * the NORMAL or RESTART state.
    * @param state Current run state of monitored agent
    */
-  protected void setState(String state) {
+  public void setState(String state) {
     log.debug("SetState: agent=" + agentId + " state=" + state);
     currentState = state;
     ModificationItem mods[] = new ModificationItem[1];
@@ -673,7 +698,7 @@ public class HealthStatus implements
    * Returns monitored agents current run state.
    * @return Current run state for agent.
    */
-  protected String getState() {
+  public String getState() {
     //return currentState;
 
 
@@ -709,7 +734,7 @@ public class HealthStatus implements
    * Records time that a ping was requested.
    * @param time  Time of ping request
    */
-  protected void setPingTimestamp(Date time) {
+  public void setPingTimestamp(Date time) {
     this.pingTimestamp = time;
   }
 
@@ -717,7 +742,7 @@ public class HealthStatus implements
    * Returns the time of a ping request.
    * @return  Time of ping request
    */
-  protected Date getPingTimestamp() {
+  public Date getPingTimestamp() {
     return this.pingTimestamp;
   }
 
@@ -726,7 +751,7 @@ public class HealthStatus implements
    * @param status Status code associated with ping status.
    * (refer to org.cougaar.tools.robustness.sensors.PingRequest for values)
    */
-  protected void setPingStatus(int pingStatus) {
+  public void setPingStatus(int pingStatus) {
     this.pingStatus = pingStatus;
   }
 
@@ -735,8 +760,52 @@ public class HealthStatus implements
    * @return status Status code associated with ping status.
    * (refer to org.cougaar.tools.robustness.sensors.PingRequest for values)
    */
-  protected int getPingStatus() {
+  public int getPingStatus() {
     return this.pingStatus;
+  }
+
+  /**
+   * Returns status of a pending Ping.
+   * @return status Status code associated with ping status.
+   * (refer to org.cougaar.tools.robustness.sensors.PingRequest for values)
+   */
+  public String getPingStatusAsString() {
+    switch (this.pingStatus) {
+      case UNDEFINED: return "UNDEFINED";
+      case PingRequest.FAILED: return "FAILED";
+      case PingRequest.NEW: return "NEW";
+      case PingRequest.RECEIVED: return "RECEIVED";
+      case PingRequest.SENT: return "SENT";
+      default: return "UNKNOWN";
+    }
+  }
+
+  // UniqueObject interface
+  /** @return the UID of a UniqueObject.  If the object was created
+   * correctly (e.g. via a Factory), will be non-null.
+   **/
+  public UID getUID() {
+    return myUID;
+  }
+
+  /** set the UID of a UniqueObject.  This should only be done by
+   * an LDM factory.  Will throw a RuntimeException if
+   * the UID was already set.
+   **/
+  public void setUID(UID uid) {
+    if (myUID != null) {
+      RuntimeException rt = new RuntimeException("Attempt to call setUID() more than once.");
+      throw rt;
+    }
+
+    myUID = uid;
+  }
+
+  //
+  // XMLizable method for UI, other clients
+  //
+  public Element getXML(Document doc) {
+      return XMLize.getPlanObjectXML(this,doc);
   }
 
   public boolean isPersistable() {

@@ -140,7 +140,7 @@ public class VacatePlugin extends SimplePlugin {
         rlr.setExcludedHosts(excludedHosts);
         rlr.setStatus(RestartLocationRequest.NEW);
         bbs.publishAdd(rlr);
-        log.info("Publishing RestartLocationRequest: type is " + rlr.getRequestType());
+        log.debug("Publishing RestartLocationRequest: type is " + rlr.getRequestType());
         bbs.publishRemove(vr);
       }
     }
@@ -160,8 +160,9 @@ public class VacatePlugin extends SimplePlugin {
           Set nodes = nodeMap.keySet();
           for(Iterator nit = nodes.iterator(); nit.hasNext();) {
             String currentNodeName = (String)nit.next();
-            String newNodeName = newNodeName(destHost, currentNodeName);
-            List agents = (List)nodeMap.get(currentNodeName);
+            //String newNodeName = newNodeName(destHost, currentNodeName);
+            String newNodeName = rlr.getNode();
+           List agents = (List)nodeMap.get(currentNodeName);
             for(Iterator ait = agents.iterator(); ait.hasNext();) {
               String agent = (String)ait.next();
               MoveTicket ticket = new MoveTicket(
@@ -187,6 +188,8 @@ public class VacatePlugin extends SimplePlugin {
             }
           }
         }
+      } else if (rlr.getStatus() == RestartLocationRequest.FAIL) {
+        log.error("Vacate request failed");
       }
       bbs.publishRemove(rlr);
     }

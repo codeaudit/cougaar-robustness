@@ -162,30 +162,44 @@ public class RestartLocatorPlugin extends SimplePlugin {
       //log.info("Got RestartLocationRequest: agent(s)=" + req.getAgents());
       getCommunityTopology();
       Collection destinations = null;
-      if (req.getRequestType() == RestartLocationRequest.LOCATE_NODE) {
+      //if (req.getRequestType() == RestartLocationRequest.LOCATE_NODE) {
         destinations = selectDestinationNodes(req.getAgents(), req.getExcludedNodes(),
           req.getExcludedHosts());
+        if (destinations != null && destinations.size() > 0) {
+          // get first candidate destination
+          log.debug("RestartLocationRequest: " + destinationsToString(destinations));
+          restartRequestMap.put(req, destinations);
+          Destination dest = (Destination)destinations.iterator().next();
+          doPing(new ClusterIdentifier(dest.node));
+        } else {
+          req.setStatus(RestartLocationRequest.FAIL);
+          bbs.publishChange(req);
+          StringBuffer msg =
+            new StringBuffer("No node available for restart: agent(s)=[");
+          for (Iterator it1 = req.getAgents().iterator(); it1.hasNext();) {
+            msg.append(((MessageAddress)it1.next()).toString());
+            if (it1.hasNext()) msg.append(" ");
+          }
+          msg.append("]");
+          log.warn(msg.toString());
+        }
+        /*
       } else if (req.getRequestType() == RestartLocationRequest.LOCATE_HOST) {
         destinations = selectDestinationHosts(req.getExcludedHosts());
-      }
-      if (destinations != null && destinations.size() > 0) {
-        // get first candidate destination
-        log.debug("RestartLocationRequest: " + destinationsToString(destinations));
-        restartRequestMap.put(req, destinations);
-        Destination dest = (Destination)destinations.iterator().next();
-        doPing(new ClusterIdentifier(dest.node));
-      } else {
-        req.setStatus(RestartLocationRequest.FAIL);
-        bbs.publishChange(req);
-        StringBuffer msg =
-          new StringBuffer("No nodes/hosts available for restart: agent(s)=[");
-        for (Iterator it1 = req.getAgents().iterator(); it1.hasNext();) {
-          msg.append(((MessageAddress)it1.next()).toString());
-          if (it1.hasNext()) msg.append(" ");
+        if (destinations != null && destinations.size() > 0) {
+          // get first candidate destination
+          log.debug("RestartLocationRequest: " + destinationsToString(destinations));
+          Destination dest = (Destination)destinations.iterator().next();
+          req.setStatus(RestartLocationRequest.SUCCESS);
+          req.setHost(dest.host);
+          bbs.publishChange(req);
+        } else {
+          req.setStatus(RestartLocationRequest.FAIL);
+          bbs.publishChange(req);
+          log.warn("No host available for restart");
         }
-        msg.append("]");
-        log.debug(msg.toString());
       }
+      */
     }
 
     // Get PingRequests
@@ -293,11 +307,15 @@ public class RestartLocatorPlugin extends SimplePlugin {
     communityToMonitor = props.getProperty("community");
     String specifiedRestartNodes = restartLocatorProps.getProperty("restartNodes");
     Attribute restartNodesAttr = new BasicAttribute("RestartNodes");
-   if (specifiedRestartNodes != null && specifiedRestartNodes.trim().length() > 0) {
+    if (specifiedRestartNodes != null && specifiedRestartNodes.trim().length() > 0) {
       StringTokenizer st = new  StringTokenizer(specifiedRestartNodes, " ");
       while (st.hasMoreTokens()) {
         restartNodesAttr.add(st.nextToken());
       }
+      ModificationItem mods[] = new ModificationItem[]{
+        new ModificationItem(DirContext.REPLACE_ATTRIBUTE, restartNodesAttr),
+      };
+      communityService.modifyEntityAttributes(communityToMonitor, myAgent.toString(), mods);
     }
     Attribute restartHostsAttr = new BasicAttribute("RestartHosts");
     String specifiedRestartHosts = restartLocatorProps.getProperty("restartHosts");
@@ -306,15 +324,14 @@ public class RestartLocatorPlugin extends SimplePlugin {
       while (st.hasMoreTokens()) {
         restartHostsAttr.add(st.nextToken());
       }
+      ModificationItem mods[] = new ModificationItem[]{
+        new ModificationItem(DirContext.REPLACE_ATTRIBUTE, restartHostsAttr),
+      };
+      communityService.modifyEntityAttributes(communityToMonitor, myAgent.toString(), mods);
     }
     //log.debug("UpdateParams: " + myAttrs.size() +
     //  " restartHosts=[" + specifiedRestartHosts +
     //  "] restartNodes=[" + specifiedRestartNodes + "]");
-    ModificationItem mods[] = new ModificationItem[]{
-      new ModificationItem(DirContext.REPLACE_ATTRIBUTE, restartHostsAttr),
-      new ModificationItem(DirContext.REPLACE_ATTRIBUTE, restartNodesAttr),
-    };
-    communityService.modifyEntityAttributes(communityToMonitor, myAgent.toString(), mods);
   }
 
   /**
@@ -412,24 +429,29 @@ public class RestartLocatorPlugin extends SimplePlugin {
     for (Iterator it = candidateNodes.iterator(); it.hasNext();) {
       String nodeName = (String)it.next();
       if (excludedNodes != null && !excludedNodes.contains(nodeName)) {
-        String hostName = null;
-        for (Iterator it1 = hosts.entrySet().iterator(); it1.hasNext();) {
-          Map.Entry me = (Map.Entry)it1.next();
-          hostName = (String)me.getKey();
-          Collection residentNodes = (Collection)me.getValue();
-          if (residentNodes.contains(nodeName)) break;
-        }
-        if (excludedHosts != null && !excludedHosts.contains(hostName)) {
-          Collection residentAgents = (Collection)nodes.get(nodeName);
-          boolean nodeHasExcludedAgent = false;
-          for (Iterator it2 = excludedAgents.iterator(); it2.hasNext();) {
-            String excludedAgent = ((MessageAddress)it2.next()).toString();
-            if (residentAgents != null && residentAgents.contains(excludedAgent)) {
-              nodeHasExcludedAgent = true;
-              break;
+        String hostName =
+          topologyService.getParentForChild(topologyService.HOST,
+                                            topologyService.NODE,
+                                            nodeName);
+        if (hostName != null &&
+            (excludedHosts == null || !excludedHosts.contains(hostName))) {
+          Set agents =
+            topologyService.getChildrenOnParent(topologyService.AGENT,
+                                              topologyService.NODE,
+                                              nodeName);
+          if (agents == null || excludedAgents == null) {
+            selectedNodes.add(nodeName);
+          } else {
+            boolean nodeHasExcludedAgent = false;
+            for (Iterator it1 = excludedAgents.iterator(); it1.hasNext();) {
+              String excludedAgent = ((MessageAddress)it1.next()).toString();
+              if (agents.contains(excludedAgent)) {
+                nodeHasExcludedAgent = true;
+                break;
+              }
             }
+            if (!nodeHasExcludedAgent) selectedNodes.add(nodeName);
           }
-          if (!nodeHasExcludedAgent) selectedNodes.add(nodeName);
         }
       }
     }
@@ -470,6 +492,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
     List destinations = new Vector();
     Collection selectedNodes = new Vector();
     String specifiedRestartNodes = restartLocatorProps.getProperty("restartNodes");
+    log.debug("SpecifiedRestartNodes=" + specifiedRestartNodes);
     if (specifiedRestartNodes != null && specifiedRestartNodes.trim().length() > 0) {
       Collection specifiedNodes = new Vector();
       StringTokenizer st = new  StringTokenizer(specifiedRestartNodes, " ");
@@ -503,7 +526,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
     StringBuffer sb = new StringBuffer("Destinations=[");
     for (Iterator it = destinations.iterator(); it.hasNext();) {
       Destination dest = (Destination)it.next();
-      sb.append(dest.node + "(" + dest.numAgents + ")");
+      sb.append(dest.host + ":" + dest.node + "(" + dest.numAgents + ")");
       if (it.hasNext()) sb.append(", ");
     }
     sb.append("]");
@@ -531,7 +554,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
       dest.host = (String)it.next();
       Collection nodeNames = (Collection)hosts.get(dest.host);
       for (Iterator it1 = nodeNames.iterator(); it1.hasNext();) {
-        Collection agents = (Collection)nodes.get((String)it.next());
+        Collection agents = (Collection)nodes.get((String)it1.next());
         dest.numAgents += (agents == null) ? 0 : agents.size();
       }
       destinations.add(dest);
