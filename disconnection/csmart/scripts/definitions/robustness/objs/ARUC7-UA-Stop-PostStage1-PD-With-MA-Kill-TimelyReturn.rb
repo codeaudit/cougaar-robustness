@@ -59,7 +59,7 @@ include_scripts:
     parameters:
       - location: during_stage_1
       - start_delay: 60
-      - nodes: ["UA-FSB-A-NODE", "UA-FSB-C-NODE"]
+      - nodes: ["UA-FSB-A-NODE", "UA-FSB-C-NODE", "UA-ROB-MGMT-NODE"]
 =end
 
 require 'cougaar/scripting'
