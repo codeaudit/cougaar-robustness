@@ -79,8 +79,8 @@ public class AssetType implements NotPersistable {
     /** the superType of the asset type */
     private AssetType superType = null;
     
-    /** The societal utility of this asset type */
-    private int societalUtility;
+    /** The societal utility of this asset type. <b>Defaults to 0</b> */
+    private int societalUtility = 0;
     
     /** Creates a new instance of AssetType 
      *@param asset type name
@@ -104,13 +104,20 @@ public class AssetType implements NotPersistable {
     }
     
     /**
-     * Create a subtype AssetType
+     * Create a subtype AssetType. Will be added if it doesn't already exist.
      */
-    public AssetType(AssetType superType, String newType) {
-        this.name = newType;
-        this.superType = superType;
-        states = new Vector();   
-        types.add(this);        
+    public static void addAssetSubtype(AssetType superType, String newType) throws DupWithDifferentSuperTypeException {
+        
+        AssetType old = AssetType.findAssetType(newType);
+        if (old == null) {
+            AssetType at = new AssetType(newType);
+            at.superType = superType;
+            types.add(at);        
+        } else { // check to make sure existing  & the one being requested have the same supertype         
+            if (!old.superType.equals(superType)) {
+                throw new DupWithDifferentSuperTypeException("new type="+newType+". First supertype = "+old.superType.name + "  new supertype = " + superType);
+            }
+        }
     }
 
     
@@ -201,5 +208,6 @@ public class AssetType implements NotPersistable {
       * Set the societal utility of the asset type
       */
      public void setUtilityValue(int value) { societalUtility = value; }
+     
 
 }

@@ -29,6 +29,8 @@ package org.cougaar.coordinator.techspec;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.component.ServiceProvider;
 
+import java.util.Vector;
+
 /*
  * Implements a service provider AND DiagnosisTechSpecService
  *
@@ -62,6 +64,7 @@ public class DiagnosisTechSpecServiceProvider implements ServiceProvider {
     private final class DiagnosisTechSpecServiceImpl implements DiagnosisTechSpecService {
 
         private DiagnosisManagerPlugin mgr;
+        private Vector crossProbs;
         
         /**
          * Create an DiagnosisTechSpecService
@@ -69,6 +72,7 @@ public class DiagnosisTechSpecServiceProvider implements ServiceProvider {
         private DiagnosisTechSpecServiceImpl(DiagnosisManagerPlugin mgr) {
 
             this.mgr = mgr;
+            crossProbs = new Vector();
             
         }
         
@@ -87,6 +91,15 @@ public class DiagnosisTechSpecServiceProvider implements ServiceProvider {
         public void addDiagnosisTechSpec(String cls, DiagnosisTechSpecInterface d) {
             
             mgr.addTechSpec(cls, d);
+            
+        }
+
+        /**
+         * Add a DiagnosisTechSpec for a class, meant for testing 
+         */
+        public void addCrossDiagnosis(CrossDiagnosis cp) {
+            
+            crossProbs.add(dp);
             
         }
         

@@ -1,11 +1,11 @@
 /*
- * DiagnosisTechSpecService.java
+ * DupWithDifferentSuperTypeException.java
  *
- * Created on February 5, 2004, 11:55 AM
+ * Created on March 24, 2004, 12:06 PM
  * <copyright>
  *  Copyright 2003 Object Services and Consulting, Inc.
- *  under sponsorship of the Diagnosis Advanced Research Projects Agency (DARPA)
- *  and the Diagnosis Logistics Agency (DLA).
+ *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
+ *  and the Defense Logistics Agency (DLA).
  * 
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
@@ -25,16 +25,24 @@
 
 package org.cougaar.coordinator.techspec;
 
-import org.cougaar.core.component.Service;
-
 /**
  *
  * @author  Administrator
  */
-public interface DiagnosisTechSpecService extends Service {
+public class DupWithDifferentSuperTypeException extends java.lang.Exception {
     
-    public DiagnosisTechSpecInterface getDiagnosisTechSpec(Class cls);    
-    public void addDiagnosisTechSpec(String cls, DiagnosisTechSpecInterface dtsi);    
-    public void addCrossDiagnosis(DiagnosisProbability dp);
-   
+    /**
+     * Creates a new instance of <code>DupWithDifferentSuperTypeException</code> without detail message.
+     */
+    public DupWithDifferentSuperTypeException() {
+    }
+    
+    
+    /**
+     * Constructs an instance of <code>DupWithDifferentSuperTypeException</code> with the specified detail message.
+     * @param msg the detail message.
+     */
+    public DupWithDifferentSuperTypeException(String msg) {
+        super(msg);
+    }
 }

@@ -62,7 +62,7 @@ public class AssetStateDimensionLoader extends XMLLoader {
     /** Creates a new instance of AssetStateDimensionLoader */
     public AssetStateDimensionLoader() {
         
-        super("AssetStateDimension", "AssetStateDimensions");
+        super("AssetStateDimensions", null);
         assetTypes = new Vector();
     }
   

@@ -58,13 +58,11 @@ import org.w3c.dom.*;
  */
 public class AssetSubtypeLoader extends XMLLoader {
     
-    Vector assetTypes;
-    
+   
     /** Creates a new instance of AssetSubtypeLoader */
     public AssetSubtypeLoader() {
         
         super("AssetSubtype", "AssetSubtypes");
-        assetTypes = new Vector();
     }
   
 
@@ -80,12 +78,17 @@ public class AssetSubtypeLoader extends XMLLoader {
         
         //what to do when assetType is null? - create it, process it later?
         if (superType == null) {
-            logger.warn("AssetType XML Error - Asset SuperType unknown: "+st + ".  Not processing new type = " + newtype);
+            logger.warn("AssetSubtype XML Error - Asset SuperType unknown: "+st + ".  Not processing new type = " + newtype);
             return;
         }
         
-        AssetType at = new AssetType(superType, newtype);        
-        logger.debug("Created new AssetType = " + newtype);
+        try {
+            //Register new asset subtype
+            AssetType.addAssetSubtype(superType, newtype);        
+            logger.debug("Created new AssetSubtype = " + newtype);
+        } catch (DupWithDifferentSuperTypeException dwd) {
+            logger.warn("AssetSubtype XML Error - Asset sub type already exists, but declared with different superType!: \n"+dwd.toString());
+        }
     }
     
     
