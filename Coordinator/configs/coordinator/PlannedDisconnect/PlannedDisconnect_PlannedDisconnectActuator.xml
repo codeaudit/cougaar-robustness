@@ -4,7 +4,7 @@
 
 <ActuatorTypes>
 
-<ActuatorType name="org.cougaar.tools.robustness.disconnection.NodeDisconnectActuator" 
+<ActuatorType name="org.cougaar.tools.robustness.disconnection.NodeDisconnectAction" 
               affectsAssetType="Node" 
               affectsStateDimension="Connectedness" 
               actionType="CORRECTIVE">
@@ -37,7 +37,7 @@
 
 </ActuatorType>
 
-<ActuatorType name="org.cougaar.tools.robustness.disconnection.AgentDisconnectActuator" 
+<ActuatorType name="org.cougaar.tools.robustness.disconnection.AgentDisconnectAction" 
               affectsAssetType="Agent" 
               affectsStateDimension="Connectedness" 
               actionType="CORRECTIVE">

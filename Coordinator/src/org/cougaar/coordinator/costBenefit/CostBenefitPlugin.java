@@ -173,7 +173,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                 //call tech spec service & get action tech spec  
                 ActionTechSpecInterface atsi = (ActionTechSpecInterface) actionTechSpecService.getActionTechSpec(thisAction.getClass().getName());
                 if (atsi == null) {
-                    throw (new TechSpecNotFoundException( "Cannot find Action Tech Spec for "+ this.getClass().getName() ));
+                    throw (new TechSpecNotFoundException( "Cannot find Action Tech Spec for "+ thisAction.getClass().getName() ));
                 }
                 // Which StateDimension does this Action apply to?
                 AssetStateDimension asd = atsi.getStateDimension();
@@ -210,7 +210,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
             }
             catch (TechSpecNotFoundException e) {
-                if (logger.isErrorEnabled()) logger.error("Cannot find Action Tech Spec for "+ this.getClass().getName() );
+                if (logger.isErrorEnabled()) logger.error( e.toString() );
             }
 
         }

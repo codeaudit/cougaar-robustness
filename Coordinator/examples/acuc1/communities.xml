@@ -17,7 +17,7 @@
     <Attribute ID="CommunityType"             Value="Robustness" />
     <Attribute ID="CommunityManager"          Value="ManagementAgent" />
     <Attribute ID="RobustnessManager"         Value="ManagementAgent" />
-    <Attribute ID="NumberOfAgents"            Value="5" />
+    <Attribute ID="NumberOfAgents"            Value="7" />
     <Attribute ID='PING_TIMEOUT' Value='300000' />
     <Attribute ID='MIMIMUM_PING_TIMEOUT' Value='120000' />
 
@@ -46,6 +46,12 @@
       <Attribute ID="Role" Value="HealthMonitor" /> 
     </Entity>
 
+    <Entity Name="T2" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" /> 
+    </Entity>
+
     <Entity Name="TestAgent" >
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="Member" />
@@ -62,6 +68,16 @@
     </Entity>
 
     <Entity Name="TestAgent4" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+
+    <Entity Name="TestAgent5" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+
+    <Entity Name="TestAgent6" >
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="Member" />
     </Entity>
