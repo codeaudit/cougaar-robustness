@@ -32,7 +32,7 @@ include_scripts:
   - script: $CIP/csmart/lib/robustness/objs/disconnect.rb
     parameters:
       - location: during_stage_1
-      - nodes: ["UA-FSB-C-NODE"]
+      - nodes: ["UA-FSB-A-NODE", "UA-FSB-C-NODE"]
       - planned_disconnect: 12.minutes
       - actual_disconnect: 8.minutes
       - verbose: 1
