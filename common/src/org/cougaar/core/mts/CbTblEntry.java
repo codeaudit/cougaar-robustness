@@ -26,14 +26,14 @@ package org.cougaar.core.mts;
 
 import java.net.URI;
 
-class CbTblEntry {
-  boolean pending;  
-  URI result; 
-  CbTblEntry() {
+public class CbTblEntry {
+  public boolean pending;  
+  public URI result; 
+  public CbTblEntry() {
     pending = false;
     result = null;
   }
-  static CbTblEntry getCbTblEntry() {
+  public static CbTblEntry getCbTblEntry() {
     return new CbTblEntry();
   }  
   public String toString() {

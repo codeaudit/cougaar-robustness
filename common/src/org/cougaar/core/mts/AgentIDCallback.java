@@ -34,18 +34,18 @@ import org.cougaar.core.service.wp.Response;
 import org.cougaar.util.log.Logger;
 import org.cougaar.util.log.Logging;
 
-class AgentIDCallback implements Callback {
+public class AgentIDCallback implements Callback {
 
-    Logger log = null;
-    Object lock;
-    Hashtable ht;
+    private Logger log = null;
+    private Object lock;
+    private Hashtable ht;
     
-    AgentIDCallback (Object lock, Hashtable ht) {
+    private AgentIDCallback (Object lock, Hashtable ht) {
         this.lock = lock;
         this.ht = ht;
     }
     
-    static AgentIDCallback getAgentIDCallback(Object lock, 
+    public static AgentIDCallback getAgentIDCallback(Object lock, 
                                               Hashtable ht) {
 	return new AgentIDCallback(lock, ht);
     }

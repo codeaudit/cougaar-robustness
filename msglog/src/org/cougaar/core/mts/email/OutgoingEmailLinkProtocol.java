@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 27 May 2003: Ported to 10.4 - changes to NameSupport access (104B)
  * 07 May 2003: Updated addMessageAttributes for Security compatibility. (102B)
  * 06 Mar 2003: Switched to URIs and added multiple outboxes. (OBJS)
  * 24 Sep 2002: Add new serialization & socket closer support. (OBJS)
@@ -293,16 +294,44 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
   {
     return this.getClass().getName();
   }
-
+  
+  //104B
   private URI lookupEmailAddress (MessageAddress address) throws NameLookupException
   {
-    synchronized (uriCache)
-    {
-      URI uri = (URI)uriCache.get(address);
-      if (uri == null) {
-        uri = getNameSupport().lookupAddressInNameServer(address, PROTOCOL_TYPE);
-        if (uri != null) uriCache.put(address, uri);
+    synchronized (uriCache) {
+
+      URI uri = null;                
+
+      // get the callback table entry for this MessageAddress
+      CbTblEntry cbte = (CbTblEntry)uriCache.get(address);
+
+      // if none, create one (first lookup)
+      if (cbte == null) {
+        cbte = new CbTblEntry();
+        uriCache.put(address,cbte);
       }
+
+      if (log.isDebugEnabled())
+        log.debug("cbte="+cbte+",uriCache="+uriCache);
+
+      // check the callback first
+      if (cbte.result != null) {
+        uri = cbte.result;
+        if (log.isDebugEnabled())
+          log.debug("found URI="+uri);
+
+      // else, if a callback isn't already pending, start one
+      } else if (!cbte.pending) {
+        cbte.pending = true;
+        if (log.isDebugEnabled())
+          log.debug("uriCache="+uriCache);
+        AgentIDCallback uriCb = AgentIDCallback.getAgentIDCallback(uriCache, uriCache);
+        if (log.isDebugEnabled())
+          log.debug("Calling lookupAddressInNameServer("+address+","+PROTOCOL_TYPE+","+uriCb+")");
+        getNameSupport().lookupAddressInNameServer(address, PROTOCOL_TYPE, uriCb);
+       
+      // else, callback is pending, so do nothing
+      } 
       return uri;
     }
   }
