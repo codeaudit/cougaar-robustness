@@ -434,11 +434,12 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
           logger.info("change condition of " + name);
           getDeconflictHelper().changeApplicabilityCondition(name);
         }
-        if (getDeconflictHelper().isOpEnabaled(name))
+        if (getDeconflictHelper().isOpEnabaled(name)) {
+          newState(name, RESTART);
+        }
+      } else {
           newState(name, RESTART);
       }
-      if (getDeconflictHelper() == null)
-        newState(name, RESTART);
     }
     public void expired(String name) {
       logger.info("Expired Status:" + " agent=" + name + " state=DECONFLICT");
@@ -451,7 +452,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
             !getDeconflictHelper().isDefenseApplicable(name)) {
           getDeconflictHelper().changeApplicabilityCondition(name);
         }
-        newState(name, RESTART);
+        //newState(name, RESTART);
+        newState(name, HEALTH_CHECK);
     }
   }
 
