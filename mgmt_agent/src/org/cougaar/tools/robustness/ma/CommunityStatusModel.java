@@ -122,14 +122,19 @@ public class CommunityStatusModel extends BlackboardClientComponent {
 
   private String thisAgent;
 
+  // Name of monitored community
   private String communityName;
+
   private Attributes communityAttrs;  // Community-level attributes
-  private SortedMap statusMap = new TreeMap();
+  private SortedMap statusMap = new TreeMap();  // Agent/node status entries
 
-
+  // Agent identified by "RobustnessManager=" attribute in community
   private String preferredLeader = null;
+
+  // Current community leader as elected by all HealthMonitors
   private String leader = null;
 
+  // Controller associated with this model
   private RobustnessController controller;
 
   // States used by leader elector.  These are initially set to states which
@@ -451,9 +456,9 @@ public class CommunityStatusModel extends BlackboardClientComponent {
   /**
    * Sets location and state as a single atomic operation before generating
    * update events.
-   * @param name
-   * @param loc
-   * @param state
+   * @param name  Name of agent or node
+   * @param loc   New location
+   * @param state New state
    */
   private void setLocationAndState(String name, String loc, int state) {
     boolean locChange = false;
