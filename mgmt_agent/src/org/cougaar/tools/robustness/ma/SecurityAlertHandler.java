@@ -21,6 +21,7 @@ import org.cougaar.tools.robustness.ma.CommunityStatusModel;
 import org.cougaar.tools.robustness.ma.StatusChangeListener;
 import org.cougaar.tools.robustness.ma.CommunityStatusChangeEvent;
 import org.cougaar.tools.robustness.ma.util.MoveHelper;
+import org.cougaar.tools.robustness.ma.util.PersistenceHelper;
 import org.cougaar.tools.robustness.ma.util.RestartDestinationLocator;
 
 import org.cougaar.tools.robustness.ma.controllers.RobustnessController;
@@ -37,11 +38,14 @@ import javax.naming.directory.BasicAttribute;
  */
 public class SecurityAlertHandler extends RobustnessThreatAlertHandlerBase {
 
+  private PersistenceHelper persistenceHelper;
+
   public SecurityAlertHandler(BindingSite          bs,
                               MessageAddress       agentId,
                               RobustnessController controller,
                               CommunityStatusModel model) {
     super(bs, agentId, controller, model);
+    persistenceHelper = new PersistenceHelper(bs);
   }
 
   public void newAlert(ThreatAlert ta) {
@@ -90,9 +94,15 @@ public class SecurityAlertHandler extends RobustnessThreatAlertHandlerBase {
    */
   protected void adjustRobustnessParameters(SecurityAlert sa, Set affectedAgents) {
     logger.info("Adjusting robustness parameters: securityLevel=" + sa.getSeverityLevelAsString());
+
+    // TODO:  Remove hard-coded values.  Retrieve new values or modification coefficients from
+    // community attributes.
     Attribute mods[] =
         new Attribute[] {new BasicAttribute("UPDATE_INTERVAL", "60000")};
     changeAttributes(model.getCommunityName(), null, mods);
+    Properties controls = new Properties();
+    controls.setProperty("lazyInterval", "600000");
+    persistenceHelper.controlPersistence(model.listEntries(model.AGENT), true, controls);
   }
 
 }
