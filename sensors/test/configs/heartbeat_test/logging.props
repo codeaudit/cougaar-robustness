@@ -6,16 +6,16 @@ log4j.category.org.cougaar.tools.robustness.sensors=INFO
 # Msg*Log
 #log4j.category.org.cougaar.core.mts.acking=INFO
 #log4j.category.org.cougaar.core.mts.AdaptiveLinkSelectionPolicy=INFO
-log4j.category.org.cougaar.core.mts.AdaptiveLinkSelectionPolicy=DEBUG
-log4j.category.org.cougaar.core.mts.ManagedNameSupportAspect=DEBUG
-log4j.category.org.cougaar.core.mts.MessageOrderingAspect=DEBUG
-log4j.category.org.cougaar.core.mts.MessageSendHistoryAspect=DEBUG
-log4j.category.org.cougaar.core.mts.SendTimeoutAspect=DEBUG
-log4j.category.org.cougaar.core.mts.RTTAspect=DEBUG
-log4j.category.org.cougaar.core.mts.acking=DEBUG
-log4j.category.org.cougaar.core.mts.email=DEBUG
-log4j.category.org.cougaar.core.mts.socket=DEBUG
-log4j.category.org.cougaar.core.mts.udp=DEBUG
+#log4j.category.org.cougaar.core.mts.AdaptiveLinkSelectionPolicy=DEBUG
+#log4j.category.org.cougaar.core.mts.ManagedNameSupportAspect=DEBUG
+#log4j.category.org.cougaar.core.mts.MessageOrderingAspect=DEBUG
+#log4j.category.org.cougaar.core.mts.MessageSendHistoryAspect=DEBUG
+#log4j.category.org.cougaar.core.mts.SendTimeoutAspect=DEBUG
+#log4j.category.org.cougaar.core.mts.RTTAspect=DEBUG
+#log4j.category.org.cougaar.core.mts.acking=DEBUG
+#log4j.category.org.cougaar.core.mts.email=DEBUG
+#log4j.category.org.cougaar.core.mts.socket=DEBUG
+#log4j.category.org.cougaar.core.mts.udp=DEBUG
 
 # misc
 #log4j.category.org.cougaar.core.adaptivity.MetricsTestPlugin=INFO
