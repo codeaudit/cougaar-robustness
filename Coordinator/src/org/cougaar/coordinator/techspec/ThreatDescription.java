@@ -43,7 +43,8 @@ public class ThreatDescription implements NotPersistable {
     
     private String name;
     private AssetType affectsAssetType;
-    private String causesEvent;
+    private String causesEventNamed;
+    private EventDescription causesEvent;
     private float defaultEventLikelihoodProb;
     //<Threat name="Bomb" affectsAssetType="Host" causesEvent="HostDeath" defaultEventLikelihoodProb="NONE" />
     private EventProbability eventProbability = null;
@@ -56,14 +57,14 @@ public class ThreatDescription implements NotPersistable {
         
         this.name = name;
         this.affectsAssetType = affectsAssetType;
-        this.causesEvent = causesEvent;
+        this.causesEventNamed = causesEvent;
         this.defaultEventLikelihoodProb = defaultEventLikelihoodProb;        
         
         //Create an ALWAYS interval if the defaultEventLikelihoodProb > 0
         if (defaultEventLikelihoodProb > 0.0) {
             eventProbability = new EventProbability();
             eventProbability.addInterval(new EventProbabilityInterval(defaultEventLikelihoodProb));
-        }
+        } 
         this.filter = null;
     }
 
@@ -72,7 +73,7 @@ public class ThreatDescription implements NotPersistable {
         
         this.name = rootTD.name;
         this.affectsAssetType = rootTD.affectsAssetType;
-        this.causesEvent = rootTD.causesEvent;
+        this.causesEventNamed = rootTD.causesEventNamed;
         this.defaultEventLikelihoodProb = rootTD.defaultEventLikelihoodProb;
       
         //if vf's ep is null create new probability using default, o.w. use one from vf
@@ -82,6 +83,7 @@ public class ThreatDescription implements NotPersistable {
             //use probability of the root TD
             eventProbability = rootTD.getEventProbability();
         }
+        
         this.filter = vf;
     }
             
@@ -94,10 +96,22 @@ public class ThreatDescription implements NotPersistable {
      * @return the asset type that this threat pertains to
      */
     public AssetType getAffectedAssetType() { return affectsAssetType; }
+
+    /**
+     * Set the event that this threat causes
+     */
+    public void setEventThreatCauses(EventDescription event) { causesEvent = event; }
+    
+    /**
+     * @return the event that this threat would cause
+     */
+    public EventDescription getEventThreatCauses() { return causesEvent; }
+
     /**
      * @return the name of the event that this threat would cause
      */
-    public String getEventThreatCauses() { return causesEvent; }
+    public String getEventNameThreatCauses() { return causesEventNamed; }
+
     /**
      * @return the event probability. 
      */
@@ -132,7 +146,7 @@ public class ThreatDescription implements NotPersistable {
     
     public String toString() {
      
-        String s = "Threat ["+this.getName()+"], affects asset type="+this.getAffectedAssetType()+", causes event="+this.getEventThreatCauses()+"\n";
+        String s = "Threat ["+this.getName()+"], affects asset type="+this.getAffectedAssetType()+", causes event="+this.getEventNameThreatCauses()+"\n";
         if (filter == null) {
             if (this.getEventProbability() == null ) {
                 s += "[Probability = 0.0] -- this is a root threat with no direct impact. See embedded threats.\n";

@@ -35,6 +35,7 @@ import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.service.LoggingService;
 
 import org.cougaar.core.service.UIDService;
+import org.cougaar.core.component.ServiceBroker;
 
 import org.cougaar.util.log.Logging;
 import org.cougaar.util.log.Logger;
@@ -63,41 +64,22 @@ public class SensorTypeLoader extends XMLLoader {
     DiagnosisTechSpecService diagnosisTechSpecService = null;
     
     /** Creates a new instance of SensorTypeLoader */
-    public SensorTypeLoader() {
+    public SensorTypeLoader(DiagnosisTechSpecService diagnosisTechSpecService, ServiceBroker serviceBroker, UIDService us) {
         
-        super("SensorType", "SensorTypes"); //, requiredServices);
+        super("SensorType", "SensorTypes", serviceBroker, us); //, requiredServices);
         sensorTypes = new Vector();
+        this.diagnosisTechSpecService = diagnosisTechSpecService;
     }
     
     
-    private static final Class[] requiredServices = {
-        DiagnosisTechSpecService.class
-    };
     
     /* Acquire needed services */
-    private boolean haveServices() { //don't use logger here... until after super.load() is called
-
-            diagnosisTechSpecService =
-            (DiagnosisTechSpecService) getServiceBroker().getService(this, DiagnosisTechSpecService.class, null);
-            if (diagnosisTechSpecService == null) {
-                throw new RuntimeException(
-                "Unable to obtain tech spec service");
-            } 
-            
-            return true;
-            
-    }
     
-    public void load() {
-        
-        haveServices(); //call have services first !!!
-        super.load(); //loads in & begins parsing of xml files.
-        
-    }
+    public void load() {    }
     
     
     /** Called with a DOM "SensorType" element to process */
-    protected void processElement(Element element) {
+    protected Vector processElement(Element element) {
         
         //publish to BB during execute().
         //1. Create a new AssetType instance &
@@ -116,15 +98,22 @@ public class SensorTypeLoader extends XMLLoader {
             //what to do when assetType is null? - create it, process it later?
             if (sensesAssetType == null) {
                 logger.warn("SensorType XML Error - sensesAssetType unknown: "+type);
-                return;
+                return null;
             }
+            
+            AssetStateDimension asd = sensesAssetType.findStateDimension(stateDim);
+            if (asd == null) {
+                logger.error("SensorTypeLoader XML Error - senses state dimension not found! unknown sensesStateDimension : "+stateDim+ " for asset type = " + type);
+                return null;
+            }
+                
             
             if (us == null) {
                 logger.warn("SensorType XML Error - UIDService is null!");
-                return;
+                return null;
             }
             UID uid = us.nextUID();
-            DiagnosisTechSpecImpl sensor = new DiagnosisTechSpecImpl( sensorName, uid, sensesAssetType, stateDim, latency);
+            DiagnosisTechSpecImpl sensor = new DiagnosisTechSpecImpl( sensorName, uid, sensesAssetType, asd, latency);
             diagnosisTechSpecService.addDiagnosisTechSpec( sensorName, sensor );
             
             //Create a SensorType
@@ -144,10 +133,8 @@ public class SensorTypeLoader extends XMLLoader {
         } catch (NumberFormatException nfe) { //converting string to int
             logger.warn("SensorType XML Error for ["+sensorName+"]- Bad integer in latency: " + lat);
         }
+        return null;
     }
-    
-    
-    protected void execute() {}
     
     
     private void parsePotentialDiagnoses(Element element, DiagnosisTechSpecImpl sensor) {
@@ -173,9 +160,20 @@ public class SensorTypeLoader extends XMLLoader {
         for (Node child = element.getFirstChild(); child != null; child = child.getNextSibling()) {
             if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("WhenActualStateIs") ) {
                 Element e = (Element) child;
-                String diagnosis = e.getAttribute("name");
+                String whenState = e.getAttribute("name");
                 
-                DiagnosisProbability dp = new DiagnosisProbability(diagnosis);
+                AssetState when_as;
+                if (whenState.equals("*")) { when_as = AssetState.ANY; } 
+                else {
+                    when_as = sensor.getStateDimension().findAssetState(whenState);
+                }
+                if (when_as == null) {
+                    logger.error("Sensor Type XML Error - diagnosis asset state not found! unknown WhenActualStateIs: "+whenState+ " [AssetStateDimension="+sensor.getStateDimension()+"]for sensor = " + sensor.getName());
+                    return;
+                }
+                
+                
+                DiagnosisProbability dp = new DiagnosisProbability(when_as);
                 sensor.addDiagnosisProbability(dp);
                 parseWhenActualStateIsElements(e, dp, sensor);
                 
@@ -191,12 +189,18 @@ public class SensorTypeLoader extends XMLLoader {
         for (Node child = element.getFirstChild(); child != null; child = child.getNextSibling()) {
             if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("WillDiagnoseAs") ) {
                 Element e = (Element) child;
-                String name = e.getAttribute("name");
+                String willState = e.getAttribute("name");
                 String p = e.getAttribute("withProbability");
+                
+                AssetState will_as = sensor.getStateDimension().findAssetState(willState);
+                if (will_as == null) {
+                    logger.error("Sensor Type XML Error - diagnosis asset state not found! unknown WillDiagnoseAs: "+willState+ " [AssetStateDimension="+sensor.getStateDimension()+"]for sensor = " + sensor.getName());
+                    return;
+                }
                 
                 try {
                     float prob = Float.parseFloat(p);
-                    probs.addProbability(name, prob);
+                    probs.addProbability(will_as, prob);
                 } catch (Exception ex) {
                     logger.warn("SensorType XML Error for ["+sensor.getName()+"]- Bad float in probability for ["+probs.getActualState()+"]: " + p);
                     continue; // ignore this one & move on.

@@ -42,10 +42,9 @@ public class EventDescription implements NotPersistable {
     
     private String name;
     private AssetType affectsAssetType;
-    private String affectsStateDimension;
+    private AssetStateDimension affectsStateDimension;
     //<Threat name="Bomb" affectsAssetType="Host" causesEvent="HostDeath" defaultEventLikelihoodProb="NONE" />
         
-    private String wildcardEnd = null; //e.g. whenActualStateIs="*", EndStateWillBe="..."
     private AssetState wildcardEndState = null; //e.g. whenActualStateIs="*", EndStateWillBe="..."
     private Vector directEffectTransitions;
 
@@ -54,7 +53,7 @@ public class EventDescription implements NotPersistable {
     private TransitiveEffectDescription transEffect;
     
     /** Creates a new instance of EventDescription */
-    public EventDescription(String name, AssetType affectsAssetType, String affectsStateDimension) {
+    public EventDescription(String name, AssetType affectsAssetType, AssetStateDimension affectsStateDimension) {
         
         this.name = name;
         this.affectsAssetType = affectsAssetType;
@@ -72,8 +71,8 @@ public class EventDescription implements NotPersistable {
                 s+= "        WhenActualStateIs="+at.start+" EndStateWillBe="+at.end+"\n";
             }
         } else {
-            if (wildcardEnd != null) { 
-                s += "        Wildcard Start state, EndStateWillBe="+this.wildcardEnd+"\n";
+            if (wildcardEndState != null) { 
+                s += "        Wildcard Start state (*), EndStateWillBe="+this.wildcardEndState.getName()+"\n";
             } else {
                 s += "        NONE.\n";
             }
@@ -102,14 +101,19 @@ public class EventDescription implements NotPersistable {
     /**
      * @return the asset state dimension this event will affect
      */
-    public String getAffectedStateDimension() { return affectsStateDimension; }
+    public AssetStateDimension getAffectedStateDimension() { return affectsStateDimension; }
+
+    /**
+     * @return the asset state dimension this event will affect
+     */
+    public String getAffectedStateDimensionName() { return affectsStateDimension.getStateName(); }
     
 
     /* Called by XML Loaders when parsed */
-    public void addDirectEffectTransition(String start, String end) { 
+    public void addDirectEffectTransition(AssetState start, AssetState end) { 
         
-        if (start.equals("*")) {
-            this.wildcardEnd = end;
+        if (start == AssetState.ANY) {
+            this.wildcardEndState = end;
         } else {  
             this.directEffectTransitions.add(new AssetTransition(affectsAssetType, affectsStateDimension, start, end)); 
         }
@@ -128,16 +132,8 @@ public class EventDescription implements NotPersistable {
      */
     public AssetState getDirectEffectTransitionForState(AssetState as) {
     
-        if (this.wildcardEnd != null) {
-            if (this.wildcardEndState != null) {
-                return this.wildcardEndState;
-            } else { //lazily get it.
-                AssetStateDimension asd = affectsAssetType.findStateDimension(affectsStateDimension);
-                if (asd != null) {
-                    wildcardEndState = asd.findAssetState(wildcardEnd);           
-                }
-                return wildcardEndState;  //even if null
-            }
+        if (this.wildcardEndState != null) {
+            return this.wildcardEndState;
         } else { //see if we have a transition with the specified starting state in the directEffectTransitions
             
             AssetTransition at;

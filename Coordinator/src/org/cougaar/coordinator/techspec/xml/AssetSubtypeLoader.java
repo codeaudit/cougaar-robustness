@@ -33,6 +33,7 @@ import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.service.LoggingService;
 
 import org.cougaar.core.service.UIDService;
+import org.cougaar.core.component.ServiceBroker;
 
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.util.log.Logging;
@@ -60,14 +61,15 @@ public class AssetSubtypeLoader extends XMLLoader {
     
    
     /** Creates a new instance of AssetSubtypeLoader */
-    public AssetSubtypeLoader() {
+    public AssetSubtypeLoader(ServiceBroker serviceBroker, UIDService us) {
         
-        super("AssetSubtype", "AssetSubtypes");
+        super("AssetSubtype", "AssetSubtypes", serviceBroker, us);
     }
   
+    public void load() {}
 
     /** Called with a DOM "AssetSubtype" element to process */
-    protected void processElement(Element element) {
+    protected Vector processElement(Element element) {
      
         //publish to BB during execute().
         //1. Create a new AssetType instance & 
@@ -79,7 +81,7 @@ public class AssetSubtypeLoader extends XMLLoader {
         //what to do when assetType is null? - create it, process it later?
         if (superType == null) {
             logger.warn("AssetSubtype XML Error - Asset SuperType unknown: "+st + ".  Not processing new type = " + newtype);
-            return;
+            return null;
         }
         
         try {
@@ -89,11 +91,9 @@ public class AssetSubtypeLoader extends XMLLoader {
         } catch (DupWithDifferentSuperTypeException dwd) {
             logger.warn("AssetSubtype XML Error - Asset sub type already exists, but declared with different superType!: \n"+dwd.toString());
         }
+        
+        return null;
     }
-    
-    
-    protected void execute() {}
-
     
     
 }

@@ -31,6 +31,9 @@ import org.cougaar.core.component.ServiceProvider;
 
 import java.util.Vector;
 import java.util.Collection;
+import java.util.Hashtable;
+import java.util.Iterator;
+
 
 /*
  * Implements a service provider AND DiagnosisTechSpecService
@@ -39,16 +42,14 @@ import java.util.Collection;
 public class DiagnosisTechSpecServiceProvider implements ServiceProvider {
     
     private DiagnosisTechSpecServiceImpl impl;
-    private DiagnosisManagerPlugin mgr;
     
     /**
      * Create an DiagnosisTechSpecService & Provider.
      *
      */
-    public DiagnosisTechSpecServiceProvider(DiagnosisManagerPlugin mgr) {
+    public DiagnosisTechSpecServiceProvider() {
     
-        this.mgr = mgr;
-        impl = new DiagnosisTechSpecServiceImpl(mgr);
+        impl = new DiagnosisTechSpecServiceImpl();
     }
     
     public Object getService(ServiceBroker sb, Object requestor, Class serviceClass) {
@@ -64,50 +65,93 @@ public class DiagnosisTechSpecServiceProvider implements ServiceProvider {
     
     private final class DiagnosisTechSpecServiceImpl implements DiagnosisTechSpecService {
 
-        private DiagnosisManagerPlugin mgr;
         private Vector crossProbs;
+        private Hashtable allDiagnoses;
+        private Vector newDiagnoses;
         
         /**
          * Create an DiagnosisTechSpecService
          */
-        private DiagnosisTechSpecServiceImpl(DiagnosisManagerPlugin mgr) {
+        private DiagnosisTechSpecServiceImpl() {
 
-            this.mgr = mgr;
+            allDiagnoses = new Hashtable(100);
+            newDiagnoses = new Vector();
             crossProbs = new Vector();
             
         }
         
+
         /**
-         * @return the DiagnosisTechSpec for this class, and NULL if not found.
+         * Returns the DiagnosisTechSpec for the given class. If it has not been loaded,
+         * the TechSpec is searched for, parsed, and loaded.
+         *
+         * @return NULL if the DiagnosisTechSpec cannot be found.
          */
-        public DiagnosisTechSpecInterface getDiagnosisTechSpec(String sensorType) {
-            
-            return mgr.getTechSpec(sensorType);
-            
+            public DiagnosisTechSpecInterface getDiagnosisTechSpec(String sensorType) {
+
+            DiagnosisTechSpecInterface dts = (DiagnosisTechSpecInterface)allDiagnoses.get( sensorType );
+            if (dts == null) {
+
+                //Tech Spec is not loaded...
+                //... try finding it, parsing it, putting it in allDiagnoses, and returning it.
+
+                //Now add it to newDiagnoses so it gets published to the BB
+                synchronized(newDiagnoses) {
+                    //add to new Diagnoses
+                }
+            }
+
+            return dts; //even if null
+        }
+
+
+        /**
+         *  @return all diagnoses. May want to return a clone to protect vector.
+         *
+         */
+        public Collection getAllDiagnosisTechSpecs() {
+
+            return allDiagnoses.values(); // may want to clone so it isn't 
         }
 
         /**
-         * Add a DiagnosisTechSpec for a class, meant for testing 
+         * Add an DiagnosisTechSpec for a class. Targeted to testing
          */
         public void addDiagnosisTechSpec(String sensorType, DiagnosisTechSpecInterface dtsi) {
-            
-             mgr.addTechSpec(sensorType, dtsi);
-            
+
+            synchronized(this) {
+                allDiagnoses.put(sensorType, dtsi);
+                newDiagnoses.add(dtsi);
+            }
+
+            //Look for cross diagnoses & add
+            for (Iterator i=crossProbs.iterator(); i.hasNext(); ) {
+
+                CrossDiagnosis cd = (CrossDiagnosis) i.next();
+                if (cd.getSensorName().equalsIgnoreCase(sensorType)) {
+                    dtsi.addCrossDiagnosisProbability(cd);
+                    crossProbs.remove(cd);
+                }            
+            }        
         }
 
+
         /**
-         * Add a CrossDiagnosis for a class
+         * Add a DiagnosisTechSpec for a class, meant for testing
          */
-        public void addCrossDiagnosis(CrossDiagnosis dp) {
-            
-            mgr.addCrossDiagnosis(dp);
-         
+        public void addCrossDiagnosis(CrossDiagnosis cd) {
+
+            DiagnosisTechSpecInterface dts = null;
+            synchronized(this) {
+                dts = this.getDiagnosisTechSpec(cd.getSensorName());
+            }
+            if (dts != null) {
+                dts.addCrossDiagnosisProbability(cd);
+            } else {
+                crossProbs.add(cd);
+            }
         }
-        
-        public Collection getAllDiagnosisTechSpecs() {
-            return mgr.getAllDiagnosisTechSpecs();
-        }
-        
+
     }
     
 }

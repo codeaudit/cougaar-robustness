@@ -146,11 +146,13 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
             //Iterate over threatDescriptions
             if ( (threatDescriptions != null && threatDescriptions.size() > 0) ) {
 
+logger.debug("evaluateThreatAssetMembership has " + threatDescriptions.size() + " threatDescriptions to examine.");
 
                 Iterator i = threatDescriptions.iterator();
                 while (i.hasNext()) {
 
                     metaModel = (ThreatDescription)i.next();
+logger.debug("evaluateThreatAssetMembership looking at threat " + metaModel.getName() );
 
                         Iterator ctp = changesToProcess.iterator();
                         while (ctp.hasNext()) {
@@ -165,6 +167,7 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
 
                                 //** First check type of asset against type of threatModel. Ignore if they don't match
                                 if (!(metaModel.getAffectedAssetType().equals(asset.getAssetType()))) {
+logger.debug("evaluateThreatAssetMembership -- asset types don't match: \n modelAssetType="+metaModel.getAffectedAssetType()+"\nasset's type = "+asset.getAssetType());
                                     continue;
                                 }
 
@@ -187,6 +190,7 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
                                     logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] Qualifies! Adding to the "+metaModel.getName()+" threatModel ["+metaModel.getAffectedAssetType().getName()+"]");
                                     threatModel = addAssetAsMember(asset, metaModel);
                                 } else { //remove the asset from the threat model's membership, if it's there                         
+//logger.debug("evaluateThreatAssetMembership - doesn't qualify.");
                                     threatModel = removeAssetAsMember(asset, metaModel);                                                        
                                     if (threatModel != null) {
                                         logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] was REMOVED from "+metaModel.getName()+" threatModel ["+metaModel.getAffectedAssetType().getName()+"]");

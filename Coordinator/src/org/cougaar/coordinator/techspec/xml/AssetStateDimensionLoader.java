@@ -33,6 +33,7 @@ import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.service.LoggingService;
 
 import org.cougaar.core.service.UIDService;
+import org.cougaar.core.component.ServiceBroker;
 
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.util.log.Logging;
@@ -60,16 +61,18 @@ public class AssetStateDimensionLoader extends XMLLoader {
     Vector assetTypes;
     
     /** Creates a new instance of AssetStateDimensionLoader */
-    public AssetStateDimensionLoader() {
+    public AssetStateDimensionLoader(ServiceBroker serviceBroker, UIDService us) {
         
-        super("AssetStateDimensions", null);
+        super("AssetStateDimensions", null, serviceBroker, us);
         assetTypes = new Vector();
     }
   
+    public void load() {}
 
     /** Called with a DOM "AssetType" element to process */
-    protected void processElement(Element element) {
+    protected Vector processElement(Element element) {
      
+        Vector states = new Vector();
         //publish to BB during execute().
         //1. Create a new AssetType instance & 
         String type = element.getAttribute("assetType");
@@ -78,7 +81,7 @@ public class AssetStateDimensionLoader extends XMLLoader {
         //what to do when assetType is null? - create it, process it later?
         if (assetType == null) {
             logger.warn("AssetType XML Error - AssetType unknown: "+type);
-            return;
+            return null;
         }
         
         for (Node child = element.getFirstChild(); child != null; child = child.getNextSibling()) { 
@@ -86,15 +89,15 @@ public class AssetStateDimensionLoader extends XMLLoader {
                 AssetStateDimension asd = parseStateDimension((Element)child, assetType);
                 if (asd != null) { // then add it to the asset type
                     assetType.addStateDimension(asd);
+                    states.add(asd);
                 }
                 logger.debug(asd.toString());
             } //else, likely a text element - ignore
         }
+        return states;
     }
     
     
-    protected void execute() {}
-
     
     private AssetStateDimension parseStateDimension(Element element, AssetType assetType) {
         

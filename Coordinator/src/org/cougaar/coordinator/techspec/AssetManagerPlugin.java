@@ -239,8 +239,11 @@ logger.warn("!!!! **********************************************************");
 
     /**  read in the plugin params*/
     public void load() {
-    
+        
+        super.load();
         getPluginParams();
+        
+        
     }
     
     
@@ -269,10 +272,9 @@ logger.warn("!!!! **********************************************************");
      * and then publishes itself.
      */
     public void setupSubscriptions() {
-        
-        
+                
         getServices();
-        
+
         allAssets = new Vector(100,100);
         
         // Subscribe to CommunityStatusModel
@@ -293,10 +295,11 @@ logger.warn("!!!! **********************************************************");
         us = (UIDService ) getBindingSite().getServiceBroker().getService( this, UIDService.class, null ) ;
         
         haveServices = true;
+        
     }
     
     public void execute() {
-        
+
         if (!haveServices) {
             getServices();
             if (!haveServices) {

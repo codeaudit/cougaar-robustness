@@ -33,6 +33,7 @@ import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.service.LoggingService;
 
 import org.cougaar.core.service.UIDService;
+import org.cougaar.core.component.ServiceBroker;
 
 import org.cougaar.util.log.Logging;
 import org.cougaar.util.log.Logger;
@@ -50,6 +51,8 @@ import java.util.ArrayList;
 
 import org.w3c.dom.*;
 
+import org.cougaar.core.component.ServiceBroker;
+
 /**
  * This class is used to import techspecs from xml files.
  *
@@ -58,40 +61,18 @@ import org.w3c.dom.*;
 public class CrossDiagnosisLoader extends XMLLoader {
     
     Vector sensorTypes;
-    DiagnosisTechSpecService diagnosisTechSpecService = null;
+    DiagnosisTechSpecService diagnosisTechSpecService;
     
     /** Creates a new instance of CrossDiagnosisLoader */
-    public CrossDiagnosisLoader() {
+    public CrossDiagnosisLoader(DiagnosisTechSpecService diagnosisTechSpecService, ServiceBroker serviceBroker, UIDService us) {
         
-        super("CrossDiagnosis", "CrossDiagnoses"); 
+        super("CrossDiagnosis", "CrossDiagnoses", serviceBroker, us); 
         sensorTypes = new Vector();
+        this.diagnosisTechSpecService = diagnosisTechSpecService;
     }
     
     
-    private static final Class[] requiredServices = {
-        DiagnosisTechSpecService.class
-    };
-    
-    /* Acquire needed services */
-    private boolean haveServices() { //don't use logger here... until after super.load() is called
-
-            diagnosisTechSpecService =
-            (DiagnosisTechSpecService) getServiceBroker().getService(this, DiagnosisTechSpecService.class, null);
-            if (diagnosisTechSpecService == null) {
-                throw new RuntimeException(
-                "Unable to obtain tech spec service");
-            } 
-            
-            return true;
-            
-    }
-    
-    public void load() {
-        
-        haveServices(); //call have services first !!!
-        super.load(); //loads in & begins parsing of xml files.
-        
-    }
+    public void load() {    }
     
     
 /*    
@@ -104,7 +85,7 @@ public class CrossDiagnosisLoader extends XMLLoader {
 */    
     
     /** Called with a DOM "CrossDiagnosis" element to process */
-    protected void processElement(Element element) {
+    protected Vector processElement(Element element) {
         
         
         //publish to BB during execute().
@@ -112,7 +93,20 @@ public class CrossDiagnosisLoader extends XMLLoader {
         String sensorType = element.getAttribute("sensorType");
         String affectedBy = element.getAttribute("isAffectedByStateDimension");
         
-        CrossDiagnosis crossD = new CrossDiagnosis( sensorType, affectedBy);
+        DiagnosisTechSpecInterface dtsi = diagnosisTechSpecService.getDiagnosisTechSpec(sensorType);
+        if (dtsi == null) {
+            logger.error("CrossDiagnosis XML Error - sensor type not found = " + sensorType );
+            return null;
+        }
+        
+        AssetStateDimension affectedBy_asd = dtsi.getAssetType().findStateDimension(affectedBy);
+        if (affectedBy_asd == null) {
+            logger.error("CrossDiagnosis XML Error -  asset state dimension not found! unknown isAffectedByStateDimension dimension: "+affectedBy+ " for asset type = " + dtsi.getAssetType());
+            return null;
+        }
+        
+        
+        CrossDiagnosis crossD = new CrossDiagnosis( dtsi, affectedBy_asd);
 
         //Create a SensorType
         Element e;
@@ -120,9 +114,17 @@ public class CrossDiagnosisLoader extends XMLLoader {
             if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("WhenActualStateIs") ) {
                 e = (Element)child;
                 String whenActualStateIs = e.getAttribute("name");
-                DiagnosisProbability dp = new DiagnosisProbability(whenActualStateIs);
+                
+                AssetState when_as = affectedBy_asd.findAssetState(whenActualStateIs);
+                if (when_as == null) {
+                    logger.error("Event XML Error - direct effect asset state not found! unknown WhenActualStateIs : "+whenActualStateIs+ " for asset type = " + dtsi.getAssetType());
+                    return null;
+                }
+                
+                
+                DiagnosisProbability dp = new DiagnosisProbability(when_as);
                 //sensor.addDiagnosisProbability(dp);
-                parseWhenActualStateIsElements(e, dp, whenActualStateIs);
+                parseWhenActualStateIsElements(e, dp, whenActualStateIs, dtsi, affectedBy_asd);
             } //else, likely a text element - ignore            
         }
 
@@ -130,24 +132,29 @@ public class CrossDiagnosisLoader extends XMLLoader {
         
         logger.debug("Added new Cross Diagnosis for sensor: \n"+sensorType.toString() );
             
+        return null;
     }
     
     
-    protected void execute() {}
-    
-    private void parseWhenActualStateIsElements(Element element, DiagnosisProbability probs, String whenActualStateIs) {
+    private void parseWhenActualStateIsElements(Element element, DiagnosisProbability probs, String whenActualStateIs, DiagnosisTechSpecInterface dtsi, AssetStateDimension affectedBy_asd ) {
         
         for (Node child = element.getFirstChild(); child != null; child = child.getNextSibling()) {
             if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("WillDiagnoseAs") ) {
                 Element e = (Element) child;
-                String name = e.getAttribute("name");
+                String willState = e.getAttribute("name");
                 String p = e.getAttribute("withProbability");
+                
+                AssetState will_as = affectedBy_asd.findAssetState(willState);
+                if (will_as == null) {
+                    logger.error("CrossDiagnosis XML Error - diagnosis asset state not found! unknown WillDiagnoseAs: "+willState+ " for asset type = " + dtsi.getAssetType());
+                    return;
+                }
                 
                 try {
                     float prob = Float.parseFloat(p);
-                    probs.addProbability(name, prob);
+                    probs.addProbability(will_as, prob);
                 } catch (Exception ex) {
-                    logger.warn("CrossDiagnosis XML Error for ["+whenActualStateIs+"]- Bad float in probability for ["+name+"]: " + p);
+                    logger.warn("CrossDiagnosis XML Error for ["+whenActualStateIs+"]- Bad float in probability for ["+willState+"]: " + p);
                     continue; // ignore this one & move on.
                 }
             } //else, likely a text element - ignore

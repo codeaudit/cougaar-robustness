@@ -33,6 +33,7 @@ import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.service.LoggingService;
 
 import org.cougaar.core.service.UIDService;
+import org.cougaar.core.component.ServiceBroker;
 
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.util.log.Logging;
@@ -61,15 +62,17 @@ public class SocietalUtilityLoader extends XMLLoader {
     Vector utilities;
     
     /** Creates a new instance of SocietalUtilityLoader */
-    public SocietalUtilityLoader() {
+    public SocietalUtilityLoader(ServiceBroker serviceBroker, UIDService us) {
         
-        super("SocietalUtility", null);
+        super("SocietalUtility", null, serviceBroker, us);
         utilities = new Vector();
     }
   
 
+    public void load() {}
+    
     /** Called with a DOM "SocietalUtility" element to process */
-    protected void processElement(Element element) {
+    protected Vector processElement(Element element) {
      
         for (Node child = element.getFirstChild(); child != null; child = child.getNextSibling()) { 
             if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("RelativeValuation") ) {
@@ -92,13 +95,10 @@ public class SocietalUtilityLoader extends XMLLoader {
                 }
             }
         }
+        
+        return null;
     }
-    
-    
-    protected void execute() {}
-
-    
-    
+        
 }
 
 

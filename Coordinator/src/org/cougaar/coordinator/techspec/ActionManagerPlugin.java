@@ -60,7 +60,7 @@ import org.cougaar.core.persist.NotPersistable;
  *
  * This plugin reads in the XML definitions of the Action Tech Specs and makes them
  * available via a service.
- *
+ *@deprecated
  * @author  Paul Pazandak, Ph.D. OBJS, Inc.
  */
 public class ActionManagerPlugin extends ComponentPlugin implements NotPersistable  {
@@ -86,8 +86,8 @@ public class ActionManagerPlugin extends ComponentPlugin implements NotPersistab
         super.initialize();
         
         // create and advertise our service
-        this.atssp = new ActionTechSpecServiceProvider(this);
-        getServiceBroker().addService(ActionTechSpecService.class, atssp);
+//        this.atssp = new ActionTechSpecServiceProvider(this);
+//        getServiceBroker().addService(ActionTechSpecService.class, atssp);
 
     }
     

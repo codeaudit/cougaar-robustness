@@ -31,6 +31,7 @@ package org.cougaar.coordinator.techspec.xml;
 import org.cougaar.coordinator.techspec.*;
 
 import org.cougaar.core.plugin.ComponentPlugin;
+import org.cougaar.core.component.ServiceBroker;
 
 import org.cougaar.core.service.LoggingService;
 
@@ -72,50 +73,32 @@ public class ActuatorTypeLoader extends XMLLoader {
 
     static final String memoryMapFile = "MemoryCostMap.xml";
     private Hashtable memoryCostMap = null;
-    
+    private org.cougaar.util.ConfigFinder cf;
     
     /** Creates a new instance of SensorTypeLoader */
-    public ActuatorTypeLoader() {
+    public ActuatorTypeLoader(ActionTechSpecService actionTechSpecService, ServiceBroker serviceBroker, UIDService us, org.cougaar.util.ConfigFinder cf) {
         
-        super("ActuatorType", "ActuatorTypes"); //, requiredServices);
+        super("ActuatorType", "ActuatorTypes", serviceBroker, us); //, requiredServices);
         actuatorTypes = new Vector();
+        this.cf = cf;
+        this.actionTechSpecService = actionTechSpecService;
     }
     
-    
-    private static final Class[] requiredServices = {
-        ActionTechSpecService.class
-    };
-    
-    /* Acquire needed services */
-    private boolean haveServices() { //don't use logger here... until after super.load() is called
-
-            actionTechSpecService =
-            (ActionTechSpecService) getServiceBroker().getService(this, ActionTechSpecService.class, null);
-            if (actionTechSpecService == null) {
-                throw new RuntimeException(
-                "Unable to obtain tech spec service");
-            } 
-            
-            return true;
-            
-    }
     
     public void load() {
         
-        haveServices(); //call have services first !!!
-        
         try {
-            bandwidthCostMap = MapLoader.loadMap(getConfigFinder(), bandwidthMapFile);
+            bandwidthCostMap = MapLoader.loadMap(cf, bandwidthMapFile);
             if (bandwidthCostMap == null) {
                 logger.error("Error loading Bandwidth Cost Map file [" + bandwidthMapFile + "]. ");
             }
 
-            cpuCostMap = MapLoader.loadMap(getConfigFinder(), cpuMapFile);
+            cpuCostMap = MapLoader.loadMap(cf, cpuMapFile);
             if (cpuCostMap == null) {
                 logger.error("Error loading CPU Cost map file [" + cpuMapFile + "]. ");
             }
 
-            memoryCostMap = MapLoader.loadMap(getConfigFinder(), memoryMapFile);
+            memoryCostMap = MapLoader.loadMap(cf, memoryMapFile);
             if (memoryCostMap == null) {
                 logger.error("Error loading Memory Cost Map file [" + memoryMapFile + "]. ");
             }
@@ -125,13 +108,12 @@ public class ActuatorTypeLoader extends XMLLoader {
             return;
         }
         
-        super.load(); //loads in & begins parsing of xml files.
         
     }
     
     
     /** Called with a DOM "SensorType" element to process */
-    protected void processElement(Element element) {
+    protected Vector processElement(Element element) {
         
         //publish to BB during execute().
         //1. Create a new AssetType instance &
@@ -144,15 +126,23 @@ public class ActuatorTypeLoader extends XMLLoader {
         //what to do when assetType is null? - create it, process it later?
         if (affectsAssetType == null) {
             logger.warn("ActuatorType XML Error - affectsAssetType unknown: "+type);
-            return;
+            return null;
         }
 
+        AssetStateDimension asd = affectsAssetType.findStateDimension(stateDim);
+        //what to do when assetType is null? - create it, process it later?
+        if (asd == null) {
+            logger.error("ActuatorType["+actuatorName+"]  XML Error - asset state dimension not found! unknown dimension: "+stateDim+ " for asset type = " + type);
+            return null;
+        }
+        
+        
         if (us == null) {
-            logger.warn("ActuatorType XML Error - UIDService is null!");
-            return;
+            logger.warn("ActuatorType["+actuatorName+"]  XML Error - UIDService is null!");
+            return null;
         }
         UID uid = us.nextUID();
-        ActionTechSpecImpl actuator = new ActionTechSpecImpl( actuatorName, uid, affectsAssetType, stateDim);
+        ActionTechSpecImpl actuator = new ActionTechSpecImpl( actuatorName, uid, affectsAssetType, asd);
         actionTechSpecService.addActionTechSpec( actuatorName, actuator );
 
         //Create an ActuatorType
@@ -160,24 +150,21 @@ public class ActuatorTypeLoader extends XMLLoader {
         for (Node child = element.getFirstChild(); child != null; child = child.getNextSibling()) {
             if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("Action") ) {
                 e = (Element)child;
-                parseAction(e, actuator, affectsAssetType, stateDim);
+                parseAction(e, actuator, affectsAssetType, asd);
             } //else, likely a text element - ignore
         }
 
         logger.debug("Added new Actuator: \n"+actuator.toString() );
-            
+        return null;
     }
     
     
-    protected void execute() {}
-    
-
-    private void parseAction(Element element, ActionTechSpecImpl actuator, AssetType assetType, String stateDim) {
+    private void parseAction(Element element, ActionTechSpecImpl actuator, AssetType assetType, AssetStateDimension asd) {
 
         String actionName = element.getAttribute("name");
         String description = null; 
         
-        ActionDescription ad = new ActionDescription(actionName, assetType, stateDim);
+        ActionDescription ad = new ActionDescription(actionName, assetType, asd);
         
         //Create an ActionDescription
         Element e;
@@ -188,7 +175,7 @@ public class ActuatorTypeLoader extends XMLLoader {
                 ad.setDescription(description);
             } else if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("Transition") ) {
                 e = (Element)child;
-                parseTransition(e, ad, assetType, stateDim);
+                parseTransition(e, ad, assetType, asd);
             } //else, likely a text element - ignore
         }
         actuator.addAction(ad);
@@ -196,7 +183,7 @@ public class ActuatorTypeLoader extends XMLLoader {
     }
 
 
-    private void parseTransition(Element element, ActionDescription desc, AssetType assetType, String stateDim) {
+    private void parseTransition(Element element, ActionDescription desc, AssetType assetType, AssetStateDimension asd) {
 
         String whenState = element.getAttribute("WhenActualStateIs");
         String endState = element.getAttribute("EndStateWillBe");
@@ -205,7 +192,32 @@ public class ActuatorTypeLoader extends XMLLoader {
         //desc.setWhenStateIs(whenState);
         //desc.setEndStateWillBe(endState);
           
-        AssetTransitionWithCost atwc = new AssetTransitionWithCost(assetType, stateDim, whenState, endState, interState );
+        AssetState when_as;
+        if (whenState.equals("*")) { when_as = AssetState.ANY; } 
+        else {        
+            when_as = desc.getAffectedStateDimension().findAssetState(whenState);
+        }
+        if (when_as == null) {
+            logger.error("Actuator["+desc.name()+"] XML Error - asset state not found! unknown WhenActualStateIs: "+whenState+ " for asset type = " + desc.getAffectedAssetType());
+            return;
+        }
+
+        AssetState inter_as = desc.getAffectedStateDimension().findAssetState(interState);
+        if (inter_as == null) {
+            logger.error("Actuator["+desc.name()+"] XML Error - asset state not found! unknown IntermediateStateWillBe: "+interState+ " for asset type = " + desc.getAffectedAssetType());
+            return;
+        }
+        
+        AssetState end_as = desc.getAffectedStateDimension().findAssetState(endState);
+        if (end_as == null) {
+            logger.error("Actuator["+desc.name()+"] XML Error - asset state not found! unknown EndStateWillBe: "+endState+ " for asset type = " + desc.getAffectedAssetType());
+            return;
+        }
+        
+        
+        
+        
+        AssetTransitionWithCost atwc = new AssetTransitionWithCost(assetType, asd, when_as, end_as, inter_as );
 
         desc.addTransition(atwc);
 

@@ -34,12 +34,12 @@ import java.util.Vector;
  */
 public class DiagnosisProbability {
     
-    String actualState;
+    AssetState actualState;
     Vector diagnosisProbs;
     
     
     /** Creates a new instance of DiagnosisProbability */
-    public DiagnosisProbability(String actualState) {
+    public DiagnosisProbability(AssetState actualState) {
         
         this.actualState = actualState;
         diagnosisProbs = new Vector();
@@ -47,7 +47,7 @@ public class DiagnosisProbability {
     
 
     /** @return the actual state */
-    public String getActualState() {
+    public AssetState getActualState() {
         return actualState;
     }
 
@@ -57,23 +57,23 @@ public class DiagnosisProbability {
     }
     
     /** add a diagnosis probability */
-    public void addProbability(String name, float prob) {
+    public void addProbability(AssetState name, float prob) {
         diagnosisProbs.add(new DiagnosisProbability.DiagnoseAs(name, prob));
     }
     
     public class DiagnoseAs {
      
-        String diagnosisState;
+        AssetState diagnosisState;
         float prob;
         
-        public DiagnoseAs(String name, float prob) {
+        public DiagnoseAs(AssetState name, float prob) {
          
             this.diagnosisState = name;
             this.prob = prob;            
         }
         
         /** @return the name of the diagnosis state */
-        public String getDiagnosisValue() { return diagnosisState; }
+        public AssetState getDiagnosisValue() { return diagnosisState; }
 
         /** @return the name of the diagnosis state */
         public float getProbability() { return prob; }

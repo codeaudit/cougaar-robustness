@@ -59,13 +59,13 @@ public class ActionDescription {
     String name;
     String desc;
     AssetType affectsAssetType;
-    String affectsStateDimension;
+    AssetStateDimension affectsStateDimension;
     Vector transitions;
     
     AssetTransitionWithCost wildcardTransition = null;
     
     /** Creates a new instance of ActionDescription */
-    public ActionDescription(String name, AssetType affectsAssetType, String affectsStateDimension) {
+    public ActionDescription(String name, AssetType affectsAssetType, AssetStateDimension affectsStateDimension) {
         this.name = name;
         this.affectsAssetType = affectsAssetType;
         this.affectsStateDimension = affectsStateDimension;
@@ -92,7 +92,7 @@ public class ActionDescription {
     /**
      * @return the asset state dimension this event will affect
      */
-    public String getAffectedStateDimension() { return affectsStateDimension; }
+    public AssetStateDimension getAffectedStateDimension() { return affectsStateDimension; }
     
     
     
@@ -100,7 +100,7 @@ public class ActionDescription {
     public void addTransition(AssetTransitionWithCost atwc) { 
         
         this.transitions.add(atwc); 
-        if (atwc.start.equals("*")) {
+        if (atwc.start == AssetState.ANY) {
             this.wildcardTransition = atwc;
         } 
     }
@@ -128,6 +128,11 @@ public class ActionDescription {
             for (Iterator i=transitions.iterator(); i.hasNext(); ) {
                 
                 at = (AssetTransitionWithCost)i.next();
+                if ( at == null) {
+                    System.out.println(">>>>>>>>>>>>>>>>>>>>>ActionDescription.getTransitionForState inspecting AssetTransitionWithCost -- it's NULL!!");
+                } else {
+                    System.out.println("ActionDescription.getTransitionForState inspecting AssetTransitionWithCost: "+ at.toString() );
+                }
                 if ( at.getStartValue().equals(as)) {
                     return at; // return the AssetTransitionWithCost with the state we'd transition to if this event occurs given the (as) starting state.
                 }

@@ -45,14 +45,14 @@ public class ActionTechSpecImpl implements ActionTechSpecInterface   {
     String name;
     UID uid;
     AssetType assetType;
-    String assetDim;
+    AssetStateDimension assetDim;
     Vector actions;
     String revision = "0.1";
     
     HashSet possibleValues = null;
     
     /** Creates a new instance of ActionTechSpecImpl */
-    public ActionTechSpecImpl(String name, UID uid, AssetType type, String assetDim) {
+    public ActionTechSpecImpl(String name, UID uid, AssetType type, AssetStateDimension assetDim) {
 
         this.name = name;
         this.uid = uid;
@@ -88,8 +88,7 @@ public class ActionTechSpecImpl implements ActionTechSpecInterface   {
      */
     public AssetStateDimension getStateDimension() { 
                 
-        //Evaluate lazily as the state dim. may not be defined when this action is loaded from xml
-        return assetType.findStateDimension(assetDim);
+        return assetDim;
     }
     
     /**

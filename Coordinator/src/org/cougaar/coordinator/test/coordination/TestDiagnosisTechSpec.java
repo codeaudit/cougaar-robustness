@@ -123,8 +123,8 @@ public class TestDiagnosisTechSpec implements DiagnosisTechSpecInterface  {
     
     /** @return the State Dimension that the sensor is watching.
      */
-    public String getStateDimension() {
-        return "TestState";
+    public AssetStateDimension getStateDimension() {
+        return null;
     }
     
 }

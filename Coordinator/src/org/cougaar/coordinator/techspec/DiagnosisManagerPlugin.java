@@ -60,7 +60,7 @@ import org.cougaar.core.persist.NotPersistable;
  *
  * This plugin reads in the XML definitions of the Diagnosis Tech Specs and makes them
  * available via a service.
- *
+ * @deprecated
  * @author  Paul Pazandak, Ph.D. OBJS, Inc.
  */
 public class DiagnosisManagerPlugin extends ComponentPlugin implements NotPersistable  {
@@ -85,8 +85,9 @@ public class DiagnosisManagerPlugin extends ComponentPlugin implements NotPersis
 
         super.initialize();
         // create and advertise our service
-        this.dtssp = new DiagnosisTechSpecServiceProvider(this);
-        getServiceBroker().addService(DiagnosisTechSpecService.class, dtssp);
+//        this.dtssp = new DiagnosisTechSpecServiceProvider(this);
+//        getServiceBroker().addService(DiagnosisTechSpecService.class, dtssp);
+        //System.out.println("Created new DiagnosisTechSpecServiceProvider <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
     }
     
     
@@ -168,8 +169,8 @@ public class DiagnosisManagerPlugin extends ComponentPlugin implements NotPersis
      */
     public void setupSubscriptions() {
         //load tech specs
-        getPluginParams();
-        readInDiagnoses(fileParams);
+        //getPluginParams();
+        //readInDiagnoses(fileParams);
         
     }
     

@@ -48,11 +48,11 @@ public class DiagnosisTechSpecImpl implements DiagnosisTechSpecInterface  {
     Vector probabilities = null;
     Vector crossProbabilities;
     AssetType assetType;
-    String stateDim;
+    AssetStateDimension stateDim;
     int latency;
     
     /** Creates a new instance of DiagnosisTechSpecImpl */
-    public DiagnosisTechSpecImpl(String name, UID uid, AssetType type, String stateDim, int latency) {
+    public DiagnosisTechSpecImpl(String name, UID uid, AssetType type, AssetStateDimension stateDim, int latency) {
 
         this.name = name;
         this.levels = new Vector();        
@@ -74,7 +74,7 @@ public class DiagnosisTechSpecImpl implements DiagnosisTechSpecInterface  {
 
     /** @return the State Dimension that the sensor is watching.
      */
-    public String getStateDimension() {
+    public AssetStateDimension getStateDimension() {
         return stateDim;
     }
 

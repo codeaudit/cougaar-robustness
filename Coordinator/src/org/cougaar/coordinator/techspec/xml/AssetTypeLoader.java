@@ -31,6 +31,7 @@ import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.service.LoggingService;
 
 import org.cougaar.core.service.UIDService;
+import org.cougaar.core.component.ServiceBroker;
 
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.util.log.Logging;
@@ -49,7 +50,8 @@ import java.util.ArrayList;
 import org.w3c.dom.*;
 
 /**
- * This class is used to import techspecs from xml files.
+ * This class is used to import techspecs from xml files. It does NOTHING at this point as
+ * we don't expect new asset types.
  *
  * @author  Administrator
  */
@@ -58,22 +60,20 @@ public class AssetTypeLoader extends XMLLoader {
     Vector assetTypes;
     
     /** Creates a new instance of AssetTypeLoader */
-    public AssetTypeLoader() {
+    public AssetTypeLoader(ServiceBroker serviceBroker, UIDService us) {
         
-        super("AssetType", "AssetTypes");
+        super("AssetType", "AssetTypes", serviceBroker, us);
         assetTypes = new Vector();
     }
   
-
+    public void load() {}
+    
     /** Called with a DOM element to process */
-    protected void processElement(Element element) {
+    protected Vector processElement(Element element) {
      
         //publish to BB during execute().
-
+        return null;
         
     }
     
-    
-    
-    protected void execute() {}
 }

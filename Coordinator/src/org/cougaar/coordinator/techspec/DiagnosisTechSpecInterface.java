@@ -56,7 +56,7 @@ public interface DiagnosisTechSpecInterface extends TechSpecRootInterface {
   
     /** @return the State Dimension that the sensor is watching.
      */
-    public String getStateDimension();
+    public AssetStateDimension getStateDimension();
 
     /** @return the latency -- the time it takes this sensor to diagnose/notice & report a problem, in milliseconds.
      */

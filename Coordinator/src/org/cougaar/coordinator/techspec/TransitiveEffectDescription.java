@@ -20,6 +20,7 @@ public class TransitiveEffectDescription {
 
     
     private String transitiveEventName = null; 
+    private EventDescription transitiveEvent = null; 
     private AssetType transitiveAssetType = null; 
     private TransitiveEffectVulnerabilityFilter transitiveVulnerabilityFilter = null;     
 
@@ -33,15 +34,21 @@ public class TransitiveEffectDescription {
     }
 
     
+    public void setTransitiveEvent(EventDescription event) { this.transitiveEvent = event; }
     public void setTransitiveEventName(String name) { this.transitiveEventName = name; }
     public void settransitiveAssetType(AssetType transType) { this.transitiveAssetType = transType; }
     public void setTransitiveVulnerabilityFilter(TransitiveEffectVulnerabilityFilter vf) { this.transitiveVulnerabilityFilter = vf; }
 
     /** Supports only ONE transitive effect in 2004 
-     * @return the name of the event that is transitively caused by this event
+     * @return the name of the event read in from XML that is transitively caused by this event
      */
     public String getTransitiveEventName() { return transitiveEventName; }
 
+    /** Supports only ONE transitive effect in 2004 
+     * @return the event that is transitively caused by this event
+     */
+    public EventDescription getTransitiveEvent() { return transitiveEvent; }
+    
     /** Supports only ONE transitive effect in 2004 
      * @return the assetType affected by the event that is transitively caused by this event
      */

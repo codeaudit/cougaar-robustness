@@ -28,7 +28,7 @@ package org.cougaar.coordinator.techspec;
 import java.util.Vector;
 import java.util.Iterator;
 import org.cougaar.core.persist.NotPersistable;
-
+ 
 /**
  * This class defines the possible transitions that an Asset make take from one AssetState to another
  * in a given AssetStateDimension.
@@ -39,19 +39,16 @@ import org.cougaar.core.persist.NotPersistable;
  */
 public class AssetTransition implements NotPersistable {
     
-    protected String start = null;
-    protected String end = null;
-    protected String stateDim = null;
+    protected AssetState start = null;
+    protected AssetState end = null;
+    protected AssetStateDimension stateDim = null;
     
-    protected AssetState startState = null;
-    protected AssetState endState = null;
-
     protected AssetType assetType;
     
     /** Creates a new instance of AssetTransition. It takes Strings as the AssetStates may not have been loaded 
      *  into the system yet -- lazy evaluation is used
      */
-    public AssetTransition(AssetType assetType, String stateDim, String start, String end) {
+    public AssetTransition(AssetType assetType, AssetStateDimension stateDim, AssetState start, AssetState end) {
         
         this.start = start;
         this.end = end;
@@ -60,24 +57,17 @@ public class AssetTransition implements NotPersistable {
     }
 
     /** @return the starting state value */
-    public AssetState getStartValue() { 
-        if (startState != null) { return startState; }
-        //Otherwise, look it up
-        AssetStateDimension asd = assetType.findStateDimension(stateDim);
-        if (asd != null) {
-            startState = asd.findAssetState(start);           
-        }
-        return startState; //even if null
-    }
+    public AssetState getStartValue() { return start; } 
     
     /** @return the ending state value */
-    public AssetState getEndValue() { 
-        if (endState != null) { return endState; }
-        //Otherwise, look it up
-        AssetStateDimension asd = assetType.findStateDimension(stateDim);
-        if (asd != null) {
-            endState = asd.findAssetState(end);           
-        }
-        return endState;  //even if null
-    }
+    public AssetState getEndValue() { return end; }
+    
+    /** Return applicable asset type */
+    public AssetType getAssetType() { return assetType; }
+    
+    /** Return applicable AssetStateDimension */
+    public AssetStateDimension getAssetStateDimension() { return stateDim; }
+    
+    public String toString() { return "AssetTransition: Start="+start+", End="+end; }
+    
 }

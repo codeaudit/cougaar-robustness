@@ -34,23 +34,30 @@ import java.util.Vector;
  */
 public class CrossDiagnosis {
     
-    private String sensorName;
-    private String isAffectedByStateDimension;
+    private DiagnosisTechSpecInterface sensor;
+    private AssetStateDimension isAffectedByStateDimension;
     private Vector probs;
     
     /** Creates a new instance of CrossDiagnosis */
-    public CrossDiagnosis(String name, String affectedState) {
+    public CrossDiagnosis(DiagnosisTechSpecInterface sensor, AssetStateDimension affectedState) {
         
-        sensorName = name;
+        this.sensor = sensor;
         isAffectedByStateDimension = affectedState;
         probs = new Vector();
     }
 
     /** @return the cross diagnosis sensor type */
-    public String getSensorName() { return sensorName; }
+    public String getSensorName() { return sensor.getName(); }
+    
+    /** @return the name of the cross diagnosis affected dimension */
+    public String getAffectedDimensionName() { return isAffectedByStateDimension.getStateName(); }
+
+    /** @return the cross diagnosis sensor  */
+    public DiagnosisTechSpecInterface getSensor() { return sensor; }
     
     /** @return the cross diagnosis affected dimension */
-    public String getAffectedDimension() { return isAffectedByStateDimension; }
+    public AssetStateDimension getAffectedDimension() { return isAffectedByStateDimension; }
+    
     
     /** Add a cross diagnosis probability */
     public void addProbability(DiagnosisProbability dp) {

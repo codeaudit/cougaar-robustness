@@ -33,6 +33,8 @@ import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.service.LoggingService;
 
 import org.cougaar.core.service.UIDService;
+import org.cougaar.core.component.ServiceBroker;
+
 
 import org.cougaar.util.log.Logging;
 import org.cougaar.util.log.Logger;
@@ -62,34 +64,27 @@ public class EventLoader extends XMLLoader {
     private Hashtable probabilityMap = null;
     
     private Vector events;
-
+    private org.cougaar.util.ConfigFinder cf;
+    
+    
     private static EventLoader loader = null;
     public static EventLoader getLoader() { return loader; }
     /** Creates a new instance of EventLoader */
-    public EventLoader() {
+    public EventLoader(ServiceBroker serviceBroker, UIDService us, org.cougaar.util.ConfigFinder cf) {
         
-        super("Event", "Events"); //, requiredServices);
+        super("Event", "Events", serviceBroker, us); //, requiredServices);
         events = new Vector();
         loader = this;
+        this.cf = cf;
+        
     }
-    
-       
-    /* Acquire needed services */
-    private void getServices() { //don't use logger here... until after super.load() is called
 
-        this.logger = (LoggingService)  this.getServiceBroker().getService(this, LoggingService.class, null);
-        if (logger == null) {
-            throw new RuntimeException("Unable to obtain LoggingService");
-        }
-    }
     
     public void load() {
                
-        getServices();
-        
         //load probability map (maps form user string probabilities to Coordinator internal floats
         try {
-            probabilityMap = MapLoader.loadMap(getConfigFinder(),probMapFile);
+            probabilityMap = MapLoader.loadMap(cf,probMapFile);
             if (probabilityMap == null) {
                 logger.error("Error loading probability map file [" + probMapFile + "]. ");
             }
@@ -99,14 +94,12 @@ public class EventLoader extends XMLLoader {
             return;
         }
         
-        //haveServices(); //call have services first !!!
-        super.load(); //loads in & begins parsing of xml files.
         
     }
     
     
     /** Called with a DOM "Event" element to process */
-    protected void processElement(Element element) {
+    protected Vector processElement(Element element) {
         
         String eventName = element.getAttribute("name");
         String assetType = element.getAttribute("affectsAssetType");
@@ -114,21 +107,29 @@ public class EventLoader extends XMLLoader {
         
         AssetType affectsAssetType = AssetType.findAssetType(assetType);
 
-        //what to do when assetType is null? - create it, process it later?
+        //Report error if asset type wasn't found
         if (affectsAssetType == null) {
-            logger.warn("Event XML Error - affectsAssetType unknown: "+assetType);
-            return;
+            logger.error("Event XML Error - affectsAssetType unknown: "+assetType);
+            return null;
         }
+        
+        AssetStateDimension asd = affectsAssetType.findStateDimension(stateDim);
+        //what to do when assetType is null? - create it, process it later?
+        if (asd == null) {
+            logger.error("Event XML Error - asset state dimension not found! unknown dimension: "+stateDim+ " for asset type = " + assetType);
+            return null;
+        }
+        
 
         if (us == null) {
             logger.warn("Event XML Error - UIDService is null!");
-            return;
+            return null;
         }
         
         UID uid = us.nextUID();
 
         //Create default threat
-        EventDescription event = new EventDescription( eventName, affectsAssetType, stateDim );
+        EventDescription event = new EventDescription( eventName, affectsAssetType, asd );
         events.add(event);
 
         Element e;
@@ -144,12 +145,45 @@ public class EventLoader extends XMLLoader {
 
         logger.debug("Added new Event: \n"+event.toString() );
             
+        return events;
+    }
+
+    
+    /** Go back thru the events & links up transitive effects with the events they referenced */ 
+    protected void setEventLinks(Vector allEvents) {
+     
+        Iterator i = allEvents.iterator();
+        while (i.hasNext() ) {
+            EventDescription orig = (EventDescription)i.next();
+            TransitiveEffectDescription ted = orig.getTransitiveEffect();
+            if (ted != null) { // then find the event it refers to
+                Iterator j = allEvents.iterator();
+                boolean found = false;
+                while (j.hasNext() ) {
+                    EventDescription e = (EventDescription)j.next();
+                    if (ted.getTransitiveEventName().equals(e.getName()) ) {
+                        ted.setTransitiveEvent(e);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    logger.error("Could not find event["+ted.getTransitiveEventName()+"] referenced in TransitiveEffect for Event["+orig.getName()+"].");
+                }
+            }
+        }                
     }
     
-    
     //publish all events & transitive effects at this point
-    protected void setupSubscriptions() {
-        Iterator i = events.iterator();
+    protected void publishEvents(org.cougaar.core.service.BlackboardService blackboard, Vector allEvents) {
+        
+        //link up transitive event names to actual events
+        if (allEvents == null) {
+            logger.warn("No events published the blackboard.");
+            return;
+        }
+        
+        Iterator i = allEvents.iterator();
         int tec = 0;
         while (i.hasNext() ) {
             EventDescription e = (EventDescription)i.next();
@@ -162,11 +196,6 @@ public class EventLoader extends XMLLoader {
         if (logger.isDebugEnabled()) { logger.debug("Published " + events.size() + " event descriptions & " + tec + " transitive effects to the blackboard."); }
     }
 
-    protected void execute() {
-    }
-    
-    
-
     /** Parse DirectEffect*/
     private void parseDirectEffect(Element element, EventDescription event) {
 
@@ -178,8 +207,25 @@ public class EventLoader extends XMLLoader {
                 String whenState = e.getAttribute("WhenActualStateIs");
                 String endState = e.getAttribute("EndStateWillBe");
 
+                AssetState when_as;
+                if (whenState.equals("*")) { when_as = AssetState.ANY; } 
+                else {
+                    when_as = event.getAffectedStateDimension().findAssetState(whenState);
+                }
+                if (when_as == null) {
+                    logger.error("Event XML Error - direct effect asset state not found! unknown WhenActualStateIs: "+whenState+ " for asset type = " + event.getAffectedAssetType());
+                    return;
+                }
+                
+                AssetState end_as = event.getAffectedStateDimension().findAssetState(endState);
+                if (end_as == null) {
+                    logger.error("Event XML Error - direct effect asset state not found! unknown EndStateWillBe: "+endState+ " for asset type = " + event.getAffectedAssetType());
+                    return;
+                }
+                
+                
                 //Add transition to Event
-                event.addDirectEffectTransition(whenState, endState);
+                event.addDirectEffectTransition(when_as, end_as);
                 logger.debug("Saw direct transition: "+whenState+", "+endState);
             } //else, likely a text element - ignore
         }

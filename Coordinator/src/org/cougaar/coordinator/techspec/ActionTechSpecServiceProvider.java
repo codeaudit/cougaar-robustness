@@ -29,6 +29,11 @@ package org.cougaar.coordinator.techspec;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.component.ServiceProvider;
 
+import java.util.Vector;
+import java.util.Collection;
+import java.util.Hashtable;
+import java.util.Iterator;
+
 /*
  * Implements a service provider AND TechSpecService
  *
@@ -36,16 +41,14 @@ import org.cougaar.core.component.ServiceProvider;
 public class ActionTechSpecServiceProvider implements ServiceProvider {
     
     private ActionTechSpecServiceImpl impl;
-    private ActionManagerPlugin mgr;
     
     /**
      * Create an ActionTechSpecService & Provider.
      *
      */
-    public ActionTechSpecServiceProvider(ActionManagerPlugin mgr) {
+    public ActionTechSpecServiceProvider() {
     
-        this.mgr = mgr;
-        impl = new ActionTechSpecServiceImpl(mgr);
+        impl = new ActionTechSpecServiceImpl();
     }
     
     public Object getService(ServiceBroker sb, Object requestor, Class serviceClass) {
@@ -61,34 +64,56 @@ public class ActionTechSpecServiceProvider implements ServiceProvider {
     
     private final class ActionTechSpecServiceImpl implements ActionTechSpecService {
 
-        private ActionManagerPlugin mgr;
+        private Hashtable allActions;
+        private Vector newActions;
         
         /**
          * Create an ActionTechSpecService
          */
-        private ActionTechSpecServiceImpl(ActionManagerPlugin mgr) {
-
-            this.mgr = mgr;
-            
+        private ActionTechSpecServiceImpl() {
+            allActions = new Hashtable(100);
+            newActions = new Vector();            
         }
         
+        
         /**
-         * @return the ActionTechSpec for this class, and NULL if not found.
+         * Returns the ActionTechSpec for the given class. If it has not been loaded,
+         * the TechSpec is searched for, parsed, and loaded.
+         *
+         * @return NULL if the ActionTechSpec cannot be found.
          */
         public ActionTechSpecInterface getActionTechSpec(String cls) {
-            
-            return mgr.getTechSpec(cls);
-            
+
+            ActionTechSpecInterface ats = (ActionTechSpecInterface)allActions.get( cls);
+            if (ats == null) {
+
+                //logger.warn("************* action tech spec NOT FOUND: "+cls);        
+
+                //Tech Spec is not loaded...
+                //... try finding it, parsing it, putting it in allActions, and returning it.
+
+                //Now add it to newActions so it gets published to the BB
+                synchronized(newActions) {
+                        //add to new Actions
+
+                }
+
+            }
+
+            return ats; //even if null
         }
 
         /**
          * Add an ActionTechSpec for a class. Targeted to testing
          */
-        public void addActionTechSpec(String cls, ActionTechSpecInterface atsi) {
-            
-            mgr.addTechSpec(cls, atsi);
-            
+        public void addActionTechSpec(String cls, ActionTechSpecInterface a) {
+
+            allActions.put(cls, a); 
+            newActions.add(a);
+            //logger.debug("************* add action tech spec: "+cls);        
         }
+        
+        
         
     }
     

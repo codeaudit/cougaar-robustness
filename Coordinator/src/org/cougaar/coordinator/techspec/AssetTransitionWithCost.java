@@ -24,7 +24,7 @@
   */
 
 package org.cougaar.coordinator.techspec;
-
+ 
 import java.util.Vector;
 import java.util.Iterator;
 import org.cougaar.core.persist.NotPersistable;
@@ -41,16 +41,15 @@ public class AssetTransitionWithCost extends AssetTransition implements NotPersi
     ActionCost oneTimeCost = null;
     ActionCost continuingCost = null;
     
-    String intermediate;
     AssetState intermediateState = null;
     
     /** Creates a new instance of AssetTransition. It takes Strings as the AssetStates may not have been loaded 
      *  into the system yet -- lazy evaluation is used
      */
-    public AssetTransitionWithCost(AssetType assetType, String stateDim, String start, String end, String intermediateState) {
+    public AssetTransitionWithCost(AssetType assetType, AssetStateDimension stateDim, AssetState start, AssetState end, AssetState intermediateState) {
 
         super(assetType, stateDim, start, end);
-        this.intermediate = intermediateState;
+        this.intermediateState = intermediateState;
     }
 
     
@@ -77,18 +76,12 @@ public class AssetTransitionWithCost extends AssetTransition implements NotPersi
     
     /** @return the intermediate state value */
     public AssetState getIntermediateValue() { 
-        if (intermediateState != null) { return intermediateState; }
-        //Otherwise, look it up
-        AssetStateDimension asd = assetType.findStateDimension(stateDim);
-        if (asd != null) {
-            intermediateState = asd.findAssetState(intermediate);           
-        }
         return intermediateState;  //even if null
     }
     
     public String toString() {
      
-        return "WhenStateIs="+this.start+" , IntermediateState="+this.intermediate+" , EndStateWillBe="+this.end+"\n        OneTimeCost=\n"+this.oneTimeCost+"\n        ContinuingCost=\n"+this.continuingCost;
+        return "WhenStateIs="+this.start+" , IntermediateState="+this.intermediateState+" , EndStateWillBe="+this.end+"\n        OneTimeCost=\n"+this.oneTimeCost+"\n        ContinuingCost=\n"+this.continuingCost;
     }
     
 }

@@ -33,6 +33,7 @@ import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.service.LoggingService;
 
 import org.cougaar.core.service.UIDService;
+import org.cougaar.core.component.ServiceBroker;
 
 import org.cougaar.util.log.Logging;
 import org.cougaar.util.log.Logger;
@@ -62,34 +63,25 @@ public class ThreatLoader extends XMLLoader {
     private Hashtable probabilityMap = null;
     
     private Vector threats;
-
+    private org.cougaar.util.ConfigFinder cf;
+    
     private static ThreatLoader loader = null;
     public static ThreatLoader getLoader() { return loader; }
     /** Creates a new instance of ThreatLoader */
-    public ThreatLoader() {
+    public ThreatLoader(ServiceBroker serviceBroker, UIDService us, org.cougaar.util.ConfigFinder cf) {
         
-        super("Threat", "Threats"); //, requiredServices);
+        super("Threat", "Threats", serviceBroker, us); //, requiredServices);
         threats = new Vector();
         loader = this;
+        this.cf = cf;
     }
     
-       
-    /* Acquire needed services */
-    private void getServices() { //don't use logger here... until after super.load() is called
-
-        this.logger = (LoggingService)  this.getServiceBroker().getService(this, LoggingService.class, null);
-        if (logger == null) {
-            throw new RuntimeException("Unable to obtain LoggingService");
-        }
-    }
-    
+           
     public void load() {
                
-        getServices();
-        
         //load probability map (maps form user string probabilities to Coordinator internal floats
         try {
-            probabilityMap = MapLoader.loadMap(getConfigFinder(),probMapFile);
+            probabilityMap = MapLoader.loadMap(cf, probMapFile);
             if (probabilityMap == null) {
                 logger.error("Error loading probability map file [" + probMapFile + "]. ");
             }
@@ -98,15 +90,12 @@ public class ThreatLoader extends XMLLoader {
             logger.error("Error parsing XML file Error was: ", e);
             return;
         }
-        
-        //haveServices(); //call have services first !!!
-        super.load(); //loads in & begins parsing of xml files.
-        
+                
     }
     
     
     /** Called with a DOM "Threat" element to process */
-    protected void processElement(Element element) {
+    protected Vector processElement(Element element) {
         
         //publish to BB during execute().
         //1. Create a new AssetType instance &
@@ -129,12 +118,12 @@ public class ThreatLoader extends XMLLoader {
         //what to do when assetType is null? - create it, process it later?
         if (affectsAssetType == null) {
             logger.warn("Threat XML Error - affectsAssetType unknown: "+assetType);
-            return;
+            return null;
         }
 
         if (us == null) {
             logger.warn("Threat XML Error - UIDService is null!");
-            return;
+            return null;
         }
         
         UID uid = us.nextUID();
@@ -153,21 +142,50 @@ public class ThreatLoader extends XMLLoader {
 
         logger.debug("Added new Threat: \n"+threat.toString() );
             
+        return threats;
+    }
+    
+    
+    /** Go back thru the threats & link them up with the events they referenced */ 
+    protected void setEventLinks(Vector allThreats, Vector allEvents) {
+     
+        Iterator i = allThreats.iterator();
+        while (i.hasNext() ) {
+            ThreatDescription threat = (ThreatDescription)i.next();
+            String eventName = threat.getEventNameThreatCauses();
+
+            Iterator j = allEvents.iterator();
+            boolean found = false;
+            while (j.hasNext() ) {
+                EventDescription e = (EventDescription)j.next();
+                if (eventName.equals(e.getName()) ) {
+                    threat.setEventThreatCauses(e);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                logger.error("Could not find event["+eventName+"] referenced in Threat["+threat.getName()+"].");
+            }
+        }   
     }
     
     
     //publish all threats at this point
-    protected void setupSubscriptions() {
+    protected void publishThreats(org.cougaar.core.service.BlackboardService blackboard) {
+        if (threats == null) {
+            logger.warn("No threats published the blackboard.");
+            return;
+        }
         Iterator i = threats.iterator();
         while (i.hasNext() ) {
-            blackboard.publishAdd(i.next());
+            ThreatDescription td = (ThreatDescription)i.next();
+            if (td.getEventProbability() != null) { //then publish it. Don't publish if there's no prob. that the threat will occur.
+                blackboard.publishAdd(td);
+            } 
         }
         logger.debug("Published "+threats.size()+" threats to the blackboard.");
     }
-    
-    protected void execute() {
-    }
-    
     
 
     /** Parse sub kinds of threats & create new ThreatDescriptions for each entry */

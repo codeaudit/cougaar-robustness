@@ -35,6 +35,8 @@ public class AssetState implements NotPersistable, Serializable {
     private float mauCompleteness;
     private float mauSecurity;
     
+    public final static AssetState ANY = new AssetState("*", 0, 0);
+    
     /** Creates a new instance of AssetState */
     public AssetState(String name, float completeness, float security) {
         this.name = name;
@@ -61,4 +63,6 @@ public class AssetState implements NotPersistable, Serializable {
     public boolean equals(Object o) {     
         return ( (o instanceof AssetState) && (o != null) && ( getName().equals(((AssetState)o).getName()) ) );
     }
+    
+    public String toString() { return "AssetState["+name+"] MauComplete="+this.mauCompleteness+", MauSecurity="+this.mauSecurity; }
 }
