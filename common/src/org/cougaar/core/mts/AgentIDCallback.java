@@ -62,12 +62,14 @@ public class AgentIDCallback implements Callback {
 		String name = req.getName();
 		CbTblEntry cbte = (CbTblEntry)ht.get(name);
 		cbte.pending = false;
-		cbte.result = null;           
+		//cbte.result = null; // don't overwrite a non-null current value, it might be newer than wp
 	    } else {
 		String name = entry.getName();
 		CbTblEntry cbte = (CbTblEntry)ht.get(name);
 		cbte.pending = false;
-		cbte.result = entry.getURI();
+		//cbte.result = entry.getURI();
+                if (cbte.result == null)  // don't overwrite a non-null current value, it might be newer than wp 
+		  cbte.result = entry.getURI();
 	        if (log.isDebugEnabled())
 	          log.debug(""+cbte);
 	    } 
