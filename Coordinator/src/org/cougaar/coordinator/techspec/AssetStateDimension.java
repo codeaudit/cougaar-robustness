@@ -27,7 +27,10 @@ package org.cougaar.coordinator.techspec;
 
 import java.util.Vector;
 import java.util.Iterator;
+import java.io.Serializable;
+
 import org.cougaar.core.persist.NotPersistable;
+
 
 /**
  * This class defines one of many possible states that an asset TYPE may have.
@@ -35,7 +38,7 @@ import org.cougaar.core.persist.NotPersistable;
  *
  * @author Paul Pazandak, Ph.D. OBJS, Inc.
  */
-public class AssetStateDimension implements NotPersistable {
+public class AssetStateDimension implements NotPersistable, Serializable {
 
     /** the associated asset type */
     private AssetType assetType;

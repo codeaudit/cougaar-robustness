@@ -341,7 +341,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             
             String refresh = null;
             String error = null;
-            boolean useShortName = false;
+            boolean useShortName = true;
             String actiondataFilter = "ACTIONS";
             //Default refresh rate
             int refreshRate = 50000;
@@ -354,7 +354,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                 
                 ln = request.getParameter("NAMEFORMAT");
                 if (ln != null && ln.length()>0) { 
-                    if (ln.equals("SHORTNAME")) {useShortName = true;} 
+                    if (!ln.equals("SHORTNAME")) {useShortName = false;} 
                 } else { //if not specified use default
                     ln = "SHORTNAME";
                 }
@@ -380,7 +380,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                 
 
                 String[] newvalues = request.getParameterValues("SETPERMITTEDVALUES");
-                if (newvalues != null && newvalues.length >0 ) { //the user wants to update a value
+                if (newvalues != null && newvalues.length >0 ) { //the user wants to update the permitted values
                     
                     String type = request.getParameter("TYPE");
                     String uid  = request.getParameter("UID");
@@ -392,14 +392,34 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                     updateResult = updateAction(type, uid, hs);
                     wasUpdated = true;
                 }
+        
+                //See if the user hit "Start Action" or "Stop Action" -- these buttons will only appear if
+                //the action is a TestAction
+                String startaction = request.getParameter("STARTACTION");
                 
-                /*                
-                String lnf = request.getParameter("LNF");
-                if (lnf != null) {
-                    LONG_NUM_FORMAT = lnf;
-                    nf = new DecimalFormat(LONG_NUM_FORMAT);
+                //Start an action
+                if (startaction != null ) {
+                
+                    String actionVal = request.getParameter("TESTACTIONCONTROL");
+                    if (actionVal != null && actionVal.length() >0 ) { //the user wants to update the value of an action
+
+                        String type = request.getParameter("TYPE");
+                        String uid  = request.getParameter("UID");
+
+                        startAction(type, uid, actionVal);
+                        wasUpdated = true;
+                    }
+                } else { //stop an action
+                    String stopaction = request.getParameter("STOPACTION");
+                    if (stopaction != null ) {
+                    
+                        String type = request.getParameter("TYPE");
+                        String uid  = request.getParameter("UID");
+
+                        stopAction(type, uid);
+                        wasUpdated = true;
+                    }
                 }
-*/                
             } 
  
             
@@ -438,7 +458,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
         
         }
 
-        
+        //Set the permitted values for an object
         private String updateAction(String type, String uid, Set newvalues) {
 
             ActionData ad;
@@ -468,7 +488,88 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             
             return result;
         }
+
+
+        //set the value of a TestAction object
+        private void startAction(String type, String uid, String newvalue) {
+
+            ActionData ad;
+            Action a;
+            
+            //find the action
+            Iterator i = actions.iterator();
+            while (i.hasNext()) {
+                ad = (ActionData)i.next();
+                
+                if (type.equals("ACTIONS")) {
+                    a = (Action)ad.getAction();
+                    if (a.getUID().toString().equals(uid)) {
+                        if (a instanceof TestAction) {                            
+                            TestAction ta = (TestAction)a;
+                            try {
+                               ta.start(newvalue);
+                            } catch (IllegalValueException ive) {
+                            }
+                        }                        
+                        break;
+                    }
+                } else { //wrapper change
+                    a = (Action)ad.getWrapper();
+                    if (a.getUID().toString().equals(uid)) {
+                        if (a instanceof TestAction) {                            
+                            TestAction ta = (TestAction)a;
+                            try {
+                               ta.start(newvalue);
+                            } catch (IllegalValueException ive) {
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
         
+
+        
+
+        //set the value of a TestAction object
+        private void stopAction(String type, String uid) {
+
+            ActionData ad;
+            Action a;
+            
+            //find the action
+            Iterator i = actions.iterator();
+            while (i.hasNext()) {
+                ad = (ActionData)i.next();
+                
+                if (type.equals("ACTIONS")) {
+                    a = (Action)ad.getAction();
+                    if (a.getUID().toString().equals(uid)) {
+                        if (a instanceof TestAction) {                            
+                            TestAction ta = (TestAction)a;
+                            try {
+                               ta.stop();
+                            } catch (NoStartedActionException ive) {
+                            }
+                        }                        
+                        break;
+                    }
+                } else { //wrapper change
+                    a = (Action)ad.getWrapper();
+                    if (a.getUID().toString().equals(uid)) {
+                        if (a instanceof TestAction) {                            
+                            TestAction ta = (TestAction)a;
+                            try {
+                               ta.stop();
+                            } catch (NoStartedActionException ive) {
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
         
         /**
          * Output page with disconnect  / reconnect button & reconnect time slot
@@ -627,9 +728,14 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             }
             
             emitSelect(out, action.getPossibleValues());
-            emitModifiableSelect(out, action.getValuesOffered(), ad, isActionObject, actiondataFilter, refresh, nameformat, "SETPERMITTEDVALUES");
-            emitSelect(out, action.getPermittedValues());
-            
+            emitModifiableSelect(out, action.getValuesOffered(), ad, isActionObject, actiondataFilter, refresh, nameformat, "SETPERMITTEDVALUES", "Set Permitted", true);
+
+            //If it's our TestAction object then we can set its value!
+            if (action instanceof TestAction) {
+                emitTestActionControl(out, action.getPermittedValues(), ad, isActionObject, actiondataFilter, refresh, nameformat);
+            } else { //we can't set the value so use this just to present them.
+               emitSelect(out, action.getPermittedValues());
+            }        
             
             
             if ( isActionObject ) { //emit value indicating if data has changed or was just added.
@@ -666,13 +772,13 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
 
 
         private void emitModifiableSelect(PrintWriter out, Set s, ActionData ad, boolean isActionObject, 
-                                          String actiondataFilter, int refresh, String nameformat, String setName) {
+                                          String actiondataFilter, int refresh, String nameformat, String setName, String buttonStr, boolean selectMultiple) {
                        
             String str;
             if (s != null && s.size() >0 ) {
                 Iterator iter = s.iterator();
                 out.print("    <TD><form clsname=\"UPDATEVALUE\" method=\"get\" ><br><br>" );
-                out.print("    <SELECT MULTIPLE NAME=\""+setName+"\" size=\"3\" ");
+                out.print("    <SELECT " + (selectMultiple ? "MULTIPLE" : "") + " NAME=\""+setName+"\" size=\"3\" ");
                 out.print("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: red; font-size: 8pt;\">\n");            
                 while (iter.hasNext()) {
                     str = iter.next().toString();
@@ -684,7 +790,36 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                 out.println("   <input type=hidden name=\"REFRESH\" value=\""+refresh+"\" >");
                 out.println("   <input type=hidden name=\"NAMEFORMAT\" value=\""+nameformat+"\" >");
                 out.println("   <input type=hidden name=\"FILTER\" value=\""+actiondataFilter+"\" ><br>");
-                out.print("   <input type=submit name=\"Submit\" value=\"Set Permitted\" size=15 ");
+                out.println("   <input type=submit name=\"Submit\" value=\"" + buttonStr + "\" size=15 ");
+                out.println("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: blue; font-size: 6pt;\">");
+                out.println("   \n</form></TD>");
+            } else { //no values
+                out.print("   <TD>Null</TD>\n");
+            }
+        }         
+
+        private void emitTestActionControl(PrintWriter out, Set s, ActionData ad, boolean isActionObject, 
+                                          String actiondataFilter, int refresh, String nameformat) {
+                       
+            String str;
+            if (s != null && s.size() >0 ) {
+                Iterator iter = s.iterator();
+                out.print("    <TD><form clsname=\"UPDATEVALUE\" method=\"get\" ><br><br>" );
+                out.print("    <SELECT  NAME=\"TESTACTIONCONTROL\" size=\"3\" ");
+                out.print("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: red; font-size: 8pt;\">\n");            
+                while (iter.hasNext()) {
+                    str = iter.next().toString();
+                    out.print("        <OPTION value=\""+ str +"\" UNSELECTED />" + str + "\n");
+                }
+                out.print("   </SELECT>\n");            
+                out.println("   <input type=hidden name=\"TYPE\" value=\""+(isActionObject?"ACTIONS":"WRAPPERS")+"\" >");
+                out.println("   <input type=hidden name=\"UID\" value=\""+(isActionObject?ad.getAction().getUID():ad.getWrapper().getUID())+"\" >");
+                out.println("   <input type=hidden name=\"REFRESH\" value=\""+refresh+"\" >");
+                out.println("   <input type=hidden name=\"NAMEFORMAT\" value=\""+nameformat+"\" >");
+                out.println("   <input type=hidden name=\"FILTER\" value=\""+actiondataFilter+"\" ><br>");
+                out.println("   <input type=submit name=\"STARTACTION\" value=\"Start\" size=15 ");
+                out.println("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: blue; font-size: 6pt;\">");
+                out.println("   <input type=submit name=\"STOPACTION\" value=\"Stop\" size=15 ");
                 out.println("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: blue; font-size: 6pt;\">");
                 out.println("   \n</form></TD>");
             } else { //no values

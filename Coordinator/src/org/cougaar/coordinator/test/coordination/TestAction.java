@@ -46,5 +46,12 @@ public class TestAction extends Action {
             this.setValuesOffered(s);
         } catch (Exception e) {}
     }        
-        
+
+    protected void start(Object o) throws IllegalValueException {
+        super.start(o);
+    }
+
+    protected void stop() throws NoStartedActionException  {
+        super.stop();
+    }
 }

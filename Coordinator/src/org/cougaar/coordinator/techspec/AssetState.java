@@ -25,11 +25,11 @@
 
 package org.cougaar.coordinator.techspec;
 import org.cougaar.core.persist.NotPersistable;
-
+import java.io.Serializable;
 /**
  * @author Paul Pazandak, Ph.D. OBJS, Inc.
  */
-public class AssetState implements NotPersistable {    
+public class AssetState implements NotPersistable, Serializable {    
     
     private String name;
     private float mauCompleteness;

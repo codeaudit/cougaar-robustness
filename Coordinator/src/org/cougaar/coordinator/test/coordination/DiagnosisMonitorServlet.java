@@ -92,7 +92,7 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
 
     
     //Default refresh rate
-    private int refreshRate = 10000;
+    private int defaultRefreshRate = 10000;
     
     protected Servlet createServlet() {
         // create inner class
@@ -370,13 +370,21 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
         public void doGet(HttpServletRequest request, HttpServletResponse response) {
             
             String refresh = null;
+            int refreshRate = defaultRefreshRate;
             String error = null;
-            boolean useShortName = false;
+            boolean useShortName = true;
+            String ln = "SHORTNAME";
             
             if (request != null) {
                 
-                String ln = request.getParameter("NAMEFORMAT");
-                if (ln != null) { if (ln.equals("SHORTNAME")) {useShortName = true;} }
+                ln = request.getParameter("NAMEFORMAT");
+                if (ln != null) { 
+                    if (!ln.equals("SHORTNAME")) {
+                        useShortName = false;
+                    } 
+                } else {
+                    ln = "SHORTNAME";
+                }
                 
                 refresh = request.getParameter("REFRESH");
                 if (refresh != null) {
@@ -391,6 +399,15 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
                         error = "Could not set refresh rate to "+refresh+". NumberFormatException occurred.";
                     }
                 }
+                
+                String diagVal = request.getParameter("CHANGEDIAGNOSISVALUE");
+                if (diagVal != null && diagVal.length() >0 ) { //the user wants to update the value of an action
+
+                    String uid  = request.getParameter("UID");
+
+                    setValue(uid, diagVal);
+                }
+                
 /*                
                 String lnf = request.getParameter("LNF");
                 if (lnf != null) {
@@ -413,18 +430,18 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
               out.println("<center><h2>"+i+"</h2></center><br>" );
           } else {
  */
-                emitHeader(out);
+                emitHeader(out, refreshRate, useShortName);
                 if (error != null) { // then emit the error
                     out.print("<font color=\"#0C15FE\">"+ error + "</h2></font>");
                 }
                 
-                boolean e1 = emitData(out, useShortName); //emit diagnoses
+                boolean e1 = emitData(out, useShortName, ln, refreshRate); //emit diagnoses
                 //boolean e2 = emitData(out, true); //emit wrappers
                 
                 if (!e1) {
                     out.println("<p><p><p><h2><center>No Data is Available.</center></h2>");
                 }
-                emitFooter(out);
+                emitFooter(out, refreshRate, useShortName);
                 //out.println("<center><h2>DefenseApplicabilityConditions not emitted - All three values required.</h2></center><br>" );
                 //if (eventService.isEventEnabled()) {
                 //   eventService.event("ERROR: Condition Name or Value not set properly: "+condName+"="+condValue);
@@ -434,10 +451,36 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
             } catch (java.io.IOException ie) { ie.printStackTrace(); }
         }
         
+        
+        //set the value of a TestDiagnosis object
+        private void setValue(String uid, String newvalue) {
+
+            Diagnosis d;
+            DiagRecord dr;
+            
+            //find the diagnosis
+            Iterator i = diagnoses.iterator();
+            while (i.hasNext()) {
+                dr = (DiagRecord)i.next();                
+                d = (Diagnosis)dr.getDiagnosis();
+                if (d.getUID().toString().equals(uid)) {
+                    if (d instanceof TestDiagnosis) {                            
+                        TestDiagnosis td = (TestDiagnosis)d;
+                        try {
+                           td.setValue(newvalue);
+                        } catch (IllegalValueException ive) {
+                        }
+                    }                        
+                    break;
+                } 
+            }
+        }
+        
+        
         /**
-         * Output page with disconnect  / reconnect button & reconnect time slot
+         * Output page header
          */
-        private void emitHeader(PrintWriter out) {
+        private void emitHeader(PrintWriter out, int refreshRate, boolean useShortName) {
             out.println("<html><META HTTP-EQUIV=\"PRAGMA\" CONTENT=\"NO-CACHE\">");
             out.println("<head></head><body onload=\"setTimeout('location.reload()',"+refreshRate+");\">");
             out.println("<center><h1>Coordinator Diagnosis Monitoring Servlet</h1>");
@@ -448,8 +491,8 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
             out.println("<input type=submit name=\"Submit\" value=\"Submit\" size=10 ><br>");
 
             out.println("<br><b>Asset Name - use:</b><SELECT NAME=\"NAMEFORMAT\" SIZE=\"1\">");
-            out.println("<OPTION VALUE=\"LONGNAME\" SELECTED />Pkg Name");
-            out.println("<OPTION VALUE=\"SHORTNAME\" />Class name");
+            out.println("<OPTION VALUE=\"LONGNAME\" "+ (useShortName ? "":"SELECTED") +" />Pkg Name");
+            out.println("<OPTION VALUE=\"SHORTNAME\" "+ (useShortName ? "SELECTED" : "") +" />Class name");
             out.println("</SELECT>");
 
             out.println("\n</form>");
@@ -458,18 +501,34 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
             out.println("<a href=\"DiagnosisMonitorServlet\">Diagnoses</a>");
             out.println("</center><hr>");
         }
+
         
         /**
-         * Output page with disconnect  / reconnect button & reconnect time slot
+         * Output page footer 
          */
-        private void emitFooter(PrintWriter out) {
+        private void emitFooter(PrintWriter out, int refreshRate, boolean useShortName) {
+            out.print("<form clsname=\"myForm\" method=\"get\" >" );
+            out.println("Refresh Rate: <input type=text name=REFRESH value=\""+refreshRate+"\" size=7 >");
+            out.println("<input type=submit name=\"Submit\" value=\"Submit\" size=10 ><br>");
+
+            out.println("<br><b>Asset Name - use:</b><SELECT NAME=\"NAMEFORMAT\" SIZE=\"1\">");
+            out.println("<OPTION VALUE=\"LONGNAME\" "+ (useShortName ? "":"SELECTED") +" />Pkg Name");
+            out.println("<OPTION VALUE=\"SHORTNAME\" "+ (useShortName ? "SELECTED" : "") +" />Class name");
+            out.println("</SELECT>");
+
+            out.println("\n</form>");
+            out.println("<a href=\"PublishServlet\">Publish Actions</a>");
+            out.println("<a href=\"ActionMonitorServlet\">Actions</a>");
+            out.println("<a href=\"DiagnosisMonitorServlet\">Diagnoses</a>");
+            out.println("</center><hr>");
             out.println("</html>");
         }
+        
         
         /** Emit data for the given CostBenefitDiagnosis vector
          *
          */
-        private boolean emitData(PrintWriter out, boolean useShortName) {
+        private boolean emitData(PrintWriter out, boolean useShortName, String nameformat, int refresh) {
             
             boolean emittedData = false;
             Diagnosis d; //diagnosis
@@ -505,22 +564,24 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
                 // Possible Values List -----------------------
                 Set pvalues = dr.getPossibleValues();
 
+                //Get the diagnosis & wrapped diagnosis
+                d  = dr.getDiagnosis();
+                dw = dr.getWrapper();
+                
                 String s;
                 Iterator pv = pvalues.iterator();
                 if (pvalues.size() >0 ) {
-                    out.print("   <TD><SELECT name=\"foo\" size=\"3\" >\n");            
-                    while (pv.hasNext()) {
-                        s = pv.next().toString();
-                        out.print("        <OPTION value=\""+ s +"\" /> " + s + "\n");
+                    
+                    if (d instanceof TestDiagnosis) { //then we can change the value
+                          emitTestActionControl(out, pvalues, d, refresh, nameformat);                        
+                    } else { //we can't change the value, so just display the possible values
+                        simpleSelect(out, pv);
                     }
-                    out.print("   </SELECT></TD>\n");            
+                    
                 } else { //no values
                     out.print("   <TD>Values Unknown</TD>\n");    //per unit time
                 }
                 
-                //Get the diagnosis & wrapped diagnosis
-                d  = dr.getDiagnosis();
-                dw = dr.getWrapper();
                 
                 //Get the diagnosis values
                 dv =  (d  != null) ?  d.getValue() : "null" ;
@@ -540,6 +601,46 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
         
             return emittedData;
         }
+
+        
+        //Emit select displaying values - no option to modify
+        private void simpleSelect(PrintWriter out, Iterator pv) {
+            
+            String s;
+            out.print("   <TD><SELECT name=\"foo\" size=\"3\" >\n");            
+            while (pv.hasNext()) {
+                s = pv.next().toString();
+                out.print("        <OPTION value=\""+ s +"\" /> " + s + "\n");
+            }
+            out.print("   </SELECT></TD>\n");            
+        }            
+        
+        
+        //Emit select displaying values - no option to modify
+        private void emitTestActionControl(PrintWriter out, Set s, Diagnosis d, int refresh, String nameformat) {
+                       
+            String str;
+            if (s != null && s.size() >0 ) {
+                Iterator iter = s.iterator();
+                out.print("    <TD><form clsname=\"UPDATEVALUE\" method=\"get\" ><br><br>" );
+                out.print("    <SELECT  NAME=\"CHANGEDIAGNOSISVALUE\" size=\"3\" ");
+                out.print("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: red; font-size: 8pt;\">\n");            
+                while (iter.hasNext()) {
+                    str = iter.next().toString();
+                    out.print("        <OPTION value=\""+ str +"\" UNSELECTED />" + str + "\n");
+                }
+                out.print("   </SELECT>\n");            
+                out.println("    <input type=hidden name=\"UID\" value=\""+d.getUID()+"\" >");
+                out.println("    <input type=hidden name=\"REFRESH\" value=\""+refresh+"\" >");
+                out.println("    <input type=hidden name=\"NAMEFORMAT\" value=\""+nameformat+"\" >");
+                out.println("<br><input type=submit name=\"Submit\" value=\"Set Value\" size=15 ");
+                out.println("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: blue; font-size: 6pt;\">");
+                out.println("   \n</form></TD>");
+            } else { //no values
+                out.print("   <TD>Null</TD>\n");
+            }
+        }         
+        
         
         
         private void tableHeader(PrintWriter out) {

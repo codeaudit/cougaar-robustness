@@ -167,7 +167,7 @@ public class ActionRelayManager extends DeconflictionPluginBase implements NotPe
                    ActionRelayManagerKnob = (ActionRelayManagerKnob)iter.next();
                    ActionRelayManagerKnob.setFoundCoordinator(managerAddress);
                }               
-            } else {
+                } else {
                if (logger.isDebugEnabled()) logger.debug("++++++++++++++++++++++++++++> ManagerAddress subscription empty.");
             }                
         }
