@@ -24,13 +24,34 @@ package org.cougaar.tools.robustness.ma.util;
    of items, the sum of the items, the average, and the standard deviation.
 */
 
-public class StatCalc {
+public class StatCalc implements Cloneable {
 
+   private String id;
    private int count;   // Number of numbers that have been entered.
    private double sum;  // The sum of all the items that have been entered.
-   private double squareSum;  // The sum of the squares of all the items.
+   private double sumSquares;  // The sum of the squares of all the items.
    private double high = Double.NaN;
    private double low = Double.NaN;
+
+   public StatCalc() {}
+
+   public StatCalc(String id) {
+     this.id = id;
+   }
+
+   public StatCalc(String id,
+                   int count,
+                   double sum,
+                   double sumSquares,
+                   double high,
+                   double low) {
+     this.id = id;
+     this.count = count;
+     this.sum = sum;
+     this.sumSquares = sumSquares;
+     this.high = high;
+     this.low = low;
+   }
 
    public void enter(double num) {
          // Add the number to the dataset.
@@ -38,7 +59,11 @@ public class StatCalc {
       if (count == 0 || num < low) low = num;
       count++;
       sum += num;
-      squareSum += num*num;
+      sumSquares += num*num;
+   }
+
+   public String getId() {
+      return id;
    }
 
    public int getCount() {
@@ -69,12 +94,33 @@ public class StatCalc {
         // Return standard deviation of all the items that have been entered.
         // Value will be Double.NaN if count == 0.
       double mean = getMean();
-      return Math.sqrt( squareSum/count - mean*mean );
+      return Math.sqrt( sumSquares/count - mean*mean );
+   }
+
+   public Object clone() {
+     try {
+       return super.clone();
+     } catch (CloneNotSupportedException e) {
+       e.printStackTrace();
+       return null;
+     }
    }
 
    public String toString() {
      return "count=" + count + " sum=" + sum + " low=" + low + " high=" + high +
          " mean=" + getMean() + " stdDev=" + getStandardDeviation();
+   }
+
+   public String toXML() {
+     return "<Item id=\"" + id + "\" " +
+                  "count=\"" + count + "\" " +
+                  "sum=\"" + sum + "\" " +
+                  "sumSquares=\"" + sumSquares + " \" " +
+                  "low=\"" + low + " \" " +
+                  "high=\"" + high + "\" " +
+                  "mean=\"" + getMean() + "\" " +
+                  "stdev=\"" + getStandardDeviation() + "\" " +
+                  "/>";
    }
 
 }  // end of class StatCalc

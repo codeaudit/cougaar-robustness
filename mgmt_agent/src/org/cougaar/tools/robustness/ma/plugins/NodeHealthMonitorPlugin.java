@@ -22,13 +22,9 @@ import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.mts.MessageAttributes;
 import org.cougaar.core.mts.SimpleMessageAttributes;
-import org.cougaar.core.mts.SimpleMessageAddress;
 
 import org.cougaar.mts.std.Constants;
 
-import org.cougaar.core.service.AlarmService;
-import org.cougaar.core.service.BlackboardService;
-import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.UIDService;
 
@@ -45,7 +41,6 @@ import org.cougaar.core.blackboard.IncrementalSubscription;
 
 import org.cougaar.util.UnaryPredicate;
 
-import org.cougaar.core.service.community.Agent;
 import org.cougaar.core.service.community.Community;
 import org.cougaar.core.service.community.CommunityService;
 import org.cougaar.core.service.community.CommunityChangeEvent;
@@ -53,10 +48,6 @@ import org.cougaar.core.service.community.CommunityChangeListener;
 import org.cougaar.core.service.community.CommunityResponseListener;
 import org.cougaar.core.service.community.CommunityResponse;
 import org.cougaar.core.service.community.Entity;
-
-import org.cougaar.community.requests.CommunityRequest;
-import org.cougaar.community.requests.JoinCommunity;
-import org.cougaar.community.requests.SearchCommunity;
 
 import org.cougaar.tools.robustness.ma.RestartManagerConstants;
 import org.cougaar.tools.robustness.ma.controllers.RobustnessController;
@@ -68,7 +59,6 @@ import org.cougaar.tools.robustness.ma.ldm.NodeStatusRelayImpl;
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorRequest;
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorResponse;
 
-import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -99,7 +89,6 @@ import java.net.URI;
  *   4) Periodically sends status update to peer health monitors in the
  *      monitored community.
  *   5) Receives status updates from peers and updates model.
- *   6) Respond to status requests from ARServlet.
  * </pre>
  */
 public class NodeHealthMonitorPlugin extends ComponentPlugin
@@ -130,7 +119,6 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
   // Services used
   private LoggingService logger;
   private UIDService uidService = null;
-  private EventService eventService;
   private CommunityService commSvc;
   private WhitePagesService whitePagesService;
 
@@ -144,7 +132,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
 
   // Join Robustness Community designated by startup parameter
   private void joinStartupCommunity() {
-    String initialCommunity = System.getProperty(COMMUNITY_PROPERTY);
+    final String initialCommunity = System.getProperty(COMMUNITY_PROPERTY);
     if (initialCommunity != null) {
       logger.debug("Joining community " + initialCommunity);
       UID joinRequestUID = uidService.nextUID();
@@ -155,13 +143,15 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
       memberAttrs.put(roles);
       memberAttrs.put("EntityType", myType);
       memberAttrs.put("CanBeManager", "False");
-      blackboard.publishAdd(new JoinCommunity(initialCommunity,
-                                              myName,
-                                              CommunityService.AGENT,
-                                              memberAttrs,
-                                              false,
-                                              null,
-                                              joinRequestUID));
+       commSvc.joinCommunity(initialCommunity, myName, CommunityService.AGENT,
+         memberAttrs, false, null, new CommunityResponseListener() {
+           public void getResponse(CommunityResponse resp) {
+             logger.debug("joinCommunity:" +
+                          " agent=" + myName +
+                          " community=" + initialCommunity +
+                          " result=" + resp.getStatusAsString());
+           }
+         });
     } else {
       logger.debug("No initial community defined");
     }
@@ -177,8 +167,6 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
     logger = org.cougaar.core.logging.LoggingServiceWithPrefix.add(logger, agentId + ": ");
     uidService =
       (UIDService) getBindingSite().getServiceBroker().getService(this, UIDService.class, null);
-    eventService =
-      (EventService) getBindingSite().getServiceBroker().getService(this, EventService.class, null);
 
     // Subscribe to Node Status updates sent by peer Health Monitors via Relay
     nodeStatusRelaySub =
@@ -188,20 +176,22 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
     healthMonitorRequests =
         (IncrementalSubscription)blackboard.subscribe(healthMonitorRequestPredicate);
 
-    // Publish SearchCommunity request to look for Robustness Communities
-    searchRequests =
-      (IncrementalSubscription)blackboard.subscribe(searchCommunityPredicate);
-    UID searchRequestUID = uidService.nextUID();
-    myUIDs.add(searchRequestUID);
-    blackboard.publishAdd(new SearchCommunity(null,
-                                              "(CommunityType=" + COMMUNITY_TYPE + ")",
-                                              false,
-                                              searchRequestUID,
-                                              Community.COMMUNITIES_ONLY));
+    commSvc.addListener(new CommunityChangeListener() {
+      public String getCommunityName() { return null; }
+      public void communityChanged(CommunityChangeEvent cce) {
+        //logger.info(cce.toString());
+        Attributes attrs = cce.getCommunity().getAttributes();
+        Attribute attr = attrs.get("CommunityType");
+        if (attr != null && attr.contains("Robustness")) {
+          processCommunityChanges(Collections.singleton(cce.getCommunity()));
+        }
+      }
+    });
 
     // Start timer to periodically check status of agents
     String updateIntervalStr =
-        System.getProperty(STATUS_UPDATE_PROPERTY, DEFAULT_STATUS_UPDATE_INTERVAL);
+        System.getProperty(STATUS_UPDATE_PROPERTY,
+                           Long.toString(DEFAULT_STATUS_UPDATE_INTERVAL));
     updateInterval = Long.parseLong(updateIntervalStr);
     wakeAlarm = new WakeAlarm(now() + updateInterval);
     alarmService.addRealTimeAlarm(wakeAlarm);
@@ -216,8 +206,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
   }
 
   public void execute() {
-    if ((wakeAlarm != null) &&
-        ((wakeAlarm.hasExpired()))) {
+    if ((wakeAlarm != null) && wakeAlarm.hasExpired()) {
       // Determine identify node and host
       if (myNode == null && getTopologyFlag) {
         getTopologyFlag = false;
@@ -236,20 +225,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
       wakeAlarm = new WakeAlarm(now() + getLongAttribute(STATUS_UPDATE_ATTRIBUTE, updateInterval));
       alarmService.addRealTimeAlarm(wakeAlarm);
     }
-    // Get updates in monitored community
-    for (Iterator it = searchRequests.getChangedCollection().iterator(); it.hasNext(); ) {
-      SearchCommunity cs = (SearchCommunity) it.next();
-      Collection robustnessCommunities = (Collection)cs.getResponse().getContent();
-      if (robustnessCommunities != null) {
-        for (Iterator it1 = robustnessCommunities.iterator(); it1.hasNext();) {
-          Community c = (Community)it1.next();
-          logger.debug("Received changed SearchCommunity:" +
-                      " community=" + (c != null ? c.getName() : null));
-        }
-        // update status model
-        processCommunityChanges(robustnessCommunities);
-      }
-    }
+
     // Get status from health monitor peers
     Collection nsCollection = nodeStatusRelaySub.getAddedCollection();
     for (Iterator it = nsCollection.iterator(); it.hasNext(); ) {
@@ -328,10 +304,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
                                     Community.AGENTS_ONLY);
     for (Iterator it1 = entities.iterator(); it1.hasNext(); ) {
       Entity entity = (Entity) it1.next();
-      String name = entity.getName();
-      //if (model.contains(name) && model.getCurrentState(name) == controller.getNormalState()) {
-        targets.add(getMessageAddressWithTimeout(entity.getName(), updateInterval));
-      //}
+      targets.add(getMessageAddressWithTimeout(entity.getName(), updateInterval));
     }
     return targets;
   }
@@ -344,7 +317,9 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
     for(Iterator it = communities.iterator(); it.hasNext(); ) {
       Community community = (Community)it.next();
       if (model == null) {
+        blackboard.openTransaction();
         initializeModel(community.getName());
+        blackboard.closeTransaction();
       }
       if (!initialAttributesLogged) {
         initialAttributesLogged = true;
@@ -364,8 +339,9 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
                            new Attribute[]{new BasicAttribute(CURRENT_STATUS_UPDATE_ATTRIBUTE, Long.toString(newInterval))});
         }
       }
-      long tmp = getLongAttribute(CURRENT_STATUS_UPDATE_ATTRIBUTE, updateInterval);
-      if (nodeStatusRelay == null && myType.equalsIgnoreCase("Node")) {
+      if (nodeStatusRelay == null &&
+          myType.equalsIgnoreCase("Node") &&
+          controller != null) {
         AgentStatus agentStatus[] = getLocalAgentStatus(community.getName());
         NodeStatusRelayImpl nsr =
             new NodeStatusRelayImpl(agentId,
@@ -384,8 +360,9 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
             nodeStatusRelay.addTarget(target);
           }
         }
-
+        blackboard.openTransaction();
         blackboard.publishAdd(nodeStatusRelay);
+        blackboard.closeTransaction();
         if(logger.isDebugEnabled()) {
           logger.debug("publishAdd NodeStatusRelay:" +
                        " targets=" + targetsToString(nodeStatusRelay.getTargets()) +
@@ -397,7 +374,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
     }
   }
 
-  private void initializeModel(String communityName) {
+  private synchronized void initializeModel(String communityName) {
     if (model == null) {
       model = new CommunityStatusModel(myName,
                                        communityName,
@@ -430,11 +407,15 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
   }
 
   private AgentStatus[] getLocalAgentStatus(String communityName) {
-    String agents[] = model.entitiesAtLocation(myName);
     List l = new ArrayList();
-    for (int i = 0; i < agents.length; i++) {
-      if (model.getCurrentState(agents[i]) == controller.getNormalState()) {
-        l.add(new AgentStatus(agents[i], myName, controller.getNormalState()));
+    Community community = commSvc.getCommunity(communityName, null);
+    if (community != null) {
+      String agents[] = model.entitiesAtLocation(myName);
+      for (int i = 0; i < agents.length; i++) {
+        //if (model.getCurrentState(agents[i]) == controller.getNormalState()) {
+        if (community.hasEntity(agents[i]) && !myName.equals(agents[i])) {
+          l.add(new AgentStatus(agents[i], myName, model.getCurrentState(agents[i])));
+        }
       }
     }
     return (AgentStatus[])l.toArray(new AgentStatus[0]);
@@ -473,7 +454,6 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
     if (model == null) {
       initializeModel(communityName);
     }
-    String agentNames[] = new String[agentStatus.length];
     model.applyUpdates(nodeName,
                        nodeStatus,
                        agentStatus,
@@ -481,39 +461,9 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
                        host);
   }
 
-  private String listServices() {
-    StringBuffer sb = new StringBuffer();
-    for (Iterator it = getServiceBroker().getCurrentServiceClasses(); it.hasNext();) {
-      sb.append(((Class)it.next()).getName() + "\n");
-    }
-    return sb.toString();
-  }
-
-  // Converts a collection of Entities to a compact string representation of names
-  private String entityNames(Collection entities) {
-    StringBuffer sb = new StringBuffer("[");
-    for (Iterator it = entities.iterator(); it.hasNext();) {
-      Entity entity = (Entity)it.next();
-      sb.append(entity.getName() + (it.hasNext() ? "," : ""));
-    }
-    return(sb.append("]").toString());
-  }
-
-
   private UnaryPredicate communityPredicate = new UnaryPredicate() {
     public boolean execute(Object o) {
       return (o instanceof Community);
-    }
-  };
-
-  private IncrementalSubscription searchRequests;
-  private UnaryPredicate searchCommunityPredicate = new UnaryPredicate() {
-    public boolean execute(Object o) {
-      if (o instanceof SearchCommunity) {
-        SearchCommunity sc = (SearchCommunity)o;
-        return (myUIDs.contains(sc.getUID()));
-      }
-      return false;
     }
   };
 
@@ -570,7 +520,6 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
         boolean isAvailable = resp.isAvailable();
         boolean isSuccess = resp.isSuccess();
         AddressEntry entry = null;
-        String agentName = null;
         if (isAvailable && isSuccess) {
           entry = ((Response.Get)resp).getAddressEntry();
         }
@@ -714,6 +663,5 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
       return was;
     }
   }
-
 
 }
