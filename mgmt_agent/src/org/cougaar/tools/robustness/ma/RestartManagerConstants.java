@@ -53,17 +53,20 @@ public interface RestartManagerConstants {
 
   // Defines how often status updates are broadcast to peers
   public static final String STATUS_UPDATE_PROPERTY = "org.cougaar.tools.robustness.update.interval";
-  public static final String DEFAULT_STATUS_UPDATE_INTERVAL = "30000";
   public static final int NEVER = -1;
 
   // Default parameter values, may be overridden by community attributes
   public static long DEFAULT_EXPIRATION = 5 * 60 * 1000;
   public static final long PING_TIMEOUT = 5 * 60 * 1000;
   public static final long MINIMUM_PING_TIMEOUT = 1 * 60 * 1000;
-  public static final long HEARTBEAT_REQUEST_TIMEOUT = 2 * 60 * 1000;
+  public static final long HEARTBEAT_REQUEST_TIMEOUT = 1 * 60 * 1000;
   public static final long HEARTBEAT_FREQUENCY = 60 * 1000;
   public static final long HEARTBEAT_TIMEOUT = 2 * 60 * 1000;
   public static final long HEARTBEAT_PCT_OUT_OF_SPEC = 80;
+
+  public static final long DEFAULT_STATUS_UPDATE_INTERVAL = 30000;
+  public static final long DEFAULT_STATUS_UPDATE_LATENCY = 4 * 60 * 1000;
+  public static final long DEFAULT_RESTART_CONFIDENCE = 4;
 
   // Minimum value for EN4J annealTime parameter
   public static final int MINIMUM_ANNEAL_TIME = 10;
