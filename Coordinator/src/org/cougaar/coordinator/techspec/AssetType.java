@@ -35,23 +35,21 @@ import java.io.Serializable;
  */
 public class AssetType implements NotPersistable, Serializable {
 
+    private static Vector types = new Vector(5,5);
+
     //public static final AssetType NETWORK = new AssetType("network", null); //no separate network that would differentiate from enclave in 2004
     public static final AssetType ENCLAVE = new AssetType("enclave", null);
-    public static final AssetType HOST = new AssetType("host", null);
-    public static final AssetType NODE = new AssetType("node", null);
-    public static final AssetType AGENT = new AssetType("agent", null);
+    public static final AssetType HOST = new AssetType("host", ENCLAVE);
+    public static final AssetType NODE = new AssetType("node", HOST);
+    public static final AssetType AGENT = new AssetType("agent", NODE);
 
-    public static final AssetType VIRTUAL = new AssetType("VirtualAsset", null);
+    public static final AssetType VIRTUAL = new AssetType("VirtualAsset", null);        
     
-    
-    private static Vector types;
-    static {
-        types = new Vector();
-        types.add(HOST);
-        types.add(NODE);
-        types.add(AGENT);
-        types.add(ENCLAVE);
-        types.add(VIRTUAL);
+    private static void addType(AssetType at) {
+        if (types == null) {
+            types = new Vector(5,5);
+        }
+        types.add(at);
     }
     
     public Vector getAllTypes() { return types; }
@@ -91,9 +89,11 @@ public class AssetType implements NotPersistable, Serializable {
     /** Creates a new instance of AssetType 
      *@param asset type name
      */
-    private AssetType(String name) {
+    private AssetType(String name, AssetType superType) {
         this.name = name;
         states = new Vector();
+        this.superType = superType;
+        types.add(this);
     }
 
     /** 
@@ -101,13 +101,13 @@ public class AssetType implements NotPersistable, Serializable {
      *@param asset type name
      *@param vector of AssetStateDimension
      */
-    private AssetType(String name, Vector assetStates) {
-        this.name = name;
-        this.states = assetStates;
-        if (this.states == null) {
-            states = new Vector();            
-        }
-    }
+//    private AssetType(String name, Vector assetStates) {
+//        this.name = name;
+//        this.states = assetStates;
+//        if (this.states == null) {
+//            states = new Vector();            
+//        }
+//    }
     
     /**
      * Create a subtype AssetType. Will be added if it doesn't already exist.
@@ -116,9 +116,9 @@ public class AssetType implements NotPersistable, Serializable {
         
         AssetType old = AssetType.findAssetType(newType);
         if (old == null) {
-            AssetType at = new AssetType(newType);
-            at.superType = superType;
-            types.add(at);        
+            AssetType at = new AssetType(newType, superType);
+            //at.superType = superType;
+            //types.add(at);        
         } else { // check to make sure existing  & the one being requested have the same supertype         
             if (!old.superType.equals(superType)) {
                 throw new DupWithDifferentSuperTypeException("new type="+newType+". First supertype = "+old.superType.name + "  new supertype = " + superType);
@@ -196,6 +196,19 @@ public class AssetType implements NotPersistable, Serializable {
       * @return the superType of this asset type
       */
      public AssetType getSuperType() { return superType; }
+     
+     
+     /**
+      * @return TRUE if this asset type is a direct or indirect subtype of the provided type
+      */
+     public boolean isSupertypeOf(AssetType at) {
+      
+         AssetType superT = at.getSuperType();
+         if (superT == null) { return false; } //type has no super type
+         if (this.equals(superT)) { return true; } //direct superType
+         return isSupertypeOf(at.getSuperType()); //recursively check parent types
+         
+     }
      
      /**
       * @return TRUE if this asset type has a superType 

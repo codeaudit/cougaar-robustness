@@ -175,7 +175,7 @@ public class EventLoader extends XMLLoader {
                 boolean found = false;
                 while (j.hasNext() ) {
                     EventDescription e = (EventDescription)j.next();
-                    if (ted.getTransitiveEventName().equals(e.getName()) ) {
+                    if (ted.getTransitiveEventName().equals(e.getName()) && ted.getTransitiveAssetType().equals(e.getAffectedAssetType() )) {
                         ted.setTransitiveEvent(e);
                         found = true;
                         break;
@@ -267,7 +267,11 @@ public class EventLoader extends XMLLoader {
                 if (assetType == null) {
                     logger.error("No AssetType for transitive effect [event="+event.getName()+"] with type="+transType+". Ignoring.");
                     return;
-                }
+                } 
+                if (! (event.getAffectedAssetType().isSupertypeOf(assetType))) { //then the event cannot have a containment relationship with it!
+                    logger.error("Invalid containment relationship: Transitive effect's asset type ["+transType+"] is not a subtype of the event's["+event.getName()+"] assetType ["+event.getAffectedAssetType()+"]. Ignoring.");
+                    return;
+                } 
                 
                 ted = new TransitiveEffectDescription(transName, assetType);
                 event.setTransitiveEffect(ted);
@@ -275,7 +279,7 @@ public class EventLoader extends XMLLoader {
             } else if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("VulnerableAssets") ) {
                 e = (Element)child;
 
-logger.debug("Calling TransitiveEffectVulnerabilityFilter, element name = " + e.getNodeName());
+                //logger.debug("Calling TransitiveEffectVulnerabilityFilter, element name = " + e.getNodeName());
                 vf = TransitiveEffectVulnerabilityLoader.parseElement(e,  probabilityMap, event);
                 if (vf == null) {
                     logger.error("Error parsing XML file for event [" + event.getName() + "]. TransitiveEffectVulnerabilityFilter was null for element = "+e.getNodeName() );

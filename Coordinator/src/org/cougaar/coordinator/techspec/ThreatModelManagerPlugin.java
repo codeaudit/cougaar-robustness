@@ -456,7 +456,7 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
                 if (node_tem == null) {
                     logger.debug("========================================== 7 ==> Creating node transitive effect model!");
                     node_tem = nodeTransEffect.instantiate(us.nextUID());
-                    this.blackboard.publishAdd(agent_tem);
+                    this.blackboard.publishAdd(node_tem);
                 }
 
                 Iterator it = nodes.iterator();
@@ -486,8 +486,13 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
                 Iterator it = agents.iterator();
                 while (it.hasNext()) {                
                     AssetTechSpecInterface agent = (AssetTechSpecInterface)it.next();
-                    if (dtm.containsAsset(agent.getHost()) ) { // then this node should be added to the transitive effect
-                        logger.debug("========================================== 9 ==> Adding agent["+agent.getName()+"] to transitive effect model!");
+                    //Add this agent ONLY if its node is in the parent (node) transEffect. If no node transEffect
+                    //exists, then add only if its host is in the threat.
+                    if (node_tem != null && node_tem.containsAsset(agent.getNode()) ) { 
+                        logger.debug("========================================== 9.1 ==> Adding agent["+agent.getName()+"] to transitive effect model! Agent's Node is in parent transEffect");
+                        agent_tem.addAsset(agent);
+                    } else if (dtm.containsAsset(agent.getHost()) ) { // then this node should be added to the transitive effect
+                        logger.debug("========================================== 9.1 ==> Adding agent["+agent.getName()+"] to transitive effect model! Agent's host is in threat");
                         agent_tem.addAsset(agent);
                     } else {
                         logger.debug("========================================== 9.5 ==> Agent not added to transitive effect model! Host Threat="+dtm.getName()+" did not contain this agent's["+agent.getName()+"] host="+agent.getHost().getName());

@@ -31,6 +31,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
 
 import org.cougaar.core.util.UID;
 import org.cougaar.core.persist.NotPersistable;
@@ -104,7 +106,7 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
         while (iter.hasNext()) {
             asset = (DefaultAssetTechSpec)iter.next();
             if (asset.getAssetID() == null) {
-System.out.println("----------------------------------------------->>>Asset ID is null for Asset = "+asset.getName());
+                Logging.getLogger(DefaultAssetTechSpec.class.getName()).error("----------------------------------------------->>>Asset ID is null for Asset = "+asset.getName());
                 continue;
             }
             if (asset.getAssetID().equals(assetID)) {
