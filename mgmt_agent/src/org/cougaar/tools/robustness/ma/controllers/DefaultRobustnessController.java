@@ -24,6 +24,7 @@ import org.cougaar.tools.robustness.ma.util.MoveHelper;
 import org.cougaar.tools.robustness.ma.util.MoveListener;
 import org.cougaar.tools.robustness.ma.util.RestartHelper;
 import org.cougaar.tools.robustness.ma.util.RestartListener;
+import org.cougaar.tools.robustness.ma.util.RestartDestinationLocator;
 
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.service.LoggingService;
@@ -63,10 +64,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                                implements HeartbeatListener {
     { addHeartbeatListener(this); }
     public void enter(String name) {
-      logger.info("INITIAL: agent=" + name + " loc=" + getLocation(name));
+      logger.debug("INITIAL: agent=" + name + " loc=" + getLocation(name));
       if (isLocal(name)) {
         if (isAgent(name)) {
-          //startHeartbeats(name);
+          startHeartbeats(name);
           newState(name, DefaultRobustnessController.ACTIVE);
         } else { // is node
           model.setCurrentState(name, DefaultRobustnessController.ACTIVE, NEVER);
@@ -80,6 +81,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (isLocal(name)) {
         logger.info("Heartbeats started: agent=" + name);
         newState(name, DefaultRobustnessController.ACTIVE);
+      }
+    }
+    public void heartbeatStopped(String name) {
+      if (isLocal(name)) {
+        logger.info("Heartbeats stopped: agent=" + name);
       }
     }
     public void heartbeatFailure(String name) {
@@ -104,10 +110,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     public void enter(String name) {
 
       if (isLeader()) {
-        //logger.info("live=" + liveAgents() + " expected=" + expectedAgents());
         if (communityReady == false && liveAgents() == expectedAgents()) {
           communityReady = true;
           event("Community " + model.getCommunityName() + " Ready");
+          RestartDestinationLocator.clearRestarts();
         }
       }
 
@@ -184,6 +190,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (isLeader() && isAgent(name)) {
         String dest = getRestartLocation();
         restartAgent(name, dest);
+        RestartDestinationLocator.restartOneAgent(dest);
       }
     }
 
@@ -201,8 +208,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (status == RestartHelper.SUCCESS) {
         event("Restart complete: agent=" + name + " location=" + dest);
         //updateLocationAndSetState(name, INITIAL);
-        setLocation(name, dest);
-        newState(name, INITIAL);
+        //setLocation(name, dest);
+        //newState(name, INITIAL);
       } else {
         event("Restart failed: agent=" + name + " location=" + dest);
         newState(name, FAILED_RESTART);
@@ -253,6 +260,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
             " agent=" + name +
             " orig=" + orig +
             " dest=" + dest);
+      stopHeartbeats(name);
       newState(name, MOVE);
     }
 
@@ -284,6 +292,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     addController(RESTART,        "RESTART", new RestartStateController());
     addController(FAILED_RESTART, "FAILED_RESTART", new FailedRestartStateController());
     addController(MOVE,           "MOVE", new MoveStateController());
+    RestartDestinationLocator.setCommunityStatusModel(csm);
+    RestartDestinationLocator.setLoggingService(logger);
   }
 
   /**
@@ -316,7 +326,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    * Selects destination node for agent to be restarted.
    */
   protected String getRestartLocation() {
-    String candidateNodes[] =
+    /*String candidateNodes[] =
         model.listEntries(model.NODE, DefaultRobustnessController.ACTIVE);
     int numAgents = 0;
     String selectedNode = null;
@@ -326,7 +336,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         selectedNode = candidateNodes[i];
         numAgents = agentsOnNode;
       }
-    }
+    }*/
+    String selectedNode = RestartDestinationLocator.getRestartLocation();
+    logger.debug("get restart destination node:: " + selectedNode);
     return selectedNode;
   }
 
