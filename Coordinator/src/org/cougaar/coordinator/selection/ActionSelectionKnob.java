@@ -36,6 +36,7 @@ public class ActionSelectionKnob implements NotPersistable {
 
     private int maxActions;
     private double patienceFactor; // how much extra time to give an Action to complete before giving up
+    private boolean isLeashed = true;  // are defenses unselectable?
 
 
     /** Creates a new instance of DefenseSelectionKnob */
@@ -49,6 +50,10 @@ public class ActionSelectionKnob implements NotPersistable {
 
     public void setPatienceFactor(double pf) { patienceFactor = pf; }
     public double getPatienceFactor() { return patienceFactor; }
+
+    public void leash() { isLeashed = true; }
+    public void unleash() { isLeashed = false; }
+    public boolean isEnclaveLeashed() { return isLeashed; }
 
 
     public static UnaryPredicate pred = new UnaryPredicate() {

@@ -152,7 +152,14 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
         if (iter.hasNext()) 
         {        
             knob = (ActionSelectionKnob) iter.next();
-        }      
+        }
+
+      // Use the Control Knob to determine if Defenses are Leashed & if so, do nothing more
+        if (knob.isEnclaveLeashed()) {
+            if (logger.isInfoEnabled()) logger.info("Enclave Defenses are LEASHED - no actions will be selected");
+            return;
+        }
+
 
      // Check any changed Actions to see if the change is a change to offeredActions
      //    and there is a currently open CBE for the asset
