@@ -337,6 +337,8 @@ public class NumberList implements java.io.Serializable
     }
   }
 
+/* //102B Comment out tests - style police object to System.out
+
   public void dump (String tag)
   {
     System.out.println (tag+ " NumberList: n=" +n+ " length=" +list.length);
@@ -346,8 +348,6 @@ public class NumberList implements java.io.Serializable
       System.out.println (tag+ " NumberList: list[" +i+ "] =" +list[i]);
     }
   }
-
-/* //102B Comment out tests - style police object to System.out
     
   public boolean debugAdd (int number)
   {
@@ -374,6 +374,7 @@ public class NumberList implements java.io.Serializable
     remove (numbers);
     System.out.println ("After remove: " +this+ " n=" +n);
   }
+
 */ //102B
 
   public synchronized int[] toArray ()

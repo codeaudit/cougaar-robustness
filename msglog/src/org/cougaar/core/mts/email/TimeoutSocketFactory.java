@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2002 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2002-2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 14 Mar 2003: Commented out unscheduleSocketClose (style police).
  * 23 Sep 2002: Created. (OBJS)
  */
 
@@ -106,10 +107,12 @@ public class TimeoutSocketFactory extends SocketFactory
     if (socketCloser != null) socketCloser.scheduleClose (socket, timeout);
   }
 
+/* //102B
   private void unscheduleSocketClose (Socket socket)
   {
     if (socketCloser != null) socketCloser.unscheduleClose (socket);
   }
+*/
 
   public String toString ()
   {

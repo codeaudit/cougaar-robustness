@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2001-2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,13 +19,13 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 14 Mar 2003: Comment out tests - style police object to System.out 
  * 15 Aug 2002: Add setAverage() and isStartDelaySatisfied(). (OBJS)
  * 25 Jul 2002: Add startDelay and getLastSampleTimestamp(). (OBJS)
  * 23 Apr 2002: Split out from MessageAckingAspect. (OBJS)
  */
 
 package org.cougaar.core.mts.acking;
-
 
 public class RunningAverage
 {
@@ -231,6 +231,7 @@ public class RunningAverage
     return System.currentTimeMillis();
   }
 
+/* //102B
   public synchronized void debugAdd (double entry)
   {
     System.out.println ("\nBfore add: avg=" +getAverage()+ " n=" +n+ " point=" +point);
@@ -277,4 +278,6 @@ public class RunningAverage
     ra.debugAdd (10);
     ra.debugAdd (0);
   }
+*/ //102B
+
 }
