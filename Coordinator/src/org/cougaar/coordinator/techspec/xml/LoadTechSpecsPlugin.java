@@ -285,7 +285,7 @@ public class LoadTechSpecsPlugin extends ServiceUserPluginBase implements NotPer
         eventLoader.publishEvents(blackboard, eventDescriptions);
         threatLoader.publishThreats(blackboard);        
         //Announce tech specs
-        blackboard.publishAdd(new TechSpecsLoadedCondition());
+        //blackboard.publishAdd(new TechSpecsLoadedCondition());
 
         //Now set attrs to null to allow garbage collecting of loader attrs.
         cleanup();
