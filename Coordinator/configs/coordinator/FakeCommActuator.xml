@@ -6,7 +6,7 @@
               affectsAssetType="Agent" 
               affectsStateDimension="Communication" 
               actionType="CORRECTIVE">
-    <Action name="TryHard">
+    <Action name="TryHard" aDefaultActionOffered="TRUE" >
         <Description value="Tries Real Hard" />
         <Transition WhenActualStateIs="*" EndStateWillBe="Communicating" IntermediateStateWillBe="Communicating" >
             <OneTimeCost>
@@ -18,7 +18,7 @@
         </Transition>
     </Action>
     
-    <Action name="Normal">
+    <Action name="Normal" aDefaultActionOffered="TRUE" >
         <Description value="Tries Normal Communications" />
         <Transition WhenActualStateIs="NOT_COMMUNICATING" EndStateWillBe="NOT_COMMUNICATING" IntermediateStateWillBe="NOT_COMMUNICATING" >
             <OneTimeCost>

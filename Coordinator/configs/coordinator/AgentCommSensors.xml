@@ -7,7 +7,7 @@
 <SensorType name="org.cougaar.coordinator.test.defense.AgentCommunicationDiagnosis1" sensesAssetType="AGENT"
             sensesStateDimension="COMMUNICATION" sensorLatency="1000">
     <PotentialDiagnoses>
-        <Diagnosis name="OK" />
+        <Diagnosis name="OK" defaultValue="TRUE" />
         <Diagnosis name="DEGRADED" />
         <Diagnosis name="NOT_COMMUNICATING" />
     </PotentialDiagnoses>
@@ -35,7 +35,7 @@
 <SensorType name="org.cougaar.coordinator.test.defense.AgentCommunicationDiagnosis2" sensesAssetType="AGENT"
             sensesStateDimension="COMMUNICATION" sensorLatency="1000">
     <PotentialDiagnoses>
-        <Diagnosis name="OK" />
+        <Diagnosis name="OK" defaultValue="TRUE" />
         <Diagnosis name="DEGRADED" />
 	<Diagnosis name="DISCONNECTED" />
         <Diagnosis name="NOT_COMMUNICATING" />
