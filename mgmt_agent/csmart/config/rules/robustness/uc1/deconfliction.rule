@@ -5,14 +5,28 @@ ompm = "org.cougaar.core.adaptivity.OperatingModePolicyManager"
 csp  = "org.cougaar.core.adaptivity.ConditionServiceProvider"
 co = "org.cougaar.tools.robustness.deconfliction.CoordinatorPlugin"
 
+# Defense Node Plugins
+# -----------------------
+ds = "org.cougaar.tools.robustness.ma.test.DeconflictionServlet"
+std   = "org.cougaar.tools.robustness.deconfliction.test.defense.MyServletTestDefense"
+domce = "org.cougaar.tools.robustness.deconfliction.test.defense.DefenseOperatingModeChangeEvents"
+
 managerPluginsToAdd = [omsp, ompm, csp, co]
+defensePluginsToAdd = [ds]
 
 society.each_agent do |agent|
-  if (agent.name == "ARManager")
+  if agent.name =~ /.*ARManager.*/
     agent.add_components(managerPluginsToAdd)
+    #agent.add_components(defensePluginsToAdd)
   end
 end
 
+#agentList = Array.new
+#society.each_node_agent do |agent|
+ # agentList << agent.name
+  #agent.add_components(managerPluginsToAdd)
+ # agent.add_components(defensePluginsToAdd)
+#end
 
 
 
