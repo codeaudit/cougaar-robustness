@@ -53,17 +53,19 @@ public final class MessageSerializationUtils
   }
 
   public static byte[] writeMessageToByteArray (AttributedMessage msg, MessageDigest digest)
-    throws Exception
+    throws IOException
   {
     return writeObjectToByteArray (msg, digest);
   }
     
-  public static byte[] writeObjectToByteArray (Object obj) throws Exception
+  public static byte[] writeObjectToByteArray (Object obj)
+    throws IOException
   {
     return writeObjectToByteArray (obj, null);
   }
     
-  public static byte[] writeObjectToByteArray (Object obj, MessageDigest digest) throws Exception
+  public static byte[] writeObjectToByteArray (Object obj, MessageDigest digest)
+    throws IOException
   {
     String algorithm = null;
     int digestLength = 0;
@@ -71,46 +73,39 @@ public final class MessageSerializationUtils
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     ObjectOutputStream oos = null;
 
-    try 
+    baos.write (magicBytes);
+    baos.write (intBytes); // placeholder for final size
+    
+    if (digest != null)
     {
-      baos.write (magicBytes);
-      baos.write (intBytes); // placeholder for final size
-      
-      if (digest != null)
+      algorithm = digest.getAlgorithm();
+      digestLength = digest.getDigestLength();
+
+      if (!algorithm.equals("MD5") || digestLength != 16)  // only MD5 - temp HACK
       {
-        algorithm = digest.getAlgorithm();
-        digestLength = digest.getDigestLength();
-
-        if (!algorithm.equals("MD5") || digestLength != 16)  // only MD5 - temp HACK
-        {
-          throw new RuntimeException ("Ony MD5 with 16 byte hash currently supported!");  
-        }
-
-        flagByte = USING_MESSAGE_DIGEST_FLAG;
-        baos.write (flagByte);
-        baos.write (new byte[digestLength]);
-        baos.flush();
-
-        digest.reset();
-        DigestOutputStream dos = new DigestOutputStream (baos, digest);
-        oos = new ObjectOutputStream (dos);  // fyi stream header written
-      }
-      else 
-      {
-        flagByte = 0;
-        baos.write (flagByte);
-        baos.flush();
-
-        oos = new ObjectOutputStream (baos); // fyi stream header written
+        throw new RuntimeException ("Ony MD5 with 16 byte hash currently supported");  
       }
 
-      oos.writeObject (obj);
-      oos.flush();
-    } 
-    catch (Exception e) 
-    {
-      throw new RuntimeException (stackTraceToString (e));
+      flagByte = USING_MESSAGE_DIGEST_FLAG;
+      baos.write (flagByte);
+      baos.write (new byte[digestLength]);
+      baos.flush();
+
+      digest.reset();
+      DigestOutputStream dos = new DigestOutputStream (baos, digest);
+      oos = new ObjectOutputStream (dos);  // fyi stream header written
     }
+    else 
+    {
+      flagByte = 0;
+      baos.write (flagByte);
+      baos.flush();
+
+      oos = new ObjectOutputStream (baos); // fyi stream header written
+    }
+
+    oos.writeObject (obj);
+    oos.flush();
 
     try { oos.close(); } catch (Exception e) {}
     byte byteArray[] = baos.toByteArray();
@@ -128,91 +123,69 @@ public final class MessageSerializationUtils
   }
 
   public static AttributedMessage readMessageFromByteArray (byte data[]) 
-    throws MessageIntegrityException, ClassCastException
+    throws MessageDeserializationException
   {
     return readMessageFromByteArray (data, null);
   }
 
   public static AttributedMessage readMessageFromByteArray (byte data[], MessageDigest digest) 
-    throws MessageIntegrityException, ClassCastException
+    throws MessageDeserializationException
   {
-    Object obj = null;
-
     try
     {
-      obj = readObjectFromByteArray (data, digest);
+      return (AttributedMessage) readObjectFromByteArray (data, digest);
     }
-    catch (DataIntegrityException die)
+    catch (Exception e)
     {
-      throw new MessageIntegrityException (die);
+      throw new MessageDeserializationException (e);
     }
-
-    AttributedMessage msg = null;
-
-    try
-    {
-      msg = (AttributedMessage) obj;
-    }
-    catch (ClassCastException cce)
-    {
-      throw cce;
-    }
-
-    return msg;
   }
 
   public static Object readObjectFromByteArray (byte[] data) 
-    throws DataIntegrityException
+    throws DataIntegrityException, ClassNotFoundException, IOException
   {
     return readObjectFromByteArray (data, null);
   }
 
   public static Object readObjectFromByteArray (byte[] data, MessageDigest digest) 
-    throws DataIntegrityException
+    throws DataIntegrityException, ClassNotFoundException, IOException
   {
     int digestLength = 16;
     byte embeddedDigest[] = null;
 	ObjectInputStream ois = null;
 	Object obj = null;
 
-	try 
+    //  Read the byte array header to verify the magic number and get the byte
+    //  count of the encoded data.
+
+    if (readByteArrayHeader (data) > data.length)
     {
-      //  Read the byte array header to verify the magic number and get the byte
-      //  count of the encoded data.
-
-      if (readByteArrayHeader (data) > data.length)
-      {
-        throw new DataIntegrityException ("Byte array too short for contained data!");
-      }
-
-      ByteArrayInputStream bais = new ByteArrayInputStream (data);
-      bais.skip (getByteArrayHeaderLength());
-                       
-      int flagByte = (bais.read() & 0xff);
-
-      if ((flagByte & USING_MESSAGE_DIGEST_FLAG) != 0)
-      {
-        embeddedDigest = new byte[digestLength];
-        bais.read (embeddedDigest, 0, embeddedDigest.length);        
-
-        if (digest == null) digest = MessageDigest.getInstance ("MD5");
-
-        digest.reset();
-        DigestInputStream dis = new DigestInputStream (bais, digest);
-        ois = new ObjectInputStream (dis);
-      }
-      else ois = new ObjectInputStream (bais);
-	  
-	  obj = ois.readObject();
-	} 
-    catch (DataIntegrityException die)
-    {
-      throw die;
+      throw new DataIntegrityException ("Byte array too short for contained data");
     }
-    catch (Exception e) 
+
+    ByteArrayInputStream bais = new ByteArrayInputStream (data);
+    bais.skip (getByteArrayHeaderLength());
+                     
+    int flagByte = (bais.read() & 0xff);
+
+    if ((flagByte & USING_MESSAGE_DIGEST_FLAG) != 0)
     {
-      throw new RuntimeException (stackTraceToString (e));
-	}
+      embeddedDigest = new byte[digestLength];
+      bais.read (embeddedDigest, 0, embeddedDigest.length);        
+
+      if (digest == null)
+      {
+        try { digest = MessageDigest.getInstance ("MD5"); }
+        catch (Exception e) { throw new RuntimeException (e); }
+      }
+
+      digest.reset();
+      DigestInputStream dis = new DigestInputStream (bais, digest);
+      ois = new ObjectInputStream (dis);
+    }
+    else ois = new ObjectInputStream (bais);
+	
+	obj = ois.readObject();
 	
 	try { ois.close(); } catch (Exception e) {}
 
@@ -229,7 +202,7 @@ public final class MessageSerializationUtils
 	return obj;
   }
 
-  public static int readByteArrayHeader (byte[] data) throws IOException, DataIntegrityException
+  public static int readByteArrayHeader (byte[] data) throws DataIntegrityException, IOException
   {
     if (convertBytesToInt (data) != MAGIC_NUMBER)
     {
@@ -276,13 +249,13 @@ public final class MessageSerializationUtils
   }
 
   public static byte[] readByteArray (InputStream in) 
-    throws IOException, DataIntegrityException
+    throws DataIntegrityException, IOException
   {
     return readByteArray (in, null);
   }
 
   public static byte[] readByteArray (InputStream in, byte[] buf) 
-    throws IOException, DataIntegrityException
+    throws DataIntegrityException, IOException
   {
     int hdrLen = getByteArrayHeaderLength();
     if (buf == null || buf.length < hdrLen) buf = new byte[hdrLen];

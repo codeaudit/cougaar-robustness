@@ -517,7 +517,6 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
           receiveTime = now();
           if (log.isDebugEnabled()) log.debug ("Waiting for msg done " +sockString);
           unscheduleSocketClose (socket);
-
           if (showTraffic) System.err.print ("<S");
         }
         catch (InterruptedIOException e)
@@ -563,17 +562,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
         {
           msg = MessageSerializationUtils.readMessageFromByteArray (msgBytes);
         }
-        catch (MessageIntegrityException e)
-        {
-          if (log.isWarnEnabled()) log.warn ("Message integrity exception deserializing msg (msg ignored): " +e);
-          exception = e;
-        }
-        catch (ClassCastException e)
-        {
-          if (log.isWarnEnabled()) log.warn ("Got non-AttributedMessage msg (msg ignored): " +e);
-          exception = e;
-        }
-        catch (Exception e)
+        catch (MessageDeserializationException e)
         {
           if (log.isWarnEnabled()) log.warn ("Deserialization exception (msg ignored): " +e);
           exception = e;

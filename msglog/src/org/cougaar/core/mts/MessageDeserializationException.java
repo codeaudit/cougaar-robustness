@@ -19,25 +19,25 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 17 Sep 2002: Created. (OBJS)
+ * 30 Sep 2002: Created. (OBJS)
  */
 
 package org.cougaar.core.mts;
 
 
-public class MessageIntegrityException extends Exception 
+public class MessageDeserializationException extends Exception 
 {
-  public MessageIntegrityException (String message)
+  public MessageDeserializationException (String message)
   {
 	super (message);
   }
 
-  public MessageIntegrityException (Throwable cause)
+  public MessageDeserializationException (Throwable cause)
   {
 	super (cause);
   }
 
-  public MessageIntegrityException (String message, Throwable cause)
+  public MessageDeserializationException (String message, Throwable cause)
   {
 	super (message, cause);
   }

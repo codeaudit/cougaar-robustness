@@ -27,13 +27,18 @@ package org.cougaar.core.mts;
 
 public class DataIntegrityException extends Exception 
 {
-  public DataIntegrityException (String msg)
+  public DataIntegrityException (String message)
   {
-	super (msg);
+	super (message);
   }
 
   public DataIntegrityException (Throwable cause)
   {
 	super (cause);
+  }
+
+  public DataIntegrityException (String message, Throwable cause)
+  {
+	super (message, cause);
   }
 }

@@ -100,8 +100,11 @@ class MessageResender implements Runnable
                 agentState.setAttribute (MessageAckingAspect.SENT_BUT_NOT_ACKED_MSGS, v);
               }
 
-              v.add (msg);
-              added = true;
+              if (!v.contains (msg)) 
+              {
+                v.add (msg);
+                added = true;
+              }
             }
           }
         }

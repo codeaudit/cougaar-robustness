@@ -335,17 +335,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
         {
           msg = MessageSerializationUtils.readMessageFromByteArray (packet.getData());
         }
-        catch (MessageIntegrityException e)
-        {
-          if (log.isWarnEnabled()) log.warn ("Message integrity exception deserializing msg (msg ignored)");
-          continue;
-        }
-        catch (ClassCastException e)
-        {
-          if (log.isWarnEnabled()) log.warn ("Got non-AttributedMessage msg (msg ignored): " +e);
-          continue;
-        }
-        catch (Exception e)
+        catch (MessageDeserializationException e)
         {
           if (log.isWarnEnabled()) log.warn ("Deserialization exception (msg ignored): " +e);
           continue;

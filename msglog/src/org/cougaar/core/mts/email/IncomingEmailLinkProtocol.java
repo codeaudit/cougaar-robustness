@@ -566,17 +566,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
       {
         msg = MessageSerializationUtils.readMessageFromByteArray (msgBytes);
       }
-      catch (MessageIntegrityException e)
-      {
-        if (log.isWarnEnabled()) log.warn ("Message integrity exception deserializing msg (msg ignored): " +e);
-        return true;  
-      }
-      catch (ClassCastException e)
-      {
-        if (log.isWarnEnabled()) log.warn ("Got non-AttributedMessage msg (msg ignored): " +e);
-        return true;  
-      }
-      catch (Exception e)
+      catch (MessageDeserializationException e)
       {
         if (log.isWarnEnabled()) log.warn ("Deserialization exception (msg ignored): " +e);
         return true;  

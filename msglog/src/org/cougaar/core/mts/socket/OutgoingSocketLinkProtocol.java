@@ -196,6 +196,8 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
       {
         SocketSpec spec = (SocketSpec) obj;
 
+if (log.isDebugEnabled()) log.debug ("Looked up socket spec for " +address+ " in NameSupport: " +spec);
+
         try
         {
           spec.setInetAddress (getInetAddress (spec.getHost()));
@@ -212,6 +214,7 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
         log.error ("Invalid SocketSpec from nameserver lookup!");
       }
     }
+else if (log.isDebugEnabled()) log.debug ("Got null for socket spec for " +address+ " in NameSupport");
 
     return null;
   }
@@ -459,14 +462,15 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
           }
           else
           {
-            Exception ex = pam.getReceptionException();
+            Exception e = pam.getReceptionException();
 
-            if (log.isWarnEnabled())
+            if (log.isWarnEnabled()) 
             {
               String node = pam.getReceptionNode();
-              String s = (sockString != null ? " over " +sockString : "");
-              log.warn ("Message reception exception from node " +node+s+ " (ignored for now): " +ex);
+              log.warn ("Got reception exception from node " +node+ " " +sockString+ ": " +e);
             }
+
+            throw e;
           }
         }
         catch (Exception e)
@@ -475,6 +479,10 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
 
           if (log.isDebugEnabled()) log.debug ("Inband acking stopped for " +sockString+ ": " +e);
           closeSocket();
+
+          //  Selectively throw exceptions back up
+
+          if (e instanceof MessageDeserializationException) throw e;
         } 
       }
 
