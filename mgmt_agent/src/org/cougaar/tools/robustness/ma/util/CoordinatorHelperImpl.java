@@ -137,8 +137,8 @@ public class CoordinatorHelperImpl
 
     for (Iterator it = diagnosisSubscription.getChangedCollection().iterator(); it.hasNext();) {
       AgentLivenessDiagnosis diagnosis = (AgentLivenessDiagnosis)it.next();
-      if (logger.isDetailEnabled()) {
-        logger.detail("Changed diagnosis: " + diagnosis);
+      if (logger.isDebugEnabled()) {
+        logger.debug("Changed diagnosis: " + diagnosis);
       }
     }
 
@@ -146,8 +146,8 @@ public class CoordinatorHelperImpl
       AgentRestartAction action = (AgentRestartAction)it.next();
       Set newPV = action.getNewPermittedValues();
       action.clearNewPermittedValues();
-      if (logger.isDetailEnabled()) {
-        logger.detail("Changed action: " + action);
+      if (logger.isDebugEnabled()) {
+        logger.debug("Changed action: " + action);
       }
       if (newPV != null && newPV.contains(RESTART_ACTION)) {
         opmodeEnabled(action.getAssetName());
