@@ -25,16 +25,13 @@ import javax.naming.*;
 import org.cougaar.tools.robustness.sensors.SensorFactory;
 import org.cougaar.tools.robustness.sensors.PingRequest;
 
-//import org.cougaar.core.agent.ClusterIdentifier;
-
 import org.cougaar.core.blackboard.IncrementalSubscription;
-//import org.cougaar.core.plugin.SimplePlugin;
+
 import org.cougaar.planning.plugin.legacy.SimplePlugin;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.BlackboardService;
-//import org.cougaar.core.service.TopologyEntry;
-//import org.cougaar.core.service.TopologyReaderService;
+
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.mts.SimpleMessageAddress;
 
@@ -68,13 +65,13 @@ import org.cougaar.core.service.wp.Application;
  * restart/move.  The selected node is then pinged to verify that it is
  * operational.
  */
-public class RestartLocatorPlugin extends SimplePlugin {
+public class RestartLocatorPlugin extends SimplePlugin
+    implements CommunityChangeListener {
 
   private LoggingService log;
   private BlackboardService bbs = null;
   private MessageAddress myAgent = null;
   private CommunityService communityService = null;
-  //private TopologyReaderService topologyService = null;
   private WhitePagesService wps = null;
 
   private SensorFactory sensorFactory;
@@ -127,29 +124,10 @@ public class RestartLocatorPlugin extends SimplePlugin {
     myAgent = getMessageAddress();
 
     communityService = getCommunityService();
-    //topologyService = getTopologyReaderService();
+    communityService.addListener(this);
+
+   //topologyService = getTopologyReaderService();
     wps = getWhitePagesService();
-
-    // Find name of community to monitor
-    Collection communities = communityService.search("(CommunityManager=" +
-      myAgent.toString() + ")");
-    if (!communities.isEmpty()) {
-      communityToMonitor = (String)communities.iterator().next();
-
-      // Initialize configurable paramaeters from defaults and plugin arguments.
-      getPropertiesFromCommunityAttributes();
-    } else {
-      log.error("Agent \"" + myAgent.toString() +
-        "\" not identified as a \"CommunityManager\" in any active community!.");
-      log.error("Check that the community to monitor has this agent identified\n");
-      log.error("in its \"CommunityManager\" attribute and that this agent is\n");
-      log.error("also identified as an Entity within the monitored community with\n");
-      log.error("the attribute \"Role=ManagementAgent\".");
-    }
-
-    // Initialize configurable paramaeters from defaults and plugin arguments.
-    updateParams(restartLocatorProps);
-    bbs.publishAdd(restartLocatorProps);
 
     // Subscribe to ManagementAgentProperties to receive parameter changes
     mgmtAgentProps =
@@ -163,9 +141,39 @@ public class RestartLocatorPlugin extends SimplePlugin {
     pingRequests =
       (IncrementalSubscription)bbs.subscribe(pingRequestPredicate);
 
-    // Print informational message defining current parameters
-    log.info(paramsToString());
+  }
 
+  public void communityChanged(CommunityChangeEvent cce) {
+    //log.debug(cce.toString());
+    if (cce.getType() == cce.ADD_COMMUNITY && communityToMonitor == null)
+      getCommunityToMonitor();
+    }
+
+  public String getCommunityName() {
+    return communityToMonitor;
+  }
+
+  private void getCommunityToMonitor() {
+    // Find name of community to monitor
+    Collection communities =
+        communityService.search("(CommunityManager=" + myAgent.toString() + ")");
+    if (!communities.isEmpty()) {
+      communityToMonitor = (String) communities.iterator().next();
+      // Initialize configurable paramaeters from defaults and plugin arguments.
+      try {
+        bbs.openTransaction();
+        updateParams(restartLocatorProps);
+        bbs.publishAdd(restartLocatorProps);
+      } catch (Exception ex) {
+        log.error(ex.getMessage(), ex);
+      }
+      finally {
+        bbs.closeTransaction();
+      }
+      // Print informational message defining current parameters
+      log.info(paramsToString());
+
+    }
   }
 
   /**
@@ -199,7 +207,6 @@ public class RestartLocatorPlugin extends SimplePlugin {
       Collection destinations =
         destinations = selectDestinationNodes(req.getAgents(), req.getExcludedNodes(),
           req.getExcludedHosts());
-
 
       if (destinations != null && destinations.size() > 0) {
         log.debug("RestartLocationRequest: " + destinationsToString(destinations));
@@ -394,14 +401,6 @@ public class RestartLocatorPlugin extends SimplePlugin {
           CommunityMember cm = (CommunityMember)it.next();
           if (cm.isAgent()) {
             String agentName = cm.getName();
-            /*TopologyEntry te = topologyService.getEntryForAgent(agentName);
-            if (te == null) {
-              log.debug("Null TopologyEntry: agent =" + agentName);
-              continue;
-            }
-            String hostName = te.getHost();
-            String nodeName = te.getNode();*/
-            //modified at Mar.04, 2003 to match cougaar-10.2
             String hostName = "";
             String nodeName = "";
             AddressEntry entrys[] = wps.get(agentName);
@@ -452,10 +451,6 @@ public class RestartLocatorPlugin extends SimplePlugin {
     for (Iterator it = candidateNodes.iterator(); it.hasNext();) {
       String nodeName = (String)it.next();
       if (excludedNodes != null && !excludedNodes.contains(nodeName)) {
-        /*String hostName =
-          topologyService.getParentForChild(topologyService.HOST,
-                                            topologyService.NODE,
-                                            nodeName);*/
         String hostName = "";
         try{
           AddressEntry entrys[] = wps.get(nodeName);
@@ -473,10 +468,6 @@ public class RestartLocatorPlugin extends SimplePlugin {
         }
         if (hostName != null &&
             (excludedHosts == null || !excludedHosts.contains(hostName))) {
-          /*Set agents =
-            topologyService.getChildrenOnParent(topologyService.AGENT,
-                                              topologyService.NODE,
-                                              nodeName);*/
           List agents = new ArrayList();
           try{
             String uri = "node://" + hostName + "/" + nodeName;
@@ -524,7 +515,8 @@ public class RestartLocatorPlugin extends SimplePlugin {
   private Collection getSpecifiedNodes() {
     Collection specifiedNodes = new Vector();
     try {
-      Attributes attrs = communityService.getCommunityAttributes(communityToMonitor);
+      Attributes attrs =
+        communityService.getCommunityAttributes(communityToMonitor);
       Attribute attr = attrs.get("RestartNode");
       if (attr != null) {
         NamingEnumeration ne = attr.getAll();
@@ -552,6 +544,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
   private Collection selectDestinationNodes(Collection excludedAgents,
       Collection excludedNodes, Collection excludedHosts) {
     List destinations = new Vector();
+    /*
     Collection selectedNodes = new Vector();
     Collection specifiedNodes = getSpecifiedNodes();
     if (specifiedNodes.size() > 0) {
@@ -559,6 +552,10 @@ public class RestartLocatorPlugin extends SimplePlugin {
     } else {
       selectedNodes = selectNodes(nodes.keySet(), excludedAgents, excludedNodes, excludedHosts);
     }
+   */
+   Collection candidateNodes = getSpecifiedNodes();
+   candidateNodes.addAll(nodes.keySet());
+   Collection selectedNodes = selectNodes(candidateNodes, excludedAgents, excludedNodes, excludedHosts);
     //log.debug("SelectedNodes=" + selectedNodes);
     for (Iterator it = selectedNodes.iterator(); it.hasNext();) {
       Destination dest = new Destination();
