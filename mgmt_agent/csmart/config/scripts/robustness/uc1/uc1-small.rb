@@ -36,30 +36,44 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
   do_action "ClearPersistenceAndLogs"
   do_action "StartSociety"
 
-#do_action "GenericAction" do |run|
-  #run.comms.on_cougaar_event do |event|
-    #puts event
-  #end
-#end
+  ## Print events from Robustness Controller
+  do_action "GenericAction" do |run|
+    run.comms.on_cougaar_event do |event|
+      if event.component.include?("RobustnessController")
+        puts event
+      end
+    end
+  end
 
-#  do_action "AddNode", "NewNode1", "1AD-FWD-COMM", "sv114"
-#  wait_for "Command", "ok"
-
-#  do_action "LoadBalancer", "1AD-FWD-COMM"
-
-#  wait_for "Command", "ok"
-
-#  do_action "KillNodes", "FWD-C", "FWD-D"
-
+  # After CommunityReady event is received wait for persistence
   wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
-  do_action "AddNode", "NewNode1", "1AD-SMALL-COMM", "net5"
-  do_action "Sleep", 1.minutes
+  do_action "Sleep", 3.minutes
+
+  # Kill node that does not contain robustness manager
   do_action "KillNodes", "TRANS-NODE"
-  wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
-  #wait_for "Command", "ok"
 
+  # Wait for restarts to complete
+  wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
+
+  # Add an empty node to community
+  do_action "AddNode", "NewNode1", "1AD-SMALL-COMM", "wayne"
+  do_action "Sleep", 3.minutes
+
+  # Kill node that contains robustness manager
+  do_action "KillNodes", "FWD-NODE"
+
+  # Wait for restarts to complete
+  wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
+
+  # Add another empty node to community
+  do_action "AddNode", "NewNode2", "1AD-SMALL-COMM", "net3"
+  do_action "Sleep", 3.minutes
+
+  # Load balance community
   do_action "LoadBalancer", "1AD-SMALL-COMM"
-  wait_for "Command", "ok"
+  wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
+
+  #wait_for "Command", "ok"
 
   wait_for  "GLSConnection", false
   wait_for  "NextOPlanStage"
