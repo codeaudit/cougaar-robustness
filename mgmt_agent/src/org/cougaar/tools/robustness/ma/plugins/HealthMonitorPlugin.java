@@ -117,20 +117,19 @@ public class HealthMonitorPlugin extends SimplePlugin implements
 
   // Defines default values for configurable parameters.
   private static String defaultParams[][] = {
-    {"hbReqTimeout",     "60000"},
-    //{"hbReqRetries", "-1"},
-    {"hbReqRetries",          "1"},
-    {"hbReqRetryFreq",    "60000"},
+    {"hbReqTimeout",     "120000"},
+    {"hbReqRetries",          "0"},
+    {"hbReqRetryFreq",   "120000"},
     {"hbFreq",            "30000"},
-    {"hbTimeout",         "30000"},
-    {"hbPctLate",           "80.0"},
-    {"hbWindow",         "360000"},  // Default to 6 minute window
-    {"hbFailRate",            "0.5"},
+    {"hbTimeout",         "60000"},
+    {"hbPctLate",          "80.0"},
+    {"hbWindow",         "600000"},
+    {"hbFailRate",         "50.0"},
     {"activePingFreq",        "0"},
-    {"pingTimeout",       "60000"},
-    {"pingRetries",           "1"},
+    {"pingTimeout",      "120000"},
+    {"pingRetries",           "0"},
     {"evalFreq",          "10000"},
-    {"restartTimeout",   "120000"},
+    {"restartTimeout",   "300000"},
     {"restartRetryFreq", "120000"}
   };
   ManagementAgentProperties healthMonitorProps =
@@ -427,17 +426,21 @@ public class HealthMonitorPlugin extends SimplePlugin implements
             case HeartbeatRequest.ACCEPTED:
               log.debug("HeartbeatRequest ACCEPTED: agent=" + hs.getAgentId());
               if (hs.getStatus() == HealthStatus.RESTARTED) {
-                log.info("Reacquired agent: agent=" + hs.getAgentId());
+                //log.info("Reacquired agent: agent=" + hs.getAgentId());
                 CougaarEvent.postComponentEvent(CougaarEventType.END,
                                                 getAgentIdentifier().toString(),
                                                 this.getClass().getName(),
-                                                "Restart succeeded: agent=" + hs.getAgentId());
+                                                "Restart succeeded:" +
+                                                " agent=" + hs.getAgentId() +
+                                                " node=" + getLocation(hs.getAgentId().toString()));
               } else if (hs.getStatus() == HealthStatus.MOVED) {
-                log.info("Move complete: agent=" + hs.getAgentId());
+                //log.info("Move complete: agent=" + hs.getAgentId());
                 CougaarEvent.postComponentEvent(CougaarEventType.END,
                                                 getAgentIdentifier().toString(),
                                                 this.getClass().getName(),
-                                                "Move succeeded: agent=" + hs.getAgentId());
+                                                "Move succeeded:" +
+                                                " agent=" + hs.getAgentId() +
+                                                " node=" + getLocation(hs.getAgentId().toString()));
               }
               hs.setState(HealthStatus.NORMAL);
               hs.setStatus(HealthStatus.OK);
@@ -472,6 +475,23 @@ public class HealthMonitorPlugin extends SimplePlugin implements
                 } else if (pingStatus == PingRequest.RECEIVED) {
                   log.info("HeartbeatRequest timeout, ping successful:" +
                     " agent=" + hs.getAgentId());
+                  if (hs.getStatus() == HealthStatus.RESTARTED) {
+                    //log.info("Reacquired agent: agent=" + hs.getAgentId());
+                    CougaarEvent.postComponentEvent(CougaarEventType.END,
+                                                getAgentIdentifier().toString(),
+                                                this.getClass().getName(),
+                                                "Restart succeeded:" +
+                                                " agent=" + hs.getAgentId() +
+                                                " node=" + getLocation(hs.getAgentId().toString()));
+                  } else if (hs.getStatus() == HealthStatus.MOVED) {
+                    //log.info("Move complete: agent=" + hs.getAgentId());
+                    CougaarEvent.postComponentEvent(CougaarEventType.END,
+                                                getAgentIdentifier().toString(),
+                                                this.getClass().getName(),
+                                                "Move succeeded:" +
+                                                " agent=" + hs.getAgentId() +
+                                                " node=" + getLocation(hs.getAgentId().toString()));
+                  }
                   hs.setState(HealthStatus.NORMAL);
                   hs.setStatus(HealthStatus.OK);
                   hs.setHeartbeatStatus(HealthStatus.HB_INACTIVE);
@@ -528,9 +548,11 @@ public class HealthMonitorPlugin extends SimplePlugin implements
             // exceeded
             } else {
 
-              log.info("Heartbeat timeout, ping successful:" +
+              log.debug("Heartbeat timeout, ping successful:" +
                 " agent=" + hs.getAgentId() +
                 " hBPctLate=" + hs.getHeartbeatEntry().getPercentLate());
+              hs.setHeartbeatStatus(HealthStatus.HB_NORMAL);
+              /*
               if (!hs.hbFailureRateInSpec()) {
                 log.warn("Exceeded Heartbeat timeout threshold: agent="
                   + hs.getAgentId());
@@ -538,6 +560,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
               } else {
                 hs.setHeartbeatStatus(HealthStatus.HB_NORMAL);
               }
+              */
             }
             hs.setPingStatus(HealthStatus.UNDEFINED);
             hs.setPingRetryCtr(0);
@@ -614,7 +637,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       } else if (state.equals(HealthStatus.RESTART)) {
         if (!state.equals(hs.getPriorState()))
           log.debug("Agent restart in process: agent=" + hs.getAgentId());
-        if (elapsedTime(hs.getLastRestartAttempt(), now()) > 120000) {
+        if (elapsedTime(hs.getLastRestartAttempt(), now()) > restartTimeout) {
           log.warn("Agent restart timed out: agent=" + hs.getAgentId());
           hs.setState(HealthStatus.FAILED_RESTART);
         }
@@ -811,11 +834,10 @@ public class HealthMonitorPlugin extends SimplePlugin implements
                          activePingFrequency);
     // Get agent attributes from community service and set any agent-specific
     // parameters
-    StringBuffer sb = new StringBuffer();
-/*
     Attributes attrs =
       communityService.getEntityAttributes(communityToMonitor, agentId.toString());
     NamingEnumeration enum = attrs.getAll();
+    StringBuffer sb = new StringBuffer();
     try {
       while (enum.hasMoreElements()) {
         Attribute attr = (Attribute)enum.nextElement();
@@ -854,7 +876,6 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     } catch (Exception ex) {
       log.error("Exception parsing agent health monitor parameters, " + ex);
     }
-*/
     if (log.isInfoEnabled()) {
       log.info("Adding " + hs.getAgentId() +
         (sb.length() > 0 ? " (" + sb.toString().trim() + ")" : ""));

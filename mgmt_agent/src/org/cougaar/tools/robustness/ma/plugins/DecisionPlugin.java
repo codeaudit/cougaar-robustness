@@ -155,25 +155,22 @@ public class DecisionPlugin extends SimplePlugin {
           HealthStatus hs = getHealthStatus(addTicket.getMobileAgent());
           if (hs != null) {
             hs.setHeartbeatRequestStatus(HealthStatus.UNDEFINED);
-            log.debug("Changed mobility status: agent-" + hs.getAgentId() +
-              " statusCode=" + ac.getStatusCodeAsString());
+            //log.debug("Changed mobility status: agent-" + hs.getAgentId() +
+            //  " statusCode=" + ac.getStatusCodeAsString());
             if (ac.getStatusCode() == ac.CREATED) {
               hs.setState(HealthStatus.RESTART_COMPLETE);
               hs.setStatus(HealthStatus.RESTARTED);
               publishChange(hs);
               bbs.publishRemove(ac);
             } else if (ac.getStatusCode() == ac.ALREADY_EXISTS) {
-              // Agent is alive but not responding to HeartbeatRequests or Pings
-              //hs.setState(HealthStatus.ROBUSTNESS_INIT_FAIL);
-              //hs.setStatus(HealthStatus.DEGRADED);
+              // Mobility thinks the agent is alive
+              // We think its dead because its not responding to HeartbeatRequests or Pings
               log.warn("Restart of active agent, action=ADD status=" +
                 ac.getStatusCodeAsString() + " agent=" + addTicket.getMobileAgent() +
                 " destNode=" + addTicket.getDestinationNode());
+              // Try an in-place restart
+              hs.setLastRestartAttempt(new Date());
               moveAgent(addTicket.getMobileAgent(), addTicket.getDestinationNode());
-              //hs.setState(HealthStatus.RESTART_COMPLETE);
-              //hs.setStatus(HealthStatus.RESTARTED);
-              //publishChange(hs);
-              //bbs.publishRemove(ac);
             } else {
               hs.setState(HealthStatus.FAILED_RESTART);
               publishChange(hs);
@@ -264,7 +261,7 @@ public class DecisionPlugin extends SimplePlugin {
         // the Heartbeat failure rate threshold.  Eventually this should
         // include logic to determine if the agent is simply busy or if there
         // is a hardware problem or external attack.
-        adjustHbSensitivity(hs, 0.1f);  // Increase threshold by 10%
+        adjustHbSensitivity(hs, 10.0f);  // Increase threshold by 10%
         hs.setState(HealthStatus.NORMAL);
         bbs.publishChange(hs);
         break;
@@ -298,10 +295,10 @@ public class DecisionPlugin extends SimplePlugin {
       log.warn("Unable to perform restart, no node selected: agents=[" +
         agentSetToString(agents) + "]");
     } else {
-      if (log.isInfoEnabled()) {
-        log.info("Restarting agent: agent(s)=[" +
-          agentSetToString(agents) + "], nodeName=" + nodeName);
-      }
+      //if (log.isInfoEnabled()) {
+      //  log.info("Restarting agent: agent(s)=[" +
+      //    agentSetToString(agents) + "], nodeName=" + nodeName);
+      //}
       for (Iterator it = agents.iterator(); it.hasNext();) {
         MessageAddress agentAddr = (MessageAddress)it.next();
 
@@ -310,7 +307,8 @@ public class DecisionPlugin extends SimplePlugin {
         CougaarEvent.postComponentEvent(CougaarEventType.START,
                                         getAgentIdentifier().toString(),
                                         this.getClass().getName(),
-                                        "Restarting agent: agent=" + hs.getAgentId());
+                                        "Restarting agent: agent=" + hs.getAgentId() +
+                                        " node=" + nodeName);
         hs.setLastRestartAttempt(new Date());
         hs.setState(HealthStatus.RESTART);
         hs.setStatus(HealthStatus.DEAD);
@@ -328,6 +326,7 @@ public class DecisionPlugin extends SimplePlugin {
    * @param nodeAddr   MessageAddresses of destination node
    */
   private void moveAgent(MessageAddress agentAddr, MessageAddress nodeAddr) {
+    log.info("Performing forced restart, agent=" + agentAddr);
     MoveTicket ticket = new MoveTicket(
       mobilityFactory.createTicketIdentifier(),
         agentAddr,
@@ -359,8 +358,17 @@ public class DecisionPlugin extends SimplePlugin {
     AgentControl ac =
       mobilityFactory.createAgentControl(acUID, destNodeAddr, addTicket);
 
-    if (log.isDebugEnabled())
-      log.debug("Publishing AgentControl(AddTicket) for mobility: " + ac);
+    if (log.isDebugEnabled()) {
+      StringBuffer sb = new StringBuffer("AgentControl publication:" +
+        " myUid=" + agentControlUIDs.contains(ac.getOwnerUID()) +
+        " status=" + ac.getStatusCodeAsString());
+      if (ac.getAbstractTicket() instanceof AddTicket) {
+        AddTicket at = (AddTicket)ac.getAbstractTicket();
+        sb.append(" agent=" + at.getMobileAgent() +
+          " destNode=" + at.getDestinationNode());
+      }
+      log.debug(sb.toString());
+    }
     bbs.publishAdd(ac);
   }
 
@@ -428,6 +436,17 @@ public class DecisionPlugin extends SimplePlugin {
 	  public boolean execute(Object o) {
 	    if (o instanceof AgentControl) {
         AgentControl ac = (AgentControl)o;
+        if (log.isDebugEnabled()) {
+          StringBuffer sb = new StringBuffer("AgentControl subscription:" +
+            " myUid=" + agentControlUIDs.contains(ac.getOwnerUID()) +
+            " status=" + ac.getStatusCodeAsString());
+          if (ac.getAbstractTicket() instanceof AddTicket) {
+            AddTicket at = (AddTicket)ac.getAbstractTicket();
+            sb.append(" agent=" + at.getMobileAgent() +
+            " destNode=" + at.getDestinationNode());
+          }
+          log.debug(sb.toString());
+        }
         return (agentControlUIDs.contains(ac.getOwnerUID()));
       }
       return false;

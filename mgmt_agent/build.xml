@@ -102,6 +102,11 @@
     </jar>
   </target>
 
+  <!-- Adds jar file to Cougaar lib -->
+  <target name="deploy" depends="build" description="Copies jar file to $CIP/lib">
+    <copy file="${lib}/${jar}" toDir="${cougaar}/lib"/>
+  </target>
+
   <!-- Deletes generated files -->
   <target name="clean" description="Deletes generated files">
     <delete dir="${classes}"/>
@@ -311,7 +316,7 @@
       <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
       <sysproperty key="org.cougaar.core.persistence.enable" value="${persistenceEnabled}"/>
       <sysproperty key="org.cougaar.core.persistence.lazyInterval" value="${persistenceInterval}"/>
-      <!-- <sysproperty key="org.cougaar.message.transport.aspects" value="org.cougaar.core.mts.StatisticsAspect"/> -->
+      <sysproperty key="org.cougaar.message.transport.aspects" value="org.cougaar.core.mts.StatisticsAspect"/>
       <sysproperty key="user.timezone" value="GMT"/>
       <sysproperty key="org.cougaar.core.agent.startTime" value="8/10/2005"/>
       <sysproperty key="org.cougaar.name.server" value="${nameserver}"/>
@@ -355,7 +360,7 @@
       <sysproperty key="org.cougaar.node.name" value="${node}"/>
       <sysproperty key="org.cougaar.planning.ldm.lpw.ComplainingLP.level" value="0"/>
       <sysproperty key="org.cougaar.config.path" value="${workspace}/configs;${robustness}/configs;$$INSTALL/configs/common;$$INSTALL/configs/glmtrans;$$INSTALL/configs/minitestconfig"/>
-      <!-- <sysproperty key="org.cougaar.message.transport.aspects" value="org.cougaar.core.mts.StatisticsAspect"/> -->
+      <sysproperty key="org.cougaar.message.transport.aspects" value="org.cougaar.core.mts.StatisticsAspect"/>
       <sysproperty key="org.cougaar.experiment.id" value="${experiment}"/>
       <sysproperty key="org.cougaar.agent.startTime" value="8/10/2005"/>
       <sysproperty key="org.cougaar.name.server" value="${nameserver}"/>
