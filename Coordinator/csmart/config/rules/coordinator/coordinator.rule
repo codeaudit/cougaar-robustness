@@ -15,13 +15,14 @@ asp  = "org.cougaar.coordinator.selection.ActionSelectionPlugin"
 amp  = "org.cougaar.coordinator.techspec.AssetManagerPlugin"
 tmmp = "org.cougaar.coordinator.techspec.ThreatModelManagerPlugin"
 ltsp = "org.cougaar.coordinator.techspec.xml.LoadTechSpecsPlugin"
+lrs  = "org.cougaar.coordinator.leashDefenses.LeashRequestServlet"
 
 # TechSpecs
 mgr_techspecs = []
 node_techspecs = []
 
 nodePlugins = [arm,drm,rmfp]
-mgrPlugins = [arm,drm,rmfp,aep,bp,cbp,cmp,amon,asp,amp,tmmp]
+mgrPlugins = [arm,drm,rmfp,aep,bp,cbp,cmp,amon,asp,amp,tmmp,lrs]
 
 society.each_agent do |agent|
     if agent.name =~ /.*ARManager.*/
