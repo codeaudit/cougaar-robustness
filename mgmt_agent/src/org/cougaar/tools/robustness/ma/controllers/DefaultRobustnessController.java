@@ -36,6 +36,8 @@ import org.cougaar.tools.robustness.ma.util.RestartListener;
 import org.cougaar.tools.robustness.ma.util.RestartDestinationLocator;
 import org.cougaar.tools.robustness.ma.util.StatCalc;
 import org.cougaar.tools.robustness.ma.util.NodeLatencyStatistics;
+import org.cougaar.tools.robustness.ma.util.ServiceChecker;
+import org.cougaar.tools.robustness.ma.util.CheckServicesListener;
 
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.service.community.CommunityResponseListener;
@@ -166,7 +168,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
          if (logger.isInfoEnabled()) {
            logger.info("Expired Status:" +
                        " agent=" + name +
-                       " state=" + model.getCurrentState(name));
+                       " state=ACTIVE");
          }
         newState(name, DEAD);
       }
@@ -487,6 +489,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   private WakeAlarm wakeAlarm;
   boolean communityReady = false;
   boolean didRestart = false;
+  private ServiceChecker serviceChecker;
 
   private Map runStats = new HashMap();
   private NodeLatencyStatistics originalStats;
@@ -526,6 +529,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     addController(FORCED_RESTART, "FORCED_RESTART", new ForcedRestartStateController());
     RestartDestinationLocator.setCommunityStatusModel(csm);
     RestartDestinationLocator.setLoggingService(logger);
+    serviceChecker = new ServiceChecker(bs.getServiceBroker(), getPingHelper());
     new HostLossThreatAlertHandler(getBindingSite(), agentId, this, csm);
     new SecurityAlertHandler(getBindingSite(), agentId, this, csm);
   }
@@ -838,7 +842,28 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       logger.info("LeaderChange: prior=" + priorLeader + " new=" + newLeader);
     }
     if (isLeader(thisAgent) && model.getCurrentState(preferredLeader()) == DEAD) {
-      newState(preferredLeader(), RESTART);
+      long pingTimeout = getLongAttribute(preferredLeader(),
+                                          PING_TIMEOUT_ATTRIBUTE,
+                                          DEFAULT_PING_TIMEOUT);
+      serviceChecker.checkServices(model.getCommunityName(),
+                                   "EssentialRestartService",
+                                   pingTimeout,
+        new CheckServicesListener() {
+          public void execute(String communityName,
+                              String serviceCategory,
+                              boolean isAvailable,
+                              String message) {
+            if (isAvailable) {
+              newState(preferredLeader(), RESTART);
+            } else {
+              if (logger.isWarnEnabled()) {
+                logger.warn("Unable to restart " + preferredLeader() +
+                            ", " + message);
+              }
+            }
+          }
+        });
+      //newState(preferredLeader(), RESTART);
     }
     checkCommunityReady();
     if (didRestart && !suppressPingsOnRestart) {

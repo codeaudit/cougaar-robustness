@@ -1,0 +1,31 @@
+# Define essential services and providers required for restarts.  A restart
+# is not attempted unless at least one provider for each essential service is
+# accessible.
+
+require 'cougaar/communities'
+require 'ultralog/enclaves'
+
+essential_restart_services = ['PersistenceManager',
+                              'CertificateAuthority',
+                              'NameServer']
+
+society.communities.each do |community|
+  essential_restart_services.each do |service|
+    found_provider = false
+    society.each_node do |node|
+      if node.has_facet?("role")
+        node.each_facet("role") do |facet|
+          role = facet["role"]
+          if role == service || role == "Redundant#{service}"
+            # Only add service attribute once even if multiple providers found
+            if found_provider == false
+              community.add_attribute("EssentialRestartService", "#{service}")
+              found_provider = true
+            end
+            community.add_attribute("#{service}-ServiceProvider", "#{node.name}")
+          end
+        end
+      end
+    end
+  end
+end

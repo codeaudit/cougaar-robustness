@@ -561,9 +561,11 @@ public class RestartHelper extends BlackboardClientComponent {
             default:
               if (logger.isInfoEnabled()) {
                 logger.info("Unexpected restart status" +
-                            " statucCode=" + ac.getStatusCodeAsString() +
+                            " statusCode=" + ac.getStatusCodeAsString() +
                             ", blackboard object not removed");
               }
+              blackboard.publishRemove(ac);
+              myUIDs.remove(ac.getOwnerUID());
           }
         }
       }
