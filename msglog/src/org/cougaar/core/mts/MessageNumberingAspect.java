@@ -114,12 +114,41 @@ public class MessageNumberingAspect extends StandardAspect implements MessageNum
 
   public Object getDelegate (Object delegate, Class type) 
   {
+    if (type == SendLink.class) 
+    {
+      return (new SendLinkDelegate ((SendLink) delegate));
+    }
     if (type == DestinationLink.class) 
     {
       return (new Link ((DestinationLink) delegate));
     }
- 
     return null;
+  }
+
+  private class SendLinkDelegate extends SendLinkDelegateImplBase 
+  {
+    public SendLinkDelegate (SendLink link)
+    {
+      super (link);
+    }
+
+    public void sendMessage (AttributedMessage msg) 
+    { 
+	// If msg has a timeout or deadline, but not a message type,
+	// then its a timeout set by something other than msglog (e.g. wp).
+        // For now, we'll treat it as a Ping, because we can't currently
+        // handle dropping sequenced messages.
+	if ((msg != null) 
+	    && (msg.getAttribute(Constants.MSG_TYPE) == null)
+	    && ((msg.getAttribute(AttributeConstants.MESSAGE_SEND_TIMEOUT_ATTRIBUTE) != null) 
+		|| (msg.getAttribute(AttributeConstants.MESSAGE_SEND_DEADLINE_ATTRIBUTE) != null))
+	    ) {
+	    msg.setAttribute(Constants.MSG_TYPE, Constants.MSG_TYPE_PING);
+	    if (log.isInfoEnabled())
+		log.info("Msg received at SendLink station with Timeout or Deadline, but no Type.  Setting Type to Ping.");
+	}
+	super.sendMessage (msg);
+    }
   }
 
   //  Note that once a message number > 0 is assigned, if message
