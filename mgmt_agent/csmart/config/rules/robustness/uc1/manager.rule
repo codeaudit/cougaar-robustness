@@ -18,7 +18,7 @@ ar_servlet                 = "org.cougaar.tools.robustness.ma.ui.ARServlet"
 node_health_monitor_plugin = "org.cougaar.tools.robustness.ma.plugins.NodeHealthMonitorPlugin"
 
 # Boeing components
-load_balancer_plugin	   ="com.boeing.pw.mct.exnihilo.plugin.EN4JPlugin"
+load_balancer_plugin	   ="org.cougaar.robustness.exnihilo.plugin.EN4JPlugin"
 
 #
 # Infrastructure components
