@@ -323,8 +323,14 @@ public abstract class Diagnosis
         
         if (value != newValue) {
             this.setLastChangedTimestamp( System.currentTimeMillis() );            
-        }
-        value = newValue;
+        
+            if ( possibleValues.contains(newValue) ) {
+                value = newValue;
+            } else {
+                throw new IllegalValueException("The following value is not a possible value: " + newValue.toString() );
+            }        
+        }        
+        
         this.setLastAssertedTimestamp( System.currentTimeMillis() );
     }
     
