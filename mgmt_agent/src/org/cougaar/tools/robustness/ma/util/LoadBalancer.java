@@ -367,9 +367,9 @@ public class LoadBalancer
       }
     }
 
-logger.info("oldnodes: " + oldnodes);
-logger.info("newnodes: " + newnodes);
-logger.info("temp: " + temp);
+//logger.info("oldnodes: " + oldnodes);
+//logger.info("newnodes: " + newnodes);
+//logger.info("temp: " + temp);
 
     /**
      * This loop does the following jobs to keep node balancing during agents moving:
@@ -405,7 +405,7 @@ logger.info("temp: " + temp);
           it.remove();
         }
       }
-logger.info("after move: oldnodes=" + oldnodes + ", newnodes=" + newnodes);
+//logger.info("after move: oldnodes=" + oldnodes + ", newnodes=" + newnodes);
     }
     logger.debug("LoadBalance finished.");
   }
@@ -426,7 +426,7 @@ logger.info("after move: oldnodes=" + oldnodes + ", newnodes=" + newnodes);
         result = node;
       }
     }
-logger.info("get current biggest difference: node=" + result + ", difference=" + diff);
+//logger.info("get current biggest difference: node=" + result + ", difference=" + diff);
     return result;
   }
 
