@@ -79,6 +79,17 @@ public class ActionManagerPlugin extends ComponentPlugin implements NotPersistab
      *  ***ASSUMES ONLY ONE MONITORING LEVEL PER DEFENSE!!! ***
      */
     //private long maxDefenseLatency = 0L;
+
+    
+    public void initialize() {
+
+        super.initialize();
+        
+        // create and advertise our service
+        this.atssp = new ActionTechSpecServiceProvider(this);
+        getServiceBroker().addService(ActionTechSpecService.class, atssp);
+
+    }
     
     /**
      * Read in the filename parameters passed in via configuration file.
@@ -149,6 +160,7 @@ public class ActionManagerPlugin extends ComponentPlugin implements NotPersistab
         getServices();
         allActions = new Hashtable(100);
         newActions = new Vector();
+
     }
     
     
@@ -161,9 +173,6 @@ public class ActionManagerPlugin extends ComponentPlugin implements NotPersistab
         getPluginParams();
         readInActions(fileParams);
         
-        // create and advertise our service
-        this.atssp = new ActionTechSpecServiceProvider(this);
-        getServiceBroker().addService(ActionTechSpecService.class, atssp);
     }
     
     /**

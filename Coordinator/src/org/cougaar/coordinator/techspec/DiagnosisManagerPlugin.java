@@ -81,6 +81,15 @@ public class DiagnosisManagerPlugin extends ComponentPlugin implements NotPersis
      */
     //private long maxDefenseLatency = 0L;
     
+    public void initialize() {
+
+        super.initialize();
+        // create and advertise our service
+        this.dtssp = new DiagnosisTechSpecServiceProvider(this);
+        getServiceBroker().addService(DiagnosisTechSpecService.class, dtssp);
+    }
+    
+    
     /**
      * Read in parameters passed in via configuration file.
      */
@@ -148,6 +157,7 @@ public class DiagnosisManagerPlugin extends ComponentPlugin implements NotPersis
         allDiagnoses = new Hashtable(100);
         newDiagnoses = new Vector();
         crossProbs = new Vector();
+
     }
     
     
@@ -161,9 +171,6 @@ public class DiagnosisManagerPlugin extends ComponentPlugin implements NotPersis
         getPluginParams();
         readInDiagnoses(fileParams);
         
-        // create and advertise our service
-        this.dtssp = new DiagnosisTechSpecServiceProvider(this);
-        getServiceBroker().addService(DiagnosisTechSpecService.class, dtssp);
     }
     
     /**
