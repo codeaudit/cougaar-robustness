@@ -23,41 +23,15 @@
 package org.cougaar.mts.std;
 
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Observable;
-import java.util.Observer;
 import org.cougaar.core.component.ServiceBroker;
-import org.cougaar.core.component.ServiceProvider;
-import org.cougaar.core.mts.MessageAddress;
-import org.cougaar.core.mts.MessageAttributes;
-import org.cougaar.core.mts.MessageTransportClient;
-import org.cougaar.core.qos.metrics.Constants;
-import org.cougaar.core.qos.metrics.Metric;
-import org.cougaar.core.qos.metrics.MetricsService;
 import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.ThreadService;
 import org.cougaar.core.thread.Schedulable;
-import org.cougaar.mts.base.DestinationLink;
-import org.cougaar.mts.base.DestinationLinkDelegateImplBase;
-import org.cougaar.mts.base.MessageDeliverer;
-import org.cougaar.mts.base.MessageDelivererDelegateImplBase;
 import org.cougaar.mts.base.StandardAspect;
-import org.cougaar.mts.base.CommFailureException;
 import org.cougaar.mts.base.MessageTransportRegistryService;
-import org.cougaar.mts.base.MisdeliveredMessageException;
-import org.cougaar.mts.base.NameLookupException;
-import org.cougaar.mts.base.SendLink;
-import org.cougaar.mts.base.SendLinkDelegateImplBase;
-import org.cougaar.mts.base.UnregisteredNameException;
-import org.cougaar.mts.std.acking.MessageAckingService;
 import org.cougaar.util.log.Logger;
 import org.cougaar.util.log.Logging;
-import java.security.Security;
 
 /**
  **  An aspect for detecting and handling host moves.
@@ -74,7 +48,6 @@ public class MobileHostsAspect extends StandardAspect
     String myHost = null;
     private static final long DEFAULT_PERIOD = 10000; // 10 secs
     private long period = -1;
-    LinkedHashSet clients = new LinkedHashSet();
 
     public MobileHostsAspect () 
     {}
@@ -99,38 +72,6 @@ public class MobileHostsAspect extends StandardAspect
 	sb.releaseService(this, ThreadService.class, threadSvc);
     }
 
-    public Object getDelegate (Object delegate, Class type) {
-	if (type == SendLink.class)
-	    return new SendLinkDelegate((SendLink)delegate);
-	return null;
-    }
-
-    private class SendLinkDelegate extends SendLinkDelegateImplBase 
-    {
-	public SendLinkDelegate (SendLink link)
-	{
-	    super (link);
-	}
-	public void registerClient (MessageTransportClient client) 
-	{ 
-	    synchronized (clients) {
-		if (log.isInfoEnabled())
-		    log.info("SendLinkDelegate.registerClient("+client+")");
-		clients.add(client);
-	    }
-	    super.registerClient(client);
-	}
-	public void unregisterClient (MessageTransportClient client) 
-	{ 
-	    synchronized (clients) {
-		if (log.isInfoEnabled())
-		    log.info("SendLinkDelegate.unregisterClient("+client+")");
-		clients.remove(client);
-	    }
-	    super.unregisterClient(client);
-	}
-    }
-
     public void run() {
 	try {
 	    InetAddress inetAddr = InetAddress.getLocalHost();
@@ -153,16 +94,13 @@ public class MobileHostsAspect extends StandardAspect
 		if (eventSvc.isEventEnabled())
 		    eventSvc.event("IP Address of "+myHost+" changed from "+myAddr+" to "+addr);
 		myAddr = addr;
-		try {
-//                  moved to RMILinkProtocol
-//                  System.setProperty("java.rmi.server.hostname",myAddr);
-		    registry.ipAddressChanged();
-		} catch (Exception e) {
-		    log.error("run: ERROR calling System.setProperty(\"java.rmi.server.hostname\","+myAddr+")",e);
-		}
+		registry.ipAddressChanged();
 	    }
 	} catch (java.net.UnknownHostException e) {
-	    log.error("run: getLocalHost returned an unknown host.", e);
+	    if (log.isWarnEnabled())
+		log.warn("run: getLocalHost returned an unknown host.", e);
+	    if (log.isInfoEnabled())
+		log.info("", e);
 	}
     }
     
