@@ -111,32 +111,16 @@ public class MessageOrderingAspect extends StandardAspect
 
           doDelivery (msg);
           setNextMsgNumInSequence (msg, nextNum+1);
-          queue.remove (msg);
 
           //  Now see how many (if any) waiting messages can be delivered
-          
+
           int len = queue.size();
 
           if (len > 0)
           {
-//            AttributedMessage msgs[] = (AttributedMessage[]) queue.toArray();
+            AttributedMessage msgs[] = new AttributedMessage[len];
+            msgs = (AttributedMessage[]) queue.toArray (msgs);
 
-AttributedMessage msgs[];
-try
-{
-msgs = (AttributedMessage[]) queue.toArray();
-}
-catch (Exception e)
-{
-System.err.println ("MessageOrderingAspect: queue prob: ");
-e.printStackTrace();
-System.err.println ("queue.size = "+queue.size());
-Object obj = queue.firstElement();
-System.err.println ("queue 1st element = "+obj.getClass().toString());
-status = MessageAttributes.DELIVERY_STATUS_DROPPED_DUPLICATE;
-attrs.setAttribute (MessageAttributes.DELIVERY_ATTRIBUTE, status);
-return attrs;
-}
             if (len > 1) Arrays.sort (msgs, 0, len, queueSort);
 
             for (int i=0; i<len; i++)

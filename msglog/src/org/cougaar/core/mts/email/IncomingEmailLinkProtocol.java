@@ -132,7 +132,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
   private boolean ignoreOldMessages;
   private int gracePeriod, mailServerPollTime;
   private boolean firstTime = true;
-
+private boolean hasStartedUp = false;  
 
   public IncomingEmailLinkProtocol ()
   {
@@ -176,7 +176,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
     // showTraffic = (AspectSupportImpl.instance().findAspect(s) != null);
     // showTraffic = (getAspectSupport().findAspect(s) != null);
 
-showTraffic = false; // HACK!!!
+showTraffic = true; // HACK!!!
   }
 
   public DestinationLink getDestinationLink (MessageAddress destination) 
@@ -219,10 +219,13 @@ showTraffic = false; // HACK!!!
       throw new RuntimeException ("Bad or missing property: " +prop);
     }
 
+if (!hasStartedUp)
+{
     if (startup (inboxesProp) == false)
     {
       throw new RuntimeException ("Failure starting up IncomingEmailLinkProtocol!");
     }
+}
   }
 
   public synchronized boolean startup (String inboxesProp)
@@ -272,6 +275,8 @@ showTraffic = false; // HACK!!!
     //  was successfully started.
 // created?
 
+hasStartedUp = true;  // kind of hack for now
+
     return messageInThreads.size() > 0;
   }
 
@@ -294,6 +299,8 @@ showTraffic = false; // HACK!!!
     //  Halt and get rid of all the inbox threads
 
     stopMailReadingThreads();
+
+hasStartedUp = false;
   }
 
   private void startMailReadingThreads ()
