@@ -214,7 +214,7 @@ public class LoadBalancer extends BlackboardClientComponent {
         index = tmp.indexOf("\"", index);
         tmp = tmp.substring(index);
         String agentName = tmp.substring(1, tmp.indexOf("\"", 1));
-        index = tmp.indexOf("node=");
+        index = tmp.indexOf("current=");
         index = tmp.indexOf("\"", index);
         tmp = tmp.substring(index);
         String parent = tmp.substring(1, tmp.indexOf("\"", 1));
