@@ -408,6 +408,7 @@
     <!-- <copy toDir="staging/csmart/config/doc/robustness/uc1">
       <fileset dir="csmart/config/doc/robustness/uc1"/>
     </copy> -->
+    <copy toDir="staging/csmart/config/rules/robustness/uc1" file="csmart/config/rules/robustness/uc1/aruc1.rule"/>
     <copy toDir="staging/csmart/config/lib/robustness/uc1">
       <fileset dir="csmart/config/lib/robustness/uc1">
          <include name="aruc1_actions_and_states.rb" />
