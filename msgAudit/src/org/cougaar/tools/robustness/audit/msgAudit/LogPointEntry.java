@@ -23,6 +23,7 @@ public class LogPointEntry {
     private Message msgRoot = null;
     private Boolean isSend = null;
     private boolean isFinalLogPoint = false;
+    private String msgtype = null;
     
     private int logPointPosition;
     
@@ -32,10 +33,11 @@ public class LogPointEntry {
         from = props.getProperty("from", "*error*");
         to   = props.getProperty("to",   "*error*");
         time = props.getProperty("time", "*error*");
+        msgtype = props.getProperty("msgtype", "no_type");
         String seqNumStr =   props.getProperty("num", "*error*");
         logpoint = props.getProperty("lpName", "*error*");
         //"TYPE", "TRAFFIC_EVENT", "lpName", tag, "time", "" + now(), "from", from, "to", to, 
-        //    "num", numS
+        //    "num", numS, "msgtype", msgtype
     
         logEvent = _evt;
         
@@ -73,6 +75,7 @@ public class LogPointEntry {
     public String time() { return time; }
     public String logPointName() { return logpoint; }
     public int getLogPointLevel() { return logPointPosition; }
+    public String msgtype() { return msgtype; }
 
     public void setMsgRoot(Message _msg) { msgRoot = _msg; }
     public Message getMsgRoot() { return msgRoot; }
