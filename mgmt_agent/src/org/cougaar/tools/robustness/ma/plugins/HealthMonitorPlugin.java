@@ -256,7 +256,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
         hs.setHeartbeatStatus(HealthStatus.HB_TIMEOUT);
         if (hs.getState().equals(HealthStatus.NORMAL)) {
           hs.addHeartbeatTimeout(new Date());
-          log.warn("HeartbeatTimeout: agent=" + hs.getAgentId() +
+          log.debug("HeartbeatTimeout: agent=" + hs.getAgentId() +
             ", pctLate=" + hbe[i].getPercentLate());
         }
       }
@@ -291,7 +291,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
         switch (hs.getHeartbeatRequestStatus()) {
           case HealthStatus.UNDEFINED:
             sendHeartbeatRequest(hs);
-            log.info("Sending HeartbeatRequest to agent '" + hs.getAgentId() + "'");
+            log.debug("Sending HeartbeatRequest to agent '" + hs.getAgentId() + "'");
             break;
           case HeartbeatRequest.NEW:
           case HeartbeatRequest.SENT:
@@ -323,7 +323,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
             //System.out.println("PingStatus=" + pingStatus);
             switch (pingStatus) {
               case HealthStatus.UNDEFINED:
-                log.debug("Heartbeat timeout: agent=" + hs.getAgentId());
+                //log.debug("Heartbeat timeout: agent=" + hs.getAgentId());
                 log.debug("Performing ping: agent=" + hs.getAgentId());
                 hs.setPingTimestamp(new Date());
                 doPing(hs.getAgentId());

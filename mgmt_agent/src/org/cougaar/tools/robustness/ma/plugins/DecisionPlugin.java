@@ -97,20 +97,17 @@ public class DecisionPlugin extends SimplePlugin {
     for (Iterator it = agentStartStatus.getChangedCollection().iterator();
          it.hasNext();) {
       AgentStart action = (AgentStart)it.next();
-      /*
       String statusStr = null;
       switch (action.getStatus()) {
-        case Action.FAIL:
+        case AgentAction.FAIL:
           statusStr = "FAIL";
           break;
-        case Action.SUCCESS:
+        case AgentAction.SUCCESS:
           statusStr = "SUCCESS";
           break;
         default:
       }
-      */
-      //log.debug("Received AgentStart response, restart result= " + action.status);
-      log.debug("Received AgentStart response, restart result= ");
+      log.debug("Received AgentStart response, restart result= " + statusStr);
       bbs.publishRemove(action);
     }
 
@@ -123,8 +120,9 @@ public class DecisionPlugin extends SimplePlugin {
         case RestartLocationRequest.SUCCESS:
           String nodeName = "EmptyNode";
           Iterator nodeIt = req.getAgents().iterator();
-          if (nodeIt.hasNext()) nodeName = getNodeName((MessageAddress)nodeIt.next());
-          restartAgents(req.getAgents(), nodeName);
+          if (nodeIt.hasNext())
+            nodeName = getNodeName((MessageAddress)nodeIt.next());
+          restartAgents(req.getAgents(), req.getHost() + "-" + nodeName);
           //restartNode(nodeName, req.getHost());
           bbs.publishRemove(req);
           break;

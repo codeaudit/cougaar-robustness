@@ -9,6 +9,7 @@
   <!-- set global properties for this build -->
   <property environment="env"/>
   <property name="cougaar" value="${env.COUGAAR_INSTALL_PATH}"/>
+  <property name="host" value="${env.HOST}"/>
 
   <!-- Define location of 3rd-party libraries -->
   <property name="lib" value="lib" />
@@ -24,7 +25,7 @@
   <property name="test" value="test"/>
   <property name="lib" value="lib"/>
   <property name="jar" value="Robustness_mic_${ant.project.name}.jar"/>
-  <property name="workspace" value="/tmp"/>
+  <property name="workspace" value="tmp"/>
   <property name="release" value="../mic-tic"/>
 
   <!-- Initialization target -->
@@ -243,10 +244,8 @@
       <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
       <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
-      <!--
       <sysproperty key="org.cougaar.core.persistence.enable" value="true"/>
       <sysproperty key="org.cougaar.core.persistence.lazyInterval" value="30000"/>
-      -->
       <sysproperty key="org.cougaar.system.path" value="${lib}"/>
       <!-- <sysproperty key="org.cougaar.class.path" value="lib/community.jar:lib/Robustness_objs_sensors.jar:lib/Robustness_bbn_bbn.jar"/> -->
       <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;$$CWD/test/configs/ma;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig;$$INSTALL/configs/common"/>
@@ -256,6 +255,9 @@
 
   <!-- Runs EmptyNode -->
     <target name="emptynode" description="Starts an empty node">
+    <mkdir dir="${workspace}/configs" />
+    <copy file="test/configs/ma/EmptyNode.ini" tofile="${workspace}/configs/${host}-EmptyNode.ini" />
+    <echo message="Starting node: ${host}-EmptyNode" />
     <java dir="${basedir}" fork="yes"
       maxmemory="350m"
       classname="org.cougaar.bootstrap.Bootstrapper">
@@ -268,16 +270,15 @@
         </fileset>
       </classpath>
       <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
+      <sysproperty key="org.cougaar.node.name" value="${host}-EmptyNode"/>
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
       <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
-      <!--
       <sysproperty key="org.cougaar.core.persistence.enable" value="true"/>
       <sysproperty key="org.cougaar.core.persistence.lazyInterval" value="30000"/>
-      -->
       <sysproperty key="org.cougaar.system.path" value="${lib}"/>
       <!-- <sysproperty key="org.cougaar.class.path" value="lib/community.jar:lib/Robustness_objs_sensors.jar:lib/Robustness_bbn_bbn.jar"/> -->
-      <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;$$CWD/test/configs/ma;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig;$$INSTALL/configs/common"/>
-      <arg line="org.cougaar.core.node.Node EmptyNode"/>
+      <sysproperty key="org.cougaar.config.path" value="${workspace}/configs;$$CWD/test/data;$$CWD/test/configs/ma;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig;$$INSTALL/configs/common"/>
+      <arg line="org.cougaar.core.node.Node"/>
     </java>
   </target>
 

@@ -142,7 +142,7 @@ public class HealthStatus implements
    *         HeartbeatFailureRateThreshold
    */
   protected boolean hbFailureRateInSpec() {
-    System.out.println(failureRateData());
+    //System.out.println(failureRateData());
     return getFailureRate() < hbFailureRateThreshold;
   }
 
