@@ -12,7 +12,7 @@
         <Diagnosis name="NOT_COMMUNICATING" />
     </PotentialDiagnoses>
     <Diagnoses>
-        <WhenActualStateIs name="GOOD" >
+        <WhenActualStateIs name="Communicating" >
             <WillDiagnoseAs name="OK" withProbability="0.9" />
             <WillDiagnoseAs name="DEGRADED" withProbability="0.1" />
         </WhenActualStateIs >
@@ -42,7 +42,7 @@
     </PotentialDiagnoses>
 
     <Diagnoses>
-        <WhenActualStateIs name="GOOD" >
+        <WhenActualStateIs name="Communicating" >
             <WillDiagnoseAs name="OK" withProbability="0.9" />
             <WillDiagnoseAs name="DEGRADED" withProbability="0.1" />
         </WhenActualStateIs >

@@ -13,19 +13,19 @@
         <Diagnosis name="No Threat" />
     </PotentialDiagnoses>
     <Diagnoses>
-        <WhenActualStateIs name="None" >
+        <WhenActualStateIs name="NoVulnerability" >
             <WillDiagnoseAs name="No Threat" withProbability="0.99" />
             <WillDiagnoseAs name="Low Threat" withProbability="0.01" />
         </WhenActualStateIs >
-        <WhenActualStateIs name="LowVulernability" >
+        <WhenActualStateIs name="LowVulnerability" >
             <WillDiagnoseAs name="Low Threat" withProbability="0.9" />
             <WillDiagnoseAs name="Medium Threat" withProbability="0.1" />
         </WhenActualStateIs >
-        <WhenActualStateIs name="MediumVulernability" >
+        <WhenActualStateIs name="MediumVulnerability" >
             <WillDiagnoseAs name="Medium Threat" withProbability="0.8" />
             <WillDiagnoseAs name="High Threat" withProbability="0.2" />
         </WhenActualStateIs >
-        <WhenActualStateIs name="HighVulernability" >
+        <WhenActualStateIs name="HighVulnerability" >
             <WillDiagnoseAs name="Medium Threat" withProbability="0.2" />
             <WillDiagnoseAs name="High Threat" withProbability="0.8" />
         </WhenActualStateIs >
