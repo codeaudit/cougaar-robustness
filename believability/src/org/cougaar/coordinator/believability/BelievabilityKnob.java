@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BelievabilityKnob.java,v $
- * $Revision: 1.12 $
- * $Date: 2004-08-09 20:46:41 $
+ * $Revision: 1.13 $
+ * $Date: 2004-08-31 14:44:36 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.util.UnaryPredicate;
  * want to have external, dynamic control over.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.12 $Date: 2004-08-09 20:46:41 $
+ * @version $Revision: 1.13 $Date: 2004-08-31 14:44:36 $
  *
  */
 public class BelievabilityKnob implements Serializable 
@@ -152,8 +152,10 @@ public class BelievabilityKnob implements Serializable
      * period is exceeded, we will compute a new belief state and
      * publish it.
      */
-    private long _max_publish_interval
-            = DEFAULT_MAX_PUBLISH_INTERVAL;
+    private long _max_publish_interval = Long.valueOf(
+        System.getProperty( "org.cougaar.coordinator.believability.MAX_PUBLISH_INTERVAL",
+			    String.valueOf(DEFAULT_MAX_PUBLISH_INTERVAL) )
+                          ).longValue();
 
     /**
      * We do not want to be too quick to publish a state estimation
@@ -174,7 +176,11 @@ public class BelievabilityKnob implements Serializable
      * system needs to acquiece, or some other known disturbance is
      * rendering actions/diagnoses invalid.
      */
-    private boolean _is_leashed = DEFAULT_IS_LEASHED;
+    //    private boolean _is_leashed = DEFAULT_IS_LEASHED;
+    private boolean _is_leashed = Boolean.valueOf(
+        System.getProperty( "org.cougaar.coordinator.believability.IS_LEASHED",
+			    String.valueOf( DEFAULT_IS_LEASHED ) )
+                          ).booleanValue();
 
     /**
      * In certain circumstances (such as rehydrating) the
