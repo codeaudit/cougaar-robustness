@@ -28,6 +28,7 @@ module Cougaar
             Cougaar.logger.info "Unleashed Defenses by calling #{agent.name}"
 	  end
         end
+        sleep 120
       end
 
     end
