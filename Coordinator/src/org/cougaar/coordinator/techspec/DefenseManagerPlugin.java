@@ -1,4 +1,4 @@
-/*
+ /*
  * DefenseManagerPlugin.java
  *
  * Created on September 12, 2003, 4:53 PM
@@ -61,7 +61,7 @@ import org.cougaar.core.persist.NotPersistable;
 /**
  *
  * This plugin reads in the XML definitions of the Defense Tech Specs & publishes them to the Blackboard.
- *
+ * @deprecated Likely to be deprecated April 2004.
  * @author  Paul Pazandak, Ph.D. OBJS, Inc.
  */
 public class DefenseManagerPlugin extends ComponentPlugin implements NotPersistable  {
@@ -100,7 +100,7 @@ public class DefenseManagerPlugin extends ComponentPlugin implements NotPersista
     
     /** Read in the Defenses from an XML file & publishes them to the BB */
     private void readInDefenses() {
-        
+/*        
         getPluginParams();
         if (fileParam == null) {
             logger.error("No Defense definitions to import! Must include xml file as plugin parameter!!");
@@ -147,6 +147,7 @@ public class DefenseManagerPlugin extends ComponentPlugin implements NotPersista
             
             logger.error("Exception while importing Defenses!",e);
         }
+ */
     }        
     
     

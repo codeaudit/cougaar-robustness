@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/Coordinator/src/org/cougaar/coordinator/believability/AssetModel.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-02-26 15:18:21 $
+ * $Revision: 1.2 $
+ * $Date: 2004-04-28 19:48:26 $
 *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -37,7 +37,7 @@ import java.util.Vector;
  * AssetTechSpecInterface).
  *
  * @author Misty Nodine
- * @version $Revision: 1.1 $Date: 2004-02-26 15:18:21 $
+ * @version $Revision: 1.2 $Date: 2004-04-28 19:48:26 $
  */
 public class AssetModel extends Object
 {
@@ -107,7 +107,8 @@ public class AssetModel extends Object
         if ( _asset_ts == null )
             return null;
 
-        return _asset_ts.getExpandedName();
+/////PP-temp        
+        return _asset_ts.getAssetID().toString(); ///////PP-temp getExpandedName();
     } // method getAssetName
 
 

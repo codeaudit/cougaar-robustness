@@ -271,20 +271,6 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
         
     }
     
-    /**
-      * Demonstrates how to read in parameters passed in via configuration files. Use/remove as needed. 
-      */
-    private void getPluginParams() {
-        
-        //The 'logger' attribute is inherited. Use it to emit data for debugging
-        //if (logger.isInfoEnabled() && getParameters().isEmpty()) logger.error("plugin saw 0 parameters.");
-
-        Iterator iter = getParameters().iterator (); 
-        if (iter.hasNext()) {
-            fileParam = (String) iter.next();
-            logger.debug("Read in plugin file Parameter = " + fileParam);
-        }
-    }       
     
     
     /** 
@@ -301,45 +287,6 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
     }
 
     
-    private void readThreatModels() {
-        
-        getPluginParams();
-        if (fileParam == null) {
-            logger.error("No ThreatModel to import! Must include xml file as plugin parameter!!");
-            return;
-        }
-
-        try {
-            ThreatModelXML_DTDHandler h = new ThreatModelXML_DTDHandler();
-            ThreatModelXML_DTDParser parser = new ThreatModelXML_DTDParser(h);
-//steve     File f = new File(fileParam);
-            File f = getConfigFinder().locateFile(fileParam); //steve
-            
-            if (!f.exists()) { //look 
-                logger.debug("*** Did not find Threat Model XML file in = " + f.getAbsolutePath()+". Checking CIP...");
-                String installpath = System.getProperty("org.cougaar.install.path");
-                String defaultPath = installpath + File.separatorChar + "csmart" + File.separatorChar + "config" +
-                   File.separatorChar + "lib" + File.separatorChar + "robustness" + 
-                   File.separatorChar + "uc9" + File.separatorChar + fileParam;
-
-                f = new File(defaultPath);
-                if (!f.exists()) {                    
-                    logger.warn("*** Did not find Threat Model XML file in = " + f.getAbsolutePath());
-                    logger.error("**** CANNOT FIND Threat Model file!");
-                    return;
-                }
-            }                            
-            logger.debug("path for Threat Model XML file = " + f.getAbsolutePath());
-            
-            parser.parse(new InputSource(new FileInputStream(f)));
-
-            metaThreatModels = h.getModels();
-            logger.debug("Imported "+metaThreatModels.size()+" models!");
-        } catch (Exception e) {
-            
-            logger.error("Exception while importing threatModel!",e);
-        }
-    }        
     
     
     /*
@@ -364,7 +311,7 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
             AssetManagerPlugin aMgr = (AssetManagerPlugin)it.next();
             logger.info("Found AssetManagerPlugin");
             
-            readThreatModels();
+//////////pp2004 - now loaded in xml pkg            readThreatModels();
             //Subscribe to the AssetMgrPlugin's change listener. 
             AssetChangeEvent currentAssets[] = aMgr.addChangeListener(myChangeListener);            
             synchronized(changesToProcess) {

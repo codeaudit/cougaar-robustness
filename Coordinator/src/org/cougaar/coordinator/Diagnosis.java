@@ -254,7 +254,7 @@ public abstract class Diagnosis
             throw new TechSpecNotFoundException("TechSpec Service not available.");            
         }
         
-        // **********************************************get the tect spec service
+        // **********************************************get the tech spec service
         DiagnosisTechSpecService DiagnosisTechSpecService =
                 (DiagnosisTechSpecService) serviceBroker.getService(this, DiagnosisTechSpecService.class, null);
         if (DiagnosisTechSpecService == null) {

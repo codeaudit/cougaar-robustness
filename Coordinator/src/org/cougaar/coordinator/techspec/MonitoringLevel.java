@@ -1,4 +1,4 @@
-/*
+ /*
  * MonitoringLevel.java
  *
  * Created on August 5, 2003, 11:39 AM
@@ -84,7 +84,7 @@ public class MonitoringLevel implements NotPersistable {
      * @return the transition probability for the given states. Returns 0 if a
      * corresponding function is not found.
      */
-     public double getProbability(AssetStateDescriptor assetState, StateValue stateValue, StateValue diagnosisStateValue) {
+     public double getProbability(AssetStateDimension assetState, StateValue stateValue, StateValue diagnosisStateValue) {
          
           Iterator iter = diagnoses.iterator();
           while (iter.hasNext()) {

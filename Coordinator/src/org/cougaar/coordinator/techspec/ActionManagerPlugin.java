@@ -201,7 +201,7 @@ public class ActionManagerPlugin extends ComponentPlugin implements NotPersistab
         haveServices = true;
     }
     
-    /** Publishes new Actions to the BB */
+    /** Publishes new Action Tech Specs to the BB */
     public void execute() {
         
         if (newActions.size() > 0) {
