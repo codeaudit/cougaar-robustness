@@ -49,10 +49,9 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersista
   private UID uid;
   private MessageAddress source;
   private transient Set targets;
-  //private MessageAddress target;
   private Object content;
   private Object response;
-  //private Properties props;
+  private boolean heartbeat = false;
 
   /**
    * @param uid UID of this HbReq object
@@ -70,11 +69,10 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersista
     this.source = source;
     this.content = content;
     this.response = response;
-    //this.targets = ((targets == null) ? Collections.EMPTY_SET : new HashSet(targets));
-    // add attributes to targets
     if (targets == null) {
       this.targets = Collections.EMPTY_SET;
     } else {
+      // add attributes to targets
       this.targets = new HashSet();
       Iterator iter = targets.iterator();
       while (iter.hasNext()) {
@@ -92,7 +90,9 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersista
             args[0] = attrs;
             args[1] = addrStr;
             addr = (MessageAddress)x.newInstance(args);
-          }
+          }  
+          // a ping is acked, but not sequenced
+          attrs.setAttribute(MessageUtils.MSG_TYPE, MessageUtils.MSG_TYPE_PING);
           if (content instanceof HbReqContent) {
             long timeout = ((HbReqContent)content).getReqTimeout();
             if (timeout > 0) {
@@ -103,7 +103,6 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersista
           e.printStackTrace();
         }
         this.targets.add(addr);
-        //System.out.println("\n\nMessageAttributes are " + attrs + "\n");
       }
     }
   }
@@ -202,6 +201,42 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersista
   * Get the address of the Agent holding the Source copy of this Relay. 
   */  
   public MessageAddress getSource() {
+    // Because message attributes are transient, I can't just put them
+    // on the source address on the source side, so I put them on when
+    // this method is called on the target side.
+    MessageAddress addr = source;
+    MessageAttributes attrs = addr.getQosAttributes();
+    if (attrs == null) {
+      try {
+        Class[] classes = new Class[2];
+        classes[0] = MessageAttributes.class;
+        classes[1] = String.class;
+        Constructor x = addr.getClass().getConstructor(classes);
+        attrs = new SimpleMessageAttributes();
+        String addrStr = addr.getAddress();
+        Object[] args = new Object[2];
+        args[0] = attrs;
+        args[1] = addrStr;
+        addr = (MessageAddress)x.newInstance(args);
+        if (content instanceof PingContent) {
+          long timeout = ((PingContent)content).getTimeout();
+          if (timeout > 0)
+            attrs.setAttribute(MessageUtils.SEND_TIMEOUT, new Integer((int)timeout));
+        }
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+    if (attrs != null) {
+      if (heartbeat == true) {
+        // heartbeats are not sequenced, acked or resent
+        attrs.setAttribute(MessageUtils.MSG_TYPE, MessageUtils.MSG_TYPE_HEARTBEAT);
+      } else {
+        // pings are acked and resent, but not sequenced
+        attrs.setAttribute(MessageUtils.MSG_TYPE, MessageUtils.MSG_TYPE_PING);
+      }
+    }
+    this.source = addr;
     return source;
   }
 
@@ -269,30 +304,7 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersista
   * Convert this into a Heartbeat.
   */
   public void convertToHeartbeat() {
-    MessageAttributes attrs = source.getQosAttributes();
-    try {
-      if (attrs == null) {
-        Class[] classes = new Class[2];
-        classes[0] = MessageAttributes.class;
-        classes[1] = String.class;
-        Constructor x = source.getClass().getConstructor(classes);
-        attrs = new SimpleMessageAttributes();
-        String addrStr = source.getAddress();
-        Object[] args = new Object[2];
-        args[0] = attrs;
-        args[1] = addrStr;
-        source = (MessageAddress)x.newInstance(args);
-      }
-      attrs.setAttribute(MessageUtils.MSG_TYPE, MessageUtils.MSG_TYPE_HEARTBEAT);
-      if (content instanceof HbReqContent) {
-        long timeout = ((HbReqContent)content).getHbTimeout();
-        if (timeout > 0) {
-          attrs.setAttribute(MessageUtils.SEND_TIMEOUT, new Integer((int)timeout));
-        }
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+    heartbeat = true;
   }
 
 }

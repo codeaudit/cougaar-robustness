@@ -24,8 +24,12 @@ package org.cougaar.tools.robustness.sensors;
 
 import java.util.Set;
 import java.util.Collections;
+import java.lang.reflect.Constructor;
 import org.cougaar.core.relay.*;
 import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.mts.MessageAttributes;
+import org.cougaar.core.mts.SimpleMessageAttributes;
+import org.cougaar.core.mts.MessageUtils;
 import org.cougaar.core.util.UID;
 import org.cougaar.core.util.XMLizable;
 import org.cougaar.core.util.XMLize;
@@ -57,14 +61,42 @@ public class Ping implements Relay.Source, Relay.Target, XMLizable, NotPersistab
               Object response) {
     this.uid = uid;
     this.source = source;
-    this.target = target;
     this.content = content;
     this.response = response;
 
-    this._targets = 
-     ((target != null) ?
-      Collections.singleton(target) :
-      Collections.EMPTY_SET);
+    if (target == null) {
+      this._targets = Collections.EMPTY_SET;
+      this.target = null;
+    } else {
+      MessageAddress addr = target;
+      MessageAttributes attrs = addr.getQosAttributes();
+      try {
+        if (attrs == null) {
+          Class[] classes = new Class[2];
+          classes[0] = MessageAttributes.class;
+          classes[1] = String.class;
+          Constructor x = addr.getClass().getConstructor(classes);
+          attrs = new SimpleMessageAttributes();
+          String addrStr = addr.getAddress();
+          Object[] args = new Object[2];
+          args[0] = attrs;
+          args[1] = addrStr;
+          addr = (MessageAddress)x.newInstance(args);
+        }
+        // a ping is acked and resent, but not sequenced
+        attrs.setAttribute(MessageUtils.MSG_TYPE, MessageUtils.MSG_TYPE_PING);
+        if (content instanceof PingContent) {
+          long timeout = ((PingContent)content).getTimeout();
+          if (timeout > 0) {
+            attrs.setAttribute(MessageUtils.SEND_TIMEOUT, new Integer((int)timeout));
+          }
+        }
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+      this.target = addr;
+      this._targets = Collections.singleton(addr);
+    }
   }
 
   // Unique Object implementation
@@ -155,6 +187,35 @@ public class Ping implements Relay.Source, Relay.Target, XMLizable, NotPersistab
   * Get the address of the Agent holding the Source copy of this Relay. 
   */
   public MessageAddress getSource() {
+    // Because message attributes are transient, I can't just put them
+    // on the source address on the source side, so I put them on when
+    // this method is called on the target side.
+    MessageAddress addr = source;
+    MessageAttributes attrs = addr.getQosAttributes();
+    if (attrs == null) {
+      try {
+        Class[] classes = new Class[2];
+        classes[0] = MessageAttributes.class;
+        classes[1] = String.class;
+        Constructor x = addr.getClass().getConstructor(classes);
+        attrs = new SimpleMessageAttributes();
+        String addrStr = addr.getAddress();
+        Object[] args = new Object[2];
+        args[0] = attrs;
+        args[1] = addrStr;
+        addr = (MessageAddress)x.newInstance(args);
+        // a ping is acked and resent, but not sequenced
+        attrs.setAttribute(MessageUtils.MSG_TYPE, MessageUtils.MSG_TYPE_PING);
+        if (content instanceof PingContent) {
+          long timeout = ((PingContent)content).getTimeout();
+          if (timeout > 0)
+            attrs.setAttribute(MessageUtils.SEND_TIMEOUT, new Integer((int)timeout));
+        }
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+    this.source = addr;
     return source;
   }
 

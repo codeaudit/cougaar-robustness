@@ -37,6 +37,10 @@ import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.blackboard.UniqueObjectSet;
 import org.cougaar.core.agent.service.alarm.Alarm;
 import org.cougaar.core.service.LoggingService;
+import org.cougaar.core.qos.metrics.Metric;
+import org.cougaar.core.qos.metrics.MetricsService;
+import org.cougaar.core.qos.metrics.Constants;
+import org.cougaar.core.component.ServiceBroker;
 
 /**
  * This Plugin receives HeartbeatRequests from the local Blackboard and
@@ -53,6 +57,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
   private Hashtable hbTable;
   private Hashtable reportTable;
   private SendHealthReportsAlarm nextAlarm = null;
+  private MetricsService metricsService;
   
   private class SendHealthReportsAlarm implements Alarm {
     private long detonate = -1;
@@ -194,6 +199,27 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
             MessageAddress target = (MessageAddress)targets.next();
             Date lastHbDate = (Date)hbTable.get(target);
             long lastHbTime = lastHbDate.getTime();
+            // check the MetricsService to see if some other
+            // message might have arrived in this timeframe from
+            // the same agent, proving that the agent is alive.
+            // if so, don't send report the heartbeat as late.
+            if (metricsService != null) {
+              Metric metric =  metricsService.getValue("Agent(" + 
+                                                       target.toString() + 
+                                                       ")" + 
+                                                       Constants.PATH_SEPR + 
+                                                       "LastHeard");
+              if (metric != null) { 
+                long lastHeardSecs = metric.longValue();
+                if (log.isDebugEnabled())
+                  log.debug("prepareHealthReports: " + lastHeardSecs + " secs since last message rec'd from " + target);
+                long lastHeardTime = now - (lastHeardSecs * 1000);
+                if (lastHeardTime > lastHbTime) lastHbTime = lastHeardTime;
+              } else {
+                if (log.isDebugEnabled()) {
+                  log.debug("prepareHealthReports:LastHeard metric returned null for agent " + target);}
+              }
+            }
             long outOfSpec = lastHbDue - lastHbTime;
             float thisPercentOutOfSpec =  ((float)outOfSpec / (float)hbFreq) * 100.0f;
             // send report if requester wants report whether in or out of spec
@@ -223,7 +249,10 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
   }
 
   protected void setupSubscriptions() {
-    log = (LoggingService) getServiceBroker().getService(this, LoggingService.class, null);
+    ServiceBroker sb = getServiceBroker();
+    log = (LoggingService)sb.getService(this, LoggingService.class, null);
+    metricsService = (MetricsService)sb.getService(this, MetricsService.class, null);
+    if (metricsService == null) {log.warn("setupSubscriptions: MetricsServics not found");}
     reqTable = new UniqueObjectSet();
     reqTable.makeSynchronized();
     hbTable = new Hashtable();
