@@ -36,9 +36,13 @@
 
 	<target name="create_cougaar_overlay">
 		<mkdir dir="staging/lib"/>
+		<mkdir dir="staging/doc/Robustness/objs/sensors"/>
 		<antcall target="delete"/>
 		<antcall target="jar"/>
 		<move file="${jar}" todir="staging/lib"/>
+		<copy todir="staging/doc/Robustness/objs/sensors/">
+			<fileset dir="doc"/>
+		</copy>
 		<zip zipfile="Robustness_objs_cougaar_overlay.zip" basedir="staging"/>
 		<delete dir="staging"/>
 	</target>
