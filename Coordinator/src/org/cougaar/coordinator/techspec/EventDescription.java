@@ -152,6 +152,14 @@ public class EventDescription implements NotPersistable {
     public void setTransitiveEffect(TransitiveEffectDescription transEffect) { this.transEffect = transEffect; }
     public TransitiveEffectDescription getTransitiveEffect() { return transEffect; }
 
-    
+    /** Equality is based upon event name, asset type and state dimension */
+    public boolean equals( Object o) {
+        
+        if (!(o instanceof EventDescription) ) { return false;}
+        EventDescription ed = (EventDescription)o;
+        
+        return (this.name.equals(ed.getName()) && this.affectsAssetType.equals(ed.getAffectedAssetType()) && this.affectsStateDimension.equals(ed.getAffectedStateDimension()) );
+        
+    }
     
 }
