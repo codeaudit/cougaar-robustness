@@ -5,10 +5,9 @@
 <AssetStateDimensions assetType="Agent">
 
   <StateDimension name="UnmediatedConnectionStatus" >
- 	<State name="OK" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" defaultStartState="TRUE" />
- 	<State name="Protocol_Failure" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
- 	<State name="Stationary_Partition" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
- 	<State name="Rolling_Partition" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
+ 	<State name="DirectPathExists" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" defaultStartState="TRUE" />
+ 	<State name="OnlyIndirectPathExists" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
+ 	<State name="NoPathExists" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
   </StateDimension>
 
   <StateDimension name="MediatedConnectionStatus" >
@@ -17,7 +16,7 @@
  	<State name="Fair" relativeMauCompleteness="0.7" relativeMauSecurity="0.7" />
  	<State name="Poor" relativeMauCompleteness="0.5" relativeMauSecurity="0.5" />
  	<State name="None" relativeMauCompleteness="0.3" relativeMauSecurity="0.3" />
- 	<State name="NoData" relativeMauCompleteness="0.5" relativeMauSecurity="0.5" />
+ 	<State name="NoData" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
   </StateDimension>
 
   <StateDimension name="MsgLogSetting" >

@@ -15,22 +15,17 @@
         <Diagnosis name="NoData" />
     </PotentialDiagnoses>
     <Diagnoses>
-        <WhenActualStateIs name="OK" >
+        <WhenActualStateIs name="DirectPathExists" >
             <WillDiagnoseAs name="Excellent" withProbability="0.98" />
             <WillDiagnoseAs name="Good" withProbability="0.01" />
             <WillDiagnoseAs name="NoData" withProbability="0.01" />
         </WhenActualStateIs >
-        <WhenActualStateIs name="Protocol_Failure" >
+        <WhenActualStateIs name="OnlyIndirectPathExists" >
             <WillDiagnoseAs name="Poor" withProbability="0.01" />
             <WillDiagnoseAs name="None" withProbability="0.98" />
             <WillDiagnoseAs name="NoData" withProbability="0.01" />
         </WhenActualStateIs >
-        <WhenActualStateIs name="Stationary_Partition" >
-            <WillDiagnoseAs name="Poor" withProbability="0.01" />
-            <WillDiagnoseAs name="None" withProbability="0.98" />
-            <WillDiagnoseAs name="NoData" withProbability="0.01" />
-        </WhenActualStateIs >
-        <WhenActualStateIs name="Rolling_Partition" >
+        <WhenActualStateIs name="NoPathExists" >
             <WillDiagnoseAs name="Poor" withProbability="0.01" />
             <WillDiagnoseAs name="None" withProbability="0.98" />
             <WillDiagnoseAs name="NoData" withProbability="0.01" />
@@ -49,22 +44,17 @@
         <Diagnosis name="NoData" />
     </PotentialDiagnoses>
     <Diagnoses>
-        <WhenActualStateIs name="OK" >
+        <WhenActualStateIs name="DirectPathExists" >
             <WillDiagnoseAs name="Excellent" withProbability="0.98" />
             <WillDiagnoseAs name="Good" withProbability="0.01" />
             <WillDiagnoseAs name="NoData" withProbability="0.01" />
         </WhenActualStateIs >
-        <WhenActualStateIs name="Protocol_Failure" >
+        <WhenActualStateIs name="OnlyIndirectPathExists" >
             <WillDiagnoseAs name="Poor" withProbability="0.01" />
             <WillDiagnoseAs name="None" withProbability="0.98" />
             <WillDiagnoseAs name="NoData" withProbability="0.01" />
         </WhenActualStateIs >
-        <WhenActualStateIs name="Stationary_Partition" >
-            <WillDiagnoseAs name="Poor" withProbability="0.01" />
-            <WillDiagnoseAs name="None" withProbability="0.98" />
-            <WillDiagnoseAs name="NoData" withProbability="0.01" />
-        </WhenActualStateIs >
-        <WhenActualStateIs name="Rolling_Partition" >
+        <WhenActualStateIs name="NoPathExists" >
             <WillDiagnoseAs name="Poor" withProbability="0.01" />
             <WillDiagnoseAs name="None" withProbability="0.98" />
             <WillDiagnoseAs name="NoData" withProbability="0.01" />
@@ -83,25 +73,20 @@
         <Diagnosis name="NoData" />
     </PotentialDiagnoses>
     <Diagnoses>
-        <WhenActualStateIs name="OK" >
-            <WillDiagnoseAs name="Excellent" withProbability="0.97" />
+        <WhenActualStateIs name="DirectPathExists" >
+            <WillDiagnoseAs name="Excellent" withProbability="0.98" />
             <WillDiagnoseAs name="Good" withProbability="0.01" />
             <WillDiagnoseAs name="NoData" withProbability="0.01" />
         </WhenActualStateIs >
-        <WhenActualStateIs name="Protocol_Failure" >
-            <WillDiagnoseAs name="Poor" withProbability="0.01" />
-            <WillDiagnoseAs name="None" withProbability="0.98" />
+        <WhenActualStateIs name="OnlyIndirectPathExists" >
+            <WillDiagnoseAs name="Excellent" withProbability="0.60" />
+	    <WillDiagnoseAs name="Good" withProbability="0.30" />
+            <WillDiagnoseAs name="Fair" withProbability="0.09" />
             <WillDiagnoseAs name="NoData" withProbability="0.01" />
         </WhenActualStateIs >
-        <WhenActualStateIs name="Stationary_Partition" >
+        <WhenActualStateIs name="NoPathExists" >
             <WillDiagnoseAs name="Poor" withProbability="0.01" />
             <WillDiagnoseAs name="None" withProbability="0.98" />
-            <WillDiagnoseAs name="NoData" withProbability="0.01" />
-        </WhenActualStateIs >
-        <WhenActualStateIs name="Rolling_Partition" >
-            <WillDiagnoseAs name="Excellent" withProbability="0.40" />
-	    <WillDiagnoseAs name="Good" withProbability="0.40" />
-            <WillDiagnoseAs name="Fair" withProbability="0.19" />
             <WillDiagnoseAs name="NoData" withProbability="0.01" />
         </WhenActualStateIs >
     </Diagnoses>
