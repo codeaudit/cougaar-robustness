@@ -41,6 +41,7 @@ import org.cougaar.util.UnaryPredicate;
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.housekeeping.IndexKey;
 import org.cougaar.core.persist.NotPersistable;
+import java.util.Iterator;
 
 public class ActionIndex implements NotPersistable {
 
@@ -68,8 +69,15 @@ public class ActionIndex implements NotPersistable {
     }
     
     protected ActionsWrapper findAction(AssetID assetID, String actuatorType) {
-        Hashtable c = (Hashtable) findActionCollection(assetID);
-        return (ActionsWrapper) c.get(actuatorType);
+        Collection c = findActionCollection(assetID);
+        if (c==null) return null;
+	Iterator iter = c.iterator();
+	while (iter.hasNext()) {
+            ActionsWrapper aw = (ActionsWrapper) iter.next();
+            Action a = aw.getAction();
+            if (aw.getAssetID().equals(assetID)) return aw;
+        }
+        return null;
     }
 
     // returns a Collection of ActionWrapper(s)

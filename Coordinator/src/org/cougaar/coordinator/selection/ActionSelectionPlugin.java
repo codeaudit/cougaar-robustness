@@ -340,42 +340,48 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 
                     // special code to activate/deactivate RMIAction in tandem with SecurityDefenseAction - a special case for ACUC #2B
                     if (thisAction.getClass().getName().equals("org.cougaar.core.security.coordinator.ThreatConAction")) {
-                        Action rmiAction = findAction(thisAction.getAssetID(), "org.cougaar.robustness.dos.coordinator.RMIAction").getAction();
-                        if (proposedVariant.getVariantName().equals("High")) {
-                            String rmiVariantName = "Disabled";
-                            VariantEvaluation rmiVariant = getRmiVariantEvaluation(cbe, rmiAction, rmiVariantName);
-                            if (rmiVariant != null && rmiAction != null && rmiAction.getValuesOffered().contains(rmiVariantName)) {
-                                if (logger.isInfoEnabled()) logger.info("Selected: " + rmiVariant.toString() + "for: " + rmiAction.getAssetID().toString());
-                                if (eventService.isEventEnabled()) eventService.event(agentId + " selected " + rmiAction.getClass().getName() + ":" + rmiVariant.getVariantName() + " for " + rmiAction.getAssetID());
-                                Set rmiPermittedVariants = new HashSet();  
-                                if ((!rmiAction.getPermittedValues().contains(rmiVariant.getVariantName()))
+                        ActionsWrapper aw = findAction(thisAction.getAssetID(), "org.cougaar.robustness.dos.coordinator.RMIAction");
+                        if (aw != null) {
+                            Action rmiAction = aw.getAction();
+                            if (proposedVariant.getVariantName().equals("High")) {
+                                String rmiVariantName = "Disabled";
+                                VariantEvaluation rmiVariant = getRmiVariantEvaluation(cbe, rmiAction, rmiVariantName);
+                                if (rmiVariant != null && rmiAction != null && rmiAction.getValuesOffered().contains(rmiVariantName)) {
+                                    if (logger.isInfoEnabled()) logger.info("Selected: " + rmiVariant.toString() + "for: " + rmiAction.getAssetID().toString());
+                                    if (eventService.isEventEnabled()) eventService.event(agentId + " selected " + rmiAction.getClass().getName() + ":" + rmiVariant.getVariantName() + " for " + rmiAction.getAssetID());
+                                    Set rmiPermittedVariants = new HashSet();  
+                                    if ((!rmiAction.getPermittedValues().contains(rmiVariant.getVariantName()))
                                         && (thisAction.getValue() == null  
                                             || !thisAction.getValue().getAction().equals(proposedVariant.getVariantName())
                                             || !thisAction.getValue().isActive())) {
-                                    permittedVariants.add(proposedVariant);
-                                    publishAdd(new SelectedAction(thisAction, permittedVariants, Math.round(knob.getPatienceFactor()*proposedVariant.getExpectedTransitionTime()), cbe));
-                                    if (logger.isInfoEnabled()) logger.info("Enabling: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString());
+                                        permittedVariants.add(proposedVariant);
+                                        publishAdd(new SelectedAction(thisAction, permittedVariants, Math.round(knob.getPatienceFactor()*proposedVariant.getExpectedTransitionTime()), cbe));
+                                        if (logger.isInfoEnabled()) logger.info("Enabling: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString());
+                                    }
                                 }
-                             }
-                             else if (eventService.isEventEnabled()) eventService.event(rmiVariantName + " was not offered");
+                                else if (eventService.isEventEnabled()) eventService.event(rmiVariantName + " was not offered");
+                            }
+                            if(proposedVariant.getVariantName().equals("Low")) {
+                                String rmiVariantName = "Enabled";
+                                VariantEvaluation rmiVariant = getRmiVariantEvaluation(cbe, rmiAction, rmiVariantName);
+                                if (rmiVariant != null && rmiAction != null && rmiAction.getValuesOffered().contains(rmiVariantName)) {
+                                    if (logger.isInfoEnabled()) logger.info("Selected: " + rmiVariant.toString() + "for: " + rmiAction.getAssetID().toString());
+                                    if (eventService.isEventEnabled()) eventService.event(agentId + " selected " + rmiAction.getClass().getName() + ":" + rmiVariant.getVariantName() + " for " + rmiAction.getAssetID().toString());
+                                    Set rmiPermittedVariants = new HashSet();  
+                                    if ((!rmiAction.getPermittedValues().contains(rmiVariant.getVariantName()))
+                                        && (thisAction.getValue() == null  
+                                            || !thisAction.getValue().getAction().equals(proposedVariant.getVariantName())
+                                            || !thisAction.getValue().isActive())) {
+                                        permittedVariants.add(proposedVariant);
+                                        publishAdd(new SelectedAction(thisAction, permittedVariants, Math.round(knob.getPatienceFactor()*proposedVariant.getExpectedTransitionTime()), cbe));
+                                        if (logger.isInfoEnabled()) logger.info("Enabling: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString());
+                                    }
+                                 }
+                                 else if (eventService.isEventEnabled()) eventService.event(rmiVariantName + " was not offered");
+                            }
                         }
-                        if(proposedVariant.getVariantName().equals("Low")) {
-                            String rmiVariantName = "Enabled";
-                            VariantEvaluation rmiVariant = getRmiVariantEvaluation(cbe, rmiAction, rmiVariantName);
-                            if (rmiVariant != null && rmiAction != null && rmiAction.getValuesOffered().contains(rmiVariantName)) {
-                                if (logger.isInfoEnabled()) logger.info("Selected: " + rmiVariant.toString() + "for: " + rmiAction.getAssetID().toString());
-                                if (eventService.isEventEnabled()) eventService.event(agentId + " selected " + rmiAction.getClass().getName() + ":" + rmiVariant.getVariantName() + " for " + rmiAction.getAssetID().toString());
-                                Set rmiPermittedVariants = new HashSet();  
-                                if ((!rmiAction.getPermittedValues().contains(rmiVariant.getVariantName()))
-                                        && (thisAction.getValue() == null  
-                                            || !thisAction.getValue().getAction().equals(proposedVariant.getVariantName())
-                                            || !thisAction.getValue().isActive())) {
-                                    permittedVariants.add(proposedVariant);
-                                    publishAdd(new SelectedAction(thisAction, permittedVariants, Math.round(knob.getPatienceFactor()*proposedVariant.getExpectedTransitionTime()), cbe));
-                                    if (logger.isInfoEnabled()) logger.info("Enabling: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString());
-                                }
-                             }
-                             else if (eventService.isEventEnabled()) eventService.event(rmiVariantName + " was not offered");
+                        else {
+                            if (logger.isInfoEnabled("RMIAction not found");
                         }
                     }
                     
