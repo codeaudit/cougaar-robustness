@@ -25,7 +25,8 @@ rtta = "org.cougaar.core.mts.RTTAspect"
 mna  = "org.cougaar.core.mts.MessageNumberingAspect"
 moa  = "org.cougaar.core.mts.MessageOrderingAspect"
 
-nsta = "org.cougaar.core.mts.NameSupportTimeoutAspect" # not sure about this aspect's position or necessity
+# not sure about this aspect's position or necessity
+nsta = "org.cougaar.core.mts.NameSupportTimeoutAspect" 
 
 aspects = [rsca, sta, sa, rsta, msha, maa, rtta, mna, moa]
 
@@ -48,10 +49,18 @@ society.each_node_agent do |node|
             c.insertionpoint = "Node.AgentManager.Agent.MessageTransport.Component"
         end
     }
-    node.add_component do |c|
-        c.classname = policy
-        c.insertionpoint = "Node.AgentManager.Agent.MessageTransport.Component"
-    end
+     
+    # There's a bug that keeps this from loading as a component.
+    #node.add_component do |c|
+    #    c.classname = policy
+    #    c.insertionpoint = "Node.AgentManager.Agent.MessageTransport.Component"
+    #end
+
+end
+
+society.each_node do |node|
+
+    node.override_parameter("-Dorg.cougaar.message.transport.policy", policy)
 
     # I don't think this is needed anymore, but I'm keeping it just in case.
     # need this for disconnected nodes
