@@ -42,7 +42,6 @@
 		<mkdir dir="staging/operator"/>		
 		<mkdir dir="staging/coordinator"/>		
                 <mkdir dir="staging/coordinator/examples"/>
-		<mkdir dir="staging/coordinator/test"/>
 		<mkdir dir="staging/csmart"/>
 		<mkdir dir="staging/sys"/>
 		<antcall target="delete"/>
@@ -58,9 +57,6 @@
 		</copy>	
 		<copy todir="staging/coordinator/examples/">
 			<fileset dir="examples/"/>
-		</copy>	
-		<copy todir="staging/coordinator/test/">
-			<fileset dir="test/"/>
 		</copy>	
                 <copy todir="staging/csmart/">
 			<fileset dir="csmart/"/>
