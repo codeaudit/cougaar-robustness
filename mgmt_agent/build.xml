@@ -61,6 +61,9 @@
         <fileset dir="./lib">
           <include name="**/*.jar"/>
         </fileset>
+        <fileset dir="./sys">
+          <include name="**/*.jar"/>
+        </fileset>
         <fileset dir="${cougaar}/lib">
           <include name="**/*.jar"/>
         </fileset>
