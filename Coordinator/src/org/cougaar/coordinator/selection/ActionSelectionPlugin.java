@@ -70,7 +70,14 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 
   private Hashtable alarmTable = new Hashtable();
   private ActionSelectionKnob knob;
+
+  private static final boolean leashOnRestart;
   
+  static
+  {
+     String s = "org.cougaar.coordinator.leashOnRestart";
+     leashOnRestart = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
+  }
   
   // Defaults for the Knob - may be overridden by parameters or the Knob may be set by policy
   int maxActions = 1;
@@ -84,7 +91,9 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
   public void load() {
       super.load();
       getPluginParams();
-      if (!blackboard.didRehydrate()) initObjects(); 
+      if (!blackboard.didRehydrate()) {
+        initObjects(); 
+      }
       cancelTimer();
   }
   
@@ -149,7 +158,19 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 
         Iterator iter;    
   
-      // Get the ActionSelectionKnob for current settings
+        // leash the defenses on rehydration if leashOnRestart is TRUE, otherwise leave as-is - dlw - 9/7/04
+        if (blackboard.didRehydrate() && leashOnRestart) {
+            iter = knobSubscription.iterator();    
+            if (iter.hasNext()) {
+                ActionSelectionKnob knob = (ActionSelectionKnob) iter.next();
+                knob.leash();
+                blackboard.publishChange(knob);
+                if (logger.isDebugEnabled()) 
+                    logger.debug("rehydrate detected  && leashOnRestart==true - enabling ThrashingSuppression");       
+            }
+        }
+      
+    // Get the ActionSelectionKnob for current settings
         iter = knobSubscription.iterator();
         if (iter.hasNext()) 
         {        
