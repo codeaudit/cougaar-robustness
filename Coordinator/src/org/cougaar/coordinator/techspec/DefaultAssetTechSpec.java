@@ -62,9 +62,8 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
     
     /** Creates a new instance of DefaultAssetTechSpec */
     public DefaultAssetTechSpec(AssetTechSpecInterface host, AssetTechSpecInterface node, String assetName, AssetType type, UID uid)  {
-
+      synchronized(allAssets) {
         allAssets.add(this);
-        
         this.host = host;
         this.node = node;
         this.assetType = type;
@@ -74,7 +73,7 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
         this.assetID = new AssetID(assetName, type);
         properties = new Vector();
         superiors = new Hashtable();
-        
+      }  
     }
     
     
@@ -98,13 +97,13 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
      * @return the DefaultAssetTechSpec for the asset having the given assetID
      */
     public static DefaultAssetTechSpec findAssetByID(AssetID assetID) {
-        
+      synchronized(allAssets) {
         DefaultAssetTechSpec asset = null;
         Iterator iter = allAssets.iterator();
         while (iter.hasNext()) {
             asset = (DefaultAssetTechSpec)iter.next();
             if (asset.getAssetID() == null) {
-                Logging.getLogger(DefaultAssetTechSpec.class.getName()).error("----------------------------------------------->>>Asset ID is null for Asset = "+asset.getName());
+                Logging.getLogger(DefaultAssetTechSpec.class.getName()).error("Asset ID is null for Asset = "+asset.getName());
                 continue;
             }
             if (asset.getAssetID().equals(assetID)) {
@@ -112,6 +111,7 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
             }
         }
         return null; //not found
+      }
     }
             
     
@@ -238,7 +238,6 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
      * @return Set the new host & node for this agent
      */
     public void setNewLocation(AssetTechSpecInterface host, AssetTechSpecInterface node) {
-        
         this.host = host;
         this.node = node;
     }
@@ -248,10 +247,9 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
      * @return the AssetTechSpecInterfaces of the assets which are the <b>direct</b> subordinates of this asset
      */
     public Vector getSubordinates(AssetRole role) {
-        
+      synchronized(allAssets) {
         Vector found = new Vector();        
         AssetTechSpecInterface asset;
-        
         Iterator iter = allAssets.iterator();
         while ( iter.hasNext() ) { 
             asset = (AssetTechSpecInterface)iter.next();
@@ -259,8 +257,8 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
                 found.addElement(asset);
             }
         }
-    
         return found;
+      }
     }
     
     /**
@@ -284,10 +282,9 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
      * @return the AssetTechSpecInterfaces of the assets which are the <b>direct</b> subordinates of this asset
      */
     public Vector getAgentsInHost(AssetTechSpecInterface host) {
-        
+      synchronized(allAssets) {
         Vector found = new Vector();        
         AssetTechSpecInterface asset;
-        
         Iterator iter = allAssets.iterator();
         while ( iter.hasNext() ) { 
             asset = (AssetTechSpecInterface)iter.next();
@@ -295,27 +292,24 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
                 found.addElement(asset);
             }
         }
-    
         return found;
+      }
     }
 
     /**
      * @return the AssetTechSpecInterfaces of the ALL agent assets which have one of the specified hosts
      */
     public static Vector getAgentsInHosts(Vector hostsV) {
-        
+      synchronized(allAssets) {
         Vector found = new Vector();        
         AssetTechSpecInterface asset;
         AssetTechSpecInterface host;
-        
         if (hostsV == null || hostsV.size() == 0) {
             return found;
         }
-        
         Iterator hosts = hostsV.iterator();
         while ( hosts.hasNext() ) { 
             host = (AssetTechSpecInterface)hosts.next();
-        
             Iterator assets = allAssets.iterator();
             while ( assets.hasNext() ) { 
                 asset = (AssetTechSpecInterface)assets.next();
@@ -323,28 +317,25 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
                     found.addElement(asset);
                 }
             }
-
         }
         return found;
+      }
     }
     
     /**
      * @return the AssetTechSpecInterfaces of the ALL agent assets which have one of the specified nodes
      */
     public static Vector getAgentsInNodes(Vector nodesV) {
-        
+      synchronized(allAssets) {
         Vector found = new Vector();        
         AssetTechSpecInterface asset;
         AssetTechSpecInterface node;
-        
         if (nodesV == null || nodesV.size() == 0) {
             return found;
         }
-        
         Iterator nodes = nodesV.iterator();
         while ( nodes.hasNext() ) { 
             node = (AssetTechSpecInterface)nodes.next();
-        
             Iterator assets = allAssets.iterator();
             while ( assets.hasNext() ) { 
                 asset = (AssetTechSpecInterface)assets.next();
@@ -352,28 +343,25 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
                     found.addElement(asset);
                 }
             }
-
         }
         return found;
+      }
     }
 
     /**
      * @return the AssetTechSpecInterfaces of the ALL node assets which have one of the specified hosts
      */
     public static Vector getNodesInHosts(Vector hostsV) {
-        
+      synchronized(allAssets) {
         Vector found = new Vector();        
         AssetTechSpecInterface asset;
         AssetTechSpecInterface host;
-        
         if (hostsV == null || hostsV.size() == 0) {
             return found;
         }
-        
         Iterator hosts = hostsV.iterator();
         while ( hosts.hasNext() ) { 
             host = (AssetTechSpecInterface)hosts.next();
-        
             Iterator assets = allAssets.iterator();
             while ( assets.hasNext() ) { 
                 asset = (AssetTechSpecInterface)assets.next();
@@ -381,9 +369,9 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
                     found.addElement(asset);
                 }
             }
-
         }
         return found;
+      }
     }
     
 }
