@@ -373,7 +373,7 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
     return createAuditData(tag, msg, sendp, null, null);
   }
 
-  static int test =1;
+  //static int test =1;
   /*
    * @param tag The overall XML tag used to bound this event data
    * @param msg The attributed message
@@ -389,25 +389,26 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
 
 	String to   = null;
 
-String t="";        
+//String t="";        
 	if (sendp) { //Get Sender data
            to = toAgent.toString();
-t=to;           
+//t=to;           
 	} else { //This is an incoming msg - Grab node/incarnation # for sender from msg
             try {
                 AgentID agent = AgentID.getAgentID (this, this.getServiceBroker(), toAgent);
                 to = agent.getNodeName() + "." + agent.getAgentName() + "." + agent.getAgentIncarnation();          
-t=agent.getAgentName() ;                
+//t=agent.getAgentName() ;                
             } catch (NameLookupException nle) {
                 to = "NameLookupException."+toAgent;
             } catch (Exception e) {
                 to = e.toString()+toAgent;
             }
 	}
-        
-        if (test == 20) { to = "NULL."+t+".NULL"; }
-        if (test == 40) { to = "NameLookupException."+t; }
-        test++;
+  
+//Self induced errors to test message resolution in TrafficAuditor
+//        if (test == 20) { to = "NULL."+t+".NULL"; }
+//        if (test == 40) { to = "NameLookupException."+t; }
+//        test++;
 
         String from = (String)msg.getAttribute(Constants.AUDIT_ATTRIBUTE_FROM_NODE) + "." + 
  	  fromAgent + "." + 

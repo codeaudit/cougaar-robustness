@@ -68,6 +68,9 @@ public class TrafficAuditor {
     //Config File name
     String configFile = null;
     
+    //Command-line flag
+    static boolean autoResolve = false;
+    
     //File to dump errors to 
     File outFile = null;
     public void setOutFile(File _o) { outFile = _o; }
@@ -129,7 +132,8 @@ public class TrafficAuditor {
         "\n                              (disabled if socket is used)" +
         "\n    -port <socketPort>   - Activate socket-based data gathering on this port " +
         "\n                              (-logs & -out options ignored)" +
-        "\n    -logLevel <level>    - Logging level to use for debugging" ;
+        "\n    -logLevel <level>    - Logging level to use for debugging" +
+        "\n    -autoResolve         - Auto resolve problem msgs if only one matching agent name is found.";
 
     /*****************************************************************************
      *
@@ -178,6 +182,9 @@ public class TrafficAuditor {
             }             
             else if (args[i].equalsIgnoreCase("-wrap") && i<(args.length-1)) {
                 wrapOutput = true;
+            } 
+            else if (args[i].equalsIgnoreCase("-autoResolve") && i<(args.length-1)) {
+                autoResolve = true;
             } 
             else if (args[i].equalsIgnoreCase("-out") && i<(args.length-1)) {
                 String out = args[++i];
@@ -261,6 +268,9 @@ public class TrafficAuditor {
 
         //Init ProblemMessageManager
         pmm = new ProblemMessageManager(this, agentMgmt, agentSummaryGUI);
+        if (autoResolve) {
+            pmm.setAutoResolve(true);
+        }
         
         //init queue processing
         qProcessor = new EventQueueProcessor(eq, logPointMgmt, agentMgmt, pmm);
