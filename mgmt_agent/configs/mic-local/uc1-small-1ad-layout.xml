@@ -7,7 +7,7 @@
     </node>
   </host>
   <host name='HOST2'>
-    <facet enclave='FWD'/>
+    <facet enclave='SMALL'/>
     <node name='FWD-NODE'>
       <agent name='1-35-ARBN'/>
       <agent name='1-6-INFBN'/>
@@ -26,7 +26,7 @@
     </node>
   </host>
   <host name='HOST3'>
-    <facet enclave='REAR'/>
+    <facet enclave='SMALL'/>
     <node name='REAR-NODE'>
       <agent name='1-27-FABN'/>
       <agent name='110-POL-SUPPLYCO'/>
@@ -70,7 +70,7 @@
     </node>
   </host>
   <host name='HOST4'>
-    <facet enclave='TRANS'/>
+    <facet enclave='SMALL'/>
     <node name='TRANS-NODE'>
       <agent name='TRANSCOM'/>
       <agent name='CONUSGround'/>
