@@ -29,6 +29,7 @@ public interface RestartManagerConstants {
   public static final String AUTO_LOAD_BALANCE_ATTRIBUTE      = "AUTO_LOAD_BALANCE";
 
   public static final String PING_TIMEOUT_ATTRIBUTE           = "PING_TIMEOUT";
+  public static final String MINIMUM_PING_TIMEOUT_ATTRIBUTE   = "MINIMUM_PING_TIMEOUT";
 
   public static final String HEARTBEAT_REQUEST_TIMEOUT_ATTRIBUTE = "HEARTBEAT_REQUEST_TIMEOUT";
   public static final String HEARTBEAT_FREQUENCY_ATTRIBUTE       = "HEARTBEAT_FREQUENCY";

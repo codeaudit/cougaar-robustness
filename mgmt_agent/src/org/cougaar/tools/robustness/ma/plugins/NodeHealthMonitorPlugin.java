@@ -222,7 +222,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
         logger.info("Changing update interval: old=" + updateInterval + " new=" + tmp);
         updateInterval = tmp;
       }
-      wakeAlarm = new WakeAlarm(now() + getLongAttribute(STATUS_UPDATE_ATTRIBUTE, updateInterval));
+      wakeAlarm = new WakeAlarm(now() + getLongAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE, updateInterval));
       alarmService.addRealTimeAlarm(wakeAlarm);
     }
 
@@ -304,8 +304,9 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
                                     Community.AGENTS_ONLY);
     for (Iterator it1 = entities.iterator(); it1.hasNext(); ) {
       Entity entity = (Entity) it1.next();
+      targets.add(MessageAddress.getMessageAddress(entity.getName()));
       targets.add(getMessageAddressWithTimeout(entity.getName(), updateInterval));
-    }
+     }
     return targets;
   }
 
@@ -330,7 +331,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
       long interval = model.getLongAttribute(CURRENT_STATUS_UPDATE_ATTRIBUTE);
       if (interval <= 0) { // Current status update interval not defined yet
         // Get default interval
-        long newInterval = getLongAttribute(STATUS_UPDATE_ATTRIBUTE, updateInterval);
+        long newInterval = getLongAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE, updateInterval);
         if (newInterval > 0) {
           // Add to community
           logger.debug("Setting update interval attribute: interval=" + newInterval);

@@ -21,7 +21,6 @@ import org.cougaar.tools.robustness.ma.CommunityStatusModel;
 import org.cougaar.tools.robustness.ma.controllers.*;
 import org.cougaar.tools.robustness.ma.HostLossThreatAlertHandler;
 import org.cougaar.tools.robustness.ma.SecurityAlertHandler;
-import org.cougaar.tools.robustness.ma.util.DeconflictHelper;
 import org.cougaar.tools.robustness.ma.util.DeconflictListener;
 import org.cougaar.tools.robustness.ma.util.HeartbeatListener;
 import org.cougaar.tools.robustness.ma.util.LoadBalancer;
@@ -34,13 +33,12 @@ import org.cougaar.tools.robustness.ma.util.PingListener;
 import org.cougaar.tools.robustness.ma.util.RestartHelper;
 import org.cougaar.tools.robustness.ma.util.RestartListener;
 import org.cougaar.tools.robustness.ma.util.RestartDestinationLocator;
-
-import org.cougaar.tools.robustness.threatalert.*;
+import org.cougaar.tools.robustness.ma.util.StatCalc;
+import org.cougaar.tools.robustness.ma.util.NodeLatencyStatistics;
 
 import org.cougaar.core.component.BindingSite;
-import org.cougaar.core.component.ServiceBroker;
-import org.cougaar.core.component.ServiceAvailableListener;
-import org.cougaar.core.component.ServiceAvailableEvent;
+import org.cougaar.core.service.community.CommunityResponseListener;
+import org.cougaar.core.service.community.CommunityResponse;
 
 import org.cougaar.core.mts.MessageAddress;
 
@@ -66,55 +64,23 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   /**
    * State Controller: INITIAL
    * <pre>
-   *   Entry:             Agent found in community descriptor
-   *   Actions performed: None
-   *   Next state:        LOCATED after found by a NodeHealthMonitorPlugin
-   *                      HEALTH_CHECK if expired
-   * </pre>
-   */
-  class InitialStateController extends StateControllerBase {
-    public void enter(String name) {
-      if (!monitorStartup() && !startupCompleted) {
-        setExpiration(name, NEVER);
-      } else if (doInitialPing() &&
-        (isLeader(thisAgent) || isNode(name) || name.equals(preferredLeader()))) {
-        doPing(name, DefaultRobustnessController.ACTIVE, DEAD);
-      }
-    }
-
-    public void expired(String name) {
-      logger.debug("Expired Status:" + " agent=" + name + " state=INITIAL" +
-                  " expiration=" + model.getStateExpiration(name));
-      newState(name, HEALTH_CHECK);
-    }
-
-  }
-
-  /**
-   * State Controller: LOCATED
-   * <pre>
    *   Entry:             Agent discovered by a NodeHealthMonitorPlugin
    *   Actions performed: Start heartbeats
    *   Next state:        ACTIVE if heartbeats successfully started
-   *                      HEALTH_CHECK if status expired
+   *                      DEAD if heartbeats can't be started
    * </pre>
    */
-  class LocatedStateController extends    StateControllerBase
+  class InitialStateController extends    StateControllerBase
                                implements HeartbeatListener {
     { addHeartbeatListener(this); }
     public void enter(String name) {
       if (isLocal(name)) {
-        if (isAgent(name)) {
-          startHeartbeats(name);
+        if (name.equals(thisAgent)) {
           newState(name, DefaultRobustnessController.ACTIVE);
-        } else { // is node
-          model.setCurrentState(name, DefaultRobustnessController.ACTIVE, NEVER);
+        } else {
+          startHeartbeats(name);
         }
       }
-    }
-    public void expired(String name) {
-      logger.debug("Expired Status:" + " agent=" + name + " state=LOCATED");
-      if (isLocal(name)) newState(name, HEALTH_CHECK);
     }
     public void heartbeatStarted(String name) {
       logger.debug("Heartbeats started: agent=" + name);
@@ -124,11 +90,17 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       logger.debug("Heartbeats stopped: agent=" + name);
     }
     public void heartbeatFailure(String name) {
-      if (getState(name) == DefaultRobustnessController.ACTIVE &&
-          isLocal(name)) {
-        logger.info("Heartbeat timeout: agent=" + name);
-        //newState(name, HEALTH_CHECK);
-        doPing(name, DefaultRobustnessController.ACTIVE, DEAD);
+      logger.info("Heartbeat timeout: agent=" + name +
+                  " state=" + stateName(getState(name)));
+      if (isLocal(name)) {
+        switch (getState(name)) {
+          case DefaultRobustnessController.ACTIVE:
+            doPing(name, DefaultRobustnessController.ACTIVE, DEAD);
+            break;
+          default: // Retry
+            startHeartbeats(name);
+            break;
+        }
       }
     }
   }
@@ -136,36 +108,76 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   /**
    * State Controller: ACTIVE
    * <pre>
-   *   Entry:             Agent confirmed to be alive (via heartbeat or ping)
+   *   Entry:             Agent determined to be alive (via heartbeat or
+   *                      node status update)
    *   Actions performed: None
-   *   Next state:        HEALTH_CHECK on expired status or failed heartbeat
+   *   Next state:        DEAD on expired status
    * </pre>
    */
   class ActiveStateController extends StateControllerBase {
     public void enter(String name) {
-      logger.debug("New state: agent=" + name + " state=ACTIVE");
       if (isLeader(thisAgent)) {
         //for deconflict: the applicability condition of one active agent should
         //be true and the defense op mode should be disabled.
         if(getDeconflictHelper() != null) {
-          if(getDeconflictHelper().isDefenseApplicable(name))
+          if(getDeconflictHelper().isDefenseApplicable(name)) {
             getDeconflictHelper().changeApplicabilityCondition(name);
+          }
           getDeconflictHelper().opmodeDisabled(name);
         }
         checkCommunityReady();
       }
-      if (isLocal(name)) {
-        setExpiration(name, NEVER);  // Set expiration to NEVER for local agents,
+      if (isAgent(name) || thisAgent.equals(name)) {
+        setExpiration(name, NEVER);  // Set expiration to NEVER for all agents,
                                      // let heartbeatListener maintain status
+      } else if (isNode(name)) {
+        setExpiration(name, (int)getNodeStatusExpiration(name));
       }
     }
     public void expired(String name) {
-      //logger.info("Expired Status:" + " agent=" + name + " state=ACTIVE");
+      logger.info("Expired Status:" + " agent=" + name + " state=ACTIVE");
       if ((isLocal(name) || isNode(name)) ||
           (thisAgent.equals(preferredLeader()) && getState(getLocation(name)) == DEAD) ||
           isLeader(name)) {
-        event("Status expiration: agent=" + name);
-        newState(name, HEALTH_CHECK);
+        newState(name, DEAD);
+      }
+    }
+  }
+
+  /**
+   * State Controller: DECONFLICT
+   * <pre>
+   *   Entry:             Agent determined to be DEAD or the defense op mode
+   *                      is enabled.
+   *   Actions performed: RESTART a dead agent when defense is enabled
+   *   Next state:        ACTIVE if status updated while defense is disabled
+   *                      RESTART if status not changed while defense disabled
+   * </pre>
+   */
+  class DeconflictStateController extends    StateControllerBase
+                                  implements DeconflictListener {
+    { addDeconflictListener(this); }
+    public void enter(String name) {
+      if (isDeconflictionEnabled()) {
+        if (!getDeconflictHelper().isDefenseApplicable(name)) {
+          getDeconflictHelper().changeApplicabilityCondition(name);
+        }
+        if (getDeconflictHelper().isOpEnabled(name)) {
+          newState(name, RESTART);
+        }
+      } else {
+        newState(name, RESTART);
+      }
+    }
+
+    public void defenseOpModeEnabled(String name) {
+      if (isDeconflictionEnabled() &&
+          !getDeconflictHelper().isDefenseApplicable(name)) {
+        getDeconflictHelper().changeApplicabilityCondition(name);
+      }
+      // Verify that agent state hasn't changed while defense was disabled
+      if (getState(name) != DefaultRobustnessController.ACTIVE) {
+        newState(name, RESTART);
       }
     }
   }
@@ -181,7 +193,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   class HealthCheckStateController extends StateControllerBase {
     public void enter(String name) {
-      logger.debug("New state: agent=" + name + " state=HEALTH_CHECK");
       if (isNode(name) ||
           thisAgent.equals(preferredLeader()) ||
           isLeader(name)) {
@@ -199,57 +210,41 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    * </pre>
    */
   class DeadStateController extends StateControllerBase {
-    public void enter(String name) {
-      //int priorState = model.getpriorState(name);
-      //if (priorState == DECONFLICT || priorState == RESTART) {
-      //  newState(name, priorState);
-      //} else {
-      logger.info("New state (DEAD):" +
-                  " name=" + name +
-                  " preferredLeader=" + thisAgent.equals(preferredLeader()) +
-                  " isAgent=" + isAgent(name));
+    public void enter(final String name) {
+      setExpiration(name, NEVER);
       communityReady = false; // For ACME Community Ready Events
-      if (isAgent(name) && thisAgent.equals(preferredLeader())) {
-        // Interface point for Deconfliction
-        // If Ok'd by Deconflictor set state to RESTART
-        if(isDeconflictionEnabled()) {
-          newState(name, DECONFLICT);
-        } else {
+      if (isAgent(name)) {
+        if (thisAgent.equals(preferredLeader()) ||
+          name.equals(preferredLeader()) && isLeader(thisAgent)) {
           newState(name, RESTART);
         }
-      } else if (isNode(name) && thisAgent.equals(preferredLeader())) {
-        removeFromCommunity(name);
-        setExpiration(name, NEVER);
+      } else if (isNode(name)) {
         deadNodes.add(name);
-        String agentsOnDeadNode[] = model.entitiesAtLocation(name, model.AGENT);
-        for (int i = 0; i < agentsOnDeadNode.length; i++) {
-          newState(agentsOnDeadNode[i], HEALTH_CHECK);
+        if (!useGlobalSolver()) {
+          newState(agentsOnNode(name), DEAD);
+        } else {
+          if (isLeader(thisAgent)) {
+            getLayout(new LoadBalancerListener() {
+              public void layoutReady(Map layout) {
+                if (getState(name) == DEAD) {
+                  logger.info("layout from EN4J: " + layout);
+                  RestartDestinationLocator.setPreferredRestartLocations(layout);
+                  newState(agentsOnNode(name), DEAD);
+                  if (thisAgent.equals(preferredLeader())) { removeFromCommunity(name); }
+                } else { // Abort, node no longer classified as DEAD
+                  deadNodes.remove(name);
+                  if (logger.isInfoEnabled()) {
+                    logger.info("Restart aborted: node=" + name +
+                                " state=" + stateName(getState(name)));
+                  }
+                }
+              }
+            });
+          }
         }
-        if (thisAgent.equals(preferredLeader()) && useGlobalSolver()) {
-          LoadBalancerListener lbl = new LoadBalancerListener() {
-            public void layoutReady(Map layout) {
-              logger.info("layout from EN4J: " + layout);
-              RestartDestinationLocator.setPreferredRestartLocations(layout);
-            }
-          };
-          getLayout(lbl);
-        }
-      } else if (name.equals(preferredLeader()) && isLeader(thisAgent)) {
-        newState(name, RESTART);
       }
       if (isLocal(name)) {
         stopHeartbeats(name);
-      }
-    }
-
-    public void expired(String name) {
-      logger.debug("Expired Status:" + " agent=" + name + " state=DEAD");
-      if (thisAgent.equals(preferredLeader())) {
-        if(getDeconflictHelper() != null) {
-          newState(name, DECONFLICT);
-        } else {
-          newState(name, RESTART);
-        }
       }
     }
   }
@@ -268,27 +263,27 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   class RestartStateController extends StateControllerBase implements RestartListener {
     { addRestartListener(this); }
     public void enter(String name) {
-      if (isAgent(name) && canRestartAgent(name)) {
-        String dest = RestartDestinationLocator.getRestartLocation(name, getExcludedNodes());
-        logger.info("Restarting agent:" +
-                    " agent=" + name +
-                    " origin=" + getLocation(name) +
-                    " dest=" + dest);
-        if (name != null && dest != null) {
-          restartAgent(name, dest);
-          RestartDestinationLocator.restartOneAgent(dest);
-        } else {
-          logger.error("Invalid restart parameter: " +
-                       " agent=" + name +
-                       " dest=" + dest);
-          // If no valid location is returned, restart on this node
-          if (name != null) {
-            dest = getLocation(thisAgent);
+        if (isAgent(name) && canRestartAgent(name)) {
+          String dest = RestartDestinationLocator.getRestartLocation(name, getExcludedNodes());
+          logger.info("Restarting agent:" +
+                      " agent=" + name +
+                      " origin=" + getLocation(name) +
+                      " dest=" + dest);
+          if (name != null && dest != null) {
             restartAgent(name, dest);
             RestartDestinationLocator.restartOneAgent(dest);
+          } else {
+            logger.error("Invalid restart parameter: " +
+                         " agent=" + name +
+                         " dest=" + dest);
+            // If no valid location is returned, restart on this node
+            if (name != null) {
+              dest = getLocation(thisAgent);
+              restartAgent(name, dest);
+              RestartDestinationLocator.restartOneAgent(dest);
+            }
           }
         }
-      }
     }
 
     public void expired(String name) {
@@ -309,7 +304,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         RestartDestinationLocator.restartSuccess(name);
         logger.debug("Next Status:" + " agent=" + name + " state=INITIAL");
         //newState(name, DefaultRobustnessController.INITIAL);
-        model.setLocationAndState(name, thisAgent, LOCATED);
+        model.setLocationAndState(name, thisAgent, INITIAL);
       } else {
         event("Restart failed: agent=" + name + " location=" + dest +
               " community=" + community);
@@ -384,54 +379,16 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
   }
 
-  /**
-   * State Controller: DECONFLICT
-   * <pre>
-   *   Entry:             Agent determined to be DEAD or the defense op mode
-   *                      is enabled.
-   *   Actions performed: restart a dead agent or health check the agent
-   *   Next state:        RESTART on dead agent
-   *                      HEALTH_CHECK on undefined agent
-   * </pre>
-   */
-  class DeconflictStateController extends    StateControllerBase
-                               implements DeconflictListener {
-    { addDeconflictListener(this); }
-    public void enter(String name) {
-      if (isDeconflictionEnabled()) {
-        if (!getDeconflictHelper().isDefenseApplicable(name)) {
-          logger.debug("change condition of " + name);
-          getDeconflictHelper().changeApplicabilityCondition(name);
-        }
-        if (getDeconflictHelper().isOpEnabled(name)) {
-          newState(name, RESTART);
-        }
-      } else {
-        newState(name, RESTART);
-      }
-    }
-    public void expired(String name) {
-      logger.info("Expired Status:" + " agent=" + name + " state=DECONFLICT");
-      //newState(name, HEALTH_CHECK);
-      doPing(name, DefaultRobustnessController.ACTIVE, RESTART);
-    }
-
-    public void defenseOpModeEnabled(String name) {
-      if (isDeconflictionEnabled() &&
-          !getDeconflictHelper().isDefenseApplicable(name)) {
-        getDeconflictHelper().changeApplicabilityCondition(name);
-      }
-      //newState(name, HEALTH_CHECK);
-      doPing(name, DefaultRobustnessController.ACTIVE, RESTART);
-    }
-  }
-
   private Set deadNodes = Collections.synchronizedSet(new HashSet());
-  //private Set newNodes = Collections.synchronizedSet(new HashSet());
   private String thisAgent;
   private WakeAlarm wakeAlarm;
   boolean communityReady = false;
-  boolean startupCompleted = false;
+  boolean didRestart = false;
+
+  private Map runStats = new HashMap();
+  private NodeLatencyStatistics originalStats;
+  private NodeLatencyStatistics nodeLatencyStats;
+  private boolean collectNodeStats = false;
 
   /**
    * Initializes services and loads state controller classes.
@@ -441,8 +398,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                          final CommunityStatusModel csm) {
     super.initialize(agentId, bs, csm);
     thisAgent = agentId.toString();
+    String propValue = System.getProperty(COLLECT_NODE_STATS_PROPERTY);
+    collectNodeStats = propValue != null && propValue.equalsIgnoreCase("true");
     addController(INITIAL,        "INITIAL", new InitialStateController());
-    addController(LOCATED,        "LOCATED", new LocatedStateController());
+    //addController(LOCATED,        "LOCATED", new LocatedStateController());
     addController(DefaultRobustnessController.ACTIVE, "ACTIVE",  new ActiveStateController());
     addController(HEALTH_CHECK,   "HEALTH_CHECK",  new HealthCheckStateController());
     addController(DEAD,           "DEAD",  new DeadStateController());
@@ -456,8 +415,119 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     new SecurityAlertHandler(getBindingSite(), agentId, this, csm);
   }
 
+  /**
+ * Invoked when a status update is received from a monitoring node.
+ * @param nodeName Name of reporting node
+ */
+  protected void statusUpdateReceived(String nodeName) {
+    updateStats(nodeName);
+  }
+
+  private void updateStats(String source) {
+    long updateInterval =
+        getLongAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE,
+                         DEFAULT_STATUS_UPDATE_INTERVAL);
+    long now = now();
+    StatsEntry se = (StatsEntry) runStats.get(source);
+    if (se == null) {
+      runStats.put(source, new StatsEntry(source, now));
+    } else {
+      long elapsed = now - se.last;
+      if (elapsed >= updateInterval) {  // filter bad events
+        long latency = elapsed - updateInterval;
+        if (latency > se.high) {
+          se.high = latency;
+        }
+      }
+      se.last = now;
+      ++se.samples;
+      collectNodeStats(source);
+    }
+  }
+
+  protected void collectNodeStats(String source) {
+    if (collectNodeStats) {
+      if (nodeLatencyStats == null) { initializeNodeStats(); }
+      if (thisAgent.equals(preferredLeader()) &&
+          !source.equals(getLocation(thisAgent))) {
+        StatsEntry se = (StatsEntry) runStats.get(source);
+        if (se.samples >= MIN_SAMPLES) {
+          StatCalc newSc = (StatCalc) nodeLatencyStats.get(source);
+          if ((se.samples == MIN_SAMPLES && se.high >= MIN_SAMPLE_VALUE) ||        // Take snapshot at MIN_SAMPLES
+              (newSc == null || se.high > newSc.getHigh())) {  // Record highs thereafter
+            if (originalStats.contains(source)) {
+              newSc = (StatCalc)originalStats.get(source).clone();
+              if (se.high > newSc.getMean()/2 &&  // Perform a basic sanity check
+                  se.high < newSc.getMean()*2) {  //   on sample
+                newSc.enter(se.high);
+                nodeLatencyStats.put(newSc);
+                saveNodeStats();
+              }
+            } else {
+              newSc = new StatCalc(model.getCommunityName(), source);
+              newSc.enter(se.high);
+              nodeLatencyStats.put(newSc);
+              saveNodeStats();
+            }
+          }
+        }
+      }
+    }
+  }
+
+  protected void saveNodeStats() {
+    NodeLatencyStatistics all = new NodeLatencyStatistics(nodeLatencyStats.values());
+    for (Iterator it = originalStats.list().iterator(); it.hasNext();) {
+      String id = (String)it.next();
+      if (!all.contains(id)) all.put(originalStats.get(id));
+    }
+    all.save();
+  }
+
+  // load persisted node stats from file and make a copy
+  protected void initializeNodeStats() {
+    originalStats = new NodeLatencyStatistics();
+    nodeLatencyStats = new NodeLatencyStatistics();
+    originalStats.load();
+    logger.detail("initializeNodeStats: " + nodeLatencyStats.toXML());
+  }
+
+  /**
+   * Calculate expiration time for node status.  This value determines how long
+   * the manager waits for a status update before reporting the problem and
+   * initiating a restart.  The expiration time is based on statistical data
+   * obtained from the community attributes.
+   * @param nodeName String  Name of node
+   * @return long Expiration in milliseconds
+   */
+  protected long getNodeStatusExpiration(String nodeName) {
+
+    // Community-wide default values
+    long defaultMean = getLongAttribute("DEFAULT_STATUS_LATENCY_MEAN",
+                                        DEFAULT_STATUS_LATENCY_MEAN);
+    long defaultStdDev = getLongAttribute("DEFAULT_STATUS_LATENCY_STDDEV",
+                                          DEFAULT_STATUS_LATENCY_STDDEV);
+    long updateInterval = getLongAttribute("STATUS_UPDATE_INTERVAL",
+                                           DEFAULT_STATUS_UPDATE_INTERVAL);
+    long restartConf = getLongAttribute("RESTART_CONFIDENCE",
+                                        DEFAULT_RESTART_CONFIDENCE);
+
+    // Node-specific values; community defaults used if not available
+    long nodeMean = getLongAttribute(nodeName,
+                                     "STATUS_LATENCY_MEAN",
+                                     defaultMean);
+    long nodeStdDev = getLongAttribute(nodeName,
+                                       "STATUS_LATENCY_STDDEV",
+                                       defaultStdDev);
+
+    long expiration = updateInterval +
+                      nodeMean +
+                      (nodeStdDev * restartConf);
+    logger.info("getNodeStateExpiration: node=" + nodeName + " expiration=" + expiration);
+    return expiration;
+  }
+
   private boolean canRestartAgent(String name) {
-    String preferredLeader = preferredLeader();
     return thisAgent.equals(preferredLeader()) ||
         (isLeader(thisAgent) && name.equals(preferredLeader()) && (getActiveHosts().size() > 1));
   }
@@ -485,12 +555,26 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     return (autoLoadBalanceAttr != null && autoLoadBalanceAttr.equalsIgnoreCase("true"));
   }
 
-  private void removeFromCommunity(String name) {
-    communityService.leaveCommunity(model.getCommunityName(), name, null);
+  private void removeFromCommunity(final String name) {
+    if (logger.isInfoEnabled()) {
+      logger.info("removeFromCommunity:" +
+                  " community=" + model.getCommunityName() +
+                  " entity=" + name);
+    }
+    communityService.leaveCommunity(model.getCommunityName(), name,
+      new CommunityResponseListener() {
+        public void getResponse(CommunityResponse resp) {
+          if (logger.isInfoEnabled()) {
+            logger.info("removeFromCommunity:" +
+                        " entity=" + name +
+                        " result=" + resp.getStatusAsString());
+          }
+        }
+      });
   }
 
   public void setupSubscriptions() {
-    startupCompleted = blackboard.didRehydrate();
+    didRestart = blackboard.didRehydrate();
     wakeAlarm = new WakeAlarm((new Date()).getTime() + STATUS_INTERVAL);
     alarmService.addRealTimeAlarm(wakeAlarm);
   }
@@ -517,27 +601,14 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         communityReady == false &&
         agentsAndLocationsActive()) {
       communityReady = true;
-      if (!startupCompleted) {
-        startupCompleted = true;
+      /*if (!didRestart) {
+        didRestart = true;
         if (doInitialPing()) {
           pingAll();
         }
-      }
+      }*/
       event("Community " + model.getCommunityName() + " Ready");
       RestartDestinationLocator.clearRestarts();
-    }
-  }
-
-  private void setPingTimeout() {
-    if (pingStats.getCount() > 10) {
-      long oldPingTimeout = getLongAttribute("PING_TIMEOUT", PING_TIMEOUT);
-      long newPingTimeout = (long)pingStats.getMean() + ((long)pingStats.getStandardDeviation() * 4);
-      long minPingTimeout = getLongAttribute("MINIMUM_PING_TIMEOUT", MINIMUM_PING_TIMEOUT);
-      if (newPingTimeout < minPingTimeout) newPingTimeout = minPingTimeout;
-      logger.info("Change PingTimeout: old=" + oldPingTimeout +
-                  " new=" + newPingTimeout + " PingStats=(" + pingStats + ")");
-      changeAttributes(model.getCommunityName(), null,
-                       new Attribute[]{new BasicAttribute("PING_TIMEOUT", Long.toString(newPingTimeout))});
     }
   }
 
@@ -579,7 +650,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   public void membershipChange(String name) {
     if (isNode(name)) {
-      logger.debug("New node detected: name=" + name);
+      logger.info("New node detected: name=" + name);
+    }
+    if (didRestart && getState(name) != DefaultRobustnessController.ACTIVE) {
+      doPing(name, DefaultRobustnessController.ACTIVE, DEAD);
     }
   }
 
@@ -614,36 +688,17 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   public int getLeaderElectionTriggerState() { return DEAD; }
 
   public long expectedAgents() {
-    return getLongAttribute("NumberOfAgents", -1);  }
+    return getLongAttribute(EXPECTED_AGENTS_ATTRIBUTE, -1);  }
 
   public String preferredLeader() {
     return model.getStringAttribute(model.MANAGER_ATTR);
   }
 
-  private boolean doInitialPing() {
-    if (model != null) {
-      String attrVal = model.getAttribute("DO_INITIAL_PING");
-      return (attrVal == null || attrVal.equalsIgnoreCase("True"));
-    }
-    return true;
-  }
-
-  private boolean monitorStartup() {
-    if (model != null) {
-      String attrVal = model.getAttribute("MONITOR_STARTUP");
-      return (attrVal != null && attrVal.equalsIgnoreCase("True"));
-    }
-    return false;
-  }
-
-  protected void pingAll() {
-    String agents[] = model.listEntries(model.AGENT, DefaultRobustnessController.ACTIVE);
-    for (int i = 0; i < agents.length; i++) {
-      doPing(agents[i], DefaultRobustnessController.ACTIVE, DEAD);
-    }
-  }
-
   boolean loadBalanceInProcess = false;
+
+  protected long now() {
+    return System.currentTimeMillis();
+  }
 
   /**
    * Get layout from EN4J load balancer.  Check node status prior to submitting
@@ -661,7 +716,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
           !excludedNodes.contains(allNodes[i]))
         nodesToPing.add(allNodes[i]);
     }
-    final long pingTimeout = getLongAttribute("PING_TIMEOUT", PING_TIMEOUT);
+    final long pingTimeout = getLongAttribute(PING_TIMEOUT_ATTRIBUTE, DEFAULT_PING_TIMEOUT);
     PingListener pl = new PingListener() {
       public void pingComplete(PingResult[] pingResults) {
         // Update list of DEAD nodes
@@ -736,121 +791,15 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                         final int stateOnFail) {
     PingHelper pinger = getPingHelper();
     if (pinger.pingInProcess(agent)) {
-      logger.info("Duplicate ping requested, new ping not performed: agent=" + agent);
+      logger.detail("Duplicate ping requested, new ping not performed: agent=" + agent);
     } else {
-      final long pingTimeout = calcPingTimeout(agent);
-      logger.info("doPing: agent=" + agent + " timeout=" + pingTimeout);
-      pinger.ping(new String[]{agent}, pingTimeout, new PingListener() {
-        public void pingComplete(PingResult[] pr) {
-          for (int i = 0; i < pr.length; i++) {
-            if (pr[i].getStatus() == PingResult.SUCCESS) {
-              newState(pr[i].getName(), stateOnSuccess);
-              if (!isLocal(pr[i].getName())) {
-                pingStats.enter(pr[i].getRoundTripTime());
-                if (pingStats.getCount() == 10 ||
-                    pingStats.getCount() % 25 == 0) {
-                  setPingTimeout();
-                }
-              }
-            } else {
-              logger.info("Ping:" +
-                          " agent=" + pr[i].getName() +
-                          " state=" + stateName(model.getCurrentState(pr[i].getName())) +
-                          " timeout=" + pingTimeout +
-                          " actual=" + pr[i].getRoundTripTime() +
-                          " result=" +
-                          (pr[i].getStatus() == PingResult.SUCCESS ? "SUCCESS" : "FAIL") +
-                          (pr[i].getStatus() == PingResult.SUCCESS ? "" :
-                           " newState=" + stateName(stateOnFail)));
-              newState(pr[i].getName(), stateOnFail);
-            }
-          }
-        }
-      });
+      doPing(new String[]{agent}, stateOnSuccess, stateOnFail);
     }
-  }
-
-  /**
-   * Ping one or more agents and update current state based on result.
-   * @param agents          Agents to ping
-   * @param stateOnSuccess  New state if ping succeeds
-   * @param stateOnFail     New state if ping fails
-   */
-  protected void doPing(String[] agents,
-                        final int stateOnSuccess,
-                        final int stateOnFail) {
-    PingHelper pinger = getPingHelper();
-    Set agentsToPing = new HashSet();
-    for (int i = 0; i < agents.length; i++) {
-      if (pinger.pingInProcess(agents[i])) {
-        logger.info("Duplicate ping requested, new ping not performed: agent=" + agents[i]);
-      } else {
-        agentsToPing.add(agents[i]);
-      }
-    }
-    if (!agentsToPing.isEmpty()) {
-      final long pingTimeout = calcPingTimeout(agents[0]);
-      logger.info("doPing: agents=" + agentsToPing + " timeout=" + pingTimeout);
-      pinger.ping((String[])agentsToPing.toArray(new String[0]),
-                  pingTimeout, new PingListener() {
-        public void pingComplete(PingResult[] pr) {
-          for (int i = 0; i < pr.length; i++) {
-            if (pr[i].getStatus() == PingResult.SUCCESS) {
-              newState(pr[i].getName(), stateOnSuccess);
-              if (!isLocal(pr[i].getName())) {
-                pingStats.enter(pr[i].getRoundTripTime());
-                if (pingStats.getCount() == 10 ||
-                    pingStats.getCount() % 25 == 0) {
-                  setPingTimeout();
-                }
-              }
-            } else {
-              logger.info("Ping:" +
-                          " agent=" + pr[i].getName() +
-                          " state=" +
-                          stateName(model.getCurrentState(pr[i].getName())) +
-                          " timeout=" + pingTimeout +
-                          " actual=" + pr[i].getRoundTripTime() +
-                          " result=" +
-                          (pr[i].getStatus() == PingResult.SUCCESS ? "SUCCESS" :
-                           "FAIL") +
-                          (pr[i].getStatus() == PingResult.SUCCESS ? "" :
-                           " newState=" + stateName(stateOnFail)));
-              newState(pr[i].getName(), stateOnFail);
-            }
-          }
-        }
-      });
-    }
-  }
-
-  protected long calcPingTimeout(String name) {
-    double nodeLoadCoefficient = 1.0;
-    String node = model.getLocation(name);
-    double nodeLoad = getNodeLoadAverage(node);
-    if (nodeLoad > 0) {
-      nodeLoad = (nodeLoad > MAX_CPU_LOAD_FOR_ADJUSTMENT)
-                 ? MAX_CPU_LOAD_FOR_ADJUSTMENT
-                 : nodeLoad;
-      nodeLoadCoefficient = 1.0 +
-          (nodeLoad/MAX_CPU_LOAD_FOR_ADJUSTMENT * (MAX_CPU_LOAD_SCALING - 1.0));
-    }
-    double pingAdjustment = getDoubleAttribute(name, PING_ADJUSTMENT, 1.0);
-    long pingTimeout = getLongAttribute(name, "PING_TIMEOUT", PING_TIMEOUT);
-    long result = (long)(pingTimeout * nodeLoadCoefficient * pingAdjustment);
-    logger.debug("calcPingTimeout:" +
-                " agent=" + name +
-                " baseTimeout=" + pingTimeout +
-                " nodeLoadCoefficient=" + nodeLoadCoefficient +
-                " pingAdjust=" + pingAdjustment +
-                " result=" + result);
-
-    return result;
   }
 
   protected void checkLoadBalance() {
-    // Don't load balance if community is not ready or is busy
-    if (autoLoadBalance() && communityReady && !isCommunityBusy()) {
+    // Don't load balance if community is not ready
+    if (autoLoadBalance() && communityReady) {
       List vacantNodes = getVacantNodes();
       if (!deadNodes.isEmpty() || !vacantNodes.isEmpty()) {
         List excludedNodes = new ArrayList(getExcludedNodes());
@@ -882,6 +831,54 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                                      lbl);
         }
       }
+    }
+  }
+
+  /**
+  * Returns a String containing top-level health status of monitored community.
+  */
+ public String statusSummary() {
+   String activeNodes[] = model.listEntries(CommunityStatusModel.NODE, getNormalState());
+   String agents[] = model.listEntries(CommunityStatusModel.AGENT);
+   StringBuffer summary = new StringBuffer("community=" + model.getCommunityName());
+   summary.append(" leader=" + model.getLeader());
+   summary.append(" activeNodes=[");
+   for (int i = 0; i < activeNodes.length; i++) {
+     long samples = 0;
+     long high = 0;
+     StatsEntry se = (StatsEntry)runStats.get(activeNodes[i]);
+     if (se != null) {
+       samples =  se.samples;
+       high = (long)se.high;
+     }
+     int agentsOnNode = model.entitiesAtLocation(activeNodes[i], model.AGENT).length;
+     summary.append(activeNodes[i] + "(" + agentsOnNode + "," +
+                    samples + "," + high + ")");
+     if (i < activeNodes.length - 1) summary.append(",");
+   }
+   summary.append("]");
+   summary.append(" agents=" + agents.length);
+   for (Iterator it = controllers.values().iterator(); it.hasNext();) {
+     int state = ( (ControllerEntry) it.next()).state;
+     String agentsInState[] = model.listEntries(CommunityStatusModel.AGENT,
+                                                state);
+     if (agentsInState.length > 0) {
+       summary.append(" " + stateName(state) + "=" + agentsInState.length);
+       if (!stateName(state).equals("ACTIVE") && agentsInState.length > 0)
+         summary.append(arrayToString(agentsInState));
+     }
+   }
+   return summary.toString();
+ }
+
+  private class StatsEntry {
+    String source;
+    int samples;
+    long last;  // Timestamp of last status update
+    long high;  // Longest elapsed time
+    StatsEntry(String source, long last) {
+      this.source = source;
+      this.last = last;
     }
   }
 

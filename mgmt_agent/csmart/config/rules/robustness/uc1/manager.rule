@@ -28,7 +28,7 @@ communityViewerServlet     = "org.cougaar.community.util.CommunityViewerServlet"
 
 # Define controller class
 society.each_node do |node|
-  node.override_parameter("-Dorg.cougaar.tools.robustness.controller.classname", "org.cougaar.tools.robustness.ma.controllers.NewRobustnessController")
+  node.override_parameter("-Dorg.cougaar.tools.robustness.controller.classname", "org.cougaar.tools.robustness.ma.controllers.DefaultRobustnessController")
 end
 
 #
