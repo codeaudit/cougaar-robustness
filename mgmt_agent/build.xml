@@ -362,4 +362,15 @@
     />
   </target>
 
+	<!-- Create Cougaar overlay zip file -->
+	<target name="create_cougaar_overlay">
+		<delete dir="staging"/>
+		<mkdir dir="staging/lib"/>
+		<antcall target="init"/>
+		<antcall target="compile"/>
+		<antcall target="jar"/>
+		<move file="${lib}/${jar}" toDir="staging/lib"/>
+		<zip zipfile="Robustness_mic_mgmt_agent_overlay.zip" basedir="staging"/>
+		<delete dir="staging"/>
+	</target>
 </project>
