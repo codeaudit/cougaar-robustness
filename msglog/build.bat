@@ -7,6 +7,7 @@ if not exist lib mkdir lib
 set LIBPATHS=%COUGAAR_INSTALL_PATH%\lib\core.jar
 set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\util.jar
 set LIBPATHS=%LIBPATHS%;sys\mail.jar
+set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\msglog_common.jar
 
 set MTS=src\org\cougaar\core\mts\*.java
 set EMAIL=src\org\cougaar\core\mts\email\*.java

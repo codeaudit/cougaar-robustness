@@ -65,14 +65,13 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
   private static LoggingService log;
   private static int RID;
 
-  private SocketClosingService socketCloser;
   private RTTService rttService;
   private String nodeID;
   private static boolean showTraffic;
   private DatagramSocketSpec datagramSocketSpecs[];
   private DatagramSocketSpec myDatagramSocketSpec;
   private Vector datagramSocketListeners;
-  private ThreadService threadService;
+  //102B private ThreadService threadService;
 
   static
   {
@@ -287,8 +286,8 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
       listener = new DatagramSocketListener (port);
       port = listener.getPort();  // port possibly updated
 
-      // Schedulable thread = threadService().getThread (this, listener, "DatagramIncomingSock_"+port);
-      Thread thread = new Thread (listener, "DatagramIncomingSock_"+port);
+      Schedulable thread = threadService.getThread (this, listener, "DatagramIncomingSock_"+port);
+      //102B Thread thread = new Thread (listener, "DatagramIncomingSock_"+port);
       thread.start();
 
       registerDatagramSocketSpec (new DatagramSocketSpec (localhost, port));
@@ -361,6 +360,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
         catch (SocketException e)
         {
           // port most likely in use
+          if (log.isDebugEnabled()) log.debug(null, e);
         }
       }
 
@@ -392,7 +392,8 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 
       if (dsocket != null)
       {
-        try { dsocket.close(); } catch (Exception e) {}
+        try { dsocket.close(); } catch (Exception e) {
+          if (log.isDebugEnabled()) log.debug(null, e);}
         dsocket = null;
       }
     }
@@ -420,7 +421,8 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
         }
         catch (Exception e)
         {
-          try { e.printStackTrace(); } catch (Exception ex) { /* !! */ }
+          try { e.printStackTrace(); } catch (Exception ex) { 
+            if (log.isDebugEnabled()) log.debug(null, e);}
         }
       }
     }
@@ -592,7 +594,8 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 
       if (dsocket != null)
       {
-        try { dsocket.close(); } catch (Exception e) {}
+        try { dsocket.close(); } catch (Exception e) {
+          if (log.isDebugEnabled()) log.debug(null, e);}
         dsocket = null;
       }
 

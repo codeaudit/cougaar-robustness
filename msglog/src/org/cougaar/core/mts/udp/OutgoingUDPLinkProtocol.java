@@ -585,7 +585,8 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
     {
       if (dsocket != null)
       {
-        try { dsocket.close(); } catch (Exception e) {}
+        try { dsocket.close(); } catch (Exception e) {
+          if (log.isDebugEnabled()) log.debug(null, e);}
         dsocket = null;
       } 
     }
