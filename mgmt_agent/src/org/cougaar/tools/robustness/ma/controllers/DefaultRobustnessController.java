@@ -71,6 +71,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    * </pre>
    */
   class InitialStateController extends StateControllerBase {
+    public void enter(String name) {
+      logger.info("New State (INITIAL):" + " agent=" + name + " state=INITIAL");
+      newState(name, HEALTH_CHECK);
+    }
     public void expired(String name) {
       logger.info("Expired Status:" + " agent=" + name + " state=INITIAL");
       newState(name, HEALTH_CHECK);
@@ -200,7 +204,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                   " preferredLeader=" + thisAgent.equals(preferredLeader()) +
                   " isAgent=" + isAgent(name));
       communityReady = false; // For ACME Community Ready Events
-      if (thisAgent.equals(preferredLeader()) && isAgent(name)) {
+      if (isAgent(name) && canRestartAgent(name)) {
         // Interface point for Deconfliction
         // If Ok'd by Deconflictor set state to RESTART
         if(getDeconflictHelper() != null) {
@@ -213,6 +217,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         setExpiration(name, NEVER);
         deadNodes.add(name);
         if (thisAgent.equals(preferredLeader()) && useGlobalSolver()) {
+          List excludedNodes = new ArrayList(getExcludedNodes());
           LoadBalancerListener lbl = new LoadBalancerListener() {
             public void layoutReady(Map layout) {
               logger.info("layout from EN4J: " + layout);
@@ -221,7 +226,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
           };
           if (!newNodes.isEmpty()) {
             for (Iterator it = newNodes.iterator(); it.hasNext(); ) {
-              if (model.entitiesAtLocation((String)it.next()).length > 0) {
+              String newNode = (String)it.next();
+              if (!isVacantNode(newNode) ||
+                  excludedNodes.contains(newNode) ||
+                  deadNodes.contains(newNode)) {
                 it.remove();
               }
             }
@@ -267,7 +275,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   class RestartStateController extends StateControllerBase implements RestartListener {
     { addRestartListener(this); }
     public void enter(String name) {
-      if (isLeader(thisAgent) && isAgent(name)) {
+      //if (isAgent(name) && canRestartAgent(name)) {
         String dest = RestartDestinationLocator.getRestartLocation(name, getExcludedNodes());
         logger.info("Restart agent:" +
                     " agent=" + name +
@@ -287,7 +295,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
             RestartDestinationLocator.restartOneAgent(dest);
           }
         }
-      }
+      //}
     }
 
     public void expired(String name) {
@@ -425,6 +433,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   private List newNodes = Collections.synchronizedList(new ArrayList());
   private String thisAgent;
   private WakeAlarm wakeAlarm;
+  boolean communityReady = false;
 
   /**
    * Initializes services and loads state controller classes.
@@ -449,6 +458,12 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     new SecurityAlertHandler(getBindingSite(), agentId, this, csm);
   }
 
+  private boolean canRestartAgent(String name) {
+    return thisAgent.equals(preferredLeader());
+    //return thisAgent.equals(preferredLeader()) ||
+    // isLeader(thisAgent) && name.equals(preferredLeader());
+  }
+
   private boolean useGlobalSolver() {
     String solverModeAttr = model.getStringAttribute(SOLVER_MODE_ATTRIBUTE);
     return (solverModeAttr != null && solverModeAttr.equalsIgnoreCase("global"));
@@ -458,8 +473,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     String autoLoadBalanceAttr = model.getStringAttribute(AUTO_LOAD_BALANCE_ATTRIBUTE);
     return (autoLoadBalanceAttr != null && autoLoadBalanceAttr.equalsIgnoreCase("true"));
   }
-
-  boolean communityReady = false;
 
   public void setupSubscriptions() {
     wakeAlarm = new WakeAlarm((new Date()).getTime() + STATUS_INTERVAL);
@@ -538,8 +551,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   public void leaderChange(String priorLeader, String newLeader) {
     logger.info("LeaderChange: prior=" + priorLeader + " new=" + newLeader);
-    if (isLeader(thisAgent) && isAgent(priorLeader)) {
-      newState(priorLeader, RESTART);
+    if (isLeader(thisAgent) && model.getCurrentState(preferredLeader()) == DEAD) {
+      logger.info("Restarting preferred leader");
+      newState(preferredLeader(), RESTART);
     }
     checkCommunityReady();
   }
@@ -620,7 +634,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         if (!newNodes.isEmpty()) {
           for (Iterator it = newNodes.iterator(); it.hasNext(); ) {
             String newNode = (String)it.next();
-            if (!isVacantNode(newNode) || excludedNodes.contains(newNode)) {
+            if (!isVacantNode(newNode) ||
+                excludedNodes.contains(newNode) ||
+                deadNodes.contains(newNode)) {
               it.remove();
             }
           }
