@@ -23,6 +23,15 @@
  * </copyright>
  */
 
+
+
+/**
+ *
+ * @author  David Wells - OBJS
+ *
+ */
+
+
 package org.cougaar.tools.robustness.disconnection;
 
 import org.cougaar.tools.robustness.deconfliction.*;
@@ -59,17 +68,10 @@ import org.cougaar.core.servlet.BaseServletComponent;
 //import org.cougaar.core.servlet.BlackboardServletSupport;
 import org.cougaar.planning.servlet.BlackboardServletComponent;
 
-import org.cougaar.core.service.ConditionService;
-import org.cougaar.core.service.UIDService;
-
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.util.log.Logger;
 
 
-/**
- *
- * @author  Administrator
- */
 public class DisconnectServlet extends BaseServletComponent
                                implements BlackboardClient
  {
@@ -78,15 +80,13 @@ public class DisconnectServlet extends BaseServletComponent
   public static final String RECONNECT = "Reconnect";
   public static final String CHANGE = "change";
   public static final String EXPIRE = "expire";
-
-  public static final String CONDITION_NAME = "PlannedDisconnect.UnscheduledDisconnect.Node.";
   
-  private ConditionService conditionService;
-  private UIDService uidService = null;
   private BlackboardService blackboard = null;
   private Logger logger = null;
   
-  private MessageAddress agentId = null;
+  private String assetType;
+  private String assetID = null;
+  
   
   protected Servlet createServlet() {
     // create inner class
@@ -115,12 +115,16 @@ public class DisconnectServlet extends BaseServletComponent
       throw new RuntimeException(
           "Unable to obtain agent-id service");
     }
-    this.agentId = agentIdService.getMessageAddress();
-    serviceBroker.releaseService(
-        this, AgentIdentificationService.class, agentIdService);
-    if (agentId == null) {
-      throw new RuntimeException(
-          "Unable to obtain agent id");
+    
+    this.assetType = "Agent";  // for now - later may be other kinds of assets
+    if (assetType.equals("Agent")) {
+        this.assetID = agentIdService.getMessageAddress().toString();
+        serviceBroker.releaseService(
+            this, AgentIdentificationService.class, agentIdService);
+        if (assetID == null) {
+          throw new RuntimeException(
+              "Unable to obtain agent id");
+        }
     }
 
     // get the blackboard
@@ -132,28 +136,6 @@ public class DisconnectServlet extends BaseServletComponent
     if (blackboard == null) {
       throw new RuntimeException(
           "Unable to obtain blackboard service");
-    }
-
-    // get the ConditionService
-    this.conditionService = (ConditionService)
-      serviceBroker.getService(
-          this,
-          ConditionService.class,
-          null);
-    if (conditionService == null) {
-      throw new RuntimeException(
-          "Unable to obtain ConditionService");
-    }
-    
-    // get the ConditionService
-    this.uidService = (UIDService)
-      serviceBroker.getService(
-          this,
-          UIDService.class,
-          null);
-    if (uidService == null) {
-      throw new RuntimeException(
-          "Unable to obtain UIDService");
     }
     
     super.load();
@@ -167,16 +149,7 @@ public class DisconnectServlet extends BaseServletComponent
           this, BlackboardService.class, blackboard);
       blackboard = null;
     }
-    if (conditionService != null) {
-      serviceBroker.releaseService(
-          this, ConditionService.class, conditionService);
-      conditionService = null;
-    }
-    if (uidService != null) {
-      serviceBroker.releaseService(
-          this, UIDService.class, uidService);
-      uidService = null;
-    }
+    
     if ((logger != null) && (logger != LoggingService.NULL)) {
       serviceBroker.releaseService(
           this, LoggingService.class, logger);
@@ -230,107 +203,102 @@ public class DisconnectServlet extends BaseServletComponent
       /** User is disconnecting the node */
       private void disconnect(HttpServletRequest request, PrintWriter out) {
 
-        String expire = request.getParameter(EXPIRE);
-        System.out.println("Expire = "+ expire);
-        double d = 0;
-        if (expire != null) {
-            try {
-                d = Double.parseDouble(expire);
-                setConditionValue(DefenseConstants.BOOL_TRUE);
-                setReconnectTimeConditionValue(d);
-                out.println("<center><h2>Status Changed - Disconnected</h2></center><br>" );
-            } catch (NumberFormatException nfe) {
-                out.println("<center><h2>Status Not Changed - NumberFormatException!</h2></center><br>" );            
-            }
-        } else {
-            out.println("<center><h2>Status Not Changed - No Reconnect Time Provided (double).</h2></center><br>" );            
+          String expire = request.getParameter(EXPIRE);
+          //System.out.println("Expire = "+ expire);
+          Double d;
+          if (expire != null) {
+              try {
+                  d = new Double(Double.parseDouble(expire));
+                  try {
+                        blackboard.openTransaction();
+                        ReconnectTimeCondition rtc = setReconnectTimeConditionValue(d);
+                        if (rtc != null) {
+                           out.println("<center><h2>Status Changed - Disconnected</h2></center><br>" );
+                           blackboard.publishChange(rtc); 
+                           if (logger.isDebugEnabled()) logger.debug("DisconnectServlet published ReconnectTimeCondition: "+rtc.getAsset()+" = "+ rtc.getValue().toString());
+                        }
+                        else {
+                            out.println("<center><h2>Failed to Disconnect - No Condition Objects</h2></center><br>");
+                        }
+                        blackboard.closeTransaction();
+                    } finally {
+                        if (blackboard.isTransactionOpen()) blackboard.closeTransactionDontReset();
+                    }
+              } catch (NumberFormatException nfe) {
+                  out.println("<center><h2>Failed to Disconnect - NumberFormatException!</h2></center><br>" );            
+              }
+          } else {
+              out.println("<center><h2>Failed to Disconnect - No Reconnect Time Provided (double).</h2></center><br>" );            
+          }
         }
-      }
 
  
       /** User is reconnecting the node */
       private void reconnect(HttpServletRequest request, PrintWriter out) {
-        setConditionValue(DefenseConstants.BOOL_FALSE);
-        out.println("<center><h2>Status Changed - Reconnected</h2></center><br>" );
+          try {
+              blackboard.openTransaction();
+              ReconnectTimeCondition rtc = setReconnectTimeConditionValue(new Double(0.0));
+              if (rtc != null) {
+                  out.println("<center><h2>Status Changed - Reconnected</h2></center><br>" );
+                  blackboard.publishChange(rtc); 
+                  if (logger.isDebugEnabled()) logger.debug("DisconnectServlet published DisconnectCondition: "+rtc.getAsset()+" = "+ rtc.getValue().toString());
+                  }
+              else {
+                  out.println("<center><h2>Failed to Reset</h2></center><br>");
+              }
+              blackboard.closeTransaction();
+          } finally {
+                if (blackboard.isTransactionOpen()) blackboard.closeTransactionDontReset();
+          }            
       }
 
 
       /** publish conditional with new status for this agent */ 
-      private void setConditionValue(DefenseConstants.OMCStrBoolPoint value) {
-
-            final String condName = CONDITION_NAME+agentId.toString();
-            
+      private DefenseCondition setConditionValue(DefenseConstants.OMCStrBoolPoint value) {
+           
             UnaryPredicate pred = new UnaryPredicate() {
               public boolean execute(Object o) {
                 return 
-                  ((o instanceof DisconnectionApplicabilityCondition) &&
-                   (condName.equals(((DisconnectionApplicabilityCondition) o).getName())));
+                  (o instanceof DisconnectApplicabilityCondition);
               }
             };
             
-            DisconnectionApplicabilityCondition cond = null;
-            try {
-                blackboard.openTransaction();
-                Collection c = blackboard.query(pred);
-                if (c.iterator().hasNext()) {
-                   cond = (DisconnectionApplicabilityCondition)c.iterator().next();
-                }
-                blackboard.closeTransaction();
+            DisconnectApplicabilityCondition cond = null;
 
-            } finally {
-                blackboard.closeTransactionDontReset();
+            Collection c = blackboard.query(pred);
+            if (c.iterator().hasNext()) {
+               cond = (DisconnectApplicabilityCondition)c.iterator().next();
+               //System.out.println(cond.getAssetType()+" "+cond.getAsset()+" " +cond.getDefenseName());
+               if (cond.compareSignature(assetType, assetID, DisconnectConstants.DEFENSE_NAME)) 
+                    cond.setValue(value); //true = disconnected
             }
             
-            if (cond == null) { //then create one
-                cond = new DisconnectionApplicabilityCondition(condName, "myAsset", "myDefense");
-                System.out.print("Created and ");
-            }
-
-            System.out.println("Published DisconnectCondition: "+condName+" = "+ value.toString());
-
-            blackboard.openTransaction();
-            cond.setValue(value); //true = disconnected
-            blackboard.publishChange(cond);    
-            blackboard.closeTransaction();
+            return cond;
       }      
         
         
       /** Publish reconnect time */
-      private void setReconnectTimeConditionValue(double d) {
-            final String condName = CONDITION_NAME+agentId.toString();
+      private ReconnectTimeCondition setReconnectTimeConditionValue(Double d) {
             
             UnaryPredicate pred = new UnaryPredicate() {
-              public boolean execute(Object o) {
+              public boolean execute(Object o) {  
                 return 
-                  ((o instanceof ReconnectTimeCondition) &&
-                   (condName.equals(((ReconnectTimeCondition) o).getName())));
+                  (o instanceof ReconnectTimeCondition);
               }
             };
             
             ReconnectTimeCondition cond = null;
-            try {
-                blackboard.openTransaction();
-                Collection c = blackboard.query(pred);
-                if (c.iterator().hasNext()) {
-                   cond = (ReconnectTimeCondition)c.iterator().next();
-                }
-            } finally {
-                blackboard.closeTransactionDontReset();
-            }
-            
-            blackboard.closeTransaction();
-
-            if (cond == null) { //then create one
-                cond = new ReconnectTimeCondition(condName  , "myAsset", "myDefense");
-                System.out.print("Created and ");
+            Collection c = blackboard.query(pred);
+            if (c.iterator().hasNext()) {
+               cond = (ReconnectTimeCondition)c.iterator().next();
+               //System.out.println(cond.getAssetType()+" "+cond.getAsset()+" " +cond.getDefenseName());
+               if (cond.compareSignature(assetType, assetID, DisconnectConstants.DEFENSE_NAME)) {
+                    cond.setValue(d); //true = disconnected
+                    return cond;
+               }
             }
 
-            System.out.println("Published ReconnectTimeCondition: "+condName+" = "+ cond.getValue().toString());
-
-            blackboard.openTransaction();
-            cond.setValue(new Double(d)); //true = disconnected
-            blackboard.publishChange(cond);    
-            blackboard.closeTransaction();
+            return null;
       }      
         
 
@@ -346,21 +314,8 @@ public class DisconnectServlet extends BaseServletComponent
 
       private void writeButtons(PrintWriter out) {
 
-    //    out.print(
-    //	      "<script language=\"JavaScript\">\n"+
-    //	      "<!--\n"+
-    //	      "function mySubmit() {\n"+
-    //	      "  var tidx = document.myForm.formCluster.selectedIndex\n"+
-    //	      "  var cluster = document.myForm.formCluster.options[tidx].text\n"+
-    //	      "  document.myForm.action=\"/$\"+cluster+\"");
-    //    out.print(support.getPath());
-    //    out.print("\"\n"+
-    //	      "  return true\n"+
-    //	      "}\n"+
-    //	      "// -->\n"+
-    //	      "</script>\n");
         out.print("<h2><center>PlannedDisconnectServlet for ");
-        out.print(agentId.toString());
+        out.print(assetID.toString());
         out.print(
                   "</center></h2>\n"+
                   "<form name=\"myForm\" method=\"get\" >" );
@@ -371,48 +326,4 @@ public class DisconnectServlet extends BaseServletComponent
 
       }
   }
-//**End of servlet class  
-  
-/*    private class CondByNamePredicate implements UnaryPredicate { 
-        String name;
-        public CondByNamePredicate(String omName) {
-          name = omName;
-        }
-
-        public boolean execute(Object o) {
-          if (o instanceof Condition) {
-            Condition c = (Condition) o;
-            if (name.equals(c.getName())) {
-              return true;
-            }
-          }
-          return false;
-        }
-    }
-*/
-  /**
-   * Private inner class precludes use by others to set our
-   * measurement. Others can only reference the base Condition
-   * class which has no setter method.
-   **/
-   private static class DisconnectDefCon extends DefenseCondition { //implements NotPersistable {
-    public DisconnectDefCon(String a, String b, String c) {
-      super(a,b,c, DefenseConstants.BOOL_RANGELIST);
-    }
-
-    public DisconnectDefCon(String a, String b, String c, DefenseConstants.OMCStrBoolPoint pt) {
-      super(a,b,c, DefenseConstants.BOOL_RANGELIST, pt.toString());
-    }
-
-    /* Called by Defense to set current condition. Limited to statically defined values
-     * of this class. **This methd should NOT be public as anyone can modify the value.
-     * Rather should be subclassed, and super.setValue() called.
-     *@param new value
-     */
-    protected void setValue(DefenseConstants.OMCStrBoolPoint newValue) {
-        super.setValue(newValue.toString());
-    }
-    
-   }
-  
 }

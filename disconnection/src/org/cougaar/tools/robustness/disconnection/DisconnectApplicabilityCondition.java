@@ -27,32 +27,20 @@ package org.cougaar.tools.robustness.disconnection;
 import org.cougaar.tools.robustness.deconfliction.*;
 
 import org.cougaar.core.adaptivity.SensorCondition;
-import org.cougaar.core.adaptivity.OMCThruRange;
-import org.cougaar.core.adaptivity.OMCRangeList;
 import org.cougaar.core.adaptivity.OMCPoint;
+import org.cougaar.core.adaptivity.OMCRangeList;
 
-import org.cougaar.core.util.UID;
-
-
-public class DefenseTimeCondition extends DefenseCondition
+public class DisconnectApplicabilityCondition extends DefenseApplicabilityBinaryCondition
 {
-    public static final Double MINTIME  = new Double(0.0);
-    public static final Double MAXTIME = new Double(9223372036854775807.0);
-
-    protected static OMCRangeList allowedValues = new OMCRangeList(new OMCThruRange (MINTIME, MAXTIME));
-
-     /* Do not use. Only use the constructors of the subclasses.
-     */
-    public DefenseTimeCondition(String assetType, String assetName, String managerID) {
-        super(assetType, assetName, managerID, allowedValues, new Double(0.0));
+    public DisconnectApplicabilityCondition (String assetType, String assetID) {
+        super(assetType, assetID, DisconnectConstants.DEFENSE_NAME, DefenseConstants.BOOL_FALSE);
     }
-       
-    protected void setValue(String newValue) {
-        super.setValue(newValue);
+    
+    public DisconnectApplicabilityCondition(String assetType, String assetID, DefenseConstants.OMCStrBoolPoint initialValue) {
+      super(assetType, assetID, DisconnectConstants.DEFENSE_NAME, initialValue);
     }
-
-    /** tiny helper class for VTH Operating Modes */
-    protected static class OMCStrPoint extends OMCPoint {
-        public OMCStrPoint (String a) { super (a); }
+    
+    public void setValue(DefenseConstants.OMCStrBoolPoint newValue) {
+      super.setValue(newValue);
     }
 }
