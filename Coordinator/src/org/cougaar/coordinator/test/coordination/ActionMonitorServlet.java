@@ -212,8 +212,8 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
         ActionData actionData;
         
         //First look for actionData
-        Iterator i = actions.iterator();
-        //synchronized(changes) { //so 
+        synchronized(actions) { //so 
+            Iterator i = actions.iterator();
             while (i.hasNext() ) {      
                 actionData = (ActionData) i.next();
                 if ( actionData.contains(a) ) { //found it
@@ -228,7 +228,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             actionData = new ActionData(a, state, isWrapper);
             actions.add(actionData);
             assetNames.add(a.getAssetName());
-        //}        
+        }        
     }
     
     //These methods are called by the ActionMonitorPlugin
