@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 23 Apr 2002: Split out from MessageAckingAspect. (OBJS)
  * 17 May 2001: Created. (OBJS)
  */
 
@@ -39,8 +40,8 @@ public class PureAckMessage extends AttributedMessage
 
     //  Set key attributes
 
-    MessageUtils.setAck (this, pureAck);
     MessageUtils.setMessageTypeToPureAck (this);
+    MessageUtils.setAck (this, pureAck);
     MessageUtils.setFromAgent (this, MessageUtils.getToAgent (msg));
     MessageUtils.setToAgent (this, MessageUtils.getFromAgent (msg));
     MessageUtils.setSrcMsgNumber (this, MessageUtils.getMessageNumber (msg));

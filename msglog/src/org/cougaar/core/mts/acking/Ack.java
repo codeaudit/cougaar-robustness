@@ -69,6 +69,45 @@ public class Ack implements Serializable
     linksUsed = new Vector();
   }
 
+  public Ack (Ack ack, AttributedMessage msg)
+  {
+    this.sendTime = sendTime;
+    this.sendLink = sendLink;
+    this.sendCount = sendCount;
+    this.specificAcks = cloneAcks (specificAcks);
+    this.latestAcks = cloneAcks (latestAcks);
+    this.roundTripTime = roundTripTime;
+    this.resendMultiplier = resendMultiplier;
+
+    this.sendTry = sendTry;
+    this.numLinkChoices = numLinkChoices;
+    this.resendDelay = resendDelay;
+    this.maxResendDelay = maxResendDelay;
+    this.msg = msg;
+    this.linksUsed = cloneLinks (linksUsed);
+    this.receiveTime = receiveTime;
+  }
+
+  private Vector cloneAcks (Vector acks)
+  {
+    Vector v = new Vector();
+
+    for (Enumeration e=acks.elements(); e.hasMoreElements(); )
+      v.add (new AckList ((AckList) e.nextElement()));
+
+    return v;
+  }
+
+  private Vector cloneLinks (Vector links)
+  {
+    Vector v = new Vector();
+
+    for (Enumeration e=links.elements(); e.hasMoreElements(); )
+      v.add ((DestinationLink) e.nextElement());
+
+    return v;
+  }
+
   public synchronized void setSendTime (long time)
   {
     sendTime = time;

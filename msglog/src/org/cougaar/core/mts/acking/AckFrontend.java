@@ -19,7 +19,8 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 23 Apr  2001: Split out from MessageAckingAspect. (OBJS)
+ * 18 Aug 2002: Mucho changes to support Cougaar 9.2+ and agent mobility. (OBJS)
+ * 23 Apr 2002: Split out from MessageAckingAspect. (OBJS)
  */
 
 package org.cougaar.core.mts.acking;
@@ -113,11 +114,9 @@ class AckFrontend extends DestinationLinkDelegateImplBase
         return success;
       }
     }
-/*
-// test code
-String n = MessageUtils.getFromAgentNode(msg);
-if (n.equals("PerformanceNodeB") && cnt++ > 5) return success;
-*/
+
+    //  Update various ack fields
+
     ack.setSendLink (link.getProtocolClass().getName());
     ack.setRTT (getBestFullRTTForLink (link, toNode, msg));
 

@@ -19,9 +19,9 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 20 Aug 2002: Support for agent mobility. (OBJS)
  * 06 Jun 2002: Completely revamped for Cougaar 9.2.x (OBJS)
- * 08 Jan 2002: Egregious temporary hack to handle last minute traffic
- *              masking messages.  (OBJS)
+ * 08 Jan 2002: Egregious temporary hack to handle last minute traffic masking messages. (OBJS)
  * 07 Jan 2002: Implemented new acking model. (OBJS)
  * 29 Nov 2001: Created. (OBJS)
  */
@@ -58,8 +58,6 @@ public class MessageAckingAspect extends StandardAspect
   private LoggingService log;
   private ThreadService threadService;
 
-  static final Object serializationLock = new Object();
-
   private static final Hashtable receivedAcksTable = new Hashtable();
   private static final Hashtable acksToSendTable = new Hashtable();
   private static final Hashtable successfulReceivesTable = new Hashtable();
@@ -69,6 +67,7 @@ public class MessageAckingAspect extends StandardAspect
   private static final Hashtable lastSendTimeTable = new Hashtable();
 
   private static MessageAckingAspect instance;
+  private static String thisNode;
 
   static
   {
@@ -104,6 +103,9 @@ public class MessageAckingAspect extends StandardAspect
   {
     super.load();
 
+    log = loggingService;
+    thisNode = getRegistry().getIdentifier();
+
     synchronized (MessageAckingAspect.class)
     {
       if (instance == null)
@@ -122,8 +124,6 @@ public class MessageAckingAspect extends StandardAspect
         instance = this;
       }
     }
-
-    log = loggingService;
   }
 
   public Object getDelegate (Object delegate, Class type) 
@@ -134,7 +134,7 @@ public class MessageAckingAspect extends StandardAspect
     }
     else if (type == SendLink.class) 
     {
-// return new AgentArrivals ((SendLink) delegate);
+//return new AgentArrivals ((SendLink) delegate);
     }
     else if (type == DestinationLink.class) 
     {
@@ -189,13 +189,43 @@ log.debug ("in AgentArrivals: register client");
         if (v != null) myState.setAttribute (SENT_BUT_NOT_ACKED_MSGS, null);
       }
 
-      if (v != null)
+      if (v == null) return;  // no messages
+
+      //  Process and send each message in the agent state
+
+      for (Enumeration e=v.elements(); e.hasMoreElements(); )
       {
-        for (Enumeration e=v.elements(); e.hasMoreElements(); )
+        AttributedMessage msg = (AttributedMessage) e.nextElement();
+
+        if (MessageUtils.isRegularMessage (msg))
         {
-          AttributedMessage msg = (AttributedMessage) e.nextElement();
+          //  Ensure message attributes ok
+
+          if (!MessageIntegrity.areMessageAttributesOK (msg, log))
+          {
+            if (log.isDebugEnabled()) log.debug ("AgentArrivals: dropping message " +
+              "that failed attributes integrity check: " +MessageUtils.toString(msg));
+          }
+
+          //  Fix up the message state for its new sending node
+
+          MessageUtils.getFromAgent(msg).setNodeName (thisNode);
+          MessageUtils.setAck (msg, null);
+          MessageUtils.setSendProtocolLink (msg, null);
+
+          //  Reclassify messages as local as needed
+
+//TODO          if (isLocalAgent (MessageUt
+
+          //  Send the message
+
           if (log.isDebugEnabled()) log.debug ("AgentArrivals: sending " +MessageUtils.toString(msg));
           sendMessage (msg);
+        }
+        else
+        {
+          if (log.isDebugEnabled()) log.debug ("AgentArrivals: dropping non-regular message " +
+            "that somehow got on agent state: " +MessageUtils.toString(msg));
         }
       }
     }
@@ -686,19 +716,24 @@ log.debug ("in AgentArrivals: register client");
 
   //  Utility methods and classes
 
-  AgentState getAgentState (MessageAddress agent)
-  {
-    return getRegistry().getAgentState (agent);
-  }
-
   LoggingService getTheLoggingService ()
   {
     return loggingService;
   }
 
+  AgentState getAgentState (MessageAddress agent)
+  {
+    return getRegistry().getAgentState (agent);
+  }
+
   String getThisNode ()
   {
-    return getRegistry().getIdentifier();
+    return thisNode;
+  }
+
+  boolean isLocalAgent (MessageAddress agent)
+  {
+    return getRegistry().isLocalClient (agent);
   }
 
   static void dingTheMessageResender ()

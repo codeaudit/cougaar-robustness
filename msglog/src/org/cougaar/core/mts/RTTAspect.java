@@ -292,7 +292,7 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
     }
   }
 
-  private class HalfRTT implements Serializable  // enclosing classes must be serializable too
+  private static class HalfRTT implements Serializable  // enclosing classes must be serializable too
   {
     private final String sendLink;
     private final long sendTime;
@@ -303,6 +303,13 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
       this.sendLink = sendLink;
       this.sendTime = sendTime;
       this.receiveTime = receiveTime;
+    }
+
+    public HalfRTT (HalfRTT hr)
+    {
+      this.sendLink = hr.sendLink;
+      this.sendTime = hr.sendTime;
+      this.receiveTime = hr.receiveTime;
     }
 
     public String getSendLink ()
@@ -324,6 +331,28 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
     {
       return "sendLink=" +sendLink+ " sendTime=" +sendTime+ " receiveTime=" +receiveTime;
     }
+  }
+
+  public static Vector getRTTDataAttribute (AttributedMessage msg)
+  {
+    return (Vector) msg.getAttribute (RTT_DATA);
+  }
+
+  public static void setRTTDataAttribute (AttributedMessage msg, Vector rttData)
+  {
+    msg.setAttribute (RTT_DATA, rttData);
+  }
+
+  public static Vector cloneRTTData (Vector rttData)
+  {
+    if (rttData == null) return null;
+
+    Vector v = new Vector();
+
+    for (Enumeration e=rttData.elements(); e.hasMoreElements(); )
+      v.add (new HalfRTT ((HalfRTT) e.nextElement()));
+
+    return v;
   }
 
   private class RTTOutbound extends DestinationLinkDelegateImplBase 
@@ -386,7 +415,7 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
         }
       }
 
-      msg.setAttribute (RTT_DATA, v);
+      setRTTDataAttribute (msg, v);
 
       //  Send the message on its way
 
@@ -432,7 +461,7 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
       //  node).  We take the first half roundtrip times in the message and
       //  make real RTTs out of them and store them away.
 
-      Vector v = (Vector) msg.getAttribute (RTT_DATA);
+      Vector v = getRTTDataAttribute (msg);
 
       if (v != null)
       {

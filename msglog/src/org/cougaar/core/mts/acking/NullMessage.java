@@ -19,7 +19,10 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 23 Apr  2001: Split out from MessageAckingAspect. (OBJS)
+ * 20 Aug 2002: Changed from package protection to public to fix class cast exception
+ *              in cougaar.core.agent package that needs access to this class as part
+ *              of moving an agent from one node to another.  (OBJS)
+ * 23 Apr 2002: Split out from MessageAckingAspect. (OBJS)
  */
 
 package org.cougaar.core.mts.acking;
@@ -27,7 +30,7 @@ package org.cougaar.core.mts.acking;
 import org.cougaar.core.mts.*;
 
 
-class NullMessage extends Message  // needed as Message class is abstract
+public class NullMessage extends Message  // needed as Message class is abstract
 {
   public NullMessage (MessageAddress src, MessageAddress dest)
   {

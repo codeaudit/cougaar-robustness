@@ -21,7 +21,7 @@
  * CHANGE RECORD 
  * 15 Aug 2002: Add setAverage() and isStartDelaySatisfied(). (OBJS)
  * 25 Jul 2002: Add startDelay and getLastSampleTimestamp(). (OBJS)
- * 23 Apr 2001: Split out from MessageAckingAspect. (OBJS)
+ * 23 Apr 2002: Split out from MessageAckingAspect. (OBJS)
  */
 
 package org.cougaar.core.mts.acking;

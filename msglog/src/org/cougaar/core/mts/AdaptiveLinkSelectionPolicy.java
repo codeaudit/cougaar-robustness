@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 18 Aug  2002: Various enhancements for Cougaar 9.4.1 (OBJS)
  * 25 Jul  2002: Added code to avoid UDP link if msg size too big. (OBJS)
  * 25 Jul  2002: Added getting RTT from RTT service. (OBJS)
  * 23 Jul  2002: Added linkChoice method. (OBJS)
@@ -378,28 +379,33 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       return blackHoleLink;
     }
 
-    //  Check that the sending agent is a current agent in this node.  If not,
-    //  it has moved on, and its outstanding messages with it, so we just drop the 
-    //  message.  As with send deadline above, maybe put this in a dropped msg 
-    //  table instead of the successful sends table?  NOTE:  Could get into trouble
-    //  if the agent returns and still needs to send this message!
+    //  Check that the sending agent is a current agent in this node.  If not, it has
+    //  moved on, and its outstanding (regular) messages with it, so we just drop all
+    //  but pure ack messages.  As with send deadline above, maybe put this in a dropped 
+    //  msg table instead of the successful sends table?  
+
+// TODO Could we get into trouble if the agent returns and still it needs to send this message?
 
     if (!getRegistry().isLocalClient(MessageUtils.getOriginatorAgent(msg)))
     {
-      if (debug) log.debug ("Dropping msg from no longer local agent: " +msgString); 
-      MessageAckingAspect.addSuccessfulSend (msg);  // HACK: needs work - see above
-      return blackHoleLink;
+      if (!MessageUtils.isSomePureAckMessage (msg))
+      {
+        if (debug) log.debug ("Dropping msg from no longer local agent: " +msgString); 
+        MessageAckingAspect.addSuccessfulSend (msg);  // HACK: needs work - see above
+        return blackHoleLink;
+      }
     }
 
-    //  Check the from node in the message.  If the message is a resend from a newly
-    //  arrived agent, its from node may be off, so correct it.
+    //  Check the from node in the message.  If is not us, something is wrong.
+    //  Messages being resent from a newly arrived agent already have this change
+    //  made.  Drop the message and log an error.
 
     String fromNode = MessageUtils.getFromAgentNode (msg);
 
     if (fromNode != null && (!(fromNode.equals(thisNode))))
     {
-      if (debug) log.debug ("Fixing msg with wrong from node: " +msgString); 
-      MessageUtils.getFromAgent(msg).setNodeName (thisNode);
+      log.error ("Dropping msg with wrong from node: " +msgString); 
+      return blackHoleLink;
     }
 
     //  Get the target node for the message.  If this message is a retry/resend, we try to

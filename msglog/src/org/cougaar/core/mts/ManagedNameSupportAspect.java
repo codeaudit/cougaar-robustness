@@ -137,12 +137,14 @@ public class ManagedNameSupportAspect extends StandardAspect
       final int POLL_TIME = 100;
       long callDeadline = now() + callTimeout;
       Object lookup = null;
+      boolean hadException = false;
       boolean timedOut = false;
 
       while (true)
       {
         if (addressLookup.isFinished()) 
         {
+          hadException = addressLookup.hadException();
           lookup = addressLookup.getLookup();
           break;
         }
@@ -156,12 +158,13 @@ public class ManagedNameSupportAspect extends StandardAspect
         }
       }
 
-      //  If the call timed out, try a value from our cache, else set the cache
+      //  If the call failed or timed out, try a value from our cache, else set the cache
 
-      if (timedOut) 
+      if (hadException || timedOut) 
       {
         lookup = getCachedAddressLookup (address, transportType);
-        if (doDebug()) debug ("timed lookupAddressInNameServer() timed out, using value from cache: " +lookup);
+        String s = (hadException ? "had exception" : "timed out");
+        if (doDebug()) debug ("timed lookupAddressInNameServer() "+s+", using value from cache: " +lookup);
       }
       else 
       {
@@ -225,7 +228,7 @@ public class ManagedNameSupportAspect extends StandardAspect
       {
         if (doDebug()) debug ("timed lookupAddressInNameServer() called: address="+address+" transportType="+transportType);
         lookup = nameSupport.lookupAddressInNameServer (address, transportType);
-        if (doDebug()) debug ("timed lookupAddressInNameServer() returned");
+        if (doDebug()) debug ("timed lookupAddressInNameServer() returned without exception");
       }
       catch (Exception e)
       {
@@ -239,9 +242,9 @@ public class ManagedNameSupportAspect extends StandardAspect
       return (lookup != null || exception != null);
     }
 
-    public boolean isError ()
+    public boolean hadException ()
     {
-      return (exception != null);
+      return exception != null;
     }
 
     public Exception getException ()

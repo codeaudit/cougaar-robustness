@@ -19,7 +19,8 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 23 Apr  2001: Split out from MessageAckingAspect. (OBJS)
+ * 18 Aug 2002: Mucho changes to support Cougaar 9.2+ and agent mobility. (OBJS)
+ * 23 Apr 2002: Split out from MessageAckingAspect. (OBJS)
  */
 
 package org.cougaar.core.mts.acking;
@@ -134,120 +135,23 @@ class AckBackend extends MessageDelivererDelegateImplBase
     //  reject it (ignore it).  If the message came from a legimate source it will
     //  resend it, and perhaps this time be well-formed.
 
-    String type = MessageUtils.getMessageType (msg);
-
-    if (type == null)
+    if (!MessageIntegrity.areMessageAttributesOK (msg, log))
     {
-      log.error ("AckBackend: Missing message type (msg ignored): " +msgString);
+      log.error ("AckBackend: Message attributes fail integrity test (msg ignored): " +msgString);
       return success;
     }
 
-    int i;
-    String validTypes[] = MessageUtils.getValidMessageTypes();
-    for (i=0; i<validTypes.length; i++) if (type.equals (validTypes[i])) break;
+    //  Is this message for us?  We only check the node.  We don't check that the target
+    //  agent exists in this node here because we want the acks out of the message.
 
-    if (i == validTypes.length)
-    {
-      log.error ("AckBackend: Message not a valid type ("+type+") (msg ignored): " +msgString);
-      return success;
-    }
-
-    if (!MessageUtils.hasMessageNumber (msg))
-    {
-      log.error ("AckBackend: Missing message number (msg ignored): " +msgString);
-      return success;
-    }
-
-    int msgNum = MessageUtils.getMessageNumber (msg);
-
-    if (ack.isAck() && msgNum < 0)
-    {
-      if (!MessageUtils.isPingMessage (msg))  // pings are an exception
-      {
-        log.error ("AckBackend: Invalid msg number (msg ignored): " +msgString);
-        return success;
-      }
-    }
-
-    if (ack.isPureAck() && msgNum >= 0)
-    {
-      log.error ("AckBackend: Invalid msg number (pure ack msg ignored): " +msgString);
-      return success;
-    }
-
-    if (ack.isPureAckAck() && msgNum >= 0)
-    {
-      log.error ("AckBackend: Invalid msg number (pure ack-ack msg ignored): " +msgString);
-      return success;
-    }
-
-    if (ack.isSomePureAck() && !MessageUtils.haveSrcMsgNumber(msg))
-    {
-      log.error ("AckBackend: Missing src msg number (some pure ack msg ignored): " +msgString);
-      return success;
-    }
-
-    String fromNode = MessageUtils.getFromAgentNode (msg);
-
-    if (fromNode == null || fromNode.equals(""))
-    {
-      log.error ("AckBackend: Missing from node (msg ignored): " +msgString);
-      return success;
-    }
-
-    String toNode = MessageUtils.getToAgentNode (msg);
-
-    if (toNode == null || toNode.equals(""))
-    {
-      log.error ("AckBackend: Missing to node (msg ignored): " +msgString);
-      return success;
-    }
-
-    if (!aspect.getThisNode().equals (toNode))
+    if (!MessageUtils.getToAgentNode(msg).equals (aspect.getThisNode()))
     {
       log.error ("AckBackend: Message not for this node (msg ignored): " +msgString);
       return success;
     }
-    
-    if (ack.getSendCount() < 1)
-    {
-      int sendCount = ack.getSendCount();
-      log.error ("AckBackend: Msg has bad sendCount (" +sendCount+ ") (msg ignored): " +msgString);
-      return success;
-    }
 
-    if (ack.isAck() && ack.getResendMultiplier() < 1)
-    {
-      log.error ("AckBackend: Msg has bad resendMultiplier (msg ignored): " +msgString);
-      return success;
-    }
-
-    try
-    {
-      if (ack.getSpecificAcks() != null)
-      {
-        for (Enumeration a=ack.getSpecificAcks().elements(); a.hasMoreElements(); )
-        {
-          NumberList.checkListValidity ((AckList) a.nextElement());
-        }
-      }
-
-      if (ack.getLatestAcks() != null)
-      {
-        for (Enumeration a=ack.getLatestAcks().elements(); a.hasMoreElements(); )
-        {
-          NumberList.checkListValidity ((AckList) a.nextElement());
-        }
-      }
-    }
-    catch (Exception e)
-    {
-      log.error ("AckBackend: Msg contains invalid acks (msg ignored): " +msgString);
-      return success;
-    }
+    //  Can't do this integrity check yet - msg system architecture wrong for it
 /*
-    Can't do this integrity check yet - msg system architecture wrong for it
-
     if (getLinkType (ack.getSendLink()) != actual receive link type)
     {
       if (MessageAckingAspect.debug) 
@@ -257,11 +161,11 @@ class AckBackend extends MessageDelivererDelegateImplBase
       }
     }
 */
+    //  Check if message is too old or too ahead.  May want to move to protocol 
+    //  indexed age windows.
+
     if (ack.getSendTime() < now() - MessageAckingAspect.messageAgeWindowInMinutes*60*1000)
     {
-      //  Kind of a hack, but the start of something.  May want to do things like set
-      //  max age based on transport type ...
-
       if (log.isWarnEnabled()) 
       {
         long mins = (now()-ack.getSendTime()) / (60*1000);
@@ -274,9 +178,6 @@ class AckBackend extends MessageDelivererDelegateImplBase
 
     if (ack.getSendTime() > now() + MessageAckingAspect.messageAgeWindowInMinutes*60*1000)
     {
-      //  Kind of a hack, but the start of something.  May want to do things like set
-      //  max age based on transport type ...
-
       if (log.isWarnEnabled()) 
       {
         String date = (new Date(ack.getSendTime())).toString();
@@ -286,15 +187,15 @@ class AckBackend extends MessageDelivererDelegateImplBase
       return success;
     }
 
-    //  Handle messages from out-of-date senders or to out-of-date receivers
+    //  Handle messages from out-of-date senders or to out-of-date receivers.
     //  NOTE:  May want to send NACKs back for these messages.
 
-// NACK Notes
-// if (regular msg)  not pure ack, ack ack, ping, etc
-// if (not a duplicate) // only send once?
-//   send it or schedule it
-//   if sched, need nack vs. pure nack
-//   a pure nack has no msg num - it is not acked?
+    // NACK Notes
+    // if (regular msg)  not pure ack, ack ack, ping, etc
+    // if (not a duplicate) // only send once?
+    //   send it or schedule it
+    //   if sched, need nack vs. pure nack
+    //   a pure nack has no msg num - it is not acked?
 
     if (!isLatestAgentIncarnation (MessageUtils.getFromAgent (msg), MessageUtils.getOriginatorAgent (msg)))
     {
@@ -310,11 +211,13 @@ class AckBackend extends MessageDelivererDelegateImplBase
       return success;
     }
 
-    //  At this point we feel the received message is legitimate, so now we deliver
+    //  At this point we feel the received message is probably ok, so now we deliver
     //  it and record its reception while making sure that it is not a message we have 
     //  already received and delivered.  Note that there is also checking for duplicate
     //  messages in the MessageOrderingAspect, but that is ok because message ordering 
     //  is orthogonal to acking and is not required to be active.
+
+    int msgNum = MessageUtils.getMessageNumber (msg);
 
     synchronized (this)
     {
@@ -343,6 +246,7 @@ class AckBackend extends MessageDelivererDelegateImplBase
 
     //  Disburse the acks contained in the message
 
+    String fromNode = MessageUtils.getFromAgentNode (msg);
     MessageAckingAspect.addReceivedAcks (fromNode, ack.getLatestAcks());  // all have latest acks
 
     long ackSendableTime = 0;

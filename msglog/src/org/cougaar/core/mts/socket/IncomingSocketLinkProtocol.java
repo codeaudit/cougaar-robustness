@@ -416,22 +416,21 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
           //  Sit and wait for a message (till socket timeout)
           
           ByteArrayObject msgObject = (ByteArrayObject) socketIn.readObject();
+          if (showTraffic) System.err.print ("<S");
 
           //  Deserialize bytes into a Cougaar message
 
-          Object obj = fromBytes (msgObject.getBytes());
+          Object obj = getObjectFromBytes (msgObject.getBytes());
 
           try
           {
-            msg = (AttributedMessage) obj;
+            msg = (AttributedMessage) obj;  // possible cast exception
           }
           catch (Exception e)
           {
             log.error ("Got non (or broken) AttributedMessage! (msg ignored): " +e);
             continue;
           }
-
-          if (showTraffic) System.err.print ("<S");
 
           if (log.isDebugEnabled()) 
           {
@@ -463,7 +462,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
         try
         {
-          getDeliverer().deliverMessage (msg, msg.getTarget());
+          if (msg != null) getDeliverer().deliverMessage (msg, msg.getTarget());
         }
         catch (MisdeliveredMessageException e)
         { 
@@ -483,37 +482,28 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
       messageInListeners.remove (this);
     }
+  }
 
-    private Object fromBytes (byte[] data) 
+  private static Object getObjectFromBytes (byte[] data) 
+  {
+	ObjectInputStream ois = null;
+	Object obj = null;
+
+	try 
     {
-      ObjectInputStream ois = null;
-      Object obj = null;
-
-      try 
-      {
-        ByteArrayInputStream bais = new ByteArrayInputStream (data);
-        ois = new ObjectInputStream (bais);
-        obj = ois.readObject();
-      } 
-      catch (ClassNotFoundException cnfe) 
-      {
-        log.error ("fromBytes cnfe exception: " +cnfe);
-        return null;
-      }
-      catch (Exception e) 
-      {
-        log.error ("fromBytes exception: " +e);
-        return null;
-      }
+      ByteArrayInputStream bais = new ByteArrayInputStream (data);
+	  ois = new ObjectInputStream (bais);
+	  obj = ois.readObject();
+	} 
+    catch (Exception e) 
+    {
+      if (log.isDebugEnabled()) log.debug ("Deserialization exception: " +e);
+      return null;
+	}
 	
-      try 
-      {
-	    ois.close();
-      } 
-      catch (IOException e) {}
+	try { ois.close(); } catch (IOException e) {}
 
-      return obj;
-    }
+	return obj;
   }
 
   private static String getLocalHost ()

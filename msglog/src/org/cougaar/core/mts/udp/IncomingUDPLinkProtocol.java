@@ -291,22 +291,21 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
           //  Wait for an incoming packet
 
           datagramSocket.receive (datagramPacket);
+          if (showTraffic) System.err.print ("<U");
 
           //  Convert packet into a Cougaar message
 
-          Object obj = fromBytes (datagramPacket.getData());
+          Object obj = getObjectFromBytes (datagramPacket.getData());
 
           try
           {
-            msg = (AttributedMessage) obj;
+            msg = (AttributedMessage) obj;  // possible cast exception
           }
           catch (Exception e)
           {
             log.error ("Got non (or broken) AttributedMessage! (msg ignored): " +e);
             continue;
           }
-
-          if (showTraffic) System.err.print ("<U");
 
           if (log.isDebugEnabled()) 
           {
@@ -332,7 +331,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 
         try
         {
-          getDeliverer().deliverMessage (msg, msg.getTarget());
+          if (msg != null) getDeliverer().deliverMessage (msg, msg.getTarget());
         }
         catch (MisdeliveredMessageException e)
         { 
@@ -350,7 +349,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
         datagramSocket = null;
       }
 
-      //  HACK!  For now, destroy this server socket and create another.
+      //  HACK!  For now, destroy this datagram socket and create another.
       //  Will work this out better later.
 
       destroyDatagramSocket (this);
@@ -386,7 +385,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
     return stringWriter.getBuffer().toString();
   }
 
-  private Object fromBytes (byte[] data) 
+  private static Object getObjectFromBytes (byte[] data) 
   {
 	ObjectInputStream ois = null;
 	Object obj = null;
@@ -397,22 +396,13 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 	  ois = new ObjectInputStream (bais);
 	  obj = ois.readObject();
 	} 
-    catch (ClassNotFoundException cnfe) 
-    {
-      log.error ("fromBytes cnfe exception: " +cnfe);
-      return null;
-	}
     catch (Exception e) 
     {
-      log.error ("fromBytes exception: " +e);
+      if (log.isDebugEnabled()) log.debug ("Deserialization exception: " +e);
       return null;
 	}
 	
-	try 
-    {
-	    ois.close();
-	} 
-    catch (IOException e) {}
+	try { ois.close(); } catch (IOException e) {}
 
 	return obj;
   }

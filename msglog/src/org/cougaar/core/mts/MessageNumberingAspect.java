@@ -95,7 +95,7 @@ public class MessageNumberingAspect extends StandardAspect
 
       if (!isLocalAgent (MessageUtils.getOriginatorAgent(msg)))
       {
-        String s = "Sending agent " +fromAgent+ " no longer on local node!";
+        String s = "Sending agent " +fromAgent+ " not in local node!";
         loggingService.error (s);
         throw new CommFailureException (new Exception (s));
       }
@@ -182,11 +182,11 @@ public class MessageNumberingAspect extends StandardAspect
 
   private int getNextMessageNumber (int type, AttributedMessage msg) throws CommFailureException
   {
-    //  NOTE:  Positive message numbers start at 1, not 0.  This is because
-    //  some messages have negative message numbers (eg. acks, pings)
-    //  and there is no -0.  Also, now we are using 0 as the message 
-    //  number for un-ordered and un-acked messages, as well as local
-    //  messages.  Negative message numbers start at -1.
+    //  NOTE:  Positive message numbers start at 1, not 0.  0 is reserved
+    //  for unacked messages, acked messages have non-zero positive or
+    //  negative numbers.  Negative message numbers start at -1.  Just 
+    //  because a message has a non-zero number does not mean it is acked,
+    //  it means it is ackable.
 
     MessageAddress agentAddr = MessageUtils.getOriginatorAgent (msg);
     Hashtable agentTable = getMessageNumberTableForAgent (agentAddr);
@@ -196,7 +196,7 @@ public class MessageNumberingAspect extends StandardAspect
       AgentID toAgent = MessageUtils.getToAgent (msg);
       String key = toAgent.getNumberSequenceKey();
       SequenceNumbers n = (SequenceNumbers) agentTable.get (key);
-      if (n == null) { n = new SequenceNumbers (1, -1); agentTable.put (key, n); }
+      if (n == null) { n = new SequenceNumbers (1,-1); agentTable.put (key, n); }
       return (type==POSITIVE ? n.nextPositiveNumber++ : n.nextNegativeNumber--);
     }
   }

@@ -67,38 +67,41 @@ class MessageResender implements Runnable
 
     if (debug()) log.debug ("MessageResender: adding " +MessageUtils.toString(msg));
 
-    //  Add (or remove) the message from the agent state
+    //  Possibly add (or remove) the message to (from) the agent state
 
-    AgentState agentState = aspect.getAgentState (MessageUtils.getOriginatorAgent(msg));
-
-    if (agentState != null)
+    if (MessageUtils.isRegularMessage (msg))
     {
-      boolean acked = MessageAckingAspect.wasSuccessfulSend (msg);
+      AgentState agentState = aspect.getAgentState (MessageUtils.getOriginatorAgent(msg));
 
-      synchronized (agentState)
+      if (agentState != null)
       {
-        Vector v = (Vector) agentState.getAttribute (MessageAckingAspect.SENT_BUT_NOT_ACKED_MSGS);
-       
-        if (acked)
-        {
-          if (v != null) 
-          {
-            if (debug()) log.debug ("MessageResender: removing from agentState: " +MessageUtils.toString(msg));
-            v.remove (msg);
-          }
-        }
-        else
-        {
-          if (v == null) 
-          {
-            v = new Vector();
-            agentState.setAttribute (MessageAckingAspect.SENT_BUT_NOT_ACKED_MSGS, v);
-          }
+        boolean acked = MessageAckingAspect.wasSuccessfulSend (msg);
 
-          if (debug()) log.debug ("MessageResender: adding to agentState: " +MessageUtils.toString(msg));
-          v.add (msg);
+        synchronized (agentState)
+        {
+          Vector v = (Vector) agentState.getAttribute (MessageAckingAspect.SENT_BUT_NOT_ACKED_MSGS);
+         
+          if (acked)
+          {
+            if (v != null) 
+            {
+              if (debug()) log.debug ("MessageResender: removing from agentState: " +MessageUtils.toString(msg));
+              v.remove (msg);
+            }
+          }
+          else
+          {
+            if (v == null) 
+            {
+              v = new Vector();
+              agentState.setAttribute (MessageAckingAspect.SENT_BUT_NOT_ACKED_MSGS, v);
+            }
+
+            if (debug()) log.debug ("MessageResender: adding to agentState: " +MessageUtils.toString(msg));
+            v.add (msg);
+          }
         }
-      }
+      } 
     }
 
     //  Add the message to the waiting queue
@@ -121,31 +124,33 @@ class MessageResender implements Runnable
 
     //  Possibly remove the message from the agent state
 
-    AgentState agentState = aspect.getAgentState (MessageUtils.getOriginatorAgent(msg));
-
-    if (agentState != null)
+    if (MessageUtils.isRegularMessage (msg))
     {
-      boolean acked = MessageAckingAspect.wasSuccessfulSend (msg);
-      Ack ack = MessageUtils.getAck (msg);
+      AgentState agentState = aspect.getAgentState (MessageUtils.getOriginatorAgent(msg));
 
-      synchronized (agentState)
+      if (agentState != null)
       {
-        Vector v = (Vector) agentState.getAttribute (MessageAckingAspect.SENT_BUT_NOT_ACKED_MSGS);
-       
-        if (acked || ack.getSendCount() == 0)
+        boolean acked = MessageAckingAspect.wasSuccessfulSend (msg);
+        Ack ack = MessageUtils.getAck (msg);
+
+        synchronized (agentState)
         {
-          if (v != null) 
+          Vector v = (Vector) agentState.getAttribute (MessageAckingAspect.SENT_BUT_NOT_ACKED_MSGS);
+         
+          if (acked || ack.getSendCount() == 0)
           {
-            if (debug()) log.debug ("MessageResender: removing from agentState: " +MessageUtils.toString(msg));
-            v.remove (msg);
+            if (v != null) 
+            {
+              if (debug()) log.debug ("MessageResender: removing from agentState: " +MessageUtils.toString(msg));
+              v.remove (msg);
+            }
           }
         }
       }
     }
 
-    //  Remove the message from the waiting queue.  This can
-    //  raise the minResendDeadline, but doesn't seem like
-    //  enough to do a ding().
+    //  Remove the message from the waiting queue.  This can raise the minResendDeadline, 
+    //  but doesn't seem like enough of an event to do a ding().
 
     synchronized (queue) 
     {

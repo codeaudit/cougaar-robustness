@@ -36,9 +36,10 @@ import org.cougaar.core.thread.Schedulable;
 public class AgentID implements java.io.Serializable
 {
   private static final int callTimeout;
+  private static final Hashtable topologyLookupTable = new Hashtable();
+
   private static ThreadService threadService;
   private static TopologyReaderService topologyReaderService;
-  private static final Hashtable topologyLookupTable = new Hashtable();
 
   private String nodeName;
   private String agentName;
@@ -57,6 +58,13 @@ public class AgentID implements java.io.Serializable
     this.nodeName = nodeName;
     this.agentName = agentName;
     this.agentIncarnation = agentIncarnation;
+  }
+
+  public AgentID (AgentID aid)
+  {
+    this.nodeName = aid.nodeName;
+    this.agentName = aid.agentName;
+    this.agentIncarnation = aid.agentIncarnation;
   }
 
   public String getNodeName ()
