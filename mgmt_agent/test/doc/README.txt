@@ -130,17 +130,24 @@ UC1 COMPONENT OVERVIEW:
      still active.  This "vacate host" action may be in response to a percieved
      threat or for administrative purposes.
 
-  7) RobustnessServlet:  This servlet
+  7) RobustnessServlet:  This servlet is used by the RobustnessUI application
+     to display information about Robustness communities.  The servlet obtains
+     information from MangementAgent blackboards and the Name Server on behalf
+     of the RobustnessUI.
 
-  8) ParameterModifierServlet
+  8) ParameterModifierServlet:  This servlet is used to modify the externally
+     configurable parameters used by the various ManagementAgent plugins.  See
+     section 5.C above for information on how to invoke this servlet.
 
 
   Monitored Agent Components
   --------------------------
 
-  9) HeartbeatServerPlugin
+  9) HeartbeatServerPlugin:  This plugin is loaded into agents that will be
+     monitored by the ManagementAgent.  This plugin will periodically send
+     heartbeat messages to the ManagementAgent upon request.
 
-  10) PingServerPlugin
+  10) PingServerPlugin:  This plugin provides a reliable 
 
 
 SETUP:
