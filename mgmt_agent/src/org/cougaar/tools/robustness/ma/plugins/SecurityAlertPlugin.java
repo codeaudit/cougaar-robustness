@@ -98,14 +98,11 @@ public class SecurityAlertPlugin extends ComponentPlugin {
   }
 
   /**
-   * Generate a SecurityAlert if an
-   * AdaptiveMnROperatingModes.PREVENTIVE_MEASURE_POLICY == HIGH.
+   * Generate a SecurityAlert if an THREATCON_LEVEL == "HIGH".
    * @param iaom
    */
   private void generateSecurityAlert(InterAgentOperatingMode iaom) {
-    Comparable level = iaom.getValue();
-    OMCRangeList allowedValues = iaom.getAllowedValues();
-    if (level == allowedValues.getMax()) {
+    if (iaom.getValue().equals("HIGH")) {
       if (securityAlert == null) {
         securityAlert = new SecurityAlert(SecurityAlert.HIGH_SEVERITY);
         tas.sendAlert(securityAlert, getCommunity(), "HealthMonitor");
@@ -125,7 +122,7 @@ public class SecurityAlertPlugin extends ComponentPlugin {
         return false;
       }
       InterAgentOperatingMode mode = (InterAgentOperatingMode)o;
-      return mode.getName().equals(AdaptiveMnROperatingModes.PREVENTIVE_MEASURE_POLICY);
+      return mode.getName().equals("org.cougaar.core.security.monitoring.THREATCON_LEVEL");
     }
   };
 
