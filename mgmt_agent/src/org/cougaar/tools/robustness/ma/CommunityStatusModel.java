@@ -86,7 +86,8 @@ public class CommunityStatusModel {
     Attributes attrs;
     long ttl;
     String name;
-    String location;
+    String currentLocation;
+    String priorLocation;
     int type;            // AGENT or NODE
     int currentState;
     String leaderVote;
@@ -154,7 +155,7 @@ public class CommunityStatusModel {
       List l = new ArrayList();
       for (Iterator it = statusMap.values().iterator(); it.hasNext();) {
         StatusEntry se = (StatusEntry)it.next();
-        if (se != null && nodeName.equals(se.location) && se.type == AGENT) {
+        if (se != null && nodeName.equals(se.currentLocation) && se.type == AGENT) {
           l.add(se.name);
         }
       }
@@ -299,7 +300,21 @@ public class CommunityStatusModel {
   public String getLocation(String name) {
     StatusEntry se = (StatusEntry)statusMap.get(name);
     if (se != null) {
-      return se.location;
+      return se.currentLocation;
+    } else {
+      logger.warn("No StatusEntry found: name=" + name);
+      return null;
+    }
+  }
+
+  /**
+   * Returns name of an agents prior node.
+   * @param name Name of agent or node
+   */
+  public String getPriorLocation(String name) {
+    StatusEntry se = (StatusEntry)statusMap.get(name);
+    if (se != null) {
+      return se.priorLocation;
     } else {
       logger.warn("No StatusEntry found: name=" + name);
       return null;
@@ -325,21 +340,21 @@ public class CommunityStatusModel {
     logger.debug("setLocation: agent=" + name + " loc=" + loc);
     StatusEntry se = (StatusEntry)statusMap.get(name);
     se.timestamp = new Date();
-    if (se.location == null || !se.location.equals(loc)) {
-      String priorLocation = se.location;
-      if (thisAgent.equals(priorLocation)) {
+    if (se.currentLocation == null || !se.currentLocation.equals(loc)) {
+      se.priorLocation = se.currentLocation;
+      if (thisAgent.equals(se.priorLocation)) {
         //logger.info("Adding " + name + " to Prior list, prior=" + priorLocation + " new=" + loc);
         //prior.add(name);
       }
-      se.location = loc;
+      se.currentLocation = loc;
       queueChangeEvent(
         new CommunityStatusChangeEvent(CommunityStatusChangeEvent.LOCATION_CHANGE,
                                        se.name,
                                        se.type,
                                        se.currentState,
                                        -1,
-                                       se.location,
-                                       priorLocation,
+                                       se.currentLocation,
+                                       se.priorLocation,
                                        null,
                                        null));
     }
@@ -428,7 +443,7 @@ public class CommunityStatusModel {
                                            se.type,
                                            se.currentState,
                                            -1,
-                                           se.location,
+                                           se.currentLocation,
                                            null,
                                            null,
                                            null));
@@ -459,7 +474,8 @@ public class CommunityStatusModel {
         se.type = NODE;
         se.timestamp = new Date();
         se.ttl = DEFAULT_TTL;
-        se.location = nodeName;
+        se.currentLocation = nodeName;
+        se.priorLocation = null;
         se.currentState = nodeStatus;
         se.leaderVote = leader;
         statusMap.put(se.name, se);
@@ -507,10 +523,10 @@ public class CommunityStatusModel {
         }
         if (se != null) {
           setCurrentState(as[i].getName(), as[i].getStatus());
-          if (se.location == null || !se.location.equals(as[i].getLocation())) {
-            String priorLocation = se.location;
+          if (se.currentLocation == null || !se.currentLocation.equals(as[i].getLocation())) {
+            se.priorLocation = se.currentLocation;
             //logger.info(priorLocation + "->" + as[i].getLocation());
-            se.location = as[i].getLocation();
+            se.currentLocation = as[i].getLocation();
             queueChangeEvent(
                 new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
                                                LOCATION_CHANGE,
@@ -518,8 +534,8 @@ public class CommunityStatusModel {
                                                se.type,
                                                se.currentState,
                                                -1,
-                                               se.location,
-                                               priorLocation,
+                                               se.currentLocation,
+                                               se.priorLocation,
                                                null,
                                                null));
           }

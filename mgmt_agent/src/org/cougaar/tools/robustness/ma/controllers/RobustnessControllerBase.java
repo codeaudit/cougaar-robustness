@@ -425,15 +425,15 @@ public abstract class RobustnessControllerBase implements
     StringBuffer sb = new StringBuffer(indent + "<attributes>\n");
     if (attrs != null) {
       try {
-        for(NamingEnumeration enum = attrs.getAll(); enum.hasMore(); ) {
+        for (NamingEnumeration enum = attrs.getAll(); enum.hasMore(); ) {
           Attribute attr = (Attribute)enum.next();
           sb.append(indent + "  <attribute id=\"" + attr.getID() + "\" >\n");
-          for(NamingEnumeration enum1 = attr.getAll(); enum1.hasMore(); ) {
+          for (NamingEnumeration enum1 = attr.getAll(); enum1.hasMore(); ) {
             sb.append(indent + "    <value>" + enum1.next() + "</value>\n");
           }
           sb.append(indent + "  </attribute>\n");
         }
-      } catch(NamingException ne) {}
+      } catch (NamingException ne) {}
     }
     sb.append(indent + "</attributes>\n");
     return sb.toString();
@@ -483,10 +483,11 @@ public abstract class RobustnessControllerBase implements
     sb.append(indent + "  <status " +
         " state=\"" + stateName(model.getCurrentState(agentName)) + "\"" +
         " last=\"" + df.format(model.getTimestamp(agentName)) + "\"" +
-        " expired=\"" + model.isExpired(agentName) + "\" >\n");
+        " expired=\"" + model.isExpired(agentName) + "\" />\n");
+    String priorLoc = model.getPriorLocation(agentName);
     sb.append(indent + "  <location " +
         " current=\"" + model.getLocation(agentName) + "\"" +
-        " prior=\"" + "" + "\" >\n");
+        " prior=\"" + (priorLoc == null ? "" : priorLoc) + "\" />\n");
     sb.append(attrsToXML(model.getAttributes(agentName), indent + "  "));
     sb.append(indent + "</agent>\n");
     return sb.toString();
@@ -499,7 +500,7 @@ public abstract class RobustnessControllerBase implements
     sb.append(indent + "  <status " +
         " state=\"" + stateName(model.getCurrentState(nodeName)) + "\"" +
         " last=\"" + df.format(model.getTimestamp(nodeName)) + "\"" +
-        " expired=\"" + model.isExpired(nodeName) + "\" >\n");
+        " expired=\"" + model.isExpired(nodeName) + "\" />\n");
     sb.append(attrsToXML(model.getAttributes(nodeName), indent + "  "));
     sb.append(indent + "</node>\n");
     return sb.toString();

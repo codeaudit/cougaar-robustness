@@ -102,14 +102,15 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   class ActiveStateController extends StateControllerBase {
     public void enter(String name) {
-      
+
       if (isLeader()) {
+        //logger.info("live=" + liveAgents() + " expected=" + expectedAgents());
         if (communityReady == false && liveAgents() == expectedAgents()) {
           communityReady = true;
           event("Community " + model.getCommunityName() + " Ready");
         }
       }
-      
+
       //logger.info("enter: state=ACTIVE agent=" + name);
       if (isLocal(name)) {
         setExpiration(name, NEVER);  // Set expiration to never, let
