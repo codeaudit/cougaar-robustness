@@ -391,7 +391,7 @@ public abstract class Action
             throw new IllegalValueException ("Action to be started is not in permittedValues set.");
         }
 
-        if (!lastAction.hasCompleted()) { //then the actuator didn't call stop, so update Last action
+        if (lastAction != null && !lastAction.hasCompleted()) { //then the actuator didn't call stop, so update Last action
             lastAction.setCompletionCode( this.ENDED_UNKNOWN, System.currentTimeMillis() );
         } 
 
