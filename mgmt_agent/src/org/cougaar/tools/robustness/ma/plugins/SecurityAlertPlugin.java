@@ -21,6 +21,8 @@ import org.cougaar.tools.robustness.threatalert.*;
 import org.cougaar.tools.robustness.ma.SecurityAlert;
 import org.cougaar.tools.robustness.ma.util.CommunityFinder;
 
+import org.cougaar.core.adaptivity.OperatingMode;
+import org.cougaar.core.adaptivity.InterAgentCondition;
 import org.cougaar.core.adaptivity.InterAgentOperatingMode;
 import org.cougaar.core.adaptivity.OMCRangeList;
 
