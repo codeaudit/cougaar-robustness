@@ -29,6 +29,7 @@ import org.cougaar.community.Filter;
 import org.cougaar.community.SearchStringParser;
 
 import org.cougaar.tools.robustness.ma.controllers.RobustnessController;
+import org.cougaar.tools.robustness.ma.util.NodeChangeListener;
 
 import org.cougaar.core.mts.MessageAddress;
 
@@ -147,6 +148,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
 
   private List eventQueue = new ArrayList();
   private List changeListeners = Collections.synchronizedList(new ArrayList());
+  private List nodeChangeListeners = Collections.synchronizedList(new ArrayList());
 
   /**
    * Constructor.
@@ -627,6 +629,12 @@ public class CommunityStatusModel extends BlackboardClientComponent
                   new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
                                                  MEMBERS_ADDED, se));
               //setCurrentState(se.name, INITIAL);
+              if(type == NODE) {
+                for(Iterator iter = nodeChangeListeners.iterator(); iter.hasNext();) {
+                  NodeChangeListener ncl = (NodeChangeListener)iter.next();
+                  ncl.addNode(se.name);
+                }
+              }
             } else {
               StatusEntry se = (StatusEntry) statusMap.get(entity.getName());
               if (se.attrs == null) {
@@ -643,6 +651,12 @@ public class CommunityStatusModel extends BlackboardClientComponent
             queueChangeEvent(
                 new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
                                                MEMBERS_REMOVED, se));
+            if(se.type == NODE) {
+              for(Iterator it = nodeChangeListeners.iterator(); it.hasNext();) {
+                NodeChangeListener ncl = (NodeChangeListener)it.next();
+                ncl.removeNode(se.name);
+              }
+            }
           }
         }
       }
@@ -1142,6 +1156,24 @@ public class CommunityStatusModel extends BlackboardClientComponent
   public void removeChangeListener(StatusChangeListener scl) {
     if (changeListeners.contains(scl))
       changeListeners.remove(scl);
+  }
+
+  /**
+   * Adds a NodeChangeListener to community
+   * @param ncl NodeChangeListener to add
+   */
+  public void addNodeChangeListener(NodeChangeListener ncl) {
+    if(!nodeChangeListeners.contains(ncl))
+      nodeChangeListeners.add(ncl);
+  }
+
+  /**
+   * Removes a NodeChangeListener from community
+   * @param ncl NodeChangeListener to remove
+   */
+  public void removeNodeChangeListener(NodeChangeListener ncl) {
+    if (nodeChangeListeners.contains(ncl))
+      nodeChangeListeners.remove(ncl);
   }
 
   /**
