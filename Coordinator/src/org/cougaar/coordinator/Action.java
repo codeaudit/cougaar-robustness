@@ -428,8 +428,8 @@ public abstract class Action
      */
     protected void stop(CompletionCode completionCode) throws IllegalValueException, NoStartedActionException  {
         
-        if (completionCode != Action.COMPLETED & 
-            completionCode != Action.ABORTED &
+        if (completionCode != Action.COMPLETED && 
+            completionCode != Action.ABORTED &&
             completionCode != Action.FAILED ) {
                 
             throw new IllegalValueException("Illegal completionCode: " + completionCode);
