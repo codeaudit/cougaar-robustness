@@ -37,12 +37,12 @@ import org.cougaar.coordinator.techspec.AssetType;
  * dimension.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.11 $Date: 2004-07-12 19:30:46 $
+ * @version $Revision: 1.14 $Date: 2004-07-15 20:19:41 $
  * @see BelievabilityDiagnosis
  * @see BelievabilityAction
  *
  */
-abstract class BeliefUpdateTrigger extends Loggable
+abstract class BeliefUpdateTrigger extends Loggable implements Comparable
 {
 
     // Class implmentation comments go here ...
@@ -66,17 +66,32 @@ abstract class BeliefUpdateTrigger extends Loggable
     abstract String getStateDimensionName();
 
     /**
-     * Returns true if the update trigger requires immediate publication
-     **/
-    abstract boolean requiresImmediateForwarding();
-
-
-    /**
      * This routine should return a string representation of the
      * belief update trigger.
      */
     abstract public String toString();
 
+    /*
+     * We use comparisons of BeliefUpdateTrigger that are based on the
+     * trigger timestamp.  We assume never have a need to compare the
+     * contents of belief triggers, so this time based comparison is
+     * useful for sorting these objects by time.
+     */
+    public int compareTo( Object obj )
+    {
+        if ( ! ( obj instanceof BeliefUpdateTrigger))
+            return -1;
+
+        BeliefUpdateTrigger trigger = (BeliefUpdateTrigger) obj;
+
+        if ( this.getTriggerTimestamp() < trigger.getTriggerTimestamp() )
+            return -1;
+
+        if ( this.getTriggerTimestamp() > trigger.getTriggerTimestamp() )
+            return 1;
+
+        return 0;
+    }
 
     //------------------------------------------------------------
     // package interface

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/AssetTypeModel.java,v $
- * $Revision: 1.14 $
- * $Date: 2004-07-12 19:30:46 $
+ * $Revision: 1.17 $
+ * $Date: 2004-07-15 20:19:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -47,7 +47,7 @@ import org.cougaar.coordinator.techspec.ThreatModelChangeEvent;
  * be notified is there is a change.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.14 $Date: 2004-07-12 19:30:46 $
+ * @version $Revision: 1.17 $Date: 2004-07-15 20:19:41 $
  *
  */
 class AssetTypeModel extends Model
@@ -453,7 +453,7 @@ class AssetTypeModel extends Model
                     ( "AssetTypeModel.addSensorTypeModel()",
                       "Sensor has unknown state dimension : "
                       + diag_ts.getStateDimension().getStateName()
-		      + "from asset type -- " + toString() );
+                + "from asset type -- " + toString() );
 
        return _dim_model[dim_idx].addSensorTypeModel( diag_ts );
         
@@ -524,7 +524,7 @@ class AssetTypeModel extends Model
                     ( "AssetTypeModel.addStressInstance()",
                       "Actuator has unknown state dimension : "
                       + stress.getStateDimension().getStateName() 
-		      + " from asset type -- " + toString() );
+                + " from asset type -- " + toString() );
 
         _dim_model[dim_idx].addStressInstance( stress );
 
@@ -575,7 +575,7 @@ class AssetTypeModel extends Model
                     ( "AssetTypeModel.handleThreatModelChange()",
                       "Threat has unknown state dimension : "
                       + state_dim_name 
-		      + "from asset type -- " + toString() );
+                + "from asset type -- " + toString() );
         
         _dim_model[dim_idx].handleThreatModelChange( tm_change );
 
@@ -603,6 +603,25 @@ class AssetTypeModel extends Model
 
         return max_latency;
     } // method getMaxSensorLatency
+
+    //************************************************************
+    /**
+     * Look at all the sensors for all state dimensions and return the
+     * total number of sensors across all state dimensions
+     *
+     */
+    public long getNumberOfSensors( )
+    {
+        int sensor_count = 0;
+        
+        for ( int dim_idx = 0; dim_idx < _dim_model.length; dim_idx++ )
+        {
+            sensor_count += _dim_model[dim_idx].getNumberOfSensors();
+
+        } // for dim_idx
+
+        return sensor_count;
+    } // method getNumberOfSensors
 
     //************************************************************
     /**

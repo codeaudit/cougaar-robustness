@@ -1,7 +1,7 @@
-/**
- * TriggerConsumerInterface.java
+/*
+ * SensorLatencyTimeTrigger.java
  *
- * Created on May 6, 2004
+ * Created on June 8, 2004
  * <copyright>
  *  Copyright 2004 Telcordia Technoligies, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
@@ -21,25 +21,37 @@
  *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
- **/
+ */
 
 package org.cougaar.coordinator.believability;
 
+import org.cougaar.coordinator.techspec.AssetID;
+
 /**
- * Used to accept new diagnoses from the blackboard
- * and take the appropriate action.
- *
- * @author Tony Cassandra
- * @version $Revision: 1.5 $Date: 2004-07-15 20:19:42 $
+ * This class serves for concrete instances of belief update triggers
+ * that are based solely on time (no diagnosis or action.) 
  * 
+ * @author Tony Cassandra
  */
-public interface TriggerConsumerInterface {
+class SensorLatencyTimeTrigger extends TimeUpdateTrigger 
+{
 
-    //------------------------------------------------------------
-    // public interface
-    //------------------------------------------------------------
+    //---------------------------------------------------------------
+    // package interface
+    //---------------------------------------------------------------
 
-    public void consumeUpdateTrigger( BeliefUpdateTrigger but ) 
-            throws BelievabilityException;
+    /**
+     * Main constructor
+     *
+     * @param asset_id The asset ID
+     * @param time The time that the update happened or was triggered
+     */
+    SensorLatencyTimeTrigger( AssetID asset_id, long time ) 
+    {
+        super( asset_id, time );
 
-} // class TriggerConsumerInterface
+    } // constructor SensorLatencyTimeTrigger
+
+
+} // class SensorLatencyTimeTrigger
+

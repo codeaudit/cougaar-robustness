@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManager.java,v $
- * $Revision: 1.13 $
- * $Date: 2004-07-12 19:30:46 $
+ * $Revision: 1.14 $
+ * $Date: 2004-07-15 15:06:00 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -47,7 +47,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * and provides information via the ModelManagerInterface. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.13 $Date: 2004-07-12 19:30:46 $
+ * @version $Revision: 1.14 $Date: 2004-07-15 15:06:00 $
  *
  */
 public class ModelManager extends Loggable
@@ -60,6 +60,18 @@ public class ModelManager extends Loggable
     // public interface
     //------------------------------------------------------------
 
+    // These constants for testing purposes only.  Make sure the
+    // bolean are set to false for a running system.
+    //
+    public static final boolean USE_FAKE_SENSOR_LATENCY = true;
+    public static final long FAKE_SENSOR_LATENCY_MS = 15000;
+
+    public static final boolean USE_FAKE_PUBLISH_INTERVAL = true;
+    public static final long FAKE_PUBLISH_INTERVAL_MS = 120000;
+
+    public static final boolean USE_FAKE_IMPLICT_INTERVAL = true;
+    public static final long FAKE_IMPLICIT_INTERVAL_MS = 30000;
+
     /**
      * Constructor documentation comments go here ...
      *
@@ -68,6 +80,7 @@ public class ModelManager extends Loggable
     public ModelManager( )
     {
         super();
+
     }  // constructor ModelManager
 
     //************************************************************
@@ -176,6 +189,12 @@ public class ModelManager extends Loggable
 
         logDetail( "==== getMaxSensorLatency() ====" );
 
+        if ( USE_FAKE_SENSOR_LATENCY )
+        {
+            logWarning( "USING FAKE LATENCY FOR TESTING ! (FIXME)" );
+            return FAKE_SENSOR_LATENCY_MS;
+        }
+
         AssetTypeModel at_model 
                 =  (AssetTypeModel) _asset_type_container.get
                 ( asset_type.getName() );
@@ -194,12 +213,96 @@ public class ModelManager extends Loggable
 
     //************************************************************
     /**
-     * docs here...
+     * Returns to number of sensors applicable for the given asset
+     * type.
      */
-    public POMDPModelInterface getPOMDPModel()
+    public long getNumberOfSensors( AssetType asset_type )
+            throws BelievabilityException
     {
-        return _pomdp_manager;
-    } // method getPOMDPModel
+
+        AssetTypeModel at_model 
+                =  (AssetTypeModel) _asset_type_container.get
+                ( asset_type.getName() );
+        
+        if ( at_model == null )
+        {
+            throw new BelievabilityException
+                    ( "ModelManager.getNumberOfSensors()",
+                      "Cannot find asset type model." );
+        }
+
+        return at_model.getNumberOfSensors( );
+
+    } // method getNumberOfSensors
+
+    //************************************************************
+    /**
+     * Returns whether or not the given sensor should have implicit
+     * diagnoses generated for it.  Somce sensors only report on a
+     * diagnsis value change, even though they are continually monitoring
+     * an asset.
+     */
+    public boolean usesImplicitDiagnoses( AssetType asset_type,
+                                          String sensor_name )
+            throws BelievabilityException
+    {
+        // FIXME: This needs to use the new flag from the techspecs.
+        //
+
+        return true;
+    }
+
+    //************************************************************
+    /**
+     * Returns the minimal amount of time we should wait before
+     * generating an implicit diagnosis for those sensors that only
+     * report a diagnosis if it changes from the last one given.
+     */
+    public long getImplicitDiagnosisInterval( AssetType asset_type,
+                                              String sensor_name )
+            throws BelievabilityException
+    {
+        if ( USE_FAKE_IMPLICT_INTERVAL )
+        {
+            logWarning( "USING FAKE IMPLICIT INTERVAL FOR TESTING ! (FIXME)" );
+            return FAKE_IMPLICIT_INTERVAL_MS;
+
+        }
+
+
+        return POLICY_IMPLICIT_DIAGNOSIS_INTERVAL;
+    }
+
+    //************************************************************
+    /**
+     * Returns the maximal amount of time we should allow between
+     * consecutive belief state (state estimation) publications.
+     */
+    public long getMaxPublishInterval( AssetType asset_type )
+            throws BelievabilityException
+    {
+
+        if ( USE_FAKE_PUBLISH_INTERVAL )
+        {
+            logWarning( "USING FAKE PUBLISH INTERVAL FOR TESTING ! (FIXME)" );
+            return FAKE_PUBLISH_INTERVAL_MS;
+
+        }
+
+        return POLICY_MAX_INTER_BELIEF_PUBLISH_INTERVAL;
+    }
+
+    //************************************************************
+    /**
+     * Returns the amount of utility chnage that must be seen in a
+     * belief state for us to go through the trouble of publishing it.
+     * This threshold is only applied in some cases, as others require
+     * the immediate publication, regardless of the utility change.
+     */
+    public double getBeliefUtilityChangeThreshold( )
+    {
+        return POLICY_BELIEF_UTILITY_CHANGE_THRESHOLD;
+    }
 
     //----------------------------------------
     // Model mutator methods
@@ -616,10 +719,169 @@ public class ModelManager extends Loggable
     private Hashtable _asset_type_container = new Hashtable();
 
     private MAUWeightModel _mau_weight_model = new MAUWeightModel();
-    
-    private POMDPModelManager _pomdp_manager = new POMDPModelManager(this);
 
     private StressGraph _stress_graph = new StressGraph();
+
+    //------------------------------------------------------------
+    // POMDP model section
+    //------------------------------------------------------------
+
+    //************************************************************
+    /**
+     * Get the a priori probability that the indicated asset type.
+     *
+     * @param asset_type The type of the asset
+     * @return A new belief states set to default values, or null if
+     * something goes wrong.  
+     *
+     */
+    public BeliefState getInitialBeliefState( AssetType asset_type )
+            throws BelievabilityException
+    {
+        // The initial belief is only based on the asset type, so is
+        // the same for all assets of a given type.
+
+        if ( asset_type == null )
+            throw new BelievabilityException
+                    ( "ModelManager.getInitialBeliefState()",
+                      "NULL asset type passed in." );
+
+        POMDPAssetModel pomdp_model = getPOMDPModel( asset_type );
+        
+        return pomdp_model.getInitialBeliefState();
+
+    } // method getInitialBeliefState
+
+    //************************************************************
+    /**
+     * Get the a priori probability for the indicated asset id and
+     * makes sure the bleif state has that ID set in it.
+     *
+     * @param asset_id The ID of the asset
+     * @return A new belief states set to default values, or null if
+     * something goes wrong.  
+     *
+     */
+    public BeliefState getInitialBeliefState( AssetID asset_id )
+           throws BelievabilityException
+     {
+         
+         // The initial belief is only based on the asset type, so is
+         // the same for all assets of a given type.
+         //
+         
+         // This call will handle the case of asset_id == null by
+         // throwing an exception.
+         //
+         BeliefState belief = getInitialBeliefState( asset_id.getType() );
+         
+         belief.setAssetID( asset_id );
+         
+         return belief;
+         
+     } // method getInitialBeliefState
+
+    //************************************************************
+    /**
+     * Used to update the belief state using the given trigger.
+     *
+     * @param start_belief initial belief state
+     * @param trigger the trigger to use to determine new belief
+     * state
+     * @return the update belief state
+     *
+     */
+    public BeliefState updateBeliefState( BeliefState start_belief,
+                                          BeliefUpdateTrigger trigger )
+            throws BelievabilityException
+    {
+        if (( start_belief == null )
+            || ( trigger == null ))
+            throw new BelievabilityException
+                    ( "ModelManager.updateBeliefState()",
+                      "NULL parameters(s) passed in." );
+
+        POMDPAssetModel pomdp_model
+                = getPOMDPModel( start_belief.getAssetType() );
+
+        logDebug( "Belief update for :" + start_belief.getAssetID() );
+
+        return pomdp_model.updateBeliefState( start_belief,
+                                              trigger );
+
+    } // method updateBeliefState
+
+     //************************************************************
+    /**
+     * Retrieves the POMDP model for the given asset type.  It will
+     * create the model if it does not exist, or if something has
+     * changed in the underlying tech spec models since it was
+     * created. 
+     *
+     * @param asset_type  The asset type ot build the model for
+     */
+    protected POMDPAssetModel getPOMDPModel( AssetType asset_type )
+            throws BelievabilityException
+    {
+        // This does an on-demand creation opf POMDP models
+
+        POMDPAssetModel model
+                = (POMDPAssetModel) _pomdp_model_set.get
+                ( asset_type.getName() );
+
+        // Model has to exist and be valid in order to use it.
+        //
+        if (( model != null ) && ( model.isValid() ))
+            return model;
+
+        // If the model has become invalid, then we remove it before
+        // recreating it.
+        //
+        if (( model != null ) && ( ! model.isValid()))
+            _pomdp_model_set.remove( asset_type.getName() );
+        
+        return createPOMDPModel( asset_type );
+
+    } // method getPOMDPModel
+
+    //************************************************************
+    /**
+     * Creates the model for the given asset type and adds it to the
+     * set of models this class is managing.
+     *
+     * @param asset_type  The asset type ot build the model for
+      */
+    protected POMDPAssetModel createPOMDPModel( AssetType asset_type )
+            throws BelievabilityException
+    {
+        // Method implementation comments go here ...
+
+        // First we find the AssetTypeModel to set up the state space
+        // and initial belief for the asset type.
+        //
+        AssetTypeModel at_model = getAssetTypeModel( asset_type );
+
+        if ( at_model == null )
+            throw new BelievabilityException
+                    ( "ModelManager.createModel()",
+                      "Asset type "
+                      + asset_type.getName() 
+                      + " does not exist in ModelManager" );
+        
+        
+        POMDPAssetModel pomdp_model
+                = new POMDPAssetModel( at_model );
+
+        _pomdp_model_set.put( asset_type.getName(), pomdp_model );
+
+        return pomdp_model;
+
+    } // method createPOMDPModel
+
+    // This contains all the POMDPModel objects for assets, keyed on
+    // the asset type name.  
+    //
+    private Hashtable _pomdp_model_set = new Hashtable();
 
     //------------------------------------------------------------
     // Test code section
@@ -636,8 +898,7 @@ public class ModelManager extends Loggable
         try
         {
             BeliefState initial_belief
-                    = _pomdp_manager.getInitialBeliefState
-                    ( _test_asset_type );
+                    = getInitialBeliefState( _test_asset_type );
             
             logDetail( "Initial Belief:\n"
                            + initial_belief.toString() );

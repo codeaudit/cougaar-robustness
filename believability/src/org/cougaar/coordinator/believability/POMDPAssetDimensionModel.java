@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetDimensionModel.java,v $
- * $Revision: 1.14 $
- * $Date: 2004-07-12 20:29:34 $
+ * $Revision: 1.17 $
+ * $Date: 2004-07-15 20:19:42 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -29,7 +29,7 @@ import org.cougaar.coordinator.techspec.AssetType;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.14 $Date: 2004-07-12 20:29:34 $
+ * @version $Revision: 1.17 $Date: 2004-07-15 20:19:42 $
  *
  */
 class POMDPAssetDimensionModel extends Model
@@ -341,7 +341,7 @@ class POMDPAssetDimensionModel extends Model
      *
      */
     void updateBeliefStateDiagnosisObs( BeliefStateDimension prev_belief,
-                                        BelievabilityDiagnosis diagnosis,
+                                        DiagnosisTrigger diagnosis,
                                         BeliefStateDimension next_belief )
             throws BelievabilityException
     {
@@ -353,7 +353,7 @@ class POMDPAssetDimensionModel extends Model
                       "NULL parameter(s) sent in." );
 
         double denom = 0.0;
-        String diagnosis_value = diagnosis.getDiagnosisValue();
+        String diagnosis_value = diagnosis.getSensorValue();
 
         double[] prev_belief_prob = prev_belief.getProbabilityArray();
         double[] next_belief_prob = new double[prev_belief_prob.length];
@@ -408,12 +408,24 @@ class POMDPAssetDimensionModel extends Model
         logDetail( "Pre-normalization: " 
                   + ProbabilityUtils.arrayToString( next_belief_prob ));
    
+        // Here we choose to ignore impossible observations, though we
+        // will give a warning.  We do not want to completely abort
+        // this operation, since the previous belief state will more
+        // than likely have some threat transition information in it.
+        // Thus, we choose to leave the belief state as is, which is
+        // why we simply copy the arrays over. 
+        //
         if( Precision.isZero( denom ))
-            throw new BelievabilityException
-                    ( "updateBeliefStateDiagnosisObs()",
-                      "Diagnosis is not possible. i.e., Pr("
-                      + diagnosis_value + ") = 0.0.");
-        
+        {
+            logWarning( "updateBeliefStateDiagnosisObs(): "
+                        + "Diagnosis is not possible. i.e., Pr("
+                        + diagnosis_value + ") = 0.0. Ignoring diagnosis.");
+            next_belief.setProbabilityArray
+                    ( prev_belief.getProbabilityArray());
+
+            return;
+        } // if found an impossible observation
+
         for( int i = 0; i < next_belief_prob.length; i++ )
             next_belief_prob[i] /= denom;
 
@@ -448,9 +460,9 @@ class POMDPAssetDimensionModel extends Model
                     ( "updateBeliefStateTrigger()",
                       "NULL parameter(s) sent in." );
         
-        if ( trigger instanceof BelievabilityDiagnosis)
+        if ( trigger instanceof DiagnosisTrigger )
             updateBeliefStateDiagnosisObs( prev_belief,
-                                           (BelievabilityDiagnosis) trigger,
+                                           (DiagnosisTrigger) trigger,
                                            next_belief );
         else if ( trigger instanceof BelievabilityAction)
             updateBeliefStateActionTrans( prev_belief,

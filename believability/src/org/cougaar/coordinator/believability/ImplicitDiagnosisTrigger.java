@@ -1,7 +1,8 @@
 /**
- * BelievabilityDiagnosis.java
+ * ImplicitDiagnosisTrigger.java
  *
- * Created on April 28, 2004
+ * Created on July 14, 2004
+ *
  * <copyright>
  *  Copyright 2004 Telcordia Technoligies, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
@@ -25,38 +26,44 @@
 
 package org.cougaar.coordinator.believability;
 
-import org.cougaar.coordinator.Diagnosis;
-import org.cougaar.coordinator.DiagnosisUtils;
-
 import org.cougaar.coordinator.techspec.AssetID;
 
 /**
  * The class that contains a local copy of pertinent information
  * related to the diagosis.
- * @author Misty Nodine
+ *
+ * @author Tony Cassandra
  */
-class BelievabilityDiagnosis extends DiagnosisTrigger
+class ImplicitDiagnosisTrigger extends DiagnosisTrigger
 {
 
+    //************************************************************
     /**
-     * Constructor, from a diagnosis on the blackboard
-     * @param diag The diagnosis from the blackboard
+     * Main constructor
+     *
+     * @param asset_id The asset ID this diagnosis is on
+     * @param sensor_name  The sensor name that generated the diagnosis
+     * @param sensor_value The diagnosis value itself
+     * @param state_dim_name The state dimension of the asset that was
+     * diagnosed
+     * @param time The time to set for the timestamps on this trigger.
      **/
-    BelievabilityDiagnosis( Diagnosis diag ) 
-    {
+    ImplicitDiagnosisTrigger( AssetID asset_id,
+                              String sensor_name,
+                              String sensor_value,
+                              String state_dim_name, 
+                              long time ) {
+        
+        super( asset_id );
+        
+        _sensor_name = sensor_name;
+        _sensor_value = sensor_value;
+        _sensor_state_dimension = state_dim_name;
+        
+        _last_asserted_timestamp = time;
+        _last_changed_timestamp = time;
 
-        super( DiagnosisUtils.getAssetID( diag ) );
+    } // constructor
 
-        // Copy relevant information from the diagnosis, as it may change
-        //
-        _sensor_name = diag.getClass().getName();
-        _sensor_value = (String) diag.getValue();
-
-        _sensor_state_dimension = diag.getAssetStateDimensionName();
-
-        _last_asserted_timestamp = diag.getLastAssertedTimestamp();
-        _last_changed_timestamp = diag.getLastChangedTimestamp();
-    }
-
-} // class BelievabilityDiagnosis
+} // class ImplicitDiagnosisTrigger
 

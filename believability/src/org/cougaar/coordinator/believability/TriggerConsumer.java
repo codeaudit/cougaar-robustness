@@ -28,12 +28,18 @@ package org.cougaar.coordinator.believability;
 /**
  * Used to accept new diagnoses or action successes from the blackboard
  * and take the appropriate action.
+ *
+ * @author Tony Cassandra, Misty Nodine
  */
 public class TriggerConsumer extends Loggable
-    implements TriggerConsumerInterface {
+        implements TriggerConsumerInterface 
+{
 
+    //************************************************************
     /**
-     * Constructor
+     * Main constructor
+     *
+     * @param bel_plugin The believability plugin
      * @param model_manager The model manager that has all the models
      *                      we need
      * @param se_publisher The publisher that will publish any resulting
@@ -41,72 +47,75 @@ public class TriggerConsumer extends Loggable
      **/
     public TriggerConsumer( BelievabilityPlugin bel_plugin,
                      ModelManagerInterface model_manager,
-                     StateEstimationPublisher se_publisher ) {
-     // Copy off the parameters
-     _plugin = bel_plugin;
-     _model_manager = model_manager;
-     _se_publisher = se_publisher;
+                     StateEstimationPublisher se_publisher ) 
+    {
+        // Copy off the parameters
+        _plugin = bel_plugin;
+        _model_manager = model_manager;
+        _se_publisher = se_publisher;
+        
+        // Set up the asset containter
+        _asset_container = new AssetContainer();
 
-     // Set up the asset containter
-     _asset_container = new AssetContainer();
     }
 
-
+    //************************************************************
     /**
      * Process a new update trigger (diagnosis or successful action)
      * @param but The belief update trigger to prcess
      * @throws BelievabilityException if there is a problem processing
      **/
     public void consumeUpdateTrigger( BeliefUpdateTrigger but ) 
-     throws BelievabilityException {
+            throws BelievabilityException 
+    {
+        
+        // Forward the information
+        this.sendToAssetModel( but );
 
-     // Forward the information
-     this.sendToAssetModel( but );
     } // end consumeUpdateTrigger
-
-
-   /**
+    
+    //************************************************************
+    /**
      * Provide an access to the AssetContainer
      * @return the Asset Container
      **/
     public AssetContainer getAssetContainer() {
-     return _asset_container;
+        return _asset_container;
     }
-
 
     //------------------------------------------------------------
     // private interface
     //------------------------------------------------------------
-
+    
     /**
      * Pass the diagnosis or successful action to the asset model
      * @param but A BeliefUpdateTrigger (Believability diagnosis or action)
      **/
-    private void sendToAssetModel( BeliefUpdateTrigger but ) {
+    private void sendToAssetModel( BeliefUpdateTrigger but ) 
+    {
 
-        logDetail("Updating Belief State for " + but.toString() );
+        try 
+        {
+            // Find the AssetModel and AssetStateWindow that this trigger
+            // concerns.
+            AssetModel am = _asset_container.getAssetModel( but.getAssetID() );
+            if ( am == null ) {
+                am = new AssetModel( but.getAssetID(),
+                                     _plugin,
+                                     _model_manager, 
+                                     _se_publisher,
+                                     but.getTriggerTimestamp() );
+                _asset_container.addAssetModel( am );
+            }
      
-     try {
-         // Find the AssetModel and AssetStateWindow that this trigger
-         // concerns.
-         AssetModel am = _asset_container.getAssetModel( but.getAssetID() );
-         if ( am == null ) {
-          am = new AssetModel( but.getAssetID(),
-                               _plugin,
-                               _model_manager, 
-                               _se_publisher,
-                               but.getTriggerTimestamp() );
-          _asset_container.addAssetModel( am );
-         }
-     
-         // Update the asset state window with the new trigger
-         am.consumeBeliefUpdateTrigger( but );
-     }
-     catch( BelievabilityException be ) {
-         logWarning( "Failed to update. Exception: " +
-                     be.getMessage() );
+            // Update the asset state window with the new trigger
+            am.consumeUpdateTrigger( but );
+        }
+        catch( BelievabilityException be ) {
+            logWarning( "Failed handling trigger: " +
+                        be.getMessage() );
          
-     }
+        }
     }
 
     // A handle to the believability plugin

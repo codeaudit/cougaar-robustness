@@ -25,34 +25,43 @@
 
 package org.cougaar.coordinator.believability;
 
-import org.cougaar.coordinator.DiagnosesWrapper;
-import org.cougaar.coordinator.Diagnosis;
-import org.cougaar.coordinator.leashDefenses.LeashRequestDiagnosis;
-import org.cougaar.coordinator.monitoring.SuccessfulAction;
-import org.cougaar.coordinator.Action;
-
-import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
-import org.cougaar.coordinator.techspec.DiagnosisTechSpecService;
-import org.cougaar.coordinator.techspec.ActionTechSpecInterface;
-import org.cougaar.coordinator.techspec.ActionTechSpecService;
-import org.cougaar.coordinator.techspec.EventDescription;
-import org.cougaar.coordinator.techspec.ThreatDescription;
-import org.cougaar.coordinator.techspec.ThreatModelInterface;
-import org.cougaar.coordinator.techspec.ThreatModelChangeEvent;
-import org.cougaar.coordinator.techspec.DefaultThreatModel;
-
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Vector;
 
-import org.cougaar.core.agent.service.alarm.Alarm;
+import org.cougaar.coordinator.Action;
+import org.cougaar.coordinator.DiagnosesWrapper;
+import org.cougaar.coordinator.Diagnosis;
+import org.cougaar.coordinator.leashDefenses.LeashRequestDiagnosis;
+
+import org.cougaar.coordinator.monitoring.SuccessfulAction;
+
+import org.cougaar.coordinator.techspec.ActionTechSpecInterface;
+import org.cougaar.coordinator.techspec.ActionTechSpecService;
+import org.cougaar.coordinator.techspec.DefaultThreatModel;
+import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
+import org.cougaar.coordinator.techspec.DiagnosisTechSpecService;
+import org.cougaar.coordinator.techspec.EventDescription;
+import org.cougaar.coordinator.techspec.ThreatDescription;
+import org.cougaar.coordinator.techspec.ThreatModelChangeEvent;
+import org.cougaar.coordinator.techspec.ThreatModelInterface;
+
 import org.cougaar.core.adaptivity.ServiceUserPluginBase;
+
+import org.cougaar.core.service.AlarmService;
+
+import org.cougaar.core.agent.service.alarm.Alarm;
+
 import org.cougaar.core.blackboard.IncrementalSubscription;
+
 import org.cougaar.core.component.Service;
 import org.cougaar.core.component.ServiceBroker;
+
 import org.cougaar.core.persist.NotPersistable;
+
 import org.cougaar.core.service.EventService;
+
 import org.cougaar.util.UnaryPredicate;
 
 
@@ -160,15 +169,12 @@ public class BelievabilityPlugin
         }
     }
 
-
     /**
-     * Set an alarm
-     * @param The Alarm object for the alarm
-     **/
-    public void setAlarm( Alarm alarm_to_set ) {
-     getAlarmService().addRealTimeAlarm( alarm_to_set );
-    }
-    
+     * Since getAlarmService() is a protected method, we need to wrap
+     * it this way to provide other classes access so they can set
+     * timers.
+     */
+    AlarmService getAlarmServiceHandle() { return getAlarmService(); }
 
     /**
      * Get the system start time
@@ -193,12 +199,12 @@ public class BelievabilityPlugin
       **/
     protected void setupSubscriptions() {
 
-	// Check for diagnosis leashing
+     // Check for diagnosis leashing
      if (IGNORE_LEASH_DIAGNOSIS) {
-	 if ( logger.isDebugEnabled() )
-	     logger.debug( "INITIAL LEASHING OF DIAGNOSES IS DISABLED" );
-	 _dc_enabled = true;
-	 _dc_enabled_new = true;
+      if ( logger.isDebugEnabled() )
+          logger.debug( "INITIAL LEASHING OF DIAGNOSES IS DISABLED" );
+      _dc_enabled = true;
+      _dc_enabled_new = true;
      }
 
      // First read in sensor type and asset type information. The
@@ -354,23 +360,23 @@ public class BelievabilityPlugin
          if (logger.isDetailEnabled() ) logger.detail ("UpdateTrigger ADD");
 
          try {
-	     // This is for leashing of diagnoses, to be sure that the
-	     // LeashRequestDiagnosis is propagated both when it enables
-	     // and when it disables the defense controller
-	     _dc_enabled_new = _dc_enabled;
+          // This is for leashing of diagnoses, to be sure that the
+          // LeashRequestDiagnosis is propagated both when it enables
+          // and when it disables the defense controller
+          _dc_enabled_new = _dc_enabled;
 
-	     but = constructUpdateTrigger( (Object) iter.next() );
-	     
-	     // Check to see whether the defense controller is enabled at
-	     // the moment
-	     if (_dc_enabled) 
-		 _trigger_consumer.consumeUpdateTrigger( but );
+          but = constructUpdateTrigger( (Object) iter.next() );
+          
+          // Check to see whether the defense controller is enabled at
+          // the moment
+          if (_dc_enabled) 
+           _trigger_consumer.consumeUpdateTrigger( but );
 
-	     _dc_enabled = _dc_enabled_new;
+          _dc_enabled = _dc_enabled_new;
          }
          catch ( BelievabilityException be ) {
              if (logger.isWarnEnabled() ) 
-                 logger.warn( "Problem processing added diagnosis "
+                 logger.warn( "Problem processing added trigger "
                               + be.getMessage() );
          }
      } // iterator for ADD update trigger
@@ -381,19 +387,19 @@ public class BelievabilityPlugin
 
          if (logger.isDetailEnabled() ) logger.detail ("UpdateTrigger CHANGE");
          try {
-	     // This is for leashing of diagnoses, to be sure that the
-	     // LeashRequestDiagnosis is propagated both when it enables
-	     // and when it disables the defense controller
-	     _dc_enabled_new = _dc_enabled;
+          // This is for leashing of diagnoses, to be sure that the
+          // LeashRequestDiagnosis is propagated both when it enables
+          // and when it disables the defense controller
+          _dc_enabled_new = _dc_enabled;
 
-	     but = constructUpdateTrigger( (Object) iter.next() );
+          but = constructUpdateTrigger( (Object) iter.next() );
 
-	     // Check to see whether the defense controller is enabled at
-	     // the moment
-	     if (_dc_enabled) 
-		 _trigger_consumer.consumeUpdateTrigger( but );
-	     
-	     _dc_enabled = _dc_enabled_new;
+          // Check to see whether the defense controller is enabled at
+          // the moment
+          if (_dc_enabled) 
+           _trigger_consumer.consumeUpdateTrigger( but );
+          
+          _dc_enabled = _dc_enabled_new;
          }
          catch ( BelievabilityException be ) {
              if ( logger.isWarnEnabled()) 
@@ -546,15 +552,15 @@ public class BelievabilityPlugin
      if (o instanceof DiagnosesWrapper) {
          Diagnosis diag = ((DiagnosesWrapper) o).getDiagnosis();
 
-	 // First check for leashing of diagnoses
-	 if ( o instanceof LeashRequestDiagnosis ) {
-	     boolean is_stable =
-		 (! ( (LeashRequestDiagnosis)diag).areDefensesLeashed() );
-	     if ( is_stable ) _dc_enabled_new = true;
-	     else _dc_enabled_new = false;
-	 }
+      // First check for leashing of diagnoses
+      if ( o instanceof LeashRequestDiagnosis ) {
+          boolean is_stable =
+           (! ( (LeashRequestDiagnosis)diag).areDefensesLeashed() );
+          if ( is_stable ) _dc_enabled_new = true;
+          else _dc_enabled_new = false;
+      }
 
-	 // Now pass on diagnosis
+      // Now pass on diagnosis
          return new BelievabilityDiagnosis( diag );
      }
 

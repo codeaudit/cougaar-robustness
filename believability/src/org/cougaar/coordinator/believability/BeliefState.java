@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefState.java,v $
- * $Revision: 1.13 $
- * $Date: 2004-07-12 19:30:46 $
+ * $Revision: 1.16 $
+ * $Date: 2004-07-15 20:19:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -34,7 +34,7 @@ import org.cougaar.coordinator.techspec.AssetStateDimension;
  * asset instance.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.13 $Date: 2004-07-12 19:30:46 $
+ * @version $Revision: 1.16 $Date: 2004-07-15 20:19:41 $
  * 
  *
  */
@@ -86,15 +86,6 @@ public class BeliefState implements Cloneable
     void setUpdateTrigger( BeliefUpdateTrigger trigger ) 
     { 
         _trigger = trigger; 
-    }
-
-    //************************************************************
-    /**
-     * @deprecated Replace with call to 'setUpdateTrigger()'
-     */
-    void setDiagnosis( BelievabilityDiagnosis diag ) 
-    { 
-        _trigger = diag; 
     }
 
     //************************************************************

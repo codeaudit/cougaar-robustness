@@ -135,14 +135,6 @@ class BelievabilityAction extends BeliefUpdateTrigger {
     } // method getStateDimensionName
     
     /**
-     * The belief state related to an action should be published immediately
-     **/
-    public boolean requiresImmediateForwarding() {
-        return true;
-    }
-
-
-    /**
      * A string value indicating the current status of the Believability action taken by the actuator.
      *@return status of BelievabilityAction 
      */

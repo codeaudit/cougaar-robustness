@@ -1,7 +1,7 @@
-/**
- * BeliefUpdateTriggerConsumerInterface.java
+/*
+ * PublishIntervalTimeTrigger.java
  *
- * Created on June 10, 2004
+ * Created on June 8, 2004
  * <copyright>
  *  Copyright 2004 Telcordia Technoligies, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
@@ -21,26 +21,37 @@
  *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
- **/
+ */
 
 package org.cougaar.coordinator.believability;
 
-/**
- * Used to accept new belief update triggers and take the appropriate action.
- */
-public interface BeliefUpdateTriggerConsumerInterface {
+import org.cougaar.coordinator.techspec.AssetID;
 
-    //------------------------------------------------------------
-    // public interface
-    //------------------------------------------------------------
+/**
+ * This class serves for concrete instances of belief update triggers
+ * that are based solely on time (no diagnosis or action.) 
+ * 
+ * @author Tony Cassandra
+ */
+class PublishIntervalTimeTrigger extends TimeUpdateTrigger 
+{
+
+    //---------------------------------------------------------------
+    // package interface
+    //---------------------------------------------------------------
 
     /**
-     * Process the belief update based on the trigger information
-     * Triggers may represent incoming diagnoses or successful actions
+     * Main constructor
      *
-     * @param trigger The new BeliefUpdateTrigger
-     **/    
-    public void consumeBeliefUpdateTrigger( BeliefUpdateTrigger trigger )
-     throws BelievabilityException;
+     * @param asset_id The asset ID
+     * @param time The time that the update happened or was triggered
+     */
+    PublishIntervalTimeTrigger( AssetID asset_id, long time ) 
+    {
+        super( asset_id, time );
 
-} // class BeliefUpdateTriggerConsumerInterface
+    } // constructor PublishIntervalTimeTrigger
+
+
+} // class PublishIntervalTimeTrigger
+

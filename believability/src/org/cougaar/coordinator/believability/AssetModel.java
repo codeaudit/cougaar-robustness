@@ -40,7 +40,9 @@ import java.util.Vector;
  *
  * @author Misty Nodine
  */
-public class AssetModel extends Loggable {
+public class AssetModel extends Loggable
+        implements TriggerConsumerInterface 
+{
 
     //------------------------------------------------------------
     // public interface
@@ -64,32 +66,20 @@ public class AssetModel extends Loggable {
                        BelievabilityPlugin bel_plugin,
                        ModelManagerInterface model_manager,
                        StateEstimationPublisher se_publisher,
-                       long initial_time ) {
-
+                       long initial_time ) 
+    {
+        
      // Save construction parameters and information
      _asset_id = asset_id;
      _model_manager = model_manager;
      _se_publisher = se_publisher;
 
-     POMDPModelInterface pmif = model_manager.getPOMDPModel();
-     
-     try {
-         // Set up with a longer window length 
-         long window_length = 
-          _model_manager.getMaxSensorLatency( _asset_id.getType() );
-         window_length = window_length * 5;
-         _belief_state_window = 
-          new BeliefStateWindow( asset_id, 
-                                 window_length,
-                                 initial_time,   
-                                 pmif,
-                                 se_publisher,
-                                 bel_plugin );
-     }
-     catch( BelievabilityException be ) {
-         logDebug( "Failed to create belief state window -- " 
-                + be.getMessage() );
-     }
+     _trigger_history 
+             = new BeliefTriggerHistory( asset_id,
+                                         model_manager,
+                                         se_publisher,
+                                         bel_plugin.getAlarmServiceHandle());
+
     } // constructor AssetModel
 
 
@@ -103,45 +93,22 @@ public class AssetModel extends Loggable {
 
 
     /**
-     * Get the asset state window for the asset
-     * @return the asset state window
-     **/
-    public BeliefStateWindow getBeliefStateWindow() {
-     return _belief_state_window;
-    }
-
-
-    /**
-     * Get the current belief state for the asset
-     * @throws BelievabilityException if there is a problem getting
-     *                                the current state
-     * @return the current belief state for the asset
-     **/
-    public BeliefState getCurrentBeliefState() throws BelievabilityException {
-     if ( getBeliefStateWindow() == null ) {
-         logWarning( "Null BeliefStateWindow for asset " + getAssetID() );
-         return null;
-     }
-
-     else return _belief_state_window.getCurrentBeliefState();
-    }
-
-
-    /**
      * Forward a BeliefUpdateTrigger to the belief state window
      * @param BeliefUpdateTrigger but
      * @throws BelievabilityException if there is a problem dealing
      *                                with the belief update trigger
      **/
-    public void consumeBeliefUpdateTrigger( BeliefUpdateTrigger but )
-     throws BelievabilityException {
+    public void consumeUpdateTrigger( BeliefUpdateTrigger but )
+            throws BelievabilityException 
+    {
 
-     if ( getBeliefStateWindow() == null ) 
-         logWarning( "Null BeliefStateWindow for asset " + getAssetID() );
+        if ( _trigger_history == null )
+            throw new BelievabilityException
+                    ( "AssetModel.consumeUpdateTrigger()",
+                      "No trigger history found." );
+        
+        _trigger_history.handleBeliefTrigger( but );
 
-     else 
-         // May throw BelievabilityException
-         getBeliefStateWindow().consumeBeliefUpdateTrigger( but );
     }
 
 
@@ -150,10 +117,11 @@ public class AssetModel extends Loggable {
      *
      * @return a string representation of the asset model
      **/
-    public String toString() {
-     return ( "< Asset model for asset ID:"
-           + getAssetID().toString()
-           + " >" );
+    public String toString() 
+    {
+        return ( "< Asset model for asset ID:"
+                 + getAssetID().toString()
+                 + " >" );
     } // method toString
 
 
@@ -170,9 +138,9 @@ public class AssetModel extends Loggable {
     // Place that is publishing the StateEstimations
     private StateEstimationPublisher _se_publisher = null;
 
-    // Asset state window for the asset
-    private BeliefStateWindow _belief_state_window = null;
+    // This does most of the work handling triggers and deciding when
+    // to publish.
+    //
+    private BeliefTriggerHistory _trigger_history = null;
 
-    // Length of diagnosis window, in milliseconds
-    private long _max_diagnosis_latency = 0;
 } // class AssetModel

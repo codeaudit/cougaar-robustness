@@ -37,7 +37,7 @@ import org.cougaar.coordinator.techspec.ActionDescription;
  * 
  * @author Tony Cassandra
  */
-class TimeUpdateTrigger extends BeliefUpdateTrigger 
+abstract class TimeUpdateTrigger extends BeliefUpdateTrigger 
 {
 
     //---------------------------------------------------------------
@@ -50,7 +50,7 @@ class TimeUpdateTrigger extends BeliefUpdateTrigger
      */
     public String toString() {
 
-        return "TimeUpdateTrigger - AssetID: "
+        return this.getClass().getName() + " - AssetID: "
                 + getAssetID() + ", Time: "
                 + this._time;
      
@@ -101,15 +101,6 @@ class TimeUpdateTrigger extends BeliefUpdateTrigger
         return null;
     } // method getStateDimensionName
     
-    //************************************************************
-    /**
-     * When updating based on time, we do not need to wait for any
-     * latencies.
-     **/
-    boolean requiresImmediateForwarding() {
-        return true;
-    } // method requiresImmediateForwarding
-
     //---------------------------------------------------------------
     // private interface
     //---------------------------------------------------------------

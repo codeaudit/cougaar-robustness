@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetModel.java,v $
- * $Revision: 1.15 $
- * $Date: 2004-07-12 19:39:35 $
+ * $Revision: 1.16 $
+ * $Date: 2004-07-15 15:06:00 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.15 $Date: 2004-07-12 19:39:35 $
+ * @version $Revision: 1.16 $Date: 2004-07-15 15:06:00 $
  *
  */
 class POMDPAssetModel extends Model
@@ -44,7 +44,7 @@ class POMDPAssetModel extends Model
 
     // For testing purposes only.
     //
-    private static final boolean USE_FAKE_TRIGGER_TIME = false;
+    private static final boolean USE_FAKE_TRIGGER_TIME = true;
 
     private static long FAKE_TIME_INCREMENT_MS = 300000;
 
@@ -205,14 +205,16 @@ class POMDPAssetModel extends Model
      * @return the update belief state
      *
      */
-    BeliefState updateBeliefState( BeliefState start_belief, 
-                                   long end_time )
+    BeliefState updateBeliefStateForTime( BeliefState start_belief, 
+                                          BeliefUpdateTrigger trigger )
             throws BelievabilityException
     {
         if ( start_belief == null )
             throw new BelievabilityException
                     ( "POMDPAssetModel.updateBeliefState()",
                       "NULL starting belief passed in." );
+
+        long end_time;
 
         // For testing to increase the time intervals so that I do not
         // have to idle for minutes.
@@ -226,17 +228,14 @@ class POMDPAssetModel extends Model
         logDetail( "Belief before threats: " + start_belief.toString() );
 
         BeliefState next_belief = (BeliefState) start_belief.clone();
-        
-        // Set this to and object to indicate that no diagnosis/action
-        // was responsible for this update: it was timer based.  This
-        // will get overridden with the real trigger if this routine
-        // is called through the method:
+
+        // Set the cause of this update.
         //
-        //     updateBeliefState( BeliefState, BeliefUpdateTrigger );
+        next_belief.setUpdateTrigger( trigger );
+
+        // Get the current time we need to update to.
         //
-        next_belief.setUpdateTrigger
-                ( new TimeUpdateTrigger( next_belief. getAssetID(),
-                                         end_time ));
+        end_time = trigger.getTriggerTimestamp();
 
         next_belief.setTimestamp( end_time );
 
@@ -343,13 +342,12 @@ class POMDPAssetModel extends Model
         // FIXME: Is this the right timestamp to use?
         //
         BeliefState next_belief 
-                = updateBeliefState( start_belief,
-                                     trigger.getTriggerTimestamp() );
+                = updateBeliefStateForTime( start_belief,
+                                            trigger );
 
         // Now we go and do the single state dimension update to
         // factor in the observation/diagnosis.
         //
-        next_belief.setUpdateTrigger( trigger );
 
         // For this case, we do not update any particular state
         // dimension.

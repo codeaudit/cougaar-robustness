@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManagerInterface.java,v $
- * $Revision: 1.13 $
- * $Date: 2004-07-12 19:30:46 $
+ * $Revision: 1.16 $
+ * $Date: 2004-07-15 20:19:42 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -21,6 +21,7 @@
 
 package org.cougaar.coordinator.believability;
 
+import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.techspec.AssetTechSpecInterface;
 import org.cougaar.coordinator.techspec.AssetType;
 import org.cougaar.coordinator.techspec.AssetStateDimension;
@@ -38,7 +39,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * tech spec information. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.13 $Date: 2004-07-12 19:30:46 $
+ * @version $Revision: 1.16 $Date: 2004-07-15 20:19:42 $
  *
  */
 public interface ModelManagerInterface
@@ -47,6 +48,14 @@ public interface ModelManagerInterface
     //------------------------------------------------------------
     // public interface
     //------------------------------------------------------------
+
+    // Policy Constants: These are constant values we used for some
+    // parameters, that some future version may turn into dynamic,
+    // model or policy generated values.
+    //
+    public static final double POLICY_BELIEF_UTILITY_CHANGE_THRESHOLD = 0.1;
+    public static final long POLICY_MAX_INTER_BELIEF_PUBLISH_INTERVAL = 900000;
+    public static final long POLICY_IMPLICIT_DIAGNOSIS_INTERVAL = 300000;
 
     //----------------------------------------
     // Model accessor methods
@@ -70,9 +79,61 @@ public interface ModelManagerInterface
     public long getMaxSensorLatency( AssetType asset_type )
             throws BelievabilityException;
 
-    public POMDPModelInterface getPOMDPModel();
+    public long getNumberOfSensors( AssetType asset_type )
+            throws BelievabilityException;
+
+    public boolean usesImplicitDiagnoses( AssetType asset_type,
+                                          String sensor_name )
+            throws BelievabilityException;
+
+    public long getImplicitDiagnosisInterval( AssetType asset_type,
+                                              String sensor_name )
+            throws BelievabilityException;
+
+    public long getMaxPublishInterval( AssetType asset_type )
+            throws BelievabilityException;
+
+    public double getBeliefUtilityChangeThreshold( );
 
     public AssetTypeModel getAssetTypeModel( AssetType asset_type );
+
+    //----------------------------------------
+    // POMDP Model methods
+    //----------------------------------------
+
+    /**
+     * Get the a priori probability that the indicated asset type.
+     *
+     * @param asset_type The type of the asset
+     *
+     */
+    public BeliefState getInitialBeliefState( AssetType asset_type )
+            throws BelievabilityException;
+
+    /**
+     * Get the a priori probability for the indicated asset id and
+     * makes sure the bleif state has that ID set in it.
+     *
+     * @param asset_id The ID of the asset
+     * @return A new belief states set to default values, or null if
+     * something goes wrong.  
+     *
+     */
+    public BeliefState getInitialBeliefState( AssetID asset_id )
+            throws BelievabilityException;
+
+    /**
+     * Used to update the belief state using the given diagnosis.
+     *
+     * @param start_belief initial belief state
+     * @param diagnosis the diagnosis to use to determine new belief
+     * state
+     * @return the update belief state
+     *
+     */
+    public BeliefState updateBeliefState( BeliefState start_belief,
+                                          BeliefUpdateTrigger diagnosis )
+            throws BelievabilityException;
 
     //----------------------------------------
     // Model mutator methods

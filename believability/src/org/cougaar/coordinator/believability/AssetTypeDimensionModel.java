@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/AssetTypeDimensionModel.java,v $
- * $Revision: 1.12 $
- * $Date: 2004-07-12 19:30:46 $
+ * $Revision: 1.15 $
+ * $Date: 2004-07-15 20:19:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -44,7 +44,7 @@ import org.cougaar.coordinator.techspec.ThreatModelChangeEvent;
  * corresponds to the tech-spec AssetSatteDimension objects.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.12 $Date: 2004-07-12 19:30:46 $
+ * @version $Revision: 1.15 $Date: 2004-07-15 20:19:41 $
  * @see AssetTypeModel
  * @see AssetStateDimension
  */
@@ -672,9 +672,9 @@ class AssetTypeDimensionModel extends Model
         // Note that it is possible to have no sensors on a state
         // dimension, yet we may care to track its belief state since
         // it can be affected by threats and actuators.  For this
-        // reason, and since the BeliefStateWindow class needs some
+        // reason, and since the Belieftriggerhistory class needs some
         // latency in order to construct itself, we should return
-        // something reasonable here. 
+        // something reasonable here.
         //
         if ( ! sensor_enum.hasMoreElements() )
         {
@@ -697,6 +697,18 @@ class AssetTypeDimensionModel extends Model
         return max_latency;
 
     } // method getMaxSensorLatency
+
+    //************************************************************
+    /**
+     * return the number fof potential sesnors looking at this state
+     * dimension
+     *
+     */
+    long getNumberOfSensors( )
+    {
+        return _sensor_model_set.size();
+
+    } // method getNumberOfSensors
 
     //************************************************************
     /**
