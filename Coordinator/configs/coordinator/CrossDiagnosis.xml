@@ -1,24 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<!-- Created by Administrator on April 5, 2004, 11:09 AM -->
-
-<!DOCTYPE CrossDiagnosis [
-
-<!ELEMENT CrossDiagnosis (WhenActualStateIs+) >
-<!ELEMENT WhenActualStateIs (WillDiagnoseAs+) >
-<!ELEMENT WillDiagnoseAs EMPTY>
-<!ATTLIST CrossDiagnosis 
-	sensorType CDATA #REQUIRED
-	isAffectedByStateDimension CDATA #REQUIRED
->
-<!ATTLIST WhenActualStateIs 
-	name CDATA #REQUIRED
->
-<!ATTLIST WillDiagnoseAs
-	name CDATA #REQUIRED
-	withProbability CDATA #REQUIRED
->
-]> 
+<!DOCTYPE CrossDiagnosis >
 
 <CrossDiagnosis sensorType="org.cougaar.coordinator.test.defense.AgentCommunicationDiagnosis2" 
                 isAffectedByStateDimension="Liveness" >
