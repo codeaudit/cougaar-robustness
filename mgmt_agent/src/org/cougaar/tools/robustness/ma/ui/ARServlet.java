@@ -25,6 +25,7 @@ import org.cougaar.core.mobility.RemoveTicket;
 import org.cougaar.core.mobility.ldm.AgentControl;
 import org.cougaar.core.util.UID;
 
+import org.cougaar.multicast.AttributeBasedAddress;
 
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorRequest;
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorRequestImpl;
@@ -569,9 +570,14 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
                                      null,
                                      null,
                                      uidService.nextUID());
-    MessageAddress target = nodeId != null
+    /*MessageAddress target = nodeId != null
         ? nodeId
-        : agentId;
+        : agentId;*/
+    AttributeBasedAddress target = AttributeBasedAddress.getAttributeBasedAddress(
+        communityName,
+        "Role",
+        "RobustnessManager");
+
 
     if (target.equals(agentId)) {
         if (log.isInfoEnabled()) {
