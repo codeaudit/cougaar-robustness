@@ -32,10 +32,28 @@ package org.cougaar.coordinator.techspec;
  */
 public class AssetName {
     
-
-    public static String generateExpandedAssetName(String assetName, AssetType assetType) {
-     
-        return assetName + ":" + assetType.toString();
+    AssetType type;
+    String name;
+    
+    /**
+     * Create an asset name object 
+     */
+    public AssetName(String assetName, AssetType assetType) {
+        type = assetType;
+        name = assetName;
     }
     
+    /** Return asset type */
+    public AssetType getType() { return type; }
+
+    /** Return asset name */
+    public String getName() { return name; }
+    
+    /** Return true if object is equal to this object */
+    public boolean equals(Object o) {
+        return ( (o instanceof AssetName) && ((AssetName)o).getName().equals(this.name) && ( (AssetName)o).getType().equals(this.type) );
+    }
+
+    public String toString() { return name + ":" + type.toString(); }
+
 }
