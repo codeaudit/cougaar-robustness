@@ -6,7 +6,7 @@ description: UR-Stage-4 + ARUC7
 script: $CIP/csmart/scripts/definitions/UR-RestoreTemplate.rb
 parameters:
   - run_count: 1
-  - snapshot_name: $CIP/SAVE-PreStage4.tgz
+  - snapshot_name: $CIP/SAVE-PreStage4-ARUC7.tgz
   - archive_dir: $CIP/Logs
   - stages:
     - 4
@@ -17,8 +17,8 @@ include_scripts:
 
   - script: $CIP/csmart/lib/robustness/objs/planned_disconnect.rb
     parameters:
-      - location: during_stage_4
-      - wait_location: after_stage_4
+      - location: starting_stage
+      - wait_location: after_stage
       - nodes: ["UA-FSB-A-NODE", "UA-FSB-C-NODE"]
       - planned_disconnect: 12.minutes
       - actual_disconnect: 8.minutes
