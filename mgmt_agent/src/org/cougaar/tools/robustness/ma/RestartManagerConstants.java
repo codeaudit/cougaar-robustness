@@ -82,7 +82,7 @@ public interface RestartManagerConstants {
   public static final long DEFAULT_HEARTBEAT_PCT_OUT_OF_SPEC = 80;
 
   public static final String COLLECT_NODE_STATS_PROPERTY = "org.cougaar.tools.robustness.collect.stats";
-  public static final long MIN_SAMPLES = 25;
+  public static final long MIN_SAMPLES = 15;
   public static final long MIN_SAMPLE_VALUE = 10000;
 
   /*
