@@ -22,10 +22,13 @@ import org.cougaar.tools.robustness.ma.StatusChangeListener;
 import org.cougaar.tools.robustness.ma.CommunityStatusChangeEvent;
 
 import org.cougaar.tools.robustness.ma.util.HeartbeatHelper;
+import org.cougaar.tools.robustness.ma.util.HeartbeatListener;
 import org.cougaar.tools.robustness.ma.util.PingHelper;
 import org.cougaar.tools.robustness.ma.util.PingListener;
 import org.cougaar.tools.robustness.ma.util.RestartHelper;
+import org.cougaar.tools.robustness.ma.util.RestartListener;
 import org.cougaar.tools.robustness.ma.util.MoveHelper;
+import org.cougaar.tools.robustness.ma.util.MoveListener;
 import org.cougaar.tools.robustness.ma.util.LoadBalancer;
 
 import org.cougaar.core.blackboard.BlackboardClientComponent;
@@ -46,6 +49,14 @@ public abstract class RobustnessControllerBase implements
     RobustnessController, StatusChangeListener {
 
   protected static final int NEVER = -1;
+
+  // Default parameter values, may be overridden by community attributes
+  protected static long DEFAULT_EXPIRATION = 1 * 60 * 1000;
+  protected static final long PING_TIMEOUT = 10 * 1000;
+  protected static final long HEARTBEAT_REQUEST_TIMEOUT = 30 * 1000;
+  protected static final long HEARTBEAT_FREQUENCY = 30 * 1000;
+  protected static final long HEARTBEAT_TIMEOUT = 60 * 1000;
+  protected static final long HEARTBEAT_PCT_OUT_OF_SPEC = 50;
 
   class ControllerEntry {
     private int state;
@@ -216,6 +227,7 @@ public abstract class RobustnessControllerBase implements
     for (Iterator it = controllers.values().iterator(); it.hasNext();) {
       ControllerEntry ce = (ControllerEntry)it.next();
       if (ce.state == csce.getCurrentState()) {
+        setExpiration(csce.getName(), stateName(csce.getCurrentState()));
         ce.controller.enter(csce.getName());
       }
       if (ce.state == csce.getPriorState()) {
@@ -259,13 +271,21 @@ public abstract class RobustnessControllerBase implements
     return (model != null && model.isLeader(name));
   }
 
-  protected boolean isLocalAgent(String name) {
+  protected boolean isLocal(String name) {
     return (model != null &&
             thisAgent.equals(model.getLocation(name)));
   }
 
   protected void newState(String name, int state) {
     model.setCurrentState(name, state);
+  }
+
+  protected int getState(String name) {
+    return model.getCurrentState(name);
+  }
+
+  protected void setExpiration(String name, int expiration) {
+    model.setStateTTL(name, expiration);
   }
 
   protected boolean isAgent(String name) {
@@ -280,6 +300,28 @@ public abstract class RobustnessControllerBase implements
     model.setLocation(name, location);
   }
 
+  protected void updateLocationAndSetState(String name, int newState) {
+    model.updateLocations(new String[]{name}, newState);
+  }
+
+  protected long getLongProperty(String id, long defaultValue) {
+    if (model.hasAttribute(id)) {
+      return model.getLongAttribute(id);
+    } else {
+      return defaultValue;
+    }
+  }
+
+  protected long getLongProperty(String name, String id, long defaultValue) {
+    if (model.hasAttribute(name, id)) {
+      return model.getLongAttribute(name, id);
+    } else if (model.hasAttribute(id)) {
+      return model.getLongAttribute(id);
+    } else {
+      return defaultValue;
+    }
+  }
+
   protected void restartAgent(String name, String dest) {
     String orig = model.getLocation(name);
     model.setLocation(name, "");
@@ -288,12 +330,12 @@ public abstract class RobustnessControllerBase implements
   }
 
   protected void doPing(String name,
-                        long timeout,
                         final int stateOnSuccess,
                         final int stateOnFail) {
-    pingHelper.ping(name, timeout, new PingListener() {
+    long pingTimeout = getLongProperty(name, "PING_TIMEOUT", PING_TIMEOUT);
+    pingHelper.ping(name, pingTimeout, new PingListener() {
       public void pingComplete(String name, int status) {
-        logger.info("Ping:" +
+        logger.debug("Ping:" +
                      " agent=" + name +
                      " state=" + stateName(model.getCurrentState(name)) +
                      " result=" + (status == PingHelper.SUCCESS ? "SUCCESS" : "FAIL"));
@@ -309,7 +351,31 @@ public abstract class RobustnessControllerBase implements
     });
   }
 
-  /**
+  protected void startHeartbeats(String name) {
+    long hbReqTimeout = getLongProperty(name, "HEARTBEAT_REQUEST_TIMEOUT", HEARTBEAT_REQUEST_TIMEOUT);
+    long hbFreq = getLongProperty(name, "HEARTBEAT_FREQUENCY", HEARTBEAT_FREQUENCY);
+    long hbTimeout =getLongProperty(name, "HEARTBEAT_TIMEOUT", HEARTBEAT_TIMEOUT);
+    long hbPctOutofSpec = getLongProperty(name, "HEARTBEAT_PCT_OUT_OF_SPEC", HEARTBEAT_PCT_OUT_OF_SPEC);
+    getHeartbeater().startHeartbeats(name,
+                                     hbReqTimeout,
+                                     hbFreq,
+                                     hbTimeout,
+                                     hbPctOutofSpec);
+  }
+
+  protected void addHeartbeatListener(HeartbeatListener hbl) {
+    getHeartbeater().addListener(hbl);
+  }
+
+  protected void addRestartListener(RestartListener rl) {
+   getRestarter().addListener(rl);
+ }
+
+ protected void addMoveListener(MoveListener ml) {
+  getMover().addListener(ml);
+}
+
+ /**
    * Returns a String containing top-level health status of monitored community.
    */
   public String statusSummary() {
@@ -339,6 +405,17 @@ public abstract class RobustnessControllerBase implements
                    (expiredAgents.length > 0 ? arrayToString(expiredAgents) : ""));
     */
     return summary.toString();
+  }
+
+  protected void setExpiration(String name, String stateName) {
+    String propertyName = stateName + "_EXPIRATION";
+    long expiration = DEFAULT_EXPIRATION;
+    if (model.hasAttribute(name, propertyName)) {
+      expiration = model.getLongAttribute(name, propertyName);
+    } else if (model.hasAttribute(propertyName)){
+      expiration = model.getLongAttribute(propertyName);
+    }
+    model.setStateTTL(name, expiration);
   }
 
   /**
