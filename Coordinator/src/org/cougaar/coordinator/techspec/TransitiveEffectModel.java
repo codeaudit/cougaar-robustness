@@ -50,7 +50,7 @@ import org.cougaar.core.persist.NotPersistable;
  *
  * @author  Paul Pazandak, OBJS
  */
-public class TransitiveEffectModel implements  NotPersistable  {
+public class TransitiveEffectModel implements NotPersistable {    
     
     /** the name of this treat */
     private String name;
@@ -111,7 +111,6 @@ public class TransitiveEffectModel implements  NotPersistable  {
        
 
     public TransitiveEffectDescription getTransitiveEffectDescription() { return td; }
-
     
     /**
      * @return the list of assets that the transitiveEffect cares about.

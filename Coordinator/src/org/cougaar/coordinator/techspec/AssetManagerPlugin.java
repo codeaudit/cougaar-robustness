@@ -174,7 +174,7 @@ logger.warn("!!!! **********************************************************");
                         hostName = csce[i].getCurrentLocation();
                     }
                     
-                    if (hostName == null || nodeName == null) {
+                    if (hostName == null || nodeName == null || hostName.length() == 0 || nodeName.length() == 0) {
                       //  logger.warn("!!!- [ASSET NOT ADDED] Saw new agent asset ["+agentName+"] without host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
                         continue;
                     } else { //continue
@@ -446,6 +446,7 @@ logger.warn("!!!! **********************************************************");
         if (hostAsset == null) {
             hostAsset = new DefaultAssetTechSpec( null, null,  hostName, AssetType.HOST, us.nextUID() );
             queueChangeEvent(new AssetChangeEvent( hostAsset, AssetChangeEvent.NEW_ASSET));
+            logger.debug("===============================================>Queued new host asset");
         }
         return hostAsset;
     }
@@ -460,6 +461,9 @@ logger.warn("!!!! **********************************************************");
         if (nodeAsset == null) {
             nodeAsset = new DefaultAssetTechSpec( hostAsset, null,  nodeName, AssetType.NODE, us.nextUID() );
             queueChangeEvent(new AssetChangeEvent( nodeAsset, AssetChangeEvent.NEW_ASSET));
+            
+            
+            logger.debug("===============================================>Queued new node asset");
             
             //Use NODE name to assign FWD / REAR property
             if (nodeName.startsWith("REAR")) {

@@ -24,6 +24,7 @@
  */
 
 //org.cougaar.coordinator.techspec.ThreatModelManagerPlugin
+
 package org.cougaar.coordinator.techspec;
 
 import org.xml.sax.InputSource;
@@ -134,10 +135,24 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
             //If no new assets or new threats, don't do anything
             if (changesToProcess.size() == 0 ) { return; }
 
+            
             ThreatDescription metaModel;
             AssetChangeEvent event;
             DefaultThreatModel threatModel;
             DefaultAssetTechSpec asset;
+            
+            Vector hosts  = new Vector();
+            Vector nodes  = new Vector();
+            Vector agents = new Vector();
+
+            //Emit list of assets to consider
+            Iterator itr = changesToProcess.iterator();
+            while (itr.hasNext()) {
+                event = (AssetChangeEvent)itr.next();
+                asset = (DefaultAssetTechSpec) event.getAsset();
+                logger.debug("evaluateThreatAssetMembership looking at asset " + asset.getName() + "["+asset.getAssetType()+"]");
+            }
+            
             
             Vector changedModels = new Vector(); //keep track so we can publish change them to the BB.
 
@@ -154,12 +169,18 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
                     metaModel = (ThreatDescription)i.next();
 //logger.debug("evaluateThreatAssetMembership looking at threat " + metaModel.getName() );
 
+                        
                         Iterator ctp = changesToProcess.iterator();
                         while (ctp.hasNext()) {
 
                             threatModel = null;
                             event = (AssetChangeEvent)ctp.next();
                             asset = (DefaultAssetTechSpec) event.getAsset();
+
+                            if (asset.getAssetType().equals(AssetType.HOST)) { hosts.add(asset); }
+                            else if (asset.getAssetType().equals(AssetType.NODE)) { nodes.add(asset); }
+                            else if (asset.getAssetType().equals(AssetType.AGENT)) { agents.add(asset); }
+                            
                             
                             if (event.moveEvent() || event.newAssetEvent() ) {
                                 //IF the agent moved or is new
@@ -187,8 +208,12 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
                                 }
 
                                 if (qualifies) {
-                                    logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] Qualifies! Adding to the "+metaModel.getName()+" threatModel ["+metaModel.getAffectedAssetType().getName()+"]");
                                     threatModel = addAssetAsMember(asset, metaModel);
+                                    if (threatModel == null) {
+                                        logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] Qualifies! But already exists in the "+metaModel.getName()+" threatModel ["+metaModel.getAffectedAssetType().getName()+"]");
+                                    } else {
+                                        logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] Qualifies! Adding to the "+metaModel.getName()+" threatModel ["+metaModel.getAffectedAssetType().getName()+"], memberCount="+threatModel.getAssetList().size());
+                                    }
                                 } else { //remove the asset from the threat model's membership, if it's there                         
 //logger.debug("evaluateThreatAssetMembership - doesn't qualify.");
                                     threatModel = removeAssetAsMember(asset, metaModel);                                                        
@@ -233,6 +258,15 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
                     }
                 }
 
+                //Now process the transitive effects
+                
+                processEnclaveTransitiveEffects(hosts, nodes, agents);
+                processHostTransitiveEffects(nodes, agents);
+                processNodeTransitiveEffects(agents);
+                
+                
+                
+                
             } //if - there are any threat models
 
             //Now remove all processed events
@@ -240,6 +274,285 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
         } //synchronized
     }
         
+    
+    /**
+     * This is a special case method -- because any threat on enclaves will affect all assets in the enclave.
+     * Therefore, all assets in the enclave with the asset type specified in the transitive effect containment filter 
+     * will be added to the transitive effect.
+     *
+     */
+    private void processEnclaveTransitiveEffects(Vector hosts, Vector nodes, Vector agents) {
+     
+        if (hosts.size() == 0 && nodes.size() == 0 && agents.size() == 0) { 
+            logger.debug("========================================== 11 ==> processEnclaveTransitiveEffects - no assets to process");
+            return; 
+        }
+        
+        ThreatDescription metaModel;        
+        TransitiveEffectDescription  transEffect;
+
+        Vector childTEs = new Vector();
+        
+        Iterator i = threatDescriptions.iterator();
+        while (i.hasNext()) {
+            
+            metaModel = (ThreatDescription)i.next();
+            transEffect = metaModel.getEventThreatCauses().getTransitiveEffect();
+            if (transEffect == null ) { continue; } // no transitive effect to process
+            
+            DefaultThreatModel dtm = metaModel.getInstantiation();
+            //Look only for ENCLAVE threats
+            if (dtm == null || !(dtm.getAssetType().equals(AssetType.ENCLAVE)) ) { continue; } // no threats to process
+
+            
+            TransitiveEffectDescription  hostTransEffect = null;
+            TransitiveEffectDescription  nodeTransEffect = null;
+            TransitiveEffectDescription  agentTransEffect = null;
+            TransitiveEffectDescription  childTE = null;
+            TransitiveEffectDescription  grandchildTE = null;
+            //Look up all transitive effects for this transitive effect
+            childTE = transEffect.getTransitiveEvent().getTransitiveEffect(); //this could be a node or agent TE
+            if (childTE != null) { //see if there is a grandchild TE
+                grandchildTE = childTE.getTransitiveEvent().getTransitiveEffect(); // this could only be an agent TE
+                if (grandchildTE != null ) { // then it must be agent typed
+                    if (grandchildTE.getTransitiveAssetType().equals(AssetType.AGENT)) {
+                        agentTransEffect = grandchildTE;
+                    } else { //error!
+                        logger.warn("Found a transEffect beneath TWO trans effects (on event["+grandchildTE.getTransitiveEvent().getName()+"])that was not on an agent container! IGNORING IT. It was: "+transEffect.getTransitiveAssetType() );
+                    }
+                } else { // the childTE could either be an agent or node container
+                    if (childTE.getTransitiveAssetType().equals(AssetType.AGENT)) {
+                        agentTransEffect = childTE;
+                    } else if (childTE.getTransitiveAssetType().equals(AssetType.NODE)) {
+                        nodeTransEffect = childTE;
+                    } else { //error!
+                        logger.warn("Found a transEffect beneath ONE trans effects (on event["+childTE.getTransitiveEvent().getName()+"])that was not on an agent or node container! IGNORING IT. It was: "+transEffect.getTransitiveAssetType() );
+                    }
+                }
+            }
+            if (transEffect.getTransitiveAssetType().equals(AssetType.HOST)) {
+                hostTransEffect = transEffect;
+            } else if (transEffect.getTransitiveAssetType().equals(AssetType.AGENT)) {
+                if (agentTransEffect != null) { // then we had a child/grandchild TE agent container already!
+                    logger.warn("Found an agent transEffect on an enclave threat (on threat["+dtm.getName()+"])that had a grand/child trans effect on an agent container! IGNORING IT. ");
+                } else {
+                    agentTransEffect = transEffect;
+                }
+            } else if (transEffect.getTransitiveAssetType().equals(AssetType.NODE)) {
+                if (nodeTransEffect != null) { // then we had a child/grandchild TE node container already!
+                    logger.warn("Found a node transEffect on an enclave threat (on threat["+dtm.getName()+"])that had a grand/child trans effect on a node container! IGNORING IT. ");
+                } else {
+                    nodeTransEffect = transEffect;
+                }
+            } else { //error!
+                logger.warn("Found a transEffect on an enclave threat (on threat["+dtm.getName()+"])that was NOT a HOST, NODE or AGENT container! IGNORING IT. It was: "+transEffect.getTransitiveAssetType());
+            }
+                
+            //Add hosts to transEffectModel
+            if (hostTransEffect != null && hosts.size() > 0) {
+                TransitiveEffectModel tem = hostTransEffect.getInstantiation();
+                if (tem == null) {
+                    logger.debug("========================================== 7 ==> Creating host transitive effect model!");
+                    tem = hostTransEffect.instantiate(us.nextUID());
+                    this.blackboard.publishAdd(tem);
+                }
+                        
+                Iterator it = hosts.iterator();
+                while (it.hasNext()) {
+                    logger.debug("========================================== 8 ==> Adding host to transitive effect model!");
+                    tem.addAsset((AssetTechSpecInterface)it.next());
+                }        
+            }
+                
+            //Add nodes to transEffectModel
+            if (nodeTransEffect != null && nodes.size() > 0) {
+                TransitiveEffectModel tem = nodeTransEffect.getInstantiation();
+                if (tem == null) {
+                    logger.debug("========================================== 7 ==> Creating node transitive effect model!");
+                    tem = nodeTransEffect.instantiate(us.nextUID());
+                    this.blackboard.publishAdd(tem);
+                }
+                        
+                Iterator it = nodes.iterator();
+                while (it.hasNext()) {
+                    logger.debug("========================================== 8 ==> Adding node to transitive effect model!");
+                    tem.addAsset((AssetTechSpecInterface)it.next());
+                }        
+            }
+
+            //Add agents to transEffectModel
+            if (agentTransEffect != null && agents.size() > 0) {
+                TransitiveEffectModel tem = agentTransEffect.getInstantiation();
+                if (tem == null) {
+                    logger.debug("========================================== 7 ==> Creating agent transitive effect model!");
+                    tem = agentTransEffect.instantiate(us.nextUID());
+                    this.blackboard.publishAdd(tem);
+                }
+                        
+                Iterator it = agents.iterator();
+                while (it.hasNext()) {
+                    logger.debug("========================================== 8 ==> Adding agent to transitive effect model!");
+                    tem.addAsset((AssetTechSpecInterface)it.next());
+                }        
+            }
+            
+        }
+        
+    }
+    
+
+    /**
+     * This method inspects all host threats for direct & indirect transitive effects on nodes & agents
+     *
+     */
+    private void processHostTransitiveEffects(Vector nodes, Vector agents) {
+     
+        if (nodes.size() == 0 && agents.size() == 0) { 
+            logger.debug("========================================== 11 ==> processHostTransitiveEffects - no assets to process");
+            return; 
+        }
+        
+        ThreatDescription metaModel;        
+        TransitiveEffectDescription  nodeTransEffect = null;
+        TransitiveEffectDescription  agentTransEffect = null;
+        TransitiveEffectDescription  transEffect = null;
+
+        Iterator i = threatDescriptions.iterator();
+        while (i.hasNext()) {
+            
+            metaModel = (ThreatDescription)i.next();
+            transEffect = metaModel.getEventThreatCauses().getTransitiveEffect();
+            if (transEffect == null ) { continue; } // no transitive effect to process
+            
+            DefaultThreatModel dtm = metaModel.getInstantiation();
+            //Look only for HOST threats
+            if (dtm == null || !(dtm.getAssetType().equals(AssetType.HOST)) ) { continue; } // only process host threats
+            
+            nodeTransEffect = null;
+            agentTransEffect = null;
+            
+            if (transEffect.getTransitiveAssetType().equals(AssetType.HOST)) { //then there may be another trans effect on agents, look for it
+                logger.warn("Found a transEffect on a host threat (on threat["+dtm.getName()+"])that was on a HOST container! IGNORING IT. ");
+            }
+            else if (transEffect.getTransitiveAssetType().equals(AssetType.NODE)) { //then there may be another trans effect on agents, look for it
+                nodeTransEffect = transEffect;
+                
+                //look for a child trans eefect -- must be of agent type since it's under a node trans effect
+                agentTransEffect = nodeTransEffect.getTransitiveEvent().getTransitiveEffect();
+                
+                if (agentTransEffect != null && agentTransEffect.getTransitiveAssetType().equals(AssetType.AGENT)) { //then there must be an error -- node trans effects can only contain agents
+                    logger.warn("Found a transEffect beneath a node trans effect (on event["+nodeTransEffect.getTransitiveEvent().getName()+"])that was not on an agent container! IGNORING IT. It was: "+transEffect.getTransitiveAssetType() );
+                    agentTransEffect = null;
+                }
+            }   
+            else if (transEffect.getTransitiveAssetType().equals(AssetType.AGENT)) { //then there cannot be anymore transeffects below this one
+                agentTransEffect = transEffect;
+            }
+                
+            TransitiveEffectModel node_tem = null;
+            TransitiveEffectModel agent_tem= null;
+            
+            //Now, search the node assets, if a nodeTransEffect exists. Add a node if its host is a member of the current threat.
+            if (nodeTransEffect != null) { //get its instantiation
+                node_tem = nodeTransEffect.getInstantiation();
+                if (node_tem == null) {
+                    logger.debug("========================================== 7 ==> Creating node transitive effect model!");
+                    node_tem = nodeTransEffect.instantiate(us.nextUID());
+                    this.blackboard.publishAdd(agent_tem);
+                }
+
+                Iterator it = nodes.iterator();
+                while (it.hasNext()) {                
+                    AssetTechSpecInterface node = (AssetTechSpecInterface)it.next();
+                    if (dtm.containsAsset(node.getHost()) ) { // then this node should be added to the transitive effect
+                        logger.debug("========================================== 9 ==> Adding node to transitive effect model!");
+                        node_tem.addAsset(node);
+                    } else {
+                        logger.debug("========================================== 9.5 ==> Node not added to transitive effect model! Host Threat="+dtm.getName()+" did not contain this node's["+node.getName()+"] host="+node.getHost().getName());
+                    }
+                }   
+            }
+            
+            //Now, search the agent assets, if an agentTransEffect exists. Add an agent if its host is a member of the current threat, or node is a member of the nodeTransEffect.
+            if (agentTransEffect != null) { //get its instantiation
+                agent_tem = agentTransEffect.getInstantiation();
+                if (agent_tem == null) {
+                    logger.debug("========================================== 7 ==> Creating a child agent transitive effect model!");
+                    agent_tem = agentTransEffect.instantiate(us.nextUID());
+                    this.blackboard.publishAdd(agent_tem);
+                }
+                
+                Iterator it = agents.iterator();
+                while (it.hasNext()) {                
+                    AssetTechSpecInterface agent = (AssetTechSpecInterface)it.next();
+                    if (dtm.containsAsset(agent.getHost()) ) { // then this node should be added to the transitive effect
+                        logger.debug("========================================== 9 ==> Adding agent to transitive effect model!");
+                        agent_tem.addAsset(agent);
+                    } else {
+                        logger.debug("========================================== 9.5 ==> Agent not added to transitive effect model! Host Threat="+dtm.getName()+" did not contain this agent's["+agent.getName()+"] host="+agent.getHost().getName());
+                    }
+                }   
+            }
+        }      
+    }
+    
+
+    /**
+     * This method inspects all node threats for transitive effects on agents
+     *
+     */
+    private void processNodeTransitiveEffects(Vector agents) {
+     
+        if (agents.size() == 0) { 
+            logger.debug("========================================== 11 ==> processNodeTransitiveEffects - no assets to process");
+            return; 
+        }
+
+        ThreatDescription metaModel;        
+        TransitiveEffectDescription  transEffect = null;
+
+        Iterator i = threatDescriptions.iterator();
+        while (i.hasNext()) {
+            
+            metaModel = (ThreatDescription)i.next();
+            transEffect = metaModel.getEventThreatCauses().getTransitiveEffect();
+            if (transEffect == null ) { continue; } // no transitive effect to process
+            
+            DefaultThreatModel dtm = metaModel.getInstantiation();
+            //Look only for HOST threats
+            if (dtm == null || !(dtm.getAssetType().equals(AssetType.NODE)) ) { continue; } // only process node threats
+                        
+            if (! (transEffect.getTransitiveAssetType().equals(AssetType.AGENT))) { //then this is an error
+                logger.warn("Found a transEffect on a node threat (on threat["+dtm.getName()+"])that was not on an AGENT container! IGNORING IT. It was on asset type = " + transEffect.getTransitiveAssetType());
+                continue;
+            }
+                
+            TransitiveEffectModel tem= null;
+                        
+            //Now, search the agent assets, if a transEffect exists. Add an agent if its node is a member of the current threat
+            if (transEffect != null) { //get its instantiation
+                tem = transEffect.getInstantiation();
+                if (tem == null) {
+                    logger.debug("========================================== 7 ==> Creating a child agent transitive effect model!");
+                    tem = transEffect.instantiate(us.nextUID());
+                    this.blackboard.publishAdd(tem);
+                }
+                
+                Iterator it = agents.iterator();
+                while (it.hasNext()) {                
+                    AssetTechSpecInterface agent = (AssetTechSpecInterface)it.next();
+                    if (dtm.containsAsset(agent.getNode()) ) { // then this agent should be added to the transitive effect
+                        logger.debug("========================================== 10 ==> Adding agent to transitive effect model!");
+                        tem.addAsset(agent);
+                    } else {
+                        logger.debug("========================================== 10.5 ==> Agent not added to transitive effect model! Node Threat="+dtm.getName()+" did not contain this agent's node="+agent.getNode().getName());
+                    }
+                }   
+            }
+        }      
+    }
+    
+    
     /**
      * Adds an asset to a threatModel, creating the model if nec.
      * @return the DefaultThreatModel, if modified. It will not be modified if the

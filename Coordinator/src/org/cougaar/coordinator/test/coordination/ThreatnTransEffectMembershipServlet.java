@@ -180,12 +180,12 @@ public class ThreatnTransEffectMembershipServlet extends ComponentPlugin
             } else {
                 AssetType at = ted.getTransitiveAssetType();
                 Vector tAssets = ted.getInstantiation().getAssetList();
-                out.println("<UL><LI>Transitive Effect Members for Event ["+ted.getTransitiveEventName()+"], on asset type="+at+" <UL>");
+                out.println("<LI>Transitive Effect Members for Event ["+ted.getTransitiveEventName()+"], on asset type="+at+" <UL>");
 
                 for (Iterator i=tAssets.iterator();i.hasNext();) {
                     out.println("<LI>"+ ( (AssetTechSpecInterface)i.next()).getName() );
                 }
-                out.println("</UL></UL>"); //end of members list
+                out.println("</UL>"); //end of members list
 
             }
 
