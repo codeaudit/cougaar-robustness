@@ -112,25 +112,27 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
 
   private void fail(UID reqUID) {
     HeartbeatRequest req = (HeartbeatRequest)reqTable.findUniqueObject(reqUID);
-    if (req.getStatus() == HeartbeatRequest.SENT) {
-      bb.openTransaction();
-      req.setStatus(HeartbeatRequest.FAILED);
-      reqTable.remove(req);
-      UID hbReqUID = req.getHbReqUID();
-      Iterator iter = hbReqSub.getCollection().iterator();
-      while (iter.hasNext()) {
-        HbReq hbReq = (HbReq)iter.next();
-        if (hbReq.getUID().equals(hbReqUID)) {
-          bb.publishRemove(hbReq);
-          if (log.isDebugEnabled()) {
-            log.debug("\nremoved HbReq = " + hbReq);
+    if (req != null) {  
+      if (req.getStatus() == HeartbeatRequest.SENT) { 
+        bb.openTransaction();
+        req.setStatus(HeartbeatRequest.FAILED);
+        reqTable.remove(req);
+        UID hbReqUID = req.getHbReqUID();
+        Iterator iter = hbReqSub.getCollection().iterator();
+        while (iter.hasNext()) {
+          HbReq hbReq = (HbReq)iter.next();
+          if (hbReq.getUID().equals(hbReqUID)) {
+            bb.publishRemove(hbReq);
+            if (log.isDebugEnabled()) {
+              log.debug("\nremoved HbReq = " + hbReq);
+            }
           }
-        }
-      } 
-      bb.publishChange(req);
-      bb.closeTransaction();
-      if (log.isDebugEnabled()) 
-        log.debug("\npublished changed HeartbeatRequest = " + req);
+        } 
+        bb.publishChange(req);
+        bb.closeTransaction();
+        if (log.isDebugEnabled()) 
+          log.debug("\npublished changed HeartbeatRequest = " + req);
+      }
     }
   }
     
