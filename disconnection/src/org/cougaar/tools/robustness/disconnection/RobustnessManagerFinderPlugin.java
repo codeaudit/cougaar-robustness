@@ -58,6 +58,7 @@ public class RobustnessManagerFinderPlugin extends ComponentPlugin
     private UIDService uidSvc;
     private Community community = null;
     private RobustnessManagerID mgr = null;
+    private CommunityChangeListener listener = null;
 
     private IncrementalSubscription sub;
 
@@ -83,11 +84,13 @@ public class RobustnessManagerFinderPlugin extends ComponentPlugin
 	Collection parents = 
 	    commSvc.listParentCommunities(agentId.toString(),  
 					  "(CommunityType=Robustness)");
-	if (parents == null || parents.isEmpty()) {
-	    commSvc.addListener(new CommunityChangeListener() {
+	if (parents != null && !parents.isEmpty())
+	    gotCommunity(parents);
+	if (community == null) {
+	    listener = new CommunityChangeListener() {
 		    public void communityChanged(CommunityChangeEvent cce) {
 			if (log.isDebugEnabled()) 
-			    log.debug("CommunityChangeListener.communityChanged("+cce+")");
+			    log.debug(agentId+": CommunityChangeListener.communityChanged("+cce+")");
 			if ((cce.getType() == cce.ADD_COMMUNITY)
 			    || ((cce.getType() == cce.ADD_ENTITY)
 				&& (cce.getWhatChanged().equals(agentId.toString())))) {
@@ -96,46 +99,52 @@ public class RobustnessManagerFinderPlugin extends ComponentPlugin
 							      "(CommunityType=Robustness)");
 			    if (parents != null) {
 				if (log.isDebugEnabled())
-				    log.debug("ParentCommunities=" + parents);
+				    log.debug(agentId+": ParentCommunities = " + parents);
 				gotCommunity(parents);
 			    }
 			}
 		    }
 		    public String getCommunityName() { 
-			return (community != null) ? community.getName() : null; 
+			return "ALL_COMMUNITIES"; 
 		    }
-		});
+		};
+	    commSvc.addListener(listener);
 	}
-
+	
 	sub = (IncrementalSubscription)bb.subscribe(pred);
     } 
 
     public synchronized void execute() {
+
+	Iterator iter;
+
+	if (log.isDebugEnabled()) {
+	    iter = sub.getAddedCollection().iterator();
+	    while (iter.hasNext()) {
+		RobustnessManagerID mgr = (RobustnessManagerID)iter.next();
+		if (mgr != null)
+		    log.debug(agentId+": "+mgr+" added.");
+	    }
+	    iter = sub.getChangedCollection().iterator();
+	    while (iter.hasNext()) {
+		RobustnessManagerID mgr = (RobustnessManagerID)iter.next();
+		if (mgr != null)
+		    log.debug(agentId+": "+mgr+" changed.");
+	    }
+	}
 	
-	Iterator iter = sub.getAddedCollection().iterator();
-	while (iter.hasNext()) {
-	    RobustnessManagerID mgr = (RobustnessManagerID)iter.next();
-	    if (mgr != null) {
-		if (log.isDebugEnabled()) 
-		    log.debug(mgr+" added.");
-	    }
-	}
-	iter = sub.getChangedCollection().iterator();
-	while (iter.hasNext()) {
-	    RobustnessManagerID mgr = (RobustnessManagerID)iter.next();
-	    if (mgr != null) {
-		if (log.isDebugEnabled()) 
-		    log.debug(mgr+" changed.");
-	    }
-	}
 	if (community != null) {
 	    Attributes attrs = community.getAttributes();
             if (log.isDebugEnabled())
-		log.debug("execute: community attributes = " + attrs);
+		log.debug(agentId+
+			  ": execute: community attributes = " 
+			  +attrs);
             Attribute mgrs = attrs.get("RobustnessManager");
             if (mgrs == null) {
 		if (log.isErrorEnabled()) {
-		    log.error("execute: no RobustnessManager attribute found in community = " + community);
+		    log.error(agentId+
+			      ": execute: no RobustnessManager attribute found in community = "
+			      +community);
 		    community = null;
 		}
 	    } else {
@@ -145,60 +154,74 @@ public class RobustnessManagerFinderPlugin extends ComponentPlugin
 			Object obj = enum.next();
 			if (obj == null) {
 			    if (log.isErrorEnabled()) 
-				log.error("execute: null value in Attribute  " + mgrs);
+				log.error(agentId+
+					  ": execute: null value in Attribute  " 
+					  +mgrs);
 			} else if (!(obj instanceof String)) {
 			    if (log.isErrorEnabled()) 
-				log.error("execute: non-String value="+obj+" found in Attribute "+mgrs);	
+				log.error(agentId+
+					  ": execute: non-String value="+obj+" found in Attribute "
+					  +mgrs);	
 			} else if (mgr == null) {
 			    String mgrAgentName = (String)obj;
 			    MessageAddress mgrAgentAddr = MessageAddress.getMessageAddress(mgrAgentName);
 			    mgr = new RobustnessManagerID(mgrAgentAddr,uidSvc.nextUID());
 			    if (log.isDebugEnabled()) 
-				log.debug("execute: RobustnessManager "+mgrAgentName+" found.");
+				log.debug(agentId+
+					  ": execute: RobustnessManager "+mgrAgentName+" found.");
 			    bb.publishAdd(mgr);
+			    commSvc.removeListener(listener);
+			    listener = null;
 			} else {
-			    if (log.isErrorEnabled()) 
-				log.error("execute: RobustnessManager already found.  Additional value="
+			    if (log.isDebugEnabled()) 
+				log.debug(agentId+
+					  ": execute: RobustnessManager already found.  Additional value="
 					  +obj+" found and discarded.");
 			}
 		    }
 		} catch (NamingException e) {
 			    if (log.isErrorEnabled()) 
-				log.error("execute: NamingException thrown while enumerating RobustnessManager Attribute = "+ mgrs, e);
+				log.error(agentId+
+					  ": execute: NamingException thrown while enumerating RobustnessManager Attribute = "
+					  + mgrs, e);
 		}
 	    }				
 	}
     }
 
     private void gotCommunity(Collection comms) {
-	if (log.isDebugEnabled()) 
-	    log.debug("gotCommunity("+comms+")");
 	if (comms == null) {
 	    if (log.isDebugEnabled()) 
-		log.debug("gotCommunity: received null Collection");
+		log.debug(agentId+": gotCommunity: received null Collection");
 	    return;
 	} else if (comms.size() == 0) {
 	    if (log.isDebugEnabled()) 
-		log.debug("gotCommunity: received empty Collection");
+		log.debug(agentId+": gotCommunity: received empty Collection");
 	    return;
 	} else if (comms.size() > 1) {
-	    if (log.isErrorEnabled())
-		log.error("gotCommunity received more than one Robustness community"+
-                          "with RobustnessManager = " + agentId +
-                          ", using the first.");
+	    if (log.isWarnEnabled())
+		log.warn(agentId+": gotCommunity received more than one Robustness community"+
+			 "with RobustnessManager = " + agentId +
+			 ", using the first.");
 	}
         Iterator it = comms.iterator();
 	String commName = (String)it.next();
 	if (community != null) {
-	    if (log.isWarnEnabled()) 
-		log.warn("gotCommunity: found an additional RobustnessCommunity for me. Ignored it. "+commName);
+	    if (log.isDebugEnabled()) 
+		log.debug(agentId+": gotCommunity: found an additional RobustnessCommunity for me. Ignored it. "+commName);
 	    return;
         } else {
-	    if (log.isDebugEnabled()) 
-		log.debug("gotCommunity: found my RobustnessCommunity ="+commName);
-	    community = commSvc.getCommunity(commName,null);
+	    Community comm = commSvc.getCommunity(commName,null);
+            if (comm == null) {
+		if (log.isWarnEnabled()) 
+		    log.warn(agentId+": gotCommunity: getCommunity("+commName+",null) returned null.");
+		return;
+	    } else {
+		if (log.isInfoEnabled()) 
+		    log.info(agentId+": gotCommunity: found my RobustnessCommunity = "+commName);
+		community = comm;
+	    } 
 	}
-
         bb.signalClientActivity();
     }
 
