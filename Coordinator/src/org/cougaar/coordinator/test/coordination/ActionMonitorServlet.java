@@ -477,7 +477,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                                 String actiondataFilter, String updateResult, String nameformat,
                                 String updateResponse, boolean wasUpdated ) {
             
-            out.println("<html>");
+            out.println("<html><META HTTP-EQUIV=\"PRAGMA\" CONTENT=\"NO-CACHE\"> ");
             out.println("<script type=\"text/javascript\">");
             out.println("function refreshPage(){");   
             out.println("     var szURL = \"?REFRESH="+refresh+"&NAMEFORMAT="+nameformat+"&FILTER="+actiondataFilter+" \";");

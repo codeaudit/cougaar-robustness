@@ -438,7 +438,8 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
          * Output page with disconnect  / reconnect button & reconnect time slot
          */
         private void emitHeader(PrintWriter out) {
-            out.println("<html><head></head><body onload=\"setTimeout('location.reload()',"+refreshRate+");\">");
+            out.println("<html><META HTTP-EQUIV=\"PRAGMA\" CONTENT=\"NO-CACHE\">");
+            out.println("<head></head><body onload=\"setTimeout('location.reload()',"+refreshRate+");\">");
             out.println("<center><h1>Coordinator Diagnosis Monitoring Servlet</h1>");
             out.println("<p>Will refresh every " + (refreshRate/1000) + " seconds. ");
             out.println("You can change this rate here: (in milliseconds)");

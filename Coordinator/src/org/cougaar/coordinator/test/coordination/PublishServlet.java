@@ -290,7 +290,8 @@ public class PublishServlet extends BaseServletComponent implements BlackboardCl
          * Output page with disconnect  / reconnect button & reconnect time slot
          */
         private void emitHeader(PrintWriter out) {
-            out.println("<html><head></head><body>");
+            out.println("<html><META HTTP-EQUIV=\"PRAGMA\" CONTENT=\"NO-CACHE\">");
+            out.println("<head></head><body>");
             out.println("<center><h1>Coordinator - Publish Diagnosis and Actions Servlet</h1></center><hr>");
 
             //Form for creating a Action & Diagnosis
