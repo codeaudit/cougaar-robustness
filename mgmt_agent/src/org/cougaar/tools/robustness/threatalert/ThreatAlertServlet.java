@@ -165,13 +165,14 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
       doGet(req, res);
     }
 
-    public void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException
-    {
+    public void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException {
+      log.debug("doGet: " + req.getQueryString());
       this.request = req;
       out = res.getWriter();
       communities = getCommunities();
       if(communities.size() == 0){
-        out.print("<html><body>No communities catched from blackboard.</body></html>");
+        out.print("<html><body>No communities found.</body></html>");
+        log.warn("No communities found.");
         return;
       }
       parseParams();
@@ -187,8 +188,7 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
           public void setParam(String name, String value) {
             if(value.equals("submit")) { //submit a threat alert
               command = "submit";
-            }
-            else if(!value.equals("")){
+            } else if(!value.equals("")){
               conditions.put(name, value); //these are conditions of the threat alert
             }
           }
@@ -215,7 +215,7 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
    * @param conditions name-value pair of all conditions of the threat alert.
    */
   private void fireThreatAlert(HashMap conditions) {
-
+    log.debug("fireThreatAlert: " + conditions);
     Date createTime = new Date();
     int level = getSeverityLevel( (String) conditions.get("level")); //alert level
     Date start;
@@ -233,8 +233,11 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
     } else {
       expire = getDateCondition("expire", conditions); //alert expire time
     }
-    ThreatAlert ta = makeThreatAlert("org.cougaar.tools.robustness.ma.HostLossThreatAlert",
-                                     level, start, expire);
+    String alertClass = "org.cougaar.tools.robustness.threatalert.DefaultThreatAlert";
+    if (conditions.containsKey("class")) {
+      alertClass = (String) conditions.get("class");
+    }
+    ThreatAlert ta = makeThreatAlert(alertClass, level, start, expire);
     //add assets to this alert
     for (int i = 0; i < 5; i++) {
       if (conditions.containsKey("type" + i)) {
@@ -243,7 +246,6 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
         ta.addAsset(new AssetImpl(type, id));
       }
     }
-
     threatAlertService.sendAlert(ta, (String) conditions.get("community"),
                                  (String) conditions.get("role"));
 
