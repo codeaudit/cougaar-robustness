@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManagerInterface.java,v $
- * $Revision: 1.17 $
- * $Date: 2004-07-31 02:56:57 $
+ * $Revision: 1.19 $
+ * $Date: 2004-08-03 22:05:50 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -39,7 +39,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * tech spec information. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.17 $Date: 2004-07-31 02:56:57 $
+ * @version $Revision: 1.19 $Date: 2004-08-03 22:05:50 $
  *
  */
 public interface ModelManagerInterface
@@ -91,6 +91,10 @@ public interface ModelManagerInterface
     public double getBeliefUtilityChangeThreshold( );
 
     public AssetTypeModel getAssetTypeModel( AssetType asset_type );
+
+    public void setRehydrationHappening( boolean value );
+    public boolean isRehydrationHappening( );
+    public boolean hasBeenRehydrated( );
 
     //----------------------------------------
     // POMDP Model methods

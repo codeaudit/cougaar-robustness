@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManager.java,v $
- * $Revision: 1.17 $
- * $Date: 2004-07-31 02:56:57 $
+ * $Revision: 1.19 $
+ * $Date: 2004-08-03 22:05:50 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -47,7 +47,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * and provides information via the ModelManagerInterface. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.17 $Date: 2004-07-31 02:56:57 $
+ * @version $Revision: 1.19 $Date: 2004-08-03 22:05:50 $
  *
  */
 public class ModelManager extends Loggable
@@ -661,6 +661,52 @@ public class ModelManager extends Loggable
 
     } // method getAssetTypeModel
 
+    //************************************************************
+    /**
+     * Sets the current flag for whether or not the rehydration
+     * processis in progress.  This should be set true only when the
+     * plugin is in the process of restoring the local data from the
+     * blackboard. 
+     *
+     * @param value The value to set
+     */
+    public void setRehydrationHappening( boolean value )
+    {
+        _rehydration_happening = value;
+
+        // Also set the global flag to indicate that we have been
+        // rehydrated.
+        //
+        if ( value )
+            _has_been_rehydrated = true;
+
+    } // method setRehydrationHappening
+
+    //************************************************************
+    /**
+     * Checks whether or not the rehydration processis in progress.
+     * This should be true only when the plugin is in the process
+     * of restoring the local data from the blackboard.
+     *
+     * @return True if the plugin is rehydrating
+     */
+    public boolean isRehydrationHappening( )
+    {
+        return _rehydration_happening;
+
+    } // method isRehydrationHappening
+
+     //************************************************************
+    /**
+     * Checks whether or not we are operating in a rehydrated state.
+     *
+     * @return True if the plugin is rehydrated
+     */
+    public boolean hasBeenRehydrated( )
+    {
+        return _has_been_rehydrated;
+
+    } // method hasBeenRehydrated
 
     //------------------------------------------------------------
     // protected interface
@@ -756,6 +802,15 @@ public class ModelManager extends Loggable
 
     private StressGraph _stress_graph = new StressGraph();
 
+    // Whether or not rehydration is happening (in progress recreation
+    // of state).
+    //
+    private boolean _rehydration_happening = false;
+
+    // Whether or not we are running in a rehydrated state or not.
+    //
+    private boolean _has_been_rehydrated = false;
+
     //------------------------------------------------------------
     // POMDP model section
     //------------------------------------------------------------
@@ -781,7 +836,35 @@ public class ModelManager extends Loggable
                       "NULL asset type passed in." );
 
         POMDPAssetModel pomdp_model = getPOMDPModel( asset_type );
+
+        // If we are rehydrating the plugin, then using the tech spec
+        // initial belief will not make sense since we have no idea
+        // what the state of the asset was prior to rehydrating.
+        // Thus, the safest thing to use is the uniform distribution
+        // fo rthe initial state whch effectively assumes we have no a
+        // priori information about the current state of the asset.
+        //
+        // FIXME: We use the uniform belief state for *all* assets
+        // after rehydration, even for new assets where the techspec
+        // initial belief might actually make sense.  This is for two
+        // reasons:
+        //
+        //   1) It turns out to be difficult to determine whether an
+        //   asset existed before the rehydration or not.
+        //
+        //   2) Due to the small publishing delay, this call to get
+        //   the initial belief actuallyy happens *after* the
+        //   rehydration process completes.  Thus, just checking
+        //   isRehydrationHappening() here will not quite do the right
+        //   thing because  it'll be finished rehydrating when the
+        //   publish delay timer goes off.
+        //
+        if ( hasBeenRehydrated())
+            return pomdp_model.getUniformBeliefState();
         
+        // If no rehydrating, then we get the techspec based initial
+        // belief.
+        //
         return pomdp_model.getInitialBeliefState();
 
     } // method getInitialBeliefState

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetModel.java,v $
- * $Revision: 1.19 $
- * $Date: 2004-07-31 02:56:57 $
+ * $Revision: 1.21 $
+ * $Date: 2004-08-03 22:05:50 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.19 $Date: 2004-07-31 02:56:57 $
+ * @version $Revision: 1.21 $Date: 2004-08-03 22:05:50 $
  *
  */
 class POMDPAssetModel extends Model
@@ -256,7 +256,7 @@ class POMDPAssetModel extends Model
 
         if ( (end_time - start_time) < SMALLEST_THREAT_INTERVAL_MS/2 )
         {
-            logDebug( "updateBeliefState(): Found miniscule update interval."
+            logDetail( "updateBeliefState(): Found miniscule update interval."
                       + "[ " + start_time + ", " + end_time + "]"
                       + " for asset " + start_belief.getAssetID()
                       + ". Rounding to zero and ignoring threats." );
@@ -265,7 +265,7 @@ class POMDPAssetModel extends Model
 
         if ( (end_time - start_time) < SMALLEST_THREAT_INTERVAL_MS )
         {
-            logDebug( "updateBeliefState(): Found small update interval."
+            logDetail( "updateBeliefState(): Found small update interval."
                      + "[ " + start_time + ", " + end_time + "]"
                      + " for asset " + start_belief.getAssetID()
                      + ". Rounding to " 
@@ -421,6 +421,34 @@ class POMDPAssetModel extends Model
         return rand_belief;
 
     } // method getRandomBeliefState
+
+    //************************************************************
+    /**
+     * Get a uniform belief state consistent with the asset type of
+     * this model.  
+     *
+     * @return A new belief state set to uniform distributions, or
+     * null if something goes wrong.
+     *
+     */
+    BeliefState getUniformBeliefState( )
+            throws BelievabilityException
+    {
+        BeliefState uniform_belief = new BeliefState( _asset_type_model );
+
+        for ( int dim_idx = 0; 
+              dim_idx < _dimension_pomdp_model.length; 
+              dim_idx++ )
+        {
+            
+            uniform_belief.addBeliefStateDimension
+                    ( _dimension_pomdp_model[dim_idx].getUniformBeliefState());
+
+        }  // for dim_idx
+
+        return uniform_belief;
+
+    } // method getUniformBeliefState
 
     //------------------------------------------------------------
     // private interface

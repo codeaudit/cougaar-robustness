@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetDimensionModel.java,v $
- * $Revision: 1.18 $
- * $Date: 2004-07-31 02:56:57 $
+ * $Revision: 1.29 $
+ * $Date: 2004-08-09 20:46:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -29,7 +29,7 @@ import org.cougaar.coordinator.techspec.AssetType;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.18 $Date: 2004-07-31 02:56:57 $
+ * @version $Revision: 1.29 $Date: 2004-08-09 20:46:41 $
  *
  */
 class POMDPAssetDimensionModel extends Model
@@ -509,6 +509,41 @@ class POMDPAssetDimensionModel extends Model
                                          null );
 
     } // method  getRandomBeliefState
+
+    //************************************************************
+    /**
+     * Constructs a unifmrm probability s\distribution belief state
+     * for this asset type state dimension.
+     *
+     */
+    BeliefStateDimension getUniformBeliefState( )
+            throws BelievabilityException
+    {
+        if ( _asset_dim_model == null )
+            throw new BelievabilityException
+                    ( "POMDPAssetDimensionModel.getUniformBeliefState()",
+                      "Asset type dimension model is NULL" );
+        
+        logDetail( "\tCreating POMDP uniform belief for dimension: " 
+                  + _asset_dim_model.getStateDimensionName( ) );
+
+        int num_vals = _asset_dim_model.getNumStateDimValues( );
+        
+        if ( num_vals < 0 )
+            throw new BelievabilityException
+                    ( "POMDPAssetDimensionModel.getUniformBeliefState()",
+                      "Asset dimension model returning zero values: "
+                      + _asset_dim_model.getStateDimensionName() );
+
+        double[] belief_prob = new double[num_vals];
+        
+        ProbabilityUtils.setUniformDistribution( belief_prob );
+        
+        return new BeliefStateDimension( _asset_dim_model,
+                                         belief_prob,
+                                         null );
+
+    } // method getUniformBeliefState
 
     //------------------------------------------------------------
     // private interface

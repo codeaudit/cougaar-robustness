@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefTriggerHistory.java,v $
- * $Revision: 1.5 $
- * $Date: 2004-07-31 02:56:57 $
+ * $Revision: 1.6 $
+ * $Date: 2004-08-03 14:06:38 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -98,7 +98,7 @@ import org.cougaar.core.agent.service.alarm.Alarm;
  * an instance of this class: one for each of these.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.5 $Date: 2004-07-31 02:56:57 $
+ * @version $Revision: 1.6 $Date: 2004-08-03 14:06:38 $
  * @see BeliefTriggerManager
  */
 class BeliefTriggerHistory 
@@ -189,7 +189,7 @@ class BeliefTriggerHistory
         //
         if ( trigger instanceof BelievabilityAction )
         {
-            logDetail( "Action trigger. Starting delay timer for: "
+            logDetail( "Action trigger. Starting publish delay timer for: "
                        + _asset_id );
             
             // Note that if there is an existing delay alarm, this
@@ -210,7 +210,7 @@ class BeliefTriggerHistory
         //
         if ( seenAllSensors() )
         {
-            logDetail( "Seen all sensors. Updating belief: "
+            logDetail( "Seen all sensors. Starting publish delay timer for: "
                        + _asset_id );
           
             startPublishDelayTimer();

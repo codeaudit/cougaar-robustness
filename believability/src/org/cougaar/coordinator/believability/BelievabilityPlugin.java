@@ -46,6 +46,7 @@ import org.cougaar.coordinator.techspec.EventDescription;
 import org.cougaar.coordinator.techspec.ThreatDescription;
 import org.cougaar.coordinator.techspec.ThreatModelChangeEvent;
 import org.cougaar.coordinator.techspec.ThreatModelInterface;
+import org.cougaar.coordinator.techspec.TechSpecsLoadedCondition;
 
 import org.cougaar.core.adaptivity.ServiceUserPluginBase;
 
@@ -80,6 +81,23 @@ public class BelievabilityPlugin
 {
     public static final boolean USE_LEASH_DIAGNOSIS = false;
 
+    // We keep a state variable about rehydration status to know what
+    // we need to do.  These are the possible state values.
+    //
+    public static final int REHYDRATION_NOT_NEEDED    = 0;
+    public static final int REHYDRATION_NEEDED        = 1;
+    public static final int REHYDRATION_IN_PROGRESS   = 2;
+    public static final int REHYDRATION_COMPLETED     = 3;
+
+    // We keep a state variable about whether all the techspecs are
+    // loaded or not, since the believability plugin could enter the
+    // execute loop before all the techspecs are loaded (I think).
+    // There is a special blackboard object posted by the techspec
+    // manager when everything has been loaded.
+    //
+    public static final int TECHSPECS_NOT_LOADED      = 0;
+    public static final int TECHSPECS_LOADED          = 1;
+
     /** 
      * Creates a new instance of BelievabilityPlugin 
      **/
@@ -107,6 +125,18 @@ public class BelievabilityPlugin
         super.load();
         getPluginParams();
         haveServices();
+
+        // Check to see if we are rehydrating, because if so, we need
+        // to set up the internal data from existing blackboard
+        // objects. 
+        //
+        if ( getBlackboardService().didRehydrate() )
+        {
+            if (logger.isDetailEnabled()) 
+                logger.detail("Believability Plugin is rehydrating.");
+            _rehydration_state = REHYDRATION_NEEDED;
+        }
+
 
     } // method load
     
@@ -207,16 +237,6 @@ public class BelievabilityPlugin
       _dc_enabled_new = true;
      }
 
-     // First read in sensor type and asset type information. The
-     // asset types are found from the sensor types.
-     try {
-         readInTechSpecInformation();
-     }
-     catch ( BelievabilityException be ) {
-         if ( logger.isDebugEnabled() )
-          logger.debug( " Believability plugin did not find sensor techspecs -- " + be.getMessage() );
-     }
-
      // Now subscribe to the threat models and the diagnoses wrappers.
      _threatModelSub 
       = ( IncrementalSubscription ) 
@@ -250,6 +270,19 @@ public class BelievabilityPlugin
            }
           }) ;
      
+     _techspecLoadedSub 
+      = ( IncrementalSubscription ) 
+      getBlackboardService().subscribe
+      ( new UnaryPredicate() 
+          {
+           public boolean execute(Object o) {
+               if ( o instanceof TechSpecsLoadedCondition ) {
+                return true ;
+               }
+               return false ;
+           }
+          }) ;
+     
     } // method setupSubscriptions
 
 
@@ -274,6 +307,49 @@ public class BelievabilityPlugin
 
         publishFromQueue();
         handleThreatModel();
+
+        // We must have all the techspecs in order to handle any
+        // belief update triggers, so check for this first if we have
+        // not yet seen the special TechSpecsLoadedCondition object.
+        //
+        if ( _techspec_load_state != TECHSPECS_LOADED )
+        {
+
+            if (logger.isDetailEnabled() ) 
+                logger.detail ("Checking for techspec loaded object.");
+            
+            // This may or may not change the techspec load state.
+            //
+            handleTechSpecLoadedCondition();
+
+            // Bail out if the techspecs are still not fully loaded.
+            // Note that we do not want to handle rehydration and/or
+            // any belief update trigger ADD or CHANGE unless we have
+            // all the techspecs.
+            //
+            if ( _techspec_load_state != TECHSPECS_LOADED )
+                return;
+
+        } // if tech spec loaded condition object not yet seen
+
+        // This will only be true at most one time for the case where
+        // this variable is set in the load() method and this is the
+        // first cal to execute().  In this case, we need to recreate
+        // our internal asset data from the blackboard objects.
+        //
+        if ( _rehydration_state == REHYDRATION_NEEDED )
+        {
+            handleRehydration();
+
+            // It is possible that there are ADD/CHANGED objects
+            // also. Since rehydration handles *ALL* subscription
+            // objects, we have to make sure we do *NOT* call
+            // handleUpdateTriggers() as this would result in
+            // processing these twice.
+            //
+            return;
+        }
+
         handleUpdateTriggers();
 
     } // method execute
@@ -341,9 +417,7 @@ public class BelievabilityPlugin
      **/
     private void handleUpdateTriggers()
     {
-     BeliefUpdateTrigger but = null;
-
-     Iterator iter;
+        Iterator iter;
 
      // Diagnoses are published to the blackboard. Each sensor has
      // a Diagnosis object on the blackboard that it either asserts
@@ -356,66 +430,24 @@ public class BelievabilityPlugin
      
      // ------- ADD UpdateTrigger
      for ( iter = _beliefUpdateTriggerSub.getAddedCollection().iterator();  
-              iter.hasNext() ; ) {
-         if (logger.isDetailEnabled() ) logger.detail ("UpdateTrigger ADD");
+              iter.hasNext() ; ) 
+     {
+         if (logger.isDetailEnabled() ) 
+             logger.detail ("UpdateTrigger ADD");
 
-         try {
-          // This is for leashing of diagnoses, to be sure that the
-          // LeashRequestDiagnosis is propagated both when it enables
-          // and when it disables the defense controller
-          _dc_enabled_new = _dc_enabled;
+         handleUpdateTriggerObject( iter.next() );
 
-          but = constructUpdateTrigger( (Object) iter.next() );
-          
-          // Check to see whether the defense controller is enabled at
-          // the moment
-          if (_dc_enabled) 
-              _trigger_consumer.consumeUpdateTrigger( but );
-          else
-          {
-              if (logger.isDetailEnabled() ) 
-                  logger.detail ("Leashing Enabled: tigger ignored.");
-          }
-
-          _dc_enabled = _dc_enabled_new;
-         }
-         catch ( BelievabilityException be ) {
-             if (logger.isWarnEnabled() ) 
-                 logger.warn( "Problem processing added trigger "
-                              + be.getMessage() );
-         }
      } // iterator for ADD update trigger
 
      // ------- CHANGE UpdateTrigger
      for ( iter = _beliefUpdateTriggerSub.getChangedCollection().iterator();
            iter.hasNext() ; ) {
 
-         if (logger.isDetailEnabled() ) logger.detail ("UpdateTrigger CHANGE");
-         try {
-          // This is for leashing of diagnoses, to be sure that the
-          // LeashRequestDiagnosis is propagated both when it enables
-          // and when it disables the defense controller
-          _dc_enabled_new = _dc_enabled;
+         if (logger.isDetailEnabled() ) 
+             logger.detail ("UpdateTrigger CHANGE");
 
-          but = constructUpdateTrigger( (Object) iter.next() );
+         handleUpdateTriggerObject( iter.next() );
 
-          // Check to see whether the defense controller is enabled at
-          // the moment
-          if (_dc_enabled) 
-           _trigger_consumer.consumeUpdateTrigger( but );
-          else
-          {
-              if (logger.isDetailEnabled() ) 
-                  logger.detail ("Leashing Enabled: tigger ignored.");
-          }
-
-          _dc_enabled = _dc_enabled_new;
-         }
-         catch ( BelievabilityException be ) {
-             if ( logger.isWarnEnabled()) 
-          logger.warn( "Problem processing changed update trigger "
-                    + be.getMessage() );
-         }
      } // iterator for CHANGE UpdateTrigger
         
      // ----- REMOVE UpdateTrigger
@@ -430,11 +462,99 @@ public class BelievabilityPlugin
      
     } // method handleUpdateTriggers
 
+    //************************************************************
+    /**
+     * Handles a single update triggfer object from the update trigger
+     * subscrtiption.
+     *
+     * @param trigger_obj The object from the enumeration of the
+     * subscription collection
+     */
+    private void handleUpdateTriggerObject( Object trigger_obj )
+    {
+        if (logger.isDetailEnabled() ) 
+            logger.detail ("Handling update trigger: "
+                           + trigger_obj.toString() );
+ 
+        // For now, we only worry about using the last diagnosis
+        // Method implementation comments go here ...
+        BeliefUpdateTrigger but = null;
 
-    //-------------------------------------------------------------------
-    // Private Methods
-    //-------------------------------------------------------------------
+         try 
+         {
+             // This is for leashing of diagnoses, to be sure that the
+             // LeashRequestDiagnosis is propagated both when it enables
+             // and when it disables the defense controller
+             _dc_enabled_new = _dc_enabled;
 
+             but = constructUpdateTrigger( trigger_obj );
+          
+             // Check to see whether the defense controller is enabled at
+             // the moment
+             if (_dc_enabled) 
+                 _trigger_consumer.consumeUpdateTrigger( but );
+             else
+             {
+                 if (logger.isDetailEnabled() ) 
+                     logger.detail ("Leashing Enabled: tigger ignored.");
+             }
+             
+             _dc_enabled = _dc_enabled_new;
+         }
+         catch ( BelievabilityException be ) 
+         {
+             if (logger.isWarnEnabled() ) 
+                 logger.warn( "Problem processing added trigger "
+                              + be.getMessage() );
+         }
+
+    } // method handleUpdateTriggerObject
+
+
+    //************************************************************
+    /**
+     * Checks if the special TechSpecsLoadedCondition object has been
+     * published, and if so update the tech spec load state
+     * accordingly. 
+     **/
+    private void handleTechSpecLoadedCondition()
+    {
+        Iterator it = _techspecLoadedSub.getAddedCollection().iterator();
+
+        // Only need to see one thing in this collection to know that
+        // the techspec load condition object has been published.
+        //
+        if (it.hasNext()) 
+        { 
+            if (logger.isDetailEnabled() ) 
+                logger.detail ("Techspec loaded object seen.");
+            
+            _techspec_load_state = TECHSPECS_LOADED;
+
+            // Now we can load all the information we need to from the
+            // techspec service.
+            //
+            try 
+            {
+                readInTechSpecInformation();
+            }
+            catch ( BelievabilityException be ) 
+            {
+                if ( logger.isDebugEnabled() )
+                    logger.debug( "Problem reading techspecs: " 
+                                  + be.getMessage() );
+            }
+            
+        }
+        else
+        {
+            if (logger.isDetailEnabled() ) 
+                logger.detail ("Techspec loaded object not yet seen.");
+        }
+
+    } // method handleTechSpecLoadedCondition
+
+    //************************************************************
     /**
      * Demonstrates how to read in parameters passed in via
      * configuration files. Use/remove as needed.
@@ -507,6 +627,7 @@ public class BelievabilityPlugin
 
     private IncrementalSubscription _threatModelSub;
     private IncrementalSubscription _beliefUpdateTriggerSub;
+    private IncrementalSubscription _techspecLoadedSub;
 
     private EventService eventService = null;
     private static final Class[] requiredServices = {
@@ -599,6 +720,62 @@ public class BelievabilityPlugin
                  );
     }
 
+    //************************************************************
+    /**
+     * Will query the blackboard for data that was previously posted
+     * before the plugin was rehydrated.  This allows us to recreate the
+     * state of assets that existed, but which will be lost upon a
+     * rehydration. 
+     *
+     */
+    private void handleRehydration( )
+    {
+
+        if (logger.isDetailEnabled() ) 
+            logger.detail ("Handling Rehydration");
+
+        _rehydration_state = REHYDRATION_IN_PROGRESS;
+
+        // We set this in the model manager, because when we rehydrate
+        // we will use the uniform probability distribution as the a
+        // rpiori beliewf state, rather than the techspec derived one.
+        //
+        _model_manager.setRehydrationHappening( true );
+
+        // Loop through all the diagnosis and action objects on the
+        // blackboard and process them to create the initial
+        // belief/state estimations.
+        //
+        for ( Iterator iter = _beliefUpdateTriggerSub.getCollection().iterator();  
+              iter.hasNext() ; ) 
+        {
+            Object trigger_obj =  iter.next();
+
+            // Ignore SuccessfulAction objects on rehydration
+            //
+            if ( trigger_obj instanceof SuccessfulAction )
+                continue;
+
+            if (logger.isDetailEnabled() ) 
+                logger.detail ("UpdateTrigger REHYDRATE");
+
+            handleUpdateTriggerObject( trigger_obj );
+
+        } // iterator for REHYDRATE update trigger
+
+        _rehydration_state = REHYDRATION_COMPLETED;
+
+        // Make sure to set this to false, so that any *new* assets
+        // will properly start at the techspec a priori belief state
+        // (the uniform initial belief only makes sense for assets
+        // that existed prior to rehydration.)
+        //
+        _model_manager.setRehydrationHappening( false );
+
+        if (logger.isDetailEnabled() ) 
+            logger.detail ("Finished Handling Rehydration");
+
+    } // method handleRehydration
 
     // Boolean saying whether this functionality is enabled or not.
     private boolean _dc_enabled = false;
@@ -623,5 +800,17 @@ public class BelievabilityPlugin
 
     // Vector of things waiting to be published to the blackboard
     private Vector _publication_list = new Vector();
+
+    // When the plugin rehydrates, we need to specially handle getting
+    // older information from blackboard objects.  We use this state
+    // variable to maintain the current status of rehydration.
+    //
+    private int _rehydration_state = REHYDRATION_NOT_NEEDED;
+
+    // We get explicit notification via a blackboard object about
+    // when all the techspecs are loaded.  We keep this local state
+    // variable to keep track of this state.
+    //
+    private int _techspec_load_state = TECHSPECS_NOT_LOADED;
 
 }  // class BelievabilityPlugin
