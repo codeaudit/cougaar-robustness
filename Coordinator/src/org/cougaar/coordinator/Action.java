@@ -548,9 +548,15 @@ public abstract class Action
      */
     public void setPermittedValues (Set values) throws IllegalValueException { 
 
-        if (logger == null) {
-            logger = Logging.getLogger(getClass());         
-        }
+        if (values == null) {
+	    if (logger == null)
+		logger = Logging.getLogger(getClass());         
+	    if (logger.isInfoEnabled()) 
+		logger.info("null passed to setPermittedValues. Set expected.");
+	    permittedValues = new LinkedHashSet();
+	    return;
+	}
+
         Object o;
         Iterator i = values.iterator();
         permittedValues = new LinkedHashSet(); //eliminate chance that this method was called with permittedValues gotten from getPermittedValues().
