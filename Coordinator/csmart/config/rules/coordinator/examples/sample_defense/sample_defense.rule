@@ -13,8 +13,8 @@ ltsp = "org.cougaar.coordinator.techspec.xml.LoadTechSpecsPlugin"
 techspecs = ['SampleSensor.xml', 
              'SampleActuator.xml']
 
-society.each_agent(true) do |agent|
-    agent.add_components(plugins)
+society.each_agent(false) do |agent|
+    agent.add_components(plugins) unless agent.name =~ /.*ARManager.*/
 end
 
 society.each_node do |node|
