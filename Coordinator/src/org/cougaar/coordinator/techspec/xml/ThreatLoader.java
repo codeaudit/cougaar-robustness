@@ -164,8 +164,8 @@ public class ThreatLoader extends XMLLoader {
                     break;
                 }
             }
-            if (!found) {
-                logger.error("Could not find event["+eventName+"] referenced in Threat["+threat.getName()+"].");
+            if (!found) {                
+                logger.error("Could not find event["+eventName+"] referenced in Threat["+threat.getName()+"]. Threat will be ignored!");
             }
         }   
     }
@@ -180,7 +180,8 @@ public class ThreatLoader extends XMLLoader {
         Iterator i = threats.iterator();
         while (i.hasNext() ) {
             ThreatDescription td = (ThreatDescription)i.next();
-            if (td.getEventProbability() != null) { //then publish it. Don't publish if there's no prob. that the threat will occur.
+            //Don't publish if there's no prob. that the threat will occur, or if the causesEvent was not found
+            if (td.getEventProbability() != null && td.getEventThreatCauses() != null) { 
                 blackboard.publishAdd(td);
             } 
         }

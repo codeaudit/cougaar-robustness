@@ -145,7 +145,7 @@ public class CrossDiagnosisLoader extends XMLLoader {
                 String willState = e.getAttribute("name");
                 String p = e.getAttribute("withProbability");
                 
-                AssetState will_as = affectedBy_asd.findAssetState(willState);
+                AssetState will_as = dtsi.getStateDimension().findAssetState(willState);
                 if (will_as == null) {
                     logger.error("CrossDiagnosis XML Error - diagnosis asset state not found! unknown WillDiagnoseAs: "+willState+ " for asset type = " + dtsi.getAssetType());
                     return;
