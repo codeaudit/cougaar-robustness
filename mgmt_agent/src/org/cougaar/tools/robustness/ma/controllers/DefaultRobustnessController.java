@@ -73,16 +73,21 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   class InitialStateController extends StateControllerBase {
     public void enter(String name) {
-      if (isLeader(thisAgent) || isNode(name) || name.equals(preferredLeader())) {
+      if (doInitialPing() && (
+          isLeader(thisAgent) || isNode(name) || name.equals(preferredLeader()))) {
         doPing(name, DefaultRobustnessController.ACTIVE, DEAD);
       }
     }
-    /*
-     public void expired(String name) {
+
+    private boolean doInitialPing() {
+      return false;
+    }
+
+    public void expired(String name) {
       logger.info("Expired Status:" + " agent=" + name + " state=INITIAL");
       newState(name, HEALTH_CHECK);
     }
-    */
+
   }
 
   /**
