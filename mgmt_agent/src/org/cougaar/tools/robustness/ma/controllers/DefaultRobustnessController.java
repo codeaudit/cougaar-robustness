@@ -281,6 +281,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   class MoveStateController extends StateControllerBase implements MoveListener {
     { addMoveListener(this); }
     public void enter(String name) {
+      communityReady = false;
     }
     public void expired(String name) {
       logger.info("Expired Status:" + " agent=" + name + " state=INITIAL");
@@ -294,7 +295,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
             " agent=" + name +
             " orig=" + orig +
             " dest=" + dest);
-      stopHeartbeats(name);
+      //stopHeartbeats(name);
       newState(name, MOVE);
     }
 
@@ -354,14 +355,23 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         model.listEntries(model.AGENT, DefaultRobustnessController.ACTIVE);
     if (agents.length < expectedAgents()) return false;
     List nodes = new ArrayList();
+    boolean result = true;
+    String location = null;
     for (int i = 0; i < agents.length; i++) {
-      String location = model.getLocation(agents[i]);
+      location = model.getLocation(agents[i]);
       if (!nodes.contains(location)) {
-        if (model.getCurrentState(location) != DefaultRobustnessController.ACTIVE) return false;
+        if (model.getCurrentState(location) != DefaultRobustnessController.ACTIVE) {
+          result = false;
+          break;
+        }
         nodes.add(location);
       }
     }
-    return true;
+    logger.info("checkCommunityReady:" +
+                " agents=" + expectedAgents() +
+                " active=" + agents.length +
+                " inactiveNode=" + !result + (!result ? " (" + location + ")" : ""));
+    return result;
   }
 
   /**
@@ -372,6 +382,18 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (isLeader(thisAgent) && isAgent(priorLeader)) {
         newState(priorLeader, RESTART);
       }
+  }
+
+  /**
+   * Receives notification of change in agent location.
+   */
+  public void locationChange(String name, String priorLocation, String newLocation) {
+    logger.info("LocationChange:" +
+                " agent=" + name +
+                " prior=" + priorLocation +
+                " new=" + newLocation);
+    // If agent has moved off this node stop heartbeats
+    if (thisAgent.equals(priorLocation)) stopHeartbeats(name);
   }
 
   /**
