@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/Attic/ThreatTypeModel.java,v $
- * $Revision: 1.2 $
- * $Date: 2004-05-28 20:01:17 $
+ * $Revision: 1.3 $
+ * $Date: 2004-05-28 21:21:47 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -33,7 +33,7 @@ import org.cougaar.coordinator.techspec.ThreatDescription;
  * information.  
  *
  * @author Tony Cassandra
- * @version $Revision: 1.2 $Date: 2004-05-28 20:01:17 $
+ * @version $Revision: 1.3 $Date: 2004-05-28 21:21:47 $
  * 
  *
  */
@@ -323,6 +323,12 @@ class ThreatTypeModel extends Model
         
         EventDescription event_desc = _threat_desc.getEventThreatCauses();
         
+        if ( event_desc == null )
+            throw new BelievabilityException
+                    ( "ThreatTypeModel.setContents()",
+                      "Threat description  has NULL event description: "
+                      + this._name );
+
         this._state_dim_name = event_desc.getAffectedStateDimensionName();
         
         if ( ! asset_type_model.isValidStateDimName( _state_dim_name ))
