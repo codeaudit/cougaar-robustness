@@ -20,11 +20,10 @@
   </StateDimension>
 
   <StateDimension name="MsgLogSetting" >
- 	<State name="Normal_RMI_Protocol" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" defaultStartState="TRUE" />
- 	<State name="Alternate_Direct_Protocols" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
- 	<State name="Store_And_Forward_Protocols" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
- 	<State name="Allow_Alternate_Network" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
- 	<State name="Suppress_Communications" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
+ 	<State name="Normal" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" defaultStartState="TRUE" />
+ 	<State name="AlternateDirect" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
+ 	<State name="StoreAndForward" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
+ 	<State name="Disabled" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
   </StateDimension>
 
 </AssetStateDimensions>
