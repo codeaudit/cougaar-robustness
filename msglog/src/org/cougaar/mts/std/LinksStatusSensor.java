@@ -611,10 +611,12 @@ public class LinksStatusSensor extends ComponentPlugin
     private final MyComparator comparator = new MyComparator();
     private class MyComparator implements Comparator {
 	public int compare (Object o1, Object o2) {
+/*
 	    if (log.isDebugEnabled()) {
 		log.debug("compare: o1="+o1);
 		log.debug("compare: o2="+o2);
 	    }
+*/
 	    MessageHistory.AgentEntry ae1 = (MessageHistory.AgentEntry)o1;
 	    MessageHistory.AgentEntry ae2 = (MessageHistory.AgentEntry)o2;
 	    if (ae1 == null && ae2 == null) return 0;

@@ -132,6 +132,8 @@ public class LinksEnablingActuator extends ComponentPlugin
 		q = newAgentQueue;
 		newAgentQueue = new Vector();
 	    }
+	    if (log.isDebugEnabled()) 
+		log.debug("execute: newAgentQueue="+q);
 	    int tsLookupCnt = 0;
 	    Iterator iter = q.iterator();
 	    while (iter.hasNext()) {
@@ -142,11 +144,11 @@ public class LinksEnablingActuator extends ComponentPlugin
 		try {
 		    action = new LinksEnablingAction(agentName,myValuesOffered,sb);
 		} catch  (TechSpecNotFoundException e) {
-		    if (tsLookupCnt > 10) {
+//		    if (tsLookupCnt > 10) {
 			if (log.isWarnEnabled())
 			    log.warn("TechSpec not found for LinksEnablingAction.  Will retry.", e);
-			tsLookupCnt = 0;
-		    }
+//			tsLookupCnt = 0;
+//		    }
 		    bb.signalClientActivity();
 		    break;
 		} catch (IllegalValueException e) {
@@ -157,6 +159,8 @@ public class LinksEnablingActuator extends ComponentPlugin
 		    break;
 		}
 //		ae.action = action;
+		if (log.isDebugEnabled()) 
+		    log.debug("execute: publishAdd "+action);
 		bb.publishAdd(action);
 		iter.remove();
 	    }
@@ -225,8 +229,6 @@ public class LinksEnablingActuator extends ComponentPlugin
 				    Community.COMMUNITIES_ONLY,
 				    new CommunityResponseListener() {
 					public void getResponse(CommunityResponse response) {
-					    if (log.isDebugEnabled()) 
-						log.debug("getResponse("+response+")");
 					    if (response.getStatus()==CommunityResponse.SUCCESS) {
 						Collection communities = 
 						    (Collection)response.getContent();
@@ -236,15 +238,9 @@ public class LinksEnablingActuator extends ComponentPlugin
     }
     
     private void gotCommunity(Collection comms) {
-	if (log.isDebugEnabled()) 
-	    log.debug("gotCommunity("+comms+")");
 	if (comms == null) {
-	    if (log.isDebugEnabled()) 
-		log.debug("gotCommunity: received null Collection");
 	    return;
 	} else if (comms.size() == 0) {
-	    if (log.isDebugEnabled()) 
-		log.debug("gotCommunity: received empty Collection");
 	    return;
 	} else if (comms.size() > 1) {
 	    if (log.isErrorEnabled())
@@ -258,6 +254,8 @@ public class LinksEnablingActuator extends ComponentPlugin
 	    checkForMembershipChange(community);
         } else {
 	    community = comm;
+	    if (log.isDebugEnabled()) 
+		log.debug("gotCommunity: found Robustness Community "+community);
 	    Collection entities = comm.getEntities();
 	    addMembers(entities);
 	}
@@ -265,7 +263,7 @@ public class LinksEnablingActuator extends ComponentPlugin
         bb.signalClientActivity();
     }
     
-    private void addMembers(Collection entities) {
+    private synchronized void addMembers(Collection entities) {
 	if (log.isDebugEnabled()) 
 	    log.debug("addMembers("+entities+")");
 	Iterator i = entities.iterator();
