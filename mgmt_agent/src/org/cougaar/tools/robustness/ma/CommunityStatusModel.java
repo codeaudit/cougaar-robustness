@@ -39,6 +39,8 @@ import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.SchedulerService;
+import org.cougaar.core.qos.metrics.MetricsService;
+import org.cougaar.core.qos.metrics.Metric;
 import org.cougaar.core.blackboard.BlackboardClientComponent;
 import org.cougaar.core.component.ServiceBroker;
 
@@ -92,6 +94,7 @@ public class CommunityStatusModel extends BlackboardClientComponent {
   private LoggingService logger;
   private ServiceBroker serviceBroker;
   private NodeControlService nodeControlService;
+  private MetricsService metricsService;
 
   /**
    * Status info for a single node/agent.
@@ -173,6 +176,7 @@ public class CommunityStatusModel extends BlackboardClientComponent {
       (BlackboardService)getServiceBroker().getService(this, BlackboardService.class, null));
     nodeControlService =
       (NodeControlService)serviceBroker.getService(this, NodeControlService.class, null);
+    metricsService = (MetricsService)serviceBroker.getService(this, MetricsService.class, null);
     super.load();
   }
 
@@ -1071,6 +1075,25 @@ public class CommunityStatusModel extends BlackboardClientComponent {
       StatusChangeListener csl = (StatusChangeListener) it.next();
       csl.statusChanged(csce);
     }
+  }
+
+  /**
+   * Get metrics information of the given node.
+   */
+  public double getMetric(String nodeName, String searchString) {
+    int tryCount = 0;
+    double cred = org.cougaar.core.qos.metrics.Constants.NO_CREDIBILITY;
+    double desiredMetricsCredibility = org.cougaar.core.qos.metrics.Constants.USER_BASE_CREDIBILITY;
+    double value = 0.0;
+    while (tryCount<2 && cred<desiredMetricsCredibility) {
+      tryCount ++;
+      String basePath = "Node(" + nodeName + ")" +
+          org.cougaar.core.qos.metrics.Constants.PATH_SEPR;
+      Metric metric = metricsService.getValue(basePath + searchString);
+      value = metric.doubleValue();
+      cred = metric.getCredibility();
+    }
+    return value;
   }
 
   private class WakeAlarm implements Alarm {
