@@ -14,56 +14,9 @@ ttms = "org.cougaar.coordinator.test.coordination.ThreatnTransEffectMembershipSe
 mgr_only_plugins = [bms]
 plugins = [awmp,dwmp,amp,ams,dmp,dms,ttms]
 
-ltsp = "org.cougaar.coordinator.techspec.xml.LoadTechSpecsPlugin"
-
-mgr_techspecs   = []
-node_techspecs = []
-
 society.each_agent(true) do |agent|
     agent.add_components(plugins)
     if agent.name =~ /.*ARManager.*/
 	agent.add_components(mgr_only_plugins)
-        found = false
-        agent.each_component do |c|
-            next unless c.classname == ltsp
-	    mgr_techspecs.each do |ts|
-                c.add_argument(ts) unless c.has_argument?(ts)
-            end
-            c.name = c.comparison_name
-            found = true
-            break
-        end
-        unless found
-            agent.add_component do |c|
-                c.classname = ltsp
-                c.insertionpoint = 'Node.AgentManager.Agent.PluginManager.Plugin'
-                mgr_techspecs.each do |ts|
-                    c.add_argument(ts)
-                end
-            end
-	end
-    end
-end
-
-society.each_node do |node|
-#    node.override_parameter("-Dorg.cougaar.core.logging.config.filename","loggingCoordinator.conf")
-    found = false
-    node.each_component do |c|
-        next unless c.classname == ltsp
-        node_techspecs.each do |ts|
-            c.add_argument(ts) unless c.has_argument?(ts)
-        end
-        c.name = c.comparison_name
-        found = true
-        break
-    end
-    unless found
-        node.add_component do |c|
-            c.classname = ltsp
-            c.insertionpoint = 'Node.AgentManager.Agent.PluginManager.Plugin'
-            node_techspecs.each do |ts|
-                c.add_argument(ts)
-            end
-        end
     end
 end
