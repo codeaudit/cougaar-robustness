@@ -281,15 +281,15 @@ module Cougaar
 		  end
 		end
 	 end
-	 
-    class KillAgent < Cougaar::Action
+
+    class KillAgents < Cougaar::Action
       PRIOR_STATES = ["SocietyLoaded"]
       DOCUMENTATION = Cougaar.document {
         @description = "Remove agents from the society"
         @parameters = [
           {:agents => "required, The agents that be removed."}
         ]
-        @example = "do_action 'KillAgent', '1-35-ARBN, GlobalAir'" 
+        @example = "do_action 'KillAgents', '1-35-ARBN, GlobalAir'"
 	}
 
       def initialize(run, *agents)
