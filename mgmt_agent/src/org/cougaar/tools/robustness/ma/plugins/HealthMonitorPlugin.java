@@ -723,7 +723,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     if (membersHealthStatus.isEmpty()) {
       for (Iterator it = cmList.iterator(); it.hasNext();) {
         CommunityMember cm = (CommunityMember)it.next();
-        if (cm.isAgent()) {
+        if (cm.isAgent() && !isNodeAgent(cm.getName())) {
           HealthStatus hs = newHealthStatus(new ClusterIdentifier(cm.getName()));
           addHealthStatus(hs);
           log.info("Adding " + cm.getName());
@@ -736,7 +736,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       for (Iterator it = cmList.iterator(); it.hasNext();) {
         CommunityMember cm = (CommunityMember)it.next();
         ClusterIdentifier agent = new ClusterIdentifier(cm.getName());
-        if (cm.isAgent() && !hasHealthStatus(agent)) {
+        if (cm.isAgent() && !isNodeAgent(cm.getName()) && !hasHealthStatus(agent)) {
           HealthStatus hs = newHealthStatus(agent);
           addHealthStatus(hs);
           newMembers.add(hs);
@@ -825,6 +825,21 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       log.error("Exception parsing agent health monitor parameters, " + ex);
     }
     return hs;
+  }
+
+  /**
+   * Determines if an agent is a Node Agent.
+   * @param agentName Name of agent
+   * @return True if node agent
+   */
+  private boolean isNodeAgent(String agentName) {
+    try {
+      TopologyEntry te = topologyService.getEntryForAgent(agentName);
+      return (te.getType() == te.NODE_AGENT_TYPE);
+    } catch (Exception ex) {
+      log.error("Exception getting agent location for TopologyReaderService", ex);
+    }
+    return false;
   }
 
   /**
