@@ -30,6 +30,8 @@ package org.cougaar.tools.robustness.disconnection.InternalConditionsAndOpModes;
 
 import org.cougaar.core.relay.Relay;
 import java.io.Serializable;
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
 //import org.cougaar.core.persist.Persistable;
 
 import org.cougaar.core.util.UniqueObject;
@@ -93,17 +95,26 @@ public class ReconnectTimeCondition extends DefenseTimeCondition
     
      public int updateContent(Object content, Relay.Token token) {
         ReconnectTimeCondition newRTC = (ReconnectTimeCondition) content;
-        //if (logger.isDebugEnabled()) logger.debug("thisRTC = " + this.toString() + "\n" + "newRTC = " + newRTC.toString());
-        if (getValue()==null && newRTC.getValue()==null) return Relay.NO_CHANGE;
+        boolean somethingChanged = false;
+        Logger logger = Logging.getLogger(ReconnectTimeCondition.class);
+        if (logger.isDebugEnabled()) logger.debug("thisRTC = " + this + "\n" + "newRTC = " + newRTC);
+
         if ((getValue()==null && newRTC.getValue()!=null) ||
-            getValue().compareTo(newRTC.getValue()) != 0 ||
-            (newRTC.getAgents()==null && getAgents()!=null) ||
-            !newRTC.getAgents().equals(agents)) {
-          setValue(newRTC.getValue());
-          agents = newRTC.getAgents();
-          return Relay.CONTENT_CHANGE;
+            (getValue()!=null && getValue().compareTo(newRTC.getValue()) != 0 )) {
+                setValue(newRTC.getValue());
+                somethingChanged = true;
         }
-        return Relay.NO_CHANGE;
+        if ((getAgents()==null && newRTC.getAgents()!=null) ||
+            (getAgents()!=null && !getAgents().equals(newRTC.getAgents()))) {
+                agents = newRTC.getAgents();
+                somethingChanged = true;
+        }
+        if (somethingChanged) {
+            return Relay.CONTENT_CHANGE;
+        }
+        else {
+            return Relay.NO_CHANGE;
+        }
     }
 
 }
