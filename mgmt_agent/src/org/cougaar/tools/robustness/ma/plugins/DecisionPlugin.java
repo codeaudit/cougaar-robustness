@@ -355,7 +355,7 @@ public class DecisionPlugin extends SimplePlugin {
     AgentControl ac =
       mobilityFactory.createAgentControl(acUID, destNodeAddr, addTicket);
 
-    event("Restarting agent: agent=" + agent);
+    event("Restarting agent: agent=" + agent + " dest=" + destNodeAddr);
     if (log.isDebugEnabled()) {
       StringBuffer sb = new StringBuffer("AgentControl publication:" +
         " myUid=" + agentControlUIDs.contains(ac.getOwnerUID()) +
