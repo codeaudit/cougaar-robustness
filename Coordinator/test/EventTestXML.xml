@@ -22,7 +22,7 @@
     assetType  CDATA #REQUIRED
 >
 
-<!ELEMENT VulnerableAssets ContainmentFilter, EventLikelihood >
+<!ELEMENT VulnerableAssets (ContainmentFilter, EventLikelihood) >
 
 <!ELEMENT EventLikelihood  EMPTY>
 <!ATTLIST EventLikelihood
@@ -36,16 +36,30 @@
 
 ]>
 
-<Event name=”HostDeath" affectsAssetType=”Host" affectsStateDimension=”Liveness">
+<Events>
+<Event name="HostDeath" affectsAssetType="Host" affectsStateDimension="Liveness">
     <DirectEffect>
-        <Transition WhenActualStateIs=”*” EndStateWillBe=”DEAD” />
-        <Transition ... />
+        <Transition WhenActualStateIs="*" EndStateWillBe="DEAD" />
     </DirectEffect>
     <TransitiveEffect>
-        <CausesEvent name=”NodeDeath” assetType=”Node”/>
+        <CausesEvent name="NodeDeath" assetType="Node"/>
         <VulnerableAssets>
-            <ContainmentFilter eventAssetContainerName=”Node” >
-            <EventLikelihood probability=“ALWAYS” />
+            <ContainmentFilter eventAssetContainerName="Node" />
+            <EventLikelihood probability="ALWAYS" />
         </VulnerableAssets>
     </TransitiveEffect> 
 </Event>
+<Event name="HostDeath2" affectsAssetType="Host" affectsStateDimension="Liveness">
+    <DirectEffect>
+        <Transition WhenActualStateIs="Eating" EndStateWillBe="DEAD" />
+        <Transition WhenActualStateIs="Sleeping" EndStateWillBe="DEAD" />
+    </DirectEffect>
+    <TransitiveEffect>
+        <CausesEvent name="NodeDeath" assetType="Node"/>
+        <VulnerableAssets>
+            <ContainmentFilter eventAssetContainerName="Node" />
+            <EventLikelihood probability="ALWAYS" />
+        </VulnerableAssets>
+    </TransitiveEffect> 
+</Event>
+</Events>

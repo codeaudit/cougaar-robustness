@@ -19,7 +19,7 @@
         </AssetFilter>
         <EventLikelihoodInterval>
             <ClockInterval intervalStart="1800" durationHrs="12" probability="MEDIUM" />
-            <ClockInterval intervalStart="1800" durationHrs="12" probability="LOW" />
+            <ClockInterval intervalStart="0600" durationHrs="12" probability="LOW" />
         </EventLikelihoodInterval>
     </VulnerableAssets>
 
