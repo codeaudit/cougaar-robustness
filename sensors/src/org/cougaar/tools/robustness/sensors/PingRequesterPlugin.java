@@ -95,6 +95,8 @@ public class PingRequesterPlugin extends ComponentPlugin {
   }
 
   protected void setupSubscriptions() {
+    log = (LoggingService)getServiceBroker().
+      getService(this, LoggingService.class, null);
     UIDtable = new UniqueObjectSet();
     bb = getBlackboardService();
     pingReqSub = (IncrementalSubscription)bb.subscribe(pingReqPred);
