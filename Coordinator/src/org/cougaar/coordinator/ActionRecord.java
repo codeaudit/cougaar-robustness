@@ -25,11 +25,14 @@
 
 package org.cougaar.coordinator;
 
+import java.io.Serializable;
+import org.cougaar.core.persist.NotPersistable;
+
 /**
  * An action, timestamp, and completionCode (start, stop -- completed, aborted, failed)
  * @author  Administrator
  */
-public class ActionRecord {
+public class ActionRecord implements NotPersistable, Serializable {
     
      long start_time;
      long end_time = 0;

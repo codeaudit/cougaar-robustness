@@ -712,7 +712,7 @@ logger.debug("Getting target on agent="+agentId+", nodeId="+nodeId);
     //*******************************Action History tracking routines*************************************
 
     /** Used to ensure that only this type is used to set the action code */
-    public static class CompletionCode {
+    public static class CompletionCode implements Serializable {
     
         private int val;
         protected CompletionCode(int i) { this.val = i; }
