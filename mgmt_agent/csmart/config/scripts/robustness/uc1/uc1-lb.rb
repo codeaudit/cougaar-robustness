@@ -25,7 +25,7 @@ Cougaar.new_experiment("UC1_LB").run(1) {
     "#{RULES}/logistics",
     "#{RULES}/robustness/uc1"
 
-  do_action "TransformSociety", false, "#{RULES}/robustness/communities"
+  do_action "TransformSociety", false, "#{RULES}/robustness"
 
   #do_action "SaveCurrentSociety", "mySociety.xml"
   #do_action "SaveCurrentCommunities", "myCommunities.xml"
