@@ -3,9 +3,9 @@
 <!DOCTYPE Threats SYSTEM "ThreatDTD.dtd"  >
 <Threats>
 
-<Threat name="Bug_Out" affectsAssetType="Node" causesEvent="Disconnect_Request" defaultEventLikelihoodProb="MEDIUM" probIntervalInMins="30" />
-<Threat name="Arrival" affectsAssetType="Node" causesEvent="Reconnect_Request" defaultEventLikelihoodProb="MEDIUM" probIntervalInMins="30" />
-<Threat name="AWOL" affectsAssetType="Node" causesEvent="Late_Return" defaultEventLikelihoodProb="MEDIUM" probIntervalInMins="30" />
-<Threat name="Restart" affectsAssetType="Agent" causesEvent="Agent_Restart" defaultEventLikelihoodProb="HIGH" probIntervalInMins="30" />
+<Threat name="Bug_Out" affectsAssetType="Node" causesEvent="Disconnect_Request" defaultEventLikelihoodProb="MEDIUM" probIntervalInMins="10" />
+<Threat name="Arrival" affectsAssetType="Node" causesEvent="Reconnect_Request" defaultEventLikelihoodProb="MEDIUM" probIntervalInMins="10" />
+<Threat name="AWOL" affectsAssetType="Node" causesEvent="Late_Return" defaultEventLikelihoodProb="MEDIUM" probIntervalInMins="10" />
+<Threat name="Restart" affectsAssetType="Agent" causesEvent="Agent_Restart" defaultEventLikelihoodProb="HIGH" probIntervalInMins="10" />
 
 </Threats>

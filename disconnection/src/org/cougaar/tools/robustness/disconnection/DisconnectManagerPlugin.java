@@ -350,33 +350,15 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         // create the Defense-Level Diagnosis & Action seen by the Coordinator
 
         RequestToDisconnectNodeDiagnosis diag = requestToDisconnectNodeDiagnosisIndex.getDiagnosis(id);
-        if (diag != null) { // the DefenseApplicability condition already exists, so don't make anotherset of conditions & opmodes
-            if (logger.isDebugEnabled()) logger.debug("Not creating redundant modes & conditions for already known "+id.toString() + ", resetting Diagnosis");
-            try {
-                diag.setValue(CONNECTED);
-            } catch (IllegalValueException e) {
-                logger.error (e.toString());
-            }
-            blackboard.publishChange(diag);
-/*
-            DisconnectAction action = disconnectActionIndex.getAction(id);
-            try {
-                action.start(AUTONOMOUS_RESTART);
-                action.stop(Action.COMPLETED);
-            } catch (IllegalValueException e) {
-                logger.error (e.toString());
-            } catch (NoStartedActionException e) {
-                logger.error (e.toString());
-            }
-            blackboard.publishChange(action);
-*/
+        if (diag != null) { // the Diagnosis already exists, so don't make another set of conditions & opmodes
+            if (logger.isDebugEnabled()) logger.debug("Not creating redundant Diagnosis & Action for already known "+id.toString());
             return diag;
         }
 
         try {
             diag = new RequestToDisconnectNodeDiagnosis(id.getName(), sb);
             try {
-                diag.setValue(currentDiagnosis); // not disconnected
+                diag.setValue(currentDiagnosis);
                 requestToDisconnectNodeDiagnosisIndex.putDiagnosis(diag);
                 blackboard.publishAdd(diag);
                 if (logger.isDebugEnabled()) { logger.debug("Created: "+diag.dump()); }
@@ -389,10 +371,28 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             return null;
         }
 
+	  NodeDisconnectAction action;
+
         try {
-            NodeDisconnectAction action = new NodeDisconnectAction(id.getName(), NULL_SET, sb);
-            HashSet offers = new HashSet();
-            action.setValuesOffered(offers); // everything is allowed
+		if (currentDiagnosis.equals(CONNECTED)) {
+            	action = new NodeDisconnectAction(id.getName(), NULL_SET, sb);
+		}
+		else {
+            	action = new NodeDisconnectAction(id.getName(), ALLOW_DISCONNECT_SET, sb);
+			action.setPermittedValues(ALLOW_DISCONNECT_SET);
+			action.start(ALLOW_DISCONNECT);
+			try {
+				action.stop(Action.ACTIVE);
+			}
+			catch (NoStartedActionException e) {
+				logger.error(e.toString());
+			}
+		}
+			/*
+            	HashSet offers = new HashSet();
+            	action.setValuesOffered(offers); // everything is allowed
+			*/
+
             disconnectActionIndex.putAction(action);
             blackboard.publishAdd(action);
             if (logger.isDebugEnabled()) { logger.debug("Created: "+action.dump()); }
@@ -415,30 +415,14 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         // create the Defense-Level Diagnosis & Action seen by the Coordinator
 
         RequestToDisconnectAgentDiagnosis diag = requestToDisconnectAgentDiagnosisIndex.getDiagnosis(id);
-        if (diag != null) { // the DefenseApplicability condition already exists, so don't make anotherset of conditions & opmodes
-            try {
-                diag.setValue(CONNECTED);
-            } catch (IllegalValueException e) {
-                logger.error (e.toString());
-            }
-            blackboard.publishChange(diag);
-/*            DisconnectAction action = disconnectActionIndex.getAction(id);
-            try {
-                action.start(AUTONOMOUS_RESTART);
-                action.stop(Action.COMPLETED);
-            } catch (IllegalValueException e) {
-                logger.error (e.toString());
-            } catch (NoStartedActionException e) {
-                logger.error (e.toString());
-            }
-            blackboard.publishChange(action);
-*/
+        if (diag != null) { // the Diagosis already exists, so don't create another Diagnosis & Action
+            if (logger.isDebugEnabled()) logger.debug("Not creating redundant Diagnosis & Action for already known "+id.toString());
             return diag;
         }
 
         try {
             diag = new RequestToDisconnectAgentDiagnosis(id.getName(), sb);
-            diag.setValue(currentDiagnosis); // wants to disconnect
+            diag.setValue(currentDiagnosis);
             requestToDisconnectAgentDiagnosisIndex.putDiagnosis(diag);
             blackboard.publishAdd(diag);
             if (logger.isDebugEnabled()) { logger.debug("Created: "+diag.dump()); }
@@ -450,10 +434,28 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             return null;
         }
 
+	  AgentDisconnectAction action;
+
         try {
-            AgentDisconnectAction action = new AgentDisconnectAction(id.getName(), NULL_SET, sb);
-            HashSet offers = new HashSet();
-            action.setValuesOffered(offers); // everything is allowed
+		if (currentDiagnosis.equals(CONNECTED)) {
+            	action = new AgentDisconnectAction(id.getName(), NULL_SET, sb);
+		}
+		else {
+            	action = new AgentDisconnectAction(id.getName(), ALLOW_DISCONNECT_SET, sb);
+			action.setPermittedValues(ALLOW_DISCONNECT_SET);
+			action.start(ALLOW_DISCONNECT);
+			try {
+				action.stop(Action.ACTIVE);
+			}
+			catch (NoStartedActionException e) {
+				logger.error(e.toString());
+			}
+		}
+			/*
+            	HashSet offers = new HashSet();
+            	action.setValuesOffered(offers); // everything is allowed
+			*/
+
             disconnectActionIndex.putAction(action);
             blackboard.publishAdd(action);
             if (logger.isDebugEnabled()) { logger.debug("Created: "+action.dump()); }
@@ -464,6 +466,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             logger.error("TechSpec not found for AgentDisconnectAction");
             return null;
         }
+
         if (logger.isDebugEnabled()) logger.debug("Created Diagnosis & Action for: " + id.toString());        
         return diag;
     }

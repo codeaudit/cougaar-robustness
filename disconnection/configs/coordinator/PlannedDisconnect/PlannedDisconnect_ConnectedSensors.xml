@@ -5,7 +5,7 @@
 <SensorTypes>
 
 <SensorType name="org.cougaar.tools.robustness.disconnection.RequestToDisconnectNodeDiagnosis" sensesAssetType="node"
-            sensesStateDimension="Connectedness" sensorLatency="5000" reportingPolicy="ALWAYS_CURRENT" >
+            sensesStateDimension="Connectedness" sensorLatency="10000" reportingPolicy="ALWAYS_CURRENT" >
     <PotentialDiagnoses>
         <Diagnosis name="Disconnect_Request" />
         <Diagnosis name="Connect_Request" defaultValue="TRUE" />
@@ -37,7 +37,7 @@
 </SensorType>
 
 <SensorType name="org.cougaar.tools.robustness.disconnection.RequestToDisconnectAgentDiagnosis" sensesAssetType="agent"
-            sensesStateDimension="Connectedness" sensorLatency="5000" reportingPolicy="ALWAYS_CURRENT" >
+            sensesStateDimension="Connectedness" sensorLatency="10000" reportingPolicy="ALWAYS_CURRENT" >
     <PotentialDiagnoses>
         <Diagnosis name="Disconnect_Request" />
         <Diagnosis name="Connect_Request" defaultValue="TRUE" />
