@@ -35,7 +35,8 @@
   <property category="team" name="ignorePath.3" value="test"/>
   <node name="configs" type="Folder">
     <node name="mic-local" type="Folder">
-      <file path="configs/mic-local/mgmt_agent.jpx"/>
+      <file path="configs/mic-local/install_acme_service"/>
+      <file path="configs/mic-local/install_cougaar"/>
       <file path="configs/mic-local/qing-hosts.xml"/>
       <file path="configs/mic-local/ron1-hosts.xml"/>
       <file path="configs/mic-local/ron2-hosts.xml"/>
@@ -78,6 +79,7 @@
             <file path="csmart/config/scripts/robustness/uc1/uc1-small.rb"/>
           </node>
           <node name="uc4" type="Folder">
+            <file path="csmart/config/scripts/robustness/uc4/uc4-full.rb"/>
             <file path="csmart/config/scripts/robustness/uc4/uc4-small.rb"/>
           </node>
         </node>

@@ -1,9 +1,11 @@
 #!/bin/tcsh -f
 
 set SOC="cougaar-a"
+set JABBER="net5"
 
-if ($HOSTNAME == 'net1' || $HOSTNAME == 'qing' || $HOSTNAME == 'taper' || $HOSTNAME == 'karen') then
+if ($HOSTNAME == 'net1' || $HOSTNAME == 'net2' || $HOSTNAME == 'qing' || $HOSTNAME == 'taper') then
   set SOC="cougaar-b"
+  set JABBER="oak"
 endif
 
 service acme stop
@@ -11,8 +13,8 @@ killall -9 ruby
 killall -9 java
 rm -rf /usr/local/acme.old
 mv /usr/local/acme /usr/local/acme.old
-cd /shares/development/$SOC/csmart/acme_service/bin
-ruby install.rb -j net5 -t /usr/local/acme -p acme_password -v /shares/commercial/java/bin/java -c /shares/development/$SOC
+cd /shares/development/cougaar/csmart/acme_service/bin
+ruby install.rb -j $JABBER -t /usr/local/acme -p acme_password -v /shares/commercial/java/bin/java -c /shares/development/$SOC
 chown -R asmt.asmt /usr/local/acme
 chmod g+w -R /usr/local/acme
 service acme start

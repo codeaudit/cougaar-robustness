@@ -2,6 +2,9 @@
 <society name='ARsmall-hosts'
   xmlns:xsi='http:/www.w3.org/2001/XMLSchema-instance'
   xsi:noNamespaceSchemaLocation='http:/www.cougaar.org/2003/society.xsd'>
+  <host name='ron'>
+    <facet service="operator"/>
+  </host>
   <host name='oak'>
     <facet service="cougaar-db"/>
   </host>
@@ -15,8 +18,7 @@
     <facet service="jabber"/>
     <facet service="acme"/>
   </host>
-  <host name='ron'>
-    <facet service="operator"/>
+  <host name='willow'>
     <facet service="acme"/>
   </host>
 </society>
