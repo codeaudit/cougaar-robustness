@@ -1,7 +1,7 @@
 =begin experiment
 
-name: ARUC1-No-Stress
-description: AR UC1 - No Stresses
+name: ARUC1-Kill-Agents
+description: AR UC1 - Kill Agents
 script: $CIP/csmart/scripts/definitions/BaselineTemplate-ExtOplan.rb
 
 parameters:
@@ -28,6 +28,7 @@ parameters:
 include_scripts:
   - script: $CIP/csmart/lib/isat/clearPnLogs.rb
   - script: $CIP/csmart/lib/coordinator/unleash_defenses.rb
+  - script: $CIP/csmart/lib/robustness/mic/small_kill_agents.rb
 
   - script: $CIP/csmart/lib/isat/stop_society.rb
     parameters:
