@@ -1,0 +1,55 @@
+ACUC 2B Outline
+
+Servlets 			Diagnoses			Actions
+------------------------------------------------------------------------
+????				ThreatConDiagnosis		Security_Defense_Setting  (per enclave)
+AvailableBandwidthServlet	AvailableBandwidthDiagnosis	Compression_Setting  (per enclave
+MAUPolicyServlet (as before)		-				-
+OutsideLoadServlet		direcly seen by Selection		-
+
+
+There will be 2 experiments:
+
+1) Show that under OutsideLoad=None, the Coord will permit both Compression & SecurityDefense at their max requested levels.  This will test the plumbing of he UC and show that the Coord can manage multiple comensatory defenses
+
+
+2) Show that under OutsideLoad=High, when only one of SecurityDefense and Compression can be permited at its highest requested value, the Coordinator will permit the appropriate one based on MAU policy settings.  There are two subcases:
+
+2a) Set HighSecurityMau.  The Coord should respond by permitting Security_Level_Setting=High and forcing Compression_Setting=Off.
+
+2b) Set IghCompletenessMau.  The Coord should respond by permitting Compression_Setting=High and forcing Security_Level_Setting=Low.
+
+
+We will create the conditions under which Compression desires to compess by setting the AvailableBandwidth=Low for all tests.
+
+
+----
+
+can run scripts to change:
+
+MAU
+ - HighSecurityMau
+ - HihCompletenessMau
+
+OutsideLoad
+ - High, None - currently don't have Actions or scrips
+
+AvailableBandwidth
+ - Low - Currently don't have Action or script 
+
+ThreatCon
+ - I asume there must be one from security, but  don't know what it is
+
+
+-----------
+
+Expected Behavior:
+
+
+Experiment	AvailableResources	ThreatConDiagnosis	Compression_Setting	Security_Defense_Setting
+----------------------------------------------------------------------------------------------------------------------
+1			High			High			On				High	
+2a			Low			High			Off				High	
+2b			Low			Low			On				Low
+
+

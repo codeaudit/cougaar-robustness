@@ -103,10 +103,6 @@ include_scripts:
   - script: $CIP/csmart/lib/security/scripts/cleanup_society.rb
 #################################################################
 
-  - script: $CIP/csmart/lib/isat/stop_society.rb
-    parameters:
-      - stop_location: after_stage_1
-
 # - script: $CIP/csmart/lib/coordinator/set_threatcon.rb 
 #   parameters:
 #      - location: during_stage_1
@@ -134,6 +130,15 @@ include_scripts:
     parameters:
       - location: during_stage_1
       - verbose: 1
+
+  - script: $CIP/csmart/lib/coordinator/monitor_action_selection.rb 
+    parameters:
+      - location: during_stage_1
+      - verbose: 2
+
+  - script: $CIP/csmart/lib/isat/stop_society.rb
+    parameters:
+      - stop_location: after_stage_1
 
 =end
 

@@ -47,7 +47,7 @@ include_scripts:
       - verbose: 2
   - script: $CIP/csmart/lib/coordinator/unleash_defenses.rb 
     parameters:
-      - location: society_running
+      - location: starting_stage
       - verbose: 1
 
 =end
