@@ -270,7 +270,8 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
             while (variantIter.hasNext()) {
                 VariantEvaluation thisVariantEvaluation = (VariantEvaluation) variantIter.next();
                 if ((thisVariantEvaluation.getPredictedBenefit() > bestBenefit)
-                  && (!thisVariantEvaluation.triedP())) {
+                  && (!thisVariantEvaluation.triedP())
+                  && (thisAction.getValuesOffered().contains(thisVariantEvaluation.getVariantName()))) {
                     bestBenefit = thisVariantEvaluation.getPredictedBenefit();
                     bestActionEvaluation = thisActionEvaluation;    
                     bestVariantEvaluation = thisVariantEvaluation;
