@@ -54,6 +54,11 @@ public class Ack implements Serializable
   private transient Vector linksUsed;
   private transient long receiveTime;
 
+  public Ack ()  // for deserialization
+  {
+    maxResendDelay = DEFAULT_MAX_RESEND_DELAY;
+  }
+
   public Ack (AttributedMessage msg)
   {
     setMsg (msg);
@@ -164,27 +169,27 @@ public class Ack implements Serializable
     return resendMultiplier;
   }
 
-  public int getMsgResendTimeout ()
+  public int getResendTimeout ()
   {
-    return (getAckWindow() * resendMultiplier) + resendDelay;
+    return (getAckWindow() * resendMultiplier);
   }
 
-  public void setMaxMsgResendDelay (int max)
+  public void setMaxResendDelay (int max)
   {
     maxResendDelay = max;
   }
 
-  public int getMaxMsgResendDelay ()
+  public int getMaxResendDelay ()
   {
     return maxResendDelay;
   }
 
-  public int getMsgResendDelay ()
+  public int getResendDelay ()
   {
     return resendDelay;
   }
 
-  public void addMsgResendDelay (int delay)
+  public void addResendDelay (int delay)
   {
     int newDelay = resendDelay + delay;
     if (newDelay < 0) newDelay = 0;
@@ -272,6 +277,11 @@ public class Ack implements Serializable
   public boolean isPureAckAck ()
   {
     return (getClass() == org.cougaar.core.mts.acking.PureAckAck.class);
+  }
+
+  public boolean isSomePureAck ()
+  {
+    return (isPureAck() || isPureAckAck());
   }
 
   public String getType ()

@@ -42,7 +42,6 @@ import org.cougaar.core.service.ThreadService;
 
 public class MessageAckingAspect extends StandardAspect
 {
-  static final boolean showTraffic;
   static final String  excludedLinks;
   static final int     messageAgeWindowInMinutes;
   static final int     initialEmailRoundtripTime;
@@ -54,7 +53,7 @@ public class MessageAckingAspect extends StandardAspect
   static final float   ackAckPlacingFactor;
   static final int     runningAveragePoolSize;
 
-  static AckWaiter ackWaiter;
+  static MessageResender messageResender;
   static PureAckSender pureAckSender;
   static PureAckAckSender pureAckAckSender;
 
@@ -79,10 +78,7 @@ public class MessageAckingAspect extends StandardAspect
   {
     //  Read external properties
 
-    String s = "org.cougaar.message.transport.aspects.acking.showTraffic";
-    showTraffic = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
-
-    s = "org.cougaar.message.transport.aspects.acking.excludedLinks";
+    String s = "org.cougaar.message.transport.aspects.acking.excludedLinks";
     String defaultList = "";
 //    String defaultList = "org.cougaar.core.mts.RMILinkProtocol";  // comma separated list
 //String defaultList = "org.cougaar.core.mts.OutgoingSocketLinkProtocol";  // comma separated list
@@ -132,8 +128,8 @@ public class MessageAckingAspect extends StandardAspect
       {
         //  Kick off worker threads
 
-        ackWaiter = new AckWaiter (this);
-        threadService().getThread (this, ackWaiter, "AckWaiter").start();
+        messageResender = new MessageResender (this);
+        threadService().getThread (this, messageResender, "MessageResender").start();
 
         pureAckSender = new PureAckSender (this);
         threadService().getThread (this, pureAckSender, "PureAckSender").start();
@@ -150,7 +146,7 @@ public class MessageAckingAspect extends StandardAspect
   {
     if (type == SendQueue.class) 
     {
-      return new MessageSender ((SendQueue) delegate);
+      return new SendMessage ((SendQueue) delegate);
     }
     else if (type == DestinationLink.class) 
     {
@@ -426,6 +422,8 @@ public class MessageAckingAspect extends StandardAspect
 
   static boolean addSuccessfulReceive (AgentID fromAgent, AgentID toAgent, int msgNum)
   {
+    if (msgNum == 0) return false;
+
     synchronized (successfulReceivesTable)
     {
       String node = fromAgent.getNodeName();
@@ -460,6 +458,8 @@ public class MessageAckingAspect extends StandardAspect
 
   static boolean wasSuccessfulReceive (AgentID fromAgent, AgentID toAgent, int msgNum)
   {
+    if (msgNum == 0) return false;
+
     synchronized (successfulReceivesTable)
     {
       String node = fromAgent.getNodeName();
@@ -487,6 +487,8 @@ public class MessageAckingAspect extends StandardAspect
 
   static boolean addSuccessfulSend (AgentID fromAgent, AgentID toAgent, int msgNum)
   {
+    if (msgNum == 0) return false;
+
     synchronized (successfulSendsTable)
     {
       String node = toAgent.getNodeName();
@@ -535,6 +537,7 @@ public class MessageAckingAspect extends StandardAspect
 
   static boolean wasSuccessfulSend (AgentID fromAgent, AgentID toAgent, int msgNum)
   {
+    if (msgNum == 0) return false;
     return getSuccessfulSends(fromAgent,toAgent).find (msgNum);
   }
 
@@ -661,7 +664,7 @@ public class MessageAckingAspect extends StandardAspect
 
   public static void dingTheMessageResender ()
   {
-    ackWaiter.ding();
+    messageResender.ding();
   }
 
   public static boolean isExcludedLink (DestinationLink link)

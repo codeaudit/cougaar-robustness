@@ -38,12 +38,7 @@ public class PureAckAck extends PureAck
     //  creation of the ack-ack, and these acks are never changed (updated).
 
     setSpecificAcks (pureAck.getLatestAcks());
-
-//System.err.println ("PureAckAck: setting acks from pure ack: " +pureAck);
-//AckList.printAcks ("specific", pureAck.getLatestAcks());
-
     setReceiveTime (pureAck.getReceiveTime());
-// temp HACK    setSenderRoundtripTime (pureAck.getSenderRoundtripTime());
   }
 }
 

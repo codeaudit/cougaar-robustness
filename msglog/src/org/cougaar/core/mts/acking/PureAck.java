@@ -39,33 +39,28 @@ public class PureAck extends Ack
     super (null);  // msg gets set by PureAckMessage
   }
 
-  public void setAckSendableTime (long time)
+  public synchronized void setAckSendableTime (long time)
   {
     ackSendableTime = time;
   }
 
-  public long getAckSendableTime ()
+  public synchronized long getAckSendableTime ()
   {
     return ackSendableTime;
   }
 
-  public void setSendDeadline (long time)
+  public synchronized void setSendDeadline (long time)
   {
     sendDeadline = time;
   }
 
-  public long getSendDeadline ()
+  public synchronized long getSendDeadline ()
   {
     return sendDeadline;
   }
 
   public boolean stillAckingSrcMsg ()
   {
-/*
-System.err.println ("stillAckingSrcMsg: src num = "+MessageUtils.getSrcMsgNumber(getMsg()));
-System.err.println ("stillAckingSrcMsg: acks =");
-AckList.printAcks (getAcks());
-*/
     return AckList.find (getLatestAcks(), MessageUtils.getSrcMsgNumber(getMsg()));
   }
 }

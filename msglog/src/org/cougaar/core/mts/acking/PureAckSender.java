@@ -55,8 +55,6 @@ class PureAckSender implements Runnable
   public PureAckSender (MessageAckingAspect aspect) 
   {
     this.aspect = aspect;
-    log = aspect.getTheLoggingService();
-
     queue = new Vector();
     messages = new PureAckMessage[32];
     haveNewMessages = false;
@@ -65,6 +63,8 @@ class PureAckSender implements Runnable
 
   public void add (PureAckMessage pam) 
   {
+    if (debug()) log.debug ("PureAckSender: adding " +pam);
+
     synchronized (queue) 
     {
       queue.add (pam);
@@ -79,6 +79,12 @@ class PureAckSender implements Runnable
     {
       queue.remove (pam);
     }
+  }
+
+  private boolean debug ()
+  {
+    if (log == null) log = aspect.getTheLoggingService();
+    return (log != null ? log.isDebugEnabled() : false);
   }
   
   public void run() 
@@ -115,14 +121,11 @@ class PureAckSender implements Runnable
 
           //  Wait until timeout, notify, or interrupt
 
-//System.err.println ("\nPureAckSender: WAIT waitTime= "+waitTime);
           try { queue.wait (waitTime); } catch (Exception e) {}
-//System.err.println ("\nPureAckSender: RUN");
         }
 
         messages = (PureAckMessage[]) queue.toArray (messages);  // try array reuse
         len = queue.size();
-//System.err.println ("PureAckSender: len="+len);
       }
 
       //  Check if it is time to send a pure ack message
@@ -137,7 +140,6 @@ class PureAckSender implements Runnable
         //  drop this pure ack message.
 
         PureAckMessage pam = messages[i];
-//System.err.println ("PureAckSender: msg="+MessageUtils.toString(pam));
 
         if (MessageAckingAspect.findAckToSend (pam))
         {
@@ -145,14 +147,19 @@ class PureAckSender implements Runnable
           long sendDeadline = pureAck.getSendDeadline();
           long timeLeft = sendDeadline - now();
 
+          if (debug())
+          { 
+            String m = MessageUtils.toShortString (pam);
+            log.debug ("PureAckSender: " +m+ " timeLeft="+timeLeft);
+          }
+
           if (timeLeft <= 0)
           {
             //  Time to send/resend the ack
 
-// System.err.println ("PureAckSender: Launching " +pam);
-
+            if (debug()) log.debug ("PureAckSender: Sending pure ack " +pam);
             remove (pam);  // remove first to avoid race condition with send
-            MessageSender.sendMsg (pam);
+            SendMessage.sendMsg (pam);
           }
           else 
           {
@@ -161,7 +168,7 @@ class PureAckSender implements Runnable
         }
         else
         {
-//System.err.println ("PureAckSender: removing " +pam);
+          if (debug()) log.debug ("PureAckSender: Dropping no longer needed pure ack " +pam);
           remove (pam);  // done sending this pure ack message
         }
       }

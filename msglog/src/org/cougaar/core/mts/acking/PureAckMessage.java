@@ -24,14 +24,12 @@
 
 package org.cougaar.core.mts.acking;
 
-import java.io.*;
-
 import org.cougaar.core.mts.*;
 
 
-public class PureAckMessage extends AttributedMessage // implements Externalizable
+public class PureAckMessage extends AttributedMessage
 {
-  public PureAckMessage () {}  // needed for incoming de-serialization
+  public PureAckMessage () {}  // needed for incoming deserialization
 
   public PureAckMessage (AttributedMessage msg, PureAck pureAck)
   {
@@ -41,10 +39,11 @@ public class PureAckMessage extends AttributedMessage // implements Externalizab
 
     //  Set key attributes
 
+    MessageUtils.setAck (this, pureAck);
+    MessageUtils.setMessageTypeToPureAck (this);
     MessageUtils.setFromAgent (this, MessageUtils.getToAgent (msg));
     MessageUtils.setToAgent (this, MessageUtils.getFromAgent (msg));
     MessageUtils.setSrcMsgNumber (this, MessageUtils.getMessageNumber (msg));
-    MessageUtils.setAck (this, pureAck);
 
     //  Set back pointer
 
@@ -55,15 +54,4 @@ public class PureAckMessage extends AttributedMessage // implements Externalizab
   {
     return MessageUtils.toString (this);
   }
-/*
-  public void writeExternal (ObjectOutput rawOut) throws java.io.IOException
-  {
-    super.writeExternal (rawOut);
-  }
-
-  public void readExternal (ObjectInput rawIn) throws java.io.IOException, ClassNotFoundException
-  {
-    super.readExternal (rawIn);
-  }
-*/
 }

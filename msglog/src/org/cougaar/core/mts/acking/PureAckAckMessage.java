@@ -24,29 +24,17 @@
 
 package org.cougaar.core.mts.acking;
 
-import java.io.*;
-
 import org.cougaar.core.mts.*;
 
 
-public class PureAckAckMessage extends PureAckMessage // implements Externalizable
+public class PureAckAckMessage extends PureAckMessage
 {
-  public PureAckAckMessage () {}  // needed for incoming de-serialization
+  public PureAckAckMessage () {}  // needed for incoming deserialization
 
   public PureAckAckMessage (AttributedMessage msg, PureAckAck pureAckAck)
   {
     super (msg, pureAckAck);
+    MessageUtils.setMessageTypeToPureAckAck (this);
     pureAckAck.setMsg (this);
   }
-/*
-  public void writeExternal (ObjectOutput rawOut) throws java.io.IOException
-  {
-    super.writeExternal (rawOut);
-  }
-
-  public void readExternal (ObjectInput rawIn) throws java.io.IOException, ClassNotFoundException
-  {
-    super.readExternal (rawIn);
-  }
-*/
 }
