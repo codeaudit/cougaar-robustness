@@ -184,8 +184,8 @@ public class DiagnosesRelayManager extends DeconflictionPluginBase implements No
             Collection added   = diagnosesSubscription.getAddedCollection();
             for ( iter = added.iterator(); iter.hasNext() ; ) 
             {
-                logger.debug("============= Saw new Diagnosis -- Wrapping it.");
                 Diagnosis d = (Diagnosis)iter.next();                
+                logger.debug("============= Saw new Diagnosis (with UID="+d.getUID()+") -- Wrapping it.");
                 UID uid = this.us.nextUID(); //gen UID for this wrapper
                 DiagnosesWrapper dw = new DiagnosesWrapper(d, this.agentId, managerAddress, uid); //wrap the diagnosis
                 //registerUID(uid); //record all UIDs so we know what wrappers are out there.
@@ -219,6 +219,9 @@ public class DiagnosesRelayManager extends DeconflictionPluginBase implements No
      */
     private DiagnosesWrapper findWrapper(Diagnosis d, Collection wrappers ) {
      
+        if (d.getWrapper() == null) {
+            logger.error("=============>>>>>>>>> Saw Diagnosis with null wrapper attr (with UID="+d.getUID()+")");
+        }
         UID uid = d.getWrapper().getUID();
         for ( Iterator iter = wrappers.iterator(); iter.hasNext() ; ) 
         {

@@ -183,8 +183,8 @@ public class ActionRelayManager extends DeconflictionPluginBase implements NotPe
             Collection added   = actionsSubscription.getAddedCollection();
             for ( iter = added.iterator(); iter.hasNext() ; ) 
             {
-                logger.debug("============= Saw new Action -- Wrapping it.");
                 Action a = (Action)iter.next();                
+                logger.debug("============= Saw new Action (with UID="+a.getUID()+")-- Wrapping it.");
                 UID uid = this.us.nextUID(); //gen UID for this wrapper
                 ActionsWrapper aw = new ActionsWrapper(a, this.agentId, managerAddress, uid); //wrap the Action
                 //registerUID(uid); //record all UIDs so we know what wrappers are out there.
@@ -218,6 +218,9 @@ public class ActionRelayManager extends DeconflictionPluginBase implements NotPe
      */
     private ActionsWrapper findWrapper(Action a, Collection wrappers ) {
      
+        if (a.getWrapper() == null) {
+            logger.error("=============>>>>>>>>> Saw Action with null wrapper attr (with UID="+a.getUID()+")");
+        }
         UID uid = a.getWrapper().getUID();
         for ( Iterator iter = wrappers.iterator(); iter.hasNext() ; ) 
         {
