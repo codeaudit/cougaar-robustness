@@ -1,70 +1,153 @@
+
+class UC7Rule
+
 #########################################
 # [UC7 Plugins]
 # Define and add all plugins
 # insertion point: All agents
 
-nodeAgentList = nil
-#Get node agent name list
-society.each_node_agent do |agent|
-  if agent.name =~ /.*MANAGEMENT_NODE.*/        
-  else
-	if nodeAgentList
-	    nodeAgentList = nodeAgentList + ", " + agent.name
-      else
-          nodeAgentList = agent.name
-      end
-  end
-end
-puts  "*** NODE AGENT LIST = "+ nodeAgentList
+# ****************************
+# generate the AE Playbook
+# ****************************
 
+def genEnclavePlaybook(enclave, nodeList) 
 
+	if (nodeList.empty?)
+	    return
+	end
+	puts "Generating Community Playbook for Adaptivity Engine"
 
-# AE Manager Node Plugins
-# -----------------------
-m1 = "org.cougaar.core.adaptivity.OperatingModeServiceProvider"
-m2 = "org.cougaar.core.adaptivity.OperatingModePolicyManager"
-m3   = "org.cougaar.core.adaptivity.AdaptivityEngine"
-### The next line references a file
-m4   = Component.new("org.cougaar.core.adaptivity.PlaybookManager")
-m4.add_argument("CommunityLevel_playbook.txt")
-
-m5  = "org.cougaar.core.adaptivity.ConditionServiceProvider"
-m6 = Component.new("org.cougaar.tools.robustness.disconnection.PlannedDisconnectManagerPlugin")
-m6.add_argument(#{nodeAgentList})
-
-m7 = "org.cougaar.tools.robustness.disconnection.test.disconnection.DefenseOperatingModeChangeEvents"
-
-
-# Defense Plugins for each agent
-# ------------------------------
-n1 = "org.cougaar.core.adaptivity.OperatingModeServiceProvider"
-n2 = "org.cougaar.core.adaptivity.OperatingModePolicyManager"
-### The next line references a file
-n3   = Component.new("org.cougaar.core.adaptivity.PlaybookManager")
-n3.add_argument("NULL_playbook.txt")
-
-n4  = "org.cougaar.core.adaptivity.ConditionServiceProvider"
-n5 = Component.new("org.cougaar.tools.robustness.disconnection.RemoteDefenseConditionMgrPlugin)"
-n5.add_argument("ARManager")
-n6 = "org.cougaar.tools.robustness.disconnection.test.disconnection.DefenseOperatingModeChangeEvents"
-n7 = "org.cougaar.tools.robustness.disconnection.test.disconnection.PlannedDisconnectServletTestNodePlugin"
-n8 = "org.cougaar.tools.robustness.disconnection.test.disconnection.DisconnectionServlet"
-
-managerPluginsToAdd = [m1,m2,m3,m4,m5,m6,m7]
-defensePluginsToAdd = [n1,n2,n3,n4,n5,n6,n7,n8]
-
-society.each_agent do |agent|
-  if agent.name =~ /.*ARManager.*/         # only apply to Mgr Node
-    agent.add_components(managerPluginsToAdd)
-  end
+	source = File.open("UC7PlaybookTemplate.txt", File::RDONLY)  # open file "path" for reading only
+	if !(source) 
+		puts "Error, could not find file UC7PlaybookTemplate.txt"
+	end
+	sink   = File.new("#{ENV['CIP']}/configs/common/#{enclave}_UC7CommunityLevel_playbook.txt", "w")  # open file "path" for writing only
+	#sink   = File.new("tempF.txt", "w")  # open file "path" for writing only
+	
+	puts "Writing file to #{ENV['CIP']}/configs/common/#{enclave}_UC7CommunityLevel_playbook.txt"
+	
+	nodeList.each do |node| 
+	  source.each do |line| 
+	     sink.puts line.gsub("NodeFOO", node.name) 
+	  end
+	  source.rewind
+	end
+	
+	sink.close
+	source.close
 end
 
-#Add disconnection to each node agent
-society.each_node_agent do |agent|
-  if agent.name =~ /.*MANAGEMENT_NODE.*/         
-  else
-    agent.add_components(defensePluginsToAdd)
-  end
-end
 
+def run(society)
+
+	# AE Manager Node Plugins
+	# -----------------------
+	m1 = "org.cougaar.core.adaptivity.OperatingModeServiceProvider"
+	m2 = "org.cougaar.core.adaptivity.OperatingModePolicyManager"
+	m3 = "org.cougaar.core.adaptivity.AdaptivityEngine"
+	m4  = "org.cougaar.core.adaptivity.ConditionServiceProvider"
+	m5 = "org.cougaar.tools.robustness.disconnection.test.disconnection.DefenseOperatingModeChangeEvents"
+	
+	# Defense Plugins for each agent
+	# ------------------------------
+	n1 = "org.cougaar.core.adaptivity.OperatingModeServiceProvider"
+	n2 = "org.cougaar.core.adaptivity.OperatingModePolicyManager"
+	### The next line references a file
+	n3   = Component.new("org.cougaar.core.adaptivity.PlaybookManager")
+	n3.add_argument("NULL_playbook.txt")
+	
+	n4  = "org.cougaar.core.adaptivity.ConditionServiceProvider"
+	n5 = "org.cougaar.tools.robustness.disconnection.test.disconnection.DefenseOperatingModeChangeEvents"
+	n6 = "org.cougaar.tools.robustness.disconnection.test.disconnection.PlannedDisconnectServletTestNodePlugin"
+	n7 = "org.cougaar.tools.robustness.disconnection.test.disconnection.DisconnectionServlet"
+	
+	managerPluginsToAdd = [m1,m2,m3,m4,m5]
+	defensePluginsToAdd = [n1,n2,n3,n4,n5,n6,n7]
+	
+	
+	
+	#-----------------------------------------------------------------------------------------------
+	
+	# Generate list of enclaves
+	#---------------------------
+	nodesByEnclave = Hash.new # contains all the agents per enclave
+	mgrByEnclave = Hash.new # contains the hash of enclaves the the mgr agent name
+	enclaves = Array.new # contains the list of enclaves
+	society.each_active_host do |host|
+	  enclaveName = host.get_facet("enclave")
+	  if !(enclaves.include?(enclaveName))
+		enclaves << enclaveName
+		puts "*** Added #{enclaveName} enclave"
+		nodesByEnclave[enclaveName] = Array.new #create a new array to hold agents
+	  end
+	end
+	
+	
+	# Find the ARManagers
+	#------------------------------------------
+	society.each_agent do |agent|
+	  if agent.name =~ /.*ARManager.*/  # store the mgr agent for each enclave
+		encl = agent.node.host.get_facet("enclave")
+		mgrByEnclave[encl] = agent
+	  end
+	end
+
+
+	# Add each node to its enclave list
+	#------------------------------------------
+	society.each_node do |node|	  
+	
+		role = node.host.get_facet("role")
+		if !(role =~ /Management/)
+		  encl = node.host.get_facet("enclave")
+		  list = nodesByEnclave[encl]
+		  if !(node.has_component?(n5)) #don't add if it already has our components ************
+			  list << node
+		  end
+		end
+	end
+
+
+	
+	# Start adding components to the nodes
+	#--------------------------------------------
+	nodesByEnclave.each do |enc, list|
+	
+		puts "There are #{list.length} nodes in the #{enc} enclave"
+		
+		# Two more mgr node components --------------
+		pdm = Component.new("org.cougaar.tools.robustness.disconnection.PlannedDisconnectManagerPlugin")
+		### The next component references a file
+		pm   = Component.new("org.cougaar.core.adaptivity.PlaybookManager")
+		pm.add_argument("#{enc}_UC7CommunityLevel_playbook.txt")
+		# One more agent component -------------
+		rdc = Component.new("org.cougaar.tools.robustness.deconfliction.RemoteDefenseConditionMgrPlugin")
+	
+		# Add plugins for Mgr Agent
+		#-----------------------------
+		mgrAgent = mgrByEnclave[enc]
+		if !(mgrAgent.has_component?(m5)) # don't add if Mgr already has our components **********
+			mgrAgent.add_components(managerPluginsToAdd)
+			mgrAgent.add_component(pdm)
+			mgrAgent.add_component(pm)
+		end
+	
+	
+		# Add plugins for Nodes
+		#-------------------------
+		list.each do |node|
+		    pdm.add_argument("#{node.name}")
+		    ####nonMgrAgentList << node.name
+		    node.add_components(defensePluginsToAdd)
+		    node.add_component(rdc)
+		    rdc.add_argument(mgrByEnclave[enc].name)			
+		end
+		genEnclavePlaybook(enc, list)
+	end
+     
+   end # test
+end #class
+
+uc7 = UC7Rule.new
+uc7.run(society)
 

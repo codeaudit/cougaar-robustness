@@ -57,19 +57,22 @@ require 'xmlrpc/client'
 
 module SupportClasses
     
-    def SupportClasses.findSomeAgentAndHost(run)
-	    puts "findSomeAgentAndHost called ******************"
+    def SupportClasses.findSomeNodeAgentAndHost(run)
+	    puts "findNodeAgentAndHost called ******************"
 	        nodeAgent = nil
 		nodeHost = nil
-		run.society.each_node_agent do |agent|
-			if agent.name =~ /.*MANAGEMENT_NODE.*/        
-			else # grab last node_agent & use that to disconnect (could use any but Mgmt_Node)
-				nodeAgent = agent.name
-				nodeHost = agent.host.name
-				break
-			end
-		end				
-		puts "findSomeAgentAndHost found: " + nodeAgent + ":"+ nodeHost
+		run.society.each_node do |node|
+		  if !(node.get_facet("role") =~"Management")
+			#node.each_agent do |agent|
+			#    if !(agent.name =~ /.*ARManager.*/ )        
+			       nodeAgent = node.name
+			       nodeHost = node.host.name
+			       break
+			#    end
+			#end
+		  end
+		end
+		puts "uc7:findSomeNodeAgentAndHost found: " + nodeAgent + ":"+ nodeHost
 		return nodeAgent, nodeHost
     end
   
@@ -142,7 +145,7 @@ end
 		loop = true
 		while loop
 			event = @run.get_next_event
-			puts "****New Event: "+event.data
+			#puts "****New Event: "+event.data
 			index = 0
 			# watch for the specifid strings
 			@watchStrings.each do |watch|
@@ -217,7 +220,7 @@ end
 		loop = true
 		while loop
 			event = @run.get_next_event
-			puts "****New Event: "+event.data
+			#puts "****New Event: "+event.data
 			index = 0
 			# watch for the specifid strings
 			@watchStrings.each do |watch|

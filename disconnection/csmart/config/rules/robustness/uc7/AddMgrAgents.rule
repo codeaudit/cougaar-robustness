@@ -1,0 +1,13 @@
+puts "*** Adding ARManager agents to each enclave's management node."
+society.each_node do |node|
+   #fr = node.get_facet("role")
+   #if (fr)  
+   #  puts "Found facet role = "+ fr
+   #end
+  if (node.get_facet("role") =~ "Management")
+        puts "Adding ARManager Agent..."
+        enclave = node.host.get_facet("enclave")
+        mgrAgent = Agent.new("1-AD-#{enclave}-ARManager")
+        node.add_agent(mgrAgent)
+  end
+end
