@@ -451,6 +451,7 @@ public abstract class Action
         }
         
         if ( !permittedValues.contains(actionValue) ) {
+	    if (logger.isDebugEnabled()) logger.debug("actionValue="+actionValue+" not in permittedValues="+permittedValues);
             throw new IllegalValueException ("Action to be started is not in permittedValues set.");
         }
 
