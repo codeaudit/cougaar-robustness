@@ -22,89 +22,71 @@ package org.cougaar.tools.robustness.ma;
  */
 public interface RestartManagerConstants {
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Community attributes used
-  /////////////////////////////////////////////////////////////////////////////
-  public static final String SOLVER_MODE_ATTRIBUTE            = "SOLVER_MODE";
-  public static final String AUTO_LOAD_BALANCE_ATTRIBUTE      = "AUTO_LOAD_BALANCE";
+  public static final int DEFAULT_TIMEOUT                      = 5;
+  public static final int DEFAULT_RESTART_AGGRESSIVENESS       = 3;
 
-  public static final String PING_TIMEOUT_ATTRIBUTE           = "PING_TIMEOUT";
-  public static final String MINIMUM_PING_TIMEOUT_ATTRIBUTE   = "MINIMUM_PING_TIMEOUT";
+  public static final int DEFAULT_HEARTBEAT_FREQUENCY          = 1;
+  public static final int DEFAULT_HEARTBEAT_PCT_OUT_OF_SPEC    = 80;
+  public static final long MINIMUM_AUTOTUNING_SAMPLES          = 10;
 
-  public static final String HEARTBEAT_REQUEST_TIMEOUT_ATTRIBUTE = "HEARTBEAT_REQUEST_TIMEOUT";
-  public static final String HEARTBEAT_FREQUENCY_ATTRIBUTE       = "HEARTBEAT_FREQUENCY";
-  public static final String HEARTBEAT_TIMEOUT_ATTRIBUTE         = "HEARTBEAT_TIMEOUT";
-  public static final String HEARTBEAT_PCT_OUT_OF_SPEC_ATTRIBUTE = "HEARTBEAT_PCT_OUT_OF_SPEC";
+  public static final int DEFAULT_STATUS_UPDATE_INTERVAL       = 1;
 
-  public static final String STATUS_UPDATE_INTERVAL_ATTRIBUTE        = "STATUS_UPDATE_INTERVAL";
-  public static final String DEFAULT_STATUS_LATENCY_MEAN_ATTRIBUTE   = "DEFAULT_STATUS_LATENCY_MEAN";
-  public static final String DEFAULT_STATUS_LATENCY_STDDEV_ATTRIBUTE = "DEFAULT_STATUS_LATENCY_STDDEV";
-  public static final String RESTART_CONFIDENCE_ATTRIBUTE            = "RESTART_CONFIDENCE";
+  public static final String DEFAULT_LOAD_BALANCER             = "Internal";
+  public static final String DEFAULT_LOAD_BALANCER_MODE        = "6";
+  public static final String DEFAULT_AUTO_LOAD_BALANCE_ENABLED = "False";
 
-  public static final String CURRENT_STATUS_UPDATE_ATTRIBUTE = "CURRENT_STATUS_UPDATE_INTERVAL";
-  public static final String PERSISTENCE_INTERVAL_THREATCON_HIGH_COEFFICIENT = "PERSISTENCE_INTERVAL_THREATCON_HIGH_COEFFICIENT";
-  public static final String STATUS_UPDATE_INTERVAL_THREATCON_HIGH_COEFFICIENT = "STATUS_UPDATE_INTERVAL_THREATCON_HIGH_COEFFICIENT";
-  public static final String PING_TIMEOUT_THREATCON_HIGH_COEFFICIENT = "PING_TIMEOUT_THREATCON_HIGH_COEFFICIENT";
+  public static final String RESTART_AGGRESSIVENESS_ATTRIBUTE  = "RestartAggressiveness";
+  public static final String DEFAULT_TIMEOUT_ATTRIBUTE         = "DefaultTimeout";
+  public static final String STATUS_UPDATE_INTERVAL_ATTRIBUTE  = "StatusUpdateInterval";
 
-  public static final String USE_FOR_RESTARTS_ATTRIBUTE      = "USE_FOR_RESTARTS";
-  public static final String EXPECTED_AGENTS_ATTRIBUTE       = "NumberOfAgents";
-  public static final String PERSISTENCE_INTERVAL_ATTRIBUTE  = "PERSISTENCE_INTERVAL";
-  public static final String PING_ADJUSTMENT_ATTRIBUTE       = "PING_ADJUSTMENT";
+  public static final String LOAD_BALANCER_ATTRIBUTE           = "LoadBalancer";
+  public static final String LOAD_BALANCER_MODE_ATTRIBUTE      = "LoadBalancerMode";
+  public static final String AUTO_LOAD_BALANCE_ATTRIBUTE       = "AutoLoadBalance";
+  public static final String MINIMUM_ANNEAL_TIME_ATTRIBUTE     = "MinimumAnnealTime";
+  // Minimum value for EN4J annealTime parameter
+  public static final int MINIMUM_ANNEAL_TIME                  = 10;
 
-  // Defines attribute to use in selection of community to monitor
-  public static final String HEALTH_MONITOR_ROLE = "HealthMonitor";
-  public static final String COMMUNITY_TYPE =      "Robustness";
+  public static final String USE_FOR_RESTARTS_ATTRIBUTE        = "UseForRestarts";
+  public static final String EXPECTED_AGENTS_ATTRIBUTE         = "NumberOfAgents";
 
-  public static final String ROBUSTNESS_MANAGER = "RobustnessManager";
+  public static final String PERSISTENCE_INTERVAL_ATTRIBUTE    = "PersistenceInterval";
+
+  // Defines attribute values to use in selection of community to monitor
+  public static final String ROLE_ATTRIBUTE                    = "Role";
+  public static final String ENTITY_TYPE_ATTRIBUTE             = "EntityType";
+  public static final String HEALTH_MONITOR_ROLE               = "HealthMonitor";
+  public static final String ROBUSTNESS_MANAGER_ATTRIBUTE      = "RobustnessManager";
+  public static final String COMMUNITY_TYPE_ATTRIBUTE          = "CommunityType";
+  public static final String ROBUSTNESS_COMMUNITY_TYPE         = "Robustness";
+
+  public static final String ESSENTIAL_RESTART_SERVICE_ATTRIBUTE = "EssentialRestartService";
+
+  public static final String HEARTBEAT_FREQUENCY_ATTRIBUTE       = "HeartbeatFrequency";
+  public static final String HEARTBEAT_PCT_OUT_OF_SPEC_ATTRIBUTE = "HeartbeatOfOfSpecPct";
 
   // Property used to define the name of a robustness community to monitor
   public static final String COMMUNITY_PROPERTY = "org.cougaar.tools.robustness.community";
 
   // Defines class to use for Robustness Controller
   public static final String CONTROLLER_CLASS_PROPERTY = "org.cougaar.tools.robustness.controller.classname";
-  public static final String DEFAULT_ROBUSTNESS_CONTROLLER_CLASSNAME = "org.cougaar.tools.robustness.ma.controllers.DefaultRobustnessController";
+  public static final String DEFAULT_CONTROLLER_CLASSNAME = "org.cougaar.tools.robustness.ma.controllers.DefaultRobustnessController";
 
   // Defines class to use for Defense Coordinator
   public static final String COORDINATOR_CLASS_PROPERTY = "org.cougaar.tools.robustness.coordinator.classname";
   public static final String DEFAULT_COORDINATOR_CLASSNAME = "org.cougaar.tools.robustness.ma.util.CoordinatorHelperImpl";
   // Old coordinator impl = "org.cougaar.tools.robustness.ma.util.DeconflictionHelper";
 
-  // Property for enabling/disabling deconfliction
-  public static final String DECONFLICTION = "org.cougaar.tools.robustness.restart.deconfliction";
-  public static final String PROPERTY_ENABLED = "enabled";
-  public static final String PROPERTY_DISABLED = "disabled";
+  // System properties
+  public static final String ENABLE_DECONFLICTION_PROPERTY = "org.cougaar.tools.robustness.restart.deconfliction";
+  public static final String ENABLE_AUTOTUNING_PROPERTY = "org.cougaar.tools.robustness.autotuning";
+  public static final String LEASH_DEFENSES_ON_RESTART_PROPERTY = "org.cougaar.tools.robustness.deconfliction.leashOnRestart";
+  public static final String MIN_HOSTS_FOR_MGR_RESTART_PROPERTY = "org.cougaar.tools.robustness.minHostsForMgrRestart";
 
-  // Defines how often status updates are broadcast to peers
-  public static final String STATUS_UPDATE_PROPERTY = "org.cougaar.tools.robustness.update.interval";
+  // Some propety values
+  public static final String ENABLED = "enabled";
+  public static final String DISABLED = "disabled";
 
   public static final int NEVER = -1;
-
-  // Default parameter values, may be overridden by applicable community attributes
-  public static final long DEFAULT_EXPIRATION =   5 * 60 * 1000;
-  public static final long MINIMUM_EXPIRATION =   2 * 60 * 1000;
-  public static final long DEFAULT_PING_TIMEOUT = 5 * 60 * 1000;
-  public static final long DEFAULT_MINIMUM_PING_TIMEOUT = 1 * 60 * 1000;
-  public static final long DEFAULT_HEARTBEAT_REQUEST_TIMEOUT = 1 * 60 * 1000;
-  public static final long DEFAULT_HEARTBEAT_FREQUENCY = 60 * 1000;
-  public static final long DEFAULT_HEARTBEAT_TIMEOUT = 2 * 60 * 1000;
-  public static final long DEFAULT_HEARTBEAT_PCT_OUT_OF_SPEC = 80;
-  public static final long DEFAULT_PERSISTENCE_INTERVAL = 5 * 60 * 1000;
-
-  public static final String COLLECT_NODE_STATS_PROPERTY = "org.cougaar.tools.robustness.collect.stats";
-  public static final long MIN_SAMPLES = 10;
-  public static final long MIN_SAMPLE_VALUE = 10000;
-
-  /*
-    Restart time = DEFAULT_STATUS_UPDATE_INTERVAL +
-                   DEFAULT_STATUS_LATENCY_MEAN +
-                   (DEFAULT_STATUS_LATENCY_STDDEV * DEFAULT_RESTART_CONFIDENCE)
-  */
-  public static final long DEFAULT_STATUS_UPDATE_INTERVAL = 60000;
-  public static final long DEFAULT_STATUS_LATENCY_MEAN =   120000;
-  public static final long DEFAULT_STATUS_LATENCY_STDDEV =  30000;
-  public static final long DEFAULT_RESTART_CONFIDENCE = 4;
-
-  // Minimum value for EN4J annealTime parameter
-  public static final int MINIMUM_ANNEAL_TIME = 10;
+  public static final int MS_PER_MIN = 60000;
 
 }
