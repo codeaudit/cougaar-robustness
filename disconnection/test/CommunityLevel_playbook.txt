@@ -1,0 +1,2 @@
+PlannedDisconnect.UnscheduledDisconnect.Node.NodeA == TRUE 
+	: [agent.NodeA]PlannedDisconnect.NodeDefense.Node.NodeA = ENABLED;
