@@ -88,7 +88,8 @@ public class SecurityAlertHandler extends RobustnessThreatAlertHandlerBase
   }
 
   protected void adjustRobustnessParameters(SecurityAlert sa, boolean resetToDefault) {
-    logger.info("Adjusting robustness parameters: securityLevel=" + sa.getSeverityLevelAsString());
+    logger.info("Adjusting robustness parameters: securityLevel=" + sa.getSeverityLevelAsString() +
+                " reset=" + resetToDefault);
     long persistenceInterval = model.getLongAttribute(PERSISTENCE_INTERVAL_ATTRIBUTE);
     double persistenceAdjustmentCoefficient = 1.0;
     if (!resetToDefault && sa.getSeverityLevel() > sa.MEDIUM_SEVERITY) {
