@@ -296,18 +296,16 @@ module Cougaar
       end
     end
 
-   class ModifyCommunityAttribute < Cougaar::Action
-      def initialize(run, agent, community, attrId, attrValue)
+   class ModifyRobustnessParameter < Cougaar::Action
+      def initialize(run, attrId, attrValue)
         super(run)
-	@myAgent = agent
-        @myCommunity = community
 	@myAttrId = attrId
         @myAttrValue = attrValue
       end
       def perform
         @run.society.each_agent do |agent|
-	  if agent.name == @myAgent
-	    result, uri = Cougaar::Communications::HTTP.get(agent.uri+"/modcommattr?community=#{@myCommunity}&id=#{@myAttrId}&value=#{@myAttrValue}")
+          if agent.name =~ /.*ARManager.*/
+	    result, uri = Cougaar::Communications::HTTP.get(agent.uri+"/ar?operation=modcommattr&id=#{@myAttrId}&value=#{@myAttrValue}")
 	  end
 	end
       end
