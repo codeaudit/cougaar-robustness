@@ -41,6 +41,7 @@ import java.util.Date;
 public class HeartbeatRequesterPlugin extends ComponentPlugin {
   private IncrementalSubscription heartbeatRequestSub;
   private IncrementalSubscription hbReqSub;
+  private IncrementalSubscription hbSub;
   private BlackboardService bb;
   private UniqueObjectSet UIDtable;
 
@@ -53,6 +54,12 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
   private UnaryPredicate hbReqPred = new UnaryPredicate() {
     public boolean execute(Object o) {
       return (o instanceof HbReq);
+    }
+  };
+
+  private UnaryPredicate hbPred = new UnaryPredicate() {
+    public boolean execute(Object o) {
+      return (o instanceof Heartbeat);
     }
   };
 
@@ -91,6 +98,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     bb = getBlackboardService();
     heartbeatRequestSub = (IncrementalSubscription)bb.subscribe(HeartbeatRequestPred);
     hbReqSub = (IncrementalSubscription)bb.subscribe(hbReqPred);
+    hbSub = (IncrementalSubscription)bb.subscribe(hbPred);
   }
 
   protected void execute() {
@@ -113,6 +121,16 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
       if (hbReq.getSource().equals(myAddr)) {
         updateHeartbeatRequest(hbReq);
       }
+    }
+    // check for heartbeats from HeartbeatServerPlugin
+    // Eventually, these won't show up this way, as they will be filtered in MTS,
+    // and fed into the Metrics Service and we will get them there.
+    iter = hbSub.getChangedCollection().iterator();
+    while (iter.hasNext()) {
+      Heartbeat hb = (Heartbeat)iter.next();
+      System.out.println("HeartbeatRequesterPlugin.execute: Heartbeat received = " + hb);
+      MessageAddress myAddr = getBindingSite().getAgentIdentifier();
+      //updateHeartbeatTable(hb);
     }
   }
 

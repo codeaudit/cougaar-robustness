@@ -18,68 +18,52 @@
  * PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
  */
-package org.cougaar.tools.manager.ldm.report;
 
+package org.cougaar.tools.robustness.sensors;
+import org.cougaar.tools.manager.ldm.report.HealthReportAdapter;
 
 /**
- * HeartbeatHealthReport: HealthReport with an associated list of 
+ * HealthReport with an associated list of 
  * monitored agents, time last msg was received, and whether that
  * was in-spec or not, according to current HeartbeatRequests.
  **/
 public class HeartbeatHealthReport extends HealthReportAdapter {
-  
-  private String myText = null;
-  private String myToString = null;
+  private HeartbeatEntry [] heartbeats;
 
-  /**
-   * HeartbeatHealthReport - no arg Constructor
-   **/
   public HeartbeatHealthReport() {
   }
 
   /**
-   * HeartbeatHealthReport - Constructor
-   * 
-   * @param reportText String specifying the text associated with the 
-   * HealthReport
+   * @param heartbeats Array of heartbeats
    **/
-  public HeartbeatHealthReport(String reportText) {
+  public HeartbeatHealthReport(HeartbeatEntry [] heartbeats) {
     super();
-    setText(reportText);
+    setHeartbeats(heartbeats);
   }
 
   /**
-   * getText - get the text associated with the HealthReport
-   *
-   * @return String - text associated with the HealthReport
+   * Get array of requested heartbeats.
    **/
-  public String getText() {
-    return myText;
+  public HeartbeatEntry [] getHeartbeats() {
+    return heartbeats;
   }
 
   /**
-   * setText - set the text associated with the HealthReport
-   *
-   * @param reportText String text to be associated with the HealthReport
+   * Set array of requested heartbeats.
    **/
-  public void setText(String reportText) {
-    myText = reportText;
-    myToString = null;
+  public void setHeartbeats(HeartbeatEntry [] heartbeats) {
+    this.heartbeats = heartbeats;
   }
 
   /**
-   * toString -  Returns a string representation of the HeartbeatHealthReport
+   * Returns a String representation of the HeartbeatHealthReport
    *
    * @return String - a string representation of the HeartbeatHealthReport.
    **/
   public String toString() {
-    if (myToString == null) {
-      myToString = "HeartbeatHealthReport: " + getText();
-      myToString = myToString.intern();
-    }
-
-    return myToString;
+      return "HeartbeatHealthReport: " + heartbeats;
   }
+
 }
 
 
