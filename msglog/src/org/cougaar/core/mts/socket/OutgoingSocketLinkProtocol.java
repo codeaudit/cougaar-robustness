@@ -19,35 +19,36 @@
  * </copyright>
  *
  * CHANGE RECORD
- * 08 Apr  2002: Update from Cougaar 9.0.0 to 9.1.x (OBJS)
- * 21 Mar  2002: Update from Cougaar 8.6.2.x to 9.0.0 (OBJS)
- * 02 Jan  2002: Added connectTimeoutSecs property. (OBJS)
- * 11 Dec  2001: Save backup of cached socket data from name server. (OBJS) 
- * 02 Dec  2001: Implement getRemoteReference (8.6.2.0) (OBJS)
- * 20 Nov  2001: Cougaar 8.6.1 compatibility changes. (OBJS)
- * 09 Nov  2001: Alter sendMessage to throw exception in case of second
- *               failure, for debugging purposes. (OBJS)
- * 25 Oct  2001: Fix stream corruption bug by adopting no header object IO
- *               streams and reseting stream for each object.  Bug only 
- *               manifests itself if output stream not used shortly after 
- *               transport initialization.  Do not know yet know why this
- *               is happening, it is not use of SO timeout.  Testing shows
- *               reset is needed for each object send, just at stream 
- *               creation doesn't work.  This modification to the object
- *               IO streams was needed anyways at some point to deal with
- *               the possible case of object evolution happening sooner
- *               than stream reconstruction (for long lived connections),
- *               as object references would then be invalidated. (OBJS)
- * 23 Oct  2001: Remove extraneous synchonized statement on sendMessage 
- *               method. (OBJS)
- * 21 Sept 2001: Make call to sendMessage class synchronized. (OBJS)
- * 26 Sept 2001: Rename: MessageTransport to LinkProtocol, add debug and
- *               cost properties. (OBJS)
- * 25 Sept 2001: Updated from Cougaar 8.4 to 8.4.1 (OBJS)
- * 14 Sept 2001: Updated from Cougaar 8.3.1 to 8.4 (OBJS)
- * 22 Aug  2001: Revamped for new 8.3.1 component model. (OBJS)
- * 11 July 2001: Added initial name server support. (OBJS)
- * 08 July 2001: Created. (OBJS)
+ * 16 May 2002: Port to Cougaar 9.2.x (OBJS)
+ * 08 Apr 2002: Port to Cougaar 9.1.x (OBJS)
+ * 21 Mar 2002: Port Cougaar 9.0.0 (OBJS)
+ * 02 Jan 2002: Added connectTimeoutSecs property. (OBJS)
+ * 11 Dec 2001: Save backup of cached socket data from name server. (OBJS) 
+ * 02 Dec 2001: Implement getRemoteReference (8.6.2.0) (OBJS)
+ * 20 Nov 2001: Cougaar 8.6.1 compatibility changes. (OBJS)
+ * 09 Nov 2001: Alter sendMessage to throw exception in case of second
+ *              failure, for debugging purposes. (OBJS)
+ * 25 Oct 2001: Fix stream corruption bug by adopting no header object IO
+ *              streams and reseting stream for each object.  Bug only 
+ *              manifests itself if output stream not used shortly after 
+ *              transport initialization.  Do not know yet know why this
+ *              is happening, it is not use of SO timeout.  Testing shows
+ *              reset is needed for each object send, just at stream 
+ *              creation doesn't work.  This modification to the object
+ *              IO streams was needed anyways at some point to deal with
+ *              the possible case of object evolution happening sooner
+ *              than stream reconstruction (for long lived connections),
+ *              as object references would then be invalidated. (OBJS)
+ * 23 Oct 2001: Remove extraneous synchonized statement on sendMessage 
+ *              method. (OBJS)
+ * 21 Sep 2001: Make call to sendMessage class synchronized. (OBJS)
+ * 26 Sep 2001: Rename: MessageTransport to LinkProtocol, add debug and
+ *              cost properties. (OBJS)
+ * 25 Sep 2001: Port to Cougaar 8.4.1 (OBJS)
+ * 14 Sep 2001: Port to Cougaar 8.4 (OBJS)
+ * 22 Aug 2001: Revamped for new 8.3.1 component model. (OBJS)
+ * 11 Jul 2001: Added initial name server support. (OBJS)
+ * 08 Jul 2001: Created. (OBJS)
  */
 
 package org.cougaar.core.mts.socket;
@@ -340,14 +341,14 @@ if (message instanceof MessageAckingAspect.AckEnvelope)
     {
       if (debug) 
       {
-        System.out.println ("\nOutgoingSocket: send msg: " +msg);
+        System.err.println ("\nOutgoingSocket: send " +MessageUtils.toString(msg));
       }
 
       //  It appears that the only way we can determine whether our message
       //  output stream is still valid is to try using it.  So we try it,
       //  and if it fails, we create a new output stream and try again.
 
-long start = System.currentTimeMillis();
+//long start = System.currentTimeMillis();
       
       boolean success = false;
 
@@ -382,8 +383,8 @@ long start = System.currentTimeMillis();
         }
       }
 
-long end = System.currentTimeMillis();
-System.out.println ("Socket transmit (ms): " +(end-start));
+//long end = System.currentTimeMillis();
+//System.out.println ("Socket transmit (ms): " +(end-start));
 
       return success;
     }

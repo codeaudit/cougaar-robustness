@@ -19,29 +19,30 @@
  * </copyright>
  *
  * CHANGE RECORD
- * 11 Jun  2002: Move to Cougaar threads. (OBJS)
- * 08 Apr  2002: Port to Cougaar 9.1.0 (OBJS)
- * 21 Mar  2002: Port to Cougaar 9.0.0 (OBJS)
- * 02 Jan  2002: Added idleTimeoutSecs property. (OBJS)
- * 11 Dec  2001: Revamp reusable threads, add reusable threads properties. (OBJS)
- * 09 Nov  2001: Two main changes: close idle sockets (when SO timeout occurs),
- *               and loop to restore failed server sockets. (OBJS) 
- * 05 Nov  2001: Get name of local host from the new localhost property if
- *               it is defined, else use our own method of determining the
- *               local host (Note: since FQDN names are not available on
- *               Windows until Java 1.4, our method currently gets the IP
- *               address of the current host). (OBJS)
- * 29 Oct  2001: Conditionally print "<S" on successful message receipt. (OBJS)
- * 25 Oct  2001: Changed to a no header ObjectInputStream to help fix socket 
- *               stream corruption bug. (OBJS)
- * 23 Oct  2001: Added "terminating socket" debug msg.  (OBJS)
- * 26 Sept 2001: Rename: MessageTransport to LinkProtocol, add debug
- *               property. (OBJS)
- * 25 Sept 2001: Port to Cougaar 8.4.1 (OBJS)
- * 14 Sept 2001: Port to Cougaar 8.4. (OBJS)
- * 22 Aug  2001: Revamped for new 8.3.1 component model. (OBJS)
- * 11 July 2001: Added initial name server support. (OBJS)
- * 08 July 2001: Created. (OBJS)
+ * 11 Jun 2002: Move to Cougaar threads. (OBJS)
+ * 16 May 2002: Port to Cougaar 9.2.x (OBJS)
+ * 08 Apr 2002: Port to Cougaar 9.1.0 (OBJS)
+ * 21 Mar 2002: Port to Cougaar 9.0.0 (OBJS)
+ * 02 Jan 2002: Added idleTimeoutSecs property. (OBJS)
+ * 11 Dec 2001: Revamp reusable threads, add reusable threads properties. (OBJS)
+ * 09 Nov 2001: Two main changes: close idle sockets (when SO timeout occurs),
+ *              and loop to restore failed server sockets. (OBJS) 
+ * 05 Nov 2001: Get name of local host from the new localhost property if
+ *              it is defined, else use our own method of determining the
+ *              local host (Note: since FQDN names are not available on
+ *              Windows until Java 1.4, our method currently gets the IP
+ *              address of the current host). (OBJS)
+ * 29 Oct 2001: Conditionally print "<S" on successful message receipt. (OBJS)
+ * 25 Oct 2001: Changed to a no header ObjectInputStream to help fix socket 
+ *              stream corruption bug. (OBJS)
+ * 23 Oct 2001: Added "terminating socket" debug msg.  (OBJS)
+ * 26 Sep 2001: Rename: MessageTransport to LinkProtocol, add debug
+ *              property. (OBJS)
+ * 25 Sep 2001: Port to Cougaar 8.4.1 (OBJS)
+ * 14 Sep 2001: Port to Cougaar 8.4. (OBJS)
+ * 22 Aug 2001: Revamped for new 8.3.1 component model. (OBJS)
+ * 11 Jul 2001: Added initial name server support. (OBJS)
+ * 08 Jul 2001: Created. (OBJS)
  */
 
 package org.cougaar.core.mts.socket;
@@ -112,7 +113,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     localhost = System.getProperty (s, getLocalHost());
 
     s = "org.cougaar.message.protocol.socket.incoming.idleTimeoutSecs";
-    idleTimeout = Integer.valueOf(System.getProperty(s,"60")).intValue();
+    idleTimeout = Integer.valueOf(System.getProperty(s,"600")).intValue();
   }
  
   public IncomingSocketLinkProtocol ()
@@ -159,9 +160,6 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     //  after transport constructor called - (name support should be universal 
     //  service) - a problem with an incoming transport as the only method called
     //  is the constructor basically.
-
-//  Changed in 9.0.0 - new way works?
-//	super.setNameSupport (nameSupport);
 
     if (getNameSupport() == null)
     {
@@ -481,7 +479,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
           if (debug) 
           {
             System.out.println ("\nIncomingSocket: socket= " + socket);
-            System.out.println ("IncomingSocket: read msg: " +msg);
+            System.out.println ("IncomingSocket: read " +MessageUtils.toString(msg));
           }
 
           //  Deliver the message
@@ -514,6 +512,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
           //  other end closes their socket connection.
 
           if (debug) System.err.println ("\nIncomingSocket: Terminating socket exception: " + e);
+e.printStackTrace();
 
           quitNow = true;
           break;

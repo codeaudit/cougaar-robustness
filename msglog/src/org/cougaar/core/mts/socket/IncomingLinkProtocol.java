@@ -19,13 +19,14 @@
  * </copyright>
  *
  * CHANGE RECORD
- * 08 Apr  2002: Update from Cougaar 9.0.0 to 9.1.x (OBJS)
- * 21 Mar  2002: Update from Cougaar 8.6.2.x to 9.0.0 (OBJS)
- * 20 Nov  2001: Cougaar 8.6.1 compatibility changes. (OBJS)
- * 26 Sept 2001: Rename: MessageTransport to LinkProtocol. (OBJS)
- * 24 Sept 2001: Updated from Cougaar 8.4 to 8.4.1 (OBJS)
- * 14 Sept 2001: Updated from Cougaar 8.3.1 to 8.4 (OBJS)
- * 08 Sept 2001: Created. (OBJS)
+ * 16 May 2002: Port to Cougaar 9.2.x (OBJS)
+ * 08 Apr 2002: Port to Cougaar 9.1.x (OBJS)
+ * 21 Mar 2002: Port from Cougaar 8.6.2.x to 9.0.0 (OBJS)
+ * 20 Nov 2001: Cougaar 8.6.1 compatibility changes. (OBJS)
+ * 26 Sep 2001: Rename: MessageTransport to LinkProtocol. (OBJS)
+ * 24 Sep 2001: Port to Cougaar 8.4.1 (OBJS)
+ * 14 Sep 2001: Port from Cougaar 8.3.1 to 8.4 (OBJS)
+ * 08 Sep 2001: Created. (OBJS)
  */
 
 package org.cougaar.core.mts.socket;
