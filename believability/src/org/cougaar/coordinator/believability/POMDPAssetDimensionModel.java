@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetDimensionModel.java,v $
- * $Revision: 1.5 $
- * $Date: 2004-06-19 01:02:22 $
+ * $Revision: 1.10 $
+ * $Date: 2004-06-29 22:43:18 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -29,16 +29,11 @@ import org.cougaar.coordinator.techspec.AssetType;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.5 $Date: 2004-06-19 01:02:22 $
+ * @version $Revision: 1.10 $Date: 2004-06-29 22:43:18 $
  *
  */
 class POMDPAssetDimensionModel extends Model
 {
-    // This is for testing to ignore the actual threat transitions and
-    // randomly generate them.
-    //
-    private static final boolean SCRAMBLE_THREAT_TRANSITIONS = false;
-
     // Class implmentation comments go here ...
 
     //------------------------------------------------------------
@@ -185,16 +180,6 @@ class POMDPAssetDimensionModel extends Model
         logDebug( "Threat transition matrix: " 
                   + _asset_dim_model.getStateDimensionName() + "\n" 
                   + ProbabilityUtils.arrayToString( trans_matrix ));
-
-        if ( SCRAMBLE_THREAT_TRANSITIONS )
-        {
-            logError( "SCRAMBLING TRANSITIONS.  THIS IS FOR TESTING ONLY!");
-
-            ProbabilityUtils.setRandomDistribution( trans_matrix );
-
-            logDebug( "New threat transition matrix:\n" 
-                      + ProbabilityUtils.arrayToString( trans_matrix ));
-        } // if testing (SCRAMBLE_THREAT_TRANSITIONS)
 
         double[] prev_belief_prob = prev_belief.getProbabilityArray();
         double[] next_belief_prob = new double[prev_belief_prob.length];

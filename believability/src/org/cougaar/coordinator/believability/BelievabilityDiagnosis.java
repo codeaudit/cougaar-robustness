@@ -49,28 +49,18 @@ public class BelievabilityDiagnosis extends BeliefUpdateTrigger
 
         super( DiagnosisUtils.getAssetID( diag ) );
 
-     _blackboard_diagnosis = diag;
-     
-     // Copy relevant information from the diagnosis, as it may change
-     _diagnosis_value = (String) _blackboard_diagnosis.getValue();
-     _diagnosis_name = _blackboard_diagnosis.getClass().getName();
+	_blackboard_diagnosis = diag;
+	
+	// Copy relevant information from the diagnosis, as it may change
+	_diagnosis_value = (String) _blackboard_diagnosis.getValue();
+	_diagnosis_name = _blackboard_diagnosis.getClass().getName();
+	_diagnosis_state_dimension = 
+	    _blackboard_diagnosis.getAssetStateDimensionName();
 
-     if ( _blackboard_diagnosis.getTechSpec() == null )
-         logError( "NULL tech spec from diagnosis: "
-                   + _diagnosis_name + " = " + _diagnosis_value );
-     else if ( _blackboard_diagnosis.getTechSpec().getStateDimension() 
-               == null )
-         logError( "NULL state dimension from diagnosis: "
-                   + _diagnosis_name + " = " + _diagnosis_value );
-     else
-         _diagnosis_state_dimension = 
-                 _blackboard_diagnosis.getTechSpec
-                 ().getStateDimension().getStateName();
-
-     _last_asserted_timestamp = 
-         _blackboard_diagnosis.getLastAssertedTimestamp();
-     _last_changed_timestamp =
-         _blackboard_diagnosis.getLastChangedTimestamp();
+	_last_asserted_timestamp = 
+	    _blackboard_diagnosis.getLastAssertedTimestamp();
+	_last_changed_timestamp =
+	    _blackboard_diagnosis.getLastChangedTimestamp();
     }
 
 

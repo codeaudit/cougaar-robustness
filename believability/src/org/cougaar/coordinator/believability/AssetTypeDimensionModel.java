@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/AssetTypeDimensionModel.java,v $
- * $Revision: 1.3 $
- * $Date: 2004-06-19 01:02:22 $
+ * $Revision: 1.4 $
+ * $Date: 2004-06-21 22:36:16 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -43,7 +43,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * corresponds to the tech-spec AssetSatteDimension objects.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.3 $Date: 2004-06-19 01:02:22 $
+ * @version $Revision: 1.4 $Date: 2004-06-21 22:36:16 $
  * @see AssetTypeModel
  * @see AssetStateDimension
  */
@@ -58,7 +58,7 @@ class AssetTypeDimensionModel extends Model
     // calculations.  The tech spec derived probabilities are
     // time-dependent making testing difficult.
     //
-    private static final boolean OVERRIDE_EVENT_PROBABILITIES = false;
+    private static final boolean OVERRIDE_EVENT_PROBABILITIES = true;
     
     //------------------------------------------------------------
     // public interface
@@ -885,7 +885,12 @@ class AssetTypeDimensionModel extends Model
             {
                 logError( "OVERRIDE EVENT PROBS.  THIS IS FOR TESTING ONLY!");
                 
-                event_probs[idx] = ProbabilityUtils.getRandomDouble() / 10.0; 
+                if ( event_probs[idx] < 0.0001 )
+                    event_probs[idx] = 0.1;
+                else if ( event_probs[idx] > 0.9999 )
+                    event_probs[idx] = 0.9;
+                else
+                    event_probs[idx] = 0.5;
 
                 logDebug( "New event prob for  " + event_name 
                           + " is " + event_probs[idx] );

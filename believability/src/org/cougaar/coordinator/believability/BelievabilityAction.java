@@ -54,12 +54,12 @@ class BelievabilityAction extends BeliefUpdateTrigger {
      *
      * @param action The action from the blackboard
      */
-    public BelievabilityAction( Action action ) 
+    public BelievabilityAction( Action action) 
     {
         super( action.getAssetID() );
         _blackboard_action = action; 
-        logError( "BelievabilitAction constructor done." );
-
+	_actuator_info = _blackboard_action.getTechSpec();
+        logError( "Got Actuator Tech Spec Handle.\n BelievabilitAction constructor done." );
     } // constructor BelievabilityAction
     
 
@@ -113,12 +113,20 @@ class BelievabilityAction extends BeliefUpdateTrigger {
 	    return null;
 	}
     } // method getStateDimensionName
-
+    
+    /**
+     * A string value indicating the current status of the Believability action taken by the actuator.
+     *@return status of BelievabilityAction 
+     */
     public String getBelivabilityActionStatus(){
 	logError("Believability Action status for " + _asset_id.toString() + " is " + _blackboard_action.getValue().getCompletionCodeString());
 	 return _blackboard_action.getValue().getCompletionCodeString();
     }
  
+    /**
+     *
+     *
+     */
     public boolean getBelievabilityActionSuccessStatus(){
 	try {
 	    if ((_blackboard_action.getValue().hasCompleted()) && 
@@ -137,10 +145,11 @@ class BelievabilityAction extends BeliefUpdateTrigger {
      * Returns the name of the actuator that this action is a part of.
      * This comes from the getName() method of the
      * ActionTechSpecInterface object.
-     * @param the actuator name
+     * @return the actuator name
      */
      public String getActuatorName( ){
-	 return null;
+	 _actuator_name = _actuator_info.getName();
+	 return _actuator_name;
      }
      
     /**
@@ -154,6 +163,10 @@ class BelievabilityAction extends BeliefUpdateTrigger {
      * @param the action value name
      */
      public String getActionValue( ){
+	 /*Vector actuator_actions = _actuator_info.getActions();
+	 for (i=0; i< actuator_actions.size(); i++){
+	     ActionDescription _descriptions = (ActionDescriptions) actuator_actions.elementAt(i);
+	 }*/
 	 return null;
      }
     
@@ -163,6 +176,8 @@ class BelievabilityAction extends BeliefUpdateTrigger {
 
     // The object where the action information came from
     private Action _blackboard_action;
+    private ActionTechSpecInterface _actuator_info;
+    private String _actuator_name;
     private AssetID _asset_id;
 
 } // class BelievabilityAction
