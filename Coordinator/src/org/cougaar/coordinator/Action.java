@@ -65,7 +65,7 @@ public abstract class Action
     static public final CompletionCode FAILED = new CompletionCode(3);
     
     /** TRUE if the class attributes have been initialized */
-    static private boolean inited = false;
+    private boolean inited = false;
     
     /** The asset type of this object */
     private  AssetType assetType = null;
