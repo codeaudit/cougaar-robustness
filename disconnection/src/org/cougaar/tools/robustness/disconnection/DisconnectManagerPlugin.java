@@ -218,7 +218,8 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                    // create the Action(s) & Diagnosis(s) for the Node & its agents
                    NodeStatusRecord nsr = (NodeStatusRecord)iter2.next();
                    RequestToDisconnectNodeDiagnosis diag = createNodeDiagnosisAndAction(nsr.getNodeID(), nsr.getDiagnosis());
-                   if (nsr.getDiagnosis().equals(DISCONNECTED)) createOverdueAlarm(diag, nsr.getAgents(), nsr.getReconnectTime() + 120000.0); // give the node an extra 2 minutes due to the move
+                   if (nsr.getDiagnosis().equals(DISCONNECTED)) 
+                        createOverdueAlarm(diag, nsr.getAgents(), (nsr.getReconnectTime()-System.currentTimeMillis() < 120000) ? 120000 :  (nsr.getReconnectTime()-System.currentTimeMillis())); // give the node at least 2 minutes from now due to the move
                    Iterator iter3 = nsr.getAgents().iterator();
                    while (iter3.hasNext()) {
                        createAgentDiagnosisAndAction((AssetID)iter3.next(), nsr.getDiagnosis());
