@@ -457,10 +457,14 @@ public class NewRobustnessController extends RobustnessControllerBase {
               (newSc == null || se.high > newSc.getHigh())) {  // Record highs thereafter
             if (original.contains(source)) {
               newSc = (StatCalc)original.get(source).clone();
+              if (se.high > newSc.getMean()/2 &&  // Perform a basic sanity check
+                  se.high < newSc.getMean()*2) {  //   on sample
+                newSc.enter(se.high);
+              }
             } else {
               newSc = new StatCalc(model.getCommunityName(), source);
+              newSc.enter(se.high);
             }
-            newSc.enter(se.high);
             nodeLatencyStats.put(newSc);
             nodeLatencyStats.save();
           }
