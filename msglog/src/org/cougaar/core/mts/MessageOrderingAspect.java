@@ -266,9 +266,7 @@ public class MessageOrderingAspect extends StandardAspect
 
         agentTable = new Hashtable();
         agentState.setAttribute (AGENT_INCOMING_SEQ_TABLE, agentTable);
-System.err.println ("creating new incoming msg num seq table for local agent " +agentAddr);
       }        
-else System.err.println ("using stored incoming msg num seq table for local agent " +agentAddr);
 
       return agentTable;
     }

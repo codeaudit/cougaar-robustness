@@ -388,13 +388,13 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
       }
 
       if (rtt > 0) avgRTT.add (rtt);
-
+/*
       System.err.println ("\nupdateRTT:"+
                           "\n  sendLink= "+sendLink+
                           "\n      node= "+node+
                           "\n  recvLink= "+receiveLink+
                           "\n       RTT= " +rtt+ " avg= " +avgRTT.getAverage()); 
-
+*/
     }    
   }
 
