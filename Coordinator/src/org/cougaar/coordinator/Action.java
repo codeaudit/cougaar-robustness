@@ -45,6 +45,8 @@ import org.cougaar.util.log.Logger;
 import org.cougaar.util.log.Logging;
 import org.cougaar.core.relay.Relay;
 
+import org.cougaar.core.service.AgentContainmentService;
+import org.cougaar.core.component.ComponentDescription;
 
 /**
  * This class is the superclass for all Action objects. 
@@ -112,6 +114,8 @@ public abstract class Action
     
     /** a single string identifier of this object, e.g. might be assetType:assetName */
     private AssetID assetID = null;
+    
+    boolean isActionRelayManagerLoadedInThisAgent = false;
 
     /** The last action set */
     
@@ -276,6 +280,15 @@ public abstract class Action
         }
         
 
+        AgentContainmentService acs =
+        (AgentContainmentService)serviceBroker.getService(this, org.cougaar.core.service.AgentContainmentService.class, null);
+        ComponentDescription cd = new
+            ComponentDescription("org.cougaar.coordinator.ActionRelayManager", // component name
+                "Node.AgentManager.Agent.PluginManager.Plugin",    // insertion point
+                "org.cougaar.coordinator.ActionRelayManager",      // component classname
+            null,null,null,null,null);
+        isActionRelayManagerLoadedInThisAgent = acs.contains(cd);
+        
     }
 
     /**
@@ -642,7 +655,10 @@ public abstract class Action
             logger = Logging.getLogger(getClass());         
         }
 //        return Collections.singleton(agentId);
-        return Collections.singleton(nodeId);
+        if (!isActionRelayManagerLoadedInThisAgent)
+            return Collections.singleton(nodeId);
+        else 
+            return Collections.singleton(agentId);
     }
     
     /**
