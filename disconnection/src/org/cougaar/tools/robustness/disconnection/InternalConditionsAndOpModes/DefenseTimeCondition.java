@@ -24,26 +24,37 @@
  * </copyright>
 */ 
 
-package org.cougaar.tools.robustness.disconnection;
+package org.cougaar.tools.robustness.disconnection.InternalConditionsAndOpModes;
 
 import org.cougaar.tools.robustness.deconfliction.*;
-import org.cougaar.core.service.BlackboardService;
-import org.cougaar.util.UnaryPredicate;
-import java.util.Collection;
-import java.util.Iterator;
 
-public class DisconnectApplicabilityCondition extends DefenseApplicabilityBinaryCondition
-{       
+import org.cougaar.core.adaptivity.SensorCondition;
+import org.cougaar.core.adaptivity.OMCThruRange;
+import org.cougaar.core.adaptivity.OMCRangeList;
+import org.cougaar.core.adaptivity.OMCPoint;
 
-    public DisconnectApplicabilityCondition (String assetType, String assetID) {
-        super(assetType, assetID, DisconnectConstants.DEFENSE_NAME, DefenseConstants.BOOL_FALSE);
+import org.cougaar.core.util.UID;
+
+
+public class DefenseTimeCondition extends DefenseCondition
+{
+    public static final Double MINTIME  = new Double(0.0);
+    public static final Double MAXTIME = new Double(9223372036854775807.0);
+
+    protected static OMCRangeList allowedValues = new OMCRangeList(new OMCThruRange (MINTIME, MAXTIME));
+
+     /* Do not use. Only use the constructors of the subclasses.
+     */
+    public DefenseTimeCondition(String assetType, String assetName, String managerID) {
+        super(assetType, assetName, managerID, allowedValues, new Double(0.0));
     }
-    
-    public DisconnectApplicabilityCondition(String assetType, String assetID, DefenseConstants.OMCStrBoolPoint initialValue) {
-      super(assetType, assetID, DisconnectConstants.DEFENSE_NAME, initialValue);
+       
+    protected void setValue(String newValue) {
+        super.setValue(newValue);
     }
-    
-    public void setValue(DefenseConstants.OMCStrBoolPoint newValue) {
-      super.setValue(newValue);
+
+    /** tiny helper class for VTH Operating Modes */
+    protected static class OMCStrPoint extends OMCPoint {
+        public OMCStrPoint (String a) { super (a); }
     }
 }

@@ -1,7 +1,8 @@
 /*
- * Class.java
  *
- * Created on August 6, 2003, 8:29 AM
+ * AgentExistsCondition.java
+ *
+ * Created on August 20, 2003, 11:03 PM
  *
  * @author David Wells - OBJS 
  *
@@ -27,21 +28,18 @@
  * </copyright> 
  */ 
 
-
-package org.cougaar.tools.robustness.disconnection;
+package org.cougaar.tools.robustness.disconnection.InternalConditionsAndOpModes;
 
 import org.cougaar.tools.robustness.deconfliction.*;
-import org.cougaar.core.service.BlackboardService;
-import org.cougaar.util.UnaryPredicate;
-import java.util.Collection;
-import java.util.Iterator;
 
-    
-public class DisconnectDefenseEnabler extends DefenseEnablingOperatingMode {
-     public DisconnectDefenseEnabler(String assetType, String assetID) {
-      super(assetType, assetID, DisconnectConstants.DEFENSE_NAME);
-    } 
-    
-   
-    
-  }
+import org.cougaar.tools.robustness.disconnection.DisconnectConstants;
+
+public class AgentExistsCondition extends DefenseApplicabilityBinaryCondition
+                                  implements java.io.Serializable {
+
+    /** Creates new AgentExistsCondition */
+    public AgentExistsCondition(String assetType, String assetID) {
+        super(assetType, assetID, DisconnectConstants.DEFENSE_NAME, DefenseConstants.BOOL_FALSE);
+    }
+
+}

@@ -28,20 +28,33 @@ package org.cougaar.tools.robustness.disconnection;
 
 import org.cougaar.tools.robustness.deconfliction.*;
 
+import org.cougaar.tools.robustness.disconnection.InternalConditionsAndOpModes.*;
+
+
 import java.util.Iterator;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.Collection;
+import java.util.HashSet;
 
 import org.cougaar.core.agent.service.alarm.Alarm;
 
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.util.UnaryPredicate;
+import org.cougaar.core.component.ServiceBroker;
+import org.cougaar.coordinator.techspec.TechSpecNotFoundException;
+import org.cougaar.coordinator.IllegalValueException;
+import org.cougaar.coordinator.Diagnosis;
+import org.cougaar.coordinator.Action;
+import org.cougaar.coordinator.techspec.AssetID;
+import org.cougaar.coordinator.techspec.AssetType;
+import org.cougaar.coordinator.RobustnessManagerID;
 
 
 public class DisconnectManagerPlugin extends DisconnectPluginBase {
-    
+
+    private ServiceBroker sb;
     private MessageAddress managerAddress;
     private long lateReportingForgiveness;
     
@@ -51,6 +64,18 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     private IncrementalSubscription managerAddressSubscription;
     
     private Hashtable activeDisconnects = new Hashtable();
+    private RequestToDisconnectNodeSensorIndex requestToDisconnectNodeSensorIndex = new RequestToDisconnectNodeSensorIndex();
+    private NodeDisconnectActuatorIndex nodeDisconnectActuatorIndex = new NodeDisconnectActuatorIndex();
+
+    // Legal Diagnosis Values
+    private final static String DISCONNECT_REQUEST = RequestToDisconnectNodeSensor.DISCONNECT_REQUEST;
+    private final static String CONNECT_REQUEST = RequestToDisconnectNodeSensor.CONNECT_REQUEST;
+    private final static String TARDY = RequestToDisconnectNodeSensor.TARDY;
+
+    // Legal Action Values
+    private final static String ALLOW_DISCONNECT = NodeDisconnectActuator.ALLOW_DISCONNECT;
+    private final static String ALLOW_CONNECT = NodeDisconnectActuator.ALLOW_CONNECT;
+
     
    
     public DisconnectManagerPlugin() {
@@ -60,6 +85,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     
     public void load() {
         super.load();
+	sb = getServiceBroker();
         cancelTimer();
     }
     
@@ -111,16 +137,6 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             }
         });
         
-        //Listen for changes to MonitoringOpModes
-        monitoringOpModeSubscription = (IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
-            public boolean execute(Object o) {
-                if ( o instanceof DisconnectMonitoringEnabler ) {
-                    return true ;
-                }
-                return false ;
-            }
-        });
-        
     }
     
     
@@ -139,12 +155,13 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             while (iter.hasNext()) {
                 ReconnectTimeCondition rtc = (ReconnectTimeCondition)iter.next();
                 
-                DefenseApplicabilityCondition item = DefenseApplicabilityCondition.findOnBlackboard(DisconnectConstants.DEFENSE_NAME, rtc.getExpandedName(), blackboard);
-                if (item != null) { // the DefenseApplicability condition already exists, so don't make anotherset of conditions & opmodes
+                //DefenseApplicabilityCondition item = DefenseApplicabilityCondition.findOnBlackboard(DisconnectConstants.DEFENSE_NAME, rtc.getExpandedName(), blackboard);
+                RequestToDisconnectNodeSensor diag = requestToDisconnectNodeSensorIndex.getDiagnosis(new AssetID(rtc.getAsset(), AssetType.findAssetType("Node")));
+                if (diag != null) { // the DefenseApplicability condition already exists, so don't make anotherset of conditions & opmodes
                     if (logger.isDebugEnabled()) logger.debug("Not creating redundant modes & conditions for already known "+rtc.getAsset());
                 }
                 else { // make new conditions & opmodes
-                    createCondAndOpModes(rtc);
+                    createDiagnosesAndActions(rtc);
                 }
             }
         }
@@ -163,7 +180,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                     if (logger.isDebugEnabled()) logger.debug("Not creating redundant modes & conditions for already known "+rtc.getAsset());
                 }
                 else { // make new conditions & opmodes
-                    createCondAndOpModes(rtc);
+                    createDiagnosesAndActions(rtc);
                 }
             }            
         }
@@ -172,8 +189,8 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         while (iter.hasNext()) {
             ReconnectTimeCondition sc = (ReconnectTimeCondition)iter.next();
             if (sc != null) {
-                if (logger.isDebugEnabled()) logger.debug("Changed "+sc.getAsset() + " set to " + sc.getValue());
-                handleDisconnectChange(sc);
+                if (logger.isDebugEnabled()) logger.debug("Changed "+sc.toString());
+                handleNodeRequest(sc);
             }
         }
         
@@ -193,94 +210,89 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             }
             propagateDefenseEnablerChange(sc);
         }
-        
-        
-        iter = monitoringOpModeSubscription.getChangedCollection().iterator();
-        while (iter.hasNext()) {
-            DisconnectMonitoringEnabler sc = (DisconnectMonitoringEnabler)iter.next();
-            if (sc != null) {
-                if (logger.isDebugEnabled()) logger.debug(sc.getClass()+":"+sc.getAsset() + " set to " + sc.getValue());
-            }
-            propagateMonitoringEnablerChange(sc);
-        }
-        
+       
     }
     
     
-    private void createCondAndOpModes(ReconnectTimeCondition rtc) {
-        // create the Defense-Level conditions & opmodes seen by the Coordinator
-        DisconnectApplicabilityCondition dac = new DisconnectApplicabilityCondition(rtc.getAssetType(), rtc.getAsset());
-        double t = ((Double)rtc.getValue()).doubleValue();
-        if (t > 0.0) {
-            dac.setValue(DefenseConstants.BOOL_TRUE); // disconnected
-            OverdueAlarm overdueAlarm = new OverdueAlarm(dac, t > 10000.0 ? (t + lateReportingForgiveness) : (10000.0 + lateReportingForgiveness));  // Don't monitor for less than 10 sec
-            activeDisconnects.put(dac.getExpandedName(), overdueAlarm);
-            //getAlarmService().addRealTimeAlarm(overdueAlarm);  do this after getting permission
-        }
-        else {
-            dac.setValue(DefenseConstants.BOOL_FALSE); // not disconnected
-        }
-        dac.setUID(getUIDService().nextUID());
-        dac.setSourceAndTarget(getAgentAddress(), managerAddress);
-        blackboard.publishAdd(dac);
-        
-        DisconnectDefenseEnabler dde = new DisconnectDefenseEnabler(rtc.getAssetType(), rtc.getAsset());
-        dde.setUID(getUIDService().nextUID());
-        dde.setSourceAndTarget(getAgentAddress(), managerAddress);
-        blackboard.publishAdd(dde);
-        
-        DisconnectMonitoringEnabler dme = new DisconnectMonitoringEnabler(rtc.getAssetType(), rtc.getAsset());
-        dme.setUID(getUIDService().nextUID());
-        dme.setSourceAndTarget(getAgentAddress(), managerAddress);
-        blackboard.publishAdd(dme);
-        
-        if (logger.isDebugEnabled()) logger.debug("Added "+rtc.getAsset()+" Conditions & OpModes for Coordinator");
-        
-    }
-    
-    private boolean handleDisconnectChange(ReconnectTimeCondition rtc) {
-        
-        double t = ((Double)rtc.getValue()).doubleValue();
-        
-        DisconnectApplicabilityCondition item = (DisconnectApplicabilityCondition)DefenseApplicabilityCondition.findOnBlackboard(DisconnectConstants.DEFENSE_NAME, rtc.getExpandedName(), blackboard);
-        if (item != null) {
-            if (t > 0.0) {
-                OverdueAlarm oldAlarm = (OverdueAlarm) activeDisconnects.get(item);
-                if (oldAlarm != null) oldAlarm.cancel();
-                item.setValue(DefenseConstants.BOOL_TRUE); // disconnected
-                OverdueAlarm overdueAlarm = new OverdueAlarm(item, t > 10000.0 ? (t + lateReportingForgiveness) : (10000.0 + lateReportingForgiveness));  // Don't monitor for less than10 sec
-                activeDisconnects.put(item.getExpandedName(), overdueAlarm);
+    private void createDiagnosesAndActions(ReconnectTimeCondition rtc) {
+        // create the Defense-Level Diagnosis & Action seen by the Coordinator
+
+        try {
+            RequestToDisconnectNodeSensor diag = new RequestToDisconnectNodeSensor(rtc.getAsset(), sb);
+            double time = ((Double)rtc.getValue()).doubleValue();
+            try {
+                if (time > 0.0) {
+                    diag.setValue(DISCONNECT_REQUEST); // wants to disconnect
+                    OverdueAlarm overdueAlarm = new OverdueAlarm(diag, time > 10000.0 ? (time + lateReportingForgiveness) : (10000.0 + lateReportingForgiveness));  // Don't monitor for less than 10 sec
+                    activeDisconnects.put(diag.getAssetID(), overdueAlarm);
                 //getAlarmService().addRealTimeAlarm(overdueAlarm);  do this after getting permission
+                }
+                else {
+                    diag.setValue(CONNECT_REQUEST); // not disconnected
+                }
+                requestToDisconnectNodeSensorIndex.putDiagnosis(diag);
+                blackboard.publishAdd(diag);
+                if (logger.isDebugEnabled()) { logger.debug("Created: "+diag.toString()); }
+            } catch (IllegalValueException e) {
+                logger.error("Attempt to set: "+diag.toString()+" with illegal value "+e.toString());
+                return;
+            }
+        } catch (TechSpecNotFoundException e) {
+            logger.error("TechSpec not found for RequestToDisconnectNodeSensor");
+            return;
+        }
+
+        try {
+            NodeDisconnectActuator action = new NodeDisconnectActuator(rtc.getAsset(), sb);
+            try {
+                HashSet offers = new HashSet();
+                offers.add( ALLOW_CONNECT );
+                offers.add( ALLOW_DISCONNECT );
+                action.setValuesOffered(offers); // everything is allowed
+                nodeDisconnectActuatorIndex.putAction(action);
+                blackboard.publishAdd(action);
+                if (logger.isDebugEnabled()) { logger.debug("Created: "+action.toString()); }
+            } catch (IllegalValueException e) {
+                logger.error("Attempt to set: "+action.toString()+" with illegal value "+e.toString());
+                return;
+            }
+        } catch (TechSpecNotFoundException e) {
+            logger.error("TechSpec not found for NodeDisconnectActuator");
+            return;
+        }
+        if (logger.isDebugEnabled()) logger.debug("Created Diagnosis & Action for: " + rtc.toString());
+        
+
+    }
+    
+    private boolean handleNodeRequest(ReconnectTimeCondition rtc) {
+        
+        double time = ((Double)rtc.getValue()).doubleValue();
+        Diagnosis diag = null;
+        if (rtc.getAssetType().equals("Node")) diag = requestToDisconnectNodeSensorIndex.getDiagnosis(new AssetID(rtc.getAsset(), AssetType.findAssetType("Node")));
+
+        try {
+            if (time > 0.0) {
+                diag.setValue(DISCONNECT_REQUEST); // wants to disconnect
+                OverdueAlarm overdueAlarm = new OverdueAlarm(diag, time > 10000.0 ? (time + lateReportingForgiveness) : (10000.0 + lateReportingForgiveness));  // Don't monitor for less than 10 sec
+                activeDisconnects.put(diag.getAssetID(), overdueAlarm);
+            //getAlarmService().addRealTimeAlarm(overdueAlarm);  do this after getting permission
             }
             else {
-                item.setValue(DefenseConstants.BOOL_FALSE); // not disconnected
-                OverdueAlarm overdueAlarm = (OverdueAlarm)activeDisconnects.remove(item);
-                if (overdueAlarm != null) overdueAlarm.cancel();
+                diag.setValue(CONNECT_REQUEST); // not disconnected
             }
             if (logger.isDebugEnabled()) logger.debug("DisconnectChange set "
-                +item.getClass()+" "
-                +item.getAssetType()+" "+item.getAsset()+" " +item.getDefenseName()+" " +item.getValue()+ " "+t
+                +diag.getAssetID()+" "
+                +diag.getValue()+ " "+time
                 +" for the Coordinator");
-            blackboard.publishChange(item);
+            blackboard.publishChange(diag);
             return true;
+        } catch (IllegalValueException e) {
+            logger.error("Attempt to set: "+diag.toString()+" with illegal value "+e.toString());
         }
-        else {
-            return false;
-        }
+        return false;
     }
     
-    private boolean propagateMonitoringEnablerChange(DisconnectMonitoringEnabler dme) {
-        
-        DisconnectMonitoringAgentEnabler item = DisconnectMonitoringAgentEnabler.findOnBlackboard(DisconnectConstants.DEFENSE_NAME, dme.getExpandedName(), blackboard);
-        if (item != null) {
-            item.setValue(dme.getValue());
-            blackboard.publishChange(item);
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
     
     private boolean propagateDefenseEnablerChange(DisconnectDefenseEnabler dme) {
         
@@ -294,16 +306,17 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             return false;
         }
     }
-    
+
+
     private class OverdueAlarm implements Alarm {
         private long detonate;
         private boolean expired;
-        DisconnectApplicabilityCondition cond;
+        Diagnosis diag;
         
-        public OverdueAlarm(DisconnectApplicabilityCondition cond, double t) {
+        public OverdueAlarm(Diagnosis diag, double t) {
             detonate = System.currentTimeMillis() + (long) t;
-            this.cond = cond;
-            if (logger.isDebugEnabled()) logger.debug("OverdueAlarm created : "+cond.getAsset()+ " at time "+detonate);
+            this.diag = diag;
+            if (logger.isDebugEnabled()) logger.debug("OverdueAlarm created : "+diag.getAssetID()+ " at time "+detonate);
         }
         
         public long getExpirationTime() {return detonate;
@@ -312,11 +325,15 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         public void expire() {
             if (!expired) {
                 expired = true;
-                if (logger.isDebugEnabled()) logger.debug("Alarm expired for: " + cond.getAsset()+" no longer legitimately Disconnected");
-                if (eventService.isEventEnabled()) eventService.event(cond.getAsset()+" is no longer legitimately Disconnected");
+                if (logger.isDebugEnabled()) logger.debug("Alarm expired for: " + diag.getAssetID()+" no longer legitimately Disconnected");
+                if (eventService.isEventEnabled()) eventService.event(diag.getAssetID()+" is no longer legitimately Disconnected");
                 blackboard.openTransaction();
-                cond.setValue(DefenseConstants.BOOL_FALSE);
-                blackboard.publishChange(cond);
+                try {
+                    diag.setValue(TARDY);
+                } catch (IllegalValueException e) {
+                    logger.error("Attempt to set: "+diag.toString()+" to illegal value " + TARDY);
+                }
+                blackboard.publishChange(diag);
                 blackboard.closeTransaction();
             }
         }

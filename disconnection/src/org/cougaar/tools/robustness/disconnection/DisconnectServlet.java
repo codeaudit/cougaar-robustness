@@ -29,6 +29,8 @@ package org.cougaar.tools.robustness.disconnection;
 
 import org.cougaar.tools.robustness.deconfliction.*;
 
+import org.cougaar.tools.robustness.disconnection.InternalConditionsAndOpModes.*;
+
 import java.lang.reflect.Constructor;
 
 import java.io.PrintWriter;
@@ -124,7 +126,7 @@ public class DisconnectServlet extends BaseServletComponent
       }
     }
     
-    //if (eventService.isEventEnabled()) eventService.event("Loaded DisconnectServlet");
+    if (eventService.isEventEnabled()) eventService.event("Loaded DisconnectServlet");
 
     super.load();
   }
