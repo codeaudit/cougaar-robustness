@@ -105,14 +105,6 @@ class AckFrontend extends DestinationLinkDelegateImplBase
         if (log.isDebugEnabled()) log.debug ("AckFrontend: Dropping acked resend " +msgString);
         return success;
       }
-
-      //  We drop any resends over excluded links as they manage their own resends
-
-      if (ack.getSendCount() > 0 && MessageAckingAspect.isExcludedLink(link))
-      {
-        if (log.isDebugEnabled()) log.debug ("AckFrontend: Dropping resend over excluded link " +msgString);
-        return success;
-      }
     }
 
     //  Update various ack fields
@@ -213,7 +205,7 @@ class AckFrontend extends DestinationLinkDelegateImplBase
 
     //  Try sending the message
 
-    String sendInfo = null;
+    String sendInfo = "null";
 
     try
     {
@@ -246,7 +238,7 @@ class AckFrontend extends DestinationLinkDelegateImplBase
       if (log.isDebugEnabled())
       {
         StringBuffer buf = new StringBuffer();
-        buf.append ("\n\n");
+//      buf.append ("\n\n");
         buf.append (ack.getSendCount()==0 ? "Sending  " : "REsending ");
         buf.append (MessageUtils.toShortString (msg));
         buf.append (" via ");
@@ -259,29 +251,17 @@ class AckFrontend extends DestinationLinkDelegateImplBase
         log.debug (buf.toString());         
       }
 
-      //  If the message has not yet been successfully sent on its first leg, we set
-      //  its send time and add it to the message resender.  The message resender
-      //  manages resending the message as needed.  We do this even for excluded links,
-      //  as we are doing this here before the send to handle the case where the
-      //  first send gets stuffed up down the line for some reason (eg. frozen socket) 
-      //  thus preventing the message to make it onto the message resender to enable it
-      //  to be resent around the obstruction, if we did this after the send.  Above
-      //  we make sure than any resends don't go out on any excluded links in case
-      //  one is chosen for a resend.
-/*
-      if (ack.getSendCount() == 0)
-      {
-        ack.setSendTime (now()); // resends get their send time set in the resender
-        if (ack.isAck()) MessageAckingAspect.messageResender.add (msg);
-      }  
-*/
-        ack.setSendTime (now());
-        if (ack.isAck()) MessageAckingAspect.messageResender.add (msg);
+      //  The message resender manages resending the message as needed.  We do this 
+      //  even for excluded links as we want to handle the case where the send gets
+      //  stuffed up down the aspect chain for some reason (eg. delayed RMI).
+
+      ack.setSendTime (now());
+      if (ack.isAck()) MessageAckingAspect.messageResender.add (msg);
 
       ack.incrementSendTry();
       ack.incrementSendCount();
 
-      success = link.forwardMessage (msg);  // message send
+      success = link.forwardMessage (msg);  // send message down the chain (may stall)
     }
     catch (Exception e)
     {
@@ -304,7 +284,7 @@ class AckFrontend extends DestinationLinkDelegateImplBase
       }
       else 
       {
-        //  We are in control of resends (over non-excluded links)
+        //  We are in control of resends
 
         if (ack.isAck())
         {

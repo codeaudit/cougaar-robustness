@@ -491,12 +491,14 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
         }
         catch (MisdeliveredMessageException e)
         { 
-          log.error ("Got MisdeliveredMessageException for " +MessageUtils.toString(msg)+ ": " +e);
+          if (log.isDebugEnabled()) 
+            log.debug ("Got MisdeliveredMessageException for " +MessageUtils.toString(msg)+ ": " +e);
         }
         catch (Exception e)
         { 
-          log.error ("Exception delivering " +MessageUtils.toString(msg)+ ": " +stackTraceToString(e));
-        }
+          if (log.isWarnEnabled()) 
+            log.warn ("Exception delivering " +MessageUtils.toString(msg)+ ": " +stackTraceToString(e));
+        }  
       }
 
       //  Cleanup

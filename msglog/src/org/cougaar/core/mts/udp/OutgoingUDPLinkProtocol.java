@@ -177,6 +177,11 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
     return link;
   }
 
+  public static long getMaxMessageSizeInBytes ()
+  {
+    return MAX_UDP_MSG_SIZE;
+  }
+
   class UDPOutLink implements DestinationLink 
   {
     private MessageAddress destination;
@@ -204,15 +209,8 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
    
     public int cost (AttributedMessage msg) 
     {
-      try 
-      {
-        if (msg != null) getDatagramSocketSpec (destination);  // HACK binding
-        return protocolCost;
-      } 
-      catch (Exception e) 
-      {
-        return Integer.MAX_VALUE;
-      }                          
+      if (msg == null) return protocolCost;  // forced HACK
+      return (addressKnown(destination) ? protocolCost : Integer.MAX_VALUE);
     }
 
     public Object getRemoteReference ()
@@ -246,6 +244,13 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
 
       DatagramSocketSpec destSpec = getDatagramSocketSpec (destination);
 
+      if (destSpec == null)
+      {
+        String s = "No nameserver info for " +destination;
+        if (log.isWarnEnabled()) log.warn (s);
+        throw new NameLookupException (new Exception (s));
+      }
+
       //  Send message via udp
 
       boolean success = false;
@@ -257,6 +262,7 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
       } 
       catch (Exception e) 
       {
+        if (log.isDebugEnabled()) log.debug ("sendMessage: " +stackTraceToString(e));
         save = e;
       }
 
@@ -284,26 +290,22 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
       //  NOTE:  UDP is an unreliable communications protocol.  We just send the message
       //  on its way and maybe it gets there.  Acking will tell us if it does or not.
 
-      //  Serialize the message into a byte buffer
+      //  Serialize the message into a byte array
 
       byte msgBytes[] = toBytes (msg);
       if (msgBytes == null) return false;
 
       //  Make sure the message will fit into the 64 KB datagram packet size limitation
 
-      if (msgBytes.length >= MAX_UDP_MSG_SIZE)
+      if (msgBytes.length >= getMaxMessageSizeInBytes())
       {
-        //  HACK!!!  Need better way to handle the UDP 64kb packet length limitation
-        //  The problem with this is that it pollutes the send history of UDP with false 
-        //  errors - size limitation it is not a UDP send error.
-
         if (log.isWarnEnabled())
         {
-          log.warn ("Msg exceeds 64kb datagram limit! (" +msgBytes.length+ "): " 
-                    +MessageUtils.toString(msg));
+          log.warn ("Msg exceeds " +(getMaxMessageSizeInBytes()/1024)+ " KB max UDP " +
+            "message size! (" +(msgBytes.length/1024)+ " KB): " +MessageUtils.toString(msg));
         }
 
-        MessageUtils.setMessageSize (msg, msgBytes.length);  // size stops UDP link selection
+        MessageUtils.setMessageSize (msg, msgBytes.length);  // size stops this link selection
         return false;
       }
 
@@ -347,6 +349,7 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
           }
           else 
           {
+            datagramSocket.close();
             datagramSocket = null;
             throw (e);
           }

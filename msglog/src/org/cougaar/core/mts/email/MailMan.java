@@ -58,11 +58,11 @@ public class MailMan
   {
     //  Read external properties
 
-    String s = "org.cougaar.message.protocol.email.pop3.connectionTimeout";
-    pop3ConnectionTimeout = Integer.valueOf(System.getProperty(s,"10000")).intValue();
+    String s = "org.cougaar.message.protocol.email.pop3.connectionTimeoutSecs";
+    pop3ConnectionTimeout = Integer.valueOf(System.getProperty(s,"10")).intValue();
 
-    s = "org.cougaar.message.protocol.email.smtp.connectionTimeout";
-    smtpConnectionTimeout = Integer.valueOf(System.getProperty(s,"10000")).intValue();
+    s = "org.cougaar.message.protocol.email.smtp.connectionTimeoutSecs";
+    smtpConnectionTimeout = Integer.valueOf(System.getProperty(s,"10")).intValue();
   }
 
   public static void setDebug (boolean b)
@@ -75,7 +75,7 @@ public class MailMan
     // Get a Session object
 
     Properties props = new Properties();
-    props.put ("mail.pop3.connectiontimeout", ""+pop3ConnectionTimeout);
+    props.put ("mail.pop3.connectiontimeout", ""+pop3ConnectionTimeout*1000);
     Session session = Session.getDefaultInstance (props, null);
     session.setDebug (Debug);
 
@@ -129,7 +129,7 @@ public class MailMan
       String host = mbox.getServerHost();
       int port = mbox.getServerPortAsInt();
 
-      socket = TimedSocket.getSocket (host, port, smtpConnectionTimeout);
+      socket = TimedSocket.getSocket (host, port, smtpConnectionTimeout*1000);
 
       return true;
     }
@@ -522,8 +522,8 @@ public class MailMan
 
     Properties props = new Properties();
     props.put ("mail.smtp.host", mbox.getServerHost());
-    props.put ("mail.smtp.port", mbox.getServerPort());                   // Sun impl supports this
-    props.put ("mail.smtp.connectiontimeout", ""+smtpConnectionTimeout);  // Sun impl supports this
+    props.put ("mail.smtp.port", mbox.getServerPort());                        // Sun impl supports this
+    props.put ("mail.smtp.connectiontimeout", ""+smtpConnectionTimeout*1000);  // Sun impl supports this
     if (Debug) props.put ("mail.debug", "true");
 
     Session session = Session.getInstance (props);  // note not (potentially) shared session!

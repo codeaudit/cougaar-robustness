@@ -119,9 +119,10 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
   private static final int mailServerPollTime;
   private static final int initialReadDelaySecs;
   private static final boolean debugMail;
-  private static boolean showTraffic;
 
-  private LoggingService log;
+  private static boolean showTraffic;
+  private static LoggingService log;
+
   private String nodeID;
   private String inboxesProp;
   private MailBox inboxes[];
@@ -142,7 +143,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
     mailServerPollTime = Integer.valueOf(System.getProperty(s,"5")).intValue();
 
     s = "org.cougaar.message.protocol.email.initialReadDelaySecs";
-    initialReadDelaySecs = Integer.valueOf(System.getProperty(s,"10")).intValue();
+    initialReadDelaySecs = Integer.valueOf(System.getProperty(s,"20")).intValue();
 
     s = "org.cougaar.message.protocol.email.debugMail";
     debugMail = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
@@ -201,7 +202,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
 
     for (int i=0; i<inboxes.length; i++)
     {
-      MessageInThread messageIn = null;
+      MessageInThread msgInThread = null;
 
       try
       {
@@ -219,18 +220,18 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
           }
         }
 
-        messageIn = new MessageInThread (inboxes[i]);  // actually a Runnable
-        Schedulable thread = threadService().getThread (this, messageIn, "inbox"+i);
-        messageIn.setThread (thread);
+        msgInThread = new MessageInThread (inboxes[i]);  // actually a Runnable
+        Schedulable thread = threadService().getThread (this, msgInThread, "inbox"+i);
+        msgInThread.setThread (thread);
         thread.start();
 
         registerMailData (nodeID, inboxes[i]);
-        messageInThreads.add (messageIn);
+        messageInThreads.add (msgInThread);
       }
       catch (Exception e)
       {
         log.error ("startup: inbox"+i+" exception: " +stackTraceToString(e));
-        if (messageIn != null) messageIn.quit();
+        if (msgInThread != null) msgInThread.quit();
       }
     }
 
@@ -265,8 +266,8 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
   {
     for (Enumeration e = messageInThreads.elements(); e.hasMoreElements(); ) 
     {
-      MessageInThread messageIn = (MessageInThread) e.nextElement();
-      messageIn.quit();  
+      MessageInThread msgInThread = (MessageInThread) e.nextElement();
+      msgInThread.quit();  
     }
 
     messageInThreads.removeAllElements();
@@ -615,24 +616,30 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
            firstTime = false;
         }
 
-        //  Sit and wait for a message to come in (the underlying
-        //  email stream is polling its mail box).
+        //  Sit and wait for a message to come in - the underlying email stream is 
+        //  polling its mail box.
       
-        msg = (AttributedMessage) messageIn.readObject();
-
+        ByteArrayObject msgObject = (ByteArrayObject) messageIn.readObject();
         if (showTraffic) System.err.print ("<E");
 
+        //  Deserialize the read bytes into a Cougaar message
+
+        Object obj = getObjectFromBytes (msgObject.getBytes());
+
+        if (obj == null && log.isWarnEnabled()) 
+          log.warn ("Deserialization exception likely due to old email message read");
+
+        try
+        {
+          msg = (AttributedMessage) obj;  // possible cast exception
+        }
+        catch (Exception e)
+        {
+          if (log.isWarnEnabled()) log.warn ("Got non-AttributedMessage msg! (msg ignored): " +e);
+          return true;
+        }
+
         if (log.isDebugEnabled()) log.debug ("reading " +MessageUtils.toString(msg));
-
-        //  Deliver the message
-
-//TODO separate out delivery in another try block?
-      
-        if (msg != null) getDeliverer().deliverMessage (msg, msg.getTarget());
-
-        //  Return success
-
-        return true;
       } 
       catch (Exception e) 
       {
@@ -657,7 +664,50 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
 
         return false;
       }
+
+      //  Deliver the message.  Nobody to send exceptions to, so we just log them.
+
+      try
+      {
+        if (msg != null) getDeliverer().deliverMessage (msg, msg.getTarget());
+      }
+      catch (MisdeliveredMessageException e)
+      { 
+        if (log.isDebugEnabled()) 
+          log.debug ("Got MisdeliveredMessageException for " +MessageUtils.toString(msg)+ ": " +e);
+      }
+      catch (Exception e)
+      { 
+        if (log.isWarnEnabled()) 
+          log.warn ("Exception delivering " +MessageUtils.toString(msg)+ ": " +stackTraceToString(e));
+      }
+
+      //  Return success
+
+      return true;
     }
+  }
+
+  private static Object getObjectFromBytes (byte[] data) 
+  {
+	ObjectInputStream ois = null;
+	Object obj = null;
+
+	try 
+    {
+      ByteArrayInputStream bais = new ByteArrayInputStream (data);
+	  ois = new ObjectInputStream (bais);
+	  obj = ois.readObject();
+	} 
+    catch (Exception e) 
+    {
+      if (log.isWarnEnabled()) log.warn ("Deserialization exception: " +stackTraceToString(e));
+      return null;
+	}
+	
+	try { ois.close(); } catch (IOException e) {}
+
+	return obj;
   }
 
   private static String stackTraceToString (Exception e)

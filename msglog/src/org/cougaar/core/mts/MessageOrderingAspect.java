@@ -24,6 +24,8 @@
 
 package org.cougaar.core.mts;
 
+import org.cougaar.core.service.LoggingService;
+
 import java.util.*;
 
 
@@ -35,17 +37,33 @@ import java.util.*;
 public class MessageOrderingAspect extends StandardAspect
 {
   private static final String AGENT_INCOMING_SEQ_TABLE = "AgentIncomingMsgNumSequenceTable";
+  private static final String QUEUE_ADD_TIME = "MessageOrderingQueueAddTime";
+  private static final String QUEUE_REPORT_COUNT = "MessageOrderingQueueReportCount";
+
+  private static final int waitingMsgReportInterval;
+
+  private LoggingService log;
+
+  static
+  {
+    //  Read external properties
+
+    String s = "org.cougaar.message.transport.aspects.ordering.waitingMsgReportIntervalMinutes";
+    waitingMsgReportInterval = Integer.valueOf(System.getProperty(s,"5")).intValue();
+  }
 
   public MessageOrderingAspect () 
   {}
 
+  public void load ()
+  {
+    super.load();
+    log = loggingService;
+  }
+
   public Object getDelegate (Object delegate, Class type) 
   {
-    if (type == ReceiveLink.class) 
-    {
-      return (new Link ((ReceiveLink) delegate));
-    }
- 
+    if (type == ReceiveLink.class) return (new Link ((ReceiveLink) delegate));
     return null;
   }
 
@@ -70,7 +88,7 @@ public class MessageOrderingAspect extends StandardAspect
       if (MessageUtils.hasMessageNumber (msg) == false)
       {
         String s = "Message has no number! : " +MessageUtils.toString(msg);
-        loggingService.error (s);
+        log.error (s);
         throw new RuntimeException (s);
       }
 
@@ -117,7 +135,6 @@ public class MessageOrderingAspect extends StandardAspect
           {
             AttributedMessage msgs[] = new AttributedMessage[len];
             msgs = (AttributedMessage[]) queue.toArray (msgs);
-
             if (len > 1) Arrays.sort (msgs, 0, len, queueSort);
 
             for (int i=0; i<len; i++)
@@ -127,11 +144,52 @@ public class MessageOrderingAspect extends StandardAspect
 
               if (num == nextNum) 
               {
+                if (log.isDebugEnabled()) 
+                  log.debug ("Take off waiting queue: " +MessageUtils.toString(msgs[i]));
+
                 doDelivery (msgs[i]);
                 setNextMessageNumber (msgs[i], nextNum+1);
                 queue.remove (msgs[i]);
               }
-              else break;
+              else 
+              {
+                //  Report any messages that have been waiting for a long time
+                
+                Long addTime = (Long) msgs[i].getAttribute (QUEUE_ADD_TIME);  
+
+                if (addTime == null)
+                {
+                  if (log.isWarnEnabled()) 
+                    log.warn ("Unexpected null Q addTime! " +MessageUtils.toString(msgs[i]));
+
+                  addTime = new Long (now());
+                  msgs[i].setLocalAttribute (QUEUE_ADD_TIME, addTime); 
+                }
+
+                int waitTime = (int)(now() - addTime.longValue());
+
+                if (waitTime > waitingMsgReportInterval*60*1000)
+                {
+                  Int count = (Int) msgs[i].getAttribute (QUEUE_REPORT_COUNT);
+
+                  if (count == null) 
+                  { 
+                    count = new Int (0);
+                    msgs[i].setLocalAttribute (QUEUE_REPORT_COUNT, count);
+                  } 
+
+                  if (waitTime >= (count.value+1)*waitingMsgReportInterval*60*1000)
+                  {
+                    if (log.isWarnEnabled()) 
+                      log.warn ("Msg has been on waiting queue for " +(waitTime/(60*1000))+
+                        " minutes: " +MessageUtils.toString(msgs[i]));
+
+                    count.value++;
+                  }
+                }
+              }
+
+              break;
             }
           }  
 
@@ -142,7 +200,9 @@ public class MessageOrderingAspect extends StandardAspect
           //  Out of sequence message - put on waiting queue
 
           queue.add (msg);
+          msg.setLocalAttribute (QUEUE_ADD_TIME, new Long (now()));
           status = MessageAttributes.DELIVERY_STATUS_HELD;
+          if (log.isDebugEnabled()) log.debug ("  Put on waiting queue: " +MessageUtils.toString(msg));
         }
       }
       else // num < 0  
@@ -161,9 +221,6 @@ public class MessageOrderingAspect extends StandardAspect
 
     private void doDelivery (AttributedMessage msg)
     {
-      if (loggingService.isDebugEnabled()) 
-        loggingService.debug ("Delivering msg " +MessageUtils.toString(msg));
-
       super.deliverMessage (msg);
     }
   }
@@ -203,13 +260,7 @@ public class MessageOrderingAspect extends StandardAspect
 
     MessageAddress agentAddr = MessageUtils.getTargetAgent (msg);
     Hashtable agentTable = getMessageNumberTableForAgent (agentAddr);
-
-    if (agentTable == null) 
-    {
-      //  HACK!  What to do here?
-
-      throw new RuntimeException (new MisdeliveredMessageException (msg));
-    }
+    if (agentTable == null) throw new RuntimeException (new MisdeliveredMessageException (msg));
 
     synchronized (agentTable)
     {
@@ -229,13 +280,7 @@ public class MessageOrderingAspect extends StandardAspect
   {
     MessageAddress agentAddr = MessageUtils.getTargetAgent (msg);
     Hashtable agentTable = getMessageNumberTableForAgent (agentAddr);
-
-    if (agentTable == null) 
-    {
-      //  HACK!  What to do here?
-
-      throw new RuntimeException (new MisdeliveredMessageException (msg));
-    }
+    if (agentTable == null) throw new RuntimeException (new MisdeliveredMessageException (msg));
 
     synchronized (agentTable)
     {
@@ -276,5 +321,10 @@ public class MessageOrderingAspect extends StandardAspect
   {
     public int value;
     public Int (int v) { value = v; }
+  }
+
+  private static long now ()
+  {
+    return System.currentTimeMillis();
   }
 }

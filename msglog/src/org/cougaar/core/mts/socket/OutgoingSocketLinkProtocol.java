@@ -243,7 +243,6 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
   {
     private MessageAddress destination;
     private NoHeaderOutputStream socketOut;
-int largestMsg = 0;
 
     public SocketOutLink (MessageAddress dest) 
     {
@@ -267,15 +266,8 @@ int largestMsg = 0;
    
     public int cost (AttributedMessage msg) 
     {
-      try 
-      {
-        if (msg != null) getSocketSpec (destination);  // HACK binding
-        return protocolCost;
-      } 
-      catch (Exception e) 
-      {
-        return Integer.MAX_VALUE;
-      }                          
+      if (msg == null) return protocolCost;  // forced HACK
+      return (addressKnown(destination) ? protocolCost : Integer.MAX_VALUE);
     }
 
     public Object getRemoteReference ()
@@ -309,6 +301,13 @@ int largestMsg = 0;
 
       SocketSpec destSpec = getSocketSpec (destination);
 
+      if (destSpec == null)
+      {
+        String s = "No nameserver info for " +destination;
+        if (log.isWarnEnabled()) log.warn (s);
+        throw new NameLookupException (new Exception (s));
+      }
+
       //  Send message via socket
 
       boolean success = false;
@@ -341,26 +340,17 @@ int largestMsg = 0;
       return successfulSend;
     }
 
-    //  Send Cougaar message out to another node via socket
-
     private synchronized boolean sendMessage (AttributedMessage msg, SocketSpec spec) throws Exception
     {
       if (log.isDebugEnabled()) log.debug ("Sending " +MessageUtils.toString(msg));
 
-      //  Serialize the message into a byte buffer
+      //  Serialize the message into a byte array
 
       byte msgBytes[] = toBytes (msg);
       if (msgBytes == null) return false;
 
-if (msgBytes.length > largestMsg)
-{
-  log.debug ("Largest msg " +msgBytes.length+ " " +MessageUtils.getMessageTypeString(msg)+
-             " " + MessageUtils.toShortSequenceID(msg));
-  largestMsg = msgBytes.length;
-}
-
       //  Since it is a hassle to read variable length arrays on the other side, we wrap
-      //  the byte buffer in a simple object.
+      //  the byte array in a simple object.
 
       ByteArrayObject msgObject = new ByteArrayObject (msgBytes);
 

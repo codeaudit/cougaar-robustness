@@ -90,29 +90,36 @@ public class MessageNumberingAspect extends StandardAspect
       {
         MessageAddress agentAddr = MessageUtils.getOriginatorAgent (msg);
         fromAgent = AgentID.getAgentID (this, getServiceBroker(), agentAddr);
-        MessageUtils.setFromAgent (msg, fromAgent);
+
+        if (fromAgent == null)
+        {
+          String s = "Null fromAgent for " +agentAddr;
+          if (loggingService.isWarnEnabled()) loggingService.warn (s);
+          throw new NameLookupException (new Exception (s));
+        }
+        else MessageUtils.setFromAgent (msg, fromAgent);
       }
-/*
-      if (!isLocalAgent (MessageUtils.getOriginatorAgent(msg)))
-      {
-        String s = "Sending agent " +fromAgent+ " not in local node!";
-        loggingService.error (s);
-        throw new CommFailureException (new Exception (s));
-      }
-*/
+      
       AgentID toAgent = MessageUtils.getToAgent (msg);
 
       if (toAgent == null)
       {
         MessageAddress agentAddr = MessageUtils.getTargetAgent (msg);
         toAgent = AgentID.getAgentID (this, getServiceBroker(), agentAddr);
-        MessageUtils.setToAgent (msg, toAgent);
+
+        if (toAgent == null)
+        {
+          String s = "Null toAgent for " +agentAddr;
+          if (loggingService.isWarnEnabled()) loggingService.warn (s);
+          throw new NameLookupException (new Exception (s));
+        }
+        else MessageUtils.setToAgent (msg, toAgent);
       }
 
       //  Set the message number based on the type of message
 
       int n;
-            
+
       if (isLocalMessage (msg))  // every msg needs a number, even local ones
       {
         //  Local messages are numbered with positive numbers in order to avoid

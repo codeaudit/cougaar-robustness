@@ -78,7 +78,7 @@ class AckBackend extends MessageDelivererDelegateImplBase
     if (ack == null)
     {
       log.error ("AckBackend: Message has no ack in it! (msg ignored): " +msgString);
-      return success;
+      throw new MisdeliveredMessageException (msg);
     }
 
     //  Get started
@@ -113,7 +113,7 @@ class AckBackend extends MessageDelivererDelegateImplBase
     if (log.isDebugEnabled())
     {
       StringBuffer buf = new StringBuffer();
-      buf.append ("\n\n");
+//    buf.append ("\n\n");
       buf.append ("Received ");
       buf.append (MessageUtils.toShortString (msg));
       buf.append (" via ");
@@ -130,15 +130,11 @@ class AckBackend extends MessageDelivererDelegateImplBase
     //  this "message" really came from, where it has been, and what happened on
     //  the way...  These are only some basic checks; other entites such as message 
     //  security (if activated) may have done or do other checks.  
-    //
-    //  NOTE:  For now we return success even if we find the message mal-formed and
-    //  reject it (ignore it).  If the message came from a legimate source it will
-    //  resend it, and perhaps this time be well-formed.
 
     if (!MessageIntegrity.areMessageAttributesOK (msg, log))
     {
       log.error ("AckBackend: Message attributes fail integrity test (msg ignored): " +msgString);
-      return success;
+      throw new MisdeliveredMessageException (msg);
     }
 /*
 Mobility issue: arriving agent is now local, msg was for it when it was on other node
@@ -149,7 +145,7 @@ Mobility issue: arriving agent is now local, msg was for it when it was on other
     if (!MessageUtils.getToAgentNode(msg).equals (aspect.getThisNode()))
     {
       log.error ("AckBackend: Message not for this node (msg ignored): " +msgString);
-      return success;
+      throw new MisdeliveredMessageException (msg);
     }
 */
     //  Can't do this integrity check yet - msg system architecture wrong for it
@@ -159,7 +155,7 @@ Mobility issue: arriving agent is now local, msg was for it when it was on other
       if (MessageAckingAspect.debug) 
       {
         log.error ("AckBackend: ALERT msg came in on wrong link - msg ignored: " +msgString); 
-        return success;
+        throw new MisdeliveredMessageException (msg);
       }
     }
 */
@@ -175,7 +171,7 @@ Mobility issue: arriving agent is now local, msg was for it when it was on other
         log.warn ("AckBackend: Msg too old [" +mins+ "minutes: " +date+ "] (msg ignored): " +msgString);
       }
 
-      return success;
+      throw new MisdeliveredMessageException (msg);
     }
 
     if (ack.getSendTime() > now() + MessageAckingAspect.messageAgeWindowInMinutes*60*1000)
@@ -186,39 +182,39 @@ Mobility issue: arriving agent is now local, msg was for it when it was on other
         log.warn ("AckBackend: Msg too far in the future [" +date+ "] (msg ignored): " +msgString);
       }
 
-      return success;
+      throw new MisdeliveredMessageException (msg);
     }
 
     //  Handle messages from out-of-date senders or to out-of-date receivers.
     //  NOTE:  May want to send NACKs back for these messages.
 
-    // NACK Notes
-    // if (regular msg)  not pure ack, ack ack, ping, etc
-    // if (not a duplicate) // only send once?
-    //   send it or schedule it
-    //   if sched, need nack vs. pure nack
-    //   a pure nack has no msg num - it is not acked?
+// NACK Notes
+// if (regular msg)  not pure ack, ack ack, ping, etc
+// if (not a duplicate) // only send once?
+//   send it or schedule it
+//   if sched, need nack vs. pure nack
+//   a pure nack has no msg num - it is not acked?
 
-if (!MessageAckingAspect.skipIncarnationCheck || ack.getSendLink().equals("org.cougaar.core.mts.email.OutgoingEmailLinkProtocol"))
-{
-    if (!isLatestAgentIncarnation (MessageUtils.getFromAgent (msg), MessageUtils.getOriginatorAgent (msg)))
-    {
-      if (log.isInfoEnabled()) 
-        log.info ("AckBackend: Msg has out of date (or unknown) sender (msg ignored): " +msgString);
-      return success;
-    }
+    boolean doCheck = !MessageAckingAspect.skipIncarnationCheck;
+    if (!doCheck) doCheck = ack.getSendLink().equals ("org.cougaar.core.mts.email.OutgoingEmailLinkProtocol");
 
-    if (!isLatestAgentIncarnation (MessageUtils.getToAgent (msg), MessageUtils.getTargetAgent (msg)))
+    if (doCheck)
     {
-      if (log.isInfoEnabled()) 
-        log.info ("AckBackend: Msg has out of date (or unknown) recipient (msg ignored): " +msgString);
-      return success;
+      if (!isLatestAgentIncarnation (MessageUtils.getFromAgent (msg), MessageUtils.getOriginatorAgent (msg)))
+      {
+        if (log.isInfoEnabled()) 
+          log.info ("AckBackend: Msg has out of date (or unknown) sender (msg ignored): " +msgString);
+        throw new MisdeliveredMessageException (msg);
+      }
+
+      if (!isLatestAgentIncarnation (MessageUtils.getToAgent (msg), MessageUtils.getTargetAgent (msg)))
+      {
+        if (log.isInfoEnabled()) 
+          log.info ("AckBackend: Msg has out of date (or unknown) recipient (msg ignored): " +msgString);
+        throw new MisdeliveredMessageException (msg);
+      }
     }
-}
-else
-{
-  if (log.isDebugEnabled()) log.debug ("Skipping incarnation check");
-}
+    else if (log.isDebugEnabled()) log.debug ("Skipping incarnation check");
 
     //  At this point we feel the received message is probably ok, so now we deliver
     //  it and record its reception while making sure that it is not a message we have 
@@ -259,7 +255,7 @@ else
         else
         {
           if (log.isInfoEnabled()) log.info ("AckBackend: Duplicate msg ignored: " +msgString);
-          return success;
+          throw new MisdeliveredMessageException (msg);
         }
       }
     }
@@ -303,7 +299,7 @@ else
     }
 
     //  Handle setting up possible return messages for the message received.
-    //  For regular messages we send back pure ack messages, and for pure ack 
+    //  For ackable messages we send back pure ack messages, and for pure ack 
     //  messages we send back pure ack-ack messages.  Howecer, if the link
     //  the received message came in on is excluded from acking, then we won't
     //  send back any kind of pure ack messages.
@@ -396,7 +392,7 @@ else
     }
     catch (NameLookupException e)
     {
-      //  Thrown by AgentID.getAgentID when can't get and don't have any topo data for agent
+      //  Thrown by AgentID.getAgentID when can't get & don't have any topo data for agent
     } 
     catch (Exception e) 
     { 

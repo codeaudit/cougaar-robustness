@@ -72,6 +72,7 @@ import java.util.*;
 
 import org.cougaar.core.mts.acking.*;
 import org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol;
+import org.cougaar.core.mts.email.OutgoingEmailLinkProtocol;
 import org.cougaar.util.CougaarEvent;
 import org.cougaar.util.CougaarEventType;
 
@@ -150,7 +151,6 @@ private static long startTime = 0;
     useRTTService = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
 
     s = "org.cougaar.message.transport.policy.adaptive.initialNodeTime";
-//  initialNodeTime = Integer.valueOf(System.getProperty(s,"1000")).intValue();
     initialNodeTime = Integer.valueOf(System.getProperty(s,"20000")).intValue();
 
     s = "org.cougaar.message.transport.policy.adaptive.tryOtherLinksInterval";
@@ -190,10 +190,9 @@ commStartDelaySeconds = Integer.valueOf(System.getProperty(s,"0")).intValue();
 
     thisNode = getRegistry().getIdentifier();
 
-//  HACK to attempt to get around nameserver/topology lookup problems
-
 if (commStartDelaySeconds > 0)
 {
+  //  HACK to attempt to get around nameserver/topology lookup problems
   log.warn ("Comm start delay: Waiting for " +commStartDelaySeconds+ " seconds before allowing any message sends");
   startTime = System.currentTimeMillis();
 }
@@ -263,14 +262,13 @@ if (commStartDelaySeconds > 0)
          AttributedMessage failedMsg, int retryCount, Exception last)
   {
     debug = log.isDebugEnabled();
-
+/*
     if (debug) log.debug ("Entered selectLink: msg= " +MessageUtils.toString(msg)+
-                          " failedMsg=" +MessageUtils.toString(failedMsg));
-
-//  HACK to attempt to get around nameserver/topology lookup problems
-
+      " failedMsg=" +MessageUtils.toString(failedMsg));
+*/
 if (commStartDelaySeconds > 0)
 {
+  //  HACK to attempt to get around nameserver/topology lookup problems
   if ((startTime + commStartDelaySeconds*1000) > now()) return null;
 }
     //  Return if things not right
@@ -426,6 +424,36 @@ if (commStartDelaySeconds > 0)
       }
     }
 
+    //  Lookup up the sending agent of the message in the nameserver.  If it is not registered
+    //  we return null and try again later, assuming that it will show up soon.  We cannot number
+    //  the message until we have the incarnation number for the agent - and message numbering
+    //  occurs after link selection - but here we can cause a wait while down there an exception
+    //  will need to be thrown.
+    
+    AgentID fromAgent = MessageUtils.getFromAgent (msg);
+
+    if (fromAgent == null) 
+    {
+      MessageAddress origAgent = null;
+
+      try
+      {
+        origAgent = MessageUtils.getOriginatorAgent (msg);
+        fromAgent = AgentID.getAgentID (this, getServiceBroker(), origAgent);
+      }
+      catch (Exception e) {}
+
+      if (fromAgent == null)
+      {
+        if (!MessageUtils.isSomePureAckMessage (msg))  // let acks pass, esp. from now moved agents
+        {
+          if (debug) log.debug ("Postponing link selection: null lookup for originator agent: " +origAgent);
+          return linkChoice (null, msg);
+        }
+      }
+      else MessageUtils.setFromAgent (msg, fromAgent);
+    }
+
     //  Get the target node for the message.  If this message is a retry/resend, we try to
     //  get the latest uncached data because the target node may have changed and thus be
     //  the cause of our (real or apparent) send failure.
@@ -438,8 +466,6 @@ if (commStartDelaySeconds > 0)
       if (ack != null && ack.getSendTry() > 0)
       {
         //  Retry/resend: bypass topological caching to get latest target agent info
-
-//log.debug ("\n\nGetting node for agent (1): " +targetAgent +"\n");
 
         AgentID toAgent = AgentID.getAgentID (this, getServiceBroker(), targetAgent, true);
         MessageUtils.setToAgent (msg, toAgent);
@@ -455,23 +481,21 @@ if (commStartDelaySeconds > 0)
         {
           //  Get cached target agent info
 
-//log.debug ("\n\nGetting node for agent (2): " +targetAgent +"\n");
-
           AgentID toAgent = AgentID.getAgentID (this, getServiceBroker(), targetAgent, false);
           MessageUtils.setToAgent (msg, toAgent);
           targetNode = toAgent.getNodeName();
         }
       }
     }
-    catch (Exception e)
+    catch (Exception e) {}
+
+    //  Cannot continue without knowing the name of the target node for the message
+
+    if (targetNode == null) 
     {
-      if (debug) log.debug ("Unable to get node for agent: " +targetAgent +"\n");
+      if (debug) log.debug ("Postponing link selection: unknown node for target agent: " +targetAgent);
+      return linkChoice (null, msg);
     }
-
-    //  Cannot continue past this point without knowing the name 
-    //  of the target node for the message.
-
-    if (targetNode == null) return linkChoice (null, msg);
 
     //  Normal operation.
     //
@@ -508,12 +532,17 @@ if (commStartDelaySeconds > 0)
           return linkChoice (link, msg);
         }
 
+        //  Drop links that cannot handle messages beyond a certain size
+
         if (getName(link).equals ("org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol"))
         {
-          //  Avoid UDP if the message exceeds the datagram size limit
-
           int msgSize = MessageUtils.getMessageSize (msg);
-          if (msgSize >= OutgoingUDPLinkProtocol.MAX_UDP_MSG_SIZE) continue;
+          if (msgSize >= OutgoingUDPLinkProtocol.getMaxMessageSizeInBytes()) continue;
+        }
+        else if (getName(link).equals ("org.cougaar.core.mts.email.OutgoingEmailLinkProtocol"))
+        {
+          int msgSize = MessageUtils.getMessageSize (msg);
+          if (msgSize >= OutgoingEmailLinkProtocol.getMaxMessageSizeInBytes()) continue;
         }
 
         //  NOTE: As of 8.6.1 an odd side effect of calling link.cost() above is to do the 

@@ -43,13 +43,13 @@ public class EmailMessageOutputStream extends NoHeaderOutputStream
     this.out = out;
   }
 
-  public void writeMsg (Message msg) throws IOException
+  public void writeMsgObject (ByteArrayObject msgObject) throws IOException
   {
     //  Important!!!  Reset the output stream so that subsequent
     //  writes do not refer to objects written previously.
 
     reset();
-    writeObject (msg);
+    writeObject (msgObject);
   }
 
   public void sendMsg (MailMessageHeader header) throws IOException

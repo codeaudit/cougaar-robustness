@@ -115,6 +115,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
   public static final String PROTOCOL_TYPE = "-email";
 
   private static final int protocolCost;
+  public  static final long maxMessageSizeKB;
   private static final boolean useFQDNs;
   private static final boolean debugMail;
 
@@ -130,6 +131,9 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
 
     String s = "org.cougaar.message.protocol.email.cost";  // one way
     protocolCost = Integer.valueOf(System.getProperty(s,"10000")).intValue();  // was 5000
+
+    s = "org.cougaar.message.protocol.email.outgoing.maxMessageSizeKB";
+    maxMessageSizeKB = Integer.valueOf(System.getProperty(s,"1000")).intValue();
 
     s = "org.cougaar.message.protocol.email.useFQDNs";
     useFQDNs = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
@@ -386,6 +390,11 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     return link;
   }
 
+  public static long getMaxMessageSizeInBytes ()
+  {
+    return maxMessageSizeKB*1024;
+  }
+
   class EmailOutLink implements DestinationLink 
   {
     private MessageAddress destination;
@@ -410,18 +419,11 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     {
       return OutgoingEmailLinkProtocol.class;
     }
-
+   
     public int cost (AttributedMessage msg) 
     {
-      try 
-      {
-        if (msg != null) getMailData (msg.getTarget());
-        return protocolCost;
-      } 
-      catch (Exception e) 
-      {
-        return Integer.MAX_VALUE;
-      }                          
+      if (msg == null) return protocolCost;  // forced HACK
+      return (addressKnown(destination) ? protocolCost : Integer.MAX_VALUE);
     }
 
     public Object getRemoteReference ()
@@ -450,31 +452,78 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
 
       if (MessageUtils.getSendTry (msg) > 1) dumpCachedData();
 
-      //  Get email info for destination address
+      //  Get emailing info for destination
     
       MailData mailData = getMailData (destination);
 
-      //  Try mailing the message
+      if (mailData == null)
+      {
+        String s = "No nameserver info for " +destination;
+        if (log.isWarnEnabled()) log.warn (s);
+        throw new NameLookupException (new Exception (s));
+      }
 
-      boolean success = sendMessage (msg, mailData);
+      //  Send message via email
+
+      boolean success = false;
+      Exception save = null;
+
+      try 
+      {
+        success = sendMessage (msg, mailData);
+      } 
+      catch (Exception e) 
+      {
+        if (log.isDebugEnabled()) log.debug ("sendMessage: " +stackTraceToString(e));
+        save = e;
+      }
+
+      //  Dump our cached data on failed sends and throw an exception
 
       if (success == false)
       {
-        Exception e = new Exception ("OutgoingEmail: sendMessage unsuccessful");
+        dumpCachedData();
+        Exception e = (save==null ? new Exception ("email sendMessage unsuccessful") : save);
         throw new CommFailureException (e);
       }
 
-      MessageAttributes result = new SimpleMessageAttributes();
+      //  Successful send
+
+	  MessageAttributes successfulSend = new SimpleMessageAttributes();
       String status = MessageAttributes.DELIVERY_STATUS_DELIVERED;
-      result.setAttribute (MessageAttributes.DELIVERY_ATTRIBUTE, status);
-      return result;
+	  successfulSend.setAttribute (MessageAttributes.DELIVERY_ATTRIBUTE, status);
+      return successfulSend;
     }
    
-    private final synchronized boolean sendMessage (AttributedMessage msg, MailData destAddr)
+    private synchronized boolean sendMessage (AttributedMessage msg, MailData destAddr) throws Exception
     {
-      if (log.isDebugEnabled()) log.debug ("sending " +MessageUtils.toString(msg));
+      if (log.isDebugEnabled()) log.debug ("Sending " +MessageUtils.toString(msg));
 
-      boolean success = false;
+      //  Serialize the message into a byte buffer
+
+      byte msgBytes[] = toBytes (msg);
+      if (msgBytes == null) return false;
+
+      //  Make sure the message is not too large for an email message
+
+      if (msgBytes.length >= getMaxMessageSizeInBytes())
+      {
+        if (log.isWarnEnabled())
+        {
+          log.warn ("Msg exceeds " +(getMaxMessageSizeInBytes()/1024)+ " KB max email " +
+            "message size! (" +(msgBytes.length/1024)+ " KB): " +MessageUtils.toString(msg));
+        }
+
+        MessageUtils.setMessageSize (msg, msgBytes.length);  // size stops link selection
+        return false;
+      }
+
+      //  Since it is a hassle to read variable length arrays on the other side, we wrap
+      //  the byte array in a simple object.
+
+      ByteArrayObject msgObject = new ByteArrayObject (msgBytes);
+
+      //  Send the message as an email
 
       try
       {
@@ -504,34 +553,50 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
 
         MailMessageHeader header = new MailMessageHeader (from, replyTo, to, cc, bcc, subject);
 
-        //  Try to send the message
+        //  Send the message
 
-        synchronized (messageOut)
-        {
-          messageOut.writeMsg (msg);
-          messageOut.sendMsg (header);
-        }
-
-        success = true;
+        messageOut.writeMsgObject (msgObject);
+        messageOut.sendMsg (header);
       }
       catch (Exception e)
       {
-        if (log.isDebugEnabled()) 
-        {
-          String msgString = MessageUtils.toString (msg);
-          log.debug ("Failure sending " +msgString+ ":\n" +stackTraceToString(e));
-        }
-        
-        success = false;
+        throw (e);
       }
 
-      return success;
+      return true;  // send successful
     }
 
     private String replaceSpaces (String s)
     {
       return s.replace (' ', '_');  // replace spaces with underscores
     }
+  }
+
+  private synchronized byte[] toBytes (AttributedMessage msg)  // serialization has needed sync before
+  {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    ObjectOutputStream oos = null;
+
+    try 
+    {
+      oos = new ObjectOutputStream (baos);
+      oos.writeObject (msg);
+      oos.flush();
+    } 
+    catch (Exception e) 
+    {
+      if (log.isWarnEnabled()) log.warn ("Serialization exception for " +MessageUtils.toString(msg)+
+        ": " +stackTraceToString(e));
+      return null;
+    }
+
+    try 
+    {
+      oos.close();
+    } 
+    catch (Exception e) {}
+
+    return baos.toByteArray();
   }
 
   private static String stackTraceToString (Exception e)

@@ -50,8 +50,7 @@ public class MessageAckingAspect extends StandardAspect
   static final float   interAckSpacingFactor;
   static final float   ackAckPlacingFactor;
   static final int     messageAgeWindowInMinutes;
-
-static final boolean skipIncarnationCheck;
+  static final boolean skipIncarnationCheck;
 
   static MessageResender messageResender;
   static PureAckSender pureAckSender;
@@ -78,16 +77,13 @@ static final boolean skipIncarnationCheck;
     //  Read external properties
 
     String s = "org.cougaar.message.transport.aspects.acking.excludedLinks";
-    String defaultList = "";
-//  String defaultList = "org.cougaar.core.mts.RMILinkProtocol";  // comma separated list
-//String defaultList = "org.cougaar.core.mts.OutgoingSocketLinkProtocol";  // comma separated list
+    String defaultList = "org.cougaar.core.mts.RMILinkProtocol";  // comma separated list
     excludedLinks = System.getProperty (s, defaultList);
 
     s = "org.cougaar.message.transport.aspects.acking.resendMultiplier";
     resendMultiplier = Integer.valueOf(System.getProperty(s,"4")).intValue();
 
     s = "org.cougaar.message.transport.aspects.acking.firstAckPlacingFactor";
-//  float def = ((float)resendMultiplier)/2.0f;  ??? where'd this value come from?  .7 sounds better
     firstAckPlacingFactor = Float.valueOf(System.getProperty(s,"0.7")).floatValue();
 
     s = "org.cougaar.message.transport.aspects.acking.interAckSpacingFactor";
@@ -99,8 +95,8 @@ static final boolean skipIncarnationCheck;
     s = "org.cougaar.message.transport.aspects.acking.msgAgeWindowInMinutes";
     messageAgeWindowInMinutes = Integer.valueOf(System.getProperty(s,"30")).intValue();
 
-s = "org.cougaar.message.transport.aspects.acking.skipIncarnationCheck";
-skipIncarnationCheck = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
+    s = "org.cougaar.message.transport.aspects.acking.skipIncarnationCheck";
+    skipIncarnationCheck = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
   }
 
   public MessageAckingAspect () 
