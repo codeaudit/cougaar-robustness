@@ -5,6 +5,9 @@ import javax.servlet.http.*;
 import java.util.*;
 import java.io.*;
 
+import org.cougaar.core.service.community.CommunityService;
+import org.cougaar.core.service.community.Community;
+
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.servlet.BaseServletComponent;
 import org.cougaar.core.servlet.ServletUtil;
@@ -48,12 +51,17 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
   private MessageAddress agentId; //what is current agent
   private MessageAddress nodeId; //what is current node
   private MobilityFactory mobilityFactory; //used to to agents mobility
+  private CommunityService commSvc;
 
   /**
    * Hard-coded servlet path.
    */
   protected String getPath() {
     return "/ar";
+  }
+
+  public void setCommunityService(CommunityService cs){
+    this.commSvc = cs;
   }
 
   /**
@@ -156,7 +164,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
       out = response.getWriter();
       robustnessCommunity = getRobustnessCommunity();
       if(robustnessCommunity == null){
-        out.print("<html><body>Can't find robustness community from blackboard.</body></html>");
+        out.print("<html><body>Can't find robustness community.</body></html>");
         return;
       }
       parseParams();
@@ -613,24 +621,22 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
    * @return the list of all community names
    */
   private String getRobustnessCommunity() {
-    Collection communityDescriptors = null;
-    try{
-      bb.openTransaction();
-      communityDescriptors = bb.query(communityPredicate);
-    }finally{bb.closeTransactionDontReset();}
-    try{
-      for(Iterator it = communityDescriptors.iterator(); it.hasNext();) {
-        Community community = (Community)it.next();
-        String type = (String)(community.getAttributes().get("CommunityType").get());
-        if(type != null)
-          if(community.hasEntity(agentId.getAddress()) && type.equals("Robustness"))
+    String parentCommunities[] = commSvc.getParentCommunities(true);
+    try {
+      for (int i = 0; i < parentCommunities.length; i++) {
+        Community community = commSvc.getCommunity(parentCommunities[i], null);
+        String type = (String) (community.getAttributes().get("CommunityType").get());
+        if (type != null) {
+          if (community.hasEntity(agentId.getAddress()) &&
+              type.equals("Robustness"))
             return community.getName();
+        }
       }
-    }catch(Exception e)
-    {log.error("Try to get robustness community of " + agentId.getAddress() + ":" + e);}
+    } catch (Exception ex) {
+      log.error(ex.getMessage(), ex);
+    }
     return null;
   }
-
 
   /**
    * Using xsl file to transform a xml file into html file.
