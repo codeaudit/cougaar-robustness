@@ -57,7 +57,6 @@ public class HbReq implements Relay.Source, Relay.Target, NotPersistable //100 ,
   private final class MessageUtils
   {
     private static final String MSG_TYPE =              "MessageType";
-    private static final String MSG_NUM =               "MessageNumber";
     private static final String SEND_TIMEOUT =          "MessageSendTimeout";
     private static final String MSG_TYPE_HEARTBEAT =    "MessageTypeHeartbeat";
     private static final String MSG_TYPE_PING =         "MessageTypePing";

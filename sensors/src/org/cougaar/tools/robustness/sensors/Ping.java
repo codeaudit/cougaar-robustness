@@ -51,9 +51,7 @@ public class Ping implements Relay.Source, Relay.Target, NotPersistable //100 , 
   private final class MessageUtils
   {
     private static final String MSG_TYPE =              "MessageType";          //100 
-    private static final String MSG_NUM =               "MessageNumber";        //100 
     private static final String SEND_TIMEOUT =          "MessageSendTimeout";   //100 
-    private static final String MSG_TYPE_HEARTBEAT =    "MessageTypeHeartbeat"; //100 
     private static final String MSG_TYPE_PING =         "MessageTypePing";      //100 
   }
 
