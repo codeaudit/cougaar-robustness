@@ -183,6 +183,17 @@ module Cougaar
       end
     end
 
+    class DisableDeconfliction < Cougaar::Action
+      def initialize(run)
+        super(run)
+      end
+      def perform
+	  @run.society.each_node do |node|
+	    node.add_parameter("-Dorg.cougaar.tools.robustness.restart.deconfliction=DISABLED")
+	  end
+      end
+    end
+
     class AddTestNode < Cougaar::Action
       def initialize(run, nodeName, communityName, hostName=KillHost_CONST)
         super(run)
