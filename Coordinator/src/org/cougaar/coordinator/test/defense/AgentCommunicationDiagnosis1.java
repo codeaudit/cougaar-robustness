@@ -19,6 +19,7 @@ import org.cougaar.core.component.ServiceBroker;
 
 public class AgentCommunicationDiagnosis1 extends Diagnosis {
 
+    private DiagnosesWrapper myWrapper;
 
     /**
      * Creates a Diagnosis instance for Diagnoses to be performed on the specified asset. Includes initialValue 
@@ -44,5 +45,8 @@ public class AgentCommunicationDiagnosis1 extends Diagnosis {
     public void setValue(Object newValue) throws IllegalValueException {
         super.setValue(newValue);
     }
-    
+
+    public void setWrapper(DiagnosesWrapper dw) { myWrapper = dw; }
+
+    public DiagnosesWrapper getWrapper()  { return myWrapper; }
 }

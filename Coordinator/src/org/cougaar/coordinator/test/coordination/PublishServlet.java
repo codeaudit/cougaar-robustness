@@ -250,13 +250,13 @@ public class PublishServlet extends BaseServletComponent implements BlackboardCl
 
     
     private void createDiagnoses(String s) throws IllegalValueException, TechSpecNotFoundException {
-        AgentCommunicationDiagnosis1 d1 = new AgentCommunicationDiagnosis1(s, serviceBroker);
+        AgentCommunicationDiagnosis1 d1 = new AgentCommunicationDiagnosis1(s, "OK", serviceBroker);
         DiagnosesWrapper dw1 = new DiagnosesWrapper(d1, null, null, new UID());
         d1.setWrapper(dw1);
         blackboard.publishAdd(d1);
         blackboard.publishAdd(dw1);
 
-        AgentCommunicationDiagnosis2 d2 = new AgentCommunicationDiagnosis2(s, serviceBroker);
+        AgentCommunicationDiagnosis2 d2 = new AgentCommunicationDiagnosis2(s, "OK", serviceBroker);
         DiagnosesWrapper dw2 = new DiagnosesWrapper(d2, null, null, new UID());
         d2.setWrapper(dw2);
         blackboard.publishAdd(d2);

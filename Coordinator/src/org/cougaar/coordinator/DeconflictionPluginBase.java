@@ -211,6 +211,7 @@ public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
     }
 
     protected ActionsWrapper findAction(AssetID assetID, String actuatorType) {
+        //System.out.println(getActionIndex());
         return getActionIndex().findAction(assetID, actuatorType);
     }
 
@@ -220,6 +221,7 @@ public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
 
     private ActionIndex getActionIndex() {
         Collection c = blackboard.query(ActionIndex.pred);
+        //System.out.println(c.size());
         Iterator iter = c.iterator();
         if (iter.hasNext())
            return (ActionIndex)iter.next();

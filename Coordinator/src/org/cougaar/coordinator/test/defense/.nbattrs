@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <attributes version="1.0">
    <fileobject name="AgentCommunicationDiagnosis1.java">
-      <attr name="class_dependency_org.cougaar.coordinator.Diagnosis" stringvalue="AgentCommunicationDiagnosis"/>
+      <attr name="class_dependency_org.cougaar.coordinator.Diagnosis" stringvalue="AgentCommunicationDiagnosis1;AgentCommunicationDiagnosis"/>
    </fileobject>
    <fileobject name="TestObservationServlet.java">
       <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="TestObservationServlet"/>
@@ -13,6 +13,6 @@
       <attr name="class_dependency_org.cougaar.core.adaptivity.ServiceUserPluginBase" stringvalue="MyServletTestDefense"/>
    </fileobject>
    <fileobject name="AgentCommunicationDiagnosis2.java">
-      <attr name="class_dependency_org.cougaar.coordinator.Diagnosis" stringvalue="AgentCommunicationDiagnosis;AgentCommunicationDiagnosis1"/>
+      <attr name="class_dependency_org.cougaar.coordinator.Diagnosis" stringvalue="AgentCommunicationDiagnosis;AgentCommunicationDiagnosis1;AgentCommunicationDiagnosis2"/>
    </fileobject>
 </attributes>
