@@ -235,9 +235,13 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
               }
             }
           }
-          //long pingTimeout = getLongAttribute(name, "PING_TIMEOUT", PING_TIMEOUT);
-          //long annealTime = pingTimeout > 0 ? pingTimeout/2/1000 : LoadBalancer.DEFAULT_ANNEAL_TIME;
-          long annealTime = LoadBalancer.DEFAULT_ANNEAL_TIME;
+          long pingTimeout = getLongAttribute(name, "PING_TIMEOUT", PING_TIMEOUT);
+          // Use ping timeout to calculate annealTime:
+          //  - convert ms to secs
+          //  - divide by 2 to provide some margin
+          //  - divide by 9 for EN multi-pass
+          long annealTime = pingTimeout > 0 ? pingTimeout/1000/2/9 : LoadBalancer.DEFAULT_ANNEAL_TIME;
+          //long annealTime = LoadBalancer.DEFAULT_ANNEAL_TIME;
           logger.debug("Get restart destinations from LoadBalancer");
           getLoadBalancer().doLayout((int)annealTime,
                                      true,
