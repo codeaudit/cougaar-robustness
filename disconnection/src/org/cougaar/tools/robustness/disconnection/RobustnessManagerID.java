@@ -1,4 +1,6 @@
 /* 
+ *@author Steve Ford - OBJS
+ *
  * <copyright>
  * Copyright 2003 BBNT Solutions, LLC
  * under sponsorship of the Defense Advanced Research Projects Agency (DARPA).

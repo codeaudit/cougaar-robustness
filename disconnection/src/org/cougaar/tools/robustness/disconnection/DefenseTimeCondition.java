@@ -1,6 +1,8 @@
 /*
  * DefenseOperatingMode.java
  *
+ * @author David Wells - OBJS
+ *
  * <copyright>
  *  Copyright 2003 Object Services and Consulting, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)

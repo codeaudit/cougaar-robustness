@@ -6,10 +6,9 @@
 
 /**
  *
- * @author  David Wells
+ * @author  David Wells - OBJS
  * @version 
- */
-/*
+ *
  * DisconnectAgentPlugin.java
  *
  * <copyright>
@@ -220,20 +219,27 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
       //We have one local time condition, so we only get the one from iter.next();
       // This was set by the DisconnectServlet for the Node
       iter = localReconnectTimeSubscription.getChangedCollection().iterator();
-      if (logger.isDebugEnabled()) logger.debug("starting to process a changed LocalReconnectTimeCondition");
-      if (iter.hasNext()) {      
-          LocalReconnectTimeCondition lrtc = (LocalReconnectTimeCondition)iter.next();
-          if (logger.isDebugEnabled()) logger.debug("Found lrtc "+lrtc.getAsset());
-          if (lrtc != null) {
-                reconnectInterval = (long) Double.parseDouble(lrtc.getValue().toString()) / 1000L;
+      if (iter.hasNext()) { 
+          if (getNodeAddress().equals(managerAddress)) {
+              if (eventService.isEventEnabled()) {
+                  eventService.event("Not allowed to Disconnect ManagementAgent on "+getNodeAddress().toString());
+              }
           }
-          // set the ReconnectTimeCondition for each agent on the node
-          Iterator iter2 = reconnectTimeSubscription.iterator();
-          while (iter2.hasNext()) {
-              ReconnectTimeCondition rtc = (ReconnectTimeCondition)iter2.next();
-              rtc.setTime(new Double(Double.parseDouble(lrtc.getValue().toString())));
-              getBlackboardService().publishAdd(rtc);
-              if (logger.isDebugEnabled()) logger.debug("Set the Condition for "+getNodeID()+":"+rtc.getAsset());   
+          else {
+              if (logger.isDebugEnabled()) logger.debug("starting to process a changed LocalReconnectTimeCondition");
+              LocalReconnectTimeCondition lrtc = (LocalReconnectTimeCondition)iter.next();
+              if (logger.isDebugEnabled()) logger.debug("Found lrtc "+lrtc.getAsset());
+              if (lrtc != null) {
+                    reconnectInterval = (long) Double.parseDouble(lrtc.getValue().toString()) / 1000L;
+              }
+              // set the ReconnectTimeCondition for each agent on the node
+              Iterator iter2 = reconnectTimeSubscription.iterator();
+              while (iter2.hasNext()) {
+                  ReconnectTimeCondition rtc = (ReconnectTimeCondition)iter2.next();
+                  rtc.setTime(new Double(Double.parseDouble(lrtc.getValue().toString())));
+                  getBlackboardService().publishAdd(rtc);
+                  if (logger.isDebugEnabled()) logger.debug("Set the Condition for "+getNodeID()+":"+rtc.getAsset());   
+              }
           }
       }
       
