@@ -5,7 +5,7 @@
 ltsp = "org.cougaar.coordinator.techspec.xml.LoadTechSpecsPlugin"
 
 techspecs = [PlannedDisconnect_AgentAssetStateDimensions.xml', 
-		 PlannedDisconnect_NodeAssetStateDimensions.xml', 
+             PlannedDisconnect_NodeAssetStateDimensions.xml', 
              PlannedDisconnect_Threats.xml', 
              PlannedDisconnect_Events.xml', 
              PlannedDisconnect_ConnectedSensors.xml', 
@@ -36,7 +36,7 @@ society.each_agent(true) do |agent|
 end
 
 society.each_node do |node|
-    node.append_value_on_parameter("-Dorg.cougaar.config.path", "$COUGAAR_INSTALL_PATH/configs/coordinator/SampleDefense")
+    node.append_value_on_parameter("-Dorg.cougaar.config.path", "$COUGAAR_INSTALL_PATH/configs/coordinator/PlannedDisconnect")
     found = false
     node.each_component do |c|
         next unless c.classname == ltsp
