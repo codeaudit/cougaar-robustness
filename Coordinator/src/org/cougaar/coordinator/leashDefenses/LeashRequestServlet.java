@@ -197,6 +197,7 @@ public class LeashRequestServlet extends BaseServletComponent implements Blackbo
               bk.setIsLeashed(true);
               out.println("<center><h2>Status Changed - Defense Suppression Requested</h2></center><br>" );
               blackboard.publishChange(ask); 
+              blackboard.publishChange(bk); 
               if (logger.isDebugEnabled()) logger.debug("Status Changed - Defense Suppression Requested");
           }
           blackboard.closeTransaction();
@@ -227,6 +228,7 @@ public class LeashRequestServlet extends BaseServletComponent implements Blackbo
               bk.setIsLeashed(false);
               out.println("<center><h2>Status Changed - Defenses Allowed Requested</h2></center><br>" );
               blackboard.publishChange(ask); 
+              blackboard.publishChange(bk); 
               if (logger.isDebugEnabled()) logger.debug("Status Changed - Defenses Allowed Requested");
           }
               

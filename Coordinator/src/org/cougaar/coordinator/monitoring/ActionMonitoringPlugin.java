@@ -108,7 +108,6 @@ public class ActionMonitoringPlugin extends MonitoringPluginBase implements NotP
             ActionsWrapper aw = (ActionsWrapper)iter.next();
             Action action = aw.getAction();
             ActionRecord latestResult = action.getValue();
-            if (logger.isDebugEnabled()) logger.debug("Latest Result: " + latestResult == null ? "NULL" : latestResult.toString());
             ActionTimeoutAlarm alarm = (ActionTimeoutAlarm)monitoredActions.get(action);
             ActionPatience ap = findActionPatience(action);
             if (alarm != null) { // This is an Action change that we are monitoring (it could be an Action change we are not monitoring)
@@ -120,6 +119,7 @@ public class ActionMonitoringPlugin extends MonitoringPluginBase implements NotP
                          (latestResult.getCompletionCode().equals(Action.ACTIVE))) // make sure it completed correctly
                      && (latestResult.getStartTime() >= ap.getStartTime()))        // make sure it's a current action
                         {
+                            if (logger.isDebugEnabled()) logger.debug("Latest Result: " + latestResult.toString());
                             if (logger.isDebugEnabled()) logger.debug(monitoredActions.toString());
                             monitoredActions.remove(action);
                             ap.setResult(Action.COMPLETED);
