@@ -48,9 +48,6 @@ society.each_agent do |agent|
   agent.add_component do |c|
     c.classname = hb_server_plugin
   end
-  #agent.add_component do |c|
-    #c.classname = agent_mobility_plugin
-  #end
 end
 
 # Add components to Nodes
@@ -74,16 +71,9 @@ society.each_node_agent do |node_agent|
   node_agent.add_component do |c|
     c.classname = ping_requester_plugin
   end
-  #node_agent.add_component do |c|
-    #c.classname = communityPlugin
-  #end
   node_agent.add_component do |c|
     c.classname = communityViewerServlet
   end
-  #node_agent.add_component do |c|
-    #c.classname = wp_servlet
-    #c.add_argument("/wp")
-  #end
   node_agent.add_component do |c|
     c.classname = ping_server_plugin
   end
@@ -93,8 +83,5 @@ society.each_node_agent do |node_agent|
   node_agent.add_component do |c|
     c.classname = load_balancer_plugin
   end
-  #node_agent.add_component do |c|
-    #c.classname = node_mobility_plugin
-  #end
 end
 
