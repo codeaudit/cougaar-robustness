@@ -728,11 +728,11 @@ public class CommunityStatusModel extends BlackboardClientComponent
         setLeaderVote(nodeName, vote);
         setLocation(nodeName, host);
       } else {
-        StatusEntry se = new StatusEntry(nodeName, NODE, null);
-        statusMap.put(se.name, se);
-        setCurrentState(se.name, controller.getNormalState());
-        queueChangeEvent(
-          new CommunityStatusChangeEvent(CommunityStatusChangeEvent.MEMBERS_ADDED, se));
+        //StatusEntry se = new StatusEntry(nodeName, NODE, null);
+        //statusMap.put(se.name, se);
+        //setCurrentState(se.name, controller.getNormalState());
+        //queueChangeEvent(
+        //  new CommunityStatusChangeEvent(CommunityStatusChangeEvent.MEMBERS_ADDED, se));
       }
       // Apply agent status changes
       for (int i = 0; i < as.length; i++) {
