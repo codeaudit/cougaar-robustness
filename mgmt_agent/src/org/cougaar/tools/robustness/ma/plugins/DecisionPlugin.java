@@ -17,7 +17,7 @@
  */
 package org.cougaar.tools.robustness.ma.plugins;
 
-import org.cougaar.tools.robustness.ma.test.*;
+import org.cougaar.robustness.restart.plugin.*;
 import java.util.*;
 
 import org.cougaar.core.blackboard.IncrementalSubscription;
@@ -70,9 +70,9 @@ public class DecisionPlugin extends SimplePlugin {
     restartRequests =
       (IncrementalSubscription)bbs.subscribe(restartRequestPredicate);
 
-    // Subscribe to Action objects
-    actionStatus =
-      (IncrementalSubscription)bbs.subscribe(actionStatusPredicate);
+    // Subscribe to AgentStart objects
+    agentStartStatus =
+      (IncrementalSubscription)bbs.subscribe(agentStartStatusPredicate);
 
   }
 
@@ -93,10 +93,11 @@ public class DecisionPlugin extends SimplePlugin {
       evaluate(hs);
     }
 
-     // Get Action objects
-    for (Iterator it = actionStatus.getChangedCollection().iterator();
+     // Get AgentStart objects
+    for (Iterator it = agentStartStatus.getChangedCollection().iterator();
          it.hasNext();) {
-      Action action = (Action)it.next();
+      AgentStart action = (AgentStart)it.next();
+      /*
       String statusStr = null;
       switch (action.getStatus()) {
         case Action.FAIL:
@@ -107,7 +108,9 @@ public class DecisionPlugin extends SimplePlugin {
           break;
         default:
       }
-      log.debug("Received Action response, restart result= " + statusStr);
+      */
+      //log.debug("Received AgentStart response, restart result= " + action.status);
+      log.debug("Received AgentStart response, restart result= ");
       bbs.publishRemove(action);
     }
 
@@ -118,11 +121,11 @@ public class DecisionPlugin extends SimplePlugin {
       int status = req.getStatus();
       switch (status) {
         case RestartLocationRequest.SUCCESS:
-          String nodeName = "NewNode";
+          String nodeName = "EmptyNode";
           Iterator nodeIt = req.getAgents().iterator();
           if (nodeIt.hasNext()) nodeName = getNodeName((MessageAddress)nodeIt.next());
-          //restartAgent(req.getAgents(), nodeName, req.getHost());
-          restartNode(nodeName, req.getHost());
+          restartAgents(req.getAgents(), nodeName);
+          //restartNode(nodeName, req.getHost());
           bbs.publishRemove(req);
           break;
         case RestartLocationRequest.FAIL:
@@ -138,7 +141,9 @@ public class DecisionPlugin extends SimplePlugin {
    * Retrieves the name of the node that the specified agent was running on.
    */
   private String getNodeName(MessageAddress agent) {
-    return "MiniNode2";
+    // Hard-coded to "EmptyNode" for now.  Will need to get the name for the
+    // TopologyService at some point.
+    return "EmptyNode";
   }
 
   /**
@@ -153,6 +158,8 @@ public class DecisionPlugin extends SimplePlugin {
         RestartLocationRequest req = new RestartLocationRequest();
         req.addAgent(hs.getAgentId());
         bbs.publishAdd(req);
+        hs.setState(HealthStatus.NORMAL);
+        bbs.publishChange(hs);
         break;
       case HealthStatus.DEGRADED:
         // Agent is alive but operating under stress.  For now just increase
@@ -172,18 +179,21 @@ public class DecisionPlugin extends SimplePlugin {
    * @param agents  Set of MessageAddresses of agents to be restarted
    * @param host    Name of restart host
    */
-  private void restartAgents(Set agents, String nodeName, String hostName) {
+  private void restartAgents(Set agents, String nodeName) {
     if (log.isInfoEnabled()) {
       StringBuffer msg = new StringBuffer("Initiating agent restart: agent(s)=[");
       for (Iterator it = agents.iterator(); it.hasNext();) {
         msg.append(((MessageAddress)it.next()).toString());
         if (it.hasNext()) msg.append(" ");
       }
-      msg.append("], hostName=" + hostName);
-      msg.append(", nodeName=" + nodeName);
+      msg.append("], nodeName=" + nodeName);
       log.info(msg.toString());
     }
-    // TODO: Add code to invoke restart by ActionPlugin
+    for (Iterator it = agents.iterator(); it.hasNext();) {
+      String agentName = ((MessageAddress)it.next()).toString();
+      AgentStart as = new AgentStart(nodeName, agentName);
+      bbs.publishAdd(as);
+    }
   }
 
   /**
@@ -243,12 +253,12 @@ public class DecisionPlugin extends SimplePlugin {
   }
 
  /**
-  * Predicate for Action objects
+  * Predicate for AgentStart objects
   */
-  private IncrementalSubscription actionStatus;
-  private UnaryPredicate actionStatusPredicate = new UnaryPredicate() {
+  private IncrementalSubscription agentStartStatus;
+  private UnaryPredicate agentStartStatusPredicate = new UnaryPredicate() {
     public boolean execute(Object o) {
-      return (o instanceof Action);
+      return (o instanceof AgentStart);
   }};
 
  /**
