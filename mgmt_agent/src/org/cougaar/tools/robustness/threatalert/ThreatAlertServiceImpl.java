@@ -25,6 +25,9 @@ import org.cougaar.core.service.AlarmService;
 import org.cougaar.core.service.SchedulerService;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.UIDService;
+import org.cougaar.core.service.community.CommunityService;
+import org.cougaar.core.service.community.Community;
+import org.cougaar.core.service.community.Entity;
 
 import org.cougaar.core.blackboard.BlackboardClientComponent;
 import org.cougaar.core.blackboard.IncrementalSubscription;
@@ -56,7 +59,12 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
 
   private LoggingService log; //logging service
   private UIDService uidService; //uid service
+  private CommunityService commSvc;
   private static Map instances = Collections.synchronizedMap(new HashMap()); //
+
+  public void setCommunityService(CommunityService cs) {
+    this.commSvc = cs;
+  }
 
   //save active current threat alerts
   private static Map threatAlerts = Collections.synchronizedMap(new HashMap());
@@ -137,6 +145,15 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
       listeners.remove(tal);
   }
 
+  private CommunityService getCommunityService() {
+    if (commSvc == null) {
+      commSvc =
+          (CommunityService) getServiceBroker().getService(this,
+          CommunityService.class, null);
+    }
+    return commSvc;
+  }
+
   /**
    * Publish the threat alert to all agents in given community with the given role.
    * @param ta
@@ -144,9 +161,27 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
    * @param role
    */
   public void sendAlert(ThreatAlert ta, String community, String role) {
-    AttributeBasedAddress target =
-        AttributeBasedAddress.getAttributeBasedAddress(community, "Role", role);
-    if(target.equals(agentId)) {
+    log.debug("sendAlert:" +
+              " alert=" + ta +
+              " community=" + community +
+              " role=" + role);
+    CommunityService cs = getCommunityService();
+    if (cs != null) {
+      Collection members =
+          commSvc.searchCommunity(community, "(Role=" + role + ")", false,
+                                  Community.AGENTS_ONLY, null);
+      log.debug("members=" + members);
+      if (members != null && !members.isEmpty()) {
+        for (Iterator it = members.iterator(); it.hasNext(); ) {
+          Entity entity = (Entity) it.next();
+          if (entity.getName().equals(agentId.toString())) {
+            addThreatAlert(ta); // add locally and notify local listeners
+            log.debug("add ThreatAlert locally");
+          }
+        }
+      }
+    }
+    /*if(target.equals(agentId)) {
       if(log.isInfoEnabled()) {
         log.info("publish ThreatAlert " + ta.toString());
       }
@@ -156,21 +191,26 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
       }finally {
         blackboard.closeTransactionDontReset();
       }
-    } else {
+    } else {*/
+
+      // Send to remote listeners
       RelayAdapter taiRelay = new RelayAdapter(agentId, ta, ta.getUID());
+      AttributeBasedAddress target =
+          AttributeBasedAddress.getAttributeBasedAddress(community, "Role", role);
       taiRelay.addTarget(target);
-      if (log.isInfoEnabled()) {
-        log.info("publish ThreatAlert, remote agent is " + target.toString() +
+      if (log.isDebugEnabled()) {
+        log.debug("publish ThreatAlert, remote agent is " + target.toString() +
                  " " + ta.toString());
       }
       try {
         blackboard.openTransaction();
         blackboard.publishAdd(taiRelay);
-      }
-      finally {
+      } catch (Exception ex) {
+        log.error(ex.getMessage(), ex);
+      } finally {
         blackboard.closeTransactionDontReset();
       }
-    }
+    //}
   }
 
   public ThreatAlert[] getCurrentThreats() {
@@ -193,15 +233,7 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
 
   public void execute() {
     for(Iterator it = taSub.getAddedCollection().iterator(); it.hasNext();) {
-      ThreatAlert ta = (ThreatAlert)it.next();
-      threatAlerts.put(ta.getUID(), ta);
-      ThreatAlertAlarm alarm = new ThreatAlertAlarm(ta);
-      alarmService.addRealTimeAlarm(alarm);
-      alertAlarms.add(alarm);
-      for(Iterator iter = listeners.iterator(); iter.hasNext();) {
-        ThreatAlertListener listener = (ThreatAlertListener)iter.next();
-        listener.newAlert(ta);
-      }
+      addThreatAlert((ThreatAlert)it.next());
     }
 
     if(!alertAlarms.isEmpty()) {
@@ -224,6 +256,21 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
           }
         }
       }
+    }
+  }
+
+  private void addThreatAlert(ThreatAlert ta) {
+    threatAlerts.put(ta.getUID(), ta);
+    ThreatAlertAlarm alarm = new ThreatAlertAlarm(ta);
+    alarmService.addRealTimeAlarm(alarm);
+    alertAlarms.add(alarm);
+    fireListeners(ta);
+  }
+
+  private void fireListeners(ThreatAlert ta) {
+    for(Iterator iter = listeners.iterator(); iter.hasNext();) {
+      ThreatAlertListener listener = (ThreatAlertListener)iter.next();
+      listener.newAlert(ta);
     }
   }
 
