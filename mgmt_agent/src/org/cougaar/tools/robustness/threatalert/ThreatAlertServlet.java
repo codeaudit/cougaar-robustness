@@ -23,8 +23,6 @@ import javax.servlet.http.*;
 import java.util.*;
 import java.io.*;
 
-import org.cougaar.tools.robustness.ma.HostLossThreatAlert;
-
 import org.cougaar.core.servlet.BaseServletComponent;
 import org.cougaar.core.servlet.ServletUtil;
 import org.cougaar.core.service.LoggingService;
@@ -235,7 +233,8 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
     } else {
       expire = getDateCondition("expire", conditions); //alert expire time
     }
-    ThreatAlert ta = new HostLossThreatAlert(agentId, level, start, expire, uidService.nextUID());
+    ThreatAlert ta = makeThreatAlert("org.cougaar.tools.robustness.ma.HostLossThreatAlert",
+                                     level, start, expire);
     //add assets to this alert
     for (int i = 0; i < 5; i++) {
       if (conditions.containsKey("type" + i)) {
@@ -248,6 +247,29 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
     threatAlertService.sendAlert(ta, (String) conditions.get("community"),
                                  (String) conditions.get("role"));
 
+  }
+
+  /**
+   * Create new threat alert.
+   * @param className
+   * @param level
+   * @param start
+   * @param duration
+   * @return
+   */
+  private ThreatAlert makeThreatAlert(String className, int level, Date start, Date expiration) {
+    ThreatAlert ta = null;
+    try {
+      ta = (ThreatAlert) Class.forName(className).newInstance();
+      ta.setSource(agentId);
+      ta.setSeverityLevel(level);
+      ta.setStartTime(start);
+      ta.setExpirationTime(expiration);
+      ta.setUID(uidService.nextUID());
+    } catch (Exception ex) {
+      log.error("Unable to create ThreatAlert: class=" + className, ex);
+    }
+    return ta;
   }
 
   private int getMonth(String month) {
