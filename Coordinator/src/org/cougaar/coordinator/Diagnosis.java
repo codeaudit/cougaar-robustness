@@ -67,7 +67,7 @@ public abstract class Diagnosis
 
    
     /** TRUE if the class attributes have been initialized */
-    static private boolean inited = false;
+    private boolean inited = false;
     
     /** The asset type of this object */
     private AssetType assetType = null;
@@ -82,7 +82,7 @@ public abstract class Diagnosis
     protected Set possibleValuesCloned;
 
     /** The service broker passed in  */
-    static private ServiceBroker serviceBroker = null;
+    private transient ServiceBroker serviceBroker = null;
         
     /** The vector of all local DiagnosisTechSpecs */
     //static private Vector diagnosisTechSpecs;
@@ -98,13 +98,13 @@ public abstract class Diagnosis
      *  Making this transient will cause the target to go to null when this object moves.
      *  So, we will need to check for null each time & lookup the local node if necessary.
      */
-    static transient private MessageAddress nodeId;
+    transient private MessageAddress nodeId;
     
     /** The address of this agent */
-    static private MessageAddress agentId = null;
+    private MessageAddress agentId = null;
     
     /** UID Service */
-    static private UIDService uidService;
+    private transient UIDService uidService;
 
     /** UID for this relayable object */
     private UID uid = null;
