@@ -6,27 +6,32 @@
 
 package org.cougaar.coordinator.selection;
 
-import org.cougaar.coordinator.*;
-
 import org.cougaar.core.util.UID;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.util.UnaryPredicate;
 import java.util.Collection;
 import java.util.Iterator;
 import org.cougaar.core.persist.NotPersistable;
+import org.cougaar.coordinator.Action;
+import org.cougaar.coordinator.techspec.AssetID;
 
 /**
  *
  * @author  David Wells - OBJS
  * @version 
  */
-public class ActionPatience extends DefenseTimeCondition  implements NotPersistable {
-    
+public class ActionPatience implements NotPersistable {
+
+    AssetID assetID;
+    Action action;
     boolean expired = false;
+    long timeoutTime;
 
     /** Creates new ActionPatience */
-    public ActionPatience(String defenseName, String assetName, String assetType, long time) {
-        super (assetType, assetName,defenseName,  time);
+    public ActionPatience(Action action, AssetID assetID, long timeoutTime) {
+        this.action = action;
+        this.assetID = assetID;
+        this.timeoutTime = timeoutTime;
     }
 
     public boolean expired() {
@@ -39,7 +44,8 @@ public class ActionPatience extends DefenseTimeCondition  implements NotPersista
                     (o instanceof ActionPatience);
             }
         };
-    
+
+    /*
     public static ActionPatience find(String defenseName, String expandedName, BlackboardService blackboard) {
 
         ActionPatience dc = null;
@@ -69,5 +75,6 @@ public class ActionPatience extends DefenseTimeCondition  implements NotPersista
         }
         return null;
     }  
+*/
 
 }

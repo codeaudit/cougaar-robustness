@@ -26,6 +26,10 @@
 package org.cougaar.coordinator.selection;
 
 import org.cougaar.core.persist.NotPersistable;
+import org.cougaar.util.UnaryPredicate;
+
+import java.util.Set;
+import java.util.HashSet;
 
 /**
  *
@@ -34,41 +38,44 @@ import org.cougaar.core.persist.NotPersistable;
 public class SelectedAction implements NotPersistable {
     /** Base class for SelectedAction(s) with varius kinds of preconditions */
     
-    private String defenseName;
+    private String actionName;
     private String expandedAssetName;
-    private String defAction;
-    private String monAction; 
+    private Set actionVariants;
     private Precondition precondition;
     
-    public SelectedAction(String defenseName, String expandedAssetName, String monAction, String defAction) {
-        this.defenseName = defenseName;
+    public SelectedAction(String expandedAssetName, String actionName, Set actionVariants) {
+        this.actionName = actionName;
         this.expandedAssetName = expandedAssetName;
-        this.defAction = defAction;
-        this.monAction = monAction;
+        this.actionVariants = actionVariants;
+        this.precondition = null;
     }
     
-    public SelectedAction(String defenseName, String expandedAssetName, String monAction, String defAction, Precondition precondition) {
-        this.defenseName = defenseName;
+    public SelectedAction(String expandedAssetName, String actionName, Set actionVariants, Precondition precondition) {
+        this.actionName = actionName;
         this.expandedAssetName = expandedAssetName;
-        this.defAction = defAction;
-        this.monAction = monAction;
+        this.actionVariants = actionVariants;
         this.precondition = precondition;
     }
     
-    public String getDefenseName() {
-        return defenseName;
+    public String getActionName() {
+        return actionName;
     }
     
     public String getExpandedAssetName() {
         return expandedAssetName;
     }
     
-    public String getDefenseAction() {
-        return defAction;
+    public Set getActionVariants() {
+        return actionVariants;
     }
     
-    public String getMonitoringAction() {
-        return monAction;
-    }
-    
+    public static UnaryPredicate pred = new UnaryPredicate() {
+        public boolean execute(Object o) {
+            if ( o instanceof SelectedAction ) {
+                return true ;
+            }
+            return false ;
+        }
+     };
+     
 }

@@ -29,10 +29,26 @@ package org.cougaar.coordinator.selection;
  *  Used to control aspects of the Defense Selection plugin
  * 
  */
-public class DefenseSelectionKnob {
+
+import org.cougaar.util.UnaryPredicate;
+
+public class ActionSelectionKnob {
     
     /** Creates a new instance of DefenseSelectionKnob */
-    public DefenseSelectionKnob () {
+    public ActionSelectionKnob() {
     }
-    
+
+    protected String getMultiplicityPolicy() { return "Single"; }
+
+    protected String getRankingPolicy() { return "ExpectedCBRatio"; }
+
+    public static UnaryPredicate pred = new UnaryPredicate() {
+            public boolean execute(Object o) {
+                if ( o instanceof ActionSelectionKnob ) {
+                    return true ;
+                }
+                return false ;
+            }
+         };
+         
 }
