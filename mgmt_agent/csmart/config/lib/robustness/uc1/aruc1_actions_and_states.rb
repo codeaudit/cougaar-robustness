@@ -183,7 +183,6 @@ module Cougaar
       end
     end
 
-
     class RemoveAgents < Cougaar::Action
       PRIOR_STATES = ["SocietyLoaded"]
       DOCUMENTATION = Cougaar.document {
@@ -202,11 +201,39 @@ module Cougaar
         @agentNames.each do |myAgent|
           @run.society.each_agent do |agent|
 	    if agent.name == myAgent
-	    puts "#{myAgent}"
 	      node = agent.node
-	    puts "#{node.uri}/$#{node.name}/ar?operation=Remove&mobileagent=#{myAgent}&orignode=#{node.name}"
-	      result, uri = Cougaar::Communications::HTTP.get(node.uri+"/$"+node.name+"/ar?operation=Remove&mobileagent=#{myAgent}&orignode=#{node.name}")
+	      #puts "#{node.uri}/$#{node.name}/ar?operation=kill&mobileagent=#{myAgent}&orignode=#{node.name}"
+	      result, uri = Cougaar::Communications::HTTP.get("#{node.uri}/$#{node.name}/ar?operation=kill&mobileagent=#{myAgent}&orignode=#{node.name}")
 	    #node.remove_agent(agent)
+	      break
+	    end
+	  end
+        end
+      end
+    end
+
+    class RestartAgents < Cougaar::Action
+      PRIOR_STATES = ["SocietyLoaded"]
+      DOCUMENTATION = Cougaar.document {
+        @description = "Peform forced restart of agents"
+        @parameters = [
+          {:agents => "required, The agents to be restarted."}
+        ]
+        @example = "do_action 'RestartAgents', '1-35-ARBN, GlobalAir'"
+	}
+
+      def initialize(run, *agents)
+        super(run)
+	@agentNames = agents
+      end
+      def perform
+        @agentNames.each do |myAgent|
+          @run.society.each_agent do |agent|
+	    if agent.name == myAgent
+	      node = agent.node
+	      #puts "#{node.uri}/$#{node.name}/ar?operation=restart&mobileagent=#{myAgent}&orignode=#{node.name}"
+	      result, uri = Cougaar::Communications::HTTP.get("#{node.uri}/$#{node.name}/ar?operation=restart&mobileagent=#{myAgent}&orignode=#{node.name}")
+	      #node.remove_agent(agent)
 	      break
 	    end
 	  end
@@ -228,7 +255,8 @@ module Cougaar
         @run.society.each_agent do |agent|
           if agent.name =~ /.*ARManager.*/
             if @myCommunity == nil || agent.name =~ /.*#{@myCommunity}.*/
-	      result, uri = Cougaar::Communications::HTTP.get(agent.uri+"/ar?operation=modcommattr&id=#{@myAttrId}&value=#{@myAttrValue}")
+	      node = agent.node
+	      result, uri = Cougaar::Communications::HTTP.get("#{node.uri}/$#{node.name}/ar?operation=modcommattr&id=#{@myAttrId}&value=#{@myAttrValue}")
 	    end
           end
 	end

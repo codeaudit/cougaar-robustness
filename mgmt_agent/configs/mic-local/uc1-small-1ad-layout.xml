@@ -4,12 +4,15 @@
   <host name='HOST1'>
     <facet enclave='SMALL'/>
     <node name='SMALL-MGMT-NODE'>
-      <facet role='NameServer'/>
       <facet role='AR-Management'/>
     </node>
   </host>
   <host name='HOST2'>
     <facet enclave='SMALL'/>
+    <node name='SMALL-MGMT-NODE'>
+      <facet role='NameServer'/>
+      <facet role='AR-Management'/>
+    </node>
     <node name='FWD-NODE'>
       <facet role="NameServer"/>
       <agent name='1-35-ARBN.2-BDE.1-AD.ARMY.MIL'/>
@@ -84,6 +87,16 @@
       <agent name='EuroGround.TRANSCOM.MIL'/>
       <agent name='EuroAir.TRANSCOM.MIL'/>
     </node>
+    <node name='AmmoTRANSCOM-NODE'>
+      <agent name='AmmoTRANSCOM.TRANSCOM.MIL'/>
+      <agent name='AmmoSea.TRANSCOM.MIL'/>
+      <agent name='AmmoShipPacker.TRANSCOM.MIL'/>
+      <agent name='AmmoConusGround.TRANSCOM.MIL'/>
+      <agent name='AmmoTheaterGround.TRANSCOM.MIL'/>
+    </node>
+  </host>
+  <host name='HOST5'>
+    <facet enclave='SMALL'/>
     <node name='ConusTRANSCOM-NODE'>
       <agent name='TRANSCOM-20.TRANSCOM.MIL'/>
       <agent name='ConusTRANSCOM.TRANSCOM.MIL'/>
@@ -95,13 +108,6 @@
       <agent name='ConusGroundA.TRANSCOM.MIL'/>
       <agent name='TheaterGroundA.TRANSCOM.MIL'/>
       <agent name='TheaterGroundB.TRANSCOM.MIL'/>
-    </node>
-    <node name='AmmoTRANSCOM-NODE'>
-      <agent name='AmmoTRANSCOM.TRANSCOM.MIL'/>
-      <agent name='AmmoSea.TRANSCOM.MIL'/>
-      <agent name='AmmoShipPacker.TRANSCOM.MIL'/>
-      <agent name='AmmoConusGround.TRANSCOM.MIL'/>
-      <agent name='AmmoTheaterGround.TRANSCOM.MIL'/>
     </node>
   </host>
 </society>

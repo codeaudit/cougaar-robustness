@@ -59,23 +59,18 @@ Cougaar.new_experiment("ARUC1_Kill_1_Agent").run(1) {
     end
   end
 
-  # After CommunityReady event is received wait for persistence
-  wait_for "CommunitiesReady", ["SMALL-COMM"]
-  do_action "Sleep", 5.minutes
-
-  # Kill single agent
-  do_action "RemoveAgents", "1-35-ARBN"
-
-  # Wait for agent restart to complete
-  wait_for "CommunitiesReady", ["SMALL-COMM"]
-  do_action "Sleep", 10.minutes
-
   wait_for  "GLSConnection", true
   wait_for  "NextOPlanStage"
   do_action "Sleep", 30.seconds
   do_action "PublishNextStage"
 
   do_action "UnleashDefenses"
+
+  # Allow time for initial persistence snapshot
+  do_action "Sleep", 5.minutes
+
+  # Kill single agent
+  do_action "RemoveAgents", "1-35-ARBN.2-BDE.1-AD.ARMY.MIL"
 
   wait_for  "SocietyQuiesced"  do
     wait_for  "Command", "shutdown"
