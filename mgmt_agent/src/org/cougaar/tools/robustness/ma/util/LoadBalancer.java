@@ -17,9 +17,8 @@
  */
 package org.cougaar.tools.robustness.ma.util;
 
-import org.cougaar.tools.robustness.ma.controllers.RobustnessController;
-
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorRequest;
+import org.cougaar.tools.robustness.ma.controllers.RobustnessController;
 
 import org.cougaar.core.blackboard.BlackboardClientComponent;
 import org.cougaar.core.blackboard.IncrementalSubscription;
@@ -38,6 +37,13 @@ import org.cougaar.core.util.UID;
 
 import org.cougaar.util.UnaryPredicate;
 
+import org.cougaar.scalability.util.CougaarSociety;
+import org.cougaar.scalability.util.CougaarNode;
+import org.cougaar.scalability.util.CougaarAgent;
+import com.boeing.pw.mct.exnihilo2002.CSParser;
+import com.boeing.pw.mct.exnihilo.plugin.LoadBalanceRequest;
+import com.boeing.pw.mct.exnihilo.plugin.LoadBalanceRequestPredicate;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Collection;
@@ -47,6 +53,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 
 /**
  * Provides interface for initiating load balancing across community nodes.
@@ -57,6 +65,8 @@ public class LoadBalancer extends BlackboardClientComponent {
   protected EventService eventService;
   private MoveHelper moveHelper;
   private RobustnessController controller;
+  //private HashMap origSocietys = new HashMap();
+  private CougaarSociety origSociety = null;
 
   // Subscription to HealthMonitorRequests for load balancing
   private IncrementalSubscription healthMonitorRequests;
@@ -68,6 +78,9 @@ public class LoadBalancer extends BlackboardClientComponent {
       }
       return false;
   }};
+
+  //Subscription to LoadBalanceRequests for load balancing results
+  private IncrementalSubscription loadBalanceRequests;
 
 /**
  * Constructor requires BindingSite to initialize needed services.
@@ -111,14 +124,25 @@ public class LoadBalancer extends BlackboardClientComponent {
   public void setupSubscriptions() {
     healthMonitorRequests =
         (IncrementalSubscription)blackboard.subscribe(healthMonitorRequestPredicate);
+    loadBalanceRequests =
+     (IncrementalSubscription) blackboard.subscribe(new LoadBalanceRequestPredicate(true));
   }
 
   public void execute() {
     for (Iterator it = healthMonitorRequests.getAddedCollection().iterator(); it.hasNext(); ) {
       HealthMonitorRequest hsm = (HealthMonitorRequest) it.next();
-      logger.debug("Received HealthMonitorRequest:" + hsm);
       if (hsm.getRequestType() == HealthMonitorRequest.LOAD_BALANCE) {
-        doLoadBalance();
+        origSociety = doLoadBalance();
+      }
+    }
+
+    for (Iterator it = loadBalanceRequests.getChangedCollection().iterator(); it.hasNext(); ){
+      logger.debug("orig society: \n" + origSociety.toXML());
+      LoadBalanceRequest lbr = (LoadBalanceRequest)it.next();
+      if(lbr.isResult()) {
+        CougaarSociety society = lbr.getCougaarSociety();
+        logger.debug("result society: \n" + society.toXML());
+        moveAgents(origSociety, society);
       }
     }
   }
@@ -126,11 +150,112 @@ public class LoadBalancer extends BlackboardClientComponent {
   /**
    * Submit request to EN for new community laydown and perform required moves.
    */
-  public void doLoadBalance() {
+  public CougaarSociety doLoadBalance() {
     // TODO: submit request to EN plugin and send move requests to moveHelper
     //       upon receipt of EN response
-    //controller.getCompleteStatus()
+    logger.info("doLoadBalance");
+    String society = controller.getCompleteStatus();
+    String enSociety = getXmlForEN(society);
+    CougaarSociety cs = loadSocietyFromXML(enSociety);
+    LoadBalanceRequest loadBalReq = new LoadBalanceRequest(cs);
+    logger.debug("publish add LoadBalanceRequest of " + agentId);
+    blackboard.publishAdd(loadBalReq);
+    return cs;
   }
+
+  private void moveAgents(CougaarSociety origSociety, CougaarSociety newSociety){
+    String society = controller.getCompleteStatus();
+    int index = society.indexOf("<community name=");
+    index = society.indexOf("\"", index);
+    String comm = society.substring(index + 1, society.indexOf("\"", index+1));
+    for(Iterator it = newSociety.getNodes(); it.hasNext(); ) {
+      CougaarNode node = (CougaarNode)it.next();
+      for(Iterator ait = node.getAgents(); ait.hasNext();) {
+        CougaarAgent agent = (CougaarAgent)ait.next();
+        String name = agent.getName();
+        CougaarAgent oldAgent = origSociety.getAgent(name);
+        String oldNode = oldAgent.getNode().getName();
+        if(!(agent.getNode().getName().equals(oldNode))) {
+          logger.debug("move agent " + name + " from " + oldNode + " to " + node.getName() + " in " + comm);
+          moveHelper.moveAgent(name, oldNode, node.getName(), comm);
+        }
+      }
+    }
+  }
+
+  /**
+   * Get the society xml file especially for EN.
+   * @param society original society xml
+   * @return
+   */
+  private String getXmlForEN(String society) {
+    StringBuffer sb = new StringBuffer();
+    sb.append("<?xml version=\"1.0\"?>\n" +
+        "<CougaarSociety identifier=\"baseline\">\n");
+    int index = society.indexOf("<nodes count=");
+    index = society.indexOf("\"", index);
+    int nodesCount = Integer.parseInt(society.substring(index+1, society.indexOf("\"", index+1)));
+    index = society.indexOf("<agents count=");
+    index = society.indexOf("\"", index);
+    int agentsCount = Integer.parseInt(society.substring(index+1, society.indexOf("\"", index+1)));
+    for(int i=0; i<nodesCount; i++) {
+      index = society.indexOf("<node name=");
+      index = society.indexOf("\"", index);
+      society = society.substring(index);
+      String nodeName = society.substring(1, society.indexOf("\"", 1));
+      sb.append("  <CougaarNode name=\"" + nodeName + "\">\n");
+      sb.append("    <Attribute name=\"Memory\" value=\"1024\"/>\n");
+      sb.append("    <Attribute name=\"ProbabilityOfFailure\" value=\"0.2\"/>\n");
+      sb.append("    <Attribute name=\"CPU\" value=\"900\"/>\n");
+      sb.append("    <Attribute name=\"OperatingSystem\" value=\"LINUX\"/>\n");
+      String tmp = society;
+      for(int j=0; j<agentsCount; j++) {
+        index = tmp.indexOf("<agent name=");
+        index = tmp.indexOf("\"", index);
+        tmp = tmp.substring(index);
+        String agentName = tmp.substring(1, tmp.indexOf("\"", 1));
+        index = tmp.indexOf("node=");
+        index = tmp.indexOf("\"", index);
+        tmp = tmp.substring(index);
+        String parent = tmp.substring(1, tmp.indexOf("\"", 1));
+        if(parent.equals(nodeName)) {
+          sb.append("    <CougaarAgent name=\"" + agentName + "\">\n");
+          sb.append("      <Requirement name=\"CPU\" value=\"50\"/>\n");
+          sb.append("      <Requirement name=\"Memory\" value=\"30\"/>\n");
+          sb.append("      <Requirement name=\"OperatingSystem\" value=\"LINUX\"/>\n");
+          sb.append("      <Requirement name=\"BandwidthReceived_" + agentName + "\" value=\"3\"/>\n");
+          sb.append("      <Requirement name=\"BandwidthSent_" + agentName + "\" value=\"3\"/>\n");
+          sb.append("    </CougaarAgent>\n");
+        }
+      }
+      sb.append("  </CougaarNode>\n");
+    }
+    sb.append("</CougaarSociety>");
+    //origSocietys.put(comm, sb.toString());
+    return sb.toString();
+  }
+
+  /**
+   * Use CSParser to load the cougaar society from given xml file.
+   * @param xml
+   * @return
+   */
+  private CougaarSociety loadSocietyFromXML(String xml) {
+    CSParser csp = new CSParser();
+    csp.echoStruct_ = false;    // be quiet
+    CougaarSociety society  = null;
+    try {
+        BufferedInputStream bis = new BufferedInputStream(new ByteArrayInputStream(xml.getBytes()));
+        society = csp.parseCSXML(bis);
+        bis.close();
+    }
+    catch (Exception e) {
+      e.printStackTrace();
+    }
+
+    return society;
+  } // loadSocietyFromXML
+
 
   /**
    * Sends Cougaar event via EventService.

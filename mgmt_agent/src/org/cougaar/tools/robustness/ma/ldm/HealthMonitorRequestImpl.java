@@ -148,6 +148,7 @@ public class HealthMonitorRequestImpl
       case HealthMonitorRequest.RESTART: return "RESTART";
       case HealthMonitorRequest.MOVE: return "MOVE";
       case HealthMonitorRequest.GET_STATUS: return "GET_STATUS";
+      case HealthMonitorRequest.LOAD_BALANCE: return "LOAD_BALANCE";
     }
     return "INVALID_VALUE";
   }

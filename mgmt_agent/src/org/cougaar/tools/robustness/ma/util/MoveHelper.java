@@ -78,10 +78,10 @@ public class MoveHelper extends BlackboardClientComponent {
 
   class MoveQueueEntry {
     String agent;
-    String origNode;
+    String destNode;
     MoveQueueEntry(String a, String n) {
       agent = a;
-      origNode = n;
+      destNode = n;
     }
   }
 
@@ -183,52 +183,59 @@ public class MoveHelper extends BlackboardClientComponent {
       if (hsm.getRequestType() == HealthMonitorRequest.MOVE) {
         String agentNames[] = hsm.getAgents();
         for (int i = 0; i < agentNames.length; i++) {
-          moveAgent(agentNames[i], hsm.getOriginNode());
+          moveAgent(agentNames[i], hsm.getDestinationNode());
         }
       }
     }
   }
 
-  public void moveAgent(String agentName, String origNode, String destNode, String communityName) {
+  public void moveAgent(final String agentName, final String origNode, final String destNode, final String communityName) {
     logger.debug("MoveAgent:" +
                 " origNode=" + origNode +
                 " destNode=" + destNode +
                 " agent=" + agentName);
-    if (agentId.toString().equals(destNode)) {
-      moveAgent(agentName, origNode);
+    if (agentId.toString().equals(origNode)) {
+      moveAgent(agentName, destNode);
     } else {
-      UIDService uidService = (UIDService) getServiceBroker().getService(this, UIDService.class, null);
-      HealthMonitorRequest hmr =
-          new HealthMonitorRequestImpl(agentId,
-          communityName,
-          HealthMonitorRequest.MOVE,
-          new String[]{agentName},
-          origNode,
-          destNode,
-          uidService.nextUID());
-      RelayAdapter hmrRa =
-          new RelayAdapter(agentId, hmr, hmr.getUID());
-      hmrRa.addTarget(SimpleMessageAddress.
-                      getSimpleMessageAddress(destNode));
-      if (logger.isInfoEnabled()) {
-        logger.debug("Publishing HealthMonitorRequest:" +
-                    " request=" + hmr.getRequestTypeAsString() +
-                    " targets=" + targetsToString(hmrRa.getTargets()) +
-                    " community-" + hmr.getCommunityName() +
-                    " agents=" + arrayToString(hmr.getAgents()) +
-                    " origNode=" + hmr.getOriginNode() +
-                    " destNode=" + hmr.getDestinationNode());
-      }
-      blackboard.openTransaction();
-      blackboard.publishAdd(hmrRa);
-      blackboard.closeTransaction();
+      ThreadService ts =
+        (ThreadService) getServiceBroker().getService(this, ThreadService.class, null);
+      Schedulable pingThread = ts.getThread(this, new Runnable() {
+        public void run() {
+          UIDService uidService = (UIDService) getServiceBroker().getService(this,
+              UIDService.class, null);
+          HealthMonitorRequest hmr =
+              new HealthMonitorRequestImpl(agentId,
+                                           communityName,
+                                           HealthMonitorRequest.MOVE,
+                                           new String[] {agentName},
+                                           origNode,
+                                           destNode,
+                                           uidService.nextUID());
+          RelayAdapter hmrRa =
+              new RelayAdapter(agentId, hmr, hmr.getUID());
+          hmrRa.addTarget(SimpleMessageAddress.
+                          getSimpleMessageAddress(origNode));
+          if (logger.isInfoEnabled()) {
+            logger.debug("Publishing HealthMonitorRequest:" +
+                         " request=" + hmr.getRequestTypeAsString() +
+                         " targets=" + targetsToString(hmrRa.getTargets()) +
+                         " community-" + hmr.getCommunityName() +
+                         " agents=" + arrayToString(hmr.getAgents()) +
+                         " origNode=" + hmr.getOriginNode() +
+                         " destNode=" + hmr.getDestinationNode());
+          }
+          blackboard.openTransaction();
+          blackboard.publishAdd(hmrRa);
+          blackboard.closeTransaction();
+        }
+    }, "PingThread");
+    getServiceBroker().releaseService(this, ThreadService.class, ts);
+    pingThread.start();
     }
   }
 
-  protected void moveAgent(String agentName, String origNode) {
-    logger.debug("MoveAgent:" +
-                " agent=" + agentName);
-    moveQueue.add(new MoveQueueEntry(agentName, origNode));
+  protected void moveAgent(String agentName, String destNode) {
+    moveQueue.add(new MoveQueueEntry(agentName, destNode));
   }
 
   private long now() { return (new Date()).getTime(); }
@@ -248,38 +255,49 @@ public class MoveHelper extends BlackboardClientComponent {
         MoveQueueEntry mqe = (MoveQueueEntry) moveQueue.remove(0);
         final MessageAddress agent =
             SimpleMessageAddress.getSimpleMessageAddress(mqe.agent);
-        final MessageAddress origNode =
-            SimpleMessageAddress.getSimpleMessageAddress(mqe.origNode);
+        final MessageAddress destNode =
+            SimpleMessageAddress.getSimpleMessageAddress(mqe.destNode);
         Long moveExpiration = new Long(now() + MOVE_TIMEOUT);
         movesInProcess.put(agent, moveExpiration);
         try {
+          ThreadService ts =
+          (ThreadService) getServiceBroker().getService(this, ThreadService.class, null);
+          Schedulable pingThread = ts.getThread(this, new Runnable() {
+          public void run() {
 
-          Object ticketId = mobilityFactory.createTicketIdentifier();
-          MoveTicket moveTicket = new MoveTicket(ticketId,
-                                                 agent,     // agent to move
-                                                 origNode,  // current node
-                                                 agentId,   // dest node
-                                                 false);    // forced restart
-          UID acUID = uidService.nextUID();
-          myUIDs.add(acUID);
-          AgentControl ac =
-              mobilityFactory.createAgentControl(acUID, agentId, moveTicket);
-          moveInitiated(agent);
-          event("Moving agent: agent=" + agent + " orig=" + origNode + " dest=" + agentId);
-          blackboard.publishAdd(ac);
-          if (logger.isInfoEnabled()) {
-            StringBuffer sb =
-                new StringBuffer("Publishing AgentControl:" +
-                                 " myUid=" + myUIDs.contains(ac.getOwnerUID()) +
-                                 " status=" + ac.getStatusCodeAsString());
-            if (ac.getAbstractTicket()instanceof MoveTicket) {
-              MoveTicket mt = (MoveTicket) ac.getAbstractTicket();
-              sb.append(" agent=" + mt.getMobileAgent() +
-                        " origNode=" + mt.getOriginNode() +
-                        " destNode=" + mt.getDestinationNode());
+            Object ticketId = mobilityFactory.createTicketIdentifier();
+            MoveTicket moveTicket = new MoveTicket(ticketId,
+                agent, // agent to move
+                agentId, //current node
+                destNode, //destination node
+                false); // forced restart
+            UID acUID = uidService.nextUID();
+            myUIDs.add(acUID);
+            AgentControl ac =
+                mobilityFactory.createAgentControl(acUID, agentId, moveTicket);
+            moveInitiated(agent);
+            event("Moving agent: agent=" + agent + " orig=" + agentId +
+                  " dest=" + destNode);
+            blackboard.openTransaction();
+            blackboard.publishAdd(ac);
+            blackboard.closeTransaction();
+            if (logger.isInfoEnabled()) {
+              StringBuffer sb =
+                  new StringBuffer("Publishing AgentControl:" +
+                                   " myUid=" + myUIDs.contains(ac.getOwnerUID()) +
+                                   " status=" + ac.getStatusCodeAsString());
+              if (ac.getAbstractTicket()instanceof MoveTicket) {
+                MoveTicket mt = (MoveTicket) ac.getAbstractTicket();
+                sb.append(" agent=" + mt.getMobileAgent() +
+                          " origNode=" + mt.getOriginNode() +
+                          " destNode=" + mt.getDestinationNode());
+              }
+              logger.debug(sb.toString());
             }
-            logger.debug(sb.toString());
           }
+        }, "PingThread");
+        getServiceBroker().releaseService(this, ThreadService.class, ts);
+        pingThread.start();
         } catch (Exception ex) {
           logger.error("Exception in agent move", ex);
         }
@@ -327,6 +345,16 @@ public class MoveHelper extends BlackboardClientComponent {
                               SUCCESS);
               break;
             case AgentControl.ALREADY_EXISTS:
+              event("Move successful:" +
+                    " agent=" + moveTicket.getMobileAgent() +
+                    " dest=" + moveTicket.getDestinationNode() +
+                    " status=" + ac.getStatusCodeAsString());
+              blackboard.publishRemove(ac);
+              myUIDs.remove(ac.getOwnerUID());
+              moveComplete(moveTicket.getMobileAgent(),
+                              SUCCESS);
+              break;
+            case AgentControl.MOVED:
               event("Move successful:" +
                     " agent=" + moveTicket.getMobileAgent() +
                     " dest=" + moveTicket.getDestinationNode() +
@@ -457,9 +485,7 @@ public class MoveHelper extends BlackboardClientComponent {
 
     public void expire() {
       if (!expired) {
-        blackboard.openTransaction();
         moveNext();
-        blackboard.closeTransaction();
       }
       alarmService.addRealTimeAlarm(new MoveTimer(TIMER_INTERVAL));
     }

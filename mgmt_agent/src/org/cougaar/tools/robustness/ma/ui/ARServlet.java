@@ -202,6 +202,10 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
               action = "removeTicket";
               dest = name;
             }
+            if(value.equals("Load Balance")) {
+              action = "loadBalance";
+              dest = name;
+            }
           }
         };
       // visit the URL parameters
@@ -227,6 +231,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
           try {
               AgentControl ac = createAgentControl(command);
               addAgentControl(ac);
+              //publishHealthMonitorMove("1AD-ROBUSTNESS-COMM");
           } catch (Exception e) {
             writeFailure(e);
             return;
@@ -247,6 +252,10 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
             writeFailure(e);
             return;
         }
+        writeSuccess(format);
+      }
+      else if(command.equals("loadBalance")) {
+        loadBalance(value);
         writeSuccess(format);
       }
     }
@@ -280,10 +289,14 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     private void showCommunityData(String format, String community)
     {
       String xml = displayStatus(community);
+      if(xml == null) {
+        writeNullResult();
+        return;
+      }
       currentCommunityXML = xml;
 
       if(format.equals("xml"))
-        showXML(xml);
+        out.write(xml);
       else
       {
         xml = xml.substring(0, xml.indexOf("</community>"));
@@ -302,6 +315,10 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     private void controlCommunity(String format, String community)
     {
       String xml = displayStatus(community);
+      if(xml == null) {
+        writeNullResult();
+        return;
+      }
       currentCommunityXML = xml;
       writeSuccess(format);
     }
@@ -314,10 +331,14 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     private void showCommunityAttributes(String format, String community)
     {
       String xml = displayStatus(community);
+      if(xml == null) {
+        writeNullResult();
+        return;
+      }
       //String xml = currentCommunityXML;
       currentCommunityXML = xml;
       if(format.equals("xml"))
-        showXML(xml);
+        out.write(xml);
       else
       {
         String html = getHTMLFromXML(xml, "communityAttributes.xsl");
@@ -325,18 +346,12 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
       }
     }
 
-    private void showXML(String xml)
-    {
-      out.print("<html><body>\n<p><br>\n");
-      out.print(convertSignals(xml));
-      out.print("</p>\n</body></html>\n");
-    }
-
     private void writeSuccess(String format){
       Collection col = queryAgentControls();
       String xml;
-      if(col.size() > 0)
+      if(col.size() > 0) {
         xml = getAgentControlXML(col);
+      }
       else
         xml = currentCommunityXML;
       if(format.equals("xml"))
@@ -367,6 +382,10 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
             HttpServletResponse.SC_BAD_REQUEST,
             new String(baos.toByteArray()));
         out.close();
+      }
+
+      private void writeNullResult() {
+        out.print("<html><body>Getting response from health monitor is failed.</body></html>");
       }
   }
 
@@ -471,23 +490,50 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     return ret;
   }
 
+  private void loadBalance(String communityName) {
+    HealthMonitorRequest hmr =
+        new HealthMonitorRequestImpl(agentId,
+                                     communityName,
+                                     HealthMonitorRequest.LOAD_BALANCE,
+                                     null,
+                                     null,
+                                     null,
+                                     uidService.nextUID());
+    MessageAddress target = nodeId != null
+        ? nodeId
+        : agentId;
 
-  /**
-   * To show raw xml in a html page, convert several specific signals.
-   * @param xml the given xml string
-   * @return converted xml
-   */
-  private String convertSignals(String xml)
-  {
-    String tmp1 = xml.replaceAll("<", "&lt;");
-    String tmp2 = tmp1.replaceAll(">", "&gt;");
-    String tmp3 = tmp2.replaceAll("\n", "<br>");
-    String tmp4 = tmp3.replaceAll(" ", "&nbsp;");
-    return tmp4;
+    if (target.equals(agentId)) {
+        if (log.isInfoEnabled()) {
+          log.info("publishing HealthMonitorRequest: " + hmr.getRequestTypeAsString());
+        }
+        try {
+          bb.openTransaction();
+          bb.publishAdd(hmr);
+        } finally {
+          bb.closeTransactionDontReset();
+        }
+    } else {
+      // send to remote agent using Relay
+      RelayAdapter hmrRa =
+          new RelayAdapter(agentId, hmr, hmr.getUID());
+      hmrRa.addTarget(target);
+      if (log.isInfoEnabled()) {
+        log.info("publishing HealthMonitorRequest: " +
+                 hmr.getRequestTypeAsString());
+      }
+      try {
+        bb.openTransaction();
+        bb.publishAdd(hmrRa);
+      }
+      finally {
+        bb.closeTransactionDontReset();
+      }
+   }
   }
 
   /**
-   * Get all communities from whit page service and save them in a list.
+   * Get all robustness communities from whit page service and save them in a list.
    * @return the list of all community names
    */
   private List getAllCommunityNames() {
@@ -583,7 +629,8 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
         }
         hmrResp = (HealthMonitorResponse)hmrRa.getResponse();
       }
-
+if(hmrResp.getStatus() == hmrResp.FAIL)
+  log.error("try to get health monitor response: " + hmrResp.getStatusAsString());
       return (String)hmrResp.getContent();
     }
 
@@ -675,4 +722,44 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     }catch(Exception e){e.printStackTrace();}
     System.out.println(html);
   }
+
+ /* private void publishHealthMonitorMove(String communityName) {
+    HealthMonitorRequest hmr =
+          new HealthMonitorRequestImpl(agentId,
+          communityName,
+          HealthMonitorRequest.MOVE,
+          new String[]{mobileAgent},
+          origNode,
+          destNode,
+          uidService.nextUID());
+      MessageAddress target = MessageAddress.getMessageAddress(destNode);
+      MessageAddress orig = MessageAddress.getMessageAddress(origNode);
+      if (target.equals(agentId)) {
+        if (log.isInfoEnabled()) {
+          log.info("Publishing HealthMonitorRequest: " + hmr.getRequestTypeAsString());
+        }
+        try {
+          bb.openTransaction();
+          bb.publishAdd(hmr);
+        } finally {
+          bb.closeTransactionDontReset();
+        }
+      } else {
+        // send to remote agent using Relay
+        RelayAdapter hmrRa =
+            new RelayAdapter(agentId, hmr, hmr.getUID());
+        hmrRa.addTarget(orig);
+        if (log.isInfoEnabled()) {
+          log.info("Publishing HealthMonitorRequest Relay:" +
+                   " target=" + hmrRa.getTargets() + " " +
+                   hmr.getRequestTypeAsString());
+        }
+        try {
+          bb.openTransaction();
+          bb.publishAdd(hmrRa);
+        } finally {
+          bb.closeTransactionDontReset();
+        }
+      }
+  }*/
 }

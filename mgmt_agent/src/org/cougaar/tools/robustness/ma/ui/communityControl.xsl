@@ -14,6 +14,8 @@
   </head>
 
   <script language="JavaScript">
+     //This function is called when user select one mobile agent. It fills the original
+     //node field and disable relative node in destination.
      function changeAgent() {
        var x = document.forms.myForm1.mobileagent;
        var node = x.options[x.selectedIndex].label;
@@ -32,6 +34,8 @@
        }
      }
 
+     //This option is called when user change selection in option field. If user
+     //select 'remove', disable the destination field.
      function changeOp() {
        var x = document.forms.myForm1.operation;
        var op = x.options[x.selectedIndex].text;
@@ -44,16 +48,25 @@
   </script>
 
   <body>
-  <form name="myForm">
     <table border="0" width="98%">
-      <tr><td align="left" bgcolor="white">
+      <tr>
+        <form name="myForm"><td align="left" bgcolor="white">
          <input type="submit" name="communities" value="List Communities" />
-      </td></tr>
-  </table></form>
+        </td></form>
+        <form name="lbForm"><td align="left" bgcolor="white">
+          <xsl:element name="input">
+            <xsl:attribute name="type">submit</xsl:attribute>
+            <xsl:attribute name="name"><xsl:value-of select="$community" /></xsl:attribute>
+            <xsl:attribute name="value">Load Balance</xsl:attribute>
+          </xsl:element>
+        </td></form>
+      </tr>
+  </table>
   <h2>Create a request:</h2>
   <form name="myForm1">
   <xsl:variable name="hasticket"><xsl:value-of select="string-length(.//operation)" /></xsl:variable>
   <table border="0" cellpadding="8" cellspacing="0">
+     <!-- Operation field: include two options: move and remove. -->
      <tr><td>Operation</td>
          <td><select name="operation" onclick="changeOp()">
             <xsl:variable name="move">Move</xsl:variable>
@@ -73,14 +86,18 @@
             </xsl:element>
           </select>
          </td></tr>
+     <!--mobile agent field is a list of all agents in current robustness community, user
+         can select one (or more?) at one time.-->
      <tr>
        <td>Mobile Agent</td>
-       <td><select name="mobileagent" onclick="changeAgent()">
+       <td><select name="mobileagent" size="1" onclick="changeAgent()">
          <xsl:apply-templates select=".//agent">
            <xsl:with-param name="select" select=".//mobileAgent" />
          </xsl:apply-templates>
        </select></td>
      </tr>
+     <!--Original node field is an uneditable field. It fills the value automatically
+         when user selects the mobile agent.-->
      <tr>
        <td>Origin Node</td>
        <td>
@@ -99,6 +116,8 @@
          </xsl:element>
        </td>
      </tr>
+     <!--Destionation node field is a list of all nodes in current robustness community,
+         it is disabled when user selects 'remove' operation.-->
      <tr>
        <td>Destination Node</td>
        <td>
@@ -202,7 +221,7 @@
             </xsl:attribute>
             <xsl:value-of select="./Status" />
           </xsl:element>
-          <td><xsl:element name="input">
+          <td align="center" valign="middle"><xsl:element name="input">
             <xsl:attribute name="type">submit</xsl:attribute>
             <xsl:attribute name="name"><xsl:value-of select="./UID" /></xsl:attribute>
             <xsl:attribute name="value">remove</xsl:attribute>
