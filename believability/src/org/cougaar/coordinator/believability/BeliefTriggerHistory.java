@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefTriggerHistory.java,v $
- * $Revision: 1.18 $
- * $Date: 2004-10-20 16:48:21 $
+ * $Revision: 1.19 $
+ * $Date: 2004-10-29 02:04:34 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -105,7 +105,7 @@ import org.cougaar.util.log.Logger;
  * an instance of this class: one for each of these.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.18 $Date: 2004-10-20 16:48:21 $
+ * @version $Revision: 1.19 $Date: 2004-10-29 02:04:34 $
  * @see BeliefTriggerManager
  */
 class BeliefTriggerHistory 
@@ -267,35 +267,56 @@ class BeliefTriggerHistory
 
         } // if an alarm trigger type occurs
 
-        // On actions, we always update the belief and publish it.
+        // On actions, we do not want to release a state estimation
+        // until we have waited long enough for the sensors to give a
+        // diagnosis for the new state that could result from this
+        // action having successfully completed.  Thus, we want to
+        // start a sensor latency timer when we see this so that we
+        // wait at least this long.  The main complication, is that we
+        // may already have some diagnoses queued up in the trigger
+        // history.  The solution here is to bring the belief state
+        // up-to-date through this current action, but without
+        // publishing it.  We then start a sensor latency timer which
+        // will wait  a while before publishing a new state
+        // estimation, in hopes we will get diagnoses from the asset's
+        // sensors. 
         //
         if ( trigger instanceof BelievabilityAction )
         {
             
-            // Note that if there is an existing delay alarm, this
-            // routine will do nothing.
+            // We always want to start with a fresh latency timer for
+            // an action, because we relay on the sensors to give us
+            // the feedback on the results of actions.  Thus, we
+            // always want to wait for all sensors to report after an
+            // action completes before we publish a new state
+            // estimation.
             //
-            if ( USE_DELAY_TIMER )
-            {
-                if ( _logger.isDetailEnabled() )
-                    _logger.detail( "Action trigger. Starting publish delay timer for: "
-                                    + _asset_id );
-                startPublishDelayTimer();
-            }
-            else
-            {
-                if ( _logger.isDetailEnabled() )
-                    _logger.detail( "Action trigger "
-                                    + trigger.getClass().getName()
-                                    + ". Updating and publishing for asset "
-                                    + _asset_id );
-                updateBeliefState( );
-                publishLatestBelief( );
-            }
+            cancelAlarm( _latency_alarm );
+            _latency_alarm = null;
+
+            if ( _logger.isDetailEnabled() )
+                _logger.detail
+                        ( "Action trigger handling: internal update for: "
+                          + _asset_id );
+
+            // We bring the belief sate up-to-date for any and all
+            // existing triggers in the history (clearing out the
+            // history as well).  Do not publish though.
+            //
+            updateBeliefState( );
+
+            // Now force a state estiation publication in the future.
+            //
+            if ( _logger.isDetailEnabled() )
+                _logger.detail
+                        ( "Action trigger handling: latency timer for: "
+                          + _asset_id );
+
+            startSensorLatencyTimer();
 
             return;
-        } // if action trigger
-        
+
+        } // if trigger instanceof BelievabilityAction 
 
         // If we have seen a diagnosis from all sensors, then we
         // should not wait until the end of the max sensor latency
@@ -305,6 +326,8 @@ class BeliefTriggerHistory
         //
         if ( seenAllSensors() )
         {
+            cancelAlarm( _latency_alarm );
+            _latency_alarm = null;
 
             if ( USE_DELAY_TIMER )
             {
@@ -331,17 +354,28 @@ class BeliefTriggerHistory
         // If this is the first sensor we are seeing (and there are
         // more than one for this asset), then we need to start a
         // timer to wait for the maximum latency time before actually
-        // generating a new belie state. Note that if there is only
-        // one known sensor, that the seenAllSensors() case above will
-        // be satisfied and we should not get to this condition.
+        // generating a new belief state. 
         //
         if ( trigger instanceof BelievabilityDiagnosis )
         {
-            if ( _current_triggers.size() == 1 )
+
+            // If we receive a diagnoses, *and* there is no latency
+            // alarm, then this must be the first diagnoses we are
+            // adding to the set of current triggers. 
+            //
+            // However, the converse is not true: it is possible for
+            // the sensor latency timer to exist even though this is
+            // the first diagnosis being added.  This case happens
+            // after the arrival of a SuccessfulAction object, where
+            // we immediate start a time rot wait for all new sensor
+            // values that should occur after the action takes place.
+            //
+            if ( _latency_alarm == null )
             {
                 if ( _logger.isDetailEnabled() )
-                    _logger.detail( "First, diagnosis, deferring belief update for: "
-                           + _asset_id );
+                    _logger.detail
+                            ( "First, diagnosis, starting latency timer for: "
+                              + _asset_id );
                 
                 startSensorLatencyTimer();
                 return;
@@ -1433,7 +1467,7 @@ class BeliefTriggerHistory
     // A handle to the current alarm (if any) associated with the
     // sensor latency.
     //
-    private IntervalAlarm _latency_alarm;
+    private IntervalAlarm _latency_alarm = null;
 
     // A handle to the current alarm associated with ensuring that we
     // publish a belief state after a period of time even if we have
