@@ -178,14 +178,19 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
           CostBenefitEvaluation cbe = findCostBenefitEvaluation(action.getAssetID());
           if (logger.isDebugEnabled()) logger.debug(action + " has " + ap.getResult());
           if (ap.getResult().equals(Action.COMPLETED)) {
-              if (logger.isDebugEnabled()) logger.debug("Nothing more to do");
+              if (logger.isDebugEnabled()) logger.debug("Action succeeded - Nothing more to do");
           }
           else {
-              Object variantAttempted = action.getValue().getAction();
-              VariantEvaluation variantAttemptedEvaluation = cbe.getActionEvaluation(action).getVariantEvaluation(variantAttempted);
-              variantAttemptedEvaluation.setTried();
+              if (action.getValue() != null) { // some action was tried & it did not help - mark it as "tried"
+                  Object variantAttempted = action.getValue().getAction();
+                  VariantEvaluation variantAttemptedEvaluation = cbe.getActionEvaluation(action).getVariantEvaluation(variantAttempted);
+                  variantAttemptedEvaluation.setTried();
+              }      
+              else { // the actuator took no action - what should we do here? 
+              }
               selectActions(cbe, knob);  // try to find a new action
-         }      }
+           }
+      }
 
       if (logger.isDebugEnabled()) logger.debug("Done processing TimeOuts");
 
