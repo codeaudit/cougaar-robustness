@@ -24,7 +24,7 @@ import org.cougaar.core.mts.MessageAttributes;
 import org.cougaar.core.mts.SimpleMessageAttributes;
 import org.cougaar.core.mts.SimpleMessageAddress;
 
-import org.cougaar.core.mts.Constants;
+import org.cougaar.mts.std.Constants;
 
 import org.cougaar.core.service.AlarmService;
 import org.cougaar.core.service.BlackboardService;
