@@ -20,6 +20,8 @@ package org.cougaar.tools.robustness.ma;
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
 import org.cougaar.tools.robustness.ma.StatusChangeListener;
 import org.cougaar.tools.robustness.ma.CommunityStatusChangeEvent;
+import org.cougaar.tools.robustness.ma.util.LoadBalancer;
+import org.cougaar.tools.robustness.ma.util.LoadBalancerListener;
 import org.cougaar.tools.robustness.ma.util.MoveHelper;
 import org.cougaar.tools.robustness.ma.util.RestartDestinationLocator;
 
@@ -49,26 +51,11 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
     if (ta instanceof HostLossThreatAlert) {
       logger.info("Received new HostLossThreatAlert: " + ta);
       if (agentId.toString().equals(preferredLeader())) {
-        Set affectedNodes = new HashSet();
-        Set affectedAgents = new HashSet();
-        Set nodesAndHosts = new HashSet();
-        Asset affectedAssets[] = ta.getAffectedAssets();
-        for (int i = 0; i < affectedAssets.length; i++) {
-          String type = affectedAssets[i].getAssetType();
-          String id = affectedAssets[i].getAssetIdentifier();
-          if (type != null &&
-              (type.equalsIgnoreCase("Node") || type.equalsIgnoreCase("Node"))) {
-            nodesAndHosts.add(id);
-          }
-         if (!nodesAndHosts.isEmpty()) {
-            affectedNodes.addAll(resolveNodes(nodesAndHosts));
-            affectedAgents.addAll(affectedAgents(affectedNodes));
-          }
-        }
+        Set affectedNodes = getAffectedNodes(ta.getAffectedAssets());
         if (ta.getSeverityLevel() >= ThreatAlert.MEDIUM_SEVERITY) {
-          vacate(affectedAgents, affectedNodes);
+          vacate(affectedNodes);
         }
-        adjustRobustnessParameters(ta, affectedAgents);
+        adjustRobustnessParameters(ta, affectedAgents(affectedNodes));
       }
     }
   }
@@ -82,6 +69,17 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
   public void removedAlert(ThreatAlert ta) {
     if (ta instanceof HostLossThreatAlert) {
       logger.info("Received removed HostLossThreatAlert: " + ta);
+      LoadBalancerListener lbl = new LoadBalancerListener() {
+        public void layoutReady(Map layout) {
+          controller.getLoadBalancer().moveAgents(layout);
+        }
+      };
+      Set vacatedNodes = getAffectedNodes(ta.getAffectedAssets());
+      controller.getLoadBalancer().doLayout(true,
+                                            new ArrayList(vacatedNodes),
+                                            Collections.EMPTY_LIST,
+                                            new ArrayList(getExcludedNodes()),
+                                            lbl);
     }
   }
 
@@ -90,15 +88,16 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
    * @param agentsToMove
    * @param nodesToVacate
    */
-  private void vacate(final Set agentsToMove, final Set nodesToVacate) {
+  private void vacate(final Set nodesToVacate) {
+    final Set agentsToMove = affectedAgents(nodesToVacate);
     logger.info("Vacating nodes: " + nodesToVacate);
-    for (Iterator it = nodesToVacate.iterator(); it.hasNext(); ) {
+    /*for (Iterator it = nodesToVacate.iterator(); it.hasNext(); ) {
       String nodeName = (String) it.next();
       String agentsOnNode[] = model.entitiesAtLocation(nodeName);
       for (int i = 0; i < agentsOnNode.length; i++) {
         agentsToMove.add(agentsOnNode[i]);
       }
-    }
+    }*/
     model.addChangeListener(new StatusChangeListener() {
       public void statusChanged(CommunityStatusChangeEvent[] csce) {
         for (int i = 0; i < csce.length; i++) {
@@ -109,14 +108,14 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
             if (agentsToMove.isEmpty()) {
               logger.info("Vacate nodes complete: nodes=" + nodesToVacate);
               model.removeChangeListener(this);
-              logger.info("Starting Load Balancer");
-              controller.getLoadBalancer().doLoadBalance();
+              //logger.info("Starting Load Balancer");
+              //controller.getLoadBalancer().doLoadBalance();
             }
           }
         }
       }
     });
-    List moveList = new ArrayList(agentsToMove);
+    /*List moveList = new ArrayList(agentsToMove);
     for (Iterator it1 = moveList.iterator(); it1.hasNext(); ) {
       String agentToMove = (String) it1.next();
       String dest =
@@ -125,7 +124,17 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
       logger.debug("Move agent: agent=" + agentToMove + " dest=" + dest);
       moveHelper.moveAgent(agentToMove, model.getLocation(agentToMove), dest,
                            model.getCommunityName());
-    }
+    }*/
+    LoadBalancerListener lbl = new LoadBalancerListener() {
+      public void layoutReady(Map layout) {
+        controller.getLoadBalancer().moveAgents(layout);
+      }
+    };
+    controller.getLoadBalancer().doLayout(true,
+                                          Collections.EMPTY_LIST,
+                                          new ArrayList(nodesToVacate),
+                                          new ArrayList(getExcludedNodes()),
+                                          lbl);
   }
 
   /**
@@ -137,6 +146,34 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
     Attribute mods[] =
         new Attribute[] {new BasicAttribute("UPDATE_INTERVAL", "15000")};
     changeAttributes(model.getCommunityName(), null, mods);
+  }
+
+  protected Set getAffectedNodes(Asset[] affectedAssets) {
+    Set nodesAndHosts = new HashSet();
+    for (int i = 0; i < affectedAssets.length; i++) {
+      String type = affectedAssets[i].getAssetType();
+      String id = affectedAssets[i].getAssetIdentifier();
+      if (type != null &&
+          (type.equalsIgnoreCase("Node") || type.equalsIgnoreCase("Host"))) {
+        nodesAndHosts.add(id);
+      }
+    }
+    if (!nodesAndHosts.isEmpty()) {
+      return resolveNodes(nodesAndHosts);
+    } else {
+      return Collections.EMPTY_SET;
+    }
+  }
+
+  protected Set getExcludedNodes() {
+    Set excludedNodes = new HashSet();
+    String allNodes[] = model.listEntries(model.NODE);
+    for (int i = 0; i < allNodes.length; i++) {
+      if (model.hasAttribute(model.getAttributes(allNodes[i]), "UseForRestarts", "False")) {
+        excludedNodes.add(allNodes[i]);
+      }
+    }
+    return excludedNodes;
   }
 
 }
