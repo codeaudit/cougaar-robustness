@@ -80,6 +80,7 @@ import org.cougaar.core.mts.email.OutgoingEmailLinkProtocol;
 //102 import org.cougaar.util.CougaarEventType;
 import org.cougaar.core.service.EventService; //102
 import org.cougaar.core.component.ServiceBroker; //102
+import org.cougaar.core.wp.WhitePagesMessage; //104B
 
 /**
  * Adaptive link selection policy that uses transport cost and 
@@ -295,10 +296,18 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
          AttributedMessage failedMsg, int retryCount, Exception last)
   {
     debug = log.isDebugEnabled();
-/*
+
     if (debug) log.debug ("Entered selectLink: msg= " +MessageUtils.toString(msg)+
       " failedMsg=" +MessageUtils.toString(failedMsg));
-*/
+    if (debug) log.debug ("raw msg = " + msg.getRawMessage());
+
+    /* 
+    if (debug) log.debug ("sleeping for 1 second");
+    try {
+      Thread.sleep(1000);
+    } catch (Exception e){}
+    */
+
     if (commStartDelaySeconds > 0)
     {
       //  HACK to attempt to get around nameserver/topology lookup problems
@@ -357,11 +366,17 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     }
 
     //  Handle message attribute transfers in the case of send retries
-
+    if (debug) log.debug("msg="+msg+",failedMsg="+failedMsg+",equal?"+(msg==failedMsg));
     if (msg != failedMsg && failedMsg != null) 
     {
       //  Transfer known persistent attributes
-      
+      if (debug) log.debug("MessageUtils.hasMessageNumber(failedMsg)="+MessageUtils.hasMessageNumber(failedMsg));
+
+      AgentID id = MessageUtils.getFromAgent(failedMsg);
+      if (id != null) MessageUtils.setFromAgent(msg, id); 
+      id = MessageUtils.getToAgent(failedMsg);
+      if (id != null) MessageUtils.setToAgent(msg, id); 
+
       if (MessageUtils.hasMessageNumber (failedMsg))
       {
         //  HACK!  How am I supposed to know which out of all the attributes 
@@ -369,8 +384,8 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
         MessageUtils.setMessageType (msg, MessageUtils.getMessageType (failedMsg));
         MessageNumberingAspect.setMessageNumber (msg, MessageUtils.getMessageNumber (failedMsg));
-        MessageUtils.setFromAgent (msg, MessageUtils.getFromAgent (failedMsg)); 
-        MessageUtils.setToAgent (msg, MessageUtils.getToAgent (failedMsg)); 
+        //MessageUtils.setFromAgent (msg, MessageUtils.getFromAgent (failedMsg)); 
+        //MessageUtils.setToAgent (msg, MessageUtils.getToAgent (failedMsg)); 
         MessageUtils.setAck (msg, MessageUtils.getAck (failedMsg)); 
         MessageUtils.setSrcMsgNumber (msg, MessageUtils.getSrcMsgNumber (failedMsg)); 
         MessageUtils.setMessageSize (msg, MessageUtils.getMessageSize (failedMsg)); 
@@ -546,7 +561,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
             }
             // need to worry about synchronization here - message might be cached or in transit 
             if (ackSvc == null)
-	      ackSvc = (MessageAckingService)getServiceBroker().getService(this,MessageAckingService.class,null);
+              ackSvc = (MessageAckingService)getServiceBroker().getService(this,MessageAckingService.class,null);
             ackSvc.handleMessagesToRestartedAgent(fromAgent, oldToAgent, newToAgent);
             return null;  // this message is returned to queue to be reprocessed now that its AgentID has been updated
             //MessageAckingAspect.addSuccessfulSend (msg);
@@ -567,8 +582,19 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
         if (targetNode == null)
         {
           //  Get cached target agent info
-
-          AgentID toAgent = AgentID.getAgentID (this, getServiceBroker(), targetAgent, false);
+          //104B temporary hack for WP messages
+          AgentID toAgent;
+          //104B try { 
+            toAgent = AgentID.getAgentID (this, getServiceBroker(), targetAgent, false);
+          //104B } catch (NameLookupException nle) {
+            //104B Message rawMsg = msg.getRawMessage();
+            //104B if (rawMsg instanceof WhitePagesMessage) {
+              //104B String s = targetAgent.getAddress();
+              //104B toAgent = new AgentID (s, s, "0");
+            //104B } else {
+              //104B throw nle;
+            //104B }
+          //104B }
           MessageUtils.setToAgent (msg, toAgent);
           targetNode = toAgent.getNodeName();
 
@@ -607,6 +633,7 @@ log.info ("exception getting toAgent for " +msgString+ ": " +e);
       try
       {
         link = (DestinationLink) links.next(); 
+if (debug) log.debug("link =" + link.getProtocolClass());
 
         //  Obvious filters
 
@@ -616,6 +643,7 @@ log.info ("exception getting toAgent for " +msgString+ ": " +e);
         //  Cost related filtering
 
         cost = getLinkCost (link, msg);
+if (debug) log.debug("cost =" + cost);
 
         if (cost == Integer.MAX_VALUE) continue; 
 
@@ -654,7 +682,10 @@ log.info ("exception getting toAgent for " +msgString+ ": " +e);
 
     //  No able outgoing links
 
-    if (v.size() == 0) return linkChoice (null, msg);
+    if (v.size() == 0) {
+      if (debug) log.debug ("Postponing link selection: no able outgoing links to " +targetAgent);
+      return linkChoice (null, msg);
+    }
 
     //  Rank the links based on the chosen (via property) metric
 

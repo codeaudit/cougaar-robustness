@@ -214,7 +214,9 @@ try {
     AgentID fromAgentFromMsg = MessageUtils.getFromAgent(msg);
     MessageAddress originatorFromMsg = msg.getOriginator();
     AgentID toAgentFromMsg = MessageUtils.getToAgent(msg);
-    MessageAddress targetFromMsg = msg.getTarget();
+//104B    MessageAddress targetFromMsg = msg.getTarget();
+
+/* //104B
     AgentID fromAgentFromWP = null;
     AgentID toAgentFromWP = null;
 
@@ -245,16 +247,18 @@ try {
       if (log.isDebugEnabled()) log.debug(null,e);
       throw new MisdeliveredMessageException (msg);
     }  
-
+*/
     // collect all the incs
     long fromIncFromMsg = fromAgentFromMsg.getAgentIncarnationAsLong();
-    long fromIncFromWP = fromAgentFromWP.getAgentIncarnationAsLong();
+//104B    long fromIncFromWP = fromAgentFromWP.getAgentIncarnationAsLong();
     AgentID fromAgentFromTbl = aspect.getCurrentIncarnation(originatorFromMsg);
     if (fromAgentFromTbl == null) {
-      fromAgentFromTbl = ((fromIncFromMsg >= fromIncFromWP)? fromAgentFromMsg : fromAgentFromWP);
+//104B      fromAgentFromTbl = ((fromIncFromMsg >= fromIncFromWP)? fromAgentFromMsg : fromAgentFromWP);
+	fromAgentFromTbl = fromAgentFromMsg; //104B
       aspect.setCurrentIncarnation(originatorFromMsg, fromAgentFromTbl);
     }    
     long fromIncFromTbl = fromAgentFromTbl.getAgentIncarnationAsLong();
+/* //104B
     long toIncFromMsg = toAgentFromMsg.getAgentIncarnationAsLong();
     long toIncFromWP = toAgentFromWP.getAgentIncarnationAsLong();
     AgentID toAgentFromTbl = aspect.getCurrentIncarnation(targetFromMsg);
@@ -263,16 +267,20 @@ try {
       aspect.setCurrentIncarnation(targetFromMsg, toAgentFromTbl);
     }    
     long toIncFromTbl = toAgentFromTbl.getAgentIncarnationAsLong();
+*/
         
     // discard message from old incarnation
-    if ((fromIncFromMsg < fromIncFromTbl) || (fromIncFromMsg < fromIncFromWP)) 
+//104B    if ((fromIncFromMsg < fromIncFromTbl) || (fromIncFromMsg < fromIncFromWP)) 
+    if (fromIncFromMsg < fromIncFromTbl) //104B
     {
       if (log.isWarnEnabled())
         log.warn("AckBackend: Discarding old msg="+msgString+
-                 ", new inc="+Math.max(fromIncFromTbl,fromIncFromWP));
+//104B                 ", new inc="+Math.max(fromIncFromTbl,fromIncFromWP));
+                 ", new inc="+fromIncFromTbl); //104B
       throw new MisdeliveredMessageException(msg);
     }
 
+/* //104B
     // discard message to old incarnation
     if ((toIncFromMsg < toIncFromTbl) || (toIncFromMsg < toIncFromWP)) 
     {
@@ -281,12 +289,15 @@ try {
                  ",new inc="+Math.max(toIncFromTbl,toIncFromWP));
       throw new MisdeliveredMessageException(msg);
     }
-
+*/
     // if new source inc in msg or in WP, then update currentIncTbl and forward queued messages
-    if ((fromIncFromTbl < fromIncFromMsg) || (fromIncFromTbl < fromIncFromWP)) 
+//104B    if ((fromIncFromTbl < fromIncFromMsg) || (fromIncFromTbl < fromIncFromWP)) 
+    if (fromIncFromTbl < fromIncFromMsg) //104B
     {
-      long newFromInc = Math.max(fromIncFromMsg, fromIncFromWP);
-      AgentID newFromAgent = ((fromIncFromMsg >= fromIncFromWP)? fromAgentFromMsg : fromAgentFromWP);
+//104B      long newFromInc = Math.max(fromIncFromMsg, fromIncFromWP);
+      long newFromInc = fromIncFromMsg; //104B
+//104B      AgentID newFromAgent = ((fromIncFromMsg >= fromIncFromWP)? fromAgentFromMsg : fromAgentFromWP);
+      AgentID newFromAgent = fromAgentFromMsg; //104B
       if (log.isInfoEnabled())
         log.info("AckBackend: Received msg from new incarnation of agent "+
                  originatorFromMsg+"; old="+fromIncFromTbl+", new="+newFromInc);
@@ -305,7 +316,7 @@ try {
         throw new MisdeliveredMessageException(msg);
      }
     }
-
+/* //104B
     // if new inc in msg or in WP, then update currentIncTbl,
     // forward queued messages (messages that might have been
     // queued for target agent when it lived on another node)
@@ -334,6 +345,7 @@ try {
         throw new MisdeliveredMessageException(msg);
       }  
     }
+*/
 } catch (NullPointerException e) {
  e.printStackTrace();
 }

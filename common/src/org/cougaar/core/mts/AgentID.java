@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 27 May 2003: Ported to 10.4 - several changes to WP access (104B)
  * 04 Mar 2003: Ported to 10.2 - replaced TopologyService with WhitePagesService (OBJS)
  * 04 Jun 2002: Created. (OBJS)
  */
@@ -26,13 +27,16 @@
 package org.cougaar.core.mts;
 
 import java.net.URI; //102
+import java.util.Hashtable; //104B
 
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.service.wp.WhitePagesService; //102
 import org.cougaar.core.service.wp.AddressEntry; //102
-import org.cougaar.core.service.wp.Application; //102
-import org.cougaar.util.log.Logger; //102
-import org.cougaar.util.log.Logging;
+import org.cougaar.core.service.wp.Callback; //104B
+import org.cougaar.core.service.wp.Request; //104B
+import org.cougaar.core.service.wp.Response; //104B
+import org.cougaar.util.log.Logger; //104B
+import org.cougaar.util.log.Logging; //104B
 
 /*
  * Class contains descriptive information about an agent. getAgentID() is used to
@@ -42,12 +46,20 @@ import org.cougaar.util.log.Logging;
 public class AgentID implements java.io.Serializable
 {
   private static final int callTimeout;
+  private static final String TOPOLOGY = "topology";
+  private static final String VERSION = "version";
 
   private static WhitePagesService wp; //102
+  private static MessageTransportRegistryService registry; //104B
+  private static Logger log; //104B
 
   private String nodeName;
   private String agentName;
   private String agentIncarnation;
+  private static String wpAgentName = null; //104B
+  private static Hashtable nodeCbTbl= new Hashtable(); //104B
+  private static Hashtable incCbTbl= new Hashtable(); //104B
+  private static Object cbLock = new Object(); //104B
 
   static
   {
@@ -236,7 +248,8 @@ public class AgentID implements java.io.Serializable
    * @param agent MessageAddress of the agent
    * @return new AgentID instance
    */
-  public static AgentID getAgentID (Object requestor, ServiceBroker sb, MessageAddress agent) 
+  public static AgentID getAgentID (Object requestor, ServiceBroker sb, 
+                                    MessageAddress agent) 
     throws NameLookupException
   {
     return getAgentID (requestor, sb, agent, false);    
@@ -250,9 +263,16 @@ public class AgentID implements java.io.Serializable
    * @param refreshCache Does nothing now
    * @return new AgentID instance
    */
-  public static AgentID getAgentID (Object requestor, ServiceBroker sb, MessageAddress agent, boolean refreshCache) 
+  public static AgentID getAgentID (Object requestor, ServiceBroker sb, 
+                                    MessageAddress agent, boolean refreshCache) 
     throws NameLookupException
   {
+    if (log == null) 
+      log = Logging.getLogger(AgentID.class);
+
+    if (log.isDebugEnabled())
+      log.debug("agent="+agent);
+
     if (agent == null) {
         return null;
     }
@@ -263,32 +283,173 @@ public class AgentID implements java.io.Serializable
 
     try {
       if (wp == null) {
-          wp = (WhitePagesService)sb.getService(requestor, WhitePagesService.class, null); //102
+        wp = (WhitePagesService)sb.getService(requestor, 
+                                              WhitePagesService.class, 
+                                              null); //102
       }
-      
-      AddressEntry ae = wp.get(agentName, Application.getApplication("topology"), "node", callTimeout); //102
-      URI uri = ae.getAddress();  //102
-      node = uri.getPath().substring(1);  //102
 
-      ae = wp.get(agentName, Application.getApplication("topology"), "version", callTimeout); //102
-      uri = ae.getAddress(); //102
-      String path = uri.getPath(); //102
-      int i = path.indexOf('/', 1); //102
-      incarnation = path.substring(1,i); //102
+      //104B Temporary hack to handle messages to node agent where WP Server 
+      //     resides without having to access the remote WP Server by sending
+      //     it a message and therefore causing a deadlock
+      if (wpAgentName == null) {
+        AddressEntry ae = wp.get("WP", "alias", -1); // -1 = only try local cache
+        if (log.isDebugEnabled())
+          log.debug("ae="+ae);
+        wpAgentName = ae.getURI().getPath().substring(1);
+        if (log.isDebugEnabled())
+          log.debug("wpAgentName="+wpAgentName);
+      }
+      if (wpAgentName.equals(agentName))
+        return new AgentID(agentName, agentName, "0");      
+      
+      //104B First check via registry if node is local before going to WhitePages
+      if (registry == null)
+        registry = (MessageTransportRegistryService)sb.getService(requestor, 
+                                                                  MessageTransportRegistryService.class,
+                                                                  null);
+/* do I really need this?
+      // short sleep just to give callbacks an opening
+      if (log.isDebugEnabled()) log.debug("sleeping for 1/10 second");
+      try {
+        Thread.sleep(100);  
+      } catch (Exception e){}
+*/
+      //104B all new code until end synchronized
+      //104B converted WP access to callbacks 
+      synchronized (cbLock) {
+
+        CbTblEntry node_cbte = null;
+        CbTblEntry inc_cbte = null;
+
+        // get node
+
+        // if local agent, get node from registry instead of WP
+        if (registry.isLocalClient(agent)) {
+          node = registry.getIdentifier();
+
+        } else {
+
+          // get the callback table entry for this agent's node
+          node_cbte = (CbTblEntry)nodeCbTbl.get(agentName);
+
+          // if none, create one (first lookup)
+          if (node_cbte == null) {
+            node_cbte = new CbTblEntry();
+            nodeCbTbl.put(agentName,node_cbte);
+          }
+
+          if (log.isDebugEnabled())
+            log.debug("node_cbte="+node_cbte+",nodeCbTbl="+nodeCbTbl);
+ 
+          // check the cache first
+          if (log.isDebugEnabled())
+            log.debug("Calling wp.get("+agentName+","+TOPOLOGY+",-1)");
+          AddressEntry ae = wp.get(agentName, TOPOLOGY, -1); 
+          if (log.isDebugEnabled())
+            log.debug("ae="+ae);
+          if ((ae != null) && (ae.getURI() != null)) { //cache hit
+            node = ae.getURI().getPath().substring(1);
+            if (log.isDebugEnabled())
+              log.debug("found node="+node);
+
+          // else, check the callback
+          } else if (node_cbte.result != null) {
+            node = node_cbte.result.getPath().substring(1);
+            if (log.isDebugEnabled())
+              log.debug("found node="+node);
+
+          // else, start a callback
+          } else if (!node_cbte.pending) {
+            node_cbte.pending = true;
+            if (log.isDebugEnabled())
+              log.debug("cbLock="+cbLock+",nodeCbTbl="+nodeCbTbl);
+            AgentIDCallback nodeCb = AgentIDCallback.getAgentIDCallback(cbLock, nodeCbTbl);
+            if (log.isDebugEnabled())
+              log.debug("Calling wp.get("+agentName+","+TOPOLOGY+","+nodeCb+")");
+            wp.get(agentName, TOPOLOGY, nodeCb);
+       
+          // else, callback is pending, so do nothing
+          } 
+        }
+      
+        // get incarnation
+
+        // get the callback table entry for this agent's incarnation
+        inc_cbte = (CbTblEntry)incCbTbl.get(agentName);
+
+        // if none, create one (first lookup)
+        if (inc_cbte == null) {
+          inc_cbte = new CbTblEntry();
+          incCbTbl.put(agentName,inc_cbte);
+        }
+
+        if (log.isDebugEnabled())
+          log.debug("inc_cbte="+inc_cbte+",incCbTbl="+incCbTbl);
+
+        // check the cache first
+        if (log.isDebugEnabled())
+          log.debug("Calling wp.get("+agentName+","+VERSION+",-1)");
+        AddressEntry ae = wp.get(agentName, VERSION, -1); 
+        if (log.isDebugEnabled())
+          log.debug("ae="+ae);
+        if ((ae != null) && (ae.getURI() != null)) {
+          String path = ae.getURI().getPath();
+          int i = path.indexOf('/', 1);
+          incarnation = path.substring(1,i);
+          if (log.isDebugEnabled())
+            log.debug("found incarnation="+incarnation);
+
+        // else, check the callback
+        } else if (inc_cbte.result != null) {
+          String path = inc_cbte.result.getPath();
+          int i = path.indexOf('/', 1);
+          incarnation = path.substring(1,i);
+          if (log.isDebugEnabled())
+            log.debug("found incarnation="+incarnation);
+
+        // else, start a callback
+        } else if (!inc_cbte.pending) {
+          inc_cbte.pending = true;
+          if (log.isDebugEnabled())
+            log.debug("cbLock="+cbLock+",incCbTbl="+incCbTbl);
+          AgentIDCallback incCb = AgentIDCallback.getAgentIDCallback(cbLock, incCbTbl);
+          if (log.isDebugEnabled())
+            log.debug("Calling wp.get("+agentName+","+VERSION+","+incCb+")");
+          wp.get(agentName, VERSION, incCb);
+       
+        // else, callback is pending, so do nothing
+        } 
+
+        // if we got both node & inc, then clear both results 
+        // from callback tables, so that next time through
+        // it will force a new lookup
+/* *********************************************************** BEWARE: Commenting this out might cause problems later ********
+        if ((node != null) && (incarnation != null)) {
+	  if (node_cbte != null) {
+            node_cbte.pending = false;
+            node_cbte.result = null;
+	  }
+	  if (inc_cbte != null) {
+            inc_cbte.pending = false;
+            inc_cbte.result = null;
+	  }
+        }
+*/
+
+      } //104B end synchronized 
 
     } catch (WhitePagesService.TimeoutException te) { //102
       // timeout with no stale value available!
-      Logger log = Logging.getLogger(AgentID.class); //102
       if (log.isDebugEnabled()) { //102
         log.debug(stackTraceToString(te)); //102
       }
     } catch (Exception e) {
-      Logger log = Logging.getLogger(AgentID.class); //102
       if (log.isDebugEnabled()) { //102
         log.debug(stackTraceToString(e)); //102
       }
     } finally {
-        sb.releaseService(requestor, WhitePagesService.class, wp);
+        //104B Do I really want to release the service after each use?
+        //104B sb.releaseService(requestor, WhitePagesService.class, wp);
     }
     if (node == null || incarnation ==null) {
       Exception e = new Exception ("WhitePagesService has no entry for agent: " + agent); //102
