@@ -32,6 +32,7 @@ import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.util.UnaryPredicate;
+import org.cougaar.core.agent.service.alarm.Alarm;
 
 public class SampleActuator extends ComponentPlugin
 {
@@ -52,6 +53,8 @@ public class SampleActuator extends ComponentPlugin
 
     private static final Hashtable codeTbl;
 
+    private boolean start = false;
+
     static {
 	codeTbl = new Hashtable();
 	codeTbl.put("COMPLETED", Action.COMPLETED);
@@ -69,6 +72,37 @@ public class SampleActuator extends ComponentPlugin
     
     public synchronized void unload() {
     }
+
+    private class DelayedStartAlarm implements Alarm {
+	private long detonate = -1;
+	private boolean expired = false;
+	
+	public DelayedStartAlarm (long delay) {
+	    detonate = delay + System.currentTimeMillis();
+	}
+	
+	public long getExpirationTime () {
+	    return detonate;
+	}
+	
+	public synchronized void expire () {
+	    if (!expired) {
+		expired = true;
+		start = true;
+		blackboard.signalClientActivity();
+	    }
+	}
+	
+	public boolean hasExpired () {
+	    return expired;
+	}
+	
+	public synchronized boolean cancel () {
+	    if (!expired)
+		return expired = true;
+	    return false;
+	}
+    }
     
     public void setupSubscriptions() 
     {
@@ -76,6 +110,7 @@ public class SampleActuator extends ComponentPlugin
 	    (IncrementalSubscription)blackboard.subscribe(actionPred);
         rawActuatorDataSub = 
 	    (IncrementalSubscription)blackboard.subscribe(rawActuatorDataPred);
+/*
 	try {
 	    action = new SampleAction(agentId.toString(), sb);
 	    blackboard.publishAdd(action);
@@ -87,9 +122,26 @@ public class SampleActuator extends ComponentPlugin
 	} catch (TechSpecNotFoundException e) {
 	    log.error("TechSpec not found for SampleAction", e);
 	}
+*/
+	alarmService.addRealTimeAlarm(new DelayedStartAlarm(120000));
     } 
     
     public synchronized void execute() {
+
+	if (start == true) {
+	    try {
+		action = new SampleAction(agentId.toString(), sb);
+		blackboard.publishAdd(action);
+		if (log.isDebugEnabled()) log.debug(action + " added.");
+		if (log.isDebugEnabled()) log.debug(action.dump());
+		data = new SampleRawActuatorData(agentId.toString(), action.getPossibleValues());
+		blackboard.publishAdd(data);
+		if (log.isDebugEnabled()) log.debug(data + " added.");	
+	    } catch (TechSpecNotFoundException e) {
+		log.error("TechSpec not found for SampleAction", e);
+	    }
+	    start = false;
+	}
 	
 	Iterator iter = rawActuatorDataSub.getChangedCollection().iterator();
 	while (iter.hasNext()) {

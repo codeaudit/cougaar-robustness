@@ -37,8 +37,9 @@ import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.service.UIDService;
 import org.cougaar.core.util.UID;
 
-import java.util.Vector;
 import java.util.Iterator;
+import java.util.Set;
+import java.util.Vector;
 
 /**
  * This Plugin is used to control relaying Action objects to the Coordinator
@@ -231,8 +232,32 @@ public class ActionRelayManager extends MinimalPluginBase implements NotPersista
                 
             }
             //newWrappers.clear(); // clear this as these wrappers will now have been committed to the BB
-            
         }           
+	
+	// handle the return trip
+	Collection wrappers = wrapperSubscription.getChangedCollection();        
+	iter = wrappers.iterator();
+	while (iter.hasNext()) {
+	    ActionsWrapper aw = (ActionsWrapper)iter.next();
+	    if (aw != null) {
+		Set newPV = (Set)aw.getResponse();
+		if (newPV != null) { // response is cleared after processing
+		    Action a = aw.getAction();
+		    Set oldPV = (Set)a.getPermittedValues();
+		    if (!newPV.equals(oldPV)) {
+			try {
+			    a.setPermittedValues(newPV);
+			    aw.clearResponse();
+			    logger.debug("publishChange "+a);
+			    logger.debug(a.dump());
+			    publishChange(a);
+			} catch (IllegalValueException e) {
+			    logger.error("Illegal permittedValues relayed from Coordinator = "+newPV);
+			}
+		    }
+		}
+	    }
+	}
     }
      
     /**

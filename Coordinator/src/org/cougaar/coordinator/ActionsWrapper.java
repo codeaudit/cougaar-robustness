@@ -43,7 +43,7 @@ import java.util.Collections;
  * @author  Administrator
  *
  * This class wraps a Action so that the Action can be relayed to the coordinator
- * in a controlled fashion. The DiagnosisManager regulates if and when a given Action 
+ * in a controlled fashion. The ActionRelayManager regulates if and when a given Action 
  * is relayed.
  *
  */
@@ -54,14 +54,17 @@ public class ActionsWrapper implements NotPersistable, Serializable, Relay.Sourc
     private transient Set targets = Collections.EMPTY_SET;     
     private transient boolean isLocal = false; 
     private Action action;
+    private transient Object response;
     private UID uid = null;
     MessageAddress source = null;
+    private transient Logger log;
     
     /** Creates a new instance of ActionsWrapper */
     public ActionsWrapper(Action a, MessageAddress source, MessageAddress target, UID uid) {
         action = a;
         setSourceAndTarget(source, target);
         this.setUID(uid);
+        log = Logging.getLogger(getClass());    
     }
 
     //protected boolean local = true;
@@ -161,25 +164,21 @@ public class ActionsWrapper implements NotPersistable, Serializable, Relay.Sourc
   }
 
   /**
-   * @return a factory to convert the content to a Relay Target.
+   * Only update the source side if the permittedValues have changed. 
    **/
-  //sjf public Relay.TargetFactory getTargetFactory() {
-  //sjf   return null;
-  //sjf }
-
-
-  /**
-   * Set the response that was sent from a target. 
-   **/
-  public int updateResponse(MessageAddress target, Object response) {
-      
-      Action a = (Action) response;
-      action.permittedValues = a.getPermittedValues();
-          
-      //sjf return Relay.CONTENT_CHANGE;
-      return Relay.RESPONSE_CHANGE;
+  public int updateResponse(MessageAddress t, Object response) {
+      if (log.isDebugEnabled())log.debug("updateResponse: r="+response+",a="+action);
+      if (!action.getPossibleValues().equals((Set)response)) {
+	  this.response = response;
+	  return Relay.RESPONSE_CHANGE;	  
+      }
+      return Relay.NO_CHANGE;
   }
-  
+
+  // call after processing by plugin on the source side
+  public void clearResponse () {
+      response = null;
+  }
 
   // Relay.Target implementation -----------------------------------------
   /**
@@ -191,11 +190,10 @@ public class ActionsWrapper implements NotPersistable, Serializable, Relay.Sourc
   }
 
   /**
-   * Get the current response for this target. Null indicates that
-   * this target has no response. 
+   * Only the permitted values make the return trip. 
    **/
   public Object getResponse() {
-    return action;
+    return action.getPermittedValues();
   }
 
   /**

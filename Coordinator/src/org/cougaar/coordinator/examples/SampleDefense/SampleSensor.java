@@ -24,6 +24,7 @@ package org.cougaar.coordinator.examples.SampleDefense;
 import java.util.Iterator;
 import org.cougaar.coordinator.*;
 import org.cougaar.coordinator.techspec.TechSpecNotFoundException;
+import org.cougaar.core.agent.service.alarm.Alarm;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.mts.MessageAddress;
@@ -37,6 +38,7 @@ public class SampleSensor extends ComponentPlugin
     private LoggingService log;
     private SampleDiagnosis diagnosis;
     private ServiceBroker sb;
+    private boolean start = false;
 
     private IncrementalSubscription rawSensorDataSub;
 
@@ -55,10 +57,42 @@ public class SampleSensor extends ComponentPlugin
 	super.unload();
     }
 
+    private class DelayedStartAlarm implements Alarm {
+	private long detonate = -1;
+	private boolean expired = false;
+	
+	public DelayedStartAlarm (long delay) {
+	    detonate = delay + System.currentTimeMillis();
+	}
+	
+	public long getExpirationTime () {
+	    return detonate;
+	}
+	
+	public synchronized void expire () {
+	    if (!expired) {
+		expired = true;
+		start = true;
+		blackboard.signalClientActivity();
+	    }
+	}
+	
+	public boolean hasExpired () {
+	    return expired;
+	}
+	
+	public synchronized boolean cancel () {
+	    if (!expired)
+		return expired = true;
+	    return false;
+	}
+    }
+
     public void setupSubscriptions() 
     {
         rawSensorDataSub = 
 	    (IncrementalSubscription)blackboard.subscribe(rawSensorDataPred);
+/*
 	try {
 	    diagnosis = new SampleDiagnosis(agentId.toString(), sb);
 	    blackboard.publishAdd(diagnosis);
@@ -74,10 +108,31 @@ public class SampleSensor extends ComponentPlugin
 	} catch (TechSpecNotFoundException e) {
 	    log.error("TechSpec not found for SampleDiagnosis", e);
 	}
+*/
+	alarmService.addRealTimeAlarm(new DelayedStartAlarm(120000));
     } 
 
     public synchronized void execute() {
 	
+	if (start == true) {
+	    try {
+		diagnosis = new SampleDiagnosis(agentId.toString(), sb);
+		blackboard.publishAdd(diagnosis);
+		if (log.isDebugEnabled()) 
+		    log.debug(diagnosis + " added.");
+		if (log.isDebugEnabled()) log.debug(diagnosis.dump());
+		SampleRawSensorData data = new SampleRawSensorData(diagnosis.getAssetName(),
+								   diagnosis.getPossibleValues(),
+								   diagnosis.getValue());
+		blackboard.publishAdd(data);
+		if (log.isDebugEnabled()) 
+		    log.debug(data + " added.");
+	    } catch (TechSpecNotFoundException e) {
+		log.error("TechSpec not found for SampleDiagnosis", e);
+	    }
+	    start = false;
+	}
+
         Iterator iter = rawSensorDataSub.getChangedCollection().iterator();
 	while (iter.hasNext()) {
 	    SampleRawSensorData data = (SampleRawSensorData)iter.next();

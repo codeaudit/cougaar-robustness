@@ -27,6 +27,7 @@ package org.cougaar.coordinator.activation;
 
 
 import org.cougaar.coordinator.Action;
+import org.cougaar.coordinator.ActionsWrapper;
 import org.cougaar.coordinator.IllegalValueException;
 import org.cougaar.coordinator.DeconflictionPluginBase;
 import org.cougaar.coordinator.techspec.ActionTechSpecInterface;
@@ -164,8 +165,11 @@ public class ActionEnablingPlugin extends DeconflictionPluginBase implements Not
         }
       if (logger.isInfoEnabled()) logger.info("Setting: "+action);
       publishAdd(new ActionPatience(action, sa.getPatience()));
-      if(logger.isDebugEnabled())logger.debug("publishChange "+action.dump());
-      publishChange(action);
+      //if(logger.isDebugEnabled())logger.debug("publishChange "+action.dump());
+      //publishChange(action);
+      ActionsWrapper aw = action.getWrapper();
+      if(logger.isDebugEnabled())logger.debug("publishChange "+aw);
+      publishChange(aw);
     }
     
     protected void setupSubscriptions() {
