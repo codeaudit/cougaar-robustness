@@ -26,50 +26,49 @@
 package org.cougaar.coordinator.costBenefit;
 
 
-import org.cougaar.coordinator.DefenseApplicabilityConditionSnapshot;
 import org.cougaar.coordinator.DeconflictionPluginBase;
-
-import org.cougaar.coordinator.techspec.ThreatModelInterface;
-import org.cougaar.coordinator.techspec.DefenseTechSpecInterface;
+import org.cougaar.core.persist.NotPersistable;
+import org.cougaar.util.UnaryPredicate;
+import org.cougaar.core.blackboard.IncrementalSubscription;
+import org.cougaar.coordinator.techspec.ActionTechSpecInterface;
 import org.cougaar.coordinator.policy.DefensePolicy;
-import org.cougaar.coordinator.selection.SelectedAction;
 import org.cougaar.coordinator.believability.StateEstimation;
+import org.cougaar.coordinator.believability.StateDimensionEstimation;
 import org.cougaar.coordinator.believability.AssetBeliefState;
 import org.cougaar.coordinator.believability.NoSuchBeliefStateException;
+import org.cougaar.coordinator.techspec.AssetID;
+import org.cougaar.coordinator.techspec.AssetState;
+import org.cougaar.coordinator.Action;
+import org.cougaar.coordinator.ActionsWrapper;
+import org.cougaar.coordinator.techspec.ActionDescription;
+import org.cougaar.coordinator.techspec.ActionCost;
+import org.cougaar.coordinator.techspec.AssetStateDimension;
+import org.cougaar.coordinator.techspec.AssetTransitionWithCost;
+import org.cougaar.coordinator.techspec.ActionTechSpecService;
+import org.cougaar.coordinator.techspec.TechSpecNotFoundException;
 
 import java.util.Iterator;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Vector;
-
 import java.util.Enumeration;
-
-
-
-import org.cougaar.core.persist.NotPersistable;
-
-import org.cougaar.core.blackboard.IncrementalSubscription;
-import org.cougaar.util.UnaryPredicate;
-import org.cougaar.core.service.BlackboardService;
- 
+import java.util.Set;
 
 
 /**
- * This Plugin is used to handle the cost benefit functions for Defense Deconfliction
- * It emits CostBenefitDiagnosis objects.
+ * This Plugin is used to handle the cost benefit computation for Defense Deconfliction
+ * It emits CostBenefitEvaluation objects to the BB and cleans up old ones
  *
  */
 public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPersistable {
 
-    
+    private ActionTechSpecService ActionTechSpecService;    
     private IncrementalSubscription stateEstimationSubscription;    
-    private IncrementalSubscription defenseTechSpecsSubscription;
+    private IncrementalSubscription actionTechSpecsSubscription;
     private IncrementalSubscription threatModelSubscription;
-    private IncrementalSubscription defensePolicySubscription;
-    private IncrementalSubscription selectedActionSubscription;
-    private IncrementalSubscription pluginControlSubscription;
+    private IncrementalSubscription knobSubscription;
     
-    private Hashtable defenses;
+    private Hashtable actions;
     
     public static final String CALC_METHOD = "SIMPLE";
     public CostBenefitKnob knob;
@@ -81,31 +80,14 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
         super();
         
     }
-    
-
-    /**
-      * Demonstrates how to read in parameters passed in via configuration files. Use/remove as needed. 
-      */
-    private void getPluginParams() {
-        
-        //The 'logger' attribute is inherited. Use it to emit data for debugging
-        if (logger.isInfoEnabled() && getParameters().isEmpty()) logger.error("plugin saw 0 parameters.");
-
-        Iterator iter = getParameters().iterator (); 
-        if (iter.hasNext()) {
-             logger.debug("Parameter = " + (String)iter.next());
-        }
-    }       
+         
 
     /**
      * Called from outside. Should contain plugin initialization code.
      */
     public void load() {
-        super.load();
-        getPluginParams();
-        
-        defenses = new Hashtable(10);
-        
+        super.load();        
+        actions = new Hashtable(10);        
         knob = new CostBenefitKnob();
     }
     
@@ -113,133 +95,35 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
     protected void execute() {
 
-        //***************************************************DefenseTechSpecs
-        //Handle the addition of new DefenseTechSpecs
-        for ( Iterator iter = defenseTechSpecsSubscription.getAddedCollection().iterator();  
-          iter.hasNext() ; ) 
-        {
-            DefenseTechSpecInterface dtsa = (DefenseTechSpecInterface)iter.next();            
-            
-            //Process - by adding this defense to our hashtable            
-            defenses.put(dtsa.getName(), dtsa);
-        }
+        Iterator iter;
 
-        //Handle the modification of DefenseTechSpecs
-        for ( Iterator iter = defenseTechSpecsSubscription.getChangedCollection().iterator();  
-          iter.hasNext() ; ) 
-        {
-            DefenseTechSpecInterface dtsc = (DefenseTechSpecInterface)iter.next();
-            //Remove old one & add new one
-            defenses.remove(dtsc.getName());
-            defenses.put(dtsc.getName(), dtsc);
+        // If the control Knob has been changed (by the PolicyPlugin), grab the new settings for use in the CB computations
+        iter = knobSubscription.getChangedCollection().iterator();
+        if (iter.hasNext()) 
+        {        
+            knob = (CostBenefitKnob) iter.next();
         }
-        
-        //Handle the removal of DefenseTechSpecs
-        for ( Iterator iter = defenseTechSpecsSubscription.getRemovedCollection().iterator();  
-          iter.hasNext() ; ) 
-        {
-            DefenseTechSpecInterface dtsr = (DefenseTechSpecInterface)iter.next();
-            //Process - remove from our hashtable
-            defenses.remove(dtsr.getName());
-        }
-
-        //***************************************************StateEstimation
         
         //Handle the addition of new StateEstimations
-        for ( Iterator iter = stateEstimationSubscription.getAddedCollection().iterator();  
-          iter.hasNext() ; ) 
+        iter = stateEstimationSubscription.getAddedCollection().iterator(); 
+        while(iter.hasNext()) 
         {
-            StateEstimation sea = (StateEstimation)iter.next();
-            //Process - a new SE object - compute the benefits for each defense & publish a CostBenefitDiagnosis
+            StateEstimation se = (StateEstimation)iter.next();
 
-            String err = sea.hasError() ? sea.getErrorMessage() : "none";
-            String out = "New StateEstimation with "+sea.size()+" AssetBeliefStates -- Error:"+err+"\n";
-            
-            if (logger.isInfoEnabled()) logger.info(sea.toString());
-            
-            CostBenefitDiagnosis cbd = null;
-            
-            Enumeration states = sea.elements();
-            while (states.hasMoreElements() ) {
-                
-                AssetBeliefState abs = (AssetBeliefState)states.nextElement();                
-                //We cannot create this until we have info from one of the asset belief states. Only create 
-                //one per state estimation
-                
-                if (cbd == null) { cbd = new CostBenefitDiagnosis(abs.getAssetName(), CALC_METHOD); }
-                
-                //Now, look at the AssetBeliefState, get the defense condition, the defense
-                                
-                String assetStateName = abs.getAssetStateDescName();
-                out += "-- asset="+ abs.getAssetName()+ ", state descriptor="+abs.getAssetStateDescName()+"\n";
+            // Produce a CBE containing the benefits for each offered action on the Asset
+            CostBenefitEvaluation cbe = createCostBenefitEvaluation(se, knob);
 
-                
-                //DefenseApplicabilityCondition dac = (DefenseApplicabilityCondition)abs.getDefenseCondition(); 
-                //DefaultDefenseTechSpec 
-                                
-                Vector defenses = findDefenseByAssetStateName(assetStateName);
-                if (defenses == null | defenses.size() == 0) { //ouch!
-                    logger.warn("Could not find any defense tech specs for AssetStateName. Name = " + assetStateName );
-                    continue;
-                }                                
-            
-                DefenseTechSpecInterface dtsi;
-                for (Iterator i = defenses.iterator(); i.hasNext();) {
-                    
-                    dtsi  = (DefenseTechSpecInterface)i.next();
-                    
-                    //Get believability from asset belief state
-                    double beliefProb = getBelievability(abs);
-                    
-                    //Compute the expected total benefit
-                    double d = computeBenefit(beliefProb, dtsi);
+            // Clean up the old SE & CBE
+            CostBenefitEvaluation old_cbe = findCostBenefitEvaluation(se.getAssetID());
+            StateEstimation old_se = old_cbe.getStateEstimation();
+            publishRemove(old_se);
+            publishRemove(old_cbe);
 
-                    out += "---- defense="+ dtsi.getName()+ ", beliefProb="+beliefProb+", benefit="+d+"\n";
-                    
-                    DefenseApplicabilityConditionSnapshot dac = DefenseApplicabilityConditionSnapshot.find( dtsi.getName(), cbd.getAssetName(), sea.getDefenseConditions());
-                    if (dac == null) {
-                        logger.warn("Could not find Applicability condition for defense="+dtsi.getName()+", asset="+cbd.getAssetName());
-                    }
-                    cbd.addDefense(dtsi, dac, d, beliefProb, knob.getHorizon() );
-                    //cbd.addDefense(dtsi, d, beliefProb);
-                }            
-            } 
-            logger.debug(out);
-            
-            //******************************************************Publishing to the BB
-            //Adding a CostBenefitDiagnosis to the BB
-            logger.warn("Publishing CostBenefitDiagnosis: \n" + cbd);
-            publishAdd(cbd);
-            
+            // Publish the new CBE
+            publishAdd(cbe);
+  
         }
 
-
-        //***************************************************DefensePolicy
-        //Handle the addition of new DefensePolicies
-        /*
-        for ( Iterator iter = defensePolicySubscription.getAddedCollection().iterator();  
-          iter.hasNext() ; ) 
-        {
-            DefensePolicy dpa = (DefensePolicy)iter.next();
-            //Process
-        }
-
-        //Handle the modification of DefensePolicies
-        for ( Iterator iter = defensePolicySubscription.getChangedCollection().iterator();  
-          iter.hasNext() ; ) 
-        {
-            DefensePolicy dpc = (DefensePolicy)iter.next();
-            //Process
-        }
-        
-        //Handle the removal of DefensePolicies
-        for ( Iterator iter = defensePolicySubscription.getRemovedCollection().iterator();  
-          iter.hasNext() ; ) 
-        {
-            DefensePolicy dpr = (DefensePolicy)iter.next();
-            //Process
-        }
-        */
         //***************************************************ThreatModelInterface
         //Handle the addition of new ThreatModels
         /*
@@ -266,238 +150,191 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
             //Process
         }
         */
-        //***************************************************SelectedActions
-        /*
-        //Handle the addition of new SelectedActions
-        for ( Iterator iter = selectedActionSubscription.getAddedCollection().iterator();  
-          iter.hasNext() ; ) 
-        {
-            SelectedAction tma = (SelectedAction)iter.next();
-            //Process
-        }
-
-        //Handle the modification of SelectedActions
-        for ( Iterator iter = selectedActionSubscription.getChangedCollection().iterator();  
-          iter.hasNext() ; ) 
-        {
-            SelectedAction tmc = (SelectedAction)iter.next();
-            //Process
-        }
-        
-        //Handle the removal of SelectedActions
-        for ( Iterator iter = selectedActionSubscription.getRemovedCollection().iterator();  
-          iter.hasNext() ; ) 
-        {
-            SelectedAction tmr = (SelectedAction)iter.next();
-            //Process
-        }
-        */
-        
-
-
-
-
            
     }
     
     /** 
-      * Called from outside once after initialization, as a "pre-execute()". This method sets up the 
-      * subscriptions to objects that we'return interested in. In this case, defense tech specs and
-      * defense conditions.
+      * Sets up local subscriptions - in this case for the control Knob 
       */
     protected void setupSubscriptions() {
-
-        stateEstimationSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
-            public boolean execute(Object o) {
-                if ( o instanceof StateEstimation) {
-                    return true ;
-                }
-                return false ;
-            }
-        }) ;
-        
-
-        defenseTechSpecsSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
-            public boolean execute(Object o) {
-                if ( o instanceof DefenseTechSpecInterface) {
-                    return true ;
-                }
-                return false ;
-            }
-        }) ;
-        
-/*        
-        threatModelSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
-            public boolean execute(Object o) {
-                if ( o instanceof ThreatModelInterface) {
-                    return true ;
-                }
-                return false ;
-            }
-        }) ;
-
-        defensePolicySubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
-            public boolean execute(Object o) {
-                if ( o instanceof DefensePolicy) {
-                    return true ;
-                }
-                return false ;
-            }
-        }) ;
-
-        //Currently not referenced in execute() method. Use as required.
-        selectedActionSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
-            public boolean execute(Object o) {
-                if ( o instanceof SelectedAction) {
-                    return true ;
-                }
-                return false ;
-            }
-        }) ;
-*/
-        
-        //*********************
-        //Not used at this time - Will be used to provide out-of-band control of this plugin
-        //*********************
-        pluginControlSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
-            public boolean execute(Object o) {
-                if ( o instanceof CostBenefitKnob) {
-                    return true ;
-                }
-                return false ;
-            }
-        }) ;
-        
+        knobSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(CostBenefitKnob.pred);
         publishAdd(knob);
-
-
-
-
-
     }
     
- 
-    private final static UnaryPredicate pred = new UnaryPredicate() {
-            public boolean execute(Object o) {  
-                return 
-                    (o instanceof CostBenefitDiagnosis);
-            }
-        };
-    
-    public static CostBenefitDiagnosis find(String expandedName, BlackboardService blackboard) {
- 
-        Collection c = blackboard.query(pred);
-        Iterator iter = c.iterator();
-        CostBenefitDiagnosis cbd = null;
-        //if (logger.isDebugEnabled()) logger.debug(new Integer(c.size()).toString());
-        while (iter.hasNext()) {
-            Object o = iter.next();
-            if (o instanceof CostBenefitDiagnosis) {
-               cbd = (CostBenefitDiagnosis) o;
-               if (cbd.getAssetName().equals(expandedName)) {
-                return cbd;
-               }
-           }
-        }
-        return null;
-    }     
 
-    /**
-     * Extracts the believability for the AssetBeliefState 
-     *
-     * @return the believability for the AssetBeliefState 
-     */
-    private double getBelievability(AssetBeliefState abs) { 
-    
-        //extract prob from AssetBeliefState
-        Enumeration e = abs.getStateNames();
-        int count = 0;
-        double  okProb = 0;
-        double badProb = 0;
-        boolean hasBadProb = false;
-        boolean hasOKProb = false;
-        while (e.hasMoreElements()) {
-            count++;
-            String s = (String)e.nextElement();
-            if (s.equals("OK")) {
-                try {
-                    okProb = abs.get("OK");
-                    hasOKProb = true;
-                } catch (NoSuchBeliefStateException ne) {
-                    logger.warn("***AssetBeliefState had no OK probability: " + abs.toString() );                    
+    private CostBenefitEvaluation createCostBenefitEvaluation(StateEstimation se, CostBenefitKnob knob) {
+
+        AssetID assetID = se.getAssetID();
+        CostBenefitEvaluation cbe = 
+                new CostBenefitEvaluation(assetID, knob.getCalcMethod(), knob.getHorizon(), se);
+
+        Collection actions = findActionCollection(se.getAssetID());
+        Iterator actionsIter = actions.iterator();
+
+        // iterate over all applicable Actions for this asset
+        // compute the expected c-b for each based on StateEstimation
+        while (actionsIter.hasNext()) {
+            ActionsWrapper thisActionWrapper = (ActionsWrapper) actionsIter.next();
+            Action thisAction = thisActionWrapper.getAction();
+
+            try {
+                //call tech spec service & get action tech spec  
+                ActionTechSpecInterface atsi = (ActionTechSpecInterface) actionTechSpecService.getActionTechSpec(thisAction.getClass().getName());
+                if (atsi == null) {
+                    throw (new TechSpecNotFoundException( "Cannot find Action Tech Spec for "+ this.getClass().getName() ));
                 }
-            } else {
+                // Which StateDimension does this Action apply to?
+                AssetStateDimension asd = atsi.getStateDimension();
+                // Get the StateDimensionEstimation for that dimension
                 try {
-                    badProb = abs.get(s);
-                    hasBadProb = true;
-                } catch (NoSuchBeliefStateException ne) {
-                    if (hasOKProb) { badProb = 1 - okProb; } // then just compute it from okProb
-                    else { badProb = 0; }
-                    logger.warn("***AssetBeliefState had no bad probability: " + abs.toString() );                    
+                    // Throws an exception if SDE not found
+                    StateDimensionEstimation currentEstimatedStateDimension = se.getStateDimensionEstimation(asd);
+
+                    // Find the Variants of this Action currently being offered
+                    Set offeredVariants = thisAction.getValuesOffered();
+                    // Get the TechSpec data for all the Variants
+                    Vector actionDescriptions = atsi.getActions();
+                    // create the Action container that will hold the evaluations of all offered Variants
+                    ActionEvaluation thisActionEvaluation = new ActionEvaluation(thisAction);
+                    // iterate thru all offered Variants of this Action
+                    Iterator variantIter = offeredVariants.iterator();                    
+                    while (variantIter.hasNext()) {
+                        ActionDescription thisVariantDescription = (ActionDescription) actionDescriptions.get(actionDescriptions.indexOf(variantIter.next()));
+                        StateDimensionEstimation predictedStateDimensionEstimation = 
+                                computePredictedStateDimensionEstimation(assetID, currentEstimatedStateDimension, thisVariantDescription);
+                        PredictedCost predictedCost = 
+                                computePredictedCost(assetID, currentEstimatedStateDimension, thisVariantDescription, knob);
+                        double predictedBenefit = 
+                                computePredictedBenefit(assetID, currentEstimatedStateDimension, predictedStateDimensionEstimation, knob);
+                        thisActionEvaluation.addVariantEvaluation(
+                                new VariantEvaluation(thisVariantDescription, predictedStateDimensionEstimation, predictedCost, predictedBenefit));  
+                    }
                 }
+                catch (NoSuchBeliefStateException e) {
+                    logger.error("Cannot find StateDimensionEstimate for "+asd.toString());
+                } 
+
             }
+            catch (TechSpecNotFoundException e) {
+                if (logger.isDebugEnabled()) logger.debug("Cannot find Action Tech Spec for "+ this.getClass().getName() );
+            }
+
         }
 
-        if (count > 2) { //we had more than two states!
-            logger.warn("***AssetBeliefState had more than two states: " + abs.toString() );
-        } else if (count == 0) { //we had NO states!
-            logger.error("***AssetBeliefState had NO states. Ignoring." );
-            return 0;
+        return cbe;
+    }
+
+    private StateDimensionEstimation computePredictedStateDimensionEstimation 
+            (AssetID assetID, StateDimensionEstimation currentStateDimensionEstimation, ActionDescription variantDescription) {
+
+        // set up the data structure for the projected state estimation if the Variant is selected
+        StateDimensionEstimation predictedStateDimensionEstimation = 
+            new StateDimensionEstimation(currentStateDimensionEstimation.getAssetName(), currentStateDimensionEstimation.getAssetStateDescriptorName(), 0);
+        Enumeration stateEnumeration = currentStateDimensionEstimation.getStateNames();
+        while (stateEnumeration.hasMoreElements()) {
+            predictedStateDimensionEstimation.setProbability((String)stateEnumeration.nextElement(), 0.0);
+        }
+        
+        // compute the probability of each end state (in this dimension) based on estimate of current state & the variant's transitions
+        Enumeration startStateEnumeration = currentStateDimensionEstimation.getStateNames();
+        while (startStateEnumeration.hasMoreElements()) {
+            String startStateName = (String) startStateEnumeration.nextElement();
+            double startStateProb;
+            double endStateProb;
+            try {
+                startStateProb = currentStateDimensionEstimation.get(startStateName);
+                }
+            catch (NoSuchBeliefStateException e) {
+                // Should be impossible to get here if the ActionDescription is correctly populated
+                throw new RuntimeException("Could not find an AssetState that the ActionDescription said t had");
+                }
+            AssetTransitionWithCost atwc = variantDescription.getTransitionForState(startStateName);
+            AssetState endState = atwc.getEndValue();
+            String endStateName = endState.getName();
+            try {
+                endStateProb = predictedStateDimensionEstimation.get(endStateName);
+                }
+            catch (NoSuchBeliefStateException e) {
+                // Should be impossible to get here if the ActionDescription is correctly populated
+                throw new RuntimeException("Could not find an AssetState that the ActionDescription said t had");
+                }            
+            predictedStateDimensionEstimation.setProbability(endStateName, endStateProb+startStateProb);
         }
 
-        return badProb;
-    }    
-    
-    private double computeBenefit(double badProb, DefenseTechSpecInterface dtsi) { 
-    
-        try {            
+      return predictedStateDimensionEstimation;
+    }
+       
+
+    private PredictedCost computePredictedCost 
+            (AssetID assetID, StateDimensionEstimation currentStateDimensionEstimation, ActionDescription variantDescription, CostBenefitKnob knob) {
+        
+        double horizon = knob.getHorizon();
+        
+        PredictedCost predictedCost = new PredictedCost();
+        Enumeration stateEnumeration = currentStateDimensionEstimation.getStateNames();
+
+        // FAKE METHODS TO GET DYNAMIC ASSET STATS - HOW IS THIS ACTUALLY DONE?????
+        double memorySize = FOO(assetID);
+        double bandwidthSize = BAR(assetID);
+        
+        while (stateEnumeration.hasMoreElements()) {
+            String stateName = (String) stateEnumeration.nextElement();
+            AssetTransitionWithCost atwc = variantDescription.getTransitionForState(stateName);
+            double transitionProb;
+            try {
+                transitionProb = currentStateDimensionEstimation.get(stateName);
+                }
+            catch (NoSuchBeliefStateException e) {
+                // Should be impossible to get here if the ActionDescription is correctly populated
+                throw new RuntimeException("Could not find an AssetState that the ActionDescription said t had");
+                }  
+
+            double c;  //  a reuseable variable
+
+            ActionCost.Cost oneTimeBandwidthCost = atwc.getOneTimeCost().getBandwidthCost();
+            ActionCost.Cost continuingBandwidthCost = atwc.getContinuingCost().getBandwidthCost();
+            c = computeIncrementalCost(oneTimeBandwidthCost, memorySize, bandwidthSize) 
+                    + horizon * computeIncrementalCost(continuingBandwidthCost, memorySize, bandwidthSize);
+            predictedCost.incrementBandwidthCost(transitionProb * c);
+
+            ActionCost.Cost oneTimeMemoryCost = atwc.getOneTimeCost().getMemoryCost();
+            ActionCost.Cost continuingMemoryCost = atwc.getContinuingCost().getMemoryCost();
+            c = computeIncrementalCost(oneTimeMemoryCost, memorySize, bandwidthSize) 
+                    + horizon * computeIncrementalCost(continuingMemoryCost, memorySize, bandwidthSize);
+            predictedCost.incrementMemoryCost(transitionProb * c);
+
+            ActionCost.Cost oneTimeCPUCost = atwc.getOneTimeCost().getCPUCost();
+            ActionCost.Cost continuingCPUCost = atwc.getContinuingCost().getCPUCost();
+            c = computeIncrementalCost(oneTimeCPUCost, memorySize, bandwidthSize) 
+                    + horizon * computeIncrementalCost(continuingCPUCost, memorySize, bandwidthSize);
+            predictedCost.incrementCPUCost(transitionProb * c);
             
-            double expectedBenefitPerUnitTime = dtsi.t_getBenefit() * badProb;
-            double expectedTotalBenefit = expectedBenefitPerUnitTime * knob.getHorizon() - dtsi.t_getCost();
-
-            return expectedTotalBenefit;
-            
-        } catch (Exception e) {
-            logger.warn("Request to compute benefit caused exception (returning 0 benefit). Defense name = " + dtsi.getName(), e );
-            return 0;
+            long oneTimeTimeCost = atwc.getOneTimeCost().getTimeCost();
+            predictedCost.incrementTimeCost(transitionProb * oneTimeTimeCost);
         }
         
-    }
-    
-    
-    /** 
-      * Locate the DefenseTechSpecInterface(s) matching the supplied string 
-      */
-    private Vector findDefenseByAssetStateName(String assetStateName) {
-        
-        Vector results = new Vector();
-        
-        for (Enumeration e = defenses.elements(); e.hasMoreElements(); ) {
-            DefenseTechSpecInterface dtsi = (DefenseTechSpecInterface)e.nextElement();
-            if (assetStateName.equals(dtsi.getAffectedAssetState().getStateName()) ) {
-                results.addElement(dtsi);
-            }
-        }
-        return results;
-        
+        return predictedCost;
     }
 
+   private double computePredictedBenefit
+            (AssetID assetID, StateDimensionEstimation currentStateDimensionEstimation, StateDimensionEstimation predictedStateDimensionEstimation, CostBenefitKnob knob) {
 
-    /** 
-      * Locate the DefenseTechSpecInterface matching the supplied string 
-      */
-    private DefenseTechSpecInterface findDefense(String defenseName) {
-        
-        for (Enumeration e = defenses.elements(); e.hasMoreElements(); ) {
-            DefenseTechSpecInterface dtsi = (DefenseTechSpecInterface)e.nextElement();
-            if (defenseName.equals(dtsi.getName()) ) {
-                return dtsi;
-            }
-        }
-        return null;
-        
+        return 0.0;
     }
-    
 
+    private double FOO(AssetID assetID) { return 1.0; }
+    private double BAR(AssetID assetID) { return 1.0; }
+
+
+    private double computeIncrementalCost(ActionCost.Cost thisCost, double memSize, double bandwidthSize) {
+        double c = thisCost.getIntensity();
+        if (!(thisCost.isAgentSizeAFactor()) || thisCost.isMessageSizeAFactor()) return c;
+        double outCost = 0.0;
+        if (thisCost.isAgentSizeAFactor()) outCost = outCost + c * memSize;
+        if (thisCost.isMessageSizeAFactor()) outCost = outCost + c * bandwidthSize;
+        return outCost;
+    }
+
+      
 }
 

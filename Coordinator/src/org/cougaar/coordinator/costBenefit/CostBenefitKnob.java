@@ -24,6 +24,8 @@
  */
 
 package org.cougaar.coordinator.costBenefit;
+
+import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.persist.NotPersistable;
 
 /**
@@ -50,4 +52,11 @@ public class CostBenefitKnob implements NotPersistable {
     
     public String getCalcMethod() { return calcMethod; }
     
+    public final static UnaryPredicate pred = new UnaryPredicate() {
+        public boolean execute(Object o) {  
+            return 
+                (o instanceof CostBenefitKnob);
+        }
+    };
+
 }
