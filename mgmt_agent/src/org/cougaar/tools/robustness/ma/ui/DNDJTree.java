@@ -1,3 +1,23 @@
+/*
+ * <copyright>
+ *  Copyright 2001-2002 Mobile Intelligence Corp.
+ *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the Cougaar Open Source License as published by
+ *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
+ *
+ *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
+ *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
+ *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
+ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE, AND WITHOUT
+ *  ANY WARRANTIES AS TO NON-INFRINGEMENT.  IN NO EVENT SHALL COPYRIGHT
+ *  HOLDER BE LIABLE FOR ANY DIRECT, SPECIAL, INDIRECT OR CONSEQUENTIAL
+ *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE OF DATA OR PROFITS,
+ *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ *  PERFORMANCE OF THE COUGAAR SOFTWARE.
+ * </copyright>
+ */
 package org.cougaar.tools.robustness.ma.ui;
 
 import java.awt.*;
@@ -5,7 +25,6 @@ import java.awt.dnd.*;
 import java.awt.datatransfer.*;
 import java.awt.event.*;
 import java.io.*;
-import java.io.IOException;
 import java.util.*;
 import javax.swing.*;
 import javax.swing.tree.*;
@@ -61,7 +80,8 @@ public class DNDJTree extends JTree
         dragSourceNodes = null;
       }
       public void mouseReleased(MouseEvent e) {
-        if (dragSourceNodes == null && pressEvent != null) super.mousePressed(pressEvent);
+        if (dragSourceNodes == null && pressEvent != null)
+        { super.mousePressed(pressEvent); }
       }
     }
   }
@@ -95,23 +115,23 @@ public class DNDJTree extends JTree
             EntityNode sen = (EntityNode)dragSourceNodes[0];
             //components only can be relocated in the same community
             if(!getParentCommunityOfNode(sen).equals(getParentCommunityOfNode((EntityNode)target)))
-              return DnDConstants.ACTION_NONE;
+            {  return DnDConstants.ACTION_NONE; }
             //components only can be relocated to different parents
             for(int j=0; j<dragSourceNodes.length; j++)
             {
               EntityNode temp = (EntityNode)dragSourceNodes[j];
               if((new TreePath(target.getPath()))
                 .equals(new TreePath(((DefaultMutableTreeNode)temp.getParent()).getPath())))
-                return DnDConstants.ACTION_NONE;
+              {  return DnDConstants.ACTION_NONE; }
             }
 
             EntityInfo sei = (EntityInfo)sen.getUserObject();
             if(sei.getType() == EntityInfo.AGENT) //an agent only can be a child of a node
               if(ei.getType() == EntityInfo.NODE)
-                return DnDConstants.ACTION_MOVE;
+              { return DnDConstants.ACTION_MOVE; }
             if(sei.getType() == EntityInfo.NODE) //a node only can be a child of a host
               if(ei.getType() == EntityInfo.HOST)
-                return DnDConstants.ACTION_MOVE;
+              {  return DnDConstants.ACTION_MOVE; }
           }
         }
       }
@@ -151,8 +171,9 @@ public class DNDJTree extends JTree
     EntityNode newNode =
       new EntityNode(cto);
     Attributes attrs = cto.getAttributes();
-    if(attrs != null)
+    if(attrs != null) {
       newNode.addAttributes(attrs);
+    }
     int ix = target.getChildCount(); // Drop at end by default
     DefaultTreeModel model = (DefaultTreeModel) getModel();
     if (before != null) {       // If before specified, put it there.
@@ -194,8 +215,9 @@ public class DNDJTree extends JTree
         // if can't drop on the target, see if you can drop on its parent
         if (action == DnDConstants.ACTION_NONE) {
           target = (DefaultMutableTreeNode)target.getParent();
-          if (target != null)
+          if (target != null) {
             action = isDroppable(possibleFlavors, target);
+          }
           return action;
         }
         return action;
@@ -220,8 +242,9 @@ public class DNDJTree extends JTree
       int result = isDroppable(possibleFlavors, target);
       return (result == DnDConstants.ACTION_MOVE ||
               result == DnDConstants.ACTION_COPY);
-    } else
+    } else {
       return false;
+      }
   }
 
   /**
@@ -285,10 +308,13 @@ public class DNDJTree extends JTree
   public void dragGestureRecognized(DragGestureEvent event) {
     InputEvent ie = event.getTriggerEvent();
     // ignore right mouse events
-    if ((ie.getModifiers() & InputEvent.BUTTON3_MASK) != 0)
+    if ((ie.getModifiers() & InputEvent.BUTTON3_MASK) != 0) {
       return;
+    }
     DefaultMutableTreeNode target = getDropTarget(event.getDragOrigin());
-    if (target == null) return; // Nothing to drag.
+    if (target == null) {
+      return; // Nothing to drag.
+    }
     TreePath[] paths = getSelectionPaths();
     boolean doMultiDrag =
       paths != null && paths.length > 1 && supportsMultiDrag();
@@ -301,9 +327,13 @@ public class DNDJTree extends JTree
           doMultiDrag = false;
           break;
         }
-        if (node == target) targetIsSelected = true;
+        if (node == target) {
+         targetIsSelected = true;
+        }
       }
-      if (!targetIsSelected) doMultiDrag = false;
+      if (!targetIsSelected) {
+        doMultiDrag = false;
+      }
     }
     if (doMultiDrag) {
       dragSourceNodes = new DefaultMutableTreeNode[paths.length];
@@ -311,9 +341,6 @@ public class DNDJTree extends JTree
         dragSourceNodes[i] =
           (DefaultMutableTreeNode) paths[i].getLastPathComponent();
       }
-//       if(log.isDebugEnabled()) {
-//        log.debug("Multi-drag " + dragSourceNodes.length + " nodes");
-//       }
       Transferable draggableObject = null;
       try {
         draggableObject = makeDraggableObject(new DMTNArray(dragSourceNodes));
@@ -322,8 +349,9 @@ public class DNDJTree extends JTree
           log.error("Illegal argument exception: " + iae);
         }
       }
-      if (draggableObject == null)
+      if (draggableObject == null) {
         return; // if couldn't make draggable object, then return
+      }
       dragSource.startDrag(event, null,
                            draggableObject, this);
     } else {
@@ -338,8 +366,9 @@ public class DNDJTree extends JTree
             log.error("Illegal argument exception: " + iae);
           }
         }
-        if (draggableObject == null)
+        if (draggableObject == null) {
           return; // if couldn't make draggable object, then return
+        }
         dragSource.startDrag(event, null,
                              draggableObject, this);
       }
@@ -370,12 +399,10 @@ public class DNDJTree extends JTree
    */
 
   public void dragDropEnd (DragSourceDropEvent event) {
-//     if(log.isDebugEnabled()) {
-//      log.debug("drop action = " + event.getDropAction());
-//     }
     if (event.getDropSuccess()
-        && event.getDropAction() == DnDConstants.ACTION_MOVE)
+        && event.getDropAction() == DnDConstants.ACTION_MOVE) {
       removeElement();
+    }
   }
 
   /**
@@ -385,17 +412,18 @@ public class DNDJTree extends JTree
   public void removeElement(){
     if (dragSourceNodes != null) {
       for (int i = 0; i < dragSourceNodes.length; i++) {
-EntityNode parent = (EntityNode)dragSourceNodes[i].getParent();
+        EntityNode parent = (EntityNode)dragSourceNodes[i].getParent();
         ((DefaultTreeModel) getModel())
           .removeNodeFromParent(dragSourceNodes[i]);
-if(parent.getChildCount() == 0)
-{
-  String node = ((EntityInfo)parent.getUserObject()).getName();
-  String host = ((EntityInfo)((EntityNode)parent.getParent()).getUserObject()).getName();
-  String community = (String)((DefaultMutableTreeNode)parent.getParent().getParent().getParent()).getUserObject();
-  community = community.substring(community.indexOf(" "), community.length()).trim();
-  addEmptyNode(community, host, node);
-}
+        //record the empty node
+        if(parent.getChildCount() == 0)
+        {
+          String node = ((EntityInfo)parent.getUserObject()).getName();
+          String host = ((EntityInfo)((EntityNode)parent.getParent()).getUserObject()).getName();
+          String community = (String)((DefaultMutableTreeNode)parent.getParent().getParent().getParent()).getUserObject();
+          community = community.substring(community.indexOf(" "), community.length()).trim();
+          addEmptyNode(community, host, node);
+        }
       }
       dragSourceNodes = null;
     }
@@ -407,9 +435,6 @@ if(parent.getChildCount() == 0)
    */
 
   public void dragEnter (DragSourceDragEvent event) {
-//       if(log.isDebugEnabled()) {
-//         log.debug( " drag source listener dragEnter");
-//       }
   }
 
   /**
@@ -418,9 +443,6 @@ if(parent.getChildCount() == 0)
    */
 
   public void dragOver (DragSourceDragEvent event) {
-//       if(log.isDebugEnabled()) {
-//         log.debug( "dragExit");
-//       }
   }
 
   /**
@@ -429,9 +451,6 @@ if(parent.getChildCount() == 0)
    */
 
   public void dragExit (DragSourceEvent event) {
-//     if(log.isDebugEnabled()) {
-//     log.debug( "dragExit");
-//     }
   }
 
   /**
@@ -440,9 +459,6 @@ if(parent.getChildCount() == 0)
    */
 
   public void dropActionChanged ( DragSourceDragEvent event) {
-//       if(log.isDebugEnabled()) {
-//         log.debug( "dropActionChanged");
-//       }
   }
 
   /**
@@ -450,22 +466,13 @@ if(parent.getChildCount() == 0)
    */
 
   public void dragEnter (DropTargetDragEvent event) {
-    // start for debugging
-    //    DefaultMutableTreeNode target = getDropTarget(event.getLocation());
-    //    if (target != null)
-    //  if(log.isDebugEnabled()) {
-    //    log.debug("DRAG ENTER: " + target.getRoot());
-    //  }
-    //    else
-    //  if(log.isDebugEnabled()) {
-    //    log.debug("DRAG ENTER: " + null);
-    //  }
-    // end for debugging
     int action = testDrop(event);
-    if (action == DnDConstants.ACTION_NONE)
+    if (action == DnDConstants.ACTION_NONE) {
       event.rejectDrag();
-    else
+    }
+    else {
       event.acceptDrag(DnDConstants.ACTION_MOVE);
+    }
   }
 
   /**
@@ -473,17 +480,6 @@ if(parent.getChildCount() == 0)
    */
 
   public void dragOver (DropTargetDragEvent event) {
-    // start for debugging
-    //    DefaultMutableTreeNode target = getDropTarget(event.getLocation());
-    //    if (target != null)
-    //  if(log.isDebugEnabled()) {
-    //    log.debug("drag over: " + target.getRoot());
-    //  }
-    //    else
-    //  if(log.isDebugEnabled()) {
-    //    log.debug("drag over: " + null);
-    //  }
-    // end for debugging
     int action = testDrop(event);
     if (action == DnDConstants.ACTION_NONE) {
       event.rejectDrag();
@@ -496,9 +492,6 @@ if(parent.getChildCount() == 0)
    */
 
   public void dragExit (DropTargetEvent event) {
-//       if(log.isDebugEnabled()) {
-//         log.debug( "dragExit");
-//       }
   }
 
   /**
@@ -507,10 +500,12 @@ if(parent.getChildCount() == 0)
 
   public void dropActionChanged (DropTargetDragEvent event) {
     int action = testDrop(event);
-    if (action == DnDConstants.ACTION_NONE)
+    if (action == DnDConstants.ACTION_NONE) {
       event.rejectDrag();
-    else
+    }
+    else {
       event.acceptDrag(DnDConstants.ACTION_MOVE);
+    }
   }
 
   /**
@@ -524,8 +519,10 @@ if(parent.getChildCount() == 0)
   public Transferable makeDraggableObject(Object selected)
   {
     if(selected instanceof DefaultMutableTreeNode)
-    { if(selected instanceof EntityNode)
+    {
+      if(selected instanceof EntityNode) {
         return (EntityInfo)((EntityNode)selected).getUserObject();
+      }
     }
     else if(selected instanceof DMTNArray)
     {
@@ -538,14 +535,18 @@ if(parent.getChildCount() == 0)
   private String getParentCommunityOfNode(EntityNode node) {
     EntityInfo info = (EntityInfo)node.getUserObject();
     String comm = null;
-    if(info.getType() == EntityInfo.HOST)
+    if(info.getType() == EntityInfo.HOST) {
       comm = (String)((DefaultMutableTreeNode)node.getParent().getParent()).getUserObject();
-    else if(info.getType() == EntityInfo.NODE)
+    }
+    else if(info.getType() == EntityInfo.NODE) {
       comm = (String)((DefaultMutableTreeNode)node.getParent().getParent().getParent()).getUserObject();
-    else if(info.getType() == EntityInfo.AGENT)
+    }
+    else if(info.getType() == EntityInfo.AGENT) {
       comm = (String)((DefaultMutableTreeNode)node.getParent().getParent().getParent().getParent()).getUserObject();
-    if(comm == null)
+    }
+    if(comm == null) {
       return null;
+    }
     return comm.substring(comm.indexOf(": ")+1, comm.length()).trim();
   }
 
@@ -626,96 +627,16 @@ if(parent.getChildCount() == 0)
       Hashtable hosts = (Hashtable)emptyNodes.get(community);
       java.util.List nodes = (java.util.List)hosts.get(host);
       nodes.remove(node);
-      if(nodes.size() == 0)
+      if(nodes.size() == 0) {
         hosts.remove(host);
-      if(hosts.size() == 0)
+      }
+      if(hosts.size() == 0) {
         emptyNodes.remove(community);
+      }
     }
 
     protected static Hashtable getEmptyNodes()
     { return emptyNodes; }
-
-  public static void main(String args[]) {
-
-   /* JFrame f = new JFrame();
-    f.setSize(500, 400);
-    Container c = f.getContentPane();
-    JPanel pane = new JPanel(new BorderLayout());
-
-    //Generate your family "tree"
-    DefaultMutableTreeNode root = new DefaultMutableTreeNode("Communities");
-    DefaultMutableTreeNode com1 = new DefaultMutableTreeNode("Community: com1");
-    DefaultMutableTreeNode com2 = new DefaultMutableTreeNode("Community: com2");
-    DefaultMutableTreeNode attr1 = new DefaultMutableTreeNode("attributes");
-    DefaultMutableTreeNode name = new DefaultMutableTreeNode("Name com1");
-    DefaultMutableTreeNode type = new DefaultMutableTreeNode("Type community");
-    DefaultMutableTreeNode hosts1 = new DefaultMutableTreeNode("hosts");
-    EntityInfo ei;
-    ei = new EntityInfo("qing", "host");
-    EntityNode en1 = new EntityNode(ei);
-    ei = new EntityInfo("ManagerNode1", "node");
-    EntityNode en2 = new EntityNode(ei);
-    ei = new EntityInfo("ManagerAgent1", "agent");
-    EntityNode en3 = new EntityNode(ei);
-    ei = new EntityInfo("ManagerAgent2", "agent");
-    EntityNode en4 = new EntityNode(ei);
-    ei = new EntityInfo("ManagerNode2", "node");
-    EntityNode en5 = new EntityNode(ei);
-    ei = new EntityInfo("ron", "host");
-    EntityNode ron = new EntityNode(ei);
-    ei = new EntityInfo("SecurityNode1", "node");
-    EntityNode sen2 = new EntityNode(ei);
-    ei = new EntityInfo("SecurityAgent1", "agent");
-    EntityNode sen3 = new EntityNode(ei);
-    ei = new EntityInfo("SecurityAgent2", "agent");
-    EntityNode sen4 = new EntityNode(ei);
-    ei = new EntityInfo("SecurityNode2", "node");
-    EntityNode sen5 = new EntityNode(ei);
-
-    DefaultMutableTreeNode hosts2 = new DefaultMutableTreeNode("hosts");
-    ei = new EntityInfo("qing", "host");
-    EntityNode en6 = new EntityNode(ei);
-    ei = new EntityInfo("ManagerNode1", "node");
-    EntityNode en7 = new EntityNode(ei);
-    ei = new EntityInfo("ManagerAgent1", "agent");
-    EntityNode en8 = new EntityNode(ei);
-    ei = new EntityInfo("ManagerAgent2", "agent");
-
-    attr1.add(name);
-    attr1.add(type);
-    com1.add(attr1);
-    en2.add(en3);
-    en2.add(en4);
-    en1.add(en2);
-    en1.add(en5);
-    hosts1.add(en1);
-    sen2.add(sen3);
-    sen2.add(sen4);
-    ron.add(sen2);
-    ron.add(sen5);
-    hosts1.add(ron);
-    com1.add(hosts1);
-    root.add(com1);
-
-    en6.add(en7);
-    en6.add(en8);
-    hosts2.add(en6);
-    com2.add(hosts2);
-    root.add(com2);
-
-
-    //add the tree to the frame and display the frame.
-    DefaultTreeModel model = new DefaultTreeModel(root);
-    JScrollPane sp = new JScrollPane(new DNDJTree(model));
-    pane.add(sp, BorderLayout.CENTER);
-    c.add(pane);
-    f.pack();
-    f.show();
-    f.addWindowListener(new WindowAdapter() {
-      public void windowClosing(WindowEvent e) {
-        System.exit(0); }
-     });*/
-  }
 }
 
 

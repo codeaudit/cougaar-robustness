@@ -38,7 +38,7 @@ public class EntityNode extends DefaultMutableTreeNode  {
     {
       EntityInfo childPI = (EntityInfo) ((EntityNode) child).getUserObject();
 
-      EntityInfo oldParent = childPI.getParent();
+      //EntityInfo oldParent = childPI.getParent();
       //if (parent != null) oldParent.remove(childPI);
 
       EntityInfo newParent = (EntityInfo) getUserObject();

@@ -232,12 +232,12 @@ public class VacatePlugin extends SimplePlugin {
    * @param oldNodeName Name of existing node
    * @return New node name
    */
-  private String newNodeName(String destHost, String oldNodeName) {
+ /* private String newNodeName(String destHost, String oldNodeName) {
     // Current cougaar configuration does not support the capability
     // to create nodes on demand.  For now this method simply returns the
     // destination host name concatenated with the phrase "-RestartNode".
     return destHost + "-RestartNode";
-  }
+  }*/
 
   /**
    * Creates an emtpy node on the destination host
@@ -245,11 +245,11 @@ public class VacatePlugin extends SimplePlugin {
    * @parma nodeName Name of node to create
    * @return         True if success
    */
-  private boolean createNode(String destHost, String nodeName) {
+ /* private boolean createNode(String destHost, String nodeName) {
     // Current cougaar configuration does not support the capability
     // to create nodes on demand.  For now this method simply returns true.
     return true;
-  }
+  }*/
 
   /**
    * Obtains plugin parameters

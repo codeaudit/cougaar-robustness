@@ -57,14 +57,9 @@ public class DOMTree
 
         } // <init>()
 
-    //
-    // Public methods
-    //
-
     /** Sets the document. */
     public void setDocument(Document document) {
         ((Model)getModel()).setDocument(document);
-        //expandRow(0);
         }
 
     /** Returns the document. */
@@ -90,34 +85,18 @@ public class DOMTree
       return nodesAndPaths;
     }
 
-    //
-    // Classes
-    //
-
     /**
      * DOM tree model.
      *
      * @author  Andy Clark, IBM
      * @version
      */
-    static class Model
-        extends DefaultTreeModel
-        implements Serializable
-        {
-
-        //
-        // Data
-        //
-
+    static class Model extends DefaultTreeModel implements Serializable
+    {
         /** Document. */
         private Document document;
         /** Node Map. */
         public Hashtable nodeMap = new Hashtable();
-
-
-        //
-        // Constructors
-        //
 
         /** Default constructor. */
         public Model() {
@@ -129,10 +108,6 @@ public class DOMTree
             super(new DefaultMutableTreeNode());
             setDocument(document);
             }
-
-        //
-        // Public methods
-        //
 
         /** Sets the document. */
         public synchronized void setDocument(Document document) {
@@ -157,10 +132,6 @@ public class DOMTree
         public Node getNode(Object treeNode) {
             return (Node)nodeMap.get(treeNode);
         }
-
-        //
-        // Private methods
-        //
 
         /** Builds the tree. */
         private void buildTree() {
@@ -226,7 +197,6 @@ public class DOMTree
                 name.append(attr.getNodeValue());
                 name.append('"');
                 }
-           // name.append('>');
 
             // insert element node
 

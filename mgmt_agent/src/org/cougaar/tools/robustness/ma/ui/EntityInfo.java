@@ -34,10 +34,12 @@ public class EntityInfo implements Transferable, Serializable {
     this.name = name;
     this.title = name; //set title default to name of the entity, user can change it by setTitle().
     this.isInMgmtCommunity = isInMgmtCommunity;
-    if(type.equals("host"))
+    if(type.equals("host")) {
       this.type = HOST;
-    else if(type.equals("node"))
+    }
+    else if(type.equals("node")) {
       this.type = NODE;
+    }
     else
     {
       this.type = AGENT;
@@ -65,12 +67,15 @@ public class EntityInfo implements Transferable, Serializable {
 
   public void setType(String type)
   {
-    if(type.equals("host"))
+    if(type.equals("host")) {
       this.type = HOST;
-    else if(type.equals("node"))
+    }
+    else if(type.equals("node")) {
       this.type = NODE;
-    else
+    }
+    else {
       this.type = AGENT;
+    }
   }
 
   public boolean isAgent() {
@@ -109,12 +114,15 @@ public class EntityInfo implements Transferable, Serializable {
 
   public String convertTypeToString(int type)
   {
-    if(type == HOST)
+    if(type == HOST) {
       return "host";
-    else if(type == NODE)
+    }
+    else if(type == NODE) {
       return "node";
-    else
+    }
+    else {
       return "agent";
+    }
   }
 
   public String toString() {

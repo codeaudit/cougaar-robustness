@@ -20,10 +20,8 @@ public class VacateRequestRelay implements Relay.Source, Relay.Target, XMLizable
    private UID uid;
    private MessageAddress source;
    private transient Set targets;
-   private MessageAddress target;
    private Object content;
    private Object response;
-   private Properties props;
 
    /**
     * @param uid UID of this HbReq object

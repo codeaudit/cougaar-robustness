@@ -402,6 +402,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
        performed for each state and when appropriate the state is transitioned
        to reflect the agents new condition.
     */
+    System.out.print("*");
     Collection currentAgents = findMonitoredAgents();
     for (Iterator it = currentAgents.iterator(); it.hasNext();) {
       HealthStatus hs = getHealthStatus((MessageAddress)it.next());

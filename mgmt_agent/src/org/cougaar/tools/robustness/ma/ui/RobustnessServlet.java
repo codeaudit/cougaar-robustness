@@ -88,13 +88,15 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
   }
 
   public void load() {
+    // get the logging service
+    log =  (LoggingService) serviceBroker.getService(this, LoggingService.class, null);
     org.cougaar.core.plugin.PluginBindingSite pbs =
       (org.cougaar.core.plugin.PluginBindingSite) bindingSite;
     this.agentId = pbs.getAgentIdentifier();
     uids = (UIDService)serviceBroker.getService(this, UIDService.class, null);
     mobilityFactory = (MobilityFactory) ds.getFactory("mobility");
     if (mobilityFactory == null) {
-      System.out.println("Unable to get 'mobility' domain");
+      log.info("Unable to get 'mobility' domain");
     }
     super.load();
   }
@@ -118,9 +120,9 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
       throw new RuntimeException("no naming service?!");
     }
     trs = (TopologyReaderService)serviceBroker.getService(this, TopologyReaderService.class, null);
-    if(trs == null) throw new RuntimeException("no topology reader service.");
-    // get the logging service
-    log =  (LoggingService) serviceBroker.getService(this, LoggingService.class, null);
+    if(trs == null) {
+      throw new RuntimeException("no topology reader service.");
+    }
     return new MyServlet();
   }
 
@@ -163,8 +165,9 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
           bb.openTransaction();
           //Collection col = (Collection)bb.query(getCommunityChangeNotificationPred());
           IncrementalSubscription sub = (IncrementalSubscription)bb.subscribe(getCommunityChangeNotificationPred());
-          if(sub.getAddedCollection().size() > 0)
+          if(sub.getAddedCollection().size() > 0) {
             result = "succeed";
+          }
         }finally
         { bb.closeTransaction(); }
       }
@@ -213,10 +216,12 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
       ServletOutputStream outs = res.getOutputStream();
       ObjectOutputStream oout = new ObjectOutputStream(outs);
       try{
-        if(command.equals("viewXml"))
+        if(command.equals("viewXml")) {
           oout.writeObject(element);
-        else
+        }
+        else {
           oout.writeObject(result);
+        }
       }catch(java.util.NoSuchElementException e){log.error(e.getMessage());}
       catch(java.lang.NullPointerException e){log.error(e.getMessage());}
     }
@@ -312,8 +317,9 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
                    if(allnodes.containsKey(nodeName))
                    {
                      List agents = (List)allnodes.get(nodeName);
-                     if(!agents.contains(ncp.getName()))
+                     if(!agents.contains(ncp.getName())) {
                        agents.add(ncp.getName());
+                     }
                    }
                    else
                    {
@@ -443,8 +449,9 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
   {
      return new UnaryPredicate() {
        public boolean execute(Object o) {
-           if(o instanceof HealthStatus)
+           if(o instanceof HealthStatus) {
              return ((HealthStatus)o).getAgentId().getAddress().equals(agentName);
+           }
            return false;
        }
      };
