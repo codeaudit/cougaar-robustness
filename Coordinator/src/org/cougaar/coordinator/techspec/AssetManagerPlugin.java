@@ -237,10 +237,14 @@ logger.warn("!!!! **********************************************************");
         }
     };
 
-    private String fileParam = null;
+    /**  read in the plugin params*/
+    public void load() {
+    
+        getPluginParams();
+    }
+    
     
     /**
-      * Read in AssetStateDimension XML file parameter passed in via configuration file. 
      * Temp - read in the # of assets to see before emitting AllAssetsSeenCondition
       */
     private void getPluginParams() {
@@ -250,72 +254,14 @@ logger.warn("!!!! **********************************************************");
 
         Iterator iter = getParameters().iterator (); 
         if (iter.hasNext()) {
-            fileParam = (String) iter.next();
-            logger.debug("Read in plugin file Parameter = " + fileParam);
-            if (iter.hasNext()) {
-                String i = (String) iter.next();
-                try {
-                    expectedAssetCount = Integer.parseInt(i);
-                } catch (Exception e) {
-                    logger.warn("expectedAssetCount integer was not a valid integer. It was: "+i);
-                }
+            String i = (String) iter.next();
+            try {
+                expectedAssetCount = Integer.parseInt(i);
+            } catch (Exception e) {
+                logger.warn("expectedAssetCount integer was not a valid integer. It was: "+i);
             }
-        }
+        } 
     }       
-    
-    /** Read in the AssetStateDimensions from an XML file */
-    private void readInAssetDescriptors() {
-        
-        getPluginParams();
-        if (fileParam == null) {
-            logger.error("No AssetStateDimension definitions to import! Must include xml file as plugin parameter!!");
-            return;
-        }
-
-        try {
-            AssetStateXMLParser parser = new AssetStateXMLParser();
-//steve     File f = new File(fileParam);
-            File f = getConfigFinder().locateFile(fileParam); //steve
-            if (!f.exists()) { //look 
-                logger.debug("*** Did not find AssetStateDimension XML file:");
-                logger.debug("*** Path checked was = " + f.getAbsolutePath()+". Checking CIP...");
-                String installpath = System.getProperty("org.cougaar.install.path");
-                String defaultPath = installpath + File.separatorChar + "csmart" + File.separatorChar + "config" +
-                   File.separatorChar + "lib" + File.separatorChar + "robustness" + 
-                   File.separatorChar + "uc9" + File.separatorChar + fileParam;
-
-                f = new File(defaultPath);
-                if (!f.exists()) {                    
-                    logger.warn("*** Did not find AssetStateDimension XML file in = " + f.getAbsolutePath());
-                    logger.error("**** CANNOT FIND AssetStateDimensions file!");
-                    return;
-                }
-            }                
-            logger.debug("path for AssetStateDimension XML file = " + f.getAbsolutePath());
-            parser.parse(new InputSource(new FileInputStream(f)));
-
-            Vector assetStates = parser.getParsedDescriptors();
-            AssetStateDimension sd;
-            
-            // Now add each read in descriptor to its AssetType
-            if (assetStates != null && assetStates.size() > 0) {             
-                    for (Iterator i = assetStates.iterator(); i.hasNext(); ) {
-                        sd = (AssetStateDimension)i.next();
-                        sd.getAssetType().addStateDimension(sd);                
-                        logger.debug("Added AssetStateDimension "+sd.getStateName()+" to AssetType = "+sd.getAssetType().getName());
-                    }
-            } else {
-                logger.warn("*** Added NO AssetStateDimensions *** ");
-            }                
-            
-            logger.debug("Imported "+assetStates.size()+" AssetStateDimensions!");
-        } catch (Exception e) {
-            
-            logger.error("Exception while importing AssetStateDimensions!",e);
-        }
-    }        
-    
-    
     
     
     /**
@@ -333,7 +279,6 @@ logger.warn("!!!! **********************************************************");
         communityStatusModelSub =
         (IncrementalSubscription)blackboard.subscribe(communityStatusModelPredicate);                
         
-        readInAssetDescriptors();
         
         blackboard.publishAdd(this); //publish myself, ONLY after reading in XML
         

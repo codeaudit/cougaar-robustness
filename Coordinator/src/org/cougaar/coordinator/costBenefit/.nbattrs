@@ -4,7 +4,4 @@
     <fileobject name=".#CostBenefitPlugin.java.1.1.2.1">
         <attr name="org.netbeans.modules.text.IsTextFile" boolvalue="true"/>
     </fileobject>
-    <fileobject name="CostBenefitPlugin.java">
-        <attr name="class_dependency_org.cougaar.coordinator.DeconflictionPluginBase" stringvalue="CostBenefitPlugin"/>
-    </fileobject>
 </attributes>

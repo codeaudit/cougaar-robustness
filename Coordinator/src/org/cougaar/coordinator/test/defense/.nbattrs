@@ -7,7 +7,4 @@
     <fileobject name="Httpd.java">
         <attr name="NetBeansAttrArguments" serialvalue="aced0005757200135b4c6a6176612e6c616e672e537472696e673badd256e7e91d7b4702000078700000000174000439303030"/>
     </fileobject>
-    <fileobject name="TestPlugin.java">
-        <attr name="class_dependency_org.cougaar.coordinator.DefenseApplicabilityBinaryCondition" stringvalue="TestPlugin.MyCondition"/>
-    </fileobject>
 </attributes>
