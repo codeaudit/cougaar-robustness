@@ -103,6 +103,10 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
         Iterator iter = allAssets.iterator();
         while (iter.hasNext()) {
             asset = (DefaultAssetTechSpec)iter.next();
+            if (asset.getAssetID() == null) {
+System.out.println("----------------------------------------------->>>Asset ID is null for Asset = "+asset.getName());
+                continue;
+            }
             if (asset.getAssetID().equals(assetID)) {
                 return asset;
             }
