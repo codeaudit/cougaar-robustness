@@ -17,6 +17,5 @@ public class DisconnectConstants {
     public DisconnectConstants() {}
     
     public static final String DEFENSE_NAME = "Disconnect";
-    public static final String MANAGER_NAME = "ManagementAgent";
 
 }

@@ -46,6 +46,7 @@ import org.cougaar.core.service.ConditionService;
 import org.cougaar.core.service.OperatingModeService;
 import org.cougaar.core.service.UIDService;
 import org.cougaar.core.service.AgentIdentificationService;
+import org.cougaar.core.service.EventService;
 
 import org.cougaar.core.adaptivity.InterAgentCondition;
 import org.cougaar.core.relay.Relay;
@@ -70,12 +71,14 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
   private UIDService us = null;
   private NodeIdentificationService nodeIdentificationService;
   private AgentIdentificationService agentIdentificationService;
+  private EventService eventService;
   
   private MessageAddress assetAddress;
   private String assetID;
   private MessageAddress managerAddress;
   private String managerID;
   private static String nodeID;
+  private String MANAGER_NAME;
   
   private IncrementalSubscription reconnectTimeConditionSubscription;
   private IncrementalSubscription defenseOpModeSubscription;
@@ -86,7 +89,8 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
   private static final Class[] requiredServices = {
     ConditionService.class,
     OperatingModeService.class,
-    UIDService.class
+    UIDService.class,
+    EventService.class
   };
   
 
@@ -104,6 +108,8 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
     
      haveServices(); 
      if (logger.isDebugEnabled()) logger.debug("setupSubscriptions called.");
+
+     getPluginParams();
 
      initObjects(); //create & publish condition and op mode objects - none yet
       
@@ -158,7 +164,14 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
       us = (UIDService ) 
         sb.getService( this, UIDService.class, null ) ;
  
-     agentIdentificationService = (AgentIdentificationService)
+      // get the EventService
+      this.eventService = (EventService)
+          sb.getService(this, EventService.class, null);
+      if (eventService == null) {
+          throw new RuntimeException("Unable to obtain EventService");
+      }
+      
+      agentIdentificationService = (AgentIdentificationService)
         sb.getService(this, AgentIdentificationService.class, null);
       if (agentIdentificationService == null) {
           throw new RuntimeException(
@@ -172,6 +185,19 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
     return false;
   }
 
+  
+  // Takes the Name of the Manager Agent as a required String parameter
+  private void getPluginParams() {
+      if (logger.isInfoEnabled() && getParameters().isEmpty()) logger.error("plugin saw 0 parameters [must supply the name of the Manager Agent].");
+
+      Iterator iter = getParameters().iterator (); 
+      if (iter.hasNext()) {
+           MANAGER_NAME = (String)iter.next();
+           logger.debug("Setting Maneger Agent Name = " + MANAGER_NAME);
+      }
+  }  
+  
+  
   public void execute() {
 
       Iterator iter;
@@ -179,7 +205,7 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
       // A new Disconnect remote has appeared, so create the Defense Conditions & OpModes for it     
       assetAddress = agentIdentificationService.getMessageAddress();
       assetID = agentIdentificationService.getName();
-      managerAddress = MessageAddress.getMessageAddress(DisconnectConstants.MANAGER_NAME);
+      managerAddress = MessageAddress.getMessageAddress(MANAGER_NAME);
       iter = reconnectTimeConditionSubscription.getAddedCollection().iterator();
       while (iter.hasNext()) {
           ReconnectTimeCondition rtc = (ReconnectTimeCondition)iter.next();
@@ -362,6 +388,7 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
             if (!expired) {
                 expired = true;
                 if (logger.isDebugEnabled()) logger.debug("Alarm expired for: " + cond.getAsset()+" no longer legitimately Disconnected");
+                if (eventService.isEventEnabled()) eventService.event(assetID+" is no longer legitimately Disconnected");
                 blackboard.openTransaction();
                 cond.setValue(DefenseConstants.BOOL_FALSE);
                 blackboard.publishChange(cond);

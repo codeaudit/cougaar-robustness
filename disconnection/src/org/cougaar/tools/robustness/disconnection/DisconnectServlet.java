@@ -208,7 +208,7 @@ public class DisconnectServlet extends BaseServletComponent
           Double d;
           if (expire != null) {
               try {
-                  d = new Double(Double.parseDouble(expire));
+                  d = new Double(Double.parseDouble(expire)*1000.0);
                   try {
                         blackboard.openTransaction();
                         ReconnectTimeCondition rtc = setReconnectTimeConditionValue(d);
@@ -228,7 +228,6 @@ public class DisconnectServlet extends BaseServletComponent
                   out.println("<center><h2>Failed to Disconnect - NumberFormatException!</h2></center><br>" );            
               }
           } else {
-              out.println("<center><h2>Failed to Disconnect - No Reconnect Time Provided (double).</h2></center><br>" );            
           }
         }
 
@@ -321,7 +320,7 @@ public class DisconnectServlet extends BaseServletComponent
                   "<form name=\"myForm\" method=\"get\" >" );
         out.println("<input type=submit name=\"Disconnect\" value=\"Disconnect\"><br>");
         out.println("<input type=submit name=\"Reconnect\" value=\"Reconnect\"><br>");
-        out.println("Will Reconnect In <input type=text name="+EXPIRE+"> minutes.");
+        out.println("Will Reconnect In <input type=text name="+EXPIRE+"> seconds.");
         out.println("\n</form>");
 
       }
