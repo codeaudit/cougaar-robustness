@@ -94,16 +94,16 @@ public class HealthMonitorPlugin extends SimplePlugin {
   // Defines default values for configurable parameters.
   private static String defaultParams[][] = {
     {"community",    ""},
-    {"hbReqTimeout", "20000"},
+    {"hbReqTimeout", "60000"},
     {"hbReqRetries", "2"},
-    {"hbFreq",       "10000"},
-    {"hbTimeout",    "5000"},
+    {"hbFreq",       "30000"},
+    {"hbTimeout",    "10000"},
     {"hbPctLate",    "80.0"},
-    {"hbWindow",     "120000"},  // Default to 2 minute window
+    {"hbWindow",     "360000"},  // Default to 3 minute window
     {"hbFailRate",   "0.5"},
     {"pingTimeout",  "10000"},
     {"pingRetries",  "2"},
-    {"evalFreq",     "1000"}
+    {"evalFreq",     "10000"}
   };
   ManagementAgentProperties healthMonitorProps =
     ManagementAgentProperties.makeProps(this.getClass().getName(), defaultParams);
@@ -344,10 +344,10 @@ public class HealthMonitorPlugin extends SimplePlugin {
             break;
           case HeartbeatRequest.NEW:
           case HeartbeatRequest.SENT:
-            if (elapsedTime(hs.getHeartbeatRequestTime(), new Date()) > heartbeatRequestTimeout) {
-              log.warn("HeartbeatRequest for agent '" + hs.getAgentId() + "' timed out");
-              hs.setHeartbeatRequestStatus(HeartbeatRequest.FAILED);
-            }
+            //if (elapsedTime(hs.getHeartbeatRequestTime(), new Date()) > heartbeatRequestTimeout) {
+            //  log.warn("HeartbeatRequest for agent '" + hs.getAgentId() + "' timed out");
+            //  hs.setHeartbeatRequestStatus(HeartbeatRequest.FAILED);
+            //}
             break;
           case HeartbeatRequest.ACCEPTED:
             hs.setState(HealthStatus.NORMAL);
@@ -362,11 +362,11 @@ public class HealthMonitorPlugin extends SimplePlugin {
             int retries = hs.getHeartbeatRequestRetries();
             if (retries < heartbeatRequestRetries) {
               log.debug("HeartbeatRequest for agent '" + hs.getAgentId() + "' FAILED, retrying");
-			  hs.setHeartbeatRequestRetries(++retries);
+			        hs.setHeartbeatRequestRetries(++retries);
               hs.setHeartbeatRequestStatus(HealthStatus.UNDEFINED);
-		    } else {
+		        } else {
               log.warn("HeartbeatRequest for agent '" + hs.getAgentId() + "' FAILED");
-			  hs.setHeartbeatRequestRetries(0);
+			        hs.setHeartbeatRequestRetries(0);
               doHealthCheck(hs, HealthStatus.NO_RESPONSE);
 			}
             break;
@@ -399,14 +399,14 @@ public class HealthMonitorPlugin extends SimplePlugin {
                 int retries = hs.getPingRetries();
                 if (retries < pingRetries) {
                   log.debug("Ping failed: agent=" + hs.getAgentId() + ", retrying");
-			      hs.setPingRetries(++retries);
+			            hs.setPingRetries(++retries);
                   hs.setPingStatus(HealthStatus.UNDEFINED);
-		        } else {
+		            } else {
                   log.error("Ping failed: agent=" + hs.getAgentId());
-			      hs.setPingRetries(0);
+			            hs.setPingRetries(0);
                   hs.setPingStatus(HealthStatus.UNDEFINED);
                   doHealthCheck(hs, HealthStatus.NO_RESPONSE);
-		        }
+		            }
                 break;
               default:
             }
@@ -415,6 +415,11 @@ public class HealthMonitorPlugin extends SimplePlugin {
       } else if (state.equals(HealthStatus.RESTART)) {
         int pingStatus = hs.getPingStatus();
         switch (pingStatus) {
+          case HealthStatus.UNDEFINED:
+            hs.setPingTimestamp(new Date());
+            doPing(hs.getAgentId());
+            log.debug("Sending ping: agent=" + hs.getAgentId() + ", state=RESTART");
+            break;
           case PingRequest.RECEIVED:
             hs.setPingStatus(HealthStatus.UNDEFINED);
             hs.setHeartbeatRequestStatus(HealthStatus.UNDEFINED);
@@ -422,6 +427,9 @@ public class HealthMonitorPlugin extends SimplePlugin {
             hs.setState(HealthStatus.INITIAL);
             log.info("Reacquired agent: agent=" + hs.getAgentId());
             break;
+          case PingRequest.FAILED:
+            log.debug("Ping failed: agent=" + hs.getAgentId() + ", state=RESTART");
+            hs.setPingStatus(HealthStatus.UNDEFINED);  // Initiates retry
           default:
         }
       }
@@ -510,8 +518,8 @@ public class HealthMonitorPlugin extends SimplePlugin {
           case PingRequest.SENT:
             // The following is used to simulate a Ping timeout.  This will
             // ultimately be done in MTS
-            if (elapsedTime(hs.getPingTimestamp(), new Date()) > pingTimeout)
-              req.setStatus(PingRequest.FAILED);
+            //if (elapsedTime(hs.getPingTimestamp(), new Date()) > pingTimeout)
+            //  req.setStatus(PingRequest.FAILED);
             break;
           case PingRequest.RECEIVED:
           case PingRequest.FAILED:

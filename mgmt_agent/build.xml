@@ -9,10 +9,12 @@
   <!-- set global properties for this build -->
   <property environment="env"/>
   <property name="cougaar" value="${env.COUGAAR_INSTALL_PATH}"/>
+  <property name="workspace" value="${env.COUGAAR_INSTALL_PATH}/workspace"/>
   <property name="host" value="${env.HOST}"/>
   <property name="port" value="8800"/>
   <property name="node" value="RestartNode"/>
-  <property name="agent" value="TINY-1AD-Enclave-ManagementAgent"/>
+  <property name="experiment" value=""/>
+  <property name="agent" value="Enclave1RobustnessManager"/>
   <property name="persistenceEnabled" value="false"/>
   <property name="persistenceInterval" value="30000"/>
   <property name="packageDir" value="org/cougaar/tools/robustness"/>
@@ -31,7 +33,6 @@
   <property name="test" value="test"/>
   <property name="lib" value="lib"/>
   <property name="jar" value="Robustness_mic_${ant.project.name}.jar"/>
-  <property name="workspace" value="tmp"/>
   <property name="release" value="../mic-tic"/>
 
   <!-- Initialization target -->
@@ -179,36 +180,35 @@
 
   <!-- Runs ManagementAgent -->
   <target name="manager" description="Runs ManagementAgent">
-    <antcall target="startnode" >
+    <antcall target="node-ini" >
       <param name="node" value="ManagerNode" />
     </antcall>
   </target>
 
   <!-- Runs MiniTestConfig on one node -->
     <target name="minitestconfig" description="Runs MiniTestConfig society on a single node">
-    <antcall target="startnode" >
+    <antcall target="node-ini" >
       <param name="node" value="MiniTestConfigNode" />
     </antcall>
   </target>
 
   <!-- Runs a mininode1-->
   <target name="mininode1" description="Runs agents 1BDE, 3-69-ARBN, MCCGlobalMode on a single node" >
-    <antcall target="startnode" >
+    <antcall target="node-ini" >
       <param name="node" value="MiniNode1" />
     </antcall>
   </target>
 
   <!-- Runs a mininode2-->
   <target name="mininode2" description="Runs agent 3ID on a single node" >
-    <antcall target="startnode" >
+    <antcall target="pnode-ini" >
       <param name="node" value="MiniNode2" />
-      <param name="persistenceEnabled" value="true" />
     </antcall>
   </target>
 
   <!-- Runs a mininode3-->
   <target name="mininode3" description="Runs agent 1BDE on a single node" >
-    <antcall target="startnode" >
+    <antcall target="pnode-ini" >
       <param name="node" value="MiniNode3" />
       <param name="persistenceEnabled" value="true" />
     </antcall>
@@ -216,28 +216,37 @@
 
   <!-- Runs a mininode4-->
   <target name="mininode4" description="Runs agents 3-69-ARBN, MCCGlobalMode on a single node" >
-    <antcall target="startnode" >
+    <antcall target="node-ini" >
       <param name="node" value="MiniNode4" />
     </antcall>
   </target>
 
   <!-- Runs ManagementAgent and MiniTestConfig on one node -->
     <target name="combinednode" description="Runs ManagementAgent and MiniTestConfig society on a single node">
-    <antcall target="startnode" >
+    <antcall target="node-ini" >
       <param name="node" value="CombinedNode" />
     </antcall>
   </target>
 
   <!-- Runs a node without persistence enabled-->
-  <target name="node" description="Run node with persistence disabled (use -Dnode=XXX to specify node name)" >
-    <antcall target="startnode" >
+  <!-- <target name="node" description="Run node with persistence disabled (use -Dnode=XXX to specify node name)" >
+    <antcall target="node-ini" >
       <param name="node" value="${node}" />
+    </antcall>
+  </target>
+  -->
+
+  <!-- Runs a node with persistence enabled-->
+  <target name="pnode-ini" description="Run node with persistence enabled (use -Dnode=XXX to specify node name)" >
+    <antcall target="node-ini" >
+      <param name="node" value="${node}" />
+      <param name="persistenceEnabled" value="true" />
     </antcall>
   </target>
 
   <!-- Runs a node with persistence enabled-->
-  <target name="pnode" description="Run node with persistence enabled (use -Dnode=XXX to specify node name)" >
-    <antcall target="startnode" >
+  <target name="pnode-db" description="Run node with persistence enabled (use -Dnode=XXX to specify node name)" >
+    <antcall target="node-db" >
       <param name="node" value="${node}" />
       <param name="persistenceEnabled" value="true" />
     </antcall>
@@ -247,7 +256,7 @@
     <mkdir dir="${workspace}/configs" />
     <copy file="test/configs/ma/${node}.ini" tofile="${workspace}/configs/${host}-${node}.ini" />
     <echo message="Starting node: ${host}-${node}" />
-    <antcall target="node" >
+    <antcall target="pnode-ini" >
       <param name="node" value="${host}-${node}" />
       <param name="persistenceEnabled" value="true" />
     </antcall>
@@ -258,7 +267,7 @@
   </target>
 
   <!-- Starts a node -->
-    <target name="startnode">
+    <target name="node-ini" description="Start a node from ini files">
     <java dir="${basedir}" fork="yes"
       maxmemory="350m"
       classname="org.cougaar.bootstrap.Bootstrapper">
@@ -275,14 +284,58 @@
           <include name="**/*.jar" />
         </fileset>
       </classpath>
+      <sysproperty key="org.cougaar.community.caching" value="off"/>
       <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
       <sysproperty key="org.cougaar.node.name" value="${node}"/>
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
       <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
       <sysproperty key="org.cougaar.core.persistence.enable" value="${persistenceEnabled}"/>
       <sysproperty key="org.cougaar.core.persistence.lazyInterval" value="${persistenceInterval}"/>
-      <sysproperty key="org.cougaar.system.path" value="${lib}"/>
-      <sysproperty key="org.cougaar.config.path" value="${workspace}/configs;$$INSTALL/configs/common;$$CWD/test/data;$$CWD/test/configs/ma;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig"/>
+      <sysproperty key="org.cougaar.name.server" value="ron:8888:5555"/>
+      <sysproperty key="org.cougaar.system.path" value="${cougaar}/sys"/>
+      <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;${workspace}/configs;$$INSTALL/configs/common;$$CWD/test/configs/ma;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig"/>
+      <arg line="org.cougaar.core.node.Node"/>
+    </java>
+  </target>
+
+  <!-- Starts a node -->
+    <target name="node-db" description="Start a node from config db">
+    <java dir="${basedir}" fork="yes"
+      maxmemory="350m"
+      classname="org.cougaar.bootstrap.Bootstrapper">
+      <jvmarg value="-Xms100m"/>
+      <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
+      <classpath>
+        <fileset dir="${cougaar}/lib">
+          <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="${cougaar}/sys">
+          <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="${lib}">
+          <include name="**/*.jar" />
+        </fileset>
+      </classpath>
+      <sysproperty key="org.cougaar.community.caching" value="off"/>
+      <sysproperty key="org.cougaar.core.persistence.enable" value="${persistenceEnabled}"/>
+      <sysproperty key="org.cougaar.core.persistence.clear" value="true"/>
+      <sysproperty key="org.cougaar.core.persistence.lazyInterval" value="${persistenceInterval}"/>
+      <sysproperty key="org.cougaar.core.agent.startTime" value="8/10/2005"/>
+      <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
+      <sysproperty key="org.cougaar.configuration.database" value="jdbc:mysql://net3/cougaar"/>
+      <sysproperty key="org.cougaar.configuration.user" value="ul_user"/>
+      <sysproperty key="org.cougaar.configuration.password" value=""/>
+      <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
+      <sysproperty key="org.cougaar.control.port" value="8484"/>
+      <sysproperty key="org.cougaar.node.name" value="${node}"/>
+      <sysproperty key="org.cougaar.planning.ldm.lpw.ComplainingLP.level" value="0"/>
+      <sysproperty key="org.cougaar.config.path" value="$$INSTALL/configs/common;$$INSTALL/glmtrans/configs/demo-config/config"/>
+      <sysproperty key="org.cougaar.message.transport.aspects" value="org.cougaar.core.mts.StatisticsAspect"/>
+      <sysproperty key="org.cougaar.experiment.id" value="${experiment}"/>
+      <sysproperty key="org.cougaar.agent.startTime" value="8/10/2005"/>
+      <sysproperty key="org.cougaar.name.server" value="ron:8888:5555"/>
+      <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
+      <sysproperty key="org.cougaar.system.path" value="${cougaar}/sys"/>
       <arg line="org.cougaar.core.node.Node"/>
     </java>
   </target>
@@ -304,10 +357,21 @@
     </java>
   </target>
 
-  <!-- Copies latest working files to release directory -->
-  <target name="movetorelease">
-    <copy todir="../${ant.project.name}" >
+  <!-- Synchronize development and release directory trees -->
+  <target name="sync" description="Synchronize development and release directory trees">
+      <!-- copy modified files in release directories to development directories -->
+    <copy todir="../${ant.project.name}-dev" >
       <fileset dir="${basedir}"
+        includes="build.xml,**/*.txt,**/*.java,**/*.properties,**/*.dat,**/*.ini,**/*.xml,**/*.csv,**/*.jar,**/*.rc"
+        excludes="*.jpx,
+                  tmp/**,
+                  lib/**,
+                  test/configs/common/host.xml,
+                  test/src/org/cougaar/tools/robustness/ma/test/simulator/**" />
+    </copy>
+      <!-- copy modified files in development directories to release directories -->
+    <copy todir="${basedir}" >
+      <fileset dir="../${ant.project.name}-dev"
         includes="build.xml,**/*.txt,**/*.java,**/*.properties,**/*.dat,**/*.ini,**/*.xml,**/*.csv,**/*.jar,**/*.rc"
         excludes="*.jpx,
                   tmp/**,

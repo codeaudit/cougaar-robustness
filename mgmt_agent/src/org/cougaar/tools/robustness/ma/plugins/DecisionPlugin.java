@@ -39,12 +39,9 @@ public class DecisionPlugin extends SimplePlugin {
   private LoggingService log;
   private BlackboardService bbs = null;
 
-  private String restartNodeName;
-
   // Defines default values for configurable parameters.
-  private static String defaultParams[][] = {
-    {"restartNodeName", "RestartNode"}
-  };
+  private static String defaultParams[][] = new String[0][0];
+
   ManagementAgentProperties decisionProps =
     ManagementAgentProperties.makeProps(this.getClass().getName(), defaultParams);
 
@@ -126,7 +123,7 @@ public class DecisionPlugin extends SimplePlugin {
       int status = req.getStatus();
       switch (status) {
         case RestartLocationRequest.SUCCESS:
-          restartAgents(req.getAgents(), req.getHost() + "-" + restartNodeName);
+          restartAgents(req.getAgents(), req.getNode());
           bbs.publishRemove(req);
           break;
         case RestartLocationRequest.FAIL:
@@ -239,7 +236,7 @@ public class DecisionPlugin extends SimplePlugin {
    * @param props Propertie object defining paramater names and values.
    */
   private void updateParams(Properties props) {
-     restartNodeName = props.getProperty("restartNodeName");
+     // None for now
   }
 
  /**

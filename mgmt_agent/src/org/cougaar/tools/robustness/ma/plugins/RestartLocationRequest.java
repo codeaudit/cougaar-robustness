@@ -45,6 +45,9 @@ public class RestartLocationRequest implements java.io.Serializable {
   // Name of destination host
   private String hostName = null;
 
+  // Name of destination node
+  private String nodeName = null;
+
   /**
    * Adds an agent to set of agents to be relocated/restarted.
    * @param agent
@@ -91,5 +94,21 @@ public class RestartLocationRequest implements java.io.Serializable {
    */
   public String getHost() {
     return this.hostName;
+  }
+
+  /**
+   * Sets name of mode selected for restarting/relocating agents.
+   * @param nodeName
+   */
+  public void setNode(String nodeName) {
+    this.nodeName = nodeName;
+  }
+
+  /**
+   * Gets name of node selected for restarting/relocating agents.
+   * @return  Name of selected restart node
+   */
+  public String getNode() {
+    return this.nodeName;
   }
 }

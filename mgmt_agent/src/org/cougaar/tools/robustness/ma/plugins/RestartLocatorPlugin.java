@@ -20,16 +20,27 @@ package org.cougaar.tools.robustness.ma.plugins;
 import org.cougaar.robustness.restart.plugin.*;
 import java.util.*;
 
+import org.cougaar.core.agent.ClusterIdentifier;
+
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.plugin.SimplePlugin;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.BlackboardService;
+import org.cougaar.core.service.TopologyEntry;
+import org.cougaar.core.service.TopologyReaderService;
 import org.cougaar.core.mts.MessageAddress;
+
+import org.cougaar.core.component.ServiceBroker;
+import org.cougaar.core.component.ServiceRevokedListener;
+import org.cougaar.core.component.ServiceRevokedEvent;
 
 import org.cougaar.util.UnaryPredicate;
 
 import org.cougaar.tools.server.*;
 import org.cougaar.tools.server.system.ProcessStatus;
+
+import org.cougaar.core.service.community.*;
+import org.cougaar.community.*;
 
 /**
  * This plugin ...
@@ -38,19 +49,23 @@ public class RestartLocatorPlugin extends SimplePlugin {
 
   private LoggingService log;
   private BlackboardService bbs = null;
+  private ClusterIdentifier myAgent = null;
+  private CommunityService communityService = null;
+  private TopologyReaderService topologyService = null;
+
+  // Name of community to monitor
+  private String communityToMonitor = null;
 
   private String restartNodeName;
 
   // Defines default values for configurable parameters.
-  private static String defaultParams[][] = {
-    {"hosts",           "localhost"},
-    {"restartNodeName", "RestartNode"}
-  };
+  private static String defaultParams[][] = new String[0][0];
 
   ManagementAgentProperties restartLocatorProps =
     ManagementAgentProperties.makeProps(this.getClass().getName(), defaultParams);
 
-  private Map availHosts = new HashMap();
+  private List memberList = new Vector();  // List of community members
+  private Map availNodes = new HashMap();
 
   protected void setupSubscriptions() {
 
@@ -58,6 +73,18 @@ public class RestartLocatorPlugin extends SimplePlugin {
       getService(this, LoggingService.class, null);
 
     bbs = getBlackboardService();
+
+    myAgent = getClusterIdentifier();
+
+    communityService = getCommunityService();
+    topologyService = getTopologyReaderService();
+
+    // Find name of community to monitor
+    Collection communities = communityService.search("(CommunityManager=" +
+      myAgent.toString() + ")");
+    if (!communities.isEmpty())
+      restartLocatorProps.setProperty("community",
+                                      (String)communities.iterator().next());
 
     // Initialize configurable paramaeters from defaults and plugin arguments.
     updateParams(restartLocatorProps);
@@ -92,9 +119,10 @@ public class RestartLocatorPlugin extends SimplePlugin {
     for (Iterator it = restartRequests.getAddedCollection().iterator();
          it.hasNext();) {
       RestartLocationRequest req = (RestartLocationRequest)it.next();
-      String selectedHost = getAvailHost();
-      req.setHost(selectedHost);
-      if (selectedHost != null) {
+      CandidateNode dest = selectDestination(req.getAgents());
+      if (dest != null) {
+        req.setHost(dest.host);
+        req.setNode(dest.node);
         req.setStatus(RestartLocationRequest.SUCCESS);
         if (log.isInfoEnabled()) {
           StringBuffer msg =
@@ -103,8 +131,8 @@ public class RestartLocatorPlugin extends SimplePlugin {
             msg.append(((MessageAddress)it1.next()).toString());
             if (it.hasNext()) msg.append(" ");
           }
-          msg.append("], selectedHost=" + req.getHost());
-          msg.append(", useCount=" + (Integer)availHosts.get(req.getHost()));
+          msg.append("], selectedNode=" + req.getNode());
+          //msg.append(", useCount=" + (Integer)availHosts.get(req.getHost()));
           log.info(msg.toString());
         }
       } else {
@@ -113,7 +141,6 @@ public class RestartLocatorPlugin extends SimplePlugin {
       }
       bbs.publishChange(req);
     }
-
   }
 
   /**
@@ -130,30 +157,13 @@ public class RestartLocatorPlugin extends SimplePlugin {
     }
   }
 
+
   /**
    * Sets externally configurable parameters using supplied Properties object.
    * @param props Properties object defining paramater names and values.
    */
   private void updateParams(Properties props) {
-    String hosts = props.getProperty("hosts");
-    restartNodeName = props.getProperty("restartNodeName");
-    StringTokenizer st = new StringTokenizer(hosts, " ");
-    List newHostsList = new Vector();
-    while (st.hasMoreTokens()) {
-      newHostsList.add((String)st.nextToken());
-    }
-    // Remove deleted hosts
-    for (Iterator it = availHosts.keySet().iterator(); it.hasNext();) {
-      if (!newHostsList.contains((String)it.next())) it.remove();
-    }
-    // Add new hosts
-    for (Iterator it = newHostsList.iterator(); it.hasNext();) {
-      String hostName = (String)it.next();
-      if (!availHosts.containsKey(hostName)) {
-        Integer useCount = new Integer(0);
-        availHosts.put(hostName, useCount);
-      }
-    }
+    communityToMonitor = props.getProperty("community");
   }
 
   /**
@@ -178,28 +188,57 @@ public class RestartLocatorPlugin extends SimplePlugin {
     }
   }
 
-  /**
-   * Returns the name of a host from the collection of available hosts.  The
-   * host is selected based on the fewest number of times it was previously used.
-   * @return  Name of selected host
-   */
-  private String getAvailHost() {
-    String hostName = null;
-    int useCount = 0;
-    for (Iterator it = availHosts.entrySet().iterator(); it.hasNext();) {
-      Map.Entry me = (Map.Entry)it.next();
-      String tmpHost = (String)me.getKey();
-      int tmpUse = ((Integer)me.getValue()).intValue();
-      if ((hostName == null || tmpUse < useCount)
-          // && nodeRunning(hostName, restartNodeName)
-         ) {
-        hostName = tmpHost;
-        useCount = tmpUse;
+  private Collection getCandidateNodes(Set agents) {
+    CommunityRoster roster = communityService.getRoster(communityToMonitor);
+    Collection cmList = roster.getMembers();
+    Map candidateNodes = new HashMap();
+    Collection deadAgentNodes = new Vector();
+    for (Iterator it = cmList.iterator(); it.hasNext();) {
+      CommunityMember cm = (CommunityMember)it.next();
+      if (cm.isAgent()) {
+        String agentName = cm.getName();
+        TopologyEntry te = topologyService.getEntryForAgent(agentName);
+        String hostName = te.getHost();
+        String nodeName = te.getNode();
+        if(agents.contains(cm.getAgentId())) {
+          deadAgentNodes.add(nodeName);
+        } else {
+          if (candidateNodes.containsKey(nodeName)) {
+            CandidateNode cn = (CandidateNode)candidateNodes.get(nodeName);
+            ++cn.numAgents;
+          } else {
+            CandidateNode cn = new CandidateNode();
+            cn.host = hostName;
+            cn.node = nodeName;
+            cn.numAgents = 1;
+            candidateNodes.put(nodeName, cn);
+          }
+        }
       }
     }
-    // Increment use count of selected host
-    if (hostName != null) availHosts.put(hostName, new Integer(++useCount));
-    return hostName;
+    // Remove dead agent nodes from candidate nodes
+    for (Iterator it = deadAgentNodes.iterator(); it.hasNext();) {
+      String nodeName = (String)it.next();
+      if (candidateNodes.containsKey(nodeName)) candidateNodes.remove(nodeName);
+    }
+    return candidateNodes.values();
+  }
+
+  /**
+   * Selects a destination host/node for a restart.  The selection is an
+   * existing node used by the community with the fewest number of agents.
+   * @return  Name of selected host
+   */
+  private CandidateNode selectDestination(Set agents) {
+    Collection candidateNodes = getCandidateNodes(agents);
+    CandidateNode selectedNode = null;
+    int agentCount = -1;
+    for (Iterator it = candidateNodes.iterator(); it.hasNext();) {
+      CandidateNode cn = (CandidateNode)it.next();
+      if (agentCount < 0 || cn.numAgents < agentCount)
+        selectedNode = cn;
+    }
+    return selectedNode;
   }
 
 	private boolean nodeRunning(String hostName, String nodeName) {
@@ -234,6 +273,38 @@ public class RestartLocatorPlugin extends SimplePlugin {
   }
 
   /**
+   * Gets reference to CommunityService.
+   */
+  private CommunityService getCommunityService() {
+    ServiceBroker sb = getBindingSite().getServiceBroker();
+    if (sb.hasService(CommunityService.class)) {
+      return (CommunityService)sb.getService(this, CommunityService.class,
+        new ServiceRevokedListener() {
+          public void serviceRevoked(ServiceRevokedEvent re) {}
+      });
+    } else {
+      log.error("CommunityService not available");
+      return null;
+    }
+  }
+
+  /**
+   * Gets reference to TopologyReaderService.
+   */
+  private TopologyReaderService getTopologyReaderService() {
+    ServiceBroker sb = getBindingSite().getServiceBroker();
+    if (sb.hasService(TopologyReaderService.class)) {
+      return (TopologyReaderService)sb.getService(this, TopologyReaderService.class,
+        new ServiceRevokedListener() {
+          public void serviceRevoked(ServiceRevokedEvent re) {}
+      });
+    } else {
+      log.error("TopologyReaderService not available");
+      return null;
+    }
+  }
+
+  /**
    * Predicate for RestartLocationRequest objects
    */
   private IncrementalSubscription restartRequests;
@@ -260,4 +331,10 @@ public class RestartLocatorPlugin extends SimplePlugin {
       }
       return false;
   }};
+
+  class CandidateNode {
+    String host;
+    String node;
+    int numAgents;
+  }
 }
