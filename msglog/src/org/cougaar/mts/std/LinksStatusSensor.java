@@ -175,39 +175,55 @@ public class LinksStatusSensor extends ComponentPlugin
     public synchronized void execute() {
 	if (community == null) return;
 
+//TODO: don't create diagoses until we get a status report for that agent/protocol tuple
         // handle new agents
-	int tsLookupCnt = 0;
-	Iterator iter = newAgentQueue.iterator();
-	while (iter.hasNext()) {
-	    AgentDiagnoses ad = (AgentDiagnoses)iter.next();
-	    Diagnosis rmiDiag, sfDiag, altDiag, allDiag;
-	    String agentName = ad.agentName;
-	    try {
-		rmiDiag = new RMILinksStatusDiagnosis(agentName,sb);
-		sfDiag  = new StoreAndForwardLinksStatusDiagnosis(agentName,sb);
-		altDiag = new AlternateDirectLinksStatusDiagnosis(agentName,sb);
-		allDiag = new AllLinksStatusDiagnosis(agentName,sb);
-	    } catch  (TechSpecNotFoundException e) {
-		if (tsLookupCnt > 10) {
-		    log.warn("TechSpec not found for LinksStatusDiagnosis.  Will retry.", e);
-		    tsLookupCnt = 0;
-		}
-		bb.signalClientActivity();
-		break;
+	if (newAgentQueue.size() > 0) {
+	    Vector q;
+	    synchronized (newAgentQueue) {
+		q = newAgentQueue;
+		newAgentQueue = new Vector();
 	    }
-	    ad.rmiDiag = rmiDiag;
-	    ad.sfDiag  = sfDiag;
-	    ad.altDiag = altDiag;
-	    ad.allDiag = allDiag;
-	    bb.publishAdd(rmiDiag);
-	    bb.publishAdd(sfDiag);
-	    bb.publishAdd(altDiag);
-	    bb.publishAdd(allDiag);
-	    iter.remove();
-	     
-	    if (statsAlarm == null) {
-		statsAlarm = new ProcessStatsAlarm(period);
-		alarmService.addRealTimeAlarm(statsAlarm);
+	    int tsLookupCnt = 0;
+	    Iterator iter = q.iterator();
+	    while (iter.hasNext()) {
+		AgentDiagnoses ad = (AgentDiagnoses)iter.next();
+		Diagnosis rmiDiag, sfDiag, altDiag, allDiag;
+		String agentName = ad.agentName;
+		String initialValue = NODATA;
+		try {
+		    rmiDiag = new RMILinksStatusDiagnosis(agentName,initialValue,sb);
+		    sfDiag  = new StoreAndForwardLinksStatusDiagnosis(agentName,initialValue,sb);
+		    altDiag = new AlternateDirectLinksStatusDiagnosis(agentName,initialValue,sb);
+		    allDiag = new AllLinksStatusDiagnosis(agentName,initialValue,sb);
+		} catch  (TechSpecNotFoundException e) {
+		    if (tsLookupCnt > 10) {
+			if (log.isWarnEnabled())
+			    log.warn("TechSpec not found for LinksStatusDiagnosis.  Will retry.", e);
+			tsLookupCnt = 0;
+		    }
+		    bb.signalClientActivity();
+		    break;
+		} catch (IllegalValueException e) {
+		    if (log.isErrorEnabled())
+			log.error("Attempt to create Diagnosis with illegal initial value="
+				  +initialValue+". No LinksStatusDiagnoses created for agent="+agentName);
+		    iter.remove();
+		    break;
+		}
+		ad.rmiDiag = rmiDiag;
+		ad.sfDiag  = sfDiag;
+		ad.altDiag = altDiag;
+		ad.allDiag = allDiag;
+		bb.publishAdd(rmiDiag);
+		bb.publishAdd(sfDiag);
+		bb.publishAdd(altDiag);
+		bb.publishAdd(allDiag);
+		iter.remove();
+		
+		if (statsAlarm == null) {
+		    statsAlarm = new ProcessStatsAlarm(period);
+		    alarmService.addRealTimeAlarm(statsAlarm);
+		}
 	    }
 	}
 
@@ -226,7 +242,7 @@ public class LinksStatusSensor extends ComponentPlugin
             // create a vector of MessageHistory.AgentEntries extracted 
             // from all the stats vectors in the statsQueue
 	    Vector aeV = new Vector(); 
-	    iter = q.iterator();
+	    Iterator iter = q.iterator();
 	    while (iter.hasNext()) {
 		Vector stats = (Vector)iter.next(); 
 		if (stats != null) {
@@ -243,8 +259,7 @@ public class LinksStatusSensor extends ComponentPlugin
 		    }
 		}
 	    }
-	    MessageHistory.AgentEntry[] aeA = 
-		(MessageHistory.AgentEntry[])aeV.toArray();
+	    Object[] aeA = aeV.toArray();
 	    Arrays.sort(aeA,comparator);
 	    String agent = null;
 	    int rmiSends=0; 
@@ -257,7 +272,7 @@ public class LinksStatusSensor extends ComponentPlugin
             int allSuccesses=0;
 	    AgentDiagnoses diags = null;
 	    for (int i=0 ; i<aeA.length ; i++) {
-		MessageHistory.AgentEntry ae = aeA[i];
+		MessageHistory.AgentEntry ae = (MessageHistory.AgentEntry)aeA[i];
 		if (ae.agent != agent) { // next agent
 		    //update last one
 		    if (diags != null) {
@@ -416,8 +431,11 @@ public class LinksStatusSensor extends ComponentPlugin
     private void addAgent(String name) {
 	if (log.isDebugEnabled()) 
 	    log.debug("addAgent("+name+")");
-	AgentDiagnoses entry  = new AgentDiagnoses (name);
-	agents.put(name,entry);
+	AgentDiagnoses ad  = new AgentDiagnoses (name);
+	agents.put(name,ad);
+	synchronized (newAgentQueue) {
+	    newAgentQueue.add(ad);
+	}
     }
 
     private void addNode(String name) {
@@ -593,12 +611,16 @@ public class LinksStatusSensor extends ComponentPlugin
     private final MyComparator comparator = new MyComparator();
     private class MyComparator implements Comparator {
 	public int compare (Object o1, Object o2) {
+	    if (log.isDebugEnabled()) {
+		log.debug("compare: o1="+o1);
+		log.debug("compare: o2="+o2);
+	    }
 	    MessageHistory.AgentEntry ae1 = (MessageHistory.AgentEntry)o1;
 	    MessageHistory.AgentEntry ae2 = (MessageHistory.AgentEntry)o2;
 	    if (ae1 == null && ae2 == null) return 0;
 	    if (ae1 == null) return 1; //sort nulls to end
 	    if (ae2 == null) return -1; //sort nulls to end
-	    return compare(ae1.agent, ae2.agent);
+	    return ae1.agent.compareTo(ae2.agent);
 	}
 	public boolean equals (Object obj) {
 	    return false;
