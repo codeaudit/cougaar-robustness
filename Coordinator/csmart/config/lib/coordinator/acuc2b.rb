@@ -92,9 +92,9 @@ module Cougaar
         @run.info_message "Setting Threatcon to "+@value+" for "+@enclave+" enclave" if @messaging >= 1
         mnr_mgr = @enclave.downcase+"MonitoringManager"
         modeName = "org.cougaar.core.security.monitoring.LOGIN_FAILURE_RATE"
-        modeValue = 40000
+        modeValue = "100000"
         if value == "Low"
-            modeValue = 1
+            modeValue = "1"
         end
         @run.society.each_agent do |agent|
           if agent.name == mnr_mgr
