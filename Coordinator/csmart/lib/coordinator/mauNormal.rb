@@ -8,7 +8,7 @@ description: set the MAU weights to Normal
 CIP = ENV['CIP']
 
 $:.unshift File.join(CIP, 'csmart', 'config', 'lib')
-require 'coordinator/mauPolicy
+require 'coordinator/mauPolicy'
 
 insert_after parameters[:location] do
   do_action "Set_MAU_Normal", parameters[:verbose]
