@@ -62,12 +62,15 @@ public class ThreatLoader extends XMLLoader {
     private Hashtable probabilityMap = null;
     
     private Vector threats;
-    
+
+    private static ThreatLoader loader = null;
+    public static ThreatLoader getLoader() { return loader; }
     /** Creates a new instance of ThreatLoader */
     public ThreatLoader() {
         
         super("Threat", "Threats"); //, requiredServices);
         threats = new Vector();
+        loader = this;
     }
     
        

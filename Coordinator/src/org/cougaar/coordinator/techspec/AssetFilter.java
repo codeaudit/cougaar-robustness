@@ -344,9 +344,10 @@ public class AssetFilter implements NotPersistable {
             
             if (logger.isDebugEnabled()) logger.debug("AssetFilter.SpecialTerm - Looking for CorruptHostOnNetwork");
             //Need to get a list of ALL hosts, then narrow to all hosts that are on the same network as this asset
+            //At this point all hosts we see will be on this network...
 ////////            sdf;
             
-            AssetType.
+///            AssetType.
             
             
             return true; //IMPLEMENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
