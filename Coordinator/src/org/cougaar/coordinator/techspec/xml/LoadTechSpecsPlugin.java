@@ -58,6 +58,8 @@ import org.w3c.dom.*;
 
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.node.NodeControlService;
+import org.cougaar.core.node.NodeIdentificationService;
+import org.cougaar.core.mts.MessageAddress;
 
 /**
  * This class is used to import techspecs from xml files.
@@ -100,6 +102,8 @@ public class LoadTechSpecsPlugin extends ServiceUserPluginBase implements NotPer
     DiagnosisTechSpecServiceProvider dtssp;
 
     ServiceBroker rootsb; //root service broker -- used to make services available to all agents on a node.
+    boolean isMgmtAgent = false;
+    
     
     public LoadTechSpecsPlugin() {
         super(requiredServices);   
@@ -145,13 +149,43 @@ public class LoadTechSpecsPlugin extends ServiceUserPluginBase implements NotPer
             //    throw new RuntimeException("Unable to obtain LoggingService");
             //}
 
-            NodeControlService ncs = (NodeControlService)
-                getServiceBroker().getService(this, NodeControlService.class, null);
-            if (ncs != null) {
-                rootsb = ncs.getRootServiceBroker();
-                getServiceBroker().releaseService(this, NodeControlService.class, ncs);
+            // **********************************************get the nodeId
+            NodeIdentificationService nodeIdService = (NodeIdentificationService)
+                getServiceBroker().getService(this, NodeIdentificationService.class, null);
+            if (nodeIdService == null) {
+                throw new RuntimeException("Unable to obtain node-id service");
+            }
+            
+            MessageAddress nodeId = nodeIdService.getMessageAddress();
+            getServiceBroker().releaseService(this, NodeIdentificationService.class, nodeIdService);
+            if (nodeId == null) {
+                throw new RuntimeException(
+                "Unable to obtain node id");
+            }
+            
+            isMgmtAgent = (!nodeId.equals(agentId) );
+            if (isMgmtAgent) {
+                logger.debug("*****************************************************************************Loaded on mgmt agent.");
+            } else {            
+                logger.debug("*****************************************************************************Loaded on node.");
+            }
+            
+            
+            if (!isMgmtAgent) {
+                
+                //Publish tech spec services to node control service, ONLY if on a node
+                //& not in the mgmt agent
+                NodeControlService ncs = (NodeControlService)
+                    getServiceBroker().getService(this, NodeControlService.class, null);
+                if (ncs != null) {
+                    rootsb = ncs.getRootServiceBroker();
+                    getServiceBroker().releaseService(this, NodeControlService.class, ncs);
+                } else {
+                    logger.error("Unable to obtain NodeControlService");
+                }
             } else {
-                logger.error("Unable to obtain NodeControlService");
+                //Just add services to local mgmt agent, so set the root service broker (rootsb) = the local service broker
+                rootsb = getServiceBroker();
             }
 
             // create and advertise our service node-wide
@@ -175,7 +209,7 @@ public class LoadTechSpecsPlugin extends ServiceUserPluginBase implements NotPer
                 logger.error(
                 "Unable to obtain ActionTechSpecService");
             } 
-
+            
             return true;
 //        }
 //        else if (logger.isDebugEnabled()) logger.error(".haveServices - at least one service not available!");
