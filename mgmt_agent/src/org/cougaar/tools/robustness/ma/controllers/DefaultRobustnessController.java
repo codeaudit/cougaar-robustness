@@ -73,6 +73,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   class InitialStateController extends StateControllerBase {
     public void enter(String name) {
+      if (!startupCompleted) setExpiration(name, NEVER);
       if (doInitialPing() && (
           isLeader(thisAgent) || isNode(name) || name.equals(preferredLeader()))) {
         doPing(name, DefaultRobustnessController.ACTIVE, DEAD);
@@ -459,6 +460,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   private String thisAgent;
   private WakeAlarm wakeAlarm;
   boolean communityReady = false;
+  boolean startupCompleted = false;
 
   /**
    * Initializes services and loads state controller classes.
@@ -486,7 +488,16 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   private boolean canRestartAgent(String name) {
     String preferredLeader = preferredLeader();
     return thisAgent.equals(preferredLeader()) ||
-        (isLeader(thisAgent) && name.equals(preferredLeader));
+        (isLeader(thisAgent) && name.equals(preferredLeader()) && (getActiveHosts().size() > 1));
+  }
+
+  private Set getActiveHosts() {
+    Set hosts = new HashSet();
+    String activeNodes[] = model.listEntries(model.NODE, DefaultRobustnessController.ACTIVE);
+    for (int i = 0; i < activeNodes.length; i++) {
+      hosts.add(model.getLocation(activeNodes[i]));
+    }
+    return hosts;
   }
 
   private boolean useGlobalSolver() {
@@ -530,6 +541,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         communityReady == false &&
         agentsAndLocationsActive()) {
       communityReady = true;
+      startupCompleted = true;
       event("Community " + model.getCommunityName() + " Ready");
       if (pingStats.getCount() > 10) {
         long oldPingTimeout = getLongAttribute("PING_TIMEOUT", PING_TIMEOUT);
