@@ -7,14 +7,14 @@
 <property name="cougaar" value="${env.COUGAAR_INSTALL_PATH}"/>
     
 	<path id="cougaar.libs">
+		<pathelement location="sys/activation.jar"/>
+		<pathelement location="sys/mail.jar"/>
 		<fileset dir="${cougaar}/lib">
 			<include name="**/*.jar"/>
 		</fileset>
 		<fileset dir="${cougaar}/sys">
 			<include name="**/*.jar"/>
 		</fileset>
-		<pathelement location="sys/activation.jar"/>
-		<pathelement location="sys/mail.jar"/>
   </path>
 
 	<target name="delete">
@@ -39,15 +39,13 @@
 	<target name="create_cougaar_overlay">
 		<mkdir dir="staging/lib"/>
 		<mkdir dir="staging/sys"/>
-		<mkdir dir="staging/doc/Robustness/objs/msglog"/>
 		<antcall target="delete"/>
 		<antcall target="jar"/>
 		<move file="${jar}" todir="staging/lib"/>
 		<copy todir="staging/sys">
-			<fileset file="sys/*.jar"/>
-		</copy>
-		<copy todir="staging/doc/Robustness/objs/msglog/">
-			<fileset dir="doc"/>
+			<fileset dir="sys/">
+				<include name="*.jar"/>
+			</fileset>
 		</copy>
 		<zip zipfile="Robustness_objs_msglog_overlay.zip" basedir="staging"/>
 		<delete dir="staging"/>
