@@ -365,10 +365,8 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
         double predictedBenefit = 0.0;
 
 	Iterator transIter = proposedVariantDescription.getTransitionVector().iterator();
-        AssetTransitionWithCost atwc;
-        if (transIter.hasNext()) {
-            atwc = (AssetTransitionWithCost) transIter.next();  // just grab the first transition - this would not be needed if there was wild-carding for TS states
-        }
+        AssetTransitionWithCost atwc = (AssetTransitionWithCost) transIter.next();  // just grab the first transition - this would not be needed if there was wild-carding for TS states
+
         long transitionTime;
         if (atwc.getOneTimeCost()!=null) transitionTime = atwc.getOneTimeCost().getTimeCost();
             else transitionTime = 0;
