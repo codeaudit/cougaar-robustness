@@ -17,9 +17,9 @@ society.communities.each do |community|
   if isRobustness == "false"
     next
   end
-	  
+
   #get the stats file of this community
-  filename = "#{CIP}/configs/common/" + community.name + ".nodestats"
+  filename = "#{CIP}/workspace/nodestats/" + community.name + ".nodestats"
   begin
     file = File.new(filename)
   rescue Exception #catch file not exist exception
