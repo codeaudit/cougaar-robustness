@@ -53,8 +53,8 @@ public class DuplicateAgentDetector implements StatusChangeListener {
   }
 
   public void statusChanged(CommunityStatusChangeEvent[] csce) {
-    for(int i = 0; i < csce.length; i++) {
-      if(csce[i].locationChanged()) {
+    for (int i = 0; i < csce.length; i++) {
+      if (csce[i].locationChanged()) {
         locationChanged(csce[i].getName(),
                         csce[i].getPriorLocation(),
                         csce[i].getCurrentLocation());
@@ -70,26 +70,29 @@ public class DuplicateAgentDetector implements StatusChangeListener {
                      " prior=" + priorLoc +
                      " new=" + newLoc);
       }
-      if (suspectedDuplicates.containsKey(agent)) {
-        Map priorLocations = (Map)suspectedDuplicates.get(agent);
-        if (!priorLocations.containsKey(priorLoc)) {
-          priorLocations.put(priorLoc, new Long(model.getVersion(agent)));
-        }
-        if (priorLocations.containsKey(newLoc)) {
-          String agentToRemove = selectAgentToRemove(priorLocations);
-          if (logger.isWarnEnabled()) {
-            logger.warn("Duplicate agent detected, removing duplicate:" +
-                        " agent=" + agent +
-                        " locations=" + priorLocations.keySet() +
-                        " removingFrom=" + agentToRemove);
+      synchronized (suspectedDuplicates) {
+        if (suspectedDuplicates.containsKey(agent)) {
+          Map priorLocations = (Map) suspectedDuplicates.get(agent);
+          if (!priorLocations.containsKey(priorLoc)) {
+            priorLocations.put(priorLoc, new Long(model.getVersion(agent)));
           }
-          suspectedDuplicates.remove(agent);
-          restartHelper.killAgent(agent, agentToRemove, model.getCommunityName());
+          if (priorLocations.containsKey(newLoc)) {
+            String agentToRemove = selectAgentToRemove(priorLocations);
+            if (logger.isWarnEnabled()) {
+              logger.warn("Duplicate agent detected, removing duplicate:" +
+                          " agent=" + agent +
+                          " locations=" + priorLocations.keySet() +
+                          " removingFrom=" + agentToRemove);
+            }
+            suspectedDuplicates.remove(agent);
+            restartHelper.killAgent(agent, agentToRemove,
+                                    model.getCommunityName());
+          }
+        } else {
+          Map priorLocations = new HashMap();
+          priorLocations.put(priorLoc, new Long(model.getVersion(agent)));
+          suspectedDuplicates.put(agent, priorLocations);
         }
-      } else {
-        Map priorLocations = new HashMap();
-        priorLocations.put(priorLoc, new Long(model.getVersion(agent)));
-        suspectedDuplicates.put(agent, priorLocations);
       }
     }
   }
