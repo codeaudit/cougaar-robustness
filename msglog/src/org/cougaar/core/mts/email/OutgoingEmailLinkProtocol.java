@@ -19,28 +19,30 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 11 Apr  2002: Removed Node name from outboxes property (2 reasons -
- *               no longer able to get Node name, and, more importantly,
- *               each Node has it's own properties, the differentiation
- *               was just done for testing convienience.)  Update from 
- *               Cougaar 9.0.0 to 9.1.x (OBJS)
- * 26 Mar  2002: Update from Cougaar 8.6.2.x to 9.0.0 (OBJS)
- * 19 Dec  2001: Commented out FQDN warning per Steve's request. (OBJS)
- * 15 Dec  2001: Changed missing msg nums to "-" in mail header. (OBJS)
- * 11 Dec  2001: Save backup of cached mail data from name server. (OBJS) 
- * 02 Dec  2001: Implement getRemoteReference (8.6.2.0) (OBJS)
- * 02 Dec  2001: Now set the msgNum in the mail message subject line here. (OBJS)
- * 20 Nov  2001: Cougaar 8.6.1 compatibility changes. (OBJS)
- * 21 Oct  2001: Make call to sendMessage class synchronized. (OBJS)
- * 26 Sept 2001: Rename: MessageTransport to LinkProtocol, add debug & cost
- *               properties. (OBJS)
- * 25 Sept 2001: Updated from Cougaar 8.4 to 8.4.1 (OBJS)
- * 16 Sept 2001: Updated from Cougaar 8.3.1 to 8.4 (OBJS)
- * 24 Aug  2001: Revamped for new 8.3.1 component model. (OBJS)
- * 14 July 2001: Require FQDN hostnames in props file, since FQDN not avail
- *               from java.net.InetAddress under Windows & JDK 1.3. (OBJS)
- * 11 July 2001: Added initial name server support. (OBJS)
- * 08 July 2001: Created. (OBJS)
+ * 18 Jun 2002: Restored Node name to outboxes properties due to facilitate
+                CSMART test configuration. (OBJS)
+ * 11 Apr 2002: Removed Node name from outboxes property (2 reasons -
+ *              no longer able to get Node name, and, more importantly,
+ *              each Node has it's own properties, the differentiation
+ *              was just done for testing convienience.)  Update from 
+ *              Cougaar 9.0.0 to 9.1.x (OBJS)
+ * 26 Mar 2002: Update from Cougaar 8.6.2.x to 9.0.0 (OBJS)
+ * 19 Dec 2001: Commented out FQDN warning per Steve's request. (OBJS)
+ * 15 Dec 2001: Changed missing msg nums to "-" in mail header. (OBJS)
+ * 11 Dec 2001: Save backup of cached mail data from name server. (OBJS) 
+ * 02 Dec 2001: Implement getRemoteReference (8.6.2.0) (OBJS)
+ * 02 Dec 2001: Now set the msgNum in the mail message subject line here. (OBJS)
+ * 20 Nov 2001: Cougaar 8.6.1 compatibility changes. (OBJS)
+ * 21 Oct 2001: Make call to sendMessage class synchronized. (OBJS)
+ * 26 Sep 2001: Rename: MessageTransport to LinkProtocol, add debug & cost
+ *              properties. (OBJS)
+ * 25 Sep 2001: Updated from Cougaar 8.4 to 8.4.1 (OBJS)
+ * 16 Sep 2001: Updated from Cougaar 8.3.1 to 8.4 (OBJS)
+ * 24 Aug 2001: Revamped for new 8.3.1 component model. (OBJS)
+ * 14 Jul 2001: Require FQDN hostnames in props file, since FQDN not avail
+ *              from java.net.InetAddress under Windows & JDK 1.3. (OBJS)
+ * 11 Jul 2001: Added initial name server support. (OBJS)
+ * 08 Jul 2001: Created. (OBJS)
  */
 
 package org.cougaar.core.mts.email;
@@ -142,8 +144,25 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     String costProp = System.getProperty (s);
     try  { protocolCost = Integer.valueOf(costProp).intValue(); } 
     catch (Exception e) { protocolCost = DEFAULT_PROTOCOL_COST; }
-    
-    s = "org.cougaar.message.protocol.email.outboxes";
+  }
+
+  public String toString ()
+  {
+    return this.getClass().getName();
+  }
+
+  public void setNameSupport (NameSupport nameSupport) 
+  {
+    //  HACK! Registry not available in constructor above
+
+    if (getRegistry() == null)
+    {
+      throw new RuntimeException ("OutgoingEmailLinkProtocol: Registry not available!");
+    }
+
+    String nodeID = getRegistry().getIdentifier();
+
+    String s = "org.cougaar.message.protocol.email.outboxes." + nodeID;
     String outboxesProp = System.getProperty (s);
 
     if (outboxesProp == null || outboxesProp.equals(""))
@@ -151,17 +170,12 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
       throw new RuntimeException ("Bad or missing property: " +s);
     }
 
-    //  Initialize the transport
+    //  Initialize the outgoing email link protocol
 
     if (startup (outboxesProp) == false)
     {
       throw new RuntimeException ("Failure starting up OutgoingEmailLinkProtocol!");
     }
-  }
-
-  public String toString ()
-  {
-    return this.getClass().getName();
   }
 
   public synchronized boolean startup (String outboxesProp)
@@ -324,8 +338,8 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
       {
         if (debug) 
         {
-          System.err.print ("\nOutgoingEmail: looked up email data in name "); 
-          System.err.println ("server:\n"+ (MailData)obj);
+//        System.err.print ("\nOutgoingEmail: looked up email data in name "); 
+//        System.err.println ("server:\n"+ (MailData)obj);
         }
 
         return (MailData) obj;
@@ -343,9 +357,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
   {
     try 
     {
-      boolean known = lookupMailData (address) != null;
-      // System.err.println ("\naddressKnown: "+known+" "+address);
-      return known;
+      return (lookupMailData (address) != null);
     } 
     catch (Exception e) 
     {
@@ -406,38 +418,6 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
       return destination;
     }
 
-    private void cacheMailData () throws NameLookupException, UnregisteredNameException
-    {
-      if (mailData == null)
-      {
-        try 
-        {
-          mailData = lookupMailData (destination);
-        }
-        catch (Exception e) 
-        {
-          System.err.println ("OutgoingEmail: Error doing name lookup: " +e);
-          // throw new  NameLookupException (e);
-        }
-
-        if (mailData != null) savedMailData = mailData;
-        else mailData = savedMailData;
-
-        if (mailData == null) throw new UnregisteredNameException (destination);
-      }
-    }
-
-    private void checkCachedMailData (String destinationNode) throws NameLookupException, UnregisteredNameException
-    {
-      //  If our cached mail data is out of date, try re-caching it
-
-      if (!mailData.getNodeID().equals(destinationNode))
-      {
-        mailData = null;
-        cacheMailData();
-      }
-    }
-
     public String toString ()
     {
       return OutgoingEmailLinkProtocol.this +"-destination:"+ destination;
@@ -452,13 +432,13 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     {
       // return protocolCost;  // pre 8.6.1
 
-      //  Calling cacheMailData() is a hack to perform the canSendMessage()
+      //  Calling lookupMailData() is a hack to perform the canSendMessage()
       //  kind of method within the cost function rather than in the adaptive
       //  link selection policy code, where we believe it makes more sense.
 
       try 
       {
-        cacheMailData();
+        lookupMailData (msg.getTarget());
         return protocolCost;
       } 
       catch (Exception e) 
@@ -474,54 +454,41 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     
     public void addMessageAttributes (MessageAttributes attrs)
     {
+      // TBD
+    }
+
+    public boolean retryFailedMessage (AttributedMessage msg, int retryCount)
+    {
+      return true;
     }
 
     public MessageAttributes forwardMessage (AttributedMessage msg) 
       throws NameLookupException, UnregisteredNameException,
              CommFailureException, MisdeliveredMessageException
     {
-      //  Make sure our cached mailing address for the destination node
-      //  is still up to date.
-
-      checkCachedMailData (MessageUtils.getToAgentNode (msg));
+      //  Get email info for destination address
+    
+      MailData mailData = lookupMailData (destination);
 
       //  Try mailing the message
 
-      synchronized (sendLock)  // important!! 
+      synchronized (sendLock)
       {
-        boolean success = false;
-        Exception save = null;
-
-        try 
-        {
-          success = sendMessage (msg, mailData);
-        } 
-        catch (Exception e) 
-        {
-          save = e;
-        }
+        boolean success = sendMessage (msg, mailData);
 
         if (success == false)
         {
-           mailData = null;  // force recache
-
-           Exception e = (save==null ? new Exception ("email sendMessage unsuccessful") : save);
-           throw new CommFailureException (e);
+          Exception e = new Exception ("OutgoingEmail: sendMessage unsuccessful");
+          throw new CommFailureException (e);
         }
 
-		MessageAttributes ma = new SimpleMessageAttributes();
-		ma.setAttribute (MessageAttributes.DELIVERY_ATTRIBUTE, MessageAttributes.DELIVERY_STATUS_DELIVERED);
-        return ma;
+        MessageAttributes result = new SimpleMessageAttributes();
+        String status = MessageAttributes.DELIVERY_STATUS_DELIVERED;
+        result.setAttribute (MessageAttributes.DELIVERY_ATTRIBUTE, status);
+        return result;
       }
     }
-
-    public boolean retryFailedMessage (AttributedMessage msg, int retryCount)
-    {
-      return true;  // NOTE: this method doesn't seem to belong here
-    }
    
-    //  Send Cougaar message out to another node via email
-
     private final boolean sendMessage (AttributedMessage msg, MailData destAddr)
     {
       if (debug) 

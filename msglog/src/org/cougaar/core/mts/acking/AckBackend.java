@@ -32,9 +32,12 @@ import org.cougaar.core.mts.*;
 
 class AckBackend extends MessageDelivererDelegateImplBase 
 {
-  public AckBackend (MessageDeliverer deliverer) 
+  private MessageAckingAspect aspect;
+
+  public AckBackend (MessageDeliverer deliverer, MessageAckingAspect aspect) 
   {
     super (deliverer);
+    this.aspect = aspect;
   }
 
   public MessageAttributes deliverMessage (AttributedMessage msg, MessageAddress dest) throws MisdeliveredMessageException
@@ -70,10 +73,15 @@ class AckBackend extends MessageDelivererDelegateImplBase
       return super.deliverMessage (msg, dest);
     }
 
+    //  Get started
+
     ack.setReceiveTime (now());  // establish message delivery time
     ack.setMsg (msg);            // reset transient msg field
 
-    //  Show message reception
+    MessageAttributes result = new SimpleMessageAttributes();
+//  String status = "MessageRejected";  // HACK - no appropriate official status defined yet
+    String status = MessageAttributes.DELIVERY_STATUS_DELIVERED;
+    result.setAttribute (MessageAttributes.DELIVERY_ATTRIBUTE, status);
 
     String msgShortStr = MessageUtils.toShortString (msg);
 
@@ -84,21 +92,74 @@ class AckBackend extends MessageDelivererDelegateImplBase
       System.err.println ("\nReceived " +msgShortStr+ " via " +lnk+ " of " +sequence);
     }
 
-    //  Here we do integrity checks on the received message.  Who knows where
+    //  We do a series of integrity checks on the received message.  Who knows where
     //  this "message" really came from, where it has been, and what happened on
-    //  the way...  These are only some basic checks, other message security
-    //  entities may do more.
+    //  the way...  These are only some basic checks; other entites such as message 
+    //  security (if activated) may have done or do other checks.
 
-    //  NOTE: We are currently limited to throwing MisdeliveredMessageException's,
-    //  may want to create new exceptions in the future.
+    if (MessageAckingAspect.isAckingOn())
+    {
+      try
+      {
+        if (MessageAckingAspect.debug) 
+        {
+          System.err.println ("Received " +msgShortStr+ " contains acks: ");
+          AckList.printAcks ("specific", ack.getSpecificAcks());
+          AckList.printAcks ("  latest", ack.getLatestAcks());
+          System.err.println ("Inbound roundtrip time: " + ack.getSenderRoundtripTime());
+        }
 
-// HACK - no appropriate official status defined yet
+        if (ack.getSpecificAcks() != null)
+        {
+          for (Enumeration a=ack.getSpecificAcks().elements(); a.hasMoreElements(); )
+          {
+            NumberList.checkListValidity ((AckList) a.nextElement());
+          }
+        }
 
-    MessageAttributes result = new SimpleMessageAttributes();
-//  String status = "MessageRejected";
-    String status = MessageAttributes.DELIVERY_STATUS_DELIVERED;
-    result.setAttribute (MessageAttributes.DELIVERY_ATTRIBUTE, status);
+        if (ack.getLatestAcks() != null)
+        {
+          for (Enumeration a=ack.getLatestAcks().elements(); a.hasMoreElements(); )
+          {
+            NumberList.checkListValidity ((AckList) a.nextElement());
+          }
+        }
+      }
+      catch (Exception e)
+      {
+        //  NOTE: Maybe just throw out bad acks?
 
+        if (MessageAckingAspect.debug) 
+        {
+          System.err.println ("Msg contains invalid acks (msg ignored): " +msgString);
+        }
+
+        return result;
+      }
+    }
+
+    //  Handle messages from out-of-date senders or to out-of-date receivers
+    //  NOTE:  May want to send NACKs back for these messages.
+
+    if (!isLatestAgentIncarnation (MessageUtils.getFromAgent (msg)))
+    {
+      if (MessageAckingAspect.debug) 
+      {
+        System.err.println ("Msg has out of date or unknown sender (msg ignored): " +msgString);
+      }
+
+      return result;
+    }
+
+    if (!isLatestAgentIncarnation (MessageUtils.getToAgent (msg)))
+    {
+      if (MessageAckingAspect.debug) 
+      {
+        System.err.println ("Msg has out of date or unknown receiver (msg ignored): " +msgString);
+      }
+
+      return result;
+    }
 /*
     Can't do this integrity check yet - msg system architecture wrong for it
 
@@ -183,44 +244,6 @@ class AckBackend extends MessageDelivererDelegateImplBase
 
     if (MessageAckingAspect.isAckingOn())
     {
-      try
-      {
-        if (MessageAckingAspect.debug) 
-        {
-          System.err.println ("Received " +msgShortStr+ " contains acks: ");
-          AckList.printAcks ("specific", ack.getSpecificAcks());
-          AckList.printAcks ("  latest", ack.getLatestAcks());
-          System.err.println ("Inbound roundtrip time: " + ack.getSenderRoundtripTime());
-        }
-
-        if (ack.getSpecificAcks() != null)
-        {
-          for (Enumeration a=ack.getSpecificAcks().elements(); a.hasMoreElements(); )
-          {
-            NumberList.checkListValidity ((AckList) a.nextElement());
-          }
-        }
-
-        if (ack.getLatestAcks() != null)
-        {
-          for (Enumeration a=ack.getLatestAcks().elements(); a.hasMoreElements(); )
-          {
-            NumberList.checkListValidity ((AckList) a.nextElement());
-          }
-        }
-      }
-      catch (Exception e)
-      {
-        //  NOTE: Maybe just throw out bad acks?
-
-        if (MessageAckingAspect.debug) 
-        {
-          System.err.println ("Msg contains invalid acks (msg ignored): " +msgString);
-        }
-
-        return result;
-      }
-    
       if (ack.getSendCount() < 1)
       {
         if (MessageAckingAspect.debug) 
@@ -242,21 +265,40 @@ class AckBackend extends MessageDelivererDelegateImplBase
       }
     }
 
-    //  At this point we feel the received message is legit, and we try to add it to our
-    //  received message numbers list.  If we have already seen this message we reject 
-    //  it as a duplicate.  Note again there is redundant functionality for this in the 
-    //  MessageOrderingAspect, but that is ok because message ordering is orthogonal to 
-    //  acking and is not required to be active.
+    //  At this point we feel the received message is legitimate, so now we deliver
+    //  it and record its reception while making sure that it is not a message we have 
+    //  already received and delivered.  Note that there is also checking for duplicate
+    //  messages in the MessageOrderingAspect, but that is ok because message ordering 
+    //  is orthogonal to acking and is not required to be active.
 
-    if (MessageUtils.isAckableMessage (msg))  // skip non-acked msgs like heartbeats & traffic masking
+    synchronized (this)
     {
-      if (MessageAckingAspect.addSuccessfulReceive (msg) == false)
+      if (!MessageAckingAspect.wasSuccessfulReceive (msg))
       {
-        if (MessageAckingAspect.showTraffic) 
+        //  Actually deliver the message.  Mis-deliveries throw an exception.
+
+        if (!ack.isPureAck() && !ack.isPureAckAck())
         {
-          System.err.println ("Duplicate msg ignored: " +MessageUtils.toString (msg));
+          super.deliverMessage (msg, dest);
         }
 
+        //  Add the message to our list of received messages.  We don't do this
+        //  for non-acked msgs like heartbeats & traffic masking messages.
+
+        if (MessageUtils.isAckableMessage (msg)) 
+        {
+          MessageAckingAspect.addSuccessfulReceive (msg);
+        }
+      }
+      else
+      {
+        //  A duplicate message - right now we just drop them cold
+
+        if (MessageAckingAspect.showTraffic) 
+        {
+          System.err.println ("Duplicate msg ignored: " +msgString);
+        }
+        
         return result;
       }
     }
@@ -305,11 +347,6 @@ class AckBackend extends MessageDelivererDelegateImplBase
       
           MessageAckingAspect.addAckToSend (msg);
           ackSendableTime = now();
-/*
-System.out.println ("ackBackend: added ack to send for "+msgString);
-System.out.println ("ackBackend: acks to send now:");
-AckList.printAcks (MessageAckingAspect.getAcksToSend(MessageUtils.getFromAgentNode(msg)));
-*/
         }
       }
       else if (ack.isPureAckAck())
@@ -354,20 +391,11 @@ AckList.printAcks (MessageAckingAspect.getAcksToSend(MessageUtils.getFromAgentNo
       }
     }
 
-    //  Finally send on the message if it the kind we deliver, otherwise declare success
+    //  We don't send pure acks et al on, but they were successfully delivered to us
 
-    if (!ack.isPureAck() && !ack.isPureAckAck())
-    {
-      return super.deliverMessage (msg, dest);
-    }
-    else
-    {
-      //  We don't send pure acks et al on, but they were successfully delivered to us
-
-      status = MessageAttributes.DELIVERY_STATUS_DELIVERED;
-      result.setAttribute (MessageAttributes.DELIVERY_ATTRIBUTE, status);
-      return result;
-    }
+    status = MessageAttributes.DELIVERY_STATUS_DELIVERED;
+    result.setAttribute (MessageAttributes.DELIVERY_ATTRIBUTE, status);
+    return result;
   }
 
   private Vector updateFields (Vector acks, Ack ack)
@@ -389,6 +417,40 @@ AckList.printAcks (MessageAckingAspect.getAcksToSend(MessageUtils.getFromAgentNo
     }
 
     return acks;
+  }
+
+  private boolean isLatestAgentIncarnation (AgentID agent)
+  {
+    if (agent == null) return false;
+
+    //  Check topology server to see if the given agent is still current
+
+    AgentID topoAgent = null;
+
+    try 
+    { 
+      topoAgent = aspect.getAgentID (agent.getAgentName()); 
+    }
+    catch (NameLookupException nle)
+    {
+      if (MessageAckingAspect.debug) 
+      {
+        System.err.println ("No topology info for agent " +agent.getAgentName());
+      }
+    }
+    catch (Exception e) 
+    { 
+      e.printStackTrace(); 
+    }
+
+    if (topoAgent == null) return false;  // correct ans is don't know
+
+    //  Compare data
+
+    if (!topoAgent.getNodeName().equals(agent.getNodeName())) return false;
+    if (topoAgent.getAgentIncarnationAsLong() > agent.getAgentIncarnationAsLong()) return false;
+
+    return true;
   }
 
   private static long now ()

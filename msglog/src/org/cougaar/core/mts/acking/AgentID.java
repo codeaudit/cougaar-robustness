@@ -53,6 +53,18 @@ public class AgentID implements java.io.Serializable
     return agentIncarnation;
   }
 
+  public long getAgentIncarnationAsLong ()
+  {
+    try
+    {
+      return Long.parseLong (agentIncarnation);
+    }
+    catch (Exception e)
+    {
+      return -1;
+    }
+  }
+
   public String getID ()
   {
     return nodeName +"_"+ agentName +"_"+ agentIncarnation;

@@ -113,7 +113,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     localhost = System.getProperty (s, getLocalHost());
 
     s = "org.cougaar.message.protocol.socket.incoming.idleTimeoutSecs";
-    idleTimeout = Integer.valueOf(System.getProperty(s,"600")).intValue();
+    idleTimeout = Integer.valueOf(System.getProperty(s,"60")).intValue();
   }
  
   public IncomingSocketLinkProtocol ()

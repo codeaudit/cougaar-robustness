@@ -89,7 +89,7 @@ private int cnt = 0;
     // TBD
   }
 
-  private DatagramSocketSpec lookupDatagramSocketSpec (MessageAddress address)
+  private DatagramSocketSpec lookupDatagramSocketSpec (MessageAddress address) throws NameLookupException
   {
     Object obj = getNameSupport().lookupAddressInNameServer (address, PROTOCOL_TYPE);
 
@@ -97,7 +97,20 @@ private int cnt = 0;
     {
       if (obj instanceof DatagramSocketSpec)
       {
-        return (DatagramSocketSpec) obj;
+        DatagramSocketSpec spec = (DatagramSocketSpec) obj;
+
+        //  Cache inet addresses?
+
+        try
+        {
+          spec.setInetAddress (InetAddress.getByName (spec.getHost()));
+        }
+        catch (Exception e)
+        {
+          throw new NameLookupException (e);
+        }
+
+        return spec;
       }
       else
       {
@@ -112,7 +125,7 @@ private int cnt = 0;
   {
     try 
     {
-      return lookupDatagramSocketSpec (address) != null;
+      return (lookupDatagramSocketSpec (address) != null);
     } 
     catch (Exception e) 
     {
@@ -145,7 +158,6 @@ private int cnt = 0;
   class Link implements DestinationLink 
   {
     private MessageAddress destination;
-    private DatagramSocketSpec spec, savedSpec;
     private DatagramSocket datagramSocket;
     private boolean connected;
 
@@ -157,28 +169,6 @@ private int cnt = 0;
     public MessageAddress getDestination() 
     {
       return destination;
-    }
-
-    private void cacheDatagramSocketSpec () throws NameLookupException, UnregisteredNameException
-    {
-      if (spec == null)
-      {
-        try 
-        {
-          spec = lookupDatagramSocketSpec (destination);
-          spec.setInetAddress (InetAddress.getByName (spec.getHost()));
-        }
-        catch (Exception e) 
-        {
-          // System.err.println ("OutgoingUDP: Error doing name or addr lookup: " +e);
-          // throw new  NameLookupException (e);
-        }
-
-        if (spec != null) savedSpec = spec;
-        else spec = savedSpec;
-
-        if (spec == null) throw new UnregisteredNameException (destination);
-      }
     }
 
     public String toString ()
@@ -193,13 +183,13 @@ private int cnt = 0;
    
     public int cost (AttributedMessage message) 
     {
-      //  Calling cache spec is a hack to perform a name server lookup
+      //  Calling lookup spec is a hack to perform a name server lookup
       //  kind of method within the cost function rather than in the adaptive
       //  link selection policy code, where we believe it makes more sense.
 
       try 
       {
-        cacheDatagramSocketSpec();
+        lookupDatagramSocketSpec (destination);
         return protocolCost;
       } 
       catch (Exception e) 
@@ -214,15 +204,26 @@ private int cnt = 0;
     }
 
     public void addMessageAttributes (MessageAttributes attrs) 
-    {}
+    {
+      // TBD
+    }
+
+    public boolean retryFailedMessage (AttributedMessage message, int retryCount)
+    {
+      return true;
+    }
 
     public MessageAttributes forwardMessage (AttributedMessage msg) 
         throws NameLookupException, UnregisteredNameException,
                CommFailureException, MisdeliveredMessageException
     {
-      cacheDatagramSocketSpec();
+      //  Get socket spec for destination
 
-      synchronized (sendLock)  // important!!  -- change in 9.2?
+      DatagramSocketSpec spec = lookupDatagramSocketSpec (destination);
+
+      //  Send message via udp
+
+      synchronized (sendLock)
       {
         boolean success = false;
         Exception save = null;
@@ -237,7 +238,7 @@ boolean isRegMsg = MessageUtils.isRegularAckMessage (msg);
 if (toNode.equals("PerformanceNodeB") && isRegMsg && (cnt > 4 && cnt < 7)) success = true;
 else
 */
-          success = sendMessage (msg);
+          success = sendMessage (msg, spec);
         } 
         catch (Exception e) 
         {
@@ -246,7 +247,6 @@ else
 
         if (success == false)
         {
-          spec = null;            // force name server recache
           datagramSocket = null;  // force new socket creation
           connected = false;      // force new connection
 
@@ -260,15 +260,8 @@ else
         return result;
       }
     }
-
-    public boolean retryFailedMessage (AttributedMessage message, int retryCount)
-    {
-      return true;  // ???
-    }
    
-    //  Send Cougaar message out to another node via socket
-
-    private boolean sendMessage (AttributedMessage msg) throws Exception
+    private boolean sendMessage (AttributedMessage msg, DatagramSocketSpec spec) throws Exception
     {
       if (debug) 
       {

@@ -234,7 +234,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
     if (debug)
     {
-      System.err.println ("ALSPolicy: Processing msg " +msgString);
+      if (!MessageUtils.isNewMessage(msg)) System.err.println ("ALSPolicy: Processing msg " +msgString);
     }
 
     /**

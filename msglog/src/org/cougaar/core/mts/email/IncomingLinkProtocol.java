@@ -37,19 +37,18 @@ import org.cougaar.core.mts.*;
 
 public abstract class IncomingLinkProtocol extends LinkProtocol
 {
-  private DestinationLink dummyDestLink;
+  protected DestinationLink dummyDestLink;
 
-  public IncomingLinkProtocol () // (AspectSupport aspectSupport)
+  public IncomingLinkProtocol ()
   {
-    // super (aspectSupport);
     dummyDestLink = new DummyDestinationLink (null);
   }
-
+/*
   public DestinationLink getDestinationLink (MessageAddress destination) 
   {
     return dummyDestLink;
   }
-
+*/
   public boolean addressKnown (MessageAddress address) 
   {
     return false;  // we are not an Outgoing transport

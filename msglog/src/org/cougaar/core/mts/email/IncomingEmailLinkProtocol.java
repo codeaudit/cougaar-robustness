@@ -19,24 +19,28 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 11 Jun  2002: Move to Cougaar threads. (OBJS)
- * 11 Apr  2002: Removed Node name from inboxes property (2 reasons -
- *               no longer able to get Node name, and, more importantly,
- *               each Node has it's own properties, the differentiation
- *               was just done for testing convienience.)  (OBJS)
- * 08 Jan  2002: Add mailServerPollTimeSecs property.  (OBJS)
- * 19 Dec  2001: Commented out FQDN warning per Steve's request. (OBJS)
- * 29 Nov  2001: Restrict data registered with nameserver to just that
- *               needed by the mail senders to us. (OBJS)
- * 29 Oct  2001: Conditionally print "<E" on successful message receipt. (OBJS)
- * 22 Oct  2001: Rewrote message in thread to handle server outages and
- *               restorations.  Went to a no header ObjectInputStream. (OBJS)
- * 26 Sept 2001: Rename: MessageTransport to LinkProtocol, add debug
- *               property. (OBJS)
- * 25 Sept 2001: Port to Cougaar 8.4.1 (OBJS)
- * 16 Sept 2001: Port to Cougaar 8.4 (OBJS)
- * 26 Aug  2001: Revamped for new 8.3.1 component model. (OBJS)
- * 14 July 2001: Require FQDN hostnames in props file, since FQDN not avail
+ * 19 Jun 2002: Removed "ignoreOldMessages" functionality - obsolete in
+ *              a persistent world. (OBJS)
+ * 18 Jun 2002: Restored Node name to inboxes properties due to facilitate
+                CSMART test configuration. (OBJS)
+ * 11 Jun 2002: Move to Cougaar threads. (OBJS)
+ * 11 Apr 2002: Removed Node name from inboxes property (2 reasons -
+ *              no longer able to get Node name, and, more importantly,
+ *              each Node has it's own properties, the differentiation
+ *              was just done for testing convienience.)  (OBJS)
+ * 08 Jan 2002: Add mailServerPollTimeSecs property.  (OBJS)
+ * 19 Dec 2001: Commented out FQDN warning per Steve's request. (OBJS)
+ * 29 Nov 2001: Restrict data registered with nameserver to just that
+ *              needed by the mail senders to us. (OBJS)
+ * 29 Oct 2001: Conditionally print "<E" on successful message receipt. (OBJS)
+ * 22 Oct 2001: Rewrote message in thread to handle server outages and
+ *              restorations.  Went to a no header ObjectInputStream. (OBJS)
+ * 26 Sep 2001: Rename: MessageTransport to LinkProtocol, add debug
+ *              property. (OBJS)
+ * 25 Sep 2001: Port to Cougaar 8.4.1 (OBJS)
+ * 16 Sep 2001: Port to Cougaar 8.4 (OBJS)
+ * 26 Aug 2001: Revamped for new 8.3.1 component model. (OBJS)
+ * 14 Jul 2001: Require FQDN hostnames in props file, since FQDN not avail
  *               from java.net.InetAddress under Windows & JDK 1.3. Add feature
  *               to props file wherein "-" for mailbox username defaults
  *               to node name. (OBJS)
@@ -123,16 +127,15 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
   private MailData myMailData;
   private Vector messageInThreads;
   private ThreadService threadService;
+  private boolean startedMailReadingThreads;
   private MessageAddress myAddress;
   private boolean ignoreOldMessages;
   private int gracePeriod, mailServerPollTime;
   private boolean firstTime = true;
 
 
-  public IncomingEmailLinkProtocol ()  // (String id, AspectSupport aspectSupport)
+  public IncomingEmailLinkProtocol ()
   {
-    // super (aspectSupport);
-
     System.err.println ("Creating " + this);
 
     messageInThreads = new Vector();
@@ -141,7 +144,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
 
     String s = "org.cougaar.message.protocol.email.debug";
     debug = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
-
+/*
     s = "org.cougaar.message.protocol.email.inboxes";
     inboxesProp = System.getProperty (s);
 
@@ -149,7 +152,8 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
     {
       throw new RuntimeException ("Bad or missing property: " +s);
     }
-
+*/
+/*
     s = "org.cougaar.message.protocol.email.ignoreOldMessages";
     ignoreOldMessages = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
 
@@ -162,7 +166,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
       s = "org.cougaar.message.protocol.email.oldMsgGracePeriod";
       gracePeriod = Integer.valueOf(System.getProperty(s,"120000")).intValue();
     }
-
+*/
     s = "org.cougaar.message.protocol.email.mailServerPollTimeSecs";
     mailServerPollTime = Integer.valueOf(System.getProperty(s,"5")).intValue();
 
@@ -173,15 +177,17 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
     // showTraffic = (getAspectSupport().findAspect(s) != null);
 
 showTraffic = false; // HACK!!!
+  }
 
-/*
-    //  HACK!!!  See setNameSupport() as to why this is commented out 
+  public DestinationLink getDestinationLink (MessageAddress destination) 
+  {
+    //  HACK! Attempt start the mail reading threads at the right time (not too early!)
 
-    if (startup (inboxesProp) == false)
-    {
-      throw new RuntimeException ("Failure starting up IncomingEmailLinkProtocol!");
-    }
-*/
+    if (!startedMailReadingThreads) startMailReadingThreads();
+
+    //  Incoming links don't have destination links like outgoing links do
+
+    return dummyDestLink;  // inherited from superclass
   }
 
   public String toString ()
@@ -191,10 +197,7 @@ showTraffic = false; // HACK!!!
 
   public void setNameSupport (NameSupport nameSupport) 
   {
-    //  HACK - shortcoming of transport construction - name support not avail till
-    //  after transport constructor called - (name support should be universal 
-    //  service) - a problem with an incoming transport as the only method called
-    //  is the constructor basically.
+    //  HACK! Name support & registry not available in constructor above
 
     if (getNameSupport() == null)
     {
@@ -207,6 +210,14 @@ showTraffic = false; // HACK!!!
     }
 
     nodeID = getRegistry().getIdentifier();
+
+    String prop = "org.cougaar.message.protocol.email.inboxes." +nodeID;
+    inboxesProp = System.getProperty (prop);
+
+    if (inboxesProp == null || inboxesProp.equals(""))
+    {
+      throw new RuntimeException ("Bad or missing property: " +prop);
+    }
 
     if (startup (inboxesProp) == false)
     {
@@ -242,11 +253,11 @@ showTraffic = false; // HACK!!!
 
         messageIn = new MessageInThread (inboxes[i]);  // actually a Runnable
         Schedulable thread = threadService().getThread (this, messageIn, "inbox"+i);
-        thread.start();
+        messageIn.setThread (thread);
+//      thread.start();
 
         registerMailData (nodeID, inboxes[i]);
-
-        messageInThreads.add (thread);
+        messageInThreads.add (messageIn);
       }
       catch (Exception e)
       {
@@ -259,6 +270,7 @@ showTraffic = false; // HACK!!!
 
     //  We can't call it a successful startup unless at least one thread 
     //  was successfully started.
+// created?
 
     return messageInThreads.size() > 0;
   }
@@ -281,12 +293,33 @@ showTraffic = false; // HACK!!!
 
     //  Halt and get rid of all the inbox threads
 
+    stopMailReadingThreads();
+  }
+
+  private void startMailReadingThreads ()
+  {
+    if (!startedMailReadingThreads)
+    {
+      for (Enumeration e=messageInThreads.elements(); e.hasMoreElements(); ) 
+      {
+        MessageInThread messageIn = (MessageInThread) e.nextElement();
+        messageIn.getThread().start();
+      }
+        
+      startedMailReadingThreads = true;
+    }
+  }
+
+  private void stopMailReadingThreads ()
+  {
     for (Enumeration e = messageInThreads.elements(); e.hasMoreElements(); ) 
     {
-       MessageInThread thread = (MessageInThread) e.nextElement();
-       messageInThreads.remove (thread);
-       thread.quit();
+      MessageInThread messageIn = (MessageInThread) e.nextElement();
+      messageIn.quit();  
     }
+
+    messageInThreads.removeAllElements();
+    startedMailReadingThreads = false;
   }
 
   public MailBox[] parseInboxes (String inboxesProp)
@@ -469,6 +502,7 @@ showTraffic = false; // HACK!!!
     private MailBox inbox;
     private NoHeaderInputStream messageIn = null;
     private boolean quitNow;
+    private Schedulable thread;
 
     public MessageInThread (MailBox inbox)
     {
@@ -590,6 +624,16 @@ showTraffic = false; // HACK!!!
       }    
     }
 
+    public void setThread (Schedulable thread)
+    {
+      this.thread = thread;
+    }
+
+    public Schedulable getThread ()
+    {
+      return thread;
+    }
+
     private EmailInputStream createEmailInputStream (int pollTime) 
     {
       EmailInputStream emailIn = null;
@@ -606,7 +650,7 @@ showTraffic = false; // HACK!!!
         emailIn.setSubjectFilter ("To: " + nodeID);
 
         emailIn.setPollTime (pollTime);
-
+/*
         //  We get the date that the OutgoingEmailLinkProtocol was created
         //  so we can detect messages that are responses for earlier incarnations
         //  of this Node, and (for now) discard them.  Note we are making the 
@@ -621,7 +665,7 @@ showTraffic = false; // HACK!!!
           Date bday = OutgoingEmailLinkProtocol.transportBirthday;
           emailIn.ignoreOlderMessages (new Date (bday.getTime()-gracePeriod));
         }
-
+*/
         return emailIn;
       }
       catch (Exception e) 
@@ -681,7 +725,8 @@ showTraffic = false; // HACK!!!
         if (debug)
         {
           if (msg == null) System.err.println ("\nIncomingEmail: Email instream lost...");
-          else System.err.println ("\nIncomingEmail: Problem delivering msg read...");
+          else System.err.println ("\nIncomingEmail: Problem delivering msg " +MessageUtils.toString(msg));
+e.printStackTrace();
         }
 
         // if (debug) e.printStackTrace();

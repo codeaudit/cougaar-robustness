@@ -215,6 +215,11 @@ public final class MessageUtils
     return (isPureAckMessage(msg) || isPureAckAckMessage(msg));
   }
 
+  public static boolean isNewMessage (AttributedMessage msg)
+  {
+    return (toString(msg).equals ("Msg [] of null::null"));
+  }
+
   public static void setSendTimeout (AttributedMessage msg, int millisecs)
   {
     msg.setAttribute (SEND_TIMEOUT, new Integer (millisecs));

@@ -118,13 +118,10 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
     connectTimeout = Integer.valueOf(System.getProperty(s,"5")).intValue();
   }
  
-  public OutgoingSocketLinkProtocol () // (String id, AspectSupport aspectSupport)
+  public OutgoingSocketLinkProtocol ()
   {
-    // super (aspectSupport);
-
     System.err.println ("Creating " + this);
 
-    // nodeID = id;
     links = new HashMap();
     sockets = new HashMap();
 
@@ -175,7 +172,7 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
   {
     try 
     {
-      return lookupSocketSpec (address) != null;
+      return (lookupSocketSpec (address) != null);
     } 
     catch (Exception e) 
     {
@@ -211,7 +208,6 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
   class Link implements DestinationLink 
   {
     private MessageAddress destination;
-    private SocketSpec destSpec, savedDestSpec;
     private NoHeaderOutputStream messageOut;
 
     Link (MessageAddress dest) 
@@ -222,27 +218,6 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
     public MessageAddress getDestination() 
     {
       return destination;
-    }
-
-    private void cacheDestSpec () throws NameLookupException, UnregisteredNameException
-    {
-      if (destSpec == null)
-      {
-        try 
-        {
-          destSpec = lookupSocketSpec (destination);
-        }
-        catch (Exception e) 
-        {
-          System.err.println ("OutgoingSocket: Error doing name lookup: " +e);
-          // throw new  NameLookupException (e);
-        }
-
-        if (destSpec != null) savedDestSpec = destSpec;
-        else destSpec = savedDestSpec;
-
-        if (destSpec == null) throw new UnregisteredNameException (destination);
-      }
     }
 
     public String toString ()
@@ -259,13 +234,13 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
     {
       // return protocolCost;  // pre 8.6.1
 
-      //  Calling cacheMailData() is a hack to perform the canSendMessage()
+      //  Calling lookupSocketSpec() is a hack to perform the canSendMessage()
       //  kind of method within the cost function rather than in the adaptive
       //  link selection policy code, where we believe it makes more sense.
 
       try 
       {
-        cacheDestSpec();
+        lookupSocketSpec (destination);
         return protocolCost;
       } 
       catch (Exception e) 
@@ -281,14 +256,18 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
 
     public void addMessageAttributes (MessageAttributes attrs)
     {
+      // TBD
     }
 
+    public boolean retryFailedMessage (AttributedMessage msg, int retryCount)
+    {
+      return true;
+    }
+   
     public MessageAttributes forwardMessage (AttributedMessage msg) 
         throws NameLookupException, UnregisteredNameException,
                CommFailureException, MisdeliveredMessageException
     {
-      cacheDestSpec();
-
 /*
 if (message instanceof MessageAckingAspect.AckEnvelope)
 {
@@ -302,14 +281,20 @@ if (message instanceof MessageAckingAspect.AckEnvelope)
 //if (sndCount == 1 && num == 5) return;
 }
 */
-      synchronized (sendLock)  // important!!
+      //  Get socket address of destination 
+
+      SocketSpec destSpec = lookupSocketSpec (destination);
+
+      //  Try sending the message over the socket
+
+      synchronized (sendLock)
       {
         boolean success = false;
         Exception save = null;
 
         try 
         {
-          success = sendMessage (msg);
+          success = sendMessage (msg, destSpec);
         } 
         catch (Exception e) 
         {
@@ -318,26 +303,20 @@ if (message instanceof MessageAckingAspect.AckEnvelope)
 
         if (success == false)
         {
-           destSpec = null;  // force recache
-
            Exception e = (save==null ? new Exception ("socket sendMessage unsuccessful") : save);
            throw new CommFailureException (e);
         }
 
-		MessageAttributes ma = new SimpleMessageAttributes();
-		ma.setAttribute (MessageAttributes.DELIVERY_ATTRIBUTE, MessageAttributes.DELIVERY_STATUS_DELIVERED);
-        return ma;
+        MessageAttributes result = new SimpleMessageAttributes();
+        String status = MessageAttributes.DELIVERY_STATUS_DELIVERED;
+        result.setAttribute (MessageAttributes.DELIVERY_ATTRIBUTE, status);
+        return result;
       }
     }
 
-    public boolean retryFailedMessage (AttributedMessage msg, int retryCount)
-    {
-      return true;  // NOTE: this method does not belong here!
-    }
-   
     //  Send Cougaar message out to another node via socket
 
-    private boolean sendMessage (AttributedMessage msg) throws Exception
+    private boolean sendMessage (AttributedMessage msg, SocketSpec destSpec) throws Exception
     {
       if (debug) 
       {

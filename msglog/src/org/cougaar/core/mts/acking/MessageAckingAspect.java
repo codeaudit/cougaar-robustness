@@ -36,6 +36,9 @@ import org.cougaar.core.component.Service;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.component.ServiceProvider;
 import org.cougaar.core.service.ThreadService;
+import org.cougaar.core.service.TopologyReaderService;
+import org.cougaar.core.service.TopologyEntry;
+
 
 /**
  **  An aspect which implements a message acking scheme.
@@ -150,7 +153,7 @@ public class MessageAckingAspect extends StandardAspect
   {
     if (type == MessageDeliverer.class) 
     {
-      return new AckBackend ((MessageDeliverer) delegate);
+      return new AckBackend ((MessageDeliverer) delegate, this);
     }
  
     return null;
@@ -457,6 +460,30 @@ public class MessageAckingAspect extends StandardAspect
       }
 
       return receives.add (msgNum);  // not added if already in list
+    }
+  }
+
+  static boolean wasSuccessfulReceive (AttributedMessage msg)
+  {
+    AgentID fromAgent = MessageUtils.getFromAgent (msg);
+    AgentID toAgent = MessageUtils.getToAgent (msg);
+    int msgNum = MessageUtils.getMessageNumber (msg);
+    return wasSuccessfulReceive (fromAgent, toAgent, msgNum);
+  }
+
+  static boolean wasSuccessfulReceive (AgentID fromAgent, AgentID toAgent, int msgNum)
+  {
+    synchronized (successfulReceivesTable)
+    {
+      String node = fromAgent.getNodeName();
+      Hashtable table = (Hashtable) successfulReceivesTable.get (node);
+      if (table == null) return false;
+
+      String key = AgentID.makeSequenceID (fromAgent, toAgent);
+      NumberList receives = (NumberList) table.get (key);
+      if (receives == null) return false;
+
+      return receives.find (msgNum);
     }
   }
 
@@ -866,6 +893,29 @@ public class MessageAckingAspect extends StandardAspect
 
 
   //  Utility methods and classes
+
+  AgentID getAgentID (String agent) throws NameLookupException
+  {
+    if (agent == null) return null;
+
+	ServiceBroker sb = getServiceBroker();
+    Class sc = TopologyReaderService.class;
+	TopologyReaderService topologySvc = (TopologyReaderService) sb.getService (this, sc, null);
+
+    TopologyEntry entry = topologySvc.getEntryForAgent (agent);  // HACK - not from MessageAddress
+
+    if (entry == null)
+    {
+      Exception e = new Exception ("Topology service blank on agent! : " +agent);
+      throw new NameLookupException (e);
+    }
+
+    String nodeName = entry.getNode();
+    String agentName = agent;
+    String agentIncarnation = "" + entry.getIncarnation();
+
+    return new AgentID (nodeName, agentName, agentIncarnation);
+  }
 
   static boolean hasRegularAck (AttributedMessage msg)
   {
