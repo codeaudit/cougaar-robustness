@@ -30,7 +30,6 @@ import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.SchedulerService;
-//import org.cougaar.core.service.ThreadService;
 import org.cougaar.core.service.UIDService;
 
 import org.cougaar.core.component.BindingSite;
@@ -47,8 +46,6 @@ import org.cougaar.core.mobility.ldm.MobilityFactory;
 import org.cougaar.core.service.AlarmService;
 import org.cougaar.core.agent.service.alarm.Alarm;
 
-//import org.cougaar.core.thread.Schedulable;
-
 import org.cougaar.core.util.UID;
 
 import org.cougaar.util.UnaryPredicate;
@@ -64,17 +61,18 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
 
-
 /**
+ * Provides convenience methods for invoking restarts on local and remote
+ * nodes.
  */
-
 public class RestartHelper extends BlackboardClientComponent {
 
+  // Status codes returned to listeners
   public static final int SUCCESS = 0;
   public static final int FAIL = 1;
 
-  public static final long TIMER_INTERVAL = 10000;
-  public static final long RESTART_TIMEOUT = 60000;
+  public static final long TIMER_INTERVAL = 10 * 000;
+  public static final long RESTART_TIMEOUT = 2 * 60 * 1000;
   public static final long MAX_CONCURRENT_RESTARTS = 1;
 
   private List restartQueue = Collections.synchronizedList(new ArrayList());
@@ -89,6 +87,7 @@ public class RestartHelper extends BlackboardClientComponent {
   protected EventService eventService;
   private List listeners = new ArrayList();
 
+  // For interaction with Mobility
   private IncrementalSubscription agentControlSub;
   private UnaryPredicate agentControlPredicate = new UnaryPredicate() {
     public boolean execute(Object o) {
@@ -101,6 +100,7 @@ public class RestartHelper extends BlackboardClientComponent {
     }
   };
 
+  // For receiving Relays from remote nodes
   private IncrementalSubscription healthMonitorRequests;
   private UnaryPredicate healthMonitorRequestPredicate = new UnaryPredicate() {
     public boolean execute (Object o) {
@@ -118,6 +118,9 @@ public class RestartHelper extends BlackboardClientComponent {
     start();
   }
 
+  /**
+   * Load required services.
+   */
   public void load() {
     setAgentIdentificationService(
       (AgentIdentificationService)getServiceBroker().getService(this, AgentIdentificationService.class, null));
@@ -138,10 +141,9 @@ public class RestartHelper extends BlackboardClientComponent {
     super.load();
   }
 
-  public void start() {
-    super.start();
-  }
-
+  /**
+   * Subscribe to HealthMonitorRequest relays and mobility objects.
+   */
   public void setupSubscriptions() {
     agentControlSub =
         (IncrementalSubscription)blackboard.subscribe(agentControlPredicate);
@@ -175,13 +177,28 @@ public class RestartHelper extends BlackboardClientComponent {
     }
   }
 
-  public void restartAgent(String agentName, String origNode, String destNode, String communityName) {
+  /**
+   * Method used by clients to initiate a restart.  The destination node is
+   * responsible for interaction with Mobility to perform the restart.  If the
+   * local agent is not the destination a request is sent to the destination
+   * via a blackboard Relay.
+   * @param agentName      Name of agent to be restarted
+   * @param origNode       Origin node
+   * @param destNode       Destination node
+   * @param communityName  Robustness community name
+   */
+  public void restartAgent(String agentName,
+                           String origNode,
+                           String destNode,
+                           String communityName) {
     logger.debug("RestartAgent:" +
                 " destNode=" + destNode +
                 " agent=" + agentName);
     if (agentId.toString().equals(destNode)) {
+      // Restart locally
       restartAgent(agentName);
     } else {
+      // Forward request to remote agent
       UIDService uidService = (UIDService) getServiceBroker().getService(this, UIDService.class, null);
       HealthMonitorRequest hmr =
           new HealthMonitorRequestImpl(agentId,
@@ -191,10 +208,8 @@ public class RestartHelper extends BlackboardClientComponent {
           origNode,
           destNode,
           uidService.nextUID());
-      RelayAdapter hmrRa =
-          new RelayAdapter(agentId, hmr, hmr.getUID());
-      hmrRa.addTarget(SimpleMessageAddress.
-                      getSimpleMessageAddress(destNode));
+      RelayAdapter hmrRa = new RelayAdapter(agentId, hmr, hmr.getUID());
+      hmrRa.addTarget(SimpleMessageAddress.getSimpleMessageAddress(destNode));
       if (logger.isDebugEnabled()) {
         logger.debug("Publishing HealthMonitorRequest:" +
                     " request=" + hmr.getRequestTypeAsString() +
@@ -208,6 +223,10 @@ public class RestartHelper extends BlackboardClientComponent {
     }
   }
 
+  /**
+   * Queue request for local action and trigger execute() method.
+   * @param agentName
+   */
   protected void restartAgent(String agentName) {
     logger.debug("RestartAgent:" +
                 " agent=" + agentName);
@@ -217,8 +236,16 @@ public class RestartHelper extends BlackboardClientComponent {
     }
   }
 
+  /**
+   * Returns current time as long.
+   * @return Current time.
+   */
   private long now() { return (new Date()).getTime(); }
 
+  /**
+   * Publish requests to Mobility to initiate restart and perform necessary
+   * bookkeeping to keep track of restarts that are in process.
+   */
   private void restartNext() {
     if ((!restartQueue.isEmpty()) &&
         (restartsInProcess.size() <= MAX_CONCURRENT_RESTARTS)) {
@@ -258,6 +285,10 @@ public class RestartHelper extends BlackboardClientComponent {
     }
   }
 
+  /**
+   * Check restarts that are in process and remove any that haven't been
+   * completed within the expiration time.
+   */
   private void removeExpiredRestarts() {
     long now = now();
     MessageAddress currentRestarts[] = getRestartsInProcess();
@@ -270,7 +301,10 @@ public class RestartHelper extends BlackboardClientComponent {
     }
   }
 
-
+  /**
+   * Evaluate updates to AgentControl objects used by Mobility.
+   * @param o
+   */
   public void update(Object o) {
     if (o instanceof AgentControl) {
       AgentControl ac = (AgentControl)o;
@@ -365,6 +399,10 @@ public class RestartHelper extends BlackboardClientComponent {
      }
    }
 
+   /**
+    * Returns addresses of agents that are currently being restarted.
+    * @return
+    */
   private MessageAddress[] getRestartsInProcess() {
     synchronized (restartsInProcess) {
       return (MessageAddress[])restartsInProcess.keySet().toArray(new MessageAddress[0]);
@@ -421,6 +459,8 @@ public class RestartHelper extends BlackboardClientComponent {
     }
   }
 
+  // Timer for periodically stimulating execute() method to check/process
+  // restart queue
   private class WakeAlarm implements Alarm {
     private long expiresAt;
     private boolean expired = false;
