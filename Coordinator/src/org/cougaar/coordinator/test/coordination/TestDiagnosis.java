@@ -39,7 +39,7 @@ public class TestDiagnosis extends Diagnosis {
     /* Set the value of the diagnosis. Since the value is a simple string
      * no mapping is required.
      */
-    protected void setValue(Object newValue) throws IllegalValueException {
+    public void setValue(Object newValue) throws IllegalValueException {
         super.setValue(newValue);
     }
     

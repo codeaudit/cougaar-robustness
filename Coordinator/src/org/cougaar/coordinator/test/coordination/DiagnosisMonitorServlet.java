@@ -491,7 +491,14 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
                 dr = (DiagRecord)i.next();                
                 d = (Diagnosis)dr.getDiagnosis();
                 if (d.getUID().toString().equals(uid)) {
-                    if (d instanceof AgentCommunicationDiagnosis1) {                            
+                    try {
+                       d.setValue(newvalue);
+                       blackboard.openTransaction();
+                       blackboard.publishChange(d);
+                       blackboard.closeTransaction();
+                    } catch (IllegalValueException ive) {
+                    }
+/*                    if (d instanceof AgentCommunicationDiagnosis1) {                            
                         AgentCommunicationDiagnosis1 td = (AgentCommunicationDiagnosis1)d;
                         try {
                            td.setValue(newvalue);
@@ -512,7 +519,8 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
                            blackboard.closeTransaction();
                         } catch (IllegalValueException ive) {
                         }
-                    } 
+                    }
+ */ 
                     break;
                 } 
             }

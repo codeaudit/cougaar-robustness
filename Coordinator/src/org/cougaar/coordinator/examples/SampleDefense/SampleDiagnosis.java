@@ -38,7 +38,7 @@ public class SampleDiagnosis extends Diagnosis
         super(assetName, serviceBroker);
     }
 
-    protected void setValue(Object value) throws IllegalValueException {
+    public void setValue(Object value) throws IllegalValueException {
 	super.setValue(value);
     }
 

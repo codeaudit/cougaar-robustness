@@ -342,7 +342,8 @@ public abstract class Diagnosis
      * only be called by the diagnosis. The value must be in the set of permittedValues.
      * <p>
      */
-    protected void setValue(Object newValue) throws IllegalValueException {
+    //protected -- SHOULD be public, but we cannot use our servlet tool to test the system!!
+    public void setValue(Object newValue) throws IllegalValueException {
         
         if (value != newValue) {
             this.setLastChangedTimestamp( System.currentTimeMillis() );            
