@@ -2,166 +2,297 @@
 <html>
 <head>
   <title>Adaptive Robustness Use Case 1 (AR-UC1) Setup</title>
-                           
+                                         
   <meta http-equiv="content-type"
  content="text/html; charset=ISO-8859-1">
 </head>
   <body>
-       
-<h1>Adaptive Robustness Use Case 1 Setup</h1>
 <br>
-           This document provides instructions for configuring a Cougaar
-society to  demonstrate/test Adaptive Robustness (AR) Use Case 1 (AR-UC1)
-components.   &nbsp;Use Case 1 involves the detection and restart of agents
-that have been  lost due to a computer or node failure. &nbsp;These instructions
-are based  on the use of a modified version of the SMALL-1AD-TRANS society
-that is distributed  with CSMART. &nbsp;With minor variation most of these
-instructions  are also  applicable to the setup of the the TINY and FULL
-versions of the  standard  1AD sociieties.<br>
 <br>
-<h2>Obtain Required software</h2>
-       
+           
+<h1>Adaptive Robustness Use Case 1 (AR-UC1) Setup<br>
+</h1>
+             This document provides instructions for configuring a Cougaar
+ society to  demonstrate/test Adaptive Robustness (AR) Use Case 1 (AR-UC1)
+ components.   &nbsp;Use Case 1 involves the detection and restart of agents
+ that have been  lost due to a computer or node failure. &nbsp;These instructions
+ are based  on the use of a modified version of the SMALL-1AD-TRANS society
+ that is distributed  with CSMART. &nbsp;With minor variation most of these
+ instructions  are also  applicable to the setup of the the TINY and FULL
+versions of the  standard  1AD societies.<br>
+  <br>
+   
+<h2>REQUIRED SOFTWARE</h2>
+           
 <h3>a. &nbsp;Cougaar</h3>
-    Cougaar version 9.4.1.2 or greater is required.<br>
-       
+      Cougaar version 9.4.1.2 or greater is required.<br>
+           
 <h3>b. &nbsp;Adaptive Robustness JAR files</h3>
-    Obtain the JAR files for the following modules from the Ultralog CVS
-repository   and copy to the COUGAAR_INSTALL_PATH/lib directory.<br>
-    <br>
+      Obtain the JAR files for the following modules from the Ultralog CVS
+ repository   and copy to the COUGAAR_INSTALL_PATH/lib directory.<br>
+   
 <ol>
-  <li>    Robustness/OBJS/Sensors</li>
-  <li>    Robustness/MIC/Mgmt_Agent </li>
+    <li>    Robustness/OBJS/Sensors</li>
+    <li>    Robustness/MIC/Mgmt_Agent </li>
+   
 </ol>
-       
+           
 <h3>c. &nbsp;AR Use Case 1 CSMART Recipes</h3>
-    A number of CSMART recipes are used to configure the standard 1AD societies
-  for AR-UC1 demonstration and testing. &nbsp;The recipes listed below can
- be obtained from the test/data/recipes directory in the Robustness/MIC/Mgmt_Agent
-  module or overlay. &nbsp;These recipes should be imported into the CSMART
-  database.<br>
-    <br>
+      A number of CSMART recipes are used to configure the standard 1AD societies
+   for AR-UC1 demonstration and testing. &nbsp;The recipes listed below can
+  be obtained from the test/data/recipes directory in the Robustness/MIC/Mgmt_Agent
+   module or overlay. &nbsp;These recipes should be imported into the CSMART
+   database.<br>
+      <br>
+   
 <ol>
-  <li>    HeartbeatServerPlugin-export.sql</li>
-  <li>    PingServerPlugin-export.sql</li>
-  <li>    SensorDomain-export.sql</li>
-  <li>    RobustnessManagementAgents-export.sql</li>
+    <li>    HeartbeatServerPlugin-export.sql</li>
+    <li>    PingServerPlugin-export.sql</li>
+    <li>    SensorDomain-export.sql</li>
+    <li>    RobustnessManagementAgents-export.sql<br>
+  </li>
+   
 </ol>
-    <br>
-    In addition to the recipes listed above, the file "recipeQueries.q" in
- the  test/data directory must be copied to the COUGAAR_INSTALL_PART/configs/common
-  directory. &nbsp;This file contains a couple unique database queries that
-  are used by the AR recipes.<br>
-       
+      In addition to the recipes listed above, the file "recipeQueries.q" 
+in  the  test/data directory must be copied to the COUGAAR_INSTALL_PATH/configs/common
+   directory. &nbsp;This file contains a couple unique database queries that
+   are used by the AR recipes.<br>
+           
 <h3>d. &nbsp;AR Use Case 1 CSMART Experiment</h3>
-    The following CSMART experiment is provided in the test/data/experiments
-  directory in the Robustness/MIC/Mgmt_Agent module. &nbsp;This experiment
- modifies the standard SMALL-1AD-TRANS experiment to define communities and
- agent allocations suitable for running AR-UC1 tests. &nbsp;This experiment
- should be imported into the CSMART database.<br>
-    <br>
-    - &nbsp;SMALL-1AD-TRANS-AR-export<br>
-    <br>
-    This experiment contains 58 agents in 4 robustness communities. &nbsp;The
-  allocation of agents to communities is as follows:<br>
-    <br>
-       
+      The following CSMART experiment is provided in the test/data/experiments
+   directory in the Robustness/MIC/Mgmt_Agent module. &nbsp;This experiment
+  modifies the standard SMALL-1AD-TRANS experiment to define communities
+and   agent allocations suitable for running AR-UC1 tests. &nbsp;This experiment
+  should be imported into the CSMART database.<br>
+   
+<ul>
+    <li>    SMALL-1AD-TRANS-AR-export<br>
+  </li>
+   
+</ul>
+      This experiment contains 58 agents in 4 robustness communities. &nbsp;The
+   allocation of agents to communities is as follows:<br>
+      <br>
+           
 <table cellpadding="2" cellspacing="2" border="1" width="300"
  align="center">
-      <tbody>
-        <tr>
-          <td valign="top">1AD-Enclave1-COMM<br>
-          </td>
-          <td valign="top">32 Agents<br>
-          </td>
-        </tr>
-        <tr>
-          <td valign="top">1AD-Enclave2-COMM<br>
-          </td>
-          <td valign="top">15 Agents<br>
-          </td>
-        </tr>
-        <tr>
-          <td valign="top">1AD-Enclave3-COMM<br>
-          </td>
-          <td valign="top">1 Agent<br>
-          </td>
-        </tr>
-        <tr>
-          <td valign="top">1AD-Enclave4-COMM<br>
-          </td>
-          <td valign="top">10 Agents<br>
-          </td>
-        </tr>
-               
-  </tbody>    
+        <tbody>
+          <tr>
+            <td valign="top">1AD-Enclave1-COMM<br>
+            </td>
+            <td valign="top">32 Agents<br>
+            </td>
+          </tr>
+          <tr>
+            <td valign="top">1AD-Enclave2-COMM<br>
+            </td>
+            <td valign="top">15 Agents<br>
+            </td>
+          </tr>
+          <tr>
+            <td valign="top">1AD-Enclave3-COMM<br>
+            </td>
+            <td valign="top">1 Agent<br>
+            </td>
+          </tr>
+          <tr>
+            <td valign="top">1AD-Enclave4-COMM<br>
+            </td>
+            <td valign="top">10 Agents<br>
+            </td>
+          </tr>
+                       
+  </tbody>      
 </table>
-    <br>
-    Each community (enclave} has a management agent that is responsible for 
- monitoring the community members and restarting them as necessary. &nbsp;The 
- management agent is given a name like "1AD-Enclave1-RobustnessManager". &nbsp;The
- name must be unique and must end with the string "RobustnessManager".<br>
-<br>
-       
-<h2>2. &nbsp;Modify Experiment Configuration</h2>
-    Using the CSMART Experiment Builder tool update the SMALL-1AD-TRANS-AR-export
-  experiment to reflect the local environment.<br>
-<br>
-       
-<h3>a. &nbsp;Allocate nodes to hosts<br>
-    </h3>
-   The SMALL-1AD-TRANS-AR-export experiment is currently configured to run 
-23 nodes on 5 computers. &nbsp;Depending on the availability of local resources
-  this step may simply involve the re-allocation of the existing nodes to
-5  computers in the local enviroment. &nbsp;While it is not normally recommended
-  that more than 1 node be allocated to a host, this 5 computer configuration
-  defines a number of relatively small nodes for each host. &nbsp;This is
-done  to mimic the agent-node allocation in the TICs FULL-1AD society and
-also to provide multiple nodes to kill for various UC1 test scenarios. &nbsp;If
- the computers to be used for the society are not capable of running this
-number of JVMs the agents in the FWD-X and REAR-X nodes could be consolidated
-into single ENCLAVE1 and ENCLAVE2 nodes. Similarily the agents in the AIR-NODE,
-  CONUS-NODE, CONTRANS-NODE, SEA-NODE, THEATERTRANS-NODE, and TRANSCOM-NODE
-  nodes could be combined to form a singe ENCLAVE4 node. <br>
-    <br>
-       
-<h3>b. &nbsp;Specify restart nodes</h3>
-   Each robustness community in the SMALL-1AD-TRANS-AR-export experiment
-designates   a specific node for restarting dead agents. &nbsp;By default
-this node is   named something like "Enclave1-RestartNode". &nbsp;The designation
-of restart   nodes for a community is performed using a community level attribute.
-&nbsp;This   attribute is found by going to the "Community" tab in the CSMART
-Experiment   Builder tool. &nbsp;Select the appropriate community from the
-community list.  &nbsp;The community name will be something like "1AD-Enclave1-COMM".<br>
-       
-<ol>
-    <li><i>Changing the restart node</i> &nbsp;- &nbsp;To change the name 
-of the restart  node simply modify the ATTRIBUTE_VALUE associated with the 
-existing RestartNode  id.<br>
-    </li>
-     <li><i>Deleting the restart node</i> &nbsp;- &nbsp;To delete the restart 
- node right click on the existing attribute entry and select "delete" from 
- the pop-up menu. &nbsp;If a robustness community does not specify a &nbsp;restart
-  node the Management Agent will consider any node currently used by a commuity
-  member as a possible destination for a restarted agent.<br>
-    </li>
-     <li><i>Adding restart nodes</i> &nbsp;- &nbsp;The default experiment 
-specifies  1 restart node for each restart community. &nbsp;However, multiple 
-restrart  nodes may be designated. &nbsp;To add additional nodes right click 
-on the  community name from the community list pane and select "Add Attribute" 
-from  the pop-up menu. &nbsp;Then add "RestartNode" to the new ATTRIBUTE_ID 
-and  the name of the node to the ATTRIBUTE_VALUE field. &nbsp;When multiple 
-restart  nodes are specified the Management Agent will consider all of these 
-as possible  destinations for a restarted agent. &nbsp;The actual node selected 
-will be  the one with the fewest number of running agents</li>
-     
+      <br>
+      Each community (enclave} has a management agent that is responsible 
+for   monitoring the community members and restarting them as necessary. &nbsp;The
+  management agent is given a name like "1AD-Enclave1-RobustnessManager". 
+&nbsp;The  name must be unique and must end with the string "RobustnessManager".<br>
+  <br>
+           
+<h2>2. &nbsp;QUICK CHECKOUT USING MiniTestConfig SOCIETY</h2>
+An easy way to verify that all required components are properly installed/configured
+is to run a simple test using the MiniTestConfig society. &nbsp;This section
+describes the steps for running a one computer test using the MiniTestConfig
+society started from provided .ini files. &nbsp;This test uses 5 console
+windows on a single computer.<br>
+<ol type="a">
+  <li> Test Setup:</li>
 </ol>
-       
-<h2>3. &nbsp;Run Society</h2>
-    Once the required software has been installed and configured the experiment
-  can be executed using the CSMART Experiment Controller tool. &nbsp;Using
- the Experiment Controller run the experiment configured from step 2 above.
- &nbsp;Monitor the log messages from 4 management agent nodes (named 1AD-EnclaveX-RobustnessManager).
-  &nbsp;As the society is starting each management agent will detect the
+<blockquote>
+  <ol>
+    <li>This test is executed using the ant build tool.&nbsp; If ant has
+not been installed it can be obtained from the <a
+ href="jakarta.apache.org">jakarta.apache.org</a> website. &nbsp; If the
+test will be run from Windows-2000 or XP, ant version 1.5 or better should
+be used as the combination of java 1.4 and windows-2000/XP does not work
+correctly with earlier versions of ant.&nbsp; If Linux is used ant 1.4.x
+is ok.&nbsp; This ant commands used in this example assume that the test
+is being run from the packages root directory (this is the top-level directory
+with the build.xml file).</li>
+    <li>The environment COUGAAR_INSTALL_PATH path must be defined and point
+to a directory containing Cougaar 9.4.1 or later.</li>
+    <li>The "lib" subdirectory directory must contain the following jar files.&nbsp;
+These jar files may be obtained from the cvs.ultralog.net web site.&nbsp;
+The Robustness_mic_mgmt_agent.jar may also be created using the ant "build"
+target.<br>
+    </li>
+  </ol>
+</blockquote>
+<blockquote>
+  <blockquote>
+    <blockquote>
+      <ul>
+        <li>Robustness_objs_sensors.jar</li>
+        <li>Robustness_mic_mgmt_agent.jar<br>
+        </li>
+      </ul>
+    </blockquote>
+  </blockquote>
+</blockquote>
+<blockquote>
+  <ol start="4">
+    <li>Delete previous persistence files.&nbsp; These are written to the
+subdirectory $COUGAAR_INSTALL_PATH/workspace/P.&nbsp; If persistence directories
+exist for the MinitTestConfig agents delete them.<br>
+    </li>
+  </ol>
+</blockquote>
+<ol type="a" start="2">
+  <li>Test Execution:<br>
+  </li>
+</ol>
+<blockquote>
+  <ol>
+    <li>In the first console start the ManagementAgent.&nbsp; Use the ant
+target "manager".</li>
+  </ol>
+</blockquote>
+ 
+<blockquote>
+  <blockquote>
+    <pre>&nbsp;&gt; ant manager<br></pre>
+  </blockquote>
+</blockquote>
+<blockquote>
+  <ol start="2">
+    <li>Start agents 3-69-ARBN and MCCGlobalMode on the node MiniNode1.&nbsp;
+Use the ant target "mininode1" for this.</li>
+  </ol>
+</blockquote>
+ 
+<blockquote>
+  <blockquote>
+    <pre>&gt; ant mininode1</pre>
+  </blockquote>
+</blockquote>
+ 
+<blockquote>
+  <ol start="3">
+    <li>Start agent 3ID on MiniNode2.&nbsp; Use the ant target "mininode2".&nbsp;</li>
+  </ol>
+  <blockquote>   
+    <blockquote>     
+      <pre>&gt; ant mininode2</pre>
+   </blockquote>
+ </blockquote>
+  <br>
+  <ol start="3">
+ <li>Start agent 1BDE on MiniNode3.&nbsp; Use the ant target "mininode3".
+&nbsp;</li>
+  </ol>
+</blockquote>
+ 
+<blockquote>
+  <blockquote>
+    <pre>&gt; ant mininode3</pre>
+  </blockquote>
+</blockquote>
+ 
+<blockquote>
+  <ol start="4">
+    <li>As the minitestconfig agents are started the ManagementAgent should
+print the message "Adding AGENTNAME" indicating that it has detected the
+agent and is sending a HeartbeatRequest. &nbsp;A</li>
+    <li>After the ManagementAgent has printed a message indicating that all
+4 agents are in the "NORMAL" state, kill MiniNode2 by typing CTRL-C in the
+MiniNode2 console window.&nbsp; Shortly after this the ManagementAgent should
+print some messages to its console indicating that heartbeats are not being
+received from agent 3ID.&nbsp; A ping will be sent by the ManagementAgent
+to 3ID to confirm its status.&nbsp; At this point the DecisionPlugin will
+obtain a restart destination from the RestartLocatorPlugin and will initiate
+a restart of 3ID on the selected restart node.</li>
+    <li>If all goes well agent 3ID should restart on the mininode1.&nbsp;
+This will be evident by the generation of the dialog boxes used by 3ID. &nbsp;The
+ManagementAgent will also report a successful restart with the message "Reacquired
+Agent: &nbsp;agent=3ID".<br>
+    </li>
+  </ol>
+</blockquote>
+<h2>3. &nbsp;MODIFYING EXPERIMENT CONFIGURATION</h2>
+      Using the CSMART Experiment Builder tool update the SMALL-1AD-TRANS-AR-export
+   experiment to reflect the local environment.<br>
+  <br>
+           
+<h3>a. &nbsp;Allocate nodes to hosts<br>
+      </h3>
+     The SMALL-1AD-TRANS-AR-export experiment is currently configured to
+run  23 nodes on 5 computers. &nbsp;Depending on the availability of local
+resources    this step may simply involve the re-allocation of the existing
+nodes to  5  computers in the local enviroment. &nbsp;While it is not normally
+recommended    that more than 1 node be allocated to a host, this 5 computer
+configuration    defines a number of relatively small nodes for each host.
+&nbsp;This is  done  to mimic the agent-node allocation in the TICs FULL-1AD
+society and  also to provide multiple nodes to kill for various UC1 test
+scenarios. &nbsp;If   the computers to be used for the society are not capable
+of running this  number of JVMs the agents in the FWD-X and REAR-X nodes
+could be consolidated  into single ENCLAVE1 and ENCLAVE2 nodes. Similarily
+the agents in the AIR-NODE,    CONUS-NODE, CONTRANS-NODE, SEA-NODE, THEATERTRANS-NODE,
+and TRANSCOM-NODE    nodes could be combined to form a singe ENCLAVE4 node.
+<br>
+      <br>
+           
+<h3>b. &nbsp;Specify restart nodes</h3>
+     Each robustness community in the SMALL-1AD-TRANS-AR-export experiment
+ designates   a specific node for restarting dead agents. &nbsp;By default
+ this node is   named something like "Enclave1-RestartNode". &nbsp;The designation
+ of restart   nodes for a community is performed using a community level
+attribute.  &nbsp;This   attribute is found by going to the "Community" tab
+in the CSMART  Experiment   Builder tool. &nbsp;Select the appropriate community
+from the  community list.  &nbsp;The community name will be something like
+"1AD-Enclave1-COMM".<br>
+           
+<ol>
+      <li><i>Changing the restart node</i> &nbsp;- &nbsp;To change the name 
+ of the restart  node simply modify the ATTRIBUTE_VALUE associated with the 
+ existing RestartNode  id.<br>
+      </li>
+       <li><i>Deleting the restart node</i> &nbsp;- &nbsp;To delete the restart 
+  node right click on the existing attribute entry and select "delete" from 
+  the pop-up menu. &nbsp;If a robustness community does not specify a &nbsp;restart
+   node the Management Agent will consider any node currently used by a commuity
+   member as a possible destination for a restarted agent.<br>
+      </li>
+       <li><i>Adding restart nodes</i> &nbsp;- &nbsp;The default experiment 
+ specifies  1 restart node for each restart community. &nbsp;However, multiple 
+ restrart  nodes may be designated. &nbsp;To add additional nodes right click 
+ on the  community name from the community list pane and select "Add Attribute" 
+ from  the pop-up menu. &nbsp;Then add "RestartNode" to the new ATTRIBUTE_ID 
+ and  the name of the node to the ATTRIBUTE_VALUE field. &nbsp;When multiple 
+ restart  nodes are specified the Management Agent will consider all of these 
+ as possible  destinations for a restarted agent. &nbsp;The actual node selected 
+ will be  the one with the fewest number of running agents</li>
+         
+</ol>
+<br>
+           
+<h2>4. &nbsp;RUNNING THE SMALL-1AD TEST SOCIETY</h2>
+Once the required software has been installed and configured the experiment
+   can be executed using the CSMART Experiment Controller tool. &nbsp;Using
+  the Experiment Controller run the experiment configured from step 2 above.
+  &nbsp;Monitor the log messages from 4 management agent nodes (named 1AD-EnclaveX-RobustnessManager).
+   &nbsp;As the society is starting each management agent will detect the
 existence   of the community members that it is monitoring and will log an
 INFO message   "Adding XXXX" where XXXX is the name of the agent to be monitored.
 &nbsp;Periodically   each management agent will log a summary message indicating
@@ -175,204 +306,310 @@ agent will log various warning   and error messages indicating heartbeat
 and ping failures. &nbsp;Eventually   the dead agents will be retarted on
 a restart node. &nbsp;If the restart  is successful, a log message "Reacquired
 XXXX" will be generated where XXXX  is the name of the agent that was restarted.<br>
-<br>
-<h2>4. &nbsp;Modifying Robustness Parameters</h2>
-The AR-UC1 components support the capability to override default values and
-to define agent-specific values for the following parameters. &nbsp;The SMALL-1AD-AR-export
-experiment discussed above uses the default values listed in the table below.
-&nbsp;While these are reasonable values they have not been optimized for
-any particular configuration. &nbsp;<br>
-<br>
+  <br>
+   
+<h2>5. &nbsp;MODIFYING ROBUSTNESS PARAMETERS</h2>
+  The AR-UC1 components support the capability to override default values 
+and to define agent-specific values for the following parameters. &nbsp;The 
+SMALL-1AD-AR-export experiment discussed above uses the default values listed 
+in the table below. &nbsp;While these are reasonable values they have not 
+been optimized for any particular configuration. &nbsp;<br>
+  <br>
+   
 <table cellpadding="2" cellspacing="2" border="2" width="90%"
  align="center">
-  <caption><br>
-  </caption><tbody>
-    <tr>
-      <th valign="middle" align="center" width="20%"><b>Parameter Name<br>
+    <caption><br>
+    </caption><tbody>
+      <tr>
+        <th valign="middle" align="center" width="20%"><b>Parameter Name<br>
+        </b></th>
+        <td valign="top" align="center"><b>Plugin</b><br>
+        </td>
+        <td valign="middle" align="center" width="15%"><b>Default Value</b><br>
+        </td>
+        <th valign="top" align="center"><b>Description</b><br>
+        </th>
+      </tr>
+      <tr>
+        <td valign="top">hbReqTimeout<br>
+        </td>
+        <td valign="top">HealthMonitorPlugin<br>
+        </td>
+        <td valign="top" align="right">60000<br>
+        </td>
+        <td valign="top">Defines the timeout period (in milliseconds) for 
+a heartbeat request.<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="top">hbReqRetries<br>
+        </td>
+        <td valign="top">HealthMonitorPlugin<br>
+        </td>
+        <td valign="top" align="right">1<br>
+        </td>
+        <td valign="top">Defines the number of times to retry a heartbeat 
+request when a failure is encountered. &nbsp;If the value is set to -1 retries 
+will continue indefinately.<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="top">hbReqRetryFreq<br>
+        </td>
+        <td valign="top">HealthMonitorPlugin<br>
+        </td>
+        <td valign="top" align="right">60000<br>
+        </td>
+        <td valign="top">Defines the interval (in milliseconds) between heartbeat
+ request retries.<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="top">hbFreq<br>
+        </td>
+        <td valign="top">HealthMonitorPlugin<br>
+        </td>
+        <td valign="top" align="right">30000<br>
+        </td>
+        <td valign="top">Defines the frequency (in milliseconds) at which 
+the monitored agents are to send heartbeats to the management agent.<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="top">hbTimeout<br>
+        </td>
+        <td valign="top">HealthMonitorPlugin<br>
+        </td>
+        <td valign="top" align="right">30000<br>
+        </td>
+        <td valign="top">Defines the timeout (in milliseconds) period for 
+hearbeats.<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="top">hbPctLate<br>
+        </td>
+        <td valign="top">HealthMonitorPlugin<br>
+        </td>
+        <td valign="top" align="right">80.0<br>
+        </td>
+        <td valign="top">Defines a tolerance for late heartbeats before they
+ are reported in a Heartbeat Health Report that is processed by the HealthMonitorPlugin.
+ &nbsp;The value is defined as a float point number representing a percentage
+ of the hbTimeout.<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="top">hbWindow<br>
+        </td>
+        <td valign="top">HealthMonitorPlugin<br>
+        </td>
+        <td valign="top" align="right">360000<br>
+        </td>
+        <td valign="top">Defines the interval (in milliseconds) over which
+ a heartbeat failure rate is calculated. &nbsp;<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="top">hbFailRate<br>
+        </td>
+        <td valign="top">HealthMonitorPlugin<br>
+        </td>
+        <td valign="top" align="right">50.0<br>
+        </td>
+        <td valign="top">Defines the heartbeat failure rate threshold. &nbsp;When
+ the calculated heartbeat failure rate exceeds this threshold the monitored
+ agent is placed into the "HEALTH_CHECK" state for further evaluation by
+the  Management Agent. &nbsp;This value is the percentage of late heartbeats
+vs  expected heartbeats.<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="top">activePingFreq<br>
+        </td>
+        <td valign="top">HealthMonitorPlugin<br>
+        </td>
+        <td valign="top" align="right">0<br>
+        </td>
+        <td valign="top">Defines the frequency (in milliseconds) at which 
+agents are pinged. &nbsp;Active pings are performed in addition to the heartbeat
+ monitored. &nbsp;If active pings are not required this value should be set
+ to 0.<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="top">pingTimeout<br>
+        </td>
+        <td valign="top">HealthMonitorPlugin<br>
+        </td>
+        <td valign="top" align="right">60000<br>
+        </td>
+        <td valign="top">Defines the ping timeout period (in milliseconds).<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="top">pingRetries<br>
+        </td>
+        <td valign="top">HealthMonitorPlugin<br>
+        </td>
+        <td valign="top" align="right">1<br>
+        </td>
+        <td valign="top">Defines the number of time to retry a failed ping.<br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="top">evalFreq<br>
+        </td>
+        <td valign="top">HealthMonitorPlugin<br>
+        </td>
+        <td valign="top" align="right">10000<br>
+        </td>
+        <td valign="top">Defines the delay (in milliseconds) between execution
+ of the healh status evaluation loop used by the HealthMonitorPlugin. <br>
+        </td>
+      </tr>
+      <tr>
+        <td valign="top">restartNode<br>
+        </td>
+        <td valign="top">RestartLocatorPlugin<br>
+        </td>
+        <td valign="top"><br>
+        </td>
+        <td valign="top">Defines the name(s) of node(s) to use for restarting
+ dead agents.&nbsp; If no restart nodes are specified the Management Agent
+ will consider any node used by a robustness community member as a candidate
+ destination.<br>
+        </td>
+      </tr>
+       
+  </tbody>  
+</table>
+  <br>
+  <br>
+   
+<h4>a. &nbsp;Overriding default values</h4>
+  New default parameter values are specified as plugin arguments. &nbsp;For
+ instance to change the heartbeat frequency for all agents to 2 minutes,
+the  argument "hbFreq=120000" would be specified. &nbsp;When using .ini files
+multiple arguments must be separated by commas. &nbsp;For instance:<br>
+   
+<pre>plugin=org.cougaar.tools.robustness.ma.HealthMonitorPlugin(hbFreq=120000,&nbsp;pingRetries=2)</pre>
+  The restartNode parameter allows more than one restart node to be defined.
+ &nbsp;If multiple nodes are defined the node names must be separated by
+spaces.  &nbsp;In addition to specifying restart nodes as a plugin argument
+to the  RestartLocatorPlugin, this parameter may also be defined using community-level
+ attributes. &nbsp;Using the CSMART community editor add a RestartNode attribute
+ for each node to be used as a restart destination. &nbsp;<br>
+<br>
+Most of the parameters defined in the table above may also be specified at
+run time.&nbsp; The <i>ParameterModifierServlet</i> may be used to send changes
+to the applicable plugin.&nbsp; The servlet is launched from a browser using 
+a URL similar to the following where HOST, PORT and ROBUSTNESS_MANAGER is 
+replaced with the appropriate host name, port, and robustness manager agent 
+name<br>
+<br>
+<blockquote>
+  <pre>http://HOST:PORT/$ROBUSTNESS_MANAGER/modifyParameters
+  </pre>
+</blockquote>
+<h4>b. &nbsp;Specifying agent-specific values</h4>
+  Agent-specific values are specified using entity-level attributes in the
+ appropriate robustness community definition. &nbsp;Using the CSMART community
+ editor locate the community and agent requiring a non-default parameter
+value.  &nbsp;Add an attribute id (from the table above) and value for the
+parameter  to be defined. &nbsp;For instance if an agent requires a longer
+ping timeout  (e.g., 2 minutes) period the attribute value "pingTimeout"
+would be created  with the value "120000". &nbsp;This value would override
+the community-wide  default that was defined.<br>
+ <br>
+<br>
+<h2>6. &nbsp;MANUALLY CONFIGURING A &nbsp;RESTART COMMUNITY</h2>
+  Restart communities are defined in the configuration database.&nbsp; Community
+definitions in the configuration database are used by the Community Service
+to assign an agent to its initial communities during startup.&nbsp; Starting
+with Cougaar 9.4 CSMART provides the capability to create/edit community
+definitions.&nbsp; Community definitions may also be created in an XML text
+file and imported into the database using a utility program. &nbsp;Community
+definitions for the MiniTestConfig and 1AD societies are part of this package
+and are found in file "test/configs/data/communities.xml". &nbsp;After editing
+this XML file the modified configurations can be imported into the configuration
+database by running the ant tool with the target "dbimport".&nbsp; This ant
+target accepts 3 optional arguments that may be specified with the "-D" option.&nbsp;
+Note that "experiment" and "assembly" are mutually exclusive.&nbsp; Only
+one of these may be specified.&nbsp; The most common use of this utility
+will be to import an experiment into CSMART and use the corresponding experiment
+name in the dbimport invocation.<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<table cellpadding="2" cellspacing="2" border="2" width="90%"
+ align="center">
+  <tbody>
+    <tr align="center">
+      <th valign="top"><b>Argument<br>
       </b></th>
-      <td valign="top" align="center"><b>Plugin</b><br>
-      </td>
-      <td valign="middle" align="center" width="15%"><b>Default Value</b><br>
-      </td>
-      <th valign="top" align="center"><b>Description</b><br>
-      </th>
-    </tr>
-    <tr>
-      <td valign="top">hbReqTimeout<br>
-      </td>
-      <td valign="top">HealthMonitorPlugin<br>
-      </td>
-      <td valign="top" align="right">60000<br>
-      </td>
-      <td valign="top">Defines the timeout period (in milliseconds) for a
-heartbeat request.<br>
+      <td valign="top"><b>Description</b><br>
       </td>
     </tr>
     <tr>
-      <td valign="top">hbReqRetries<br>
+      <td valign="top"> -Dexperiment=EXPERIMENT_NAME<br>
       </td>
-      <td valign="top">HealthMonitorPlugin<br>
-      </td>
-      <td valign="top" align="right">1<br>
-      </td>
-      <td valign="top">Defines the number of times to retry a heartbeat request
-when a failure is encountered. &nbsp;If the value is set to -1 retries will
-continue indefinately.<br>
+      <td valign="top">Name of experiment that will use the community definition.<br>
       </td>
     </tr>
     <tr>
-      <td valign="top">hbReqRetryFreq<br>
+      <td valign="top">-Dassembly=ASSEMBLY_ID<br>
       </td>
-      <td valign="top">HealthMonitorPlugin<br>
-      </td>
-      <td valign="top" align="right">60000<br>
-      </td>
-      <td valign="top">Defines the interval (in milliseconds) between heartbeat
-request retries.<br>
+      <td valign="top">Assembly ID to associate community definitions.&nbsp;
+By default this will be "COMM-DEFAULT_CONFIG".<br>
       </td>
     </tr>
     <tr>
-      <td valign="top">hbFreq<br>
+      <td valign="top"> -Dfile=XML_FILENAME<br>
       </td>
-      <td valign="top">HealthMonitorPlugin<br>
-      </td>
-      <td valign="top" align="right">30000<br>
-      </td>
-      <td valign="top">Defines the frequency (in milliseconds) at which the
-monitored agents are to send heartbeats to the management agent.<br>
-      </td>
-    </tr>
-    <tr>
-      <td valign="top">hbTimeout<br>
-      </td>
-      <td valign="top">HealthMonitorPlugin<br>
-      </td>
-      <td valign="top" align="right">30000<br>
-      </td>
-      <td valign="top">Defines the timeout (in milliseconds) period for hearbeats.<br>
-      </td>
-    </tr>
-    <tr>
-      <td valign="top">hbPctLate<br>
-      </td>
-      <td valign="top">HealthMonitorPlugin<br>
-      </td>
-      <td valign="top" align="right">80.0<br>
-      </td>
-      <td valign="top">Defines a tolerance for late heartbeats before they
-are reported in a Heartbeat Health Report that is processed by the HealthMonitorPlugin.
-&nbsp;The value is defined as a float point number representing a percentage
-of the hbTimeout.<br>
-      </td>
-    </tr>
-    <tr>
-      <td valign="top">hbWindow<br>
-      </td>
-      <td valign="top">HealthMonitorPlugin<br>
-      </td>
-      <td valign="top" align="right">360000<br>
-      </td>
-      <td valign="top">Defines the interval (in milliseconds) over which
-a heartbeat failure rate is calculated. &nbsp;<br>
-      </td>
-    </tr>
-    <tr>
-      <td valign="top">hbFailRate<br>
-      </td>
-      <td valign="top">HealthMonitorPlugin<br>
-      </td>
-      <td valign="top" align="right">50.0<br>
-      </td>
-      <td valign="top">Defines the heartbeat failure rate threshold. &nbsp;When
-the calculated heartbeat failure rate exceeds this threshold the monitored
-agent is placed into the "HEALTH_CHECK" state for further evaluation by the
-Management Agent. &nbsp;This value is the percentage of late heartbeats vs
-expected heartbeats.<br>
-      </td>
-    </tr>
-    <tr>
-      <td valign="top">activePingFreq<br>
-      </td>
-      <td valign="top">HealthMonitorPlugin<br>
-      </td>
-      <td valign="top" align="right">0<br>
-      </td>
-      <td valign="top">Defines the frequency (in milliseconds) at which agents
-are pinged. &nbsp;Active pings are performed in addition to the heartbeat
-monitored. &nbsp;If active pings are not required this value should be set
-to 0.<br>
-      </td>
-    </tr>
-    <tr>
-      <td valign="top">pingTimeout<br>
-      </td>
-      <td valign="top">HealthMonitorPlugin<br>
-      </td>
-      <td valign="top" align="right">60000<br>
-      </td>
-      <td valign="top">Defines the ping timeout period (in milliseconds).<br>
-      </td>
-    </tr>
-    <tr>
-      <td valign="top">pingRetries<br>
-      </td>
-      <td valign="top">HealthMonitorPlugin<br>
-      </td>
-      <td valign="top" align="right">1<br>
-      </td>
-      <td valign="top">Defines the number of time to retry a failed ping.<br>
-      </td>
-    </tr>
-    <tr>
-      <td valign="top">evalFreq<br>
-      </td>
-      <td valign="top">HealthMonitorPlugin<br>
-      </td>
-      <td valign="top" align="right">10000<br>
-      </td>
-      <td valign="top">Defines the delay (in milliseconds) between execution
-of the healh status evaluation loop used by the HealthMonitorPlugin. <br>
-      </td>
-    </tr>
-    <tr>
-      <td valign="top">restartNode<br>
-      </td>
-      <td valign="top">RestartLocatorPlugin<br>
-      </td>
-      <td valign="top"><br>
-      </td>
-      <td valign="top">Defines the name(s) of node(s) to use for restarting
-dead agents.&nbsp; If no restart nodes are specified the Management Agent
-will consider any node used by a robustness community member as a candidate
-destination.<br>
+      <td valign="top">The name of the community xml file that contains the
+community definitions.&nbsp; The location of this file is determined by the
+org.cougaar.config.path property.&nbsp; By default the dbimport ant target
+adds the directory "test/data" to the config path. &nbsp;If this argument
+is not specified the default is "communities.xml".<br>
+  <br>
       </td>
     </tr>
   </tbody>
 </table>
 <br>
-<br>
-<h4>a. &nbsp;Overriding default values</h4>
-New default parameter values are specified as plugin arguments. &nbsp;For
-instance to change the heartbeat frequency for all agents to 2 minutes, the
-argument "hbFreq=120000" would be specified. &nbsp;When using .ini files
-multiple arguments must be separated by commas. &nbsp;For instance:<br>
-<pre>plugin=org.cougaar.tools.robustness.ma.HealthMonitorPlugin(hbFreq=120000,&nbsp;pingRetries=2)</pre>
-The restartNode parameter allows more than one restart node to be defined.
-&nbsp;If multiple nodes are defined the node names must be separated by spaces.
-&nbsp;In addition to specifying restart nodes as a plugin argument to the
-RestartLocatorPlugin, this parameter may also be defined using community-level
-attributes. &nbsp;Using the CSMART community editor add a RestartNode attribute
-for each node to be used as a restart destination. &nbsp;<br>
-<br>
-<h4>b. &nbsp;Specifying agent-specific values</h4>
-Agent-specific values are specified using entity-level attributes in the
-appropriate robustness community definition. &nbsp;Using the CSMART community
-editor locate the community and agent requiring a non-default parameter value.
-&nbsp;Add an attribute id (from the table above) and value for the parameter
-to be defined. &nbsp;For instance if an agent requires a longer ping timeout
-(e.g., 2 minutes) period the attribute value "pingTimeout" would be created
-with the value "120000". &nbsp;This value would override the community-wide
-default that was defined.<br>
-       
+<h4>Examples:</h4>
+<ul>
+  <li>Import the community definitions in the file "communities.xml" and
+associate with the community Assembly_Id used by experiment "tiny-1ad-trans-exprt".</li>
+</ul>
+<blockquote>
+  <pre>&gt; ant -Dexperiment=tiny-1ad-trans-exprt -Dfile=communities.xml dbimport</pre>
+</blockquote>
+<ul>
+  <li>  Import the community definitions in the file "communities.xml" and
+associate with the community Assembly_Id "COMM-DEFAULT_CONFIG".</li>
+</ul>
+  
+<blockquote>
+  <pre>&gt; ant -Dassembly=COMM-DEFAULT_CONFIG -Dfile=communities.xml dbimport</pre>
+</blockquote>
+  
+<ul>
+  <li>Associating the name of a robustness community with a ManagementAgent.
+&nbsp;The ManagementAgent will monitor all members agents from a specified
+community.&nbsp; The name of the community to be monitored is determined
+by the ManagementAgent during startup.&nbsp; The ManagementAgent will look
+for a community that has the attribute "CommunityManager" with the value
+equal to its name.&nbsp; The community definition that defines the restart
+community must define this attribute.<br>
+  </li>
+</ul>
+  &nbsp;&nbsp;&nbsp;&nbsp; For example:<br>
+  <br>
+<blockquote>
+  <pre>&lt;Community Name="Enclave1Robustness-COMM"&gt;<br>  &lt;Attribute ID="CommunityManager" Value="Enclave1RobustnessManager" /&gt;<br>  &lt;Attribute ID="CommunityType" Value="Robustness" /&gt;<br>&nbsp; &lt;Entity Name="Enclave1RobustnessManager"&gt;<br>    &lt;Attribute ID="EntityType" Value="Agent" /&gt;<br>    &lt;Attribute ID="Role" Value="HealthReportConsumer" /&gt;<br>    &lt;Attribute ID="Role" Value="ManagementAgent" /&gt;<br>  &lt;/Entity&gt;<br>  &lt;Entity Name="1-27-FABN" &gt;<br>    ...<br>  &lt;/Entity&gt;<br>&lt;/Community&gt;<br></pre>
+</blockquote>
+  <br>
+ <br>
+           
 </body>
 </html>

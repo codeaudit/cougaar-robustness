@@ -19,7 +19,7 @@
   <property name="nsport" value="8888:5555" />
   <property name="nameserver" value="${nshost}:${nsport}" />
   <property name="controlport" value="8484" />
-  <property name="agent" value="1AD-Enclave1-RobustnessManager"/>
+  <property name="agent" value="Manager"/>
   <property name="persistenceEnabled" value="false"/>
   <property name="persistenceInterval" value="30000"/>
   <property name="packageDir" value="org/cougaar/tools/robustness"/>
@@ -217,8 +217,8 @@
   </target>
 
   <!-- Runs a mininode1-->
-  <target name="mininode1" description="Runs agents 1BDE, 3-69-ARBN, MCCGlobalMode on a single node" >
-    <antcall target="pnode-ini" >
+  <target name="mininode1" description="Runs agents 3-69-ARBN and MCCGlobalMode on a single node" >
+    <antcall target="node-ini" >
       <param name="node" value="MiniNode1" />
     </antcall>
   </target>
@@ -232,33 +232,10 @@
 
   <!-- Runs a mininode3-->
   <target name="mininode3" description="Runs agent 1BDE on a single node" >
-    <antcall target="pnode-ini" >
+    <antcall target="node-ini" >
       <param name="node" value="MiniNode3" />
-      <param name="persistenceEnabled" value="true" />
     </antcall>
   </target>
-
-  <!-- Runs a mininode4-->
-  <target name="mininode4" description="Runs agents 3-69-ARBN, MCCGlobalMode on a single node" >
-    <antcall target="pnode-ini" >
-      <param name="node" value="MiniNode4" />
-    </antcall>
-  </target>
-
-  <!-- Runs ManagementAgent and MiniTestConfig on one node -->
-    <target name="combinednode" description="Runs ManagementAgent and MiniTestConfig society on a single node">
-    <antcall target="node-ini" >
-      <param name="node" value="CombinedNode" />
-    </antcall>
-  </target>
-
-  <!-- Runs a node without persistence enabled-->
-  <!-- <target name="node" description="Run node with persistence disabled (use -Dnode=XXX to specify node name)" >
-    <antcall target="node-ini" >
-      <param name="node" value="${node}" />
-    </antcall>
-  </target>
-  -->
 
   <!-- Runs a node with persistence enabled-->
   <target name="pnode-ini" description="Run node with persistence enabled (use -Dnode=XXX to specify node name)" >

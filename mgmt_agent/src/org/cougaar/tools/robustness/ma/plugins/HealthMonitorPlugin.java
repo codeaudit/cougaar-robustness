@@ -97,7 +97,7 @@ import org.cougaar.core.util.UID;
  *                  acceptable heartbeat failure rate.
  * activePingFreq   Defines the frequency at which agents are pinged.  This
  *                  is performed in addition to Heartbeat monitoring.  If
- *                  active pings are not required set this parameter to -1.
+ *                  active pings are not required set this parameter to 0.
  * pingTimeout      Defines the ping timeout period (in milliseconds).
  * pingRetries      Defines the number of times to retry a ping
  *                  when a failure is encountered
@@ -113,7 +113,6 @@ public class HealthMonitorPlugin extends SimplePlugin implements
 
   // Defines default values for configurable parameters.
   private static String defaultParams[][] = {
-    {"community",    ""},
     {"hbReqTimeout",     "60000"},
     //{"hbReqRetries", "-1"},
     {"hbReqRetries",          "1"},
@@ -227,10 +226,10 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     Collection communities = communityService.search("(CommunityManager=" +
       myAgent.toString() + ")");
     if (!communities.isEmpty())
-      healthMonitorProps.setProperty("community",
-                                      (String)communities.iterator().next());
+      communityToMonitor = (String)communities.iterator().next();
 
     // Initialize configurable paramaeters from defaults and plugin arguments.
+    getPropertiesFromCommunityAttributes();
     updateParams(healthMonitorProps);
     bbs.publishAdd(healthMonitorProps);
 
@@ -271,7 +270,8 @@ public class HealthMonitorPlugin extends SimplePlugin implements
 
     // Print informational message defining current parameters
     StringBuffer startMsg = new StringBuffer();
-    startMsg.append("HealthMonitorPlugin started: agent=" + myAgent);
+    startMsg.append("agent=" + myAgent);
+    startMsg.append(" community=" + communityToMonitor);
     startMsg.append(" " + paramsToString());
     log.info(startMsg.toString());
 
@@ -438,13 +438,14 @@ public class HealthMonitorPlugin extends SimplePlugin implements
                                                 getAgentIdentifier().toString(),
                                                 this.getClass().getName(),
                                                 "Restart succeeded: agent=" + hs.getAgentId());
-              }
-              if (hs.getStatus() == HealthStatus.MOVED) {
+              } else if (hs.getStatus() == HealthStatus.MOVED) {
                 log.info("Move complete: agent=" + hs.getAgentId());
                 CougaarEvent.postComponentEvent(CougaarEventType.END,
                                                 getAgentIdentifier().toString(),
                                                 this.getClass().getName(),
                                                 "Move succeeded: agent=" + hs.getAgentId());
+              } else {
+                log.info("Unknown HealthStatus value: value=" + hs.getStatus());
               }
               hs.setState(HealthStatus.NORMAL);
               hs.setStatus(HealthStatus.OK);
@@ -530,6 +531,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
                 " newNode=" + location);
               hs.setNode(location);
               hs.setState(HealthStatus.INITIAL);
+              hs.setStatus(HealthStatus.MOVED);
             // Agent hasn't moved, log timeout and see if threshold was
             // exceeded
             } else {
@@ -1108,7 +1110,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       int agentsInNormalState = ((List)stateMap.get("NORMAL")).size();
       if (agentsInNormalState == totalAgents) {
         log.info("Agents Monitored: " + totalAgents +
-        " - All in NORMAL state");
+        (totalAgents > 0 ? " - All in NORMAL state" : ""));
         allNormalLastTime = true;
       } else {
         log.info("Agents Monitored: " + totalAgents);
@@ -1130,11 +1132,50 @@ public class HealthMonitorPlugin extends SimplePlugin implements
   }
 
   /**
+   * Gets externally configurable parameters defined in community attributes.
+   */
+  private void getPropertiesFromCommunityAttributes() {
+    Attributes attrs =
+      communityService.getCommunityAttributes(communityToMonitor);
+    try {
+      NamingEnumeration enum = attrs.getAll();
+      while (enum.hasMore()) {
+        Attribute attr = (Attribute)enum.nextElement();
+        String id = attr.getID();
+        if (healthMonitorProps.containsKey(id)) {
+          healthMonitorProps.setProperty(id, (String)attr.get());
+        }
+      }
+    } catch (NamingException ne) {
+      log.error("Exception getting attributes from CommunityService, " + ne);
+    }
+  }
+
+  /**
+   * Updates Community Attributes that define configurable robustness parameters.
+   * @param props  Robustness parameters
+   */
+  private void updateCommunityAttributes(Properties props) {
+    ModificationItem mods[] = new ModificationItem[props.size()];
+    int index = 0;
+    Attributes attrs = new BasicAttributes();
+    for (Enumeration enum = props.propertyNames(); enum.hasMoreElements();) {
+      String id = (String)enum.nextElement();
+      String value = props.getProperty(id);
+      Attribute attr = new BasicAttribute(id, value);
+      mods[index++] =
+        new ModificationItem(DirContext.REPLACE_ATTRIBUTE, attr);
+    }
+    if (mods.length > 0) {
+      communityService.modifyCommunityAttributes(communityToMonitor, mods);
+    }
+  }
+
+  /**
    * Sets externally configurable parameters using supplied Properties object.
    * @param props Propertie object defining paramater names and values.
    */
   private void updateParams(Properties props) {
-    communityToMonitor = props.getProperty("community");
     heartbeatRequestTimeout = Long.parseLong(props.getProperty("hbReqTimeout"));
     heartbeatRequestRetries = Integer.parseInt(props.getProperty("hbReqRetries"));
     heartbeatRequestRetryFrequency = Long.parseLong(props.getProperty("hbReqRetryFreq"));
@@ -1148,6 +1189,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     evaluationFrequency = Long.parseLong(props.getProperty("evalFreq"));
     restartRetryFrequency = Long.parseLong(props.getProperty("restartRetryFreq"));
     activePingFrequency = Long.parseLong(props.getProperty("activePingFreq"));
+    updateCommunityAttributes(props);
   }
 
   /**

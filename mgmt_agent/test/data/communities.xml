@@ -20,6 +20,14 @@
   <Community Name="MiniTestConfig-COMM" >
     <Attribute ID="CommunityType" Value="Robustness" />
     <Attribute ID="CommunityManager" Value="Manager" />
+    <!-- Caution:  The following robustness parameters are set at relatively
+     small values for demonstration and test purposes.  These values may not
+     be appropriate for a deployed society.  -->
+    <Attribute ID="hbFreq" Value="10000" />
+    <Attribute ID="hbTimeout" Value="5000" />
+    <Attribute ID="hbPctLate" Value="50.0" />
+    <Attribute ID="pingRetries" Value="0" />
+    <Attribute ID="pingTimeout" Value="5000" />
     <Entity Name="Manager" >
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="ManagementAgent" />

@@ -77,8 +77,8 @@ public class RestartLocatorPlugin extends SimplePlugin {
 
   // Defines default values for configurable parameters.
   private static String defaultParams[][] = {
-    {"restartNodes",  ""},
-    {"restartHosts",  ""}
+    {"restartNode",  ""},
+    {"restartHost",  ""}
   };
 
   ManagementAgentProperties restartLocatorProps =
@@ -139,7 +139,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
     StringBuffer startMsg = new StringBuffer();
     startMsg.append("RestartLocatorPlugin started: ");
     startMsg.append(paramsToString());
-    log.info(startMsg.toString());
+    log.debug(startMsg.toString());
 
   }
 
