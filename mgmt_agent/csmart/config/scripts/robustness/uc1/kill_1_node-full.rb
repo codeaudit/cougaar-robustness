@@ -57,14 +57,14 @@ Cougaar.new_experiment("ARUC1_Kill_1_Node").run(1) {
   end
 
   # After CommunityReady event is received wait for persistence
-  wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
+  wait_for "CommunitiesReady", ["1AD-REAR-COMM"]
   do_action "Sleep", 5.minutes
 
   # Kill single agent
-  do_action "KillNodes", "TRANS-NODE"
+  do_action "KillNodes", "REAR-A"
 
   # Wait for agent restart to complete
-  wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
+  wait_for "CommunitiesReady", ["1AD-REAR-COMM"]
   do_action "Sleep", 10.minutes
 
   #wait_for "Command", "ok"
