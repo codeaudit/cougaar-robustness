@@ -39,7 +39,7 @@
 
 </Threat>
 
-<Threat name="AgentVirus" affectsAssetType="Agent" causesEvent="AgentDeath" defaultEventLikelihoodProb="HIGH" probIntervalInMins="10" />
+<Threat name="AgentVirus" affectsAssetType="Agent" causesEvent="AgentDeath" defaultEventLikelihoodProb="MEDIUM" probIntervalInMins="100" />
 
 <Threat name="NodeVirus" affectsAssetType="Node" causesEvent="NodeDeath" defaultEventLikelihoodProb="VERY_LOW" probIntervalInMins="1000" />
 
