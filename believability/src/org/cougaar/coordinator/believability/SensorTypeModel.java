@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/SensorTypeModel.java,v $
- * $Revision: 1.12 $
- * $Date: 2004-06-29 22:43:18 $
+ * $Revision: 1.18 $
+ * $Date: 2004-07-15 20:19:42 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -37,7 +37,7 @@ import org.cougaar.core.util.UID;
  * needs concerning a SensorType (from the tech specs). 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.12 $Date: 2004-06-29 22:43:18 $
+ * @version $Revision: 1.18 $Date: 2004-07-15 20:19:42 $
  *
  */
 class SensorTypeModel extends Model
@@ -254,7 +254,7 @@ class SensorTypeModel extends Model
         for ( int obs_idx = 0; name_iter.hasNext(); obs_idx++ )
         {
             _obs_names[obs_idx] = (String) name_iter.next();
-            logDebug( "Adding observation name: " + _obs_names[obs_idx] );
+            logDetail( "Adding observation name: " + _obs_names[obs_idx] );
 
         } // while name_iter
 

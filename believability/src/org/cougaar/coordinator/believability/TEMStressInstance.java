@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/TEMStressInstance.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-06-29 22:43:18 $
+ * $Revision: 1.7 $
+ * $Date: 2004-07-15 20:19:42 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -32,7 +32,7 @@ import org.cougaar.coordinator.techspec.TransitiveEffectModel;
  * This wraps and extends the TransitveEffectModel objects.  
  *
  * @author Tony Cassandra
- * @version $Revision: 1.1 $Date: 2004-06-29 22:43:18 $
+ * @version $Revision: 1.7 $Date: 2004-07-15 20:19:42 $
  *
  */
 class TEMStressInstance extends StressInstance
@@ -51,18 +51,29 @@ class TEMStressInstance extends StressInstance
      */
     TEMStressInstance( TransitiveEffectModel stress )
     {
+        super();
+
         this._stress_object = stress;
+
     }  // constructor TEMStressInstance
 
     //------------------------------------------------------------
     // protected interface
     //------------------------------------------------------------
 
-    //************************************************************
     /**
      * Return an identifying label for the stress.
      */
-    String getName() { return _stress_object.getName(); }
+    String getName() 
+    {
+        // TransitiveEffectDescription (TED) and
+        // TransitiveEffectModel's (TEM) do not have proper names.
+        // TED's have no name and TEM's use the event name (which is
+        // really confusing).  Thus, we manufacture a name based on
+        // the parent event (which should be unique).
+        //
+        return "CausedBy-" + getParentStressCollection().getEventName();
+    }
 
     //************************************************************
     /**
@@ -132,7 +143,7 @@ class TEMStressInstance extends StressInstance
     {
         double prob = _stress_object.getTransitiveEffectLikelihood();
         
-        logDebug( "For trans effect " + getName()
+        logDetail( "For trans effect " + getName()
                   + " received prob = " + prob );
                   
         return prob;

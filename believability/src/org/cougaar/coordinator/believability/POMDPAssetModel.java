@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetModel.java,v $
- * $Revision: 1.11 $
- * $Date: 2004-06-30 16:04:53 $
+ * $Revision: 1.12 $
+ * $Date: 2004-07-02 21:49:33 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.11 $Date: 2004-06-30 16:04:53 $
+ * @version $Revision: 1.12 $Date: 2004-07-02 21:49:33 $
  *
  */
 class POMDPAssetModel extends Model
@@ -117,7 +117,7 @@ class POMDPAssetModel extends Model
         //
         createInitialBeliefState();
 
-        logDebug( "Finished creating POMDP model for asset type: " 
+        logDetail( "Finished creating POMDP model for asset type: " 
                   + _asset_type_model.getName() );
         
         setValidity( true );
@@ -191,7 +191,7 @@ class POMDPAssetModel extends Model
         //
         _initial_belief.setTimestamp( System.currentTimeMillis() );
 
-        logDebug( "Creating POMDP initial belief for asset type: " 
+        logDetail( "Creating POMDP initial belief for asset type: " 
                   + _asset_type_model.getName() );
         
     } // method createInitialBeliefState
@@ -223,7 +223,7 @@ class POMDPAssetModel extends Model
             end_time = nextFakeTime(); 
         }
    
-        logDebug( "Belief before threats: " + start_belief.toString() );
+        logDetail( "Belief before threats: " + start_belief.toString() );
 
         BeliefState next_belief = (BeliefState) start_belief.clone();
         
@@ -242,7 +242,7 @@ class POMDPAssetModel extends Model
 
         if ( start_time > end_time )
         {
-            logWarning( "updateBeliefState(): Found a negative update interval."
+            logDebug( "updateBeliefState(): Found a negative update interval."
                      + "[ " + start_time + ", " + end_time + "]"
                      + " for asset " + start_belief.getAssetID()
                      + ". Ignoring threats." );
@@ -251,16 +251,16 @@ class POMDPAssetModel extends Model
 
         if ( (end_time - start_time) < SMALLEST_THREAT_INTERVAL_MS/2 )
         {
-            logWarning( "updateBeliefState(): Found miniscule update interval."
-                     + "[ " + start_time + ", " + end_time + "]"
-                     + " for asset " + start_belief.getAssetID()
-                     + ". Rounding to zero and ignoring threats." );
+            logDebug( "updateBeliefState(): Found miniscule update interval."
+                      + "[ " + start_time + ", " + end_time + "]"
+                      + " for asset " + start_belief.getAssetID()
+                      + ". Rounding to zero and ignoring threats." );
             return next_belief;
         }
 
         if ( (end_time - start_time) < SMALLEST_THREAT_INTERVAL_MS )
         {
-            logWarning( "updateBeliefState(): Found small update interval."
+            logDebug( "updateBeliefState(): Found small update interval."
                      + "[ " + start_time + ", " + end_time + "]"
                      + " for asset " + start_belief.getAssetID()
                      + ". Rounding to " 
@@ -296,7 +296,7 @@ class POMDPAssetModel extends Model
 
         } // for dim_idx
 
-        logDebug( "Belief after threats: " + next_belief.toString() );
+        logDetail( "Belief after threats: " + next_belief.toString() );
 
         return next_belief;
 
@@ -369,7 +369,7 @@ class POMDPAssetModel extends Model
                                                   trigger,
                                                   next_belief_dim );
 
-        logDebug( "Belief after trigger: " + next_belief.toString() );
+        logDetail( "Belief after trigger: " + next_belief.toString() );
 
         return next_belief;
 

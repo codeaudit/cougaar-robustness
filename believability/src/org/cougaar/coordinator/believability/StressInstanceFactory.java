@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/StressInstanceFactory.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-06-29 22:43:18 $
+ * $Revision: 1.7 $
+ * $Date: 2004-07-15 20:19:42 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.coordinator.techspec.TransitiveEffectModel;
  * general object.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.1 $Date: 2004-06-29 22:43:18 $
+ * @version $Revision: 1.7 $Date: 2004-07-15 20:19:42 $
  *
  */
 public class StressInstanceFactory extends Object

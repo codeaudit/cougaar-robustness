@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/AssetTypeModel.java,v $
- * $Revision: 1.11 $
- * $Date: 2004-06-29 22:43:18 $
+ * $Revision: 1.13 $
+ * $Date: 2004-07-02 23:34:03 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,6 @@ import java.util.Set;
 import java.util.Vector;
 
 import org.cougaar.coordinator.techspec.ActionTechSpecInterface;
-import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.techspec.AssetState;
 import org.cougaar.coordinator.techspec.AssetStateDimension;
 import org.cougaar.coordinator.techspec.AssetType;
@@ -48,7 +47,7 @@ import org.cougaar.coordinator.techspec.ThreatModelChangeEvent;
  * be notified is there is a change.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.11 $Date: 2004-06-29 22:43:18 $
+ * @version $Revision: 1.13 $Date: 2004-07-02 23:34:03 $
  *
  */
 class AssetTypeModel extends Model

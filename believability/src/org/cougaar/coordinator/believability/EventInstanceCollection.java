@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/EventInstanceCollection.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-06-29 22:43:18 $
+ * $Revision: 1.7 $
+ * $Date: 2004-07-15 20:19:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -37,7 +37,7 @@ import org.cougaar.coordinator.techspec.EventDescription;
  * artifact of the nature of the threat and event objects). 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.1 $Date: 2004-06-29 22:43:18 $
+ * @version $Revision: 1.7 $Date: 2004-07-15 20:19:41 $
  *
  */
 class EventInstanceCollection extends Model
@@ -161,12 +161,12 @@ class EventInstanceCollection extends Model
 
         this._asset_id = asset_id;
 
-        logDebug ( "Creating new event collection for asset "
+        logDetail ( "Creating new event collection for asset "
                    + asset_id.getName()
                    + " in state dim "
                    + asset_dim_model.getStateDimensionName( ) );
 
-        logDebug ( "Considering a set of " 
+        logDetail ( "Considering a set of " 
                    + stress_set.size() + " stresses." );
 
         // This is the way to convert and IS into its techspec.
@@ -176,9 +176,9 @@ class EventInstanceCollection extends Model
 
         if ( asset_ts == null )
         {
-            logWarning( "Found a NULL tech spec for asset ID "
-                        + asset_id.getName() 
-                        + ". Assuming no events/stresses." );
+            logDetail( "Found a NULL tech spec for asset ID "
+                        + asset_id + " (name=" + asset_id.getName() 
+                        + "). Assuming no events/stresses." );
             return;
         }
 
@@ -189,12 +189,12 @@ class EventInstanceCollection extends Model
 
             if ( ! stress.affectsAsset( asset_ts ))
             {
-                logDebug ( "Stress " + stress.getName()
+                logDetail ( "Stress " + stress.getName()
                            + " is not applicable for " + asset_id.getName() );
                 continue;
             }
 
-            logDebug ( "Applicable Stress " + stress.getName()
+            logDetail ( "Applicable Stress " + stress.getName()
                        + " found for " + asset_id.getName() );
             
             // See whether or not we already have a stres fo this
@@ -205,7 +205,7 @@ class EventInstanceCollection extends Model
 
             if ( event_desc == null )
             {
-                logError( "NULL found for stress event. Skipping."); 
+                logDetail( "NULL found for stress event. Skipping."); 
                 continue;
             }
 
@@ -222,11 +222,11 @@ class EventInstanceCollection extends Model
                 _event_instance_hash.put( event_desc.getName(),
                                           event_im );
 
-                logDebug ( "New stress event added: " + event_im.getName() );
+                logDetail ( "New stress event added: " + event_im.getName() );
             }
             else
             {
-                logDebug ( "Using existing stress event: "
+                logDetail ( "Using existing stress event: "
                            + event_im.getName() );
             }
 
@@ -321,7 +321,7 @@ class EventInstanceCollection extends Model
 
             if ( OVERRIDE_EVENT_PROBABILITIES )
             {
-                logError( "OVERRIDE EVENT PROBS.  THIS IS FOR TESTING ONLY!");
+                logWarning( "OVERRIDE EVENT PROBS.  THIS IS FOR TESTING ONLY!");
                 
                 if ( event_probs[idx] < 0.0001 )
                     event_probs[idx] = 0.1;
@@ -330,16 +330,16 @@ class EventInstanceCollection extends Model
                 else
                     event_probs[idx] = 0.5;
 
-                logDebug( "New event prob for  " + event.getName() 
+                logDetail( "New event prob for  " + event.getName() 
                           + " is " + event_probs[idx] );
             }
 
         } // for idx
 
-        logDebug( "Event probs: " 
+        logDetail( "Event probs: " 
                   + ProbabilityUtils.arrayToString( event_probs ));
         
-        logDebug( "Event transitions:\n" 
+        logDetail( "Event transitions:\n" 
                   + ProbabilityUtils.arrayToString( event_trans, "\t" ));
         
         // Ok, so now we have the individual state transition

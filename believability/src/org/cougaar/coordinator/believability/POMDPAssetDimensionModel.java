@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetDimensionModel.java,v $
- * $Revision: 1.10 $
- * $Date: 2004-06-29 22:43:18 $
+ * $Revision: 1.11 $
+ * $Date: 2004-07-02 21:49:33 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -29,7 +29,7 @@ import org.cougaar.coordinator.techspec.AssetType;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.10 $Date: 2004-06-29 22:43:18 $
+ * @version $Revision: 1.11 $Date: 2004-07-02 21:49:33 $
  *
  */
 class POMDPAssetDimensionModel extends Model
@@ -55,7 +55,7 @@ class POMDPAssetDimensionModel extends Model
         
         this._asset_dim_model = dim_model;
 
-        logDebug( "\tCreating POMDP model for dimension: " 
+        logDetail( "\tCreating POMDP model for dimension: " 
                   + _asset_dim_model.getStateDimensionName( ) );
 
         createInitialBeliefState();
@@ -84,7 +84,7 @@ class POMDPAssetDimensionModel extends Model
                     ( "POMDPAssetDimensionModel.createInitialBeliefState()",
                       "Asset model is NULL" );
         
-        logDebug( "\tCreating POMDP iinitial belief for dimension: " 
+        logDetail( "\tCreating POMDP iinitial belief for dimension: " 
                   + _asset_dim_model.getStateDimensionName( ) );
 
         int num_vals = _asset_dim_model.getNumStateDimValues( );
@@ -177,7 +177,7 @@ class POMDPAssetDimensionModel extends Model
                   start_time,
                   end_time );
 
-        logDebug( "Threat transition matrix: " 
+        logDetail( "Threat transition matrix: " 
                   + _asset_dim_model.getStateDimensionName() + "\n" 
                   + ProbabilityUtils.arrayToString( trans_matrix ));
 
@@ -276,7 +276,7 @@ class POMDPAssetDimensionModel extends Model
         double[][] action_trans
                 = _asset_dim_model.getActionTransitionMatrix( action );
 
-        logDebug( "Action transition matrix: " 
+        logDetail( "Action transition matrix: " 
                   + _asset_dim_model.getStateDimensionName() + "\n" 
                   + ProbabilityUtils.arrayToString( action_trans ));
 
@@ -378,14 +378,14 @@ class POMDPAssetDimensionModel extends Model
         //
         double[][] obs_prob = sensor_model.getObservationProbabilityArray();
 
-        logDebug( "Observation probabilities: " 
+        logDetail( "Observation probabilities: " 
                   + _asset_dim_model.getStateDimensionName() + "\n" 
                   + ProbabilityUtils.arrayToString( obs_prob ));
 
 
         int obs_idx = sensor_model.getObsNameIndex( diagnosis_value );
 
-        logDebug( "Pre-update: " 
+        logDetail( "Pre-update: " 
                   + ProbabilityUtils.arrayToString( prev_belief_prob ));
 
         for ( int state = 0; state < prev_belief_prob.length; state++ ) 
@@ -398,7 +398,7 @@ class POMDPAssetDimensionModel extends Model
             
         } // for state
 
-        logDebug( "Pre-normalization: " 
+        logDetail( "Pre-normalization: " 
                   + ProbabilityUtils.arrayToString( next_belief_prob ));
    
         if( Precision.isZero( denom ))
@@ -410,7 +410,7 @@ class POMDPAssetDimensionModel extends Model
         for( int i = 0; i < next_belief_prob.length; i++ )
             next_belief_prob[i] /= denom;
 
-        logDebug( "Post-normalization: " 
+        logDetail( "Post-normalization: " 
                   + ProbabilityUtils.arrayToString( next_belief_prob ));
 
         next_belief.setProbabilityArray( next_belief_prob );
@@ -470,7 +470,7 @@ class POMDPAssetDimensionModel extends Model
                     ( "POMDPAssetDimensionModel.getRandomBeliefState()",
                       "Asset type dimension model is NULL" );
         
-        logDebug( "\tCreating POMDP random belief for dimension: " 
+        logDetail( "\tCreating POMDP random belief for dimension: " 
                   + _asset_dim_model.getStateDimensionName( ) );
 
         int num_vals = _asset_dim_model.getNumStateDimValues( );

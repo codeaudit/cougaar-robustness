@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/AssetTypeDimensionModel.java,v $
- * $Revision: 1.9 $
- * $Date: 2004-06-29 22:43:18 $
+ * $Revision: 1.12 $
+ * $Date: 2004-07-12 19:30:46 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -44,7 +44,7 @@ import org.cougaar.coordinator.techspec.ThreatModelChangeEvent;
  * corresponds to the tech-spec AssetSatteDimension objects.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.9 $Date: 2004-06-29 22:43:18 $
+ * @version $Revision: 1.12 $Date: 2004-07-12 19:30:46 $
  * @see AssetTypeModel
  * @see AssetStateDimension
  */
@@ -228,7 +228,7 @@ class AssetTypeDimensionModel extends Model
                       "Cannot add null diagnosis tech spec" );
 
         if ( _sensor_model_set.get( diag_ts.getName()) != null )
-            logWarning( "Replacing sensor type model: "
+            logInfo( "Replacing sensor type model: "
                         + diag_ts.getName() );
 
         SensorTypeModel s_model
@@ -272,7 +272,7 @@ class AssetTypeDimensionModel extends Model
                 = new ActuatorTypeModel( action_ts, this );
 
         if ( _actuator_model_set.get( a_model.getName()) != null )
-            logWarning( "Replacing actuator type model: "
+            logInfo( "Replacing actuator type model: "
                         + a_model.getName() );
         
         _actuator_model_set.put( a_model.getName(),
@@ -318,6 +318,14 @@ class AssetTypeDimensionModel extends Model
         //
         _stress_set.add( stress );
 
+
+        if ( ! USE_EVENT_COLLECTION_CACHING )
+        {
+            logDetail( "NOTE: Event collection caching disabled."
+                      + " Ignoring threat asset list." );
+            return;
+        }
+
         // We need to also treat this addition as a change.  It is
         // possible that we will create a cache of applicable stresses
         // before we actually see any stresses, or before we have seen
@@ -343,14 +351,14 @@ class AssetTypeDimensionModel extends Model
 
         if ( asset_ts_list == null )
         {
-            logDebug( "No event collections to purge (NULL list)"
+            logDetail( "No event collections to purge (NULL list)"
                       + " in state dimension " + _state_dim_name );
             return;
        }
 
         if ( asset_ts_list.size() < 1 )
         {
-            logDebug( "No event collections to purge (empty list)"
+            logDetail( "No event collections to purge (empty list)"
                       + " in state dimension " + _state_dim_name );
             return;
        }
@@ -376,14 +384,14 @@ class AssetTypeDimensionModel extends Model
             if ( _asset_event_collection_table.contains
                  ( asset_ts.getAssetID() ))
             {
-                logDebug( "Purging event collection from cache for "
+                logDetail( "Purging event collection from cache for "
                           + asset_ts.getAssetID() 
                           + " in state dimension " + _state_dim_name );
                 _asset_event_collection_table.remove( asset_ts.getAssetID() );
             }
             else
             {
-                logDebug( "No event collection to purge from cache for "
+                logDetail( "No event collection to purge from cache for "
                           + asset_ts.getAssetID() 
                           + " in state dimension " + _state_dim_name );
             }
@@ -417,7 +425,7 @@ class AssetTypeDimensionModel extends Model
         //
         if ( event_collection != null )
         {
-            logDebug( "Found existing event collection for asset '" 
+            logDetail( "Found existing event collection for asset '" 
                       + asset_id.getName() 
                       + "' in dimension '" 
                       + _state_dim_name );
@@ -427,7 +435,7 @@ class AssetTypeDimensionModel extends Model
 
         // Else, we need to construct the set.
 
-        logDebug( "Event collection not found for asset '" 
+        logDetail( "Event collection not found for asset '" 
                   + asset_id.getName() 
                   + "' in dimension '" 
                   + _state_dim_name
@@ -453,7 +461,7 @@ class AssetTypeDimensionModel extends Model
         }
         else
         {
-            logDebug( "NOTE: Event collection caching disabled." );
+            logDetail( "NOTE: Event collection caching disabled." );
         }
 
         return event_collection;
@@ -476,6 +484,13 @@ class AssetTypeDimensionModel extends Model
             throw new BelievabilityException
                     ( "AssetTypeDimensionModel.handleThreatModelChange()",
                       "Found NULL for threat change object." );
+
+        if ( ! USE_EVENT_COLLECTION_CACHING )
+        {
+            logDetail( "NOTE: Event collection caching disabled."
+                      + " Ignoring threat change event." );
+            return;
+        }
 
         // FIXME: Do I need to to walk the transitive effects and
         // purge all assets connected with those effects?  If so, it
@@ -663,7 +678,7 @@ class AssetTypeDimensionModel extends Model
         //
         if ( ! sensor_enum.hasMoreElements() )
         {
-            logDebug( "getMaxSensorLatency(). "
+            logDetail( "getMaxSensorLatency(). "
                       + "No sensor models found for this asset dimension: "
                       + _state_dim_name );
             return DEFAULT_SENSOR_LATENCY;
@@ -741,7 +756,7 @@ class AssetTypeDimensionModel extends Model
         if (( event_collection == null )
             || ( event_collection.getNumEvents() < 1 ))
         {
-            logDebug( "Event collection for asset '" + asset_id.getName() 
+            logDetail( "Event collection for asset '" + asset_id.getName() 
                       + "', state dim. '"
                       + _state_dim_name  + " is null or has no events." );
 
@@ -754,7 +769,7 @@ class AssetTypeDimensionModel extends Model
             return probs;
         } // if no threats acting on this asset state dimension
 
-        logDebug( "Event collection for asset '" + asset_id.getName() 
+        logDetail( "Event collection for asset '" + asset_id.getName() 
                   + "', state dim. '"
                   + _state_dim_name + "'\n"
                   + event_collection.toString() );

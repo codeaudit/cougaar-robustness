@@ -32,7 +32,13 @@ import java.util.Hashtable;
 
 public class StateEstimationPublisher extends Loggable {
 
-    public static double PUBLICATION_THRESHHOLD = .5;
+    // Threshold the utility must cross if the state estimation is
+    // to be published immediately
+    public static double PUBLICATION_THRESHOLD = .5;
+
+    // How old the state estimation must be to be updated before
+    // publishing, currently set at one minute
+    public static double STALE_SE_THRESHOLD = 60000;
 
     /**
      * Constructor.
@@ -56,12 +62,13 @@ public class StateEstimationPublisher extends Loggable {
          StateEstimation se = new StateEstimation ( belief_state,
                                   _model_manager );
       AssetID aid = se.getAssetID();
+
          AssetStateInformation asi = 
           (AssetStateInformation) _state_information.get( aid );
-      AssetType at = belief_state.getAssetType();
-      long max_latency = _model_manager.getMaxSensorLatency( at );
          if ( asi == null ) {
-          logDebug( "Making new AssetStateInformation for asset " + aid
+          AssetType at = belief_state.getAssetType();
+          long max_latency = _model_manager.getMaxSensorLatency( at );
+          logDetail( "Making new AssetStateInformation for asset " + aid
                  + " with latency " + max_latency );
              asi = new AssetStateInformation( aid, this, max_latency );
              _state_information.put( se.getAssetID(), asi );
@@ -69,7 +76,7 @@ public class StateEstimationPublisher extends Loggable {
          asi.checkPublish( se );
      }
      catch ( BelievabilityException be ) {
-      logError( "Cannot publish belief state [" 
+      logWarning( "Cannot publish belief state [" 
              + belief_state.toString()
              + "] -- got exception "
              + be.getMessage() );
@@ -147,7 +154,8 @@ public class StateEstimationPublisher extends Loggable {
      AssetAlarm _asset_alarm = null;
      StateEstimationPublisher _publisher = null;
      long _timer_length = 0;
-     double _utility_threshhold = PUBLICATION_THRESHHOLD;
+     boolean _update_se_on_timeout = false;
+     double _utility_threshhold = PUBLICATION_THRESHOLD;
 
 
      /**
@@ -162,6 +170,8 @@ public class StateEstimationPublisher extends Loggable {
          _asset_id = asset_id;
          _publisher = publisher;
          _timer_length = timer_length;
+      if ( _timer_length >= STALE_SE_THRESHOLD )
+          _update_se_on_timeout = true;
      }
 
 
@@ -181,12 +191,12 @@ public class StateEstimationPublisher extends Loggable {
          _last_se_created = state_estimation;
 
          if ( checkUtilityChange( _last_se_published, 
-                         state_estimation ) ) {
+                      state_estimation ) ) {
           publish( state_estimation );
          }
          else {
           if ( ! isAlarmRunning() ) setAssetAlarm();
-          logDebug("Delaying StateEstimation publication for asset "
+          logDetail("Delaying StateEstimation publication for asset "
                 + state_estimation.getAssetID().toString() );
          }
      }
@@ -209,7 +219,7 @@ public class StateEstimationPublisher extends Loggable {
          // May want to make this more sophisticated later
          if ( old_se == null ) return false;
          if ( new_se == null ) return false;
-         logDebug( "Checking Utility for asset " 
+         logDetail( "Checking Utility for asset " 
                 + _last_se_published.getAssetID().toString()
                 + " -- old utility is  " 
                 + old_se.getStateUtility()
@@ -233,9 +243,10 @@ public class StateEstimationPublisher extends Loggable {
          throws BelievabilityException {
      
          clearAssetAlarm();
+         //** was for debugging
+      // _last_se_published = getRandomStateEstimation( state_estimation );
          _last_se_published = state_estimation;
-         // _last_se_published = getRandomStateEstimation( state_estimation );
-         logDebug( "Publishing StateEstimation for asset " 
+         logDetail( "Publishing StateEstimation for asset " 
                 + _last_se_published.getAssetID().toString()
                 + " with utility " 
                 + _last_se_published.getStateUtility() );
@@ -252,7 +263,7 @@ public class StateEstimationPublisher extends Loggable {
          _asset_alarm = new AssetAlarm( _timer_length, 
                             (CallbackInterface) this );
          _publisher.setAlarm( _asset_alarm );
-         logDebug( "Asset alarm set for asset " + _asset_id.toString() 
+         logDetail( "Asset alarm set for asset " + _asset_id.toString() 
                + " for time " + _timer_length );
 
      }
@@ -280,22 +291,30 @@ public class StateEstimationPublisher extends Loggable {
 
          // Don't do anything if the timer was canceled
          if (! expiredP) {
-          logDebug( "Alarm canceled for: " + _asset_id.toString() );
+          logDetail( "Alarm canceled for: " + _asset_id.toString() );
           return; //**** check this
          }
 
          // Alarm has expired
-         logDebug( "Alarm expired for: " + _asset_id.toString());
+         logDetail( "Alarm expired for: " + _asset_id.toString());
 
          // Get the current state and publish it.
          try {
-          if ( _asset_model == null ) 
-              _asset_model = _publisher.getAssetModel( _asset_id );
-          BeliefState curr_belief = _asset_model.getCurrentBeliefState();
-          publish( new StateEstimation( curr_belief, _model_manager ) );
+          // Check if current estimate is good enough, because timer
+          // is short
+          if ( _update_se_on_timeout ) {
+           if ( _asset_model == null ) 
+               _asset_model = _publisher.getAssetModel( _asset_id );
+           BeliefState curr_belief = 
+               _asset_model.getCurrentBeliefState();
+           _last_se_created = 
+               new StateEstimation( curr_belief, _model_manager );
+          }
+          // Now publish
+          publish( _last_se_created );
          }
          catch( Exception e ) {
-          logError( "Failed to publish belief state for assetID " 
+          logWarning( "Failed to publish belief state for assetID " 
                  + _asset_id 
                  + " when its timer expired -- "
                  + e.getMessage() );
@@ -321,7 +340,7 @@ public class StateEstimationPublisher extends Loggable {
         random_belief.setAssetID( se.getAssetID() );
         random_belief.setTimestamp( se.getTimestamp() );
 
-        logDebug( "Random state estimation returned for asset " 
+        logDetail( "Random state estimation returned for asset " 
             + se.getAssetID().toString() );
 
      return new StateEstimation( random_belief, _model_manager );

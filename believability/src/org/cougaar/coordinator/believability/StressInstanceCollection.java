@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/StressInstanceCollection.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-06-29 22:43:18 $
+ * $Revision: 1.7 $
+ * $Date: 2004-07-15 20:19:42 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -21,6 +21,8 @@
 
 package org.cougaar.coordinator.believability;
 
+import org.cougaar.coordinator.techspec.EventDescription;
+
 import java.util.HashSet;
 import java.util.Iterator;
 
@@ -30,7 +32,7 @@ import java.util.Iterator;
  * assets).
  *
  * @author Tony Cassandra
- * @version $Revision: 1.1 $Date: 2004-06-29 22:43:18 $
+ * @version $Revision: 1.7 $Date: 2004-07-15 20:19:42 $
  *
  */
 class StressInstanceCollection extends Model
@@ -80,9 +82,54 @@ class StressInstanceCollection extends Model
 
         _stress_set.add( stress );
 
+        if ( _event_desc == null )
+            setEventDescription( stress.getEventDescription());
+
+        else if ( ! getEventName().equalsIgnoreCase( stress.getEventName()))
+            logDebug( "Added stress " + stress.getName()
+                      + " in collection has non-matching event name. "
+                      + " (" + getEventName() + "!=" 
+                      + stress.getName() + ")" );
+
     } // method addParent
 
-     //************************************************************
+    //************************************************************
+    /**
+     * Gets the event description for the event that this stress
+     * collectsion causes.
+     */
+    EventDescription getEventDescription( )
+    {
+        return _event_desc;
+
+    } // method getEventDescription
+
+    //************************************************************
+    /**
+     * Gets the event description for the event that this stress
+     * collectsion causes.
+     */
+    void setEventDescription( EventDescription event_desc )
+    {
+        _event_desc = event_desc;
+
+    } // method getEventDescription
+
+    //************************************************************
+    /**
+     * Gets the name of the event that this stress collectsion causes.
+     */
+    String getEventName( )
+    {
+        if ( getEventDescription( ) == null )
+            return null;
+        
+        else 
+            return getEventDescription( ).getName();
+
+    } // method getEventName
+
+    //************************************************************
     /**
      * Computes the probability that this give set of stresses will
      * occur.  This computes the probability that at least one of
@@ -124,13 +171,13 @@ class StressInstanceCollection extends Model
                                                              end_time );
         } // while stress_iter
 
-        logDebug( "Stress collection individual probs = "
+        logDetail( "Stress collection individual probs = "
                   + ProbabilityUtils.arrayToString( stress_prob ));
 
         double prob = ProbabilityUtils.computeEventUnionProbability
                 ( stress_prob );
         
-        logDebug( "Stress collection total prob = " + prob );
+        logDetail( "Stress collection total prob = " + prob );
 
         return prob;
 
@@ -153,7 +200,8 @@ class StressInstanceCollection extends Model
     {
         StringBuffer buff = new StringBuffer();
 
-        buff.append( prefix + "Stress collection:\n" );
+        buff.append( prefix + "Stress collection (event="
+                     + getEventName() + "):\n" );
 
         Iterator iter = _stress_set.iterator();
         while( iter.hasNext() )
@@ -176,5 +224,10 @@ class StressInstanceCollection extends Model
     // objects).
     //
     private HashSet _stress_set = new HashSet();
+
+    // The description obejhct for the event that this stress
+    // collection is the cause of.
+    //
+    private EventDescription _event_desc;
 
 } // class StressInstanceCollection

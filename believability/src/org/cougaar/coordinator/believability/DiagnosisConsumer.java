@@ -83,8 +83,8 @@ public class DiagnosisConsumer extends Loggable
      * @param but A BeliefUpdateTrigger (Believability diagnosis or action)
      **/
     private void sendToAssetModel( BeliefUpdateTrigger but ) {
-     if (_logger.isDebugEnabled()) 
-         _logger.debug("Updating Belief State for " + but.toString() );
+
+        logDebug("Updating Belief State for " + but.toString() );
      
      try {
          // Find the AssetModel and AssetStateWindow that this diagnosis
@@ -103,9 +103,8 @@ public class DiagnosisConsumer extends Loggable
          am.consumeBeliefUpdateTrigger( but );
      }
      catch( BelievabilityException be ) {
-         if (_logger.isDebugEnabled()) 
-          _logger.error("Failed to update diagnosis or action -- " +
-                        be.getMessage() );
+         logWarning( "Failed to update diagnosis or action -- " +
+                     be.getMessage() );
          
      }
     }

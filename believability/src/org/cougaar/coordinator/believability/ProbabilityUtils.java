@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ProbabilityUtils.java,v $
- * $Revision: 1.7 $
- * $Date: 2004-06-29 22:43:18 $
+ * $Revision: 1.13 $
+ * $Date: 2004-07-15 20:19:42 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -28,7 +28,7 @@ import java.util.Random;
  * Utilities for dealing with probabilities.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.7 $Date: 2004-06-29 22:43:18 $
+ * @version $Revision: 1.13 $Date: 2004-07-15 20:19:42 $
  */
 public class ProbabilityUtils
 {

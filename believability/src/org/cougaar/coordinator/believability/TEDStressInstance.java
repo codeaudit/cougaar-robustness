@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/TEDStressInstance.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-06-29 22:43:18 $
+ * $Revision: 1.7 $
+ * $Date: 2004-07-15 20:19:42 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,12 +30,12 @@ import org.cougaar.coordinator.techspec.TransitiveEffectDescription;
 import org.cougaar.coordinator.techspec.TransitiveEffectModel;
 
 /**
- * This wraps and extends the TransitveEffectDescription objects.
- * This is only used when a TransitveEffectDescription has no
- * corresponding instantiation of a TransitveEffectModel.  The absence
- * of the model means we cannot compute any probabilities (we'll
- * assume it is zero), but there can be further transitive effects, so
- * we must treat this like a stress.
+ * This wraps and extends the TransitveEffectDescription (TED)
+ * objects.  This is only used when a TransitveEffectDescription has
+ * no corresponding instantiation of a TransitveEffectModel.  The
+ * absence of the model means we cannot compute any probabilities
+ * (we'll assume it is zero), but there can be further transitive
+ * effects, so we must treat this like a stress.
  *
  *
  * The other complication that happens, is that though we may not have
@@ -45,7 +45,7 @@ import org.cougaar.coordinator.techspec.TransitiveEffectModel;
  * check for the model whenever we attempt to use it.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.1 $Date: 2004-06-29 22:43:18 $
+ * @version $Revision: 1.7 $Date: 2004-07-15 20:19:42 $
  *
  */
 class TEDStressInstance extends StressInstance
@@ -64,11 +64,9 @@ class TEDStressInstance extends StressInstance
      */
     TEDStressInstance( TransitiveEffectDescription stress )
     {
+        super();
+
         this._stress_object = stress;
-
-        this._name = "UnamedTED-" + _name_counter;
-
-        _name_counter++;
 
     }  // constructor TEDStressInstance
 
@@ -82,10 +80,13 @@ class TEDStressInstance extends StressInstance
      */
     String getName() 
     {
-        if ( _model == null )
-            return _name;
-        else
-            return _model.getName();
+        // TransitiveEffectDescription (TED) and
+        // TransitiveEffectModel's (TEM) do not have proper names.
+        // TED's have no name and TEM's use the event name (which is
+        // really confusing).  Thus, we manufacture a name based on
+        // the parent event (which should be unique).
+        //
+        return "CausedBy-" + getParentStressCollection().getEventName();
     }
 
     //************************************************************
@@ -190,15 +191,16 @@ class TEDStressInstance extends StressInstance
 
         if ( _model == null )
         {
-            logWarning( "Attempting to compute the probability of a "
-                        + "stress while there is no model instance." );
+            logDetail( "Attempting to compute the probability of a "
+                        + "stress while there is no model instance: "
+                        + getName() + ". Assuming prob=0.0" );
             
             return 0.0;
         }
 
         double prob = _model.getTransitiveEffectLikelihood();
         
-        logDebug( "For trans effect " + getName()
+        logDetail( "For trans effect " + getName()
                   + " received prob = " + prob );
         
         return prob;
@@ -224,9 +226,12 @@ class TEDStressInstance extends StressInstance
         _model = _stress_object.getInstantiation();
         
         if ( _model != null )
-            logDebug( "New TransitiveEffectModel: "
+        {
+            logDetail( "New TransitiveEffectModel: "
                       + "TED Stress " + getName() 
-                      + "converted to TEM stress.");
+                      + " converted to TEM stress.");
+
+        }
 
         return _model != null;
 
@@ -246,15 +251,5 @@ class TEDStressInstance extends StressInstance
     // it is to surgically retrofit the StressGraph structure.
     //
     private TransitiveEffectModel _model = null;
-
-    // We assign our own locally unique name until we have a
-    // TransitiveEffectModel.  Through some bizarre circumstance,
-    // TransitiveEffectDescription objects have no name.
-    //
-    private String _name;
-
-    // Helps with unique names.
-    //
-    private static int _name_counter = 0;
 
 } // class TEDStressInstance

@@ -32,9 +32,6 @@ import org.cougaar.core.agent.service.alarm.Alarm;
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.techspec.AssetType;
 
-import org.cougaar.util.log.Logging;
-import org.cougaar.util.log.Logger;
-
 import java.util.LinkedList;
 import java.sql.Timestamp;
 
@@ -95,7 +92,7 @@ import java.sql.Timestamp;
           _max_window_length = max_diag_latency;
           _pmdp_mi =  _pmdp_mif;
           _blv_plugin = blv_plugin;
-	  _initial_timestamp = bs_timestamp;
+       _initial_timestamp = bs_timestamp;
          } catch (Exception e){
           throw new BelievabilityException("BeliefStateWindow - constructor","Argument assignment error");
          }
@@ -104,7 +101,7 @@ import java.sql.Timestamp;
          try {
           _apriori_state = _pmdp_mi.getInitialBeliefState(_asset_type);
           _apriori_state.setAssetID(ast_id);  //set assetid for retrieved initial belief state
-	  _apriori_state.setTimestamp(_initial_timestamp);
+       _apriori_state.setTimestamp(_initial_timestamp);
           //Belief State queue
           _bst_queue = new LinkedList();
           _bst_queue.addFirst(_apriori_state);

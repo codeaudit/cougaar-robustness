@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/StressGraph.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-06-29 22:43:18 $
+ * $Revision: 1.7 $
+ * $Date: 2004-07-15 20:19:42 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -47,7 +47,7 @@ import org.cougaar.coordinator.techspec.TransitiveEffectModel;
  * for us.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.1 $Date: 2004-06-29 22:43:18 $
+ * @version $Revision: 1.7 $Date: 2004-07-15 20:19:42 $
  *
  */
 class StressGraph extends Model
@@ -91,7 +91,7 @@ class StressGraph extends Model
 
         if ( event == null )
         {
-            logDebug( "NULL event found for stress instance "
+            logDetail( "NULL event found for stress instance "
                       + stress.getName() );
             return;
         }
@@ -104,13 +104,13 @@ class StressGraph extends Model
         //
         if ( caused_ted == null )
         {
-            logDebug( "No transitve effect for stress " + stress.getName() );
+            logDetail( "No transitve effect for stress " + stress.getName() );
             return;
         }
 
         if ( _recursion_depth > MAX_RECURSION_DEPTH )
         {
-            logError( "connectAndRecurse(): Maximum recursion depth reached.");
+            logDebug( "connectAndRecurse(): Maximum recursion depth reached.");
             return;
         }
 
@@ -122,7 +122,7 @@ class StressGraph extends Model
 
         if ( caused_tem == null )
         {
-            logDebug( "No TransitiveEffectModel found for"
+            logDetail( "No TransitiveEffectModel found for"
                       + " TransitiveEffectDescription of: " 
                       + stress.getName() );
 
@@ -131,14 +131,14 @@ class StressGraph extends Model
         }
         else
         {
-            logDebug( "Found transitve effect model for stress "
+            logDetail( "Found transitve effect model for stress "
                       + stress.getName());
 
             caused_stress = add( caused_tem, new_stress_set );
 
             if ( caused_stress == null )
             {
-                logError( "Unknown stress object type. Ignoring." );
+                logDebug( "Unknown stress object type. Ignoring." );
                 _recursion_depth -= 1;
                 return;
             }
@@ -185,7 +185,7 @@ class StressGraph extends Model
         //
         if ( stress != null )
         {
-            logDebug( "Not adding existing "
+            logDetail( "Not adding existing "
                       + stress.getTypeStr() 
                       + " stress " + stress.getName() );
             return stress;
@@ -193,7 +193,7 @@ class StressGraph extends Model
         
         stress = StressInstanceFactory.create( stress_obj );
 
-        logDebug( "Adding new "
+        logDetail( "Adding new "
                   + stress.getTypeStr() 
                   + " stress " + stress.getName() );
         

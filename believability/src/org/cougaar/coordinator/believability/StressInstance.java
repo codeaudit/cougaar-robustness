@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/StressInstance.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-06-29 22:43:18 $
+ * $Revision: 1.7 $
+ * $Date: 2004-07-15 20:19:42 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -38,7 +38,7 @@ import org.cougaar.coordinator.techspec.EventDescription;
  * transitive effects are not.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.1 $Date: 2004-06-29 22:43:18 $
+ * @version $Revision: 1.7 $Date: 2004-07-15 20:19:42 $
  *
  */
 abstract class StressInstance extends Model
@@ -66,6 +66,24 @@ abstract class StressInstance extends Model
     //------------------------------------------------------------
     // package interface
     //------------------------------------------------------------
+
+    //************************************************************
+    /**
+     * Main constructor.  Sets up unique ID.
+     */
+    StressInstance()
+    {
+        _id = new String( "Stress-" + _id_counter );
+
+        _id_counter += 1;
+
+    } // constructor
+
+    //************************************************************
+    /**
+     * Return a unique identifier for the stress.
+     */
+    String getID() { return _id; }
 
     //************************************************************
     /**
@@ -187,7 +205,7 @@ abstract class StressInstance extends Model
     {
        StringBuffer buff = new StringBuffer();
 
-        buff.append( prefix + "Stress "
+       buff.append( prefix + getID() + " with name "
                      + getName() + " is of type " + getTypeStr()
                      + ", cause event " + getEventName() );
 
@@ -227,9 +245,22 @@ abstract class StressInstance extends Model
     abstract protected double getImmediateProbability( long start_time, 
                                                        long end_time );
 
+    //************************************************************
+    /**
+     * Return the collection of parent stresses.
+     */
+    protected StressInstanceCollection getParentStressCollection()
+    {
+        return _parent_stress_set;
+    }
+
     //------------------------------------------------------------
     // private interface
     //------------------------------------------------------------
+
+    private static int _id_counter = 0;
+
+    private String _id;
 
     // Defines all the immediate parent stress instances that can
     // cause this stress to happen.

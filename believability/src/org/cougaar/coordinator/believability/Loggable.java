@@ -33,7 +33,7 @@ import org.cougaar.util.log.Logger;
  * logging mechanism. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.10 $Date: 2004-06-29 22:43:18 $
+ * @version $Revision: 1.16 $Date: 2004-07-15 20:19:42 $
  * 
  *
  */
@@ -76,7 +76,7 @@ abstract class Loggable
      */
     protected void logWarning( String msg )
     {
-	    _logger.warn( msg );
+         _logger.warn( msg );
     } // method logWarning
 
 
@@ -101,8 +101,19 @@ abstract class Loggable
     protected void logInfo( String msg )
     {
         if ( _logger.isInfoEnabled() )
-	    _logger.info( msg );
+         _logger.info( msg );
     } // method logInfo
+
+    /**
+     * Log some detail information
+     *
+     * @param msg The detail message to log.
+     */
+    protected void logDetail( String msg )
+    {
+        if ( _logger.isDetailEnabled() )
+         _logger.detail( msg );
+    } // method logDetail
 
     //------------------------------------------------------------
     // private interface

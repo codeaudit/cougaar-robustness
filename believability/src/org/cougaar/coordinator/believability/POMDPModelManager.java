@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/Attic/POMDPModelManager.java,v $
- * $Revision: 1.10 $
- * $Date: 2004-06-29 22:43:18 $
+ * $Revision: 1.13 $
+ * $Date: 2004-07-12 19:30:46 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -32,7 +32,7 @@ import org.cougaar.coordinator.techspec.AssetType;
  * manage and access them all. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.10 $Date: 2004-06-29 22:43:18 $
+ * @version $Revision: 1.13 $Date: 2004-07-12 19:30:46 $
  */
 public class POMDPModelManager 
         extends Loggable implements POMDPModelInterface
@@ -134,6 +134,8 @@ public class POMDPModelManager
         POMDPAssetModel pomdp_model
                 = getModel( start_belief.getAssetType() );
 
+        logDebug( "Belief update for :" + start_belief.getAssetID() );
+
         return pomdp_model.updateBeliefState( start_belief,
                                               trigger );
 
@@ -160,6 +162,8 @@ public class POMDPModelManager
         POMDPAssetModel pomdp_model
                 = getModel( start_belief.getAssetType() );
 
+
+        logDebug( "Belief update for :" + start_belief.getAssetID() );
 
         return pomdp_model.updateBeliefState( start_belief,
                                               time );
