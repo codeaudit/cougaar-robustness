@@ -19,9 +19,10 @@ import org.cougaar.util.UnaryPredicate;
 import org.cougaar.coordinator.believability.StateEstimation;
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.housekeeping.IndexKey;
+import org.cougaar.core.persist.NotPersistable;
 
 
-public class StateEstimationIndex extends Hashtable{
+public class StateEstimationIndex extends Hashtable implements NotPersistable {
 
     /** Creates new StateEstimationIndex */
     public StateEstimationIndex() {
