@@ -64,6 +64,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
     private IncrementalSubscription stateEstimationSubscription;
     private IncrementalSubscription knobSubscription;
+    private IncrementalSubscription cbeSubscription;
 
     private Hashtable actions;
 
@@ -121,7 +122,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
             if (logger.isInfoEnabled()) logger.info(se.toString());
 
             // If there is an existing CBE, ignore this SE, because otherwise we might oveerrun the selection process
-            CostBenefitEvaluation old_cbe = activeCBEs(se.getAssetID());
+            CostBenefitEvaluation old_cbe = activeCBEs.get(se.getAssetID());
             if (old_cbe == null) {
             	CostBenefitEvaluation cbe = createCostBenefitEvaluation(se, knob);
             	if (logger.isInfoEnabled()) logger.info("CostBenefitEvaluation created: "+cbe.toString());
