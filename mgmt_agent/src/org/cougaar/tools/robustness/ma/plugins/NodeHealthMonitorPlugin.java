@@ -33,6 +33,8 @@ import org.cougaar.core.service.wp.WhitePagesService;
 import org.cougaar.core.service.wp.Callback;
 import org.cougaar.core.service.wp.Response;
 
+import org.cougaar.core.node.NodeControlService;
+
 import org.cougaar.core.agent.service.alarm.Alarm;
 
 import org.cougaar.core.util.UID;
@@ -63,8 +65,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.naming.NamingEnumeration;
@@ -124,6 +128,8 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
   private CommunityService commSvc;
   private WhitePagesService whitePagesService;
 
+  private NodeControlService nodeControlService;
+
   public void setWhitePagesService(WhitePagesService wps) {
     whitePagesService = wps;
   }
@@ -164,6 +170,15 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
       }
     }
     joinedStartupCommunity = true;
+  }
+
+  public NodeControlService getNodeControlService() {
+    if (nodeControlService == null) {
+      nodeControlService =
+          (NodeControlService) getBindingSite().getServiceBroker().getService(this,
+          NodeControlService.class, null);
+    }
+    return nodeControlService;
   }
 
   public void setupSubscriptions() {
@@ -459,15 +474,40 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
     List l = new ArrayList();
     Community community = commSvc.getCommunity(communityName, null);
     if (community != null) {
-      String agents[] = model.entitiesAtLocation(myName);
+      String agents[] = listLocalAgents();
       for (int i = 0; i < agents.length; i++) {
-        //if (model.getCurrentState(agents[i]) == controller.getNormalState()) {
         if (community.hasEntity(agents[i]) && !myName.equals(agents[i])) {
-          l.add(new AgentStatus(agents[i], myName, model.getCurrentState(agents[i])));
+          l.add(new AgentStatus(agents[i],
+                                ((Long)agentVersions.get(agents[i])).longValue(),
+                                myName,
+                                model.getCurrentState(agents[i])));
         }
       }
     }
     return (AgentStatus[])l.toArray(new AgentStatus[0]);
+  }
+
+  Map agentVersions = Collections.synchronizedMap(new HashMap());
+
+  private String[] listLocalAgents() {
+    String names[] = new String[0];
+    NodeControlService ncs = getNodeControlService();
+    if (ncs != null) {
+      Set agentAddresses = ncs.getRootContainer().getAgentAddresses();
+      names = new String[agentAddresses.size()];
+      int index = 0;
+      for (Iterator it = agentAddresses.iterator(); it.hasNext(); ) {
+        String agent = it.next().toString();
+        names[index++] = agent;
+        if (!agentVersions.containsKey(agent)) {
+          agentVersions.put(agent, new Long(now()));
+          if (logger.isDebugEnabled()) {
+            logger.debug("New agent detected: agent=" + agent);
+          }
+        }
+      }
+    }
+    return names;
   }
 
   /**
