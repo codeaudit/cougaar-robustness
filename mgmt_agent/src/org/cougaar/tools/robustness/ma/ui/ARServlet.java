@@ -148,6 +148,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
 
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException
     {
+      log.debug("Request=" + req.getQueryString());
       Worker worker = new Worker();
       worker.execute(req, res);
     }
@@ -232,9 +233,13 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
             action = "removeTicket";
             dest = name;
           }
-          if (value.equalsIgnoreCase("Kill") || value.equalsIgnoreCase("Restart") || value.equalsIgnoreCase("ForcedRestart")
-              || value.equals("loadBalance") || value.equals("Move")) {
-            if(value.equalsIgnoreCase("ForcedRestart"))
+          if (value.equalsIgnoreCase("Kill") ||
+              value.equalsIgnoreCase("Restart") ||
+              value.equalsIgnoreCase("ForcedRestart") ||
+              value.equalsIgnoreCase("loadBalance") ||
+              value.equalsIgnoreCase("add") ||
+              value.equalsIgnoreCase("move")) {
+            if (value.equalsIgnoreCase("ForcedRestart"))
               action = "restart";
             else
               action = value.toLowerCase();
@@ -284,24 +289,33 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
 
     private void displayParams(String command, String value) throws IOException
     {
-      if(command.equals("") || command.equals("showCommunity"))
+      if (command.equals("") ||
+          command.equals("showCommunity")) {
         showCommunityData(format, robustnessCommunity);
-      else if(command.equals("community"))
+      } else if (command.equals("community")) {
         showCommunityAttributes(format, robustnessCommunity);
-      else if(command.equals("control"))
+      } else if (command.equals("control")) {
         controlCommunity(format, robustnessCommunity);
-      else if(command.equals("move") || command.equals("Remove") || command.equals("kill") ||
-              command.equals("restart") || command.equals("loadbalance")) {
-        if(operation.equals(lastop) && mobileAgent.equals(lastma) && origNode.equals(laston)
-          && destNode.equals(lastdn)) {
+      } else if (command.equals("move") ||
+                 command.equals("Remove") ||
+                 command.equals("kill") ||
+                 command.equals("restart") ||
+                 command.equals("add") ||
+                 command.equals("loadbalance")) {
+        if (operation.equals(lastop) &&
+            mobileAgent.equals(lastma) &&
+            origNode.equals(laston) &&
+            destNode.equals(lastdn)) {
           writeSuccess(format); //this is just for refresh, don't do a publishAdd.
-        }
-        else {
+        } else {
           try {
-            if(command.equals("move") || command.equals("kill") || command.equals("restart") || command.equals("loadbalance")) {
+            if (command.equals("move") ||
+                command.equals("kill") ||
+                command.equals("restart") ||
+                command.equals("add") ||
+                command.equals("loadbalance")) {
               publishHealthMonitorRequest(robustnessCommunity, command);
-            }
-            else { //publish remove tickets to remove agents
+            } else { //publish remove tickets to remove agents
               AgentControl ac = createAgentControl(command);
               addAgentControl(ac);
             }
@@ -658,8 +672,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
 
       if (target.equals(agentId)) {
         if (log.isInfoEnabled()) {
-          log.info("Publishing HealthMonitorRequest:" +
-                   " community=" + hmr.getCommunityName());
+          log.info("Publishing HealthMonitorRequest:" + hmr);
         }
         try {
           bb.openTransaction();
@@ -741,7 +754,8 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     int request = command.equals("kill") ? HealthMonitorRequest.KILL :
           (command.equals("restart") ? HealthMonitorRequest.FORCED_RESTART :
           (command.equals("loadbalance") ? HealthMonitorRequest.LOAD_BALANCE :
-                                           HealthMonitorRequest.MOVE));
+          (command.equals("add") ? HealthMonitorRequest.ADD
+                                 : HealthMonitorRequest.MOVE)));
     String orig = origNode;
     String dest = destNode;
     if(origNode.equals("")) orig = null;

@@ -28,11 +28,13 @@ package org.cougaar.tools.robustness.ma.ldm;
 public class AgentStatus implements java.io.Serializable {
 
   protected String name;
+  protected long version;
   protected String location;
   protected int status;
 
-  public AgentStatus(String name, String location, int status) {
+  public AgentStatus(String name, long version, String location, int status) {
     this.name = name;
+    this.version = version;
     this.location = location;
     this.status = status;
   }
@@ -42,6 +44,13 @@ public class AgentStatus implements java.io.Serializable {
   }
   public void setName(String name) {
     this.name = name;
+  }
+
+  public long getVersion() {
+    return version;
+  }
+  public void setVersion(long version) {
+    this.version = version;
   }
 
   public String getLocation() {

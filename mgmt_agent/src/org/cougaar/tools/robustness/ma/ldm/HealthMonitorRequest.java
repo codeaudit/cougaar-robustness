@@ -39,6 +39,7 @@ public interface HealthMonitorRequest
   public static final int MOVE                     = 4;
   public static final int GET_STATUS               = 5;
   public static final int LOAD_BALANCE             = 6;
+  public static final int ADD                      = 7;
 
   /**
    * Get name of Robustness Community.

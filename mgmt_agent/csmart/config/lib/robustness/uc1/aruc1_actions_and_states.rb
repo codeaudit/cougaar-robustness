@@ -215,7 +215,7 @@ module Cougaar
     class RestartAgents < Cougaar::Action
       PRIOR_STATES = ["SocietyLoaded"]
       DOCUMENTATION = Cougaar.document {
-        @description = "Peform forced restart of agents"
+        @description = "Perform forced restart of agents"
         @parameters = [
           {:agents => "required, The agents to be restarted."}
         ]
@@ -237,6 +237,32 @@ module Cougaar
 	      break
 	    end
 	  end
+        end
+      end
+    end
+
+    class AddAgent < Cougaar::Action
+      PRIOR_STATES = ["SocietyLoaded"]
+      DOCUMENTATION = Cougaar.document {
+        @description = "Add agent"
+        @example = "do_action 'AddAgent', '1-35-ARBN', 'DEST-NODE', 'SMALL-COMM'"
+	}
+
+      def initialize(run, agent, dest, community)
+        super(run)
+	@agentName = agent
+        @dest = dest
+        @community = community
+        @community = @community.sub('-COMM','')
+      end
+      def perform
+        @run.society.each_agent do |agent|
+          if agent.name =~ /.*ARManager.*/
+            if agent.name =~ /.*#{@community}.*/
+              node = agent.node
+              result, uri = Cougaar::Communications::HTTP.get("#{node.uri}/$#{node.name}/ar?operation=add&mobileagent=#{@agentName}&destinationnode=#{@dest}&comm=#{@community}-COMM")
+            end
+          end
         end
       end
     end

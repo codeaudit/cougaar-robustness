@@ -106,6 +106,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
     Attributes attrs;
     long expiration;
     String name;
+    long version;
     String currentLocation;
     String priorLocation;
     int type;
@@ -280,6 +281,23 @@ public class CommunityStatusModel extends BlackboardClientComponent
    */
   public boolean contains(String name) {
     return statusMap.containsKey(name);
+  }
+
+  public long getVersion(String name) {
+    return (name != null && statusMap.containsKey(name))
+        ? ((StatusEntry)statusMap.get(name)).version
+        : -1;
+  }
+
+  public void setVersion(String name, long version) {
+    StatusEntry se = (StatusEntry)statusMap.get(name);
+    if (se != null) {
+      se.version = version;
+    } else {
+      if (logger.isDebugEnabled()) {
+        logger.debug("setVersion: status entry not found, agent=" + name);
+      }
+    }
   }
 
   /**
@@ -724,12 +742,13 @@ public class CommunityStatusModel extends BlackboardClientComponent
       for (int i = 0; i < as.length; i++) {
         String agentName = as[i].getName();
         if (statusMap.containsKey(agentName)) {
-          if (isLocalAgent(agentName)) {
-            setLocation(agentName, thisAgent);
-          } else {
+          //if (isLocalAgent(agentName)) {
+          //  setLocation(agentName, thisAgent);
+          //} else {
+            setVersion(agentName, as[i].getVersion());
             setLocation(agentName, as[i].getLocation());
             setCurrentState(agentName, as[i].getStatus());
-          }
+          //}
         }
       }
     }

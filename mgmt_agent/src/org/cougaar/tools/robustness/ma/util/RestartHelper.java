@@ -108,7 +108,8 @@ public class RestartHelper extends BlackboardClientComponent {
       if (o instanceof HealthMonitorRequest) {
         HealthMonitorRequest hmr = (HealthMonitorRequest)o;
         return (hmr.getRequestType() == hmr.RESTART ||
-                hmr.getRequestType() == hmr.KILL);
+                hmr.getRequestType() == hmr.KILL ||
+                hmr.getRequestType() == hmr.ADD);
       }
       return false;
   }};
@@ -243,6 +244,32 @@ public class RestartHelper extends BlackboardClientComponent {
     }
   }
 
+  /**
+   * Method used by clients to add an agent.
+   * @param agentName      Name of agent to be added
+   * @param destNode       Destination node
+   */
+  public void addAgent(String agentName,
+                        String destNode,
+                        String communityName) {
+    if (logger.isDebugEnabled()) {
+      logger.debug("AddAgent:" +
+                   " agent=" + agentName +
+                   " destNode=" + destNode);
+    }
+    if (agentId.toString().equals(destNode)) {
+      // Add agent locally
+      doLocalAction(agentName, HealthMonitorRequest.ADD);
+    } else {
+      // Queue request to remote agent
+      fireLater(new RemoteRequest(new String[]{agentName},
+                                  HealthMonitorRequest.ADD,
+                                  null,
+                                  destNode,
+                                  communityName));
+    }
+  }
+
   protected void fireLater(RemoteRequest rr) {
     synchronized (remoteRequestQueue) {
       remoteRequestQueue.add(rr);
@@ -269,8 +296,15 @@ public class RestartHelper extends BlackboardClientComponent {
   }
 
   private void sendRemoteRequest(RemoteRequest rr) {
+    if (logger.isDebugEnabled()) {
+      logger.debug("sendRemoteRequest: " + rr);
+    }
     UIDService uidService = (UIDService)getServiceBroker().getService(this,
         UIDService.class, null);
+    if (uidService == null) {
+      logger.warn("Unable to send request, can't get UidService");
+      return;
+    }
     HealthMonitorRequest hmr =
         new HealthMonitorRequestImpl(agentId,
                                      rr.communityName,
@@ -281,7 +315,7 @@ public class RestartHelper extends BlackboardClientComponent {
                                      uidService.nextUID());
     RelayAdapter hmrRa = new RelayAdapter(agentId, hmr, hmr.getUID());
     hmrRa.addTarget(SimpleMessageAddress.getSimpleMessageAddress(rr.destNode));
-    if(logger.isDebugEnabled()) {
+    if (logger.isDebugEnabled()) {
       logger.debug("Publishing HealthMonitorRequest:" +
                    " request=" + hmr.getRequestTypeAsString() +
                    " targets=" + targetsToString(hmrRa.getTargets()) +
@@ -321,6 +355,27 @@ public class RestartHelper extends BlackboardClientComponent {
           }
         }
         break;
+      case HealthMonitorRequest.ADD:
+         if (destNode != null) {
+           if (!agentId.toString().equals(destNode)) {
+             // Forward request to destination node
+             if (logger.isDebugEnabled()) {
+               logger.debug("doAction, forwarding request: " + hmr);
+             }
+             sendRemoteRequest(new RemoteRequest(hmr.getAgents(),
+                                                 hmr.getRequestType(),
+                                                 origNode,
+                                                 destNode,
+                                                 hmr.getCommunityName()));
+
+           } else { // local request
+             String agentNames[] = hmr.getAgents();
+             for (int i = 0; i < agentNames.length; i++) {
+               doLocalAction(agentNames[i], hmr.getRequestType());
+             }
+           }
+         }
+         break;
       case HealthMonitorRequest.KILL:
         if (origNode != null && !agentId.toString().equals(origNode)) {
           // Forward request to destination node
@@ -388,6 +443,7 @@ public class RestartHelper extends BlackboardClientComponent {
         AbstractTicket ticket = null;
         switch (request.action) {
           case HealthMonitorRequest.RESTART:
+          case HealthMonitorRequest.ADD:
             ticket = new AddTicket(ticketId, agent, agentId);
             break;
           case HealthMonitorRequest.KILL:
@@ -453,7 +509,7 @@ public class RestartHelper extends BlackboardClientComponent {
               actionComplete(addTicket.getMobileAgent().toString(),
                              HealthMonitorRequest.RESTART,
                              addTicket.getDestinationNode(),
-                            SUCCESS);
+                             SUCCESS);
               break;
             case AgentControl.ALREADY_EXISTS:
               blackboard.publishRemove(ac);
@@ -627,6 +683,19 @@ public class RestartHelper extends BlackboardClientComponent {
       this.origNode = orig;
       this.destNode = dest;
       this.communityName = community;
+    }
+    public String toString() {
+      StringBuffer sb = new StringBuffer("RemoteRequest");
+      sb.append(" agents=[");
+      for (int i = 0; i < agentNames.length; i++) {
+        sb.append(agentNames[i]);
+        if (i < agentNames.length - 1) sb.append(", ");
+      }
+      sb.append("] action=" + action);
+      sb.append(" orig=" + origNode);
+      sb.append(" dest=" + destNode);
+      sb.append(" comm=" + communityName);
+      return sb.toString();
     }
   }
 

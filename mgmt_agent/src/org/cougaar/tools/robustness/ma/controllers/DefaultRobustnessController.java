@@ -18,7 +18,7 @@
 package org.cougaar.tools.robustness.ma.controllers;
 
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
-import org.cougaar.tools.robustness.ma.controllers.*;
+import org.cougaar.tools.robustness.ma.DuplicateAgentDetector;
 import org.cougaar.tools.robustness.ma.ReaffiliationNotificationHandler;
 import org.cougaar.tools.robustness.ma.HostLossThreatAlertHandler;
 import org.cougaar.tools.robustness.ma.SecurityAlertHandler;
@@ -135,10 +135,12 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   class ActiveStateController extends StateControllerBase {
     public void enter(String name) {
       if (isSentinel()) {
-        // Cleanup previous restart
-        getCoordinatorHelper().opmodeDisabled(name);
-        // Set current diagnosis to "Live"
-        getCoordinatorHelper().setDiagnosis(name, CoordinatorHelper.LIVE);
+        if (isCoordinatorEnabled()) {
+          // Cleanup previous restart
+          getCoordinatorHelper().opmodeDisabled(name);
+          // Set current diagnosis to "Live"
+          getCoordinatorHelper().setDiagnosis(name, CoordinatorHelper.LIVE);
+        }
         checkCommunityReady();
       }
       if (isAgent(name) || thisAgent.equals(name)) {
@@ -188,10 +190,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (logger.isDetailEnabled()) {
         logger.detail("deconflictCallback: agent=" + agentName);
       }
-      if (isCoordinatorEnabled() &&
-          !getCoordinatorHelper().isDefenseApplicable(agentName)) {
-        getCoordinatorHelper().setDiagnosis(agentName, CoordinatorHelper.DEAD);
-      }
+      //if (isCoordinatorEnabled() &&
+      //    !getCoordinatorHelper().isDefenseApplicable(agentName)) {
+      //  getCoordinatorHelper().setDiagnosis(agentName, CoordinatorHelper.DEAD);
+      //}
       // Verify that agent state hasn't changed while defense was disabled
       if (getState(agentName) == DECONFLICT) {
         newState(agentName, RESTART);
@@ -227,13 +229,61 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    * </pre>
    */
   class DeadStateController extends StateControllerBase {
+
     public void enter(final String name) {
       setExpiration(name, NEVER);
       communityReady = false; // For ACME Community Ready Events
+
+      if (isSentinel()) {
+        if (isAgent(name)) {
+          int priorState = getPriorState(name);
+          if (priorState != DECONFLICT && priorState != RESTART) {
+            newState(name, DECONFLICT);
+          } else {
+            if (logger.isWarnEnabled()) {
+              logger.warn("Unexpected transition to DEAD state: agent=" + name +
+                          " priorState=" + stateName(getPriorState(name)));
+            }
+          }
+        } else { // a node
+          deadNodes.add(name);
+          if (!useGlobalSolver()) {
+            newState(agentsOnNode(name), DEAD);
+            removeFromCommunity(name);
+          } else {
+            if (agentsOnNode(name).size() > 0) {
+              getLayout(new LoadBalancerListener() {
+                public void layoutReady(Map layout) {
+                  if (getState(name) == DEAD) {
+                    if (logger.isInfoEnabled()) {
+                      logger.info("layout from EN4J: " + layout);
+                    }
+                    RestartDestinationLocator.setPreferredRestartLocations(
+                        layout);
+                    newState(agentsOnNode(name), DEAD);
+                    removeFromCommunity(name);
+                  } else { // Abort, node no longer classified as DEAD
+                    deadNodes.remove(name);
+                    if (logger.isInfoEnabled()) {
+                      logger.info("Restart aborted: node=" + name +
+                                  " state=" + stateName(getState(name)));
+                    }
+                  }
+                }
+              });
+            } else {
+              removeFromCommunity(name);
+            }
+          }
+        }
+      }
+
+      /*
       if (isAgent(name) &&
           isSentinel() &&
           (getPriorState(name) == DefaultRobustnessController.ACTIVE ||
-          getPriorState(name) < INITIAL || getPriorState(name) == HEALTH_CHECK)) {
+          getPriorState(name) < INITIAL || getPriorState(name) == HEALTH_CHECK))
+      {
         newState(name, DECONFLICT);
       } else if (isNode(name)) {
         deadNodes.add(name);
@@ -243,8 +293,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         } else {
           if (isLeader(thisAgent)) {
             if (agentsOnNode(name).size() > 0) {
-              final long minAnnealTime = getLongAttribute("MINIMUM_ANNEAL_TIME", MINIMUM_ANNEAL_TIME);
-                getLayout(new LoadBalancerListener() {
+              getLayout(new LoadBalancerListener() {
                 public void layoutReady(Map layout) {
                   if (getState(name) == DEAD) {
                     if (logger.isInfoEnabled()) {
@@ -271,7 +320,13 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
             newState(agentsOnNode(name), DEAD);
           }
         }
-      }
+      } else {
+        if (logger.isWarnEnabled()) {
+          logger.warn("Unexpected transition to DEAD state: agent=" + name +
+                      " priorState=" + stateName(getPriorState(name)));
+        }
+      }*/
+
       if (isLocal(name)) {
         stopHeartbeats(name);
       }
@@ -497,6 +552,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     new HostLossThreatAlertHandler(getBindingSite(), agentId, this, csm);
     new SecurityAlertHandler(getBindingSite(), agentId, this, csm);
     new ReaffiliationNotificationHandler(getBindingSite(), agentId, csm);
+    new DuplicateAgentDetector(csm, getRestartHelper());
   }
 
 /**
@@ -764,10 +820,12 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   public void memberAdded(String name) {
     //robustness manager should publish deconfliction objects for every agent member.
     if (isSentinel()) {
-      if (logger.isInfoEnabled()) {
-        logger.info("memberAdded: name=" + name);
+      if (logger.isDebugEnabled()) {
+        logger.debug("memberAdded: name=" + name);
       }
-      coordinatorHelper.addAgent(name);
+      if (isCoordinatorEnabled()) {
+        coordinatorHelper.addAgent(name);
+      }
       if (isNode(name)) {
         if (logger.isInfoEnabled()) {
           logger.info("New node detected: name=" + name);
@@ -784,10 +842,12 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
   public void memberRemoved(String name) {
     if (isSentinel()) {
-      if (logger.isInfoEnabled()) {
-        logger.info("memberRemoved: name=" + name);
+      if (logger.isDebugEnabled()) {
+        logger.debug("memberRemoved: name=" + name);
       }
-      coordinatorHelper.removeAgent(name);
+      if (isCoordinatorEnabled()) {
+        coordinatorHelper.removeAgent(name);
+      }
     }
   }
 
