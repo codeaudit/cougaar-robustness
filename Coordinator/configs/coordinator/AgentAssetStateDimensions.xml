@@ -31,12 +31,12 @@
 
   <StateDimension name="Eavesdropping" >
  	<State name="NoVulnerability" relativeMauCompleteness="0.5" 
-                           relativeMauSecurity="1.0"
-			   defaultStartState="TRUE" />
+                           relativeMauSecurity="1.0" />
  	<State name="LowVulnerability" relativeMauCompleteness="0.7"
 	                     relativeMauSecurity="0.7" />
  	<State name="MediumVulnerability" relativeMauCompleteness="0.5"
-	                     relativeMauSecurity="0.5" />
+	                     relativeMauSecurity="0.5"
+			   defaultStartState="TRUE" />
  	<State name="HighVulnerability" relativeMauCompleteness="0.5"
 	                   relativeMauSecurity="0.1" />
 
