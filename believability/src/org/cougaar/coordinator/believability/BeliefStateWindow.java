@@ -298,7 +298,9 @@ import java.sql.Timestamp;
          try{
           a_alarm = new AssetAlarm(duration,(CallbackInterface) this);
           _blv_plugin.setAlarm(a_alarm);
-          logDebug("Alarm set for " + _max_window_length + " ms.");
+
+//          logDebug("Alarm set for " + _max_window_length + " ms.");
+
           return true;
          } catch (Exception e){
           logDebug("Errot setting Cougaar timer for AssetID:" + _asset_id.toString());
