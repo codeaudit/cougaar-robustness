@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/SensorTypeModel.java,v $
- * $Revision: 1.18 $
- * $Date: 2004-07-15 20:19:42 $
+ * $Revision: 1.30 $
+ * $Date: 2004-08-09 20:46:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -37,7 +37,7 @@ import org.cougaar.core.util.UID;
  * needs concerning a SensorType (from the tech specs). 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.18 $Date: 2004-07-15 20:19:42 $
+ * @version $Revision: 1.30 $Date: 2004-08-09 20:46:41 $
  *
  */
 class SensorTypeModel extends Model
@@ -95,6 +95,14 @@ class SensorTypeModel extends Model
      * @return the latency of this sensor
      **/
     long getLatency() { return _latency; }
+
+    //************************************************************
+    /**
+     * Get whether or not we need to use implicit diagnoses for this
+     * sensor.
+     *
+     **/
+    boolean usesImplicitDiagnoses() { return _uses_implicit_diagnoses; }
 
     //************************************************************
     /**
@@ -203,6 +211,7 @@ class SensorTypeModel extends Model
     private String _state_dim_name;
     private String[] _obs_names;
     private double[][] _obs_prob;
+    private boolean _uses_implicit_diagnoses;
 
     //************************************************************
     /**
@@ -233,6 +242,10 @@ class SensorTypeModel extends Model
         _name = diag_ts.getName();
         _uid = diag_ts.getUID();
         _latency = diag_ts.getLatency();
+        _uses_implicit_diagnoses 
+                = ( diag_ts.getReportingPolicy() 
+                    == DiagnosisTechSpecInterface.ALWAYS_CURRENT );
+
         _state_dim_name = asset_dim_model.getStateDimensionName();
 
 

@@ -30,7 +30,7 @@ package org.cougaar.coordinator.believability;
  * and take the appropriate action.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.5 $Date: 2004-07-15 20:19:42 $
+ * @version $Revision: 1.17 $Date: 2004-08-09 20:46:41 $
  * 
  */
 public interface TriggerConsumerInterface {

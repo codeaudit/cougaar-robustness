@@ -78,7 +78,7 @@ public class BelievabilityPlugin
         implements NotPersistable 
 
 {
-    public static final boolean IGNORE_LEASH_DIAGNOSIS = true;
+    public static final boolean USE_LEASH_DIAGNOSIS = false;
 
     /** 
      * Creates a new instance of BelievabilityPlugin 
@@ -200,7 +200,7 @@ public class BelievabilityPlugin
     protected void setupSubscriptions() {
 
      // Check for diagnosis leashing
-     if (IGNORE_LEASH_DIAGNOSIS) {
+     if ( ! USE_LEASH_DIAGNOSIS) {
       if ( logger.isDebugEnabled() )
           logger.debug( "INITIAL LEASHING OF DIAGNOSES IS DISABLED" );
       _dc_enabled = true;
@@ -345,7 +345,7 @@ public class BelievabilityPlugin
 
      Iterator iter;
 
-        // Diagnoses are published to the blackboard. Each sensor has
+     // Diagnoses are published to the blackboard. Each sensor has
      // a Diagnosis object on the blackboard that it either asserts
      // periodically or asserts when some value changes (or both).
      // The Believability plugin receives a wrapped version of this

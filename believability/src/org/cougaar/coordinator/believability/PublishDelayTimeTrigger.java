@@ -1,8 +1,7 @@
-/**
- * ImplicitDiagnosisTrigger.java
+/*
+ * PublishDelayTimeTrigger.java
  *
- * Created on July 14, 2004
- *
+ * Created on June 8, 2004
  * <copyright>
  *  Copyright 2004 Telcordia Technoligies, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
@@ -29,40 +28,30 @@ package org.cougaar.coordinator.believability;
 import org.cougaar.coordinator.techspec.AssetID;
 
 /**
- * The class that contains a local copy of pertinent information
- * related to the diagosis.
- *
+ * This class serves for concrete instances of belief update triggers
+ * that are based solely on time (no diagnosis or action.) 
+ * 
  * @author Tony Cassandra
  */
-class ImplicitDiagnosisTrigger extends DiagnosisTrigger
+class PublishDelayTimeTrigger extends TimeUpdateTrigger 
 {
 
-    //************************************************************
+    //---------------------------------------------------------------
+    // package interface
+    //---------------------------------------------------------------
+
     /**
      * Main constructor
      *
-     * @param asset_id The asset ID this diagnosis is on
-     * @param sensor_name  The sensor name that generated the diagnosis
-     * @param sensor_value The diagnosis value itself
-     * @param state_dim_name The state dimension of the asset that was
-     * diagnosed
-     * @param time The time to set for the timestamps on this trigger.
-     **/
-    ImplicitDiagnosisTrigger( AssetID asset_id,
-                              String sensor_name,
-                              String sensor_value,
-                              String state_dim_name, 
-                              long time ) {
-        
-        super( asset_id );
-        
-        _sensor_name = sensor_name;
-        _sensor_value = sensor_value;
-        _sensor_state_dimension = state_dim_name;
-        
-        _last_asserted_timestamp = time;
+     * @param asset_id The asset ID
+     * @param time The time that the update happened or was triggered
+     */
+    PublishDelayTimeTrigger( AssetID asset_id, long time ) 
+    {
+        super( asset_id, time );
 
-    } // constructor
+    } // constructor PublishDelayTimeTrigger
 
-} // class ImplicitDiagnosisTrigger
+
+} // class PublishDelayTimeTrigger
 

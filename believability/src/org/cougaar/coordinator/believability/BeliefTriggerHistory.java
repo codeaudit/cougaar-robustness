@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefTriggerHistory.java,v $
- * $Revision: 1.4 $
- * $Date: 2004-07-30 01:10:08 $
+ * $Revision: 1.5 $
+ * $Date: 2004-07-31 02:56:57 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -83,18 +83,22 @@ import org.cougaar.core.agent.service.alarm.Alarm;
  *
  * Some terminology:
  *
- *   o Latency Window - The time window maintained to account for the
- *          delay that sensors may have in reporting.
+ *   o Sensor Latency Window - The time window maintained to account
+ *                  for the delay that sensors may have in reporting.
+ *
+ *   o Publish Delay Window - The time window maintained to account
+ *             stop all immediate publications.  This helps with
+ *             simultaneous and near-simultaneous events.
  *
  *   o Publish Window - The time window maintained to ensure that we do
  *          not go too long without producing a belief update for an
  *          asset. 
  *
- * At a given point in time, there could be two timers associated with
+ * At a given point in time, there could be three timers associated with
  * an instance of this class: one for each of these.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.4 $Date: 2004-07-30 01:10:08 $
+ * @version $Revision: 1.5 $Date: 2004-07-31 02:56:57 $
  * @see BeliefTriggerManager
  */
 class BeliefTriggerHistory 
@@ -162,69 +166,66 @@ class BeliefTriggerHistory
         // may want to compute a new belief state, predominantly based
         // upon the type of trigger we are seeing..
 
-        // On actions, we always update the belief and publish it.
+        // We only publish in response to a timer/alarm going off.
+        // However, there are three types of possible alarms that
+        // could trigger publishing: PublishDelayTimeTrigger,
+        // PublishIntervalTimeTrigger and SensorLatencyTimeTrigger.
         //
-        // Also, if the trigger here is because a timer went off
-        // indicating it has been too long since we have published,
-        // then we publish now. We will also need to start a new timer
-        // for the next period.
-        //
-        if (( trigger instanceof BelievabilityAction )
-            || ( trigger instanceof PublishIntervalTimeTrigger ))
+        if ( trigger instanceof TimeUpdateTrigger )
         {
-            if ( trigger instanceof BelievabilityAction )
-                logDetail( "Action trigger. Updating and publishing: "
-                           + _asset_id );
-            else
-                logDetail( "Publish time-out. Updating and publishing: "
-                           + _asset_id );
+            logDetail( "Time-out for alarm type "
+                       + trigger.getClass().getName()
+                       + ". Updating and publishing for asset "
+                       + _asset_id );
 
             updateBeliefState( );
             publishLatestBelief( );
             return;
-        }
+
+        } // if an alarm trigger type occurs
+
+        // On actions, we always update the belief and publish it,
+        // though only after a short delay.
+        //
+        if ( trigger instanceof BelievabilityAction )
+        {
+            logDetail( "Action trigger. Starting delay timer for: "
+                       + _asset_id );
+            
+            // Note that if there is an existing delay alarm, this
+            // routine will do nothing.
+            //
+            startPublishDelayTimer();
+            return;
+        } // if action trigger
+        
 
         // If we have seen a diagnosis from all sensors, then we
         // should not wait until the end of the max sensor latency
         // period. Note that if there is only one sensor, this wil
         // return true on the first diagnosis addition and thus cause
-        // an immediate belief computation.
+        // an immediate belief computation.  This uses a small delay
+        // for publishing in case the diagnosis arrives at the same
+        // time as an action.
         //
-        // Also, if we the trigger is signalling the end of the sensor
-        // latency period, then we need to update the belief state and
-        // check to see if we should publish it.
-        //
-        else if (( trigger instanceof SensorLatencyTimeTrigger )
-                 || seenAllSensors() )
+        if ( seenAllSensors() )
         {
-            if ( trigger instanceof SensorLatencyTimeTrigger ) 
-                logDetail( "Latency timer. Updating belief: "
-                           + _asset_id );
-            else
-                logDetail( "Seen all sensors. Updating belief: "
-                           + _asset_id );
-            
-            updateBeliefState( );
-            
-            if ( utilityHasChangedEnough())
-            {
-                publishLatestBelief();
-            }
-            else
-            {
-                logDetail( "Utility has not changed enough to publish: "
-                           + _asset_id );
-            }
-
+            logDetail( "Seen all sensors. Updating belief: "
+                       + _asset_id );
+          
+            startPublishDelayTimer();
             return;
-        } // if SensorLatencyTimeTrigger or seenAllSensors()
+         
+        } // if seen all sensors
 
         // If this is the first sensor we are seeing (and there are
         // more than one for this asset), then we need to start a
-        // timer to wait for the maximum latency time before actuall
-        // generating a new belie state.
+        // timer to wait for the maximum latency time before actually
+        // generating a new belie state. Note that if there is only
+        // one known sensor, that the seenAllSensors() case above will
+        // be satisfied and we should not get to this condition.
         //
-        else if ( trigger instanceof BelievabilityDiagnosis )
+        if ( trigger instanceof BelievabilityDiagnosis )
         {
             if ( _current_triggers.size() == 1 )
             {
@@ -263,6 +264,12 @@ class BeliefTriggerHistory
     {
         // Method implementation comments go here ...
 
+        // I am pretty sure having an inequality here is better.  I
+        // originally had "<=", which caused some problems for
+        // simultaneous actions/diagnosis.  Anyway, if you are
+        // debugging a problem and happen to look here, this might be
+        // useful information for you.
+        //
         if (( _last_computed_belief != null )
             && ( trigger.getTriggerTimestamp() 
                  < _last_computed_belief.getTimestamp() ))
@@ -349,7 +356,7 @@ class BeliefTriggerHistory
         // efficiency reasons, so we need to make sure we treat this
         // case correctly.  This works by simply adding extra triggers
         // to the list at the end. 
-        ////
+        //
         addImplicitDiagnoses( getLatestCurrentTriggerTime() );
 
         logDetail( "Updating belief based on " + _current_triggers.size()
@@ -394,7 +401,7 @@ class BeliefTriggerHistory
         // anything else that is associated with this latency window
         // we have maintained.
         //
-        clearLatencyHistory();
+        clearTriggerHistory();
         
         _last_computed_belief = latest_belief;
 
@@ -409,13 +416,13 @@ class BeliefTriggerHistory
     //************************************************************
     /**
      * This should be called right after a new belief state is
-     * computed to clear out the current hostory of triggers that we
+     * computed to clear out the current history of triggers that we
      * might have been accumulating.
      *
      */
-    void clearLatencyHistory( )
+    void clearTriggerHistory( )
     {
-        // Cancel any alarm that might be on-going.
+        // Cancel any alarms that might be on-going.
         //
         if ( _latency_alarm != null )
         {
@@ -423,10 +430,16 @@ class BeliefTriggerHistory
             _latency_alarm = null;
         } // if have a latency alarm
 
+        if ( _delay_alarm != null )
+        {
+            _delay_alarm.cancel();
+            _delay_alarm = null;
+        } // if have a publish delay alarm
+
         _current_triggers.clear();
         _current_sensors.clear();
 
-    } // method resetCurrentHistory
+    } // method clearTriggerHistory
 
     //************************************************************
     /**
@@ -475,8 +488,7 @@ class BeliefTriggerHistory
 
         try
         {
-            first_trigger = (BeliefUpdateTrigger) 
-                    _current_triggers.get( _current_triggers.size() - 1 );
+            first_trigger = (BeliefUpdateTrigger) _current_triggers.get( 0 );
         }
         catch (IndexOutOfBoundsException ioobe)
         {
@@ -495,7 +507,7 @@ class BeliefTriggerHistory
      * has not detected any change.  Not reporting a diagnosis is
      * different from having a diagnosis, so we make the assumption that
      * for certain sensors, no report should be taken to be the same
-     * as 
+     * as not reporting (and not 'no information').
      *
      * @param time The time to use for any added implicit diagnoses.
      */
@@ -555,7 +567,7 @@ class BeliefTriggerHistory
     //************************************************************
     /**
      * Determines if an implicit diagnosis is needed for the current
-     * sesnor based on the time sent in, in relation to the last explicit
+     * sensor based on the time sent in, in relation to the last explicit
      * diagnosis time as well as the last implicit diagnosis time.
      * This assumes that the sensor name is one for which the model
      * says we will need to add implicit diagnoses for.
@@ -801,6 +813,54 @@ class BeliefTriggerHistory
 
     //************************************************************
     /**
+     * Responsible for setting an alarm to be triggered after a brief
+     * period after certain triggers are processed.  This is used to
+     * ensure that simultaneous and near simultaneous trigger events
+     * are grouped into the same belief update.  Note that if there is
+     * already an active delay alarm, this routine does nothing.
+     */
+    void startPublishDelayTimer( )
+            throws BelievabilityException
+    {
+        // If there is an outstanding delay alarm, then we do
+        // nothing. 
+        //
+        if (( _delay_alarm != null )
+            && ( ! _delay_alarm.hasExpired() ))
+            return;
+
+        // Note that we *always* want to wait the publish delay time,
+        // even if an existing latency timer will expire sooner.  The
+        // idea is that the publish delay should be very short (less
+        // than a second) and that its purpose is to make sure
+        // simultaneous and near-simultaneous events get grouped
+        // together into the same belief update. The same goes for
+        // any existing publication alarm.
+        //
+        if ( _latency_alarm != null )
+        {
+            _latency_alarm.cancel();
+            _latency_alarm = null;
+        }
+
+        if ( _publish_alarm != null )
+        {
+            _publish_alarm.cancel();
+            _publish_alarm = null;
+        }
+
+        _delay_alarm = new IntervalAlarm
+                ( _model_manager.getPublishDelayInterval(), this );
+        
+        _alarm_service.addRealTimeAlarm( _delay_alarm );
+
+        logDetail( "Publish delay timer started for " + _asset_id
+                   + ". Alarm:" + _delay_alarm.toString() );
+
+    } // method startPublishDelayTimer
+
+    //************************************************************
+    /**
      * Responsible for setting an alarm to be triggered when the
      * maximum sensor latency time has been reached, starting from the
      * current time.
@@ -808,12 +868,41 @@ class BeliefTriggerHistory
     void startSensorLatencyTimer( )
             throws BelievabilityException
     {
+        // If there is an existing, unexpired publish delay timer,
+        // then that should take precedence over the sensor latency.
+        // The idea here is that the delay serves and important
+        // function (group simultaneous and near-simultaneous trigger
+        // events) and that it should be a relative short interval
+        // (less than a second).  Also, the delay alarm existing means
+        // we want to publish a belief state sonner rather than later.
+        // Thus, we do not create a latency alarm if there is an
+        // active delay alarm.
+        //
+        if (( _delay_alarm != null )
+            && ( ! _delay_alarm.hasExpired() ))
+        {
+            logDetail( "Latency timer not started for " + _asset_id
+                       + ". Existing publish delay alarm exists." );
+            return;
+        }
+
+        // If there is an existing publication interval timer, then
+        // we cancel that, as it is more important to wait for the
+        // sensors to report than the somewhat arbitrary
+        // inter-publication interval.
+        //
+        if ( _publish_alarm != null )
+        {
+            _publish_alarm.cancel();
+            _publish_alarm = null;
+        }
+        
         // Just for good luck, make sure any existing alarm gets
         // cancelled. 
         //
         if ( _latency_alarm != null )
             _latency_alarm.cancel();
-        
+
         _latency_alarm = new IntervalAlarm
                 ( _model_manager.getMaxSensorLatency
                   ( _asset_id.getType() ), 
@@ -835,6 +924,18 @@ class BeliefTriggerHistory
     void startPublishIntervalTimer( )
             throws BelievabilityException
     {
+        // Note that:
+        //
+        //    o we should only be starting this alarm immediately after
+        //      publishing, and 
+        //
+        //    o we only publish is response to some timer going off.
+        //
+        //    o we should only have one active alarm at a time.
+        //
+        // Therefore, we do not check for the status of the other
+        // alarms here.
+
         // Just for good luck, make sure any existing alarm gets
         // cancelled. 
         //
@@ -886,7 +987,7 @@ class BeliefTriggerHistory
         //
         startPublishIntervalTimer();
 
-    } // method checkForPublication
+    } // method publishLatestBelief
 
     //------------------------------------------------------------
     // AlarmExpirationHandler interface
@@ -906,7 +1007,18 @@ class BeliefTriggerHistory
         // possible that two alarms will expire simultaneously?
         //
 
-        if ( alarm == _latency_alarm )
+        if ( alarm == _delay_alarm )
+        {
+            logDetail( "Handling delay alarm expiration for: "
+                       + _asset_id );
+
+            handleBeliefTrigger
+                    (  new PublishDelayTimeTrigger
+                       (  _asset_id, alarm.getExpirationTime() ));
+
+        } // if publish alarm
+
+        else if ( alarm == _latency_alarm )
         {
             logDetail( "Handling latency alarm expiration for: "
                        + _asset_id );
@@ -1041,6 +1153,13 @@ class BeliefTriggerHistory
     //
     private IntervalAlarm _publish_alarm;
 
+    // A handle to the current alarm associated with ensuring that we
+    // publish a belief state after a short period of time after
+    // receiving the trigger that is suposed to start a belief state
+    // publication.
+    //
+    private IntervalAlarm _delay_alarm;
+
     //------------------------------------------------------------
     // Inner Classes
     //------------------------------------------------------------
@@ -1051,7 +1170,7 @@ class BeliefTriggerHistory
      */
     class TriggerComparator implements Comparator
     {
-       public int compare(Object o1, Object o2) 
+        public int compare(Object o1, Object o2) 
         {
             if ( ! ( o1 instanceof BeliefUpdateTrigger )
                  || ! (o2 instanceof BeliefUpdateTrigger ))
@@ -1060,15 +1179,24 @@ class BeliefTriggerHistory
 
             BeliefUpdateTrigger t1 = (BeliefUpdateTrigger) o1;
             BeliefUpdateTrigger t2 = (BeliefUpdateTrigger) o2;
+            
+            if ( t1.getTriggerTimestamp() < t2.getTriggerTimestamp() )
+                return -1;
 
-        if ( t1.getTriggerTimestamp() < t2.getTriggerTimestamp() )
-            return -1;
+            if ( t1.getTriggerTimestamp() > t2.getTriggerTimestamp() )
+                return 1;
 
-        if ( t1.getTriggerTimestamp() > t2.getTriggerTimestamp() )
-            return 1;
-
-        return 0;
-
+            // If the timestamps are the same, then we define an action to
+            // preceed a diagnosis.
+            //
+            if (( o1 instanceof BelievabilityAction )
+                && ( o2 instanceof DiagnosisTrigger ))
+                return -1;
+            
+            // Equality case is zero return value.
+            //
+            return 0;
+            
         } // method compare
 
     } // inner class TriggerComparator

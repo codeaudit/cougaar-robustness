@@ -94,10 +94,10 @@ public class AssetModel extends Loggable
 
     /**
      * Forward a BeliefUpdateTrigger to the belief state window
-     * @param BeliefUpdateTrigger but
+     * @param but The trigger object to be consumed
      * @throws BelievabilityException if there is a problem dealing
      *                                with the belief update trigger
-     **/
+     */
     public void consumeUpdateTrigger( BeliefUpdateTrigger but )
             throws BelievabilityException 
     {

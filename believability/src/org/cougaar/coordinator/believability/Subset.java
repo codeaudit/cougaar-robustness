@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/Subset.java,v $
- * $Revision: 1.13 $
- * $Date: 2004-07-15 20:19:42 $
+ * $Revision: 1.25 $
+ * $Date: 2004-08-09 20:46:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -25,7 +25,7 @@ package org.cougaar.coordinator.believability;
  * Represents subset of a set of the integers 0 through (n-1).
  *
  * @author Tony Cassandra
- * @version $Revision: 1.13 $Date: 2004-07-15 20:19:42 $
+ * @version $Revision: 1.25 $Date: 2004-08-09 20:46:41 $
  *
  */
 public class Subset extends Object
@@ -40,7 +40,8 @@ public class Subset extends Object
     /**
      * Constructor documentation comments go here ...
      *
-     * @param
+     * @param set_size The size of the set that an instance of this
+     * class will be a subset for.
      */
     public Subset( int set_size )
     {
@@ -51,6 +52,12 @@ public class Subset extends Object
 
     }  // constructor Subset
 
+    /**
+     * Tests to see if a member is in thge subset
+     *
+     * @param elem_idx The index position of the element to be tested
+     * for membership.
+     */
     public boolean inSubset( int elem_idx )
     {
         if (( _in_set == null )

@@ -33,7 +33,7 @@ import org.cougaar.util.log.Logger;
  * logging mechanism. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.16 $Date: 2004-07-15 20:19:42 $
+ * @version $Revision: 1.28 $Date: 2004-08-09 20:46:41 $
  * 
  *
  */

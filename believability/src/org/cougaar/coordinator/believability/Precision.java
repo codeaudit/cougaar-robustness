@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/Precision.java,v $
- * $Revision: 1.16 $
- * $Date: 2004-07-15 20:19:42 $
+ * $Revision: 1.28 $
+ * $Date: 2004-08-09 20:46:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -27,8 +27,7 @@ package org.cougaar.coordinator.believability;
  * ignored: they will cause you problems is care is not taken. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.16 $Date: 2004-07-15 20:19:42 $
- * @see
+ * @version $Revision: 1.28 $Date: 2004-08-09 20:46:41 $
  */
 public class Precision
 {

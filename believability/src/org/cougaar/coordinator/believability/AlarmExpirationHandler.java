@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/AlarmExpirationHandler.java,v $
- * $Revision: 1.3 $
- * $Date: 2004-07-15 20:19:41 $
+ * $Revision: 1.15 $
+ * $Date: 2004-08-09 20:46:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -28,7 +28,7 @@ import org.cougaar.core.agent.service.alarm.Alarm;
  * expirations.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.3 $Date: 2004-07-15 20:19:41 $
+ * @version $Revision: 1.15 $Date: 2004-08-09 20:46:41 $
  *
  */
 public interface AlarmExpirationHandler

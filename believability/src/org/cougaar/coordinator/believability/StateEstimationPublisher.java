@@ -106,7 +106,7 @@ public class StateEstimationPublisher
 
     /**
      * Get the AssetModel for an asset 
-     * @param asset_id the identifier of the asset
+     * @param aid the identifier of the asset
      * @return the AssetContainer, null if there is none
      **/
     public AssetModel getAssetModel( AssetID aid ) {

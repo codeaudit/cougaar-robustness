@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManagerInterface.java,v $
- * $Revision: 1.16 $
- * $Date: 2004-07-15 20:19:42 $
+ * $Revision: 1.17 $
+ * $Date: 2004-07-31 02:56:57 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -39,7 +39,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * tech spec information. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.16 $Date: 2004-07-15 20:19:42 $
+ * @version $Revision: 1.17 $Date: 2004-07-31 02:56:57 $
  *
  */
 public interface ModelManagerInterface
@@ -48,14 +48,6 @@ public interface ModelManagerInterface
     //------------------------------------------------------------
     // public interface
     //------------------------------------------------------------
-
-    // Policy Constants: These are constant values we used for some
-    // parameters, that some future version may turn into dynamic,
-    // model or policy generated values.
-    //
-    public static final double POLICY_BELIEF_UTILITY_CHANGE_THRESHOLD = 0.1;
-    public static final long POLICY_MAX_INTER_BELIEF_PUBLISH_INTERVAL = 900000;
-    public static final long POLICY_IMPLICIT_DIAGNOSIS_INTERVAL = 300000;
 
     //----------------------------------------
     // Model accessor methods
@@ -91,6 +83,9 @@ public interface ModelManagerInterface
             throws BelievabilityException;
 
     public long getMaxPublishInterval( AssetType asset_type )
+            throws BelievabilityException;
+
+    public long getPublishDelayInterval( )
             throws BelievabilityException;
 
     public double getBeliefUtilityChangeThreshold( );

@@ -59,15 +59,7 @@ abstract class DiagnosisTrigger extends BeliefUpdateTrigger
      * Return the last time the sensor asserted a value
      * @return the timestamp
      **/
-    long getLastAssertedTimestamp() { return _last_asserted_timestamp; }
-
-    //************************************************************
-    /**
-     * Return the last time the sensor asserted a value different from
-     * the previous value
-     * @return the timestamp
-     **/
-    long getTriggerTimestamp() { return _last_changed_timestamp; }
+    long getTriggerTimestamp() { return _last_asserted_timestamp; }
 
     //************************************************************
     /**
@@ -116,10 +108,6 @@ abstract class DiagnosisTrigger extends BeliefUpdateTrigger
 
     // The last time the sensor asserted a value
     protected long _last_asserted_timestamp;
-
-    // The last time the sensor asserted a value that was different from
-    // the previous value
-    protected long _last_changed_timestamp;
 
 } // class DiagnosisTrigger
 

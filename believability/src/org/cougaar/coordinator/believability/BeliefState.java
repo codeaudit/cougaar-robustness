@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefState.java,v $
- * $Revision: 1.16 $
- * $Date: 2004-07-15 20:19:41 $
+ * $Revision: 1.22 $
+ * $Date: 2004-08-05 13:27:08 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -34,7 +34,7 @@ import org.cougaar.coordinator.techspec.AssetStateDimension;
  * asset instance.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.16 $Date: 2004-07-15 20:19:41 $
+ * @version $Revision: 1.22 $Date: 2004-08-05 13:27:08 $
  * 
  *
  */

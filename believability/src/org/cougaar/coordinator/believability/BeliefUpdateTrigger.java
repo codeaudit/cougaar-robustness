@@ -37,7 +37,7 @@ import org.cougaar.coordinator.techspec.AssetType;
  * dimension.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.14 $Date: 2004-07-15 20:19:41 $
+ * @version $Revision: 1.25 $Date: 2004-08-07 17:08:34 $
  * @see BelievabilityDiagnosis
  * @see BelievabilityAction
  *

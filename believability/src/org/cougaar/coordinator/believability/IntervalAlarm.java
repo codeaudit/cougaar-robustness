@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/IntervalAlarm.java,v $
- * $Revision: 1.3 $
- * $Date: 2004-07-15 20:19:42 $
+ * $Revision: 1.12 $
+ * $Date: 2004-08-05 20:58:53 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -28,7 +28,7 @@ import org.cougaar.core.agent.service.alarm.Alarm;
  * interval of time.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.3 $Date: 2004-07-15 20:19:42 $
+ * @version $Revision: 1.12 $Date: 2004-08-05 20:58:53 $
  *
  */
 public class IntervalAlarm extends Loggable implements Alarm
@@ -43,7 +43,8 @@ public class IntervalAlarm extends Loggable implements Alarm
     /**
      * Constructor documentation comments go here ...
      *
-     * @param
+     * @param duration The timer duration in milliseconds
+     * @param handler The object that will handle when the timer expires
      */
     public IntervalAlarm( long duration,
                           AlarmExpirationHandler handler )

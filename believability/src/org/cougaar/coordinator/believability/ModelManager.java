@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManager.java,v $
- * $Revision: 1.16 $
- * $Date: 2004-07-15 20:19:42 $
+ * $Revision: 1.17 $
+ * $Date: 2004-07-31 02:56:57 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -47,7 +47,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * and provides information via the ModelManagerInterface. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.16 $Date: 2004-07-15 20:19:42 $
+ * @version $Revision: 1.17 $Date: 2004-07-31 02:56:57 $
  *
  */
 public class ModelManager extends Loggable
@@ -72,10 +72,12 @@ public class ModelManager extends Loggable
     public static final boolean USE_FAKE_IMPLICT_INTERVAL = false;
     public static final long FAKE_IMPLICIT_INTERVAL_MS = 30000;
 
+    public static final boolean USE_FAKE_PUBLISH_DELAY_INTERVAL = false;
+    public static final long FAKE_PUBLISH_DELAY_INTERVAL_MS = 3000;
+
     /**
-     * Constructor documentation comments go here ...
+     * Main constructor
      *
-     * @param
      */
     public ModelManager( )
     {
@@ -246,11 +248,23 @@ public class ModelManager extends Loggable
                                           String sensor_name )
             throws BelievabilityException
     {
-        // FIXME: This needs to use the new flag from the techspecs.
+        // Just relay this to the appropriate asset type model.
         //
 
-        return true;
-    }
+        AssetTypeModel at_model 
+                =  (AssetTypeModel) _asset_type_container.get
+                ( asset_type.getName() );
+        
+        if ( at_model == null )
+        {
+            throw new BelievabilityException
+                    ( "ModelManager.usesImplicitDiagnoses()",
+                      "Cannot find asset type model." );
+        }
+
+        return at_model.usesImplicitDiagnoses( sensor_name );
+
+    } // method usesImplicitDiagnoses
 
     //************************************************************
     /**
@@ -270,7 +284,7 @@ public class ModelManager extends Loggable
         }
 
 
-        return POLICY_IMPLICIT_DIAGNOSIS_INTERVAL;
+        return BelievabilityKnob.getImplicitDiagnosisInterval();
     }
 
     //************************************************************
@@ -289,7 +303,27 @@ public class ModelManager extends Loggable
 
         }
 
-        return POLICY_MAX_INTER_BELIEF_PUBLISH_INTERVAL;
+        return BelievabilityKnob.getMaxPublishInterval();
+    }
+
+    //************************************************************
+    /**
+     * Returns the delay time (millisecs) we should allow between
+     * consecutive when a trigger is processed and when it triggers a
+     * new belief state computation.
+     */
+    public long getPublishDelayInterval( )
+            throws BelievabilityException
+    {
+
+        if ( USE_FAKE_PUBLISH_DELAY_INTERVAL )
+        {
+            logWarning( "USING FAKE PUBLISH DELAY INTERVAL FOR TESTING ! (FIXME)" );
+            return FAKE_PUBLISH_DELAY_INTERVAL_MS;
+
+        }
+
+        return BelievabilityKnob.getPublishDelayInterval();
     }
 
     //************************************************************
@@ -301,7 +335,7 @@ public class ModelManager extends Loggable
      */
     public double getBeliefUtilityChangeThreshold( )
     {
-        return POLICY_BELIEF_UTILITY_CHANGE_THRESHOLD;
+        return BelievabilityKnob.getBeliefReleaseUtilityThreshold();
     }
 
     //----------------------------------------
@@ -365,7 +399,7 @@ public class ModelManager extends Loggable
     /**
      * Adding a new threat type to the local models
      *
-     * @param threat_model Threat type to be added
+     * @param threat_mi Threat type to be added
      */
     public void addThreatType( ThreatModelInterface threat_mi )
     {

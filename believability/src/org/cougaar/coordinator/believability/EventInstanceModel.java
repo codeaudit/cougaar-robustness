@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/EventInstanceModel.java,v $
- * $Revision: 1.7 $
- * $Date: 2004-07-15 20:19:41 $
+ * $Revision: 1.19 $
+ * $Date: 2004-08-09 20:46:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.coordinator.techspec.AssetState;
  * indirect) that can lead to this event. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.7 $Date: 2004-07-15 20:19:41 $
+ * @version $Revision: 1.19 $Date: 2004-08-09 20:46:41 $
  *
  */
 class EventInstanceModel extends Model

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetModel.java,v $
- * $Revision: 1.18 $
- * $Date: 2004-07-15 20:19:42 $
+ * $Revision: 1.19 $
+ * $Date: 2004-07-31 02:56:57 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.18 $Date: 2004-07-15 20:19:42 $
+ * @version $Revision: 1.19 $Date: 2004-07-31 02:56:57 $
  *
  */
 class POMDPAssetModel extends Model
@@ -305,7 +305,7 @@ class POMDPAssetModel extends Model
 
         return next_belief;
 
-    } // method updateBeliefState
+    } // method updateBeliefStateForTime
 
     //************************************************************
     /**
@@ -338,8 +338,6 @@ class POMDPAssetModel extends Model
         // This will create a new belief state with all state
         // dimensions belief adjusted for the passage of time (state
         // transitions based on threats).
-        //
-        // FIXME: Is this the right timestamp to use?
         //
         BeliefState next_belief 
                 = updateBeliefStateForTime( start_belief,

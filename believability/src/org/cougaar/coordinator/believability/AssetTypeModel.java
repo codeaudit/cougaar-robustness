@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/AssetTypeModel.java,v $
- * $Revision: 1.17 $
- * $Date: 2004-07-15 20:19:41 $
+ * $Revision: 1.20 $
+ * $Date: 2004-08-03 22:05:50 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -47,7 +47,7 @@ import org.cougaar.coordinator.techspec.ThreatModelChangeEvent;
  * be notified is there is a change.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.17 $Date: 2004-07-15 20:19:41 $
+ * @version $Revision: 1.20 $Date: 2004-08-03 22:05:50 $
  *
  */
 class AssetTypeModel extends Model
@@ -622,6 +622,42 @@ class AssetTypeModel extends Model
 
         return sensor_count;
     } // method getNumberOfSensors
+
+    //************************************************************
+    /**
+     * Return whether the given sensor name needs for us to provide
+     * implicit diagnoses for this sensor.
+     *
+     * @param sensor_name The name of the sensor we are querying
+     */
+    public boolean usesImplicitDiagnoses( String sensor_name )
+            throws BelievabilityException
+    {
+        
+        // Given only a sensor name, we cannot know what state
+        // dimension it is sensing, so we loop over all the state
+        // dimensioons until we one that has a sensor of the given
+        // name.
+        //
+
+        for ( int dim_idx = 0; dim_idx < _dim_model.length; dim_idx++ )
+        {
+            SensorTypeModel sensor 
+                    = _dim_model[dim_idx].getSensorTypeModel( sensor_name );
+
+            if ( sensor == null )
+                continue;
+
+            return sensor.usesImplicitDiagnoses();
+
+        } // for dim_idx
+
+        throw new BelievabilityException
+                ( "AssetTypeModel.usesImplicitDiagnoses()",
+                  "Did not find sensor name " + sensor_name
+                  + " for asset type " + _name );
+
+    } // method usesImplicitDiagnoses
 
     //************************************************************
     /**
