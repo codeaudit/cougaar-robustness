@@ -26,14 +26,14 @@ import org.cougaar.coordinator.*;
 import org.cougaar.coordinator.techspec.TechSpecNotFoundException;
 import org.cougaar.core.component.ServiceBroker;
 
-public class CombinedLinksStatusDiagnosis extends Diagnosis
+public class AllLinksStatusDiagnosis extends Diagnosis
 {
-    public CombinedLinksStatusDiagnosis(String assetName, Object initialValue, ServiceBroker serviceBroker) 
+    public AllLinksStatusDiagnosis(String assetName, Object initialValue, ServiceBroker serviceBroker) 
 	throws IllegalValueException, TechSpecNotFoundException {
 	super(assetName, initialValue, serviceBroker);
     }
 
-    public CombinedLinksStatusDiagnosis(String assetName, ServiceBroker serviceBroker) 
+    public AllLinksStatusDiagnosis(String assetName, ServiceBroker serviceBroker) 
 	throws TechSpecNotFoundException {
         super(assetName, serviceBroker);
     }
@@ -43,11 +43,11 @@ public class CombinedLinksStatusDiagnosis extends Diagnosis
     }
 
     /**
-     * Returns a verbose pretty-printed representation for a CombinedLinksStatusDiagnosis.
+     * Returns a verbose pretty-printed representation for a AllLinksStatusDiagnosis.
      */
     public String dump() {
 	return "\n" +
-            "<CombinedLinksStatusDiagnosis:\n" +
+            "<AllLinksStatusDiagnosis:\n" +
 	    "   assetID = " + getAssetID() + "\n" +
 	    "   assetName = " + getAssetName() + "\n" +
 	    "   assetStateDimensionName = " + getAssetStateDimensionName() + "\n" +
