@@ -667,7 +667,9 @@ public class CommunityStatusModel extends BlackboardClientComponent
               StatusEntry se = new StatusEntry(entity.getName(), type,
                                                entity.getAttributes());
               statusMap.put(se.name, se);
-              logger.debug("Adding: " + se.name);
+              if (logger.isDebugEnabled()) {
+                logger.debug("Adding: " + se.name);
+              }
               queueChangeEvent(
                   new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
                                                  MEMBERS_ADDED, se));
