@@ -19,7 +19,8 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 08 July 2001: Created. (OBJS)
+ * 28 Sep 2002: Improved buffering. (OBJS)
+ * 08 Jul 2001: Created. (OBJS)
  */
 
 package org.cougaar.core.mts.email;
@@ -36,15 +37,23 @@ import org.cougaar.util.log.Logging;
 
 public class Base64
 {
-  private static ByteArrayOutputStream out = new ByteArrayOutputStream (2048);
-  private static BASE64EncoderStream encoder = new  BASE64EncoderStream (out);
+  private static final int NOMINAL_BUFFER_SIZE = 16*1024;
 
-  public static String encodeBytes (byte bytes[])
+  private static ByteArrayOutputStream out;
+  private static BASE64EncoderStream encoder;
+
+  public static synchronized String encodeBytes (byte bytes[])
   {
     if (bytes == null) return null;
 
+    if (out == null)
+    {
+      out = new ByteArrayOutputStream (NOMINAL_BUFFER_SIZE);
+      encoder = new  BASE64EncoderStream (out);
+    }
+    else out.reset();
+
     String encodedString = null;
-    out.reset();
 
     try
     {
@@ -54,10 +63,16 @@ public class Base64
     }
     catch (Exception e)
     {
-      Logging.getLogger(Base64.class).error ("encoding bytes: " + e);
+      Logging.getLogger(Base64.class).error ("encoding bytes: " +stackTraceToString(e));
     }
 
-    out.reset();
+    if (out.size() > NOMINAL_BUFFER_SIZE)
+    {
+      out = null;     // gc large bufs
+      encoder = null;
+    }
+    else out.reset();
+
     return encodedString;
   }
 
@@ -69,24 +84,26 @@ public class Base64
     ByteArrayInputStream in = new ByteArrayInputStream (bytes);
     BASE64DecoderStream decoder = new  BASE64DecoderStream (in);
 
+    byte buf[] = new byte[bytes.length];
     int n = -1;
-    byte tmp[] = new byte[bytes.length];
 
     try
     {
-      n = decoder.read (tmp);
+      n = decoder.read (buf);
     }
     catch (Exception e)
     {
-      Logging.getLogger(Base64.class).error ("decoding string: " + e);
+      Logging.getLogger(Base64.class).error ("decoding string: " +stackTraceToString(e));
     }
     
-    if (n >= 0)
-    {
-      byte decodedBytes[] = new byte[n];
-      for (int i=0; i<n; i++) decodedBytes[i] = tmp[i];
-      return decodedBytes;
-    }
-    else return null;
+    return (n >= 0 ? buf : null);
+  }
+
+  private static String stackTraceToString (Exception e)
+  {
+    java.io.StringWriter stringWriter = new java.io.StringWriter();
+    java.io.PrintWriter printWriter = new java.io.PrintWriter (stringWriter);
+    e.printStackTrace (printWriter);
+    return stringWriter.getBuffer().toString();
   }
 }

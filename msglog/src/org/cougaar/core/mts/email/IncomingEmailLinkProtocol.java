@@ -568,7 +568,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
       }
       catch (MessageIntegrityException e)
       {
-        if (log.isWarnEnabled()) log.warn ("Message integrity exception deserializing msg (msg ignored)");
+        if (log.isWarnEnabled()) log.warn ("Message integrity exception deserializing msg (msg ignored): " +e);
         return true;  
       }
       catch (ClassCastException e)
