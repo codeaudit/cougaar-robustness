@@ -39,23 +39,13 @@ import javax.naming.directory.BasicAttribute;
  * ThreatAlert handler to respond to threats of imminent loss of a host
  * computer.
  */
-public class HostLossThreatAlertHandler extends ThreatAlertHandlerBase {
-
-  private CommunityStatusModel model;
-  private RobustnessController controller;
-  private MoveHelper moveHelper;
+public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase {
 
   public HostLossThreatAlertHandler(BindingSite          bs,
                                     MessageAddress       agentId,
                                     RobustnessController controller,
                                     CommunityStatusModel model) {
-    super(bs, agentId);
-    this.model = model;
-    this.controller = controller;
-    this.moveHelper = controller.getMoveHelper();
-  }
-
-  private void addChangeListener() {
+    super(bs, agentId, controller, model);
   }
 
   public void newAlert(ThreatAlert ta) {
@@ -81,58 +71,9 @@ public class HostLossThreatAlertHandler extends ThreatAlertHandlerBase {
         if (ta.getSeverityLevel() >= ThreatAlert.MEDIUM_SEVERITY) {
           vacate(affectedAgents, affectedNodes);
         }
-        adjustParameters(ta, affectedAgents);
+        adjustRobustnessParameters(ta, affectedAgents);
       }
     }
-  }
-
-  /**
-   * Returns a Set of agent names residing on specified nodes.
-   * @param locations  Node names
-   * @return           Set of agent names
-   */
-  protected Set affectedAgents(Set nodes) {
-    Set affectedAgents = new HashSet();
-    for (Iterator it = nodes.iterator(); it.hasNext();) {
-      String node = (String)it.next();
-      affectedAgents.addAll(agentsOnNode(node));
-    }
-    return affectedAgents;
-  }
-
-  /**
-   * Returns a Set of node names from a set of node and/or host names.
-   * @param locations  Set of host and/or node names
-   * @return           Node names
-   */
-  private Set resolveNodes(Set locations) {
-    Set nodes = new HashSet();
-    for (Iterator it = locations.iterator(); it.hasNext();) {
-      String location = (String)it.next();
-      if (model.getType(location) == model.NODE) {
-        nodes.add(location);
-      } else {  // Host
-        String nodeNames[] = model.entitiesAtLocation(location);
-        for (int i = 0; i < nodeNames.length; i++) {
-          nodes.add(nodeNames[i]);
-        }
-      }
-    }
-    return nodes;
-  }
-
-  /**
-   * Returns a Set of all agents on specified node.
-   * @param nodeName
-   * @return   Set of agent names
-   */
-  private Set agentsOnNode(String nodeName) {
-    Set agents = new HashSet();
-    String[] agentsOnNode = model.entitiesAtLocation(nodeName);
-    for (int i = 0; i < agentsOnNode.length; i++) {
-      agents.add(agentsOnNode[i]);
-    }
-    return agents;
   }
 
   /**
@@ -182,21 +123,13 @@ public class HostLossThreatAlertHandler extends ThreatAlertHandlerBase {
    * Adjust key robustness parameters based on new threat level.
    * @param ta
    */
-  protected void adjustParameters(ThreatAlert ta, Set affectedAgents) {
+  protected void adjustRobustnessParameters(ThreatAlert ta, Set affectedAgents) {
     logger.info("Adjusting robustness parameters: threatLevel=" + ta.getSeverityLevelAsString());
     CommunityService cs =
         (CommunityService) bindingSite.getServiceBroker().getService(this, CommunityService.class, null);
     Attributes attrs = cs.getCommunityAttributes(model.getCommunityName());
-    Attribute intervalAttr = attrs.get("UPDATE_INTERVAL");
-    if (intervalAttr == null) {
-      attrs.remove("UPDATE_INTERVAL");
-    }
-    attrs.put(new BasicAttribute("UPDATE_INTERVAL", "15000"));
+    changeAttribute(attrs, "UPDATE_INTERVAL", "15000");
     cs.setCommunityAttributes(model.getCommunityName(), attrs);
-  }
-
-  protected String preferredLeader() {
-    return model.getStringAttribute(model.MANAGER_ATTR);
   }
 
 }
