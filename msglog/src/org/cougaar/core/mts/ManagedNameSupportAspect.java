@@ -120,7 +120,7 @@ public class ManagedNameSupportAspect extends StandardAspect
       {
         debug 
         (
-          "setting up timed (" +callTimeout+ " ms) lookupAddressInNameServer() call: address=" +
+          "timed lookupAddressInNameServer() (timout=" +callTimeout+ "ms): address=" +
           address+ " transportType=" +transportType
         );
       }
@@ -169,7 +169,7 @@ public class ManagedNameSupportAspect extends StandardAspect
         cacheAddressLookup (address, transportType, lookup);
       }
 
-      if (doDebug()) debug ("finished timed lookupAddressInNameServer()");
+      if (doDebug()) debug ("timed lookupAddressInNameServer() finished");
       return lookup;
     }
 

@@ -211,7 +211,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
         ack.setSendLink (getName (link));
         String targetNode = MessageUtils.getToAgentNode (msg);
         int rtt = rttService.getBestFullRTTForLink (link, targetNode);
-        if (rtt <= 0) rtt = link.cost (msg);
+        if (rtt <= 0) rtt = getLinkCost (link, msg);
         ack.setRTT (rtt);
         MessageAckingAspect.dingTheMessageResender();  // calc new deadlines
       }
@@ -468,7 +468,7 @@ if (rn != null) rns = "" + rn;
 
         if (!isOutgoingLink (link)) continue;
 
-        if (link.cost (msg) == Integer.MAX_VALUE) continue; 
+        if (getLinkCost (link, msg) == Integer.MAX_VALUE) continue; 
 
         if (getName(link).equals ("org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol"))
         {
@@ -541,7 +541,7 @@ if (rn != null) rns = "" + rn;
             if (debug) log.debug ("Dropping used " +getName(link)+ " for " +msgString);
 
             int rtt = rttService.getBestFullRTTForLink (link, targetNode);
-            if (rtt <= 0) rtt = link.cost (msg);
+            if (rtt <= 0) rtt = getLinkCost (link, msg);
 
             float spacingFactor = MessageAckingAspect.getInterAckSpacingFactor();
             long deadline = lastSendTime + (long)((float)rtt * spacingFactor);
@@ -1261,7 +1261,7 @@ if (rn != null) rns = "" + rn;
 
     //  Fallback to old cost method
 
-    return link.cost (msg);
+    return getLinkCost (link, msg);
   }
 
   private static long now ()
@@ -1383,6 +1383,13 @@ if (rn != null) rns = "" + rn;
     return null;
   }
 
+  //  Utility methods
+
+  public int getLinkCost (DestinationLink link, AttributedMessage msg)
+  {
+    try { return link.cost (msg); } catch (Exception e) { return Integer.MAX_VALUE; } 
+  }
+
   private boolean isMemberOf (DestinationLink links[], DestinationLink link)
   {
     if (links == null || link == null) return false;
@@ -1423,11 +1430,11 @@ if (rn != null) rns = "" + rn;
     if (getName(link).equals("org.cougaar.core.mts.CorbaLinkProtocol"))       return 500;   // yep, a HACK
     if (getName(link).equals("org.cougaar.core.mts.SSLRMILinkProtocol"))      return 1000;  // yep, a HACK
 
-    int cost = link.cost (null);  // another HACK (note null msg)
+    int cost = getLinkCost (link, null);  // another HACK (note null msg)
 
-    if (cost == Integer.MAX_VALUE)  // watch for problems
+    if (cost <= 0 || cost == Integer.MAX_VALUE)  // watch for problems
     {
-      String s = "Link has unexpected max cost: " +getName(link);
+      String s = "Link has unexpected cost (" +cost+ "): " +getName(link);
       log.error (s);
       throw new RuntimeException (s);
     }
