@@ -16,16 +16,17 @@ parameters:
     - $CIP/csmart/config/rules/assessment
 
     - $CIP/csmart/config/rules/robustness/manager.rule
+    - $CIP/csmart/config/rules/coordinator
     - $CIP/csmart/config/rules/robustness/uc1
     - $CIP/csmart/config/rules/robustness/uc1/tuning/collect_stats.rule
     - $CIP/csmart/config/rules/robustness/uc4
     - $CIP/csmart/config/rules/robustness/uc7
-    - $CIP/csmart/config/rules/robustness/uc9
-    #- $CIP/csmart/config/rules/robustness/UC3
-    #- $CIP/csmart/config/rules/metrics/basic
-    #- $CIP/csmart/config/rules/metrics/sensors
-    #- $CIP/csmart/config/rules/metrics/serialization/metrics-only-serialization.rule
-    #- $CIP/csmart/config/rules/metrics/rss/tic
+    #- $CIP/csmart/config/rules/robustness/uc9
+    - $CIP/csmart/config/rules/robustness/UC3
+    - $CIP/csmart/config/rules/metrics/basic
+    - $CIP/csmart/config/rules/metrics/sensors
+    - $CIP/csmart/config/rules/metrics/serialization/metrics-only-serialization.rule
+    - $CIP/csmart/config/rules/metrics/rss/tic
 
 # Security rules
     - $CIP/csmart/config/rules/security
@@ -53,7 +54,7 @@ include_scripts:
       - cleanup_label: transformed_society
 
   # Robustness scripts
-  - script: $CIP/csmart/lib/robustness/objs/deconfliction.rb
+  #- script: $CIP/csmart/lib/robustness/objs/deconfliction.rb
   - script: $CIP/csmart/lib/coordinator/unleash_defenses.rb
   - script: $CIP/csmart/lib/robustness/mic/ua_big_kill_s.rb
   #- script: $CIP/csmart/lib/robustness/mic/ua_kill_rear_mgr.rb
@@ -66,8 +67,6 @@ include_scripts:
   - script: $CIP/csmart/lib/isat/stop_society.rb
     parameters:
       - stop_location: before_stage_2
-
-
 
 =end
 

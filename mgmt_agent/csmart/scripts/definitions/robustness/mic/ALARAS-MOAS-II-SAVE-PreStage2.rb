@@ -16,16 +16,17 @@ parameters:
     - $CIP/csmart/config/rules/assessment
 
     - $CIP/csmart/config/rules/robustness/manager.rule
+    - $CIP/csmart/config/rules/coordinator
     - $CIP/csmart/config/rules/robustness/uc1
     - $CIP/csmart/config/rules/robustness/uc1/tuning/collect_stats.rule
     - $CIP/csmart/config/rules/robustness/uc4
     - $CIP/csmart/config/rules/robustness/uc7
-    - $CIP/csmart/config/rules/robustness/uc9
-    #- $CIP/csmart/config/rules/robustness/UC3
-    #- $CIP/csmart/config/rules/metrics/basic
-    #- $CIP/csmart/config/rules/metrics/sensors
-    #- $CIP/csmart/config/rules/metrics/serialization/metrics-only-serialization.rule
-    #- $CIP/csmart/config/rules/metrics/rss/tic
+    #- $CIP/csmart/config/rules/robustness/uc9
+    - $CIP/csmart/config/rules/robustness/UC3
+    - $CIP/csmart/config/rules/metrics/basic
+    - $CIP/csmart/config/rules/metrics/sensors
+    - $CIP/csmart/config/rules/metrics/serialization/metrics-only-serialization.rule
+    - $CIP/csmart/config/rules/metrics/rss/tic
 
 # Security rules
     - $CIP/csmart/config/rules/security

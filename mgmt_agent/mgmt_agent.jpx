@@ -159,6 +159,7 @@
       <node name="definitions" type="Folder">
         <node name="robustness" type="Folder">
           <node name="mic" type="Folder">
+            <file path="csmart/scripts/definitions/robustness/mic/ALAR-MOAS-II-Kills-PreStage2.rb"/>
             <file path="csmart/scripts/definitions/robustness/mic/ALARAS-MOAS-II-Kills-PreStage2.rb"/>
             <file path="csmart/scripts/definitions/robustness/mic/ALARAS-MOAS-II-SAVE-PreStage2.rb"/>
             <file path="csmart/scripts/definitions/robustness/mic/ALARAS-RESTORE-KILLS-Prestage2-Stressed.rb"/>
