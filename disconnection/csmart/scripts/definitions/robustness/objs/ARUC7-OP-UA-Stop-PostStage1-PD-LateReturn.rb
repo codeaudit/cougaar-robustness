@@ -55,4 +55,4 @@ include_scripts:
 =end
 
 require 'cougaar/scripting'
-Cougaar::ExperimentDefinition.register(__FILE__)
+Cougaar::ExperimentDefinition.register(__FILE__)     
