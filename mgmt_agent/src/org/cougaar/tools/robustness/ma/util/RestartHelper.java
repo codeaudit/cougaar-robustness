@@ -204,9 +204,7 @@ public class RestartHelper extends BlackboardClientComponent {
                     arrayToString(hmr.getAgents()) +
                     " destNode=" + hmr.getDestinationNode());
       }
-      blackboard.openTransaction();
       blackboard.publishAdd(hmrRa);
-      blackboard.closeTransaction();
     }
   }
 
