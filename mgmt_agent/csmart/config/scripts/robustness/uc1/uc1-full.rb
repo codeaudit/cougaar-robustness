@@ -85,13 +85,13 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
   do_action "Sleep", 30.seconds
   do_action "PublishNextStage"
 
-  wait_for  "PlanningComplete"  do
+  #wait_for  "PlanningComplete"  do
     wait_for  "Command", "shutdown"
     #do_action "SaveSocietyCompletion", "completion_#{name}.xml"
     do_action "StopSociety"
     do_action "ArchiveLogs"
     do_action "StopCommunications"
-  end
+  #end
 
 #  do_action "Sleep", 1.minutes
   #do_action "SaveSocietyCompletion", "completion_#{name}.xml"
