@@ -152,8 +152,8 @@ module Cougaar
             raise "Could not connect to #{url}" unless response
             Cougaar.logger.info "#{response}" if response
           end
+          @run['PlannedDisconnectCompleted'] = true
         }
-        @run['PlannedDisconnectCompleted'] = true
       end
 
     end
