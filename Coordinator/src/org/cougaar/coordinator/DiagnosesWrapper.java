@@ -66,6 +66,12 @@ public class DiagnosesWrapper
     //protected boolean local = true;
     //protected Relay.Token owner = null;
     
+  /**
+   * Helper method to return content as a Diagnosis
+   **/
+  public Diagnosis getDiagnosis() {
+    return diagnosis;
+  }
     
   
   // UniqueObject implementation

@@ -74,6 +74,13 @@ public class ActionsWrapper implements NotPersistable, Serializable, Relay.Sourc
     return uid;
   }
 
+  /**
+   * Helper method to return content as an Action
+   **/
+  public Action getAction() {
+    return action;
+  }
+  
   // Initialization methods
 
   /**
