@@ -2,7 +2,7 @@
 
 <!DOCTYPE Threats SYSTEM "ThreatDTD.dtd"   >
 <Threats>
-<Threat name="Bomb" affectsAssetType="Host" causesEvent="HostDeath" defaultEventLikelihoodProb="NONE" >
+<Threat name="Bomb" affectsAssetType="Host" causesEvent="HostDeath" defaultEventLikelihoodProb="NONE" probIntervalInMins="1000" >
 
     <VulnerableAssets>
         <AssetFilter>
