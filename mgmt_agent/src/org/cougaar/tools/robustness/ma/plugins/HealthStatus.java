@@ -28,8 +28,9 @@ import org.cougaar.tools.robustness.sensors.HeartbeatRequest;
 import org.cougaar.tools.robustness.sensors.HeartbeatEntry;
 import org.cougaar.tools.robustness.sensors.PingRequest;
 import org.cougaar.util.log.*;
-import org.cougaar.core.util.XMLizable;
-import org.cougaar.core.util.XMLize;
+//import org.cougaar.core.util.XMLizable;
+//import org.cougaar.core.util.XMLize;
+import org.cougaar.planning.servlet.XMLize;
 
 import org.cougaar.core.util.UniqueObject;
 import org.cougaar.core.util.UID;
@@ -44,7 +45,7 @@ import org.w3c.dom.Document;
  */
 
 public class HealthStatus implements
-   UniqueObject, NotPersistable, XMLizable {
+   UniqueObject, NotPersistable/*, XMLizable*/ {
 
   private Logger log =
     Logging.getLogger(org.cougaar.tools.robustness.ma.plugins.HealthStatus.class.getName());
@@ -398,6 +399,19 @@ public class HealthStatus implements
   public int getStatus() {
     return currentStatus;
   }
+
+  public String getStatusAsString() {
+    switch(this.currentStatus) {
+      case OK: return "OK";
+      case DEGRADED: return "DEGRADED";
+      case NO_RESPONSE: return "No RESPONSE";
+      case DEAD: return "DEAD";
+      case RESTARTED: return "RESTARTED";
+      case MOVED: return "MOVED";
+      default: return "UNKNOWN";
+    }
+  }
+
 
 
   /**

@@ -21,12 +21,14 @@ import org.cougaar.tools.robustness.ma.ldm.RestartLocationRequest;
 import java.util.*;
 
 import org.cougaar.core.blackboard.IncrementalSubscription;
-import org.cougaar.core.plugin.SimplePlugin;
+//import org.cougaar.core.plugin.SimplePlugin;
+import org.cougaar.planning.plugin.legacy.SimplePlugin;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.mts.MessageAddress;
-import org.cougaar.core.agent.ClusterIdentifier;
+//import org.cougaar.core.agent.ClusterIdentifier;
+import org.cougaar.core.mts.SimpleMessageAddress;
 
 import org.cougaar.core.mobility.ldm.*;
 import org.cougaar.core.mobility.AbstractTicket;
@@ -319,7 +321,8 @@ public class DecisionPlugin extends SimplePlugin {
 
     MessageAddress destNodeAddr = null;
     if (destNode != null) {
-      destNodeAddr = new MessageAddress(destNode);
+      //destNodeAddr = new MessageAddress(destNode); //change in cougaar 10.0
+      destNodeAddr = SimpleMessageAddress.getSimpleMessageAddress(destNode);
     }
     Object ticketId = mobilityFactory.createTicketIdentifier();
     AddTicket addTicket = new AddTicket(ticketId, agent, destNodeAddr);

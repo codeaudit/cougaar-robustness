@@ -25,16 +25,18 @@ import javax.naming.*;
 import org.cougaar.tools.robustness.sensors.SensorFactory;
 import org.cougaar.tools.robustness.sensors.PingRequest;
 
-import org.cougaar.core.agent.ClusterIdentifier;
+//import org.cougaar.core.agent.ClusterIdentifier;
 
 import org.cougaar.core.blackboard.IncrementalSubscription;
-import org.cougaar.core.plugin.SimplePlugin;
+//import org.cougaar.core.plugin.SimplePlugin;
+import org.cougaar.planning.plugin.legacy.SimplePlugin;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.TopologyEntry;
 import org.cougaar.core.service.TopologyReaderService;
 import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.mts.SimpleMessageAddress;
 
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.component.ServiceRevokedListener;
@@ -66,7 +68,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
 
   private LoggingService log;
   private BlackboardService bbs = null;
-  private ClusterIdentifier myAgent = null;
+  private MessageAddress myAgent = null;
   private CommunityService communityService = null;
   private TopologyReaderService topologyService = null;
 
@@ -117,7 +119,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
       log.error("Unable to get 'sensors' domain");
     }
 
-    myAgent = getClusterIdentifier();
+    myAgent = getMessageAddress();
 
     communityService = getCommunityService();
     topologyService = getTopologyReaderService();
@@ -202,7 +204,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
 
         // Ping first candidate destination node to verify that it's alive
         Destination dest = (Destination)destinations.iterator().next();
-        doPing(new ClusterIdentifier(dest.node));
+        doPing(SimpleMessageAddress.getSimpleMessageAddress(dest.node));
 
       } else {  // No candidate destinations, log error message
         req.setStatus(RestartLocationRequest.FAIL);
@@ -281,7 +283,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
                 if (it2.hasNext()) {
                   // If there are more candidate nodes, ping the next one in the list
                   dest = (Destination)it2.next();
-                  doPing(new ClusterIdentifier(dest.node));
+                  doPing(SimpleMessageAddress.getSimpleMessageAddress(dest.node));
                 } else {
                   // If there are no more candidates, log the event and
                   // publish a failed RestartLocationRequest
@@ -590,7 +592,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
    * Sends a ping to a candidate restart node.
    * @param addr NodeAgent address
    */
-  private void doPing(ClusterIdentifier addr) {
+  private void doPing(MessageAddress addr) {
     PingRequest pr = sensorFactory.newPingRequest(myAgent,
                                    addr,
                                    pingTimeout);

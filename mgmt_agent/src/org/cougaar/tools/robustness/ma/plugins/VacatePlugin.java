@@ -23,7 +23,8 @@ import org.cougaar.tools.robustness.ma.ldm.RestartLocationRequest;
 import java.util.*;
 
 import org.cougaar.core.blackboard.IncrementalSubscription;
-import org.cougaar.core.plugin.SimplePlugin;
+//import org.cougaar.core.plugin.SimplePlugin;
+import org.cougaar.planning.plugin.legacy.SimplePlugin;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.TopologyReaderService;
@@ -32,7 +33,8 @@ import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.NamingService;
 import org.cougaar.core.service.community.*;
 import org.cougaar.core.mts.MessageAddress;
-import org.cougaar.core.agent.ClusterIdentifier;
+import org.cougaar.core.mts.SimpleMessageAddress;
+//import org.cougaar.core.agent.ClusterIdentifier;
 
 import org.cougaar.core.mobility.AbstractTicket;
 import org.cougaar.core.mobility.MoveTicket;
@@ -170,11 +172,11 @@ public class VacatePlugin extends SimplePlugin {
               String agent = (String)ait.next();
               MoveTicket ticket = new MoveTicket(
                 mobilityFactory.createTicketIdentifier(),
-                new MessageAddress(agent),
-                new MessageAddress(currentNodeName),
-                new MessageAddress(newNodeName),
+                SimpleMessageAddress.getSimpleMessageAddress(agent),
+                SimpleMessageAddress.getSimpleMessageAddress(currentNodeName),
+                SimpleMessageAddress.getSimpleMessageAddress(newNodeName),
                 false);
-              MessageAddress AgentAddr = new MessageAddress(agent);
+              MessageAddress AgentAddr = SimpleMessageAddress.getSimpleMessageAddress(agent);
               AgentControl ac =
                 mobilityFactory.createAgentControl(myUID,
                                                    AgentAddr,
@@ -308,7 +310,7 @@ public class VacatePlugin extends SimplePlugin {
     Map nodes = new HashMap();
     String community = null;
     Collection communities =
-      cs.search("(CommunityManager=" + getClusterIdentifier().getAddress() + ")");
+      cs.search("(CommunityManager=" + getMessageAddress().getAddress() + ")");
     if (!communities.isEmpty()) {
       community = (String)communities.iterator().next();
       CommunityRoster roster = cs.getRoster(community);

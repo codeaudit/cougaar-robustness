@@ -27,10 +27,12 @@ import org.cougaar.tools.robustness.sensors.HeartbeatEntry;
 import org.cougaar.tools.robustness.sensors.HeartbeatHealthReport;
 import org.cougaar.tools.robustness.sensors.PingRequest;
 
-import org.cougaar.core.agent.ClusterIdentifier;
+//import org.cougaar.core.agent.ClusterIdentifier;
 import org.cougaar.core.blackboard.IncrementalSubscription;
-import org.cougaar.core.plugin.SimplePlugin;
+//import org.cougaar.core.plugin.SimplePlugin;
+import org.cougaar.planning.plugin.legacy.SimplePlugin;
 import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.mts.SimpleMessageAddress;
 
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.component.ServiceRevokedListener;
@@ -183,7 +185,8 @@ public class HealthMonitorPlugin extends SimplePlugin implements
   /////////////////////////////////////////////////////////////////////////
 
   private SensorFactory sensorFactory;
-  private ClusterIdentifier myAgent;
+  //private ClusterIdentifier myAgent;
+  private MessageAddress myAgent;
   private LoggingService log;
   private BlackboardService bbs;
 
@@ -225,7 +228,8 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       log.error("Unable to get 'sensors' domain");
     }
 
-    myAgent = getClusterIdentifier();
+    //myAgent = getClusterIdentifier();
+    myAgent = getMessageAddress();
 
     communityService = getCommunityService();
     topologyService = getTopologyReaderService();
@@ -767,7 +771,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       for (Iterator it = cmList.iterator(); it.hasNext();) {
         CommunityMember cm = (CommunityMember)it.next();
         if (cm.isAgent() && !isNodeAgent(cm.getName())) {
-          HealthStatus hs = newHealthStatus(new ClusterIdentifier(cm.getName()));
+          HealthStatus hs = newHealthStatus(SimpleMessageAddress.getSimpleMessageAddress(cm.getName()));
           addHealthStatus(hs);
           //log.info("Adding " + cm.getName());
           bbs.openTransaction();
@@ -780,7 +784,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       Collection newMembers = new Vector();
       for (Iterator it = cmList.iterator(); it.hasNext();) {
         CommunityMember cm = (CommunityMember)it.next();
-        ClusterIdentifier agent = new ClusterIdentifier(cm.getName());
+        MessageAddress agent = SimpleMessageAddress.getSimpleMessageAddress(cm.getName());
         if (cm.isAgent() && !isNodeAgent(cm.getName()) && !hasHealthStatus(agent)) {
           HealthStatus hs = newHealthStatus(agent);
           addHealthStatus(hs);
@@ -797,7 +801,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
         boolean found = false;
         for (Iterator it1 = cmList.iterator(); it1.hasNext();) {
           CommunityMember cm = (CommunityMember)it1.next();
-          if (hs.getAgentId().equals(new ClusterIdentifier(cm.getName()))) {
+          if (hs.getAgentId().equals(SimpleMessageAddress.getSimpleMessageAddress(cm.getName()))) {
             found = true;
             break;
           }
@@ -979,7 +983,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
    * @param agentId
    * @return  True if the agent is currently being monitored
    */
-  private boolean hasHealthStatus(ClusterIdentifier agentId) {
+  private boolean hasHealthStatus(MessageAddress agentId) {
     synchronized (membersHealthStatus) {
       return membersHealthStatus.containsKey(agentId);
     }
