@@ -22,6 +22,7 @@ public class ActionEvaluation {
 
     private Action action;
     private Hashtable variants;
+    private double selectionScore;
 
     /** Creates new ActionEvaluation */
     public ActionEvaluation(Action action) {
@@ -41,5 +42,7 @@ public class ActionEvaluation {
         return variants.values();
     }
 
+    public void setSelectionScore(double score) { selectionScore = score; }
+    public double getSelectionScore() { return selectionScore; }
 
 }

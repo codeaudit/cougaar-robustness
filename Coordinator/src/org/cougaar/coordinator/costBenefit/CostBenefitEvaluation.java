@@ -74,13 +74,13 @@ public class CostBenefitEvaluation implements NotPersistable {
 
 
     //
-    public Collection getActionEvaluations() {
-        return actions.values();
+    public Hashtable getActionEvaluations() {
+        return actions;
     }
     
     public String toString() {
         String result = assetID.toString()+"\n";
-        Iterator iter = getActionEvaluations().iterator();
+        Iterator iter = getActionEvaluations().values().iterator();
         while (iter.hasNext()) {
             ActionEvaluation thisAction = (ActionEvaluation)iter.next();
             result = result+"    "+thisAction.toString()+"\n";
@@ -88,48 +88,7 @@ public class CostBenefitEvaluation implements NotPersistable {
         return result;
     }
     
-//    public void   setStatus(String s) { status = s; }
-//    public String getStatus() { return status; }
-    
-    public class ActionBenefit implements NotPersistable {
-     
-        private ActionTechSpecInterface atsi;
-        private double benefit;
-        private double orig_benefit;
-        private double believability;
-        private String myStatus = null;
-        private String outcome = null;
-        private double horizon = 0.0;
-        private long timeout = 0;
-        
-        public ActionBenefit(ActionTechSpecInterface a, double b, double believability, double horizon) {
-            atsi = a;
-            benefit = b;
-            orig_benefit = b; //Since selection sets this to 0 after trying it, we want to preserve the original #.
-            this.believability = believability;
-            this.horizon = horizon;
-        }
-        
-        public ActionTechSpecInterface getAction() { return atsi; }
-        public double getBenefit() { return benefit; }      
-        public void setBenefit(double newBenefit) { benefit = newBenefit; }
 
-        public double getOrigBenefit() { return orig_benefit; }
-        
-        public double getBelievability() { return believability; }      
-                
-        /** Set the status - enabled / disabled - of this defense, by the DefenseSelectionPlugin */
-        public void   setStatus(String s) { myStatus = s; }
-        public String getStatus() { return myStatus; }
-
-        /** Set the outcome of running this defense */
-        public void   setOutcome(String s) { outcome = s; }
-        public String getOutcome() { return outcome; }
-
-        /** Set the timeout that was used for this defense */
-        public void setTimeout(long l) { timeout = l; }
-        public long getTimeout() { return timeout; }
-    }
 
     public final static UnaryPredicate pred = new UnaryPredicate() {
             public boolean execute(Object o) {  

@@ -34,8 +34,8 @@ import org.cougaar.coordinator.techspec.ActionTechSpecInterface;
 import org.cougaar.coordinator.policy.DefensePolicy;
 import org.cougaar.coordinator.believability.StateEstimation;
 import org.cougaar.coordinator.believability.StateDimensionEstimation;
-import org.cougaar.coordinator.believability.AssetBeliefState;
-import org.cougaar.coordinator.believability.NoSuchBeliefStateException;
+//import org.cougaar.coordinator.believability.AssetBeliefState;
+import org.cougaar.coordinator.believability.BelievabilityException;
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.techspec.AssetState;
 import org.cougaar.coordinator.Action;
@@ -210,7 +210,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                                 new VariantEvaluation(thisVariantDescription, predictedStateDimensionEstimation, predictedCost, predictedBenefit));  
                     }
                 }
-                catch (NoSuchBeliefStateException e) {
+                catch (BelievabilityException e) {
                     logger.error("Cannot find StateDimensionEstimate for "+asd.toString());
                 } 
 
@@ -225,11 +225,12 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
     }
 
     private StateDimensionEstimation computePredictedStateDimensionEstimation 
-            (AssetID assetID, StateDimensionEstimation currentStateDimensionEstimation, ActionDescription variantDescription) {
+            (AssetID assetID, StateDimensionEstimation currentStateDimensionEstimation, ActionDescription variantDescription) 
+        throws BelievabilityException {
 
         // set up the data structure for the projected state estimation if the Variant is selected
         StateDimensionEstimation predictedStateDimensionEstimation = 
-            new StateDimensionEstimation(currentStateDimensionEstimation.getAssetName(), currentStateDimensionEstimation.getAssetStateDescriptorName(), 0);
+            new StateDimensionEstimation(currentStateDimensionEstimation.getAssetModel(), currentStateDimensionEstimation.getStateDimension());
         Enumeration stateEnumeration = currentStateDimensionEstimation.getStateNames();
         while (stateEnumeration.hasMoreElements()) {
             predictedStateDimensionEstimation.setProbability((String)stateEnumeration.nextElement(), 0.0);
@@ -242,9 +243,9 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
             double startStateProb;
             double endStateProb;
             try {
-                startStateProb = currentStateDimensionEstimation.get(startStateName);
+                startStateProb = currentStateDimensionEstimation.getProbability(startStateName);
                 }
-            catch (NoSuchBeliefStateException e) {
+            catch (BelievabilityException e) {
                 // Should be impossible to get here if the ActionDescription is correctly populated
                 throw new RuntimeException("Could not find an AssetState that the ActionDescription said t had");
                 }
@@ -252,9 +253,9 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
             AssetState endState = atwc.getEndValue();
             String endStateName = endState.getName();
             try {
-                endStateProb = predictedStateDimensionEstimation.get(endStateName);
+                endStateProb = predictedStateDimensionEstimation.getProbability(endStateName);
                 }
-            catch (NoSuchBeliefStateException e) {
+            catch (BelievabilityException e) {
                 // Should be impossible to get here if the ActionDescription is correctly populated
                 throw new RuntimeException("Could not find an AssetState that the ActionDescription said t had");
                 }            
@@ -282,9 +283,9 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
             AssetTransitionWithCost atwc = variantDescription.getTransitionForState(stateName);
             double transitionProb;
             try {
-                transitionProb = currentStateDimensionEstimation.get(stateName);
+                transitionProb = currentStateDimensionEstimation.getProbability(stateName);
                 }
-            catch (NoSuchBeliefStateException e) {
+            catch (BelievabilityException e) {
                 // Should be impossible to get here if the ActionDescription is correctly populated
                 throw new RuntimeException("Could not find an AssetState that the ActionDescription said t had");
                 }  
