@@ -488,6 +488,7 @@
     <delete dir="staging"/>
     <mkdir dir="staging/lib"/>
     <mkdir dir="staging/sys"/>
+    <mkdir dir="staging/configs/common"/>
     <mkdir dir="staging/robustness"/>
     <mkdir dir="staging/robustness/bin"/>
     <mkdir dir="staging/robustness/doc"/>
@@ -501,6 +502,7 @@
     <move file="${lib}/${jar}" toDir="staging/lib"/>
     <move file="sys/ant.jar" toDir="staging/sys"/>
     <copy file="build.xml" toDir="staging/robustness"/>
+    <copy file="configs/recipeQueries.q" toDir="staging/configs/common"/>
     <copy toDir="staging/robustness/bin">
       <fileset dir="bin"/>
     </copy>
