@@ -136,7 +136,8 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     {"pingRetries",           "0"},
     {"evalFreq",          "10000"},
     {"restartTimeout",   "300000"},
-    {"restartRetryFreq", "600000"}
+    {"restartRetryFreq", "600000"},
+    {"numAgents",            "-1"}
   };
   ManagementAgentProperties healthMonitorProps =
     ManagementAgentProperties.makeProps(this.getClass().getName(), defaultParams);
@@ -170,7 +171,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
   private int  pingRetries;
 
   // Determines how often our internal evaluation Thread is run
-  private long evaluationFrequency;
+  private long evaluationFrequency = 10000;  // Defaults to 10 seconds
 
   // Determines how long to wait for a restart to complete
   private long restartTimeout;
@@ -183,6 +184,8 @@ public class HealthMonitorPlugin extends SimplePlugin implements
 
   // Name of community to monitor
   private String communityToMonitor = null;
+
+  private int numAgents = -1;
 
   /////////////////////////////////////////////////////////////////////////
   //  End of externally configurable parameters
@@ -245,28 +248,6 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     //topologyService = getTopologyReaderService();
     wps = getWhitePagesService();
 
-    // Find name of community to monitor
-    Collection communities = communityService.search("(CommunityManager=" +
-      myAgent.toString() + ")");
-    if (!communities.isEmpty()) {
-      communityToMonitor = (String)communities.iterator().next();
-
-      // Initialize configurable paramaeters from defaults and plugin arguments.
-      getPropertiesFromCommunityAttributes();
-    } else {
-      log.error("Agent \"" + myAgent.toString() +
-        "\" not identified as a \"CommunityManager\" in any active community!.");
-      log.error("Check that the community to monitor has this agent identified\n");
-      log.error("in its \"CommunityManager\" attribute and that this agent is\n");
-      log.error("also identified as an Entity within the monitored community with\n");
-      log.error("the attribute \"Role=ManagementAgent\".");
-    }
-
-    // Set configurable parameters
-    updateParams(healthMonitorProps);
-
-    bbs.publishAdd(healthMonitorProps);
-
     // Subscribe to HeartbeatRequests to determine if HeartbeatRequest was
     // received/accepted by monitored agent
     heartbeatRequests =
@@ -286,27 +267,54 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     mgmtAgentProps =
       (IncrementalSubscription)bbs.subscribe(propertiesPredicate);
 
-    // Register for updates to monitored community
     communityService.addListener(this);
-
-    // Get Roster for community to monitor
-    if (communityToMonitor != null && communityToMonitor.length() > 0) {
-      roster = communityService.getRoster(communityToMonitor);
-    }
 
     // Start evaluation thread to periodically update and analyze the Health
     // Status of monitored agents
     startEvaluationThread(evaluationFrequency);
 
-    // Print informational message defining current parameters
-    StringBuffer startMsg = new StringBuffer();
-    startMsg.append("agent=" + myAgent);
-    startMsg.append(" community=" + communityToMonitor);
-    startMsg.append(" " + paramsToString());
-    log.info(startMsg.toString());
-
   }
 
+  private int checkCtr = 0;
+  private void getCommunityToMonitor() {
+    // Find name of community to monitor
+    Collection communities =
+        communityService.search("(CommunityManager=" + myAgent.toString() + ")");
+    if (!communities.isEmpty()) {
+      communityToMonitor = (String) communities.iterator().next();
+      // Initialize configurable paramaeters from defaults and plugin arguments.
+      try {
+        bbs.openTransaction();
+        getPropertiesFromCommunityAttributes();
+        // Set configurable parameters
+        updateParams(healthMonitorProps);
+        bbs.publishAdd(healthMonitorProps);
+
+        // Print informational message defining current parameters
+        StringBuffer startMsg = new StringBuffer();
+        startMsg.append("agent=" + myAgent);
+        startMsg.append(" community=" + communityToMonitor);
+        startMsg.append(" " + paramsToString());
+        log.info(startMsg.toString());
+      }
+      catch (Exception ex) {
+        log.error(ex.getMessage(), ex);
+      }
+      finally {
+        bbs.closeTransaction();
+      }
+    }
+    else {
+      if (++checkCtr == 20) {
+        log.error("Agent \"" + myAgent.toString() + "\" " +
+            "is not identified as a \"CommunityManager\" in any active community!\n" +
+            "Check that the community to monitor has this agent identified\n" +
+            "in its \"CommunityManager\" attribute and that this agent is\n" +
+            "also identified as an Entity within the monitored community with\n" +
+            "the attribute \"Role=ManagementAgent\".");
+      }
+    }
+  }
 
   /**
    * Creates a printable representation of current parameters.
@@ -332,12 +340,6 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     for (Iterator it = mgmtAgentProps.getChangedCollection().iterator();
          it.hasNext();) {
       ManagementAgentProperties props = (ManagementAgentProperties)it.next();
-      /*
-      if (!props.getProperty("community").equals(communityToMonitor)) {
-        communityToMonitor = props.getProperty("community");
-        sendRosterRequest(communityToMonitor);
-      }
-      */
       updateParams(props);
       log.info("Parameters modified: " + paramsToString());
     }
@@ -410,338 +412,380 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     */
     //System.out.print("*");
     // Process any Roster changes
-    if (roster != null) {
-      processRosterChanges();
-    }
-    Collection currentAgents = findMonitoredAgents();
-    for (Iterator it = currentAgents.iterator(); it.hasNext();) {
-      HealthStatus hs = getHealthStatus((MessageAddress)it.next());
-      String state = hs.getState();
+    if (communityToMonitor == null) {
+      //getCommunityToMonitor();
+    } else {
+      if (communityChanged) {
+        processRosterChanges();
+        communityChanged = false;
+      }
+      Collection currentAgents = findMonitoredAgents();
+      for (Iterator it = currentAgents.iterator(); it.hasNext(); ) {
+        HealthStatus hs = getHealthStatus( (MessageAddress) it.next());
+        String state = hs.getState();
 
-      //************************************************************************
-      // State: INITIAL  - Agents in this state have recently been started
-      //                   restarted, or moved.  The primary task in this state
-      //                   is to start generation of Heartbeats.  Once
-      //                   Heartbeats are activated the agents state is
-      //                   transition to NORMAL.
-      //************************************************************************
-      if (state.equals(HealthStatus.INITIAL)) {
-        if (!hs.getPriorState().equals(HealthStatus.INITIAL) ||
-            hs.getHeartbeatRequestStatus() == HealthStatus.UNDEFINED) {
-          log.debug("Sending HeartbeatRequest to agent '" + hs.getAgentId() + "'");
-          sendHeartbeatRequest(hs);
-        } else {
-          switch (hs.getHeartbeatRequestStatus()) {
-            case HeartbeatRequest.NEW:
-            case HeartbeatRequest.SENT:
-              if (elapsedTime(hs.getHeartbeatRequestTime(), now()) > (hs.getHbReqTimeout() * 2)) {
-                log.warn("HeartbeatRequest timeout: agent=" + hs.getAgentId());
-                hs.setHeartbeatRequestStatus(HeartbeatRequest.FAILED);
-              }
-              break;
-            case HeartbeatRequest.ACCEPTED:
-              log.debug("HeartbeatRequest ACCEPTED: agent=" + hs.getAgentId());
-              if (hs.getStatus() == HealthStatus.RESTARTED) {
-                event("Restart succeeded:" +
-                      " agent=" + hs.getAgentId() +
-                      " node=" + hs.getNode());
-              } else if (hs.getStatus() == HealthStatus.MOVED) {
-                event("Move succeeded:" +
-                      " agent=" + hs.getAgentId() +
-                      " node=" + hs.getNode());
-              }
-              hs.setState(HealthStatus.NORMAL);
-              hs.setStatus(HealthStatus.OK);
-              hs.setHeartbeatStatus(HealthStatus.HB_NORMAL);
-              hs.setHbReqRetryCtr(0);
-              break;
-            case HeartbeatRequest.REFUSED:
-              log.warn("HeartbeatRequest REFUSED: agent=" + hs.getAgentId());
-              break;
-            case HeartbeatRequest.FAILED:
-              int retries = hs.getHbReqRetryCtr();
-              if (hs.getHbReqRetries() == -1 || retries < hs.getHbReqRetries()) {
-                if (retries == 0) {
-                  log.warn("HeartbeatRequest FAILED (retrying): agent=" + hs.getAgentId());
+        //************************************************************************
+         // State: INITIAL  - Agents in this state have recently been started
+         //                   restarted, or moved.  The primary task in this state
+         //                   is to start generation of Heartbeats.  Once
+         //                   Heartbeats are activated the agents state is
+         //                   transition to NORMAL.
+         //************************************************************************
+        if (state.equals(HealthStatus.INITIAL)) {
+          if (!hs.getPriorState().equals(HealthStatus.INITIAL) ||
+              hs.getHeartbeatRequestStatus() == HealthStatus.UNDEFINED) {
+            log.debug("Sending HeartbeatRequest to agent '" + hs.getAgentId() +
+                      "'");
+            sendHeartbeatRequest(hs);
+          }
+          else {
+            switch (hs.getHeartbeatRequestStatus()) {
+              case HeartbeatRequest.NEW:
+              case HeartbeatRequest.SENT:
+                if (elapsedTime(hs.getHeartbeatRequestTime(), now()) >
+                    (hs.getHbReqTimeout() * 2)) {
+                  log.warn("HeartbeatRequest timeout: agent=" + hs.getAgentId());
+                  hs.setHeartbeatRequestStatus(HeartbeatRequest.FAILED);
                 }
-                hs.setHbReqRetryCtr(++retries);
-                // Setting status to undefined forces a retry
-                hs.setHeartbeatRequestStatus(HealthStatus.UNDEFINED);
-              } else {
-                if (hs.getPingStatus() == HealthStatus.UNDEFINED) {
-                  hs.setPingStatus(HealthStatus.PING_REQUIRED);
+                break;
+              case HeartbeatRequest.ACCEPTED:
+                log.debug("HeartbeatRequest ACCEPTED: agent=" + hs.getAgentId());
+                if (hs.getStatus() == HealthStatus.RESTARTED) {
+                  event("Restart succeeded:" +
+                        " agent=" + hs.getAgentId() +
+                        " node=" + hs.getNode());
                 }
-                int pingStatus = hs.getPingStatus();
-                if (pingStatus == HealthStatus.PING_REQUIRED) {
-                  doPing(hs);
-                } else if (pingStatus == PingRequest.NEW ||
+                else if (hs.getStatus() == HealthStatus.MOVED) {
+                  event("Move succeeded:" +
+                        " agent=" + hs.getAgentId() +
+                        " node=" + hs.getNode());
+                }
+                hs.setState(HealthStatus.NORMAL);
+                hs.setStatus(HealthStatus.OK);
+                hs.setHeartbeatStatus(HealthStatus.HB_NORMAL);
+                hs.setHbReqRetryCtr(0);
+                break;
+              case HeartbeatRequest.REFUSED:
+                log.warn("HeartbeatRequest REFUSED: agent=" + hs.getAgentId());
+                break;
+              case HeartbeatRequest.FAILED:
+                int retries = hs.getHbReqRetryCtr();
+                if (hs.getHbReqRetries() == -1 || retries < hs.getHbReqRetries()) {
+                  if (retries == 0) {
+                    log.warn("HeartbeatRequest FAILED (retrying): agent=" +
+                             hs.getAgentId());
+                  }
+                  hs.setHbReqRetryCtr(++retries);
+                  // Setting status to undefined forces a retry
+                  hs.setHeartbeatRequestStatus(HealthStatus.UNDEFINED);
+                }
+                else {
+                  if (hs.getPingStatus() == HealthStatus.UNDEFINED) {
+                    hs.setPingStatus(HealthStatus.PING_REQUIRED);
+                  }
+                  int pingStatus = hs.getPingStatus();
+                  if (pingStatus == HealthStatus.PING_REQUIRED) {
+                    doPing(hs);
+                  }
+                  else if (pingStatus == PingRequest.NEW ||
                            pingStatus == PingRequest.SENT) {
-                  if (elapsedTime(hs.getPingTimestamp(), now()) > (hs.getPingTimeout() * 2)) {
-                    log.warn("PingRequest timeout: agent=" + hs.getAgentId());
-                    hs.setPingStatus(PingRequest.FAILED);
+                    if (elapsedTime(hs.getPingTimestamp(), now()) >
+                        (hs.getPingTimeout() * 2)) {
+                      log.warn("PingRequest timeout: agent=" + hs.getAgentId());
+                      hs.setPingStatus(PingRequest.FAILED);
+                    }
                   }
-                } else if (pingStatus == PingRequest.RECEIVED) {
-                  log.info("HeartbeatRequest timeout, ping successful:" +
-                    " agent=" + hs.getAgentId());
-                  if (hs.getStatus() == HealthStatus.RESTARTED) {
-                    event("Restart succeeded:" +
-                          " agent=" + hs.getAgentId() +
-                          " node=" + hs.getNode());
-                  } else if (hs.getStatus() == HealthStatus.MOVED) {
-                    event("Move succeeded:" +
-                          " agent=" + hs.getAgentId() +
-                          " node=" + hs.getNode());
+                  else if (pingStatus == PingRequest.RECEIVED) {
+                    log.info("HeartbeatRequest timeout, ping successful:" +
+                             " agent=" + hs.getAgentId());
+                    if (hs.getStatus() == HealthStatus.RESTARTED) {
+                      event("Restart succeeded:" +
+                            " agent=" + hs.getAgentId() +
+                            " node=" + hs.getNode());
+                    }
+                    else if (hs.getStatus() == HealthStatus.MOVED) {
+                      event("Move succeeded:" +
+                            " agent=" + hs.getAgentId() +
+                            " node=" + hs.getNode());
+                    }
+                    hs.setState(HealthStatus.NORMAL);
+                    hs.setStatus(HealthStatus.OK);
+                    hs.setHeartbeatStatus(HealthStatus.HB_INACTIVE);
+                    hs.setHbReqRetryCtr(0);
                   }
-                  hs.setState(HealthStatus.NORMAL);
-                  hs.setStatus(HealthStatus.OK);
-                  hs.setHeartbeatStatus(HealthStatus.HB_INACTIVE);
-                  hs.setHbReqRetryCtr(0);
-                } else if (pingStatus == PingRequest.FAILED) {
-                  log.warn("HeartbeatRequest timeout, ping failed:" +
-                    " agent=" + hs.getAgentId());
-                  hs.setPingRetryCtr(0);
-                  hs.setPingStatus(HealthStatus.UNDEFINED);
-                  hs.setHeartbeatStatus(HealthStatus.NO_RESPONSE);
-                  doHealthCheck(hs, HealthStatus.NO_RESPONSE);
+                  else if (pingStatus == PingRequest.FAILED) {
+                    log.warn("HeartbeatRequest timeout, ping failed:" +
+                             " agent=" + hs.getAgentId());
+                    hs.setPingRetryCtr(0);
+                    hs.setPingStatus(HealthStatus.UNDEFINED);
+                    hs.setHeartbeatStatus(HealthStatus.NO_RESPONSE);
+                    doHealthCheck(hs, HealthStatus.NO_RESPONSE);
+                  }
                 }
-              }
-              break;
-            default:
+                break;
+              default:
+            }
           }
+          //************************************************************************
+           // State: NORMAL   - Agents in this state have previously been confirmed
+           //                   to be alive and are sending periodic Heartbeats.  When
+           //                   late Heartbeats are detected the agent is pinged to
+           //                   determine if it is still alive.  If the ping fails
+           //                   or if the frequency of late heartbeats exceeds a
+           //                   threshold the agents state is transitioned to
+           //                   HEALTH_CHECK.
+           //************************************************************************
         }
-      //************************************************************************
-      // State: NORMAL   - Agents in this state have previously been confirmed
-      //                   to be alive and are sending periodic Heartbeats.  When
-      //                   late Heartbeats are detected the agent is pinged to
-      //                   determine if it is still alive.  If the ping fails
-      //                   or if the frequency of late heartbeats exceeds a
-      //                   threshold the agents state is transitioned to
-      //                   HEALTH_CHECK.
-      //************************************************************************
-      } else if (state.equals(HealthStatus.NORMAL)) {
-        if (hs.getHeartbeatStatus() == HealthStatus.HB_TIMEOUT) {
-          if (hs.getPingStatus() == HealthStatus.UNDEFINED) {
-            hs.setPingStatus(HealthStatus.PING_REQUIRED);
-          }
-          int pingStatus = hs.getPingStatus();
-          if (pingStatus == HealthStatus.PING_REQUIRED) {
-            // Late heartbeat, ping agent to see if agent is alive
-            doPing(hs);
-          } else if (pingStatus == PingRequest.NEW ||
+        else if (state.equals(HealthStatus.NORMAL)) {
+          if (hs.getHeartbeatStatus() == HealthStatus.HB_TIMEOUT) {
+            if (hs.getPingStatus() == HealthStatus.UNDEFINED) {
+              hs.setPingStatus(HealthStatus.PING_REQUIRED);
+            }
+            int pingStatus = hs.getPingStatus();
+            if (pingStatus == HealthStatus.PING_REQUIRED) {
+              // Late heartbeat, ping agent to see if agent is alive
+              doPing(hs);
+            }
+            else if (pingStatus == PingRequest.NEW ||
                      pingStatus == PingRequest.SENT) {
-            if (elapsedTime(hs.getPingTimestamp(), now()) > (hs.getPingTimeout() * 2)) {
+              if (elapsedTime(hs.getPingTimestamp(), now()) >
+                  (hs.getPingTimeout() * 2)) {
                 log.warn("PingRequest timeout: agent=" + hs.getAgentId());
                 hs.setPingStatus(PingRequest.FAILED);
               }
-          } else if (pingStatus == PingRequest.RECEIVED) {
-            // See if agent has moved
+            }
+            else if (pingStatus == PingRequest.RECEIVED) {
+              // See if agent has moved
 
-            String location = getLocation(hs.getAgentId().toString());
-            if (!location.equals(hs.getNode())) {
-              log.info("Agent move detected: agent=" + hs.getAgentId() +
-                " priorNode=" + hs.getNode() +
-                " newNode=" + location);
-              hs.setNode(location);
-              hs.setState(HealthStatus.INITIAL);
-              hs.setStatus(HealthStatus.MOVED);
-            // Agent hasn't moved, log timeout and see if threshold was
-            // exceeded
-            } else {
-              log.debug("Heartbeat timeout, ping successful:" +
-                " agent=" + hs.getAgentId() +
-                " hBPctLate=" + hs.getHeartbeatEntry().getPercentLate());
-              hs.setHeartbeatStatus(HealthStatus.HB_NORMAL);
-              /*
-              if (!hs.hbFailureRateInSpec()) {
-                log.warn("Exceeded Heartbeat timeout threshold: agent="
-                  + hs.getAgentId());
-                doHealthCheck(hs, HealthStatus.DEGRADED);
-              } else {
-                hs.setHeartbeatStatus(HealthStatus.HB_NORMAL);
+              String location = getLocation(hs.getAgentId().toString());
+              if (!location.equals(hs.getNode())) {
+                log.info("Agent move detected: agent=" + hs.getAgentId() +
+                         " priorNode=" + hs.getNode() +
+                         " newNode=" + location);
+                hs.setNode(location);
+                hs.setState(HealthStatus.INITIAL);
+                hs.setStatus(HealthStatus.MOVED);
+                // Agent hasn't moved, log timeout and see if threshold was
+                // exceeded
               }
-              */
-            }
-            hs.setPingStatus(HealthStatus.UNDEFINED);
-            hs.setPingRetryCtr(0);
-          } else if (pingStatus == PingRequest.FAILED) {
-            int retries = hs.getPingRetryCtr();
-            if (retries < hs.getPingRetries()) {
-              log.warn("Heartbeat timeout, ping failed (retrying):" +
-                " agent=" + hs.getAgentId() +
-                " hBPctLate=" + hs.getHeartbeatEntry().getPercentLate());
-              hs.setPingRetryCtr(++retries);
-              hs.setPingStatus(HealthStatus.PING_REQUIRED);
-            } else {
-              log.error("Heartbeat timeout, ping failed:" +
-                " agent=" + hs.getAgentId() +
-                " hBPctLate=" + hs.getHeartbeatEntry().getPercentLate());
-              hs.setPingRetryCtr(0);
+              else {
+                log.debug("Heartbeat timeout, ping successful:" +
+                          " agent=" + hs.getAgentId() +
+                          " hBPctLate=" + hs.getHeartbeatEntry().getPercentLate());
+                hs.setHeartbeatStatus(HealthStatus.HB_NORMAL);
+                /*
+                               if (!hs.hbFailureRateInSpec()) {
+                  log.warn("Exceeded Heartbeat timeout threshold: agent="
+                    + hs.getAgentId());
+                  doHealthCheck(hs, HealthStatus.DEGRADED);
+                               } else {
+                  hs.setHeartbeatStatus(HealthStatus.HB_NORMAL);
+                               }
+                 */
+              }
               hs.setPingStatus(HealthStatus.UNDEFINED);
-              doHealthCheck(hs, HealthStatus.NO_RESPONSE);
+              hs.setPingRetryCtr(0);
             }
+            else if (pingStatus == PingRequest.FAILED) {
+              int retries = hs.getPingRetryCtr();
+              if (retries < hs.getPingRetries()) {
+                log.warn("Heartbeat timeout, ping failed (retrying):" +
+                         " agent=" + hs.getAgentId() +
+                         " hBPctLate=" + hs.getHeartbeatEntry().getPercentLate());
+                hs.setPingRetryCtr(++retries);
+                hs.setPingStatus(HealthStatus.PING_REQUIRED);
+              }
+              else {
+                log.error("Heartbeat timeout, ping failed:" +
+                          " agent=" + hs.getAgentId() +
+                          " hBPctLate=" + hs.getHeartbeatEntry().getPercentLate());
+                hs.setPingRetryCtr(0);
+                hs.setPingStatus(HealthStatus.UNDEFINED);
+                doHealthCheck(hs, HealthStatus.NO_RESPONSE);
+              }
+            }
+
           }
-
-
-        } else if ((hs.getHeartbeatStatus() == HealthStatus.HB_NORMAL ||
-                   hs.getHeartbeatStatus() == HealthStatus.HB_INACTIVE) &&
+          else if ( (hs.getHeartbeatStatus() == HealthStatus.HB_NORMAL ||
+                     hs.getHeartbeatStatus() == HealthStatus.HB_INACTIVE) &&
                    hs.getActivePingFrequency() > 0) {
-          // Ping agents periodically even if we haven't received a
-          // HealthReport
-          if (activePingFrequency != -1 &&
-              (hs.getPingTimestamp() == null ||
-              elapsedTime(hs.getPingTimestamp(), now()) > hs.getActivePingFrequency())) {
-            hs.setPingStatus(HealthStatus.PING_REQUIRED);
-          }
-          int pingStatus = hs.getPingStatus();
-          if (pingStatus == HealthStatus.PING_REQUIRED) {
-            log.debug("Active Ping: agent=" + hs.getAgentId());
-            doPing(hs);
-          } else if (pingStatus == PingRequest.NEW ||
+            // Ping agents periodically even if we haven't received a
+            // HealthReport
+            if (activePingFrequency != -1 &&
+                (hs.getPingTimestamp() == null ||
+                 elapsedTime(hs.getPingTimestamp(), now()) >
+                 hs.getActivePingFrequency())) {
+              hs.setPingStatus(HealthStatus.PING_REQUIRED);
+            }
+            int pingStatus = hs.getPingStatus();
+            if (pingStatus == HealthStatus.PING_REQUIRED) {
+              log.debug("Active Ping: agent=" + hs.getAgentId());
+              doPing(hs);
+            }
+            else if (pingStatus == PingRequest.NEW ||
                      pingStatus == PingRequest.SENT) {
-            if (elapsedTime(hs.getPingTimestamp(), now()) > (hs.getPingTimeout() * 2)) {
+              if (elapsedTime(hs.getPingTimestamp(), now()) >
+                  (hs.getPingTimeout() * 2)) {
                 log.warn("Active Ping Timeout: agent=" + hs.getAgentId());
                 hs.setPingStatus(PingRequest.FAILED);
               }
-          } else if (pingStatus == PingRequest.RECEIVED) {
-            // As expected
-            if (hs.getPingRetryCtr() > 0) {
-              // If this is a successful retry print success message
-              log.info("Active Ping SUCCEEDED: agent=" + hs.getAgentId());
-              hs.setPingRetryCtr(0);
             }
-            hs.setPingStatus(HealthStatus.UNDEFINED);
-          } else if (pingStatus == PingRequest.FAILED) {
-            int retries = hs.getPingRetryCtr();
-            if (retries < hs.getPingRetries()) {
-              log.warn("Active Ping FAILED (retrying): agent=" + hs.getAgentId());
-              hs.setPingRetryCtr(++retries);
-              hs.setPingStatus(HealthStatus.PING_REQUIRED);
-            } else {
-              log.error("Active Ping FAILED: agent=" + hs.getAgentId());
+            else if (pingStatus == PingRequest.RECEIVED) {
+              // As expected
+              if (hs.getPingRetryCtr() > 0) {
+                // If this is a successful retry print success message
+                log.info("Active Ping SUCCEEDED: agent=" + hs.getAgentId());
+                hs.setPingRetryCtr(0);
+              }
+              hs.setPingStatus(HealthStatus.UNDEFINED);
+            }
+            else if (pingStatus == PingRequest.FAILED) {
+              int retries = hs.getPingRetryCtr();
+              if (retries < hs.getPingRetries()) {
+                log.warn("Active Ping FAILED (retrying): agent=" +
+                         hs.getAgentId());
+                hs.setPingRetryCtr(++retries);
+                hs.setPingStatus(HealthStatus.PING_REQUIRED);
+              }
+              else {
+                log.error("Active Ping FAILED: agent=" + hs.getAgentId());
+                hs.setPingRetryCtr(0);
+                hs.setPingStatus(HealthStatus.UNDEFINED);
+                doHealthCheck(hs, HealthStatus.NO_RESPONSE);
+              }
+            }
+
+          }
+          //************************************************************************
+           // State: RESTART         - Agents in this state are being restarted
+           //                          (most likely by our DecisionPlugin).
+           //                          The condition is simply logged by this plugin.
+           //                          The DecisionPlugin will transition the state
+           //                          to either INITIAL or FAILED_RESTART depending
+           //                          on the result of the restart action.
+           //************************************************************************
+        }
+        else if (state.equals(HealthStatus.RESTART)) {
+          if (!state.equals(hs.getPriorState()))
+            log.debug("Agent restart in process: agent=" + hs.getAgentId());
+          if (restartTimeout >= 0 &&
+              elapsedTime(hs.getLastRestartAttempt(), now()) > restartTimeout) {
+            log.warn("Agent restart timed out: agent=" + hs.getAgentId());
+            hs.setState(HealthStatus.FAILED_RESTART);
+          }
+          //************************************************************************
+           // State: RESTART_COMPLETE - Agents in this state have just completed
+           //                          a restart.
+           //************************************************************************
+        }
+        else if (state.equals(HealthStatus.RESTART_COMPLETE)) {
+          log.debug("Restart complete: agent=" + hs.getAgentId());
+          hs.setState(HealthStatus.INITIAL);
+          hs.setStatus(HealthStatus.RESTARTED);
+          //hs.setNode(getLocation(hs.getAgentId().toString()));
+          //hs.setHeartbeatRequestStatus(HealthStatus.UNDEFINED);
+          //************************************************************************
+           // State: FAILED_RESTART  - Agents in this state were previously
+           //                          determined to be dead and have not been
+           //                          successfully restarted.  The agent will
+           //                          periodically be put back into the HEALTH_CHECK
+           //                          state to initiate a retry of the restart.
+           //************************************************************************
+        }
+        else if (state.equals(HealthStatus.FAILED_RESTART)) {
+          if (!state.equals(hs.getPriorState())) {
+            log.error("Agent restart failed: agent=" + hs.getAgentId());
+            event("Restart failed: agent=" + hs.getAgentId());
+          }
+          // While in this state periodically ping agent to see if it responds.
+          //   If a response is received put agent back into NORMAL state.  Otherwise,
+          //   retry restarts at specified interval.
+          int pingStatus = hs.getPingStatus();
+          switch (pingStatus) {
+            case HealthStatus.UNDEFINED:
+              if (hs.getLastRestartAttempt() == null ||
+                  elapsedTime(hs.getLastRestartAttempt(), now()) >
+                  restartRetryFrequency) {
+                log.info("Retrying restart: agent=" + hs.getAgentId());
+                hs.setLastRestartAttempt(now());
+                doHealthCheck(hs, HealthStatus.NO_RESPONSE);
+              }
+              else if (hs.getPingTimestamp() == null ||
+                       elapsedTime(hs.getPingTimestamp(), now()) >
+                       hs.getHbFrequency()) {
+                doPing(hs);
+              }
+              break;
+            case PingRequest.RECEIVED:
+              hs.setState(HealthStatus.INITIAL);
+              hs.setPingStatus(HealthStatus.UNDEFINED);
+              hs.setHeartbeatStatus(HealthStatus.HB_NORMAL);
+              hs.setPingRetryCtr(0);
+              break;
+            case PingRequest.FAILED:
               hs.setPingRetryCtr(0);
               hs.setPingStatus(HealthStatus.UNDEFINED);
-              doHealthCheck(hs, HealthStatus.NO_RESPONSE);
-            }
+              break;
+            default:
           }
 
+          //************************************************************************
+           // State: FAILED_MOVE     - Agents in this state have recently been the
+           //                          subject of a move attempt that failed.  The
+           //                          move failure is reported and the agent is
+           //                          placed into the NORMAL state.
+           //************************************************************************
         }
-      //************************************************************************
-      // State: RESTART         - Agents in this state are being restarted
-      //                          (most likely by our DecisionPlugin).
-      //                          The condition is simply logged by this plugin.
-      //                          The DecisionPlugin will transition the state
-      //                          to either INITIAL or FAILED_RESTART depending
-      //                          on the result of the restart action.
-      //************************************************************************
-      } else if (state.equals(HealthStatus.RESTART)) {
-        if (!state.equals(hs.getPriorState()))
-          log.debug("Agent restart in process: agent=" + hs.getAgentId());
-        if (restartTimeout >= 0 &&
-            elapsedTime(hs.getLastRestartAttempt(), now()) > restartTimeout) {
-          log.warn("Agent restart timed out: agent=" + hs.getAgentId());
-          hs.setState(HealthStatus.FAILED_RESTART);
+        else if (state.equals(HealthStatus.FAILED_MOVE)) {
+          // Move failed resume normal monitoring
+          log.warn("Agent move failed: agent=" + hs.getAgentId());
+          event("Move failed: agent=" + hs.getAgentId());
+          hs.setState(HealthStatus.NORMAL);
+          hs.setHeartbeatStatus(HealthStatus.HB_NORMAL);
+          //************************************************************************
+           // State: MOVE  - Agents in this state are currently in the process of
+           //                moving.  The condition is simply logged by this plugin.
+           //                The VacatePlugin or MovePlugin will transition the state
+           //                to either INITIAL or FAILED_MOVE depending on the result
+           //                of the move action.
+           //************************************************************************
         }
-      //************************************************************************
-      // State: RESTART_COMPLETE - Agents in this state have just completed
-      //                          a restart.
-      //************************************************************************
-      } else if (state.equals(HealthStatus.RESTART_COMPLETE)) {
-        log.debug("Restart complete: agent=" + hs.getAgentId());
-        hs.setState(HealthStatus.INITIAL);
-        hs.setStatus(HealthStatus.RESTARTED);
-        //hs.setNode(getLocation(hs.getAgentId().toString()));
-        //hs.setHeartbeatRequestStatus(HealthStatus.UNDEFINED);
-      //************************************************************************
-      // State: FAILED_RESTART  - Agents in this state were previously
-      //                          determined to be dead and have not been
-      //                          successfully restarted.  The agent will
-      //                          periodically be put back into the HEALTH_CHECK
-      //                          state to initiate a retry of the restart.
-      //************************************************************************
-      } else if (state.equals(HealthStatus.FAILED_RESTART)) {
-        if (!state.equals(hs.getPriorState())) {
-          log.error("Agent restart failed: agent=" + hs.getAgentId());
-          event("Restart failed: agent=" + hs.getAgentId());
+        else if (state.equals(HealthStatus.MOVE)) {
+          if (!state.equals(hs.getPriorState()))
+            log.debug("Agent move in process: agent=" + hs.getAgentId());
+            //************************************************************************
+             // State: HEALTH_CHECK  - Agents in this state are being analyzed by the
+             //                        DecisionPlugin.  The DecisionPlugin will
+             //                        transition the state upon completion of its
+             //                        analysis and subsequent action (such as
+             //                        restart).
+             //************************************************************************
         }
-        // While in this state periodically ping agent to see if it responds.
-        //   If a response is received put agent back into NORMAL state.  Otherwise,
-        //   retry restarts at specified interval.
-        int pingStatus = hs.getPingStatus();
-        switch (pingStatus) {
-          case HealthStatus.UNDEFINED:
-            if (hs.getLastRestartAttempt() == null ||
-              elapsedTime(hs.getLastRestartAttempt(), now()) > restartRetryFrequency) {
-              log.info("Retrying restart: agent=" + hs.getAgentId());
-              hs.setLastRestartAttempt(now());
-              doHealthCheck(hs, HealthStatus.NO_RESPONSE);
-            } else if (hs.getPingTimestamp() == null ||
-              elapsedTime(hs.getPingTimestamp(), now()) > hs.getHbFrequency()) {
-              doPing(hs);
-            }
-            break;
-          case PingRequest.RECEIVED:
-            hs.setState(HealthStatus.INITIAL);
-            hs.setPingStatus(HealthStatus.UNDEFINED);
-            hs.setHeartbeatStatus(HealthStatus.HB_NORMAL);
-            hs.setPingRetryCtr(0);
-            break;
-          case PingRequest.FAILED:
-            hs.setPingRetryCtr(0);
-            hs.setPingStatus(HealthStatus.UNDEFINED);
-           break;
-          default:
+        else if (state.equals(HealthStatus.HEALTH_CHECK)) {
+          if ( (elapsedTime(hs.getHealthCheckTime(), now()) > restartTimeout) &&
+              (restartTimeout > 0)) {
+            log.warn("Agent Health Check timed out: agent=" + hs.getAgentId());
+            doHealthCheck(hs, hs.getStatus());
+          }
+          //************************************************************************
+           // State: ROBUSTNESS_INIT_FAIL  - Agents in this state are alive but
+           //                        are not responding to HeartbeatRequests or
+           //                        Pings.
+           //************************************************************************
         }
-
-      //************************************************************************
-      // State: FAILED_MOVE     - Agents in this state have recently been the
-      //                          subject of a move attempt that failed.  The
-      //                          move failure is reported and the agent is
-      //                          placed into the NORMAL state.
-      //************************************************************************
-      } else if (state.equals(HealthStatus.FAILED_MOVE)) {
-        // Move failed resume normal monitoring
-        log.warn("Agent move failed: agent=" + hs.getAgentId());
-        event("Move failed: agent=" + hs.getAgentId());
-        hs.setState(HealthStatus.NORMAL);
-        hs.setHeartbeatStatus(HealthStatus.HB_NORMAL);
-      //************************************************************************
-      // State: MOVE  - Agents in this state are currently in the process of
-      //                moving.  The condition is simply logged by this plugin.
-      //                The VacatePlugin or MovePlugin will transition the state
-      //                to either INITIAL or FAILED_MOVE depending on the result
-      //                of the move action.
-      //************************************************************************
-      } else if (state.equals(HealthStatus.MOVE)) {
-        if (!state.equals(hs.getPriorState()))
-          log.debug("Agent move in process: agent=" + hs.getAgentId());
-      //************************************************************************
-      // State: HEALTH_CHECK  - Agents in this state are being analyzed by the
-      //                        DecisionPlugin.  The DecisionPlugin will
-      //                        transition the state upon completion of its
-      //                        analysis and subsequent action (such as
-      //                        restart).
-      //************************************************************************
-      } else if (state.equals(HealthStatus.HEALTH_CHECK)) {
-        if ((elapsedTime(hs.getHealthCheckTime(), now()) > restartTimeout) &&
-            (restartTimeout > 0)) {
-          log.warn("Agent Health Check timed out: agent=" + hs.getAgentId());
-          doHealthCheck(hs, hs.getStatus());
+        else if (state.equals(HealthStatus.INIT_FAIL)) {
+          if (!state.equals(hs.getPriorState()))
+            log.error("Robustness init fail: agent=" + hs.getAgentId());
         }
-      //************************************************************************
-      // State: ROBUSTNESS_INIT_FAIL  - Agents in this state are alive but
-      //                        are not responding to HeartbeatRequests or
-      //                        Pings.
-      //************************************************************************
-      } else if (state.equals(HealthStatus.INIT_FAIL)) {
-        if (!state.equals(hs.getPriorState()))
-          log.error("Robustness init fail: agent=" + hs.getAgentId());
-      } else {
-        log.warn("Invalid run state: agent=" + hs.getAgentId() + ", state=" + state);
+        else {
+          log.warn("Invalid run state: agent=" + hs.getAgentId() + ", state=" +
+                   state);
+        }
+        // Capture this state for use next cycle
+        hs.setPriorState(state);
       }
-      // Capture this state for use next cycle
-      hs.setPriorState(state);
+      printStats();
     }
-    printStats();
   }
 
   /**
@@ -772,7 +816,8 @@ public class HealthMonitorPlugin extends SimplePlugin implements
             bbs.closeTransaction();
           }
         }
-      } else {
+      }
+      else {
         // Look for additions
         Collection newMembers = new Vector();
         for (Iterator it = cmList.iterator(); it.hasNext(); ) {
@@ -1159,7 +1204,9 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     if (changed) {
       int totalAgents = agents.size();
       int agentsInNormalState = ((List)stateMap.get("NORMAL")).size();
-      if (agentsInNormalState == totalAgents && totalAgents > 0) {
+      if (agentsInNormalState == totalAgents &&
+          totalAgents > 0 &&
+          (numAgents == -1 || numAgents == totalAgents)) {
         event("Robustness Community Ready");
         log.info(totalAgents + " Agents Monitored - All in NORMAL state");
         allNormalLastTime = true;
@@ -1247,6 +1294,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     restartTimeout = Long.parseLong(props.getProperty("restartTimeout"));
     restartRetryFrequency = Long.parseLong(props.getProperty("restartRetryFreq"));
     activePingFrequency = Long.parseLong(props.getProperty("activePingFreq"));
+    numAgents = Integer.parseInt(props.getProperty("numAgents"));
     updateCommunityAttributes(props);
   }
 
@@ -1274,6 +1322,8 @@ public class HealthMonitorPlugin extends SimplePlugin implements
 
   public void communityChanged(CommunityChangeEvent cce) {
     //log.info("CommunityChangeEvent: " + cce);
+    if (cce.getType() == cce.ADD_COMMUNITY && communityToMonitor == null)
+      getCommunityToMonitor();
     if (cce.getCommunityName().equals(communityToMonitor) &&
         (cce.getType() == cce.ADD_ENTITY || cce.getType() == cce.REMOVE_ENTITY)) {
       communityChanged = true;
@@ -1336,20 +1386,6 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     if (eventService != null && eventService.isEventEnabled())
       eventService.event(message);
   }
-  /**
-   * Gets reference to TopologyReaderService.
-   * @return Reference to TopolotyReaderService
-   */
- /* private TopologyReaderService getTopologyReaderService() {
-    int counter = 0;
-    ServiceBroker sb = getBindingSite().getServiceBroker();
-    while (!sb.hasService(TopologyReaderService.class)) {
-      // Print a message after waiting for 30 seconds
-      if (++counter == 60) log.info("Waiting for TopologyReaderService ... ");
-      try { Thread.sleep(500); } catch (Exception ex) {log.error(ex.getMessage());}
-    }
-    return (TopologyReaderService)sb.getService(this, TopologyReaderService.class, null);
-  }*/
 
   /**
    * Gets reference to WhitePagesService.
