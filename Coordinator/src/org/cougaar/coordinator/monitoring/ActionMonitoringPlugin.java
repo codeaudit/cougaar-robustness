@@ -96,7 +96,8 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
             Action action = aw.getAction();
             ActionRecord latestResult = action.getValue();
             ActionPatience ap = findActionPatience(action);
-            if (latestResult != null) { // null only on initialization
+            if (latestResult != null &&                      // null when action is not started
+		latestResult.getCompletionCode() != null) {  // null when action is not stopped
                 if ((latestResult.getCompletionCode().equals(Action.COMPLETED)) // make sure it completed correctly
                  && (latestResult.getStartTime() >= ap.getStartTime()))        // make sure it's a current action
                     {
