@@ -41,11 +41,9 @@ include_scripts:
 #  - script: $CIP/csmart/lib/isat/wait_for_ok.rb
 #    parameters:
 #      - wait_for_location: after_stage_1
-
   - script: $CIP/csmart/lib/robustness/objs/planned_disconnect_with_node_kill.rb
     parameters:
       - location: during_stage_1
-      - start_delay: 60
       - wait_location: after_stage_1
       - nodes: ["FSB-CO-HQ-CIC-NODE", "FSB-DISTRO-FWD-EVAC-NODE"]
       - nodes_to_kill: ["FSB-CO-HQ-CIC-NODE", "FSB-DISTRO-FWD-EVAC-NODE"]
@@ -54,6 +52,15 @@ include_scripts:
       - timeout: 30.minutes
       - verbose: 2
   - script: $CIP/csmart/lib/coordinator/unleash_defenses.rb 
+    parameters:
+      - location: during_stage_1
+      - verbose: 1
+  - script: $CIP/csmart/lib/coordinator/nodes_persisted_find_providers.rb 
+    parameters:
+      - location: during_stage_1
+      - start_delay: 60
+      - nodes: ["FSB-CO-HQ-CIC-NODE", "FSB-DISTRO-FWD-EVAC-NODE"]
+
 =end
 
 require 'cougaar/scripting'
