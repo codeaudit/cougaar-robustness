@@ -209,11 +209,21 @@ public class MoveHelper extends BlackboardClientComponent {
     logger.debug("MoveAgent:" +
                  " origNode=" + origNode +
                  " destNode=" + destNode +
-                 " agent=" + agentName);
-    if (agentId.toString().equals(origNode)) {
-      moveAgent(agentName, destNode);
+                 " agent=" + agentName +
+                 " community=" + communityName);
+    if (agentName != null && origNode != null && destNode != null && communityName != null) {
+      if (agentId.toString().equals(origNode)) {
+        moveAgent(agentName, destNode);
+      } else {
+        fireLater(new RemoteMoveRequest(agentName, origNode, destNode,
+                                        communityName));
+      }
     } else {
-      fireLater(new RemoteMoveRequest(agentName, origNode, destNode, communityName));
+      logger.warn("Null moveAgent parameter:" +
+                 " origNode=" + origNode +
+                 " destNode=" + destNode +
+                 " agent=" + agentName +
+                 " community=" + communityName);
     }
   }
 
@@ -249,26 +259,25 @@ public class MoveHelper extends BlackboardClientComponent {
     }
   }
 
-  private void sendRemoteRequest(RemoteMoveRequest rrr) {
+  private void sendRemoteRequest(RemoteMoveRequest rmr) {
     logger.debug("sendRemoteRequest:" +
-                 " agent=" + rrr.agentName +
-                 " orig=" + rrr.origNode +
-                 " dest=" + rrr.destNode);
+                 " agent=" + rmr.agentName +
+                 " orig=" + rmr.origNode +
+                 " dest=" + rmr.destNode);
     UIDService uidService = (UIDService)getServiceBroker().getService(this,
           UIDService.class, null);
       HealthMonitorRequest hmr =
           new HealthMonitorRequestImpl(agentId,
-                                       rrr.communityName,
+                                       rmr.communityName,
                                        HealthMonitorRequest.MOVE,
-                                       new String[] {rrr.agentName}
-                                       ,
-                                       rrr.origNode,
-                                       rrr.destNode,
+                                       new String[] {rmr.agentName},
+                                       rmr.origNode,
+                                       rmr.destNode,
                                        uidService.nextUID());
       RelayAdapter hmrRa =
           new RelayAdapter(agentId, hmr, hmr.getUID());
       hmrRa.addTarget(SimpleMessageAddress.
-                      getSimpleMessageAddress(rrr.origNode));
+                      getSimpleMessageAddress(rmr.origNode));
       if (logger.isDebugEnabled()) {
         logger.debug("Publishing HealthMonitorRequest:" +
                      " request=" + hmr.getRequestTypeAsString() +
