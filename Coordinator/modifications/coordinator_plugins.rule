@@ -1,0 +1,118 @@
+###############################
+# Adds coordinator components
+# 
+
+if ! defined? CIP
+  CIP = ENV['COUGAAR_INSTALL_PATH']
+end
+$:.unshift File.join(CIP, 'csmart', 'assessment', 'lib')
+
+require 'security/lib/common_security_rules'
+
+
+sact = "org.cougaar.core.security.coordinator.AgentCompromiseActuator"
+ssen = "org.cougaar.core.security.coordinator.AgentCompromiseSensor"
+tact = "org.cougaar.core.security.coordinator.ThreatConActuator"
+tsen = "org.cougaar.core.security.coordinator.ThreatConLevelSensor"
+upp  = "org.cougaar.core.security.test.coordinator.UpdatePolicyPlugin"
+
+
+plugins = [sact,ssen,tact,tsen]
+
+ltsp = "org.cougaar.coordinator.techspec.xml.LoadTechSpecsPlugin"
+
+techspecs = ['AgentCompromise_AgentAssetStateDimensions.xml', 
+             'AgentCompromise_Threats.xml', 
+             'AgentCompromise_Events.xml', 
+             'AgentCompromise_Sensor.xml', 
+             'AgentCompromise_Actuator.xml',
+             'Security_EnclaveAssetStateDimensions.xml', 
+             'Security_Threats.xml', 
+             'Security_Events.xml', 
+             'Security_Sensors.xml', 
+             'Security_Actuators.xml']
+
+def getPolicyMgrForAgent(agent)
+ enclave = agent.host.enclave
+ policyMgr = nil
+ society.each_agent do |possPolicyMgr|
+   if possPolicyMgr.host.enclave != enclave then
+     next
+   end
+   possPolicyMgr.each_facet(:role) do |facet|
+     if facet[:role] == $facetPolicyManagerAgent then
+       policyMgr = possPolicyMgr
+       break
+     end 
+   end
+   if (policyMgr != nil) then
+     break
+   end
+ end
+ policyMgr
+end
+
+society.each_agent(true) do |agent|
+    insert_to_node = false
+#    agent.add_components(plugins) 
+    agent.each_facet(:role) do |facet|
+        if facet[:role] == $facetMonitoringManagerAgent
+            agent.add_components(plugins)
+            insert_to_node = true
+            agent.add_component do |c|
+                c.classname = upp
+                c.add_argument(getPolicyMgrForAgent(agent).name)
+            end
+        end
+    end
+    if agent.name =~ /.*ARManager.*/
+        insert_to_node = true
+        found = false
+        agent.each_component do |c|
+            next unless c.classname == ltsp
+            techspecs.each do |ts|
+                c.add_argument(ts) unless c.has_argument?(ts)
+            end
+            c.name = c.comparison_name
+            found = true
+            break
+        end
+        unless found
+            agent.add_component do |c|
+                c.classname = ltsp
+                c.insertionpoint = 'Node.AgentManager.Agent.PluginManager.Plugin'
+                techspecs.each do |ts|
+                    c.add_argument(ts)
+                end
+            end
+        end
+    end
+
+  if insert_to_node
+    node = agent.node
+#end
+
+#society.each_node do |node|
+    node.append_value_on_parameter("-Dorg.cougaar.config.path", "$COUGAAR_INSTALL_PATH/configs/coordinator/AgentCompromise")
+    node.append_value_on_parameter("-Dorg.cougaar.config.path", "$COUGAAR_INSTALL_PATH/configs/coordinator/ThreatCon")
+    found = false
+    node.each_component do |c|
+        next unless c.classname == ltsp
+        techspecs.each do |ts|
+            c.add_argument(ts) unless c.has_argument?(ts)
+        end
+        c.name = c.comparison_name
+        found = true
+        break
+    end
+    unless found
+        node.add_component do |c|
+            c.classname = ltsp
+            c.insertionpoint = 'Node.AgentManager.Agent.PluginManager.Plugin'
+            techspecs.each do |ts|
+                c.add_argument(ts)
+            end
+        end
+    end
+  end # insert_to_node
+end
