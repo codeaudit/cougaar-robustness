@@ -257,7 +257,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                                      new ArrayList(getExcludedNodes()),
                                      lbl);
           newNodes.clear();
-          deadNodes.clear();
+          //deadNodes.clear();
         }
       } else if (isLocal(name)) {
         stopHeartbeats(name);
@@ -699,7 +699,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                                      lbl);
         }
         newNodes.clear();
-        deadNodes.clear();
+        //deadNodes.clear();
       }
     }
   }
