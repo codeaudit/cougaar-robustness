@@ -23,8 +23,10 @@
 package org.cougaar.coordinator.examples.SampleDefense;
 
 import java.util.Set;
+import org.cougaar.core.persist.NotPersistable;
+import java.io.Serializable;
 
-public class SampleRawSensorData
+public class SampleRawSensorData implements NotPersistable, Serializable
 {
     String assetName;
     Set possibleValues;
