@@ -228,6 +228,9 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
         System.getProperty(STATUS_UPDATE_PROPERTY,
                            Long.toString(DEFAULT_STATUS_UPDATE_INTERVAL));
     updateInterval = Long.parseLong(updateIntervalStr);
+    if (logger.isDebugEnabled()) {
+      logger.debug("updateInterval=" + updateInterval + " default=" + DEFAULT_STATUS_UPDATE_INTERVAL);
+    }
     wakeAlarm = new WakeAlarm(now() + updateInterval);
     alarmService.addRealTimeAlarm(wakeAlarm);
     new ReaffiliationNotificationHandler(getBindingSite(), agentId);

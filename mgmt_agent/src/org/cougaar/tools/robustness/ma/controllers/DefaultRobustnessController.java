@@ -58,6 +58,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+
 public class DefaultRobustnessController extends RobustnessControllerBase {
 
   public static final int INITIAL        = 0;
@@ -70,6 +73,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   public static final int MOVE           = 7;
   public static final int DECONFLICT     = 8;
   public static final int FORCED_RESTART = 9;
+
+  private static DateFormat df = new SimpleDateFormat("HH:mm:ss");
 
   // Determines how often the status summary is logged
   public static final long STATUS_INTERVAL = 2 * 60 * 1000;
@@ -561,41 +566,37 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         if (latency > se.high) {
           se.high = latency;
         }
-        ++se.samples;
         collectNodeStats(source);
       }
       se.last = now;
+      ++se.samples;
     }
   }
 
   private void collectNodeStats(String source) {
     if (collectNodeStats) {
-      if (nodeLatencyStats == null) { initializeNodeStats(); }
+      if (nodeLatencyStats == null) {initializeNodeStats();
+      }
       if (isSentinel() &&
           !source.equals(getLocation(thisAgent))) {
         StatsEntry se = (StatsEntry) runStats.get(source);
         if (se.samples >= MIN_SAMPLES) {
-          if (se.high < MIN_SAMPLE_VALUE) {
-            se.high = MIN_SAMPLE_VALUE;
-          }
           StatCalc newSc = (StatCalc) nodeLatencyStats.get(source);
-            if (se.samples == MIN_SAMPLES ||                    // Take snapshot at MIN_SAMPLES
-               newSc == null ||
-               se.high > newSc.getHigh()) {                     // Record highs thereafter
-              if (originalStats.contains(source)) {
-                newSc = (StatCalc) originalStats.get(source).clone();
-                //if (se.high > newSc.getMean() / 2) { //   sanity check
-                  newSc.enter(se.high);
-                  nodeLatencyStats.put(newSc);
-                  saveNodeStats();
-                //}
-              } else {
-                newSc = new StatCalc(model.getCommunityName(), source);
-                newSc.enter(se.high);
-                nodeLatencyStats.put(newSc);
-                saveNodeStats();
-              }
+          if (se.samples == MIN_SAMPLES || // Take snapshot at MIN_SAMPLES
+              newSc == null ||
+              se.high > newSc.getHigh()) { // Record highs thereafter
+            if (originalStats.contains(source)) {
+              newSc = (StatCalc) originalStats.get(source).clone();
+              newSc.enter(se.high);
+              nodeLatencyStats.put(newSc);
+              saveNodeStats();
+            } else {
+              newSc = new StatCalc(model.getCommunityName(), source);
+              newSc.enter(se.high);
+              nodeLatencyStats.put(newSc);
+              saveNodeStats();
             }
+          }
         }
       }
     }
@@ -633,6 +634,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   private long getNodeStatusExpiration(String nodeName) {
 
     // Community-wide default values
+    long minimumExpiration = getLongAttribute("MINIMUM_EXPIRATION",
+                                              MINIMUM_EXPIRATION);
     long defaultMean = getLongAttribute("DEFAULT_STATUS_LATENCY_MEAN",
                                         DEFAULT_STATUS_LATENCY_MEAN);
     long defaultStdDev = getLongAttribute("DEFAULT_STATUS_LATENCY_STDDEV",
@@ -653,6 +656,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     long expiration = updateInterval +
                       nodeMean +
                       (nodeStdDev * restartConf);
+    if (expiration < minimumExpiration) {
+      expiration = minimumExpiration;
+    }
     if (logger.isDebugEnabled()) {
       logger.debug("getNodeStateExpiration: node=" + nodeName + " expiration=" +
                   expiration);
@@ -817,7 +823,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       }
       if (isNode(name)) {
         if (logger.isInfoEnabled()) {
-          logger.info("New node detected: node=" + name);
+          logger.info("New node detected: node=" + name +
+                      " timeout=" + getNodeStatusExpiration(name));
         }
         if (deadNodes.contains(name)) {
           deadNodes.remove(name);
@@ -1080,8 +1087,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
        high = (long)se.high;
      }
      int agentsOnNode = model.entitiesAtLocation(activeNodes[i], model.AGENT).length;
+     Date lastHeard = new Date(se.last);
      summary.append(activeNodes[i] + "(" + agentsOnNode + "," +
-                    samples + "," + high + ")");
+                    samples + "," + high + "," + df.format(lastHeard) + ")");
      if (i < activeNodes.length - 1) summary.append(",");
    }
    summary.append("]");

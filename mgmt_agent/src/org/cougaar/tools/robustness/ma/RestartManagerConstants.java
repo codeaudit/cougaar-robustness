@@ -81,6 +81,7 @@ public interface RestartManagerConstants {
 
   // Default parameter values, may be overridden by applicable community attributes
   public static final long DEFAULT_EXPIRATION =   5 * 60 * 1000;
+  public static final long MINIMUM_EXPIRATION =   2 * 60 * 1000;
   public static final long DEFAULT_PING_TIMEOUT = 5 * 60 * 1000;
   public static final long DEFAULT_MINIMUM_PING_TIMEOUT = 1 * 60 * 1000;
   public static final long DEFAULT_HEARTBEAT_REQUEST_TIMEOUT = 1 * 60 * 1000;
