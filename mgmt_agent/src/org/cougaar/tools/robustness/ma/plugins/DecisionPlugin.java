@@ -157,47 +157,25 @@ public class DecisionPlugin extends SimplePlugin {
               hs.setState(HealthStatus.RESTART_COMPLETE);
               hs.setStatus(HealthStatus.RESTARTED);
               publishChange(hs);
-              //bbs.publishRemove(ac);
+              bbs.publishRemove(ac);
             } else if (ac.getStatusCode() == ac.ALREADY_EXISTS) {
               // Agent is alive but not responding to HeartbeatRequests or Pings
-              hs.setState(HealthStatus.ROBUSTNESS_INIT_FAIL);
-              hs.setStatus(HealthStatus.DEGRADED);
+              //hs.setState(HealthStatus.ROBUSTNESS_INIT_FAIL);
+              //hs.setStatus(HealthStatus.DEGRADED);
               publishChange(hs);
-              //bbs.publishRemove(ac);
+              hs.setState(HealthStatus.RESTART_COMPLETE);
+              hs.setStatus(HealthStatus.RESTARTED);
+              bbs.publishRemove(ac);
             } else {
               hs.setState(HealthStatus.FAILED_RESTART);
               publishChange(hs);
-              //bbs.publishRemove(ac);
+              bbs.publishRemove(ac);
               log.error("Unexpected status code from mobility, action=ADD status=" +
                 ac.getStatusCodeAsString() + " agent=" + addTicket.getMobileAgent() +
                 " destNode=" + addTicket.getDestinationNode());
-              /*
-              if (ac.getStatusCode() == ac.ALREADY_EXISTS) {
-                log.info("Killing agent: agent=" + addTicket.getMobileAgent() +
-                  " node=" + addTicket.getDestinationNode());
-                killAgent(addTicket.getMobileAgent(), addTicket.getDestinationNode());
-              */
-              }
             }
           }
-        /*
-        } else if (ticket instanceof RemoveTicket) {
-          RemoveTicket removeTicket = (RemoveTicket)ticket;
-          if (ac.getStatusCode() == ac.REMOVED) {
-            Set agents = new HashSet();
-            agents.add(removeTicket.getMobileAgent());
-            //restartAgents(agents, removeTicket.getDestinationNode().toString());
-          } else {
-            HealthStatus hs = getHealthStatus(removeTicket.getMobileAgent());
-            hs.setState(HealthStatus.FAILED_RESTART);
-            publishChange(hs);
-              //bbs.publishRemove(ac);
-            log.error("Unexpected status code from mobility, action=REMOVE status=" +
-              ac.getStatusCodeAsString() + " agent=" + removeTicket.getMobileAgent() +
-              " destNode=" + removeTicket.getDestinationNode());
-          }
         }
-        */
       }
     }
 

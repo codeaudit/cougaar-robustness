@@ -23,6 +23,9 @@ import java.util.*;
 import javax.naming.*;
 import javax.naming.directory.*;
 import java.io.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.apache.xerces.dom.DocumentImpl;
 
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.servlet.BaseServletComponent;
@@ -52,10 +55,10 @@ import org.cougaar.core.mobility.MoveTicket;
 import org.cougaar.core.mobility.RemoveTicket;
 import org.cougaar.core.mobility.ldm.AgentControl;
 import org.cougaar.core.mobility.ldm.MobilityFactory;
+import org.cougaar.tools.robustness.ma.plugins.HealthStatus;
 
 import org.cougaar.tools.robustness.ma.ldm.VacateRequest;
 import org.cougaar.tools.robustness.ma.ldm.RestartLocationRequest;
-
 import org.cougaar.tools.robustness.ma.ldm.VacateRequestRelay;
 
 /**
@@ -153,6 +156,7 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
       }catch(ClassNotFoundException e){log.error("RobustnessServlet:: class Vector not found");}
       String command = (String)vs.get(0);
       String result = "unchanged";
+      Document element = null;
       if(command.equals("checkChange")) //check if the community got ang changes since last checking
       {
         try{
@@ -195,10 +199,23 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
         removeAgent(agentName, nodeName);
         result = "succeed";
       }
+      else if(command.equals("viewXml")) //show health status xml
+      {
+        String agentName = (String)vs.get(1);
+        element = getXmlOfAgent(agentName);
+      }
+      else if(command.equals("getParentHost"))
+      {
+        result = trs.getParentForChild(TopologyReaderService.HOST,
+           TopologyReaderService.NODE, (String)vs.get(1));
+      }
 
       ServletOutputStream outs = res.getOutputStream();
       ObjectOutputStream oout = new ObjectOutputStream(outs);
       try{
+        if(command.equals("viewXml"))
+          oout.writeObject(element);
+        else
           oout.writeObject(result);
       }catch(java.util.NoSuchElementException e){log.error(e.getMessage());}
       catch(java.lang.NullPointerException e){log.error(e.getMessage());}
@@ -356,6 +373,24 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
     log.info("RobustnessServlet:: Remove agent " + agentName + " from " + sourceNode);
   }
 
+  private Document getXmlOfAgent(String agentName)
+  {
+    Document doc = null;
+    try{
+      bb.openTransaction();
+      IncrementalSubscription sub = (IncrementalSubscription)bb.subscribe(getHealthStatusPred(agentName));
+      if(sub.size() > 0)
+      {
+       HealthStatus hs = (HealthStatus)sub.getAddedCollection().iterator().next();
+       doc = new DocumentImpl();
+       Element element = hs.getXML((Document)doc);
+       doc.appendChild(element);
+      }
+    }finally
+    { bb.closeTransaction(); }
+    return doc;
+  }
+
   private Hashtable getTopology()
   {
     Hashtable topology = new Hashtable();
@@ -400,6 +435,17 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
      return new UnaryPredicate() {
        public boolean execute(Object o) {
            return (o instanceof CommunityChangeNotification);
+       }
+     };
+  }
+
+  protected static UnaryPredicate getHealthStatusPred(final String agentName)
+  {
+     return new UnaryPredicate() {
+       public boolean execute(Object o) {
+           if(o instanceof HealthStatus)
+             return ((HealthStatus)o).getAgentId().getAddress().equals(agentName);
+           return false;
        }
      };
   }

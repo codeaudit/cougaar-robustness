@@ -3,6 +3,8 @@ package org.cougaar.tools.robustness.ma.ui;
 import java.io.*;
 import java.awt.datatransfer.*;
 import java.util.*;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.Attribute;
 
 /**
  * Transferable object represents one element in society. This object is used
@@ -23,16 +25,24 @@ public class EntityInfo implements Transferable, Serializable {
   private int type; //element type
   private EntityInfo Parent = null; //parent of the element
   private Vector Children = null; //children of the element
+  private Attributes attrs = null; //attributes of agent
+  private boolean isInMgmtCommunity = false; //if this entity is in management community
+  private String title; //the string showed in the tree
 
-  public EntityInfo(String name, String type) {
+  public EntityInfo(String name, String type, Attributes attrs, boolean isInMgmtCommunity) {
     Children = new Vector();
     this.name = name;
+    this.title = name; //set title default to name of the entity, user can change it by setTitle().
+    this.isInMgmtCommunity = isInMgmtCommunity;
     if(type.equals("host"))
       this.type = HOST;
     else if(type.equals("node"))
       this.type = NODE;
     else
+    {
       this.type = AGENT;
+      this.attrs = attrs;
+    }
   }
 
   public String getName() {
@@ -43,8 +53,15 @@ public class EntityInfo implements Transferable, Serializable {
     this.name = name;
   }
 
+  public void setTitle(String title) {
+    this.title = title;
+  }
+
   public int getType()
   { return this.type; }
+
+  public Attributes getAttributes()
+  { return this.attrs; }
 
   public void setType(String type)
   {
@@ -58,6 +75,10 @@ public class EntityInfo implements Transferable, Serializable {
 
   public boolean isAgent() {
     return getType()==AGENT;
+  }
+
+  public boolean isInMgmtCommunity() {
+    return this.isInMgmtCommunity;
   }
 
   public void add(EntityInfo info) {
@@ -83,7 +104,7 @@ public class EntityInfo implements Transferable, Serializable {
   }
 
   public Object clone() {
-    return new EntityInfo(name, convertTypeToString(type));
+    return new EntityInfo(name, convertTypeToString(type), attrs, isInMgmtCommunity);
   }
 
   public String convertTypeToString(int type)
@@ -97,7 +118,7 @@ public class EntityInfo implements Transferable, Serializable {
   }
 
   public String toString() {
-    return name;
+    return title;
   }
 
   public boolean equals(EntityInfo newei)

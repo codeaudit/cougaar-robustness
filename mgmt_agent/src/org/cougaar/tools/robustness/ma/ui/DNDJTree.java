@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.*;
 import javax.swing.*;
 import javax.swing.tree.*;
+import javax.naming.directory.Attributes;
 import org.cougaar.util.log.Logger;
 import org.cougaar.tools.csmart.ui.viewer.CSMART;
 
@@ -148,6 +149,9 @@ public class DNDJTree extends JTree
     EntityInfo cto = (EntityInfo) source.getUserObject();
     EntityNode newNode =
       new EntityNode(cto);
+    Attributes attrs = cto.getAttributes();
+    if(attrs != null)
+      newNode.addAttributes(attrs);
     int ix = target.getChildCount(); // Drop at end by default
     DefaultTreeModel model = (DefaultTreeModel) getModel();
     if (before != null) {       // If before specified, put it there.
@@ -282,7 +286,6 @@ public class DNDJTree extends JTree
     // ignore right mouse events
     if ((ie.getModifiers() & InputEvent.BUTTON3_MASK) != 0)
       return;
-    //if (!isEditable()) return; // if tree isn't editable, return
     DefaultMutableTreeNode target = getDropTarget(event.getDragOrigin());
     if (target == null) return; // Nothing to drag.
     TreePath[] paths = getSelectionPaths();
@@ -351,7 +354,8 @@ public class DNDJTree extends JTree
     DefaultMutableTreeNode node = (DefaultMutableTreeNode)selected;
     if(node instanceof EntityNode)
     {
-      return (((EntityInfo)((EntityNode)node).getUserObject()).getType() == EntityInfo.AGENT);
+      return (((EntityInfo)((EntityNode)node).getUserObject()).getType() == EntityInfo.AGENT
+        && ((EntityNode)selected).getParent() instanceof EntityNode);
     }
     return false;
   }
@@ -581,7 +585,7 @@ public class DNDJTree extends JTree
 
   public static void main(String args[]) {
 
-    JFrame f = new JFrame();
+   /* JFrame f = new JFrame();
     f.setSize(500, 400);
     Container c = f.getContentPane();
     JPanel pane = new JPanel(new BorderLayout());
@@ -658,7 +662,7 @@ public class DNDJTree extends JTree
     f.addWindowListener(new WindowAdapter() {
       public void windowClosing(WindowEvent e) {
         System.exit(0); }
-     });
+     });*/
   }
 }
 

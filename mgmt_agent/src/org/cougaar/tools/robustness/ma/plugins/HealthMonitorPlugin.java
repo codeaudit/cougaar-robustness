@@ -834,8 +834,14 @@ public class HealthMonitorPlugin extends SimplePlugin implements
    */
   private String getLocation(String agentName) {
     // Get agents current location
-    TopologyEntry te = topologyService.getEntryForAgent(agentName);
-    return te.getNode();
+    String node = "";
+    try {
+      TopologyEntry te = topologyService.getEntryForAgent(agentName);
+      node = te.getNode();
+    } catch (Exception ex) {
+      log.error("Exception getting agent location for TopologyReaderService", ex);
+    }
+    return node;
   }
 
   /**
@@ -998,7 +1004,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       // Remove any prior PingRequests
       if (pr != null) {
         bbs.openTransaction();
-        //bbs.publishRemove(pr);
+        bbs.publishRemove(pr);
         bbs.closeTransaction();
         // Remove UID from list
         if (pingUIDs.contains(pr.getUID())) pingUIDs.remove(pr.getUID());
@@ -1055,11 +1061,11 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       int totalAgents = agents.size();
       int agentsInNormalState = ((List)stateMap.get("NORMAL")).size();
       if (agentsInNormalState == totalAgents) {
-        log.info("Total Agents Monitored: " + totalAgents +
+        log.info("Agents Monitored: " + totalAgents +
         " - All in NORMAL state");
         allNormalLastTime = true;
       } else {
-        log.info("Total Agents Monitored: " + totalAgents);
+        log.info("Agents Monitored: " + totalAgents);
         for (Iterator it = stateMap.entrySet().iterator(); it.hasNext();) {
           Map.Entry me = (Map.Entry)it.next();
           String stateName = (String)me.getKey();

@@ -20,6 +20,7 @@ package org.cougaar.tools.robustness.ma.plugins;
 import org.cougaar.tools.robustness.ma.ldm.RestartLocationRequest;
 import java.util.*;
 import javax.naming.directory.*;
+import javax.naming.*;
 
 import org.cougaar.tools.robustness.sensors.SensorFactory;
 import org.cougaar.tools.robustness.sensors.PingRequest;
@@ -138,7 +139,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
     StringBuffer startMsg = new StringBuffer();
     startMsg.append("RestartLocatorPlugin started: ");
     startMsg.append(paramsToString());
-    log.debug(startMsg.toString());
+    log.info(startMsg.toString());
 
   }
 
@@ -224,14 +225,14 @@ public class RestartLocatorPlugin extends SimplePlugin {
               if (dest.node.equals(node) && dest.pingStatus == PingRequest.NEW) {
                 dest.pingStatus = PingRequest.RECEIVED;
                 log.debug("Ping succeeded, agent=" + node);
+                // Remove PingRequest from BB and our internal list
+                if (pingUIDs.contains(req.getUID())) pingUIDs.remove(req.getUID());
+                bbs.publishRemove(req);
                 rlr.setHost(dest.host);
                 rlr.setNode(dest.node);
                 rlr.setStatus(RestartLocationRequest.SUCCESS);
-                //restartRequestMap.remove(rlr);
-                it1.remove();;
                 bbs.publishChange(rlr);
-                if (pingUIDs.contains(req.getUID())) pingUIDs.remove(req.getUID());
-                bbs.publishRemove(req);
+                it1.remove();
                 if (log.isInfoEnabled()) {
                   StringBuffer msg =
                     new StringBuffer("Completed RestartLocation request: agent(s)=[");
@@ -241,6 +242,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
                   }
                   msg.append("], selectedNode=" + rlr.getNode() + ", selectedHost=" + rlr.getHost());
                   log.debug(msg.toString());
+                  break;
                 }
               }
             }
@@ -306,8 +308,8 @@ public class RestartLocatorPlugin extends SimplePlugin {
   private void updateParams(Properties props) {
     communityToMonitor = props.getProperty("community");
     String specifiedRestartNodes = restartLocatorProps.getProperty("restartNodes");
-    Attribute restartNodesAttr = new BasicAttribute("RestartNodes");
     if (specifiedRestartNodes != null && specifiedRestartNodes.trim().length() > 0) {
+      Attribute restartNodesAttr = new BasicAttribute("RestartNode");
       StringTokenizer st = new  StringTokenizer(specifiedRestartNodes, " ");
       while (st.hasMoreTokens()) {
         restartNodesAttr.add(st.nextToken());
@@ -315,7 +317,8 @@ public class RestartLocatorPlugin extends SimplePlugin {
       ModificationItem mods[] = new ModificationItem[]{
         new ModificationItem(DirContext.REPLACE_ATTRIBUTE, restartNodesAttr),
       };
-      communityService.modifyEntityAttributes(communityToMonitor, myAgent.toString(), mods);
+      //communityService.modifyEntityAttributes(communityToMonitor, myAgent.toString(), mods);
+      communityService.modifyCommunityAttributes(communityToMonitor, mods);
     }
     Attribute restartHostsAttr = new BasicAttribute("RestartHosts");
     String specifiedRestartHosts = restartLocatorProps.getProperty("restartHosts");
@@ -327,7 +330,8 @@ public class RestartLocatorPlugin extends SimplePlugin {
       ModificationItem mods[] = new ModificationItem[]{
         new ModificationItem(DirContext.REPLACE_ATTRIBUTE, restartHostsAttr),
       };
-      communityService.modifyEntityAttributes(communityToMonitor, myAgent.toString(), mods);
+      //communityService.modifyEntityAttributes(communityToMonitor, myAgent.toString(), mods);
+      communityService.modifyCommunityAttributes(communityToMonitor, mods);
     }
     //log.debug("UpdateParams: " + myAttrs.size() +
     //  " restartHosts=[" + specifiedRestartHosts +
@@ -355,53 +359,65 @@ public class RestartLocatorPlugin extends SimplePlugin {
     hosts = new HashMap();
     nodes = new HashMap();
     specifiedHosts = new Vector();
-    CommunityRoster roster = communityService.getRoster(communityToMonitor);
-    Collection cmList = roster.getMembers();
-    // Add hosts/nodes/agents associated with community members
-    for (Iterator it = cmList.iterator(); it.hasNext();) {
-      CommunityMember cm = (CommunityMember)it.next();
-      if (cm.isAgent()) {
-        String agentName = cm.getName();
-        TopologyEntry te = topologyService.getEntryForAgent(agentName);
-        String hostName = te.getHost();
-        String nodeName = te.getNode();
-        if (!hosts.containsKey(hostName)) hosts.put(hostName, new Vector());
-        Collection c = (Collection)hosts.get(hostName);
-        if (!c.contains(nodeName)) c.add(nodeName);
-        if (!nodes.containsKey(nodeName)) nodes.put(nodeName, new Vector());
-        c = (Collection)nodes.get(nodeName);
-        if (!c.contains(agentName)) c.add(agentName);
-      }
-    }
-    // Add RestartNodes associated with hosts currently used by community members
-    for (Iterator it = hosts.keySet().iterator(); it.hasNext();) {
-      String nodeAgentName = (String)it.next() + "-RestartNode";
-      TopologyEntry te = topologyService.getEntryForAgent(nodeAgentName);
-      if (te != null) {
-        String hostName = te.getHost();
-        String nodeName = nodeAgentName;
-        if (!hosts.containsKey(hostName)) hosts.put(hostName, new Vector());
-        Collection c = (Collection)hosts.get(hostName);
-        if (!c.contains(nodeName)) c.add(nodeName);
-        if (!nodes.containsKey(nodeName)) nodes.put(nodeName, new Vector());
-      }
-    }
-    // Add RestartNodes associated with specified Restart Hosts
-    String specifiedRestartHosts = restartLocatorProps.getProperty("restartHosts");
-    if (specifiedRestartHosts != null && specifiedRestartHosts.trim().length() > 0) {
-      StringTokenizer st = new  StringTokenizer(specifiedRestartHosts, " ");
-      while (st.hasMoreTokens()) {
-        String nodeAgentName = st.nextToken() + "-RestartNode";
-        TopologyEntry te = topologyService.getEntryForAgent(nodeAgentName);
-        if (te != null) {
-          String hostName = te.getHost();
-          String nodeName = nodeAgentName;
-          specifiedHosts.add(hostName);
-          if (!hosts.containsKey(hostName)) hosts.put(hostName, new Vector());
-          Collection c = (Collection)hosts.get(hostName);
-          if (!c.contains(nodeName)) c.add(nodeName);
-          if (!nodes.containsKey(nodeName)) nodes.put(nodeName, new Vector());
+    if (topologyService == null) {
+      log.error("TopologyService is null");
+    } else {
+      try {
+        CommunityRoster roster = communityService.getRoster(communityToMonitor);
+        Collection cmList = roster.getMembers();
+        // Add hosts/nodes/agents associated with community members
+        for (Iterator it = cmList.iterator(); it.hasNext();) {
+          CommunityMember cm = (CommunityMember)it.next();
+          if (cm.isAgent()) {
+            String agentName = cm.getName();
+            TopologyEntry te = topologyService.getEntryForAgent(agentName);
+            if (te == null) {
+              log.debug("Null TopologyEntry: agent =" + agentName);
+              continue;
+            }
+            String hostName = te.getHost();
+            String nodeName = te.getNode();
+            if (!hosts.containsKey(hostName)) hosts.put(hostName, new Vector());
+            Collection c = (Collection)hosts.get(hostName);
+            if (!c.contains(nodeName)) c.add(nodeName);
+            if (!nodes.containsKey(nodeName)) nodes.put(nodeName, new Vector());
+            c = (Collection)nodes.get(nodeName);
+            if (!c.contains(agentName)) c.add(agentName);
+          }
         }
+        // Add RestartNodes associated with hosts currently used by community members
+        for (Iterator it = hosts.keySet().iterator(); it.hasNext();) {
+          String nodeAgentName = (String)it.next() + "-RestartNode";
+          TopologyEntry te = topologyService.getEntryForAgent(nodeAgentName);
+          if (te != null) {
+            String hostName = te.getHost();
+            String nodeName = nodeAgentName;
+            if (!hosts.containsKey(hostName)) hosts.put(hostName, new Vector());
+            Collection c = (Collection)hosts.get(hostName);
+            if (!c.contains(nodeName)) c.add(nodeName);
+            if (!nodes.containsKey(nodeName)) nodes.put(nodeName, new Vector());
+          }
+        }
+        // Add RestartNodes associated with specified Restart Hosts
+        String specifiedRestartHosts = restartLocatorProps.getProperty("restartHosts");
+        if (specifiedRestartHosts != null && specifiedRestartHosts.trim().length() > 0) {
+          StringTokenizer st = new  StringTokenizer(specifiedRestartHosts, " ");
+          while (st.hasMoreTokens()) {
+            String nodeAgentName = st.nextToken() + "-RestartNode";
+            TopologyEntry te = topologyService.getEntryForAgent(nodeAgentName);
+            if (te != null) {
+              String hostName = te.getHost();
+              String nodeName = nodeAgentName;
+              specifiedHosts.add(hostName);
+              if (!hosts.containsKey(hostName)) hosts.put(hostName, new Vector());
+              Collection c = (Collection)hosts.get(hostName);
+              if (!c.contains(nodeName)) c.add(nodeName);
+              if (!nodes.containsKey(nodeName)) nodes.put(nodeName, new Vector());
+            }
+          }
+        }
+      } catch (Exception ex) {
+        log.error("Exception getting community topology", ex);
       }
     }
   }
@@ -478,6 +494,29 @@ public class RestartLocatorPlugin extends SimplePlugin {
   }
 
   /**
+   * Get collection of specified restart nodes from community attributes entry
+   * in Name Server.
+   * @return
+   */
+  private Collection getSpecifiedNodes() {
+    Collection specifiedNodes = new Vector();
+    try {
+      Attributes attrs = communityService.getCommunityAttributes(communityToMonitor);
+      Attribute attr = attrs.get("RestartNode");
+      if (attr != null) {
+        NamingEnumeration ne = attr.getAll();
+        while (ne.hasMore()) {
+          specifiedNodes.add(ne.next());
+        }
+      }
+    } catch (Exception ex) {
+      log.error("Error getting 'RestartNode' attribute for community'" +
+        communityToMonitor + "' from Name Server");
+    }
+    return specifiedNodes;
+  }
+
+  /**
    * Select a destination node for restarting an agent.
    * @param excludedAgents  Collection of name of agents that are being
    *                        moved/restarted
@@ -491,16 +530,20 @@ public class RestartLocatorPlugin extends SimplePlugin {
       Collection excludedNodes, Collection excludedHosts) {
     List destinations = new Vector();
     Collection selectedNodes = new Vector();
-    String specifiedRestartNodes = restartLocatorProps.getProperty("restartNodes");
-    log.debug("SpecifiedRestartNodes=" + specifiedRestartNodes);
-    if (specifiedRestartNodes != null && specifiedRestartNodes.trim().length() > 0) {
-      Collection specifiedNodes = new Vector();
-      StringTokenizer st = new  StringTokenizer(specifiedRestartNodes, " ");
-      while (st.hasMoreTokens()) specifiedNodes.add(st.nextToken());
-      selectedNodes = selectNodes(specifiedNodes, excludedAgents, excludedNodes, excludedHosts);
-    } else {
-      selectedNodes = selectNodes(nodes.keySet(), excludedAgents, excludedNodes, excludedHosts);
-    }
+    //String specifiedRestartNodes = restartLocatorProps.getProperty("restartNodes");
+    //log.debug("SpecifiedRestartNodes=" + specifiedRestartNodes);
+    //if (specifiedRestartNodes != null && specifiedRestartNodes.trim().length() > 0) {
+    //  Collection specifiedNodes = new Vector();
+    //  StringTokenizer st = new  StringTokenizer(specifiedRestartNodes, " ");
+    //  while (st.hasMoreTokens()) specifiedNodes.add(st.nextToken());
+    Collection candidateNodes = getSpecifiedNodes();
+    candidateNodes.addAll(nodes.keySet());
+    selectedNodes = selectNodes(candidateNodes, excludedAgents, excludedNodes, excludedHosts);
+    //if (specifiedNodes.size() > 0) {
+    //  selectedNodes = selectNodes(specifiedNodes, excludedAgents, excludedNodes, excludedHosts);
+    //} else {
+    //  selectedNodes = selectNodes(nodes.keySet(), excludedAgents, excludedNodes, excludedHosts);
+    //}
     log.debug("SelectedNodes=" + selectedNodes);
     for (Iterator it = selectedNodes.iterator(); it.hasNext();) {
       Destination dest = new Destination();

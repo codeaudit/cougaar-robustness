@@ -209,14 +209,11 @@ public class VacatePlugin extends SimplePlugin {
               hs.setState(HealthStatus.INITIAL);
               hs.setStatus(HealthStatus.MOVED);
               publishChange(hs);
-              //bbs.publishRemove(ac);
+              bbs.publishRemove(ac);
             } else {
               hs.setState(HealthStatus.FAILED_MOVE);
               publishChange(hs);
-              //bbs.publishRemove(ac);
-              //log.error("Unexpected status code from mobility, status=" +
-              //  ac.getStatusCodeAsString() + " agent=" + moveTicket.getMobileAgent() +
-              //  " destNode=" + moveTicket.getDestinationNode());
+              bbs.publishRemove(ac);
               log.error("Unexpected status code from mobility, status=" +
                 ac.getStatusCodeAsString() + " agent=" + moveTicket.getMobileAgent() +
                 " destNode=" + moveTicket.getDestinationNode() + " " + ac);

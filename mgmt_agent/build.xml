@@ -147,8 +147,8 @@
       </classpath>
       <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;$$CWD/test/configs/common;$$INSTALL/configs/common"/>
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
-      <!-- <arg line="import file=${file} experiment=${experiment} db=replace"/> -->
-      <arg line="import file=${file} assembly=${assembly} db=replace"/>
+      <arg line="import file=${file} experiment=${experiment} db=replace"/>
+      <!-- <arg line="import file=${file} assembly=${assembly} db=replace"/> -->
     </java>
   </target>
 
@@ -182,7 +182,7 @@
         regress/**,
         test/**,
         build.xml"
-      excludes="**/cvs/**,doc/api/**,**/*.bak,.cvsignore"
+      excludes="**/*.sql,**/cvs/**,doc/api/**,**/*.bak,.cvsignore"
     />
   </target>
 
