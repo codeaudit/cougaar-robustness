@@ -2,7 +2,10 @@
 <!DOCTYPE attributes PUBLIC "-//NetBeans//DTD DefaultAttributes 1.0//EN" "http://www.netbeans.org/dtds/attributes-1_0.dtd">
 <attributes version="1.0">
     <fileobject name="ActionsWrapper.java">
-        <attr name="class_dependency_java.io.Serializable" stringvalue="ActionsWrapper"/>
+        <attr name="class_dependency_java.io.Serializable" stringvalue="ActionsWrapper;ActionsWrapper.SimpleRelayFactory"/>
+    </fileobject>
+    <fileobject name="DiagnosesWrapper.java">
+        <attr name="class_dependency_java.io.Serializable" stringvalue="DiagnosesWrapper.SimpleRelayFactory;DiagnosesWrapper"/>
     </fileobject>
     <fileobject name="DeconflictionPluginBase.java">
         <attr name="EA-OpenIDE-Connection" serialvalue="aced0005737200146a6176612e7574696c2e4c696e6b65644c6973740c29535d4a608822030000787077040000000078"/>
@@ -11,11 +14,11 @@
         <attr name="class_dependency_java.io.Serializable" stringvalue="Action"/>
         <attr name="class_dependency_java.util.Vector" stringvalue="Action.ActionHistory"/>
     </fileobject>
-    <fileobject name="Diagnosis.java">
-        <attr name="class_dependency_java.io.Serializable" stringvalue="Diagnosis"/>
-    </fileobject>
     <fileobject name="DiagnosesRelayManagerKnob.java">
         <attr name="class_dependency_java.io.Serializable" stringvalue="DiagnosesRelayManagerKnob"/>
+    </fileobject>
+    <fileobject name="Diagnosis.java">
+        <attr name="class_dependency_java.io.Serializable" stringvalue="Diagnosis"/>
     </fileobject>
     <fileobject name="ActionRelayManagerKnob.java">
         <attr name="class_dependency_java.io.Serializable" stringvalue="ActionRelayManagerKnob"/>

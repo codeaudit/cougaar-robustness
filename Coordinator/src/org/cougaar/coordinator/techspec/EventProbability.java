@@ -125,11 +125,11 @@ public class EventProbability {
         endTime.add(Calendar.MINUTE, durationInMins); // find ending time
         int durHrs = durationInMins / 60;
         
-        if (logger.isDebugEnabled()) { logger.debug("start time = "+startTime.toString() + ", endTime = "+endTime.toString()); }                    
+        if (logger.isDebugEnabled()) { logger.debug("endTime - startTime = "+ durHrs + " hours (truncated)"); }                    
         
         ClockInterval[] clockIntervals = ClockInterval.generateIntervals(startTime, endTime, durHrs);
         
-        if (logger.isDebugEnabled()) { logger.debug("Number of clock intervals = "+ clockIntervals.length ); }            
+        if (logger.isDebugEnabled()) { logger.debug("Number of clock intervals that overlap with threat intervals = "+ clockIntervals.length ); }            
         
         //Otherwise figure out how many interval probabilities will be used.
         EventProbabilityInterval epi;

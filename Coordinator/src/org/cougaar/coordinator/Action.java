@@ -482,7 +482,10 @@ public abstract class Action
      * @see #getPermittedValues
      */
     public void setPermittedValues (Set values) throws IllegalValueException { 
-    
+
+        if (logger == null) {
+            logger = Logging.getLogger(getClass());         
+        }
         Object o;
         Iterator i = values.iterator();
         permittedValues.clear();
@@ -584,7 +587,13 @@ logger.debug("///////////////////////////////////Adding permitted value: "+o);
      * singleton set contain just one target.
      **/
     public Set getTargets() {
-        return Collections.singleton(nodeId);
+        if (logger == null) {
+            logger = Logging.getLogger(getClass());         
+        }
+logger.debug("In getTargets...");        
+logger.debug("Getting target on agent="+agentId+", nodeId="+nodeId);        
+        return Collections.singleton(agentId);
+//        return Collections.singleton(nodeId);
     }
     
     /**
