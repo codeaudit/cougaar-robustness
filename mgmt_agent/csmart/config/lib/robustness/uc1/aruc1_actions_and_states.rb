@@ -83,14 +83,14 @@ module Cougaar
              newNode = host.add_node(@nodeName)
              newNode.classname = "org.cougaar.bootstrap.Bootstrapper"
              newNode.add_prog_parameter("org.cougaar.core.node.Node")
-             components = ["org.cougaar.tools.robustness.ma.plugins.NodeHealthMonitorPlugin", 
-                "org.cougaar.tools.robustness.sensors.PingServerPlugin", 
+             components = ["org.cougaar.tools.robustness.ma.plugins.NodeHealthMonitorPlugin",
+                "org.cougaar.tools.robustness.sensors.PingServerPlugin",
                  "org.cougaar.tools.robustness.sensors.PingRequesterPlugin",
                  "org.cougaar.tools.robustness.sensors.HeartbeatRequesterPlugin",
                  "org.cougaar.community.CommunityPlugin",
 		 "org.cougaar.community.util.CommunityViewerServlet",
                  "org.cougaar.tools.robustness.ma.ui.ARServlet",
-		 "com.boeing.pw.mct.exnihilo.plugin.EN4JPlugin",
+		 #"com.boeing.pw.mct.exnihilo.plugin.EN4JPlugin",
                  "org.cougaar.core.mobility.service.RedirectMovePlugin",
                  "org.cougaar.core.mobility.service.RootMobilityPlugin"]
              newNode.add_components(components)
@@ -115,7 +115,7 @@ module Cougaar
              newNode.add_parameter("-Dorg.cougaar.tools.robustness.community=#{@community}")
 	     cip = getCIP()
 	     newNode.override_parameter("-Dorg.cougaar.core.logging.log4j.appender.SECURITY.File","#{cip}/workspace/log4jlogs/#{@nodeName}.log")
-	     
+
              post_node_xml(newNode)
              msg_body = @nodeName + ".rb"
              result = @run.comms.new_message(host).set_body("command[start_xml_node]#{msg_body}").request(120)
@@ -182,7 +182,7 @@ module Cougaar
         end
       end
     end
-    
+
     class AddTestNode < Cougaar::Action
       def initialize(run, nodeName, communityName, hostName=KillHost_CONST)
         super(run)
@@ -196,8 +196,8 @@ module Cougaar
              newNode = host.add_node(@nodeName)
              newNode.classname = "org.cougaar.bootstrap.Bootstrapper"
              newNode.add_prog_parameter("org.cougaar.core.node.Node")
-             components = ["org.cougaar.tools.robustness.ma.plugins.NodeHealthMonitorPlugin", 
-                "org.cougaar.tools.robustness.sensors.PingServerPlugin", 
+             components = ["org.cougaar.tools.robustness.ma.plugins.NodeHealthMonitorPlugin",
+                "org.cougaar.tools.robustness.sensors.PingServerPlugin",
                  "org.cougaar.tools.robustness.sensors.PingRequesterPlugin",
                  "org.cougaar.tools.robustness.sensors.HeartbeatRequesterPlugin",
                  "org.cougaar.community.CommunityPlugin",
@@ -227,7 +227,7 @@ module Cougaar
              newNode.add_parameter("-Dorg.cougaar.tools.robustness.community=#{@community}")
 	     #newNode.override_parameter("-Dorg.cougaar.core.logging.log4j.appender.SECURITY.File","/shares/development/cougaar-b/workspace/log4jlogs/#{@nodeName}.log")
 
-	     
+
              post_node_xml(newNode)
              msg_body = @nodeName + ".rb"
              result = @run.comms.new_message(host).set_body("command[start_xml_node]#{msg_body}").request(120)
