@@ -5,10 +5,8 @@
 <AssetStateDimensions assetType="Enclave">
 
   <StateDimension name="DefenseSuppression" >
- 	<State name="Leashed" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" defaultStartState="TRUE" />
- 	<State name="Unleashed" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
- 	<State name="WantsToLeash" relativeMauCompleteness="0.0" relativeMauSecurity="0.0" />
- 	<State name="WantsToUnleash" relativeMauCompleteness="0.0" relativeMauSecurity="0.0" />
+ 	<State name="LeashDefenses" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" defaultStartState="TRUE" />
+ 	<State name="UnleashDefenses" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
   </StateDimension>
 
 </AssetStateDimensions>

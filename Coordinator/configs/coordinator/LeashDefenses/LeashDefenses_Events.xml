@@ -5,12 +5,12 @@
 <Events>
     <Event name="WantsToLeash" affectsAssetType="Enclave" affectsStateDimension="DefenseSuppression">
         <DirectEffect>
-            <Transition WhenActualStateIs="*" EndStateWillBe="WantsToLeash" />
+            <Transition WhenActualStateIs="*" EndStateWillBe="LeashDefenses" />
         </DirectEffect>
     </Event>
     <Event name="WantsToUnleash" affectsAssetType="Enclave" affectsStateDimension="DefenseSuppression">
         <DirectEffect>
-            <Transition WhenActualStateIs="*" EndStateWillBe="WantsToUnleash" />
+            <Transition WhenActualStateIs="*" EndStateWillBe="UnleashDefenses" />
         </DirectEffect>
     </Event>
 </Events>

@@ -21,8 +21,8 @@ import org.cougaar.core.component.ServiceBroker;
 public class LeashRequestDiagnosis extends Diagnosis { 
 
     // Values that the diagnosis can take.
-    public static final String LEASH = "WantsToLeash";
-    public static final String UNLEASH = "WantsToUnleash";
+    public static final String LEASH = "LeashDefenses";
+    public static final String UNLEASH = "UnleashDefenses";
 
     private DiagnosesWrapper myWrapper;
 
@@ -66,7 +66,8 @@ public class LeashRequestDiagnosis extends Diagnosis {
      **/
     public boolean areDefensesLeashed() {
 	String diagnosis_value = (String) this.getValue();
-	return (diagnosis_value.equalsIgnoreCase( LEASH ) );
+        System.out.println("areDefensesEnabled() returns: " + diagnosis_value.equalsIgnoreCase( LEASH ) + " for: " + diagnosis_value );
+	return (diagnosis_value.equalsIgnoreCase( UNLEASH ) );
     }
 
 } 

@@ -60,6 +60,7 @@ public class ActionMonitoringPlugin extends MonitoringPluginBase implements NotP
     
     private Hashtable monitoredActions;
     private boolean somethingExpired = false;
+    private Hashtable expiredAlarms;
         
  
     /** 
@@ -73,6 +74,7 @@ public class ActionMonitoringPlugin extends MonitoringPluginBase implements NotP
     public void load() {
         super.load();
         monitoredActions = new Hashtable();
+        expiredAlarms = new Hashtable();
     }
     
     
@@ -80,10 +82,10 @@ public class ActionMonitoringPlugin extends MonitoringPluginBase implements NotP
     protected void execute() {
 
         if (somethingExpired) {
-            Iterator iter = monitoredActions.values().iterator();
+            Iterator iter = expiredAlarms.values().iterator();
             while (iter.hasNext()) {
                 ActionTimeoutAlarm thisAlarm = (ActionTimeoutAlarm)iter.next();
-                thisAlarm.handleExpiration();
+                if (thisAlarm.hasExpired()) thisAlarm.handleExpiration();
             }
         }
         somethingExpired = false;
@@ -195,7 +197,8 @@ public class ActionMonitoringPlugin extends MonitoringPluginBase implements NotP
         public void expire () {
             expired = true;
             somethingExpired = true;
-            signalClientActivity(); 
+            expiredAlarms.put(action, this);
+            signalClientActivity();
         }
 
         public void handleExpiration() {

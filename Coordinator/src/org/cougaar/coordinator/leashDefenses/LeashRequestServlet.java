@@ -33,6 +33,7 @@ package org.cougaar.coordinator.leashDefenses;
 
 import org.cougaar.coordinator.Diagnosis;
 import org.cougaar.coordinator.IllegalValueException;
+import org.cougaar.coordinator.techspec.TechSpecNotFoundException;
 
 import java.lang.reflect.Constructor;
 
@@ -100,7 +101,13 @@ public class LeashRequestServlet extends BaseServletComponent implements Blackbo
     if (blackboard == null) {
       throw new RuntimeException("Unable to obtain blackboard service");
     }
-    
+    try {
+        blackboard.openTransaction();
+        blackboard.publishAdd(new LeashRequestDiagnosis("ENCLAVE", "LeashDefenses", serviceBroker));
+        blackboard.closeTransaction();
+    } 
+    catch (IllegalValueException e) { logger.error("Attempt to initialize the LeashRequestDiagnosis to illegal vale: "+ e); }
+    catch (TechSpecNotFoundException e) { logger.error("Could not find TechSPec for LeashRequestDiagnosis: "+ e); }
     super.load();
   }
 
@@ -144,6 +151,7 @@ public class LeashRequestServlet extends BaseServletComponent implements Blackbo
         String suppress = request.getParameter(LeashRequestDiagnosis.LEASH);
         String allow = request.getParameter(LeashRequestDiagnosis.UNLEASH);
         response.setContentType("text/html");
+        if (logger.isDebugEnabled()) logger.debug("Response is: " + response.toString());
 
         try {
           PrintWriter out = response.getWriter();
@@ -180,6 +188,7 @@ public class LeashRequestServlet extends BaseServletComponent implements Blackbo
               if (logger.isDebugEnabled()) logger.debug("Status Changed - Defense Suppression Requested");
           }
           blackboard.closeTransaction();
+          System.out.println("Leaving suppress(), with: " + td.areDefensesLeashed());
 
     } 
 
@@ -202,6 +211,7 @@ public class LeashRequestServlet extends BaseServletComponent implements Blackbo
                   blackboard.publishChange(td); 
                   if (logger.isDebugEnabled()) logger.debug("Status Changed - Defenses Allowed Requested");
               blackboard.closeTransaction();
+              System.out.println("Leaving allow(), with: " + td.areDefensesLeashed());
               }
           } finally {
                 if (blackboard.isTransactionOpen()) blackboard.closeTransactionDontReset();
@@ -225,8 +235,8 @@ public class LeashRequestServlet extends BaseServletComponent implements Blackbo
         out.print(
                   "</center></h2>\n"+
                   "<form name=\"myForm\" method=\"get\" >" );
-        out.println("<input type=submit name=\"LeashDefenses\" value=\"WantsToLeash\"><br>");
-        out.println("<input type=submit name=\"UnleashDefenses\" value=\"WantsToUnleash\"><br>");
+        out.println("<input type=submit name=\"LeashDefenses\" value=\"LeashDefenses\"><br>");
+        out.println("<input type=submit name=\"UnleashDefenses\" value=\"UnleashDefenses\"><br>");
         out.println("\n</form>");
 
       }

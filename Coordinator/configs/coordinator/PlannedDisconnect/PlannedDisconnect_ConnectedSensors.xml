@@ -15,10 +15,12 @@
     </PotentialDiagnoses>
     <Diagnoses>
         <WhenActualStateIs name="WantsToDisconnect" >
-            <WillDiagnoseAs name="Disconnect_Request" withProbability="1.0" />
+            <WillDiagnoseAs name="Disconnect_Request" withProbability="0.998" />
+            <WillDiagnoseAs name="Disconnected" withProbability="0.002" />
         </WhenActualStateIs >
         <WhenActualStateIs name="WantsToConnect" >
-            <WillDiagnoseAs name="Connect_Request" withProbability="1.0" />
+            <WillDiagnoseAs name="Connect_Request" withProbability="0.998" />
+            <WillDiagnoseAs name="Connected" withProbability="0.002" />
         </WhenActualStateIs >
         <WhenActualStateIs name="Connected" >
             <WillDiagnoseAs name="Connected" withProbability="1.0" />
@@ -43,10 +45,12 @@
     </PotentialDiagnoses>
     <Diagnoses>
         <WhenActualStateIs name="WantsToDisconnect" >
-            <WillDiagnoseAs name="Disconnect_Request" withProbability="1.0" />
+            <WillDiagnoseAs name="Disconnect_Request" withProbability="0.998" />
+            <WillDiagnoseAs name="Disconnected" withProbability="0.002" />
         </WhenActualStateIs >
         <WhenActualStateIs name="WantsToConnect" >
-            <WillDiagnoseAs name="Connect_Request" withProbability="1.0" />
+            <WillDiagnoseAs name="Connect_Request" withProbability="0.998" />
+            <WillDiagnoseAs name="Connected" withProbability="0.002" />
         </WhenActualStateIs >
         <WhenActualStateIs name="Connected" >
             <WillDiagnoseAs name="Connected" withProbability="1.0" />

@@ -58,5 +58,31 @@
     </DirectEffect>
 </Event>
 
+<Event name="Late_Return" affectsAssetType="Node" affectsStateDimension="Connectedness">
+    <DirectEffect>
+        <Transition WhenActualStateIs="Connected" EndStateWillBe="Connected" />
+        <Transition WhenActualStateIs="WantsToDisconnect" EndStateWillBe="WantsToDisconnect" />
+        <Transition WhenActualStateIs="Disconnected" EndStateWillBe="Tardy" />
+        <Transition WhenActualStateIs="WantsToConnect" EndStateWillBe="Tardy" />
+        <Transition WhenActualStateIs="Tardy" EndStateWillBe="Tardy" />
+    </DirectEffect>
+    <TransitiveEffect>
+        <CausesEvent name="Late_Return" assetType="Agent"/>
+        <VulnerableAssets>
+            <ContainmentFilter eventAssetContainerName="Agent" />
+            <EventLikelihood probability="ALWAYS" />
+        </VulnerableAssets>
+    </TransitiveEffect> 
+</Event>
+
+<Event name="Late_Return" affectsAssetType="Agent" affectsStateDimension="Connectedness">
+    <DirectEffect>
+        <Transition WhenActualStateIs="Connected" EndStateWillBe="Connected" />
+        <Transition WhenActualStateIs="WantsToDisconnect" EndStateWillBe="WantsToDisconnect" />
+        <Transition WhenActualStateIs="Disconnected" EndStateWillBe="Tardy" />
+        <Transition WhenActualStateIs="WantsToConnect" EndStateWillBe="Tardy" />
+        <Transition WhenActualStateIs="Tardy" EndStateWillBe="Tardy" />
+    </DirectEffect>
+</Event>
 
 </Events>

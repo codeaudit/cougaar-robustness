@@ -7,22 +7,15 @@
             sensesStateDimension="DefenseSuppression" 
             sensorLatency="10">
     <PotentialDiagnoses>
-        <Diagnosis name="LeashRequest" />
-        <Diagnosis name="UnleashRequest" />
-        <Diagnosis name="NoRequest" defaultValue="TRUE" />
+        <Diagnosis name="LeashDefenses" />
+        <Diagnosis name="UnleashDefenses" />
     </PotentialDiagnoses>
     <Diagnoses>
-        <WhenActualStateIs name="WantsToUnleash" >
-            <WillDiagnoseAs name="UnleashRequest" withProbability="1.0" />
+        <WhenActualStateIs name="LeashDefenses" >
+            <WillDiagnoseAs name="LeashDefenses" withProbability="1.0" />
         </WhenActualStateIs >
-        <WhenActualStateIs name="WantsToUnLeash" >
-            <WillDiagnoseAs name="LeashRequest" withProbability="1.0" />
-        </WhenActualStateIs >
-        <WhenActualStateIs name="Leashed" >
-            <WillDiagnoseAs name="NoRequest" withProbability="1.0" />
-        </WhenActualStateIs >
-        <WhenActualStateIs name="Unleashed" >
-            <WillDiagnoseAs name="NoRequest" withProbability="1.0" />
+        <WhenActualStateIs name="UnleashDefenses" >
+            <WillDiagnoseAs name="UnleashDefenses" withProbability="1.0" />
         </WhenActualStateIs >
     </Diagnoses>
 </SensorType>

@@ -25,4 +25,9 @@ public class SuccessfulAction implements NotPersistable {
 
     public Action getAction() { return a; }
 
+    public String toString() {
+        return "<SuccessfulAction> for: \n "
+                + a.toString();
+    }
+
 }
