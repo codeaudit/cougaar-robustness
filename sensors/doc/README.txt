@@ -21,7 +21,7 @@ The Heartbeat Sensor includes the following classes:
    that will be requesting that heartbeats be sent and receiving 
    reports of their status (e.g. the Management Agent).
 
- HeartbeatServerPlugin - This plugin is installed in the agent that will 
+ HeartbeatServerPlugin - This plugin is installed in the agents that will 
    be sending the Heartbeat (e.g. the Monitored Agent).
 
  HeartbeatTesterPlugin - This is an example of how a user-defined plugin 
@@ -29,7 +29,7 @@ The Heartbeat Sensor includes the following classes:
    the result.  It should be installed in the agent requesting the Heartbeat.  
 
  HeartbeatRequest - This is the object that the user plugin creates and
-   publishes to its blackboard to request that a specific agent send
+   publishes to its blackboard to request that specific agents send
    Heartbeats.
 
  HeartbeatHealthReport - This is the object that the user plugin receives
@@ -50,9 +50,17 @@ javadocs are at doc\api\index.html
 To compile & build sensors.jar, execute build.bat
 To generate the javadocs, execute buildjavadocs.bat
 
-This is a preliminary version of this software.  Dubug information is
-printed to System.out.  This will be removed in the final version.
-Please report any other violations of Cougaar standards to ford@objs.com.
+This is a preliminary version of this software.
+
+Caveats:
+  - multiple targets are now supported in HeartbeatRequests, and 
+    HeartbeatHealthReports report on them, but HeartbeatRequest.getStatus()
+    hasn't been updated to reflect the status of multiple-target requests. 
+  - haven't tested with ABA
+  - haven't converted to logging yet (debug info is still printed to System.out)
+  - heartbeats don't use UDP yet
+
+Please report any problems to ford@objs.com.
 
 
 

@@ -22,10 +22,11 @@
 
 package org.cougaar.tools.robustness.sensors;
 
+import java.util.Iterator;
+import java.util.HashSet;
 import org.cougaar.core.plugin.*;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.blackboard.IncrementalSubscription;
-import java.util.Iterator;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.LoggingService;
@@ -74,12 +75,8 @@ public class HeartbeatTesterPlugin extends ComponentPlugin {
     reqSub = (IncrementalSubscription)bb.subscribe(reqPred);
     reportSub = (IncrementalSubscription)bb.subscribe(reportPred);
     MessageAddress source = getBindingSite().getAgentIdentifier();
-    // target is first parameter (from .ini)
-    MessageAddress target = null;
-    Iterator iter = this.getParameters().iterator();  
-    if (iter.hasNext()) {
-      target = new ClusterIdentifier((String)iter.next());
-    }
+
+    Iterator iter = this.getParameters().iterator(); //from .ini
     long requestTimeout = 0;
     if (iter.hasNext()) {
       requestTimeout = Long.parseLong((String)iter.next());
@@ -100,8 +97,14 @@ public class HeartbeatTesterPlugin extends ComponentPlugin {
     if (iter.hasNext()) {
       percentOutOfSpec = Float.parseFloat((String)iter.next());
     }
+    // the rest of the parameters are targets
+    HashSet targets = new HashSet();
+    MessageAddress target = null;
+    while (iter.hasNext()) {
+      targets.add(new ClusterIdentifier((String)iter.next()));
+    }
     HeartbeatRequest req = sensorFactory.newHeartbeatRequest(source, 
-                                                             target, 
+                                                             targets, 
                                                              requestTimeout, 
                                                              heartbeatFrequency,      
                                                              heartbeatTimeout,   

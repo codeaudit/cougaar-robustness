@@ -23,14 +23,16 @@
 package org.cougaar.tools.robustness.sensors;
 
 import java.util.Set;
-import java.util.Collections;
+import java.util.HashSet;
+import java.util.Date;
+import java.util.Iterator;
 import org.cougaar.core.relay.*;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.util.UID;
 import org.cougaar.core.util.XMLizable;
 import org.cougaar.core.util.XMLize;
 import org.cougaar.core.util.UniqueObject;
-import java.util.Date;
+
 
 /**
  * A Plugin developer requests a Heartbeat by publishing a 
@@ -41,7 +43,7 @@ public class HeartbeatRequest implements UniqueObject
 {
   private UID uid;
   private MessageAddress source;
-  private MessageAddress target;
+  private Set targets;
   private long reqTimeout;  // milliseconds
   private long hbFrequency;  // milliseconds
   private long hbTimeout;  // milliseconds
@@ -54,23 +56,23 @@ public class HeartbeatRequest implements UniqueObject
 
   /**
   * A new HeartbeatRequest that has not yet resulted in a request being
-  * sent to target agent.
+  * sent to target agents.
   */
   public static final int NEW = 0;
 
   /**
   * A HeartbeatRequest that has resulted in a request being sent to 
-  * target agent.
+  * target agents.
   */
   public static final int SENT = 1;
 
   /**
-  * A HeartbeatRequest which has been accepted by target agent.
+  * A HeartbeatRequest which has been accepted by target agents.
   */
   public static final int ACCEPTED = 2;
 
   /**
-  * A HeartbeatRequest which has been denied by target agent.
+  * A HeartbeatRequest which has been denied by target agents.
   */
   public static final int REFUSED = 3;
 
@@ -111,6 +113,8 @@ public class HeartbeatRequest implements UniqueObject
    * as specified by hbFrequency
    * @param percentOutOfSpec only report when heartbeat is 
    * this much later than specified by hbFrequency
+   *
+   * @deprecated Use other constructor instead.
    */
   public HeartbeatRequest(UID uid, 
                           MessageAddress source, 
@@ -122,7 +126,39 @@ public class HeartbeatRequest implements UniqueObject
                           float percentOutOfSpec) {
     this.uid = uid;
     this.source = source;
-    this.target = target;
+    this.targets = new HashSet();
+    this.targets.add(target);
+    this.reqTimeout = reqTimeout;
+    this.hbFrequency = hbFrequency;
+    this.hbTimeout = hbTimeout;
+    this.onlyOutOfSpec = onlyOutOfSpec;
+    this.percentOutOfSpec = percentOutOfSpec;
+    this.status = NEW; 
+  }
+
+  /**
+   * @param uid UID of this request
+   * @param source MessageAddress of agent requesting the Heartbeat
+   * @param targets Set of MessageAddresses of agents providing Heartbeats
+   * @param reqTimeout Request timeout in milliseconds
+   * @param hbFrequency Heartbeat frequency in milliseconds
+   * @param hbTimeout Heartbeat timeout in milliseconds
+   * @param onlyOutOfSpec only report if heartbeat is late,
+   * as specified by hbFrequency
+   * @param percentOutOfSpec only report when heartbeat is 
+   * this much later than specified by hbFrequency
+   */
+  public HeartbeatRequest(UID uid, 
+                          MessageAddress source, 
+                          Set targets, 
+                          long reqTimeout, 
+                          long hbFrequency, 
+                          long hbTimeout,
+                          boolean onlyOutOfSpec,
+                          float percentOutOfSpec) {
+    this.uid = uid;
+    this.source = source;
+    this.targets = new HashSet(targets);
     this.reqTimeout = reqTimeout;
     this.hbFrequency = hbFrequency;
     this.hbTimeout = hbTimeout;
@@ -159,21 +195,33 @@ public class HeartbeatRequest implements UniqueObject
   public void setSource(MessageAddress addr) { source = addr; }
 
   /**
-  * Get the address of the Agent to which this request is sent.
+  * Get the address of the agent to which this request is sent.
+  * If there are more than one target, returns the first.
+  *
+  * @deprecated Use getTargets instead.
   */
-  public MessageAddress getTarget() { return target; }
+  public MessageAddress getTarget() { 
+    Iterator iter = targets.iterator();
+    if (iter.hasNext()) return (MessageAddress)iter.next();
+    else return null;
+  }
+
+  /**
+  * Get the addresses of the agents to which this request is sent.
+  */
+  public Set getTargets() { return targets; }
   
   /**
   * Get the number of milliseconds that source agent should wait
   *   before giving up sending a request for a heartbeat or target
-  *   agent should wait before giving up sending his response.
+  *   agents should wait before giving up sending his response.
   */
   public long getReqTimeout() { return reqTimeout; }
 
   /**
   * Set the number of milliseconds that source agent should wait
   *   before giving up sending a request for a heartbeat or target
-  *   agent should wait before giving up sending his response.
+  *   agents should wait before giving up sending his response.
   */
   public void setReqTimeout(long reqTimeout) { 
     this.reqTimeout = reqTimeout; 
@@ -181,26 +229,26 @@ public class HeartbeatRequest implements UniqueObject
 
   /**
   * Get the number of milliseconds between heartbeats to be sent by 
-  * target agent.
+  * target agents.
   */
   public long getHbFrequency() { return hbFrequency; }
 
   /**
   * Set the number of milliseconds between heartbeats to be sent by 
-  * target agent.
+  * target agents.
   */
   public void setHbFrequency(long hbFrequency) { 
     this.hbFrequency = hbFrequency; 
   }
 
   /**
-  * Get the number of milliseconds that target agent should wait before 
+  * Get the number of milliseconds that target agents should wait before 
   * giving up sending a Heartbeat.
   */
   public long getHbTimeout() { return hbTimeout; }
 
   /**
-  * Set the number of milliseconds that target agent should wait before 
+  * Set the number of milliseconds that target agents should wait before 
   * giving up sending a Heartbeat.
   */
   public void setHbTimeout(long hbTimeout) { 
@@ -260,22 +308,22 @@ public class HeartbeatRequest implements UniqueObject
   }
 
   /**
-  * Get the time that the request was sent to the target Agent.
+  * Get the time that the request was sent to the target agents.
   */
   public Date getTimeSent() { return timeSent; }
 
   /**
-  * Set the time that the Heartbeat was sent to the target Agent.
+  * Set the time that the Heartbeat was sent to the target agents.
   */
   public void setTimeSent(Date timeSent) { this.timeSent = timeSent; }
 
   /**
-  * Get the time that the response was received from the target Agent.
+  * Get the time that the response was received from the target agents.
   */
   public Date getTimeReceived() { return timeReceived; }
 
   /**
-  * Set the time that the response was received from the target Agent.
+  * Set the time that the response was received from the target agents.
   */
   public void setTimeReceived(Date timeReceived) { 
     this.timeReceived = timeReceived; 
@@ -303,7 +351,7 @@ public class HeartbeatRequest implements UniqueObject
            "(HeartbeatRequest:\n" +
            "   uid = " + uid + "\n" +
            "   source = " + source + "\n" +
-           "   target = " + target + "\n" +
+           "   targets = " + targets + "\n" +
            "   reqTimeout = " + reqTimeout + "\n" +
            "   hbFrequency = " + hbFrequency + "\n" +
            "   hbTimeout = " + hbTimeout + "\n" +

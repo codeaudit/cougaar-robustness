@@ -22,6 +22,7 @@
 
 package org.cougaar.tools.robustness.sensors;
 
+import java.util.Set;
 import org.cougaar.core.domain.Factory;
 import org.cougaar.core.domain.RootFactory;
 import org.cougaar.core.domain.LDMServesPlugin;
@@ -74,6 +75,8 @@ public class SensorFactory implements org.cougaar.core.domain.Factory {
    * this much later than specified by hbFrequency
    *
    * @return HeartbeatRequest
+   *
+   * @deprecated Use multiple targets version of this method instead.
    */
   public HeartbeatRequest newHeartbeatRequest(MessageAddress source,  
                                               MessageAddress target, 
@@ -86,6 +89,40 @@ public class SensorFactory implements org.cougaar.core.domain.Factory {
     HeartbeatRequest req = new HeartbeatRequest(uid, 
                                                 source,
                                                 target,
+                                                reqTimeout,
+                                                hbFrequency,
+                                                hbTimeout,
+                                                onlyOutOfSpec,
+                                                percentOutOfSpec);
+    return req;
+  }
+
+  /** 
+   * Creates a new HeartbeatRequest.
+   *
+   * @param source MessageAddress of agent requesting the Heartbeat
+   * @param targets Set of MessageAddresses of agents providing the Heartbeats
+   * @param reqTimeout Request timeout in milliseconds
+   * @param hbFrequency Heartbeat frequency in milliseconds
+   * @param hbTimeout Heartbeat timeout in milliseconds
+   * @param onlyOutOfSpec only report if heartbeat is late,
+   * as specified by hbFrequency
+   * @param percentOutOfSpec only report when heartbeat is 
+   * this much later than specified by hbFrequency
+   *
+   * @return HeartbeatRequest
+   */
+  public HeartbeatRequest newHeartbeatRequest(MessageAddress source,  
+                                              Set targets, 
+                                              long reqTimeout,
+                                              long hbFrequency,
+                                              long hbTimeout,
+                                              boolean onlyOutOfSpec,
+                                              float percentOutOfSpec) {
+    UID uid = myUIDServer.nextUID();
+    HeartbeatRequest req = new HeartbeatRequest(uid, 
+                                                source,
+                                                targets,
                                                 reqTimeout,
                                                 hbFrequency,
                                                 hbTimeout,

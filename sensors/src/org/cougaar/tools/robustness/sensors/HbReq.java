@@ -24,6 +24,7 @@ package org.cougaar.tools.robustness.sensors;
 
 import java.util.Set;
 import java.util.Collections;
+import java.util.HashSet;
 import org.cougaar.core.relay.*;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.util.UID;
@@ -38,33 +39,28 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable
 {
   private UID uid;
   private MessageAddress source;
+  private transient Set targets;
   private MessageAddress target;
   private Object content;
   private Object response;
-  private transient Set _targets;
 
   /**
    * @param uid UID of this HbReq object
    * @param source MessageAddress of sending agent
-   * @param target MessageAddress of target agent
+   * @param targets Set of MessageAddresses of target agents
    * @param content HbReqContent to be sent with HbReq
    * @param response initial response
    */
   public HbReq(UID uid,
                MessageAddress source,
-               MessageAddress target,      
+               Set targets,      
                Object content,
                Object response) {
     this.uid = uid;
     this.source = source;
-    this.target = target;
+    this.targets = ((targets == null) ? Collections.EMPTY_SET : new HashSet(targets));
     this.content = content;
     this.response = response;
-
-    this._targets = 
-     ((target != null) ?
-      Collections.singleton(target) :
-      Collections.EMPTY_SET);
   }
 
   // Unique Object implementation
@@ -94,7 +90,7 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable
   * Get the addresses of the target agents to which this Relay should be sent.
   **/
   public Set getTargets() {
-    return _targets;
+    return targets;
   }
 
   /**
@@ -214,8 +210,9 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable
            "(HbReq:\n" +
            "   uid = " + uid + "\n" +
            "   source = " + source + "\n" +
-           "   target = " + target + "\n" +
+           "   targets = " + targets + "\n" +
            "   content = " + content + "\n" +
            "   response = " + response + ")";
   }
 }
+

@@ -68,14 +68,14 @@ public final class HbReqContent implements java.io.Serializable {
   /**
   * Get the number of milliseconds that source agent should wait
   *   before giving up sending a request for a heartbeat or target
-  *   agent should wait before giving up sending his response.
+  *   agents should wait before giving up sending his response.
   */
   public long getReqTimeout() { return reqTimeout; }
 
   /**
   * Set the number of milliseconds that source agent should wait
   *   before giving up sending a request for a heartbeat or target
-  *   agent should wait before giving up sending his response.
+  *   agents should wait before giving up sending his response.
   */
   public void setReqTimeout(long reqTimeout) { 
     this.reqTimeout = reqTimeout; 
@@ -83,26 +83,26 @@ public final class HbReqContent implements java.io.Serializable {
 
   /**
   * Get the number of milliseconds between heartbeats to be sent by 
-  * target agent.
+  * target agents.
   */
   public long getHbFrequency() { return hbFrequency; }
 
   /**
   * Set the number of milliseconds between heartbeats to be sent by 
-  * target agent.
+  * target agents.
   */
   public void setHbFrequency(long hbFrequency) { 
     this.hbFrequency = hbFrequency; 
   }
 
   /**
-  * Get the number of milliseconds that target agent should wait before 
+  * Get the number of milliseconds that target agents should wait before 
   * giving up sending a Heartbeat.
   */
   public long getHbTimeout() { return hbTimeout; }
 
   /**
-  * Set the number of milliseconds that target agent should wait before 
+  * Set the number of milliseconds that target agents should wait before 
   * giving up sending a Heartbeat.
   */
   public void setHbTimeout(long hbTimeout) { 

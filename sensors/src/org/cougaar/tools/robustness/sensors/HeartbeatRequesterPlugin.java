@@ -22,6 +22,10 @@
 
 package org.cougaar.tools.robustness.sensors;
 
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.Vector;
+import java.util.Set;
 import org.cougaar.core.plugin.*;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.blackboard.IncrementalSubscription;
@@ -31,14 +35,12 @@ import org.cougaar.core.util.UID;
 import org.cougaar.core.service.UIDService;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.blackboard.UniqueObjectSet;
-import java.util.Date;
-import java.util.Hashtable;
 import org.cougaar.core.agent.service.alarm.Alarm;
 
 /**
  * This Plugin receives HeartbeatRequests from the local Blackboard and
- * sends HbReqs to the target agent's HeartbeatServerPlugin. It should 
- * be installed in the Agent that is originating the HeartbeatRequests.
+ * sends HbReqs to the target agents' HeartbeatServerPlugin. It should 
+ * be installed in the agent that is originating the HeartbeatRequests.
  **/
 public class HeartbeatRequesterPlugin extends ComponentPlugin {
   private IncrementalSubscription heartbeatRequestSub;
@@ -164,19 +166,27 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
           long nextReportDue = reportDue + hbFreq;
           long timeUntilNextReportDue = nextReportDue - now;  
           if (timeUntilNextAlarm > timeUntilNextReportDue) timeUntilNextAlarm = timeUntilNextReportDue;
-          // now check to see how late the heartbeat is
-          MessageAddress target = req.getTarget();  // change here for multiple targets
-          Date lastHbDate = (Date)hbTable.get(target);
-          long lastHbTime = lastHbDate.getTime();
-          long outOfSpec = lastHbTime - lastHbDue;
-          float thisPercentOutOfSpec =  ((float)outOfSpec / (float)hbFreq) * 100.0f;
-          // send report if requester wants report whether in or out of spec
-          // or if the heartbeat is enough out of spec
-          if ( req.getOnlyOutOfSpec() == false ||  
-               thisPercentOutOfSpec > percentOutOfSpec ) {
-            HeartbeatEntry [] entries = new HeartbeatEntry[1];
-            entries[0] = new HeartbeatEntry(target, lastHbDate, thisPercentOutOfSpec);
-            HeartbeatHealthReport report = new HeartbeatHealthReport(entries);
+          // now check to see how late the heartbeats are
+          Iterator targets = req.getTargets().iterator();
+          Vector entries = null;
+          while (targets.hasNext()) {
+            MessageAddress target = (MessageAddress)targets.next();
+            Date lastHbDate = (Date)hbTable.get(target);
+            long lastHbTime = lastHbDate.getTime();
+            long outOfSpec = lastHbTime - lastHbDue;
+            float thisPercentOutOfSpec =  ((float)outOfSpec / (float)hbFreq) * 100.0f;
+            // send report if requester wants report whether in or out of spec
+            // or if the heartbeat is enough out of spec
+            if ( req.getOnlyOutOfSpec() == false ||  
+                 thisPercentOutOfSpec > percentOutOfSpec ) {
+              if (entries == null) entries = new Vector();
+              entries.add(new HeartbeatEntry(target, lastHbDate, thisPercentOutOfSpec));
+            }
+          }
+          // if no entries, don't send report
+          if ((entries != null) && (entries.size() > 0)) {
+            HeartbeatEntry[] entryArray = (HeartbeatEntry[])entries.toArray(new HeartbeatEntry[entries.size()]);
+            HeartbeatHealthReport report = new HeartbeatHealthReport(entryArray);
             bb.publishAdd(report);
             System.out.println("\nHeartbeatRequesterPlugin.prepareHealthReports:" +
                                " published new HeartbeatHealthReport = " + report);
@@ -257,7 +267,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
       if (status == HeartbeatRequest.NEW) {
         System.out.println("\nHeartbeatRequesterPlugin.prepareHealthReports: new HeartbeatRequest received = " + req);
         MessageAddress source = getBindingSite().getAgentIdentifier();
-        MessageAddress target = req.getTarget();
+        Set targets = req.getTargets();
         UID reqUID = req.getUID();
         reqTable.add(req);
         req.setStatus(HeartbeatRequest.SENT);
@@ -268,7 +278,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
                                                 req.getHbTimeout());
         HbReq hbReq = new HbReq(getUIDService().nextUID(), 
                                 source, 
-                                target, 
+                                targets, 
                                 content, 
                                 null);
         bb.publishAdd(hbReq);
