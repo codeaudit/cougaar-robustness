@@ -37,6 +37,7 @@ import org.cougaar.core.service.LoggingService;
  * It should be installed in agents that might send out heartbeats.
  **/
 public class HeartbeatServerPlugin extends ComponentPlugin {
+  private Object lock = new Object();
   private IncrementalSubscription sub;
   private BlackboardService bb;
   private LoggingService log;
@@ -71,7 +72,7 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
     /** 
      * Called by the cluster clock when clock-time >= getExpirationTime().
      **/
-    public void expire () {
+    public synchronized void expire () {
       if (!expired) {
         bb.openTransaction();
         processHeartbeats();
@@ -89,7 +90,7 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
      * the alarm from the queue, but should prevent expire from doing anything.
      * @return false IF the the alarm has already expired or was already canceled.
      **/
-    public boolean cancel () {
+    public synchronized boolean cancel () {
       if (!expired)
         return expired = true;
       return false;
@@ -97,6 +98,7 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
   }
 
   private void processHeartbeats() {
+   synchronized (lock) {
     long minFreq = Long.MAX_VALUE;  // milliseconds until next heartbeat should be sent
     Iterator iter = sub.getCollection().iterator();
     while (iter.hasNext()) {
@@ -118,6 +120,7 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
         if (lastHbDue > lastHbSent) {   // its time for this one
           MessageAddress me = getBindingSite().getAgentIdentifier();
           response.setResponder(me);
+
           response.setStatus(HbReqResponse.HEARTBEAT);
           response.setLastHbSent(now);
           req.updateResponse(me, response);
@@ -132,6 +135,7 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
       nextAlarm =  new ProcessHeartbeatsAlarm(minFreq);
       alarmService.addRealTimeAlarm(nextAlarm);
     }
+   }
   } 
 
   public void suspend() {
@@ -158,6 +162,7 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
   }
 
   protected void execute() {
+   synchronized (lock) {
     long minFreq = Long.MAX_VALUE;  // milliseconds until next heartbeat should be sent
     Iterator iter = sub.getAddedCollection().iterator();
     while (iter.hasNext()) {
@@ -180,5 +185,5 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
       alarmService.addRealTimeAlarm(nextAlarm);
     }
   } 
-
+ }
 }

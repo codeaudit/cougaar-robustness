@@ -44,6 +44,7 @@ import org.cougaar.core.service.LoggingService;
  * be installed in the agent that is originating the HeartbeatRequests.
  **/
 public class HeartbeatRequesterPlugin extends ComponentPlugin {
+  private Object lock = new Object();
   private IncrementalSubscription heartbeatRequestSub;
   private IncrementalSubscription hbReqSub;
   private BlackboardService bb;
@@ -63,7 +64,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     public long getExpirationTime () {
       return detonate;
     }
-    public void expire () {
+    public synchronized void expire () {
       if (!expired) {
         bb.openTransaction();
         prepareHealthReports();
@@ -74,7 +75,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     public boolean hasExpired () {
       return expired;
     }
-    public boolean cancel () {
+    public synchronized boolean cancel () {
       if (!expired)
         return expired = true;
       return false;
@@ -147,6 +148,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
 
   // produce HeartbeatHealthReports from ACCEPTED HeartbeatRequests
   private void prepareHealthReports() {
+   synchronized (lock) {
     long timeUntilNextAlarm = Long.MAX_VALUE; // milliseconds until next call to prepareHealthReports
     Iterator iter = heartbeatRequestSub.getCollection().iterator();
     while (iter.hasNext()) {
@@ -203,6 +205,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
       nextAlarm = new SendHealthReportsAlarm(timeUntilNextAlarm);
       alarmService.addRealTimeAlarm(nextAlarm);
     }
+   }
   }
 
   protected void setupSubscriptions() {
@@ -222,6 +225,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     // all responses except REFUSED are considered heartbeats and are entered in hbTable
     // Eventually, heartbeats won't show up this way, as they will be filtered in MTS,
     // and fed into the Metrics Service and we will get them there.
+   synchronized (lock) {
     Iterator iter = hbReqSub.getChangedCollection().iterator();
     while (iter.hasNext()) {
       HbReq hbReq = (HbReq)iter.next();
@@ -300,6 +304,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
         alarmService.addRealTimeAlarm(new HeartbeatRequestTimeout(req.getReqTimeout(),reqUID));
       }
     }
+   }
   }
 
   private UIDService UIDService;
