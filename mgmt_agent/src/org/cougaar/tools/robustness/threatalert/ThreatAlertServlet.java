@@ -63,6 +63,8 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
   private ThreatAlertService threatAlertService;
   private MessageAddress agentId; //which agent address is invoked?
 
+  private String defaultThreatAlert = "org.cougaar.tools.robustness.threatalert.DefaultThreatAlert";
+
   /**
    * Hard-coded servlet path.
    */
@@ -170,11 +172,11 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
       this.request = req;
       out = res.getWriter();
       communities = getCommunities();
-      if(communities.size() == 0){
+      /*if(communities.size() == 0){
         out.print("<html><body>No communities found.</body></html>");
         log.warn("No communities found.");
         return;
-      }
+      }*/
       parseParams();
     }
 
@@ -231,9 +233,10 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
       expire = getDateCondition(t);
       conditions.remove(t);
     } else {
-      expire = getDateCondition("expire", conditions); //alert expire time
+      //expire = getDateCondition("expire", conditions); //alert expire time
+      expire = getExpireDate(start, conditions);
     }
-    String alertClass = "org.cougaar.tools.robustness.threatalert.DefaultThreatAlert";
+    String alertClass = defaultThreatAlert;
     if (conditions.containsKey("class")) {
       alertClass = (String) conditions.get("class");
     }
@@ -247,8 +250,17 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
       }
     }
     ThreatAlert ta = makeThreatAlert(alertClass, level, start, expire, assets);
-    threatAlertService.sendAlert(ta, (String) conditions.get("community"),
-                                 (String) conditions.get("role"));
+    String role;
+    if(conditions.containsKey("inputrole"))
+      role = (String)conditions.get("inputrole");
+    else
+      role = (String)conditions.get("selectrole");
+    String community;
+    if(conditions.containsKey("inputcommunity"))
+      community = (String)conditions.get("inputcommunity");
+    else
+      community = (String)conditions.get("selectcommunity");
+    threatAlertService.sendAlert(ta, community, role);
 
   }
 
@@ -323,6 +335,23 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
     return calendar.getTime();
   }
 
+  private Date getExpireDate(Date startDate, HashMap conditions) {
+    int day = transformStringToInteger("durationday", conditions);
+    int hour = transformStringToInteger("durationhour", conditions);
+    int minute = transformStringToInteger("durationminute", conditions);
+    int second = transformStringToInteger("durationsecond", conditions);
+    Calendar calendar = Calendar.getInstance();
+    calendar.setTime(startDate);
+    long s = (long)((((day*24+hour)*60+minute)*60+second)*1000);
+    long duration = calendar.getTimeInMillis() + s;
+    calendar.setTimeInMillis(duration);
+    return calendar.getTime();
+  }
+
+  private int transformStringToInteger(String name, HashMap conditions) {
+    return Integer.parseInt((String)conditions.get(name));
+  }
+
   private int getSeverityLevel(String level) {
     for(int i=0; i<levels.length; i++) {
       if(levels[i].equalsIgnoreCase(level)) {
@@ -363,31 +392,46 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
     sb.append("<body>\n");
     sb.append("<form name=\"myForm\">\n");
     sb.append("<table border=\"0\" cellpadding=\"10\" cellspacing=\"0\">\n");
+    sb.append("<tr>\n<td>Threat Alert Class</td>\n");
+    sb.append("<td><input type=\"text\" size=\"50\" name=\"class\" value=\"" + defaultThreatAlert + "\" />\n");
+    sb.append("</td>\n</tr>\n");
     sb.append("<tr>\n<td>Community</td>\n");
-    sb.append("<td><select name=\"community\" onclick=\"changeRole()\">\n");
-    for(Iterator it = communities.iterator(); it.hasNext(); ) {
-      String option = (String)it.next();
-      List roles = getRolesOfCommunity(option);
-      sb.append("<option");
-      if(map != null) {
-        sb.append((option.equals((String)map.get("community"))) ? " selected" : "");
+    sb.append("<td>\n");
+    if(communities.size() > 0) {
+      sb.append("<select name=\"selectcommunity\" onclick=\"changeRole()\">\n");
+      for (Iterator it = communities.iterator(); it.hasNext(); ) {
+        String option = (String) it.next();
+        List roles = getRolesOfCommunity(option);
+        sb.append("<option");
+        if (map != null) {
+          sb.append( (option.equals( (String) map.get("community"))) ?
+                    " selected" : "");
+        }
+        sb.append(" label=\"" + roles.toString() + "\"");
+        sb.append(">" + option + "</option>\n");
       }
-      sb.append(" label=\"" + roles.toString() + "\"");
-      sb.append(">" + option + "</option>\n");
+      sb.append("</select>\n");
+      sb.append("&nbsp;&nbsp;or&nbsp;&nbsp;");
     }
-    sb.append("</select></td>\n</tr>\n");
+    sb.append("<input type=\"text\" size=\"30\" name=\"inputcommunity\" /></td>\n</tr>\n");
     sb.append("<tr><td>Role</td>\n");
-    sb.append("<td><select name=\"role\">\n");
-    List roles = getRolesOfCommunity((String)communities.iterator().next());
-    for(Iterator it = roles.iterator(); it.hasNext();) {
-      String role = (String)it.next();
-      sb.append("<option");
-      if(map != null) {
-        sb.append((role.equals((String)map.get("role"))) ? " selected" : "");
+    sb.append("<td>\n");
+    if(communities.size() > 0) {
+      sb.append("<select name=\"selectrole\">\n");
+      List roles = getRolesOfCommunity( (String) communities.iterator().next());
+      for (Iterator it = roles.iterator(); it.hasNext(); ) {
+        String role = (String) it.next();
+        sb.append("<option");
+        if (map != null) {
+          sb.append( (role.equals( (String) map.get("role"))) ? " selected" :
+                    "");
+        }
+        sb.append(">" + role + "</option>\n");
       }
-      sb.append(">" + role + "</option>\n");
+      sb.append("</select>\n");
+      sb.append("&nbsp;&nbsp;or&nbsp;&nbsp;");
     }
-    sb.append("</select></td>\n</tr>\n");
+    sb.append("<input type=\"text\" size=\"30\" name=\"inputrole\" /></td>\n</tr>\n");
     sb.append("<tr><td>Severity Level</td>\n");
     sb.append("<td><select name=\"level\">\n");
     for(int i=0; i<levels.length; i++) {
@@ -400,13 +444,34 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
     sb.append("</td></tr>\n");
     sb.append("<tr><td>Start Time</td>\n");
     sb.append("<td>" + getDate("start", map) + "</td><tr>\n");
-    sb.append("<tr><td>Expire Time</td>\n");
-    sb.append("<td>" + getDate("expire", map) + "</td><tr>\n");
+    //sb.append("<tr><td>Expire Time</td>\n");
+    //sb.append("<td>" + getDate("expire", map) + "</td><tr>\n");
+    sb.append("<tr><td>Duration</td>\n");
+    sb.append("<td>\n");
+    sb.append(getDurationHtml("day", 31));
+    sb.append(getDurationHtml("hour", 24));
+    sb.append(getDurationHtml("minute", 60));
+    sb.append(getDurationHtml("second", 60));
+    sb.append("</td></tr>\n");
     sb.append("</table>\n");
     sb.append(addAssets(map));
     sb.append("<br><input type=\"submit\" name=\"submit\" value=\"submit\">");
     sb.append("</form>\n");
     sb.append("</body>\n</html>");
+    return sb.toString();
+  }
+
+  private String getDurationHtml(String unit, int length) {
+    StringBuffer sb = new StringBuffer();
+    sb.append("<select name=\"duration" + unit + "\">\n");
+    for(int i=0; i<length; i++) {
+      sb.append("<option");
+      sb.append((i == 0) ? " selected" : "");
+      sb.append(">" + Integer.toString(i) + "</option>\n");
+    }
+    sb.append("</select>\n");
+    sb.append(unit + "s");
+    sb.append("&nbsp;&nbsp;");
     return sb.toString();
   }
 
