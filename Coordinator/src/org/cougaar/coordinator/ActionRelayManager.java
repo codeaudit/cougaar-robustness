@@ -148,6 +148,7 @@ public class ActionRelayManager extends DeconflictionPluginBase implements NotPe
      */
     protected void execute() {
 
+        boolean mgrJustFound = false;
         Iterator iter;
         //First check to see if we know where the manager is. If not, look it up (if shouldRelayActions == true).
         if (managerAddress == null && shouldRelayActions) {
@@ -156,6 +157,8 @@ public class ActionRelayManager extends DeconflictionPluginBase implements NotPe
             if (iter.hasNext()) {
               // find & set the ManagerAgent address
                managerAddress = ((RobustnessManagerID)iter.next()).getMessageAddress();
+               mgrJustFound = true; //signal that there might be unwrapped actions that need to be wrapped
+                                    // -- They weren't wrapped because the mgr wasn't found.
                if (logger.isDebugEnabled()) logger.debug("++++++++++++++++++++++++++++> ManagerAddress: "+managerAddress.toString());
                
                //Update the knob with status -- we know where the coordinator is
@@ -179,21 +182,29 @@ public class ActionRelayManager extends DeconflictionPluginBase implements NotPe
             shouldRelayActions = ActionRelayManagerKnob.getShouldRelay();
         }
         
-        //Wrap & Relay the Actions
+        //Wrap & Relay the Actions -- won't get here if managerAddress == null
         if (shouldRelayActions) {
             
-            //First get all added Actions & wrap them with a ActionsWrapper
-            Collection added   = actionsSubscription.getAddedCollection();
+            Collection added = null;
+            
+            if (mgrJustFound) { //then all of the actions should need to be wrapped.
+                added = actionsSubscription.getCollection();                
+            } else {           //Only need to get all added Actions & wrap them with a ActionsWrapper
+                added = actionsSubscription.getAddedCollection();
+            }
+
             for ( iter = added.iterator(); iter.hasNext() ; ) 
             {
                 Action a = (Action)iter.next();                
-                logger.debug("============= Saw new Action (with UID="+a.getUID()+")-- Wrapping it.");
-                UID uid = this.us.nextUID(); //gen UID for this wrapper
-                ActionsWrapper aw = new ActionsWrapper(a, this.agentId, managerAddress, uid); //wrap the Action
-                //registerUID(uid); //record all UIDs so we know what wrappers are out there.
-                a.setWrapper(aw);
-                this.publishAdd(aw);                
-                newWrappers.add(aw);
+                if (a.getWrapper() == null) { //Make sure it wasn't already wrapped... just a precaution
+                    logger.debug("============= Saw new Action (with UID="+a.getUID()+")-- Wrapping it.");
+                    UID uid = this.us.nextUID(); //gen UID for this wrapper
+                    ActionsWrapper aw = new ActionsWrapper(a, this.agentId, managerAddress, uid); //wrap the Action
+                    //registerUID(uid); //record all UIDs so we know what wrappers are out there.
+                    a.setWrapper(aw);
+                    this.publishAdd(aw);                
+                    newWrappers.add(aw);
+                }
             }
             
             //Now look at changed Actions
@@ -219,7 +230,7 @@ public class ActionRelayManager extends DeconflictionPluginBase implements NotPe
             
         }           
     }
-    
+     
     /**
      * Locates the wrapper for a given Action
      */

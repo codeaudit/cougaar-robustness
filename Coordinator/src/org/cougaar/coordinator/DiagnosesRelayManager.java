@@ -150,6 +150,8 @@ public class DiagnosesRelayManager extends DeconflictionPluginBase implements No
     protected void execute() {
 
         Iterator iter;
+        boolean mgrJustFound = false;
+
         //First check to see if we know where the manager is. If not, look it up (if shouldRelayDiagnoses == true).
         if (managerAddress == null && shouldRelayDiagnoses) {
             //Check to see if the Coordinator's address is known...
@@ -157,6 +159,8 @@ public class DiagnosesRelayManager extends DeconflictionPluginBase implements No
             if (iter.hasNext()) {
               // find & set the ManagerAgent address
                managerAddress = ((RobustnessManagerID)iter.next()).getMessageAddress();
+               mgrJustFound = true; //signal that there might be unwrapped actions that need to be wrapped
+                                    // -- They weren't wrapped because the mgr wasn't found.
                if (logger.isDebugEnabled()) logger.debug("ManagerAddress: "+managerAddress.toString());
                
                //Update the knob with status -- we know where the coordinator is
@@ -183,18 +187,27 @@ public class DiagnosesRelayManager extends DeconflictionPluginBase implements No
         //Wrap & Relay the diagnoses
         if (shouldRelayDiagnoses) {
             
-            //First get all added Diagnoses & wrap them with a DiagnosisWrapper
-            Collection added   = diagnosesSubscription.getAddedCollection();
+            Collection added = null;
+            
+            if (mgrJustFound) { //then all of the actions should need to be wrapped.
+                added = diagnosesSubscription.getCollection();                
+            } else {           //Only need to get all added Actions & wrap them with a ActionsWrapper
+                added = diagnosesSubscription.getAddedCollection();
+            }
+            
+                        
             for ( iter = added.iterator(); iter.hasNext() ; ) 
             {
                 Diagnosis d = (Diagnosis)iter.next();                
-                logger.debug("============= Saw new Diagnosis (with UID="+d.getUID()+") -- Wrapping it.");
-                UID uid = this.us.nextUID(); //gen UID for this wrapper
-                DiagnosesWrapper dw = new DiagnosesWrapper(d, this.agentId, managerAddress, uid); //wrap the diagnosis
-                //registerUID(uid); //record all UIDs so we know what wrappers are out there.
-                d.setWrapper(dw);
-                this.publishAdd(dw);                
-                newWrappers.add(dw);
+                if (d.getWrapper() == null) { //Make sure it wasn't already wrapped... just a precaution
+                    logger.debug("============= Saw new Diagnosis (with UID="+d.getUID()+") -- Wrapping it.");
+                    UID uid = this.us.nextUID(); //gen UID for this wrapper
+                    DiagnosesWrapper dw = new DiagnosesWrapper(d, this.agentId, managerAddress, uid); //wrap the diagnosis
+                    //registerUID(uid); //record all UIDs so we know what wrappers are out there.
+                    d.setWrapper(dw);
+                    this.publishAdd(dw);                
+                    newWrappers.add(dw);
+                }
             }
             
             //Now look at changed diagnoses
