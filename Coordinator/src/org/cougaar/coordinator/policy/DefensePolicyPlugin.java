@@ -1,9 +1,6 @@
 /*
- * DefensePolicyPlugin.java
- *
- * Created on July 8, 2003, 4:09 PM
  * <copyright>
- *  Copyright 2003 Object Services and Consulting, Inc.
+ *  Copyright 2004 Object Services and Consulting, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
  *  and the Defense Logistics Agency (DLA).
  * 
@@ -23,6 +20,7 @@
  * </copyright>
  */
 
+
 package org.cougaar.coordinator.policy;
 
 
@@ -33,11 +31,12 @@ import java.util.Collection;
 
 import org.cougaar.core.component.Service;
 import org.cougaar.core.component.ServiceBroker;
-import org.cougaar.core.adaptivity.ServiceUserPluginBase;
 import org.cougaar.core.persist.NotPersistable;
 import org.cougaar.core.service.EventService;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.util.UnaryPredicate;
+import org.cougaar.coordinator.believability.BelievabilityKnob;
+import org.cougaar.core.agent.service.alarm.Alarm;
 
 
 /**
@@ -45,47 +44,45 @@ import org.cougaar.util.UnaryPredicate;
  * It emits CostBenefitDiagnosis objects.
  *
  */
-public class DefensePolicyPlugin extends ServiceUserPluginBase implements NotPersistable {
+public class DefensePolicyPlugin extends DeconflictionPluginBase implements NotPersistable {
     
     
-    private IncrementalSubscription defensePolicySubscription;
-    private IncrementalSubscription pluginControlSubscription;
+    private IncrementalSubscription believabilityKnobSubscription;
     
     private EventService eventService = null;
     private static final Class[] requiredServices = {
         EventService.class
     };
 
+    private static final boolean leashOnRestart;
+    private static final long leashTimeAfterCoordinatorRestart;
+    private boolean somethingExpired = false;
+
+    static
+    {
+         String s = "org.cougaar.coordinator.leashOnRestart";
+         leashOnRestart = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
+    }
+
+    static
+    {
+         String s = "org.cougaar.coordinator.leashTimeAfterCoordinatorRestart";
+         leashTimeAfterCoordinatorRestart = Long.valueOf(System.getProperty(s, "240")).longValue();
+    }
     
     /** 
       * Creates a new instance of DefensePolicyPlugin 
       */
     public DefensePolicyPlugin() {
-        super(requiredServices);
     }
     
-
-    /**
-      * Demonstrates how to read in parameters passed in via configuration files. Use/remove as needed. 
-      */
-    private void getPluginParams() {
-        
-        //The 'logger' attribute is inherited. Use it to emit data for debugging
-        if (logger.isInfoEnabled() && getParameters().isEmpty()) logger.error("plugin saw 0 parameters.");
-
-        Iterator iter = getParameters().iterator (); 
-        if (iter.hasNext()) {
-             logger.debug("Parameter = " + (String)iter.next());
-        }
-    }       
+     
 
     /**
      * Called from outside. Should contain plugin initialization code.
      */
     public void load() {
         super.load();
-        getPluginParams();
-        haveServices();
     }
     
     
@@ -98,36 +95,39 @@ public class DefensePolicyPlugin extends ServiceUserPluginBase implements NotPer
      */
     protected void execute() {
 
-        //***************************************************DefensePolicy
-        //Handle the addition of new DefensePolicies
-        for ( Iterator iter = defensePolicySubscription.getAddedCollection().iterator();  
-          iter.hasNext() ; ) 
-        {
-            DefensePolicy dpa = (DefensePolicy)iter.next();
-            //Process
+        if (blackboard.didRehydrate()) {
+            Iterator iter = believabilityKnobSubscription.iterator();    
+            BelievabilityKnob knob;
+            if (iter.hasNext()) {
+                knob = (BelievabilityKnob) iter.next();
+            }
+            else {
+                knob = new BelievabilityKnob();
+                publishAdd(knob);
+            }
+            if(leashOnRestart) {
+                knob.setIsLeashed(true);
+                blackboard.publishChange(knob);
+                if (logger.isDebugEnabled()) logger.debug("rehydrate detected  && leashOnRestart==true - Leashing Defenses");       
+            }
+            else if (leashTimeAfterCoordinatorRestart > 0) { // leash the defenses on an MA restart, dlw - 9/29/04
+                getAlarmService().addRealTimeAlarm(new LeashAlarm(leashTimeAfterCoordinatorRestart));
+                knob.setIsLeashed(true);
+                blackboard.publishChange(knob);
+                if (logger.isDebugEnabled()) logger.debug("rehydrate detected  && leashTimeAfterCoordinatorRestart==" + leashTimeAfterCoordinatorRestart  + " - Leashing Defenses");       
+            }
         }
 
-        //Handle the modification of DefensePolicies
-        for ( Iterator iter = defensePolicySubscription.getChangedCollection().iterator();  
-          iter.hasNext() ; ) 
-        {
-            DefensePolicy dpc = (DefensePolicy)iter.next();
-            //Process
+        if (somethingExpired) {
+            Iterator iter = believabilityKnobSubscription.iterator();    
+            if (iter.hasNext()) {
+                BelievabilityKnob knob = (BelievabilityKnob) iter.next();
+                knob.setIsLeashed(false);
+                blackboard.publishChange(knob);
+                somethingExpired = false;
+                if (logger.isDebugEnabled()) logger.debug("Unleashing Defenses");       
+            }
         }
-        
-        //Handle the removal of DefensePolicies
-        for ( Iterator iter = defensePolicySubscription.getRemovedCollection().iterator();  
-          iter.hasNext() ; ) 
-        {
-            DefensePolicy dpr = (DefensePolicy)iter.next();
-            //Process
-        }
-
-        //******************************************************Publishing to the BB
-        //Adding a DefensePolicy to the BB
-        DefensePolicy dp = new DefensePolicy();
-        publishAdd(dp);
-           
     }
     
     /** 
@@ -137,19 +137,10 @@ public class DefensePolicyPlugin extends ServiceUserPluginBase implements NotPer
       */
     protected void setupSubscriptions() {
 
-        defensePolicySubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
-            public boolean execute(Object o) {
-                if ( o instanceof DefensePolicy) {
-                    return true ;
-                }
-                return false ;
-            }
-        }) ;
-
         //Not used at this time - Will be used to provide out-of-band control of this plugin
-        pluginControlSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
+        believabilityKnobSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
             public boolean execute(Object o) {
-                if ( o instanceof DefensePolicyKnob) {
+                if ( o instanceof BelievabilityKnob) {
                     return true ;
                 }
                 return false ;
@@ -157,45 +148,33 @@ public class DefensePolicyPlugin extends ServiceUserPluginBase implements NotPer
         }) ;
     }
 
-    /**
-      * Called to ensure that the services we need get loaded.
-      */
-    private boolean haveServices() {
-        if (eventService != null) return true;
-        if (acquireServices()) {
-            if (logger.isDebugEnabled()) logger.debug(".haveServices - acquiredServices.");
-                ServiceBroker sb = getServiceBroker();
-                
-            eventService = (EventService ) 
-            sb.getService( this, EventService.class, null ) ;      
-            if (eventService == null) {
-                throw new RuntimeException(
-                    "Unable to obtain EventService");
-            }
-
-            return true;
+    private class LeashAlarm implements Alarm {
+        private long detonate;
+        private boolean expired;
+        
+        public LeashAlarm (long delay) {
+            detonate = System.currentTimeMillis() + 1000*delay;
+            if (logger.isDebugEnabled()) logger.debug("LeashAlarm created, will expire in "+delay+" sec");
         }
-        else if (logger.isDebugEnabled()) logger.debug(".haveServices - did NOT acquire services.");
+        
+        public long getExpirationTime () { return detonate; }
+        
+        public void expire () {
+            if (!expired) {
+                expired = true;
+                somethingExpired = true;
+                signalClientActivity();
+                if (logger.isDebugEnabled()) logger.debug("LeashAlarm expired");
+            }
+        }
+        public boolean hasExpired () { return expired; }
+
+        public boolean cancel () {
+            if (!expired)
+                return expired = true;
             return false;
-    }
-    
-
-    // Helper methods to publish objects to the Blackboard
-    public boolean publishAdd(Object o) {
-        getBlackboardService().publishAdd(o);
-        return true;
-    }
-
-    public boolean publishChange(Object o) {
-	getBlackboardService().publishChange(o);
-        return true;
-    }
-
-    public boolean publishRemove(Object o) {
-	getBlackboardService().publishRemove(o);
-        return true;
-    }
-    
-    
+        }
+ 
+    }    
     
 }

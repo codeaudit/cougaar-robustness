@@ -46,8 +46,9 @@ public class CostBenefitKnob implements NotPersistable {
     public long getHorizon() { return horizon; }
 
     public void setWeights(double completnessWeight, double securityWeight, double timelinessWeight) throws BadWeightsException {
-        if ((completnessWeight + securityWeight + timelinessWeight) != 1.0) 
-            throw new BadWeightsException();
+        double totalWeight = completnessWeight + securityWeight + timelinessWeight;
+        if ((totalWeight > 1.000000001) || (totalWeight < 0.999999999))
+            throw new BadWeightsException(securityWeight, completenessWeight, timelinessWeight);
         else {
             this.completenessWeight = completenessWeight;
             this.securityWeight = securityWeight;
