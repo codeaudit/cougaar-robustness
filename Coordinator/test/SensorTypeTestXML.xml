@@ -29,7 +29,7 @@
         </WhenActualStateIs >
     </Diagnoses>
 </SensorType>
-<SensorType name="AgentCommunication" sensesAssetType="Agent" sensesStateDimension="COMMUNICATION" sensorLatency="1000">
+<SensorType name="AgentCommunication2" sensesAssetType="Agent" sensesStateDimension="COMMUNICATION2" sensorLatency="1000">
     <PotentialDiagnoses>
         <Diagnosis name="OK" />
         <Diagnosis name="DEGRADED" />
