@@ -1,4 +1,26 @@
 /*
+ * <copyright>
+ *  Copyright 2004 Object Services and Consulting, Inc.
+ *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
+ *  and the Defense Logistics Agency (DLA).
+ * 
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the Cougaar Open Source License as published by
+ *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
+ * 
+ *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
+ *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
+ *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
+ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE, AND WITHOUT
+ *  ANY WARRANTIES AS TO NON-INFRINGEMENT.  IN NO EVENT SHALL COPYRIGHT
+ *  HOLDER BE LIABLE FOR ANY DIRECT, SPECIAL, INDIRECT OR CONSEQUENTIAL
+ *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE OF DATA OR PROFITS,
+ *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ *  PERFORMANCE OF THE COUGAAR SOFTWARE.
+ * </copyright>
+ */
+
+/*
  * ActionEvaluation.java
  *
  * Created on May 5, 2004, 9:42 AM
@@ -35,6 +57,8 @@ public class ActionEvaluation implements Comparable {
     }
 
     public Action getAction() { return action; }
+
+    public String getActionName() { return getAction().getClass().toString();  }
 
     
     protected void addVariantEvaluation(VariantEvaluation ve) { 
@@ -141,8 +165,9 @@ public class ActionEvaluation implements Comparable {
             else {
                 if (conflictWith("org.cougaar.tools.robustness.ma.util.AgentRestartAction", "Yes", activeActions, selectedVariants)) return false;
                 if (conflictWith("org.cougaar.tools.robustness.disconnection.NodeDisconnectAction", "Allow_Disconnect", activeActions, selectedVariants)) return false;
+                if (conflictWith("org.cougaar.tools.robustness.disconnection.AgentDisconnectAction", "Allow_Disconnect", activeActions, selectedVariants)) return false;
                 if (conflictWith("org.cougaar.coordinator.security.AgentCompromiseAction", "Restart", activeActions, selectedVariants)) return false;
-            }
+            } 
         }
         if (this.getAction().getClass().getName().equals("org.cougaar.tools.robustness.ma.util.AgentRestartAction")) {
             if (ve.getVariantName().equals("No")) return true;
@@ -152,6 +177,7 @@ public class ActionEvaluation implements Comparable {
                 if (conflictWith("org.cougaar.mts.std.LinksEnablingAction", "AlternateDirect", activeActions, selectedVariants)) return false;
                 if (conflictWith("org.cougaar.mts.std.LinksEnablingAction", "StoreAndForward", activeActions, selectedVariants)) return false;
                 if (conflictWith("org.cougaar.tools.robustness.disconnection.NodeDisconnectAction", "Allow_Disconnect", activeActions, selectedVariants)) return false;
+                if (conflictWith("org.cougaar.tools.robustness.disconnection.AgentDisconnectAction", "Allow_Disconnect", activeActions, selectedVariants)) return false;
                 if (conflictWith("org.cougaar.coordinator.security.AgentCompromiseAction", "Restart", activeActions, selectedVariants)) return false;
             }
         }
@@ -163,6 +189,7 @@ public class ActionEvaluation implements Comparable {
                 if (conflictWith("org.cougaar.mts.std.LinksEnablingAction", "StoreAndForward", activeActions, selectedVariants)) return false;
                 if (conflictWith("org.cougaar.tools.robustness.ma.util.AgentRestartAction", "Yes", activeActions, selectedVariants)) return false;
                 if (conflictWith("org.cougaar.tools.robustness.disconnection.NodeDisconnectAction", "Allow_Disconnect", activeActions, selectedVariants)) return false;
+                if (conflictWith("org.cougaar.tools.robustness.disconnection.AgentDisconnectAction", "Allow_Disconnect", activeActions, selectedVariants)) return false;
             }
         }
         return true;
@@ -190,7 +217,7 @@ public class ActionEvaluation implements Comparable {
         Iterator iter = activeActions.iterator();
         while (iter.hasNext()) {
             Action thisAction = (Action) iter.next();
-            if (thisAction.getClass().getName().equals(actionName) && thisAction.getValue().equals(variantName)) return true;
+            if (thisAction.getClass().getName().equals(actionName) && variantName.equals(thisAction.getValue().getAction())) return true;
         }
         return false;
     }

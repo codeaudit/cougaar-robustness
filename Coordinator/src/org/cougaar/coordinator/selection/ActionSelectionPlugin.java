@@ -58,6 +58,7 @@ import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.persist.NotPersistable;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.coordinator.Action;
+import org.cougaar.coordinator.sensors.load.OutsideLoadDiagnosis;
 
 
 public class ActionSelectionPlugin extends DeconflictionPluginBase
@@ -134,11 +135,6 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
             return false ;
         }
      }) ;
-
-     //Unsure of use...
-     if (blackboard.didRehydrate()) { //reset to null so it gets established again after rehydration -- IS THIS RIGHT??
-         //this.testServlet = null;
-     }
      
   }
 
@@ -266,16 +262,36 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
     cbe.setOrderedEvaluations(orderedActions);
     if (logger.isDebugEnabled()) logger.debug(cbe.toString());
   }
+
+  private double getCurrentEnclaveResources() {
+    return 100.0;  // for now
+  }
+
+  private double getCostForAction(Action thisAction) { 
+    return 1.0; // for now
+  }
   
   private void selectActions(CostBenefitEvaluation cbe, ActionSelectionKnob knob) {
 
     rankAvailableActions(cbe, knob);
+    
+    Iterator iter;
 
     boolean done = false;
+    double resourcePercentageRemaining = getCurrentEnclaveResources();
     Set alreadyActiveActions = findActiveIrrevocableActions(cbe);
+
+    // deduct the cost of actions that we can't terminate
+    iter = alreadyActiveActions.iterator();
+    while (iter.hasNext()) {
+        Action thisAction = (Action)iter.next();
+        double thisCost = getCostForAction(thisAction);
+        resourcePercentageRemaining = resourcePercentageRemaining - thisCost;
+    }
+
     Set alreadySelectedVariants = new HashSet();
 
-    Iterator iter = cbe.getOrderedEvaluations().iterator();
+    iter = cbe.getOrderedEvaluations().iterator();
     if (logger.isInfoEnabled()) logger.info(cbe.dumpAvailableVariants());
     while (iter.hasNext()) {
         ActionEvaluation thisActionEvaluation = (ActionEvaluation) iter.next();
@@ -285,6 +301,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
         boolean pickedSomeVariant = false;
         while (iter3.hasNext() && !pickedSomeVariant) {
             VariantEvaluation proposedVariant = (VariantEvaluation)iter3.next();
+            if (logger.isDebugEnabled()) logger.debug("Considering conflict for Action: " +thisActionEvaluation.getAction().getClass().getName() + "Variant: " + proposedVariant.toString());
             if (logger.isDebugEnabled()) logger.debug(proposedVariant + " doesNotConflict: " + thisActionEvaluation.doesNotConflict(proposedVariant, alreadyActiveActions, alreadySelectedVariants));
             if (thisActionEvaluation.doesNotConflict(proposedVariant, alreadyActiveActions, alreadySelectedVariants)) {
                 if ((proposedVariant.getPredictedBenefit() > 0.0) || (thisActionEvaluation.mustSelectOne())) {

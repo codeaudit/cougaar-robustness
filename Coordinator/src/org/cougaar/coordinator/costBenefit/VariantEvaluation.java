@@ -30,7 +30,6 @@ public class VariantEvaluation implements Comparable {
     private boolean active = false;
     private boolean failed = false;
     private long expectedTransitionTime;
-    private double selectionScore = -100000000.0;
 
     /** Creates new VariantEvaluation containing the cost & benefit for this variant under the current StateEstimation */
     public VariantEvaluation(ActionDescription variantDescription, 
@@ -70,9 +69,6 @@ public class VariantEvaluation implements Comparable {
     public void setActive() { active = true; }
     public boolean activeP() { return active; }
     protected void setActive(boolean p) { active = p; }
-
-    public void setSelectionScore(double score) { selectionScore = score; }
-    public double getSelectionScore() { return selectionScore; }
 
     public long getExpectedTransitionTime() { return expectedTransitionTime; }
 
