@@ -501,9 +501,15 @@
     <antcall target="jar"/>
     <move file="${lib}/${jar}" toDir="staging/lib"/>
     <copy file="build.xml" toDir="staging/robustness"/>
-    <copy file="bin/**" toDir="staging/robustness/bin"/>
-    <copy file="configs/**" toDir="staging/robustness/configs"/>
-    <copy file="doc/**" toDir="staging/robustness/doc"/>
+    <copy toDir="staging/robustness/bin">
+      <fileset dir="bin"/>
+    </copy>
+    <copy toDir="staging/robustness/configs">
+      <fileset dir="configs"/>
+    </copy>
+    <copy toDir="staging/robustness/doc">
+      <fileset dir="doc"/>
+    </copy>
     <zip zipfile="Robustness_mic_mgmt_agent_overlay.zip" basedir="staging"/>
     <delete dir="staging"/>
   </target>
