@@ -7,6 +7,7 @@ $:.unshift File.join(CIP, 'csmart', 'config', 'lib')
 
 require 'cougaar/scripting'
 require 'ultralog/scripting'
+require 'ultralog/enclaves'
 require 'robustness/uc1/aruc1_actions_and_states'
 require 'robustness/uc2/msglog'
 require 'robustness/uc2/flushmail'
