@@ -32,6 +32,7 @@ import java.util.Date;
 public final class HbReqResponse implements java.io.Serializable {
   private int status;
   MessageAddress responder;
+  private long firstHbSent; //only set and used on the target side
   private long lastHbSent;  //only set and used on the target side
 
   /**
@@ -43,10 +44,12 @@ public final class HbReqResponse implements java.io.Serializable {
    * @param responder the MessageAddress of the responding agent.
    * @param status The status of the HeartbeatRequest 
    * (i.e. HeartbeatRequest.ACCEPTED, HeartbeatRequest.REFUSED)
+   * @param firstHbSent the time when the first heartbeat was sent
    * @param lastHbSent the time when the last heartbeat was sent
    */
-  public HbReqResponse(MessageAddress responder, int status, long lastHbSent) {
+  public HbReqResponse(MessageAddress responder, int status, long firstHbSent, long lastHbSent) {
     this.responder = responder;
+    this.firstHbSent = firstHbSent;
     this.lastHbSent = lastHbSent;
     switch (status) {
       // only these two values can be set by server
@@ -95,6 +98,18 @@ public final class HbReqResponse implements java.io.Serializable {
   }
 
   /**
+  * Get the time when the first heartbeat was sent.
+  */
+  public long getFirstHbSent() { return firstHbSent; }
+
+  /**
+  * Set the first send time for a heartbeat.
+  */
+  public void setFirstHbSent(long firstHbSent) { 
+    this.firstHbSent = firstHbSent;        
+  }
+
+  /**
   * Get the time when the last heartbeat was sent.
   */
   public long getLastHbSent() { return lastHbSent; }
@@ -118,6 +133,7 @@ public final class HbReqResponse implements java.io.Serializable {
       HbReqResponse r = (HbReqResponse)o;
       if (this.status == r.getStatus() &&
           this.responder.equals(r.getResponder()) &&
+          this.firstHbSent == r.getFirstHbSent() &&
           this.lastHbSent == r.getLastHbSent()) 
         return true;
     }
@@ -143,6 +159,7 @@ public final class HbReqResponse implements java.io.Serializable {
            "    (HbReqResponse:\n" +
            "       responder = " + responder + "\n" +
            "       status = " + statusToString(status) + "\n" +
+           "       firstsHbSent = " + new Date(firstHbSent) + "\n" +
            "       lastHbSent = " + new Date(lastHbSent) + ")";
   } 
 

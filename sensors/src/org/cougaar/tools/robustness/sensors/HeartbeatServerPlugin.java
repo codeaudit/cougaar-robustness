@@ -105,14 +105,16 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
       HbReqContent content = (HbReqContent)req.getContent();
       HbReqResponse response = (HbReqResponse)req.getResponse();
       long now = System.currentTimeMillis();
-      long lastHb = response.getLastHbSent();
+      long lastHbSent = response.getLastHbSent();
       long freq = content.getHbFrequency();
       // ignore new requests here - execute will handle
-      if (lastHb != -1) {
+      if (lastHbSent != -1) {
         // check if its time to send a heartbeat or not for this one
-        long nextHb = (lastHb + freq);
-        if (now >= nextHb) {   // its time for this one
-          if (minFreq > freq) minFreq = freq;
+        long start = response.getFirstHbSent(); 
+        long lastHbDue = start + ((now - start)/freq)*freq;
+        long nextHbDueFromNow = lastHbDue + freq - now;
+        if (minFreq > nextHbDueFromNow) minFreq = nextHbDueFromNow;
+        if (lastHbDue > lastHbSent) {   // its time for this one
           MessageAddress me = getBindingSite().getAgentIdentifier();
           response.setResponder(me);
           response.setStatus(HbReqResponse.HEARTBEAT);
@@ -121,9 +123,6 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
           bb.publishChange(req);
           if (log.isDebugEnabled()) 
             log.debug("\nHeartbeatServerPlugin.processHeartbeats: published changed HbReq = " + req);
-        } else {  // its not time yet for this one
-          long fromNow = nextHb - now;
-          if (minFreq > fromNow) minFreq = fromNow;
         }
       }
     }
@@ -151,7 +150,7 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
       long freq = content.getHbFrequency();
       if (minFreq > freq) minFreq = freq;
       MessageAddress me = getBindingSite().getAgentIdentifier();
-      req.updateResponse(me, new HbReqResponse(me, HeartbeatRequest.ACCEPTED, now));
+      req.updateResponse(me, new HbReqResponse(me, HeartbeatRequest.ACCEPTED, now, now));
       bb.publishChange(req);
       if (log.isDebugEnabled()) 
         log.debug("\nHeartbeatServerPlugin.execute: published changed HbReq = " + req);
