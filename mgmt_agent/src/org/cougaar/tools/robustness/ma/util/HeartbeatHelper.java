@@ -153,20 +153,22 @@ public class HeartbeatHelper extends BlackboardClientComponent {
     for (Iterator it = heartbeatRequestSub.getChangedCollection().iterator(); it.hasNext();) {
       HeartbeatRequest hbr = (HeartbeatRequest) it.next();
       int status = hbr.getStatus();
+      MessageAddress target = getTarget(hbr);
       if (status == HeartbeatRequest.ACCEPTED) {
-        heartbeatRequests.put(hbr.getTarget(), hbr);
-        heartbeatsStarted(hbr.getTarget());
+        heartbeatRequests.put(target, hbr);
+        heartbeatsStarted(target);
       } else if (status == HeartbeatRequest.FAILED || status == HeartbeatRequest.REFUSED) {
-        logger.debug("Heartbeat request failed: agent=" + hbr.getTarget() +
+        logger.debug("Heartbeat request failed: agent=" + target +
                     " status=" + hbr.statusToString(hbr.getStatus()));
-        heartbeatFailure(hbr.getTarget());
+        heartbeatFailure(target);
       }
     }
 
     for (Iterator it = heartbeatRequestSub.getRemovedCollection().iterator(); it.hasNext();) {
       HeartbeatRequest hbr = (HeartbeatRequest) it.next();
-      heartbeatRequests.remove(hbr.getTarget());
-      heartbeatsStopped(hbr.getTarget());
+      MessageAddress target = getTarget(hbr);
+      heartbeatRequests.remove(target);
+      heartbeatsStopped(target);
     }
 
     // Get HeartbeatHealthReports
@@ -247,6 +249,12 @@ public class HeartbeatHelper extends BlackboardClientComponent {
       }
   }
 
+  private MessageAddress getTarget(HeartbeatRequest hbr) {
+    Set targets = hbr.getTargets();
+    return !targets.isEmpty()
+               ? ((MessageAddress[])targets.toArray(new MessageAddress[0]))[0]
+               : null;
+  }
 
   protected void fireLater(QueueEntry qe) {
     synchronized (heartbeatRequestQueue) {
@@ -273,7 +281,7 @@ public class HeartbeatHelper extends BlackboardClientComponent {
       if (qe.action == START) {
         HeartbeatRequest hbr =
             sensorFactory.newHeartbeatRequest(agentId,
-                                              qe.agent,
+                                              Collections.singleton(qe.agent),
                                               qe.hbrTimeout,
                                               qe.hbFrequency,
                                               qe.hbTimeout,
