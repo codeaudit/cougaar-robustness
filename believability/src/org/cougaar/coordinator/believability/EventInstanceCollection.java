@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/EventInstanceCollection.java,v $
- * $Revision: 1.19 $
- * $Date: 2004-08-09 20:46:41 $
+ * $Revision: 1.20 $
+ * $Date: 2004-09-27 16:29:57 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -37,7 +37,7 @@ import org.cougaar.coordinator.techspec.EventDescription;
  * artifact of the nature of the threat and event objects). 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.19 $Date: 2004-08-09 20:46:41 $
+ * @version $Revision: 1.20 $Date: 2004-09-27 16:29:57 $
  *
  */
 class EventInstanceCollection extends Model
@@ -176,9 +176,9 @@ class EventInstanceCollection extends Model
 
         if ( asset_ts == null )
         {
-            logDetail( "Found a NULL tech spec for asset ID "
-                        + asset_id + " (name=" + asset_id.getName() 
-                        + "). Assuming no events/stresses." );
+            logError( "Found a NULL tech spec for asset ID "
+                      + asset_id + " (name=" + asset_id.getName() 
+                      + "). Assuming no events/stresses." );
             return;
         }
 
