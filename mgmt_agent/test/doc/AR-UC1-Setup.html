@@ -65,7 +65,8 @@ repository   and copy to the COUGAAR_INSTALL_PATH/lib directory.<br>
   allocation of agents to communities is as follows:<br>
     <br>
        
-<table cellpadding="2" cellspacing="2" border="1" width="300">
+<table cellpadding="2" cellspacing="2" border="1" width="300"
+ align="center">
       <tbody>
         <tr>
           <td valign="top">1AD-Enclave1-COMM<br>
@@ -151,8 +152,7 @@ from  the pop-up menu. &nbsp;Then add "RestartNode" to the new ATTRIBUTE_ID
 and  the name of the node to the ATTRIBUTE_VALUE field. &nbsp;When multiple 
 restart  nodes are specified the Management Agent will consider all of these 
 as possible  destinations for a restarted agent. &nbsp;The actual node selected 
-will be  the one with the fewest number of running agents.<br>
-   </li>
+will be  the one with the fewest number of running agents</li>
      
 </ol>
        
@@ -176,16 +176,23 @@ and ping failures. &nbsp;Eventually   the dead agents will be retarted on
 a restart node. &nbsp;If the restart  is successful, a log message "Reacquired
 XXXX" will be generated where XXXX  is the name of the agent that was restarted.<br>
 <br>
-<h2>4. &nbsp;Modifying Parameters</h2>
-The AR-UC1 components support the capability to specify default values and
-agent-specific values for the following parameters:<br>
+<h2>4. &nbsp;Modifying Robustness Parameters</h2>
+The AR-UC1 components support the capability to override default values and
+to define agent-specific values for the following parameters. &nbsp;The SMALL-1AD-AR-export
+experiment discussed above uses the default values listed in the table below.
+&nbsp;While these are reasonable values they have not been optimized for
+any particular configuration. &nbsp;<br>
 <br>
-<table cellpadding="2" cellspacing="2" border="1" width="100%">
-  <tbody>
+<table cellpadding="2" cellspacing="2" border="2" width="90%"
+ align="center">
+  <caption><br>
+  </caption><tbody>
     <tr>
-      <th valign="top" align="center" width="20%"><b>Parameter Name<br>
+      <th valign="middle" align="center" width="20%"><b>Parameter Name<br>
       </b></th>
-      <td valign="top" align="center" width="15%"><b>Nominal Value</b><br>
+      <td valign="top" align="center"><b>Plugin</b><br>
+      </td>
+      <td valign="middle" align="center" width="15%"><b>Default Value</b><br>
       </td>
       <th valign="top" align="center"><b>Description</b><br>
       </th>
@@ -193,122 +200,179 @@ agent-specific values for the following parameters:<br>
     <tr>
       <td valign="top">hbReqTimeout<br>
       </td>
+      <td valign="top">HealthMonitorPlugin<br>
+      </td>
       <td valign="top" align="right">60000<br>
       </td>
-      <td valign="top"><br>
+      <td valign="top">Defines the timeout period (in milliseconds) for a
+heartbeat request.<br>
       </td>
     </tr>
     <tr>
       <td valign="top">hbReqRetries<br>
       </td>
+      <td valign="top">HealthMonitorPlugin<br>
+      </td>
       <td valign="top" align="right">1<br>
       </td>
-      <td valign="top"><br>
+      <td valign="top">Defines the number of times to retry a heartbeat request
+when a failure is encountered. &nbsp;If the value is set to -1 retries will
+continue indefinately.<br>
       </td>
     </tr>
     <tr>
       <td valign="top">hbReqRetryFreq<br>
       </td>
+      <td valign="top">HealthMonitorPlugin<br>
+      </td>
       <td valign="top" align="right">60000<br>
       </td>
-      <td valign="top"><br>
+      <td valign="top">Defines the interval (in milliseconds) between heartbeat
+request retries.<br>
       </td>
     </tr>
     <tr>
       <td valign="top">hbFreq<br>
       </td>
+      <td valign="top">HealthMonitorPlugin<br>
+      </td>
       <td valign="top" align="right">30000<br>
       </td>
-      <td valign="top"><br>
+      <td valign="top">Defines the frequency (in milliseconds) at which the
+monitored agents are to send heartbeats to the management agent.<br>
       </td>
     </tr>
     <tr>
       <td valign="top">hbTimeout<br>
       </td>
+      <td valign="top">HealthMonitorPlugin<br>
+      </td>
       <td valign="top" align="right">30000<br>
       </td>
-      <td valign="top"><br>
+      <td valign="top">Defines the timeout (in milliseconds) period for hearbeats.<br>
       </td>
     </tr>
     <tr>
       <td valign="top">hbPctLate<br>
       </td>
+      <td valign="top">HealthMonitorPlugin<br>
+      </td>
       <td valign="top" align="right">80.0<br>
       </td>
-      <td valign="top"><br>
+      <td valign="top">Defines a tolerance for late heartbeats before they
+are reported in a Heartbeat Health Report that is processed by the HealthMonitorPlugin.
+&nbsp;The value is defined as a float point number representing a percentage
+of the hbTimeout.<br>
       </td>
     </tr>
     <tr>
       <td valign="top">hbWindow<br>
       </td>
+      <td valign="top">HealthMonitorPlugin<br>
+      </td>
       <td valign="top" align="right">360000<br>
       </td>
-      <td valign="top"><br>
+      <td valign="top">Defines the interval (in milliseconds) over which
+a heartbeat failure rate is calculated. &nbsp;<br>
       </td>
     </tr>
     <tr>
       <td valign="top">hbFailRate<br>
       </td>
-      <td valign="top" align="right">0<br>
+      <td valign="top">HealthMonitorPlugin<br>
       </td>
-      <td valign="top"><br>
+      <td valign="top" align="right">50.0<br>
+      </td>
+      <td valign="top">Defines the heartbeat failure rate threshold. &nbsp;When
+the calculated heartbeat failure rate exceeds this threshold the monitored
+agent is placed into the "HEALTH_CHECK" state for further evaluation by the
+Management Agent. &nbsp;This value is the percentage of late heartbeats vs
+expected heartbeats.<br>
       </td>
     </tr>
     <tr>
       <td valign="top">activePingFreq<br>
       </td>
+      <td valign="top">HealthMonitorPlugin<br>
+      </td>
       <td valign="top" align="right">0<br>
       </td>
-      <td valign="top"><br>
+      <td valign="top">Defines the frequency (in milliseconds) at which agents
+are pinged. &nbsp;Active pings are performed in addition to the heartbeat
+monitored. &nbsp;If active pings are not required this value should be set
+to 0.<br>
       </td>
     </tr>
     <tr>
       <td valign="top">pingTimeout<br>
       </td>
+      <td valign="top">HealthMonitorPlugin<br>
+      </td>
       <td valign="top" align="right">60000<br>
       </td>
-      <td valign="top"><br>
+      <td valign="top">Defines the ping timeout period (in milliseconds).<br>
       </td>
     </tr>
     <tr>
       <td valign="top">pingRetries<br>
       </td>
+      <td valign="top">HealthMonitorPlugin<br>
+      </td>
       <td valign="top" align="right">1<br>
       </td>
-      <td valign="top"><br>
+      <td valign="top">Defines the number of time to retry a failed ping.<br>
       </td>
     </tr>
     <tr>
       <td valign="top">evalFreq<br>
       </td>
+      <td valign="top">HealthMonitorPlugin<br>
+      </td>
       <td valign="top" align="right">10000<br>
       </td>
-      <td valign="top"><br>
+      <td valign="top">Defines the delay (in milliseconds) between execution
+of the healh status evaluation loop used by the HealthMonitorPlugin. <br>
       </td>
     </tr>
     <tr>
-      <td valign="top"><br>
+      <td valign="top">restartNode<br>
+      </td>
+      <td valign="top">RestartLocatorPlugin<br>
       </td>
       <td valign="top"><br>
       </td>
-      <td valign="top"><br>
-      </td>
-    </tr>
-    <tr>
-      <td valign="top"><br>
-      </td>
-      <td valign="top"><br>
-      </td>
-      <td valign="top"><br>
+      <td valign="top">Defines the name(s) of node(s) to use for restarting
+dead agents.&nbsp; If no restart nodes are specified the Management Agent
+will consider any node used by a robustness community member as a candidate
+destination.<br>
       </td>
     </tr>
   </tbody>
 </table>
 <br>
 <br>
-<h4>a. &nbsp;Specifying default values</h4>
-<h4>b. &nbsp;Specifying agent-specific &nbsp;values<br>
-</h4>
+<h4>a. &nbsp;Overriding default values</h4>
+New default parameter values are specified as plugin arguments. &nbsp;For
+instance to change the heartbeat frequency for all agents to 2 minutes, the
+argument "hbFreq=120000" would be specified. &nbsp;When using .ini files
+multiple arguments must be separated by commas. &nbsp;For instance:<br>
+<pre>plugin=org.cougaar.tools.robustness.ma.HealthMonitorPlugin(hbFreq=120000,&nbsp;pingRetries=2)</pre>
+The restartNode parameter allows more than one restart node to be defined.
+&nbsp;If multiple nodes are defined the node names must be separated by spaces.
+&nbsp;In addition to specifying restart nodes as a plugin argument to the
+RestartLocatorPlugin, this parameter may also be defined using community-level
+attributes. &nbsp;Using the CSMART community editor add a RestartNode attribute
+for each node to be used as a restart destination. &nbsp;<br>
+<br>
+<h4>b. &nbsp;Specifying agent-specific values</h4>
+Agent-specific values are specified using entity-level attributes in the
+appropriate robustness community definition. &nbsp;Using the CSMART community
+editor locate the community and agent requiring a non-default parameter value.
+&nbsp;Add an attribute id (from the table above) and value for the parameter
+to be defined. &nbsp;For instance if an agent requires a longer ping timeout
+(e.g., 2 minutes) period the attribute value "pingTimeout" would be created
+with the value "120000". &nbsp;This value would override the community-wide
+default that was defined.<br>
        
 </body>
 </html>
