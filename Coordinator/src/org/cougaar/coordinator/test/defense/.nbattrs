@@ -9,6 +9,12 @@
       <attr name="class_dependency_org.cougaar.core.blackboard.BlackboardClient" stringvalue="TestObservationServlet"/>
       <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="TestObservationServlet.MyServlet"/>
    </fileobject>
+   <fileobject name="RestartAgentDefense.java">
+      <attr name="class_dependency_org.cougaar.coordinator.Action" stringvalue="RestartAgent"/>
+   </fileobject>
+   <fileobject name="FakeCommDefense.java">
+      <attr name="class_dependency_org.cougaar.coordinator.Action" stringvalue="FakeCommDefense"/>
+   </fileobject>
    <fileobject name="MyServletTestDefense.java">
       <attr name="class_dependency_org.cougaar.core.adaptivity.ServiceUserPluginBase" stringvalue="MyServletTestDefense"/>
    </fileobject>

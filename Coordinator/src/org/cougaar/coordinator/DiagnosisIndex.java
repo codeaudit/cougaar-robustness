@@ -41,7 +41,9 @@ import org.cougaar.util.UnaryPredicate;
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.housekeeping.IndexKey;
 
-public class DiagnosisIndex extends Hashtable {
+public class DiagnosisIndex {
+
+    private Hashtable entries = new Hashtable();
 
     /** Creates new DiagnosesIndex */
     public DiagnosisIndex() {
@@ -56,8 +58,11 @@ public class DiagnosisIndex extends Hashtable {
 
     protected DiagnosesWrapper indexDiagnosis(DiagnosesWrapper dw, IndexKey key) {
         Diagnosis d = dw.getDiagnosis();
-        Hashtable c = (Hashtable) super.get(d.getAssetID());
-        if (c == null) c = new Hashtable();
+        Hashtable c = (Hashtable) entries.get(d.getAssetID());
+        if (c == null) {
+            c = new Hashtable();
+            entries.put(d.getAssetID(), c);
+            }
         return (DiagnosesWrapper) c.put(DiagnosisUtils.getSensorType(d), dw);
     }
     
@@ -67,8 +72,9 @@ public class DiagnosisIndex extends Hashtable {
     }
 
     protected Collection findDiagnosisCollection(AssetID assetID) {
-        Hashtable c = (Hashtable) super.get(assetID);
-        return c.values();
+        Hashtable c = (Hashtable) entries.get(assetID);
+        if (c != null) return c.values();
+        else return null;
     }
 
 }

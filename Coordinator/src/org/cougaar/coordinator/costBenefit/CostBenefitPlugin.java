@@ -25,6 +25,7 @@
 
 package org.cougaar.coordinator.costBenefit;
 
+import org.cougaar.coordinator.*;  //FIX
 
 import org.cougaar.coordinator.DeconflictionPluginBase;
 import org.cougaar.core.persist.NotPersistable;
@@ -66,6 +67,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
     private IncrementalSubscription stateEstimationSubscription;    
 //    private IncrementalSubscription threatModelSubscription;
     private IncrementalSubscription knobSubscription;
+    private IncrementalSubscription diagnosesWrapperSubscription;
     
     private Hashtable actions;
     
@@ -93,7 +95,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
 
     protected void execute() {
-
+        
         Iterator iter;
 
         // If the control Knob has been changed (by the PolicyPlugin), grab the new settings for use in the CB computations
@@ -109,11 +111,13 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
         {
             StateEstimation se = (StateEstimation)iter.next();
 
-            // Clean up the old SE & CBE
+            // Clean up the old SE & CBE if they exist
             CostBenefitEvaluation old_cbe = findCostBenefitEvaluation(se.getAssetID());
-            StateEstimation old_se = old_cbe.getStateEstimation();
-            publishRemove(old_se);
-            publishRemove(old_cbe);
+            if (old_cbe != null) {
+                StateEstimation old_se = old_cbe.getStateEstimation();
+                publishRemove(old_se);
+                publishRemove(old_cbe);
+                }
 
             // Produce and publish a CBE containing the benefits for each offered action on the Asset
             CostBenefitEvaluation cbe = createCostBenefitEvaluation(se, knob);
@@ -126,6 +130,17 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
       * Sets up local subscriptions - in this case for the control Knob containing the default settings
       */
     protected void setupSubscriptions() { 
+        super.setupSubscriptions();
+
+        diagnosesWrapperSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
+            public boolean execute(Object o) {
+                if ( o instanceof DiagnosesWrapper) {
+                    return true ;
+                }
+                return false ;
+            }
+        }) ;
+
         stateEstimationSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(StateEstimation.pred);    
         // threatModelSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(ThreatModel.pred);
         knobSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(CostBenefitKnob.pred);
@@ -136,10 +151,15 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
     private CostBenefitEvaluation createCostBenefitEvaluation(StateEstimation se, CostBenefitKnob knob) {
 
         AssetID assetID = se.getAssetID();
+        if (logger.isDebugEnabled()) logger.debug("Looking for actions for "+assetID);
         CostBenefitEvaluation cbe = 
                 new CostBenefitEvaluation(assetID, knob.getHorizon(), se);
 
         Collection actions = findActionCollection(assetID);
+        if (logger.isDebugEnabled()) logger.debug("Have "+actions.size()+" actions");
+
+        if (actions == null) return cbe; // No actions exist that even possibly apply - usually an initialization situation
+
         Iterator actionsIter = actions.iterator();
 
         // iterate over all applicable Actions for this asset
@@ -156,11 +176,13 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                 }
                 // Which StateDimension does this Action apply to?
                 AssetStateDimension asd = atsi.getStateDimension();
+                if (logger.isDebugEnabled()) logger.debug("This Action: "+thisAction+":"+atsi+":"+asd);
+                if (logger.isDebugEnabled()) logger.debug("StateEstimation: "+se.toString());
                 
                 try { 
                     // Get the StateDimensionEstimation for that dimension - Throws an exception if SDE not found
                     StateDimensionEstimation currentEstimatedStateDimension = se.getStateDimensionEstimation(asd);
-
+                    if (logger.isDebugEnabled()) logger.debug("Current ESD: "+((currentEstimatedStateDimension==null)?"null":"cesd="+currentEstimatedStateDimension.toString()));
                     // create the Action container that will hold the evaluations of all offered Variants
                     ActionEvaluation thisActionEvaluation = new ActionEvaluation(thisAction);
 
@@ -177,7 +199,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                         // Get TechSpec for this Variant
                         ActionDescription thisVariantDescription = (ActionDescription) variantIter.next();
                         // Add an entry to the current Action containing the information about this Variant
-                        thisActionEvaluation.addVariantEvaluation(createVariantEvaluation(assetID, currentEstimatedStateDimension, thisVariantDescription, knob)); 
+                        thisActionEvaluation.addVariantEvaluation(createVariantEvaluation(assetID, asd, currentEstimatedStateDimension, thisVariantDescription, knob)); 
                     }
                 }
                 catch (BelievabilityException e) {
@@ -214,22 +236,24 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
     }
 
     private double computeStateBenefit(AssetState state, CostBenefitKnob knob) {
+        if(logger.isDebugEnabled()) logger.debug(state+":"+knob);
         return (knob.getCompletenessWeight()*state.getRelativeMauCompleteness() 
               + knob.getSecurityWeight()*state.getRelativeMauSecurity() 
               + knob.getTimelinessWeight()*1.0);  // FIX - need a way to determine MauTimeliness (the 1.0 factor in the preceeding)
     }
 
    private VariantEvaluation createVariantEvaluation
-            (AssetID assetID, StateDimensionEstimation currentStateDimensionEstimation, ActionDescription thisVariantDescription, CostBenefitKnob knob) {
+            (AssetID assetID, AssetStateDimension asd, StateDimensionEstimation currentStateDimensionEstimation, ActionDescription thisVariantDescription, CostBenefitKnob knob) {
         double memorySize = 1000.0; // FIX _ needs to be dynamic
         double bandwidthSize = 1000.0; // FIX -needs to be dynamic
         double predictedCost = 0.0;
         double predictedBenefit = 0.0;
         long maxTransitionTime = 0L;
         long horizon = knob.getHorizon();
-        Enumeration startStateEnumeration = currentStateDimensionEstimation.getStateNames();
-        while (startStateEnumeration.hasMoreElements()) {
-            String startStateName = (String) startStateEnumeration.nextElement();
+        Vector startStateVector = asd.getPossibleStates();
+        Iterator startStateIterator = startStateVector.iterator();
+        while (startStateIterator.hasNext()) {
+            String startStateName = ((AssetState) startStateIterator.next()).getName();
             double startStateProb;
             double startStateBenefit;
             double intermediateStateBenefit;

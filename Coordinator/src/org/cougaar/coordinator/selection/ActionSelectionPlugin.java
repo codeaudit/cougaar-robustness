@@ -28,6 +28,7 @@
 
 package org.cougaar.coordinator.selection;
 
+import org.cougaar.coordinator.*;
 
 import org.cougaar.coordinator.Diagnosis;
 import org.cougaar.coordinator.DeconflictionPluginBase;
@@ -63,7 +64,9 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
   private IncrementalSubscription failedActionSubscription;
   private IncrementalSubscription knobSubscription;
   private IncrementalSubscription testServletSubscription;
- 
+
+   private IncrementalSubscription diagnosesWrapperSubscription;  // FIX
+
   private Hashtable alarmTable = new Hashtable();
   private ActionSelectionKnob knob;
   
@@ -99,10 +102,22 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
   
  
   public void setupSubscriptions() {
-    
-      if (logger.isDebugEnabled()) logger.debug("Loading DefenseSelectionPlugin");
-     getPluginParams();
-     initObjects(); 
+
+         super.setupSubscriptions();
+
+         diagnosesWrapperSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
+            public boolean execute(Object o) {
+                if ( o instanceof DiagnosesWrapper) {
+                    return true ;
+                }
+                return false ;
+            }
+        }) ;
+        
+
+         if (logger.isDebugEnabled()) logger.debug("Loading DefenseSelectionPlugin");
+         getPluginParams();
+         initObjects(); 
       
      //Listen for new CostBenefitEvaluations
      costBenefitSubscription = (IncrementalSubscription ) getBlackboardService().subscribe(CostBenefitEvaluation.pred);
@@ -141,7 +156,19 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 
   public void execute() {
 
-      Iterator iter;    
+        for ( Iterator iter = diagnosesWrapperSubscription.getAddedCollection().iterator();  
+          iter.hasNext() ; ) 
+        {
+            DiagnosesWrapper dw = (DiagnosesWrapper)iter.next();
+            Diagnosis d = (Diagnosis) dw.getContent();
+            //indexDiagnosis(dw, key);
+            findDiagnosisCollection(d.getAssetID());
+            findActionCollection(d.getAssetID());
+            findCostBenefitEvaluation(d.getAssetID());
+        } 
+
+      
+        Iterator iter;    
   
       // Get the ActionSelectionKnob for current settings
         iter = knobSubscription.iterator();
@@ -266,12 +293,15 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
     int index = 0;
     while (!done) {
         SelectedAction thisAction = selectBest(cbe, knob); 
-        publishAdd(thisAction);
-        index++;
-        if ((thisAction.getActionEvaluation().actionType().equals("Corrective"))
-         || (outOfResources())
-         || (index == knob.getMaxActions()))
-                done = true;
+        if (thisAction != null) {
+            publishAdd(thisAction);
+            index++;
+            done = true; // done because can't find anything useful to do
+            if ((thisAction.getActionEvaluation().actionType().equals("Corrective"))
+                    || (outOfResources())
+                    || (index == knob.getMaxActions()))
+               done = true; // Because we try only one corrective action at a time
+        }
     }
   }
 

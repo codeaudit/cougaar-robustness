@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.Set;
+import java.util.HashSet;
 
 import javax.servlet.Servlet;
 import javax.servlet.http.HttpServlet;
@@ -238,9 +239,7 @@ public class PublishServlet extends BaseServletComponent implements BlackboardCl
         }
 
         try {
-            Action a = createAction(assetname);    
-            blackboard.publishAdd(a);
-            logger.debug("**** Saw new Action["+ActionUtils.getAssetID(a)+" UID=" + a.getUID());
+            createActions(assetname);    
         } catch (Exception e) {
             error = error + "\n" + e.toString();
         }
@@ -266,10 +265,25 @@ public class PublishServlet extends BaseServletComponent implements BlackboardCl
         return;
     }
     
-    private Action createAction(String s) throws IllegalValueException, TechSpecNotFoundException {
-        TestAction a = new TestAction(s, serviceBroker);        
-        return a;
-    }
+    private void createActions(String s) throws IllegalValueException, TechSpecNotFoundException {
+        Set initValues = new HashSet();
+        initValues.add("LocalRestart");
+        initValues.add("QuickRemoteRestart" );
+        RestartAgentDefense ra = new RestartAgentDefense(s, initValues, serviceBroker);
+        ActionsWrapper raw = new ActionsWrapper(ra, null, null, new UID());
+        ra.setWrapper(raw);
+        blackboard.publishAdd(ra);
+        blackboard.publishAdd(raw);
+
+        initValues = new HashSet();
+        initValues.add("TryHard");
+        initValues.add("Normal" );
+        FakeCommDefense fcd = new FakeCommDefense(s, initValues, serviceBroker);
+        ActionsWrapper fcdw = new ActionsWrapper(fcd, null, null, new UID());
+        ra.setWrapper(fcdw);
+        blackboard.publishAdd(fcd);
+        blackboard.publishAdd(fcdw);
+}
     
     private class MyServlet extends HttpServlet {
         

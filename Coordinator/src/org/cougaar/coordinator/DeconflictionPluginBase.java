@@ -68,6 +68,11 @@ public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
   protected EventService eventService;
   protected ActionTechSpecService actionTechSpecService;
 
+  private IncrementalSubscription actionIndexSubscription;
+  private IncrementalSubscription diagnosisIndexSubscription;
+  private IncrementalSubscription stateEstimationIndexSubscription;
+  private IncrementalSubscription costBenefitEvaluationIndexSubscription;
+
   private static final Class[] requiredServices = {
     UIDService.class,
     AgentIdentificationService.class,
@@ -120,10 +125,21 @@ public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
     return false;
   }
 
+  protected void setupSubscriptions() {
+    //openTransaction();
+    actionIndexSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( ActionIndex.pred);
+    diagnosisIndexSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( DiagnosisIndex.pred);;
+    stateEstimationIndexSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( StateEstimationIndex.pred);
+    costBenefitEvaluationIndexSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( CostBenefitEvaluationIndex.pred);
+    if (logger.isDebugEnabled()) logger.debug("Subscribed to Indices");
+    //closeTransaction();
+  }
+
 
   public void load() {
       super.load();
       haveServices();
+      //setupSubscriptions();
       cancelTimer();
   }
   
@@ -183,84 +199,120 @@ public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
     // Indexing for Diagnosis objects
        
     protected DiagnosesWrapper indexDiagnosis(DiagnosesWrapper dw, IndexKey key) {
-        return getDiagnosisIndex().indexDiagnosis(dw, key);
+        DiagnosisIndex index = getDiagnosisIndex();
+        if (index == null) return null;
+        if (logger.isDebugEnabled()) logger.debug("Indexed: " + dw);
+        return index.indexDiagnosis(dw, key);
     }
     
     protected DiagnosesWrapper findDiagnosis(AssetID assetID, String sensorType) {
-        return getDiagnosisIndex().findDiagnosis(assetID, sensorType);
+        DiagnosisIndex index = getDiagnosisIndex();
+        if (index == null) return null;
+        else return index.findDiagnosis(assetID, sensorType);
     }
     
     protected Collection findDiagnosisCollection(AssetID assetID) {
-        return getDiagnosisIndex().findDiagnosisCollection(assetID);
+        DiagnosisIndex index = getDiagnosisIndex();
+        if (index == null) return null;
+        else return index.findDiagnosisCollection(assetID);
     }
 
     private DiagnosisIndex getDiagnosisIndex() {
-        Collection c = blackboard.query(DiagnosisIndex.pred);
+        Collection c = diagnosisIndexSubscription.getCollection(); // blackboard.query(DiagnosisIndex.pred);
         Iterator iter = c.iterator();
-        if (iter.hasNext())
+        if (iter.hasNext()) {
+           if (logger.isDebugEnabled()) logger.debug("Found Diagnosis Index");
            return (DiagnosisIndex)iter.next();
-        else
+           }
+        else {
+           if (logger.isDebugEnabled()) logger.debug("No Diagnosis Index");
            return null;
+           }
     }    
     
     
     // Indexing for Action objects
         
     protected ActionsWrapper indexAction(ActionsWrapper aw, IndexKey key) {
-        return getActionIndex().indexAction(aw, key);
+        ActionIndex index = getActionIndex();
+        if (index == null) return null;
+        if (logger.isDebugEnabled()) logger.debug("Indexed: " + aw);
+        return index.indexAction(aw, key);
     }
 
     protected ActionsWrapper findAction(AssetID assetID, String actuatorType) {
-        //System.out.println(getActionIndex());
-        return getActionIndex().findAction(assetID, actuatorType);
+        ActionIndex index = getActionIndex();
+        if (index == null) return null;
+        else return index.findAction(assetID, actuatorType);
     }
 
     protected Collection findActionCollection(AssetID assetID) {
-        return getActionIndex().findActionCollection(assetID);
+        ActionIndex index = getActionIndex();
+        if (index == null) return null;
+        if (logger.isDebugEnabled()) logger.debug("Found the ActionIndex while searching"+index.toString());
+        Collection c = index.findActionCollection(assetID);
+        if (logger.isDebugEnabled()) logger.debug((c==null)?"null":new Integer(c.size()).toString());
+        return c;
     }
 
     private ActionIndex getActionIndex() {
-        Collection c = blackboard.query(ActionIndex.pred);
+        Collection c = actionIndexSubscription.getCollection(); // blackboard.query(ActionIndex.pred);
         //System.out.println(c.size());
         Iterator iter = c.iterator();
-        if (iter.hasNext())
+        if (iter.hasNext()) {
+           if (logger.isDebugEnabled()) logger.debug("Found Action Index");
            return (ActionIndex)iter.next();
-        else
+           }
+        else {
+           if (logger.isDebugEnabled()) logger.debug("No Action Index");
            return null;
+           }
     } 
 
     
     // Indexing for CostBenefitEvaluations objects
            
     protected CostBenefitEvaluation indexCostBenefitEvaluation(CostBenefitEvaluation cbe, IndexKey key) {
-        return getCostBenefitEvaluationIndex().indexCostBenefitEvaluation(cbe, key);
+        CostBenefitEvaluationIndex index = getCostBenefitEvaluationIndex();
+        if (index == null) return null;
+        else return index.indexCostBenefitEvaluation(cbe, key);
     }
               
     protected CostBenefitEvaluation findCostBenefitEvaluation(AssetID assetID) {
-        return getCostBenefitEvaluationIndex().findCostBenefitEvaluation(assetID);
+        CostBenefitEvaluationIndex index = getCostBenefitEvaluationIndex();
+        if (index == null) return null;
+        else return index.findCostBenefitEvaluation(assetID);
     }
     
     private CostBenefitEvaluationIndex getCostBenefitEvaluationIndex() {
-        Collection c = blackboard.query(CostBenefitEvaluationIndex.pred);
+        Collection c = costBenefitEvaluationIndexSubscription.getCollection(); // blackboard.query(CostBenefitEvaluationIndex.pred);
         Iterator iter = c.iterator();
-        if (iter.hasNext())
+        if (iter.hasNext()) {
+           if (logger.isDebugEnabled()) logger.debug("Found CBE Index");
            return (CostBenefitEvaluationIndex)iter.next();
-        else
+           }
+        else {
+           if (logger.isDebugEnabled()) logger.debug("No CBE Index");
            return null;
+           }
     }    
 
     // Indexing for Statestimation objects
            
     protected StateEstimation indexStateEstimation(StateEstimation se, IndexKey key) {
-        return getStateEstimationIndex().indexStateEstimation(se, key);
+        StateEstimationIndex index = getStateEstimationIndex();
+        if (index == null) return null;
+        else return index.indexStateEstimation(se, key);
     }
               
     protected StateEstimation findStateEstimation(AssetID assetID) {
-        return getStateEstimationIndex().findStateEstimation(assetID);
+        StateEstimationIndex index = getStateEstimationIndex();
+        if (index == null) return null;
+        else return index.findStateEstimation(assetID);
     }
     
     private StateEstimationIndex getStateEstimationIndex() {
-        Collection c = blackboard.query(StateEstimationIndex.pred);
+        Collection c = stateEstimationIndexSubscription.getCollection(); // blackboard.query(StateEstimationIndex.pred);
         Iterator iter = c.iterator();
         if (iter.hasNext())
            return (StateEstimationIndex)iter.next();

@@ -412,7 +412,7 @@ public abstract class Diagnosis
     /**
      * @return expanded name - "type:String"
      */
-    AssetID getAssetID() { return assetID; }
+    public AssetID getAssetID() { return assetID; }
 
     /**
      * @return the (read-only) tech spec for this diagnosis type

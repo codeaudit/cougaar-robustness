@@ -33,6 +33,9 @@ package org.cougaar.coordinator.housekeeping;
  * @version 
  */
 
+import org.cougaar.coordinator.techspec.*;
+import org.cougaar.coordinator.believability.StateEstimation;
+
 import org.cougaar.coordinator.DeconflictionPluginBase;
 import org.cougaar.core.persist.NotPersistable;
 import org.cougaar.core.blackboard.IncrementalSubscription;
@@ -50,6 +53,7 @@ import org.cougaar.coordinator.costBenefit.CostBenefitEvaluation;
 import org.cougaar.coordinator.ActionIndex;
 import org.cougaar.coordinator.DiagnosisIndex;
 import org.cougaar.coordinator.CostBenefitEvaluationIndex;
+import org.cougaar.coordinator.StateEstimationIndex;
 import org.cougaar.coordinator.believability.StateEstimation;
 
 import java.util.Iterator;
@@ -64,6 +68,7 @@ public class CoordinatorManagerPlugin extends DeconflictionPluginBase implements
     private IncrementalSubscription costBenefitEvaluationSubscription;   
     private IncrementalSubscription stateEstimationSubscription;   
     private IndexKey key;
+    private boolean indicesCreated = false;
         
     /** Creates new CoordinatorManagerPugin */
     public CoordinatorManagerPlugin() {
@@ -71,15 +76,19 @@ public class CoordinatorManagerPlugin extends DeconflictionPluginBase implements
     
     public void load() {
         super.load();
-        openTransaction();
-        publishAdd(new DiagnosisIndex());
-        publishAdd(new ActionIndex());
-        publishAdd(new CostBenefitEvaluationIndex());
         key = new IndexKey();
-        closeTransaction();
     }
 
     protected void execute() {
+
+        if (!indicesCreated) {
+            publishAdd(new DiagnosisIndex());
+            publishAdd(new ActionIndex());
+            publishAdd(new StateEstimationIndex());
+            publishAdd(new CostBenefitEvaluationIndex());
+            if (logger.isDebugEnabled()) logger.debug("Created ALL BB Indices");
+            indicesCreated = true;
+            }
       
         //Handle the addition of new DiagnosesWrapper(s)
         for ( Iterator iter = diagnosesWrapperSubscription.getAddedCollection().iterator();  
@@ -88,6 +97,7 @@ public class CoordinatorManagerPlugin extends DeconflictionPluginBase implements
             DiagnosesWrapper dw = (DiagnosesWrapper)iter.next();
             Diagnosis d = (Diagnosis) dw.getContent();
             indexDiagnosis(dw, key);
+            findCostBenefitEvaluation(d.getAssetID());
         }   
         
         //Handle the addition of new ActionsWrapper(s)
@@ -97,6 +107,7 @@ public class CoordinatorManagerPlugin extends DeconflictionPluginBase implements
             ActionsWrapper aw = (ActionsWrapper)iter.next();
             Action a = (Action) aw.getContent();
             indexAction(aw, key);
+            if (logger.isDebugEnabled()) logger.debug("Indexed: "+a+" AssetID="+a.getAssetID());
         }
 
         //Handle the addition of new StateEstimation(s)
@@ -125,31 +136,35 @@ public class CoordinatorManagerPlugin extends DeconflictionPluginBase implements
       */
     protected void setupSubscriptions() {
 
+        super.setupSubscriptions();
+
         diagnosesWrapperSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
-            public boolean execute(Object o) {
-                if ( o instanceof DiagnosesWrapper) {
-                    return true ;
-                }
-                return false ;
+        public boolean execute(Object o) {
+            if ( o instanceof DiagnosesWrapper) {
+                return true ;
             }
+            return false ;
+        }
         }) ;
-        
+
 
         actionsWrapperSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
-            public boolean execute(Object o) {
-                if ( o instanceof ActionsWrapper) {
-                    return true ;
-                }
-                return false ;
+        public boolean execute(Object o) {
+            if ( o instanceof ActionsWrapper) {
+                return true ;
             }
+            return false ;
+        }
         }) ;
-  
-  
-      costBenefitEvaluationSubscription = 
+
+
+        costBenefitEvaluationSubscription = 
         ( IncrementalSubscription ) getBlackboardService().subscribe( CostBenefitEvaluation.pred );
 
-      stateEstimationSubscription = 
+        stateEstimationSubscription = 
         ( IncrementalSubscription ) getBlackboardService().subscribe( StateEstimation.pred );
+
+
 }
     
 

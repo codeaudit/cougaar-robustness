@@ -20,7 +20,9 @@ import org.cougaar.coordinator.costBenefit.CostBenefitEvaluation;
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.housekeeping.IndexKey;
 
-public class CostBenefitEvaluationIndex extends Hashtable {
+public class CostBenefitEvaluationIndex {
+
+    private Hashtable entries = new Hashtable();
 
     /** Creates new Class */
     public CostBenefitEvaluationIndex() {
@@ -34,11 +36,11 @@ public class CostBenefitEvaluationIndex extends Hashtable {
         };
 
     protected CostBenefitEvaluation indexCostBenefitEvaluation(CostBenefitEvaluation cbe, IndexKey key) {
-        return (CostBenefitEvaluation) super.put(cbe.getAssetID(), cbe);
+        return (CostBenefitEvaluation) entries.put(cbe.getAssetID(), cbe);
     }
     
     protected CostBenefitEvaluation findCostBenefitEvaluation(AssetID assetID) {
-        return (CostBenefitEvaluation) super.get(assetID);
-    }
+        return (CostBenefitEvaluation) entries.get(assetID);
+    }  
 
 }

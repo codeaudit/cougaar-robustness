@@ -41,7 +41,9 @@ import org.cougaar.util.UnaryPredicate;
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.housekeeping.IndexKey;
 
-public class ActionIndex extends Hashtable {
+public class ActionIndex {
+
+    private Hashtable entries = new Hashtable();
 
     /** Creates new ActionsIndex */
     public ActionIndex() {
@@ -56,8 +58,11 @@ public class ActionIndex extends Hashtable {
     
     protected ActionsWrapper indexAction(ActionsWrapper aw, IndexKey key) {
         Action a = aw.getAction();
-        Hashtable c = (Hashtable) super.get(a.getAssetID());
-        if (c == null) c = new Hashtable();
+        Hashtable c = (Hashtable) entries.get(a.getAssetID());
+        if (c == null) {
+            c = new Hashtable();
+            entries.put(a.getAssetID(), c);
+            }
         return (ActionsWrapper) c.put(ActionUtils.getActuatorType(a), aw);
     }
     
@@ -68,8 +73,12 @@ public class ActionIndex extends Hashtable {
 
     // returns a Collection of ActionWrapper(s)
     protected Collection findActionCollection(AssetID assetID) {
-        Hashtable c = (Hashtable) super.get(assetID);
-        return c.values();
+        Hashtable c = (Hashtable) entries.get(assetID);
+        if (c != null) return c.values();
+        else return null;
     }
 
+    public String toString() {
+        return entries.toString();
+    }
 }

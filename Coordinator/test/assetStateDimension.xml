@@ -5,7 +5,7 @@
 
 <AssetStateDimensions assetType="agent">
 
-  <StateDimension name="Foo1" >
+  <StateDimension name="Liveness" >
  	<State name="good" relativeMauCompleteness="0.1" 
 				   defaultStartState="TRUE" 
                            relativeMauSecurity="0.9" />
@@ -14,7 +14,7 @@
 
 
   </StateDimension>
-  <StateDimension name="Foo2" >
+  <StateDimension name="Communications" >
  	<State name="good" relativeMauCompleteness="0.1" 
 				   defaultStartState="TRUE" 
                            relativeMauSecurity="0.9" />

@@ -51,8 +51,10 @@ public class AssetID {
     
     /** Return true if object is equal to this object */
     public boolean equals(Object o) {
-        return ( (o instanceof AssetID) && ((AssetID)o).getName().equals(this.name) && ( (AssetID)o).getType().equals(this.type) );
+        return true; // ( (o instanceof AssetID) && ((AssetID)o).getName().equals(this.name) && ( (AssetID)o).getType().equals(this.type) );
     }
+
+    public int hashCode() { return name.hashCode(); }
 
     public String toString() { return name + ":" + type.toString(); }
 

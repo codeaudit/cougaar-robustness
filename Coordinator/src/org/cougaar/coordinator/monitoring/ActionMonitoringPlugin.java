@@ -133,6 +133,7 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
             }
         }) ;
         */
+        super.setupSubscriptions();
         
     }
 
