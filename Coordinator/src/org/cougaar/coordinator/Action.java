@@ -121,6 +121,9 @@ public abstract class Action
     /** Name of the asset that this object describes */
     private  String assetName = null;
 
+    /** State Dimension name that this action affects */
+    private  String assetStateDimensionName = null;
+    
     /** The action values the coordinator permits the actuator to take */
     Set permittedValues = null;
     
@@ -284,6 +287,7 @@ public abstract class Action
         }        
         this.setPossibleValues(actionTechSpec.getPossibleValues());
         this.assetType = actionTechSpec.getAssetType();
+        this.assetStateDimensionName = actionTechSpec.getStateDimension().getStateName();
         
         serviceBroker.releaseService(this, ActionTechSpecService.class, ActionTechSpecService);
         
@@ -507,6 +511,11 @@ logger.debug("///////////////////////////////////Adding permitted value: "+o);
     public String getAssetName() { return assetName; }
     
     /**
+     * @return the asset name related to this diagnosis (e.g. "123-MSB")
+     */
+    public String getAssetStateDimensionName() { return assetStateDimensionName; }
+
+   /**
      * @return AssetID
      */
     public AssetID getAssetID() { return assetID; }

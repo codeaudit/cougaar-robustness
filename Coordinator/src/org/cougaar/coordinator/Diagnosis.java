@@ -121,6 +121,9 @@ public abstract class Diagnosis
     /** Name of the asset that this object describes */
     private  String assetName = null;
 
+    /** State Dimension name that this diagnosis monitors */
+    private  String assetStateDimensionName = null;
+
     /** The current diagnosis value */
     private Object value = null;
     
@@ -270,6 +273,7 @@ public abstract class Diagnosis
         }        
         this.setPossibleValues(diagnosisTechSpec.getPossibleValues());
         this.assetType = diagnosisTechSpec.getAssetType();
+        this.assetStateDimensionName = diagnosisTechSpec.getStateDimension().getStateName();
         
         
         serviceBroker.releaseService(this, DiagnosisTechSpecService.class, DiagnosisTechSpecService);
@@ -408,8 +412,13 @@ public abstract class Diagnosis
      * @return the asset name related to this diagnosis (e.g. "123-MSB")
      */
     public String getAssetName() { return assetName; }
-    
+
     /**
+     * @return the asset name related to this diagnosis (e.g. "123-MSB")
+     */
+    public String getAssetStateDimensionName() { return assetStateDimensionName; }
+    
+   /**
      * @return expanded name - "type:String"
      */
     public AssetID getAssetID() { return assetID; }
@@ -418,7 +427,6 @@ public abstract class Diagnosis
      * @return the (read-only) tech spec for this diagnosis type
      */
     public DiagnosisTechSpecInterface getTechSpec ( ) { return diagnosisTechSpec; }
-
 
     /**
      * @return a string representing an instance of this class of the form "<classname:assetType:assetName=value>"
