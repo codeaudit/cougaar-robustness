@@ -113,9 +113,9 @@ public class EventProbability {
         //See if there is an infinite interval probability. If so, we don't need to break up
         //the entire interval into sub-intervals.
         if (infiniteIntervalProbability != null) {
-            if (logger.isDebugEnabled()) { logger.debug("computeIntervalProbability(). Interval="+interval+", durationInMins="+durationInMins); }            
+            if (logger.isDebugEnabled()) { logger.debug("computeIntervalProbability(). IntervalInMSECS="+interval+", durationInMins="+durationInMins); }            
             double pr = infiniteIntervalProbability.computeIntervalProbability(durationInMins); //returns prob of NOT occurring during interval
-            if (logger.isDebugEnabled()) { logger.debug("Infinite interval, called infiniteIntervalProbability.computeIntervalProbability(). Prob of non-occurrence= "+pr); }            
+            if (logger.isDebugEnabled()) { logger.debug("Infinite interval, called infiniteIntervalProbability.computeIntervalProbability(). Prob of non-occurrence= "+pr+", prob of occurrence="+(1.0 - pr)); }            
             return (1.0 - pr);
         }
         
