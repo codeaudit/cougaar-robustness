@@ -296,7 +296,8 @@ public class MoveHelper extends BlackboardClientComponent {
     UIDService uidService = (UIDService)getServiceBroker().getService(this,
           UIDService.class, null);
       HealthMonitorRequest hmr =
-          new HealthMonitorRequestImpl(rmr.communityName,
+          new HealthMonitorRequestImpl(agentId,
+                                       rmr.communityName,
                                        HealthMonitorRequest.MOVE,
                                        new String[] {rmr.agentName},
                                        rmr.origNode,

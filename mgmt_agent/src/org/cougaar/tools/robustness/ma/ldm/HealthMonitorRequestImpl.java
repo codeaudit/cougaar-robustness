@@ -79,13 +79,14 @@ public class HealthMonitorRequestImpl
    * @param dest          Name of agents destination node
    * @param               Unique identifier
    */
-  public HealthMonitorRequestImpl(String             communityName,
+  public HealthMonitorRequestImpl(MessageAddress     source,
+                                  String             communityName,
                                   int                reqType,
                                   String[]           agents,
                                   String             orig,
                                   String             dest,
                                   UID                uid) {
-    //this.source = source;
+    this.source = source;
     this.communityName = communityName;
     this.requestType = reqType;
     this.agents = agents;

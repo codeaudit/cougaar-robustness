@@ -571,7 +571,8 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
    */
   private void loadBalance(String communityName) {
     HealthMonitorRequest hmr =
-        new HealthMonitorRequestImpl(communityName,
+        new HealthMonitorRequestImpl(agentId,
+                                     communityName,
                                      HealthMonitorRequest.LOAD_BALANCE,
                                      null,
                                      null,
@@ -707,7 +708,8 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
    */
   private String displayStatus(String communityName) {
       HealthMonitorRequest hmr =
-          new HealthMonitorRequestImpl(communityName,
+          new HealthMonitorRequestImpl(agentId,
+          communityName,
           HealthMonitorRequest.GET_STATUS,
           null,
           null,
@@ -731,7 +733,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
           bb.closeTransactionDontReset();
         }
         while (hmr.getResponse() == null) {
-          try { Thread.sleep(1000); } catch (Exception ex) {}
+          try { Thread.sleep(1000);} catch (Exception ex) {}
         }
         hmrResp = (HealthMonitorResponse)hmr.getResponse();
       } else {
@@ -751,7 +753,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
           bb.closeTransactionDontReset();
         }
         while (hmrRa.getResponse() == null) {
-          try { Thread.sleep(1000); } catch (Exception ex) {}
+          try { Thread.sleep(1000);} catch (Exception ex) {}
         }
         hmrResp = (HealthMonitorResponse)hmrRa.getResponse();
       }
@@ -798,7 +800,8 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
    */
   private void publishHealthMonitorMove(String communityName) {
     HealthMonitorRequest hmr =
-          new HealthMonitorRequestImpl(communityName,
+          new HealthMonitorRequestImpl(agentId,
+          communityName,
           HealthMonitorRequest.MOVE,
           new String[]{mobileAgent},
           origNode,
@@ -848,7 +851,8 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
    * @param communityName
    */
   private void publishHealthMonitorKill(String communityName) {
-    publishRequest(new HealthMonitorRequestImpl(communityName,
+    publishRequest(new HealthMonitorRequestImpl(agentId,
+                                     communityName,
                                      HealthMonitorRequest.KILL,
                                      new String[] {mobileAgent},
                                      null,
@@ -861,7 +865,8 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
    * @param communityName
    */
   private void publishHealthMonitorRestart(String communityName) {
-    publishRequest(new HealthMonitorRequestImpl(communityName,
+    publishRequest(new HealthMonitorRequestImpl(agentId,
+                                     communityName,
                                      HealthMonitorRequest.FORCED_RESTART,
                                      new String[] {mobileAgent},
                                      null,

@@ -266,7 +266,8 @@ public class RestartHelper extends BlackboardClientComponent {
     UIDService uidService = (UIDService)getServiceBroker().getService(this,
         UIDService.class, null);
     HealthMonitorRequest hmr =
-        new HealthMonitorRequestImpl(rr.communityName,
+        new HealthMonitorRequestImpl(agentId,
+                                     rr.communityName,
                                      rr.action,
                                      rr.agentNames,
                                      rr.origNode,
