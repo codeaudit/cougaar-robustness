@@ -484,6 +484,8 @@ if (commStartDelaySeconds > 0)
         //  Retry/resend: bypass topological caching to get latest target agent info
 
         AgentID toAgent = AgentID.getAgentID (this, getServiceBroker(), targetAgent, true);
+
+log.info ("latest toAgent for " +msgString+ ": " +toAgent);
         
         if (log.isInfoEnabled())
         {
@@ -513,10 +515,15 @@ if (commStartDelaySeconds > 0)
           AgentID toAgent = AgentID.getAgentID (this, getServiceBroker(), targetAgent, false);
           MessageUtils.setToAgent (msg, toAgent);
           targetNode = toAgent.getNodeName();
+
+log.info ("toAgent for new msg " +msgString+ ": " +toAgent);
         }
       }
     }
-    catch (Exception e) {}
+    catch (Exception e) 
+    {
+log.info ("exception getting toAgent for " +msgString+ ": " +e);
+    }
 
     //  Cannot continue without knowing the name of the target node for the message
 
