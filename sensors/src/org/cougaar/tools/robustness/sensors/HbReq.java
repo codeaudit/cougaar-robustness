@@ -210,11 +210,12 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable
   * Returns a String represention for this object.
   */
   public String toString() {
-    return "(HbReq:\n" +
-           "    uid = " + uid + "\n" +
-           "    source = " + source + "\n" +
-           "    target = " + target + "\n" +
-           "    content = " + content + "\n" +
-           "    response = " + response + "\n" + ")";
+    return "\n" +
+           "(HbReq:\n" +
+           "   uid = " + uid + "\n" +
+           "   source = " + source + "\n" +
+           "   target = " + target + "\n" +
+           "   content = " + content + "\n" +
+           "   response = " + response + ")";
   }
 }

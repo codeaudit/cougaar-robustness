@@ -65,10 +65,9 @@ public final class HeartbeatEntry implements java.io.Serializable {
   * Returns a String represention for this object.
   */
   public String toString() {
-    return "(HeartbeatEntry:\n" +
-           "    source = " + source + "\n" +
-           "    timeReceived = " + timeReceived + "\n" +
-           "    percentLate = " + percentLate + "\n" + ")";
+    return "(HeartbeatEntry: source = " + source + 
+              ", timeReceived = " + timeReceived + 
+              ", percentLate = " + percentLate + ")";
   }
 
 }

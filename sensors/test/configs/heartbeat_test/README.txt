@@ -30,178 +30,296 @@ the frequency in 10000ms (a heartbeat should arrive every 10 seconds).  If a
 hearbeat arrives in 11 seconds it is late, but won't be reported.  If a
 heartbeat hasn't arrived in 15 seconds, it will be reported.
 
-The timeouts aren't implemented yet.
-
+Caveats:
+  - the timeouts aren't implemented yet, so won't return FAILURE.
+  - doesn't use UDP yet
+  - only supports one target per request at the moment
+  - haven't tested with ABA
+  - haven't converted to logging yet
+  
 To run the test, open two cmd windows, cd to test\configs\heartbeat_test in each, and
 run "Node MonitoredAgentNode" in one, and "Node ManagerAgentNode" in the other.
 
-The following should be printed in the windows and repeated every 10 seconds:
+The following should be printed in the windows after three iterations:
 
 ------------------
 MonitoredAgentNode
 ------------------
 
-..-HeartbeatServerPlugin.execute: received HbReq = (HbReq:
-    uid = ManagerAgent/1022600211734
-    source = ManagerAgent
-    target = null
-    content = (HbReqContent:
-    heartbeatRequestUID = ManagerAgent/1022600211733
-    reqTimeout = 10000
-    hbFrequency = 10000
-    hbTimeout = 1000
-    lastHbSent = Wed Dec 31 23:59:59 GMT 1969
-)
-    response = null
-)
-HeartbeatServerPlugin.execute: published changed HbReq = (HbReq:
-    uid = ManagerAgent/1022600211734
-    source = ManagerAgent
-    target = null
-    content = (HbReqContent:
-    heartbeatRequestUID = ManagerAgent/1022600211733
-    reqTimeout = 10000
-    hbFrequency = 10000
-    hbTimeout = 1000
-    lastHbSent = Tue May 28 15:36:52 GMT 2002
-)
-    response = (HbReqResponse:
-   responder = MonitoredAgent
-   status = ACCEPTED)
-)
-+HeartbeatServerPlugin.execute: received HbReq = (HbReq:
-    uid = ManagerAgent/1022600211734
-    source = ManagerAgent
-    target = null
-    content = (HbReqContent:
-    heartbeatRequestUID = ManagerAgent/1022600211733
-    reqTimeout = 10000
-    hbFrequency = 10000
-    hbTimeout = 1000
-    lastHbSent = Tue May 28 15:36:52 GMT 2002
-)
-    response = (HbReqResponse:
-   responder = MonitoredAgent
-   status = ACCEPTED)
-)
+-HeartbeatServerPlugin.execute: received new HbReq =
+(HbReq:
+   uid = ManagerAgent/1022702609063
+   source = ManagerAgent
+   target = null
+   content =
+    (HbReqContent:
+       heartbeatRequestUID = ManagerAgent/1022702609062
+       reqTimeout = 10000
+       hbFrequency = 10000
+       hbTimeout = 1000)
+   response = null)
+
+HeartbeatServerPlugin.execute: published changed HbReq =
+(HbReq:
+   uid = ManagerAgent/1022702609063
+   source = ManagerAgent
+   target = null
+   content =
+    (HbReqContent:
+       heartbeatRequestUID = ManagerAgent/1022702609062
+       reqTimeout = 10000
+       hbFrequency = 10000
+       hbTimeout = 1000)
+   response =
+    (HbReqResponse:
+       responder = MonitoredAgent
+       status = ACCEPTED
+       lastHbSent = Wed May 29 20:03:29 GMT 2002))
+
++..HeartbeatServerPlugin.processHeartbeats: processing HbReq =
+(HbReq:
+   uid = ManagerAgent/1022702609063
+   source = ManagerAgent
+   target = null
+   content =
+    (HbReqContent:
+       heartbeatRequestUID = ManagerAgent/1022702609062
+       reqTimeout = 10000
+       hbFrequency = 10000
+       hbTimeout = 1000)
+   response =
+    (HbReqResponse:
+       responder = MonitoredAgent
+       status = ACCEPTED
+       lastHbSent = Wed May 29 20:03:29 GMT 2002))
+
+HeartbeatServerPlugin.processHeartbeats: published changed HbReq =
+(HbReq:
+   uid = ManagerAgent/1022702609063
+   source = ManagerAgent
+   target = null
+   content =
+    (HbReqContent:
+       heartbeatRequestUID = ManagerAgent/1022702609062
+       reqTimeout = 10000
+       hbFrequency = 10000
+       hbTimeout = 1000)
+   response =
+    (HbReqResponse:
+       responder = MonitoredAgent
+       status = HEARTBEAT
+       lastHbSent = Wed May 29 20:03:39 GMT 2002))
+
++..HeartbeatServerPlugin.processHeartbeats: processing HbReq =
+(HbReq:
+   uid = ManagerAgent/1022702609063
+   source = ManagerAgent
+   target = null
+   content =
+    (HbReqContent:
+       heartbeatRequestUID = ManagerAgent/1022702609062
+       reqTimeout = 10000
+       hbFrequency = 10000
+       hbTimeout = 1000)
+   response =
+    (HbReqResponse:
+       responder = MonitoredAgent
+       status = HEARTBEAT
+       lastHbSent = Wed May 29 20:03:39 GMT 2002))
+
+HeartbeatServerPlugin.processHeartbeats: published changed HbReq =
+(HbReq:
+   uid = ManagerAgent/1022702609063
+   source = ManagerAgent
+   target = null
+   content =
+    (HbReqContent:
+       heartbeatRequestUID = ManagerAgent/1022702609062
+       reqTimeout = 10000
+       hbFrequency = 10000
+       hbTimeout = 1000)
+   response =
+    (HbReqResponse:
+       responder = MonitoredAgent
+       status = HEARTBEAT
+       lastHbSent = Wed May 29 20:03:49 GMT 2002))
 
 ----------------
 ManagerAgentNode
 ----------------
 
-HeartbeatTesterPlugin.setupSubscriptions: added HeartbeatRequest = (HeartbeatRequest:
-    uid = ManagerAgent/1022600211733
-    source = ManagerAgent
-    target = MonitoredAgent
-    reqTimeout = 10000
-    hbFrequency = 10000
-    hbTimeout = 1000
-    onlyOutOfSpec = false
-    percentOutOfSpec = 50.0
-    status = NEW
-    timeSent = null
-    timeReceived = null
-    roundTripTime = 0
-)
-HeartbeatRequesterPlugin.execute: new HeartbeatRequest received = (HeartbeatRequest:
-    uid = ManagerAgent/1022600211733
-    source = ManagerAgent
-    target = MonitoredAgent
-    reqTimeout = 10000
-    hbFrequency = 10000
-    hbTimeout = 1000
-    onlyOutOfSpec = false
-    percentOutOfSpec = 50.0
-    status = NEW
-    timeSent = null
-    timeReceived = null
-    roundTripTime = 0
-)
-HeartbeatRequesterPlugin.sendHbReq: published new HbReq = (HbReq:
-    uid = ManagerAgent/1022600211734
-    source = ManagerAgent
-    target = MonitoredAgent
-    content = (HbReqContent:
-    heartbeatRequestUID = ManagerAgent/1022600211733
-    reqTimeout = 10000
-    hbFrequency = 10000
-    hbTimeout = 1000
-    lastHbSent = Wed Dec 31 23:59:59 GMT 1969
-)
-    response = null
-)
-HeartbeatRequesterPlugin.sendHbReq: published changed HeartbeatRequest = (HeartbeatRequest:
-    uid = ManagerAgent/1022600211733
-    source = ManagerAgent
-    target = MonitoredAgent
-    reqTimeout = 10000
-    hbFrequency = 10000
-    hbTimeout = 1000
-    onlyOutOfSpec = false
-    percentOutOfSpec = 50.0
-    status = SENT
-    timeSent = Tue May 28 15:36:52 GMT 2002
-    timeReceived = null
-    roundTripTime = 0
-)
-+HeartbeatTesterPlugin.execute: received changed HeartbeatRequest
+HeartbeatTesterPlugin.setupSubscriptions: added HeartbeatRequest =
 (HeartbeatRequest:
-    uid = ManagerAgent/1022600211733
-    source = ManagerAgent
-    target = MonitoredAgent
-    reqTimeout = 10000
-    hbFrequency = 10000
-    hbTimeout = 1000
-    onlyOutOfSpec = false
-    percentOutOfSpec = 50.0
-    status = SENT
-    timeSent = Tue May 28 15:36:52 GMT 2002
-    timeReceived = null
-    roundTripTime = 0
-)
-HeartbeatTesterPlugin.execute: status = SENT, ignored.
--HeartbeatRequesterPlugin.execute: changed HbReq received = (HbReq:
-    uid = ManagerAgent/1022600211734
-    source = ManagerAgent
-    target = MonitoredAgent
-    content = (HbReqContent:
-    heartbeatRequestUID = ManagerAgent/1022600211733
-    reqTimeout = 10000
-    hbFrequency = 10000
-    hbTimeout = 1000
-    lastHbSent = Wed Dec 31 23:59:59 GMT 1969
-)
-    response = (HbReqResponse:
-   responder = MonitoredAgent
-   status = ACCEPTED)
-)
-HeartbeatRequesterPlugin.updateHeartbeatRequest: published changed HeartbeatRequest = (HeartbeatRequest:
-    uid = ManagerAgent/1022600211733
-    source = ManagerAgent
-    target = MonitoredAgent
-    reqTimeout = 10000
-    hbFrequency = 10000
-    hbTimeout = 1000
-    onlyOutOfSpec = false
-    percentOutOfSpec = 50.0
-    status = ACCEPTED
-    timeSent = Tue May 28 15:36:52 GMT 2002
-    timeReceived = Tue May 28 15:36:52 GMT 2002
-    roundTripTime = 350
-)
+   uid = ManagerAgent/1022702609062
+   source = ManagerAgent
+   target = MonitoredAgent
+   reqTimeout = 10000
+   hbFrequency = 10000
+   hbTimeout = 1000
+   onlyOutOfSpec = false
+   percentOutOfSpec = 50.0
+   status = NEW
+   timeSent = null
+   timeReceived = null
+   roundTripTime = 0)
+
+HeartbeatRequesterPlugin.prepareHealthReports: new HeartbeatRequest received =
+(HeartbeatRequest:
+   uid = ManagerAgent/1022702609062
+   source = ManagerAgent
+   target = MonitoredAgent
+   reqTimeout = 10000
+   hbFrequency = 10000
+   hbTimeout = 1000
+   onlyOutOfSpec = false
+   percentOutOfSpec = 50.0
+   status = NEW
+   timeSent = null
+   timeReceived = null
+   roundTripTime = 0)
+
+HeartbeatRequesterPlugin.execute: published new HbReq =
+(HbReq:
+   uid = ManagerAgent/1022702609063
+   source = ManagerAgent
+   target = MonitoredAgent
+   content =
+    (HbReqContent:
+       heartbeatRequestUID = ManagerAgent/1022702609062
+       reqTimeout = 10000
+       hbFrequency = 10000
+       hbTimeout = 1000)
+   response = null)
+
+HeartbeatRequesterPlugin.execute: published changed HeartbeatRequest =
+(HeartbeatRequest:
+   uid = ManagerAgent/1022702609062
+   source = ManagerAgent
+   target = MonitoredAgent
+   reqTimeout = 10000
+   hbFrequency = 10000
+   hbTimeout = 1000
+   onlyOutOfSpec = false
+   percentOutOfSpec = 50.0
+   status = SENT
+   timeSent = Wed May 29 20:03:29 GMT 2002
+   timeReceived = null
+   roundTripTime = 0)
+
 HeartbeatTesterPlugin.execute: received changed HeartbeatRequest
 (HeartbeatRequest:
-    uid = ManagerAgent/1022600211733
-    source = ManagerAgent
-    target = MonitoredAgent
-    reqTimeout = 10000
-    hbFrequency = 10000
-    hbTimeout = 1000
-    onlyOutOfSpec = false
-    percentOutOfSpec = 50.0
-    status = ACCEPTED
-    timeSent = Tue May 28 15:36:52 GMT 2002
-    timeReceived = Tue May 28 15:36:52 GMT 2002
-    roundTripTime = 350
-)
+   uid = ManagerAgent/1022702609062
+   source = ManagerAgent
+   target = MonitoredAgent
+   reqTimeout = 10000
+   hbFrequency = 10000
+   hbTimeout = 1000
+   onlyOutOfSpec = false
+   percentOutOfSpec = 50.0
+   status = SENT
+   timeSent = Wed May 29 20:03:29 GMT 2002
+   timeReceived = null
+   roundTripTime = 0)
+
+HeartbeatTesterPlugin.execute: status = SENT, ignored.
++-HeartbeatRequesterPlugin.execute: changed HbReq received =
+(HbReq:
+   uid = ManagerAgent/1022702609063
+   source = ManagerAgent
+   target = MonitoredAgent
+   content =
+    (HbReqContent:
+       heartbeatRequestUID = ManagerAgent/1022702609062
+       reqTimeout = 10000
+       hbFrequency = 10000
+       hbTimeout = 1000)
+   response =
+    (HbReqResponse:
+       responder = MonitoredAgent
+       status = ACCEPTED
+       lastHbSent = Wed May 29 20:03:29 GMT 2002))
+
+HeartbeatRequesterPlugin.updateHeartbeatRequest: published changed HeartbeatRequest =
+(HeartbeatRequest:
+   uid = ManagerAgent/1022702609062
+   source = ManagerAgent
+   target = MonitoredAgent
+   reqTimeout = 10000
+   hbFrequency = 10000
+   hbTimeout = 1000
+   onlyOutOfSpec = false
+   percentOutOfSpec = 50.0
+   status = ACCEPTED
+   timeSent = Wed May 29 20:03:29 GMT 2002
+   timeReceived = Wed May 29 20:03:29 GMT 2002
+   roundTripTime = 360)
+
+HeartbeatTesterPlugin.execute: received changed HeartbeatRequest
+(HeartbeatRequest:
+   uid = ManagerAgent/1022702609062
+   source = ManagerAgent
+   target = MonitoredAgent
+   reqTimeout = 10000
+   hbFrequency = 10000
+   hbTimeout = 1000
+   onlyOutOfSpec = false
+   percentOutOfSpec = 50.0
+   status = ACCEPTED
+   timeSent = Wed May 29 20:03:29 GMT 2002
+   timeReceived = Wed May 29 20:03:29 GMT 2002
+   roundTripTime = 360)
+
 HeartbeatTesterPlugin.execute: status = ACCEPTED.
+.-HeartbeatRequesterPlugin.execute: changed HbReq received =
+(HbReq:
+   uid = ManagerAgent/1022702609063
+   source = ManagerAgent
+   target = MonitoredAgent
+   content =
+    (HbReqContent:
+       heartbeatRequestUID = ManagerAgent/1022702609062
+       reqTimeout = 10000
+       hbFrequency = 10000
+       hbTimeout = 1000)
+   response =
+    (HbReqResponse:
+       responder = MonitoredAgent
+       status = HEARTBEAT
+       lastHbSent = Wed May 29 20:03:39 GMT 2002))
+
+..HeartbeatRequesterPlugin.prepareHealthReports: published new HeartbeatHealthReport =
+(HeartbeatHealthReport:
+   [(HeartbeatEntry: source = MonitoredAgent, timeReceived = Wed May 29 20:03:39 GMT 2002, percentLate = -0.86)
+    ])
+
+HeartbeatTesterPlugin.execute: received HeartbeatHealthReport
+(HeartbeatHealthReport:
+   [(HeartbeatEntry: source = MonitoredAgent, timeReceived = Wed May 29 20:03:39 GMT 2002, percentLate = -0.86)
+    ])
+
+-HeartbeatRequesterPlugin.execute: changed HbReq received =
+(HbReq:
+   uid = ManagerAgent/1022702609063
+   source = ManagerAgent
+   target = MonitoredAgent
+   content =
+    (HbReqContent:
+       heartbeatRequestUID = ManagerAgent/1022702609062
+       reqTimeout = 10000
+       hbFrequency = 10000
+       hbTimeout = 1000)
+   response =
+    (HbReqResponse:
+       responder = MonitoredAgent
+       status = HEARTBEAT
+       lastHbSent = Wed May 29 20:03:49 GMT 2002))
+
+.HeartbeatRequesterPlugin.prepareHealthReports: published new HeartbeatHealthReport =
+(HeartbeatHealthReport:
+   [(HeartbeatEntry: source = MonitoredAgent, timeReceived = Wed May 29 20:03:49 GMT 2002, percentLate = -0.81)
+    ])
+
+HeartbeatTesterPlugin.execute: received HeartbeatHealthReport
+(HeartbeatHealthReport:
+   [(HeartbeatEntry: source = MonitoredAgent, timeReceived = Wed May 29 20:03:49 GMT 2002, percentLate = -0.81)
+    ])

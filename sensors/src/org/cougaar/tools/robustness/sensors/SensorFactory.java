@@ -68,6 +68,10 @@ public class SensorFactory implements org.cougaar.core.domain.Factory {
    * @param reqTimeout Request timeout in milliseconds
    * @param hbFrequency Heartbeat frequency in milliseconds
    * @param hbTimeout Heartbeat timeout in milliseconds
+   * @param onlyOutOfSpec only report if heartbeat is late,
+   * as specified by hbFrequency
+   * @param percentOutOfSpec only report when heartbeat is 
+   * this much later than specified by hbFrequency
    *
    * @return HeartbeatRequest
    */

@@ -94,7 +94,7 @@ public class HeartbeatTesterPlugin extends ComponentPlugin {
     }
     boolean onlyOutOfSpec = false;
     if (iter.hasNext()) {
-      onlyOutOfSpec = Boolean.getBoolean((String)iter.next());
+      onlyOutOfSpec = Boolean.valueOf((String)iter.next()).booleanValue();
     }
     float percentOutOfSpec = 0.0f;
     if (iter.hasNext()) {
@@ -108,7 +108,7 @@ public class HeartbeatTesterPlugin extends ComponentPlugin {
                                                              onlyOutOfSpec,
                                                              percentOutOfSpec);
     bb.publishAdd(req);
-    System.out.println("HeartbeatTesterPlugin.setupSubscriptions: added HeartbeatRequest = " + req);
+    System.out.println("\nHeartbeatTesterPlugin.setupSubscriptions: added HeartbeatRequest = " + req);
   }
 
   protected void execute () {
@@ -116,10 +116,9 @@ public class HeartbeatTesterPlugin extends ComponentPlugin {
     Iterator iter = reqSub.getChangedCollection().iterator();
     while (iter.hasNext()) {
       HeartbeatRequest req = (HeartbeatRequest)iter.next();
-      System.out.println("HeartbeatTesterPlugin.execute: received changed HeartbeatRequest");
       MessageAddress myAddr = getBindingSite().getAgentIdentifier();
       if (req.getSource().equals(myAddr)) {
-        System.out.println(req);
+        System.out.println("\nHeartbeatTesterPlugin.execute: received changed HeartbeatRequest = " + req);
         int status = req.getStatus();
 	  switch (status) {
           case HeartbeatRequest.NEW:
@@ -146,11 +145,11 @@ public class HeartbeatTesterPlugin extends ComponentPlugin {
       }
     }
     // process new HeartbeatHealthReports
-    iter = reportSub.getChangedCollection().iterator();
+    iter = reportSub.getAddedCollection().iterator();
     while (iter.hasNext()) {
       HeartbeatHealthReport rpt = (HeartbeatHealthReport)iter.next();
-      System.out.println("HeartbeatTesterPlugin.execute: received HeartbeatHealthReport");
-      System.out.println(rpt);
+      System.out.println("\nHeartbeatTesterPlugin.execute: received HeartbeatHealthReport = " + rpt);
+      bb.publishRemove(rpt);
     }
   }
 

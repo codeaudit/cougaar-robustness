@@ -69,9 +69,12 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
      * Called by the cluster clock when clock-time >= getExpirationTime().
      **/
     public void expire () {
-      if (!expired) 
+      if (!expired) {
+        bb.openTransaction();
         processHeartbeats();
-      expired = true;
+        bb.closeTransaction();
+        expired = true;
+      }
     }
 
     /** @return true IFF the alarm has expired or was canceled. **/
@@ -91,9 +94,37 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
   }
 
   private void processHeartbeats() {
-    bb.openTransaction();
-    execute();
-    bb.closeTransaction();
+    long minFreq = Long.MAX_VALUE;  // milliseconds until next heartbeat should be sent
+    Iterator iter = sub.getCollection().iterator();
+    while (iter.hasNext()) {
+      HbReq req = (HbReq)iter.next();
+      System.out.println("\nHeartbeatServerPlugin.processHeartbeats: processing HbReq = " + req);
+      HbReqContent content = (HbReqContent)req.getContent();
+      HbReqResponse response = (HbReqResponse)req.getResponse();
+      long now = System.currentTimeMillis();
+      long lastHb = response.getLastHbSent();
+      long freq = content.getHbFrequency();
+      // ignore new requests here - execute will handle
+      if (lastHb != -1) {
+        // check if its time to send a heartbeat or not for this one
+        long nextHb = (lastHb + freq);
+        if (now >= nextHb) {   // its time for this one
+          if (minFreq > freq) minFreq = freq;
+          MessageAddress me = getBindingSite().getAgentIdentifier();
+          response.setResponder(me);
+          response.setStatus(HbReqResponse.HEARTBEAT);
+          response.setLastHbSent(now);
+          req.updateResponse(me, response);
+          bb.publishChange(req);
+          System.out.println("\nHeartbeatServerPlugin.processHeartbeats: published changed HbReq = " + req);
+        } else {  // its not time yet for this one
+          long fromNow = nextHb - now;
+          if (minFreq > fromNow) minFreq = fromNow;
+        }
+      }
+    }
+    if (minFreq != Long.MAX_VALUE)
+      alarmService.addRealTimeAlarm(new ProcessHeartbeatsAlarm(minFreq));
   } 
 
   protected void setupSubscriptions() {
@@ -103,37 +134,19 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
 
   protected void execute() {
     long minFreq = Long.MAX_VALUE;  // milliseconds until next heartbeat should be sent
-    Iterator iter = sub.getCollection().iterator();
+    Iterator iter = sub.getAddedCollection().iterator();
     while (iter.hasNext()) {
       HbReq req = (HbReq)iter.next();
-      System.out.println("HeartbeatServerPlugin.execute: received HbReq = " + req);
+      System.out.println("\nHeartbeatServerPlugin.execute: received new HbReq = " + req);
       HbReqContent content = (HbReqContent)req.getContent();
       long now = System.currentTimeMillis();
-      long lastHb = content.getLastHbSent();
       long freq = content.getHbFrequency();
-      // handle new request
-      if (lastHb == -1) {
-        if (minFreq > freq) minFreq = freq;
-        content.setLastHbSent(now);
-        req.updateContent(content, null);
-        MessageAddress me = getBindingSite().getAgentIdentifier();
-        req.updateResponse(me, new HbReqResponse(me, HeartbeatRequest.ACCEPTED));
-        bb.publishChange(req);
-        System.out.println("HeartbeatServerPlugin.execute: published changed HbReq = " + req);
-      } else {
-        // check if its time to send a heartbeat or not for this one
-        long nextHb = (lastHb + freq);
-        if (now >= nextHb) {   // its time for this one
-          if (minFreq > freq) minFreq = freq;
-          content.setLastHbSent(now);
-          bb.publishChange(req);
-          System.out.println("HeartbeatServerPlugin.execute: published changed HbReq = " + req);
-        } else {  // its not time yet for this one
-          long fromNow = nextHb - now;
-          if (minFreq > fromNow) minFreq = fromNow;
-        }
-      }
-    }
+      if (minFreq > freq) minFreq = freq;
+      MessageAddress me = getBindingSite().getAgentIdentifier();
+      req.updateResponse(me, new HbReqResponse(me, HeartbeatRequest.ACCEPTED, now));
+      bb.publishChange(req);
+      System.out.println("\nHeartbeatServerPlugin.execute: published changed HbReq = " + req);
+    } 
     if (minFreq != Long.MAX_VALUE)
       alarmService.addRealTimeAlarm(new ProcessHeartbeatsAlarm(minFreq));
   } 

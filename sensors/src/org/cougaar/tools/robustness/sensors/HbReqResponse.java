@@ -24,6 +24,7 @@ package org.cougaar.tools.robustness.sensors;
 
 import org.cougaar.core.util.UID;
 import org.cougaar.core.mts.MessageAddress;
+import java.util.Date;
 
 /**
  * The Response returned by the HeartbeatServerPlugin, containing the status.
@@ -31,6 +32,7 @@ import org.cougaar.core.mts.MessageAddress;
 public final class HbReqResponse implements java.io.Serializable {
   private int status;
   MessageAddress responder;
+  private long lastHbSent;  //only set and used on the target side
 
   /**
   * This status is for heartbeats, and isn't propagated to the HeartbeatRequest.
@@ -38,11 +40,14 @@ public final class HbReqResponse implements java.io.Serializable {
   public static final int HEARTBEAT = -1;
 
   /**
+   * @param responder the MessageAddress of the responding agent.
    * @param status The status of the HeartbeatRequest 
    * (i.e. HeartbeatRequest.ACCEPTED, HeartbeatRequest.REFUSED)
+   * @param lastHbSent the time when the last heartbeat was sent
    */
-  public HbReqResponse(MessageAddress responder, int status) {
+  public HbReqResponse(MessageAddress responder, int status, long lastHbSent) {
     this.responder = responder;
+    this.lastHbSent = lastHbSent;
     switch (status) {
       // only these two values can be set by server
       case HeartbeatRequest.ACCEPTED:
@@ -90,6 +95,36 @@ public final class HbReqResponse implements java.io.Serializable {
   }
 
   /**
+  * Get the time when the last heartbeat was sent.
+  */
+  public long getLastHbSent() { return lastHbSent; }
+
+  /**
+  * Set the last send time for a heartbeat.
+  */
+  public void setLastHbSent(long lastHbSent) { 
+    this.lastHbSent = lastHbSent;        
+  }
+
+  /**
+  * Returns true if this object equals the argument.
+  */
+  public boolean equals(Object o) {
+    if (o == this) {
+      return true;
+    } else if (!(o instanceof HbReqResponse)) {
+      return false;
+    } else {
+      HbReqResponse r = (HbReqResponse)o;
+      if (this.status == r.getStatus() &&
+          this.responder.equals(r.getResponder()) &&
+          this.lastHbSent == r.getLastHbSent()) 
+        return true;
+    }
+    return false;
+  }
+
+  /**
   * Convert the status code to a human-readable String.
   */
   public static String statusToString(int status) {
@@ -104,9 +139,11 @@ public final class HbReqResponse implements java.io.Serializable {
   * Returns a String represention for a HbReqResponse.
   */
   public String toString() {
-    return "(HbReqResponse:\n" +
-           "   responder = " + responder + "\n" +
-           "   status = " + statusToString(status) + ")";
-  }
+    return "\n" +
+           "    (HbReqResponse:\n" +
+           "       responder = " + responder + "\n" +
+           "       status = " + statusToString(status) + "\n" +
+           "       lastHbSent = " + new Date(lastHbSent) + ")";
+  } 
 
 }

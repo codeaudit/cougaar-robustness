@@ -35,7 +35,6 @@ public final class HbReqContent implements java.io.Serializable {
   private long reqTimeout;
   private long hbFrequency;
   private long hbTimeout;
-  private long lastHbSent;  //only set and used on the target side
 
   /**
    * @param heartbeatRequestUID UID of the HeartbeatRequest object. Used
@@ -52,7 +51,6 @@ public final class HbReqContent implements java.io.Serializable {
     this.reqTimeout = reqTimeout;
     this.hbFrequency = hbFrequency;
     this.hbTimeout = hbTimeout;
-    this.lastHbSent = -1;
   }
 
   /**
@@ -112,18 +110,6 @@ public final class HbReqContent implements java.io.Serializable {
   }
 
   /**
-  * Get the time when the last heartbeat was.
-  */
-  public long getLastHbSent() { return lastHbSent; }
-
-  /**
-  * Set the last send time for a heartbeat.
-  */
-  public void setLastHbSent(long lastHbSent) { 
-    this.lastHbSent = lastHbSent;        
-  }
-
-  /**
   * Returns true if this object equals the argument.
   */
   public boolean equals(Object o) {
@@ -136,8 +122,7 @@ public final class HbReqContent implements java.io.Serializable {
       if (this.heartbeatRequestUID.equals(c.getHeartbeatRequestUID()) &&
           this.reqTimeout == c.getReqTimeout() &&
           this.hbFrequency == c.getHbFrequency() &&
-          this.hbTimeout == c.getHbTimeout() &&   
-          this.lastHbSent == c.getLastHbSent()) 
+          this.hbTimeout == c.getHbTimeout()) 
         return true;
     }
     return false;
@@ -147,12 +132,12 @@ public final class HbReqContent implements java.io.Serializable {
   * Returns a String represention for this object.
   */
   public String toString() {
-    return "(HbReqContent:\n" +
-           "    heartbeatRequestUID = " + heartbeatRequestUID + "\n" +
-           "    reqTimeout = " + reqTimeout + "\n" +
-           "    hbFrequency = " + hbFrequency + "\n" +
-           "    hbTimeout = " + hbTimeout + "\n" +
-           "    lastHbSent = " + new Date(lastHbSent) + "\n" + ")";
+    return "\n" +
+           "    (HbReqContent:\n" +
+           "       heartbeatRequestUID = " + heartbeatRequestUID + "\n" +
+           "       reqTimeout = " + reqTimeout + "\n" +
+           "       hbFrequency = " + hbFrequency + "\n" +
+           "       hbTimeout = " + hbTimeout + ")";
   }
 
 }

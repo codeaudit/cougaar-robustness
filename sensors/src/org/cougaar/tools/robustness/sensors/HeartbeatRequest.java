@@ -299,19 +299,20 @@ public class HeartbeatRequest implements UniqueObject
   * Returns a pretty-printed representation for a HeartbeatRequest.
   */
   public String toString() {
-    return "(HeartbeatRequest:\n" +
-           "    uid = " + uid + "\n" +
-           "    source = " + source + "\n" +
-           "    target = " + target + "\n" +
-           "    reqTimeout = " + reqTimeout + "\n" +
-           "    hbFrequency = " + hbFrequency + "\n" +
-           "    hbTimeout = " + hbTimeout + "\n" +
-           "    onlyOutOfSpec = " + onlyOutOfSpec + "\n" +
-           "    percentOutOfSpec = " + percentOutOfSpec + "\n" +
-           "    status = " + statusToString(status) + "\n" +
-           "    timeSent = " + timeSent + "\n" +
-           "    timeReceived = " + timeReceived + "\n" +
-           "    roundTripTime = " + roundTripTime + "\n" + ")";
+    return "\n" +
+           "(HeartbeatRequest:\n" +
+           "   uid = " + uid + "\n" +
+           "   source = " + source + "\n" +
+           "   target = " + target + "\n" +
+           "   reqTimeout = " + reqTimeout + "\n" +
+           "   hbFrequency = " + hbFrequency + "\n" +
+           "   hbTimeout = " + hbTimeout + "\n" +
+           "   onlyOutOfSpec = " + onlyOutOfSpec + "\n" +
+           "   percentOutOfSpec = " + percentOutOfSpec + "\n" +
+           "   status = " + statusToString(status) + "\n" +
+           "   timeSent = " + timeSent + "\n" +
+           "   timeReceived = " + timeReceived + "\n" +
+           "   roundTripTime = " + roundTripTime + ")";
   }
 
 }

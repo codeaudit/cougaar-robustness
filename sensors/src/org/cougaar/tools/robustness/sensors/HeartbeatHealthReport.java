@@ -64,7 +64,10 @@ public class HeartbeatHealthReport implements java.io.Serializable {
    * @return String - a string representation of the HeartbeatHealthReport.
    **/
   public String toString() {
-      return "HeartbeatHealthReport: " + heartbeats;
+    String tmp = "\n(HeartbeatHealthReport: \n   [";
+    for (int i = 0; i < heartbeats.length; i++)
+      tmp = tmp + heartbeats[i].toString() + "\n    ";
+    return tmp + "])";
   }
 
 }

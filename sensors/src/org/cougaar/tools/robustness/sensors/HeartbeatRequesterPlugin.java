@@ -47,12 +47,13 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
   private UniqueObjectSet reqTable;
   private Hashtable hbTable;
   private Hashtable reportTable;
-
-  private class SendHeathReportsAlarm implements Alarm {
+  private SendHealthReportsAlarm nextAlarm = null;
+  
+  private class SendHealthReportsAlarm implements Alarm {
     private long detonate = -1;
     private boolean expired = false;
 
-    public SendHeathReportsAlarm (long delay) {
+    public SendHealthReportsAlarm (long delay) {
       detonate = delay + System.currentTimeMillis();
     }
 
@@ -92,21 +93,6 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     }
   };
 
-  private void sendHbReq (HeartbeatRequest req) {
-    MessageAddress source = getBindingSite().getAgentIdentifier();
-    MessageAddress target = req.getTarget();
-    UID reqUID = req.getUID();
-    reqTable.add(req);
-    req.setStatus(HeartbeatRequest.SENT);
-    req.setTimeSent(new Date());
-    HbReqContent content = new HbReqContent(reqUID, req.getReqTimeout(), req.getHbFrequency(), req.getHbTimeout());
-    HbReq hbReq = new HbReq(getUIDService().nextUID(), source, target, content, null);
-    bb.publishAdd(hbReq);
-    bb.publishChange(req);
-    System.out.println("HeartbeatRequesterPlugin.sendHbReq: published new HbReq = " + hbReq);
-    System.out.println("HeartbeatRequesterPlugin.sendHbReq: published changed HeartbeatRequest = " + req);
-  }
-
   private void updateHeartbeatRequest (HbReq hbReq) {
     HbReqContent content = (HbReqContent)hbReq.getContent();
     UID reqUID = content.getHeartbeatRequestUID();
@@ -117,54 +103,58 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     req.setStatus(response.getStatus());
     req.setRoundTripTime(timeReceived.getTime() - req.getTimeSent().getTime());
     bb.publishChange(req);
-    //bb.publishRemove(hbReq);
-    System.out.println("HeartbeatRequesterPlugin.updateHeartbeatRequest: published changed HeartbeatRequest = " + req);
-    //System.out.println("HeartbeatRequesterPlugin.updateHeartbeatRequest: removed HbReq = " + hbReq);
+    System.out.println("\nHeartbeatRequesterPlugin.updateHeartbeatRequest: published changed HeartbeatRequest = " + req);
   }
 
+  // produce HeartbeatHealthReports from ACCEPTED HeartbeatRequests
   private void prepareHealthReports() {
-    // process NEW and ACCEPTED HeartbeatRequests
-    long minFreq = Long.MAX_VALUE;  // milliseconds until next HeartbeatHealthReport should be sent
+    long timeUntilNextAlarm = Long.MAX_VALUE; // milliseconds until next call to prepareHealthReports
     Iterator iter = heartbeatRequestSub.getCollection().iterator();
     while (iter.hasNext()) {
       HeartbeatRequest req = (HeartbeatRequest)iter.next();
       int status = req.getStatus();
-      if (status == HeartbeatRequest.NEW) {
-        System.out.println("HeartbeatRequesterPlugin.execute: new HeartbeatRequest received = " + req);
-        sendHbReq(req);
-      } else if (status == HeartbeatRequest.ACCEPTED) {
+      if (status == HeartbeatRequest.ACCEPTED) {
         // Is it time yet to send a health report for this request?
-        long freq = req.getHbFrequency();
+        // first, calculate when last heartbeat should have arrived
+        long start = req.getTimeReceived().getTime(); //baseline for heartbeats for this request
         long now = System.currentTimeMillis();
-        // Get time last report was sent from reportTable?
-        UID uid = req.getUID();
-        long lastReportTime = ((Date)reportTable.get(uid)).getTime();
-        long nextReportTime = (lastReportTime + freq);
-        if (now < nextReportTime) {  // not time yet, so just set the next wakeup time 
-          long timeUntilNextReport = nextReportTime - now;    
-          if (minFreq > timeUntilNextReport) minFreq = timeUntilNextReport;
-        } else {
-          // now is the time
-          if (minFreq > freq) minFreq = freq;
+        long hbFreq = req.getHbFrequency();
+        long lastHbDue = start + ((now - start)/hbFreq)*hbFreq;
+        // now calculate when to send report 
+        float percentOutOfSpec = req.getPercentOutOfSpec();
+        long reportDue = lastHbDue + (long)(hbFreq * (percentOutOfSpec / 100));
+        if (reportDue > now){ // report isn't due yet, so just set next wakeup time
+          long timeUntilReportDue = reportDue - now;    
+          if (timeUntilNextAlarm > timeUntilReportDue) timeUntilNextAlarm = timeUntilReportDue;
+       } else { // now is the time to send the report, if needed
+          // first, set next wakeup time
+          long nextReportDue = reportDue + hbFreq;
+          long timeUntilNextReportDue = nextReportDue - now;  
+          if (timeUntilNextAlarm > timeUntilNextReportDue) timeUntilNextAlarm = timeUntilNextReportDue;
+          // now check to see how late the heartbeat is
           MessageAddress target = req.getTarget();  // change here for multiple targets
           Date lastHbDate = (Date)hbTable.get(target);
-          long nextHbTime = lastHbDate.getTime() + freq;
-          long outOfSpec = now - nextHbTime;
-          float percentOutOfSpec = (float)outOfSpec / (float)freq;
-          // send report if requester wants report whether in or out or spec
+          long lastHbTime = lastHbDate.getTime();
+          long outOfSpec = lastHbTime - lastHbDue;
+          float thisPercentOutOfSpec =  ((float)outOfSpec / (float)hbFreq) * 100.0f;
+          // send report if requester wants report whether in or out of spec
           // or if the heartbeat is enough out of spec
           if ( req.getOnlyOutOfSpec() == false ||  
-               percentOutOfSpec > req.getPercentOutOfSpec() ) {
+               thisPercentOutOfSpec > percentOutOfSpec ) {
             HeartbeatEntry [] entries = new HeartbeatEntry[1];
-            entries[0] = new HeartbeatEntry(target, lastHbDate, percentOutOfSpec);
+            entries[0] = new HeartbeatEntry(target, lastHbDate, thisPercentOutOfSpec);
             HeartbeatHealthReport report = new HeartbeatHealthReport(entries);
             bb.publishAdd(report);
+            System.out.println("\nHeartbeatRequesterPlugin.prepareHealthReports:" +
+                               " published new HeartbeatHealthReport = " + report);
           }   
-        }                                                  
+        }    
       }
+    } 
+    if (timeUntilNextAlarm != Long.MAX_VALUE) {
+      nextAlarm = new SendHealthReportsAlarm(timeUntilNextAlarm);
+      alarmService.addRealTimeAlarm(nextAlarm);
     }
-    if (minFreq != Long.MAX_VALUE)
-      alarmService.addRealTimeAlarm(new SendHeathReportsAlarm(minFreq));
   }
 
   protected void setupSubscriptions() {
@@ -185,7 +175,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     Iterator iter = hbReqSub.getChangedCollection().iterator();
     while (iter.hasNext()) {
       HbReq hbReq = (HbReq)iter.next();
-      System.out.println("HeartbeatRequesterPlugin.execute: changed HbReq received = " + hbReq);
+      System.out.println("\nHeartbeatRequesterPlugin.execute: changed HbReq received = " + hbReq);
       MessageAddress myAddr = getBindingSite().getAgentIdentifier();
       if (hbReq.getSource().equals(myAddr)) {
         HbReqResponse response = (HbReqResponse)hbReq.getResponse();
@@ -193,19 +183,67 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
         Date now = new Date();
         switch (status) {
           case HeartbeatRequest.ACCEPTED:
-            hbTable.put(response.getResponder(), now); // falls through
-            reportTable.put(((HbReqContent)hbReq.getContent()).getHeartbeatRequestUID(), now); // falls through
+            hbTable.put(response.getResponder(), now);
+            HbReqContent content = (HbReqContent)hbReq.getContent();
+            UID reqUID = content.getHeartbeatRequestUID();
+            reportTable.put(reqUID, now);
+            // figure out when the alarm should be set
+            HeartbeatRequest req = (HeartbeatRequest)reqTable.findUniqueObject(reqUID);
+            long freq = req.getHbFrequency();
+            float percentOutOfSpec = req.getPercentOutOfSpec();
+            long fromNow = freq + (long)(freq * (percentOutOfSpec / 100));
+            if (nextAlarm == null){    // if no alarm set yet, this is the first
+                                       // ACCEPTED request, so set one to 
+                                       // (freq + (freq * percentOutOfSpec)) from now
+              nextAlarm = new SendHealthReportsAlarm(fromNow);
+              alarmService.addRealTimeAlarm(nextAlarm);
+            } else { // an alarm is already set - figure out if its soon enough
+              long fromNowTime = now.getTime() + fromNow;
+              if (nextAlarm.getExpirationTime() > fromNowTime) {
+                nextAlarm.cancel();
+                nextAlarm = new SendHealthReportsAlarm(fromNow);
+                alarmService.addRealTimeAlarm(nextAlarm);
+              }
+            } // falls through
           case HeartbeatRequest.REFUSED:
             updateHeartbeatRequest(hbReq);
             break;
           case HbReqResponse.HEARTBEAT:
             hbTable.put(response.getResponder(), now);
+            break;
           default:
             throw new RuntimeException("illegal status = " + status);
         }
       }
     }
-    prepareHealthReports();
+    // process NEW HeartbeatRequests
+    iter = heartbeatRequestSub.getAddedCollection().iterator();
+    while (iter.hasNext()) {
+      HeartbeatRequest req = (HeartbeatRequest)iter.next();
+      int status = req.getStatus();
+      if (status == HeartbeatRequest.NEW) {
+        System.out.println("\nHeartbeatRequesterPlugin.prepareHealthReports: new HeartbeatRequest received = " + req);
+        MessageAddress source = getBindingSite().getAgentIdentifier();
+        MessageAddress target = req.getTarget();
+        UID reqUID = req.getUID();
+        reqTable.add(req);
+        req.setStatus(HeartbeatRequest.SENT);
+        req.setTimeSent(new Date());
+        HbReqContent content = new HbReqContent(reqUID, 
+                                                req.getReqTimeout(), 
+                                                req.getHbFrequency(), 
+                                                req.getHbTimeout());
+        HbReq hbReq = new HbReq(getUIDService().nextUID(), 
+                                source, 
+                                target, 
+                                content, 
+                                null);
+        bb.publishAdd(hbReq);
+        bb.publishChange(req);
+        System.out.println("\nHeartbeatRequesterPlugin.execute: published new HbReq = " + hbReq);
+        System.out.println("\nHeartbeatRequesterPlugin.execute: published changed HeartbeatRequest = " + req);
+      }
+    }
   }
 
   private UIDService UIDService;
