@@ -20,6 +20,7 @@ package org.cougaar.tools.robustness.ma.controllers;
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
 import org.cougaar.tools.robustness.ma.controllers.*;
 import org.cougaar.tools.robustness.ma.HostLossThreatAlertHandler;
+import org.cougaar.tools.robustness.ma.SecurityAlertHandler;
 import org.cougaar.tools.robustness.ma.util.DeconflictHelper;
 import org.cougaar.tools.robustness.ma.util.DeconflictListener;
 import org.cougaar.tools.robustness.ma.util.HeartbeatListener;
@@ -407,6 +408,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     RestartDestinationLocator.setCommunityStatusModel(csm);
     RestartDestinationLocator.setLoggingService(logger);
     new HostLossThreatAlertHandler(getBindingSite(), agentId, this, csm);
+    new SecurityAlertHandler(getBindingSite(), agentId, this, csm);
   }
 
   boolean communityReady = false;
