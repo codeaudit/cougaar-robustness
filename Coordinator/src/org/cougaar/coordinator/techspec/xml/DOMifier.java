@@ -32,6 +32,10 @@ import org.cougaar.util.ConfigFinder;
 import javax.xml.parsers.*;
 import org.w3c.dom.*;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileInputStream;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.InputSource;
 
 import org.apache.crimson.jaxp.*;
 import org.xml.sax.ErrorHandler;
@@ -45,7 +49,7 @@ import org.cougaar.util.log.Logger;
  * This class converts an XML file into a DOM Document
  * @author  Administrator
  */
-public class DOMifier implements ErrorHandler {
+public class DOMifier implements ErrorHandler, EntityResolver  {
     
     private DocumentBuilder domBuilder = null;
     private ConfigFinder configFinder;
@@ -66,6 +70,7 @@ public class DOMifier implements ErrorHandler {
         try {
             domBuilder = factory.newDocumentBuilder();
             domBuilder.setErrorHandler(this);
+            domBuilder.setEntityResolver(this);
         } catch (ParserConfigurationException pce) {
             logger.error("Could not create domBuilder: " + pce.toString() );
         }
@@ -82,25 +87,8 @@ public class DOMifier implements ErrorHandler {
         
         try {
             
-            File f = configFinder.locateFile(fileParam); //steve
-            if (f==null || !f.exists()) { //look 
-                if (f != null) {
-                    if (logger.isDebugEnabled()) logger.debug("*** Did not find XML file: " + fileParam);
-                    if (logger.isDebugEnabled()) logger.debug("*** Path checked was = " + f.getAbsolutePath()+". Checking CIP...");
-                }
-                String installpath = System.getProperty("org.cougaar.install.path");
-                String defaultPath = installpath + File.separatorChar + "csmart" + File.separatorChar + "config" +
-                   File.separatorChar + "lib" + File.separatorChar + "coordinator" + File.separatorChar + fileParam;
-
-                f = new File(defaultPath);
-                if (!f.exists()) {                    
-                    logger.warn("*** Did not find XML file in = " + f.getAbsolutePath());
-                    return null;
-                }
-            }                
-            if (logger.isDebugEnabled()) logger.debug("path for XML file = " + f.getAbsolutePath());
-            //(new InputSource(new FileInputStream(f)));
-
+            File f = findFile(fileParam);
+            
             try {
                 return domBuilder.parse(f);
             } catch (Exception e) {
@@ -112,7 +100,42 @@ public class DOMifier implements ErrorHandler {
             throw new Exception(e.toString());
         }
     }
+    
+    private File findFile(String fileParam) {
+        
+            File f = configFinder.locateFile(fileParam); //steve
+            if (f==null || !f.exists()) { //look 
+                if (f != null) {
+                    if (logger.isDebugEnabled()) logger.debug("*** Did not find XML file: " + f.getAbsolutePath());
+                    if (logger.isDebugEnabled()) logger.debug("*** Path checked was = " + f.getAbsolutePath()+". Checking CIP...");
+                }
+                String installpath = System.getProperty("org.cougaar.install.path");
+                String defaultPath = installpath + File.separatorChar + "csmart" + File.separatorChar + "config" +
+                   File.separatorChar + "lib" + File.separatorChar + "coordinator" + File.separatorChar + fileParam;
 
+                //Now, try local dir...
+                f = new File(fileParam);
+                if (!f.exists()) {     
+                    if (f!= null) { logger.warn("*** Did not find XML file in = " + f.getAbsolutePath()); }
+                    //now try default path
+                    f = new File(defaultPath);
+                    if (!f.exists()) {                    
+                        logger.warn("*** Did not find XML file in = " + f.getAbsolutePath());
+                        return null;
+                    }
+                }
+            }                
+            if (logger.isDebugEnabled()) logger.debug("path for XML file = " + f.getAbsolutePath());
+            //(new InputSource(new FileInputStream(f)));
+
+           return f;
+    }
+    
+        
+        
+
+    //FROM ErrorHandler ------------------------------------------------------------------------------------------------------------------
+    
     public void warning(SAXParseException exception) throws SAXException {
         if (logger.isDebugEnabled()) logger.debug("SAXException - Warning at line/col["+exception.getLineNumber()+":"+exception.getColumnNumber()+"]: "+ exception);
     }
@@ -124,5 +147,27 @@ public class DOMifier implements ErrorHandler {
     public void fatalError(SAXParseException exception) throws SAXException {
         logger.error("SAXException - FatalError at line/col["+exception.getLineNumber()+":"+exception.getColumnNumber()+"]: "+ exception);
     }
+
     
+    
+    // FROM EntityResolver  ------------------------------------------------------------------------------------------------------------
+    
+   /**
+    *  Used by the parser to find the DTDs
+    */ 
+   public InputSource resolveEntity (String publicId, String systemId)
+   {
+        //take everything off until the last slash
+       int index = systemId.lastIndexOf('/');
+       String filename = systemId.substring(index+1);
+        
+        File f = findFile(filename);
+        if (f == null) { return null; }
+        try {         
+            return (new InputSource(new FileInputStream(f)));
+        } catch (FileNotFoundException fnf) {
+            return null;
+        }
+   }
+     
 }
