@@ -47,7 +47,6 @@ import org.cougaar.coordinator.techspec.AssetStateDimension;
 import org.cougaar.coordinator.techspec.AssetTransitionWithCost;
 import org.cougaar.coordinator.techspec.ActionTechSpecService;
 import org.cougaar.coordinator.techspec.TechSpecNotFoundException;
-import org.cougaar.coordinator.selection.SelectionCompleted;
 
 import java.util.Iterator;
 import java.util.Collection;
@@ -64,11 +63,9 @@ import java.util.Set;
 public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPersistable {
 
     private IncrementalSubscription stateEstimationSubscription;
-    private IncrementalSubscription selectionCompletedSubscription;
     private IncrementalSubscription knobSubscription;
 
     private Hashtable actions;
-    private Hashtable pendingSEs;
 
     private MediatedTechSpecMap mediatedTechSpecMap = new MediatedTechSpecMap(); // this should come from real TechSpecs - no time
 
@@ -90,7 +87,6 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
     public void load() {
         super.load();
         actions = new Hashtable(10);
-        pendingSEs = new Hashtable();
         knob = new CostBenefitKnob();
     }
 
@@ -113,36 +109,14 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
             StateEstimation se = (StateEstimation)iter.next();
             if (logger.isInfoEnabled()) logger.info(se.toString());
 
-            // If there is an existing CBE, ignore cache SE for possible future use, because otherwise we might over-run the selection process
+            // If there is an existing CBE, ignore this SE, because otherwise we might oveerrun the selection process
             CostBenefitEvaluation old_cbe = findCostBenefitEvaluation(se.getAssetID());
             if (old_cbe == null) {
             	CostBenefitEvaluation cbe = createCostBenefitEvaluation(se, knob);
             	if (logger.isInfoEnabled()) logger.info("CostBenefitEvaluation created: "+cbe.toString());
             	publishAdd(cbe);
-	    }
-	    else {
-	        pendingSEs.put(se.getAssetID(), se);
-                if (logger.isInfoEnabled()) logger.info("Caching SE for: " + se.getAssetID() + " for possible future use.  Still processing last one.");
-            }
-            publishRemove(se);
-        }
-
-        //Handle CompletedSelections - if FAILED & have an existing SE, try again with the new SE
-        iter = selectionCompletedSubscription.getAddedCollection().iterator();
-        while(iter.hasNext())
-        {
-            SelectionCompleted sc = (SelectionCompleted)iter.next();
-            if (logger.isInfoEnabled()) logger.info(sc.toString());
-   
-            AssetID assetID = sc.getAssetID();
-            StateEstimation se = (StateEstimation) pendingSEs.remove(assetID);
-
-	    if ((se != null) && !sc.successfulP()) {
-                  CostBenefitEvaluation cbe = createCostBenefitEvaluation(se, knob);
-           	  if (logger.isInfoEnabled()) logger.info("CostBenefitEvaluation created: "+cbe.toString());
-           	  publishAdd(cbe);
-	    }
-            publishRemove(sc);
+			}
+			else if (logger.isInfoEnabled()) logger.info("Discarding SE for: " + se.getAssetID() + " still processng last one.");
         }
     }
 
@@ -152,7 +126,6 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
     protected void setupSubscriptions() {
         super.setupSubscriptions();
         stateEstimationSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(StateEstimation.pred);
-        selectionCompletedSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(SelectionCompleted.pred);
         knobSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(CostBenefitKnob.pred);
         publishAdd(knob);
     }
@@ -240,23 +213,25 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
                     try {
                         // Get the StateDimensionEstimation for the base dimension the Action applies to - Throws an exception if SDE not found
-                        StateDimensionEstimation currentEstimatedBaseStateDimension = se.getStateDimensionEstimation(baseStateDimension);
-                        // create the Action container that will hold the evaluations of all offered Variants
-                        ActionEvaluation thisActionEvaluation = new ActionEvaluation(thisAction);
-                        cbe.addActionEvaluation(thisActionEvaluation);
+                        if (baseStateDimension != null) {
+                            StateDimensionEstimation currentEstimatedBaseStateDimension = se.getStateDimensionEstimation(baseStateDimension);
+                            // create the Action container that will hold the evaluations of all offered Variants
+                            ActionEvaluation thisActionEvaluation = new ActionEvaluation(thisAction);
+                            cbe.addActionEvaluation(thisActionEvaluation);
 
-                        // Get the TechSpec data for all the Variants
-                        Collection variantDescriptions = atsi.getActions();
-                        // iterate thru all offered Variants of this Action
-                        Iterator variantIter = variantDescriptions.iterator();
-                        while (variantIter.hasNext()) {
-                            // Get TechSpec for this Variant
-                            ActionDescription thisVariantDescription = (ActionDescription) variantIter.next();
-                            boolean thisVariantActiveP = thisAction.getValue().isActive() && thisAction.getValue().getAction().equals(thisVariantDescription.name());
-                            // Add an entry to the current Action containing the information about this Variant
-                            thisActionEvaluation.addVariantEvaluation(createCompensatoryVariantEvaluation
+                            // Get the TechSpec data for all the Variants
+                            Collection variantDescriptions = atsi.getActions();
+                            // iterate thru all offered Variants of this Action
+                            Iterator variantIter = variantDescriptions.iterator();
+                            while (variantIter.hasNext()) {
+                                // Get TechSpec for this Variant
+                                ActionDescription thisVariantDescription = (ActionDescription) variantIter.next();
+                                boolean thisVariantActiveP = thisAction.getValue().isActive() && thisAction.getValue().getAction().equals(thisVariantDescription.name());
+                                // Add an entry to the current Action containing the information about this Variant
+                                thisActionEvaluation.addVariantEvaluation(createCompensatoryVariantEvaluation
                                        (thisVariantDescription, thisActionEvaluation, currentEstimatedBaseStateDimension, thisAction, 
                                         baseStateDimension, compensatedStateDimension, thisVariantActiveP, knob));
+                            }
                         }
                     }
                     catch (BelievabilityException e) {
