@@ -45,7 +45,9 @@ public abstract class RobustnessThreatAlertHandlerBase extends ThreatAlertHandle
     super(bs, agentId);
     this.model = model;
     this.controller = controller;
-    this.moveHelper = controller.getMoveHelper();
+    if (controller != null) {
+      this.moveHelper = controller.getMoveHelper();
+    }
   }
 
   /**

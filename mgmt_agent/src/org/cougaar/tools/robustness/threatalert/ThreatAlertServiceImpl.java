@@ -40,8 +40,8 @@ import org.cougaar.core.agent.service.alarm.Alarm;
 
 import org.cougaar.util.UnaryPredicate;
 
+import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.multicast.AttributeBasedAddress;
-
 import org.cougaar.tools.robustness.ma.ldm.RelayAdapter;
 
 import java.util.ArrayList;
@@ -186,6 +186,25 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
                 " community=" + community +
                 " role=" + role +
                 " targets=" + taRelay.targetsToString(taRelay));
+    }
+    queueForSend(taRelay);
+  }
+
+  /**
+   * Send a new ThreatAlert message to a single agent.
+   * @param ta  ThreatAlert to send
+   * @param agent  Agent to receive alert
+   */
+  public void sendAlert(ThreatAlert ta, String agent) {
+    ta.setSource(agentId);
+    ta.setUID(uidSvc.nextUID());
+    // Send to remote listeners via Relay
+    RelayAdapter taRelay = new RelayAdapter(agentId, ta, ta.getUID());
+    taRelay.addTarget(MessageAddress.getMessageAddress(agent));
+    if (log.isDebugEnabled()) {
+      log.debug("sendAlert:" +
+                " alert=" + ta +
+                " target=" + taRelay.targetsToString(taRelay));
     }
     queueForSend(taRelay);
   }

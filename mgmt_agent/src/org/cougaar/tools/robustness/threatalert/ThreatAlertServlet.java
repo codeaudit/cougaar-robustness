@@ -267,6 +267,11 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
     } else {
       community = (String) conditions.get("selectcommunity");
     }
+    Object content;
+    if (conditions.containsKey("content")) {
+      content = conditions.get("content");
+      ta.setContent(content);
+    }
     threatAlertService.sendAlert(ta, community, role);
 
   }

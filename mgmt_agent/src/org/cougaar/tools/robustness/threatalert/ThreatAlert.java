@@ -39,6 +39,7 @@ public interface ThreatAlert extends UniqueObject, Relay.Target {
 
   /**
    * Get alert source.
+   * @param MessageAddress source
    */
   public void setSource(MessageAddress source);
 
@@ -91,5 +92,17 @@ public interface ThreatAlert extends UniqueObject, Relay.Target {
    * @return Array of Assets affected by alert.
    */
   public Asset[] getAffectedAssets();
+
+  /**
+   * set optional content associated affected by the alert.
+   * @param content Object.
+   */
+  public void setContent(Object content);
+
+  /**
+   * Get optional content associated affected by the alert.
+   * @return content Object.
+   */
+  public Object getContent();
 
 }

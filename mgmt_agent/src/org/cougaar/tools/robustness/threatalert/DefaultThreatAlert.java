@@ -40,6 +40,7 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
   private long duration;
   private UID uid;
   private List assets;
+  private Object content;
 
   /**
    * Default constructor.
@@ -138,6 +139,14 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
     this.startTime = startTime.getTime();
   }
 
+  public void setContent(Object content) {
+    this.content = content;
+  }
+
+  public Object getContent() {
+    return this.content;
+  }
+
   public Date getExpirationTime() {
     if (duration == FOREVER) {
       // 1000 years from now, not quite forever but close enough
@@ -213,6 +222,7 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
         " start=" + new Date(startTime) +
         " expires=" + getExpirationTime() +
         " assets=" + assets +
+        " content=" + content +
         " uid=" + getUID();
   }
 

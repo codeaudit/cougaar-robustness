@@ -534,40 +534,43 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
   private void updateAndSendNodeStatus() {
     if (model != null) {
       String communityName = model.getCommunityName();
-      // Get status of local agents
-      AgentStatus agentStatus[] = getLocalAgentStatus(communityName);
+      if (model.contains(myName)) {
+        // Get status of local agents
+        AgentStatus agentStatus[] = getLocalAgentStatus(communityName);
 
-      // Dissemminate status to peer managers
-      if (nodeStatusRelay != null) {
-       NodeStatusRelayImpl nsr = (NodeStatusRelayImpl)nodeStatusRelay.
-            getContent();
-        nsr.setAgentStatus(agentStatus);
-        nsr.setLeaderVote(model.getLeaderVote(myName));
-        Set targets = findHealthMonitorPeers(nsr.getCommunityName());
-        nodeStatusRelay.clearTargets();
-        for (Iterator it1 = targets.iterator(); it1.hasNext(); ) {
-          MessageAddress target = (MessageAddress)it1.next();
-          if (!target.equals(agentId))
-            nodeStatusRelay.addTarget(target);
-        }
-        if (logger.isDebugEnabled()) {
-          logger.debug("publishChange NodeStatusRelay:" +
-                       " source=" + nsr.getSource() +
-                       " targets=" + targetsToString(nodeStatusRelay.getTargets()) +
-                       " community=" + nsr.getCommunityName() +
-                       " agents=" + nsr.getAgentStatus().length +
-                       " leaderVote=" + nsr.getLeaderVote() +
-                       " location=" + nsr.getLocation());
-        }
-        if (logger.isDetailEnabled()) {
-          StringBuffer detailedStatus = new StringBuffer("<AgentStatus>\n");
-          for (int i = 0; i < agentStatus.length; i++) {
-            detailedStatus.append("  " + agentStatus[i].toString() + "\n");
+        // Dissemminate status to peer managers
+        if (nodeStatusRelay != null) {
+          NodeStatusRelayImpl nsr = (NodeStatusRelayImpl) nodeStatusRelay.
+              getContent();
+          nsr.setAgentStatus(agentStatus);
+          nsr.setLeaderVote(model.getLeaderVote(myName));
+          Set targets = findHealthMonitorPeers(nsr.getCommunityName());
+          nodeStatusRelay.clearTargets();
+          for (Iterator it1 = targets.iterator(); it1.hasNext(); ) {
+            MessageAddress target = (MessageAddress) it1.next();
+            if (!target.equals(agentId))
+              nodeStatusRelay.addTarget(target);
           }
-          detailedStatus.append("</AgentStatus>");
-          logger.detail(detailedStatus.toString());
+          if (logger.isDebugEnabled()) {
+            logger.debug("publishChange NodeStatusRelay:" +
+                         " source=" + nsr.getSource() +
+                         " targets=" +
+                         targetsToString(nodeStatusRelay.getTargets()) +
+                         " community=" + nsr.getCommunityName() +
+                         " agents=" + nsr.getAgentStatus().length +
+                         " leaderVote=" + nsr.getLeaderVote() +
+                         " location=" + nsr.getLocation());
+          }
+          if (logger.isDetailEnabled()) {
+            StringBuffer detailedStatus = new StringBuffer("<AgentStatus>\n");
+            for (int i = 0; i < agentStatus.length; i++) {
+              detailedStatus.append("  " + agentStatus[i].toString() + "\n");
+            }
+            detailedStatus.append("</AgentStatus>");
+            logger.detail(detailedStatus.toString());
+          }
+          blackboard.publishChange(nodeStatusRelay);
         }
-        blackboard.publishChange(nodeStatusRelay);
       }
     }
   }

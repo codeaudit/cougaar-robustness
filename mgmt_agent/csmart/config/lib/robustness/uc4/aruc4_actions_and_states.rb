@@ -11,12 +11,13 @@ module Cougaar
 	  {:role => "required, community member role to receive alerts."},
 	  {:alertLevel => "required, alert level, must be one of the following: maximum, high, medium, low, minimum, undefined"},
 	  {:duration => "required, alert duration."},
-	  {:assets => "required, affected assets. Example of assets: assets = {'node'=>'TRANS-NODE, FWD-NODE', 'host'=>'net1'}"}
+          {:assets => "required, affected assets. Example of assets: assets = {'node'=>'TRANS-NODE, FWD-NODE', 'host'=>'net1'}"},
+          {:content => "optional, alert specific content"}
         ]
         @example = "do_action 'org.cougaar.tools.robustness.ma.HostLossThreatAlert', 'PublishThreatAlert', '1AD-SMALL-COMM', 'HealthMonitor', 'low', 10.minutes, assets"
       }
 
-      def initialize(run, classname, community, role, alertLevel, duration, assets)
+  def initialize(run, classname, community, role, alertLevel, duration, assets, content="")
         super(run)
         @classname = classname
         @community = community
@@ -24,6 +25,7 @@ module Cougaar
         @alertLevel = alertLevel
         @duration = duration
         @assets = assets
+        @content = content
       end
 
       def perform
@@ -48,13 +50,12 @@ module Cougaar
           temp = str.chop
 	end
         @run.society.each_node do |node|
-            result, uri = Cougaar::Communications::HTTP.get(node.uri+"/$"+node.name+"/alert?class=#{@classname}&inputcommunity=#{@community}&inputrole=#{@role}&level=#{@alertLevel}&startFromAction=#{start}&expireFromAction=#{expire}&submit=submit&#{temp}")
-            #puts "#{node.uri}/$#{node.name}/alert?class=#{@classname}&inputcommunity=#{@community}&inputrole=#{@role}&level=#{@alertLevel}&startFromAction=#{start}&expireFromAction=#{expire}&#{temp}"
+            result, uri = Cougaar::Communications::HTTP.get(node.uri+"/$"+node.name+"/alert?class=#{@classname}&inputcommunity=#{@community}&inputrole=#{@role}&level=#{@alertLevel}&content=#{@content}&startFromAction=#{start}&expireFromAction=#{expire}&submit=submit&#{temp}")
             return
         end
      end
    end
-   
+
    class PublishInterAgentOperatingMode < Cougaar::Action
       def initialize(run, agent, level)
         super(run)
