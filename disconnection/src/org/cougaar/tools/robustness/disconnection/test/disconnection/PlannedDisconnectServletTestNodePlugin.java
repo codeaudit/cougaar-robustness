@@ -22,9 +22,10 @@
  * </copyright>
 */
 
-package org.cougaar.tools.robustness.disconnection;
+package org.cougaar.tools.robustness.disconnection.test.disconnection;
 
 import org.cougaar.tools.robustness.deconfliction.*;
+import org.cougaar.tools.robustness.disconnection.*;
 
 import java.util.Iterator;
 import java.util.Date;
@@ -44,7 +45,6 @@ import org.cougaar.core.service.ConditionService;
 import org.cougaar.core.service.OperatingModeService;
 import org.cougaar.core.service.UIDService;
 import org.cougaar.core.service.AgentIdentificationService;
-import org.cougaar.core.node.NodeIdentificationService;
 
 import org.cougaar.core.adaptivity.InterAgentCondition;
 import org.cougaar.core.relay.Relay;
@@ -57,14 +57,13 @@ import org.cougaar.util.UnaryPredicate;
 import org.cougaar.util.GenericStateModelAdapter;
 
 
-public class PlannedDisconnectNodePlugin extends ServiceUserPluginBase {
+public class PlannedDisconnectServletTestNodePlugin extends ServiceUserPluginBase {
     
   private ConditionService conditionService;
   private OperatingModeService operatingModeService;
   private UIDService us = null;
-  private NodeIdentificationService nodeIdentificationService;
   
-  private String nodeID;
+  private static String nodeID = "NodeA";
 
   //private IncrementalSubscription myOpModes;
   private IncrementalSubscription reconnectTimeConditionSubscription;
@@ -77,27 +76,26 @@ public class PlannedDisconnectNodePlugin extends ServiceUserPluginBase {
   private static final Class[] requiredServices = {
     ConditionService.class,
     OperatingModeService.class,
-    UIDService.class,
-    NodeIdentificationService.class
+    UIDService.class
+    
   };
   
   public static final String MY_APPLICABILITY_CONDITION_NAME 
-    = "PlannedDisconnect.UnscheduledDisconnect.Node.";
+    = "PlannedDisconnect.UnscheduledDisconnect.Node." + nodeID;
   public static final String MY_RECONNECT_TIME_NAME 
-    = "PlannedDisconnect.UnscheduledReconnectTime.Node.";
+    = "PlannedDisconnect.UnscheduledReconnectTime.Node." + nodeID;
   public static final String MY_DEFENSE_OPMODE_NAME 
-    = "PlannedDisconnect.NodeDefense.Node.";
+    = "PlannedDisconnect.NodeDefense.Node." + nodeID;
   public static final String MY_MONITORING_OPMODE_NAME 
-    = "PlannedDisconnect.NodeMonitoring.Node.";
+    = "PlannedDisconnect.NodeMonitoring.Node." + nodeID;
 
-  public PlannedDisconnectNodePlugin() {
+  public PlannedDisconnectServletTestNodePlugin() {
     super(requiredServices);
   }
 
   
   public void load() {
       super.load();
-      cancelTimer();
   }
   
   public void setupSubscriptions() {
@@ -161,17 +159,14 @@ public class PlannedDisconnectNodePlugin extends ServiceUserPluginBase {
 
   //Create one condition and one of each type of operating mode
   private void initObjects() {
-    
-     nodeID = nodeIdentificationService.getMessageAddress().toString();
-
      DisconnectionApplicabilityCondition dac = 
-        new MyDefenseApplicabilityCondition(MY_APPLICABILITY_CONDITION_NAME + nodeID);
+        new MyDefenseApplicabilityCondition(MY_APPLICABILITY_CONDITION_NAME);
      ReconnectTimeCondition rtc =
-        new MyReconnectTimeCondition(MY_RECONNECT_TIME_NAME + nodeID);
+        new MyReconnectTimeCondition(MY_RECONNECT_TIME_NAME);
      DefenseEnablingOperatingMode deom = 
-        new MyDefenseEnabler(MY_DEFENSE_OPMODE_NAME + nodeID);
+        new MyDefenseEnabler(MY_DEFENSE_OPMODE_NAME);
      MonitoringEnablingOperatingMode meom = 
-        new MyMonitoringEnabler(MY_MONITORING_OPMODE_NAME + nodeID);
+        new MyMonitoringEnabler(MY_MONITORING_OPMODE_NAME);
 
      //These InterAgents need UIDs.
      deom.setUID(us.nextUID());
@@ -179,21 +174,10 @@ public class PlannedDisconnectNodePlugin extends ServiceUserPluginBase {
      
      
       getBlackboardService().publishAdd(dac);
-      System.out.println();
-      System.out.println("NodeA Published:");
-      System.out.println("Condition: " + dac.getName() + " with value = " + dac.getValue());
-      System.out.println(" with allowed values  = " + dac.getAllowedValues());
       getBlackboardService().publishAdd(rtc);
-      System.out.println("Condition: " + rtc.getName() + " with value = " + rtc.getValue());
-      System.out.println(" with allowed values  = " + rtc.getAllowedValues());
       getBlackboardService().publishAdd(deom);
-      System.out.println("OpMode: " + deom.getName() + " with value = " + deom.getValue());
-      System.out.println(" with allowed values  = " + deom.getAllowedValues());
       getBlackboardService().publishAdd(meom);
-      System.out.println("OpMode: " + meom.getName() + " with value = " + meom.getValue());
-      System.out.println(" with allowed values  = " + meom.getAllowedValues());
 
-      startTimer(10000);
   }      
   
   private boolean haveServices() {
@@ -209,9 +193,6 @@ public class PlannedDisconnectNodePlugin extends ServiceUserPluginBase {
       
       us = (UIDService ) 
         sb.getService( this, UIDService.class, null ) ;
-        
-      nodeIdentificationService = (NodeIdentificationService)
-        sb.getService(this, NodeIdentificationService.class, null);
       
       return true;
     }
@@ -256,52 +237,6 @@ public class PlannedDisconnectNodePlugin extends ServiceUserPluginBase {
           }
       }
       
-      if (timerExpired()) { //then change the value of the condition
-        if (haveServices()) {
-          cancelTimer();
-          setTestCondition();
-        }
-        else if (logger.isDebugEnabled()) {
-          logger.debug(".execute - not all services ready yet.");
-        }
-      } else {
-          logger.debug("** Timer not expired");
-      }      
-  }
-
-  /* Periodically change the condition value from TRUE to FALSE and back to 
-   * allow testing of the plays.
-   */
-  private void setTestCondition() {
-      logger.debug("** In setTestCondition");
-      DisconnectionApplicabilityCondition cond = 
-        (DisconnectionApplicabilityCondition)conditionService.getConditionByName(MY_APPLICABILITY_CONDITION_NAME + nodeID);
-      ReconnectTimeCondition rtc =
-        (ReconnectTimeCondition)conditionService.getConditionByName(MY_RECONNECT_TIME_NAME + nodeID);
-      if ((cond != null)&& (rtc != null)) {
-          
-          if (cond.getValue().equals("FALSE")) {
-              cond.setValue(DefenseConstants.BOOL_TRUE);
-              logger.debug("** setTestCondition - Condition set to "+ cond.getValue());
-              long reconnectTime = new Date().getTime() + 5000L;
-              rtc.setValue(new Double(reconnectTime));
-              getBlackboardService().publishChange(rtc);
-              System.out.println("Disconnecting Node");
-          }
-          else {
-              cond.setValue(DefenseConstants.BOOL_FALSE);
-              logger.debug("** setTestCondition - Condition set to "+ cond.getValue());
-              long reconnectTime = 0L;
-              rtc.setValue(new Double(reconnectTime));
-              getBlackboardService().publishChange(rtc);
-              System.out.println("Reconnecting Node");
-          }
-              
-          getBlackboardService().publishChange(cond);
-      } else {
-	logger.debug("** Cannot find condition object!");
-      }    
-    startTimer(10000);
   }
 
   /**

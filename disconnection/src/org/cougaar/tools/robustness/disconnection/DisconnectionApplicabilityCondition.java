@@ -33,7 +33,7 @@ import org.cougaar.core.adaptivity.OMCRangeList;
 public class DisconnectionApplicabilityCondition extends DefenseApplicabilityBinaryCondition
 {
     public DisconnectionApplicabilityCondition (String name) {
-        super(name);
+        super(name, DefenseConstants.BOOL_FALSE);
     }
     
     public DisconnectionApplicabilityCondition(String name, DefenseConstants.OMCStrBoolPoint initialValue) {
