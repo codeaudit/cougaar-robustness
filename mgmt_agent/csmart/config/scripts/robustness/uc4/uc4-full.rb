@@ -46,18 +46,34 @@ Cougaar.new_experiment("UC4_Small_1AD_Tests").run(1) {
   do_action "ClearPersistenceAndLogs"
   do_action "StartSociety"
 
-  wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
+  ## Print events from Robustness Controller
+  do_action "GenericAction" do |run|
+    run.comms.on_cougaar_event do |event|
+      if event.component.include?("RobustnessController")
+        puts event
+      end
+    end
+  end
 
-  # Action "PublishThreatAlert" has five parameters:
+  wait_for "CommunitiesReady", ["1AD-REAR-COMM"]
+
+  # Action "PublishThreatAlert" has 6 parameters:
+  #   alert classname,
   #   community name,
   #   role in the community,
-  #   alert level(select from: max, high, medium, low, min, undefined),
+  #   alert level(select from: maximum, high, medium, low, minimum, undefined),
   #   alert duration, and
   #   assets
-  assets = Hash['node'=>'TRANS-NODE', 'node'=>'FWD-NODE']
-  do_action "PublishThreatAlert", "1AD-SMALL-COMM", "HealthMonitor", "min", 10.minutes, assets
+  assets = Hash['node'=>'REAR-A', 'node'=>'REAR-A']
+  do_action "PublishThreatAlert",
+            "org.cougaar.tools.robustness.ma.HostLossThreatAlert",
+            "1AD-SMALL-COMM",
+            "HealthMonitor",
+            "medium",
+            10.minutes,
+            assets
 
-  do_action "Sleep", 5.minutes
+  wait_for "CommunitiesReady", ["1AD-REAR-COMM"]
 
   #wait_for "Command", "ok"
 
