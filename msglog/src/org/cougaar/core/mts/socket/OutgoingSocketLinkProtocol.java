@@ -295,13 +295,13 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
       return true;
     }
    
-    private void dumpCachedData ()
+    private synchronized void dumpCachedData ()
     {
       clearCaches();
       socketOut = null;
     }
 
-    public MessageAttributes forwardMessage (AttributedMessage msg) 
+    public synchronized MessageAttributes forwardMessage (AttributedMessage msg) 
         throws NameLookupException, UnregisteredNameException,
                CommFailureException, MisdeliveredMessageException
     {
@@ -346,7 +346,7 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
 
     //  Send Cougaar message out to another node via socket
 
-    private boolean sendMessage (AttributedMessage msg, SocketSpec spec) throws Exception
+    private synchronized boolean sendMessage (AttributedMessage msg, SocketSpec spec) throws Exception
     {
       if (log.isDebugEnabled()) log.debug ("Sending " +MessageUtils.toString(msg));
 

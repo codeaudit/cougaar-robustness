@@ -95,7 +95,8 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
   private static boolean showTraffic;
 
   private static final String localhost;
-  private static final int idleTimeout;
+  private static final int firstMsgSoTimeout;
+  private static final int subsequentMsgsSoTimeout;
 
   private SocketSpec socketSpecs[];
   private SocketSpec mySocket;
@@ -111,8 +112,11 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     String s = "org.cougaar.message.protocol.socket.localhost";
     localhost = System.getProperty (s, getLocalHost());
 
-    s = "org.cougaar.message.protocol.socket.incoming.idleTimeoutMsecs";
-    idleTimeout = Integer.valueOf(System.getProperty(s,"100")).intValue();
+    s = "org.cougaar.message.protocol.socket.incoming.firstMsgSoTimeout";
+    firstMsgSoTimeout = Integer.valueOf(System.getProperty(s,"1000")).intValue();
+
+    s = "org.cougaar.message.protocol.socket.incoming.subsequentMsgsSoTimeout";
+    subsequentMsgsSoTimeout = Integer.valueOf(System.getProperty(s,"100")).intValue();
   }
  
   public IncomingSocketLinkProtocol ()
@@ -400,7 +404,6 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     {
       try
       {
-        socket.setSoTimeout (idleTimeout);  // timeout in msecs
         socketIn = new NoHeaderInputStream (socket.getInputStream());
       }
       catch (Exception e)
@@ -409,6 +412,8 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
         messageInListeners.remove (this);
         return;
       }
+
+      boolean firstMsg = true;
  
       while (!quitNow)
       {
@@ -416,8 +421,16 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
         try 
         {
-          //  Sit and wait for a message (till socket timeout)
-          
+          //  Sit and wait for a message (till socket timeout).  We distinguish between
+          //  first and subsequent message timeouts because the first message will incur
+          //  the socket connection overhead while the others won't, and we are in a race
+          //  condition with the message sender - he has to send the message fast enough
+          //  after establishing the connection to catch this side of the connection 
+          //  still alive.
+
+          socket.setSoTimeout (firstMsg? firstMsgSoTimeout : subsequentMsgsSoTimeout);
+          firstMsg = false;
+
           ByteArrayObject msgObject = (ByteArrayObject) socketIn.readObject();
           if (showTraffic) System.err.print ("<S");
 
@@ -447,7 +460,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
           //  Socket SO timeout (set above).  Socket still good, but we will close
           //  it as it has not been used in a while.
 
-          if (log.isDebugEnabled()) log.debug ("Closing socket due to lack of use (SO timeout): " +e);
+          if (log.isDebugEnabled()) log.debug ("Closing socket due to SO timeout: " +e);
           quitNow = true;
           break;
         }
