@@ -44,23 +44,15 @@ import org.cougaar.util.UnaryPredicate;
 import org.cougaar.scalability.util.CougaarSociety;
 import org.cougaar.scalability.util.CougaarNode;
 import org.cougaar.scalability.util.CougaarAgent;
-import org.cougaar.robustness.exnihilo.CSParser;
 import org.cougaar.robustness.exnihilo.plugin.LoadBalanceRequest;
 import org.cougaar.robustness.exnihilo.plugin.LoadBalanceRequestPredicate;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Collections;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.util.ConcurrentModificationException;
 
 /**
  * Provides interface for initiating load balancing across community nodes.
@@ -218,14 +210,16 @@ public class LoadBalancer
                        LoadBalancerListener listener) {
     UID uid = uidService.nextUID();
     int solverMode = DEFAULT_SOLVER_MODE;
-    logger.info("getLayout:" +
-                " annealTime=" + annealTime +
-                " solverMode=" + solverMode +
-                " useHamming=" + useHamming +
-                " newNodes=" + newNodes +
-                " killedNodes=" + killedNodes +
-                " leaveAsIsNodes=" + leaveAsIsNodes +
-                " uid=" + uid);
+    if (logger.isInfoEnabled()) {
+      logger.info("getLayout:" +
+                  " annealTime=" + annealTime +
+                  " solverMode=" + solverMode +
+                  " useHamming=" + useHamming +
+                  " newNodes=" + newNodes +
+                  " killedNodes=" + killedNodes +
+                  " leaveAsIsNodes=" + leaveAsIsNodes +
+                  " uid=" + uid);
+    }
     LoadBalanceRequest loadBalReq =
         new UniqueLoadBalanceRequest(annealTime,
                                      DEFAULT_SOLVER_MODE,
@@ -235,7 +229,9 @@ public class LoadBalancer
                                      leaveAsIsNodes,
                                      uid);
     myRequests.put(uid, listener);
-    logger.debug("publishing LoadBalanceRequest");
+    if (logger.isDebugEnabled()) {
+      logger.debug("publishing LoadBalanceRequest");
+    }
     fireLater(loadBalReq);
   }
 
@@ -253,7 +249,9 @@ public class LoadBalancer
                             List leaveAsIsNodes) {
     // submit request to EN plugin and send move requests to moveHelper
     //       upon receipt of EN response
-    logger.info("doLoadBalance");
+    if (logger.isInfoEnabled()) {
+      logger.info("doLoadBalance");
+    }
     doLayout(DEFAULT_ANNEAL_TIME, useHamming, newNodes, killedNodes,
              leaveAsIsNodes, new LoadBalancerListener() {
       public void layoutReady(Map layout) {
@@ -395,8 +393,11 @@ public class LoadBalancer
         String currentNode = model.getLocation(agent);
         if ( (currentNode.equals(node) && ! (newNode.equals(currentNode))) ||
             node.equals("") || checkDiffCount >= nodeSize) {
-          logger.debug("move agent " + agent + " from " + currentNode + " to " +
-                       newNode + " in comm " + communityName);
+          if (logger.isDebugEnabled()) {
+            logger.debug("move agent " + agent + " from " + currentNode +
+                         " to " +
+                         newNode + " in comm " + communityName);
+          }
           moveHelper.moveAgent(agent, currentNode, newNode, communityName);
           count++;
           needChange = false;
@@ -413,7 +414,9 @@ public class LoadBalancer
         }
       }
     }
-    logger.debug("LoadBalance finished.");
+    if (logger.isDebugEnabled()) {
+      logger.debug("LoadBalance finished.");
+    }
   }
 
   /**

@@ -54,18 +54,22 @@ import org.cougaar.core.service.community.CommunityService;
 import org.cougaar.core.service.community.CommunityResponse;
 import org.cougaar.core.service.community.CommunityResponseListener;
 
-import org.cougaar.core.qos.metrics.Metric;
-
 import org.cougaar.core.mts.MessageAddress;
 
 import org.cougaar.core.agent.service.alarm.Alarm;
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.Attribute;
-import javax.naming.directory.BasicAttribute;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.ModificationItem;
 
@@ -176,7 +180,9 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * @param sc        StateController
    */
   public void addController(int state, String stateName, StateController sc) {
-    logger.debug("Adding state controller: state=" + stateName);
+    if (logger.isDebugEnabled()) {
+      logger.debug("Adding state controller: state=" + stateName);
+    }
     if (sc instanceof StateControllerBase) {
       StateControllerBase scb = (StateControllerBase) sc;
       scb.setBindingSite(getBindingSite());
@@ -235,7 +241,6 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * @param csm   Status model associated with event
    */
   public void statusChanged(CommunityStatusChangeEvent[] csce) {
-    boolean interestingChange = false;
     for(int i = 0; i < csce.length; i++) {
       if(logger.isDebugEnabled()) {
         logger.debug(csce[i].toString());
@@ -245,16 +250,12 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
       }
       if(csce[i].membersAdded() || csce[i].membersRemoved()) {
         processMembershipChanges(csce[i]);
-        interestingChange = true;
       }
       if(csce[i].stateChanged()) {
         processStatusChanges(csce[i]);
-        interestingChange = true;
       }
       if(csce[i].leaderChanged()) {
         processLeaderChanges(csce[i]);
-        if(!(csce[i].getCurrentLeader() == null && csce[i].getPriorLeader() == null))
-          interestingChange = true;
       }
       if(csce[i].locationChanged()) {
         processLocationChanges(csce[i]);
@@ -301,7 +302,10 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
         deconflictHelper = new DeconflictHelper(getBindingSite(), model);
         if (dl != null)
           deconflictHelper.addListener(dl);
-        logger.info("Deconfliction enabled: community=" + model.getCommunityName());
+        if (logger.isInfoEnabled()) {
+          logger.info("Deconfliction enabled: community=" +
+                      model.getCommunityName());
+        }
         deconflictHelper.initObjs();
       }
     }
@@ -329,10 +333,12 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    */
   protected void processStatusChanges(CommunityStatusChangeEvent csce) {
     // Notify controllers of state transition
-    logger.debug("State change:" +
-                " name=" + csce.getName() +
-                " state=" + stateName(csce.getCurrentState()) +
-                " prior=" + stateName(csce.getPriorState()));
+    if (logger.isDebugEnabled()) {
+      logger.debug("State change:" +
+                   " name=" + csce.getName() +
+                   " state=" + stateName(csce.getCurrentState()) +
+                   " prior=" + stateName(csce.getPriorState()));
+    }
     for (Iterator it = controllers.values().iterator(); it.hasNext();) {
       ControllerEntry ce = (ControllerEntry)it.next();
       if (ce.state == csce.getCurrentState()) {
@@ -355,9 +361,11 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
   }
 
   protected void processStatusExpirations(CommunityStatusChangeEvent csce) {
-    logger.debug("Status expiration:" +
-                " name=" + csce.getName() +
-                " state=" + stateName(csce.getCurrentState()));
+    if (logger.isDebugEnabled()) {
+      logger.debug("Status expiration:" +
+                   " name=" + csce.getName() +
+                   " state=" + stateName(csce.getCurrentState()));
+    }
     // Notify controllers of state expirations
     for (Iterator it = controllers.values().iterator(); it.hasNext();) {
       ControllerEntry ce = (ControllerEntry)it.next();
@@ -639,20 +647,27 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
       public void pingComplete(PingResult[] pr) {
         for (int i = 0; i < pr.length; i++) {
           if (pr[i].getStatus() == PingResult.FAIL) {
-            logger.info("Ping:" +
-                         " agent=" + pr[i].getName() +
-                         " state=" + stateName(model.getCurrentState(pr[i].getName())) +
-                         " result=FAIL" +
+            if (logger.isInfoEnabled()) {
+              logger.info("Ping:" +
+                          " agent=" + pr[i].getName() +
+                          " state=" +
+                          stateName(model.getCurrentState(pr[i].getName())) +
+                          " result=FAIL" +
                           " newState=" + stateName(stateOnFail));
+            }
           } else {
-            logger.debug("Ping:" +
-                         " agent=" + pr[i].getName() +
-                         " state=" + stateName(model.getCurrentState(pr[i].getName())) +
-                         " result=" + (pr[i].getStatus() == PingResult.SUCCESS
-                                       ? "SUCCESS"
-                                       : "FAIL") +
-                         (pr[i].getStatus() == PingResult.SUCCESS ? "" :
-                         " newState=" + stateName(stateOnFail)));
+            if (logger.isDebugEnabled()) {
+              logger.debug("Ping:" +
+                           " agent=" + pr[i].getName() +
+                           " state=" +
+                           stateName(model.getCurrentState(pr[i].getName())) +
+                           " result=" +
+                           (pr[i].getStatus() == PingResult.SUCCESS
+                            ? "SUCCESS"
+                            : "FAIL") +
+                           (pr[i].getStatus() == PingResult.SUCCESS ? "" :
+                            " newState=" + stateName(stateOnFail)));
+            }
           }
           if (pr[i].getStatus() == PingResult.SUCCESS) {
             newState(pr[i].getName(), stateOnSuccess);
@@ -969,18 +984,23 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
             mods.add(new ModificationItem(type, newAttrs[i]));
           }
         } catch (NamingException ne) {
-          logger.error("Error setting community attribute:" +
-                       " community=" + community.getName() +
-                       " attribute=" + newAttrs[i]);
+          if (logger.isErrorEnabled()) {
+            logger.error("Error setting community attribute:" +
+                         " community=" + community.getName() +
+                         " attribute=" + newAttrs[i]);
+          }
         }
       }
       if (!mods.isEmpty()) {
         CommunityResponseListener crl = new CommunityResponseListener() {
           public void getResponse(CommunityResponse resp) {
             if (resp.getStatus() != CommunityResponse.SUCCESS) {
-              logger.warn("Unexpected status from CommunityService modifyAttributes request:" +
-                          " status=" + resp.getStatusAsString() +
-                          " community=" + community.getName());
+              if (logger.isWarnEnabled()) {
+                logger.warn(
+                    "Unexpected status from CommunityService modifyAttributes request:" +
+                    " status=" + resp.getStatusAsString() +
+                    " community=" + community.getName());
+              }
             }
           }
       };

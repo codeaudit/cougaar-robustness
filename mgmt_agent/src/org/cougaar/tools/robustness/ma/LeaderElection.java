@@ -21,8 +21,16 @@
 
 package org.cougaar.tools.robustness.ma;
 
-import java.util.*;
-import org.cougaar.util.log.*;
+import java.util.List;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
+import org.cougaar.util.log.Logger;
+import org.cougaar.util.log.LoggerFactory;
 
 /**
  * Static methods for selecting a single leader from multiple candidates in
@@ -62,10 +70,12 @@ public class LeaderElection {
     if (leader == null && currentLeader != null && candidates.contains(currentLeader)) {
       leader = currentLeader;
     }
-    logger.debug("getLeader:" +
-                 " candidates=" + candidates +
-                 " votes=" + votes +
-                 " leader=" + leader);
+    if (logger.isDebugEnabled()) {
+      logger.debug("getLeader:" +
+                   " candidates=" + candidates +
+                   " votes=" + votes +
+                   " leader=" + leader);
+    }
     return leader;
   }
 
@@ -141,33 +151,15 @@ public class LeaderElection {
       } else {
         selected = (String)allCandidates.first();
       }
-     /* } else {
-        if (votes.size() == 0) {
-          String candArray[] = (String[])allCandidates.toArray(new String[0]);
-          int rand = (int)(java.lang.Math.random() * candArray.length);
-          selected = candArray[rand];
-        } else {
-          topCandidates = getTopCandidates(allCandidates, votes);
-          if (topCandidates.size() == 1) {
-            selected = (String)topCandidates.first();
-          } else if (topCandidates.size() > 1){
-            String candArray[] = (String[])topCandidates.toArray(new String[0]);
-            int rand = (int)(java.lang.Math.random() * candArray.length);
-            selected = candArray[rand];
-          } else {  // no top candidates, randomly select from all candidates
-            String candArray[] = (String[])allCandidates.toArray(new String[0]);
-            int rand = (int)(java.lang.Math.random() * candArray.length);
-            selected = candArray[rand];
-          }
-        }
-      }*/
     }
-    logger.debug("chooseCandidate:" +
-                 " preferred=" + preferredCandidate +
-                 " candidates=" + allCandidates +
-                 " top=" + topCandidates +
-                 " votes=" + votes +
-                 " selected=" + selected);
+    if (logger.isDebugEnabled()) {
+      logger.debug("chooseCandidate:" +
+                   " preferred=" + preferredCandidate +
+                   " candidates=" + allCandidates +
+                   " top=" + topCandidates +
+                   " votes=" + votes +
+                   " selected=" + selected);
+    }
     return selected;
   }
 

@@ -1,9 +1,22 @@
 package org.cougaar.tools.robustness.ma.ui;
 
-import javax.servlet.*;
-import javax.servlet.http.*;
-import java.util.*;
-import java.io.*;
+import javax.servlet.Servlet;
+import javax.servlet.ServletException;
+
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 import org.cougaar.core.service.community.CommunityService;
 import org.cougaar.core.service.community.Community;
@@ -24,8 +37,6 @@ import org.cougaar.core.mobility.AbstractTicket;
 import org.cougaar.core.mobility.RemoveTicket;
 import org.cougaar.core.mobility.ldm.AgentControl;
 import org.cougaar.core.util.UID;
-
-import org.cougaar.multicast.AttributeBasedAddress;
 
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorRequest;
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorRequestImpl;
@@ -463,7 +474,10 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     try {
       bb.openTransaction();
       bb.publishAdd(ac);
-      log.debug("publishing AgentControl: source=" + ac.getSource().toAddress() + " target=" + ac.getTarget().toAddress());
+      if (log.isDebugEnabled()) {
+        log.debug("publishing AgentControl: source=" + ac.getSource().toAddress() +
+                  " target=" + ac.getTarget().toAddress());
+      }
     } finally {
       bb.closeTransactionDontReset();
     }
@@ -537,10 +551,12 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
   protected void modifyCommunityAttribute(String communityName,
                                           String attrId,
                                           String attrValue) {
-    log.info("modifyCommunityAttributes:" +
-                 " communityName=" + communityName +
-                 " attrId=" + attrId +
-                 " attrValue=" + attrValue);
+    if (log.isInfoEnabled()) {
+      log.info("modifyCommunityAttributes:" +
+               " communityName=" + communityName +
+               " attrId=" + attrId +
+               " attrValue=" + attrValue);
+    }
     if (communityName != null && attrId != null && attrValue != null) {
       changeAttributes(communityName,
                        new Attribute[] {new BasicAttribute(attrId, attrValue)});
@@ -568,18 +584,23 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
             mods.add(new ModificationItem(type, newAttrs[i]));
           }
         } catch (NamingException ne) {
-          log.error("Error setting community attribute:" +
-                       " community=" + community.getName() +
-                       " attribute=" + newAttrs[i]);
+          if (log.isErrorEnabled()) {
+            log.error("Error setting community attribute:" +
+                      " community=" + community.getName() +
+                      " attribute=" + newAttrs[i]);
+          }
         }
       }
       if (!mods.isEmpty()) {
         CommunityResponseListener crl = new CommunityResponseListener() {
           public void getResponse(CommunityResponse resp) {
             if (resp.getStatus() != CommunityResponse.SUCCESS) {
-              log.warn("Unexpected status from CommunityService modifyAttributes request:" +
-                          " status=" + resp.getStatusAsString() +
-                          " community=" + communityName);
+              if (log.isWarnEnabled()) {
+                log.warn(
+                    "Unexpected status from CommunityService modifyAttributes request:" +
+                    " status=" + resp.getStatusAsString() +
+                    " community=" + communityName);
+              }
             }
           }
       };
@@ -608,7 +629,9 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
         }
       }
     } catch (Exception ex) {
-      log.error(ex.getMessage(), ex);
+      if (log.isErrorEnabled()) {
+        log.error(ex.getMessage(), ex);
+      }
     }
     return null;
   }
@@ -670,8 +693,10 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
         hmrResp = (HealthMonitorResponse)hmrRa.getResponse();
       }
 
-      if(hmrResp.getStatus() == hmrResp.FAIL)
-        log.error("try to get health monitor response: " + hmrResp.getStatusAsString());
+      if (hmrResp.getStatus() == hmrResp.FAIL && log.isDebugEnabled()) {
+        log.error("try to get health monitor response: " +
+                  hmrResp.getStatusAsString());
+      }
       return (String)hmrResp.getContent();
     }
 
@@ -756,7 +781,9 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
 
   protected void publishRequest(HealthMonitorRequest hmr) {
     MessageAddress target = getRobustnessManager(hmr.getCommunityName());
-    log.info("publishRequest: " + hmr);
+    if (log.isInfoEnabled()) {
+      log.info("publishRequest: " + hmr);
+    }
     Object request = hmr;
     if (!target.equals(agentId)) {
       // send to remote agent using Relay

@@ -33,7 +33,6 @@ import org.cougaar.core.service.community.CommunityResponseListener;
 import javax.naming.NamingException;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.Attribute;
-import javax.naming.directory.BasicAttribute;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.ModificationItem;
 
@@ -87,7 +86,9 @@ public abstract class ThreatAlertHandlerBase implements ThreatAlertListener {
   }
 
   private void initThreatAlertListener() {
-    logger.debug("Initializing ThreatAlertListener");
+    if (logger.isDebugEnabled()) {
+      logger.debug("Initializing ThreatAlertListener");
+    }
     ServiceBroker sb = bindingSite.getServiceBroker();
     ThreatAlertService tas =
         (ThreatAlertService) sb.getService(this, ThreatAlertService.class, null);
@@ -137,18 +138,23 @@ public abstract class ThreatAlertHandlerBase implements ThreatAlertListener {
             mods.add(new ModificationItem(type, newAttrs[i]));
           }
         } catch (NamingException ne) {
-          logger.error("Error setting community attribute:" +
-                       " community=" + community.getName() +
-                       " attribute=" + newAttrs[i]);
+          if (logger.isErrorEnabled()) {
+            logger.error("Error setting community attribute:" +
+                         " community=" + community.getName() +
+                         " attribute=" + newAttrs[i]);
+          }
         }
       }
       if (!mods.isEmpty()) {
         CommunityResponseListener crl = new CommunityResponseListener() {
           public void getResponse(CommunityResponse resp) {
             if (resp.getStatus() != CommunityResponse.SUCCESS) {
-              logger.warn("Unexpected status from CommunityService modifyAttributes request:" +
-                          " status=" + resp.getStatusAsString() +
-                          " community=" + community.getName());
+              if (logger.isWarnEnabled()) {
+                logger.warn(
+                    "Unexpected status from CommunityService modifyAttributes request:" +
+                    " status=" + resp.getStatusAsString() +
+                    " community=" + community.getName());
+              }
             }
           }
       };

@@ -31,7 +31,6 @@ import org.cougaar.core.service.community.CommunityChangeListener;
 import org.cougaar.core.service.community.CommunityChangeEvent;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Observable;
 
 abstract public class CommunityFinder extends Observable implements

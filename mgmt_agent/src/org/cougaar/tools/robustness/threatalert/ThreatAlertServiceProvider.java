@@ -21,9 +21,6 @@ package org.cougaar.tools.robustness.threatalert;
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.component.ServiceProvider;
-import org.cougaar.core.component.Service;
-
-import org.cougaar.core.mts.MessageAddress;
 
 /**
  * Returns a reference to a ThreatAlertService.

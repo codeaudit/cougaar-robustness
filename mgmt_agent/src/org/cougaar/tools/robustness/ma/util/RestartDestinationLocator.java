@@ -2,13 +2,17 @@ package org.cougaar.tools.robustness.ma.util;
 
 import org.cougaar.core.service.LoggingService;
 
-import org.cougaar.tools.robustness.ma.StatusChangeListener;
-import org.cougaar.tools.robustness.ma.CommunityStatusChangeEvent;
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
 import org.cougaar.tools.robustness.ma.controllers.DefaultRobustnessController;
 
-import java.util.*;
-
+import java.util.Map;
+import java.util.Collections;
+import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Set;
 
 public class RestartDestinationLocator {
   static CommunityStatusModel model;
@@ -77,7 +81,9 @@ public class RestartDestinationLocator {
     }
     if (preferredRestartLocations.containsKey(agent)) {
       selectedNode = (String)preferredRestartLocations.remove(agent);
-      logger.debug("Using preferredRestartLocation: agent=" + agent + " dest=" + selectedNode);
+      if (logger.isDebugEnabled()) {
+        logger.debug("Using preferredRestartLocation: agent=" + agent + " dest=" + selectedNode);
+      }
     }
     if (selectedNode != null) temp.remove(selectedNode); //this one is already used this time, don't count it.
 

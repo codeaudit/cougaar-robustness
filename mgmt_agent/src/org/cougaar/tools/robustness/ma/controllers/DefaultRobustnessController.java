@@ -29,8 +29,6 @@ import org.cougaar.tools.robustness.ma.util.LoadBalancerListener;
 import org.cougaar.tools.robustness.ma.util.MoveHelper;
 import org.cougaar.tools.robustness.ma.util.MoveListener;
 import org.cougaar.tools.robustness.ma.util.PingHelper;
-import org.cougaar.tools.robustness.ma.util.PingResult;
-import org.cougaar.tools.robustness.ma.util.PingListener;
 import org.cougaar.tools.robustness.ma.util.RestartHelper;
 import org.cougaar.tools.robustness.ma.util.RestartListener;
 import org.cougaar.tools.robustness.ma.util.RestartDestinationLocator;
@@ -46,7 +44,15 @@ import org.cougaar.util.UnaryPredicate;
 
 import org.cougaar.core.mts.MessageAddress;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class DefaultRobustnessController extends RobustnessControllerBase {
 
@@ -86,15 +92,21 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       }
     }
     public void heartbeatStarted(String name) {
-      logger.debug("Heartbeats started: agent=" + name);
+      if (logger.isDebugEnabled()) {
+        logger.debug("Heartbeats started: agent=" + name);
+      }
       newState(name, DefaultRobustnessController.ACTIVE);
     }
     public void heartbeatStopped(String name) {
-      logger.debug("Heartbeats stopped: agent=" + name);
+      if (logger.isDebugEnabled()) {
+        logger.debug("Heartbeats stopped: agent=" + name);
+      }
     }
     public void heartbeatFailure(String name) {
-      logger.info("Heartbeat timeout: agent=" + name +
-                  " state=" + stateName(getState(name)));
+      if (logger.isInfoEnabled()) {
+        logger.info("Heartbeat timeout: agent=" + name +
+                    " state=" + stateName(getState(name)));
+      }
       if (isLocal(name)) {
         switch (getState(name)) {
           case DefaultRobustnessController.ACTIVE:
@@ -138,7 +150,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       }
     }
     public void expired(String name) {
-      logger.info("Expired Status:" + " agent=" + name + " state=ACTIVE");
+      if (logger.isInfoEnabled()) {
+        logger.info("Expired Status:" + " agent=" + name + " state=ACTIVE");
+      }
       if ((isLocal(name) || isNode(name)) ||
           (thisAgent.equals(preferredLeader()) && getState(getLocation(name)) == DEAD) ||
           isLeader(name)) {
@@ -173,7 +187,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
 
     public void defenseOpModeEnabled(String name) {
-      logger.debug("deconflictCallback: agent=" + name);
+      if (logger.isDebugEnabled()) {
+        logger.debug("deconflictCallback: agent=" + name);
+      }
       if (isDeconflictionEnabled() &&
           !getDeconflictHelper().isDefenseApplicable(name)) {
         getDeconflictHelper().changeApplicabilityCondition(name);
@@ -233,7 +249,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                 getLayout(new LoadBalancerListener() {
                 public void layoutReady(Map layout) {
                   if (getState(name) == DEAD) {
-                    logger.info("layout from EN4J: " + layout);
+                    if (logger.isInfoEnabled()) {
+                      logger.info("layout from EN4J: " + layout);
+                    }
                     RestartDestinationLocator.setPreferredRestartLocations(layout);
                     newState(agentsOnNode(name), DEAD);
                     if (thisAgent.equals(preferredLeader())) {
@@ -300,7 +318,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
           event("Restart complete: agent=" + name + " location=" + dest +
                 " community=" + community);
           RestartDestinationLocator.restartSuccess(name);
-          logger.debug("Next Status:" + " agent=" + name + " state=INITIAL");
+          if (logger.isDebugEnabled()) {
+            logger.debug("Next Status:" + " agent=" + name + " state=INITIAL");
+          }
           //newState(name, DefaultRobustnessController.INITIAL);
           model.setLocationAndState(name, thisAgent, INITIAL);
         } else {
@@ -327,8 +347,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   class FailedRestartStateController extends StateControllerBase {
 
     public void enter(String name) {
-      logger.info("New state (FAILED_RESTART):" +
-                  " name=" + name);
+      if (logger.isInfoEnabled()) {
+        logger.info("New state (FAILED_RESTART):" +
+                    " name=" + name);
+      }
       if (isLeader(thisAgent) &&
           isAgent(name)) {
         if (getState(model.getLocation(name)) == DefaultRobustnessController.ACTIVE) {
@@ -366,7 +388,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       communityReady = false;
     }
     public void expired(String name) {
-      logger.debug("Expired Status:" + " agent=" + name + " state=MOVE");
+      if (logger.isDebugEnabled()) {
+        logger.debug("Expired Status:" + " agent=" + name + " state=MOVE");
+      }
       if (isLeader(thisAgent) || isLocal(name)) {
         newState(name, HEALTH_CHECK);
       }
@@ -415,7 +439,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     public void execute() {
       for (Iterator it = forcedRestartRequests.getAddedCollection().iterator(); it.hasNext(); ) {
         HealthMonitorRequest hmr = (HealthMonitorRequest) it.next();
-        logger.info("Received FORCED_RESTART request:" + hmr);
+        if (logger.isInfoEnabled()) {
+          logger.info("Received FORCED_RESTART request:" + hmr);
+        }
         String agentsToRestart[] = hmr.getAgents();
         for (int i = 0; i < agentsToRestart.length; i++) {
           killAgent(agentsToRestart[i]);
@@ -554,7 +580,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     originalStats = new NodeLatencyStatistics(model.getCommunityName());
     nodeLatencyStats = new NodeLatencyStatistics(model.getCommunityName());
     originalStats.load();
-    logger.detail("initializeNodeStats: " + originalStats.toXML());
+    if (logger.isDetailEnabled()) {
+      logger.detail("initializeNodeStats: " + originalStats.toXML());
+    }
   }
 
   /**
@@ -588,7 +616,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     long expiration = updateInterval +
                       nodeMean +
                       (nodeStdDev * restartConf);
-    logger.info("getNodeStateExpiration: node=" + nodeName + " expiration=" + expiration);
+    if (logger.isInfoEnabled()) {
+      logger.info("getNodeStateExpiration: node=" + nodeName + " expiration=" +
+                  expiration);
+    }
     return expiration;
   }
 
@@ -600,10 +631,12 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   protected void restartAgent(String name) {
     String dest =
         RestartDestinationLocator.getRestartLocation(name, getExcludedNodes());
-    logger.info("Restarting agent:" +
-                " agent=" + name +
-                " origin=" + getLocation(name) +
-                " dest=" + dest);
+    if (logger.isInfoEnabled()) {
+      logger.info("Restarting agent:" +
+                  " agent=" + name +
+                  " origin=" + getLocation(name) +
+                  " dest=" + dest);
+    }
     if (retries.contains(name)) {
       retries.remove(name);
     }
@@ -611,9 +644,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       restartAgent(name, dest);
       RestartDestinationLocator.restartOneAgent(dest);
     } else {
-      logger.error("Invalid restart parameter: " +
-                   " agent=" + name +
-                   " dest=" + dest);
+      if (logger.isErrorEnabled()) {
+        logger.error("Invalid restart parameter: " +
+                     " agent=" + name +
+                     " dest=" + dest);
+      }
       // If no valid location is returned, restart on this node
       if (name != null) {
         dest = getLocation(thisAgent);
@@ -673,7 +708,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   public void execute() {
     if ((wakeAlarm != null) && ((wakeAlarm.hasExpired()))) {
       if (thisAgent.equals(preferredLeader())) {
-        logger.info(statusSummary());
+        if (logger.isInfoEnabled()) {
+          logger.info(statusSummary());
+        }
         checkCommunityReady();
         checkLoadBalance();
       }
@@ -720,12 +757,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         nodes.add(location);
       }
     }
-    /*
-     logger.info("checkCommunityReady:" +
-                " agents=" + expectedAgents() +
-                " active=" + agents.length +
-                (inactiveNode ? " inactiveNode=" + location + " agent=" + agent : ""));
-     */
     return !inactiveNode;
   }
 
@@ -734,7 +765,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   public void membershipChange(String name) {
     if (isNode(name)) {
-      logger.info("New node detected: name=" + name);
+      if (logger.isInfoEnabled()) {
+        logger.info("New node detected: name=" + name);
+      }
       if (deadNodes.contains(name)) {
         deadNodes.remove(name);
       }
@@ -748,7 +781,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    * Receives notification of leader changes.
    */
   public void leaderChange(String priorLeader, String newLeader) {
-    logger.info("LeaderChange: prior=" + priorLeader + " new=" + newLeader);
+    if (logger.isInfoEnabled()) {
+      logger.info("LeaderChange: prior=" + priorLeader + " new=" + newLeader);
+    }
     if (isLeader(thisAgent) && model.getCurrentState(preferredLeader()) == DEAD) {
       newState(preferredLeader(), RESTART);
     }
@@ -828,11 +863,13 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         };
         long annealTime = getLongAttribute("MINIMUM_ANNEAL_TIME",
                                            MINIMUM_ANNEAL_TIME);
-        logger.debug("doLayout:" +
-                     " annealTime=" + annealTime +
-                     " newNodes=" + vacantNodes +
-                     " deadNodes=" + deadNodes +
-                     " excludedNodes=" + excludedNodes);
+        if (logger.isDebugEnabled()) {
+          logger.debug("doLayout:" +
+                       " annealTime=" + annealTime +
+                       " newNodes=" + vacantNodes +
+                       " deadNodes=" + deadNodes +
+                       " excludedNodes=" + excludedNodes);
+        }
         getLoadBalancer().doLayout( (int) annealTime,
                                    true,
                                    vacantNodes,
@@ -855,7 +892,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                         final int stateOnFail) {
     PingHelper pinger = getPingHelper();
     if (pinger.pingInProcess(agent)) {
-      logger.detail("Duplicate ping requested, new ping not performed: agent=" + agent);
+      if (logger.isDetailEnabled()) {
+        logger.detail(
+            "Duplicate ping requested, new ping not performed: agent=" + agent);
+      }
     } else {
       doPing(new String[]{agent}, stateOnSuccess, stateOnFail);
     }
@@ -887,11 +927,15 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         if (!vacantNodes.isEmpty()) {
           LoadBalancerListener lbl = new LoadBalancerListener() {
             public void layoutReady(Map layout) {
-              logger.debug("layout from EN4J: " + layout);
+              if (logger.isDebugEnabled()) {
+                logger.debug("layout from EN4J: " + layout);
+              }
               getLoadBalancer().moveAgents(layout);
             }
           };
-          logger.info("autoLoadBalance");
+          if (logger.isInfoEnabled()) {
+            logger.info("autoLoadBalance");
+          }
           getLoadBalancer().doLayout(LoadBalancer.DEFAULT_ANNEAL_TIME,
                                      true,
                                      new ArrayList(vacantNodes),

@@ -27,7 +27,6 @@ import org.cougaar.core.service.community.CommunityService;
 import org.cougaar.core.service.community.CommunityResponse;
 import org.cougaar.core.service.community.CommunityResponseListener;
 import org.cougaar.core.service.community.Community;
-import org.cougaar.core.service.community.Entity;
 
 import javax.naming.NamingException;
 import javax.naming.directory.Attributes;
@@ -36,10 +35,20 @@ import javax.naming.directory.BasicAttribute;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.ModificationItem;
 
-import javax.servlet.*;
-import javax.servlet.http.*;
-import java.util.*;
-import java.io.*;
+import javax.servlet.Servlet;
+import javax.servlet.ServletException;
+
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+
+import java.io.IOException;
+import java.io.PrintWriter;
 
 /**
  * Utility servlet to modify a community attribute.
@@ -144,10 +153,12 @@ public class CommunityAttributeServlet extends BaseServletComponent implements B
       // If community name isn't supplied use Robustness Community
       cname = getRobustnessCommunityName();
     }
-    logger.info("modifyCommunityAttributes:" +
-                 " communityName=" + cname +
-                 " attrId=" + attrId +
-                 " attrValue=" + attrValue);
+    if (logger.isInfoEnabled()) {
+      logger.info("modifyCommunityAttributes:" +
+                  " communityName=" + cname +
+                  " attrId=" + attrId +
+                  " attrValue=" + attrValue);
+    }
     if (cname != null && attrId != null && attrValue != null) {
       changeAttributes(cname,
                        new Attribute[] {new BasicAttribute(attrId, attrValue)});
@@ -197,18 +208,23 @@ public class CommunityAttributeServlet extends BaseServletComponent implements B
             mods.add(new ModificationItem(type, newAttrs[i]));
           }
         } catch (NamingException ne) {
-          logger.error("Error setting community attribute:" +
-                       " community=" + community.getName() +
-                       " attribute=" + newAttrs[i]);
+          if (logger.isErrorEnabled()) {
+            logger.error("Error setting community attribute:" +
+                         " community=" + community.getName() +
+                         " attribute=" + newAttrs[i]);
+          }
         }
       }
       if (!mods.isEmpty()) {
         CommunityResponseListener crl = new CommunityResponseListener() {
           public void getResponse(CommunityResponse resp) {
             if (resp.getStatus() != CommunityResponse.SUCCESS) {
-              logger.warn("Unexpected status from CommunityService modifyAttributes request:" +
-                          " status=" + resp.getStatusAsString() +
-                          " community=" + communityName);
+              if (logger.isWarnEnabled()) {
+                logger.warn(
+                    "Unexpected status from CommunityService modifyAttributes request:" +
+                    " status=" + resp.getStatusAsString() +
+                    " community=" + communityName);
+              }
             }
           }
       };

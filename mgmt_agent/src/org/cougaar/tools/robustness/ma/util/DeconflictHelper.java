@@ -31,24 +31,21 @@ import org.cougaar.core.service.ConditionService;
 import org.cougaar.core.service.EventService;
 import org.cougaar.core.blackboard.BlackboardClientComponent;
 import org.cougaar.core.blackboard.IncrementalSubscription;
-import org.cougaar.core.adaptivity.Condition;
-
-import org.cougaar.core.component.ServiceRevokedListener;
-import org.cougaar.core.component.ServiceRevokedEvent;
-import org.cougaar.core.component.ServiceBroker;
 
 import org.cougaar.util.UnaryPredicate;
 
 import org.cougaar.tools.robustness.deconfliction.DefenseEnablingOperatingMode;
-import org.cougaar.tools.robustness.deconfliction.DefenseApplicabilityCondition;
 import org.cougaar.tools.robustness.deconfliction.MonitoringEnablingOperatingMode;
 import org.cougaar.tools.robustness.deconfliction.DefenseApplicabilityBinaryCondition;
 import org.cougaar.tools.robustness.deconfliction.DefenseConstants;
-import org.cougaar.tools.robustness.deconfliction.DefenseOperatingMode;
 
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Iterator;
 
 /**
  * Provides convenience methods for invoking deconflictor. This helper only applies
@@ -118,7 +115,7 @@ public class DeconflictHelper extends BlackboardClientComponent {
     logger = org.cougaar.core.logging.LoggingServiceWithPrefix.add(logger, agentId + ": ");
     uidService = (UIDService) getServiceBroker().getService(this, UIDService.class, null);
     conditionService = (ConditionService) getServiceBroker().getService(this, ConditionService.class, null);
-    if(conditionService == null) {
+    if(conditionService == null && logger.isWarnEnabled()) {
       logger.warn("No ConditionService?");
     }
     //conditionService = getConditionService();
@@ -225,12 +222,18 @@ public class DeconflictHelper extends BlackboardClientComponent {
     it = opModeSubscription.getChangedCollection().iterator();
     while(it.hasNext()) {
       RestartDefenseEnabler rde = (RestartDefenseEnabler)it.next();
-      logger.debug("get opmode change: " + rde.getAsset() + " -- " + rde.getValue());
+      if (logger.isDebugEnabled()) {
+        logger.debug("get opmode change: " + rde.getAsset() + " -- " +
+                     rde.getValue());
+      }
       if(rde.getValue().equals(DefenseConstants.DEF_ENABLED.toString())) {
         if(rde.getAssetType().equals(assetType)) {
           String agent = rde.getAsset();
           opmodeEnabled(agent);
-          logger.debug("get " + agent + ": " + rde.getName() + "=" + rde.getValue());
+          if (logger.isDebugEnabled()) {
+            logger.debug("get " + agent + ": " + rde.getName() + "=" +
+                         rde.getValue());
+          }
         }
       }
     }
@@ -275,7 +278,9 @@ public class DeconflictHelper extends BlackboardClientComponent {
   public void opmodeDisabled(String name) {
     if(opModeEnabled.contains(name)) {
       opModeEnabled.remove(name);
-      logger.debug("remove " + name + " from opModeEnabled queue");
+      if (logger.isDebugEnabled()) {
+        logger.debug("remove " + name + " from opModeEnabled queue");
+      }
     }
   }
 
@@ -374,7 +379,10 @@ public class DeconflictHelper extends BlackboardClientComponent {
     for(int i=0; i<defenseConditionQueue.size(); i++) {
       RestartDefenseCondition rdc = (RestartDefenseCondition)defenseConditionQueue.get(i);
       blackboard.publishChange(rdc);
-      logger.debug("** publish RestartCondition - " + rdc.getName() + "=" + rdc.getValue());
+      if (logger.isDebugEnabled()) {
+        logger.debug("** publish RestartCondition - " + rdc.getName() + "=" +
+                     rdc.getValue());
+      }
     }
     defenseConditionQueue.clear();
   }

@@ -18,18 +18,15 @@
 package org.cougaar.tools.robustness.ma;
 
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
-import org.cougaar.tools.robustness.ma.StatusChangeListener;
-import org.cougaar.tools.robustness.ma.CommunityStatusChangeEvent;
-import org.cougaar.tools.robustness.ma.util.MoveHelper;
 import org.cougaar.tools.robustness.ma.util.PersistenceHelper;
-import org.cougaar.tools.robustness.ma.util.RestartDestinationLocator;
 
 import org.cougaar.tools.robustness.ma.controllers.RobustnessController;
 import org.cougaar.tools.robustness.threatalert.*;
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.mts.MessageAddress;
 
-import java.util.*;
+import java.util.Properties;
+
 import javax.naming.directory.Attribute;
 import javax.naming.directory.BasicAttribute;
 
@@ -52,7 +49,9 @@ public class SecurityAlertHandler extends RobustnessThreatAlertHandlerBase
   public void newAlert(ThreatAlert ta) {
     if (ta instanceof SecurityAlert) {
       SecurityAlert sa = (SecurityAlert)ta;
-      logger.info("Received new SecurityThreatAlert: " + sa);
+      if (logger.isInfoEnabled()) {
+        logger.info("Received new SecurityThreatAlert: " + sa);
+      }
       if (agentId.toString().equals(preferredLeader())) {
         adjustRobustnessParameters(sa);
       }
@@ -62,7 +61,9 @@ public class SecurityAlertHandler extends RobustnessThreatAlertHandlerBase
   public void changedAlert(ThreatAlert ta) {
     if (ta instanceof SecurityAlert) {
       SecurityAlert sa = (SecurityAlert) ta;
-      logger.info("SecurityThreatAlert changed: " + sa);
+      if (logger.isInfoEnabled()) {
+        logger.info("SecurityThreatAlert changed: " + sa);
+      }
       if (agentId.toString().equals(preferredLeader())) {
         adjustRobustnessParameters(sa);
       }
@@ -72,7 +73,9 @@ public class SecurityAlertHandler extends RobustnessThreatAlertHandlerBase
   public void removedAlert(ThreatAlert ta) {
     if (ta instanceof SecurityAlert) {
       SecurityAlert sa = (SecurityAlert) ta;
-      logger.info("SecurityThreatAlert removed: " + sa);
+      if (logger.isInfoEnabled()) {
+        logger.info("SecurityThreatAlert removed: " + sa);
+      }
       if (agentId.toString().equals(preferredLeader())) {
         adjustRobustnessParameters(sa, true);  // Reset to default
       }
@@ -88,8 +91,11 @@ public class SecurityAlertHandler extends RobustnessThreatAlertHandlerBase
   }
 
   protected void adjustRobustnessParameters(SecurityAlert sa, boolean resetToDefault) {
-    logger.info("Adjusting robustness parameters: securityLevel=" + sa.getSeverityLevelAsString() +
-                " reset=" + resetToDefault);
+    if (logger.isInfoEnabled()) {
+      logger.info("Adjusting robustness parameters: securityLevel=" +
+                  sa.getSeverityLevelAsString() +
+                  " reset=" + resetToDefault);
+    }
     long persistenceInterval = model.hasAttribute(PERSISTENCE_INTERVAL_ATTRIBUTE)
                            ? model.getLongAttribute(PERSISTENCE_INTERVAL_ATTRIBUTE)
                            : DEFAULT_PERSISTENCE_INTERVAL;

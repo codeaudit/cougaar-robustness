@@ -57,7 +57,9 @@ public class PersistenceControlPlugin extends ComponentPlugin {
     Collection requests = persistenceControlRequests.getAddedCollection();
     for (Iterator it = requests.iterator(); it.hasNext();) {
       PersistenceControlRequest pcr = (PersistenceControlRequest)it.next();
-      logger.debug("Received PersistenceControlRequest: " + pcr);
+      if (logger.isDebugEnabled()) {
+        logger.debug("Received PersistenceControlRequest: " + pcr);
+      }
       persistenceHelper.setPersistenceControls(pcr.persistNow(), pcr.getControls());
       pcr.setResponder(agentId);
       blackboard.publishChange(pcr);

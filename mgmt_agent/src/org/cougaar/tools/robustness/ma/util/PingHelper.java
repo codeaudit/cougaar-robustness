@@ -29,28 +29,20 @@ import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.SchedulerService;
-//import org.cougaar.core.service.ThreadService;
 import org.cougaar.core.service.UIDService;
 
-//import org.cougaar.core.thread.Schedulable;
-
 import org.cougaar.core.component.BindingSite;
-import org.cougaar.core.component.ServiceBroker;
 
 import org.cougaar.core.mts.MessageAddress;
-import org.cougaar.core.mts.SimpleMessageAddress;
 
 import org.cougaar.core.service.AlarmService;
-import org.cougaar.core.agent.service.alarm.Alarm;
 
 import org.cougaar.core.util.UID;
 
 import org.cougaar.util.UnaryPredicate;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Collections;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -121,7 +113,9 @@ public class PingHelper extends BlackboardClientComponent {
     sensorFactory =
       ((SensorFactory) domainService.getFactory("sensors"));
     if (sensorFactory == null) {
-      logger.error("Unable to get 'sensors' domain");
+      if (logger.isErrorEnabled()) {
+        logger.error("Unable to get 'sensors' domain");
+      }
     }
   }
 
@@ -164,7 +158,9 @@ public class PingHelper extends BlackboardClientComponent {
     qe.pingResults.add(new PingResult(agent.toString(), status, roundTripTime));
     qe.agentsToPing.remove(agent);
     if (qe.agentsToPing.isEmpty()) {
-      logger.debug("pingsComplete:" + qe.pingResults);
+      if (logger.isDebugEnabled()) {
+        logger.debug("pingsComplete:" + qe.pingResults);
+      }
       qe.listener.pingComplete((PingResult[])qe.pingResults.toArray(new PingResult[0]));
     }
   }
@@ -203,7 +199,6 @@ public class PingHelper extends BlackboardClientComponent {
             agentsToPing[i],
             qe.timeout);
         pingsInProcess.put(pr.getUID(), qe);
-        //logger.debug("sendPing: " + pr);
         if (agentsToPing[i].equals(agentId)) { // Can't ping self, report success
           pingComplete(pr.getUID(), agentsToPing[i], PingResult.SUCCESS, 0l);
         } else {

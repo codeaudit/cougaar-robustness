@@ -44,7 +44,13 @@ import org.cougaar.multicast.AttributeBasedAddress;
 
 import org.cougaar.tools.robustness.ma.ldm.RelayAdapter;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /** A ThreatAlert is an API which may be supplied by a
  * ServiceProvider registered in a ServiceBroker that provides
@@ -174,11 +180,13 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
     if (sendToLocalAgent(community, role)) {
       taRelay.addTarget(agentId);
     }
-    log.debug("sendAlert:" +
-              " alert=" + ta +
-              " community=" + community +
-              " role=" + role +
-              " targets=" + taRelay.targetsToString(taRelay));
+    if (log.isDebugEnabled()) {
+      log.debug("sendAlert:" +
+                " alert=" + ta +
+                " community=" + community +
+                " role=" + role +
+                " targets=" + taRelay.targetsToString(taRelay));
+    }
     queueForSend(taRelay);
   }
 
@@ -187,7 +195,9 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
    * @param ta  ThreatAlert to update
    */
   public void updateAlert(ThreatAlert ta) {
-    log.debug("updateAlert:" + ta);
+    if (log.isDebugEnabled()) {
+      log.debug("updateAlert:" + ta);
+    }
     RelayAdapter taRelay = (RelayAdapter)myRelays.get(ta.getUID());
     if (taRelay != null) {
       queueForUpdate(taRelay);
@@ -199,7 +209,9 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
    * @param ta  ThreatAlert to cancel
    */
   public void cancelAlert(ThreatAlert ta) {
-    log.debug("cancelAlert:" + ta);
+    if (log.isDebugEnabled()) {
+      log.debug("cancelAlert:" + ta);
+    }
     queueForCancel(ta);
   }
 
@@ -383,7 +395,9 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
   }
 
   private void cancelThreatAlert(ThreatAlert alert) {
-    log.debug("cancelThreatAlert: listeners=" + listeners.size());
+    if (log.isDebugEnabled()) {
+      log.debug("cancelThreatAlert: listeners=" + listeners.size());
+    }
     if (currentThreatAlerts.containsKey(alert.getUID())) {
       // Remove from current alert list
       currentThreatAlerts.remove(alert.getUID());
@@ -393,7 +407,9 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
     if (myRelays.containsKey(alert.getUID())) {
       RelayAdapter ra = (RelayAdapter)myRelays.remove(alert.getUID());
       blackboard.publishRemove(ra);
-      log.debug("publishRemove ThreatAlert: " + ra);
+      if (log.isDebugEnabled()) {
+        log.debug("publishRemove ThreatAlert: " + ra);
+      }
     }
   }
 

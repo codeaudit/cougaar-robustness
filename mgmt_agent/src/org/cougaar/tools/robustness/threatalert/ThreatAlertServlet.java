@@ -18,10 +18,23 @@
 
 package org.cougaar.tools.robustness.threatalert;
 
-import javax.servlet.*;
-import javax.servlet.http.*;
-import java.util.*;
-import java.io.*;
+import javax.servlet.Servlet;
+import javax.servlet.ServletException;
+
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
+import java.io.IOException;
+import java.io.PrintWriter;
 
 import org.cougaar.core.servlet.BaseServletComponent;
 import org.cougaar.core.servlet.ServletUtil;
@@ -38,14 +51,7 @@ import org.cougaar.core.service.wp.WhitePagesService;
 import org.cougaar.core.blackboard.BlackboardClient;
 import org.cougaar.core.mts.MessageAddress;
 
-import org.cougaar.util.UnaryPredicate;
-
-import org.cougaar.multicast.AttributeBasedAddress;
-
-import org.cougaar.community.RelayAdapter;
-
 import javax.naming.directory.Attribute;
-import javax.naming.directory.Attributes;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 
@@ -168,15 +174,12 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
     }
 
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException {
-      log.debug("doGet: " + req.getQueryString());
+      if (log.isDebugEnabled()) {
+        log.debug("doGet: " + req.getQueryString());
+      }
       this.request = req;
       out = res.getWriter();
       communities = getCommunities();
-      /*if(communities.size() == 0){
-        out.print("<html><body>No communities found.</body></html>");
-        log.warn("No communities found.");
-        return;
-      }*/
       parseParams();
     }
 
@@ -217,7 +220,9 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
    * @param conditions name-value pair of all conditions of the threat alert.
    */
   private void fireThreatAlert(HashMap conditions) {
-    log.debug("fireThreatAlert: " + conditions);
+    if (log.isDebugEnabled()) {
+      log.debug("fireThreatAlert: " + conditions);
+    }
     Date createTime = new Date();
     int level = getSeverityLevel( (String) conditions.get("level")); //alert level
     Date start;
@@ -286,7 +291,11 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
       if (obj instanceof DefaultThreatAlert) {
           ta = (DefaultThreatAlert) obj;
       } else {
-        log.warn("Unable to create ThreatAlert, using DefaultThreatAlert: class=" + className);
+        if (log.isWarnEnabled()) {
+          log.warn(
+              "Unable to create ThreatAlert, using DefaultThreatAlert: class=" +
+              className);
+        }
         ta = new DefaultThreatAlert();
       }
       ta.setSource(agentId);
@@ -297,7 +306,9 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
         ta.addAsset( (Asset) it.next());
       }
     } catch (Exception ex) {
-      log.error("Unable to create ThreatAlert: class=" + className, ex);
+      if (log.isErrorEnabled()) {
+        log.error("Unable to create ThreatAlert: class=" + className, ex);
+      }
     }
     return ta;
   }
@@ -378,8 +389,11 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
         name = name.substring(0, name.indexOf(".comm"));
         communities.add(name);
       }
-    }catch(Exception e)
-    {log.error("try to get communities from WhitePagesService: " + e);}
+    } catch (Exception e) {
+      if (log.isErrorEnabled()) {
+        log.error("try to get communities from WhitePagesService: " + e);
+      }
+    }
     return communities;
   }
 
@@ -636,7 +650,9 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
         }
       }
       catch (NamingException e) {
-        log.error(e.getMessage(), e.fillInStackTrace());
+        if (log.isErrorEnabled()) {
+          log.error(e.getMessage(), e.fillInStackTrace());
+        }
       }
     }
     return crs;

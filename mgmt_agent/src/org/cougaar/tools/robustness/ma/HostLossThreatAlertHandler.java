@@ -23,15 +23,18 @@ import org.cougaar.tools.robustness.ma.StatusChangeListener;
 import org.cougaar.tools.robustness.ma.CommunityStatusChangeEvent;
 import org.cougaar.tools.robustness.ma.util.LoadBalancer;
 import org.cougaar.tools.robustness.ma.util.LoadBalancerListener;
-import org.cougaar.tools.robustness.ma.util.MoveHelper;
-import org.cougaar.tools.robustness.ma.util.RestartDestinationLocator;
 
 import org.cougaar.tools.robustness.ma.controllers.RobustnessController;
 import org.cougaar.tools.robustness.threatalert.*;
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.mts.MessageAddress;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import javax.naming.directory.Attribute;
 import javax.naming.directory.BasicAttribute;
 
@@ -53,7 +56,9 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
 
   public void newAlert(ThreatAlert ta) {
     if (ta instanceof HostLossThreatAlert) {
-      logger.info("Received new HostLossThreatAlert: " + ta);
+      if (logger.isInfoEnabled()) {
+        logger.info("Received new HostLossThreatAlert: " + ta);
+      }
       if (agentId.toString().equals(preferredLeader()) && ta.isActive()) {
         Set affectedNodes = getAffectedNodes(ta.getAffectedAssets());
         if (ta.getSeverityLevel() >= ALERT_LEVEL_FOR_VACATE) {
@@ -67,7 +72,9 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
 
   public void changedAlert(ThreatAlert ta) {
     if (ta instanceof HostLossThreatAlert) {
-      logger.info("Received changed HostLossThreatAlert: " + ta);
+      if (logger.isInfoEnabled()) {
+        logger.info("Received changed HostLossThreatAlert: " + ta);
+      }
       if (agentId.toString().equals(preferredLeader()) && ta.isActive()) {
         Set affectedNodes = getAffectedNodes(ta.getAffectedAssets());
         if (ta.getSeverityLevel() >= ALERT_LEVEL_FOR_VACATE) {
@@ -81,7 +88,9 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
 
   public void removedAlert(ThreatAlert ta) {
     if (ta instanceof HostLossThreatAlert) {
-      logger.info("Received removed HostLossThreatAlert: " + ta);
+      if (logger.isInfoEnabled()) {
+        logger.info("Received removed HostLossThreatAlert: " + ta);
+      }
       if (agentId.toString().equals(preferredLeader()) && ta.isExpired()) {
         Set affectedNodes = getAffectedNodes(ta.getAffectedAssets());
         if (ta.getSeverityLevel() >= ALERT_LEVEL_FOR_VACATE) {
@@ -110,7 +119,9 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
    */
   private void vacate(final Set nodesToVacate) {
     final Set agentsToMove = affectedAgents(nodesToVacate);
-    logger.info("Vacating nodes: " + nodesToVacate);
+    if (logger.isInfoEnabled()) {
+      logger.info("Vacating nodes: " + nodesToVacate);
+    }
     model.addChangeListener(new StatusChangeListener() {
       public void statusChanged(CommunityStatusChangeEvent[] csce) {
         for (int i = 0; i < csce.length; i++) {
@@ -119,7 +130,9 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
               !nodesToVacate.contains(csce[i].getCurrentLocation())) {
             agentsToMove.remove(csce[i].getName());
             if (agentsToMove.isEmpty()) {
-              logger.info("Vacate nodes complete: nodes=" + nodesToVacate);
+              if (logger.isInfoEnabled()) {
+                logger.info("Vacate nodes complete: nodes=" + nodesToVacate);
+              }
               model.removeChangeListener(this);
             }
           }
@@ -144,7 +157,10 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
    * @param ta
    */
   protected void adjustRobustnessParameters(ThreatAlert ta, Set affectedAgents) {
-    logger.info("Adjusting robustness parameters: threatLevel=" + ta.getSeverityLevelAsString());
+    if (logger.isInfoEnabled()) {
+      logger.info("Adjusting robustness parameters: threatLevel=" +
+                  ta.getSeverityLevelAsString());
+    }
     long newStatusUpdateInterval = model.getLongAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE);
     if (newStatusUpdateInterval > 0) {
       if (ta.isActive()) {

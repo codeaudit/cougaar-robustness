@@ -7,8 +7,6 @@ import org.cougaar.core.service.*;
 import org.cougaar.core.adaptivity.InterAgentOperatingMode;
 import org.cougaar.core.adaptivity.OMCRangeList;
 import org.cougaar.core.mts.MessageAddress;
-import org.cougaar.core.security.constants.AdaptiveMnROperatingModes;
-import org.cougaar.core.relay.Relay;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.service.wp.WhitePagesService;
 
@@ -18,19 +16,27 @@ import org.cougaar.core.service.community.CommunityService;
 import org.cougaar.core.service.community.CommunityResponse;
 import org.cougaar.core.service.community.CommunityResponseListener;
 import org.cougaar.core.service.community.Community;
-import org.cougaar.core.service.community.Entity;
 
 import javax.naming.directory.Attribute;
-import javax.naming.directory.Attributes;
-import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 
 import EDU.oswego.cs.dl.util.concurrent.Semaphore;
 
-import javax.servlet.*;
-import javax.servlet.http.*;
-import java.util.*;
-import java.io.*;
+import javax.servlet.Servlet;
+import javax.servlet.ServletException;
+
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
+import java.io.IOException;
+import java.io.PrintWriter;
 
 public class IAOMServlet extends BaseServletComponent implements BlackboardClient{
 
@@ -177,7 +183,10 @@ public class IAOMServlet extends BaseServletComponent implements BlackboardClien
       finally {
         bb.closeTransactionDontReset();
       }
-    log.info("publish " + action + " InterAgentOperatingMode: target=" + iaom.getTargets() + " content=" + iaom.toString());
+      if (log.isInfoEnabled()) {
+        log.info("publish " + action + " InterAgentOperatingMode: target=" +
+                 iaom.getTargets() + " content=" + iaom.toString());
+      }
   }
 
   private InterAgentOperatingMode getThreatcon() {
@@ -223,8 +232,11 @@ public class IAOMServlet extends BaseServletComponent implements BlackboardClien
         name = name.substring(0, name.indexOf(".comm"));
         communities.add(name);
       }
-    }catch(Exception e)
-    {log.error("try to get communities from WhitePagesService: " + e);}
+    } catch(Exception e) {
+      if (log.isErrorEnabled()) {
+        log.error("try to get communities from WhitePagesService: " + e);
+      }
+    }
     return communities;
   }
 
@@ -250,8 +262,11 @@ public class IAOMServlet extends BaseServletComponent implements BlackboardClien
     Attribute attr = community.getAttributes().get("RobustnessManager");
     try {
       return (String)attr.get();
-    }catch(NamingException e){log.error(e.getMessage(), e.fillInStackTrace());}
-
+    } catch(NamingException e) {
+      if (log.isErrorEnabled()) {
+        log.error(e.getMessage(), e.fillInStackTrace());
+      }
+    }
     return null;
   }
 

@@ -30,12 +30,10 @@ import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.SchedulerService;
-//import org.cougaar.core.service.ThreadService;
 import org.cougaar.core.service.UIDService;
 import org.cougaar.core.node.NodeIdentificationService;
 
 import org.cougaar.core.component.BindingSite;
-import org.cougaar.core.component.ServiceBroker;
 
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.mts.SimpleMessageAddress;
@@ -47,8 +45,6 @@ import org.cougaar.core.mobility.ldm.MobilityFactory;
 
 import org.cougaar.core.service.AlarmService;
 import org.cougaar.core.agent.service.alarm.Alarm;
-
-//import org.cougaar.core.thread.Schedulable;
 
 import org.cougaar.core.util.UID;
 
@@ -209,7 +205,9 @@ public class MoveHelper extends BlackboardClientComponent {
     }
     for (Iterator it = healthMonitorRequests.getAddedCollection().iterator(); it.hasNext(); ) {
       HealthMonitorRequest hsm = (HealthMonitorRequest) it.next();
-      logger.debug("Received HealthMonitorRequest:" + hsm);
+      if (logger.isDebugEnabled()) {
+        logger.debug("Received HealthMonitorRequest:" + hsm);
+      }
       if (hsm.getRequestType() == HealthMonitorRequest.MOVE) {
         String agentNames[] = hsm.getAgents();
         for (int i = 0; i < agentNames.length; i++) {
@@ -235,11 +233,13 @@ public class MoveHelper extends BlackboardClientComponent {
 
   public void moveAgent(final String agentName, final String origNode,
                         final String destNode, final String communityName) {
-    logger.debug("MoveAgent:" +
-                 " origNode=" + origNode +
-                 " destNode=" + destNode +
-                 " agent=" + agentName +
-                 " community=" + communityName);
+    if (logger.isDebugEnabled()) {
+      logger.debug("MoveAgent:" +
+                   " origNode=" + origNode +
+                   " destNode=" + destNode +
+                   " agent=" + agentName +
+                   " community=" + communityName);
+    }
     if (agentName != null && origNode != null && destNode != null && communityName != null) {
       if (agentId.toString().equals(origNode)) {
         moveAgent(agentName, destNode);
@@ -248,16 +248,20 @@ public class MoveHelper extends BlackboardClientComponent {
                                         communityName));
       }
     } else {
-      logger.warn("Null moveAgent parameter:" +
-                 " origNode=" + origNode +
-                 " destNode=" + destNode +
-                 " agent=" + agentName +
-                 " community=" + communityName);
+      if (logger.isWarnEnabled()) {
+        logger.warn("Null moveAgent parameter:" +
+                    " origNode=" + origNode +
+                    " destNode=" + destNode +
+                    " agent=" + agentName +
+                    " community=" + communityName);
+      }
     }
   }
 
   private void moveAgent(String agentName, String destNode) {
-    logger.debug("moveAgent: agent=" + agentName + " dest=" + destNode);
+    if (logger.isDebugEnabled()) {
+      logger.debug("moveAgent: agent=" + agentName + " dest=" + destNode);
+    }
     moveQueue.add(new MoveQueueEntry(SimpleMessageAddress.getSimpleMessageAddress(agentName),
                                      agentId,
                                      SimpleMessageAddress.getSimpleMessageAddress(destNode)));
@@ -289,10 +293,12 @@ public class MoveHelper extends BlackboardClientComponent {
   }
 
   private void sendRemoteRequest(RemoteMoveRequest rmr) {
-    logger.debug("sendRemoteRequest:" +
-                 " agent=" + rmr.agentName +
-                 " orig=" + rmr.origNode +
-                 " dest=" + rmr.destNode);
+    if (logger.isDebugEnabled()) {
+      logger.debug("sendRemoteRequest:" +
+                   " agent=" + rmr.agentName +
+                   " orig=" + rmr.origNode +
+                   " dest=" + rmr.destNode);
+    }
     UIDService uidService = (UIDService)getServiceBroker().getService(this,
           UIDService.class, null);
       HealthMonitorRequest hmr =
@@ -331,9 +337,11 @@ public class MoveHelper extends BlackboardClientComponent {
     synchronized (movesInProcess) {
       if ((!moveQueue.isEmpty()) &&
           (movesInProcess.size() <= MAX_CONCURRENT_MOVES)) {
-        logger.debug("MoveNext: " +
-                     " MoveQueue=" + moveQueue.size() +
-                     " MovesInProcess=" + movesInProcess.size());
+        if (logger.isDebugEnabled()) {
+          logger.debug("MoveNext: " +
+                       " MoveQueue=" + moveQueue.size() +
+                       " MovesInProcess=" + movesInProcess.size());
+        }
         final MoveQueueEntry mqe = (MoveQueueEntry)moveQueue.remove(0);
         try {
           Object ticketId = mobilityFactory.createTicketIdentifier();
@@ -385,7 +393,9 @@ public class MoveHelper extends BlackboardClientComponent {
         MoveQueueEntry mqe = (MoveQueueEntry)it.next();
         if (mqe.expiration < now) {
           movesInProcess.remove(mqe.agent);
-          logger.warn("Move timeout: agent=" + mqe.agent);
+          if (logger.isWarnEnabled()) {
+            logger.warn("Move timeout: agent=" + mqe.agent);
+          }
           moveComplete(mqe.agent, mqe.origNode, mqe.destNode, FAIL);
         }
       }
@@ -462,9 +472,11 @@ public class MoveHelper extends BlackboardClientComponent {
             case AgentControl.NONE:
               break;
             default:
-              logger.info("Unexpected move status" +
-                          " statucCode=" + ac.getStatusCodeAsString() +
-                          ", blackboard object not removed");
+              if (logger.isInfoEnabled()) {
+                logger.info("Unexpected move status" +
+                            " statucCode=" + ac.getStatusCodeAsString() +
+                            ", blackboard object not removed");
+              }
           }
         }
       }
@@ -497,7 +509,9 @@ public class MoveHelper extends BlackboardClientComponent {
    * Notify move listeners.
    */
   private void moveInitiated(MessageAddress agent, MessageAddress orig, MessageAddress dest) {
-    logger.debug("MoveInitiated: agent=" + agent);
+    if (logger.isDebugEnabled()) {
+      logger.debug("MoveInitiated: agent=" + agent);
+    }
     synchronized (listeners) {
       for (Iterator it = listeners.iterator(); it.hasNext(); ) {
         MoveListener ml = (MoveListener) it.next();
@@ -512,7 +526,9 @@ public class MoveHelper extends BlackboardClientComponent {
    * Notify move listeners.
    */
   private void moveComplete(MessageAddress agent, MessageAddress orig, MessageAddress dest, int status) {
-    logger.debug("MoveComplete: agent=" + agent);
+    if (logger.isDebugEnabled()) {
+      logger.debug("MoveComplete: agent=" + agent);
+    }
     synchronized (listeners) {
       for (Iterator it = listeners.iterator(); it.hasNext(); ) {
         MoveListener ml = (MoveListener) it.next();

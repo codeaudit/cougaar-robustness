@@ -178,7 +178,9 @@ public class RestartHelper extends BlackboardClientComponent {
 
     for (Iterator it = healthMonitorRequests.getAddedCollection().iterator(); it.hasNext(); ) {
       HealthMonitorRequest hsm = (HealthMonitorRequest) it.next();
-      logger.debug("Received " + hsm);
+      if (logger.isDebugEnabled()) {
+        logger.debug("Received " + hsm);
+      }
       doAction(hsm);
     }
   }
@@ -197,9 +199,11 @@ public class RestartHelper extends BlackboardClientComponent {
                            String origNode,
                            String destNode,
                            String communityName) {
-    logger.debug("RestartAgent:" +
-                " destNode=" + destNode +
-                " agent=" + agentName);
+    if (logger.isDebugEnabled()) {
+      logger.debug("RestartAgent:" +
+                   " destNode=" + destNode +
+                   " agent=" + agentName);
+    }
     if (agentId.toString().equals(destNode)) {
       // Restart locally
       doLocalAction(agentName, HealthMonitorRequest.RESTART);
@@ -221,9 +225,11 @@ public class RestartHelper extends BlackboardClientComponent {
   public void killAgent(String agentName,
                         String currentNode,
                         String communityName) {
-    logger.debug("KillAgent:" +
-                " agent=" + agentName +
-                " currentNode=" + currentNode);
+    if (logger.isDebugEnabled()) {
+      logger.debug("KillAgent:" +
+                   " agent=" + agentName +
+                   " currentNode=" + currentNode);
+    }
     if (agentId.toString().equals(currentNode)) {
       // Kill local agent
       doLocalAction(agentName, HealthMonitorRequest.KILL);
@@ -298,7 +304,9 @@ public class RestartHelper extends BlackboardClientComponent {
         if (destNode != null) {
           if (!agentId.toString().equals(destNode)) {
             // Forward request to destination node
-            logger.debug("doAction, forwarding request: " + hmr);
+            if (logger.isDebugEnabled()) {
+              logger.debug("doAction, forwarding request: " + hmr);
+            }
             sendRemoteRequest(new RemoteRequest(hmr.getAgents(),
                                                 hmr.getRequestType(),
                                                 destNode,
@@ -316,7 +324,9 @@ public class RestartHelper extends BlackboardClientComponent {
       case HealthMonitorRequest.KILL:
         if (origNode != null && !agentId.toString().equals(origNode)) {
           // Forward request to destination node
-          logger.debug("doAction, forwarding request: " + hmr);
+          if (logger.isDebugEnabled()) {
+            logger.debug("doAction, forwarding request: " + hmr);
+          }
           sendRemoteRequest(new RemoteRequest(hmr.getAgents(),
                                               hmr.getRequestType(),
                                               destNode,
@@ -338,9 +348,11 @@ public class RestartHelper extends BlackboardClientComponent {
    * @param agentName
    */
   protected void doLocalAction(String agentName, int action) {
-    logger.debug("doLocalAction:" +
-                " agent=" + agentName +
-                " action=" + action);
+    if (logger.isDebugEnabled()) {
+      logger.debug("doLocalAction:" +
+                   " agent=" + agentName +
+                   " action=" + action);
+    }
     if (!localActionQueue.contains(agentName)) {
       localActionQueue.add(new LocalRequest(agentName, action));
       blackboard.signalClientActivity();
@@ -360,9 +372,11 @@ public class RestartHelper extends BlackboardClientComponent {
   private void doNextAction() {
     if ((!localActionQueue.isEmpty()) &&
         (actionsInProcess.size() <= MAX_CONCURRENT_ACTIONS)) {
-      logger.debug("doNextAction: " +
-                   " localActionQueue=" + localActionQueue.size() +
-                   " actionsInProcess=" + actionsInProcess.size());
+      if (logger.isDebugEnabled()) {
+        logger.debug("doNextAction: " +
+                     " localActionQueue=" + localActionQueue.size() +
+                     " actionsInProcess=" + actionsInProcess.size());
+      }
       LocalRequest request = (LocalRequest)localActionQueue.remove(0);
       MessageAddress agent = MessageAddress.getMessageAddress(request.agentName);
       request.expiration = now() + ACTION_TIMEOUT;
@@ -384,7 +398,7 @@ public class RestartHelper extends BlackboardClientComponent {
             mobilityFactory.createAgentControl(acUID, agentId, ticket);
         actionInitiated(agent, request.action, agentId);
         blackboard.publishAdd(ac);
-        if (logger.isInfoEnabled()) {
+        if (logger.isDebugEnabled()) {
           StringBuffer sb =
               new StringBuffer("Publishing AgentControl:" +
                                " myUid=" + myUIDs.contains(ac.getOwnerUID()) +
@@ -397,7 +411,9 @@ public class RestartHelper extends BlackboardClientComponent {
           logger.debug(sb.toString());
         }
       } catch (Exception ex) {
-        logger.error("Exception in agent restart", ex);
+        if (logger.isErrorEnabled()) {
+          logger.error("Exception in agent restart", ex);
+        }
       }
     }
   }
@@ -411,7 +427,9 @@ public class RestartHelper extends BlackboardClientComponent {
     LocalRequest currentActions[] = getActionsInProcess();
     for (int i = 0; i < currentActions.length; i++) {
       if (currentActions[i].expiration < now) {
-        logger.info("Action timeout: agent=" + currentActions[i].agentName);
+        if (logger.isInfoEnabled()) {
+          logger.info("Action timeout: agent=" + currentActions[i].agentName);
+        }
         actionComplete(currentActions[i].agentName, currentActions[i].action, agentId, FAIL);
       }
     }
@@ -456,9 +474,11 @@ public class RestartHelper extends BlackboardClientComponent {
             case AgentControl.NONE:
               break;
             default:
-              logger.info("Unexpected restart status" +
-                          " statucCode=" + ac.getStatusCodeAsString() +
-                          ", blackboard object not removed");
+              if (logger.isInfoEnabled()) {
+                logger.info("Unexpected restart status" +
+                            " statucCode=" + ac.getStatusCodeAsString() +
+                            ", blackboard object not removed");
+              }
           }
         }
       }
@@ -491,7 +511,10 @@ public class RestartHelper extends BlackboardClientComponent {
     * Notify restart listeners.
     */
    private void actionInitiated(MessageAddress agent, int action, MessageAddress dest) {
-     logger.debug("ActionInitiated: agent=" + agent + " action=" + action + " dest=" + dest);
+     if (logger.isDebugEnabled()) {
+       logger.debug("ActionInitiated: agent=" + agent + " action=" + action +
+                    " dest=" + dest);
+     }
      synchronized (listeners) {
        for (Iterator it = listeners.iterator(); it.hasNext(); ) {
          RestartListener rl = (RestartListener) it.next();
@@ -514,7 +537,10 @@ public class RestartHelper extends BlackboardClientComponent {
    * Notify restart listeners.
    */
   private void actionComplete(String agent, int action, MessageAddress dest, int status) {
-    logger.debug("ActionComplete: agent=" + agent + " action=" + action + " dest=" + dest + " status=" + status);
+    if (logger.isDebugEnabled()) {
+      logger.debug("ActionComplete: agent=" + agent + " action=" + action +
+                   " dest=" + dest + " status=" + status);
+    }
     synchronized (listeners) {
       for (Iterator it = listeners.iterator(); it.hasNext(); ) {
         RestartListener rl = (RestartListener) it.next();

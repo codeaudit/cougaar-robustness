@@ -35,7 +35,6 @@ import org.cougaar.core.mts.MessageAddress;
 
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.service.AlarmService;
-import org.cougaar.core.agent.service.alarm.Alarm;
 import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.LoggingService;
@@ -50,13 +49,20 @@ import org.cougaar.core.node.NodeControlService;
 
 import org.cougaar.tools.robustness.ma.ldm.*;
 
-import org.cougaar.util.log.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
-import java.util.*;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
-import javax.naming.directory.BasicAttributes;
 
 /**
  * Holds community status information used by robustness health monitor
@@ -366,7 +372,9 @@ public class CommunityStatusModel extends BlackboardClientComponent
                                            STATE_CHANGE, se));
       }
     } else {
-      logger.debug("setCurrentState: status entry not found, agent=" + name);
+      if (logger.isDebugEnabled()) {
+        logger.debug("setCurrentState: status entry not found, agent=" + name);
+      }
     }
   }
 
@@ -389,12 +397,17 @@ public class CommunityStatusModel extends BlackboardClientComponent
     StatusEntry se = (StatusEntry)statusMap.get(name);
     if (se != null) {
       se.expiration = expiration;
-      logger.debug("setStatusExpiration" +
-                   " agent=" + name +
-                   " currentState=" + se.currentState +
-                   " expiration=" + expiration);
+      if (logger.isDebugEnabled()) {
+        logger.debug("setStatusExpiration" +
+                     " agent=" + name +
+                     " currentState=" + se.currentState +
+                     " expiration=" + expiration);
+      }
     } else {
-      logger.info("setStateExpiration: No status entry found for '" + name + "'");
+      if (logger.isInfoEnabled()) {
+        logger.info("setStateExpiration: No status entry found for '" + name +
+                    "'");
+      }
     }
   }
 
@@ -416,7 +429,9 @@ public class CommunityStatusModel extends BlackboardClientComponent
     if (se != null) {
       return se.currentLocation;
     } else {
-      logger.debug("No StatusEntry found: name=" + name);
+      if (logger.isDebugEnabled()) {
+        logger.debug("No StatusEntry found: name=" + name);
+      }
       return null;
     }
   }
@@ -430,7 +445,9 @@ public class CommunityStatusModel extends BlackboardClientComponent
     if (se != null) {
       return se.priorLocation;
     } else {
-      logger.debug("No StatusEntry found: name=" + name);
+      if (logger.isDebugEnabled()) {
+        logger.debug("No StatusEntry found: name=" + name);
+      }
       return null;
     }
   }
@@ -451,7 +468,6 @@ public class CommunityStatusModel extends BlackboardClientComponent
    * @param name Name of peer node
    */
   public void setLeaderVote(String name, String vote) {
-    //logger.info("agent=" + name + " vote=" + vote);
     StatusEntry se = (StatusEntry)statusMap.get(name);
     se.leaderVote = vote;
   }
@@ -462,7 +478,9 @@ public class CommunityStatusModel extends BlackboardClientComponent
    * @param loc  Name of containing node or host
    */
   public void setLocation(String name, String loc) {
-    logger.debug("setLocation: agent=" + name + " loc=" + loc);
+    if (logger.isDebugEnabled()) {
+      logger.debug("setLocation: agent=" + name + " loc=" + loc);
+    }
     StatusEntry se = (StatusEntry)statusMap.get(name);
     if (se != null) {
       se.timestamp = now();
@@ -474,7 +492,9 @@ public class CommunityStatusModel extends BlackboardClientComponent
                                            LOCATION_CHANGE, se));
       }
     } else {
-      logger.debug("No StatusEntry found: name=" + name);
+      if (logger.isDebugEnabled()) {
+        logger.debug("No StatusEntry found: name=" + name);
+      }
     }
   }
 
@@ -486,10 +506,12 @@ public class CommunityStatusModel extends BlackboardClientComponent
    * @param state New state
    */
   public void setLocationAndState(String name, String loc, int state) {
-    logger.debug("setLocationAndState" +
-                 " agent=" + name +
-                 " location=" + loc +
-                 " state=" + state);
+    if (logger.isDebugEnabled()) {
+      logger.debug("setLocationAndState" +
+                   " agent=" + name +
+                   " location=" + loc +
+                   " state=" + state);
+    }
     StatusEntry se = (StatusEntry)statusMap.get(name);
     se.timestamp = now();
     int changeFlags = 0;
@@ -498,17 +520,21 @@ public class CommunityStatusModel extends BlackboardClientComponent
         changeFlags = changeFlags | CommunityStatusChangeEvent.LOCATION_CHANGE;
         se.priorLocation = se.currentLocation;
         se.currentLocation = loc;
-        logger.debug("setLocation: agent=" + name + " loc=" + loc);
+        if (logger.isDebugEnabled()) {
+          logger.debug("setLocation: agent=" + name + " loc=" + loc);
+        }
       }
       if (se.currentState != state) {
         changeFlags = changeFlags | CommunityStatusChangeEvent.STATE_CHANGE;
         se.priorState = se.currentState;
         se.currentState = state;
-        logger.debug("setCurrentState" +
-                     " agent=" + name +
-                     " newState=" + se.currentState +
-                     " priorState=" + se.priorState +
-                     " expiration=" + se.expiration);
+        if (logger.isDebugEnabled()) {
+          logger.debug("setCurrentState" +
+                       " agent=" + name +
+                       " newState=" + se.currentState +
+                       " priorState=" + se.priorState +
+                       " expiration=" + se.expiration);
+        }
       }
       if (changeFlags > 0) {
         queueChangeEvent(
@@ -518,7 +544,9 @@ public class CommunityStatusModel extends BlackboardClientComponent
         electLeader();
       }
     } else {
-      logger.debug("No StatusEntry found: name=" + name);
+      if (logger.isDebugEnabled()) {
+        logger.debug("No StatusEntry found: name=" + name);
+      }
     }
   }
 
@@ -542,7 +570,9 @@ public class CommunityStatusModel extends BlackboardClientComponent
         }
       }
     } catch (Exception ex) {
-      logger.error("Exception in search, filter=" + filter);
+      if (logger.isErrorEnabled()) {
+        logger.error("Exception in search, filter=" + filter);
+      }
     }
     return matches;
   }
@@ -580,7 +610,9 @@ public class CommunityStatusModel extends BlackboardClientComponent
 
   private void setPreferredLeader(String pl) {
     if (pl != null && preferredLeader == null) {
-      logger.info("Preferred leader: " + pl);
+      if (logger.isInfoEnabled()) {
+        logger.info("Preferred leader: " + pl);
+      }
     }
     preferredLeader = pl;
   }
@@ -670,10 +702,12 @@ public class CommunityStatusModel extends BlackboardClientComponent
    */
   public void applyUpdates(String nodeName, int nodeStatus, AgentStatus[] as, String vote, String host) {
     synchronized (statusMap) {
-      logger.debug("ApplyUpdates:" +
-                   " node=" + nodeName +
-                   " nodeStatus=" + controller.stateName(nodeStatus) +
-                   " numAgents=" + as.length);
+      if (logger.isDebugEnabled()) {
+        logger.debug("ApplyUpdates:" +
+                     " node=" + nodeName +
+                     " nodeStatus=" + controller.stateName(nodeStatus) +
+                     " numAgents=" + as.length);
+      }
       if (statusMap.containsKey(nodeName)) {
         setCurrentState(nodeName, nodeStatus);
         setLeaderVote(nodeName, vote);
@@ -976,12 +1010,6 @@ public class CommunityStatusModel extends BlackboardClientComponent
     synchronized (statusMap) {
       for (Iterator it = statusMap.values().iterator(); it.hasNext(); ) {
         StatusEntry se = (StatusEntry)it.next();
-        /*logger.info("getCandidates" +
-                    " name=" + se.name +
-                    " hasAttr=" + hasAttribute(se.attrs, "Role", "HealthMonitor") +
-                    " isExpired=" + isExpired(se) +
-                    " currentState=" + se.currentState +
-                    " normalState=" + normalState);*/
         if (se != null &&
             se.attrs != null  &&
             hasAttribute(se.attrs, "Role", HEALTH_MONITOR) &&
@@ -1061,7 +1089,9 @@ public class CommunityStatusModel extends BlackboardClientComponent
         }
       }
     } catch (Exception ex) {
-      logger.error(ex.getMessage() + " thisAgent=" + thisAgent, ex);
+      if (logger.isErrorEnabled()) {
+        logger.error(ex.getMessage() + " thisAgent=" + thisAgent, ex);
+      }
     }
   }
 
@@ -1074,8 +1104,9 @@ public class CommunityStatusModel extends BlackboardClientComponent
    * are generated when a status expiration is detected.
    */
   private void checkExpirations() {
-    logger.debug("check expirations");
-    boolean foundExpired = false;
+    if (logger.isDebugEnabled()) {
+      logger.debug("check expirations");
+    }
     synchronized (statusMap) {
       for (Iterator it = statusMap.values().iterator(); it.hasNext();) {
         StatusEntry se = (StatusEntry)it.next();
@@ -1105,11 +1136,14 @@ public class CommunityStatusModel extends BlackboardClientComponent
       }
     }
     String currentLeader = getLeader();
-    logger.debug("electLeader:" +
-                 " leader=" + leader +
-                 " leaderState=" +
-                 (currentLeader == null ? null : getCurrentState(currentLeader) +
-                  " triggerState=" + triggerState));
+    if (logger.isDebugEnabled()) {
+      logger.debug("electLeader:" +
+                   " leader=" + leader +
+                   " leaderState=" +
+                   (currentLeader == null ? null :
+                    getCurrentState(currentLeader) +
+                    " triggerState=" + triggerState));
+    }
     electLeader();
   }
 
@@ -1121,8 +1155,10 @@ public class CommunityStatusModel extends BlackboardClientComponent
         if (nodeControlService.getRootContainer().containsAgent(addr)) {
           if (!thisAgent.equals(getLocation(allAgents[i]))) {
             setLocationAndState(allAgents[i], thisAgent, INITIAL);
-            logger.debug("Found agent " + allAgents[i] + " at node " +
-                         thisAgent);
+            if (logger.isDebugEnabled()) {
+              logger.debug("Found agent " + allAgents[i] + " at node " +
+                           thisAgent);
+            }
           }
         }
       }
@@ -1180,7 +1216,9 @@ public class CommunityStatusModel extends BlackboardClientComponent
     synchronized (eventQueue) {
       eventQueue.add(csce);
       blackboard.signalClientActivity();
-      logger.debug("queueEvent: (" + eventQueue.size() + ") " + csce);
+      if (logger.isDebugEnabled()) {
+        logger.debug("queueEvent: (" + eventQueue.size() + ") " + csce);
+      }
     }
   }
 
@@ -1191,8 +1229,10 @@ public class CommunityStatusModel extends BlackboardClientComponent
     if (!eventQueue.isEmpty()) {
       CommunityStatusChangeEvent[] events = new CommunityStatusChangeEvent[0];
       synchronized (eventQueue) {
-        logger.debug("sendEvents:" +
-                    " numEvents=" + eventQueue.size());
+        if (logger.isDebugEnabled()) {
+          logger.debug("sendEvents:" +
+                       " numEvents=" + eventQueue.size());
+        }
         //dumpEventQueue();
         events =
             (CommunityStatusChangeEvent[]) eventQueue.toArray(new CommunityStatusChangeEvent[0]);
@@ -1206,7 +1246,9 @@ public class CommunityStatusModel extends BlackboardClientComponent
     synchronized (eventQueue) {
       for (Iterator it = eventQueue.iterator(); it.hasNext();) {
         CommunityStatusChangeEvent csce = (CommunityStatusChangeEvent)it.next();
-        logger.info(csce.toString());
+        if (logger.isInfoEnabled()) {
+          logger.info(csce.toString());
+        }
       }
     }
   }

@@ -136,7 +136,9 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
   private void joinStartupCommunity() {
     final String initialCommunity = System.getProperty(COMMUNITY_PROPERTY);
     if (initialCommunity != null) {
-      logger.debug("Joining community " + initialCommunity);
+      if (logger.isDebugEnabled()) {
+        logger.debug("Joining community " + initialCommunity);
+      }
       UID joinRequestUID = uidService.nextUID();
       myUIDs.add(joinRequestUID);
       Attributes memberAttrs = new BasicAttributes();
@@ -148,14 +150,18 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
        commSvc.joinCommunity(initialCommunity, myName, CommunityService.AGENT,
          memberAttrs, false, null, new CommunityResponseListener() {
            public void getResponse(CommunityResponse resp) {
-             logger.debug("joinCommunity:" +
-                          " agent=" + myName +
-                          " community=" + initialCommunity +
-                          " result=" + resp.getStatusAsString());
+             if (logger.isDebugEnabled()) {
+               logger.debug("joinCommunity:" +
+                            " agent=" + myName +
+                            " community=" + initialCommunity +
+                            " result=" + resp.getStatusAsString());
+             }
            }
          });
     } else {
-      logger.debug("No initial community defined");
+      if (logger.isDebugEnabled()) {
+        logger.debug("No initial community defined");
+      }
     }
     joinedStartupCommunity = true;
   }
@@ -236,7 +242,10 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
       updateAndSendNodeStatus();
       long tmp = getLongAttribute(CURRENT_STATUS_UPDATE_ATTRIBUTE, updateInterval);
       if (tmp != updateInterval) {
-        logger.info("Changing update interval: old=" + updateInterval + " new=" + tmp);
+        if (logger.isInfoEnabled()) {
+          logger.info("Changing update interval: old=" + updateInterval +
+                      " new=" + tmp);
+        }
         updateInterval = tmp;
       }
       if (model != null) {
@@ -250,11 +259,13 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
     Collection nsCollection = nodeStatusRelaySub.getAddedCollection();
     for (Iterator it = nsCollection.iterator(); it.hasNext(); ) {
       NodeStatusRelay nsr = (NodeStatusRelay)it.next();
-      logger.debug("Received added NodeStatusRelay:" +
-                  " community=" + nsr.getCommunityName() +
-                  " source=" + nsr.getSource() +
-                  " numAgents=" + nsr.getAgentStatus().length +
-                  " leaderVote=" + nsr.getLeaderVote());
+      if (logger.isDebugEnabled()) {
+        logger.debug("Received added NodeStatusRelay:" +
+                     " community=" + nsr.getCommunityName() +
+                     " source=" + nsr.getSource() +
+                     " numAgents=" + nsr.getAgentStatus().length +
+                     " leaderVote=" + nsr.getLeaderVote());
+      }
       // update status model
       updateCommunityStatus(nsr.getCommunityName(),
                             nsr.getSource().toString(),
@@ -266,11 +277,13 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
     nsCollection = nodeStatusRelaySub.getChangedCollection();
     for (Iterator it = nsCollection.iterator(); it.hasNext(); ) {
       NodeStatusRelay nsr = (NodeStatusRelay)it.next();
-      logger.debug("Received changed NodeStatusRelay:" +
-                  " community=" + nsr.getCommunityName() +
-                  " source=" + nsr.getSource() +
-                  " numAgents=" + nsr.getAgentStatus().length +
-                  " leaderVote=" + nsr.getLeaderVote());
+      if (logger.isDebugEnabled()) {
+        logger.debug("Received changed NodeStatusRelay:" +
+                     " community=" + nsr.getCommunityName() +
+                     " source=" + nsr.getSource() +
+                     " numAgents=" + nsr.getAgentStatus().length +
+                     " leaderVote=" + nsr.getLeaderVote());
+      }
      // update status model
       updateCommunityStatus(nsr.getCommunityName(),
                             nsr.getSource().toString(),
@@ -342,9 +355,11 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
       model.update(community);
       if (!initialAttributesLogged) {
         initialAttributesLogged = true;
-        logger.info("Robustness community attributes:" +
-                    " community=" + community.getName() +
-                    " attributes=" + attrsToString(community.getAttributes()));
+        if (logger.isInfoEnabled()) {
+          logger.info("Robustness community attributes:" +
+                      " community=" + community.getName() +
+                      " attributes=" + attrsToString(community.getAttributes()));
+        }
       }
       long interval = model.getLongAttribute(CURRENT_STATUS_UPDATE_ATTRIBUTE);
       if (interval <= 0) { // Current status update interval not defined yet
@@ -352,7 +367,10 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
         long newInterval = getLongAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE, updateInterval);
         if (newInterval > 0) {
           // Add to community
-          logger.debug("Setting update interval attribute: interval=" + newInterval);
+          if (logger.isDebugEnabled()) {
+            logger.debug("Setting update interval attribute: interval=" +
+                         newInterval);
+          }
           changeAttributes(community,
                            null,
                            new Attribute[]{new BasicAttribute(CURRENT_STATUS_UPDATE_ATTRIBUTE, Long.toString(newInterval))});
@@ -402,7 +420,9 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
 
   private synchronized void initializeModel(String communityName) {
     if (model == null) {
-      logger.debug("Initialize CommunityStatusModel");
+      if (logger.isDebugEnabled()) {
+        logger.debug("Initialize CommunityStatusModel");
+      }
       model = new CommunityStatusModel(myName,
                                        communityName,
                                        getBindingSite());
@@ -415,7 +435,9 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
             (RobustnessController)Class.forName(controllerClassname).newInstance();
         controller.initialize(agentId, getBindingSite(), model);
       } catch (Exception ex) {
-        logger.error("Exception creating RobustnessController", ex);
+        if (logger.isErrorEnabled()) {
+          logger.error("Exception creating RobustnessController", ex);
+        }
       }
       model.setController(controller);
       model.addChangeListener(controller);
@@ -528,13 +550,15 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
           if (!target.equals(agentId))
             nodeStatusRelay.addTarget(target);
         }
-        logger.debug("publishChange NodeStatusRelay:" +
-                     " source=" + nsr.getSource() +
-                     " targets=" + targetsToString(nodeStatusRelay.getTargets()) +
-                     " community=" + nsr.getCommunityName() +
-                     " agents=" + nsr.getAgentStatus().length +
-                     " leaderVote=" + nsr.getLeaderVote() +
-                     " location=" + nsr.getLocation());
+        if (logger.isDebugEnabled()) {
+          logger.debug("publishChange NodeStatusRelay:" +
+                       " source=" + nsr.getSource() +
+                       " targets=" + targetsToString(nodeStatusRelay.getTargets()) +
+                       " community=" + nsr.getCommunityName() +
+                       " agents=" + nsr.getAgentStatus().length +
+                       " leaderVote=" + nsr.getLeaderVote() +
+                       " location=" + nsr.getLocation());
+        }
         if (logger.isDetailEnabled()) {
           StringBuffer detailedStatus = new StringBuffer("<AgentStatus>\n");
           for (int i = 0; i < agentStatus.length; i++) {
@@ -574,18 +598,23 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
                           " node=" + myNode);
             }
           } catch (Exception ex) {
-            logger.error("Exception in getTopologyInfo:", ex);
+            if (logger.isErrorEnabled()) {
+              logger.error("Exception in getTopologyInfo:", ex);
+            }
           }
         } else {
           getTopologyFlag = true;
         }
-        if (blackboard != null)
+        if (blackboard != null) {
           blackboard.signalClientActivity();
-        logger.debug("getTopologyInfo callback:" +
-                     " name=" + myName +
-                     " resp.isAvailable=" + isAvailable +
-                     " resp.isSuccess=" + isSuccess +
-                     " entry=" + entry);
+        }
+        if (logger.isDebugEnabled()) {
+          logger.debug("getTopologyInfo callback:" +
+                       " name=" + myName +
+                       " resp.isAvailable=" + isAvailable +
+                       " resp.isSuccess=" + isSuccess +
+                       " entry=" + entry);
+        }
       }
     };
     whitePagesService.get(myName, "topology", cb);
@@ -630,18 +659,23 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
             mods.add(new ModificationItem(type, newAttrs[i]));
           }
         } catch (NamingException ne) {
-          logger.error("Error setting community attribute:" +
-                       " community=" + community.getName() +
-                       " attribute=" + newAttrs[i]);
+          if (logger.isErrorEnabled()) {
+            logger.error("Error setting community attribute:" +
+                         " community=" + community.getName() +
+                         " attribute=" + newAttrs[i]);
+          }
         }
       }
       if (!mods.isEmpty()) {
         CommunityResponseListener crl = new CommunityResponseListener() {
           public void getResponse(CommunityResponse resp) {
             if (resp.getStatus() != CommunityResponse.SUCCESS) {
-              logger.warn("Unexpected status from CommunityService modifyAttributes request:" +
-                          " status=" + resp.getStatusAsString() +
-                          " community=" + community.getName());
+              if (logger.isWarnEnabled()) {
+                logger.warn(
+                    "Unexpected status from CommunityService modifyAttributes request:" +
+                    " status=" + resp.getStatusAsString() +
+                    " community=" + community.getName());
+              }
             }
           }
       };

@@ -25,8 +25,6 @@ import org.cougaar.core.blackboard.IncrementalSubscription;
 
 import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.service.BlackboardService;
-import org.cougaar.core.service.DomainService;
-import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.SchedulerService;
 import org.cougaar.core.service.UIDService;
@@ -43,25 +41,17 @@ import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.component.ServiceBroker;
 
 import org.cougaar.core.mts.MessageAddress;
-import org.cougaar.core.mts.SimpleMessageAddress;
 
 import org.cougaar.core.service.AlarmService;
-import org.cougaar.core.agent.service.alarm.Alarm;
-
-import org.cougaar.core.util.UID;
 
 import org.cougaar.util.UnaryPredicate;
 
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Collections;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.HashSet;
 import java.util.Iterator;
 
 /**
@@ -122,10 +112,14 @@ public class PersistenceHelper extends BlackboardClientComponent {
     fireAll();
     if (persistNow) {
       try {
-        logger.debug("persistNow:");
+        if (logger.isDebugEnabled()) {
+          logger.debug("persistNow:");
+        }
         blackboard.persistNow();
       } catch (PersistenceNotEnabledException pnee) {
-        logger.warn(pnee.getMessage());
+        if (logger.isWarnEnabled()) {
+          logger.warn(pnee.getMessage());
+        }
       } finally {
         persistNow = false;
       }
@@ -140,7 +134,9 @@ public class PersistenceHelper extends BlackboardClientComponent {
       //            " responders=" + responders);
       // Remove request after all targets have responded
       if (responders.containsAll(ra.getTargets())) {
-        logger.debug("PublishRemove PersistenceControlRequest:" + ra);
+        if (logger.isDebugEnabled()) {
+          logger.debug("PublishRemove PersistenceControlRequest:" + ra);
+        }
         myUIDs.remove(ra.getUID());
         blackboard.publishRemove(ra);
       }
@@ -173,10 +169,12 @@ public class PersistenceHelper extends BlackboardClientComponent {
    * @param controls
    */
   public void controlPersistence(String[] agentNames, boolean persistNow, Properties controls) {
-    logger.info("controlPersistence:" +
-                " agents=" + arrayToString(agentNames) +
-                " persistNow=" + persistNow +
-                " controls=" + controls);
+    if (logger.isInfoEnabled()) {
+      logger.info("controlPersistence:" +
+                  " agents=" + arrayToString(agentNames) +
+                  " persistNow=" + persistNow +
+                  " controls=" + controls);
+    }
     PersistenceControlRequest pcr = new PersistenceControlRequest(agentId, persistNow, controls, uidService.nextUID());
     RelayAdapter ra = new RelayAdapter(agentId, pcr, pcr.getUID());
     for (int i = 0; i < agentNames.length; i++) {
@@ -214,10 +212,12 @@ public class PersistenceHelper extends BlackboardClientComponent {
   public void setPersistenceControl(String name, Comparable value) {
     String[] mediaNames = pcs.getMediaNames();
     for (int i = 0; i < mediaNames.length; i++) {
-      logger.info("setPersistenceControl:" +
-                  " media=" + mediaNames[i] +
-                  " control=" + name +
-                  " value=" + value);
+      if (logger.isInfoEnabled()) {
+        logger.info("setPersistenceControl:" +
+                    " media=" + mediaNames[i] +
+                    " control=" + name +
+                    " value=" + value);
+      }
       pcs.setMediaControlValue(mediaNames[i], name, value);
     }
   }
@@ -266,7 +266,9 @@ public class PersistenceHelper extends BlackboardClientComponent {
     }
     for (int i = 0; i < n; i++) {
       RelayAdapter ra = (RelayAdapter)l.get(i);
-      logger.info("publishAdd: " + ra);
+      if (logger.isInfoEnabled()) {
+        logger.info("publishAdd: " + ra);
+      }
       blackboard.publishAdd(ra);
     }
   }

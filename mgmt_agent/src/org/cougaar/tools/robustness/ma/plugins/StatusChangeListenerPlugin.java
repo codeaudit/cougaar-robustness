@@ -43,9 +43,11 @@ public class StatusChangeListenerPlugin extends ComponentPlugin {
     public void statusChanged(CommunityStatusChangeEvent[] csce) {
       for (int i = 0; i < csce.length; i++) {
         if (csce[i].locationChanged() && csce[i].getPriorLocation() != null) {
-          logger.info("Agent location changed: agent=" + csce[i].getName() +
-                      " priorLocation=" + csce[i].getPriorLocation() +
-                      " newLocation=" + csce[i].getCurrentLocation());
+          if (logger.isInfoEnabled()) {
+            logger.info("Agent location changed: agent=" + csce[i].getName() +
+                        " priorLocation=" + csce[i].getPriorLocation() +
+                        " newLocation=" + csce[i].getCurrentLocation());
+          }
         }
       }
     }
@@ -66,7 +68,10 @@ public class StatusChangeListenerPlugin extends ComponentPlugin {
     Collection models = communityStatusModelSub.getAddedCollection();
     for (Iterator it = models.iterator(); it.hasNext();) {
       CommunityStatusModel csm = (CommunityStatusModel)it.next();
-      logger.info("Found CommunityStatusModel: community=" + csm.getCommunityName());
+      if (logger.isInfoEnabled()) {
+        logger.info("Found CommunityStatusModel: community=" +
+                    csm.getCommunityName());
+      }
       csm.addChangeListener(myChangeListener);
     }
   }

@@ -18,27 +18,16 @@
 package org.cougaar.tools.robustness.ma;
 
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
-import org.cougaar.tools.robustness.ma.StatusChangeListener;
-import org.cougaar.tools.robustness.ma.CommunityStatusChangeEvent;
 import org.cougaar.tools.robustness.ma.util.MoveHelper;
-import org.cougaar.tools.robustness.ma.util.RestartDestinationLocator;
 
 import org.cougaar.tools.robustness.ma.controllers.RobustnessController;
 import org.cougaar.tools.robustness.threatalert.*;
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.mts.MessageAddress;
 
-import org.cougaar.core.component.ServiceBroker;
-import org.cougaar.core.component.ServiceAvailableListener;
-import org.cougaar.core.component.ServiceAvailableEvent;
-
-import java.util.*;
-import javax.naming.NamingException;
-import javax.naming.directory.Attributes;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.BasicAttribute;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.ModificationItem;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Base class for robustness ThreatAlert handlers.

@@ -17,11 +17,7 @@
  */
 package org.cougaar.tools.robustness.ma;
 
-import org.cougaar.tools.robustness.threatalert.ThreatAlert;
 import org.cougaar.tools.robustness.threatalert.DefaultThreatAlert;
-
-import org.cougaar.core.mts.MessageAddress;
-import org.cougaar.core.util.UID;
 
 import java.util.Date;
 

@@ -122,7 +122,7 @@ public class HeartbeatHelper extends BlackboardClientComponent {
       getService(this, DomainService.class, null);
     sensorFactory =
       ((SensorFactory) domainService.getFactory("sensors"));
-    if (sensorFactory == null) {
+    if (sensorFactory == null && logger.isErrorEnabled()) {
       logger.error("Unable to get 'sensors' domain");
     }
   }
@@ -150,8 +150,10 @@ public class HeartbeatHelper extends BlackboardClientComponent {
         heartbeatRequests.put(target, hbr);
         heartbeatsStarted(target);
       } else if (status == HeartbeatRequest.FAILED || status == HeartbeatRequest.REFUSED) {
-        logger.debug("Heartbeat request failed: agent=" + target +
-                    " status=" + hbr.statusToString(hbr.getStatus()));
+        if (logger.isDebugEnabled()) {
+          logger.debug("Heartbeat request failed: agent=" + target +
+                       " status=" + hbr.statusToString(hbr.getStatus()));
+        }
         blackboard.publishRemove(hbr);
         heartbeatFailure(target);
       }
@@ -171,8 +173,10 @@ public class HeartbeatHelper extends BlackboardClientComponent {
       HeartbeatEntry hbe[] = hbhr.getHeartbeats();
       for(int i = 0; i < hbe.length; i++) {
         hbe[i].getSource();
-        logger.debug("HeartbeatTimeout: agent=" + hbe[i].getSource() +
-                     ", heartbeatEntry=" + hbe[i].toString());
+        if (logger.isDebugEnabled()) {
+          logger.debug("HeartbeatTimeout: agent=" + hbe[i].getSource() +
+                       ", heartbeatEntry=" + hbe[i].toString());
+        }
         heartbeatFailure(hbe[i].getSource());
       }
       blackboard.publishRemove(hbhr);
@@ -227,27 +231,33 @@ public class HeartbeatHelper extends BlackboardClientComponent {
    * Notify HeartbeatListeners.
    */
   private void heartbeatFailure(MessageAddress agent) {
-    logger.debug("Heartbeat failed: agent=" + agent);
-      for (Iterator it = listeners.iterator(); it.hasNext(); ) {
-        HeartbeatListener hbl = (HeartbeatListener)it.next();
-        hbl.heartbeatFailure(agent.toString());
-      }
+    if (logger.isDebugEnabled()) {
+      logger.debug("Heartbeat failed: agent=" + agent);
+    }
+    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
+      HeartbeatListener hbl = (HeartbeatListener) it.next();
+      hbl.heartbeatFailure(agent.toString());
+    }
   }
 
   private void heartbeatsStarted(MessageAddress agent) {
-    logger.debug("Heartbeats started: agent=" + agent);
-      for (Iterator it = listeners.iterator(); it.hasNext(); ) {
-        HeartbeatListener hbl = (HeartbeatListener)it.next();
-        hbl.heartbeatStarted(agent.toString());
-      }
+    if (logger.isDebugEnabled()) {
+      logger.debug("Heartbeats started: agent=" + agent);
+    }
+    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
+      HeartbeatListener hbl = (HeartbeatListener) it.next();
+      hbl.heartbeatStarted(agent.toString());
+    }
   }
 
   private void heartbeatsStopped(MessageAddress agent) {
-    logger.debug("Heartbeats stopped: agent=" + agent);
-      for (Iterator it = listeners.iterator(); it.hasNext(); ) {
-        HeartbeatListener hbl = (HeartbeatListener)it.next();
-        hbl.heartbeatStopped(agent.toString());
-      }
+    if (logger.isDebugEnabled()) {
+      logger.debug("Heartbeats stopped: agent=" + agent);
+    }
+    for (Iterator it = listeners.iterator(); it.hasNext(); ) {
+      HeartbeatListener hbl = (HeartbeatListener) it.next();
+      hbl.heartbeatStopped(agent.toString());
+    }
   }
 
   private MessageAddress getTarget(HeartbeatRequest hbr) {
