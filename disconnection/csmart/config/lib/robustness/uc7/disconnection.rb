@@ -25,7 +25,7 @@ module Cougaar
       def perform 
 	nodeObj = @run.society.nodes[node]
         host = nodeObj.host
-        url = "http://#{nodeObj.uri/$#{node}/Disconnect?Disconnect=Disconnect&expire=#{seconds.to_s}"
+        url = "http://#{nodeObj.uri}/$#{node}/Disconnect?Disconnect=Disconnect&expire=#{seconds.to_s}"
 	response, uri = Cougaar::Communications::HTTP.get(url)
         raise "Could not connect to #{@url}" unless response
         puts "response="+response if response
@@ -33,6 +33,38 @@ module Cougaar
         return response, uri
       end
     end
+
+    class EndPlannedDisconnect < Cougaar::Action
+      PRIOR_STATES = ["SocietyLoaded"]
+      RESULTANT_STATE = "PlannedDisconnectSignalled"
+      DOCUMENTATION = Cougaar.document {
+        @description = "End a Planned Disconnect"
+        @parameters = [
+          {:node => "required, The node that has reconnected."}
+        ]
+        @example = "do_action 'EndPlannedDisconnect', 'FWD-C'
+	}
+
+	@@node = nil
+
+      def initialize(run, node, seconds)
+        super(run) 
+	@node = seconds
+	@seconds = seconds
+      end
+
+      def perform 
+	nodeObj = @run.society.nodes[node]
+        host = nodeObj.host
+        url = "http://#{nodeObj.uri}/$#{node}/Disconnect?Reconnect=Reconnect"
+	response, uri = Cougaar::Communications::HTTP.get(url)
+        raise "Could not connect to #{@url}" unless response
+        puts "response="+response if response
+        Cougaar.logger.info "#{response}" if response
+        return response, uri
+      end
+    end
+
   end
 
   module States
@@ -56,12 +88,12 @@ module Cougaar
      end
      
      def process
-        puts "Waiting " + @timeout.to_s + " seconds for Coordinator's permission to disconnect node " + @node
+        puts "Waiting " + @timeout.to_s + " seconds for Coordinator's permission to disconnect node "+@node+"."
         loop = true
         while loop
           event = @run.get_next_event
           puts event.data
-          if event.component=="DisconnectAgentPlugin" && event.data.include?(@node+" plans to Disconnect")
+          if event.component=="DisconnectNodePlugin" && event.data.include?(@node+" plans to Disconnect")
             loop = false
             puts event.data
           end
@@ -94,7 +126,7 @@ module Cougaar
      end
 
      def process
-        puts "Waiting " + @timeout.to_s + " seconds for node "+node+"'s PlannedDisconnect to expire"
+        puts "Waiting " + @timeout.to_s + " seconds for node "+node+"'s PlannedDisconnect to expire."
         loop = true
         while loop
           event = @run.get_next_event
@@ -107,7 +139,7 @@ module Cougaar
       end
       
       def unhandled_timeout
-        puts "Timed out after "+@timeout.to_s+" seconds waiting for node "+node+"'s PlannedDisconnect to expire"
+        puts "Timed out after "+@timeout.to_s+" seconds waiting for node "+node+"'s PlannedDisconnect to expire."
         @run.do_action "StopSociety" 
         @run.do_action "StopCommunications"
       end
