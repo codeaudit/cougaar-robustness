@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 01 May 2003: Added removeMessageNumber in support of UC1. (102B)
  * 12 Mar 2003: Moved some constants to org.cougaar.core.mts.Constants
  * 14 May 2002: Created. (OBJS)
  */
@@ -213,6 +214,12 @@ public final class MessageUtils
     Integer num = (Integer) msg.getAttribute (MSG_NUM);
     if (num != null) return num.intValue();
     return 0;  // have method hasMessageNumber() if needed
+  }
+
+  //102B
+  public static void removeMessageNumber (AttributedMessage msg)
+  {
+    msg.removeAttribute(MSG_NUM);
   }
 
   public static boolean isAckableMessage (AttributedMessage msg)

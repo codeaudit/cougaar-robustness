@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2001-2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 01 May 2003: Added handleMessagesToRestartedAgent in support of UC1. (102B)
  * 20 Aug 2002: Support for agent mobility. (OBJS)
  * 06 Jun 2002: Completely revamped for Cougaar 9.2.x (OBJS)
  * 08 Jan 2002: Egregious temporary hack to handle last minute traffic masking messages. (OBJS)
@@ -35,13 +36,15 @@ import org.cougaar.core.mts.*;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.ThreadService;
 import org.cougaar.core.component.ServiceBroker;
+import org.cougaar.util.log.Logger;
+import org.cougaar.util.log.Logging;
 
 
 /**
  **  An aspect which implements a message acking scheme.
  **/
-
 public class MessageAckingAspect extends StandardAspect
+  implements MessageAckingService
 {
   public static final String SENT_BUT_NOT_ACKED_MSGS = "SentButNotAckedMessages";
 
@@ -61,7 +64,7 @@ public class MessageAckingAspect extends StandardAspect
   private LoggingService log;
   private static TrafficAuditService trafficAuditer;
   private ThreadService threadService;
-  private SendQueueDelegate sendQueueDelegate;
+  private static SendQueueDelegate sendQueueDelegate;
   private RouterDelegate routerDelegate;
 
   private static final Hashtable receivedAcksTable = new Hashtable();
@@ -71,7 +74,8 @@ public class MessageAckingAspect extends StandardAspect
   private static final Hashtable lastReceiveLinkTable = new Hashtable();
   private static final Hashtable lastSuccessfulLinkTable = new Hashtable();
   private static final Hashtable lastSendTimeTable = new Hashtable();
-
+  private static final Hashtable currentIncarnationTable = new Hashtable(); //102B
+ 
   private static MessageAckingAspect instance;
   private static String thisNode;
 
@@ -155,13 +159,11 @@ public class MessageAckingAspect extends StandardAspect
 
   public Object getDelegate (Object delegate, Class type) 
   {
-/*
     if (type == SendQueue.class) 
     {
       sendQueueDelegate = new SendQueueDelegate ((SendQueue) delegate);
       return sendQueueDelegate;
     }
-*/
     if (RouterDelegate.isRouterClass (type))
     {
       routerDelegate = new RouterDelegate (delegate);
@@ -198,6 +200,8 @@ public class MessageAckingAspect extends StandardAspect
       super (queue);
     }
   }
+
+
 
   void sendMessage (AttributedMessage msg)
   {
@@ -472,6 +476,19 @@ public class MessageAckingAspect extends StandardAspect
           if (current.isEmpty()) table.remove (removals.getAckingSequenceID());
         }
       }
+    }
+  }
+
+  //102B
+  public static void removeAcksToSend (AgentID remoteAgent, AgentID localAgent)
+  {
+    String node = remoteAgent.getNodeName();  //get the node where the ack will be sent
+
+    synchronized(acksToSendTable)
+    {
+      Hashtable table = (Hashtable)acksToSendTable.get(node);
+      if (table != null) 
+        table.remove(AgentID.makeAckingSequenceID(remoteAgent, localAgent));
     }
   }
 
@@ -757,7 +774,30 @@ public class MessageAckingAspect extends StandardAspect
       return (lastSendTime != null ? lastSendTime.value : 0);
     }
   }
+ 
+  //102B
+  // currentIncarnationTable - used for detecting restarted agents
+  // key is agent's MessageAddress - value is agent's last known AgentID
 
+  public static AgentID getCurrentIncarnation(MessageAddress addr){
+    synchronized(currentIncarnationTable) {
+      return (AgentID)currentIncarnationTable.get(addr);
+    }
+  }
+
+  public static AgentID setCurrentIncarnation(MessageAddress addr, AgentID incarnation){
+    synchronized(currentIncarnationTable) {
+      return (AgentID)currentIncarnationTable.put(addr, incarnation);
+    }
+  }
+
+  public static AgentID removeCurrentIncarnation(MessageAddress addr){
+    synchronized(currentIncarnationTable) {
+      return (AgentID)currentIncarnationTable.remove(addr);
+    }
+  }
+   
+  
   //  Utility methods and classes
 
   static boolean isAckingOn ()
@@ -871,4 +911,79 @@ public class MessageAckingAspect extends StandardAspect
     long ms = time % 1000;
     return d1 + "." + ms + d2;
   }
+
+/*
+  //102B
+  // Handle outstanding messages to restarted destination agent
+  // called from AdaptiveLinkSelectionPolicy
+  public synchronized void handleMessagesToRestartedAgent(AttributedMessage msg, 
+                                                          AgentID newToAgent) 
+      throws org.cougaar.core.mts.NameLookupException, org.cougaar.core.mts.CommFailureException
+  {
+    //Logger log = Logging.currentLogger();
+    if (log.isDebugEnabled()) 
+      log.debug("enter handleMessagesToRestartedAgent("+MessageUtils.toString(msg)+","+newToAgent+")");
+
+    setCurrentIncarnation(msg.getTarget(), new Long(newToAgent.getAgentIncarnation()));
+
+    MessageAddress originator = msg.getOriginator();
+    AgentID oldFromAgent = MessageUtils.getFromAgent(msg);
+    AgentID oldToAgent = MessageUtils.getToAgent(msg);
+
+    // maybe all these tables should be synchronized on the same object, 
+    // so they change atomically, but for now I will do them one at a time.
+
+    messageResender.handleMessagesToRestartedAgent(originator, oldToAgent);
+    pureAckSender.removePureAckMessages(oldToAgent);
+    pureAckAckSender.removePureAckAckMessages(oldToAgent);
+
+    // remove Acks waiting to be sent 
+    removeAcksToSend(oldToAgent, oldFromAgent); 
+
+    //??????????? other things to change
+
+    if (log.isDebugEnabled()) 
+      log.debug("exit handleMessagesToRestartedAgent("+MessageUtils.toString(msg)+","+newToAgent+")");
+  }
+*/
+  
+  //102B
+  // Handle outstanding messages to restarted destination agent
+  // called from AdaptiveLinkSelectionPolicy
+  public synchronized void handleMessagesToRestartedAgent(AgentID localAgent,
+                                                          AgentID oldRestartedAgent,
+                                                          AgentID newRestartedAgent) 
+      throws org.cougaar.core.mts.NameLookupException, 
+             org.cougaar.core.mts.CommFailureException
+  {
+    //Logger log = Logging.currentLogger();
+    if (log.isDebugEnabled()) 
+      log.debug("enter handleMessagesToRestartedAgent("+localAgent+","+
+                                                        oldRestartedAgent+","+
+                                                        newRestartedAgent+")");
+
+    MessageAddress restartedAgentAddr = 
+      MessageAddress.getMessageAddress(newRestartedAgent.getAgentName());
+    setCurrentIncarnation(restartedAgentAddr, newRestartedAgent);
+
+    // maybe all these tables should be synchronized on the same object, 
+    // so they change atomically, but for now I will do them one at a time.
+
+    messageResender.handleMessagesToRestartedAgent(localAgent, 
+                                                   oldRestartedAgent, 
+                                                   newRestartedAgent);
+    pureAckSender.removePureAckMessages(oldRestartedAgent);
+    pureAckAckSender.removePureAckAckMessages(oldRestartedAgent);
+
+    // remove Acks waiting to be sent 
+    removeAcksToSend(oldRestartedAgent, localAgent); 
+
+    //??????????? other things to change
+
+    if (log.isDebugEnabled()) 
+      log.debug("exit handleMessagesToRestartedAgent("+localAgent+","+
+                                                       oldRestartedAgent+","+
+                                                       newRestartedAgent+")");
+  }
+  
 }

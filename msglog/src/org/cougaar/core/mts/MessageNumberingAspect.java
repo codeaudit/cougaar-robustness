@@ -41,15 +41,15 @@ import java.util.Hashtable;
  **  -1,-2,-3 ...   ackable, not ordered, loseable
  **/
 
-public class MessageNumberingAspect extends StandardAspect
+public class MessageNumberingAspect extends StandardAspect implements MessageNumberingService
 {
-  private static final String AGENT_OUTGOING_SEQ_TABLE = "AgentOutgoingMsgNumSequenceTable";
+  public static final String AGENT_OUTGOING_SEQ_TABLE = "AgentOutgoingMsgNumSequenceTable";
   private static final Integer ZERO = new Integer (0);
   private static final int POSITIVE = 1;
   private static final int NEGATIVE = -1;
 
   private LoggingService log;
-  private static TrafficAuditService trafficAuditer;
+  private static TrafficAuditService trafficAuditor;
 
   public MessageNumberingAspect () 
   {}
@@ -63,13 +63,13 @@ public class MessageNumberingAspect extends StandardAspect
     {
       synchronized (this)
       {
-        if (trafficAuditer == null)
+        if (trafficAuditor == null)
         {
           ServiceBroker sb = getServiceBroker();
-          trafficAuditer = (TrafficAuditService) sb.getService (this, TrafficAuditService.class, null);
-          if (trafficAuditer == null) new TrafficAuditServiceImpl (sb);
-          trafficAuditer = (TrafficAuditService) sb.getService (this, TrafficAuditService.class, null);
-          if (trafficAuditer == null) log.warn ("Cannot do traffic auditing - TrafficAuditService not available!");
+          trafficAuditor = (TrafficAuditService) sb.getService (this, TrafficAuditService.class, null);
+          if (trafficAuditor == null) new TrafficAuditServiceImpl (sb);
+          trafficAuditor = (TrafficAuditService) sb.getService (this, TrafficAuditService.class, null);
+          if (trafficAuditor == null) log.warn ("Cannot do traffic auditing - TrafficAuditService not available!");
         }
       }
     }
@@ -193,20 +193,20 @@ public class MessageNumberingAspect extends StandardAspect
       return link.forwardMessage (msg);
     }
 
-    private boolean isLocalAgent (MessageAddress agent)
-    {
-      return getRegistry().isLocalClient (agent);
-    }
-
-    private boolean isLocalMessage (AttributedMessage msg)
-    {
-      return isLocalAgent (MessageUtils.getTargetAgent(msg));
-    }
-
     public String toString ()
     {
       return link.toString();
     }
+  }
+
+  private boolean isLocalAgent (MessageAddress agent)
+  {
+    return getRegistry().isLocalClient (agent);
+  }
+
+  private boolean isLocalMessage (AttributedMessage msg)
+  {
+    return isLocalAgent (MessageUtils.getTargetAgent(msg));
   }
 
   protected static void setMessageNumber (AttributedMessage msg, int n)
@@ -264,6 +264,34 @@ public class MessageNumberingAspect extends StandardAspect
 
       return agentTable;
     }
+  }
+
+  //102B
+  public void renumberMessage (AttributedMessage msg) throws CommFailureException
+  {
+    //  Set the message number based on the type of message
+    int n;
+    if (isLocalMessage (msg)) {  // every msg needs a number, even local ones
+      n = getNextMessageNumber (POSITIVE, msg);  
+      MessageUtils.setMessageTypeToLocal (msg);
+    } else if (!MessageUtils.hasMessageType(msg) || MessageUtils.isRegularMessage (msg)) {
+      n = getNextMessageNumber (POSITIVE, msg);
+      MessageUtils.setMessageTypeToRegular (msg);
+    } else if (MessageUtils.isSomePureAckMessage (msg)) {
+      n = getNextMessageNumber (NEGATIVE, msg);
+    } else if (MessageUtils.isHeartbeatMessage (msg)) {
+      n = 0;
+    } else if (MessageUtils.isPingMessage (msg)) {
+      n = getNextMessageNumber (NEGATIVE, msg);
+    } else if (MessageUtils.isTrafficMaskingMessage (msg)) {
+      n = 0;
+      MessageUtils.setMessageTypeToTrafficMasking (msg);
+    } else {
+      //  Has an unknown message type - should not occur, except during system development
+      log.error("Unknown msg type! : " +MessageUtils.getMessageType(msg));
+      n = -1;  // will nearly always result in a duplicate msg on the remote side
+    }
+    setMessageNumber(msg, n);
   }
 
   private static class SequenceNumbers implements java.io.Serializable

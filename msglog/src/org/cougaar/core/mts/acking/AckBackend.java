@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2001-2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 12 May 2003: Added support for restarted agents. (102B)
  * 18 Aug 2002: Mucho changes to support Cougaar 9.2+ and agent mobility. (OBJS)
  * 23 Apr 2002: Split out from MessageAckingAspect. (OBJS)
  */
@@ -204,11 +205,148 @@ Mobility issue: arriving agent is now local, msg was for it when it was on other
 //   send it or schedule it
 //   if sched, need nack vs. pure nack
 //   a pure nack has no msg num - it is not acked?
+    
+    //102B
+    // handle discrepancies in source and destination
+    // agent's incarnation between the currentIncarnationTable,
+    // the White Pages, and incarnation in the message
+try {
+    AgentID fromAgentFromMsg = MessageUtils.getFromAgent(msg);
+    MessageAddress originatorFromMsg = msg.getOriginator();
+    AgentID toAgentFromMsg = MessageUtils.getToAgent(msg);
+    MessageAddress targetFromMsg = msg.getTarget();
+    AgentID fromAgentFromWP = null;
+    AgentID toAgentFromWP = null;
 
+    // reject message if originator can't be found in WhitePages
+    try {
+      fromAgentFromWP = AgentID.getAgentID(aspect, 
+                                           aspect.getServiceBroker(),
+                                           originatorFromMsg); 
+    } catch (NameLookupException e) {
+      if (log.isWarnEnabled()) {
+        log.warn("AckBackend: Failed to find agent "+originatorFromMsg+" in WhitePages");
+        log.warn("AckBackend: Discarding msg="+msgString);
+      }
+      if (log.isDebugEnabled()) log.debug(null,e);
+      throw new MisdeliveredMessageException (msg);
+    }  
+
+    // reject message if target can't be found in WhitePages
+    try {
+      toAgentFromWP = AgentID.getAgentID(aspect, 
+                                         aspect.getServiceBroker(),
+                                         targetFromMsg); 
+    } catch (NameLookupException e) {
+      if (log.isWarnEnabled()) {
+        log.warn("AckBackend: Failed to find agent "+targetFromMsg+" in WhitePages");
+        log.warn("AckBackend: Discarding msg="+msgString);
+      }
+      if (log.isDebugEnabled()) log.debug(null,e);
+      throw new MisdeliveredMessageException (msg);
+    }  
+
+    // collect all the incs
+    long fromIncFromMsg = fromAgentFromMsg.getAgentIncarnationAsLong();
+    long fromIncFromWP = fromAgentFromWP.getAgentIncarnationAsLong();
+    AgentID fromAgentFromTbl = aspect.getCurrentIncarnation(originatorFromMsg);
+    if (fromAgentFromTbl == null) {
+      fromAgentFromTbl = ((fromIncFromMsg >= fromIncFromWP)? fromAgentFromMsg : fromAgentFromWP);
+      aspect.setCurrentIncarnation(originatorFromMsg, fromAgentFromTbl);
+    }    
+    long fromIncFromTbl = fromAgentFromTbl.getAgentIncarnationAsLong();
+    long toIncFromMsg = toAgentFromMsg.getAgentIncarnationAsLong();
+    long toIncFromWP = toAgentFromWP.getAgentIncarnationAsLong();
+    AgentID toAgentFromTbl = aspect.getCurrentIncarnation(targetFromMsg);
+    if (toAgentFromTbl == null) {
+      toAgentFromTbl = ((toIncFromMsg >= toIncFromWP)? toAgentFromMsg : toAgentFromWP);
+      aspect.setCurrentIncarnation(targetFromMsg, toAgentFromTbl);
+    }    
+    long toIncFromTbl = toAgentFromTbl.getAgentIncarnationAsLong();
+        
+    // discard message from old incarnation
+    if ((fromIncFromMsg < fromIncFromTbl) || (fromIncFromMsg < fromIncFromWP)) 
+    {
+      if (log.isWarnEnabled())
+        log.warn("AckBackend: Discarding old msg="+msgString+
+                 ", new inc="+Math.max(fromIncFromTbl,fromIncFromWP));
+      throw new MisdeliveredMessageException(msg);
+    }
+
+    // discard message to old incarnation
+    if ((toIncFromMsg < toIncFromTbl) || (toIncFromMsg < toIncFromWP)) 
+    {
+      if (log.isWarnEnabled())
+        log.warn("AckBackend: Discarding msg to old incarnation="+msgString+
+                 ",new inc="+Math.max(toIncFromTbl,toIncFromWP));
+      throw new MisdeliveredMessageException(msg);
+    }
+
+    // if new source inc in msg or in WP, then update currentIncTbl and forward queued messages
+    if ((fromIncFromTbl < fromIncFromMsg) || (fromIncFromTbl < fromIncFromWP)) 
+    {
+      long newFromInc = Math.max(fromIncFromMsg, fromIncFromWP);
+      AgentID newFromAgent = ((fromIncFromMsg >= fromIncFromWP)? fromAgentFromMsg : fromAgentFromWP);
+      if (log.isInfoEnabled())
+        log.info("AckBackend: Received msg from new incarnation of agent "+
+                 originatorFromMsg+"; old="+fromIncFromTbl+", new="+newFromInc);
+      aspect.setCurrentIncarnation(originatorFromMsg, newFromAgent);
+      try {
+	  aspect.handleMessagesToRestartedAgent(toAgentFromMsg, fromAgentFromTbl, newFromAgent);
+      } catch (Exception e){
+        if (log.isWarnEnabled()) {
+          log.warn("AckBackend: Exception in handleMessagesToRestartedAgent("+
+                   toAgentFromMsg+","+
+                   fromAgentFromTbl+","+
+                   newFromAgent+")",e);
+          log.warn("AckBackend: Discarding msg="+msgString);
+        }
+        if (log.isDebugEnabled()) log.debug(null,e);
+        throw new MisdeliveredMessageException(msg);
+     }
+    }
+
+    // if new inc in msg or in WP, then update currentIncTbl,
+    // forward queued messages (messages that might have been
+    // queued for target agent when it lived on another node)
+    // ******* Assumes someone else will filter out messages
+    // ******* intended for new incarnation that is not local.
+    // ******* but not sure that this is right.
+    if ((toIncFromTbl < toIncFromMsg) || (toIncFromTbl < toIncFromWP)) 
+    {
+      long newToInc = Math.max(toIncFromMsg, toIncFromWP);
+      AgentID newToAgent = ((toIncFromMsg >= toIncFromWP)? toAgentFromMsg : toAgentFromWP);
+      if (log.isInfoEnabled())
+        log.info("AckBackend: Received msg to new incarnation of agent "+
+                 targetFromMsg+"; old="+toIncFromTbl+", new="+newToInc);
+      aspect.setCurrentIncarnation(targetFromMsg, newToAgent);
+      try {
+        aspect.handleMessagesToRestartedAgent(fromAgentFromMsg, toAgentFromTbl, newToAgent);
+      } catch (Exception e) {
+        if (log.isWarnEnabled()) {
+          log.warn("AckBackend: Exception in handleMessagesToRestartedAgent("+
+                   fromAgentFromMsg+","+
+                   toAgentFromTbl+","+
+                   newToAgent+")",e);
+          log.warn("AckBackend: Discarding msg="+msgString);
+        }
+        if (log.isDebugEnabled()) log.warn(null,e);
+        throw new MisdeliveredMessageException(msg);
+      }  
+    }
+} catch (NullPointerException e) {
+ e.printStackTrace();
+}
+
+/*  //102B
+    // This  check is inadequate to handle msgs from new incarnations (restarted agents).
+    // Its replaced by code above.
+    // Figure out later whether we can reduce hitting the WP some.
+    // Incarnations for local agents ought to be available locally.
     boolean doCheck = !MessageAckingAspect.skipIncarnationCheck;
     if (!doCheck) doCheck = ack.getSendLink().equals ("org.cougaar.core.mts.email.OutgoingEmailLinkProtocol");
 
-    if (doCheck)
+    if (doCheck)  //by default, we only do this check on email messages, which may be leftover in a mail server from a previous run
     {
       if (!isLatestAgentIncarnation (MessageUtils.getFromAgent (msg), MessageUtils.getOriginatorAgent (msg)))
       {
@@ -216,7 +354,6 @@ Mobility issue: arriving agent is now local, msg was for it when it was on other
           log.info ("AckBackend: Msg has out of date (or unknown) sender (msg ignored): " +msgString);
         throw new MisdeliveredMessageException (msg);
       }
-
       if (!isLatestAgentIncarnation (MessageUtils.getToAgent (msg), MessageUtils.getTargetAgent (msg)))
       {
         if (log.isInfoEnabled()) 
@@ -225,6 +362,7 @@ Mobility issue: arriving agent is now local, msg was for it when it was on other
       }
     }
     else if (log.isDebugEnabled()) log.debug ("Skipping incarnation check");
+*/
 
     //  At this point we feel the received message is probably ok, so now we deliver
     //  it and record its reception while making sure that it is not a message we have 

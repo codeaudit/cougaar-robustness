@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 07 May 2003: Updated addMessageAttributes for Security compatibility. (102B)
  * 06 Mar 2003: Switched to URIs and added multiple outboxes. (OBJS)
  * 24 Sep 2002: Add new serialization & socket closer support. (OBJS)
  * 18 Aug 2002: Various enhancements for Cougaar 9.4.1 release. (OBJS)
@@ -384,9 +385,6 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
       return null;
     }
     
-    public void addMessageAttributes (MessageAttributes attrs)
-    {}
-
     public boolean retryFailedMessage (AttributedMessage msg, int retryCount)
     {
       return true;
@@ -538,6 +536,15 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     {
       return s.replace (' ', '_');  // replace spaces with underscores
     }
+
+    //102B
+    public void addMessageAttributes(MessageAttributes attrs) {
+      attrs.addValue(MessageAttributes.IS_STREAMING_ATTRIBUTE,
+                     Boolean.FALSE);
+      attrs.addValue(MessageAttributes.ENCRYPTED_SOCKET_ATTRIBUTE,
+                     Boolean.FALSE);
+    }
+
   }
 
   private static String stackTraceToString (Exception e)

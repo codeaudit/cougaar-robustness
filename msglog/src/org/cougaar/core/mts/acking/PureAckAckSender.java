@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 08 May 2003: Remove PureAckAckMessages queued for an agent that has restarted (102B)
  * 24 Sep 2002: Revamped queue adds scheduling. (OBJS)
  * 08 Jun 2002: Revamped and streamlined for 9.2.x. (OBJS)
  * 23 Apr 2002: Split out from MessageAckingAspect. (OBJS)
@@ -26,8 +27,12 @@
 
 package org.cougaar.core.mts.acking;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.Vector;
 
+import org.cougaar.core.mts.AgentID;
 import org.cougaar.core.mts.MessageUtils;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.thread.CougaarThread;
@@ -252,4 +257,25 @@ class PureAckAckSender implements Runnable
     e.printStackTrace (printWriter);
     return stringWriter.getBuffer().toString();
   }
+
+  // discard PureAckAckMessages queued for an agent that has since restarted   //102B
+  void removePureAckAckMessages(AgentID toAgent) 
+  {
+    if (debug()) 
+      log.debug("PureAckAckSender: enter removePureAckAckMessages("+toAgent+")");
+    synchronized(queue) {
+      Iterator i = queue.iterator();
+      while (i.hasNext()) {
+        PureAckAckMessage paam = (PureAckAckMessage)i.next();
+        if (MessageUtils.getToAgent(paam).equals(toAgent)) 
+          if (debug()) 
+            log.debug("PureAckAckSender: remove PureAckAckMessage: " +MessageUtils.toString(paam));
+          i.remove();
+      }
+      if (queue.size() == 0) offerNewSendDeadline (0);
+    }
+    if (debug()) 
+      log.debug("PureAckAckSender: exit removePureAckAckMessages("+toAgent+")");
+  }
+
 }

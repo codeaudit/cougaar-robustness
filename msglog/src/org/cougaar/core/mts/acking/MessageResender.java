@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2001-2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 03 May 2003: Added dequeueMessages in support UC1. (102B)
  * 25 Sep 2002: Revamped queue adds scheduling. (OBJS)
  * 12 Aug 2002: Reworked to resend autonomously. Renamed from AckWaiter. (OBJS)
  * 08 Jun 2002: Revamped and streamlined for 9.2.x. (OBJS)
@@ -30,8 +31,11 @@ package org.cougaar.core.mts.acking;
 import java.util.*;
 
 import org.cougaar.core.mts.*;
+
+import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.thread.CougaarThread;
+import org.cougaar.core.component.ServiceBroker;
 
 
 /**
@@ -49,6 +53,7 @@ class MessageResender implements Runnable
   private AttributedMessage messages[];
   private Comparator deadlineSort;
   private long minResendDeadline;
+  private MessageNumberingService messageNumberingService = null;
 
   public MessageResender (MessageAckingAspect aspect) 
   {
@@ -448,4 +453,115 @@ class MessageResender implements Runnable
     e.printStackTrace (printWriter);
     return stringWriter.getBuffer().toString();
   }
+
+/*
+  // used to change AgentID and resequence messages queued for an agent that has since restarted   //102B
+  void handleMessagesToRestartedAgent(MessageAddress originator, AgentID toAgent) 
+      throws org.cougaar.core.mts.NameLookupException, org.cougaar.core.mts.CommFailureException
+  {
+    if (debug()) 
+      log.debug("MessageResender: enter dequeueMessages("+originator+","+toAgent+")");
+    synchronized(queue) {
+      AgentState agentState = aspect.getAgentState(originator);
+      if (agentState != null) {
+        synchronized (agentState) {
+          Vector msgs = (Vector)agentState.getAttribute(MessageAckingAspect.SENT_BUT_NOT_ACKED_MSGS);
+          if (msgs != null) { 
+            // sort them by msg num
+            Collections.sort(msgs, MsgNumSort.getInstance());
+            Iterator i = msgs.iterator();
+            while (i.hasNext()) {
+              AttributedMessage msg = (AttributedMessage)i.next();
+              if (MessageUtils.getToAgent(msg).equals(toAgent) && 
+                  !aspect.hasMessageBeenAcked(msg)) {
+		// change AgentID and renumber messages
+                MessageAddress agentAddr = MessageUtils.getTargetAgent(msg);
+                toAgent = AgentID.getAgentID(this, aspect.getServiceBroker(), agentAddr);
+                if (toAgent == null) {
+                  String s = "Null toAgent for " +agentAddr;
+                  if (log.isErrorEnabled()) log.error(s);
+                  throw new NameLookupException(new Exception (s));
+                } else {
+                  MessageUtils.setToAgent(msg, toAgent);
+                }
+                if (messageNumberingService == null) {
+                  ServiceBroker sb = aspect.getServiceBroker();
+                  messageNumberingService = 
+                    (MessageNumberingService)sb.getService(this, MessageNumberingService.class, null);
+                }
+                messageNumberingService.renumberMessage(msg);
+                if (debug()) 
+                  log.debug("MessageResender: dequeued msg: " +MessageUtils.toString(msg));
+              }
+            }
+            offerNewResendDeadline(0);
+          }
+        }
+      }
+    }
+    if (debug()) 
+      log.debug("MessageResender: exit dequeueMessages("+originator+","+toAgent+")");
+  }
+*/
+  
+  // used to change AgentID and resequence messages queued for an agent that has since restarted   //102B
+  void handleMessagesToRestartedAgent(AgentID fromAgent, AgentID oldToAgent, AgentID newToAgent) 
+      throws org.cougaar.core.mts.NameLookupException, org.cougaar.core.mts.CommFailureException
+  {
+    if (debug()) 
+      log.debug("MessageResender: enter dequeueMessages("+fromAgent+","+oldToAgent+","+newToAgent+")");
+    synchronized(queue) {
+      MessageAddress originator = MessageAddress.getMessageAddress(fromAgent.getAgentName());
+      AgentState agentState = aspect.getAgentState(originator);
+      if (agentState != null) {
+        synchronized (agentState) {
+          Vector msgs = (Vector)agentState.getAttribute(MessageAckingAspect.SENT_BUT_NOT_ACKED_MSGS);
+          if (msgs != null) { 
+            // sort them by msg num
+            Collections.sort(msgs, MsgNumSort.getInstance());
+            Iterator i = msgs.iterator();
+            while (i.hasNext()) {
+              AttributedMessage msg = (AttributedMessage)i.next();
+              if (MessageUtils.getToAgent(msg).equals(oldToAgent) && 
+                  !aspect.hasMessageBeenAcked(msg)) {
+		// change AgentID and renumber messages
+                MessageUtils.setToAgent(msg, newToAgent);
+                if (messageNumberingService == null) {
+                  ServiceBroker sb = aspect.getServiceBroker();
+                  messageNumberingService = 
+                    (MessageNumberingService)sb.getService(this, MessageNumberingService.class, null);
+                }
+                messageNumberingService.renumberMessage(msg);
+                if (debug()) 
+                  log.debug("MessageResender: dequeued msg: " +MessageUtils.toString(msg));
+              }
+            }
+            offerNewResendDeadline(0);
+          }
+        }
+      }
+    }
+    if (debug()) 
+      log.debug("MessageResender: exit dequeueMessages("+fromAgent+","+oldToAgent+","+newToAgent+")");
+  }
+  
+  //102B
+  private static class MsgNumSort implements Comparator {
+    private static final MsgNumSort instance = new MsgNumSort();   
+    private MsgNumSort () {}
+    public static MsgNumSort getInstance () { return instance; }
+    public int compare (Object m1, Object m2) {
+      if (m1 == null) { // drive nulls to bottom (top is index 0)
+        if (m2 == null) return 0;
+        else return 1;
+      } else if (m2 == null) return -1;
+      //  Sort on message number (lower numbers come first)
+      int n1 = MessageUtils.getMessageNumber ((AttributedMessage) m1);
+      int n2 = MessageUtils.getMessageNumber ((AttributedMessage) m2);
+      if (n1 == n2) return 0;
+      return (n1 > n2 ? 1 : -1); }
+    public boolean equals (Object obj) {
+      return (this == obj); }
+  }
+          
 }

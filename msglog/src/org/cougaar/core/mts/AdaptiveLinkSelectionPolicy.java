@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 05 May  2003: Handle restarted agents. (102B)
  * 04 Mar  2003: Port to 10.2 - replace CougaarEvent with EventService. (OBJS)
  * 30 Oct  2002: Improve link selection in face of send failures. (OBJS)
  * 18 Aug  2002: Various enhancements for Cougaar 9.4.1 (OBJS)
@@ -129,7 +130,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
   private static final int upgradeMetricMultiplier;
   private static final int maxUpgradeTries;
 
-private static int commStartDelaySeconds;
+  private static int commStartDelaySeconds;
 
   private static SocketClosingServiceImpl socketClosingService;
   private static DestinationLink loopbackLink;
@@ -143,11 +144,13 @@ private static int commStartDelaySeconds;
   private static boolean firstTime = true;
   private static String thisNode;
 
-private static long startTime = 0;
+  private static long startTime = 0;
 
   private final LinkRanker linkRanker = new LinkRanker();
 
   private RTTService rttService;
+
+  private MessageAckingService ackSvc = null;
 
   static 
   {
@@ -213,12 +216,12 @@ private static long startTime = 0;
 
     thisNode = getRegistry().getIdentifier();
 
-if (commStartDelaySeconds > 0)
-{
-  //  HACK to attempt to get around nameserver/topology lookup problems
-  log.warn ("Comm start delay: Waiting for " +commStartDelaySeconds+ " seconds before allowing any message sends");
-  startTime = System.currentTimeMillis();
-}
+    if (commStartDelaySeconds > 0)
+    {
+      //  HACK to attempt to get around nameserver/topology lookup problems
+      log.warn ("Comm start delay: Waiting for " +commStartDelaySeconds+ " seconds before allowing any message sends");
+      startTime = System.currentTimeMillis();
+    }
   }
 
   public String toString ()
@@ -296,11 +299,11 @@ if (commStartDelaySeconds > 0)
     if (debug) log.debug ("Entered selectLink: msg= " +MessageUtils.toString(msg)+
       " failedMsg=" +MessageUtils.toString(failedMsg));
 */
-if (commStartDelaySeconds > 0)
-{
-  //  HACK to attempt to get around nameserver/topology lookup problems
-  if ((startTime + commStartDelaySeconds*1000) > now()) return null;
-}
+    if (commStartDelaySeconds > 0)
+    {
+      //  HACK to attempt to get around nameserver/topology lookup problems
+      if ((startTime + commStartDelaySeconds*1000) > now()) return null;
+    }
     //  Return if things not right
 
     if (links == null || msg == null) return null;
@@ -428,7 +431,7 @@ if (commStartDelaySeconds > 0)
       //  [Semi-HACK] Declare message as successfully sent so that any incoming
       //  acks for it are ignored.  Maybe put this in a dropped msg table instead?
 
-      if (debug) log.debug ("Dropping msg past its send deadline: " +msgString); 
+      if (log.isInfoEnabled()) log.info ("Dropping msg past its send deadline: " +msgString); 
       MessageAckingAspect.addSuccessfulSend (msg);
       return blackHoleLink;
     }
@@ -448,7 +451,7 @@ if (commStartDelaySeconds > 0)
 
       if (!MessageUtils.isSomePureAckMessage (msg))
       {
-        if (debug) log.debug ("Dropping non-ack msg from no-longer-local agent: " +msgString); 
+        if (log.isInfoEnabled()) log.info ("Dropping non-ack msg from no-longer-local agent: " +msgString); 
         MessageAckingAspect.addSuccessfulSend (msg);  // HACK: needs work - see above
         return blackHoleLink;
       }
@@ -493,18 +496,15 @@ if (commStartDelaySeconds > 0)
 
     try
     {
-      if (ack != null && ack.getSendTry() > 0)
-      {
-        //  Retry/resend: bypass topological caching to get latest target agent info
+      if (ack != null && ack.getSendTry() > 0) {
+        // Retry/resend: bypass topological caching to get latest target agent info
 
+/* //102B see new code below
         AgentID toAgent = AgentID.getAgentID (this, getServiceBroker(), targetAgent, true);
-
-log.info ("latest toAgent for " +msgString+ ": " +toAgent);
-        
+        log.info ("latest toAgent for " +msgString+ ": " +toAgent);    
         if (log.isInfoEnabled())
         {
           AgentID oldToAgent = MessageUtils.getToAgent (msg);
-
           if (oldToAgent != null && (!oldToAgent.equals(toAgent)))
           {
             log.info ("Message re-address: " +MessageUtils.toShortString(msg)+
@@ -512,9 +512,51 @@ log.info ("latest toAgent for " +msgString+ ": " +toAgent);
                       "\n  new destination: " +toAgent);
           }
         }
-
         MessageUtils.setToAgent (msg, toAgent);
-        targetNode = toAgent.getNodeName();      
+        targetNode = toAgent.getNodeName(); 
+*/   
+        //102B   
+        // replace commented out code above
+        // When an agent moves, its node changes, but not its incarnation.  In such 
+        // instances, our message sequences, which number messages between individual
+        // source and destination pairs based on agent name and incarnation number, remain
+        // viable across the move.
+        // But when an agent is restarted, its incarnation number changes, so a new sequence
+        // needs to be established.  This code deals with the case of outstanding messages -
+        // a message send to the old location, but for which the send failed or an ack wasn't
+        // received.  In this case, this message and any other outstanding messages to
+        // to the restarted agent should be resequenced wrt new agent/incarnation name.
+        // We also do this when a message is received from an agent with a newer incarnation
+        // than the one we know about.
+        AgentID newToAgent = AgentID.getAgentID (this, getServiceBroker(), targetAgent, true);
+        AgentID oldToAgent = MessageUtils.getToAgent (msg);
+        if ((oldToAgent != null) && (!oldToAgent.equals(newToAgent))) {
+          if (oldToAgent.getAgentIncarnation().equals(newToAgent.getAgentIncarnation())) {
+            // If incarnations are the same, then use new AgentID
+            if (log.isInfoEnabled()) {
+              log.info ("Message re-address: " +MessageUtils.toShortString(msg)+
+                        "\n  old destination: " +oldToAgent+
+                        "\n  new destination: " +newToAgent);
+            }
+            MessageUtils.setToAgent(msg, newToAgent);
+            targetNode = newToAgent.getNodeName();
+          } else { // if incs are different, then move all outstanding messages in this sequence to new sequence
+            if (log.isInfoEnabled()) {
+              log.info("Destination agent moved to "+newToAgent+" - incarnations different - resequencing msg: "+MessageUtils.toString(msg));
+            }
+            // need to worry about synchronization here - message might be cached or in transit 
+            if (ackSvc == null)
+	      ackSvc = (MessageAckingService)getServiceBroker().getService(this,MessageAckingService.class,null);
+            ackSvc.handleMessagesToRestartedAgent(fromAgent, oldToAgent, newToAgent);
+            return null;  // this message is returned to queue to be reprocessed now that its AgentID has been updated
+            //MessageAckingAspect.addSuccessfulSend (msg);
+            //return blackHoleLink;  // causes msg to be forwarded to a link that doesn't do anything but return success.  
+                                     // only issue might be what other aspects seeing success returned might do -
+                                     // we don't want them sticking this message in a table somewhere
+          }
+        } else {
+          targetNode = oldToAgent.getNodeName();
+        }
       }
       else
       {
@@ -670,7 +712,7 @@ log.info ("exception getting toAgent for " +msgString+ ": " +e);
 
       if (pureAck.getNumberOfLinkSelections() == destLinks.length)
       {
-        if (debug) log.debug ("No untried links left to send pure ack, dropping it: " +msgString);
+        if (log.isInfoEnabled()) log.info ("No untried links left to send pure ack, dropping it: " +msgString);
         return blackHoleLink;
       }
 
@@ -741,9 +783,9 @@ log.info ("exception getting toAgent for " +msgString+ ": " +e);
       else
       {
         //  For now, if there are send failures, just drop masking messages, as
-        //  we don't need to be clogging up the pipes with chafe at this time.
+        //  we don't need to be clogging up the pipes with chaff at this time.
 
-        if (debug) log.debug ("Send failure with masking msg, dropping it: " +msgString);
+        if (log.isInfoEnabled()) log.info ("Send failure with masking msg, dropping it: " +msgString);
         return blackHoleLink;
       }
     }

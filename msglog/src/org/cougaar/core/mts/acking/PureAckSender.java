@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2002-2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -20,6 +20,7 @@
  *
  * CHANGE RECORD 
  * 
+ * 08 May 2003: Remove PureAckMessages queued for an agent that has restarted (102B)
  * 22 Sep 2002: Revamped queue adds scheduling. (OBJS)
  * 08 Jun 2002: Revamped and streamlined for 9.2.x. (OBJS)
  * 23 Apr 2002: Split out from MessageAckingAspect. (OBJS)
@@ -27,8 +28,12 @@
 
 package org.cougaar.core.mts.acking;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.Vector;
 
+import org.cougaar.core.mts.AgentID;
 import org.cougaar.core.mts.MessageUtils;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.thread.CougaarThread;
@@ -255,4 +260,25 @@ class PureAckSender implements Runnable
     e.printStackTrace (printWriter);
     return stringWriter.getBuffer().toString();
   }
+
+  // discard PureAckMessages queued for an agent that has since restarted   //102B
+  void removePureAckMessages(AgentID toAgent) 
+  {
+    if (debug()) 
+      log.debug("PureAckSender: enter removePureAckMessages("+toAgent+")");
+    synchronized(queue) {
+      Iterator i = queue.iterator();
+      while (i.hasNext()) {
+        PureAckMessage pam = (PureAckMessage)i.next();
+        if (MessageUtils.getToAgent(pam).equals(toAgent)) 
+          if (debug()) 
+            log.debug("PureAckSender: remove PureAckMessage: " +MessageUtils.toString(pam));
+          i.remove();
+      }
+      if (queue.size() == 0) offerNewSendDeadline (0);
+    }
+    if (debug()) 
+      log.debug("PureAckSender: exit removePureAckMessages("+toAgent+")");
+  }
+  
 }

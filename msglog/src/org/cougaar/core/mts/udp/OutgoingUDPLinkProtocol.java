@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD
+ * 07 May 2003: Updated addMessageAttributes for Security compatibility. (102B)
  * 12 Feb 2003: Port to 10.0 (OBJS)
  * 30 Sep 2002: Add inband acking. (OBJS)
  * 22 Sep 2002: Revamp for new serialization & socket closer. (OBJS)
@@ -251,6 +252,14 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
     {
       return destination;
     }
+    
+    //102B
+    public void addMessageAttributes(MessageAttributes attrs) {
+      attrs.addValue(MessageAttributes.IS_STREAMING_ATTRIBUTE,
+                     Boolean.FALSE);
+      attrs.addValue(MessageAttributes.ENCRYPTED_SOCKET_ATTRIBUTE,
+                     Boolean.FALSE);
+    }
 
     public String toString ()
     {
@@ -272,9 +281,6 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
     {
       return null;
     }
-
-    public void addMessageAttributes (MessageAttributes attrs) 
-    {}
 
     public boolean retryFailedMessage (AttributedMessage message, int retryCount)
     {

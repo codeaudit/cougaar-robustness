@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 22 Apr 2003: Added Event when message sent. (102B)
  * 18 Aug 2002: Mucho changes to support Cougaar 9.2+ and agent mobility. (OBJS)
  * 23 Apr 2002: Split out from MessageAckingAspect. (OBJS)
  */
@@ -29,6 +30,7 @@ import org.cougaar.core.mts.*;
 import org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol;
 import org.cougaar.core.mts.socket.OutgoingSocketLinkProtocol;
 import org.cougaar.core.service.LoggingService;
+import org.cougaar.core.service.EventService; //102B
 
 import java.io.*;
 import java.util.*;
@@ -312,6 +314,15 @@ class AckFrontend extends DestinationLinkDelegateImplBase
     }
 
     //  Ok, the first (and possibly only) leg of the message send has completed successfully
+
+/* 102B This caused too many events for Acme
+    //102B Added this Event to indicate a successful send 
+    EventService es = (EventService)aspect.getServiceBroker().getService(this, EventService.class, null);
+    if (es.isEventEnabled())
+      es.event("Message Sent via " +link.getProtocolClass().getName()+
+               " from " +MessageUtils.getFromAgent(msg).getNodeName()+
+               " to " +MessageUtils.getToAgent(msg).getNodeName() );
+*/
 
     MessageAckingAspect.recordMessageSend (msg);  // for msg auditing
     MessageAckingAspect.setLastSendTime (ack.getSendLink(), toNode, ack.getSendTime());
