@@ -18,6 +18,7 @@
 package org.cougaar.tools.robustness.ma.util;
 
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
+import org.cougaar.tools.robustness.ma.RestartManagerConstants;
 
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorRequest;
 import org.cougaar.tools.robustness.ma.controllers.RobustnessController;
@@ -58,11 +59,8 @@ import java.util.Iterator;
  * Provides interface for initiating load balancing across community nodes.
  */
 public class LoadBalancer
-    extends BlackboardClientComponent {
+    extends BlackboardClientComponent implements RestartManagerConstants {
 
-  public static final int DEFAULT_SOLVER_MODE =
-      LoadBalanceRequest.SOLVER_MODE_BLEND_PFAIL_LOAD_BALANCE;
-  public static final int DEFAULT_ANNEAL_TIME = -1;
   public static final boolean DEFAULT_HAMMING = true;
 
   private LoggingService logger;
@@ -164,14 +162,7 @@ public class LoadBalancer
          it.hasNext(); ) {
       HealthMonitorRequest hsm = (HealthMonitorRequest) it.next();
       if (hsm.getRequestType() == HealthMonitorRequest.LOAD_BALANCE) {
-        doLoadBalance(DEFAULT_SOLVER_MODE,
-                      DEFAULT_ANNEAL_TIME,
-                      true,
-                      //Collections.EMPTY_LIST,
-                      getNewNodes(),
-                      //Collections.EMPTY_LIST,
-                      getKilledNodes(),
-                      getExcludedNodes());
+        doLoadBalance();
       }
     }
 
@@ -244,10 +235,20 @@ public class LoadBalancer
    * Submit request to EN for new community laydown and perform required moves.
    */
   public void doLoadBalance() {
-    List newNodes = Collections.EMPTY_LIST;
-    List killedNodes = Collections.EMPTY_LIST;
-    List leaveAsIsNodes = getExcludedNodes();
-    doLoadBalance(DEFAULT_SOLVER_MODE, DEFAULT_ANNEAL_TIME, DEFAULT_HAMMING, newNodes, killedNodes, leaveAsIsNodes);
+    long annealTime = getLongAttribute(ANNEAL_TIME_ATTRIBUTE,
+                                       ANNEAL_TIME);
+    long solverMode = getLongAttribute(LOAD_BALANCER_MODE_ATTRIBUTE,
+                                       DEFAULT_LOAD_BALANCER_MODE);
+    doLoadBalance((int)solverMode,
+                  (int)annealTime,
+                  DEFAULT_HAMMING,
+                  getNewNodes(),
+                  getKilledNodes(),
+                  getExcludedNodes());
+  }
+
+  protected boolean isVacantNode(String name) {
+    return model.entitiesAtLocation(name, model.AGENT).length == 0;
   }
 
   public void doLoadBalance(int     solverMode,
@@ -470,6 +471,18 @@ public class LoadBalancer
     else {
       map.put(name, new Integer(1));
     }
+  }
+
+  protected long getLongAttribute(String id, long defaultValue) {
+    if (attributeDefined(id)) {
+      return model.getLongAttribute(id);
+    } else {
+      return defaultValue;
+    }
+  }
+
+  protected boolean attributeDefined(String id) {
+    return model.hasAttribute(id);
   }
 
 }
