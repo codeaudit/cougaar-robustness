@@ -231,7 +231,24 @@ public class CommunityStatusModel extends BlackboardClientComponent
       List l = new ArrayList();
       for (Iterator it = statusMap.values().iterator(); it.hasNext();) {
         StatusEntry se = (StatusEntry)it.next();
-        if (se != null && se.name != null && location.equals(se.currentLocation) && se.type == AGENT) {
+        if (se != null && se.name != null && location.equals(se.currentLocation)) {
+          l.add(se.name);
+        }
+      }
+      return (String[])l.toArray(new String[0]);
+    }
+  }
+
+  /**
+   * Returns list of all monitored entities at specified location.
+   * @return Entity names
+   */
+  public String[] entitiesAtLocation(String location, int type) {
+    synchronized (statusMap) {
+      List l = new ArrayList();
+      for (Iterator it = statusMap.values().iterator(); it.hasNext();) {
+        StatusEntry se = (StatusEntry)it.next();
+        if (se != null && se.name != null && location.equals(se.currentLocation) && se.type == type) {
           l.add(se.name);
         }
       }

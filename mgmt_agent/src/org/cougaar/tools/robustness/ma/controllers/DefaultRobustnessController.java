@@ -220,7 +220,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         removeFromCommunity(name);
         setExpiration(name, NEVER);
         deadNodes.add(name);
-        String agentsOnDeadNode[] = model.entitiesAtLocation(name);
+        String agentsOnDeadNode[] = model.entitiesAtLocation(name, model.AGENT);
         for (int i = 0; i < agentsOnDeadNode.length; i++) {
           newState(agentsOnDeadNode[i], HEALTH_CHECK);
         }
@@ -424,7 +424,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   }
 
   private Set deadNodes = Collections.synchronizedSet(new HashSet());
-  private Set newNodes = Collections.synchronizedSet(new HashSet());
+  //private Set newNodes = Collections.synchronizedSet(new HashSet());
   private String thisAgent;
   private WakeAlarm wakeAlarm;
   boolean communityReady = false;
@@ -576,7 +576,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   public void membershipChange(String name) {
     if (isNode(name)) {
-      newNodes.add(name);
       logger.debug("New node detected: name=" + name);
     }
   }
@@ -675,9 +674,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
           }
         }
         List excludedNodes = new ArrayList(getExcludedNodes());
+        List vacantNodes = getVacantNodes();
         // Update list of NEW nodes
-        if (!newNodes.isEmpty()) {
-          for (Iterator it = newNodes.iterator(); it.hasNext(); ) {
+        if (!vacantNodes.isEmpty()) {
+          for (Iterator it = vacantNodes.iterator(); it.hasNext(); ) {
             String newNode = (String)it.next();
             if (!isVacantNode(newNode) ||
                 excludedNodes.contains(newNode) ||
@@ -705,17 +705,16 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
           if (annealTime < minAnnealTime) annealTime = minAnnealTime;
           logger.debug("doLayout:" +
                       " annealTime=" + annealTime +
-                      " newNodes=" + newNodes +
+                      " newNodes=" + vacantNodes +
                       " deadNodes=" + deadNodes +
                       " excludedNodes=" + excludedNodes);
           getLoadBalancer().doLayout( (int) annealTime,
                                      true,
-                                     new ArrayList(newNodes),
+                                     vacantNodes,
                                      new ArrayList(deadNodes),
                                      excludedNodes,
                                      newLbl);
 
-          newNodes.clear();
         }
       }
     };
@@ -856,18 +855,30 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     return excludedNodes;
   }
 
+  protected List getVacantNodes() {
+    List vacantNodes = new ArrayList();
+    String allNodes[] = model.listEntries(model.NODE);
+    for (int i = 0; i < allNodes.length; i++) {
+      if (isVacantNode(allNodes[i])) {
+        vacantNodes.add(allNodes[i]);
+      }
+    }
+    return vacantNodes;
+  }
+
   protected boolean isVacantNode(String name) {
-    return model.entitiesAtLocation(name).length == 0;
+    return model.entitiesAtLocation(name, model.AGENT).length == 0;
   }
 
   protected void checkLoadBalance() {
     // Don't load balance if community is not ready or is busy
     if (autoLoadBalance() && communityReady && !isCommunityBusy()) {
-      if (!deadNodes.isEmpty() || !newNodes.isEmpty()) {
+      List vacantNodes = getVacantNodes();
+      if (!deadNodes.isEmpty() || !vacantNodes.isEmpty()) {
         List excludedNodes = new ArrayList(getExcludedNodes());
         // Remove occupied nodes from newNodes list
-        if (!newNodes.isEmpty()) {
-          for (Iterator it = newNodes.iterator(); it.hasNext(); ) {
+        if (!vacantNodes.isEmpty()) {
+          for (Iterator it = vacantNodes.iterator(); it.hasNext(); ) {
             String newNode = (String)it.next();
             if (!isVacantNode(newNode) ||
                 excludedNodes.contains(newNode) ||
@@ -877,7 +888,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
           }
         }
         // invoke load balancer if there are new (vacant) nodes
-        if (!newNodes.isEmpty()) {
+        if (!vacantNodes.isEmpty()) {
           LoadBalancerListener lbl = new LoadBalancerListener() {
             public void layoutReady(Map layout) {
               logger.debug("layout from EN4J: " + layout);
@@ -887,12 +898,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
           logger.info("autoLoadBalance");
           getLoadBalancer().doLayout(LoadBalancer.DEFAULT_ANNEAL_TIME,
                                      true,
-                                     new ArrayList(newNodes),
+                                     new ArrayList(vacantNodes),
                                      new ArrayList(deadNodes),
                                      excludedNodes,
                                      lbl);
         }
-        newNodes.clear();
       }
     }
   }

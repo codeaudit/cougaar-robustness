@@ -725,7 +725,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
     summary.append(" activeNodes=[");
     for (int i = 0; i < activeNodes.length; i++) {
       double loadAverage = getNodeLoadAverage(activeNodes[i]);
-      int agentsOnNode = model.entitiesAtLocation(activeNodes[i]).length;
+      int agentsOnNode = model.entitiesAtLocation(activeNodes[i], model.AGENT).length;
       summary.append(activeNodes[i] + "(" + agentsOnNode + "," + loadAverage + ")");
       if (i < activeNodes.length - 1) summary.append(",");
     }
