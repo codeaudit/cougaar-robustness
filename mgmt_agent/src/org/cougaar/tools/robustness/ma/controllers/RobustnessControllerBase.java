@@ -17,6 +17,7 @@
  */
 package org.cougaar.tools.robustness.ma.controllers;
 
+import org.cougaar.tools.robustness.ma.RestartManagerConstants;
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
 import org.cougaar.tools.robustness.ma.StatusChangeListener;
 import org.cougaar.tools.robustness.ma.CommunityStatusChangeEvent;
@@ -62,24 +63,7 @@ import javax.naming.NamingException;
  * classes for use by state controllers.
  */
 public abstract class RobustnessControllerBase extends BlackboardClientComponent
-    implements RobustnessController, StatusChangeListener {
-
-  protected static final int NEVER = -1;
-
-  // Default parameter values, may be overridden by community attributes
-  protected static long DEFAULT_EXPIRATION = 2 * 60 * 1000;
-  protected static final long PING_TIMEOUT = 2 * 60 * 1000;
-  protected static final long HEARTBEAT_REQUEST_TIMEOUT = 1 * 60 * 1000;
-  protected static final long HEARTBEAT_FREQUENCY = 60 * 1000;
-  protected static final long HEARTBEAT_TIMEOUT = 2 * 60 * 1000;
-  protected static final long HEARTBEAT_PCT_OUT_OF_SPEC = 50;
-
-  public static final String deconflictionProperty = "org.cougaar.tools.robustness.restart.deconfliction";
-  public static final String defaultEnabled = "enabled";
-
-  public static final String LOAD_AVERAGE_METRIC = "LoadAverage";
-  public static final String COMMUNITY_BUSY_ATTRIBUTE = "COMMUNITY_BUSY_THRESHOLD";
-  public static final String NODE_BUSY_ATTRIBUTE = "NODE_BUSY_THRESHOLD";
+    implements RestartManagerConstants, RobustnessController, StatusChangeListener {
 
   /**
    * Inner class used to maintain info about registered state controller.
@@ -287,8 +271,8 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
     //the robustness manager invokes DeconflictHelper object and add necessary deconflict
     //listener.
     if(agentId.toString().equals(manager) && deconflictHelper == null) {
-      String enable = System.getProperty(deconflictionProperty, defaultEnabled);
-      if(enable.equals(defaultEnabled)) {
+      String enable = System.getProperty(DECONFLICTION, PROPERTY_ENABLED);
+      if(enable.equalsIgnoreCase(PROPERTY_ENABLED)) {
         deconflictHelper = new DeconflictHelper(getBindingSite(), model);
         if (dl != null)
           deconflictHelper.addListener(dl);
@@ -699,7 +683,9 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
     summary.append(" isBusy=" + isCommunityBusy());
     summary.append(" activeNodes=[");
     for (int i = 0; i < activeNodes.length; i++) {
-      summary.append(activeNodes[i] + "(" + getNodeLoadAverage(activeNodes[i]) + ")");
+      double loadAverage = getNodeLoadAverage(activeNodes[i]);
+      int agentsOnNode = model.entitiesAtLocation(activeNodes[i]).length;
+      summary.append(activeNodes[i] + "(" + agentsOnNode + "," + loadAverage + ")");
       if (i < activeNodes.length - 1) summary.append(",");
     }
     summary.append("]");
