@@ -99,6 +99,10 @@
         includes="${packageDir}/**"
         excludes="**/cvs/*,**/*.bak"
       />
+      <fileset dir="${src}"
+        includes="**/*.xsl"
+        excludes="**/cvs/*,**/*.bak"
+      />
     </jar>
   </target>
 
@@ -382,43 +386,45 @@
     <mkdir dir="staging/lib"/>
     <mkdir dir="staging/sys"/>
 
-    <mkdir dir="staging/configs"/>
-    <mkdir dir="staging/configs/common"/>
-
     <!-- ACME and CSMART -->
     <!-- <mkdir dir="staging/csmart/config/doc/robustness/uc1"/> -->
     <mkdir dir="staging/csmart/config/lib/robustness/uc1"/>
     <mkdir dir="staging/csmart/config/rules/robustness/uc1"/>
     <mkdir dir="staging/csmart/config/scripts/robustness/uc1"/>
-    <mkdir dir="staging/configs/common"/>
-    <mkdir dir="staging/robustness"/>
+    <mkdir dir="staging/robustness/configs"/>
 
     <antcall target="init"/>
     <antcall target="compile"/>
     <antcall target="jar"/>
+    
     <signjar jar="${lib}/${jar}" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
+    
     <move file="${lib}/${jar}" toDir="staging/lib"/>
     <copy file="build.xml" toDir="staging/robustness"/>
-    <copy toDir="staging/configs/common">
-      <fileset dir="configs/common">
+    <copy toDir="staging/robustness/configs">
+      <fileset dir="configs">
          <include name="communities.xml"/>
-         <include name="*.xsl" />
+         <include name="*loggingConfig.conf" />
       </fileset>
     </copy>
     <!-- <copy toDir="staging/csmart/config/doc/robustness/uc1">
       <fileset dir="csmart/config/doc/robustness/uc1"/>
     </copy> -->
-    <copy toDir="staging/csmart/config/rules/robustness/uc1" file="csmart/config/rules/robustness/uc1/aruc1.rule"/>
     <copy toDir="staging/csmart/config/lib/robustness/uc1">
       <fileset dir="csmart/config/lib/robustness/uc1">
          <include name="aruc1_actions_and_states.rb" />
       </fileset>
     </copy>
+    <copy toDir="staging/csmart/config/rules/robustness/uc1">
+      <fileset dir="csmart/config/rules/robustness/uc1">
+         <include name="aruc1.rule" />
+      </fileset>
+    </copy>
     <copy toDir="staging/csmart/config/scripts/robustness/uc1">
       <fileset dir="csmart/config/scripts/robustness/uc1">
-         <include name="runTiny.rb"/>
+         <include name="run.rb"/>
          <include name="TINY-1AD-TRANS-AR.xml"/>
-         <include name="5_node_config.xml"/>
+         <include name="tiny_1ad_config.xml"/>
          <include name="aruc1.xsl"/>
          <include name="config.xml"/>
          <include name="transform.sh"/>
