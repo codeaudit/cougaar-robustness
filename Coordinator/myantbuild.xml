@@ -13,6 +13,12 @@
 		<fileset dir="${cougaar}/sys">
 			<include name="**/*.jar"/>
 		</fileset>
+		<fileset dir="sys/">
+			<include name="**/*.jar"/>
+		</fileset>
+    <pathelement location="/var/www/html/jars/Robustness_telcordia_coordinator_HEAD_B11_0.jar"/>
+    <pathelement location="/var/www/html/jars/Robustness_mic_mgmt_agent_B11_0_B11_0.jar"/>
+
         </path>
 
 	<target name="delete">
