@@ -39,19 +39,19 @@ public class AgentRestartAction extends Action
         super(action);
     }
 
-    protected void setValuesOffered(Set values) throws IllegalValueException {
+    public void setValuesOffered(Set values) throws IllegalValueException {
         super.setValuesOffered(values);
     }
 
-    protected void start(Object actionValue) throws IllegalValueException {
+    public void start(Object actionValue) throws IllegalValueException {
         super.start(actionValue);
     }
 
-    protected void stop() throws NoStartedActionException {
+    public void stop() throws NoStartedActionException {
         super.stop();
     }
 
-    protected void stop(CompletionCode completionCode)
+    public void stop(CompletionCode completionCode)
         throws IllegalValueException, NoStartedActionException  {
         super.stop(completionCode);
     }
