@@ -297,21 +297,27 @@ module Cougaar
     end
 
    class ModifyRobustnessParameter < Cougaar::Action
-      def initialize(run, attrId, attrValue)
+      def initialize(run, attrId, attrValue, community=nil)
         super(run)
 	@myAttrId = attrId
         @myAttrValue = attrValue
+        @myCommunity = community
+        if @myCommunity != nil
+          @myCommunity = @myCommunity.sub('-COMM','')
+        end
       end
       def perform
         @run.society.each_agent do |agent|
           if agent.name =~ /.*ARManager.*/
-	    result, uri = Cougaar::Communications::HTTP.get(agent.uri+"/ar?operation=modcommattr&id=#{@myAttrId}&value=#{@myAttrValue}")
-	  end
+            if @myCommunity == nil || agent.name =~ /.*#{@myCommunity}.*/
+	      result, uri = Cougaar::Communications::HTTP.get(agent.uri+"/ar?operation=modcommattr&id=#{@myAttrId}&value=#{@myAttrValue}")
+	    end
+          end
 	end
       end
     end
 
-   # Suspend restarts by setting PING_TIMEOUT attribute in all Robustness communities
+   # Suspend restarts by setting PING_ADJUSTMENT attribute in all Robustness communities
    # to an arbitrarily high value
    class SuspendRestarts < Cougaar::Action
       def initialize(run)
@@ -320,7 +326,8 @@ module Cougaar
       def perform
         @run.society.each_agent do |agent|
           if agent.name =~ /.*ARManager.*/
-	    result, uri = Cougaar::Communications::HTTP.get(agent.uri+"/ar?operation=modcommattr&id=PING_TIMEOUT&value=99999999")
+	    result, uri = Cougaar::Communications::HTTP.get(agent.uri+"/ar?operation=modcommattr&id=PING_ADJUSTMENT&value=100")
+	    result, uri = Cougaar::Communications::HTTP.get(agent.uri+"/ar?operation=modcommattr&id=PING_TIMEOUT_THREATCON_HIGH_COEFFICIENT&value=100")
 	  end
 	end
       end
