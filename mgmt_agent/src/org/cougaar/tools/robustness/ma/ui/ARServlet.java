@@ -11,8 +11,11 @@ import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.servlet.BaseServletComponent;
 import org.cougaar.core.service.ServletService;
 import org.cougaar.core.servlet.ServletUtil;
+import org.cougaar.core.service.NamingService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.BlackboardService;
+//import org.cougaar.core.service.TopologyReaderService;
+//import org.cougaar.core.service.TopologyEntry;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.util.PropertyNameValue;
@@ -22,14 +25,6 @@ import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.tools.robustness.ma.plugins.HealthStatus;
 import org.cougaar.util.ConfigFinder;
 
-import org.cougaar.community.CommunityImpl;
-import org.cougaar.core.service.community.CommunityResponseListener;
-import org.cougaar.core.service.community.CommunityResponse;
-import org.cougaar.core.service.community.CommunityService;
-import org.cougaar.core.service.community.Community;
-import org.cougaar.core.service.community.Entity;
-import org.cougaar.core.service.community.Agent;
-
 import javax.xml.transform.*;
 import javax.xml.transform.stream.*;
 
@@ -37,17 +32,18 @@ import org.cougaar.core.service.wp.WhitePagesService;
 import org.cougaar.core.service.wp.AddressEntry;
 import org.cougaar.core.service.wp.Application;
 
-import EDU.oswego.cs.dl.util.concurrent.Semaphore;
-
 /**
  * This servlet provides community information.
  */
 public class ARServlet extends BaseServletComponent implements BlackboardClient{
-  private CommunityService cs;
+  private NamingService ns;
   private BlackboardService bb;
   private DomainService ds;
   private LoggingService log;
+  //private TopologyReaderService trs;
   private WhitePagesService wps;
+  //private MessageAddress agentId;
+  private String indexName = "Communities";
 
   /**
    * Hard-coded servlet path.
@@ -59,6 +55,9 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
   public void load() {
     // get the logging service
     log =  (LoggingService) serviceBroker.getService(this, LoggingService.class, null);
+    //org.cougaar.planning.plugin.legacy.PluginBindingSite pbs =
+      //(org.cougaar.planning.plugin.legacy.PluginBindingSite) bindingSite;
+    //this.agentId = pbs.getAgentIdentifier();
     super.load();
   }
 
@@ -70,14 +69,18 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     this.ds = ds;
   }
 
-  public void setCommunityService(CommunityService cs) {
-    this.cs = cs;
-  }
-
   /**
    * Create the servlet.
    */
   protected Servlet createServlet() {
+    ns = (NamingService)serviceBroker.getService(this, NamingService.class, null);
+    if (ns == null) {
+      throw new RuntimeException("no naming service?!");
+    }
+    /*trs = (TopologyReaderService)serviceBroker.getService(this, TopologyReaderService.class, null);
+    if(trs == null) {
+      throw new RuntimeException("no topology reader service.");
+    }*/
     wps = (WhitePagesService)serviceBroker.getService(this, WhitePagesService.class, null);
     if(wps == null) {
       throw new RuntimeException("no WhitePagesService.");
@@ -90,6 +93,12 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
    */
   public void unload() {
     super.unload();
+    // release the naming service
+    if (ns != null) {
+      serviceBroker.releaseService(
+        this, ServletService.class, servletService);
+      ns = null;
+    }
   }
 
   private class MyServlet extends HttpServlet {
@@ -113,7 +122,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     private HttpServletResponse response;
     private PrintWriter out;
     private String action = "", format = "";
-    private List communities = new ArrayList();
+    private Hashtable totalList = new Hashtable();
 
     public void execute(HttpServletRequest req, HttpServletResponse res)
       throws IOException, ServletException
@@ -121,7 +130,11 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
       this.request = req;
       this.response = res;
       out = response.getWriter();
-      communities = getAllCommunityNames();
+      try{
+        InitialDirContext idc = ns.getRootContext();
+        Hashtable communities = buildCommunitiesTable(idc, indexName);
+        totalList.put("Communities", communities);
+      }catch(NamingException e){log.error(e.getMessage());}
       parseParams();
     }
 
@@ -203,22 +216,20 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     private void showCoverPage()
     {
       out.print("<html><body>\n<p>\n<br><br><br>\n");
-      out.print("<center>");
-      //out.print("<form method=\"GET\" action=\"" + request.getRequestURI() + "\">\n");
-      out.print("<form method=\"GET\" action=\"./ar\">\n");
-      out.print("<input type=\"submit\" name=\"list\" value=\"list communities\">\n<br><br>\n");
-      out.print("</form>");
-      out.print("show data");
-      out.print("<form method=\"GET\" action=\"./ar\">\n");
-      out.print("<select name=\"showcommunity\" onchange=\"submit()\">\n");
-      for(Iterator it = communities.iterator(); it.hasNext();)
+      out.print("<center>\n");
+      out.print("<form method=\"GET\" action=\"" + request.getRequestURI() + "\">\n");
+      out.print("<input type=\"submit\" name=\"list\" value=\"list communities\">\n<br>\n");
+      out.print("<input type=\"submit\" name=\"data\" value=\"show data\">\n");
+      out.print("<select name=\"communities\" onchange=\"submit()\">\n");
+      Hashtable list = (Hashtable)totalList.get("Communities");
+      for(Enumeration enums = list.keys(); enums.hasMoreElements();)
       {
         out.print("<option>");
-        out.print((String)it.next());
+        out.print((String)enums.nextElement());
         out.print("</option>\n");
       }
       out.print("</select><br>\n");
-      out.print("</form></center>");
+      out.print("</center></form>");
       out.print("</p>\n</body></html>");
     }
 
@@ -229,13 +240,16 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
      */
     private void showAllCommunities(String format)
     {
+      List links = new ArrayList();
       StringBuffer xmlsb = new StringBuffer();
       xmlsb.append(xmlTitle);
       xmlsb.append("<communities>\n");
-      for(Iterator it = communities.iterator(); it.hasNext();)
+      Hashtable list = (Hashtable)totalList.get("Communities");
+      for(Enumeration enums = list.keys(); enums.hasMoreElements();)
       {
-        String community = (String)it.next();
+        String community = (String)enums.nextElement();
         xmlsb.append("  <community name=\"" + community + "\"/>\n");
+        links.add("/$Manager/ar?data=show+data&communities=" + community + "&format=xml");
       }
       xmlsb.append("</communities>\n");
       String xml = xmlsb.toString();
@@ -255,7 +269,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
      */
     private void showCommunityData(String format, String community)
     {
-      String xml = getXMLOfCommunity(community);
+      String xml = getXMLOfCommunity(totalList, community);
       currentCommunityXML = xml;
 
       if(format.equals("xml"))
@@ -269,9 +283,8 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
 
     private void showCommunityAttributes(String format, String community)
     {
-      String xml = getXMLOfCommunity(community);
-      //String xml = currentCommunityXML;
-      currentCommunityXML = xml;
+      //String xml = getXMLOfCommunity(totalList, community);
+      String xml = currentCommunityXML;
       if(format.equals("xml"))
         showXML(xml);
       else
@@ -283,8 +296,8 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
 
     private void showAgentAttributes(String format, String agent)
     {
-      //String xml = getXMLOfCommunity(totalList, showcommunity);
-      String xml = currentCommunityXML;
+      String xml = getXMLOfCommunity(totalList, showcommunity);
+      //String xml = currentCommunityXML;
       if(format.equals("xml"))
         showXML(xml);
       else
@@ -300,7 +313,6 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     private void showNodeAttributes(String format, String node)
     {
       String xml = currentCommunityXML;
-      //String xml = getXMLOfCommunity(totalList, showcommunity);
       if(format.equals("xml"))
         showXML(xml);
       else
@@ -327,7 +339,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
 
     private void showStateData(String format)
     {
-      String xml = getXMLOfCommunity(showcommunity);
+      String xml = getXMLOfCommunity(totalList, showcommunity);
       if(format.equals("xml"))
         showXML(xml);
       else
@@ -336,7 +348,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
 
     private void showStatusData(String format)
     {
-      String xml = getXMLOfCommunity(showcommunity);
+      String xml = getXMLOfCommunity(totalList, showcommunity);
       if(format.equals("xml"))
         showXML(xml);
       else
@@ -366,57 +378,101 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     return tmp4;
   }
 
-  private List getAllCommunityNames() {
-    List list = new ArrayList();
-    try{
-      Set names = wps.list(".");
-        for(Iterator it = names.iterator(); it.hasNext();) {
-          String name = (String)it.next();
-          AddressEntry[] aes = wps.get(name);
-          for(int i=0; i<aes.length; i++) {
-            //this is a community
-            if(aes[i].getApplication().toString().equals("community"))
-                list.add(name);
-          }
-        }
-    }catch(Exception e){log.error(e.getMessage());}
-    return list;
-  }
 
-  private Community getCommunity(String communityName) {
-    final List temp = new ArrayList();
-    final Semaphore s = new Semaphore(0);
-    cs.getCommunity(communityName, -1, new CommunityResponseListener(){
-        public void getResponse(CommunityResponse resp){
-          temp.add((Community)resp.getContent());
-          s.release();
-        }
-    });
-    try{
-      s.acquire();
-    }catch(InterruptedException e){}
-    return (Community)temp.iterator().next();
-  }
-
-  private Hashtable getNodesAndAgentsOfCommunity(Community comm){
-      Hashtable list = new Hashtable(); //temporiraly records all agents and parent node from WPS.
+    /**
+     * Get attributes of given parameter from naming service.
+     * @param context Directory context
+     * @param name The parameter need to search
+     * @return the attributes.
+     */
+    private Attributes getAttributes(DirContext context, String name)
+    {
+      Attributes attrs = null;
       try{
-        for(Iterator it = comm.getEntities().iterator(); it.hasNext();)
-        {
-          Entity entity = (Entity)it.next();
-            String uri = getEntityURI(entity.getName());
-            String nodeName = uri.substring(uri.lastIndexOf("/")+1);
-            if(list.containsKey(nodeName))
-                 ((List)list.get(nodeName)).add(entity.getName());
-            else {
-                List l = new ArrayList();
-                l.add(entity.getName());
-                list.put(nodeName, l);
-            }
+        attrs = context.getAttributes(name);
+      }catch(NamingException e){log.error(e.getMessage());}
+      return attrs;
+    }
+
+    /**
+     * Fetch community information from name service in blackboard and save all
+     * information into a hash table.
+     */
+    private Hashtable buildCommunitiesTable(InitialDirContext idc, String index)
+    {
+      Hashtable list = new Hashtable();
+      try{
+        DirContext communitiesContext = (DirContext)idc.lookup(index);
+        NamingEnumeration enum = communitiesContext.list("");
+        while (enum.hasMore()) {
+             NameClassPair ncPair = (NameClassPair)enum.next();
+             List contents = new ArrayList();
+             contents.add(getAttributes(communitiesContext, ncPair.getName())); //attributes of this community
+             Hashtable entities = new Hashtable(); //records all entities of this community
+             Hashtable hosts = new Hashtable(); //records all hosts of this community
+             Hashtable allnodes = new Hashtable(); //records all nodes of this community
+             DirContext entityContext = (DirContext)communitiesContext.lookup(ncPair.getName());
+             NamingEnumeration entityEnums = entityContext.list("");
+             while(entityEnums.hasMore())
+             {
+               NameClassPair ncp = (NameClassPair)entityEnums.next();
+               String entityName = ncp.getName();
+               if(ncp.getClassName().equals("org.cougaar.core.mts.SimpleMessageAddress"))
+               {
+                  String uri = getEntityURI(entityName);
+                  String nodeName = uri.substring(uri.lastIndexOf("/")+1);
+                   //String nodeName = trs.getParentForChild(trs.NODE, trs.AGENT, ncp.getName());
+                   entityName += "  (" + nodeName + ")";
+                   //String hostName = trs.getEntryForAgent(ncp.getName()).getHost();
+                  String hostName = uri.substring(7, uri.lastIndexOf("/"));
+                   if(hosts.containsKey(hostName))
+                   {
+                     Hashtable nodes = (Hashtable)hosts.get(hostName);
+                     if(nodes.containsKey(nodeName))
+                     {
+                       List temp = (List)nodes.get(nodeName);
+                       temp.add(ncp.getName());
+                     }
+                     else
+                     {
+                       List agents = new ArrayList();
+                       agents.add(ncp.getName());
+                       nodes.put(nodeName, agents);
+                     }
+                   }
+                   else //build a new entry into the hashtable
+                   {
+                     Hashtable temp = new Hashtable();
+                     List agents = new ArrayList();
+                     agents.add(ncp.getName());
+                     temp.put(nodeName, agents);
+                     hosts.put(hostName, temp);
+                   }
+
+                   if(allnodes.containsKey(nodeName))
+                   {
+                     List agents = (List)allnodes.get(nodeName);
+                     if(!agents.contains(ncp.getName())) {
+                       agents.add(ncp.getName());
+                     }
+                   }
+                   else
+                   {
+                     List agents = new ArrayList();
+                     agents.add(ncp.getName());
+                     allnodes.put(nodeName, agents);
+                   }
+               }
+               entities.put(entityName, getAttributes(entityContext, ncp.getName()));
+             }
+             contents.add(entities);
+             contents.add(hosts);
+             contents.add(allnodes);
+             list.put(ncPair.getName(), contents);
         }
-      }catch(Exception e){log.error(e.getMessage());}
+      }catch(NamingException e){log.error(e.getMessage());}
       return list;
-  }
+    }
 
   /**
    * Compare properties of one agent with properties of it's parent community, save
@@ -519,16 +575,17 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
    * @param community which community is concerned?
    * @return the xml string
    */
-  private String getXMLOfCommunity(String community)
+  private String getXMLOfCommunity(Hashtable totalList, String community)
   {
-      Community comm = getCommunity(community);
       List restartNodes = new ArrayList(); //save all restart nodes
       Hashtable properties = new Hashtable(); //all attributes of community
+      Hashtable list = (Hashtable)totalList.get("Communities");
       StringBuffer xmlsb = new StringBuffer();
       xmlsb.append(xmlTitle);
       xmlsb.append("<community name=\"" + community + "\">\n");
       xmlsb.append("  <properties>\n");
-      Attributes attributes = comm.getAttributes();
+      List content = (List)list.get(community); //all information of this community
+      Attributes attributes = (Attributes)content.get(0); //attributes of the community
       try{
         for(NamingEnumeration nes = attributes.getAll(); nes.hasMore();)
         {
@@ -559,26 +616,19 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
       }catch(NamingException e){log.error(e.getMessage());}
       xmlsb.append("  </properties>\n");
 
-      Hashtable allNodes = getNodesAndAgentsOfCommunity(comm);
+      Hashtable allNodes = (Hashtable)content.get(3);//all nodes and agents of current community
       xmlsb.append("  <nodes>\n");
       for(Enumeration enums = allNodes.keys(); enums.hasMoreElements();)
       {
         String nodeName = (String)enums.nextElement();
         xmlsb.append("    <node name=\"" + nodeName + "\">\n");
         xmlsb.append("      <properties>\n");
+        if(restartNodes.contains(nodeName))
+          xmlsb.append("        <property name=\"type\" value=\"restart\"/>\n");
+        else
           xmlsb.append("        <property name=\"type\" value=\"normal\"/>\n");
         xmlsb.append("      </properties>\n");
         xmlsb.append("    </node>\n");
-      }
-      for(Iterator it = restartNodes.iterator(); it.hasNext();) {
-        String nodeName = (String)it.next();
-        if(isNodeExists(nodeName)) {
-          xmlsb.append("    <node name=\"" + nodeName + "\">\n");
-          xmlsb.append("      <properties>\n");
-          xmlsb.append("        <property name=\"type\" value=\"restart\"/>\n");
-          xmlsb.append("      </properties>\n");
-          xmlsb.append("    </node>\n");
-        }
       }
       xmlsb.append("  </nodes>\n");
 
@@ -626,21 +676,6 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
       log.error("Try to get location from WhitePagesService: " + e);
     }
     return uri;
-  }
-
-  private boolean isNodeExists(String nodeName) {
-    try{
-      String name = nodeName + "(MTS)";
-      Set set = wps.list(".");
-      for(Iterator it = set.iterator(); it.hasNext();) {
-        String entry = (String)it.next();
-        if(entry.equals(name))
-          return true;
-      }
-    }catch(Exception e){
-      log.error("Try to get location from WhitePagesService: " + e);
-    }
-    return false;
   }
 
 
