@@ -29,8 +29,8 @@ import org.cougaar.coordinator.DeconflictionPluginBase;
 
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.Action;
-import org.cougaar.coordinator.Diagnosis;
-import org.cougaar.coordinator.DiagnosesWrapper;
+import org.cougaar.coordinator.ActionRecord;
+import org.cougaar.coordinator.ActionsWrapper;
 import org.cougaar.coordinator.activation.ActionPatience;
 
 import java.util.Iterator;
@@ -54,8 +54,8 @@ import org.cougaar.core.util.UID;
 public class ActionMonitoringPlugin extends DeconflictionPluginBase implements NotPersistable {
     
     
-    private IncrementalSubscription monitoredActionSubscription;
-    private IncrementalSubscription diagnosesWrapperSubscription;
+    private IncrementalSubscription monitoredActionsSubscription;
+    private IncrementalSubscription actionsWrapperSubscription;
     private IncrementalSubscription pluginControlSubscription;
     
     private Hashtable monitoredActions;
@@ -80,35 +80,36 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
 
         //***************************************************SelectedActions
         //Handle the addition of new ActionPatience for SelectedActions
-        for ( Iterator iter = monitoredActionSubscription.getAddedCollection().iterator();  
+        for ( Iterator iter = monitoredActionsSubscription.getAddedCollection().iterator();  
           iter.hasNext() ; ) 
         {
             ActionPatience ap = (ActionPatience)iter.next();
-            findDesiredOutcomes(ap);
+            //findDesiredOutcomes(ap);
             startTimerIfNone(ap); 
         }
 
-        /*  THIS SHOULD BE WATCHING FOR EXPECTED "GOOD" CHANGES TO DIAGNOSES - NEEDS TO BE UPDATED
-        for ( Iterator iter = diagnosisSubscription.getChangedCollection().iterator();  
+        // Watches for desirable outcomes for Actions
+        for ( Iterator iter = actionsWrapperSubscription.getChangedCollection().iterator();  
           iter.hasNext() ; ) 
         {
-            DefenseApplicabilityCondition dc = (DefenseApplicabilityCondition)iter.next();
-            if (dc.getValue().toString().equalsIgnoreCase("TRUE")) { continue; } //ignore unless false
-            //Make sure this is a defense that we have a timer for!
-            ActionTimeoutAlarm alarm = (ActionTimeoutAlarm)monitoredActions.get(dc.getExpandedName());
-            if (!alarm.defense.equalsIgnoreCase(dc.getDefenseName()) ) {
-                if (logger.isDebugEnabled()) logger.debug("ActionTimeoutAlarm *-* Ignored DefCon we don't care about *-*");
-                continue; // not the defense we'return watching for! Ignore it!
-            }
-            //Remove it... it's the right one...    
-            monitoredActions.remove(dc.getExpandedName());
-
-            if (alarm != null) {
-                alarm.sendBackResults(dc);
-                alarm.cancel();
-            }
+            ActionsWrapper aw = (ActionsWrapper)iter.next();
+            Action action = aw.getAction();
+            ActionRecord latestResult = action.getValue();
+            ActionPatience ap = findActionPatience(action);
+            if ((latestResult.getCompletionCode().equals(Action.COMPLETED)) // make sure it completed correctly
+             && (latestResult.getStartTime() >= ap.getStartTime()))        // make sure it's a current action
+                {
+                    ActionTimeoutAlarm alarm = (ActionTimeoutAlarm)monitoredActions.get(action);
+                    monitoredActions.remove(action);
+                    openTransaction();
+                    ap.setResult(Action.COMPLETED);
+                    publishChange(new SuccessfulAction(action));
+                    publishChange(ap);
+                    closeTransaction();
+                    alarm.cancel();
+                }
         }
-*/
+
     }
 
     /* 
@@ -125,11 +126,11 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
 
     protected void setupSubscriptions() {
 
-        monitoredActionSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( ActionPatience.pred);
+        monitoredActionsSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( ActionPatience.pred);
 
-        diagnosesWrapperSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
+        actionsWrapperSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
             public boolean execute(Object o) {
-                if ( o instanceof DiagnosesWrapper) {
+                if ( o instanceof ActionsWrapper) {
                     return true ;
                 }
                 return false ;
@@ -153,6 +154,7 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
 
     
     private class ActionTimeoutAlarm implements Alarm {
+        private ActionPatience ap;
         private long detonate;
         private boolean expired;
         private AssetID assetID;
@@ -162,7 +164,7 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
         public ActionTimeoutAlarm (ActionPatience ap) {
             detonate = ap.getDuration() + System.currentTimeMillis();
             this.action = ap.getAction();
-            //this.uid = ap.getUID();
+            this.ap = ap;
             if (logger.isDebugEnabled()) logger.debug("ActionTimeoutAlarm created : " + detonate + " " + action);
         }
         
@@ -172,7 +174,9 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
         
         public void expire () {
             openTransaction();
-            //sendBackResults(null);
+            ap.setResult(Action.FAILED);
+            monitoredActions.remove(action);
+            publishChange(ap);
             closeTransaction();
         }
         public boolean hasExpired () {return expired;
@@ -183,29 +187,6 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
             return false;
         }
         
-/*        protected void sendBackResults(DefenseApplicabilityCondition dac) {
-            if (!expired) {
-                expired = true;
-                if (logger.isDebugEnabled()) logger.debug("ActionTimeoutAlarm expired for: " + assetID);
-                // Did the Defense succeed?
-                try {
-                    if (dac == null) {
-                        dac = DefenseApplicabilityCondition.find(defense, AssetName.generateExpandedAssetName(asset,AssetType.findAssetType(assetType)), blackboard);
-                    }
-                    DiagnosisSnapshot snapshot = new DiagnosisSnapshot(dac);
-                    snapshot.setCompletionTime(System.currentTimeMillis()); //set time that this defense completed (succeed or failure)
-                    publishAdd(new ActionTimeoutCondition(snapshot));
-                    // no longer interested in this defense no matter what it did
-                    monitoredActions.remove(dac.getExpandedName());
-                } catch (Exception e) {
-                    if (logger.isWarnEnabled()) logger.warn("Could not find condition for asset: " + asset+ " for defense: "+ defense);
-                } 
-            }
-
-  
- 
-        }
-       */
     }
   
     

@@ -49,6 +49,7 @@ import org.cougaar.coordinator.housekeeping.IndexKey;
 import org.cougaar.coordinator.costBenefit.CostBenefitEvaluation;
 import org.cougaar.coordinator.believability.StateEstimation;
 import org.cougaar.coordinator.techspec.AssetID;
+import org.cougaar.coordinator.activation.ActionPatience;
 
 import java.util.Hashtable;
 import java.util.Collection;
@@ -72,6 +73,7 @@ public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
   private IncrementalSubscription diagnosisIndexSubscription;
   private IncrementalSubscription stateEstimationIndexSubscription;
   private IncrementalSubscription costBenefitEvaluationIndexSubscription;
+  private IncrementalSubscription actionPatienceIndexSubscription;
 
   private static final Class[] requiredServices = {
     UIDService.class,
@@ -130,6 +132,7 @@ public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
     diagnosisIndexSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( DiagnosisIndex.pred);;
     stateEstimationIndexSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( StateEstimationIndex.pred);
     costBenefitEvaluationIndexSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( CostBenefitEvaluationIndex.pred);
+    actionPatienceIndexSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( ActionPatienceIndex.pred);
     //if (logger.isDebugEnabled()) logger.debug("Subscribed to Indices");
   }
 
@@ -316,4 +319,35 @@ public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
         else
            return null;
     }    
+
+
+    // Indexing for ActionPatience objects
+           
+    protected ActionPatience indexActionPatience(ActionPatience ap, IndexKey key) {
+        ActionPatienceIndex index = getActionPatienceIndex();
+        if (index == null) return null;
+        else return index.indexActionPatience(ap, key);
+    }
+              
+    protected ActionPatience findActionPatience(Action a) {
+        ActionPatienceIndex index = getActionPatienceIndex();
+        if (index == null) return null;
+        else return index.findActionPatience(a);
+    }
+    
+    protected ActionPatience removeActionPatience(ActionPatience ap) {
+        ActionPatienceIndex index = getActionPatienceIndex();
+        if (index == null) return null;
+        else return index.removeActionPatience(ap);
+    }
+    
+    private ActionPatienceIndex getActionPatienceIndex() {
+        Collection c = actionPatienceIndexSubscription.getCollection(); // blackboard.query(ActionPatienceIndex.pred);
+        Iterator iter = c.iterator();
+        if (iter.hasNext())
+           return (ActionPatienceIndex)iter.next();
+        else
+           return null;
+    }    
+
 }

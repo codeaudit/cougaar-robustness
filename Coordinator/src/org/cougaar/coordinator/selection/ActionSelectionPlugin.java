@@ -32,13 +32,12 @@ import org.cougaar.coordinator.*;
 
 import org.cougaar.coordinator.Diagnosis;
 import org.cougaar.coordinator.DeconflictionPluginBase;
-import org.cougaar.coordinator.monitoring.FailedActionWrapper;
+import org.cougaar.coordinator.activation.ActionPatience;
 
 import org.cougaar.coordinator.costBenefit.CostBenefitEvaluation;
 import org.cougaar.coordinator.costBenefit.ActionEvaluation;
 import org.cougaar.coordinator.costBenefit.VariantEvaluation;
 
-import org.cougaar.coordinator.monitoring.ActionTimeoutCondition;
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.techspec.ActionTechSpecInterface;
 
@@ -62,7 +61,7 @@ import org.cougaar.coordinator.Action;
 public class ActionSelectionPlugin extends DeconflictionPluginBase
 {  
   private IncrementalSubscription costBenefitSubscription;
-  private IncrementalSubscription failedActionSubscription;
+  private IncrementalSubscription actionPatienceSubscription;
   private IncrementalSubscription knobSubscription;
   private IncrementalSubscription testServletSubscription;
 
@@ -115,7 +114,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
      costBenefitSubscription = (IncrementalSubscription ) getBlackboardService().subscribe(CostBenefitEvaluation.pred);
 
      //Listen for Failed Actions
-     failedActionSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(FailedActionWrapper.pred);
+     actionPatienceSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(ActionPatience.pred);
 
      //Unsure of use...
      if (blackboard.didRehydrate()) { //reset to null so it gets established again after rehydration -- IS THIS RIGHT??
@@ -166,23 +165,27 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 
       }
 
-      //********* Process Actions that have Timed Out ***********
-      if (logger.isDebugEnabled()) logger.debug("Ready to Process Timeouts");
-      iter = failedActionSubscription.getAddedCollection().iterator();
+      //********* Process Actions that have Responded ***********
+      if (logger.isDebugEnabled()) logger.debug("Ready to Process Action Responses");
+      iter = actionPatienceSubscription.getAddedCollection().iterator();
       // Mark the resolution of all the Actions that just reported back (for now it will just be one Action)
       while (iter.hasNext()) {
-          FailedActionWrapper faw = (FailedActionWrapper)iter.next();
-          publishRemove(faw);    // we have the info we want, so get rid of it 
-          Action action = faw.getAction();
+          ActionPatience ap = (ActionPatience)iter.next();
+          publishRemove(ap);    // we have the info we want, so get rid of it 
+          Action action = ap.getAction();
 
-          // get the CBE associated with the failed Action
+          // get the CBE associated with the Action
           CostBenefitEvaluation cbe = findCostBenefitEvaluation(action.getAssetID());
-          if (logger.isDebugEnabled()) logger.debug(action + " has timed out w/o succeeding");
-          Object variantAttempted = action.getValue().getAction();
-          VariantEvaluation variantAttemptedEvaluation = cbe.getActionEvaluation(action).getVariantEvaluation(variantAttempted);
-          variantAttemptedEvaluation.setTried();
-          selectActions(cbe, knob);  // try to find a new action
-      }
+          if (logger.isDebugEnabled()) logger.debug(action + " has " + ap.getResult());
+          if (ap.getResult().equals(Action.COMPLETED)) {
+              if (logger.isDebugEnabled()) logger.debug("Nothing more to do");
+          }
+          else {
+              Object variantAttempted = action.getValue().getAction();
+              VariantEvaluation variantAttemptedEvaluation = cbe.getActionEvaluation(action).getVariantEvaluation(variantAttempted);
+              variantAttemptedEvaluation.setTried();
+              selectActions(cbe, knob);  // try to find a new action
+         }      }
 
       if (logger.isDebugEnabled()) logger.debug("Done processing TimeOuts");
 

@@ -23,22 +23,26 @@ import org.cougaar.coordinator.techspec.AssetID;
 public class ActionPatience implements NotPersistable {
 
     Action action;
-    boolean expired = false;
+    Action.CompletionCode result = null;
     long timeoutTime;
+    long startTime;
 
     /** Creates new ActionPatience */
     public ActionPatience(Action action, long timeoutTime) {
         this.action = action;
         this.timeoutTime = timeoutTime;
+        startTime = System.currentTimeMillis();
     }
 
     public Action getAction() { return action; }
 
     public long getDuration() { return timeoutTime; }
 
-    public boolean expired() {
-        return expired;
-    }
+    public long getStartTime() { return startTime; }
+
+    public void setResult(Action.CompletionCode result) { this.result = result; }
+
+    public Action.CompletionCode getResult() { return result; }
     
     public static final UnaryPredicate pred = new UnaryPredicate() {
             public boolean execute(Object o) {  
@@ -46,37 +50,5 @@ public class ActionPatience implements NotPersistable {
                     (o instanceof ActionPatience);
             }
         };
-
-    /*
-    public static ActionPatience find(String defenseName, String expandedName, BlackboardService blackboard) {
-
-        ActionPatience dc = null;
-        Collection c = blackboard.query(pred);
-        Iterator iter = c.iterator();
-        //if (logger.isDebugEnabled()) logger.debug(new Integer(c.size()).toString());
-        while (iter.hasNext()) {
-           dc = (ActionPatience)iter.next();
-           if (dc.compareSignature(expandedName, defenseName)) {
-               return dc;
-           }
-        }
-        return null;
-    }          
-
-    public static ActionPatience find(UID uid, BlackboardService blackboard) {
-
-        ActionPatience dc = null;
-        Collection c = blackboard.query(pred);
-        Iterator iter = c.iterator();
-        //if (logger.isDebugEnabled()) logger.debug(new Integer(c.size()).toString());
-        while (iter.hasNext()) {
-           dc = (ActionPatience)iter.next();
-           if (dc.compareSignature(uid)) {
-               return dc;
-           }
-        }
-        return null;
-    }  
-*/
 
 }
