@@ -25,8 +25,6 @@ import org.cougaar.core.service.community.CommunityResponseListener;
 import org.cougaar.core.service.community.CommunityResponse;
 import org.cougaar.core.service.community.FindCommunityCallback;
 
-import org.cougaar.community.DefaultCommunityServiceImpl;
-
 import org.cougaar.tools.robustness.ma.RestartManagerConstants;
 
 import org.cougaar.tools.robustness.threatalert.*;
@@ -143,7 +141,7 @@ public class ReaffiliationNotificationHandler extends RobustnessThreatAlertHandl
             }
           }
         });
-        /* Use the following to perform LEAVE with a timeout, required Cougaar 11.4
+        /* Use the following to perform a LEAVE with a timeout, requires Cougaar 11.4
         commSvc.leaveCommunity(community, agentId.toString(),
                                timeout,
                                new CommunityResponseListener() {
