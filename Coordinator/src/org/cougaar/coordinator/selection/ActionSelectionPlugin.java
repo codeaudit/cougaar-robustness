@@ -326,7 +326,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
                         if (proposedVariant.getVariantName().equals(cbe, "High")) {
                             String rmiVariantName = "Disabled";
                             VariantEvaluation rmiVariant = getRmiVariantEvaluation(cbe, rmiVariantName);
-                            if (rmiVariant != null && rmiAction != null && rmiAction.getValuesOffered().contains(rmiVariantName) {
+                            if (rmiVariant != null && rmiAction != null && rmiAction.getValuesOffered().contains(rmiVariantName)) {
                                 if (logger.isInfoEnabled()) logger.info("Selected: " + rmiVariant.toString() + "for: " + rmiAction.getAssetID().toString());
                                 if (logger.isEventEnabled()) logger.event(agentId + " selected " + rmiAction.getClass().getName() + ":" + rmiVariant.getVariantName() + " for " + rmiAction.getAssetID());
                                 Set rmiPermittedVariants = new HashSet();  
@@ -343,7 +343,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
                         if(proposedVariant.getVariantName().equals("Low")) {
                             VariantEvaluation rmiVariant = getRmiVariantEvaluation(cbe, "Enabled");
                             VariantEvaluation rmiVariant = getRmiVariantEvaluation(cbe, rmiVariantName);
-                            if (rmiVariant != null && rmiAction != null && rmiAction.getValuesOffered().contains(rmiVariantName) {
+                            if (rmiVariant != null && rmiAction != null && rmiAction.getValuesOffered().contains(rmiVariantName)) {
                                 if (logger.isInfoEnabled()) logger.info("Selected: " + rmiVariant.toString() + "for: " + rmiAction.getAssetID().toString());
                                 if (logger.isEventEnabled()) logger.event(agentId + " selected " + rmiAction.getClass().getName() + ":" + rmiVariant.getVariantName() + " for " + rmiAction.getAssetID());
                                 Set rmiPermittedVariants = new HashSet();  
