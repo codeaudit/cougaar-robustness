@@ -18,7 +18,6 @@ parameters:
     - $CIP/csmart/config/rules/robustness/manager.rule
     - $CIP/csmart/config/rules/coordinator
     - $CIP/csmart/config/rules/robustness/uc1
-    - $CIP/csmart/config/rules/robustness/uc1/tuning/collect_stats.rule
     - $CIP/csmart/config/rules/robustness/uc4
     - $CIP/csmart/config/rules/robustness/uc7
     #- $CIP/csmart/config/rules/robustness/uc9
