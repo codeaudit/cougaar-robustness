@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE ActuatorTypes SYSTEM "ActuatorTypeDTD.dtd">
+<ActuatorTypes>
+
+<ActuatorType name="org.cougaar.robustness.dos.coordinator.CompressionAction" affectsAssetType="Enclave" affectsStateDimension="Compression_Setting" actionType="COMPENSATORY">
+
+    <Action name="Compress">
+        <Description value="Turns on S/W compression"/>
+        <Transition WhenActualStateIs="NoCompress" EndStateWillBe="Compress" IntermediateStateWillBe="NoCompress">
+            <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost>
+		<ContinuingCost>
+			<CPU intensity="MEDIUM" msgSizeFactor="TRUE"/>
+		</ContinuingCost>
+	  </Transition>
+        <Transition WhenActualStateIs="Compress" EndStateWillBe="Compress" IntermediateStateWillBe="Compress">
+            <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost>
+		<ContinuingCost>
+			<CPU intensity="MEDIUM" msgSizeFactor="TRUE"/>
+		</ContinuingCost>
+	  </Transition>
+	  <Transition WhenActualStateIs="AutoCompress" EndStateWillBe="Compress" IntermediateStateWillBe="AutoCompress">
+            <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost>
+		<ContinuingCost>
+			<CPU intensity="MEDIUM" msgSizeFactor="TRUE"/>
+		</ContinuingCost>
+	  </Transition>
+    </Action>
+    
+    <Action name="NoCompress">
+        <Description value="Turns off S/W compression"/>
+        <Transition WhenActualStateIs="NoCompress" EndStateWillBe="NoCompress" IntermediateStateWillBe="NoCompress">
+            <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost>
+	  </Transition>
+        <Transition WhenActualStateIs="Compress" EndStateWillBe="NoCompress" IntermediateStateWillBe="NoCompress">
+            <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost>
+	  </Transition>
+	  <Transition WhenActualStateIs="AutoCompress" EndStateWillBe="NoCompress" IntermediateStateWillBe="AutoCompress">
+            <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost>
+	  </Transition>
+    </Action>
+  <Action name="AutoCompress">
+        <Description value="Turns S/W compression to auto"/>
+        <Transition WhenActualStateIs="NoCompress" EndStateWillBe="AutoCompress" IntermediateStateWillBe="NoCompress">
+            <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost>
+		<ContinuingCost>
+			<CPU intensity="LOW" msgSizeFactor="TRUE"/>
+		</ContinuingCost>
+	  </Transition>
+        <Transition WhenActualStateIs="Compress" EndStateWillBe="AutoCompress" IntermediateStateWillBe="Compress">
+            <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost>
+		<ContinuingCost>
+			<CPU intensity="LOW" msgSizeFactor="TRUE"/>
+		</ContinuingCost>
+	  </Transition>
+	  <Transition WhenActualStateIs="AutoCompress" EndStateWillBe="AutoCompress" IntermediateStateWillBe="AutoCompress">
+            <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost>
+		<ContinuingCost>
+			<CPU intensity="LOW" msgSizeFactor="TRUE"/>
+		</ContinuingCost>
+	  </Transition>
+    </Action>
+</ActuatorType>
+
+<ActuatorType name="org.cougaar.robustness.dos.coordinator.RMIAction" affectsAssetType="Enclave" affectsStateDimension="RMI_Setting" actionType="COMPENSATORY">
+  <!--Don't use SSL-->
+    <Action name="UseRMI">
+        <Description value="Uses RMI"/>
+        <Transition WhenActualStateIs="NoRMI" EndStateWillBe="UseRMI" IntermediateStateWillBe="NoRMI">
+            <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost>	
+	  </Transition>
+        <Transition WhenActualStateIs="UseRMI" EndStateWillBe="UseRMI" IntermediateStateWillBe="UseRMI">
+            <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost>	
+	  </Transition>
+          <Transition WhenActualStateIs="SecureLAN" EndStateWillBe="UseRMI" IntermediateStateWillBe="UseRMI">
+            <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost>	
+	  </Transition>
+    </Action>
+   <!--Use SSL--> 
+    <Action name="NoRMI">
+        <Description value="Does not use RMI"/>
+        <Transition WhenActualStateIs="NoRMI" EndStateWillBe="NoRMI" IntermediateStateWillBe="NoRMI">
+	  <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost>
+		<ContinuingCost>
+			<Bandwidth intensity="HIGH" msgSizeFactor="TRUE"/>
+			<CPU intensity="HIGH" msgSizeFactor="TRUE"/>
+		</ContinuingCost>           
+	  </Transition>
+        <Transition WhenActualStateIs="SecureLAN" EndStateWillBe="NoRMI" IntermediateStateWillBe="NoRMI">
+            <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost>
+    	    <ContinuingCost>
+			<Bandwidth intensity="HIGH" msgSizeFactor="TRUE"/>
+			<CPU intensity="HIGH" msgSizeFactor="TRUE"/>
+		</ContinuingCost>  
+	</Transition>
+	<Transition WhenActualStateIs="UseRMI" EndStateWillBe="UseRMI" IntermediateStateWillBe="NoRMI">
+            <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost>
+    	    <ContinuingCost>
+			<Bandwidth intensity="HIGH" msgSizeFactor="TRUE"/>
+			<CPU intensity="HIGH" msgSizeFactor="TRUE"/>
+		</ContinuingCost>  
+	  </Transition>
+    </Action>
+    <Action name="SecureLAN">
+        <Description value="Use RMI when LAN is secure"/>
+        <Transition WhenActualStateIs="NoRMI" EndStateWillBe="SecureLAN" IntermediateStateWillBe="NoRMI">
+	  <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost>
+		<ContinuingCost>
+			<Bandwidth intensity="LOW" msgSizeFactor="TRUE"/>
+			<CPU intensity="LOW" msgSizeFactor="TRUE"/>
+		</ContinuingCost>           
+	  </Transition>
+        <Transition WhenActualStateIs="UseRMI" EndStateWillBe="SecureLAN" IntermediateStateWillBe="UseRMI">
+            <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost>
+    	    <ContinuingCost>
+			<Bandwidth intensity="LOW" msgSizeFactor="TRUE"/>
+			<CPU intensity="LOW" msgSizeFactor="TRUE"/>
+		</ContinuingCost>  
+	</Transition>	
+<Transition WhenActualStateIs="SecureLAN" EndStateWillBe="SecureLAN" IntermediateStateWillBe="SecureLAN">
+            <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost>
+    	    <ContinuingCost>
+			<Bandwidth intensity="LOW" msgSizeFactor="TRUE"/>
+			<CPU intensity="LOW" msgSizeFactor="TRUE"/>
+		</ContinuingCost>  
+	</Transition>	
+    </Action>
+  </ActuatorType>
+
+<ActuatorType name="org.cougaar.robustness.dos.coordinator.FuseResetAction" affectsAssetType="Enclave" affectsStateDimension="Fuse_Setting" actionType="COMPENSATORY">
+   <!--Fuse Reset--> 
+    <Action name="FuseReset">
+        <Description value="Reset Fuse"/>
+        <Transition WhenActualStateIs="NoFuseReset" EndStateWillBe="NoFuseReset" IntermediateStateWillBe="FuseReset">
+	  <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost>	
+	  </Transition>
+        <Transition WhenActualStateIs="FuseReset" EndStateWillBe="FuseReset" IntermediateStateWillBe="FuseReset">
+            <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost> 	  
+	</Transition>
+ 
+    </Action>
+ <Action name="NoFuseReset">
+        <Description value="Don't Reset Fuse"/>
+        <Transition WhenActualStateIs="FuseReset" EndStateWillBe="NoFuseReset" IntermediateStateWillBe="NoFuseReset">
+	  <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost>	
+	  </Transition>
+        <Transition WhenActualStateIs="NoFuseReset" EndStateWillBe="NoFuseReset" IntermediateStateWillBe="NoFuseReset">
+            <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost> 	  
+	</Transition>
+ 
+    </Action>
+
+</ActuatorType>
+
+<ActuatorType name="org.cougaar.robustness.dos.coordinator.AttackResetAction" affectsAssetType="Enclave" affectsStateDimension="Attack_Setting" actionType="COMPENSATORY">
+   <!--Attack Reset--> 
+    <Action name="AttackReset">
+        <Description value="Reset Attack Status"/>
+        <Transition WhenActualStateIs="NoAttackReset" EndStateWillBe="AttackReset" IntermediateStateWillBe="NoAttackReset">
+	  <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost>	
+	  </Transition>
+        <Transition WhenActualStateIs="AttackReset" EndStateWillBe="AttackReset" IntermediateStateWillBe="AttackReset">
+            <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost> 	  
+	</Transition>
+ 
+    </Action>
+ <Action name="NoAttackReset">
+        <Description value="Don't Reset Attack Status"/>
+        <Transition WhenActualStateIs="AttackReset" EndStateWillBe="NoAttackReset" IntermediateStateWillBe="Attackreset">
+	  <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost>	
+	  </Transition>
+        <Transition WhenActualStateIs="NoAttackReset" EndStateWillBe="NoAttackReset" IntermediateStateWillBe="NoAttackReset">
+            <OneTimeCost>
+                <Time duration="1000"/>
+            </OneTimeCost> 	  
+	</Transition>
+ 
+    </Action>
+
+</ActuatorType>
+
+</ActuatorTypes>

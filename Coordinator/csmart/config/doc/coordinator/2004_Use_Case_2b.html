@@ -1,0 +1,288 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html; charset=ISO-8859-1"
+ http-equiv="content-type">
+  <title>ACUC #1</title>
+</head>
+<body>
+<h1 style="text-align: center;">ACUC #2a - MAU-Sensitive Control of
+Agent Data Compromise<br>
+</h1>
+<h2 style="text-align: center;">David Wells - OBJS</h2>
+<div style="text-align: center;"></div>
+<h2 style="text-align: center;">11/8/04</h2>
+<pre><br></pre>
+<h2>Purpose:</h2>
+Demonstrate the ability of the Coordinator to select different
+combinations of compenastory actions in a resource constrained
+environment based on which combination provides a greater benefit per a
+high-level MAU specification.<br>
+<pre><br></pre>
+<h2>Use Case Overview</h2>
+<ol>
+</ol>
+In UC #2b, the Coordinator is choosing some combination of compensatory
+action variants for an asset (in this case an enclave).&nbsp; There are
+two actions available: ThreatConAction (with variants HighSecurity and
+LowSecurity), and CompressAction (with variants Compress, AutoCompress,
+and NoCompress).&nbsp; The ThreatConAction affects the Security asset
+dimension by providing defense against cyberthreats.&nbsp; The
+CompressAction affects the Completeness dimension by trading
+(generally) abundant CPU resources to improve the use of (generally)
+less abundant bandwidth resources.<br>
+<br>
+In both ThreatConAction variants, the ThreatConAction is provided a
+certain
+amount of (CPU) resources to use as it sees fit based on its assessment
+of the
+security situation; HighSecurity provides greater security than
+LowSecuirity, but at greater cost in resources. &nbsp; Compress causes
+all messages to be compressed and is the most expensive, AutoCompress
+allows the CompressAction to compress or not at its discretion and is
+cheaper but less benficial, and NoCompress is free but provides no
+Completion benefits.<br>
+<br>
+The ideal situation is to run at HighSecurity and Compress, as this
+provides maximal benefits fro both Security &amp; Completeness
+MAUs.&nbsp; But this can only be done if sufficient CPU resources are
+avialable.&nbsp; This use case illustares tradeoffs that can be made
+when this is not the case.<br>
+<br>
+When insufficient CPU resources are available, one or both of the
+ThreatConAction and CompressAction must be moved to a lower cost
+variant - CPU availablity is an absolute limit on what can be
+accomplished.&nbsp; When such a tradeoff must be made, the following
+factors are considered by the Coordinator:<br>
+<ul>
+  <li>available CPU resources, which serve as a limit on what can be
+done (these are stipulated in the use case, as there was insufficient
+time to incorporate actual measurements)<br>
+  </li>
+  <li>belief estimates of the ThreatConLevel based on a threat model
+and a ThreatConLevelDiagnosis provided by the Security defense.&nbsp;
+The greater the security threat, the greater the benefit of
+HighSecurity setting.&nbsp; In the reverse case, if there is no
+security threat (say when running on a physically secure subnetwork),
+ThreatConActions provide no benefit at all.<br>
+  </li>
+  <li>available bandwidth resources (these are stipulated in the use
+case, as there was insufficient time to incorporate actual
+measurements).&nbsp; The benefit of compression is greater when
+bandwidth drops.</li>
+  <li>policy, in the form of the setting of relative MAU weights for
+Security and Completeness.&nbsp; For the use case, three policies are
+provided: HighSecurity, HighCompleteness, and Normal.<br>
+  </li>
+</ul>
+Expected benefits and costs are computed over a planning horizon as
+usual.&nbsp; For this uase case, instead of a greddy selection
+algorithm in which the action(s) with the highest benefit or highest
+cost/benefit ratio are selected in order, a recursive selection has
+been added that considers all possible combinations of actions on the
+(enclave) asset and then picks the combination with the highest total
+benefit that is affordable with available resources.&nbsp; This
+succeeds when limited resources are avialable, whereas the greedy
+selection frequently would box itself into a suboptimal solution
+because some expensive, but beneficial variant was selected first,
+thereby precluding some alternate combination of several "almost as
+good" but cheaper variants.&nbsp; Ultimately, the recusrive selection
+should be applied to all situations; at present, it is applied only to
+enclaves, due to a desire to avoid perturbing already working use cases
+at the end of the UltraLog program.<br>
+<br>
+Note:&nbsp; This use case is somewhat unstable because not all
+requested bug fixes have been made and because there was insufficient
+testing time due to the end of the UltraLog program.&nbsp; <br>
+<br>
+Note:&nbsp; See the directory Coordinator/modifications (README) for a
+list of fixes to other modules that must be made in order for acuc2b to
+work.<br>
+<h2>Model Details</h2>
+<h3>State Dimensions:</h3>
+Security Defense (compensatory)<br>
+<br>
+<ul>
+  <li>Security_Attack_Status &amp; Security_Attack_Diagnosis_Setting
+(these attempt to track)</li>
+  <ul>
+    <li>None</li>
+    <li>Low</li>
+    <li>Severe</li>
+  </ul>
+</ul>
+<ul style="margin-left: 40px;">
+</ul>
+<ul>
+  <li>Security_Defense_Setting (values the ThreatConAction can assume)</li>
+  <ul>
+    <li>Low</li>
+    <li>High</li>
+  </ul>
+</ul>
+<ul>
+  <li>Effective_Security_Status (an estimated value based on how the
+ThreatConAction compensates for the presumed Security_Attack_Status)</li>
+  <ul>
+    <li>High</li>
+    <li>Medium</li>
+    <li>Low</li>
+  </ul>
+</ul>
+Compress (compensatory)<br>
+<ul>
+  <li>Available_Bandwidth_Status (stpulated by a Coordinator-defined
+sensor)<br>
+  </li>
+  <ul>
+    <li>Low</li>
+    <li>Moderate</li>
+    <li>High</li>
+  </ul>
+</ul>
+<ul>
+  <li>Compression_Setting (values CompressionAction can assume)</li>
+  <ul>
+    <li>Compress</li>
+    <li>AutoCompress</li>
+    <li>NoCompress</li>
+  </ul>
+</ul>
+<ul>
+  <li>Effective_Bandwidth_Status (the result of applying the given
+level of compression to the actual available bandwidth)<br>
+  </li>
+  <ul>
+    <li>Normal</li>
+    <li>Degraded-1</li>
+    <li>Degraded-2</li>
+    <li>Degraded-3<br>
+    </li>
+  </ul>
+</ul>
+<ul style="margin-left: 40px;">
+</ul>
+<ul style="margin-left: 40px;">
+</ul>
+<h3>Sensors</h3>
+<ul>
+  <li>AvailableBandwidthDiagnosis</li>
+  <ul>
+    <li>Low</li>
+    <li>Moderate</li>
+    <li>Severe</li>
+  </ul>
+</ul>
+<ul>
+</ul>
+<ul>
+</ul>
+<ul>
+  <li><>OutsideLoadDiagnosis</></li>
+  <ul>
+    <li>None</li>
+    <li>Moderate</li>
+    <li>High</li>
+  </ul>
+</ul>
+<ul>
+  <li>ThreatConSensor</li>
+  <ul>
+    <li>Low</li>
+    <li>High</li>
+    <li>Note: should really be able to also assert "None", but does not<br>
+    </li>
+  </ul>
+</ul>
+<h3>Actions</h3>
+<ul>
+  <li>ThreatConAction</li>
+  <ul>
+    <li>Low</li>
+    <li>High<br>
+    </li>
+  </ul>
+</ul>
+<ul>
+</ul>
+<ul>
+</ul>
+<ul>
+  <li>CompressionAction</li>
+  <ul>
+    <li>Compress</li>
+    <li>AutoCompress</li>
+    <li>NoCompress<br>
+    </li>
+  </ul>
+</ul>
+<ul style="margin-left: 40px;">
+</ul>
+<pre></pre>
+<h3>Stresses (Threats)<br>
+</h3>
+<ul>
+  <li>Big_Security_Attack</li>
+  <li>Small_Security_Attack</li>
+  <li>Security_Attack_Subsides<br>
+  </li>
+</ul>
+<h3>Policy Settings</h3>
+<ul>
+  <li>HighSecurityMau</li>
+  <li>HighCompletenessMau<br>
+  </li>
+</ul>
+<h3>Experiments</h3>
+1) Small-ACUC2B-ThreatHi-LdHi-BwLo-MauComplHi-Stop-PostStage1.rb <br>
+<div style="margin-left: 40px;">T1 - Set HighSecurityMau policy via a
+servlet<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set ThreatConLevel=Severe
+via a servlet<br>
+T2 - Coordinator permits ThreatConAction=HighSecurity,
+CompressAction=Compress because no resource limits<br>
+T3 - Set OutsideLoad=High via a servlet<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set AvailableBandwidth=Low
+via a servlet<br>
+T4 - Coordinator permits ThreatConAction=LowSecurity,
+CompressAction=Compress because compression is mre valuable than
+security<br>
+<br>
+<br>
+</div>
+2) Small-ACUC2B-ThreatHi-LdHi-BwLo-MauSecurityHi-Stop-PostStage1.rb<br>
+<div style="margin-left: 40px;">T1 - Set HighSecurityMau policy via
+a servllet<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set ThreatConLevel=Severe
+via a servlet<br>
+T2 - Coordinator permits ThreatConAction=HighSecurity,
+CompressAction=Compress because no resource limits<br>
+T3 - Set OutsideLoad=High via a servlet<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Set AvailableBandwidth=Low
+via a servlet<br>
+T4 - Coordinator permits ThreatConAction=HighSecurity,
+CompressAction=NoCompress because security is more valuable than
+compresion<br>
+</div>
+<h3>Monitoring</h3>
+To see these results, set the logging level for the Coordinator package
+to INFO, and then:<br>
+<ul>
+  <li>tail -f SMALL-ROB-MGMT-NODE.log | grep -v DoNothing | grep -A1
+Selected:</li>
+</ul>
+You can also see the "remaining resources"&nbsp; during the selection
+process by:<br>
+<ul>
+  <li>tail -f SMALL-ROB-MGMT-NODE.log | grep -A5 "Available resources"<br>
+  </li>
+</ul>
+<h3>Additional Tests</h3>
+You can also set the AvailableBandwidth, MauPolicy, and OutsideLoad via
+servlets associated with the enclave's manager agent.&nbsp; <br>
+<br>
+You can see the actions selected and their relative benefits as above.<br>
+<br>
+<br>
+</body>
+</html>

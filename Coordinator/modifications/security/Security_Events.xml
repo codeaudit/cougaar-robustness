@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE Events SYSTEM "EventDTD.dtd"  >
+
+<Events>
+
+<Event name="Big_Security_Stress" affectsAssetType="Enclave" affectsStateDimension="Security_Attack_Status">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="Severe" />
+    </DirectEffect>
+</Event>
+
+<Event name="Small_Security_Stress" affectsAssetType="Enclave" affectsStateDimension="Security_Attack_Status">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="Low" />
+    </DirectEffect>
+</Event>
+
+<Event name="Security_Stress_Subsides" affectsAssetType="Enclave" affectsStateDimension="Security_Attack_Status">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="None" />
+    </DirectEffect>
+</Event>
+
+</Events>

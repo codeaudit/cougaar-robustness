@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE SensorTypes SYSTEM "SensorTypeDTD.dtd">
+<SensorTypes>
+
+<SensorType name="org.cougaar.core.security.coordinator.ThreatConDiagnosis" sensesAssetType="Enclave" sensesStateDimension="Security_Attack_Status" sensorLatency="30000" reportingPolicy="ALWAYS_CURRENT">
+    <PotentialDiagnoses>
+        <Diagnosis name="None"/>
+        <Diagnosis name="Low"/>
+        <Diagnosis name="Severe" defaultValue="TRUE"/>
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="None">
+            <WillDiagnoseAs name="None" withProbability="1.0"/>
+        </WhenActualStateIs>
+        <WhenActualStateIs name="Low">
+            <WillDiagnoseAs name="Low" withProbability="1.0"/>
+        </WhenActualStateIs>
+        <WhenActualStateIs name="Severe">
+            <WillDiagnoseAs name="Severe" withProbability="1.0" />
+        </WhenActualStateIs>
+    </Diagnoses>
+</SensorType>
+
+<SensorType name="org.cougaar.core.security.coordinator.EffectiveSecurityDiagnosis" sensesAssetType="Enclave" sensesStateDimension="Effective_Security_Status" sensorLatency="30000">
+    <PotentialDiagnoses>
+        <Diagnosis name="Low"/>
+        <Diagnosis name="Medium"/>
+        <Diagnosis name="High"/>
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="Low">
+            <WillDiagnoseAs name="Low" withProbability="1.0"/>
+        </WhenActualStateIs>
+        <WhenActualStateIs name="Medium">
+            <WillDiagnoseAs name="Medium" withProbability="1.0"/>
+        </WhenActualStateIs>
+        <WhenActualStateIs name="High">
+            <WillDiagnoseAs name="High" withProbability="1.0"/>
+        </WhenActualStateIs>
+    </Diagnoses>
+</SensorType>
+
+</SensorTypes>

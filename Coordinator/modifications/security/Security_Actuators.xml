@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE ActuatorTypes SYSTEM "ActuatorTypeDTD.dtd">
+<ActuatorTypes>
+
+<ActuatorType name="org.cougaar.core.security.coordinator.ThreatConAction" affectsAssetType="Enclave" affectsStateDimension="Security_Defense_Setting" actionType="COMPENSATORY">
+
+    <Action name="HighSecurity">
+        <Description value="Allows Security to make its own decisions"/>
+        <Transition WhenActualStateIs="Low" EndStateWillBe="High" IntermediateStateWillBe="Low">
+            <OneTimeCost>
+                <Time duration="120000"/>
+            </OneTimeCost>
+		<ContinuingCost>
+			<CPU intensity="HIGH" msgSizeFactor="TRUE"/>
+		</ContinuingCost>
+	  </Transition>
+        <Transition WhenActualStateIs="High" EndStateWillBe="High" IntermediateStateWillBe="High">
+            <OneTimeCost>
+                <Time duration="10000"/>
+            </OneTimeCost>
+		<ContinuingCost>
+			<CPU intensity="HIGH" msgSizeFactor="TRUE"/>
+		</ContinuingCost>
+	  </Transition>
+    </Action>
+    
+    <Action name="LowSecurity">
+        <Description value="Allows Security to make its own decisions, but at a lower assumed resource level"/>
+        <Transition WhenActualStateIs="Low" EndStateWillBe="Low" IntermediateStateWillBe="Low">
+            <OneTimeCost>
+                <Time duration="10000"/>
+            </OneTimeCost>
+		<ContinuingCost>
+			<CPU intensity="LOW" msgSizeFactor="TRUE"/>
+		</ContinuingCost>
+	  </Transition>
+        <Transition WhenActualStateIs="High" EndStateWillBe="Low" IntermediateStateWillBe="High">
+            <OneTimeCost>
+                <Time duration="120000"/>
+            </OneTimeCost>
+		<ContinuingCost>
+			<CPU intensity="LOW" msgSizeFactor="TRUE"/>
+		</ContinuingCost>
+	  </Transition>
+    </Action>
+
+</ActuatorType>
+
+</ActuatorTypes>

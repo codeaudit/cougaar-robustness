@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE Threats SYSTEM "ThreatDTD.dtd"  >
+
+<Threats>
+    <Threat name="EnemyVirus" affectsAssetType="Agent" causesEvent="SevereCompromise" defaultEventLikelihoodProb="LOW" probIntervalInMins="100" />
+    <Threat name="ThiefVirus" affectsAssetType="Agent" causesEvent="ModerateCompromise" defaultEventLikelihoodProb="LOW" probIntervalInMins="100" />
+</Threats>

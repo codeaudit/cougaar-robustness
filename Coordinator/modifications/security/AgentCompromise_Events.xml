@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE Events SYSTEM "EventDTD.dtd"  > 
+
+<Events>
+    <Event name="SevereCompromise" affectsAssetType="Agent" affectsStateDimension="Compromise">
+        <DirectEffect>
+            <Transition WhenActualStateIs="None" EndStateWillBe="Severe" />
+            <Transition WhenActualStateIs="Moderate" EndStateWillBe="Severe" />
+            <Transition WhenActualStateIs="Severe" EndStateWillBe="Severe" />
+            <Transition WhenActualStateIs="Isolated" EndStateWillBe="Isolated" />
+        </DirectEffect>
+    </Event>
+    <Event name="ModerateCompromise" affectsAssetType="Agent" affectsStateDimension="Compromise">
+        <DirectEffect>
+            <Transition WhenActualStateIs="None" EndStateWillBe="Moderate" />
+            <Transition WhenActualStateIs="Moderate" EndStateWillBe="Moderate" />
+            <Transition WhenActualStateIs="Severe" EndStateWillBe="Severe" />
+            <Transition WhenActualStateIs="Isolated" EndStateWillBe="Isolated" />
+        </DirectEffect>
+    </Event>
+</Events>

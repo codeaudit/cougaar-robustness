@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE SensorType SYSTEM "SensorTypeDTD.dtd" >
+
+<SensorType name="org.cougaar.core.security.coordinator.AgentCompromiseDiagnosis" 
+            sensesAssetType="Agent"
+            sensesStateDimension="Compromise" 
+            sensorLatency="10000"
+            reportingPolicy="ALWAYS_CURRENT" >
+    <PotentialDiagnoses>
+        <Diagnosis name="Severe" />
+        <Diagnosis name="None" defaultValue="TRUE" />
+        <Diagnosis name="Moderate" />
+        <Diagnosis name="Isolated" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="Severe" >
+            <WillDiagnoseAs name="Severe" withProbability="0.7" />
+            <WillDiagnoseAs name="Moderate" withProbability="0.2" />
+            <WillDiagnoseAs name="None" withProbability="0.1" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Moderate" >
+            <WillDiagnoseAs name="Severe" withProbability="0.1" />
+            <WillDiagnoseAs name="Moderate" withProbability="0.5" />
+            <WillDiagnoseAs name="None" withProbability="0.4" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="None" >
+            <WillDiagnoseAs name="Severe" withProbability="0.05" />
+            <WillDiagnoseAs name="Moderate" withProbability="0.05" />
+            <WillDiagnoseAs name="None" withProbability="0.9" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Isolated" >
+            <WillDiagnoseAs name="Isolated" withProbability="1.0" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>

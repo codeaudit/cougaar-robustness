@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE Threats SYSTEM "ThreatDTD.dtd"  >
+<Threats>
+
+<Threat name="Big_Security_Attack" affectsAssetType="Enclave" causesEvent="Big_Security_Stress" defaultEventLikelihoodProb="LOW" probIntervalInMins="100"/>
+<Threat name="Small_Security_Attack" affectsAssetType="Enclave" causesEvent="Small_Security_Stress" defaultEventLikelihoodProb="MEDIUM" probIntervalInMins="30"/>
+<Threat name="Security_Attack_Subsides" affectsAssetType="Enclave" causesEvent="Security_Stress_Subsides" defaultEventLikelihoodProb="MEDIUM" probIntervalInMins="30"/>
+
+</Threats>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE ActuatorType SYSTEM "ActuatorTypeDTD.dtd">
+
+<ActuatorType name="org.cougaar.core.security.coordinator.AgentCompromiseAction" 
+              affectsAssetType="Agent" 
+              affectsStateDimension="Compromise" 
+              actionType="CORRECTIVE">
+
+    <Action name="Restart">
+        <Description value="Isolate and then restart the Agent" />
+        <Transition WhenActualStateIs="*" EndStateWillBe="None" IntermediateStateWillBe="Isolated" >
+            <OneTimeCost>
+                <CPU intensity="MEDIUM" />
+                <Memory intensity="MEDIUM" />
+                <Time duration="900000" />
+            </OneTimeCost>
+        </Transition>
+    </Action>
+
+    <Action name="DoNothing">
+        <Description value="Leave the agent as-is, even if compromised" />
+        <Transition WhenActualStateIs="Severe" EndStateWillBe="Severe" IntermediateStateWillBe="Severe" />
+        <Transition WhenActualStateIs="Moderate" EndStateWillBe="Moderate" IntermediateStateWillBe="Moderate" />
+        <Transition WhenActualStateIs="None" EndStateWillBe="None" IntermediateStateWillBe="None" />
+        <Transition WhenActualStateIs="Isolated" EndStateWillBe="Isolated" IntermediateStateWillBe="Isolated" />
+    </Action>
+    
+</ActuatorType>
