@@ -23,8 +23,9 @@ import org.cougaar.coordinator.Action;
 import org.cougaar.coordinator.activation.ActionPatience;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.coordinator.housekeeping.IndexKey;
+import org.cougaar.core.persist.NotPersistable;
 
-public class ActionPatienceIndex {
+public class ActionPatienceIndex implements NotPersistable {
 
     private Hashtable entries = new Hashtable();
 
