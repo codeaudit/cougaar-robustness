@@ -23,8 +23,11 @@ Cougaar.new_experiment("Kill_1_agent").run(1) {
   do_action "TransformSociety", false,
     "#{RULES}/isat",
     "#{RULES}/logistics",
-    "#{RULES}/robustness"
-    "#{RULES}/robustness/uc1"
+    "#{RULES}/robustness",
+    "#{RULES}/robustness/uc1",
+    "#{RULES}/metrics/basic",
+    "#{RULES}/metrics/sensors"
+
 
   do_action "TransformSociety", false, "#{RULES}/robustness/communities"
 

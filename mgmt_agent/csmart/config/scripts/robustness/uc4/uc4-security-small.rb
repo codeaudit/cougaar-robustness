@@ -26,7 +26,8 @@ Cougaar.new_experiment("UC4_Small_1AD_Tests").run(1) {
     "#{RULES}/logistics",
     "#{RULES}/robustness",
     "#{RULES}/robustness/uc1",
-    "#{RULES}/robustness/uc4"
+    "#{RULES}/metrics/basic",
+    "#{RULES}/metrics/sensors"
 
   do_action "TransformSociety", false, "#{RULES}/robustness/communities"
 

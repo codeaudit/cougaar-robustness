@@ -24,8 +24,10 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
   do_action "TransformSociety", false,
     "#{RULES}/isat",
     "#{RULES}/logistics",
-    "#{RULES}/robustness"
-    "#{RULES}/robustness/uc1"
+    "#{RULES}/robustness",
+    "#{RULES}/robustness/uc1",
+    "#{RULES}/metrics/basic",
+    "#{RULES}/metrics/sensors"
 
   do_action "TransformSociety", false, "#{RULES}/robustness/communities"
 
