@@ -101,7 +101,8 @@ public class DOMifier implements ErrorHandler, EntityResolver  {
             return null;
         }
     }
-    
+
+/* source of much confusion
     private File findFile(String fileParam) {
         
             File f = configFinder.locateFile(fileParam); //steve
@@ -131,9 +132,22 @@ public class DOMifier implements ErrorHandler, EntityResolver  {
 
            return f;
     }
-    
-        
-        
+*/
+  
+    private File findFile(String fileParam) {
+	File f = configFinder.locateFile(fileParam);
+	if (f == null) {
+            if (logger.isErrorEnabled()) 
+		logger.error("Did not find XML file="+fileParam+" in config path="+configFinder.getConfigPath());	
+	} else if (!f.exists()) { 
+	    if (logger.isErrorEnabled())
+		logger.error("XML File "+f.getAbsolutePath()+" does not exist.");
+	} else {
+	    if (logger.isInfoEnabled())
+		logger.info("Found XML File "+f.getAbsolutePath());
+	}
+	return f;
+    }
 
     //FROM ErrorHandler ------------------------------------------------------------------------------------------------------------------
     
