@@ -83,7 +83,7 @@ implements NotPersistable {
     public void setupSubscriptions() {
         
         
-        logger.debug("setupSubscriptions called.");
+        //logger.debug("setupSubscriptions called.");
         
         //Listen for changes in out defense mode object
         actionWrappersSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
@@ -95,7 +95,7 @@ implements NotPersistable {
             }
         }) ;
         
-        logger.debug("Listening for ActionsWrappers");
+        //logger.debug("Listening for ActionsWrappers");
 
 
         servletSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {

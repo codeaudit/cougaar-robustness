@@ -342,7 +342,7 @@ System.out.println("Added Action Data Found. Asset = "+a.getAssetName());
             String refresh = null;
             String error = null;
             boolean useShortName = false;
-            String actiondataFilter = "BOTH";
+            String actiondataFilter = "ACTIONS";
             //Default refresh rate
             int refreshRate = 50000;
             String ln="SHORTNAME";
@@ -361,7 +361,7 @@ System.out.println("Added Action Data Found. Asset = "+a.getAssetName());
 
                 actiondataFilter = request.getParameter("FILTER");
                 if (actiondataFilter == null || actiondataFilter.length()==0) {
-                    actiondataFilter = "BOTH"; //set up value to enable default data output.
+                    actiondataFilter = "ACTIONS"; //set up value to enable default data output.
                 }
                 
                 refresh = request.getParameter("REFRESH");
@@ -557,7 +557,7 @@ System.out.println("Added Action Data Found. Asset = "+a.getAssetName());
                 //Output the asset name
                 out.print("   <TD " + (twoRows ? "ROWSPAN=2":"") + ">"+ ad.getAction().getAssetName() +"</TD>\n");
                 
-                //Output the action name
+                //Output the action class name
                 out.print("   <TD " + (twoRows ? "ROWSPAN=2":"") + ">"+ ad.getName(useShortName) +"</TD>\n");
 
                 

@@ -84,7 +84,7 @@ implements NotPersistable {
     public void setupSubscriptions() {
         
         
-        logger.debug("setupSubscriptions called.");
+        //logger.debug("setupSubscriptions called.");
         
         //Listen for changes in out defense mode object
         diagnosesSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
@@ -96,7 +96,7 @@ implements NotPersistable {
             }
         }) ;
         
-        logger.debug("Listening for Diagnoses");
+        //logger.debug("Listening for Diagnoses");
 
 
         servletSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
@@ -133,7 +133,7 @@ implements NotPersistable {
         while (iter.hasNext()) {
             Diagnosis a = (Diagnosis)iter.next();
             if (servlet != null) { servlet.addDiagnosis(a); }
-            logger.debug("**** Saw new Diagnosis["+DiagnosisUtils.getExpandedName(a)+"], with value = " + a.getValue());
+            logger.debug("**** Saw new Diagnosis["+DiagnosisUtils.getExpandedName(a)+"], with value = " + a.getValue() + " UID=" + a.getUID());
         }
         
         //********* Check for changes in our modes ************
@@ -144,7 +144,7 @@ implements NotPersistable {
         while (iter.hasNext()) {
             Diagnosis a = (Diagnosis)iter.next();
             if (servlet != null) { servlet.changedDiagnosis(a); }
-            logger.debug("**** Saw changed Diagnosis["+DiagnosisUtils.getExpandedName(a)+"], with value = " + a.getValue());
+            logger.debug("**** Saw changed Diagnosis["+DiagnosisUtils.getExpandedName(a)+"], with value = " + a.getValue() + " UID=" + a.getUID());
         }
         
     }

@@ -248,13 +248,15 @@ public class PublishServlet extends BaseServletComponent implements BlackboardCl
         try {
             Diagnosis d = createDiagnosis(assetname); 
             blackboard.publishAdd(d);
+            logger.debug("**** Published Diagnosis["+DiagnosisUtils.getExpandedName(d)+" UID=" + d.getUID());
         } catch (Exception e) {
             error = e.toString();
         }
 
         try {
-            Action a = createAction(assetname);             
+            Action a = createAction(assetname);    
             blackboard.publishAdd(a);
+            logger.debug("**** Saw new Action["+ActionUtils.getExpandedName(a)+" UID=" + a.getUID());
         } catch (Exception e) {
             error = error + "\n" + e.toString();
         }

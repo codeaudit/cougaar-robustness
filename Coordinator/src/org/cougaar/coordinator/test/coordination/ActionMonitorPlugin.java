@@ -83,7 +83,7 @@ implements NotPersistable {
     public void setupSubscriptions() {
         
         
-        logger.debug("setupSubscriptions called.");
+        //logger.debug("setupSubscriptions called.");
         
         //Listen for changes in out defense mode object
         actionsSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
@@ -95,7 +95,7 @@ implements NotPersistable {
             }
         }) ;
         
-        logger.debug("Listening for Actions");
+        //logger.debug("Listening for Actions");
         
         servletSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
             public boolean execute(Object o) {
@@ -130,7 +130,7 @@ implements NotPersistable {
         while (iter.hasNext()) {
             Action a = (Action)iter.next();
             if (servlet != null) { servlet.addAction(a); }
-            logger.debug("**** Saw new Action["+ActionUtils.getExpandedName(a)+"], with ActionRecord = " + a.getValue());
+            logger.debug("**** Saw new Action["+ActionUtils.getExpandedName(a)+"], with ActionRecord = " + a.getValue() + " UID=" + a.getUID());
         }
         
         //********* Check for changes in our modes ************
@@ -140,7 +140,7 @@ implements NotPersistable {
         while (iter.hasNext()) {
             Action a = (Action)iter.next();
             if (servlet != null) { servlet.changedAction(a); }
-            logger.debug("**** Saw changed Action["+ActionUtils.getExpandedName(a)+"], with ActionRecord = " + a.getValue());
+            logger.debug("**** Saw changed Action["+ActionUtils.getExpandedName(a)+"], with ActionRecord = " + a.getValue() + " UID=" + a.getUID());
         }
         
     }
