@@ -368,11 +368,15 @@ public class CommunityStatusModel extends BlackboardClientComponent
    */
   public void setStateExpiration(String name, long expiration) {
     StatusEntry se = (StatusEntry)statusMap.get(name);
+    if (se != null) {
       se.expiration = expiration;
       logger.debug("setStatusExpiration" +
-                  " agent=" + name +
-                  " currentState=" + se.currentState +
-                  " expiration=" + expiration);
+                   " agent=" + name +
+                   " currentState=" + se.currentState +
+                   " expiration=" + expiration);
+    } else {
+      logger.info("setStateExpiration: No status entry found for '" + name + "'");
+    }
   }
 
   /**
