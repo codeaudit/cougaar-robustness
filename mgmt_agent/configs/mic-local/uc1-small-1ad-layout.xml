@@ -3,9 +3,9 @@
   xsi:noNamespaceSchemaLocation='http:/www.cougaar.org/2003/society.xsd'>
   <host name='HOST1'>
     <facet enclave='SMALL'/>
-    <node name='1AD-SMALL-MGMT-NODE'>
+    <node name='SMALL-MGMT-NODE'>
       <facet role='NameServer'/>
-      <facet role='Management'/>
+      <facet role='AR-Management'/>
     </node>
   </host>
   <host name='HOST2'>
