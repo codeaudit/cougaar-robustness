@@ -413,8 +413,11 @@ private int cnt=0;  // temp
       
       try 
       { 
+/*
         if (myThreadService == null) myThreadService = new MyThreadService (this, getThreadService(this));
         Socket socket = TimedSocket.getSocket (host, addr, port, connectTimeout*1000, myThreadService);
+*/
+        Socket socket = new Socket (addr, port);
         socket.shutdownInput();  // not essential
         return new NoHeaderOutputStream (socket.getOutputStream());
       }

@@ -161,6 +161,7 @@ public class AgentID implements java.io.Serializable
   {
     if (topologyReaderService != null) return topologyReaderService;
 	topologyReaderService = (TopologyReaderService) sb.getService (requestor, TopologyReaderService.class, null);
+    topologyReaderService.setTimeout (callTimeout);
     return topologyReaderService;
   }
 
@@ -178,6 +179,37 @@ public class AgentID implements java.io.Serializable
   }
 
   public static AgentID getAgentID (Object requestor, ServiceBroker sb, MessageAddress agent, boolean refreshCache) 
+    throws NameLookupException
+  {
+    if (agent == null) return null;
+
+    TopologyEntry entry = null;
+
+    try 
+    {
+      TopologyReaderService svc = getTopologyReaderService (requestor, sb);
+      entry = svc.getEntryForAgent (agent.toString());
+    } 
+    catch (TopologyReaderService.TimeoutException te) 
+    {
+      // timeout with no stale value available!
+//Logging.getLogger(AgentID.class).warn (stackTraceToString (te));
+    }
+    catch (Exception e)
+    {
+//Logging.getLogger(AgentID.class).warn (stackTraceToString (e));
+    }
+
+    if (entry == null)
+    {
+      Exception e = new Exception ("Topology service blank on agent: " +agent);
+      throw new NameLookupException (e);
+    }
+
+    return new AgentID (entry);
+  }
+
+  public static AgentID oldGetAgentID (Object requestor, ServiceBroker sb, MessageAddress agent, boolean refreshCache) 
     throws NameLookupException
   {
     if (agent == null) return null;
@@ -206,7 +238,7 @@ public class AgentID implements java.io.Serializable
     boolean hadException = false;
     boolean timedOut = false;
 
-Logging.getLogger(AgentID.class).warn ("starting timed topology lookup ("+callTimeout+" ms) for agent " +agent);
+Logging.getLogger(AgentID.class).warn (now() + " starting timed topology lookup ("+callTimeout+" ms) for agent " +agent);
 
     while (true)
     {
@@ -232,12 +264,12 @@ Logging.getLogger(AgentID.class).warn ("starting timed topology lookup ("+callTi
     {
       entry = (TopologyEntry) getCachedTopologyLookup (agent);
 String s = (hadException ? "had exception" : "timed out");
-Logging.getLogger(AgentID.class).warn ("timed topology lookup "+s+", using value from cache for agent "+agent+": " +entry);
+Logging.getLogger(AgentID.class).warn (now()+ " timed topology lookup "+s+", using value from cache for agent "+agent+": " +entry);
     }
     else 
     {
 Logging.getLogger(AgentID.class).warn ("timed topology lookup completed on time for agent " +agent);
-      cacheTopologyLookup (agent, entry);
+//      cacheTopologyLookup (agent, entry);
     }
 
     if (entry == null)
@@ -273,12 +305,14 @@ Logging.getLogger(AgentID.class).warn ("timed topology lookup completed on time 
 
       try
       {
-        //System.err.println ("timed topology lookup called: agent=" +agent+ " refreshCache=" +refreshCache);
+Logging.getLogger(AgentID.class).warn (now()+ " timed topology lookup called: agent=" +agent+ " refreshCache=" +refreshCache);
 
         if (!refreshCache) entry = topologyService.getEntryForAgent    (agent.getAddress());
         else               entry = topologyService.lookupEntryForAgent (agent.getAddress());
 
-        //System.err.println ("timed topology lookup returned");
+Logging.getLogger(AgentID.class).warn (now()+ " timed topology lookup returned: agent=" +agent+ " entry=" +entry);
+
+cacheTopologyLookup (agent, entry);
       }
       catch (Exception e)
       {

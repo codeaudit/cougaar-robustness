@@ -40,6 +40,7 @@ import javax.mail.*;
 import javax.mail.internet.*;
 import javax.mail.search.*;
 
+import org.cougaar.util.log.Logging;
 
 /**
  *  Main implementation class for mail sending and receiving.
@@ -168,7 +169,7 @@ public class MailMan
     if (mbox.getFolder() != null) folder = store.getFolder (mbox.getFolder());
     else                          folder = store.getDefaultFolder();
 
-    if (Debug) System.out.println ("Mailbox: " + folder.getURLName());
+    if (Debug) Logging.getLogger(MailMan.class).debug ("Mailbox: " + folder.getURLName());
 
     if (!folder.isSubscribed())
     {
@@ -219,7 +220,7 @@ public class MailMan
 
         if (msgs == null) msgs = zeroMsgs;
 
-        if (Debug) System.out.println ("Read " + msgs.length + " message headers");
+        if (Debug)  Logging.getLogger(MailMan.class).debug ("Read " + msgs.length + " message headers");
 
         //  Continue polling for headers in a loop if we did not get any
         //  and the poll time > 0
@@ -372,7 +373,7 @@ public class MailMan
     if (mbox.getFolder() != null) folder = store.getFolder (mbox.getFolder());
     else                          folder = store.getDefaultFolder();
   
-    if (Debug) System.out.println ("Mailbox: " + folder.getURLName());
+    if (Debug)  Logging.getLogger(MailMan.class).debug ("Mailbox: " + folder.getURLName());
 
     if (!folder.isSubscribed())
     {
@@ -424,7 +425,7 @@ public class MailMan
 
         if (msgs == null) msgs = zeroMsgs;
 
-        if (Debug) System.out.println ("Found " + msgs.length + " messages");
+        if (Debug) Logging.getLogger(MailMan.class).debug ("Found " + msgs.length + " messages");
 
         //  Continue polling for messages in a loop if we did not get
         //  any messages and the poll time > 0
@@ -487,10 +488,10 @@ public class MailMan
           //  end up throwing away the message later.
 
           mm[i].setBodyContent (content);
-          System.err.println ("MailMan: got message that's not text/plain!");
+          Logging.getLogger(MailMan.class).debug ("Got message that's not text/plain!");
         }
 
-        if (Debug) System.out.println ((i+1)+ ".  " + mm);
+        if (Debug) Logging.getLogger(MailMan.class).debug ((i+1)+ ".  " + mm);
       }
 
       //  Delete read mail messages
@@ -618,45 +619,43 @@ public class MailMan
     {
       if (Debug)
       {
-        System.err.print ("MailMan.sendMessage: exception: ");
-        e.printStackTrace();
-        System.err.println();
+        Logging.getLogger(MailMan.class).debug ("sendMessage exception: " +stackTraceToString(e));
 
         Exception ex = e;
+        StringBuffer buf = new StringBuffer();
+
         do 
         {
           if (ex instanceof SendFailedException) 
           {
             SendFailedException sfex = (SendFailedException)ex;
             Address[] invalid = sfex.getInvalidAddresses();
+            String sp = "         ";
             
             if (invalid != null) 
             {
-              System.err.println ("    ** Invalid Addresses");
-              for (int i=0; i<invalid.length; i++) 
-                System.out.println ("         " + invalid[i]);
+              buf.append ("    ** Invalid Addresses\n");
+              for (int i=0; i<invalid.length; i++) buf.append (sp +invalid[i]+ "\n");
             }
 
             Address[] validUnsent = sfex.getValidUnsentAddresses();
           
             if (validUnsent != null) 
             {
-              System.err.println ("    ** ValidUnsent Addresses");
-              for (int i=0; i<validUnsent.length; i++) 
-                System.out.println ("         "+validUnsent[i]);
+              buf.append ("    ** ValidUnsent Addresses\n");
+              for (int i=0; i<validUnsent.length; i++) buf.append (sp +validUnsent[i] +"\n");
             }
           
             Address[] validSent = sfex.getValidSentAddresses();
 
             if (validSent != null) 
             {
-              System.out.println("    ** ValidSent Addresses");
-              for (int i=0; i<validSent.length; i++) 
-                System.out.println ("         "+validSent[i]);
+              buf.append ("    ** ValidSent Addresses\n");
+              for (int i=0; i<validSent.length; i++) buf.append (sp +validSent[i]+ "\n");
             }
           }
         
-          System.err.println();
+          Logging.getLogger(MailMan.class).debug (buf.toString());
 
           if (ex instanceof MessagingException) ex = ((MessagingException)ex).getNextException();
           else ex = null;
@@ -666,5 +665,13 @@ public class MailMan
     }
 
     return false;  // msg not successfuly sent
+  }
+
+  private static String stackTraceToString (Exception e)
+  {
+    java.io.StringWriter stringWriter = new java.io.StringWriter();
+    java.io.PrintWriter printWriter = new java.io.PrintWriter (stringWriter);
+    e.printStackTrace (printWriter);
+    return stringWriter.getBuffer().toString();
   }
 }

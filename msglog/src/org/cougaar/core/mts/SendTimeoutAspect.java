@@ -81,6 +81,8 @@ public class SendTimeoutAspect extends StandardAspect
        
           // Forward the message in another thread so we can timeout on it here
 
+          Object sem = new Object();
+
           // shallow copy the AttributedMessage
           //AttributedMessage msgCopy = new AttributedMessage(msg); 
           AttributedMessage msgCopy; 
@@ -97,45 +99,48 @@ public class SendTimeoutAspect extends StandardAspect
             msgCopy,
             RTTAspect.cloneRTTData(RTTAspect.getRTTDataAttribute(msg))); 
 
-          ForwardMessageThread t = new ForwardMessageThread(msgCopy,link);
-          Schedulable thread = threadService.getThread(this, t, "SendTimeoutAspect");
+          ForwardMessageThread t = new ForwardMessageThread(msgCopy,link,sem);
+          //Schedulable thread = threadService.getThread(this, t, "SendTimeoutAspect");
+          Thread thread = new Thread(t, "SendTimeoutAspect");
+          //thread.setPriority(7);
           thread.start();
- 
-          // check on its progress periodically, and close it if it exceeds timeout
-          final int POLL_TIME = 100;
-          int sleepTime = 0;
- 
-          int timeout;
-          if (fastp == true) {
-            timeout = fastTimeout;
-          } else {
-            timeout = slowTimeout;
+          synchronized (sem) {
+            try {
+              sem.wait(fastp ? fastTimeout : slowTimeout);
+            } catch (InterruptedException e) {
+	      e.printStackTrace();
+              throw new CommFailureException(e);
+            }
           }
-          while (true) {
-            if (t.isDone()) return t.getAttributes();
-            if (t.isException()) {
-              Exception ex = t.getException();
+ 
+          if (t.isDone()) return t.getAttributes();
+          if (t.isException()) {
+            Exception ex = t.getException();
 //System.out.println("\nSendTimeoutAspect: got exception = " + ex);
-              if (ex instanceof UnregisteredNameException) 
-                throw (UnregisteredNameException)ex;
-              if (ex instanceof NameLookupException) 
-                throw (NameLookupException)ex;
-              if (ex instanceof CommFailureException) 
-                throw (CommFailureException)ex;
-              if (ex instanceof MisdeliveredMessageException) 
-                throw (MisdeliveredMessageException)ex;
-              throw new CommFailureException(ex);
-            }
-            try { Thread.sleep (POLL_TIME); } catch (Exception e) {}
-            sleepTime += POLL_TIME;
-            if (sleepTime > timeout) {
-              String s = "SendTimeoutAspect: Timeout sending message " + 
-                         MessageUtils.toString(msgCopy);
-              throw new CommFailureException(new Exception(s));
-            }
+            if (ex instanceof UnregisteredNameException) 
+              throw (UnregisteredNameException)ex;
+            if (ex instanceof NameLookupException) 
+              throw (NameLookupException)ex;
+            if (ex instanceof CommFailureException) 
+              throw (CommFailureException)ex;
+            if (ex instanceof MisdeliveredMessageException) 
+              throw (MisdeliveredMessageException)ex;
+            throw new CommFailureException(ex);
           }
+          //Ack ack = MessageUtils.getAck(msgCopy);
+          //String srcMsgNum = (ack.isSomePureAck()) ? MessageUtils.getSrcMsgNumber(msgCopy).t : "") + ") "
+
+          String s = 
+            "SendTimeoutAspect: Timeout sending msg " 
+            + MessageUtils.getMessageNumber(msgCopy) + "."
+            + (MessageUtils.getAck(msgCopy).getSendCount()+1) + " "
+            + MessageUtils.getMessageTypeLetter(msgCopy) + "("
+            + (MessageUtils.getAck(msgCopy).isSomePureAck() ? String.valueOf(MessageUtils.getSrcMsgNumber(msgCopy)) : "") + ") "
+            + MessageUtils.toAltShortSequenceID(msgCopy) + " via "   
+            + AdaptiveLinkSelectionPolicy.getLinkType(link.getProtocolClass().getName());
+          throw new CommFailureException(new Exception(s));
       } else {
-        return link.forwardMessage(msg);
+          return link.forwardMessage(msg);
       }
     }
   }
@@ -146,19 +151,25 @@ public class SendTimeoutAspect extends StandardAspect
     private DestinationLink link = null;
     private MessageAttributes attrs;
     private Exception ex;
+    private Object sem;
 
-    public ForwardMessageThread (AttributedMessage msg, DestinationLink link) {
+    public ForwardMessageThread (AttributedMessage msg, DestinationLink link, Object sem) {
       this.msg = msg;
       this.link = link;
       attrs = null;
       ex = null;
+      this.sem = sem;
     }
     public void run () {
+      synchronized (sem) {
         try {
           attrs = link.forwardMessage(msg);
         } catch (Exception e) {
+	    e.printStackTrace();
           ex = e;
         }
+        sem.notify();
+      }
     }
     protected MessageAttributes getAttributes() {
       return attrs;

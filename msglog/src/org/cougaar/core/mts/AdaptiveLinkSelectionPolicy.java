@@ -434,6 +434,8 @@ if (commStartDelaySeconds > 0)
       {
         //  Retry/resend: bypass topological caching to get latest target agent info
 
+//log.debug ("\n\nGetting node for agent (1): " +targetAgent +"\n");
+
         AgentID toAgent = AgentID.getAgentID (this, getServiceBroker(), targetAgent, true);
         MessageUtils.setToAgent (msg, toAgent);
         targetNode = toAgent.getNodeName();      
@@ -448,6 +450,8 @@ if (commStartDelaySeconds > 0)
         {
           //  Get cached target agent info
 
+//log.debug ("\n\nGetting node for agent (2): " +targetAgent +"\n");
+
           AgentID toAgent = AgentID.getAgentID (this, getServiceBroker(), targetAgent, false);
           MessageUtils.setToAgent (msg, toAgent);
           targetNode = toAgent.getNodeName();
@@ -456,7 +460,7 @@ if (commStartDelaySeconds > 0)
     }
     catch (Exception e)
     {
-      if (debug) log.debug ("Unable to get node for agent: " +targetAgent);
+      if (debug) log.debug ("Unable to get node for agent: " +targetAgent +"\n");
     }
 
     //  Cannot continue past this point without knowing the name 
@@ -478,6 +482,7 @@ if (commStartDelaySeconds > 0)
     while (links.hasNext()) 
     {
       DestinationLink link = null;
+      int cost;
 
       try
       {
@@ -487,7 +492,16 @@ if (commStartDelaySeconds > 0)
 
         if (!isOutgoingLink (link)) continue;
 
-        if (getLinkCost (link, msg) == Integer.MAX_VALUE) continue; 
+        cost = getLinkCost (link, msg);
+
+        if (cost == Integer.MAX_VALUE) continue; 
+
+        if (cost == 1 && getName(link).equals ("org.cougaar.core.mts.SSLRMILinkProtocol"))
+        {
+          //  Temp HACK for UC3
+
+          return linkChoice (link, msg);
+        }
 
         if (getName(link).equals ("org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol"))
         {

@@ -43,5 +43,5 @@ if exist tutorial\assets set FILES=%FILES% tutorial\assets\*.java
 @echo on
 javac -deprecation -d lib -classpath %LIBPATHS% %FILES% && jar cf %COUGAAR_INSTALL_PATH%\lib\sensors.jar -C lib ./org
 
-jarsigner.exe -keystore signingCA.keystore -storepass keystore %COUGAAR_INSTALL_PATH%\lib\sensors.jar privileged
+jarsigner.exe -keystore %COUGAAR_INSTALL_PATH%\keystore\signingCA.keystore -storepass keystore %COUGAAR_INSTALL_PATH%\lib\sensors.jar privileged
 

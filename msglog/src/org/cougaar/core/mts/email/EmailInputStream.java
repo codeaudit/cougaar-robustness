@@ -34,6 +34,7 @@ import java.util.*;
 import java.net.InetAddress;
 import javax.mail.Store;
 
+import org.cougaar.util.log.Logging;
 
 /**
  *  EmailInputStream is an InputStream that reads email for its data source.
@@ -86,7 +87,7 @@ public class EmailInputStream extends InputStream
     
     if (Debug) 
     {
-      System.err.println ("\nEmailInputStream: created: " +host+ ":" +port+ " user=" + user);
+      Logging.getLogger(EmailInputStream.class).debug ("created: " +host+ ":" +port+ " user=" + user);
       cache.dump (System.err);
     }
   }
@@ -167,7 +168,7 @@ public class EmailInputStream extends InputStream
 
       if (bufsize == 0) 
       {
-        if (Debug) System.err.println ("\nEmailInputStream.read: ERROR - no more bytes from mail");
+        if (Debug) Logging.getLogger(EmailInputStream.class).debug ("ERROR - no more bytes from mail");
         return -1;
       }
 
@@ -181,7 +182,7 @@ public class EmailInputStream extends InputStream
 
   public int read (byte bytes[], int off, int len) throws IOException
   {
-    if (Debug) System.out.println ("\nEmailInputStream.read: " +now()+ " reading " +len+ " bytes ...");
+    if (Debug) Logging.getLogger(EmailInputStream.class).debug ("read: " +now()+ " reading " +len+ " bytes ...");
 
     if (streamClosed) return -1;
 
@@ -209,7 +210,7 @@ public class EmailInputStream extends InputStream
       n = -1;
     }
 
-    if (Debug) System.out.println ("\nEmailInputStream.read: " +now()+ " read " +n+ " of " +len+ " bytes.");
+    if (Debug) Logging.getLogger(EmailInputStream.class).debug ("read: " +now()+ " read " +n+ " of " +len+ " bytes.");
 
     return n;  // number of bytes read or -1 for error/eof
   }
@@ -262,7 +263,7 @@ public class EmailInputStream extends InputStream
 
           for (int i=0; i<msgs.length; i++)
           {
-            if (InfoDebug) System.err.println ("\nRead email:\n" + msgs[i]);
+            if (InfoDebug) Logging.getLogger(EmailInputStream.class).info ("Read email:\n" + msgs[i]);
 
             if (ignoreOldMessages)
             {
@@ -270,13 +271,13 @@ public class EmailInputStream extends InputStream
              
               if (msgSent == null) 
               {
-                if (Debug) System.err.println ("\nFYI Email message has no sent date!");
+                if (Debug) Logging.getLogger(EmailInputStream.class).debug ("FYI Email message has no sent date!");
                 continue;
               }
 
               if (earliestMessageDate.compareTo (msgSent) > 0)
               {
-                if (InfoDebug) System.err.println ("\nNote: This old message is discarded!");
+                if (InfoDebug) Logging.getLogger(EmailInputStream.class).info ("Note: This old message is discarded!");
                 msgs[i] = null;                
               }
             }
@@ -293,7 +294,7 @@ public class EmailInputStream extends InputStream
         throw new RuntimeException ("EmailInputStream: Unexpected null msg!");
       }
 
-      if (Debug) System.err.println ("\nEmailInputStream.readMail: read " +msg);
+      if (Debug) Logging.getLogger(EmailInputStream.class).debug ("readMail: read " +msg);
 
       //  Save a pointer to the current message so that info like from 
       //  and reply-to can be accessed.
@@ -306,7 +307,7 @@ public class EmailInputStream extends InputStream
 
       if (bytes == null)
       {
-        if (Debug) System.err.println ("\nEmailInputStream.readMail: ERROR: Got msg with null bytes!!");
+        if (Debug) Logging.getLogger(EmailInputStream.class).debug ("ERROR: Got msg with null bytes!!");
       }
       else
       { 
@@ -327,11 +328,11 @@ public class EmailInputStream extends InputStream
     }
     catch (javax.mail.AuthenticationFailedException afe)
     {
-      if (Debug) System.err.println ("\nEmailInputStream.readMail: Is your mail server running? : " +afe);
+      if (Debug) Logging.getLogger(EmailInputStream.class).debug ("Is your mail server running? : " +afe);
     }
     catch (Exception e)
     {
-      if (Debug) System.err.println ("\nEmailInputStream.readMail: Error reading messages: " +e);
+      if (Debug) Logging.getLogger(EmailInputStream.class).debug ("Error reading messages: " +e);
     }
   }
 

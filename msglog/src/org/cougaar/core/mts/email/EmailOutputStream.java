@@ -30,6 +30,7 @@ import java.io.*;
 import java.util.*;
 import java.net.InetAddress;
 
+import org.cougaar.util.log.Logging;
 
 /**
  *  EmailOutputStream is an OutputStream that outputs email
@@ -71,7 +72,7 @@ public class EmailOutputStream extends OutputStream
   {
     if (Debug)
     {
-      System.out.println ("EmailOutputStream.write: " +now()+ " writing int = " +b);
+      Logging.getLogger(EmailOutputStream.class).debug ("write: " +now()+ " writing int = " +b);
     }
 
     buf.write (b);
@@ -81,7 +82,7 @@ public class EmailOutputStream extends OutputStream
   {
     if (Debug)
     {
-      System.out.println ("EmailOutputStream.write: " +now()+ " writing bytes = " +b.length);
+      Logging.getLogger(EmailOutputStream.class).debug ("write: " +now()+ " writing bytes = " +b.length);
     }
 
     buf.write (b, 0, b.length);
@@ -91,7 +92,7 @@ public class EmailOutputStream extends OutputStream
   {
     if (Debug)
     {
-      System.out.println ("EmailOutputStream.write: " +now()+ " writing bytes = " +len);
+      Logging.getLogger(EmailOutputStream.class).debug ("write: " +now()+ " writing bytes = " +len);
     }
 
     buf.write (b, off, len);
@@ -111,7 +112,7 @@ public class EmailOutputStream extends OutputStream
 
     if (Debug)
     {
-      System.out.println ("EmailOutputStream.flush: " +now()+ " called");
+      Logging.getLogger(EmailOutputStream.class).debug ("flush: " +now()+ " called");
     }
 
     //  Set the contents of the buffer as the body of an email message and
@@ -124,8 +125,8 @@ public class EmailOutputStream extends OutputStream
 
     if (Debug)
     {
-      System.out.println ("EmailOutputStream.flush: body bytes len = " + len);
-      if (len == 0) System.out.println ("EmailOutputStream.flush: no msg sent since len = 0");
+      Logging.getLogger(EmailOutputStream.class).debug ("flush: body bytes len = " + len);
+      if (len == 0) Logging.getLogger(EmailOutputStream.class).debug ("flush: no msg sent since len = 0");
     }
 
     if (len > 0)
@@ -136,7 +137,7 @@ public class EmailOutputStream extends OutputStream
       {
         MailMessage msg = new MailMessage (header, body);
 
-        if (InfoDebug) System.err.println ("\nSending email:\n" + msg);
+        if (InfoDebug) Logging.getLogger(EmailOutputStream.class).info ("Sending email:\n" + msg);
 
         MailMan.setDebug (DebugMail);
         success = MailMan.sendMessage (mbox, msg);
@@ -145,7 +146,7 @@ public class EmailOutputStream extends OutputStream
       {
         if (Debug) 
         {
-          System.err.println ("EmailOutputStream.flush: Error sending message: ");
+          Logging.getLogger(EmailOutputStream.class).debug ("flush: Error sending message: ");
           e.printStackTrace();
         }
 

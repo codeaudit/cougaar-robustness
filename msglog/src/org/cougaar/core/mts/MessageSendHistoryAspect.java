@@ -124,6 +124,8 @@ public class MessageSendHistoryAspect extends StandardAspect
       catch (Exception e)
       {
         exception = e;
+
+        if (loggingService.isDebugEnabled()) loggingService.debug (stackTraceToString(e));
       }
 
       //  NOTE:  Should we include traffic masking messages or heartbeats and the
@@ -208,5 +210,13 @@ public class MessageSendHistoryAspect extends StandardAspect
   private static long now ()
   {
     return System.currentTimeMillis();
+  }
+
+  private static String stackTraceToString (Exception e)
+  {
+    java.io.StringWriter stringWriter = new java.io.StringWriter();
+    java.io.PrintWriter printWriter = new java.io.PrintWriter (stringWriter);
+    e.printStackTrace (printWriter);
+    return stringWriter.getBuffer().toString();
   }
 }
