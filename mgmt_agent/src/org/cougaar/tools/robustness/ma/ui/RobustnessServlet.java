@@ -98,46 +98,8 @@ public class RobustnessServlet extends BaseServletComponent
       ObjectOutputStream oout = new ObjectOutputStream(outs);
       try{
         InitialDirContext idc = ns.getRootContext();
-       /* NamingEnumeration nes = idc.listBindings("");
-        //out.print("<ul>");
-        while(nes.hasMore())
-        {
-          NameClassPair ncp = (NameClassPair)nes.nextElement();
-          //out.print("<ul>\n");
-          String ncpN = ncp.getName();
-          String ncpC = ncp.getClassName();
-         /* if(ncpN.equalsIgnoreCase("Topology"))
-          {
-            Hashtable list = buildTopologyTable(idc);
-            totalList.put("Topology", list);
-          }
-
-          else if(ncpN.equalsIgnoreCase("Webservers"))
-          {
-            Hashtable list = buildWebserverTable(idc);
-            totalList.put("Webservers", list);
-          }
-
-          else if(!ncpN.equalsIgnoreCase(indexName))
-          {
-            DirContext dc = (DirContext)idc.lookup(ncp.getName());
-            List sublist = new ArrayList();
-            NamingEnumeration enum = dc.list("");
-            while(enum.hasMore())
-            {
-              NameClassPair nvpair = (NameClassPair)enum.next();
-              sublist.add(nvpair);
-            }
-            totalList.put(ncp.getName(), sublist);
-          }
-          //out.print("</ul>\n");
-
-          else
-          {*/
-            Hashtable communities = buildCommunitiesTable(idc, indexName);
-            totalList.put("Communities", communities);
-          //}
-        //}
+        Hashtable communities = buildCommunitiesTable(idc, indexName);
+        totalList.put("Communities", communities);
         oout.writeObject(totalList);
       }catch(NamingException e){e.printStackTrace();}
     }
