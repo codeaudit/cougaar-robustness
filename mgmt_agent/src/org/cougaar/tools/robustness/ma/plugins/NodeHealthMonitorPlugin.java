@@ -455,10 +455,6 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
       blackboard.publishRemove(nodeStatusRelay);
       nodeStatusRelay = null;
     }
-    model = new CommunityStatusModel(myName,
-                                     communityName,
-                                     getBindingSite());
-    blackboard.publishAdd(model);
     String controllerClassname =
         System.getProperty(CONTROLLER_CLASS_PROPERTY,
                            DEFAULT_CONTROLLER_CLASSNAME);
@@ -471,8 +467,12 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
         logger.error("Exception creating RobustnessController", ex);
       }
     }
+    model = new CommunityStatusModel(myName,
+                                     communityName,
+                                     getBindingSite());
     model.setController(controller);
     model.addChangeListener(controller);
+    blackboard.publishAdd(model);
 
     if (logger.isInfoEnabled()) {
       logger.info("Monitoring community:" +
@@ -558,10 +558,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
                                      AgentStatus[] agentStatus,
                                      String leader,
                                      String host) {
-    //if (model == null) {
-    //  initializeModel(communityName);
-    //}
-    if (model != null) {
+    if (model != null && controller != null) {
       model.applyUpdates(nodeName,
                          nodeStatus,
                          agentStatus,
