@@ -106,6 +106,8 @@
             <file path="csmart/config/scripts/robustness/uc1/uc1-small.rb"/>
           </node>
           <node name="uc4" type="Folder">
+            <file path="csmart/config/scripts/robustness/uc4/threatcon-full.rb"/>
+            <file path="csmart/config/scripts/robustness/uc4/threatcon-small.rb"/>
             <file path="csmart/config/scripts/robustness/uc4/uc4-full.rb"/>
             <file path="csmart/config/scripts/robustness/uc4/uc4-security-full.rb"/>
             <file path="csmart/config/scripts/robustness/uc4/uc4-security-small.rb"/>

@@ -70,7 +70,7 @@ Cougaar.new_experiment("ARUC4_SecurityAlert").run(1) {
   assets = Hash[]
   do_action "PublishThreatAlert",
             "org.cougaar.tools.robustness.ma.SecurityAlert",
-            "1AD-SMALL-COMM",
+            "1AD-REAR-COMM",
             "HealthMonitor",
             "medium",
             10.minutes,
