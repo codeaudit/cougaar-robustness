@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE Events SYSTEM "EventDTD.dtd"  >
+
+<Events>
+
+<Event name="Disconnect_Request" affectsAssetType="Node" affectsStateDimension="Connectedness">
+    <DirectEffect>
+        <Transition WhenActualStateIs="Connected" EndStateWillBe="WantsToDisconnect" />
+        <Transition WhenActualStateIs="WantsToDisconnect" EndStateWillBe="WantsToDisconnect" />
+        <Transition WhenActualStateIs="Disconnected" EndStateWillBe="Disconnected" />
+        <Transition WhenActualStateIs="WantsToConnect" EndStateWillBe="WantsToDisconnect" />
+        <Transition WhenActualStateIs="Tardy" EndStateWillBe="Tardy" />
+    </DirectEffect>
+    <TransitiveEffect>
+        <CausesEvent name="Disconnect_Request" assetType="Agent"/>
+        <VulnerableAssets>
+            <ContainmentFilter eventAssetContainerName="Agent" />
+            <EventLikelihood probability="ALWAYS" />
+        </VulnerableAssets>
+    </TransitiveEffect> 
+</Event>
+
+<Event name="Reconnect_Request" affectsAssetType="Node" affectsStateDimension="Connectedness">
+    <DirectEffect>
+        <Transition WhenActualStateIs="Connected" EndStateWillBe="Connected" />
+        <Transition WhenActualStateIs="WantsToDisconnect" EndStateWillBe="WantsToConnect" />
+        <Transition WhenActualStateIs="Disconnected" EndStateWillBe="WantsToConnect" />
+        <Transition WhenActualStateIs="WantsToConnect" EndStateWillBe="WantsToConnect" />
+        <Transition WhenActualStateIs="Tardy" EndStateWillBe="Tardy" />
+    </DirectEffect>
+    <TransitiveEffect>
+        <CausesEvent name="Reconnect_Request" assetType="Agent"/>
+        <VulnerableAssets>
+            <ContainmentFilter eventAssetContainerName="Agent" />
+            <EventLikelihood probability="ALWAYS" />
+        </VulnerableAssets>
+    </TransitiveEffect> 
+</Event>
+
+<Event name="Disconnect_Request" affectsAssetType="Agent" affectsStateDimension="Connectedness">
+    <DirectEffect>
+        <Transition WhenActualStateIs="Connected" EndStateWillBe="WantsToDisconnect" />
+        <Transition WhenActualStateIs="WantsToDisconnect" EndStateWillBe="WantsToDisconnect" />
+        <Transition WhenActualStateIs="Disconnected" EndStateWillBe="Disconnected" />
+        <Transition WhenActualStateIs="WantsToConnect" EndStateWillBe="WantsToDisconnect" />
+        <Transition WhenActualStateIs="Tardy" EndStateWillBe="Tardy" />
+    </DirectEffect>
+</Event>
+
+<Event name="Reconnect_Request" affectsAssetType="Agent" affectsStateDimension="Connectedness">
+    <DirectEffect>
+        <Transition WhenActualStateIs="Connected" EndStateWillBe="Connected" />
+        <Transition WhenActualStateIs="WantsToDisconnect" EndStateWillBe="WantsToConnect" />
+        <Transition WhenActualStateIs="Disconnected" EndStateWillBe="WantsToConnect" />
+        <Transition WhenActualStateIs="WantsToConnect" EndStateWillBe="WantsToConnect" />
+        <Transition WhenActualStateIs="Tardy" EndStateWillBe="Tardy" />
+    </DirectEffect>
+</Event>
+
+<Event name="Late_Return" affectsAssetType="Node" affectsStateDimension="Connectedness">
+    <DirectEffect>
+        <Transition WhenActualStateIs="Connected" EndStateWillBe="Connected" />
+        <Transition WhenActualStateIs="WantsToDisconnect" EndStateWillBe="WantsToDisconnect" />
+        <Transition WhenActualStateIs="Disconnected" EndStateWillBe="Tardy" />
+        <Transition WhenActualStateIs="WantsToConnect" EndStateWillBe="Tardy" />
+        <Transition WhenActualStateIs="Tardy" EndStateWillBe="Tardy" />
+    </DirectEffect>
+    <TransitiveEffect>
+        <CausesEvent name="Late_Return" assetType="Agent"/>
+        <VulnerableAssets>
+            <ContainmentFilter eventAssetContainerName="Agent" />
+            <EventLikelihood probability="ALWAYS" />
+        </VulnerableAssets>
+    </TransitiveEffect> 
+</Event>
+
+<Event name="Late_Return" affectsAssetType="Agent" affectsStateDimension="Connectedness">
+    <DirectEffect>
+        <Transition WhenActualStateIs="Connected" EndStateWillBe="Connected" />
+        <Transition WhenActualStateIs="WantsToDisconnect" EndStateWillBe="WantsToDisconnect" />
+        <Transition WhenActualStateIs="Disconnected" EndStateWillBe="Tardy" />
+        <Transition WhenActualStateIs="WantsToConnect" EndStateWillBe="Tardy" />
+        <Transition WhenActualStateIs="Tardy" EndStateWillBe="Tardy" />
+    </DirectEffect>
+</Event>
+
+<Event name="Agent_Restart" affectsAssetType="Agent" affectsStateDimension="Connectedness">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="Connected" />
+    </DirectEffect>
+</Event>
+
+</Events>
