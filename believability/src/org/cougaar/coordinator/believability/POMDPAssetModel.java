@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetModel.java,v $
- * $Revision: 1.12 $
- * $Date: 2004-07-02 21:49:33 $
+ * $Revision: 1.13 $
+ * $Date: 2004-07-02 23:34:03 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.12 $Date: 2004-07-02 21:49:33 $
+ * @version $Revision: 1.13 $Date: 2004-07-02 23:34:03 $
  *
  */
 class POMDPAssetModel extends Model
@@ -211,7 +211,7 @@ class POMDPAssetModel extends Model
     {
         if ( start_belief == null )
             throw new BelievabilityException
-                    ( "POMDPModelManager.updateBeliefState()",
+                    ( "POMDPAssetModel.updateBeliefState()",
                       "NULL starting belief passed in." );
 
         // For testing to increase the time intervals so that I do not
@@ -319,7 +319,7 @@ class POMDPAssetModel extends Model
         if (( start_belief == null )
             || ( trigger == null ))
             throw new BelievabilityException
-                    ( "POMDPModelManager.updateBeliefState()",
+                    ( "POMDPAssetModel.updateBeliefState()",
                       "NULL parameters(s) passed in." );
         
         // All state dimensions will be updated to the currrent
@@ -349,7 +349,12 @@ class POMDPAssetModel extends Model
         //
         String state_dim_name = trigger.getStateDimensionName();
 
-        // First, fetch the appropriate POMDP model for this dimension...
+        if ( state_dim_name == null )
+            throw new BelievabilityException
+                    ( "POMDPAssetModel.updateBeliefState()",
+                      "Found NULL state dimension in trigger." );
+        
+      // First, fetch the appropriate POMDP model for this dimension...
         POMDPAssetDimensionModel pomdp_model_dim
                 = getPOMDPAssetDimensionModel( state_dim_name );
         

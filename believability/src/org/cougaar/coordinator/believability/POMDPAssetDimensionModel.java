@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetDimensionModel.java,v $
- * $Revision: 1.11 $
- * $Date: 2004-07-02 21:49:33 $
+ * $Revision: 1.13 $
+ * $Date: 2004-07-12 19:30:46 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -29,7 +29,7 @@ import org.cougaar.coordinator.techspec.AssetType;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.11 $Date: 2004-07-02 21:49:33 $
+ * @version $Revision: 1.13 $Date: 2004-07-12 19:30:46 $
  *
  */
 class POMDPAssetDimensionModel extends Model
@@ -445,15 +445,15 @@ class POMDPAssetDimensionModel extends Model
             updateBeliefStateDiagnosisObs( prev_belief,
                                            (BelievabilityDiagnosis) trigger,
                                            next_belief );
-        else if ( trigger instanceof BelievabilityDiagnosis)
+        else if ( trigger instanceof BelievabilityAction)
             updateBeliefStateActionTrans( prev_belief,
                                           (BelievabilityAction) trigger,
                                           next_belief );
         else
             throw new BelievabilityException
                     ( "updateBeliefStateTrigger()",
-                      "Unknown BeliefUpdateTrigger type: "
-                      + trigger );
+                      "Unknown BeliefUpdateTrigger subclass: "
+                      + trigger.getClass().getName() );
             
     } // method updateBeliefStateTrigger
 

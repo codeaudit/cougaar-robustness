@@ -80,10 +80,10 @@ public class BelievabilityPlugin
      // Initialize various classes
      _model_manager = new ModelManager();
      _se_publisher = new StateEstimationPublisher( this, _model_manager );
-     _diagnosis_consumer = new DiagnosisConsumer( this,
+     _trigger_consumer = new TriggerConsumer( this,
                                 _model_manager,
                                 _se_publisher );
-     _se_publisher.setAssetContainer( _diagnosis_consumer.getAssetContainer() );
+     _se_publisher.setAssetContainer( _trigger_consumer.getAssetContainer() );
      
     } // constructor BelievabilityPlugin
     
@@ -349,7 +349,7 @@ public class BelievabilityPlugin
           // Check to see whether the defense controller is enabled at
           // the moment
           if (_dc_enabled) 
-              _diagnosis_consumer.consumeUpdateTrigger( but );
+              _trigger_consumer.consumeUpdateTrigger( but );
          }
          catch ( BelievabilityException be ) {
              if (logger.isWarnEnabled() ) 
@@ -369,7 +369,7 @@ public class BelievabilityPlugin
           // Check to see whether the defense controller is enabled at
           // the moment
           if (_dc_enabled) 
-              _diagnosis_consumer.consumeUpdateTrigger( but );
+              _trigger_consumer.consumeUpdateTrigger( but );
 
          }
          catch ( BelievabilityException be ) {
@@ -565,7 +565,7 @@ public class BelievabilityPlugin
     private StateEstimationPublisher _se_publisher = null;
 
     // This is the asset index for the AssetModels. It is indexed by AssetID
-    private DiagnosisConsumer _diagnosis_consumer = null;
+    private TriggerConsumer _trigger_consumer = null;
 
     // Vector of things waiting to be published to the blackboard
     private Vector _publication_list = new Vector();

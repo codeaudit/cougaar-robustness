@@ -41,6 +41,6 @@ public interface BeliefUpdateTriggerConsumerInterface {
      * @param trigger The new BeliefUpdateTrigger
      **/    
     public void consumeBeliefUpdateTrigger( BeliefUpdateTrigger trigger )
-	throws BelievabilityException;
+     throws BelievabilityException;
 
-} // class DiagnosisConsumerInterface
+} // class BeliefUpdateTriggerConsumerInterface

@@ -119,7 +119,7 @@ public class AssetModel extends Loggable {
      **/
     public BeliefState getCurrentBeliefState() throws BelievabilityException {
      if ( getBeliefStateWindow() == null ) {
-         logError( "Null BeliefStateWindow for asset " + getAssetID() );
+         logWarning( "Null BeliefStateWindow for asset " + getAssetID() );
          return null;
      }
 
@@ -137,7 +137,7 @@ public class AssetModel extends Loggable {
      throws BelievabilityException {
 
      if ( getBeliefStateWindow() == null ) 
-         logError( "Null BeliefStateWindow for asset " + getAssetID() );
+         logWarning( "Null BeliefStateWindow for asset " + getAssetID() );
 
      else 
          // May throw BelievabilityException

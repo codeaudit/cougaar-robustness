@@ -1,5 +1,5 @@
 /**
- * DiagnosisConsumerInterface.java
+ * TriggerConsumerInterface.java
  *
  * Created on May 6, 2004
  * <copyright>
@@ -25,21 +25,21 @@
 
 package org.cougaar.coordinator.believability;
 
-import org.cougaar.coordinator.Diagnosis;
-
 /**
- * Used to accept new diagnoses and take the appropriate action.
+ * Used to accept new diagnoses from the blackboard
+ * and take the appropriate action.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.11 $Date: 2004-07-02 21:49:33 $
+ * @version $Revision: 1.2 $Date: 2004-07-12 19:30:46 $
+ * 
  */
-public interface BelievabilityDiagnosisConsumerInterface {
+public interface TriggerConsumerInterface {
 
     //------------------------------------------------------------
     // public interface
     //------------------------------------------------------------
 
-    public void consumeBelievabilityDiagnosis( BelievabilityDiagnosis diag ) 
-	throws BelievabilityException;
+    public void consumeUpdateTrigger( BeliefUpdateTrigger but ) 
+     throws BelievabilityException;
 
-} // class DiagnosisConsumerInterface
+} // class TriggerConsumerInterface

@@ -1,5 +1,5 @@
 /**
- * DiagnosisConsumer.java
+ * TriggerConsumer.java
  *
  * Created on May 6, 2004
  * <copyright>
@@ -29,8 +29,8 @@ package org.cougaar.coordinator.believability;
  * Used to accept new diagnoses or action successes from the blackboard
  * and take the appropriate action.
  */
-public class DiagnosisConsumer extends Loggable
-    implements DiagnosisConsumerInterface {
+public class TriggerConsumer extends Loggable
+    implements TriggerConsumerInterface {
 
     /**
      * Constructor
@@ -39,7 +39,7 @@ public class DiagnosisConsumer extends Loggable
      * @param se_publisher The publisher that will publish any resulting
      *                     StateEstimations
      **/
-    public DiagnosisConsumer( BelievabilityPlugin bel_plugin,
+    public TriggerConsumer( BelievabilityPlugin bel_plugin,
                      ModelManagerInterface model_manager,
                      StateEstimationPublisher se_publisher ) {
      // Copy off the parameters
@@ -84,10 +84,10 @@ public class DiagnosisConsumer extends Loggable
      **/
     private void sendToAssetModel( BeliefUpdateTrigger but ) {
 
-        logDebug("Updating Belief State for " + but.toString() );
+        logDetail("Updating Belief State for " + but.toString() );
      
      try {
-         // Find the AssetModel and AssetStateWindow that this diagnosis
+         // Find the AssetModel and AssetStateWindow that this trigger
          // concerns.
          AssetModel am = _asset_container.getAssetModel( but.getAssetID() );
          if ( am == null ) {
@@ -99,11 +99,11 @@ public class DiagnosisConsumer extends Loggable
           _asset_container.addAssetModel( am );
          }
      
-         // Update the asset state window with the new diagnosis
+         // Update the asset state window with the new trigger
          am.consumeBeliefUpdateTrigger( but );
      }
      catch( BelievabilityException be ) {
-         logWarning( "Failed to update diagnosis or action -- " +
+         logWarning( "Failed to update. Exception: " +
                      be.getMessage() );
          
      }
@@ -122,7 +122,7 @@ public class DiagnosisConsumer extends Loggable
     // The asset container for all of the asset models.
     private AssetContainer _asset_container = null;
 
-} // class DiagnosisConsumer
+} // class TriggerConsumer
 
 
 

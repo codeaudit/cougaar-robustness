@@ -290,7 +290,7 @@ import java.sql.Timestamp;
           
           //remove the oldest belief state & publish current belief state
           if (_bst_queue.size() != _diag_queue.size()) {
-           throw new BelievabilityException ("BeliefStateWindow.consumeBelievabilityDiagnosis","Diagnosis:BeliefState coordianation mismatched");
+           throw new BelievabilityException ("BeliefStateWindow.consumeBeliefUpdateTrigger","Diagnosis:BeliefState coordianation mismatched");
           }
           if (_bst_queue.size() > 1){
                _bst_queue.removeFirst();
@@ -298,11 +298,12 @@ import java.sql.Timestamp;
           }
           this.publishBeliefState(current_belief_state);
       } catch (BelievabilityException be){
-          logDebug("Believability exception in consumeBelievabilityDiagnosis :" + be.getMessage());
-          throw new BelievabilityException ("BeliefStateWindow.consumeBelievabilityDiagnosis", be.getMessage());   
+          logDebug("Believability exception in consumeBeliefUpdateTrigger :" + be.getMessage());
+          throw new BelievabilityException ("BeliefStateWindow.consumeBeliefUpdateTrigger", be.getMessage());   
       } catch (Exception e){
-          logDebug("General Error in consumeBelievabilityDiagnosis :" + e.getMessage());
-          throw new BelievabilityException ("BeliefStateWindow.consumeBelievabilityDiagnosis", e.getMessage());
+          logDebug("General Error in consumeBeliefUpdateTrigger :" + e.toString());
+
+          throw new BelievabilityException ("BeliefStateWindow.consumeBeliefUpdateTrigger", e.getMessage());
       }
      }    
     /**
