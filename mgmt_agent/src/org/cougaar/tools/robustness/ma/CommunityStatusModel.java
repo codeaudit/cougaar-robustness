@@ -133,7 +133,7 @@ public class CommunityStatusModel extends BlackboardClientComponent {
   private int triggerState = -2;
 
   private List eventQueue = new ArrayList();
-  private List changeListeners = new ArrayList();
+  private List changeListeners = Collections.synchronizedList(new ArrayList());
 
   /**
    * Constructor.
@@ -980,10 +980,8 @@ public class CommunityStatusModel extends BlackboardClientComponent {
    * @param scl  StatusChangeListener to add
    */
   public void addChangeListener(StatusChangeListener scl) {
-    synchronized (changeListeners) {
-      if (!changeListeners.contains(scl))
-        changeListeners.add(scl);
-    }
+    if (!changeListeners.contains(scl))
+      changeListeners.add(scl);
   }
 
   /**
@@ -991,10 +989,8 @@ public class CommunityStatusModel extends BlackboardClientComponent {
    * @param scl  StatusChangeListener to remove
    */
   public void removeChangeListener(StatusChangeListener scl) {
-    synchronized (changeListeners) {
-      if (changeListeners.contains(scl))
-        changeListeners.remove(scl);
-    }
+    if (changeListeners.contains(scl))
+      changeListeners.remove(scl);
   }
 
   /**
@@ -1039,11 +1035,13 @@ public class CommunityStatusModel extends BlackboardClientComponent {
    * Send CommunityStatusChangeEvent to listeners.
    */
   protected void notifyListeners(CommunityStatusChangeEvent[] csce) {
+    List listenersToNotify = new ArrayList();
     synchronized (changeListeners) {
-      for (Iterator it = changeListeners.iterator(); it.hasNext(); ) {
-        StatusChangeListener csl = (StatusChangeListener) it.next();
-        csl.statusChanged(csce, this);
-      }
+      listenersToNotify.addAll(changeListeners);
+    }
+    for (Iterator it = listenersToNotify.iterator(); it.hasNext(); ) {
+      StatusChangeListener csl = (StatusChangeListener) it.next();
+      csl.statusChanged(csce);
     }
   }
 
