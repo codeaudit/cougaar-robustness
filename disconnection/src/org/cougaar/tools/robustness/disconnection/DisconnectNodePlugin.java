@@ -42,48 +42,12 @@ import java.util.Date;
 import java.util.Set;
 import java.util.Collection;
 
-import org.cougaar.core.adaptivity.*;
-import org.cougaar.core.adaptivity.OMCRangeList;
-
-import org.cougaar.core.component.BindingSite;
-import org.cougaar.core.component.Component;
-import org.cougaar.core.component.Service;
-import org.cougaar.core.component.ServiceBroker;
-import org.cougaar.core.component.ServiceProvider;
-import org.cougaar.core.service.EventService;
-
-import org.cougaar.core.service.ConditionService;
-import org.cougaar.core.service.OperatingModeService;
-import org.cougaar.core.service.UIDService;
-import org.cougaar.core.service.AgentIdentificationService;
-import org.cougaar.core.node.NodeIdentificationService;
-import org.cougaar.core.mts.AgentStatusService;
-import org.cougaar.core.node.NodeControlService;
-
-import org.cougaar.core.adaptivity.InterAgentCondition;
-import org.cougaar.core.relay.Relay;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.blackboard.IncrementalSubscription;
-import org.cougaar.core.plugin.ComponentPlugin;
-import org.cougaar.core.persist.NotPersistable;
-
 import org.cougaar.util.UnaryPredicate;
-import org.cougaar.util.GenericStateModelAdapter;
 
-
-public class DisconnectNodePlugin extends ServiceUserPluginBase {
+public class DisconnectNodePlugin extends DisconnectPluginBase {
     
-  private ConditionService conditionService;
-  private OperatingModeService operatingModeService;
-  private UIDService us = null;
-  private NodeIdentificationService nodeIdentificationService;
-  private AgentIdentificationService agentIdentificationService;
-  private EventService eventService;
-  private AgentStatusService agentStatusService;
-  private NodeControlService nodeControlService;
-  
-  private MessageAddress nodeAddress;
-  private String nodeID;
   private MessageAddress managerAddress;
   private String managerID;
 
@@ -98,33 +62,19 @@ public class DisconnectNodePlugin extends ServiceUserPluginBase {
   private IncrementalSubscription managerAddressSubscription;
     
   private long reconnectInterval;
-  private String defenseMode;
-  private String monitoringMode;
- 
-  private static final Class[] requiredServices = {
-    ConditionService.class,
-    OperatingModeService.class,
-    UIDService.class,
-    AgentIdentificationService.class,
-    NodeIdentificationService.class,
-    EventService.class
-  };
   
 
   public DisconnectNodePlugin() {
-    super(requiredServices);
+    super();
   }
 
   
   public void load() {
       super.load();
-      cancelTimer();
   }
   
   public void setupSubscriptions() {
     
-     haveServices(); 
-     
      initObjects(); //create & publish condition and op mode objects
 
      //Listen for new agents on this node
@@ -186,61 +136,14 @@ public class DisconnectNodePlugin extends ServiceUserPluginBase {
             return false ;
         }
       
-     }) ;    }
+     }) ;    
+  }
 
 
   
   private void initObjects() {
-    
-     nodeAddress = agentIdentificationService.getMessageAddress();
-     nodeID = agentIdentificationService.getName();
-     if (logger.isDebugEnabled()) logger.debug("NodeAgent Address: "+nodeAddress);
   }      
  
-  
-  private boolean haveServices() {
-    //if (conditionService != null && operatingModeService != null && us != null) return true;
-    if (acquireServices()) {
-      if (logger.isDebugEnabled()) logger.debug(".haveServices - acquiredServices.");
-      ServiceBroker sb = getServiceBroker();
-      conditionService = (ConditionService)
-        sb.getService(this, ConditionService.class, null);
-      
-      operatingModeService = (OperatingModeService)
-        sb.getService(this, OperatingModeService.class, null);
-      
-      us = (UIDService ) 
-        sb.getService( this, UIDService.class, null ) ;
-        
-      // get the EventService
-      this.eventService = (EventService)
-          sb.getService(this, EventService.class, null);
-      if (eventService == null) {
-          throw new RuntimeException("Unable to obtain EventService");
-      }
-
-      this.nodeControlService = (NodeControlService)
-          sb.getService(this, NodeControlService.class, null);
-      if (nodeControlService == null) {
-          throw new RuntimeException("Unable to obtain EventService");
-      }
-
-      this.agentStatusService = (AgentStatusService)
-          sb.getService(this, AgentStatusService.class, null);
-      if (agentStatusService == null) {
-          throw new RuntimeException("Unable to obtain AgentStatusService");
-      }
-      agentIdentificationService = (AgentIdentificationService)
-        sb.getService(this, AgentIdentificationService.class, null);
-      if (agentIdentificationService == null) {
-          throw new RuntimeException("Unable to obtain agent-id service");
-      }
-      else if (logger.isDebugEnabled()) logger.debug(agentIdentificationService.toString());
-      return true;
-    }
-    else if (logger.isDebugEnabled()) logger.warn(".haveServices - did NOT acquire services.");
-    return false;
-  }
 
   public void execute() {
 
@@ -254,7 +157,7 @@ public class DisconnectNodePlugin extends ServiceUserPluginBase {
           Iterator iter2 = localAgentsSubscription.getAddedCollection().iterator();
           while (iter2.hasNext()) {
              AgentExistsCondition aec = (AgentExistsCondition) iter2.next();
-             createConditionsAndOpModes("Agent", aec.getAsset(), nodeAddress, managerAddress);
+             createConditionsAndOpModes("Agent", aec.getAsset(), getNodeAddress(), managerAddress);
           }
       }
 
@@ -265,15 +168,15 @@ public class DisconnectNodePlugin extends ServiceUserPluginBase {
            if (logger.isDebugEnabled()) logger.debug("ManagerAddress: "+managerAddress.toString());
 
           // create conditions & opmodes for the NodeAgent
-          createLocalCondition("Node", nodeID, nodeAddress, managerAddress);
-          createConditionsAndOpModes("Node", nodeID, nodeAddress, managerAddress);
+          createLocalCondition("Node", getNodeID(), getNodeAddress(), managerAddress);
+          createConditionsAndOpModes("Node", getNodeID(), getNodeAddress(), managerAddress);
      
           //********** Check for new agents on the node **********
           // create conditions for all the agents that reported BEFORE we found the ManagerAgent Address
           Iterator iter2 = localAgentsSubscription.iterator();
           while (iter2.hasNext()) {
              AgentExistsCondition aec = (AgentExistsCondition) iter2.next();
-             createConditionsAndOpModes("Agent", aec.getAsset(), nodeAddress, managerAddress);
+             createConditionsAndOpModes("Agent", aec.getAsset(), getNodeAddress(), managerAddress);
           }
       }
       
@@ -294,7 +197,7 @@ public class DisconnectNodePlugin extends ServiceUserPluginBase {
       while (iter.hasNext()) {
           DisconnectDefenseAgentEnabler dmode = (DisconnectDefenseAgentEnabler)iter.next();
           if (dmode != null) {
-              defenseMode = dmode.getValue().toString();
+              String defenseMode = dmode.getValue().toString();
               if (logger.isDebugEnabled()) logger.debug("Saw: "+
                  dmode.getClass()+":"+
                  dmode.getName() + " set to " + dmode.getValue());
@@ -306,7 +209,7 @@ public class DisconnectNodePlugin extends ServiceUserPluginBase {
       while (iter.hasNext()) {      
           DisconnectMonitoringAgentEnabler mmode = (DisconnectMonitoringAgentEnabler)iter.next();
           if (mmode != null) {
-              monitoringMode = mmode.getValue().toString();
+              String monitoringMode = mmode.getValue().toString();
               if (logger.isDebugEnabled()) logger.debug("Saw: "+
                 mmode.getClass()+":"+
                 mmode.getName() + " set to " + mmode.getValue());
@@ -330,7 +233,7 @@ public class DisconnectNodePlugin extends ServiceUserPluginBase {
               ReconnectTimeCondition rtc = (ReconnectTimeCondition)iter2.next();
               rtc.setTime(new Double(Double.parseDouble(lrtc.getValue().toString())));
               getBlackboardService().publishAdd(rtc);
-              if (logger.isDebugEnabled()) logger.debug("Set the Condition for "+nodeID+":"+rtc.getAsset());   
+              if (logger.isDebugEnabled()) logger.debug("Set the Condition for "+getNodeID()+":"+rtc.getAsset());   
           }
       }
       
@@ -341,10 +244,10 @@ public class DisconnectNodePlugin extends ServiceUserPluginBase {
           DisconnectDefenseAgentEnabler dmode = (DisconnectDefenseAgentEnabler)iter.next();
           if (dmode != null) {
               if (dmode.getAssetType().equals("Node")) {
-                  defenseMode = dmode.getValue().toString();
+                  String defenseMode = dmode.getValue().toString();
                   if (eventService.isEventEnabled()) {
                       if (defenseMode.equals("ENABLED")) {
-                          eventService.event(nodeID+" plans to Disconnect for "+reconnectInterval+" sec");
+                          eventService.event(getNodeID()+" plans to Disconnect for "+reconnectInterval+" sec");
                      } 
                   }
               }
@@ -358,7 +261,7 @@ public class DisconnectNodePlugin extends ServiceUserPluginBase {
         
           LocalReconnectTimeCondition lrtc =
              new LocalReconnectTimeCondition("Node", assetID);
-          lrtc.setUID(us.nextUID());
+          lrtc.setUID(getUIDService().nextUID());
           lrtc.setSourceAndTarget(localAddress, remoteAddress);
 
           getBlackboardService().publishAdd(lrtc);
@@ -371,15 +274,15 @@ public class DisconnectNodePlugin extends ServiceUserPluginBase {
         // Make the remote condition & opmodes (used for agents & the node agent)
 
         ReconnectTimeCondition rtc = new ReconnectTimeCondition(assetType, assetID);
-        rtc.setUID(us.nextUID());
+        rtc.setUID(getUIDService().nextUID());
         rtc.setSourceAndTarget(localAddress, remoteAddress);
 
         DisconnectDefenseAgentEnabler dde = new DisconnectDefenseAgentEnabler(assetType, assetID);
-        dde.setUID(us.nextUID());
+        dde.setUID(getUIDService().nextUID());
         dde.setSourceAndTarget(localAddress, remoteAddress);
 
         DisconnectMonitoringAgentEnabler dme = new DisconnectMonitoringAgentEnabler(assetType, assetID);
-        dme.setUID(us.nextUID());
+        dme.setUID(getUIDService().nextUID());
         dme.setSourceAndTarget(localAddress, remoteAddress);
 
         getBlackboardService().publishAdd(rtc);
@@ -393,10 +296,10 @@ public class DisconnectNodePlugin extends ServiceUserPluginBase {
     private void removeConditionsAndOpModes(String assetType, String assetID) {
         // Find and remove the corresponding ReconnectTimeCondition & LocalReconnectTimeCondition
         
-        LocalReconnectTimeCondition lrtc = LocalReconnectTimeCondition.findOnBlackboard(assetType, assetID, blackboard);       
-        ReconnectTimeCondition rtc = ReconnectTimeCondition.findOnBlackboard(assetType, assetID, blackboard);
-        DisconnectMonitoringAgentEnabler dme = DisconnectMonitoringAgentEnabler.findOnBlackboard(assetType, assetID, blackboard);
-        DisconnectDefenseAgentEnabler dde = DisconnectDefenseAgentEnabler.findOnBlackboard(assetType, assetID, blackboard);
+        LocalReconnectTimeCondition lrtc = LocalReconnectTimeCondition.findOnBlackboard(assetType, assetID, getBlackboardService());       
+        ReconnectTimeCondition rtc = ReconnectTimeCondition.findOnBlackboard(assetType, assetID, getBlackboardService());
+        DisconnectMonitoringAgentEnabler dme = DisconnectMonitoringAgentEnabler.findOnBlackboard(assetType, assetID, getBlackboardService());
+        DisconnectDefenseAgentEnabler dde = DisconnectDefenseAgentEnabler.findOnBlackboard(assetType, assetID, getBlackboardService());
         
         if (lrtc != null) blackboard.publishRemove(lrtc);
         if (rtc != null) blackboard.publishRemove(rtc);

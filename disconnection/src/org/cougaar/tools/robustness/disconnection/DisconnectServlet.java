@@ -57,15 +57,13 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.cougaar.core.servlet.ComponentServlet;
 
-import org.cougaar.util.UnaryPredicate;
-import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.component.ServiceBroker;
+import org.cougaar.core.service.BlackboardService;
+import org.cougaar.core.node.NodeIdentificationService;
 import org.cougaar.core.blackboard.BlackboardClient;
 import org.cougaar.core.mts.MessageAddress;
-import org.cougaar.core.node.NodeIdentificationService;
 
 import org.cougaar.core.servlet.BaseServletComponent;
-//import org.cougaar.core.servlet.BlackboardServletSupport;
 import org.cougaar.planning.servlet.BlackboardServletComponent;
 
 import org.cougaar.core.service.LoggingService;
@@ -84,7 +82,7 @@ public class DisconnectServlet extends BaseServletComponent
   private BlackboardService blackboard = null;
   private Logger logger = null;
   
-  private String assetType;
+  private String assetType = "Node";
   private String assetID = null;
   
   
@@ -97,47 +95,33 @@ public class DisconnectServlet extends BaseServletComponent
   public void load() {
 
     // get the log
-    logger = (LoggingService)
-      serviceBroker.getService(
-          this, LoggingService.class, null);
+    logger = 
+        (LoggingService) serviceBroker.getService(this, LoggingService.class, null);
     if (logger == null) {
       logger = LoggingService.NULL;
     }
-
-    // get the agentId
-    NodeIdentificationService nodeIdService = 
-      (NodeIdentificationService)
-      serviceBroker.getService(
-          this,
-          NodeIdentificationService.class,
-          null);
-    if (nodeIdService == null) {
-      throw new RuntimeException(
-          "Unable to obtain node-id service");
-    }
     
-    this.assetType = "Node";  // for now - later may be other kinds of assets
-    if (assetType.equals("Node")) {
-        this.assetID = nodeIdService.getMessageAddress().toString();
-        serviceBroker.releaseService(
-            this, NodeIdentificationService.class, nodeIdService);
-        if (assetID == null) {
-          throw new RuntimeException(
-              "Unable to obtain agent id");
-        }
-    }
-
     // get the blackboard
-    this.blackboard = (BlackboardService)
-      serviceBroker.getService(
-          this,
-          BlackboardService.class,
-          null);
+    blackboard = 
+        (BlackboardService) serviceBroker.getService(this, BlackboardService.class, null);
     if (blackboard == null) {
-      throw new RuntimeException(
-          "Unable to obtain blackboard service");
+      throw new RuntimeException("Unable to obtain blackboard service");
     }
     
+    // get the agentId
+    if (assetType.equals("Node")) {
+      NodeIdentificationService nodeIdService = 
+          (NodeIdentificationService) serviceBroker.getService(this, NodeIdentificationService.class, null);
+      if (nodeIdService == null) {
+          throw new RuntimeException("Unable to obtain node-id service");
+      } 
+      assetID = nodeIdService.getMessageAddress().toString();
+      serviceBroker.releaseService(this, NodeIdentificationService.class, nodeIdService);
+      if (assetID == null) {
+          throw new RuntimeException("Unable to obtain node id");
+      }
+    }
+
     super.load();
   }
 
@@ -145,20 +129,18 @@ public class DisconnectServlet extends BaseServletComponent
   public void unload() {
     super.unload();
     if (blackboard != null) {
-      serviceBroker.releaseService(
-          this, BlackboardService.class, blackboard);
+      serviceBroker.releaseService(this, BlackboardService.class, blackboard);
       blackboard = null;
     }
     
     if ((logger != null) && (logger != LoggingService.NULL)) {
-      serviceBroker.releaseService(
-          this, LoggingService.class, logger);
+      serviceBroker.releaseService(this, LoggingService.class, logger);
       logger = LoggingService.NULL;
     }
   }
 
   // odd BlackboardClient method:
-  public String getBlackboardClientName() {
+  public java.lang.String getBlackboardClientName() {
     return toString();
   }
 
@@ -210,15 +192,16 @@ public class DisconnectServlet extends BaseServletComponent
                   d = new Double(Double.parseDouble(expire)*1000.0);
                   try {
                         blackboard.openTransaction();
-                        LocalReconnectTimeCondition lrtc = setReconnectTimeConditionValue(d);
+                        LocalReconnectTimeCondition lrtc = LocalReconnectTimeCondition.findOnBlackboard(assetType, assetID, blackboard);
                         if (lrtc != null) {
-                           out.println("<center><h2>Status Changed - Disconnected</h2></center><br>" );
+                           lrtc.setTime(d);
+                           out.println("<center><h2>Status Changed - Disconnect Requested</h2></center><br>" );
                            blackboard.publishChange(lrtc); 
-                           if (logger.isDebugEnabled()) logger.debug("DisconnectServlet published ReconnectTimeCondition: "+lrtc.getAsset()+" = "+lrtc.getValue().toString());
+                           if (logger.isDebugEnabled()) logger.debug("Disconnect Requested: "+lrtc.getAsset()+" = "+lrtc.getValue().toString());
                         }
                         else {
-                            out.println("<center><h2>Failed to Disconnect - No Condition Objects - Caused by not finding a ManagementAgent address</h2></center><br>");
-                            if (logger.isErrorEnabled()) logger.error("Failed to Disconnect - No Condition Objects - Caused by not finding a ManagementAgent address");
+                            out.println("<center><h2>Failed to Disconnect - Defense not initialized: can't find ManagementAgent address</h2></center><br>");
+                            if (logger.isErrorEnabled()) logger.error("Failed to Disconnect - Defense not initialized: can't find ManagementAgent address");
                         }
                         blackboard.closeTransaction();
                     } finally {
@@ -226,6 +209,7 @@ public class DisconnectServlet extends BaseServletComponent
                     }
               } catch (NumberFormatException nfe) {
                   out.println("<center><h2>Failed to Disconnect - NumberFormatException!</h2></center><br>" );            
+                  if (logger.isErrorEnabled()) logger.error("Failed to Disconnect - NumberFormatException!");
               }
           } else {
           }
@@ -236,11 +220,12 @@ public class DisconnectServlet extends BaseServletComponent
       private void reconnect(HttpServletRequest request, PrintWriter out) {
           try {
               blackboard.openTransaction();
-              LocalReconnectTimeCondition lrtc = setReconnectTimeConditionValue(new Double(0.0));
+              LocalReconnectTimeCondition lrtc = LocalReconnectTimeCondition.findOnBlackboard(assetType, assetID, blackboard);
               if (lrtc != null) {
-                  out.println("<center><h2>Status Changed - Reconnected</h2></center><br>" );
+                  lrtc.setTime(new Double(0.0));
+                  out.println("<center><h2>Status Changed - Reconnect Requested</h2></center><br>" );
                   blackboard.publishChange(lrtc); 
-                  if (logger.isDebugEnabled()) logger.debug("DisconnectServlet published DisconnectCondition: "+lrtc.getAsset()+" = "+lrtc.getValue().toString());
+                  if (logger.isDebugEnabled()) logger.debug("Reconnect Request: "+lrtc.getAsset()+" = "+lrtc.getValue().toString());
                   }
               else {
                   out.println("<center><h2>Failed to Reset</h2></center><br>");
@@ -249,22 +234,7 @@ public class DisconnectServlet extends BaseServletComponent
           } finally {
                 if (blackboard.isTransactionOpen()) blackboard.closeTransactionDontReset();
           }            
-      }
-
-        
-      /** Publish reconnect time */
-      private LocalReconnectTimeCondition setReconnectTimeConditionValue(Double d) {
-
-          LocalReconnectTimeCondition item = LocalReconnectTimeCondition.findOnBlackboard(assetType, assetID, blackboard);
-          if (item != null) { //  better always be true
-              item.setTime(d);
-              return item;
-          }
-          else {
-              if (logger.isWarnEnabled()) logger.warn("No LocalReconnectTimeCondition for "+assetID+" be patient, sometimes this takes a while to set up");
-              return null;
-          }
-      }      
+      }   
         
 
       /**

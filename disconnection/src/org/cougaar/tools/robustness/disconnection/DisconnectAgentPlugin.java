@@ -30,68 +30,21 @@ import java.util.Iterator;
 import java.util.Date;
 import java.util.Collection;
 
-import org.cougaar.core.adaptivity.*;
-import org.cougaar.core.adaptivity.OMCRangeList;
-//import org.cougaar.core.adaptivity.InterAgentOperatingModePolicy;
-//import org.cougaar.core.adaptivity.InterAgentOperatingMode;
-
-import org.cougaar.core.component.BindingSite;
-import org.cougaar.core.component.Component;
-import org.cougaar.core.component.Service;
-import org.cougaar.core.component.ServiceBroker;
-import org.cougaar.core.component.ServiceProvider;
-import org.cougaar.core.service.EventService;
-
-import org.cougaar.core.service.ConditionService;
-import org.cougaar.core.service.OperatingModeService;
-import org.cougaar.core.service.UIDService;
-import org.cougaar.core.service.AgentIdentificationService;
-import org.cougaar.core.node.NodeIdentificationService;
-
-import org.cougaar.core.adaptivity.InterAgentCondition;
-import org.cougaar.core.relay.Relay;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.blackboard.IncrementalSubscription;
-import org.cougaar.core.plugin.ComponentPlugin;
-import org.cougaar.core.persist.NotPersistable;
-
 import org.cougaar.util.UnaryPredicate;
-import org.cougaar.util.GenericStateModelAdapter;
 
 
-public class DisconnectAgentPlugin extends ServiceUserPluginBase {
-    
-  private ConditionService conditionService;
-  private OperatingModeService operatingModeService;
-  private UIDService us = null;
-  private NodeIdentificationService nodeIdentificationService;
-  private AgentIdentificationService agentIdentificationService;
-  private EventService eventService;
-  
-  private MessageAddress assetAddress;
-  private String assetID;
-  private MessageAddress nodeAddress;
+public class DisconnectAgentPlugin extends DisconnectPluginBase {
 
-  private static final Class[] requiredServices = {
-    ConditionService.class,
-    OperatingModeService.class,
-    UIDService.class,
-    AgentIdentificationService.class,
-    NodeIdentificationService.class,
-    EventService.class
-  };
-  
 
   public DisconnectAgentPlugin() {
-    super(requiredServices);
+    super();
   }
 
   
   public void load() {
       super.load();
-      haveServices(); 
-        if (logger.isDebugEnabled()) logger.debug("setupSubscriptions called.");
-     
       initObjects(); //create & publish condition and op mode objectscancelTimer();
   }
   
@@ -120,71 +73,25 @@ public class DisconnectAgentPlugin extends ServiceUserPluginBase {
     }
   
   public void setupSubscriptions() {
-    
-
   }
 
   
-  //Create one condition and one of each type of operating mode
   private void initObjects() {
-           
-     assetAddress = agentIdentificationService.getMessageAddress();
-     assetID = agentIdentificationService.getName();
-     nodeAddress = nodeIdentificationService.getMessageAddress();
-    
+     // create an AgentExistsCondition object to inform the NodeAgent that the agent is here
      AgentExistsCondition aec =
-        new AgentExistsCondition("Agent", assetID);
-     aec.setUID(us.nextUID());
-     aec.setSourceAndTarget(assetAddress, nodeAddress);
-     if (logger.isDebugEnabled()) logger.debug("Source: "+assetAddress+", Target: "+nodeAddress);
+        new AgentExistsCondition("Agent", getAgentID());
+     aec.setUID(getUIDService().nextUID());
+     aec.setSourceAndTarget(getAgentAddress(), getNodeAddress());
+     if (logger.isDebugEnabled()) logger.debug("Source: "+getAgentAddress()+", Target: "+getNodeAddress());
 
      getBlackboardService().openTransaction();
-     getBlackboardService().publishAdd(new Dummy(assetID));  // weird hack so the agent doesnt get lost on rehydration - not entirely clear this is the problem
+     //getBlackboardService().publishAdd(new Dummy(assetID));  // weird hack so the agent doesnt get lost on rehydration - not entirely clear this is the problem
      getBlackboardService().publishAdd(aec);
      getBlackboardService().closeTransaction();
 
-     if (logger.isDebugEnabled()) logger.debug("Announced existence of "+assetID);
-   
+     if (logger.isDebugEnabled()) logger.debug("Announced existence of "+getAgentID());   
   }      
-  
-  private boolean haveServices() {
-    //if (conditionService != null && operatingModeService != null && us != null) return true;
-    if (acquireServices()) {
-      if (logger.isDebugEnabled()) logger.debug(".haveServices - acquiredServices.");
-      ServiceBroker sb = getServiceBroker();
-      conditionService = (ConditionService)
-        sb.getService(this, ConditionService.class, null);
-      
-      operatingModeService = (OperatingModeService)
-        sb.getService(this, OperatingModeService.class, null);
-      
-      us = (UIDService ) 
-        sb.getService( this, UIDService.class, null ) ;
-        
-      // get the EventService
-      this.eventService = (EventService)
-          sb.getService(this, EventService.class, null);
-      if (eventService == null) {
-          throw new RuntimeException("Unable to obtain EventService");
-      }
 
-      this.nodeIdentificationService = (NodeIdentificationService)
-          sb.getService(this, NodeIdentificationService.class, null);
-      if (nodeIdentificationService == null) {
-          throw new RuntimeException("Unable to obtain EventService");
-      }
-      
-      agentIdentificationService = (AgentIdentificationService)
-        sb.getService(this, AgentIdentificationService.class, null);
-      if (agentIdentificationService == null) {
-          throw new RuntimeException("Unable to obtain agent-id service");
-      }
-      else if (logger.isDebugEnabled()) logger.debug(agentIdentificationService.toString());
-      return true;
-    }
-    else if (logger.isDebugEnabled()) logger.warn(".haveServices - did NOT acquire services.");
-    return false;
-  }
 
   public void execute() {
   }

@@ -29,57 +29,19 @@ import org.cougaar.tools.robustness.deconfliction.*;
 import java.util.Iterator;
 import java.util.Date;
 import java.util.Hashtable;
-
-import org.cougaar.core.adaptivity.*;
-import org.cougaar.core.adaptivity.OMCRangeList;
-import org.cougaar.core.adaptivity.InterAgentOperatingModePolicy;
-import org.cougaar.core.adaptivity.InterAgentOperatingMode;
-
-import org.cougaar.core.component.BindingSite;
-import org.cougaar.core.component.Component;
-import org.cougaar.core.component.Service;
-import org.cougaar.core.component.ServiceBroker;
-import org.cougaar.core.component.ServiceProvider;
-import org.cougaar.core.agent.service.alarm.Alarm;
-
-import org.cougaar.core.service.ConditionService;
-import org.cougaar.core.service.OperatingModeService;
-import org.cougaar.core.service.UIDService;
-import org.cougaar.core.service.AgentIdentificationService;
-import org.cougaar.core.service.EventService;
-import org.cougaar.core.service.community.CommunityService;
-
-
-import org.cougaar.core.adaptivity.InterAgentCondition;
-import org.cougaar.core.relay.Relay;
-import org.cougaar.core.mts.MessageAddress;
-import org.cougaar.core.blackboard.IncrementalSubscription;
-import org.cougaar.core.plugin.ComponentPlugin;
-import org.cougaar.core.persist.NotPersistable;
-
-import org.cougaar.util.UnaryPredicate;
-import org.cougaar.util.GenericStateModelAdapter;
-
-import org.cougaar.core.service.AgentIdentificationService;
-import org.cougaar.core.node.NodeIdentificationService;
-
 import java.util.Collection;
 
-public class DisconnectManagerPlugin extends ServiceUserPluginBase {
+import org.cougaar.core.agent.service.alarm.Alarm;
+
+import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.blackboard.IncrementalSubscription;
+import org.cougaar.util.UnaryPredicate;
+
+
+public class DisconnectManagerPlugin extends DisconnectPluginBase {
     
-    private ConditionService conditionService;
-    private OperatingModeService operatingModeService;
-    private UIDService us = null;
-    private NodeIdentificationService nodeIdentificationService;
-    private AgentIdentificationService agentIdentificationService;
-    private EventService eventService;
-    private CommunityService communityService;
-    
-    private MessageAddress assetAddress;
-    private String assetID;
     private MessageAddress managerAddress;
     private String managerID;
-    private static String nodeID;
     
     private IncrementalSubscription reconnectTimeConditionSubscription;
     private IncrementalSubscription defenseOpModeSubscription;
@@ -88,17 +50,9 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase {
     
     private Hashtable activeDisconnects = new Hashtable();
     
-    private static final Class[] requiredServices = {
-        ConditionService.class,
-        OperatingModeService.class,
-        UIDService.class,
-        EventService.class,
-        CommunityService.class
-    };
-    
-    
+   
     public DisconnectManagerPlugin() {
-        super(requiredServices);
+        super();
     }
     
     
@@ -109,7 +63,6 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase {
     
     public void setupSubscriptions() {
         
-        haveServices();
         initObjects(); 
         
         //Listen for the ManagerAddress
@@ -159,54 +112,11 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase {
     private void initObjects() {
     }
     
-    private boolean haveServices() {
-        if (conditionService != null && operatingModeService != null && us != null) return true;
-        if (acquireServices()) {
-            if (logger.isDebugEnabled()) logger.debug(".haveServices - acquiredServices.");
-            ServiceBroker sb = getServiceBroker();
-            conditionService = (ConditionService)
-            sb.getService(this, ConditionService.class, null);
-            
-            operatingModeService = (OperatingModeService)
-            sb.getService(this, OperatingModeService.class, null);
-            
-            us = (UIDService )
-            sb.getService( this, UIDService.class, null ) ;
-            
-            // get the EventService
-            this.eventService = (EventService)
-            sb.getService(this, EventService.class, null);
-            if (eventService == null) {
-                throw new RuntimeException("Unable to obtain EventService");
-            }
-            
-            this.communityService = (CommunityService)
-            sb.getService(this, CommunityService.class, null);
-            if (communityService == null) {
-                throw new RuntimeException("Unable to obtain CommunityService");
-            }
-            
-            agentIdentificationService = (AgentIdentificationService)
-            sb.getService(this, AgentIdentificationService.class, null);
-            if (agentIdentificationService == null) {
-                throw new RuntimeException(
-                "Unable to obtain agent-id service");
-            }
-            else if (logger.isDebugEnabled()) logger.debug(agentIdentificationService.toString());
-            
-            return true;
-        }
-        else if (logger.isWarnEnabled()) logger.warn(".haveServices - did NOT acquire services.");
-        return false;
-    }
-    
+
     
     public void execute() {
         
         Iterator iter;
-        
-        assetAddress = agentIdentificationService.getMessageAddress();
-        assetID = agentIdentificationService.getName();
         
         if (managerAddress != null) {// already know the ManagerAgent, so create conditions & opmodes for newly announced Nodes & Agents
             iter = reconnectTimeConditionSubscription.getAddedCollection().iterator();
@@ -286,18 +196,18 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase {
         else {
             dac.setValue(DefenseConstants.BOOL_FALSE); // not disconnected
         }
-        dac.setUID(us.nextUID());
-        dac.setSourceAndTarget(assetAddress, managerAddress);
+        dac.setUID(getUIDService().nextUID());
+        dac.setSourceAndTarget(getAgentAddress(), managerAddress);
         blackboard.publishAdd(dac);
         
         DisconnectDefenseEnabler dde = new DisconnectDefenseEnabler(rtc.getAssetType(), rtc.getAsset());
-        dde.setUID(us.nextUID());
-        dde.setSourceAndTarget(assetAddress, managerAddress);
+        dde.setUID(getUIDService().nextUID());
+        dde.setSourceAndTarget(getAgentAddress(), managerAddress);
         blackboard.publishAdd(dde);
         
         DisconnectMonitoringEnabler dme = new DisconnectMonitoringEnabler(rtc.getAssetType(), rtc.getAsset());
-        dme.setUID(us.nextUID());
-        dme.setSourceAndTarget(assetAddress, managerAddress);
+        dme.setUID(getUIDService().nextUID());
+        dme.setSourceAndTarget(getAgentAddress(), managerAddress);
         blackboard.publishAdd(dme);
         
         if (logger.isDebugEnabled()) logger.debug("Added "+rtc.getAsset()+" Conditions & OpModes for Coordinator");
@@ -309,7 +219,6 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase {
         double t = ((Double)rtc.getValue()).doubleValue();
         
         DisconnectApplicabilityCondition item = DisconnectApplicabilityCondition.findOnBlackboard(rtc.getAssetType(), rtc.getAsset(), blackboard);
-        if (logger.isDebugEnabled()) logger.debug("Found :"+item);
         if (item != null) {
             if (t > 0.0) {
                 item.setValue(DefenseConstants.BOOL_TRUE); // disconnected
@@ -337,7 +246,6 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase {
     private boolean propagateMonitoringEnablerChange(DisconnectMonitoringEnabler dme) {
         
         DisconnectMonitoringAgentEnabler item = DisconnectMonitoringAgentEnabler.findOnBlackboard(dme.getAssetType(), dme.getAsset(), blackboard);
-        if (logger.isDebugEnabled()) logger.debug("Found :"+item);
         if (item != null) {
             item.setValue(dme.getValue());
             blackboard.publishChange(item);
@@ -351,7 +259,6 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase {
     private boolean propagateDefenseEnablerChange(DisconnectDefenseEnabler dme) {
         
         DisconnectDefenseAgentEnabler item = DisconnectDefenseAgentEnabler.findOnBlackboard(dme.getAssetType(), dme.getAsset(), blackboard);
-        if (logger.isDebugEnabled()) logger.debug("Found :"+item);
         if (item != null) {
             item.setValue(dme.getValue());
             blackboard.publishChange(item);
