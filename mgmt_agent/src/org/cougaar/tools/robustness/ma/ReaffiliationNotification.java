@@ -29,24 +29,28 @@ public class ReaffiliationNotification extends DefaultThreatAlert {
   private String entityType = "Node";
   private String oldCommunity;
   private String newCommunity;
+  private long timeout;
 
   /**
    * Default constructor.
    */
   public ReaffiliationNotification(MessageAddress source,
                                    String         oldCommunity,
-                                   String         newCommunity) {
+                                   String         newCommunity,
+                                   long           timeout) {
     super();
     setSource(source);
     this.oldCommunity = oldCommunity;
     this.newCommunity = newCommunity;
+    this.timeout = timeout;
   }
 
   public ReaffiliationNotification(MessageAddress source,
                                    String         oldCommunity,
                                    String         newCommunity,
+                                   long           timeout,
                                    String         entityType) {
-    this (source, oldCommunity, newCommunity);
+    this (source, oldCommunity, newCommunity, timeout);
     this.entityType = entityType;
   }
 
@@ -62,11 +66,16 @@ public class ReaffiliationNotification extends DefaultThreatAlert {
     return entityType;
   }
 
+  public long getTimeout() {
+    return timeout;
+  }
+
   public String toString() {
     return "ReaffiliationNotification:" +
            " source=" + getSource() +
            " oldCommunity=" + oldCommunity +
-           " newCommunity=" + newCommunity;
+           " newCommunity=" + newCommunity +
+           " timeout=" + timeout;
   }
 
 }

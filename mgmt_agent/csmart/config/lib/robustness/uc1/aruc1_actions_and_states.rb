@@ -375,17 +375,18 @@ module Cougaar
     end
 
     class ChangeCommunityAffiliation < Cougaar::Action
-      def initialize(run, target, oldComm, newComm)
+      def initialize(run, target, oldComm, newComm, timeout)
         super(run)
         @target = target
         @oldComm = oldComm
         @newComm = newComm
+        @timeout = timeout
       end
       def perform
         @run.society.each_node do |node|
           if node.name = @target
-            puts "#{node.uri}/$#{node.name}/reaffiliation?old=#{@oldComm}&new=#{@newComm}&target=#{@target}"
-            result, uri = Cougaar::Communications::HTTP.get(node.uri+"/$"+node.name+"/reaffiliation?old=#{@oldComm}&new=#{@newComm}&target=#{@target}")
+            #puts "#{node.uri}/$#{node.name}/reaffiliation?old=#{@oldComm}&new=#{@newComm}&target=#{@target}&timeout=#{@timeout}"
+            result, uri = Cougaar::Communications::HTTP.get(node.uri+"/$"+node.name+"/reaffiliation?old=#{@oldComm}&new=#{@newComm}&target=#{@target}&timeout=#{@timeout}")
             return
           end
         end

@@ -34,6 +34,7 @@ import org.cougaar.tools.robustness.ma.util.MoveListener;
 import org.cougaar.tools.robustness.ma.util.LoadBalancer;
 import org.cougaar.tools.robustness.ma.util.CoordinatorHelper;
 import org.cougaar.tools.robustness.ma.util.StatCalc;
+import org.cougaar.tools.robustness.ma.util.RestartDestinationLocator;
 
 import org.cougaar.core.blackboard.BlackboardClientComponent;
 import org.cougaar.core.component.BindingSite;
@@ -112,6 +113,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
   protected LoggingService logger;
   protected EventService eventService;
   protected StatCalc pingStats = new StatCalc();
+  protected RestartDestinationLocator restartLocator;
 
   // Status model containing current information about monitored community
   protected CommunityStatusModel model;
@@ -132,7 +134,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
     logger = org.cougaar.core.logging.LoggingServiceWithPrefix.add(logger, agentId + ": ");
     eventService = (EventService) bs.getServiceBroker().getService(this, EventService.class, null);
     heartbeatHelper = new HeartbeatHelper(bs);
-    moveHelper = new MoveHelper(bs, model);
+    moveHelper = new MoveHelper(bs, model, restartLocator);
     pingHelper = new PingHelper(bs);
     restartHelper = new RestartHelper(bs);
     loadBalancer = new LoadBalancer(bs, this, model);
@@ -199,6 +201,13 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
   public StateController getController(int state) {
     ControllerEntry ce = (ControllerEntry)controllers.get(new Integer(state));
     return ce != null ? ce.controller : null;
+  }
+
+  protected RestartDestinationLocator getRestartLocator() {
+    if (restartLocator == null) {
+      restartLocator = new RestartDestinationLocator(model);
+    }
+    return restartLocator;
   }
 
   /**

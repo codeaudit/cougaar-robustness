@@ -503,7 +503,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   private boolean collectNodeStats = false;
   private boolean suppressPingsOnRestart = false;
   private int minimumHostsForManagerRestart = 2;
-  private RestartDestinationLocator restartLocator;
 
   /**
    * Initializes services and loads state controller classes.
@@ -534,7 +533,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     addController(MOVE,           "MOVE", new MoveStateController());
     addController(DECONFLICT,     "DECONFLICT", new DeconflictStateController());
     addController(FORCED_RESTART, "FORCED_RESTART", new ForcedRestartStateController());
-    //RestartDestinationLocator.setCommunityStatusModel(csm);
     serviceChecker = new ServiceChecker(bs.getServiceBroker(), getPingHelper());
     new HostLossThreatAlertHandler(getBindingSite(), agentId, this, csm);
     new SecurityAlertHandler(getBindingSite(), agentId, this, csm);
@@ -996,13 +994,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
       }
     }
-  }
-
-  protected RestartDestinationLocator getRestartLocator() {
-    if (restartLocator == null) {
-      restartLocator = new RestartDestinationLocator(model);
-    }
-    return restartLocator;
   }
 
   /**
