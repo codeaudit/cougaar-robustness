@@ -138,7 +138,7 @@ public class ActionEvaluation implements Comparable {
         // determines whether the selection of one variant for this Action is required
         // this should be based on TechSpecs
         if (this.getAction().getClass().getName().equals("org.cougaar.mts.std.LinksEnablingAction")) return true;
-        if (this.getAction().getClass().getName().equals("org.cougaar.coordinator.security.AgentCompromiseAction")) return true;
+        if (this.getAction().getClass().getName().equals("org.cougaar.core.security.coordinator.AgentCompromiseAction")) return true;
         if (this.getAction().getClass().getName().equals("org.cougaar.robustness.dos.coordinator.CompressionAction")) return true;
         if (this.getAction().getClass().getName().equals("org.cougaar.robustness.dos.coordinator.RMIAction")) return true;
         if (this.getAction().getClass().getName().equals("org.cougaar.robustness.dos.coordinator.FuseResetAction")) return true;
