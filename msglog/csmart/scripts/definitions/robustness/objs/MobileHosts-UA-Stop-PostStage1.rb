@@ -22,7 +22,7 @@ include_scripts:
   - script: $CIP/csmart/lib/isat/migrate.rb
     parameters:
     - migrate_location: during_stage_1
-    - host_name: sv125
+    - node_name: AVN-CO-NODE
     - target_network: 1-UA
   - script: $CIP/csmart/lib/isat/stop_society.rb
     parameters:
