@@ -110,6 +110,25 @@ public class ActionTechSpecImpl implements ActionTechSpecInterface   {
         actions.add(ad); 
         possibleValues.add( ad.name() );
     }
+
+    
+    /**
+     * @return an action description for the specified actionValue taken
+     * from the actionRecord.getValue(), which was generated initially from getValueFromXML(). 
+     * The tech spec does not know what this conversion is since it didn't have a handle to an Action
+     * at start up.
+     */
+    public ActionDescription getActionDescriptionForValue(Action a, Object actionValue) { 
+        Iterator i = actions.iterator();
+        while (i.hasNext()) {
+            ActionDescription ad = (ActionDescription) i.next();
+            Object adValue = a.getValueFromXML(ad.name()); //ad.name() returns the xml-based name
+            if (adValue.equals(actionValue)) {
+                return ad;
+            }
+        }
+        return null;
+    }
     
     /** @return a revision string for this TechSpec
      *
