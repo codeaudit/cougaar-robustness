@@ -127,6 +127,8 @@ public abstract class Action
         this.serviceBroker = serviceBroker;        
         this.assetName = assetName;
         this.possibleValues = new LinkedHashSet(); //initialize
+        this.permittedValues = new LinkedHashSet(); //initialize
+        this.valuesOffered = new LinkedHashSet(); //initialize
 
         //this.actionHistory = new ActionHistory(); //initialize
         
@@ -230,10 +232,9 @@ public abstract class Action
             throw new TechSpecNotFoundException("ServiceBroker is null.");            
         }
         
-        //Don't do this unless needed.
+        //Don't look up the techspecs if we have already successfully done so
         if (actionTechSpec != null && this.possibleValues != null) { return; }
-        
-        
+                
         if (!serviceBroker.hasService( ActionTechSpecService.class )) {
             throw new TechSpecNotFoundException("TechSpec Service not available.");            
         }
@@ -447,6 +448,7 @@ public abstract class Action
      */
     void setPermittedValues (Set values) throws IllegalValueException { 
     
+System.out.println("Updating permitted values.");        
         Object o;
         Iterator i = values.iterator();
         while (i.hasNext()) {

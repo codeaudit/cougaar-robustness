@@ -137,15 +137,25 @@ public class DiagnosisManagerPlugin extends ComponentPlugin implements NotPersis
     
     
     /**
-     * Prepare to run this plugin. Announce DiagnosisTechSpecService
+     * Prepare to run this plugin.
      *
      */
     public void load() {
         
+        super.load();
         getServices();
         allDiagnoses = new Hashtable(100);
         newDiagnoses = new Vector();
         
+    }
+    
+    
+    /**
+     * Reads in the Diagnoses from XML, publishes them,
+     * and then publishes the DiagnosisTechSpecService.
+     *
+     */
+    public void setupSubscriptions() {
         //load tech specs
         getPluginParams();
         readInDiagnoses(fileParams);
@@ -155,6 +165,9 @@ public class DiagnosisManagerPlugin extends ComponentPlugin implements NotPersis
         getServiceBroker().addService(DiagnosisTechSpecService.class, dtssp);
     }
     
+    /**
+     * Unload the DiagnosisTechSpecService 
+     */
     public void unload() {
         // revoke our service
         if (dtssp != null) {
@@ -164,12 +177,6 @@ public class DiagnosisManagerPlugin extends ComponentPlugin implements NotPersis
         super.unload();
     }
     
-    /**
-     * Reads in the Diagnoses from XML, publishes them,
-     * and then publishes itself.
-     */
-    public void setupSubscriptions() {
-    }
     
     private void getServices() {
         
@@ -223,6 +230,17 @@ public class DiagnosisManagerPlugin extends ComponentPlugin implements NotPersis
         }
         
         return dts; //even if null
+    }
+
+
+    /**
+     * Add an DiagnosisTechSpec for a class. Targeted to testing
+     */
+    public void addTechSpec(String cls, DiagnosisTechSpecInterface a) {
+
+        allDiagnoses.put(cls, a); 
+        newDiagnoses.add(a);
+
     }
     
 }

@@ -2,10 +2,6 @@
 <!DOCTYPE attributes PUBLIC "-//NetBeans//DTD DefaultAttributes 1.0//EN" "http://www.netbeans.org/dtds/attributes-1_0.dtd">
 <attributes version="1.0">
     <fileobject name="DefenseMonitoringPlugin.java">
-        <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="DefenseMonitoringPlugin"/>
-        <attr name="class_dependency_org.cougaar.core.agent.service.alarm.Alarm" stringvalue="DefenseMonitoringPlugin.DefenseTimeoutAlarm"/>
-    </fileobject>
-    <fileobject name="DefenseTimeoutCondition.java">
-        <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="DefenseTimeoutCondition"/>
+        <attr name="class_dependency_org.cougaar.coordinator.DeconflictionPluginBase" stringvalue="DefenseMonitoringPlugin"/>
     </fileobject>
 </attributes>

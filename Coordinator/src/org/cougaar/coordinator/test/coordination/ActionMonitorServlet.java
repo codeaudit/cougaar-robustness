@@ -88,8 +88,6 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
     private static final String ADDEDFONT = "<font color=\"#0000ff\">"; //blue            
 
     
-    //Default refresh rate
-    private int refreshRate = 10000;
     
     protected Servlet createServlet() {
         // create inner class
@@ -216,9 +214,12 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             while (i.hasNext() ) {      
                 actionData = (ActionData) i.next();
                 if ( actionData.contains(a) ) { //found it
+System.out.println("Changed Action Data Found. Asset ="+a.getAssetName());                    
                     actionData.setAction(a, state, isWrapper);
                     return;
-                }
+                } else {
+System.out.println("Added Action Data Found. Asset = "+a.getAssetName());                    
+                }                    
             }
             //Not found so create it
             actionData = new ActionData(a, state, isWrapper);
@@ -341,14 +342,27 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             String refresh = null;
             String error = null;
             boolean useShortName = false;
-            String actiondataFilter = null;
+            String actiondataFilter = "BOTH";
+            //Default refresh rate
+            int refreshRate = 50000;
+            String ln="SHORTNAME";
+            
+            String updateResult = null;
+            boolean wasUpdated = false;
             
             if (request != null) {
                 
-                String ln = request.getParameter("NAMEFORMAT");
-                if (ln != null) { if (ln.equals("SHORTNAME")) {useShortName = true;} }
+                ln = request.getParameter("NAMEFORMAT");
+                if (ln != null && ln.length()>0) { 
+                    if (ln.equals("SHORTNAME")) {useShortName = true;} 
+                } else { //if not specified use default
+                    ln = "SHORTNAME";
+                }
 
                 actiondataFilter = request.getParameter("FILTER");
+                if (actiondataFilter == null || actiondataFilter.length()==0) {
+                    actiondataFilter = "BOTH"; //set up value to enable default data output.
+                }
                 
                 refresh = request.getParameter("REFRESH");
                 if (refresh != null) {
@@ -363,6 +377,22 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                         error = "Could not set refresh rate to "+refresh+". NumberFormatException occurred.";
                     }
                 }
+                
+                String[] newvalues = request.getParameterValues("NEWVALUE");
+                if (newvalues != null && newvalues.length >0 ) { //the user wants to update a value
+                    
+                    System.out.println("*************** newvalue = " + newvalues);
+                    
+                    String type = request.getParameter("TYPE");
+                    String uid  = request.getParameter("UID");
+                    
+                    java.util.HashSet hs = new java.util.HashSet();
+                    for (int i=0; i<newvalues.length; i++) {
+                        hs.add(newvalues[i]);
+                    }
+                    updateResult = updateAction(type, uid, hs);
+                    wasUpdated = true;
+                }
 /*                
                 String lnf = request.getParameter("LNF");
                 if (lnf != null) {
@@ -370,7 +400,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                     nf = new DecimalFormat(LONG_NUM_FORMAT);
                 }
 */                
-            }
+            } 
  
             
             response.setContentType("text/html");
@@ -385,12 +415,12 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
               out.println("<center><h2>"+i+"</h2></center><br>" );
           } else {
  */
-                emitHeader(out);
+                emitHeader(out, refreshRate, useShortName, actiondataFilter, updateResult, ln, updateResult, wasUpdated );
                 if (error != null) { // then emit the error
                     out.print("<font color=\"#0C15FE\">"+ error + "</h2></font>");
                 }
                 
-                boolean e1 = emitData(out, useShortName, actiondataFilter); //emit actions
+                boolean e1 = emitData(out, useShortName, actiondataFilter, refreshRate, ln); //emit actions
                 //boolean e2 = emitData(out, true); //emit wrappers
                 
                 if (!e1) {
@@ -407,31 +437,83 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             
         
         }
+
+        
+        private String updateAction(String type, String uid, Set newvalues) {
+
+            ActionData ad;
+            Action a;
+            
+            String result = null;
+            //find the action
+            Iterator i = actions.iterator();
+            while (i.hasNext()) {
+                ad = (ActionData)i.next();
+                
+                if (type.equals("ACTIONS")) {
+                    a = (Action)ad.getAction();
+                    if (a.getUID().toString().equals(uid)) {
+                        result = ActionUtils.setPermittedValues(a, newvalues);
+                        break;
+                    }
+                } else { //wrapper change
+                    a = (Action)ad.getWrapper();
+                    if (a.getUID().toString().equals(uid)) {
+                        result = ActionUtils.setPermittedValues(a, newvalues);
+                        break;
+                    }
+                }
+            }
+            
+            
+            return result;
+        }
+        
         
         /**
          * Output page with disconnect  / reconnect button & reconnect time slot
          */
-        private void emitHeader(PrintWriter out) {
-            out.println("<html><head></head><body onload=\"setTimeout('location.reload()',"+refreshRate+");\">");
+        private void emitHeader(PrintWriter out, int refresh, boolean useShortName, 
+                                String actiondataFilter, String updateResult, String nameformat,
+                                String updateResponse, boolean wasUpdated ) {
+            
+            out.println("<html>");
+            out.println("<script type=\"text/javascript\">");
+            out.println("function refreshPage(){");   
+            out.println("     var szURL = \"?REFRESH="+refresh+"&NAMEFORMAT="+nameformat+"&FILTER="+actiondataFilter+" \";");
+            out.println("     self.location.replace(szURL);");
+            out.println("}</script>");
+            out.println("<head></head><body onload=\"setTimeout('refreshPage()', " +refresh+");\">");
             out.println("<center><h1>Coordinator Action Monitoring Servlet</h1>");
-            out.println("<p>Will refresh every " + (refreshRate/1000) + " seconds. ");
+            out.println("<p>Will refresh every " + (refresh/1000) + " seconds. ");
             out.println("You can change this rate here: (in milliseconds)");
             out.print("<form clsname=\"myForm\" method=\"get\" >" );
-            out.println("Refresh Rate: <input type=text name=REFRESH value=\""+refreshRate+"\" size=7 >");
+            out.println("Refresh Rate: <input type=text name=REFRESH value=\""+refresh+"\" size=7 >");
 
-            out.println("<br><b>Asset Name - use:</b><SELECT NAME=\"NAMEFORMAT\" SIZE=\"1\">");
-            out.println("<OPTION VALUE=\"LONGNAME\" SELECTED>Pkg Name");
-            out.println("<OPTION VALUE=\"SHORTNAME\">Class name");
+            out.println("<br><b>Action Name - use:</b><SELECT NAME=\"NAMEFORMAT\" SIZE=\"1\">");
+            out.println("<OPTION VALUE=\"LONGNAME\" "+(!useShortName?"SELECTED":"")+" />Pkg Name");
+            out.println("<OPTION VALUE=\"SHORTNAME\" "+(useShortName?"SELECTED":"")+"/>Class name");
             out.println("</SELECT>");
 
+            //String assets = if (filter.equals(ASSETS))SELECTED 
             out.println("<br><b>Include:</b><SELECT NAME=\"FILTER\" SIZE=\"1\">");
-            out.println("<OPTION VALUE=\"ASSETS\" >Only Assets");
-            out.println("<OPTION VALUE=\"WRAPPERS\">Only Wrappers");
-            out.println("<OPTION VALUE=\"BOTH\" SELECTED>Both");
+            out.println("<OPTION VALUE=\"ACTIONS\" "+((actiondataFilter!=null&&actiondataFilter.equals("ACTIONS"))?"SELECTED":"")+"/>Only Actions");
+            out.println("<OPTION VALUE=\"WRAPPERS\" "+((actiondataFilter!=null&&actiondataFilter.equals("WRAPPERS"))?"SELECTED":"")+"/>Only Wrappers");
+            out.println("<OPTION VALUE=\"BOTH\" "+((actiondataFilter==null ||actiondataFilter.equals("BOTH"))?"SELECTED":"")+" />Both");
             out.println("</SELECT>");
             
             out.println("<input type=submit name=\"Submit\" value=\"Submit\" size=10 ><br>");
             out.println("\n</form>");
+            out.println("<a href=\"PublishServlet\">Publish Actions</a>");
+            out.println("<a href=\"ActionMonitorServlet\">Actions</a>");
+            out.println("<a href=\"DiagnosisMonitorServlet\">Diagnoses</a>");
+            if (wasUpdated) {
+                if (updateResult == null) {
+                    out.println("<p><b>Object Updated.</b><p>");
+                } else {
+                    out.println("<p><b>Update Error: "+updateResult+"</b><p>");
+                }
+            }
             out.println("</center><hr>");
         }
         
@@ -445,7 +527,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
         /** Emit data for the given CostBenefitAction vector
          *
          */
-        private boolean emitData(PrintWriter out, boolean useShortName, String actiondataFilter) {
+        private boolean emitData(PrintWriter out, boolean useShortName, String actiondataFilter, int refresh, String nameformat) {
             
             boolean emittedData = false;
             Action a; //action
@@ -455,7 +537,6 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             Object av; //store value of action
             Object awv; //store value of wrapped action
 
-            
             Iterator i = actions.iterator();
             if (i.hasNext()) {
                 emittedData = true;
@@ -464,6 +545,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             
             tableHeader(out);
             
+            boolean twoRows = actiondataFilter.equals("BOTH");
             //Print out each action
             while (i.hasNext()) {
 
@@ -473,48 +555,54 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                 ad = (ActionData)i.next();
                 
                 //Output the asset name
-                out.print("   <TD>"+ ad.getAction().getAssetName() +"</TD>\n");
+                out.print("   <TD " + (twoRows ? "ROWSPAN=2":"") + ">"+ ad.getAction().getAssetName() +"</TD>\n");
                 
                 //Output the action name
-                out.print("   <TD>"+ ad.getName(useShortName) +"</TD>\n");
+                out.print("   <TD " + (twoRows ? "ROWSPAN=2":"") + ">"+ ad.getName(useShortName) +"</TD>\n");
 
                 
-                emitActionData(out, ad, actiondataFilter);
+                emitActionData(out, ad, actiondataFilter, refresh, nameformat);
                 
                 //End of row
-                out.print("</TR>");
+                if (!twoRows) {
+                    out.print("</TR>");
+                }
             }
             
+            tableFooter(out);
 
         
             return emittedData;
         }
         
         
-        private void emitActionData(PrintWriter out, ActionData ad, String what) {
+        private void emitActionData(PrintWriter out, ActionData ad, String what, int refresh, String nameformat) {
 
-            String endSubTableRow = "";
+            boolean twoRows = what.equals("BOTH");  
+            
+            //emit the action object data
+            if (what.equals("BOTH") || what.equals("ACTIONS")) {
                 
-            if (what.equals("BOTH")) { // create subtable
-                endSubTableRow = "</TR>";
-                out.print("   <TR>");
+                emitActionDataItem(out, ad, true, twoRows, what, refresh, nameformat);
+                
+            }
+
+            if (twoRows) { //then end the first row, and start the next
+                out.print("</TR>");    
+                out.print("<TR>");    
             }
             
-            if (what.equals("BOTH") || what.equals("ACTION")) {
+            //now emit the wrapper data
+            if (what.equals("BOTH") || what.equals("WRAPPERS")) {
                 
-                emitActionDataItem(out, ad, true);
-                
-            }
-                
-            if (what.equals("BOTH") || what.equals("WRAPPER")) {
-                
-                emitActionDataItem(out, ad, false);
+                emitActionDataItem(out, ad, false, twoRows, what, refresh, nameformat);
                 
             }
-            out.print("   "+endSubTableRow); //end sub table if used.
+            out.print("</TD>");    
         }
         
-        private void emitActionDataItem(PrintWriter out, ActionData ad, boolean isActionObject) {
+        private void emitActionDataItem(PrintWriter out, ActionData ad, boolean isActionObject, boolean twoRows, 
+                                        String actiondataFilter, int refresh, String nameformat) {
 
             Object av;
             Object awv;
@@ -533,35 +621,70 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                 action = ad.getWrapper();
             }                
 
-            emitSelect(out, action.getPossibleValues());
+            if (action == null) { 
+                out.print("   <TD>NULL</TD>");
+                return; 
+            }
+            
+            emitModifiableSelect(out, action.getPossibleValues(), ad, isActionObject, actiondataFilter, refresh, nameformat);
             emitSelect(out, action.getPermittedValues());
             emitSelect(out, action.getValuesOffered());
             
             if ( isActionObject ) { //emit value indicating if data has changed or was just added.
-                out.print("   <TR>");
-                out.print("   "+ emitActionValue(action.getValue()));    //last Action Value
-                out.print("   "+ emitActionValue(action.getPreviousValue()));    //prev Action Value
-                out.print("   </TR>");
+                out.print("   <TD><TABLE>");
+                out.print("   "+ emitActionValue(action.getValue(), "<b>last:</b>"));    //last Action Value
+                out.print("   "+ emitActionValue(action.getPreviousValue(), "<b>prev:</b>"));    //prev Action Value
+                out.print("   </TABLE></TD>");
                 out.print("   <TD>"+getStatusString(ad.getActionState())+"</TD>");
             } else { //emit wrapper data
-                out.print("   <TR>");
-                out.print("   "+ emitActionValue(action.getValue()));    //last Wrapper Value
-                out.print("   "+ emitActionValue(action.getPreviousValue()));    //prev Wrapper Value
-                out.print("   </TR>");
+                out.print("   <TD><TABLE>");
+                out.print("   "+ emitActionValue(action.getValue(), "<b>last:</b>"));    //last Wrapper Value
+                out.print("   "+ emitActionValue(action.getPreviousValue(), "<b>prev:</b>"));    //prev Wrapper Value
+                out.print("   </TABLE></TD>");
                 out.print("   <TD>"+getStatusString(ad.getWrapperState())+"</TD>");
             }
-            
         }
 
         private void emitSelect(PrintWriter out, Set s) {
-            
-            if (s.size() >0 ) {
+                       
+            String str;
+            if (s != null && s.size() >0 ) {
                 Iterator iter = s.iterator();
-                out.print("   <TD><SELECT size=\"5\" >\n");            
+                out.print("   <TD><SELECT size=\"3\" ");            
+                out.print("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: red; font-size: 8pt;\">\n");            
                 while (iter.hasNext()) {
-                    out.print("        <OPTION>"+ iter.next() +"</OPTION>\n");
+                    str = iter.next().toString();
+                    out.print("        <OPTION value=\""+ str +"\" />" + str + "\n");
                 }
                 out.print("   </SELECT></TD>\n");            
+            } else { //no values
+                out.print("   <TD>Null</TD>\n");
+            }
+        }         
+
+
+        private void emitModifiableSelect(PrintWriter out, Set s, ActionData ad, boolean isActionObject, 
+                                          String actiondataFilter, int refresh, String nameformat) {
+                       
+            String str;
+            if (s != null && s.size() >0 ) {
+                Iterator iter = s.iterator();
+                out.print("    <TD><form clsname=\"UPDATEVALUE\" method=\"get\" ><br><br>" );
+                out.print("    <SELECT MULTIPLE NAME=\"NEWVALUE\" size=\"3\" ");
+                out.print("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: red; font-size: 8pt;\">\n");            
+                while (iter.hasNext()) {
+                    str = iter.next().toString();
+                    out.print("        <OPTION value=\""+ str +"\" UNSELECTED />" + str + "\n");
+                }
+                out.print("   </SELECT>\n");            
+                out.println("   <input type=hidden name=\"TYPE\" value=\""+(isActionObject?"ACTIONS":"WRAPPERS")+"\" >");
+                out.println("   <input type=hidden name=\"UID\" value=\""+(isActionObject?ad.getAction().getUID():ad.getWrapper().getUID())+"\" >");
+                out.println("   <input type=hidden name=\"REFRESH\" value=\""+refresh+"\" >");
+                out.println("   <input type=hidden name=\"NAMEFORMAT\" value=\""+nameformat+"\" >");
+                out.println("   <input type=hidden name=\"FILTER\" value=\""+actiondataFilter+"\" ><br>");
+                out.print("   <input type=submit name=\"Submit\" value=\"Set Permitted\" size=15 ");
+                out.println("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: blue; font-size: 6pt;\">");
+                out.println("   \n</form></TD>");
             } else { //no values
                 out.print("   <TD>Null</TD>\n");
             }
@@ -570,12 +693,11 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
         /**
          * Emit the action value & completion code 
          */
-        private String emitActionValue(ActionRecord ar) {
-        
+        private String emitActionValue(ActionRecord ar, String s) {
             if (ar != null) {
-                return "<TD>" + ar.getAction() + "</TD><TD>" + ar.getCompletionCodeString() + "</TD>";
+                return "<TR><TD>" + s + ar.getAction() + "</TD><TD>" + ar.getCompletionCodeString() + "</TD></TR>";
             } else {
-                return "<TD>null</TD><TD></TD>";
+                return "<TR><TD>"+s+"null</TD><TD>N/A</TD></TR>";
             }
         }
         
@@ -600,7 +722,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
         private void tableHeader(PrintWriter out) {
             
             out.print("<p><p><TABLE cellspacing=\"20\">");
-            out.print("<CAPTION align=left ><font color=\"#891728\">Actions</font></CAPTION>");
+            //out.print("<CAPTION align=left ><font color=\"#891728\">Actions</font></CAPTION>");
             out.print("<TR align=left>");
             out.print("   <TH>AssetName <sp> </TH>");
             out.print("   <TH>Action <sp> </TH>");
@@ -608,8 +730,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             out.print("   <TH>Poss. Values</TH>");
             out.print("   <TH>Permitted</TH>");
             out.print("   <TH>Offered</TH>");
-            out.print("   <TH>Value</TH>");
-            out.print("   <TH>Code</TH>");
+            out.print("   <TH>Value / Completed?</TH>");
             out.print("   <TH>Status</TH>");
             //out.print("   <TH>Time</TH>");
             out.print("</TR>");
@@ -617,7 +738,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
 
         private void tableFooter(PrintWriter out) {
             
-            out.print("</TABLE>");
+            out.print("</TABLE><hr>");
             out.print("Value = The value of the Action object<p>");
             out.print(CHANGEDFONT + "Denotes changed values</font><p>");
             out.print(ADDEDFONT + "Denotes newly added values</font><p>");

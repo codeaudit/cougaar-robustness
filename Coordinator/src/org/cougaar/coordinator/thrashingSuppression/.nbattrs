@@ -5,8 +5,6 @@
         <attr name="class_dependency_org.cougaar.core.adaptivity.ServiceUserPluginBase" stringvalue="DisconnectPluginBase;ThrashingSuppressionPluginBase"/>
     </fileobject>
     <fileobject name="ThrashingSuppressionServlet.java">
-        <attr name="class_dependency_org.cougaar.core.servlet.BaseServletComponent" stringvalue="ThrashingSuppressionServlet"/>
         <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="ThrashingSuppressionServlet.MyServlet"/>
-        <attr name="class_dependency_org.cougaar.core.blackboard.BlackboardClient" stringvalue="ThrashingSuppressionServlet"/>
     </fileobject>
 </attributes>

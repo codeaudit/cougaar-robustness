@@ -80,6 +80,15 @@ public class DiagnosisTechSpecServiceProvider implements ServiceProvider {
             return mgr.getTechSpec(cls);
             
         }
+
+        /**
+         * Add a DiagnosisTechSpec for a class, meant for testing 
+         */
+        public void addDiagnosisTechSpec(String cls, DiagnosisTechSpecInterface d) {
+            
+            mgr.addTechSpec(cls, d);
+            
+        }
         
     }
     

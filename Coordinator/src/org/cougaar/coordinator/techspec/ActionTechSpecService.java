@@ -32,5 +32,6 @@ package org.cougaar.coordinator.techspec;
 public interface ActionTechSpecService {
     
     public ActionTechSpecInterface getActionTechSpec(Class cls);    
+    public void addActionTechSpec(String cls, ActionTechSpecInterface atsi);    
     
 }

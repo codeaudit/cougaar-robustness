@@ -5,7 +5,6 @@
         <attr name="class_dependency_java.lang.Object" stringvalue="AssetBeliefState"/>
     </fileobject>
     <fileobject name="StateEstimation.java">
-        <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="StateEstimation"/>
         <attr name="class_dependency_java.util.Hashtable" stringvalue="StateEstimation"/>
     </fileobject>
 </attributes>

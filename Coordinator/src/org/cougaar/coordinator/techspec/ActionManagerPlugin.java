@@ -139,17 +139,24 @@ public class ActionManagerPlugin extends ComponentPlugin implements NotPersistab
         }
     }
     
-    
     /**
-     * Prepare to run this plugin. Announce ActionTechSpecService
+     * Prepare to run this plugin. 
      *
      */
     public void load() {
-        
+
+        super.load();
         getServices();
         allActions = new Hashtable(100);
         newActions = new Vector();
-        
+    }
+    
+    
+    /**
+     * Reads in the Actions from XML, publishes them,
+     * and then publishes the ActionTechSpecService
+     */
+    public void setupSubscriptions() {
         //load tech specs
         getPluginParams();
         readInActions(fileParams);
@@ -159,6 +166,9 @@ public class ActionManagerPlugin extends ComponentPlugin implements NotPersistab
         getServiceBroker().addService(ActionTechSpecService.class, atssp);
     }
     
+    /**
+     * Unload the ActionTechSpecService
+     */
     public void unload() {
         // revoke our service
         if (atssp != null) {
@@ -168,12 +178,6 @@ public class ActionManagerPlugin extends ComponentPlugin implements NotPersistab
         super.unload();
     }
     
-    /**
-     * Reads in the Actions from XML, publishes them,
-     * and then publishes itself.
-     */
-    public void setupSubscriptions() {
-    }
     
     private void getServices() {
         
@@ -216,6 +220,7 @@ public class ActionManagerPlugin extends ComponentPlugin implements NotPersistab
     
         ActionTechSpecInterface ats = (ActionTechSpecInterface)allActions.get( cls.getName() );
         if (ats == null) {
+System.out.println("************* action tech spec NOT FOUND: "+cls.getName());        
             
             //Tech Spec is not loaded...
             //... try finding it, parsing it, putting it in allActions, and returning it.
@@ -229,6 +234,17 @@ public class ActionManagerPlugin extends ComponentPlugin implements NotPersistab
         
         return ats; //even if null
     }
+    
+    /**
+     * Add an ActionTechSpec for a class. Targeted to testing
+     */
+    public void addTechSpec(String cls, ActionTechSpecInterface a) {
+
+        allActions.put(cls, a); 
+        newActions.add(a);
+System.out.println("************* add action tech spec: "+cls);        
+    }
+    
     
 }
 

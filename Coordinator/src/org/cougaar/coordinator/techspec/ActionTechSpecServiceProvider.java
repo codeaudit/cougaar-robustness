@@ -80,6 +80,15 @@ public class ActionTechSpecServiceProvider implements ServiceProvider {
             return mgr.getTechSpec(cls);
             
         }
+
+        /**
+         * Add an ActionTechSpec for a class. Targeted to testing
+         */
+        public void addActionTechSpec(String cls, ActionTechSpecInterface a) {
+            
+            mgr.addTechSpec(cls, a);
+            
+        }
         
     }
     

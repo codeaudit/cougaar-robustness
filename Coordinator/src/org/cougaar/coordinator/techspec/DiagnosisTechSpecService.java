@@ -32,5 +32,6 @@ package org.cougaar.coordinator.techspec;
 public interface DiagnosisTechSpecService {
     
     public DiagnosisTechSpecInterface getDiagnosisTechSpec(Class cls);    
+    public void addDiagnosisTechSpec(String cls, DiagnosisTechSpecInterface dtsi);    
     
 }

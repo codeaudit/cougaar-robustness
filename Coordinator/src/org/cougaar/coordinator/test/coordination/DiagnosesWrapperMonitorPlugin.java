@@ -23,7 +23,7 @@
  * </copyright>
  */
 
-package src.org.cougaar.coordinator.test.coordination;
+package org.cougaar.coordinator.test.coordination;
 
 import org.cougaar.coordinator.*;
 import org.cougaar.coordinator.techspec.*;

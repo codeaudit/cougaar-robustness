@@ -371,12 +371,12 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
             
             String refresh = null;
             String error = null;
-            boolean useShortName = true;
+            boolean useShortName = false;
             
             if (request != null) {
                 
-                String ln = request.getParameter("LONGNAME");
-                if (ln != null) {useShortName = false;}
+                String ln = request.getParameter("NAMEFORMAT");
+                if (ln != null) { if (ln.equals("SHORTNAME")) {useShortName = true;} }
                 
                 refresh = request.getParameter("REFRESH");
                 if (refresh != null) {
@@ -445,7 +445,16 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
             out.print("<form clsname=\"myForm\" method=\"get\" >" );
             out.println("Refresh Rate: <input type=text name=REFRESH value=\""+refreshRate+"\" size=7 >");
             out.println("<input type=submit name=\"Submit\" value=\"Submit\" size=10 ><br>");
+
+            out.println("<br><b>Asset Name - use:</b><SELECT NAME=\"NAMEFORMAT\" SIZE=\"1\">");
+            out.println("<OPTION VALUE=\"LONGNAME\" SELECTED />Pkg Name");
+            out.println("<OPTION VALUE=\"SHORTNAME\" />Class name");
+            out.println("</SELECT>");
+
             out.println("\n</form>");
+            out.println("<a href=\"PublishServlet\">Publish Actions</a>");
+            out.println("<a href=\"ActionMonitorServlet\">Actions</a>");
+            out.println("<a href=\"DiagnosisMonitorServlet\">Diagnoses</a>");
             out.println("</center><hr>");
         }
         
@@ -495,11 +504,13 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
                 // Possible Values List -----------------------
                 Set pvalues = dr.getPossibleValues();
 
+                String s;
                 Iterator pv = pvalues.iterator();
                 if (pvalues.size() >0 ) {
-                    out.print("   <TD><SELECT size=\"5\" >\n");            
+                    out.print("   <TD><SELECT name=\"foo\" size=\"3\" >\n");            
                     while (pv.hasNext()) {
-                        out.print("        <OPTION>"+ pv.next() +"</OPTION>\n");
+                        s = pv.next().toString();
+                        out.print("        <OPTION value=\""+ s +"\" /> " + s + "\n");
                     }
                     out.print("   </SELECT></TD>\n");            
                 } else { //no values
@@ -522,6 +533,8 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
                 out.print("</TR>");
             }
             
+            tableFooter(out);
+            
 
         
             return emittedData;
@@ -530,8 +543,8 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
         
         private void tableHeader(PrintWriter out) {
             
+            out.print("<h2><font color=\"#891728\">Diagnoses</font></h2>");
             out.print("<p><p><TABLE cellspacing=\"20\">");
-            out.print("<CAPTION align=left ><font color=\"#891728\">Diagnoses</font></CAPTION>");
             out.print("<TR align=left>");
             out.print("   <TH>AssetName <sp> </TH>");
             out.print("   <TH>Diagnosis <sp> </TH>");
@@ -545,7 +558,7 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
         private void tableFooter(PrintWriter out) {
             
             out.print("</TABLE>");
-            out.print("D-Value = The value of the Diagnosis object<p>");
+            out.print("<hr>D-Value = The value of the Diagnosis object<p>");
             out.print("DW-Value = The value of the wrapped Diagnosis object<p>");
             out.print(CHANGEDFONT + "Denotes changed values</font><p>");
             out.print(ADDEDFONT + "Denotes newly added values</font><p>");

@@ -53,5 +53,17 @@ public  class ActionUtils
         if (a != null) { return a.getExpandedName(); }
         else { return null; }
     }
+
+    /**
+     * @return expanded name - "type:name"
+     */
+    public static String setPermittedValues(Action a, java.util.Set s) { 
+        try {
+            if (a != null) { a.setPermittedValues(s); }
+            return null;
+        } catch (Exception e) {
+            return e.toString();
+        }
+    }
     
 }
