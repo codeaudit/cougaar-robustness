@@ -128,8 +128,11 @@ module Cougaar
               seen[node] = true
               @run.info_message event.data if @messaging >= 2
             elsif event.component == "DisconnectManagerPlugin" && event.data.include?("is Tardy")
-              seen[node] = true
-              results[node] = 'tardy'
+              start_pos = event.data.index(' ') + 1
+              end_pos = event.data.index(':' , start)  
+              the_node = event.data.slice(start_pos, end_pos - start_pos)
+              seen[the_node] = true
+              results[the_node] = 'tardy'
               @run.error_message event.data if @messaging >= 1
             elsif seen[node] == true
               if event.component == "DisconnectServlet" && event.data.include?("Failed to Connect")
