@@ -1,0 +1,51 @@
+<project name="sensors" default="create_cougaar_overlay" basedir=".">
+
+<property name="src" value="src"/>
+<property name="build" value="build"/>
+<property name="jar" value="sensors.jar"/>
+<property environment="env"/>
+<property name="cougaar" value="${env.COUGAAR_INSTALL_PATH}"/>
+    
+	<path id="cougaar.libs">
+		<fileset dir="${cougaar}/lib">
+			<include name="**/*.jar"/>
+		</fileset>
+		<fileset dir="${cougaar}/sys">
+			<include name="**/*.jar"/>
+		</fileset>
+  </path>
+
+	<target name="delete">
+      <delete dir="${build}"/>
+      <mkdir dir="${build}"/>
+  </target>
+
+  <target name="compile">
+        <javac  deprecation="true" 
+                debug="true" 
+                optimize="false" 
+                srcdir="${src}" 
+                destdir="${build}">
+                <classpath refid="cougaar.libs"/>
+        </javac>
+	</target>
+
+	<target name="jar" depends="compile">
+		<jar jarfile="${jar}" baseDir="${build}"/>
+	</target>
+
+	<target name="create_cougaar_overlay">
+		<mkdir dir="staging/lib"/>
+		<antcall target="delete"/>
+		<antcall target="jar"/>
+		<move file="${jar}" todir="staging/lib"/>
+		<zip zipfile="Robustness_objs_cougaar_overlay.zip" basedir="staging"/>
+		<delete dir="staging"/>
+	</target>
+
+	<target name="clean" depends="delete,compile,jar"/>
+    
+</project>
+
+
+
