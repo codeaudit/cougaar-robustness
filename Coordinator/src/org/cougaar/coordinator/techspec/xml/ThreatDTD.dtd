@@ -8,35 +8,24 @@
     name CDATA #REQUIRED
     affectsAssetType CDATA #REQUIRED
     causesEvent CDATA #REQUIRED
-    defaultEventLikelihoodProb ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH ) 'NONE'
+    defaultEventLikelihoodProb ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH | ALWAYS ) 'NONE'
 >
 
-<!ELEMENT VulnerableAssets ((AssetFilter|ContainmentFilter), (EventLikelihoodInterval|EventLikelihood)? >
-<!-- It will have exactly one filter element above -->
+<!ELEMENT VulnerableAssets AssetFilter, (EventLikelihoodInterval|EventLikelihood)? >
 
 <!ELEMENT AssetFilter (Term | CorruptHostExistsOnNetwork | CorruptHostExists)+ >
 <!ELEMENT EventLikelihoodInterval (ClockInterval)+ >
 
 <!ELEMENT EventLikelihood  EMPTY>
 <!ATTLIST EventLikelihood
-    probability ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH ) 'NONE'
+    probability ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH | ALWAYS ) 'NONE'
 >
 
 <!ELEMENT ClockInterval  EMPTY>
 <!ATTLIST ClockInterval
     intervalStart CDATA #REQUIRED
     durationHrs CDATA #REQUIRED
-    probability ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH ) 'NONE'
->
-
-<!ELEMENT EventLikelihood  EMPTY>
-<!ATTLIST EventLikelihood
-    probability ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH ) 'NONE'
->
-
-<!ELEMENT ContainmentFilter  EMPTY>
-<!ATTLIST ContainmentFilter
-    eventAssetContainerName CDATA #REQUIRED
+    probability ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH | ALWAYS ) 'NONE'
 >
 
 <!ELEMENT Term >
@@ -92,8 +81,4 @@ Some variations:
 </AssetFilter >
  
  
-<VulnerableAssets>
-    <ContainmentFilter eventAssetContainerName=”Node” >
-    <EventLikelihood probability=“ALWAYS” />
-</VulnerableAssets>
 -->

@@ -1,7 +1,7 @@
 /*
- * ThreatLikelihoodInterval.java
+ * ThreatProbabilityInterval.java
  *
- * Created on September 17, 2003, 2:03 PM
+ * Created on April 29, 2004, 3:21 PM
  * <copyright>
  *  Copyright 2003 Object Services and Consulting, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
@@ -33,67 +33,45 @@ import org.cougaar.core.persist.NotPersistable;
 /**
  *
  * @author  Paul Pazandak, Ph.D, OBJS
- *
- * Defines the threat likelihood for a specific interval of time. Currently,
- * definable for day, night or always. If always is used, that precludes using
- * day or night (but two such intervals, one with day & the other with night is
- * allowed).
+ * @deprecated
+ * Defines the threat likelihood for a SPECIFIC interval of time. It's
+ * based upon values from ThreatDescriptions & specifically from VulnerabilityFilters.
  */
-public class ThreatLikelihoodInterval implements NotPersistable {
+public class ThreatProbabilityInterval implements NotPersistable {
     
-    private static int G_OID = 0;
-    public static final ApplicabilityInterval ALWAYS = new ApplicabilityInterval("ALWAYS");
-    public static final ApplicabilityInterval DAY = new ApplicabilityInterval("DAY");
-    public static final ApplicabilityInterval NIGHT = new ApplicabilityInterval("NIGHT");
-    
-    private static ApplicabilityInterval intervals[] = {ALWAYS, DAY, NIGHT};
-    /** @return the ApplicabilityInterval with the supplied name  */
-    public static ApplicabilityInterval getApplicabilityIntervalByName(String n) {
-        
-        for (int i=0; i<intervals.length; i++) {
-            if (n.equalsIgnoreCase(intervals[i].toString())) { return intervals[i]; }
-        }
-        return null;
-    }
-    
-    private ApplicabilityInterval applicabilityInterval;
     private int intervalLength;
     private double prob;
-    private int oid; //used by the servlet gui
-
+    private long start;
+    private long end;
+    
     private Logger logger;
     
-    /** Creates a new instance of ThreatLikelihoodInterval */
-    public ThreatLikelihoodInterval(ApplicabilityInterval applicabilityInterval, double probability, int intervalLength) {
+    /** Creates a new instance of ThreatProbabilityInterval */
+    public ThreatProbabilityInterval(long start, long end, double probability, int intervalLength) {
         
-        this.applicabilityInterval = applicabilityInterval;
         this.intervalLength = intervalLength;
         this.prob = probability;
+        this.start = start;
+        this.end = end;
         
-        this.oid = G_OID++;
+        //this.oid = G_OID++;
         
         logger = Logging.getLogger(this.getClass().getName());
         
-    }
-    
-    /** @return the applicability interval of this object */
-    public ApplicabilityInterval getApplicabilityInterval() { return applicabilityInterval; }
+    }    
     
     /** @return the poisson probability interval length of this object */
     public int getIntervalLength() { return intervalLength; }
     
     /** Set the oid of this object */
-    private void setOID(int oid) { this.oid = oid; }
+    //private void setOID(int oid) { this.oid = oid; }
     
     /** Set the oid of this object */
-    public int getOID() { return this.oid; }
+    //public int getOID() { return this.oid; }
     
     /** @return the probability of this object */
     public double getProbability() { return prob; }
 
-    /** Set the probability of this object */
-    public void setProbability(double p) { this.prob = p; }
-    
     /** @return the computed probability of this object for the interval specified */
     public double computeIntervalProbability(long start, long end) { 
         
@@ -126,19 +104,4 @@ public class ThreatLikelihoodInterval implements NotPersistable {
         return result;
     }
     
-    
-    
-    /** Used to restrict parameter use to specified values */
-    static class ApplicabilityInterval {
-    
-        private String name;
-        private ApplicabilityInterval(String name) { this.name = name; }
-        public String toString() { return name; }
-    }
-
-    /** @return a concatenation of the values within this object */
-    public String toString() {
-
-        return "AppInterval="+applicabilityInterval+"    intervalLength="+intervalLength+"   prob="+prob;
-    }
 }

@@ -53,6 +53,10 @@ public class ActionCost {
     /** Set the time duration the action will take to execute */
     public void setTimeCost(int duration) { time = duration; }
     
+    public Cost getBandwidthCost() { return bandwidth; }
+    public Cost getCPUCost() { return cpu; }
+    public Cost getMemoryCost() { return memory; }
+    public int getTimCost() { return time; }
     
     public String toString() {
      
@@ -65,16 +69,21 @@ public class ActionCost {
     
         
     /** Holds the cost info for a given dimension */
-    class Cost {
+    public class Cost {
         
         float fIntensity;
-        boolean asf, msf;
+        boolean asf = false; //asf = agentSizeFactor, msf = messageSizeFactor
+        boolean msf = false; //asf = agentSizeFactor, msf = messageSizeFactor
         
         Cost(float fIntensity, boolean asf, boolean msf) {
             this.fIntensity = fIntensity;
             this.asf = asf;
             this.msf = msf;
         }
+        
+        public float getIntensity() { return fIntensity; }
+        public boolean isAgentSizeAFactor() { return asf; } 
+        public boolean isMessageSizeAFactor() { return msf; }         
         
         public String toString() {
             return "Intensity="+fIntensity+ "  " + (asf ? "Agent Size Factor; " : "") + 

@@ -30,6 +30,7 @@ import org.cougaar.core.persist.NotPersistable;
 
 /**
  * @author Paul Pazandak, Ph.D. OBJS, Inc.
+ * @deprecated It has been replaced with AssetState
  */
 public class StateValue implements NotPersistable {
     

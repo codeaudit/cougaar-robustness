@@ -30,14 +30,15 @@ import org.cougaar.util.log.Logger;
 import org.cougaar.util.log.Logging;
 import org.cougaar.core.persist.NotPersistable;
 
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
+
 /**
  *
  * @author  Paul Pazandak, Ph.D, OBJS
  *
- * Defines the threat likelihood for a specific interval of time. Currently,
- * definable for day, night or always. If always is used, that precludes using
- * day or night (but two such intervals, one with day & the other with night is
- * allowed).
+ * Defines the threat likelihood for a specific interval of time. 
  */
 public class EventProbabilityInterval implements NotPersistable {
     
@@ -47,10 +48,15 @@ public class EventProbabilityInterval implements NotPersistable {
     private int intervalLength = 0;
     private float prob = 0;
     private int oid; //used by the servlet gui
-
+    private ClockInterval[] clockIntervals;
+    
     private Logger logger;
     
-    /** Creates a new instance of EventProbabilityInterval */
+    /** 
+     * Creates a new instance of EventProbabilityInterval, with a specified applicability interval 
+     * over some clock period. startTime should be in the range from 0001-2400 (24 hr clock). intervalLength
+     * (in HOURS) should be less than 24 hours & the interval must not overlap itself.
+     */
     public EventProbabilityInterval(int startTime, int intervalLength, float probability) {
 
         this.startTime = startTime;
@@ -59,9 +65,18 @@ public class EventProbabilityInterval implements NotPersistable {
         
         logger = Logging.getLogger(this.getClass().getName());
         
+        
+        GregorianCalendar start = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
+        start.setTimeInMillis(startTime);
+        GregorianCalendar end = (GregorianCalendar)start.clone();
+        end.add(Calendar.HOUR_OF_DAY, intervalLength);
+
+        //Build up array of clockIntervals to compare against
+        clockIntervals = ClockInterval.generateIntervals(start, end, intervalLength);
+        
     }
 
-    /** Creates a new instance of EventProbabilityInterval that is ALWAYS applicable (no specified interval) */
+    /** Creates a new instance of EventProbabilityInterval that is ALWAYS applicable (infinite interval) */
     public EventProbabilityInterval(float probability) {
 
         this.prob = probability;
@@ -69,24 +84,55 @@ public class EventProbabilityInterval implements NotPersistable {
         logger = Logging.getLogger(this.getClass().getName());
         
     }
+
+    /**
+     * @return the ClockIntervals for this probability
+     */
+    protected ClockInterval[] getClockIntervals() { return clockIntervals; }
     
- 
-    /** Set the oid of this object */
-    private void setOID(int oid) { this.oid = oid; }
+    /**
+     * Use startTime & intervalLength to determine the applicability of this EventProbabilityInterval,
+     * then use computeIntervalProbability to compute the probability over the qualifying interval.
+     *
+     *@return the start time of this interval probability, -1 if infinite interval
+     */
+    public int getStartTime() { return this.startTime; }
+
+    /**
+     *@return the length (in hours) of this interval probability, 0 if an infinite length.
+     */
+    public int getIntervalLength() { return this.intervalLength; }
+        
     
-    /** Set the oid of this object */
-    public int getOID() { return this.oid; }
-    
-    /** @return the probability of this object */
+    /** @return the probability of occurrence over the specified interval. Unit time probability in minutes.*/
     public float getProbability() { return prob; }
 
     /** Set the probability of this object */
-    public void setProbability(float p) { this.prob = p; }
+   // public void setProbability(float p) { this.prob = p; }
     
-    /** @return the computed probability of this object for the interval specified */
-    public double computeIntervalProbability(long start, long end) { 
-        
-        long interval = end - start;
+    /** @return the computed, weighted probability of this object for the interval specified */
+    public double computeIntervalProbability(int intervalMinutes) {         
+        return java.lang.Math.pow((1.0 - prob), intervalMinutes);        
+    }
+    
+    public String toString() {
+     
+        if (this.startTime == -1) { // then this is an "all the time" interval"
+            return "Constant Probability = " + this.getProbability();
+        } else {
+            String s= "\nClockIntervals:";
+            for (int i=0; i< clockIntervals.length; i++) {
+             
+                s += "\n     " + clockIntervals[i].toString();
+            }
+            return "Interval Probability: " + this.getProbability() + "[startTime=" + this.startTime + 
+                                           ", durationHrs=" + this.intervalLength + s;
+        }
+    }
+
+    
+/*
+         long interval = end - start;
         double x = (double)intervalLength / (double)interval ;
         double lambda = prob / (x);
         
@@ -112,17 +158,39 @@ public class EventProbabilityInterval implements NotPersistable {
             logger.error("Exception generating poisson probability. Returning probability = 0.", e);
         }
         
-        return result;
-    }
+        if (result == 0.0) { return 0.0; }
+        //Return weighted probability
+        return result * ( (end-start) / entireInterval );
+*/    
     
-    public String toString() {
-     
-        if (this.startTime == -1) { // then this is an "all the time" interval"
-            return "Constant Probability = " + this.getProbability();
-        } else {
-            return "Interval Probability = " + this.getProbability() + "[startTime=" + this.startTime + 
-                                           ", durationHrs=" + this.intervalLength;
+   /* keep until sure its not needed
+        int fromHr = cal.get(Calendar.HOUR_OF_DAY);
+        int fromMin = date.get(Calendar.MINUTE);
+
+        //Init
+        int minIn = 0;
+        int minOut = (fromMin == 0) ? 0 : 60-fromMin; //# of minutes in the first hour's interval
+                                                      //e.g. startTime = 1815, minOut = 45 minutes
+        
+        //Populate the interval
+        int t = fromHr;
+        for (int i=0, t=fromHr; i< intervalLength; i++) {
+            
+            //Check if this is the last interval
+            if (i == (intervalLength - 1 ) { 
+            //recompute minIn & minOut
+        
+                minIn = fromMin; //# of minutes in the last hour's interval
+                                 //e.g. startTime = 1815, minIn = 15 minutes
+                minOut = 0;
+            }
+
+            clockIntervals[i] = new ClockInterval(t, minIn, minOut, false);
+            cal.add(Calendar.HOUR_OF_DAY, 1); //add one hour
+            t = cal.get(Calendar.HOUR_OF_DAY);
+            minIn = 0;
+            minOut = 0;
+            
         }
-    }
-    
+    */     
 }

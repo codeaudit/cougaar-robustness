@@ -31,53 +31,43 @@ import org.cougaar.core.persist.NotPersistable;
 
 /**
  * This class defines the possible transitions that an Asset make take from one AssetState to another
- * in a given AssetStateDimension.
- *
- * Reused/reengineered for 2004
+ * in a given AssetStateDimension. This class extends AssetTransition with information on the costs
+ * associated with those transitions should they occur.
  *
  * @author Paul Pazandak, Ph.D. OBJS, Inc.
  */
-public class AssetTransition implements NotPersistable {
+public class AssetTransitionWithCost extends AssetTransition implements NotPersistable {
     
-    protected String start = null;
-    protected String end = null;
-    protected String stateDim = null;
-    
-    protected AssetState startState = null;
-    protected AssetState endState = null;
-
-    protected AssetType assetType;
+    ActionCost oneTimeCost = null;
+    ActionCost continuingCost = null;
     
     /** Creates a new instance of AssetTransition. It takes Strings as the AssetStates may not have been loaded 
      *  into the system yet -- lazy evaluation is used
      */
-    public AssetTransition(AssetType assetType, String stateDim, String start, String end) {
-        
-        this.start = start;
-        this.end = end;
-        this.assetType = assetType;
-        this.stateDim = stateDim;
+    public AssetTransitionWithCost(AssetType assetType, String stateDim, String start, String end) {
+
+        super(assetType, stateDim, start, end);
     }
 
-    /** @return the starting state value */
-    public AssetState getStartValue() { 
-        if (startState != null) { return startState; }
-        //Otherwise, look it up
-        AssetStateDimension asd = assetType.findStateDimension(stateDim);
-        if (asd != null) {
-            startState = asd.findAssetState(start);           
-        }
-        return startState; //even if null
-    }
     
-    /** @return the ending state value */
-    public AssetState getEndValue() { 
-        if (endState != null) { return endState; }
-        //Otherwise, look it up
-        AssetStateDimension asd = assetType.findStateDimension(stateDim);
-        if (asd != null) {
-            endState = asd.findAssetState(end);           
+    /** 
+     *  Set the Action Cost. Set <b>isOneTimeCost</> to TRUE if
+     *  this is the one time cost. Set to false if it is the 
+     *  continuing cost.
+     */
+    public void setActionCost(ActionCost ac, boolean isOneTimeCost) {
+     
+        if (isOneTimeCost) { 
+            oneTimeCost = ac; 
+        } else {
+            continuingCost = ac;
         }
-        return endState;  //even if null
-    }
+    }        
+    
+    /** @return get one-time cost */
+    public ActionCost getOneTimeCost() { return oneTimeCost; }
+
+    /** @return get continuing cost */
+    public ActionCost getContinuingCost() { return continuingCost; }
+    
 }

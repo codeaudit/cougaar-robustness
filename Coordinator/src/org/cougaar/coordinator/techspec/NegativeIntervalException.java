@@ -1,7 +1,7 @@
 /*
- * TransProbability.java
+ * NegativeIntervalException.java
  *
- * Created on September 9, 2003, 9:26 AM
+ * Created on April 30, 2004, 9:56 AM
  * <copyright>
  *  Copyright 2003 Object Services and Consulting, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
@@ -21,39 +21,28 @@
  *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
-  */
+ */
 
 package org.cougaar.coordinator.techspec;
 
-import org.cougaar.core.persist.NotPersistable;
-
 /**
- * @deprecated
- * This class describes a transition probability.
- * @author Paul Pazandak, Ph.D. OBJS, Inc.
+ *
+ * @author  Administrator
  */
-public class TransProbability implements NotPersistable {
+public class NegativeIntervalException extends java.lang.Exception {
     
-    
-    /** Starting value of this state transition */
-    private StateValue start;
-
-    /** Ending value of this state transition */
-    private StateValue end;
-
-    /** Probability of this state transition */
-    private double probability;
-    
-    /** Creates a new instance of TransProbability */
-    public TransProbability(StateValue start, StateValue end, double probability) {        
-        this.start = start;
-        this.end = end;
-        this.probability = probability;
+    /**
+     * Creates a new instance of <code>NegativeIntervalException</code> without detail message.
+     */
+    public NegativeIntervalException() {
     }
     
-    public StateValue getStartValue() { return start; }
-
-    public StateValue getEndValue() { return end; }
-
-    public double getProbability() { return probability; }
+    
+    /**
+     * Constructs an instance of <code>NegativeIntervalException</code> with the specified detail message.
+     * @param msg the detail message.
+     */
+    public NegativeIntervalException(String msg) {
+        super(msg);
+    }
 }

@@ -37,6 +37,8 @@ import java.util.Vector;
  * providing much greater functionality -- but primarily oriented toward
  * intra-package use.
  *
+ * //@deprecated Likely deprecated in 2004.
+ * @see ThreatDescription
  * @author Paul Pazandak, Ph.D. OBJS, Inc.
  */
 public interface ThreatModelInterface extends TechSpecRootInterface {
@@ -52,12 +54,12 @@ public interface ThreatModelInterface extends TechSpecRootInterface {
      *@return the threat likelihood during the given time interval
      *
      */
-    public double getThreatLikelihood(long start_time, long end_time);
+    public double getThreatLikelihood(long start_time, long end_time)  throws NegativeIntervalException;
     
     /**
      *@return the vector of associated damage distribution instances. This may be 
      * a dynamically generated vector.
-     *
+     *@deprecated
      */
     public Vector getDamageDistributionVector();
 
@@ -84,6 +86,7 @@ public interface ThreatModelInterface extends TechSpecRootInterface {
      
      /**
       * @return the ThreatType associated with this ThreatModel
+      *@deprecated
       */
      public ThreatType getThreatType();
      

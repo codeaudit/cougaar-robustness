@@ -1,0 +1,54 @@
+<?xml encoding="UTF-8" ?>
+
+<!-- Created by Administrator on May 3, 2004, 2:55 PM -->
+
+<!ELEMENT Event (DirectEffect, TransitiveEffect) >
+
+<!ELEMENT DirectEffect (Transition+) >
+
+<!ELEMENT Transition EMPTY >
+<!ATTLIST Transition
+    WhenActualStateIs CDATA #REQUIRED
+    EndStateWillBe    CDATA #REQUIRED
+>
+
+<!ELEMENT TransitiveEffect (CausesEvent, VulnerableAssets) >
+
+<!ELEMENT CausesEvent EMPTY >
+<!ATTLIST CausesEvent
+    name       CDATA #REQUIRED
+    assetType  CDATA #REQUIRED
+>
+
+<!ELEMENT VulnerableAssets ContainmentFilter, EventLikelihood >
+
+<!ELEMENT EventLikelihood  EMPTY>
+<!ATTLIST EventLikelihood
+    probability ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH ) 'NONE'
+>
+
+<!ELEMENT ContainmentFilter  EMPTY>
+<!ATTLIST ContainmentFilter
+    eventAssetContainerName CDATA #REQUIRED
+>
+
+
+<!-- Example Event XML
+
+<Event name=”HostDeath" affectsAssetType=”Host" affectsStateDimension=”Liveness">
+    <DirectEffect>
+        <Transition WhenActualStateIs=”*” EndStateWillBe=”DEAD” />
+        <Transition ... />
+    </DirectEffect>
+    <TransitiveEffect>
+        <CausesEvent name=”NodeDeath” assetType=”Node”/>
+        <VulnerableAssets>
+            <ContainmentFilter eventAssetContainerName=”Node” >
+            <EventLikelihood probability=“ALWAYS” />
+        </VulnerableAssets>
+    </TransitiveEffect> 
+</Event>
+
+TransitionGroup  - not used in 2004
+Multiple TransitiveEffect elements not supported in 2004.
+    -->

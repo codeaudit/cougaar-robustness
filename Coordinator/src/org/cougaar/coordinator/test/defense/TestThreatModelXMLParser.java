@@ -36,7 +36,7 @@ import java.util.Iterator;
 import org.cougaar.core.plugin.ComponentPlugin;
 
 /**
- *
+ * @deprecated
  * @author  Administrator
  */
 public class TestThreatModelXMLParser extends ComponentPlugin {

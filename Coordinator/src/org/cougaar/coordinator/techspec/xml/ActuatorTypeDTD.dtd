@@ -8,7 +8,7 @@
     affectsStateDimension CDATA #REQUIRED
 >
 
-<!ELEMENT Action (Description, Transition)  >
+<!ELEMENT Action (Description, Transition+)  >
 <!ATTLIST Action 
     name CDATA #REQUIRED
 >

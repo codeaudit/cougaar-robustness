@@ -81,7 +81,6 @@ public class AssetFilter implements NotPersistable {
     }
 
     
-    
 
     /** Logger for error msgs */
     private Logger logger;
@@ -96,7 +95,7 @@ public class AssetFilter implements NotPersistable {
      *
      *@return TRUE if the comparison operator returns TRUE. O.w. false.
      */
-    public boolean qualifies(AssetTechSpecInterface asset) {
+    public boolean qualifies(ThreatModelManagerPlugin mgr, AssetTechSpecInterface asset) {
     
         if (terms.size() == 0) return true; // no filters, so every asset qualifies
 
@@ -119,7 +118,7 @@ public class AssetFilter implements NotPersistable {
             Iterator i = this.specialTerms.iterator();
             while (i.hasNext()) {
                 SpecialTerm st = (SpecialTerm) i.next();
-                qualifies = st.qualifies(asset);
+                qualifies = st.qualifies(mgr, asset);
                 if (!qualifies) { break; } // no need to continue
             }
         }   
@@ -296,13 +295,14 @@ public class AssetFilter implements NotPersistable {
     
     interface SpecialTerm {
      
-        public boolean qualifies(AssetTechSpecInterface asset);
+        public boolean qualifies(ThreatModelManagerPlugin mgr, AssetTechSpecInterface asset);
         public String toString();
     }
 
     
     /**
-     *
+     * @return true if the asset (host) is corrupt, false otherwise.
+     * Returns false if not a host.
      */
     class CorruptHostTerm implements SpecialTerm {
         
@@ -311,17 +311,23 @@ public class AssetFilter implements NotPersistable {
             this.value = value;
         }
 
-        public boolean qualifies(AssetTechSpecInterface asset) {
+        public boolean qualifies(ThreatModelManagerPlugin mgr, AssetTechSpecInterface asset) {
             
             if (logger.isDebugEnabled()) logger.debug("AssetFilter.SpecialTerm - Looking for CorruptHost for this asset");
             //Need to get the host for this asset, then narrow to all hosts that are on the same network as this asset
             //If this asset IS a host, then do nothing.
-            if (asset.getAssetType() == AssetType.HOST) { return false; } //or maybe return true if it is corrupt...
-            AssetTechSpecInterface atsi = asset.getHost();
+
+            if ( asset.getAssetType() != AssetType.HOST ) { return false; }
             
-            
-            
-            return true; //IMPLEMENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            //As above, look for diagnosis on this asset from security that says that this host is believed to be corrupt
+            logger.error("NOT IMPLEMENTED FULLY! Waiting for security to implement diagnosis to look for.");
+
+            AssetProperty ap = asset.findPropertyByName("CORRUPTHOST");
+            if (ap != null && ap.equals("TRUE") ) {
+                return true;
+            } else {
+                return false;
+            }
             
         }
         
@@ -340,17 +346,26 @@ public class AssetFilter implements NotPersistable {
             this.value = value;            
         }
 
-        public boolean qualifies(AssetTechSpecInterface asset) {
+        public boolean qualifies(ThreatModelManagerPlugin mgr, AssetTechSpecInterface asset) {
             
             if (logger.isDebugEnabled()) logger.debug("AssetFilter.SpecialTerm - Looking for CorruptHostOnNetwork");
-            //Need to get a list of ALL hosts, then narrow to all hosts that are on the same network as this asset
-            //At this point all hosts we see will be on this network...
-////////            sdf;
+            //Need to get a list of ALL hosts...
+            //At this point all hosts we see will be on this network.
+
+            //We may need a sensor to watch for such diagnoses & then upon seeing one, modify the 
+            //ALL host assets so their membership gets reevaluated??? CORRUPTHOSTONNETWORK = TRUE
+
+            if ( asset.getAssetType() != AssetType.HOST ) { return false; }
             
-///            AssetType.
-            
-            
-            return true; //IMPLEMENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            //As above, look for diagnosis on this asset from security that says that this host is believed to be corrupt
+            logger.error("NOT IMPLEMENTED FULLY! Waiting for security to implement diagnosis to look for.");
+
+            AssetProperty ap = asset.findPropertyByName("CORRUPTHOSTONNETWORK");
+            if (ap != null && ap.equals("TRUE") ) {
+                return true;
+            } else {
+                return false;
+            }
             
         }
 

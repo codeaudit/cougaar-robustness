@@ -1,7 +1,7 @@
 /*
- * ThreatModelManagerPlugin.java
+ * TransitiveEffectModelManagerPlugin.java
  *
- * Created on September 15, 2003, 4:39 PM
+ * Created on May 6, 2004, 3:44 PM
  * <copyright>
  *  Copyright 2003 Object Services and Consulting, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
@@ -23,7 +23,7 @@
  * </copyright>
  */
 
-//org.cougaar.coordinator.techspec.ThreatModelManagerPlugin
+//org.cougaar.coordinator.techspec.TransitiveEffectModelManagerPlugin
 package org.cougaar.coordinator.techspec;
 
 import org.xml.sax.InputSource;
@@ -65,7 +65,7 @@ import org.cougaar.util.UnaryPredicate;
  *
  * @author  Paul Pazandak Ph.D, OBJS
  */
-public class ThreatModelManagerPlugin extends ComponentPlugin {
+public class TransitiveEffectModelManagerPlugin extends ComponentPlugin {
     
     boolean haveServices = false;
     private LoggingService logger;
@@ -77,17 +77,16 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
     /** Set to true when the asset listener has been added */
     private boolean ADDED_ASSET_LISTENER = false;
 
-    /** The collection of threatDescriptions */
-    private Collection threatDescriptions;
+    /** The collection of transitiveEffectDescriptions */
+    private Collection transitiveEffectDescriptions;
 
     /** List of all assets */
     private Vector assets;
     
-    /** Creates a new instance of ThreatModelManagerPlugin 
-     *
+    /** Creates a new instance of TransitiveEffectModelManagerPlugin 
      *
      */
-    public ThreatModelManagerPlugin() {
+    public TransitiveEffectModelManagerPlugin() {
     
         assets = new Vector(100,50);
     }
@@ -128,34 +127,34 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
     * to get the list of change reports for each changed model. These reports will be of the type 
     * ThreatModelChangeEvent & have an eventType of MEMBERSHIP_CHANGE. Only call from an open TX!    
     */    
-    private void evaluateThreatAssetMembership() {
+    private void evaluateAssetMembership() {
 
         synchronized(changesToProcess) {
             //If no new assets or new threats, don't do anything
             if (changesToProcess.size() == 0 ) { return; }
 
-            ThreatDescription metaModel;
+            TransitiveEffectDescription transitiveEffectDesc;
             AssetChangeEvent event;
-            DefaultThreatModel threatModel;
+            TransitiveEffectModel transitiveEffectModel;
             DefaultAssetTechSpec asset;
             
             Vector changedModels = new Vector(); //keep track so we can publish change them to the BB.
 
-            logger.debug("evaluateThreatAssetMembership called with " + changesToProcess.size() + " events");
+            logger.debug("evaluateAssetMembership called with " + changesToProcess.size() + " events");
 
-            //Iterate over threatDescriptions
-            if ( (threatDescriptions != null && threatDescriptions.size() > 0) ) {
+            //Iterate over transitiveEffectDescriptions
+            if ( (transitiveEffectDescriptions != null && transitiveEffectDescriptions.size() > 0) ) {
 
 
-                Iterator i = threatDescriptions.iterator();
+                Iterator i = transitiveEffectDescriptions.iterator();
                 while (i.hasNext()) {
 
-                    metaModel = (ThreatDescription)i.next();
+                    transitiveEffectDesc = (TransitiveEffectDescription)i.next();
 
                         Iterator ctp = changesToProcess.iterator();
                         while (ctp.hasNext()) {
 
-                            threatModel = null;
+                            transitiveEffectModel = null;
                             event = (AssetChangeEvent)ctp.next();
                             asset = (DefaultAssetTechSpec) event.getAsset();
                             
@@ -163,14 +162,14 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
                                 //IF the agent moved or is new
                                 //check to see if the asset qualifies
 
-                                //** First check type of asset against type of threatModel. Ignore if they don't match
-                                if (!(metaModel.getAffectedAssetType().equals(asset.getAssetType()))) {
+                                //** First check type of asset against type of transitiveEffectModel. Ignore if they don't match
+                                if (!(transitiveEffectDesc.getTransitiveAssetType().equals(asset.getAssetType()))) {
                                     continue;
                                 }
 
                                 boolean qualifies = true; //assume the asset qualifies, until a filter rejects it.
 
-                                ThreatVulnerabilityFilter filter = metaModel.getVulnerabilityFilter();
+                                TransitiveEffectVulnerabilityFilter filter = transitiveEffectDesc.getTransitiveVulnerabilityFilter();
 
                                 //IF NO FILTER -- add the asset as a member
                                 if (filter == null) {
@@ -184,27 +183,27 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
                                 }
 
                                 if (qualifies) {
-                                    logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] Qualifies! Adding to the "+metaModel.getName()+" threatModel ["+metaModel.getAffectedAssetType().getName()+"]");
-                                    threatModel = addAssetAsMember(asset, metaModel);
+                                    logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] Qualifies! Adding to the transitive effect for event: "+transitiveEffectDesc.getTransitiveEventName()+" transitiveEffectModel ["+transitiveEffectDesc.getTransitiveAssetType().getName()+"]");
+                                    transitiveEffectModel = addAssetAsMember(asset, transitiveEffectDesc);
                                 } else { //remove the asset from the threat model's membership, if it's there                         
-                                    threatModel = removeAssetAsMember(asset, metaModel);                                                        
-                                    if (threatModel != null) {
-                                        logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] was REMOVED from "+metaModel.getName()+" threatModel ["+metaModel.getAffectedAssetType().getName()+"]");
+                                    transitiveEffectModel = removeAssetAsMember(asset, transitiveEffectDesc);                                                        
+                                    if (transitiveEffectModel != null) {
+                                        logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] was REMOVED from the transitive effect for event: "+transitiveEffectDesc.getTransitiveEventName()+" transitiveEffectModel ["+transitiveEffectDesc.getTransitiveAssetType().getName()+"]");
                                     }
                                 }
                                 
                               //If the asset was removed, just remove from this threat, if there
                             } else if (event.assetRemovedEvent() ) {
-                                    threatModel = removeAssetAsMember(asset, metaModel);                                                       
-                                    if (threatModel != null) {
-                                        logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] was REMOVED from "+metaModel.getName()+" threatModel ["+metaModel.getAffectedAssetType().getName()+"]");
+                                    transitiveEffectModel = removeAssetAsMember(asset, transitiveEffectDesc);                                                       
+                                    if (transitiveEffectModel != null) {
+                                        logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] was REMOVED from "+transitiveEffectDesc.getTransitiveEventName()+" transitiveEffectModel ["+transitiveEffectDesc.getTransitiveAssetType().getName()+"]");
                                     }
                             }
 
-                            //Now if the threatModel != null, then it was changed so add it to the list to publishChange
-                            if (threatModel != null) {
-                                if (! changedModels.contains(threatModel)) {
-                                    changedModels.addElement(threatModel);
+                            //Now if the transitiveEffectModel != null, then it was changed so add it to the list to publishChange
+                            if (transitiveEffectModel != null) {
+                                if (! changedModels.contains(transitiveEffectModel)) {
+                                    changedModels.addElement(transitiveEffectModel);
                                 }
                             }
                             
@@ -215,8 +214,8 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
 
                     Iterator cModels = changedModels.iterator();
                     while (cModels.hasNext()) {
-                        DefaultThreatModel dtm = (DefaultThreatModel) cModels.next();
-                        Collection changes = Collections.singleton( new ThreatModelChangeEvent( dtm, ThreatModelChangeEvent.MEMBERSHIP_CHANGE ) );
+                        TransitiveEffectModel dtm = (TransitiveEffectModel) cModels.next();
+                        Collection changes = Collections.singleton( new TransitiveEffectModelChangeEvent( dtm, TransitiveEffectModelChangeEvent.MEMBERSHIP_CHANGE ) );
                         this.blackboard.publishChange(dtm, changes);
                     }
                 }
@@ -229,17 +228,17 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
     }
         
     /**
-     * Adds an asset to a threatModel, creating the model if nec.
-     * @return the DefaultThreatModel, if modified. It will not be modified if the
+     * Adds an asset to a transitiveEffectModel, creating the model if nec.
+     * @return the TransitiveEffectModel, if modified. It will not be modified if the
      * asset was already a member. ONLY call from an open Transaction.
      */
-    private DefaultThreatModel addAssetAsMember(AssetTechSpecInterface asset, ThreatDescription metaModel) {
+    private TransitiveEffectModel addAssetAsMember(AssetTechSpecInterface asset, TransitiveEffectDescription transitiveEffectDesc) {
         
         boolean createdModel = false;
-        DefaultThreatModel dtm = metaModel.getInstantiation();
+        TransitiveEffectModel dtm = transitiveEffectDesc.getInstantiation();
         if (dtm == null) {
             //logger.debug("========================================== 6 ==> Creating threat model!");
-            dtm = metaModel.instantiate(us.nextUID());
+            dtm = transitiveEffectDesc.instantiate(us.nextUID());
             
             this.blackboard.publishAdd(dtm);
         }
@@ -253,12 +252,12 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
     
     /**
      * Tries to remove an asset from the membership of a threat
-     * @return the DefaultThreatModel, if modified. It will not be modified if the
+     * @return the TransitiveEffectModel, if modified. It will not be modified if the
      * asset was not a member.
      */
-    private DefaultThreatModel removeAssetAsMember(AssetTechSpecInterface asset, ThreatDescription metaModel) {
+    private TransitiveEffectModel removeAssetAsMember(AssetTechSpecInterface asset, TransitiveEffectDescription transitiveEffectDesc) {
         
-        DefaultThreatModel dtm = metaModel.getInstantiation();
+        TransitiveEffectModel dtm = transitiveEffectDesc.getInstantiation();
         if (dtm == null) { return null; } //nothing to remove
         
         boolean wasAMember = dtm.removeAsset(asset);
@@ -283,7 +282,7 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
         assetManagerSub =
         (IncrementalSubscription)blackboard.subscribe(assetManagerModelPredicate);
 
-        threatDescriptionsSub =
+        transitiveEffectDescriptionsSub =
         (IncrementalSubscription)blackboard.subscribe(threatDescriptionsPredicate);
     }
 
@@ -306,15 +305,15 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
             } 
         }
 
-        //Update the threatDescriptions collection if new ones were added
-        if (threatDescriptionsSub.getAddedCollection().size() > 0) {
-            if (threatDescriptions != null && threatDescriptions.size() > 0) {
+        //Update the transitiveEffectDescriptions collection if new ones were added
+        if (transitiveEffectDescriptionsSub.getAddedCollection().size() > 0) {
+            if (transitiveEffectDescriptions != null && transitiveEffectDescriptions.size() > 0) {
                 logger.warn("Read in threat descriptions on subsequent execute() invocations. They should have been all seen at once!");
                 //Should not happen. If it did, the assets already seen would not be compared against these threats until
                 //they changed in some way. Since the threat descriptions are published in a setupSubscription, this should not occur.
             }
-            threatDescriptions = threatDescriptionsSub.getCollection();
-            logger.debug("Got " + threatDescriptions.size() + " ThreatDescriptions from the blackboard.");
+            transitiveEffectDescriptions = transitiveEffectDescriptionsSub.getCollection();
+            logger.debug("Got " + transitiveEffectDescriptions.size() + " ThreatDescriptions from the blackboard.");
         }
         
         //Get the asset manager plugin
@@ -335,7 +334,7 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
             ADDED_ASSET_LISTENER = true;            
         } 
         
-        evaluateThreatAssetMembership();            
+        evaluateAssetMembership();            
             
     }
 
@@ -359,10 +358,10 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
     };
     
 
-    private IncrementalSubscription threatDescriptionsSub;
+    private IncrementalSubscription transitiveEffectDescriptionsSub;
     private UnaryPredicate threatDescriptionsPredicate = new UnaryPredicate() {
         public boolean execute(Object o) {
-            return (o instanceof ThreatDescription);
+            return (o instanceof TransitiveEffectDescription);
         }
     };
     

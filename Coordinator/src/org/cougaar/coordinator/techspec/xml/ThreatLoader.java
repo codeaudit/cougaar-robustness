@@ -139,9 +139,10 @@ public class ThreatLoader extends XMLLoader {
         
         UID uid = us.nextUID();
 
+        //Create default threat
         ThreatDescription threat = new ThreatDescription( threatName, affectsAssetType, causesEvent, fProb );
-        
-        //Create a Threat
+        threats.add(threat);
+
         Element e;
         for (Node child = element.getFirstChild(); child != null; child = child.getNextSibling()) {
             if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("VulnerableAssets") ) {
@@ -155,22 +156,28 @@ public class ThreatLoader extends XMLLoader {
     }
     
     
+    //publish all threats at this point
+    protected void setupSubscriptions() {
+        Iterator i = threats.iterator();
+        while (i.hasNext() ) {
+            blackboard.publishAdd(i.next());
+        }
+    }
+    
     protected void execute() {
-    
-    
-    //should possibly publish all threats at this point??
-    
     }
     
     
-    
+
+    /** Parse sub kinds of threats & create new ThreatDescriptions for each entry */
     private void parseVulnerableAssets(Element element, ThreatDescription threat) {
 
-        VulnerabilityFilter vf = VulnerabilityLoader.parseElement(element, probabilityMap);
+        ThreatVulnerabilityFilter vf = ThreatVulnerabilityLoader.parseElement(element, probabilityMap);
         if (vf != null) {
-            threat.addVulnerabilityFilter(vf);
+            ThreatDescription td = new ThreatDescription(threat, vf);
+            threats.add(td);
         } else {
-            logger.error("Error parsing XML file for threat [" + threat.getName() + "]. VulnerabilityFilter was null for element = "+element.getNodeName() );
+            logger.error("Error parsing XML file for threat [" + threat.getName() + "]. ThreatVulnerabilityFilter was null for element = "+element.getNodeName() );
         }
     }
     

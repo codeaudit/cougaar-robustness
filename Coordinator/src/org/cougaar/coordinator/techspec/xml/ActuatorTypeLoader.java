@@ -160,7 +160,7 @@ public class ActuatorTypeLoader extends XMLLoader {
         for (Node child = element.getFirstChild(); child != null; child = child.getNextSibling()) {
             if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("Action") ) {
                 e = (Element)child;
-                parseAction(e, actuator);
+                parseAction(e, actuator, affectsAssetType, stateDim);
             } //else, likely a text element - ignore
         }
 
@@ -172,12 +172,12 @@ public class ActuatorTypeLoader extends XMLLoader {
     protected void execute() {}
     
 
-    private void parseAction(Element element, ActionTechSpecImpl actuator) {
+    private void parseAction(Element element, ActionTechSpecImpl actuator, AssetType assetType, String stateDim) {
 
         String actionName = element.getAttribute("name");
         String description = null; 
         
-        ActionDescription ad = new ActionDescription(actionName);
+        ActionDescription ad = new ActionDescription(actionName, assetType, stateDim);
         
         //Create an ActionDescription
         Element e;
@@ -188,7 +188,7 @@ public class ActuatorTypeLoader extends XMLLoader {
                 ad.setDescription(description);
             } else if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("Transition") ) {
                 e = (Element)child;
-                parseTransition(e, ad);
+                parseTransition(e, ad, assetType, stateDim);
             } //else, likely a text element - ignore
         }
         actuator.addAction(ad);
@@ -196,13 +196,15 @@ public class ActuatorTypeLoader extends XMLLoader {
     }
 
 
-    private void parseTransition(Element element, ActionDescription desc) {
+    private void parseTransition(Element element, ActionDescription desc, AssetType assetType, String stateDim) {
 
         String whenState = element.getAttribute("WhenActualStateIs");
         String endState = element.getAttribute("EndStateWillBe");
-        desc.setWhenStateIs(whenState);
-        desc.setEndStateWillBe(endState);
-                
+        //desc.setWhenStateIs(whenState);
+        //desc.setEndStateWillBe(endState);
+          
+        AssetTransitionWithCost atwc = new AssetTransitionWithCost(assetType, stateDim, whenState, endState );
+        desc.addTransition(atwc);
         //Creating ActionCosts
         Element e;
         ActionCost ac;
@@ -210,11 +212,11 @@ public class ActuatorTypeLoader extends XMLLoader {
             if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("OneTimeCost") ) {
                 e = (Element)child;
                 ac = parseCost(e);
-                desc.setActionCost(ac, true);
+                atwc.setActionCost(ac, true);
             } else if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("ContinuingCost") ) {
                 e = (Element)child;
                 ac = parseCost(e);
-                desc.setActionCost(ac, false);
+                atwc.setActionCost(ac, false);
             } //else, likely a text element - ignore
         }
     }

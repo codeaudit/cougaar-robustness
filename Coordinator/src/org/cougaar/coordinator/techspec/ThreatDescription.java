@@ -32,6 +32,9 @@ import org.cougaar.util.log.Logging;
 import org.cougaar.util.log.Logger;
 import org.cougaar.core.persist.NotPersistable;
 
+import org.cougaar.core.util.UID;
+
+
 /**
  *
  * @author  Administrator
@@ -43,62 +46,106 @@ public class ThreatDescription implements NotPersistable {
     private String causesEvent;
     private float defaultEventLikelihoodProb;
     //<Threat name="Bomb" affectsAssetType="Host" causesEvent="HostDeath" defaultEventLikelihoodProb="NONE" />
-
-    private Vector filters;
+    private EventProbability eventProbability;
     
-    /** Creates a new instance of ThreatDescription */
+    /** Threat filter */
+    private ThreatVulnerabilityFilter filter = null;
+    
+    /** Creates a new instance of ThreatDescription  -- it has no filter other than asset type */
     public ThreatDescription(String name, AssetType affectsAssetType, String causesEvent, float defaultEventLikelihoodProb) {
         
         this.name = name;
         this.affectsAssetType = affectsAssetType;
         this.causesEvent = causesEvent;
-        this.defaultEventLikelihoodProb = defaultEventLikelihoodProb;
+        this.defaultEventLikelihoodProb = defaultEventLikelihoodProb;        
         
-        filters = new Vector();
-        
+        eventProbability = new EventProbability();
+        eventProbability.addInterval(new EventProbabilityInterval(defaultEventLikelihoodProb));
+        this.filter = null;
     }
-    
+
+    /** Creates a new instance of ThreatDescription from a root ThreatDescription */
+    public ThreatDescription(ThreatDescription rootTD, ThreatVulnerabilityFilter vf) {
+        
+        this.name = rootTD.name;
+        this.affectsAssetType = rootTD.affectsAssetType;
+        this.causesEvent = rootTD.causesEvent;
+        this.defaultEventLikelihoodProb = rootTD.defaultEventLikelihoodProb;
+      
+        //if vf's ep is null crate new probability using default, o.w. use one from vf
+        if (vf != null && vf.getProbability() == null) {
+                eventProbability = new EventProbability();
+                eventProbability.addInterval(new EventProbabilityInterval(defaultEventLikelihoodProb));                
+        }        
+        this.filter = vf;
+    }
+            
     /**
      * @return the name of this threat
      */
     public String getName() { return name; }
 
     /**
-     * @return the name of this threat
+     * @return the asset type that this threat pertains to
      */
     public AssetType getAffectedAssetType() { return affectsAssetType; }
     /**
-     * @return the name of this threat
+     * @return the name of the event that this threat would cause
      */
     public String getEventThreatCauses() { return causesEvent; }
     /**
-     * @return the name of this threat
+     * @return the default probability. Applicable, if the prob is not NONE,
+     * to all assets of the specified type.
      */
     public float getDefaultProbability() { return defaultEventLikelihoodProb; }
-    
+        
     /**
-     * Add a vulnerability
+     * Get vulnerability filter
      */
-    public void addVulnerabilityFilter(VulnerabilityFilter vf) {
-        filters.add(vf);
+    protected ThreatVulnerabilityFilter getVulnerabilityFilter() {
+        return filter;
     }
     
     /**
-     * Get vulnerability filters
+     * @return true if an asset qualifies -- if the threat's filter doesn't exclude the asset.
+     * Will return <b>false</b> if the asset type of the asset and the affectAssetType aren't equal.
+     * If this is a ThreatDescription without a filter, it will return true if the asset type of the
+     * asset equals the affectedAssetType of the threat.
      */
-    public Vector getVulnerabilityFilters() {
-        return filters;
+    public boolean qualifies(ThreatModelManagerPlugin mgr, AssetTechSpecInterface asset) {
+
+        //If the asset type & affectAssetType don't equal, then this threat doesn't apply.
+        if (! (asset.getAssetType().equals(this.getAffectedAssetType())) ) {
+            return false;
+        }
+        
+        if (filter == null) {
+            return true;
+        } else { // check filter
+            return filter.qualifies(mgr, asset);
+        }        
     }
     
     public String toString() {
      
         String s = "Threat ["+this.getName()+"], affects asset type="+this.getAffectedAssetType()+", causes event="+this.getEventThreatCauses()+"\n";
         s += "[Default Probability = "+this.getDefaultProbability()+"]\n";
-        Iterator i = this.getVulnerabilityFilters().iterator();
-        while (i.hasNext()) {
-             VulnerabilityFilter vf = (VulnerabilityFilter)i.next();
-             s = s+ vf + "\n";
+        if (filter != null) {
+             s = s + filter + "\n";
         }        
         return s;
     }
+    
+
+    /** A ptr to an instantiation of this meta model */
+    private DefaultThreatModel instantiation = null;
+    
+    //ThreatModelManagerPlugin uses the following methods
+    public DefaultThreatModel getInstantiation() { return instantiation; }
+    /** Create a new DefaultThreatModel */
+    public DefaultThreatModel instantiate(UID uid) { 
+        instantiation = new DefaultThreatModel(this, uid);
+        return instantiation; 
+    }
+    
 }

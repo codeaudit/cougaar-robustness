@@ -58,14 +58,19 @@ public class ActionDescription {
     
     String name;
     String desc;
-    String whenStateIs, endStateWillBe;
+    AssetType affectsAssetType;
+    String affectsStateDimension;
+    Vector transitions;
     
-    ActionCost oneTimeCost = null;
-    ActionCost continuingCost = null;
+    AssetTransitionWithCost wildcardTransition = null;
     
     /** Creates a new instance of ActionDescription */
-    public ActionDescription(String name) {
+    public ActionDescription(String name, AssetType affectsAssetType, String affectsStateDimension) {
         this.name = name;
+        this.affectsAssetType = affectsAssetType;
+        this.affectsStateDimension = affectsStateDimension;
+        
+        transitions = new Vector(5,5);
     }
         
     /** @return action name */
@@ -73,49 +78,96 @@ public class ActionDescription {
     
     /** @return action description */
     public String description() { return desc;}
-    
-    /** @return whenStateIs */
-    public String getWhenStateIs() { return whenStateIs;}
-    
-    /** @return whenStateIs */
-    public void setWhenStateIs(String s) { whenStateIs = s;}
-    
-    /** @return endStateWillBe */
-    public String getEndStateWillBe() { return endStateWillBe;}
-    
-    /** @return endStateWillBe */
-    public void setEndStateWillBe(String s) { endStateWillBe = s;}
-
-    
+        
     /** Set the description for this action */
     public void setDescription(String d) {
         this.desc = d;
     }
-    
-    /** 
-     *  Set the Action Cost. Set <b>isOneTimeCost</> to TRUE if
-     *  this is the one time cost. Set to false if it is the 
-     *  continuing cost.
-     */
-    public void setActionCost(ActionCost ac, boolean isOneTimeCost) {
-     
-        if (isOneTimeCost) { 
-            oneTimeCost = ac; 
-        } else {
-            continuingCost = ac;
-        }
-    }        
-    
-    /** @return get one-time cost */
-    public ActionCost getOneTimeCost() { return oneTimeCost; }
 
-    /** @return get continuing cost */
-    public ActionCost getContinuingCost() { return continuingCost; }
+    /**
+     * @return the asset type that this event will affect
+     */
+    public AssetType getAffectedAssetType() { return affectsAssetType; }
+
+    /**
+     * @return the asset state dimension this event will affect
+     */
+    public String getAffectedStateDimension() { return affectsStateDimension; }
+    
+    
+    
+    /* Called by XML Loaders when parsed */
+    public void addTransition(AssetTransitionWithCost atwc) { 
+        
+        this.transitions.add(atwc); 
+        if (atwc.start.equals("*")) {
+            this.wildcardTransition = atwc;
+        } 
+    }
+    
+    /**
+     * @return the vector of AssetTransitionWithCost objects that may occur should this event happen
+     */
+    public Vector getTransitionVector() {
+        return transitions;
+    }
+
+   /**
+     * Locates a transition from the supplied starting AssetState. If one is found the ending state is
+     * returned, otherwise null.  
+     */
+    public AssetTransitionWithCost getTransitionForState(AssetState as) {
+    
+        if (this.wildcardTransition != null) { //this will apply to all requests
+
+            return this.wildcardTransition;
+
+        } else { //see if we have a transition with the specified starting state in the transitions
+            
+            AssetTransitionWithCost at;
+            for (Iterator i=transitions.iterator(); i.hasNext(); ) {
+                
+                at = (AssetTransitionWithCost)i.next();
+                if ( at.getStartValue().equals(as)) {
+                    return at; // return the AssetTransitionWithCost with the state we'd transition to if this event occurs given the (as) starting state.
+                }
+            }
+            return null; // didn't find one
+        }
+    }
+    
+
+   /**
+     * Locates a transition from the supplied starting AssetState. If one is found the ending state is
+     * returned, otherwise null.  
+     */
+    public AssetTransitionWithCost getTransitionForState(String s) {
+    
+        if (this.wildcardTransition != null) { //this will apply to all requests
+
+            return this.wildcardTransition;
+
+        } else { //see if we have a transition with the specified starting state in the transitions
+            
+            AssetTransitionWithCost at;
+            for (Iterator i=transitions.iterator(); i.hasNext(); ) {
+                
+                at = (AssetTransitionWithCost)i.next();
+                if ( at.getStartValue().getName().equals(s)) {
+                    return at; // return the AssetTransitionWithCost with the state we'd transition to if this event occurs given the (as) starting state.
+                }
+            }
+            return null; // didn't find one
+        }
+    }
+    
+    
     
     public String toString() {
         
         String s = "    Action ["+this.name()+"] -------------\n";
         s += "    Desc = "+ this.description() + "\n";
+/*
         s += "    WhenStateIs="+this.getWhenStateIs()+"  EndStateWillBe="+this.getEndStateWillBe()+"\n";
         if (this.getOneTimeCost() != null) {
             s += "    One Time Transition Costs:\n"+ this.getOneTimeCost();
@@ -123,6 +175,7 @@ public class ActionDescription {
         if (this.getContinuingCost() != null) {
             s += "    Continuing Transition Costs:\n"+ this.getContinuingCost();
         }
+ */
         return s;
     }
     

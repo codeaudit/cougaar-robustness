@@ -44,6 +44,25 @@ public class ContainmentFilter {
      */
     public String getContainerName() { return eventAssetContainerName; }
     
+    /**
+     * @return true if an asset qualifies -- if the threat's filters don't exclude the asset
+     */
+    protected boolean qualifies(ThreatModelManagerPlugin mgr, AssetTechSpecInterface asset) {
+
+        return true;
+//FIX        
+    }
+
+    
+    /**
+     * @return true if an asset qualifies -- if the threat's filters don't exclude the asset
+     */
+    protected boolean qualifies(TransitiveEffectModelManagerPlugin mgr, AssetTechSpecInterface asset) {
+
+        return true;
+//FIX        
+    }
+    
     
     public String toString() {
         return "CONTAINMENT FILTER. Filter on container = "+this.getContainerName();
