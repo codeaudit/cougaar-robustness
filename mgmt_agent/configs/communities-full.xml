@@ -31,14 +31,13 @@
     <Attribute ID="NumberOfAgents"            Value="73" />
     <!-- Parameters used by Robustness Manager.  Parameters set for
          Entities override these values -->
-    <Attribute ID="UNDEFINED_EXPIRATION"      Value="60000" />
     <Attribute ID="INITIAL_EXPIRATION"        Value="180000" />
     <Attribute ID="LOCATED_EXPIRATION"        Value="120000" />
     <Attribute ID="ACTIVE_EXPIRATION"         Value="120000" />
-    <Attribute ID="HEALTH_CHECK_EXPIRATION"   Value="-1" />
+    <Attribute ID="HEALTH_CHECK_EXPIRATION"   Value="240000" />
     <Attribute ID="DEAD_EXPIRATION"           Value="30000" />
     <Attribute ID="RESTART_EXPIRATION"        Value="300000" />
-    <Attribute ID="FAILED_RESTART_EXPIRATION" Value="-1" />
+    <Attribute ID="FAILED_RESTART_EXPIRATION" Value="30000" />
     <Attribute ID="MOVE_EXPIRATION"           Value="300000" />
     <Attribute ID="PING_TIMEOUT"              Value="120000" />
     <Attribute ID="HEARTBEAT_REQUEST_TIMEOUT" Value="60000" />
@@ -389,14 +388,13 @@
     <Attribute ID="CommunityManager"          Value="1AD-FWD-ARManager" />
     <Attribute ID="RobustnessManager"         Value="1AD-FWD-ARManager" />
     <Attribute ID="NumberOfAgents"            Value="55" />
-    <Attribute ID="UNDEFINED_EXPIRATION"      Value="60000" />
     <Attribute ID="INITIAL_EXPIRATION"        Value="180000" />
     <Attribute ID="LOCATED_EXPIRATION"        Value="120000" />
     <Attribute ID="ACTIVE_EXPIRATION"         Value="120000" />
-    <Attribute ID="HEALTH_CHECK_EXPIRATION"   Value="-1" />
+    <Attribute ID="HEALTH_CHECK_EXPIRATION"   Value="240000" />
     <Attribute ID="DEAD_EXPIRATION"           Value="30000" />
     <Attribute ID="RESTART_EXPIRATION"        Value="300000" />
-    <Attribute ID="FAILED_RESTART_EXPIRATION" Value="-1" />
+    <Attribute ID="FAILED_RESTART_EXPIRATION" Value="30000" />
     <Attribute ID="MOVE_EXPIRATION"           Value="300000" />
     <Attribute ID="PING_TIMEOUT"              Value="120000" />
     <Attribute ID="HEARTBEAT_REQUEST_TIMEOUT" Value="60000" />
@@ -677,14 +675,13 @@
     <Attribute ID="CommunityManager"          Value="1AD-CONUS-ARManager" />
     <Attribute ID="RobustnessManager"         Value="1AD-CONUS-ARManager" />
     <Attribute ID="NumberOfAgents"            Value="4" />
-    <Attribute ID="UNDEFINED_EXPIRATION"      Value="60000" />
     <Attribute ID="INITIAL_EXPIRATION"        Value="180000" />
     <Attribute ID="LOCATED_EXPIRATION"        Value="120000" />
     <Attribute ID="ACTIVE_EXPIRATION"         Value="120000" />
-    <Attribute ID="HEALTH_CHECK_EXPIRATION"   Value="-1" />
+    <Attribute ID="HEALTH_CHECK_EXPIRATION"   Value="240000" />
     <Attribute ID="DEAD_EXPIRATION"           Value="30000" />
     <Attribute ID="RESTART_EXPIRATION"        Value="300000" />
-    <Attribute ID="FAILED_RESTART_EXPIRATION" Value="-1" />
+    <Attribute ID="FAILED_RESTART_EXPIRATION" Value="30000" />
     <Attribute ID="MOVE_EXPIRATION"           Value="300000" />
     <Attribute ID="PING_TIMEOUT"              Value="120000" />
     <Attribute ID="HEARTBEAT_REQUEST_TIMEOUT" Value="60000" />
@@ -761,14 +758,13 @@
     <Attribute ID="CommunityManager"          Value="1AD-TRANS-ARManager" />
     <Attribute ID="RobustnessManager"         Value="1AD-TRANS-ARManager" />
     <Attribute ID="NumberOfAgents"            Value="4" />
-    <Attribute ID="UNDEFINED_EXPIRATION"      Value="60000" />
     <Attribute ID="INITIAL_EXPIRATION"        Value="180000" />
     <Attribute ID="LOCATED_EXPIRATION"        Value="120000" />
     <Attribute ID="ACTIVE_EXPIRATION"         Value="120000" />
-    <Attribute ID="HEALTH_CHECK_EXPIRATION"   Value="-1" />
+    <Attribute ID="HEALTH_CHECK_EXPIRATION"   Value="240000" />
     <Attribute ID="DEAD_EXPIRATION"           Value="30000" />
     <Attribute ID="RESTART_EXPIRATION"        Value="300000" />
-    <Attribute ID="FAILED_RESTART_EXPIRATION" Value="-1" />
+    <Attribute ID="FAILED_RESTART_EXPIRATION" Value="30000" />
     <Attribute ID="MOVE_EXPIRATION"           Value="300000" />
     <Attribute ID="PING_TIMEOUT"              Value="120000" />
     <Attribute ID="HEARTBEAT_REQUEST_TIMEOUT" Value="60000" />
