@@ -87,7 +87,8 @@ public class RestartDestinationLocator {
         numAgents = agentsOnNode;
       }
     }
-    if (preferredRestartLocations.containsKey(agent)) {
+    if (preferredRestartLocations.containsKey(agent) &&
+        !excludedNodes.contains((String)preferredRestartLocations.get(agent))) {
       selectedNode = (String)preferredRestartLocations.remove(agent);
       if (logger.isDebugEnabled()) {
         logger.debug("Using preferredRestartLocation: agent=" + agent + " dest=" + selectedNode);
