@@ -33,30 +33,51 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
   do_action "ClearPersistenceAndLogs"
   do_action "StartSociety"
 
-#do_action "GenericAction" do |run|
-  #run.comms.on_cougaar_event do |event|
-    #puts event
-  #end
-#end
+  ## Print events from Robustness Controller
+  do_action "GenericAction" do |run|
+    run.comms.on_cougaar_event do |event|
+      if event.component.include?("RobustnessController")
+        puts event
+      end
+    end
+  end
 
-#  do_action "AddNode", "NewNode1", "1AD-FWD-COMM", "sv114"
-#  wait_for "Command", "ok"
+  # After CommunityReady event is received wait for persistence
+  wait_for "CommunitiesReady", ["1AD-FWD-COMM", "1AD-REAR-COMM"]
+  do_action "Sleep", 5.minutes
 
-#  do_action "LoadBalancer", "1AD-FWD-COMM"
+  # Kill node
+  do_action "SaveHostOfNode", "FWD-A"
+  do_action "KillNodes", "FWD-A"
+  # Wait for restarts to complete
+  wait_for "CommunitiesReady", ["1AD-FWD-COMM"]
+  # Add an empty node to community
+  do_action "AddNode", "FWD-NEW-1", "1AD-FWD-COMM"
+  do_action "Sleep", 3.minutes
 
-#  wait_for "Command", "ok"
+  # Kill node
+  do_action "SaveHostOfNode", "REAR-A"
+  do_action "KillNodes", "REAR-A"
+  # Wait for restarts to complete
+  wait_for "CommunitiesReady", ["1AD-REAR-COMM"]
+  # Add an empty node to community
+  do_action "AddNode", "REAR-NEW-1", "1AD-REAR-COMM"
+  do_action "Sleep", 3.minutes
 
-#  do_action "KillNodes", "FWD-C", "FWD-D"
+  # Kill node that contains robustness manager
+  do_action "SaveHostOfNode", "FWD-MGMT-NODE"
+  do_action "KillNodes", "FWD-MGMT-NODE"
+  wait_for "CommunitiesReady", ["1AD-FWD-COMM"]
 
-  wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
-  do_action "AddNode", "NewNode1", "1AD-SMALL-COMM", "net5"
-  do_action "Sleep", 1.minutes
-  do_action "KillNodes", "TRANS-NODE"
-  wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
+  # Add another empty node to community
+  do_action "AddNode", "FWD-NEW-2", "1AD-FWD-COMM"
+  do_action "Sleep", 3.minutes
+
+  # Load balance community
+  do_action "LoadBalancer", "1AD-FWD-COMM"
+  wait_for "CommunitiesReady", ["1AD-FWD-COMM"]
+
   #wait_for "Command", "ok"
-
-  do_action "LoadBalancer", "1AD-SMALL-COMM"
-  wait_for "Command", "ok"
 
   wait_for  "GLSConnection", false
   wait_for  "NextOPlanStage"

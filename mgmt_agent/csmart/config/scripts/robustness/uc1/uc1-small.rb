@@ -44,26 +44,39 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
 
   # After CommunityReady event is received wait for persistence
   wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
-  do_action "Sleep", 3.minutes
+  do_action "Sleep", 5.minutes
 
   # Kill node that does not contain robustness manager
+  do_action "SaveHostOfNode", "TRANS-NODE"
   do_action "KillNodes", "TRANS-NODE"
 
   # Wait for restarts to complete
   wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
 
   # Add an empty node to community
-  do_action "AddNode", "NewNode1", "1AD-SMALL-COMM", "wayne"
+  do_action "AddNode", "NewNode1", "1AD-SMALL-COMM"
   do_action "Sleep", 3.minutes
 
   # Kill node that contains robustness manager
+  do_action "SaveHostOfNode", "FWD-NODE"
   do_action "KillNodes", "FWD-NODE"
 
   # Wait for restarts to complete
   wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
 
   # Add another empty node to community
-  do_action "AddNode", "NewNode2", "1AD-SMALL-COMM", "net3"
+  do_action "AddNode", "NewNode2", "1AD-SMALL-COMM"
+  do_action "Sleep", 3.minutes
+
+  # Kill last of original nodes 
+  do_action "SaveHostOfNode", "REAR-NODE"
+  do_action "KillNodes", "REAR-NODE"
+
+  # Wait for restarts to complete
+  wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
+
+  # Add another empty node to community
+  do_action "AddNode", "NewNode3", "1AD-SMALL-COMM"
   do_action "Sleep", 3.minutes
 
   # Load balance community
