@@ -536,14 +536,15 @@ public class RestartLocatorPlugin extends SimplePlugin {
     //  Collection specifiedNodes = new Vector();
     //  StringTokenizer st = new  StringTokenizer(specifiedRestartNodes, " ");
     //  while (st.hasMoreTokens()) specifiedNodes.add(st.nextToken());
-    Collection candidateNodes = getSpecifiedNodes();
-    candidateNodes.addAll(nodes.keySet());
-    selectedNodes = selectNodes(candidateNodes, excludedAgents, excludedNodes, excludedHosts);
-    //if (specifiedNodes.size() > 0) {
-    //  selectedNodes = selectNodes(specifiedNodes, excludedAgents, excludedNodes, excludedHosts);
-    //} else {
-    //  selectedNodes = selectNodes(nodes.keySet(), excludedAgents, excludedNodes, excludedHosts);
-    //}
+    //Collection candidateNodes = getSpecifiedNodes();
+    //candidateNodes.addAll(nodes.keySet());
+    //selectedNodes = selectNodes(candidateNodes, excludedAgents, excludedNodes, excludedHosts);
+    Collection specifiedNodes = getSpecifiedNodes();
+    if (specifiedNodes.size() > 0) {
+      selectedNodes = selectNodes(specifiedNodes, excludedAgents, excludedNodes, excludedHosts);
+    } else {
+      selectedNodes = selectNodes(nodes.keySet(), excludedAgents, excludedNodes, excludedHosts);
+    }
     log.debug("SelectedNodes=" + selectedNodes);
     for (Iterator it = selectedNodes.iterator(); it.hasNext();) {
       Destination dest = new Destination();

@@ -116,15 +116,15 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     //{"hbReqRetries", "-1"},
     {"hbReqRetries", "1"},
     {"hbReqRetryFreq", "60000"},
-    {"hbFreq",       "20000"},
-    {"hbTimeout",    "10000"},
+    {"hbFreq",       "30000"},
+    {"hbTimeout",    "20000"},
     {"hbPctLate",    "80.0"},
     {"hbWindow",     "360000"},  // Default to 6 minute window
     {"hbFailRate",   "0.5"},
-    {"activePingFreq", "120000"},
-    {"pingTimeout",  "20000"},
-    {"pingRetries",  "1"},
-    {"evalFreq",     "10000"},
+    {"activePingFreq", "180000"},
+    {"pingTimeout",  "60000"},
+    {"pingRetries",  "0"},
+    {"evalFreq",     "20000"},
     {"restartRetryFreq", "120000"}
   };
   ManagementAgentProperties healthMonitorProps =

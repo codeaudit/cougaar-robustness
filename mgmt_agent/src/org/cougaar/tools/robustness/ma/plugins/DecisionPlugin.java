@@ -157,7 +157,7 @@ public class DecisionPlugin extends SimplePlugin {
               hs.setState(HealthStatus.RESTART_COMPLETE);
               hs.setStatus(HealthStatus.RESTARTED);
               publishChange(hs);
-              //bbs.publishRemove(ac);
+              bbs.publishRemove(ac);
             } else if (ac.getStatusCode() == ac.ALREADY_EXISTS) {
               // Agent is alive but not responding to HeartbeatRequests or Pings
               //hs.setState(HealthStatus.ROBUSTNESS_INIT_FAIL);
@@ -165,11 +165,11 @@ public class DecisionPlugin extends SimplePlugin {
               publishChange(hs);
               hs.setState(HealthStatus.RESTART_COMPLETE);
               hs.setStatus(HealthStatus.RESTARTED);
-              //bbs.publishRemove(ac);
+              bbs.publishRemove(ac);
             } else {
               hs.setState(HealthStatus.FAILED_RESTART);
               publishChange(hs);
-              //bbs.publishRemove(ac);
+              bbs.publishRemove(ac);
               log.error("Unexpected status code from mobility, action=ADD status=" +
                 ac.getStatusCodeAsString() + " agent=" + addTicket.getMobileAgent() +
                 " destNode=" + addTicket.getDestinationNode());
