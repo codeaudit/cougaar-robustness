@@ -2,7 +2,7 @@
 
 <!-- Created by Administrator on May 3, 2004, 2:55 PM -->
 
-<!ELEMENT Event (DirectEffect, TransitiveEffect) >
+<!ELEMENT Event (DirectEffect, TransitiveEffect?) >
 
 <!ELEMENT DirectEffect (Transition+) >
 

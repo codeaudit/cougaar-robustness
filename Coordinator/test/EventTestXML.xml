@@ -4,7 +4,7 @@
 
 <!DOCTYPE Event [
 
-<!ELEMENT Event (DirectEffect, TransitiveEffect) >
+<!ELEMENT Event (DirectEffect, TransitiveEffect?) >
 
 <!ELEMENT DirectEffect (Transition+) >
 
@@ -61,5 +61,11 @@
             <EventLikelihood probability="ALWAYS" />
         </VulnerableAssets>
     </TransitiveEffect> 
+</Event>
+<Event name="HostDeath3-noTransEffects" affectsAssetType="Host" affectsStateDimension="Liveness">
+    <DirectEffect>
+        <Transition WhenActualStateIs="Eating" EndStateWillBe="DEAD" />
+        <Transition WhenActualStateIs="Sleeping" EndStateWillBe="DEAD" />
+    </DirectEffect>
 </Event>
 </Events>
