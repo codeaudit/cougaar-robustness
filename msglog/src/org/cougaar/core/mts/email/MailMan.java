@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2001-2002 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -155,7 +155,9 @@ public class MailMan
     }
     finally
     {
-      if (store != null) try { store.close(); } catch (Exception e) {}
+      if (store != null) try { store.close(); } catch (Exception e) {
+	  if (debugPop3) Logging.getLogger(MailMan.class).debug(null,e);
+      }
     }
   }
 
@@ -247,7 +249,9 @@ public class MailMan
         if (msgs.length == 0 && pollTime > 0)
         {
           folder.close (false);
-          try { Thread.sleep (pollTime); } catch (Exception e) {}
+          try { Thread.sleep (pollTime); } catch (Exception e) {
+	      if (debugPop3) Logging.getLogger(MailMan.class).debug(null,e);
+          }
         }
         else break;
       }
@@ -296,47 +300,55 @@ public class MailMan
     //  From:
 
     Address f[] = null;
-    try { f = msg.getFrom(); } catch (Exception e) {}
+    try { f = msg.getFrom(); } catch (Exception e) {
+      if (debugPop3) Logging.getLogger(MailMan.class).debug(null,e);}
     MailAddress from = getMailAddresses(f)[0];
 
     //  ReplyTo:
     
     Address rt[] = null;
-    try { rt = msg.getReplyTo(); } catch (Exception e) {}
+    try { rt = msg.getReplyTo(); } catch (Exception e) {
+      if (debugPop3) Logging.getLogger(MailMan.class).debug(null,e);}
     MailAddress replyTo = getMailAddresses(rt)[0];
 
     //  To:
     
     Address t[] = null;
-    try { t = msg.getRecipients (Message.RecipientType.TO); } catch (Exception e) {}
+    try { t = msg.getRecipients (Message.RecipientType.TO); } catch (Exception e) {
+      if (debugPop3) Logging.getLogger(MailMan.class).debug(null,e);}
     MailAddress to = getMailAddresses(t)[0];
 
     //  Cc:
     
     Address c[] = null;
-    try { c = msg.getRecipients (Message.RecipientType.CC); } catch (Exception e) {}
+    try { c = msg.getRecipients (Message.RecipientType.CC); } catch (Exception e) {
+      if (debugPop3) Logging.getLogger(MailMan.class).debug(null,e);}
     MailAddress cc = getMailAddresses(c)[0];
 
     //  Bcc:
 
     Address b[] = null;
-    try { b = msg.getRecipients (Message.RecipientType.BCC); } catch (Exception e) {}
+    try { b = msg.getRecipients (Message.RecipientType.BCC); } catch (Exception e) {
+      if (debugPop3) Logging.getLogger(MailMan.class).debug(null,e);}
     MailAddress bcc = getMailAddresses(b)[0];
 
     //  SentDate:
 
     Date sent = null;
-    try { sent = msg.getSentDate(); } catch (Exception e) {}
+    try { sent = msg.getSentDate(); } catch (Exception e) {
+      if (debugPop3) Logging.getLogger(MailMan.class).debug(null,e);}
     
     //  RecvDate:
 
     Date recv = null;
-    try { recv = msg.getReceivedDate(); } catch (Exception e) {}
+    try { recv = msg.getReceivedDate(); } catch (Exception e) {
+      if (debugPop3) Logging.getLogger(MailMan.class).debug(null,e);}
     
     //  Subject:
 
     String subject = null;
-    try { subject = msg.getSubject(); } catch (Exception e) {}
+    try { subject = msg.getSubject(); } catch (Exception e) {
+      if (debugPop3) Logging.getLogger(MailMan.class).debug(null,e);}
 
     //  Return
 
@@ -462,7 +474,8 @@ public class MailMan
         if (msgs.length == 0 && pollTime > 0)
         {
           folder.close (false);
-          try { Thread.sleep (pollTime); } catch (Exception e) {}
+          try { Thread.sleep (pollTime); } catch (Exception e) {
+            if (debugPop3) Logging.getLogger(MailMan.class).debug(null,e);}
         }
         else break;
       }
@@ -596,7 +609,8 @@ public class MailMan
     }
     finally
     {
-      if (socket != null) try { socket.close(); } catch (Exception e) {}
+      if (socket != null) try { socket.close(); } catch (Exception e) {
+            if (debugSmtp) Logging.getLogger(MailMan.class).debug(null,e);}
     }
   }
 
