@@ -10,14 +10,17 @@ aep  = "org.cougaar.coordinator.activation.ActionEnablingPlugin"
 bp   = "org.cougaar.coordinator.believability.BelievabilityPlugin"
 cbp  = "org.cougaar.coordinator.costBenefit.CostBenefitPlugin"
 cmp  = "org.cougaar.coordinator.housekeeping.CoordinatorManagerPlugin"
+lors = "org.cougaar.coordinator.leashDefenses.LeashOnRestartServlet"
+lrs  = "org.cougaar.coordinator.leashDefenses.LeashRequestServlet"
 amon = "org.cougaar.coordinator.monitoring.ActionMonitoringPlugin"
+dpp  = "org.cougaar.coordinator.policy.DefensePolicyPlugin"
+mps  = "org.cougaar.coordinator.policy.MAUPolicyServlet"
 asp  = "org.cougaar.coordinator.selection.ActionSelectionPlugin"
 amp  = "org.cougaar.coordinator.techspec.AssetManagerPlugin"
 tmmp = "org.cougaar.coordinator.techspec.ThreatModelManagerPlugin"
-lrs  = "org.cougaar.coordinator.leashDefenses.LeashRequestServlet"
 
-nodePlugins = [arm,drm,rmfp]
-mgrPlugins = [arm,drm,rmfp,aep,bp,cbp,cmp,amon,asp,amp,tmmp,lrs]
+nodePlugins = [arm,drm,lors,rmfp]
+mgrPlugins  = [arm,drm,rmfp,aep,bp,cbp,cmp,amon,asp,amp,tmmp,lrs,dpp,mps]
 
 society.each_agent do |agent|
     if agent.name =~ /.*ARManager.*/
@@ -31,5 +34,3 @@ society.each_node do |node|
     node.append_value_on_parameter("-Dorg.cougaar.config.path", "$COUGAAR_INSTALL_PATH/configs/coordinator")
     node.add_components(nodePlugins)
 end
-
-
