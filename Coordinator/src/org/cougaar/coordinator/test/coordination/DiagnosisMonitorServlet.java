@@ -680,7 +680,7 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
                     out.print("        <OPTION value=\""+ str +"\" UNSELECTED />" + str + "\n");
                 }
                 out.print("   </SELECT>\n");            
-                out.println("    <input type=hidden name=\"UID\" value=\""+d.getUID()+"\" >");
+                out.println("    <input type=hidden name=\"UID\" value=\""+((d == null)?null:d.getUID())+"\" >");
                 out.println("    <input type=hidden name=\"REFRESH\" value=\""+refresh+"\" >");
                 out.println("    <input type=hidden name=\"NAMEFORMAT\" value=\""+nameformat+"\" >");
                out.println("    <input type=hidden name=\"ASSETFILTER\" value=\""+assetFilter+"\" >");
