@@ -17,6 +17,7 @@
  */
 package org.cougaar.tools.robustness.ma.plugins;
 
+import org.cougaar.tools.robustness.ma.test.*;
 import java.util.*;
 
 import org.cougaar.core.blackboard.IncrementalSubscription;
@@ -69,6 +70,10 @@ public class DecisionPlugin extends SimplePlugin {
     restartRequests =
       (IncrementalSubscription)bbs.subscribe(restartRequestPredicate);
 
+    // Subscribe to Action objects
+    actionStatus =
+      (IncrementalSubscription)bbs.subscribe(actionStatusPredicate);
+
   }
 
   public void execute() {
@@ -80,12 +85,30 @@ public class DecisionPlugin extends SimplePlugin {
       //updateParams(props);
     }
 
-     // Get HealtStatus objects
+     // Get HealthStatus objects
     for (Iterator it = healthStatus.getChangedCollection().iterator();
          it.hasNext();) {
       HealthStatus hs = (HealthStatus)it.next();
       log.debug("Received HEALTH_CHECK for agent " + hs.getAgentId());
       evaluate(hs);
+    }
+
+     // Get Action objects
+    for (Iterator it = actionStatus.getChangedCollection().iterator();
+         it.hasNext();) {
+      Action action = (Action)it.next();
+      String statusStr = null;
+      switch (action.getStatus()) {
+        case Action.FAIL:
+          statusStr = "FAIL";
+          break;
+        case Action.SUCCESS:
+          statusStr = "SUCCESS";
+          break;
+        default:
+      }
+      log.debug("Received Action response, restart result= " + statusStr);
+      bbs.publishRemove(action);
     }
 
     // Get RestartLocationRequests
@@ -95,7 +118,11 @@ public class DecisionPlugin extends SimplePlugin {
       int status = req.getStatus();
       switch (status) {
         case RestartLocationRequest.SUCCESS:
-          initiateRestart(req.getAgents(), req.getHost());
+          String nodeName = "NewNode";
+          Iterator nodeIt = req.getAgents().iterator();
+          if (nodeIt.hasNext()) nodeName = getNodeName((MessageAddress)nodeIt.next());
+          //restartAgent(req.getAgents(), nodeName, req.getHost());
+          restartNode(nodeName, req.getHost());
           bbs.publishRemove(req);
           break;
         case RestartLocationRequest.FAIL:
@@ -105,6 +132,13 @@ public class DecisionPlugin extends SimplePlugin {
         default:
       }
     }
+  }
+
+  /**
+   * Retrieves the name of the node that the specified agent was running on.
+   */
+  private String getNodeName(MessageAddress agent) {
+    return "MiniNode2";
   }
 
   /**
@@ -138,17 +172,34 @@ public class DecisionPlugin extends SimplePlugin {
    * @param agents  Set of MessageAddresses of agents to be restarted
    * @param host    Name of restart host
    */
-  private void initiateRestart(Set agents, String host) {
+  private void restartAgents(Set agents, String nodeName, String hostName) {
     if (log.isInfoEnabled()) {
-      StringBuffer msg = new StringBuffer("Initiating restart: agent(s)=[");
+      StringBuffer msg = new StringBuffer("Initiating agent restart: agent(s)=[");
       for (Iterator it = agents.iterator(); it.hasNext();) {
         msg.append(((MessageAddress)it.next()).toString());
         if (it.hasNext()) msg.append(" ");
       }
-      msg.append("], selectedHost=" + host);
+      msg.append("], hostName=" + hostName);
+      msg.append(", nodeName=" + nodeName);
       log.info(msg.toString());
     }
     // TODO: Add code to invoke restart by ActionPlugin
+  }
+
+  /**
+   * Initiates a restart.
+   * @param agents  Set of MessageAddresses of agents to be restarted
+   * @param host    Name of restart host
+   */
+  private void restartNode(String nodeName, String hostName) {
+    if (log.isInfoEnabled()) {
+      StringBuffer msg = new StringBuffer("Initiating node restart: ");
+      msg.append("hostName=" + hostName);
+      msg.append(", nodeName=" + nodeName);
+      log.info(msg.toString());
+    }
+    NodeStart nodeStart = new NodeStart(hostName, nodeName);
+    bbs.publishAdd(nodeStart);
   }
 
   /**
@@ -190,6 +241,15 @@ public class DecisionPlugin extends SimplePlugin {
   private void updateParams(Properties props) {
     // Nothing defined for now
   }
+
+ /**
+  * Predicate for Action objects
+  */
+  private IncrementalSubscription actionStatus;
+  private UnaryPredicate actionStatusPredicate = new UnaryPredicate() {
+    public boolean execute(Object o) {
+      return (o instanceof Action);
+  }};
 
  /**
   * Predicate for HealthStatus objects

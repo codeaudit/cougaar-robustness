@@ -31,7 +31,7 @@ import javax.naming.directory.*;
  */
 
 public class HealthStatus implements
-  Publishable, java.io.Serializable {
+  Publishable, org.cougaar.core.persist.NotPersistable {
 
   public static final int UNDEFINED   = -1;
 
