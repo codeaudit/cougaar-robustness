@@ -65,6 +65,7 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
     //  Read external properties
     String s = "org.cougaar.message.transport.aspects.messageaudit.includeLocalMsgs";
     includeLocalMsgs = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
+    
   }
 
   
@@ -81,6 +82,10 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
     log = loggingService;
     reg = getRegistry();
     thisIns = this;
+    
+    if ( !log.isInfoEnabled() ) {
+        log.warn("** INFO logging level not enabled, this aspect is not active **");        
+    }
   }
 
   /*
