@@ -83,8 +83,10 @@ public class VariantEvaluation implements Comparable {
             return otherVE.failedP() ? 0 : 1;
         }
         else if (otherVE.failedP()) return -1;
-        else if (otherVE.getBenefitToCostRatio() < this.getBenefitToCostRatio()) return -1;
-        else if (otherVE.getBenefitToCostRatio() == this.getBenefitToCostRatio()) return 0; 
+        //else if (otherVE.getBenefitToCostRatio() < this.getBenefitToCostRatio()) return -1;  dlw - greedy selection based on the ratio doesn't work
+        //else if (otherVE.getBenefitToCostRatio() == this.getBenefitToCostRatio()) return 0; 
+        else if (otherVE.getBenefit() < this.getBenefit()) return -1;
+        else if (otherVE.getBenefit() == this.getBenefit()) return 0; 
         else return 1;
     }
 
