@@ -44,8 +44,6 @@ public class ParameterModifierServlet extends BaseServletComponent implements Bl
   private static final String restartPlugin = "RestartLocatorPlugin";
   private static final String packageName = "org.cougaar.tools.robustness.ma.plugins.";
 
-  private Collection properties = null;
-  private ManagementAgentProperties prop = null;
   private String pluginName = monitorPlugin;
 
   public void load() {
@@ -83,7 +81,6 @@ public class ParameterModifierServlet extends BaseServletComponent implements Bl
     public void doGet(HttpServletRequest req, HttpServletResponse res)
       throws IOException, ServletException
     {
-
       Modifier mod = new Modifier();
       mod.execute(req, res);
     }
@@ -91,7 +88,6 @@ public class ParameterModifierServlet extends BaseServletComponent implements Bl
     public void doPost(HttpServletRequest req, HttpServletResponse res)
       throws IOException, ServletException
     {
-
       Modifier mod = new Modifier();
       mod.execute(req, res);
     }
@@ -104,6 +100,9 @@ public class ParameterModifierServlet extends BaseServletComponent implements Bl
     private PrintWriter out;
     private boolean doSubmit;
     private String[] newParams;
+    private Collection properties = null;
+    private ManagementAgentProperties prop = null;
+
 
     public void execute(HttpServletRequest req, HttpServletResponse res)
       throws IOException, ServletException
@@ -112,7 +111,7 @@ public class ParameterModifierServlet extends BaseServletComponent implements Bl
       this.response = res;
       out = response.getWriter();
       getPropertiesFromBlackboard();
-      String[][] params = getParamsOfPlugin(pluginName);
+      String[][] params = getParamsOfPlugin(getCurrentPluginName());
       newParams = new String[params.length];
       parseParams();
     }
@@ -128,7 +127,9 @@ public class ParameterModifierServlet extends BaseServletComponent implements Bl
                pluginName = value;
             }
             else if(name.equalsIgnoreCase(monitorPlugin))
+            {
               pluginName = monitorPlugin;
+            }
             else if(name.equalsIgnoreCase("submit"))
             {
               doSubmit = true;
@@ -141,7 +142,6 @@ public class ParameterModifierServlet extends BaseServletComponent implements Bl
             }
           }
         };
-
       // visit the URL parameters
       ServletUtil.parseParams(vis, request);
 
@@ -171,7 +171,7 @@ public class ParameterModifierServlet extends BaseServletComponent implements Bl
       }
 
       //decide which page to display
-      displayParams(pluginName);
+      displayParams(getCurrentPluginName());
     }
 
     private String[][] getParamsOfPlugin(String plugin)
@@ -252,6 +252,9 @@ public class ParameterModifierServlet extends BaseServletComponent implements Bl
       out.print("</tr>\n");
     }
   }
+
+  private String getCurrentPluginName()
+  { return this.pluginName; }
 
   // odd BlackboardClient method:
   public String getBlackboardClientName() {

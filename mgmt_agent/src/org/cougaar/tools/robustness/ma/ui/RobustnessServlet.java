@@ -92,17 +92,13 @@ public class RobustnessServlet extends BaseServletComponent
     public void doGet(
         HttpServletRequest req,
         HttpServletResponse res) throws IOException {
-      /*res.setContentType("text/html");
-      PrintWriter out = res.getWriter();
-      out.print(
-          "<html><body>\n"+
-          "<h2>Yellow Page Information</h2><br>\n");*/
+
       Hashtable totalList = new Hashtable();
       ServletOutputStream outs = res.getOutputStream();
       ObjectOutputStream oout = new ObjectOutputStream(outs);
       try{
         InitialDirContext idc = ns.getRootContext();
-        NamingEnumeration nes = idc.listBindings("");
+       /* NamingEnumeration nes = idc.listBindings("");
         //out.print("<ul>");
         while(nes.hasMore())
         {
@@ -141,12 +137,9 @@ public class RobustnessServlet extends BaseServletComponent
             Hashtable communities = buildCommunitiesTable(idc, indexName);
             totalList.put("Communities", communities);
           //}
-        }
+        //}
         oout.writeObject(totalList);
-        //out.print("</ul>\n");
       }catch(NamingException e){e.printStackTrace();}
-
-      //out.print("</body></html>");
     }
 
     private Attributes getAttributes(DirContext context, String name)

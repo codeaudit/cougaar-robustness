@@ -48,7 +48,7 @@ public class RobustnessUI extends JPanel
   private Hashtable nodeandpath = new Hashtable();
   private Point lastVisiblePoint;
   private JScrollPane pane;
-  private DefaultMutableTreeNode selectedNode;
+  //private DefaultMutableTreeNode selectedNode;
 
   private static String host = "localhost";
   private static String port = "8800";
@@ -90,10 +90,10 @@ public class RobustnessUI extends JPanel
     nodeandpath.clear();
     table = getInfoFromServlet();
     DefaultMutableTreeNode root = new DefaultMutableTreeNode();
-    for(Enumeration enums=table.keys(); enums.hasMoreElements();)
+    /*for(Enumeration enums=table.keys(); enums.hasMoreElements();)
     {
       String name = (String)enums.nextElement();
-     /* if(name.equalsIgnoreCase("Topology"))
+      if(name.equalsIgnoreCase("Topology"))
       {
         Hashtable c = (Hashtable)table.get(name);
         DefaultMutableTreeNode toNode = buildTopologyTree(c, nodes);
@@ -128,7 +128,7 @@ public class RobustnessUI extends JPanel
         root.add(communities);
         nodes.add(communities);
       //}
-    }
+    //}
 
 
     model = new DefaultTreeModel(root);
@@ -145,14 +145,19 @@ public class RobustnessUI extends JPanel
          for(int i=0; i<size; i++)
          {
            if(((String)path.get(unremove)).startsWith(str.substring(0, str.indexOf("]"))))
+           {
              path.remove(unremove);
+           }
            else
+           {
              unremove ++;
+           }
          }
       }
     });
     tree.setCellRenderer(new ElementTreeCellRenderer());
     tree.expandRow(1);
+    //final DefaultMutableTreeNode selectedNode;
     final JPopupMenu popup = new JPopupMenu();
     final JMenuItem command = new JMenuItem("command");
       command.addActionListener(new ActionListener(){
@@ -178,7 +183,7 @@ public class RobustnessUI extends JPanel
             TreePath path = tree.getPathForRow(row);
             if(path != null)
             {
-              selectedNode = (DefaultMutableTreeNode)tree.getLastSelectedPathComponent();
+              DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)tree.getLastSelectedPathComponent();
               if(((DefaultMutableTreeNode)selectedNode.getParent()).getUserObject().equals("hosts"))
                 popup.show(e.getComponent(), e.getX(), e.getY());
             }
@@ -222,9 +227,13 @@ public class RobustnessUI extends JPanel
               String str;
               Attribute attr = (Attribute)nes.next();
               if(attr.size() == 1)
+              {
                 str = attr.getID() + " " + (String)attr.get();
+              }
               else
+              {
                 str = attr.getID();
+              }
               DefaultMutableTreeNode nvnode = new DefaultMutableTreeNode(str);
               if(attr.size() > 1)
               {
@@ -238,7 +247,7 @@ public class RobustnessUI extends JPanel
               }
               attrs.add(nvnode);
               nodes.add(nvnode);
-            }catch(NoSuchElementException e){} //in case the attribute doesn't have a value
+            }catch(NoSuchElementException e){continue;} //in case the attribute doesn't have a value
           }
           cnode.add(attrs);
         }
@@ -264,9 +273,13 @@ public class RobustnessUI extends JPanel
                 Attribute attr = (Attribute)nes.next();
                 String str;
                 if(attr.size() == 1)
+                {
                   str = attr.getID() + " " + (String)attr.get();
+                }
                 else
+                {
                   str = attr.getID();
+                }
                 DefaultMutableTreeNode nvnode = new DefaultMutableTreeNode(str);
                 if(attr.size() > 1)
                 {
@@ -280,7 +293,7 @@ public class RobustnessUI extends JPanel
                 }
                 nameNode.add(nvnode);
                 nodes.add(nvnode);
-              }catch(NoSuchElementException e){} //in case the attribute doesn't have a value
+              }catch(NoSuchElementException e){continue;} //in case the attribute doesn't have a value
             }
             nodes.add(nameNode);
             entityNode.add(nameNode);
@@ -444,7 +457,7 @@ public class RobustnessUI extends JPanel
       try{
         atree.scrollPathToVisible(new TreePath((
           (DefaultMutableTreeNode)node.getFirstChild()).getPath()));
-      }catch(NullPointerException e){} //nodes before refresh may not exist in current
+      }catch(NullPointerException e){continue;} //nodes before refresh may not exist in current
        //model, this will cause null pointer, ignore it.
       model.reload(node);
     }
@@ -525,7 +538,7 @@ public class RobustnessUI extends JPanel
       try {
         while(true)
           idc = (Hashtable)oin.readObject();
-      } catch(Exception e){}
+      } catch(Exception e){return idc;}
     }
     return idc;
   }

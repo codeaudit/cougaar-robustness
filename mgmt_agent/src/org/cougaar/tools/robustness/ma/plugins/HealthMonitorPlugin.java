@@ -37,6 +37,8 @@ import org.cougaar.core.component.ServiceRevokedEvent;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.BlackboardService;
+import org.cougaar.core.service.ThreadService;
+import org.cougaar.core.thread.Schedulable;
 
 import org.cougaar.core.service.community.*;
 import org.cougaar.community.*;
@@ -332,7 +334,6 @@ public class HealthMonitorPlugin extends SimplePlugin {
    * Periodically evaluates the HealthStatus of monitored agents.
    */
   private void evaluateHealthStatus() {
-    Date now = new Date();
     //synchronized (membersHealthStatus) {
     for (Iterator it = membersHealthStatus.iterator(); it.hasNext();) {
       HealthStatus hs = (HealthStatus)it.next();
@@ -579,16 +580,23 @@ public class HealthMonitorPlugin extends SimplePlugin {
    */
   private void startEvaluationThread(final long interval) {
     // Starts thread to periodically check HealthStatus of monitored agents
-    Thread evaluationThread = new Thread("HealthStatusTimerThread") {
+    Runnable healthStatusTimer = new Runnable() {
       public void run() {
         while(true) {
-          try { Thread.sleep(interval); } catch (Exception ex) {}
+          try { Thread.sleep(interval);
+          } catch (Exception ex) {
+            log.error(ex.getMessage());
+          }
           getPings();
           evaluateHealthStatus();
         }
       }
     };
-    evaluationThread.setPriority(Thread.NORM_PRIORITY);
+    ServiceBroker sb = getBindingSite().getServiceBroker();
+    ThreadService ts =
+      (ThreadService)sb.getService(this, ThreadService.class, null);
+    Schedulable evaluationThread =
+      ts.getThread(this, healthStatusTimer, "HealthStatusTimerThread");
     evaluationThread.start();
   }
 
