@@ -712,12 +712,12 @@ public class HealthStatus implements
   public void setState(String state) {
     log.debug("SetState: agent=" + agentId + " state=" + state);
     currentState = state;
+
     ModificationItem mods[] = new ModificationItem[1];
     mods[0] = new ModificationItem(DirContext.REPLACE_ATTRIBUTE,
       new BasicAttribute("RunState", currentState));
     commSvc.modifyEntityAttributes(communityName, agentId.toString(), mods);
-    //Attributes attrs = new BasicAttributes("RunState", currentState);
-    //commSvc.setEntityAttributes(communityName, agentId.toString(), attrs);
+
   }
 
   /**
@@ -725,6 +725,7 @@ public class HealthStatus implements
    * @return Current run state for agent.
    */
   public String getState() {
+
     //return currentState;
 
 

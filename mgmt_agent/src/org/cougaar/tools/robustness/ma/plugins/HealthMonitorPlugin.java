@@ -189,8 +189,9 @@ public class HealthMonitorPlugin extends SimplePlugin implements
   private CommunityService communityService = null;
   private TopologyReaderService topologyService = null;
 
-  // Alarm for periodically retrieving new rosters from CommunityService
-  private RosterUpdateAlarm nextAlarm;
+  private CommunityRoster roster = null;
+  private Object rosterLock = new Object();
+
 
   /**
    * This method obtains a roster for the community to be monitored and sends
@@ -244,11 +245,6 @@ public class HealthMonitorPlugin extends SimplePlugin implements
 
     bbs.publishAdd(healthMonitorProps);
 
-    // Subscribe to CommunityRequests to get roster (and roster updates)
-    // from CommunityPlugin
-    communityRequests =
-      (IncrementalSubscription)bbs.subscribe(communityRequestPredicate);
-
     // Subscribe to HeartbeatRequests to determine if HeartbeatRequest was
     // received/accepted by monitored agent
     heartbeatRequests =
@@ -270,9 +266,9 @@ public class HealthMonitorPlugin extends SimplePlugin implements
 
     // Get Roster for community to monitor
     if (communityToMonitor != null && communityToMonitor.length() > 0) {
-      sendRosterRequest(communityToMonitor);
-      //communityService.addListener(this);
-      //processRosterChanges(communityService.getRoster(communityToMonitor));
+      roster = communityService.getRoster(communityToMonitor);
+      // Register for updates to monitored community
+      communityService.addListener(this);
     }
 
     // Start evaluation thread to periodically update and analyze the Health
@@ -288,19 +284,6 @@ public class HealthMonitorPlugin extends SimplePlugin implements
 
   }
 
-  /**
-   * Send request to CommunityPlugin to return a list of members in the
-   * Robustness community thats being monitored.  This roster will be
-   * automatically updated by the CommunityPlugin when changes to community
-   * membership occur.
-   * @param communityName Community to Monitor
-   */
-  private void sendRosterRequest(String communityName) {
-    CommunityRequest cr = new CommunityRequestImpl();
-    cr.setVerb("GET_ROSTER_WITH_UPDATES");
-    cr.setTargetCommunityName(communityName);
-    bbs.publishAdd(cr);
-  }
 
   /**
    * Creates a printable representation of current parameters.
@@ -390,20 +373,6 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       bbs.publishRemove(hbhr);
     }
 
-    // Get CommunityRoster (and updates)
-
-    for (Iterator it = communityRequests.getChangedCollection().iterator();
-         it.hasNext();) {
-      CommunityRequest req = (CommunityRequest)it.next();
-      if (req.getVerb() != null &&
-          req.getVerb().equals("GET_ROSTER_WITH_UPDATES")) {
-        CommunityResponse resp = req.getCommunityResponse();
-        CommunityRoster roster = (CommunityRoster)resp.getResponseObject();
-        // Ensure membersHealthStatus collection is consistent with current
-        // community membership
-        processRosterChanges(roster);
-      }
-    }
   }
 
 
@@ -417,6 +386,10 @@ public class HealthMonitorPlugin extends SimplePlugin implements
        to reflect the agents new condition.
     */
     //System.out.print("*");
+    // Process any Roster changes
+    if (roster != null) {
+      processRosterChanges();
+    }
     Collection currentAgents = findMonitoredAgents();
     for (Iterator it = currentAgents.iterator(); it.hasNext();) {
       HealthStatus hs = getHealthStatus((MessageAddress)it.next());
@@ -746,8 +719,13 @@ public class HealthMonitorPlugin extends SimplePlugin implements
    * collection to maintain consistency with roster.
    * @param roster
    */
-  private void processRosterChanges(CommunityRoster roster) {
-    Collection cmList = roster.getMembers();
+  //private void processRosterChanges(CommunityRoster roster) {
+  private void processRosterChanges() {
+    Collection cmList = null;
+    synchronized (rosterLock) {
+      cmList = roster.getMembers();
+      roster = null;
+    }
     // If first time, copy members from roster to local list
     if (membersHealthStatus.isEmpty()) {
       for (Iterator it = cmList.iterator(); it.hasNext();) {
@@ -756,7 +734,9 @@ public class HealthMonitorPlugin extends SimplePlugin implements
           HealthStatus hs = newHealthStatus(new ClusterIdentifier(cm.getName()));
           addHealthStatus(hs);
           //log.info("Adding " + cm.getName());
+          bbs.openTransaction();
           bbs.publishAdd(hs);
+          bbs.closeTransaction();
         }
       }
     } else {
@@ -770,7 +750,9 @@ public class HealthMonitorPlugin extends SimplePlugin implements
           addHealthStatus(hs);
           newMembers.add(hs);
           //log.info("Adding " + cm.getName());
+          bbs.openTransaction();
           bbs.publishAdd(hs);
+          bbs.closeTransaction();
         }
       }
       // Look for deletions
@@ -787,15 +769,13 @@ public class HealthMonitorPlugin extends SimplePlugin implements
         if (!found) {
           log.info("Removed " + hs.getAgentId());
           it.remove();
+          bbs.openTransaction();
           bbs.publishRemove(hs);
+          bbs.closeTransaction();
         }
       }
+      roster = null;
     }
-
-    if (nextAlarm != null) nextAlarm.cancel();
-    nextAlarm =  new RosterUpdateAlarm(120000);
-    getAlarmService().addRealTimeAlarm(nextAlarm);
-
   }
 
   /**
@@ -1229,8 +1209,10 @@ public class HealthMonitorPlugin extends SimplePlugin implements
   public void communityChanged(CommunityChangeEvent cce) {
     if (cce.getCommunityName().equals(communityToMonitor) &&
         (cce.getType() == cce.ADD_ENTITY || cce.getType() == cce.REMOVE_ENTITY)) {
-      log.info("CommunityChangeEvent: " + cce);
-      processRosterChanges(communityService.getRoster(communityToMonitor));
+      //log.info("CommunityChangeEvent: " + cce);
+      synchronized (rosterLock) {
+        roster = communityService.getRoster(communityToMonitor);
+      }
     }
   }
 
@@ -1254,22 +1236,6 @@ public class HealthMonitorPlugin extends SimplePlugin implements
   private UnaryPredicate heartbeatPredicate = new UnaryPredicate() {
     public boolean execute(Object o) {
       return (o instanceof HeartbeatHealthReport);
-  }};
-
-
-  private IncrementalSubscription communityRequests;
-  /**
-   * Predicate for CommunityRequests.  Used to receive CommunityResponse objects
-   * with CommunityRosters.
-   */
-  private UnaryPredicate communityRequestPredicate = new UnaryPredicate() {
-    public boolean execute (Object o) {
-      if (o instanceof CommunityRequest) {
-        String communityName = ((CommunityRequest)o).getTargetCommunityName();
-        return (communityName != null &&
-                communityName.equals(communityToMonitor));
-      }
-      return false;
   }};
 
 
@@ -1330,63 +1296,4 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       return false;
   }};
 
-  /**
-   * This alarm is used to periodically retrieve the current roster associated
-   * with the monitored community.  Although the roster obtained via a
-   * subscription should be automatically updated by the CommunityService when
-   * changes occur, during periods of high activity (such as society startup)
-   * this roster may not receive all updates.
-   */
-  private class RosterUpdateAlarm implements Alarm {
-    private long expirationTime = -1;
-    private boolean expired = false;
-
-    /**
-     * Create an Alarm to go off in the milliseconds specified,.
-     * @param delay Alarm delay
-     **/
-    public RosterUpdateAlarm (long delay) {
-      expirationTime = delay + System.currentTimeMillis();
-    }
-
-    /** @return absolute time (in milliseconds) that the Alarm should
-     * go off.
-     * This value must be implemented as a fixed value.
-     **/
-    public long getExpirationTime () {
-      return expirationTime;
-    }
-
-    /**
-     * Called by the cluster clock when clock-time >= getExpirationTime().
-     **/
-    public void expire () {
-      if (!expired) {
-        try {
-          bbs.openTransaction();
-          processRosterChanges(communityService.getRoster(communityToMonitor));
-        } catch (Exception e) {
-          e.printStackTrace();
-        } finally {
-         expired = true;
-         bbs.closeTransaction();
-        }
-      }
-    }
-
-    /** @return true IFF the alarm has expired or was canceled. **/
-    public boolean hasExpired () {
-      return expired;
-    }
-
-    /** can be called by a client to cancel the alarm.  May or may not remove
-     * the alarm from the queue, but should prevent expire from doing anything.
-     * @return false IF the the alarm has already expired or was already canceled.
-     **/
-    public synchronized boolean cancel () {
-      if (!expired)
-        return expired = true;
-      return false;
-    }
-  }
 }
