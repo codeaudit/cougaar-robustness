@@ -16,7 +16,8 @@ techspecs = ['SampleDefense_AgentAssetStateDimensions.xml',
              'SampleDefense_SampleSensor.xml', 
              'SampleDefense_SampleActuator.xml']
 
-society.each_agent(false) do |agent|
+society.each_agent(true) do |agent|
+    agent.add_components(plugins) 
     if agent.name =~ /.*ARManager.*/
         found = false
         agent.each_component do |c|
@@ -37,8 +38,6 @@ society.each_agent(false) do |agent|
                 end
             end
         end
-    else
-        agent.add_components(plugins) 
     end
 end
 
