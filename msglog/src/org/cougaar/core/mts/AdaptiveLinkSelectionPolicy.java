@@ -598,7 +598,11 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
         // than the one we know about.
         AgentID newToAgent = AgentID.getAgentID (this, getServiceBroker(), targetAgent, true);
         AgentID oldToAgent = MessageUtils.getToAgent (msg);
-        if ((oldToAgent != null) && (!oldToAgent.equals(newToAgent))) {
+        if ((oldToAgent != null) 
+	    && (newToAgent != null) //1045B
+	    && (oldToAgent.getAgentIncarnationAsLong() != 0) //1045B
+	    && (newToAgent.getAgentIncarnationAsLong() != 0) //1045B
+	    && (!oldToAgent.equals(newToAgent))) {
           if (oldToAgent.getAgentIncarnation().equals(newToAgent.getAgentIncarnation())) {
             // If incarnations are the same, then use new AgentID
             if (log.isInfoEnabled()) {
@@ -697,7 +701,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       try
       {
         link = (DestinationLink) linksI.next(); 
-if (debug) log.debug("link =" + link.getProtocolClass());
+        if (debug) log.debug("link =" + link.getProtocolClass());
 
         //  Obvious filters
 
@@ -707,7 +711,7 @@ if (debug) log.debug("link =" + link.getProtocolClass());
         //  Cost related filtering
 
         cost = getLinkCost (link, msg);
-if (debug) log.debug("cost =" + cost);
+        if (debug) log.debug("cost =" + cost);
 
         if (cost == Integer.MAX_VALUE) continue; 
 
