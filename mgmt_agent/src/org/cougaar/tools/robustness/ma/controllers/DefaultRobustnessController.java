@@ -225,9 +225,13 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         } else {
           newState(name, RESTART);
         }
-      } else if (isNode(name)) {
+      } else if (isNode(name) && thisAgent.equals(preferredLeader())) {
         setExpiration(name, NEVER);
         deadNodes.add(name);
+        String agentsOnDeadNode[] = model.entitiesAtLocation(name);
+        for (int i = 0; i < agentsOnDeadNode.length; i++) {
+          newState(agentsOnDeadNode[i], HEALTH_CHECK);
+        }
         if (thisAgent.equals(preferredLeader()) && useGlobalSolver()) {
           List excludedNodes = new ArrayList(getExcludedNodes());
           LoadBalancerListener lbl = new LoadBalancerListener() {

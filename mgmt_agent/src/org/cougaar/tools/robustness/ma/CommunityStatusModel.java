@@ -597,10 +597,10 @@ public class CommunityStatusModel extends BlackboardClientComponent
               StatusEntry se = new StatusEntry(entity.getName(), type,
                                                entity.getAttributes());
               statusMap.put(se.name, se);
-              setCurrentState(se.name, INITIAL);
               queueChangeEvent(
                   new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
                                                  MEMBERS_ADDED, se));
+              setCurrentState(se.name, INITIAL);
             } else {
               StatusEntry se = (StatusEntry) statusMap.get(entity.getName());
               Attributes entityAttrs = entity.getAttributes();
