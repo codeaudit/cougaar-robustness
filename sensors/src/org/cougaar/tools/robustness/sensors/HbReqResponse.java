@@ -25,11 +25,13 @@ package org.cougaar.tools.robustness.sensors;
 import org.cougaar.core.util.UID;
 import org.cougaar.core.mts.MessageAddress;
 import java.util.Date;
+//import org.cougaar.core.persist.NotPersistable;
 
 /**
  * The Response returned by the HeartbeatServerPlugin, containing the status.
  **/
-public final class HbReqResponse implements java.io.Serializable {
+public final class HbReqResponse implements java.io.Serializable //, NotPersistable 
+{
   private int status;
   MessageAddress responder;
   private long firstHbSent; //only set and used on the target side

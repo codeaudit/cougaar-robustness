@@ -34,12 +34,13 @@ import org.cougaar.core.util.UID;
 import org.cougaar.core.util.XMLizable;
 import org.cougaar.core.util.XMLize;
 import org.cougaar.core.agent.ClusterIdentifier;
+import org.cougaar.core.persist.NotPersistable;
 
 /**
  * A Heartbeat Request Relay, the Blackboard object that is passed
  * between HeartbeatRequesterPlugin to HeartbeatServerPlugin.
  **/
-public class HbReq implements Relay.Source, Relay.Target, XMLizable
+public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersistable
 {
   private UID uid;
   private MessageAddress source;

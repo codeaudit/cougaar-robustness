@@ -31,12 +31,13 @@ import org.cougaar.core.util.XMLizable;
 import org.cougaar.core.util.XMLize;
 import org.cougaar.core.util.UniqueObject;
 import java.util.Date;
+import org.cougaar.core.persist.NotPersistable;
 
 /**
  * A Plugin developer requests a ping by publishing a PingRequest on the 
  * blackboard of a local agent with PingRequesterPlugin loaded.
  **/
-public class PingRequest implements UniqueObject
+public class PingRequest implements UniqueObject, NotPersistable
 {
   /**
   * A new PingRequest that has not yet resulted in a Ping being sent by PingRequesterPlugin to target Agent.

@@ -24,13 +24,15 @@ package org.cougaar.tools.robustness.sensors;
 
 import org.cougaar.core.util.UID;
 import java.util.Date;
+//import org.cougaar.core.persist.NotPersistable;
 
 /**
  * An object to be passed along with a HbReq object between 
  * HeartbeatRequesterPlugin to HeartbeatServerPlugin containing
  * additional content.
  **/
-public final class HbReqContent implements java.io.Serializable {
+public final class HbReqContent implements java.io.Serializable //, NotPersistable 
+{
   private UID heartbeatRequestUID;
   private long reqTimeout;
   private long hbFrequency;

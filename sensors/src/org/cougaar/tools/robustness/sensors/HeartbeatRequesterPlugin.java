@@ -65,6 +65,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
       return detonate;
     }
     public synchronized void expire () {
+    //public void expire () {
       if (!expired) {
         bb.openTransaction();
         prepareHealthReports();
@@ -76,6 +77,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
       return expired;
     }
     public synchronized boolean cancel () {
+    //public boolean cancel () {
       if (!expired)
         return expired = true;
       return false;

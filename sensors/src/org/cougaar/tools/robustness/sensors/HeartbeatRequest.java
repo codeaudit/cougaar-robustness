@@ -32,14 +32,14 @@ import org.cougaar.core.util.UID;
 import org.cougaar.core.util.XMLizable;
 import org.cougaar.core.util.XMLize;
 import org.cougaar.core.util.UniqueObject;
-
+import org.cougaar.core.persist.NotPersistable;
 
 /**
  * A Plugin developer requests a Heartbeat by publishing a 
  * HeartbeatRequest on the blackboard of a local agent with 
  * HeartbeatRequesterPlugin loaded.
  **/
-public class HeartbeatRequest implements UniqueObject
+public class HeartbeatRequest implements UniqueObject, NotPersistable
 {
   private UID uid;
   private MessageAddress source;

@@ -21,13 +21,14 @@
 
 package org.cougaar.tools.robustness.sensors;
 import org.cougaar.tools.manager.ldm.report.HealthReportAdapter;
+import org.cougaar.core.persist.NotPersistable;
 
 /**
  * HealthReport with an associated list of 
  * monitored agents, time last msg was received, and whether that
  * was in-spec or not, according to current HeartbeatRequests.
  **/
-public class HeartbeatHealthReport implements java.io.Serializable {
+public class HeartbeatHealthReport implements java.io.Serializable, NotPersistable {
   private HeartbeatEntry [] heartbeats;
 
   /**
