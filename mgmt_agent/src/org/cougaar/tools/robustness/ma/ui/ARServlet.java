@@ -3,47 +3,50 @@ package org.cougaar.tools.robustness.ma.ui;
 import javax.servlet.*;
 import javax.servlet.http.*;
 import java.util.*;
-import javax.naming.*;
-import javax.naming.directory.*;
 import java.io.*;
 
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.servlet.BaseServletComponent;
-import org.cougaar.core.service.ServletService;
 import org.cougaar.core.servlet.ServletUtil;
-import org.cougaar.core.service.NamingService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.BlackboardService;
-//import org.cougaar.core.service.TopologyReaderService;
-//import org.cougaar.core.service.TopologyEntry;
+import org.cougaar.core.service.UIDService;
+import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.service.DomainService;
-import org.cougaar.core.mts.MessageAddress;
-import org.cougaar.core.util.PropertyNameValue;
 import org.cougaar.core.node.NodeIdentificationService;
 import org.cougaar.core.blackboard.BlackboardClient;
 import org.cougaar.core.blackboard.IncrementalSubscription;
-import org.cougaar.tools.robustness.ma.plugins.HealthStatus;
-import org.cougaar.util.ConfigFinder;
+import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.mts.SimpleMessageAddress;
+import org.cougaar.core.mobility.ldm.MobilityFactory;
+import org.cougaar.core.mobility.AbstractTicket;
+import org.cougaar.core.mobility.MoveTicket;
+import org.cougaar.core.mobility.RemoveTicket;
+import org.cougaar.core.mobility.ldm.AgentControl;
+import org.cougaar.core.util.UID;
+
+
+import org.cougaar.tools.robustness.ma.ldm.HealthMonitorRequest;
+import org.cougaar.tools.robustness.ma.ldm.HealthMonitorRequestImpl;
+import org.cougaar.tools.robustness.ma.ldm.HealthMonitorResponse;
+import org.cougaar.tools.robustness.ma.ldm.RelayAdapter;
+
+import org.cougaar.core.service.community.Community;
 
 import javax.xml.transform.*;
 import javax.xml.transform.stream.*;
 
-import org.cougaar.core.service.wp.WhitePagesService;
-import org.cougaar.core.service.wp.AddressEntry;
-import org.cougaar.core.service.wp.Application;
-
 /**
- * This servlet provides community information.
+ * This servlet provides robustness community information.
  */
 public class ARServlet extends BaseServletComponent implements BlackboardClient{
-  private NamingService ns;
   private BlackboardService bb;
-  private DomainService ds;
   private LoggingService log;
-  //private TopologyReaderService trs;
-  private WhitePagesService wps;
-  //private MessageAddress agentId;
-  private String indexName = "Communities";
+  private UIDService uidService;
+  private DomainService domain;
+  private MessageAddress agentId;
+  private MessageAddress nodeId;
+  private MobilityFactory mobilityFactory;
 
   /**
    * Hard-coded servlet path.
@@ -55,9 +58,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
   public void load() {
     // get the logging service
     log =  (LoggingService) serviceBroker.getService(this, LoggingService.class, null);
-    //org.cougaar.planning.plugin.legacy.PluginBindingSite pbs =
-      //(org.cougaar.planning.plugin.legacy.PluginBindingSite) bindingSite;
-    //this.agentId = pbs.getAgentIdentifier();
+    uidService =  (UIDService) serviceBroker.getService(this, UIDService.class, null);
     super.load();
   }
 
@@ -65,25 +66,31 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     this.bb = blackboard;
   }
 
-  public void setDomainService(DomainService ds) {
-    this.ds = ds;
+  public void setDomainService(DomainService domain) {
+    this.domain = domain;
+    if (domain == null) {
+      mobilityFactory = null;
+    } else {
+      mobilityFactory =
+        (MobilityFactory) domain.getFactory("mobility");
+    }
   }
 
   /**
    * Create the servlet.
    */
   protected Servlet createServlet() {
-    ns = (NamingService)serviceBroker.getService(this, NamingService.class, null);
-    if (ns == null) {
-      throw new RuntimeException("no naming service?!");
+    AgentIdentificationService ais = (AgentIdentificationService)serviceBroker.getService(
+        this, AgentIdentificationService.class, null);
+    if (ais != null) {
+      this.agentId = ais.getMessageAddress();
+      serviceBroker.releaseService(this, AgentIdentificationService.class, ais);
     }
-    /*trs = (TopologyReaderService)serviceBroker.getService(this, TopologyReaderService.class, null);
-    if(trs == null) {
-      throw new RuntimeException("no topology reader service.");
-    }*/
-    wps = (WhitePagesService)serviceBroker.getService(this, WhitePagesService.class, null);
-    if(wps == null) {
-      throw new RuntimeException("no WhitePagesService.");
+    NodeIdentificationService nis = (NodeIdentificationService)serviceBroker.getService(
+        this, NodeIdentificationService.class, null);
+    if (nis != null) {
+      this.nodeId = nis.getMessageAddress();
+      serviceBroker.releaseService(this, NodeIdentificationService.class, nis);
     }
     return new MyServlet();
   }
@@ -93,11 +100,15 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
    */
   public void unload() {
     super.unload();
-    // release the naming service
-    if (ns != null) {
+    if (bb != null) {
       serviceBroker.releaseService(
-        this, ServletService.class, servletService);
-      ns = null;
+          this, BlackboardService.class, bb);
+      bb = null;
+    }
+    if (domain != null) {
+      serviceBroker.releaseService(
+          this, DomainService.class, domain);
+      domain = null;
     }
   }
 
@@ -115,14 +126,17 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     }
   }
 
-  private String showcommunity = "", showAgent = "", currentCommunityXML = "", showNode="";
+  private String currentCommunityXML = ""; //xml of current displayed community
+  //parameters of current poeration
+  private String operation = "", mobileAgent = "", origNode = "", destNode = ""; //forceRestart = "";
   private class Worker
   {
     private HttpServletRequest request;
     private HttpServletResponse response;
     private PrintWriter out;
-    private String action = "", format = "";
-    private Hashtable totalList = new Hashtable();
+    private String action = "", format = "", dest="";
+    private List communities = new ArrayList();
+    private String lastop="", lastma="", laston="", lastdn=""; //lastfs="";
 
     public void execute(HttpServletRequest req, HttpServletResponse res)
       throws IOException, ServletException
@@ -130,161 +144,178 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
       this.request = req;
       this.response = res;
       out = response.getWriter();
-      try{
-        InitialDirContext idc = ns.getRootContext();
-        Hashtable communities = buildCommunitiesTable(idc, indexName);
-        totalList.put("Communities", communities);
-      }catch(NamingException e){log.error(e.getMessage());}
+      communities = getAllCommunityNames();
       parseParams();
     }
 
     private void parseParams() throws IOException
     {
+      //remember all parameters for last operation, in case this is just a refresh call.
+      if(!operation.equals("")) {
+        lastop = operation;
+        lastma = mobileAgent;
+        laston = origNode;
+        lastdn = destNode;
+        //lastfs = forceRestart;
+      }
+      operation = "";
       // create a URL parameter visitor
       ServletUtil.ParamVisitor vis =
         new ServletUtil.ParamVisitor() {
           public void setParam(String name, String value) {
-            if(name.equalsIgnoreCase("list"))
-              action = "list";
-            if(name.equalsIgnoreCase("data"))
-              action = "data";
-            if(name.equalsIgnoreCase("communities"))
-                showcommunity = value;
-            if(name.equalsIgnoreCase("format"))
+            if(name.equalsIgnoreCase("communities")) //show all robustness communities
+                action = name;
+            if(name.equalsIgnoreCase("format")) //display page in html or xml?
               format = value;
-            if(name.equals("community"))
+            if(name.equals("community")) //show attributes of seleced community
             {
               action = "community";
-              showcommunity = value;
+              dest = value;
             }
-            if(name.equals("agentAttributes"))
-            {
-              action = "agentAttributes";
-              showAgent = value;
-            }
-            if(name.equals("nodeAttributes"))
-            {
-              action = "nodeAttributes";
-              showNode = value;
-            }
-            if(name.equals("showcommunity"))
+            if(name.equals("showcommunity")) //detail of the community
             {
               action = "showCommunity";
-              showcommunity = value;
+              dest = value;
             }
-            if(name.equals("listNode"))
-              action = "listNode";
-            if(name.equals("listState"))
-              action = "listState";
-            if(name.equals("listStatus"))
-              action = "listStatus";
+            if(name.equals("node")) //show this community using a remote node
+              nodeId = SimpleMessageAddress.getSimpleMessageAddress(value);
+            if(name.equals("control")) //show community control page
+            {
+              action = "control";
+              dest = value;
+            }
+            if(name.equals("operation")) { //do a move or remove?
+              action = value;
+              operation = value;
+            }
+            if(name.equals("mobileagent")) //which agent is operated?
+              mobileAgent = value;
+            if(name.equals("orignode")) //original node of this agent
+              origNode = value;
+            if(name.equals("destinationnode")) //move to where?
+              destNode = value;
+            //if(name.equals("forcerestart")) //
+              //forceRestart = value;
+            if(value.equals("refresh"))//refresh the page
+              action = "refresh";
+            if(value.equals("remove")){ //remove selected ticket
+              action = "removeTicket";
+              dest = name;
+            }
           }
         };
       // visit the URL parameters
       ServletUtil.parseParams(vis, request);
-      displayParams(action);
+      displayParams(action, dest);
     }
 
-    private void displayParams(String command) throws IOException
+    private void displayParams(String command, String value) throws IOException
     {
-      if(command.equals(""))
-        showCoverPage();
-      else if(command.equals("list"))
-        showAllCommunities(format);
-      else if(command.equals("data"))
-        showCommunityData(format, showcommunity);
+      if(command.equals("") || command.equals("communities"))
+        showAllCommunities();
       else if(command.equals("community"))
-        showCommunityAttributes(format, showcommunity);
-      else if(command.equals("agentAttributes"))
-        showAgentAttributes(format, showAgent);
-      else if(command.equals("nodeAttributes"))
-        showNodeAttributes(format, showNode);
+        showCommunityAttributes(format, value);
       else if(command.equals("showCommunity"))
-        showCommunityData(format, showcommunity);
-      else if(command.equals("listNode"))
-        showNodeData(format);
-      else if(command.equals("listState"))
-        showStateData(format);
-      else if(command.equals("listStatus"))
-        showStatusData(format);
-    }
-
-    /**
-     * This page is shown when no any parameters in the command line. It lets user
-     * select an action.
-     */
-    private void showCoverPage()
-    {
-      out.print("<html><body>\n<p>\n<br><br><br>\n");
-      out.print("<center>\n");
-      out.print("<form method=\"GET\" action=\"" + request.getRequestURI() + "\">\n");
-      out.print("<input type=\"submit\" name=\"list\" value=\"list communities\">\n<br>\n");
-      out.print("<input type=\"submit\" name=\"data\" value=\"show data\">\n");
-      out.print("<select name=\"communities\" onchange=\"submit()\">\n");
-      Hashtable list = (Hashtable)totalList.get("Communities");
-      for(Enumeration enums = list.keys(); enums.hasMoreElements();)
-      {
-        out.print("<option>");
-        out.print((String)enums.nextElement());
-        out.print("</option>\n");
+        showCommunityData(format, value);
+      else if(command.equals("control"))
+        controlCommunity(format, value);
+      else if(command.equals("Move") || command.equals("Remove")) {
+        if(operation.equals(lastop) && mobileAgent.equals(lastma) && origNode.equals(laston)
+          && destNode.equals(lastdn))// && forceRestart.equals(lastfs))
+          writeSuccess(format); //this is just for refresh, don't do a publishAdd.
+        else {
+          try {
+              AgentControl ac = createAgentControl(command);
+              addAgentControl(ac);
+          } catch (Exception e) {
+            writeFailure(e);
+            return;
+          }
+          writeSuccess(format);
+        }
       }
-      out.print("</select><br>\n");
-      out.print("</center></form>");
-      out.print("</p>\n</body></html>");
+      else if(command.equals("refresh"))
+        writeSuccess(format);
+      else if(command.equals("removeTicket")) {
+        try {
+            UID uid = UID.toUID(value);
+            AgentControl ac = queryAgentControl(uid);
+            if (ac != null) {
+              removeAgentControl(ac);
+            }
+        } catch (Exception e) {
+            writeFailure(e);
+            return;
+        }
+        writeSuccess(format);
+      }
     }
 
     /**
-     * List names of all communities in the homepage. Every name is a link to show
+     * List names of all robustness communities in the homepage. Every name is a link to show
      * the detail of this community.
-     * @param format show raw xml data or html? default is html.
      */
-    private void showAllCommunities(String format)
+    private void showAllCommunities()
     {
-      List links = new ArrayList();
       StringBuffer xmlsb = new StringBuffer();
       xmlsb.append(xmlTitle);
       xmlsb.append("<communities>\n");
-      Hashtable list = (Hashtable)totalList.get("Communities");
-      for(Enumeration enums = list.keys(); enums.hasMoreElements();)
+      for(Iterator it = communities.iterator(); it.hasNext();)
       {
-        String community = (String)enums.nextElement();
+        String community = (String)it.next();
         xmlsb.append("  <community name=\"" + community + "\"/>\n");
-        links.add("/$Manager/ar?data=show+data&communities=" + community + "&format=xml");
       }
       xmlsb.append("</communities>\n");
       String xml = xmlsb.toString();
-      if(format.equals("xml"))
-        showXML(xml);
-      else
-      {
-        String html = getHTMLFromXML(xml, "communities.xsl");
-        out.print(html);
-      }
+      String html = getHTMLFromXML(xml, "communities.xsl");
+      out.print(html);
     }
 
     /**
-     * Show all agents, their parent nodes and health status in a table.
+     * Show all agents, their parent nodes and health status in a table. Path is
+     * ./ar?showCommunity=xxx.
      * @param format show raw xml or html?
      * @param community the community to shown.
      */
     private void showCommunityData(String format, String community)
     {
-      String xml = getXMLOfCommunity(totalList, community);
+      String xml = displayStatus(community);
       currentCommunityXML = xml;
 
       if(format.equals("xml"))
         showXML(xml);
       else
       {
-        String html = getHTMLFromXML(xml, "community.xsl");
+        xml = xml.substring(0, xml.indexOf("</community>"));
+        xml += "<remoteNode>" + nodeId.getAddress() + "</remoteNode></community>";
+        String html = getHTMLFromXML(xml, "communityStatus.xsl");
         out.print(html);
       }
     }
 
+    /**
+     * Shows the control page of the community. The control page is used to moving
+     * or removing agents.
+     * @param format show raw xml data or html?
+     * @param community the community name
+     */
+    private void controlCommunity(String format, String community)
+    {
+      String xml = displayStatus(community);
+      currentCommunityXML = xml;
+      writeSuccess(format);
+    }
+
+    /**
+     * Show attributes of one specified community. Path is ./ar?community=xxx.
+     * @param format show raw xml data or html? default is html.
+     * @param community the community name
+     */
     private void showCommunityAttributes(String format, String community)
     {
-      //String xml = getXMLOfCommunity(totalList, community);
-      String xml = currentCommunityXML;
+      String xml = displayStatus(community);
+      //String xml = currentCommunityXML;
+      currentCommunityXML = xml;
       if(format.equals("xml"))
         showXML(xml);
       else
@@ -294,67 +325,6 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
       }
     }
 
-    private void showAgentAttributes(String format, String agent)
-    {
-      String xml = getXMLOfCommunity(totalList, showcommunity);
-      //String xml = currentCommunityXML;
-      if(format.equals("xml"))
-        showXML(xml);
-      else
-      {
-        int index = xml.indexOf("<agent name=\"" + agent + "\">");
-        int end = xml.indexOf("</agent>", index);
-        String str = xml.substring(index, end + 8);
-        String html = getHTMLFromXML(str, "agentAttributes.xsl");
-        out.print(html);
-      }
-    }
-
-    private void showNodeAttributes(String format, String node)
-    {
-      String xml = currentCommunityXML;
-      if(format.equals("xml"))
-        showXML(xml);
-      else
-      {
-        int index = xml.indexOf("<node name=\"" + node + "\">");
-        int end = xml.indexOf("</node>", index);
-        String str = xml.substring(index, end + 7);
-        String html = getHTMLFromXML(str, "nodeAttributes.xsl");
-        out.print(html);
-      }
-    }
-
-    private void showNodeData(String format)
-    {
-      String xml = currentCommunityXML;
-      if(format.equals("xml"))
-        showXML(xml);
-      else
-      {
-        String html = getHTMLFromXML(xml, "nodes.xsl");
-        out.print(html);
-      }
-    }
-
-    private void showStateData(String format)
-    {
-      String xml = getXMLOfCommunity(totalList, showcommunity);
-      if(format.equals("xml"))
-        showXML(xml);
-      else
-        out.print(getHTMLFromXML(xml, "states.xsl"));
-    }
-
-    private void showStatusData(String format)
-    {
-      String xml = getXMLOfCommunity(totalList, showcommunity);
-      if(format.equals("xml"))
-        showXML(xml);
-      else
-        out.print(getHTMLFromXML(xml, "statuses.xsl"));
-    }
-
     private void showXML(String xml)
     {
       out.print("<html><body>\n<p><br>\n");
@@ -362,7 +332,145 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
       out.print("</p>\n</body></html>\n");
     }
 
+    private void writeSuccess(String format){
+      Collection col = queryAgentControls();
+      String xml;
+      if(col.size() > 0)
+        xml = getAgentControlXML(col);
+      else
+        xml = currentCommunityXML;
+      if(format.equals("xml"))
+        out.write(xml);
+      else {
+        String html = getHTMLFromXML(xml, "communityControl.xsl");
+        out.print(html);
+      }
+    }
+
+    private void writeFailure(Exception e) throws IOException {
+        // select response message
+        response.setContentType("text/html");
+        // build up response
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintWriter out = new PrintWriter(baos);
+        out.print("<html><body>");
+        out.print(
+            "<center>"+
+            "<h2>Agent Control (failed)</h2>"+
+            "</center>"+
+            "<p><pre>\n");
+        e.printStackTrace(out);
+        out.print(
+            "</body></html>\n");
+        // send error code
+        response.sendError(
+            HttpServletResponse.SC_BAD_REQUEST,
+            new String(baos.toByteArray()));
+        out.close();
+      }
   }
+
+  private AgentControl createAgentControl(String op) {
+    boolean isForceRestart = false;
+    MessageAddress mobileAgentAddr = MessageAddress.getMessageAddress(mobileAgent);
+    MessageAddress destNodeAddr = MessageAddress.getMessageAddress(destNode);
+    MessageAddress originNodeAddr = MessageAddress.getMessageAddress(origNode);
+    MessageAddress target;
+    AbstractTicket ticket;
+    //boolean isForceRestart = (forceRestart.equals("true") ? true : false);
+    if(op.equals("Move")) {
+      target = (originNodeAddr != null ? (originNodeAddr) : mobileAgentAddr);
+      if (destNodeAddr == null && originNodeAddr != null) {
+        destNodeAddr = originNodeAddr;
+      }
+      ticket =
+        new MoveTicket(
+                null,
+                mobileAgentAddr,
+                originNodeAddr,
+                destNodeAddr,
+                isForceRestart);
+    } else {
+       //target = (destNodeAddr != null ? destNodeAddr : mobileAgentAddr);
+       target = (originNodeAddr != null ? originNodeAddr : mobileAgentAddr);
+       ticket =
+         new RemoveTicket(
+                  null,
+                  mobileAgentAddr,
+                  //destNodeAddr);
+                  originNodeAddr);
+    }
+    AgentControl ac = ARServlet.this.createAgentControl(null, target, ticket);
+    return ac;
+  }
+
+  private AgentControl createAgentControl(
+      UID ownerUID,
+      MessageAddress target,
+      AbstractTicket ticket) {
+    if (mobilityFactory == null) {
+      throw new RuntimeException(
+          "Mobility factory (and domain) not enabled");
+    }
+    AgentControl ac =
+      mobilityFactory.createAgentControl(
+          ownerUID, target, ticket);
+    return ac;
+  }
+
+  private void addAgentControl(AgentControl ac) {
+    try {
+      bb.openTransaction();
+      bb.publishAdd(ac);
+    } finally {
+      bb.closeTransactionDontReset();
+    }
+  }
+
+  private void removeAgentControl(AgentControl ac) {
+    try {
+      bb.openTransaction();
+      bb.publishRemove(ac);
+    } finally {
+      bb.closeTransaction();
+    }
+  }
+
+  private Collection queryAgentControls() {
+    Collection ret = null;
+    try {
+      bb.openTransaction();
+      ret = bb.query(AGENT_CONTROL_PRED);
+    } finally {
+      bb.closeTransactionDontReset();
+    }
+    return ret;
+  }
+
+  private AgentControl queryAgentControl(final UID uid) {
+    if (uid == null) {
+      throw new IllegalArgumentException("null uid");
+    }
+    UnaryPredicate pred = new UnaryPredicate() {
+      public boolean execute(Object o) {
+        return
+          ((o instanceof AgentControl) &&
+           (uid.equals(((AgentControl) o).getUID())));
+      }
+    };
+    AgentControl ret = null;
+    try {
+      bb.openTransaction();
+      Collection c = bb.query(pred);
+      if ((c != null) && (c.size() >= 1)) {
+        ret = (AgentControl) c.iterator().next();
+      }
+    } finally {
+      bb.closeTransactionDontReset();
+    }
+    return ret;
+  }
+
 
   /**
    * To show raw xml in a html page, convert several specific signals.
@@ -378,175 +486,30 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     return tmp4;
   }
 
-
-    /**
-     * Get attributes of given parameter from naming service.
-     * @param context Directory context
-     * @param name The parameter need to search
-     * @return the attributes.
-     */
-    private Attributes getAttributes(DirContext context, String name)
-    {
-      Attributes attrs = null;
-      try{
-        attrs = context.getAttributes(name);
-      }catch(NamingException e){log.error(e.getMessage());}
-      return attrs;
-    }
-
-    /**
-     * Fetch community information from name service in blackboard and save all
-     * information into a hash table.
-     */
-    private Hashtable buildCommunitiesTable(InitialDirContext idc, String index)
-    {
-      Hashtable list = new Hashtable();
-      try{
-        DirContext communitiesContext = (DirContext)idc.lookup(index);
-        NamingEnumeration enum = communitiesContext.list("");
-        while (enum.hasMore()) {
-             NameClassPair ncPair = (NameClassPair)enum.next();
-             List contents = new ArrayList();
-             contents.add(getAttributes(communitiesContext, ncPair.getName())); //attributes of this community
-             Hashtable entities = new Hashtable(); //records all entities of this community
-             Hashtable hosts = new Hashtable(); //records all hosts of this community
-             Hashtable allnodes = new Hashtable(); //records all nodes of this community
-             DirContext entityContext = (DirContext)communitiesContext.lookup(ncPair.getName());
-             NamingEnumeration entityEnums = entityContext.list("");
-             while(entityEnums.hasMore())
-             {
-               NameClassPair ncp = (NameClassPair)entityEnums.next();
-               String entityName = ncp.getName();
-               if(ncp.getClassName().equals("org.cougaar.core.mts.SimpleMessageAddress"))
-               {
-                  String uri = getEntityURI(entityName);
-                  String nodeName = uri.substring(uri.lastIndexOf("/")+1);
-                   //String nodeName = trs.getParentForChild(trs.NODE, trs.AGENT, ncp.getName());
-                   entityName += "  (" + nodeName + ")";
-                   //String hostName = trs.getEntryForAgent(ncp.getName()).getHost();
-                  String hostName = uri.substring(7, uri.lastIndexOf("/"));
-                   if(hosts.containsKey(hostName))
-                   {
-                     Hashtable nodes = (Hashtable)hosts.get(hostName);
-                     if(nodes.containsKey(nodeName))
-                     {
-                       List temp = (List)nodes.get(nodeName);
-                       temp.add(ncp.getName());
-                     }
-                     else
-                     {
-                       List agents = new ArrayList();
-                       agents.add(ncp.getName());
-                       nodes.put(nodeName, agents);
-                     }
-                   }
-                   else //build a new entry into the hashtable
-                   {
-                     Hashtable temp = new Hashtable();
-                     List agents = new ArrayList();
-                     agents.add(ncp.getName());
-                     temp.put(nodeName, agents);
-                     hosts.put(hostName, temp);
-                   }
-
-                   if(allnodes.containsKey(nodeName))
-                   {
-                     List agents = (List)allnodes.get(nodeName);
-                     if(!agents.contains(ncp.getName())) {
-                       agents.add(ncp.getName());
-                     }
-                   }
-                   else
-                   {
-                     List agents = new ArrayList();
-                     agents.add(ncp.getName());
-                     allnodes.put(nodeName, agents);
-                   }
-               }
-               entities.put(entityName, getAttributes(entityContext, ncp.getName()));
-             }
-             contents.add(entities);
-             contents.add(hosts);
-             contents.add(allnodes);
-             list.put(ncPair.getName(), contents);
-        }
-      }catch(NamingException e){log.error(e.getMessage());}
-      return list;
-    }
-
   /**
-   * Compare properties of one agent with properties of it's parent community, save
-   * all unduplicate properties of this agent into a hash table.
-   * @param agentName agent be compared
-   * @param communityProperties a hash table with properties of parent community
-   * @return a hash table
+   * Get all communities from whit page service and save them in a list.
+   * @return the list of all community names
    */
-  private Hashtable getUnduplicatePropertiesOfAgent(String agentName, Hashtable communityProperties)
-  {
-    Hashtable properties = new Hashtable();
+  private List getAllCommunityNames() {
+    final List list = new ArrayList();
+    Collection communityDescriptors = null;
     try{
       bb.openTransaction();
-      IncrementalSubscription sub = (IncrementalSubscription)bb.subscribe(getHealthStatusPred(agentName));
-      if(sub.size() > 0)
-      {
-        HealthStatus hs = (HealthStatus)sub.getAddedCollection().iterator().next();
-        checkElement("currentState", hs.getState(), "string", communityProperties, properties);
-        checkElement("priorState", hs.getPriorState(), "string", communityProperties, properties);
-        checkElement("currentStatus", hs.getStatusAsString(), "string", communityProperties, properties);
-        checkElement("heartbeatRequestStatus", hs.getHeartbeatRequestStatusAsString(), "string", communityProperties, properties);
-        checkElement("heartbeatRequestTime", hs.getHeartbeatRequestTime().toString(),"string", communityProperties, properties);
-        checkElement("heartbeatStatus", Integer.toString(hs.getHeartbeatStatus()), "int", communityProperties, properties);
-        checkElement("pingStatus", hs.getPingStatusAsString(), "string", communityProperties, properties);
-        checkElement("hbReqTimeout", Long.toString(hs.getHbReqTimeout()), "long", communityProperties, properties);
-        checkElement("hbReqRetries", Long.toString(hs.getHbReqRetries()), "long", communityProperties, properties);
-        checkElement("hbFreq", Long.toString(hs.getHbFrequency()), "long", communityProperties, properties);
-        checkElement("hbTimeout", Long.toString(hs.getHbReqTimeout()), "long", communityProperties, properties);
-        checkElement("hbPctLate", Float.toString(hs.getHbPctLate()), "float", communityProperties, properties);
-        checkElement("hbWindow", Float.toString(hs.getHbWindow()), "float", communityProperties, properties);
-        checkElement("hbFailRate", Float.toString(hs.getFailureRate()), "float", communityProperties, properties);
-        checkElement("hbFailRateThreshold", Float.toString(hs.getHbFailRateThreshold()), "float", communityProperties, properties);
-        checkElement("pingTimeout", Long.toString(hs.getPingTimeout()), "long", communityProperties, properties);
-        checkElement("pingRetries", Long.toString(hs.getPingRetries()), "long", communityProperties, properties);
-        checkElement("activePingFreq", Long.toString(hs.getActivePingFrequency()), "long", communityProperties, properties);
-        checkElement("hbReqRetryCtr", Integer.toString(hs.getHbReqRetryCtr()), "int", communityProperties, properties);
-        checkElement("PingRetryCtr", Integer.toString(hs.getPingRetryCtr()), "int", communityProperties, properties);
-        checkElement("persistable", Boolean.toString(hs.isPersistable()), "string", communityProperties, properties);
+      communityDescriptors = bb.query(communityPredicate);
+    }finally{bb.closeTransactionDontReset();}
+    try{
+      for(Iterator it = communityDescriptors.iterator(); it.hasNext();) {
+        Community community = (Community)it.next();
+        String type = (String)(community.getAttributes().get("CommunityType").get());
+        if(type != null)
+          if(community.hasEntity(agentId.getAddress()) && type.equals("Robustness"))
+            list.add(community.getName());
       }
-    }finally
-    { bb.closeTransaction(); }
-    return properties;
+    }catch(Exception e)
+    {log.error("Try to get robustness community of " + agentId.getAddress() + ":" + e);}
+    return list;
   }
 
-  /**
-   * Search if given hashtable contains one element with the same name and value as
-   * given element name and value, if no, save this given element into another hash table.
-   * @param element name of the element need to be checked
-   * @param value value of the element
-   * @param type what type is the element?
-   * @param table1 the hashtable be searched
-   * @param table2 the hashtable saving unduplicate elements
-   */
-  private void checkElement(String element, String value, String type, Hashtable table1, Hashtable table2)
-  {
-    if(table1.containsKey(element))
-    {
-      String tmp = (String)table1.get(element);
-      if(type.equals("string"))
-        if(!tmp.equals(value))
-          table2.put(element, value);
-      else if(type.equals("int"))
-        if(Integer.parseInt(value) != Integer.parseInt(tmp))
-          table2.put(element, value);
-      else if(type.equals("float"))
-        if(Float.parseFloat(value) != Float.parseFloat(tmp))
-          table2.put(element, value);
-      else if(type.equals("long"))
-        if(Long.parseLong(value) != Long.parseLong(tmp))
-          table2.put(element, value);
-    }
-    else
-      table2.put(element, value);
-  }
 
   /**
    * Using xsl file to transform a xml file into html file.
@@ -559,8 +522,9 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     String html = "";
     try{
       TransformerFactory tFactory = TransformerFactory.newInstance();
-      File xslf = ConfigFinder.getInstance().locateFile(xsl);
-      Transformer transformer = tFactory.newTransformer(new StreamSource(xslf));
+      //File xslf = ConfigFinder.getInstance().locateFile(xsl);
+      InputStream in = ARServlet.class.getResourceAsStream(xsl);
+      Transformer transformer = tFactory.newTransformer(new StreamSource(in));
       StringWriter writer = new StringWriter();
       transformer.transform(new StreamSource(new StringReader(xml)), new StreamResult(writer));
       html = writer.toString();
@@ -568,116 +532,112 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     return html;
   }
 
-  /**
-   * From community information fetched from name service, produce a xml string
-   * contains all this information.
-   * @param totalList the hashtable contains community information
-   * @param community which community is concerned?
-   * @return the xml string
-   */
-  private String getXMLOfCommunity(Hashtable totalList, String community)
-  {
-      List restartNodes = new ArrayList(); //save all restart nodes
-      Hashtable properties = new Hashtable(); //all attributes of community
-      Hashtable list = (Hashtable)totalList.get("Communities");
-      StringBuffer xmlsb = new StringBuffer();
-      xmlsb.append(xmlTitle);
-      xmlsb.append("<community name=\"" + community + "\">\n");
-      xmlsb.append("  <properties>\n");
-      List content = (List)list.get(community); //all information of this community
-      Attributes attributes = (Attributes)content.get(0); //attributes of the community
-      try{
-        for(NamingEnumeration nes = attributes.getAll(); nes.hasMore();)
-        {
-          Attribute attr = (Attribute)nes.next();
-          if(attr.size() == 1)
-          {
-            String tmp = (String)attr.get();
-            if(attr.getID().equalsIgnoreCase("RestartNode"))
-              restartNodes.add(tmp);
-            xmlsb.append("    <property name=\"" + attr.getID() + "\" value=\"" + tmp + "\" />\n");
-            properties.put(attr.getID(), tmp);
-          }
-          else
-          {
-            List tmpList = new ArrayList();
-            String str = attr.getID();
-            for(NamingEnumeration subattrs = attr.getAll(); subattrs.hasMore();)
-            {
-              String tmp = (String)subattrs.next();
-              if(str.equalsIgnoreCase("RestartNode"))
-                restartNodes.add(tmp);
-              xmlsb.append("    <property name=\"" + str + "\" value=\"" + tmp + "\" />\n");
-              tmpList.add(tmp);
-            }
-            properties.put(str, tmpList);
-          }
+  private String displayStatus(String communityName) {
+      HealthMonitorRequest hmr =
+          new HealthMonitorRequestImpl(agentId,
+          communityName,
+          HealthMonitorRequest.GET_STATUS,
+          null,
+          null,
+          null,
+          uidService.nextUID());
+      MessageAddress target = nodeId != null
+          ? nodeId
+          : agentId;
+
+      HealthMonitorResponse hmrResp = null;
+
+      if (target.equals(agentId)) {
+        if (log.isInfoEnabled()) {
+          log.info("Publishing HealthMonitorRequest:" +
+                   " community-" + hmr.getCommunityName());
         }
-      }catch(NamingException e){log.error(e.getMessage());}
-      xmlsb.append("  </properties>\n");
-
-      Hashtable allNodes = (Hashtable)content.get(3);//all nodes and agents of current community
-      xmlsb.append("  <nodes>\n");
-      for(Enumeration enums = allNodes.keys(); enums.hasMoreElements();)
-      {
-        String nodeName = (String)enums.nextElement();
-        xmlsb.append("    <node name=\"" + nodeName + "\">\n");
-        xmlsb.append("      <properties>\n");
-        if(restartNodes.contains(nodeName))
-          xmlsb.append("        <property name=\"type\" value=\"restart\"/>\n");
-        else
-          xmlsb.append("        <property name=\"type\" value=\"normal\"/>\n");
-        xmlsb.append("      </properties>\n");
-        xmlsb.append("    </node>\n");
-      }
-      xmlsb.append("  </nodes>\n");
-
-      xmlsb.append("  <agents>\n");
-      for(Enumeration enums = allNodes.keys(); enums.hasMoreElements();)
-      {
-        String nodeName = (String)enums.nextElement();
-        List agents = (List)allNodes.get(nodeName); //all agents of given node
-        for(int i=0; i<agents.size(); i++)
-        {
-          String agentName = (String)agents.get(i);
-          xmlsb.append("    <agent name=\"" + agentName + "\">\n");
-          xmlsb.append("      <properties>\n");
-          xmlsb.append("        <property name=\"node\" value=\"" + nodeName + "\"/>\n");
-          Hashtable agentProperties = getUnduplicatePropertiesOfAgent(agentName, properties);
-          for(Enumeration enum = agentProperties.keys(); enum.hasMoreElements();)
-          {
-            String name = (String)enum.nextElement();
-            xmlsb.append("        <property name=\"" + name + "\" value=\"" + (String)agentProperties.get(name) + "\"/>\n");
-          }
-          xmlsb.append("      </properties>\n");
-          xmlsb.append("    </agent>\n");
+        try {
+          bb.openTransaction();
+          bb.publishAdd(hmr);
+        } finally {
+          bb.closeTransactionDontReset();
         }
-      }
-      xmlsb.append("  </agents>\n");
-
-      xmlsb.append("  <events>\n");
-      xmlsb.append("  </events>\n");
-
-      xmlsb.append("</community>\n");
-     return xmlsb.toString();
-  }
-
-  private String getEntityURI(String entityName){
-    String uri = "";
-    try{
-      AddressEntry entrys[] = wps.get(entityName);
-      for(int i=0; i<entrys.length; i++) {
-        if(entrys[i].getApplication().toString().equals("topology") && entrys[i].getAddress().toString().startsWith("node:")) {
-          uri = entrys[i].getAddress().toString();
-          return uri;
+        while (hmr.getResponse() == null) {
+          try { Thread.sleep(1000); } catch (Exception ex) {}
         }
+        hmrResp = (HealthMonitorResponse)hmr.getResponse();
+      } else {
+        // send to remote agent using Relay
+        RelayAdapter hmrRa =
+            new RelayAdapter(agentId, hmr, hmr.getUID());
+        hmrRa.addTarget(target);
+        if (log.isInfoEnabled()) {
+          log.info("Publishing HealthMonitorRequest Relay:" +
+                   " target=" + hmrRa.getTargets() +
+                   " community-" + hmr.getCommunityName());
+        }
+        try {
+          bb.openTransaction();
+          bb.publishAdd(hmrRa);
+        } finally {
+          bb.closeTransactionDontReset();
+        }
+        while (hmrRa.getResponse() == null) {
+          try { Thread.sleep(1000); } catch (Exception ex) {}
+        }
+        hmrResp = (HealthMonitorResponse)hmrRa.getResponse();
       }
-    }catch(Exception e){
-      log.error("Try to get location from WhitePagesService: " + e);
+
+      return (String)hmrResp.getContent();
     }
-    return uri;
+
+  private String getAgentControlXML(Collection acs) {
+    StringBuffer sb = new StringBuffer();
+    sb.append("<AgentControls>\n");
+    for(Iterator it = acs.iterator(); it.hasNext();) {
+      AgentControl ac = (AgentControl)it.next();
+      sb.append("  <AgentControl>\n");
+      sb.append("    <UID>" + ac.getUID() + "</UID>\n");
+      sb.append("    <Ticket>\n");
+      sb.append("    " + ac.getAbstractTicket() + "\n");
+      sb.append("    </Ticket>\n");
+      sb.append("    <Status>");
+      int status = ac.getStatusCode();
+      if (status == AgentControl.NONE)
+        sb.append("In progress");
+      else
+        sb.append(ac.getStatusCodeAsString());
+      sb.append("</Status>\n");
+      sb.append("  </AgentControl>\n");
+    }
+    sb.append("</AgentControls>\n");
+
+    int index = currentCommunityXML.indexOf("</community>");
+    String xml = currentCommunityXML.substring(0, index);
+    xml += sb.toString();
+
+    if(!mobileAgent.equals("")) {
+      StringBuffer sb2 = new StringBuffer();
+      sb2.append("<CurrentTicket>\n");
+      sb2.append("  <operation>" + operation + "</operation>\n");
+      sb2.append("  <mobileAgent>" + mobileAgent + "</mobileAgent>\n");
+      sb2.append("  <origNode>" + origNode + "</origNode>\n");
+      sb2.append("  <destNode>" + destNode + "</destNode>\n");
+      //sb2.append("  <forceRestart>" + forceRestart + "</forceRestart>\n");
+      sb2.append("</CurrentTicket>\n");
+      xml += sb2.toString();
+    }
+    xml += "</community>";
+    return xml;
   }
 
+  private UnaryPredicate communityPredicate = new UnaryPredicate() {
+    public boolean execute (Object o) {
+      return (o instanceof Community);
+  }};
+
+  private static final UnaryPredicate AGENT_CONTROL_PRED =
+    new UnaryPredicate() {
+      public boolean execute(Object o) {
+        return (o instanceof AgentControl);
+      }
+    };
 
     // odd BlackboardClient method:
   public String getBlackboardClientName() {
@@ -698,17 +658,21 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
         "a \"trigger\" event: "+event);
   }
 
-  protected static UnaryPredicate getHealthStatusPred(final String agentName)
-  {
-     return new UnaryPredicate() {
-       public boolean execute(Object o) {
-           if(o instanceof HealthStatus) {
-             return ((HealthStatus)o).getAgentId().getAddress().equals(agentName);
-           }
-           return false;
-       }
-     };
-  }
-
   private static final String xmlTitle = "<?xml version=\"1.0\"?>\n";
+
+  public static void main(String[] args) {
+    String html = "";
+    String xml = "<communities><community name=\"comm1\" /><community name=\"comm2\" /></communities>";
+    try{
+      TransformerFactory tFactory = TransformerFactory.newInstance();
+      //File xslf = ConfigFinder.getInstance().locateFile(xsl);
+      InputStream in = ARServlet.class.getResourceAsStream("communities.xsl");
+      Transformer transformer = tFactory.newTransformer(new StreamSource(in));
+      StringWriter writer = new StringWriter();
+      transformer.transform(new StreamSource(new StringReader(xml)), new StreamResult(writer));
+      //transformer.transform(new StreamSource(new File("/home/qing/tmp.xml")), new StreamResult(writer));
+      html = writer.toString();
+    }catch(Exception e){e.printStackTrace();}
+    System.out.println(html);
+  }
 }
