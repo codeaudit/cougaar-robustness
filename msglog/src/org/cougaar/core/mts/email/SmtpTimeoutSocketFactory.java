@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2002 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,41 +19,50 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 26 Mar  2002: Update from Cougaar 8.6.2.x to 9.0.0 (OBJS)
- * 22 Oct  2001: Change derivation to NoHeaderOutputStream, and add
- *               stream reset call. (OBJS)
- * 24 Sept 2001: Hack to handle 8.4.1 MessageEnvelopes. (OBJS)
- * 08 July 2001: Created. (OBJS)
+ * 23 Sep 2002: Created. (OBJS)
  */
 
 package org.cougaar.core.mts.email;
 
-import java.io.*;
+import javax.net.SocketFactory;
 
-import org.cougaar.core.mts.Message;
+import org.cougaar.core.component.ServiceBroker;
 
 
-public class EmailMessageOutputStream extends NoHeaderOutputStream
+public class SmtpTimeoutSocketFactory extends TimeoutSocketFactory
 {
-  EmailOutputStream out;
+  private static ServiceBroker serviceBroker;
+  private static int socketTimeout;
+  private static SmtpTimeoutSocketFactory instance;
 
-  public EmailMessageOutputStream (EmailOutputStream out) throws IOException
+  public SmtpTimeoutSocketFactory ()
   {
-    super (out);
-    this.out = out;
+    super (serviceBroker, socketTimeout);
   }
 
-  public void writeMsgObject (ByteArrayObject msgObject) throws IOException
+  public static void setServiceBroker (ServiceBroker sb)
   {
-    //  Important!!!  Reset the output stream so that subsequent
-    //  writes do not refer to objects written previously.
-
-    reset();
-    writeObject (msgObject);
+    serviceBroker = sb;
   }
 
-  public void sendMsg (MailMessageHeader header) throws IOException
+  public static ServiceBroker getServiceBroker ()
   {
-    out.flush (header);  // sends email message
+    return serviceBroker;
+  }
+
+  public static void setSocketTimeout (int timeout)
+  {
+    socketTimeout = timeout;
+  }
+
+  public static int getSocketTimeout ()
+  {
+    return socketTimeout;
+  }
+
+  public static SocketFactory getDefault ()
+  {
+    if (instance == null) instance = new SmtpTimeoutSocketFactory();
+    return instance;
   }
 }

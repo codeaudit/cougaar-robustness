@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2002 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,37 +19,24 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 18 Jun 2002: Created. (OBJS)
+ * 06 Sep 2002: Created from old SendMessage.java. (OBJS)
  */
 
-package org.cougaar.core.mts.socket;
+package org.cougaar.core.mts.acking;
 
-import org.cougaar.core.service.ThreadService;
-import org.cougaar.core.thread.Schedulable;
+import org.cougaar.core.mts.*;
 
 
-/**
- **  Utility class to help create Cougaar threads from static methods.
- **/ 
-
-public class MyThreadService
+class SendQueueDelegate extends SendQueueDelegateImplBase 
 {
-  private Object obj;
-  private ThreadService threadService;
-
-  public MyThreadService (Object obj, ThreadService threadService)
+  public SendQueueDelegate (SendQueue queue)
   {
-    this.obj = obj;
-    this.threadService = threadService;
-  } 
-
-  public Schedulable getThread (Runnable r)
-  {
-    return threadService.getThread (obj, r, r.getClass().getName());
+    super (queue);
   }
 
-  public Schedulable getThread (Runnable r, String name)
+  public void sendMsg (AttributedMessage msg)
   {
-    return threadService.getThread (obj, r, name);
+    super.sendMessage (msg);
   }
 }
+

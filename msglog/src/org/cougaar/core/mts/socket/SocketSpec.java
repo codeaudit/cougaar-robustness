@@ -119,6 +119,6 @@ public class SocketSpec implements java.io.Serializable
 
   public String toString ()
   {
-    return "socket[" +host+ ":" +port+ "]";
+    return "SocketSpec[" +host+ ":" +port+ "]";
   }
 }

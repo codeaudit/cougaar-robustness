@@ -119,6 +119,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
   private static boolean showTraffic; 
 
   private static boolean useRTTService; 
+  private static final boolean createSocketClosingService;
   private static final int initialNodeTime;
   private static final int tryOtherLinksInterval;
   private static final int upgradeMetricMultiplier;
@@ -126,6 +127,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
 private static int commStartDelaySeconds;
 
+  private static SocketClosingServiceImpl socketClosingService;
   private static DestinationLink loopbackLink;
   private static DestinationLink blackHoleLink = new BlackHoleDestinationLink();
 
@@ -149,6 +151,9 @@ private static long startTime = 0;
 
     String s = "org.cougaar.message.transport.policy.adaptive.useRTTService";
     useRTTService = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
+
+    s = "org.cougaar.message.transport.policy.adaptive.createSocketClosingService";
+    createSocketClosingService = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
 
     s = "org.cougaar.message.transport.policy.adaptive.initialNodeTime";
     initialNodeTime = Integer.valueOf(System.getProperty(s,"20000")).intValue();
@@ -180,8 +185,19 @@ commStartDelaySeconds = Integer.valueOf(System.getProperty(s,"0")).intValue();
 
       if (rttService == null) 
       {
-        log.error ("Missing RTTAspect! (useRTTService reset to false)");
+        log.error ("Missing RTTAspect! (useRTTService boolean reset to false)");
         useRTTService = false;
+      }
+    }
+
+    if (createSocketClosingService)
+    {
+      synchronized (this)
+      {
+        if (socketClosingService == null)
+        {
+          socketClosingService = new SocketClosingServiceImpl (getServiceBroker());
+        }
       }
     }
 
@@ -499,12 +515,11 @@ if (commStartDelaySeconds > 0)
 
     //  Normal operation.
     //
-    //  First filter the given links into a vector of outgoing links that
-    //  are able to send the given message.
+    //  First filter the given links into a vector of outgoing links that are able
+    //  to send the given message.
     //
-    //  NOTE:  Must insure that the link finally returned by this method
-    //  is a member of these filtered links, as they are the only valid
-    //  links for this iteration.
+    //  NOTE:  Link selection must insure that the link finally returned is a one 
+    //  of these filtered links, as they are the only valid links for this iteration.
 
     Vector v = new Vector();
 
@@ -517,9 +532,12 @@ if (commStartDelaySeconds > 0)
       {
         link = (DestinationLink) links.next(); 
 
-        if (isLoopbackLink (link)) continue;
+        //  Obvious filters
 
+        if (isLoopbackLink (link)) continue;
         if (!isOutgoingLink (link)) continue;
+
+        //  Cost related filtering
 
         cost = getLinkCost (link, msg);
 
@@ -527,9 +545,7 @@ if (commStartDelaySeconds > 0)
 
         if (cost == 1 && getName(link).equals ("org.cougaar.core.mts.SSLRMILinkProtocol"))
         {
-          //  Temp HACK for UC3
-
-          return linkChoice (link, msg);
+          return linkChoice (link, msg);  //  Temp HACK for UC3
         }
 
         //  Drop links that cannot handle messages beyond a certain size
@@ -571,7 +587,6 @@ if (commStartDelaySeconds > 0)
     Arrays.sort (destLinks, linkRanker);
 
     DestinationLink topLink = destLinks[0];
-//log.debug ("\ntopLink = " +geName(topLink));
 
     //  Special Case:  Sending pure ack messages.  For pure ack messages we try all possible 
     //  links until we run out or we determine we no longer need to send the pure ack.
@@ -617,10 +632,18 @@ if (commStartDelaySeconds > 0)
         }
       }
 
+      //  Check if we have exhusted all the links for sending the ack
+
+      if (pureAck.getNumberOfLinkSelections() == destLinks.length)
+      {
+        if (debug) log.debug ("No untried links left to send pure ack, dropping it: " +msgString);
+        return blackHoleLink;
+      }
+
+      //  Possibly reschedule the pure ack msg for sending later
+
       if (latestDeadline > now())
       {
-        //  Reschedule the pure ack msg and don't send it now
-
         if (debug) 
         {
           long t = latestDeadline - now();
@@ -646,9 +669,9 @@ if (commStartDelaySeconds > 0)
         }
       }
 
-      //  Final case: No untried links left - we are done sending pure ack
+      //  We shouldn't get here
 
-      if (debug) log.debug ("No untried links left to send pure ack, dropping it: " +msgString);
+      log.error ("Error selecting link for pure ack (dropping ack): " +msgString);
       return blackHoleLink;
     }
 

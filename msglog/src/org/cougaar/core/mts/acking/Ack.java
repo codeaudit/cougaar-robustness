@@ -290,6 +290,14 @@ public class Ack implements Serializable
     }
   }
 
+  public int getNumberOfLinkSelections ()
+  {
+    synchronized (linksUsed)
+    {
+      return linksUsed.size();
+    }
+  }
+
   public void clearLinkSelections ()
   {
     synchronized (linksUsed)

@@ -19,37 +19,50 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 108 Jun 2002: Created. (OBJS)
+ * 23 Sep 2002: Created. (OBJS)
  */
 
 package org.cougaar.core.mts.email;
 
-import org.cougaar.core.service.ThreadService;
-import org.cougaar.core.thread.Schedulable;
+import javax.net.SocketFactory;
+
+import org.cougaar.core.component.ServiceBroker;
 
 
-/**
- **  Utility class to help create Cougaar threads from static methods.
- **/ 
-
-public class MyThreadService
+public class Pop3TimeoutSocketFactory extends TimeoutSocketFactory
 {
-  private Object obj;
-  private ThreadService threadService;
+  private static ServiceBroker serviceBroker;
+  private static int socketTimeout;
+  private static Pop3TimeoutSocketFactory instance;
 
-  public MyThreadService (Object obj, ThreadService threadService)
+  public Pop3TimeoutSocketFactory ()
   {
-    this.obj = obj;
-    this.threadService = threadService;
-  } 
-
-  public Schedulable getThread (Runnable r)
-  {
-    return threadService.getThread (obj, r, r.getClass().getName());
+    super (serviceBroker, socketTimeout);
   }
 
-  public Schedulable getThread (Runnable r, String name)
+  public static void setServiceBroker (ServiceBroker sb)
   {
-    return threadService.getThread (obj, r, name);
+    serviceBroker = sb;
+  }
+
+  public static ServiceBroker getServiceBroker ()
+  {
+    return serviceBroker;
+  }
+
+  public static void setSocketTimeout (int timeout)
+  {
+    socketTimeout = timeout;
+  }
+
+  public static int getSocketTimeout ()
+  {
+    return socketTimeout;
+  }
+
+  public static SocketFactory getDefault ()
+  {
+    if (instance == null) instance = new Pop3TimeoutSocketFactory();
+    return instance;
   }
 }

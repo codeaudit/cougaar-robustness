@@ -568,8 +568,8 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
       {
         StringBuffer buf = new StringBuffer();
         buf.append ("\n\nupdateRTT:");
+        buf.append ("\n  destNode= " +node);
         buf.append ("\n  sendLink= " +sendLink);
-        buf.append ("\n      node= " +node);
         buf.append ("\n  recvLink= " +receiveLink);
 
         int commLast = (int) commRTT.getLastSample();

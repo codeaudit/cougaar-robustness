@@ -24,10 +24,15 @@
 
 package org.cougaar.core.mts;
 
+import java.io.*;
+
 import org.cougaar.core.mts.acking.Ack;
 import org.cougaar.core.mts.acking.PureAckMessage;
 import org.cougaar.core.mts.acking.PureAckAckMessage;
 
+/**
+ * Collection of utility methods for messages
+ */
 
 public final class MessageUtils
 {
@@ -400,7 +405,7 @@ public final class MessageUtils
       specialType = " (TrafficMaskingMsg)";
     }
 
-    String msgNum = (hasMessageNumber (msg) ? ""+getMessageNumber (msg) : "[]");
+    String msgNum = (hasMessageNumber(msg) ? ""+getMessageNumber(msg) : "[]");
     return "Msg " + msgNum + specialType;
   }
 

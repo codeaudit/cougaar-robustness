@@ -19,6 +19,8 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 
+ * 22 Sep 2002: Revamped queue adds scheduling. (OBJS)
  * 08 Jun 2002: Revamped and streamlined for 9.2.x. (OBJS)
  * 23 Apr 2002: Split out from MessageAckingAspect. (OBJS)
  */
@@ -49,7 +51,6 @@ class PureAckSender implements Runnable
   private LoggingService log;
   private Vector queue;
   private PureAckMessage messages[];
-  private boolean haveNewMessages;
   private Comparator deadlineSort;
   private long minSendDeadline;
 
@@ -58,20 +59,22 @@ class PureAckSender implements Runnable
     this.aspect = aspect;
     queue = new Vector();
     messages = new PureAckMessage[32];
-    haveNewMessages = false;
     deadlineSort = new DeadlineSort();
-    minSendDeadline = Long.MAX_VALUE;
+    minSendDeadline = 0;
   }
 
   public void add (PureAckMessage pam) 
   {
-    if (debug()) log.debug ("PureAckSender: adding " +pam);
+    PureAck pureAck = (PureAck) MessageUtils.getAck (pam);
+    long deadline = pureAck.getSendDeadline();
+
+    if (debug()) log.debug ("PureAckSender: adding timeout=" +(deadline-now())+ " " +pam);
 
     synchronized (queue) 
     {
       queue.add (pam);
-      haveNewMessages = true;
-      queue.notify();
+      boolean buildup = (queue.size() > 32);
+      offerNewSendDeadline (!buildup ? deadline : Math.min(1000+now(),deadline));
     }
   }
   
@@ -80,6 +83,21 @@ class PureAckSender implements Runnable
     synchronized (queue) 
     {
       queue.remove (pam);
+      if (queue.size() == 0) offerNewSendDeadline (0);
+    }
+  }
+    
+  private void offerNewSendDeadline (long deadline)
+  {
+    if (deadline < 0) return;
+
+    synchronized (queue) 
+    {
+      if (deadline < minSendDeadline || (minSendDeadline == 0 && deadline > 0))
+      {
+        minSendDeadline = deadline;
+        queue.notify();
+      }
     }
   }
 
@@ -93,7 +111,7 @@ class PureAckSender implements Runnable
   {
     while (true)
     {
-      String s = "PureAckSender: Unexpected exception, restarting";
+      String s = "PureAckSender: Unexpected exception, restarting thread";
 
       try
       { 
@@ -104,12 +122,12 @@ class PureAckSender implements Runnable
         catch (Exception e) 
         {
           s += ": " + stackTraceToString (e);
-          if (log.isWarnEnabled()) log.warn (s);
+          log.error (s);
         }
       }
       catch (Exception e)
       {
-        try { System.err.println (s); } catch (Exception ex) { /* !! */ }
+        try { e.printStackTrace(); } catch (Exception ex) { /* !! */ }
       }
     }
   }
@@ -127,15 +145,6 @@ class PureAckSender implements Runnable
       {
         while (true)
         {
-          //  Check for new messages before waiting.  They can come
-          //  in during waiting or during queue processing.
-
-          if (haveNewMessages)
-          {
-            haveNewMessages = false;
-            if (queue.size() > 0) break;
-          }
-
           //  Check how long to wait before we need to satisfy a send deadline
 
           long waitTime = 0;  // 0 = wait till notify (or interrupt)
@@ -143,7 +152,7 @@ class PureAckSender implements Runnable
           if (queue.size() > 0)
           {
             waitTime = minSendDeadline - now();
-            if (waitTime <= 0) break;
+            if (waitTime <= 0) { minSendDeadline = 0;  break; }
           }
 
           //  Wait until timeout, notify, or interrupt
@@ -163,8 +172,6 @@ class PureAckSender implements Runnable
         log.debug ("PureAckSender: reviewing queue (" +len+ " msg" +(len==1? ")" : "s)"));
       }
 
-      minSendDeadline = Long.MAX_VALUE;
-
       for (int i=0; i<len; i++)
       {
         //  We only consider sending a pure ack message as long as there is
@@ -180,8 +187,8 @@ class PureAckSender implements Runnable
           long sendDeadline = pureAck.getSendDeadline();
           long timeLeft = sendDeadline - now();
 
-          if (debug()) log.debug ("PureAckSender: " +MessageUtils.toShortString(pam)+ 
-            " timeLeft=" +timeLeft+ "  " +MessageUtils.toShortSequenceID(pam));
+          if (debug()) log.debug ("PureAckSender: timeLeft=" +timeLeft+ "  " +
+            MessageUtils.toShortString(pam)+ " " +MessageUtils.toShortSequenceID(pam));
 
           if (timeLeft <= 0)
           {
@@ -193,7 +200,7 @@ class PureAckSender implements Runnable
           }
           else 
           {
-            if (sendDeadline < minSendDeadline) minSendDeadline = sendDeadline;
+            offerNewSendDeadline (sendDeadline);
           }
         }
         else

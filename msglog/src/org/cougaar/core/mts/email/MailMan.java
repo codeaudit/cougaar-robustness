@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 24 Sep 2002: Reworking due to addition of JavaMail socket factories. (OBJS)
  * 12 Jun 2002: Replaced System.getProperties call in openStore(), cited
  *              as potential security hole. (OBJS)
  * 27 Oct 2001: Added serverConnTimeout property, upped default server
@@ -36,11 +37,14 @@ package org.cougaar.core.mts.email;
 
 import java.util.*;
 import java.net.Socket;
+import javax.net.SocketFactory;
 import javax.mail.*;
 import javax.mail.internet.*;
 import javax.mail.search.*;
 
 import org.cougaar.util.log.Logging;
+import org.cougaar.core.component.ServiceBroker;
+
 
 /**
  *  Main implementation class for mail sending and receiving.
@@ -48,38 +52,70 @@ import org.cougaar.util.log.Logging;
 
 public class MailMan 
 {
-  private static final int pop3ConnectionTimeout;
-  private static final int smtpConnectionTimeout;
-
+  private static ServiceBroker serviceBroker;
+  private static int pop3SocketTimeout, smtpSocketTimeout;
+  private static boolean debugPop3, debugSmtp;
   private static final Message[] zeroMsgs = new Message[0];
-  static boolean Debug;
 
-  static
+
+  public static void setServiceBroker (ServiceBroker sb)
   {
-    //  Read external properties
-
-    String s = "org.cougaar.message.protocol.email.pop3.connectionTimeoutSecs";
-    pop3ConnectionTimeout = Integer.valueOf(System.getProperty(s,"10")).intValue();
-
-    s = "org.cougaar.message.protocol.email.smtp.connectionTimeoutSecs";
-    smtpConnectionTimeout = Integer.valueOf(System.getProperty(s,"10")).intValue();
+    serviceBroker = sb;
   }
 
-  public static void setDebug (boolean b)
+  public static void setPop3SocketTimeout (int timeout)
   {
-    Debug = b;
+    pop3SocketTimeout = timeout;
+  }
+
+  public static void setSmtpSocketTimeout (int timeout)
+  {
+    smtpSocketTimeout = timeout;
+  }
+
+  public static void setPop3Debug (boolean b)
+  {
+    debugPop3 = b;
+  }
+
+  public static void setSmtpDebug (boolean b)
+  {
+    debugSmtp = b;
+  }
+
+
+  //  Receiving email via POP3
+
+  private static Session getPop3Session () throws Exception
+  {
+    //  POP3 socket factory initialization
+
+    String pop3SocFac = "org.cougaar.core.mts.email.Pop3TimeoutSocketFactory";
+
+    if (Pop3TimeoutSocketFactory.getServiceBroker() == null)
+    {
+      Pop3TimeoutSocketFactory.setServiceBroker (serviceBroker);
+      Pop3TimeoutSocketFactory.setSocketTimeout (pop3SocketTimeout);
+    }
+
+    //  Set the properties for the session and get a Session object
+
+    Properties props = new Properties();
+    props.put ("mail.pop3.socketFactory.class", pop3SocFac);
+    props.put ("mail.pop3.socketFactory.fallback", "false");
+    props.put ("mail.debug", (debugPop3 ? "true" : "false"));
+
+    Session session = Session.getDefaultInstance (props, null);
+    return session;
   }
 
   private static Store openStore (MailBox mbox) throws Exception
   {
-    // Get a Session object
+    //  Create a POP3 session
 
-    Properties props = new Properties();
-    props.put ("mail.pop3.connectiontimeout", ""+pop3ConnectionTimeout*1000);
-    Session session = Session.getDefaultInstance (props, null);
-    session.setDebug (Debug);
+    Session session = getPop3Session();
 
-    // Get a Store object and do a connect
+    //  Get a Store object and do a connect
 
     Store store = null;
 
@@ -96,41 +132,21 @@ public class MailMan
     {
       store.connect (host, port, user, password);
     }
-    else store.connect ();
+    else store.connect();
 
     return store;
   }
 
-  public static boolean checkMailBoxAccess (MailBox mbox)
+  public static boolean checkInboxAccess (MailBox inbox)
   {
     //  Check that we can establish a connection to the mail server
     //  and account specified in the given mailbox.
 
-    try
-    {
-      openStore (mbox);
-      return true;
-    }
-    catch (Exception e)
-    {
-      return false;
-    }      
-  }
-
-  public static boolean checkMailServerAccess (MailBox mbox)
-  {
-    //  Check that we can establish a connection to the mail server.
-    //  Could go farther and establish that it is an SMTP mail server.
-
-    Socket socket = null;
+    Store store = null;
 
     try
     {
-      String host = mbox.getServerHost();
-      int port = mbox.getServerPortAsInt();
-
-      socket = TimedSocket.getSocket (host, port, smtpConnectionTimeout*1000);
-
+      store = openStore (inbox);
       return true;
     }
     catch (Exception e)
@@ -139,10 +155,7 @@ public class MailMan
     }
     finally
     {
-      if (socket != null)
-      {
-        try { socket.close(); } catch (Exception e) {}
-      }
+      if (store != null) try { store.close(); } catch (Exception e) {}
     }
   }
 
@@ -170,7 +183,12 @@ public class MailMan
     if (mbox.getFolder() != null) folder = store.getFolder (mbox.getFolder());
     else                          folder = store.getDefaultFolder();
 
-    if (Debug) Logging.getLogger(MailMan.class).debug ("Mailbox: " + folder.getURLName());
+    if (folder == null)
+    {
+      throw new Exception ("Unable to get folder!");
+    }
+
+    if (debugPop3) Logging.getLogger(MailMan.class).debug ("Mailbox: " + folder.getURLName());
 
     if (!folder.isSubscribed())
     {
@@ -221,7 +239,7 @@ public class MailMan
 
         if (msgs == null) msgs = zeroMsgs;
 
-        if (Debug)  Logging.getLogger(MailMan.class).debug ("Read " + msgs.length + " message headers");
+        if (debugPop3) Logging.getLogger(MailMan.class).debug ("Read " + msgs.length + " message headers");
 
         //  Continue polling for headers in a loop if we did not get any
         //  and the poll time > 0
@@ -259,7 +277,13 @@ public class MailMan
     }
     finally 
     {
-      folder.close (false);
+      if (folder != null && folder.isOpen()) 
+      {
+        try { folder.close (false); } catch (Exception e)
+        {
+          Logging.getLogger(MailMan.class).debug ("Exception closing folder: " +e);
+        }
+      }
     }
 
     return mmh;
@@ -360,8 +384,8 @@ public class MailMan
     return readMessages (mbox, null, pollTime);
   }
 
-  public static MailMessage[] readMessages (MailBox mbox, MailFilters filters,
-       int pollTime) throws Exception
+  public static MailMessage[] readMessages (MailBox mbox, MailFilters filters, int pollTime) 
+    throws Exception
   {
     // Get and connect to a mail store
 
@@ -373,8 +397,13 @@ public class MailMan
 
     if (mbox.getFolder() != null) folder = store.getFolder (mbox.getFolder());
     else                          folder = store.getDefaultFolder();
+
+    if (folder == null)
+    {
+      throw new Exception ("Unable to get folder!");
+    }
   
-    if (Debug)  Logging.getLogger(MailMan.class).debug ("Mailbox: " + folder.getURLName());
+    if (debugPop3) Logging.getLogger(MailMan.class).debug ("Mailbox: " + folder.getURLName());
 
     if (!folder.isSubscribed())
     {
@@ -413,7 +442,6 @@ public class MailMan
 
     Message[] msgs = zeroMsgs;
     MailMessage mm[] = null;
-    boolean success = false;
 
     try
     {
@@ -426,7 +454,7 @@ public class MailMan
 
         if (msgs == null) msgs = zeroMsgs;
 
-        if (Debug) Logging.getLogger(MailMan.class).debug ("Found " + msgs.length + " messages");
+        if (debugPop3) Logging.getLogger(MailMan.class).debug ("Found " + msgs.length + " messages");
 
         //  Continue polling for messages in a loop if we did not get
         //  any messages and the poll time > 0
@@ -492,15 +520,13 @@ public class MailMan
           Logging.getLogger(MailMan.class).debug ("Got message that's not text/plain!");
         }
 
-        if (Debug) Logging.getLogger(MailMan.class).debug ((i+1)+ ".  " + mm);
+        if (debugPop3) Logging.getLogger(MailMan.class).debug ((i+1)+ ".  " + mm);
       }
 
       //  Delete read mail messages
 
       folder.setFlags (msgs, new Flags (Flags.Flag.DELETED), true);
       folder.close (true);  // true = expunge deleted messages
-
-      success = true;
     }
     catch (Exception e)
     {
@@ -508,7 +534,13 @@ public class MailMan
     }
     finally 
     {
-      if (!success) folder.close (false);  // do not delete any messages
+      if (folder != null && folder.isOpen()) 
+      {
+        try { folder.close (false); } catch (Exception e)
+        {
+          Logging.getLogger(MailMan.class).debug ("Exception closing folder: " +e);
+        }
+      }
     }
 
     //  Return
@@ -516,156 +548,144 @@ public class MailMan
     return mm;
   }
 
-  public static boolean sendMessage (MailBox mbox, MailMessage msg) throws Exception
+
+  //  Sending email via SMTP
+
+  private static Session getSmtpSession (MailBox mbox) throws Exception
   {
-    //  Get a Session object
+    //  SMTP socket factory initialization
+
+    String smtpSocFac = "org.cougaar.core.mts.email.SmtpTimeoutSocketFactory";
+
+    if (SmtpTimeoutSocketFactory.getServiceBroker() == null)
+    {
+      SmtpTimeoutSocketFactory.setServiceBroker (serviceBroker);
+      SmtpTimeoutSocketFactory.setSocketTimeout (smtpSocketTimeout);
+    }
+
+    //  Set the properties for the session and get a Session object
 
     Properties props = new Properties();
     props.put ("mail.smtp.host", mbox.getServerHost());
-    props.put ("mail.smtp.port", mbox.getServerPort());                        // Sun impl supports this
-    props.put ("mail.smtp.connectiontimeout", ""+smtpConnectionTimeout*1000);  // Sun impl supports this
-    if (Debug) props.put ("mail.debug", "true");
+    props.put ("mail.smtp.port", mbox.getServerPort());
+    props.put ("mail.smtp.socketFactory.class", smtpSocFac);
+    props.put ("mail.smtp.socketFactory.fallback", "false");
+    props.put ("mail.debug", (debugSmtp ? "true" : "false"));
 
-    Session session = Session.getInstance (props);  // note not (potentially) shared session!
-    session.setDebug (Debug);
+    Session session = Session.getInstance (props);  // note not a (potentially) shared session
+    return session;
+  }
 
-    //  Create and send the message
+  public static boolean checkOutboxAccess (MailBox outbox)
+  {
+    //  Check that we can establish a connection to the outbox mail server.
+    //  We don't currently support any SMTP server access control scheme.
+
+    Socket socket = null;
 
     try
     {
-      //  Construct mail message
-
-      Message message = new MimeMessage (session);
-
-      //  From:
-
-      String from = msg.getFrom().getMaxAddress();
-
-      if (from != null && !from.equals("")) 
-      {
-        message.setFrom (new InternetAddress (from));
-      }
-
-      //  Reply-To:
-
-      String replyTo = msg.getReplyTo().getMaxAddress();
-
-      if (replyTo != null && !replyTo.equals(""))
-      {
-        InternetAddress[] addrs = { new InternetAddress (replyTo) };
-        message.setReplyTo (addrs);
-      }
-
-      //  To:
-
-      String to = msg.getTo().getMaxAddress();
-
-      if (to != null && !to.equals(""))
-      {
-        InternetAddress[] addrs = { new InternetAddress (to) };
-        message.setRecipients (Message.RecipientType.TO, addrs);
-      }
-
-      //  Cc:
-
-      String cc = msg.getCc().getMaxAddress();
-
-      if (cc != null && !cc.equals(""))
-      {
-        InternetAddress[] addrs = { new InternetAddress (cc) };
-        message.setRecipients (Message.RecipientType.CC, addrs);
-      }
-
-      //  Bcc:
-
-      String bcc = msg.getBcc().getMaxAddress();
-
-      if (bcc != null && !bcc.equals(""))
-      {
-        InternetAddress[] addrs = { new InternetAddress (bcc) };
-        message.setRecipients (Message.RecipientType.BCC, addrs);
-      }
-
-      //  Subject:
-
-      message.setSubject (msg.getSubject());
-
-      //  Sent date
-
-      message.setSentDate (new Date());
-
-      //  Body
-
-      if (msg.getBodyContent() != null)
-      {
-        message.setText (msg.getBodyContent());  // poss setText (text, charset)
-      }
-      else if (msg.getBodyBytes() != null)
-      {
-        String encodedBytes = Base64.encodeBytes (msg.getBodyBytes()); 
-        message.setText (encodedBytes);
-
-        //System.out.println ("encodedBytes len = " + encodedBytes.length());
-        //System.out.println ("encodedBytes = " + encodedBytes);
-      }
-
-      //  Note: JavaMail allows you to only send one mail message at
-      //  a time, reconnecting with the mail server each time.
-      
-      Transport.send (message);
-
-      return true;  // msg successfuly sent
-    } 
-    catch (Exception e) 
+      getSmtpSession (outbox);  // insure socket factory initialized
+      SocketFactory socFac = SmtpTimeoutSocketFactory.getDefault();
+      socket = socFac.createSocket (outbox.getServerHost(), outbox.getServerPortAsInt());
+      return true;
+    }
+    catch (Exception e)
     {
-      if (Debug)
-      {
-        Logging.getLogger(MailMan.class).debug ("sendMessage exception: " +stackTraceToString(e));
+      return false;
+    }
+    finally
+    {
+      if (socket != null) try { socket.close(); } catch (Exception e) {}
+    }
+  }
 
-        Exception ex = e;
-        StringBuffer buf = new StringBuffer();
+  public static void sendMessage (MailBox mbox, MailMessage msg) throws Exception
+  {
+    //  Create a SMTP session
 
-        do 
-        {
-          if (ex instanceof SendFailedException) 
-          {
-            SendFailedException sfex = (SendFailedException)ex;
-            Address[] invalid = sfex.getInvalidAddresses();
-            String sp = "         ";
-            
-            if (invalid != null) 
-            {
-              buf.append ("    ** Invalid Addresses\n");
-              for (int i=0; i<invalid.length; i++) buf.append (sp +invalid[i]+ "\n");
-            }
+    Session session = getSmtpSession (mbox);
 
-            Address[] validUnsent = sfex.getValidUnsentAddresses();
-          
-            if (validUnsent != null) 
-            {
-              buf.append ("    ** ValidUnsent Addresses\n");
-              for (int i=0; i<validUnsent.length; i++) buf.append (sp +validUnsent[i] +"\n");
-            }
-          
-            Address[] validSent = sfex.getValidSentAddresses();
+    //  Create the email message
 
-            if (validSent != null) 
-            {
-              buf.append ("    ** ValidSent Addresses\n");
-              for (int i=0; i<validSent.length; i++) buf.append (sp +validSent[i]+ "\n");
-            }
-          }
-        
-          Logging.getLogger(MailMan.class).debug (buf.toString());
+    Message message = new MimeMessage (session);
 
-          if (ex instanceof MessagingException) ex = ((MessagingException)ex).getNextException();
-          else ex = null;
-        }
-        while (ex != null);
-      }
+    //  From:
+
+    String from = msg.getFrom().getMaxAddress();
+
+    if (from != null && !from.equals("")) 
+    {
+      message.setFrom (new InternetAddress (from));
     }
 
-    return false;  // msg not successfuly sent
+    //  Reply-To:
+
+    String replyTo = msg.getReplyTo().getMaxAddress();
+
+    if (replyTo != null && !replyTo.equals(""))
+    {
+      InternetAddress[] addrs = { new InternetAddress (replyTo) };
+      message.setReplyTo (addrs);
+    }
+
+    //  To:
+
+    String to = msg.getTo().getMaxAddress();
+
+    if (to != null && !to.equals(""))
+    {
+      InternetAddress[] addrs = { new InternetAddress (to) };
+      message.setRecipients (Message.RecipientType.TO, addrs);
+    }
+
+    //  Cc:
+
+    String cc = msg.getCc().getMaxAddress();
+
+    if (cc != null && !cc.equals(""))
+    {
+      InternetAddress[] addrs = { new InternetAddress (cc) };
+      message.setRecipients (Message.RecipientType.CC, addrs);
+    }
+
+    //  Bcc:
+
+    String bcc = msg.getBcc().getMaxAddress();
+
+    if (bcc != null && !bcc.equals(""))
+    {
+      InternetAddress[] addrs = { new InternetAddress (bcc) };
+      message.setRecipients (Message.RecipientType.BCC, addrs);
+    }
+
+    //  Subject:
+
+    message.setSubject (msg.getSubject());
+
+    //  Sent date
+
+    message.setSentDate (new Date());
+
+    //  Body
+
+    if (msg.getBodyContent() != null)
+    {
+      message.setText (msg.getBodyContent());  // poss setText (text, charset)
+    }
+    else if (msg.getBodyBytes() != null)
+    {
+      String encodedBytes = Base64.encodeBytes (msg.getBodyBytes()); 
+      message.setText (encodedBytes);
+
+      //System.out.println ("encodedBytes len = " + encodedBytes.length());
+      //System.out.println ("encodedBytes = " + encodedBytes);
+    }
+
+    //  We are currently only sending one mail message at a time, reconnecting 
+    //  with the mail server each time.
+
+    Transport.send (message);
   }
 
   private static String stackTraceToString (Exception e)

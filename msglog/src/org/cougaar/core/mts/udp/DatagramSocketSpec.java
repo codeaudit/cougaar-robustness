@@ -118,6 +118,6 @@ public class DatagramSocketSpec implements java.io.Serializable
 
   public String toString ()
   {
-    return "datagramSocket[" +host+ ":" +port+ "]";
+    return "DatagramSocketSpec[" +host+ ":" +port+ "]";
   }
 }

@@ -116,13 +116,16 @@ public class MessageAckingAspect extends StandardAspect
         //  Kick off worker threads
 
         messageResender = new MessageResender (this);
-        threadService().getThread (this, messageResender, "MessageResender").start();
+        // threadService().getThread (this, messageResender, "MessageResender").start();
+        (new Thread (messageResender, "MessageResender")).start();
 
         pureAckSender = new PureAckSender (this);
-        threadService().getThread (this, pureAckSender, "PureAckSender").start();
+        // threadService().getThread (this, pureAckSender, "PureAckSender").start();
+        (new Thread (pureAckSender, "PureAckSender")).start();
 
         pureAckAckSender = new PureAckAckSender (this);
-        threadService().getThread (this, pureAckAckSender, "PureAckAckSender").start();
+        // threadService().getThread (this, pureAckAckSender, "PureAckAckSender").start();
+        (new Thread (pureAckAckSender, "PureAckAckSender")).start();
 
         instance = this;
       }
@@ -276,7 +279,7 @@ public class MessageAckingAspect extends StandardAspect
 
   //  receivedAcksTable
 
-  static void addReceivedAcks (String node, Vector acks)
+  public static void addReceivedAcks (String node, Vector acks)
   {
     if (acks == null || acks.isEmpty()) return;
 
@@ -425,7 +428,7 @@ public class MessageAckingAspect extends StandardAspect
     }
   }
 
-  static void removeAcksToSend (String node, Vector acks)
+  public static void removeAcksToSend (String node, Vector acks)
   {
     if (acks == null || acks.isEmpty()) return;
 

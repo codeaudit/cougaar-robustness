@@ -159,6 +159,11 @@ public class MailBox implements java.io.Serializable
 
   public String toString ()
   {
+    return "MailBox[" +protocol+ "," +serverHost+ ":" +serverPort+ "," +username+ "]";
+  }
+
+  public String toStringFull ()
+  {
     return "[" + "\n" +
            "     protocol= " + protocol + "\n" +
            "   serverHost= " + serverHost + "\n" +

@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD
+ * 22 Sep 2002: Revamp for new serialization & socket closer. (OBJS)
  * 26 Apr 2002: Created from socket link protocol. (OBJS)
  */
 
@@ -29,6 +30,7 @@ import java.net.*;
 import java.util.*;
 
 import org.cougaar.core.mts.*;
+import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.ThreadService;
 import org.cougaar.core.thread.Schedulable;
@@ -43,11 +45,12 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 {
   public static final String PROTOCOL_TYPE = "-UDP";
 
-  private static LoggingService log;
-  private static boolean showTraffic;
-
   private static final String localhost;
+  private static final int socketTimeout;
 
+  private static LoggingService log;
+  private SocketClosingService socketCloser;
+  private static boolean showTraffic;
   private DatagramSocketSpec datagramSocketSpecs[];
   private DatagramSocketSpec myDatagramSocketSpec;
   private Vector datagramSocketListeners;
@@ -59,6 +62,9 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 
     String s = "org.cougaar.message.protocol.udp.localhost";
     localhost = System.getProperty (s, getLocalHost());
+
+    s = "org.cougaar.message.protocol.udp.incoming.socketTimeout";
+    socketTimeout = Integer.valueOf(System.getProperty(s,"10000")).intValue();
   }
  
   public IncomingUDPLinkProtocol ()
@@ -81,7 +87,14 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
     log = loggingService;
 
     if (log.isInfoEnabled()) log.info ("Creating " + this);
-    if (log.isInfoEnabled()) log.info ("Using " +localhost+ " as name of local host");
+    if (log.isInfoEnabled()) log.info ("Using " +localhost+ " as the name of the local host");
+
+    if (socketTimeout > 0)
+    {
+      ServiceBroker sb = getServiceBroker();
+      socketCloser = (SocketClosingService) sb.getService (this, SocketClosingService.class, null);
+      if (socketCloser == null) log.error ("Cannot do socket timeouts - socket closing service not available!");
+    }
 
     String s = "org.cougaar.core.mts.ShowTrafficAspect";
     showTraffic = (getAspectSupport().findAspect(s) != null);
@@ -206,7 +219,8 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
       listener = new DatagramSocketListener (port);
       port = listener.getPort();  // port possibly updated
 
-      Schedulable thread = threadService().getThread (this, listener, "DatagramIncomingSock_"+port);
+      // Schedulable thread = threadService().getThread (this, listener, "DatagramIncomingSock_"+port);
+      Thread thread = new Thread (listener, "DatagramIncomingSock_"+port);
       thread.start();
 
       registerDatagramSocketSpec (localhost, port);
@@ -254,15 +268,17 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
   private class DatagramSocketListener implements Runnable
   { 
     private DatagramSocket datagramSocket;
-    private DatagramPacket datagramPacket;
+    private DatagramPacket packet;
     private boolean quitNow;
-
+    private String sockString;
+    
     public DatagramSocketListener (int port) throws IOException
     {
       datagramSocket = new DatagramSocket (port);
+      if (log.isDebugEnabled()) sockString = datagramSocketToString (datagramSocket);
 
       byte[] buf = new byte[64*1024];
-      datagramPacket = new DatagramPacket (buf, buf.length);
+      packet = new DatagramPacket (buf, buf.length);
     }
 
     public int getPort ()
@@ -287,33 +303,14 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 
       while (!quitNow)
       {
-        AttributedMessage msg = null;
-
         try 
         {
-          //  Wait for an incoming packet
+          //  Sit and wait for an incoming UDP packet
 
-          datagramSocket.receive (datagramPacket);
+          if (log.isDebugEnabled()) log.debug ("Waiting for msg on " +sockString);
+          datagramSocket.receive (packet);
+          if (log.isDebugEnabled()) log.debug ("Got msg on " +sockString);
           if (showTraffic) System.err.print ("<U");
-
-          //  Convert packet into a Cougaar message
-
-          Object obj = getObjectFromBytes (datagramPacket.getData());
-
-          try
-          {
-            msg = (AttributedMessage) obj;  // possible cast exception
-          }
-          catch (Exception e)
-          {
-            if (log.isWarnEnabled()) log.warn ("Got non AttributedMessage msg! (ignored): " +e);
-            continue;
-          }
-
-          if (log.isDebugEnabled()) 
-          {
-            log.debug ("From " +showAddress(datagramPacket)+ " read " +MessageUtils.toString(msg));
-          }
         }
         catch (Exception e)
         { 
@@ -330,7 +327,36 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
           break;
         }
 
-        //  Deliver the message
+        //  Deserialize the packet into a Cougaar message
+
+        AttributedMessage msg = null;
+
+        try
+        {
+          msg = MessageSerializationUtils.readMessageFromByteArray (packet.getData());
+        }
+        catch (MessageIntegrityException e)
+        {
+          if (log.isWarnEnabled()) log.warn ("Message integrity exception deserializing msg (msg ignored)");
+          continue;
+        }
+        catch (ClassCastException e)
+        {
+          if (log.isWarnEnabled()) log.warn ("Got non-AttributedMessage msg (msg ignored): " +e);
+          continue;
+        }
+        catch (Exception e)
+        {
+          if (log.isWarnEnabled()) log.warn ("Deserialization exception (msg ignored): " +e);
+          continue;
+        }
+
+        if (log.isDebugEnabled()) 
+        {
+          log.debug ("From " +sockString+ " read " +MessageUtils.toString(msg));
+        }
+
+        //  Deliver the message.  Currently nobody to send exceptions to, so we just log them.
 
         try
         {
@@ -347,6 +373,8 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
             log.warn ("Exception delivering " +MessageUtils.toString(msg)+ ": " +stackTraceToString(e));
         }  
       }
+
+      //  Cleanup
 
       if (datagramSocket != null)
       {
@@ -382,26 +410,12 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
     }
   }
 
-  private static Object getObjectFromBytes (byte[] data) 
+  private static String datagramSocketToString (DatagramSocket ds)
   {
-	ObjectInputStream ois = null;
-	Object obj = null;
-
-	try 
-    {
-      ByteArrayInputStream bais = new ByteArrayInputStream (data);
-	  ois = new ObjectInputStream (bais);
-	  obj = ois.readObject();
-	} 
-    catch (Exception e) 
-    {
-      if (log.isWarnEnabled()) log.warn ("Deserialization exception: " +stackTraceToString(e));
-      return null;
-	}
-	
-	try { ois.close(); } catch (IOException e) {}
-
-	return obj;
+    if (ds == null) return "null";
+    boolean conn = ds.isConnected();
+    String data = conn ? ds.getInetAddress()+":"+ds.getPort() : "unconnected";
+    return "DatagramSocket[" +data+ "]";
   }
 
   private static String showAddress (DatagramPacket dp)

@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2002 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,35 +19,21 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 22 Oct  2001: Created. (OBJS)
+ * 17 Sep 2002: Created. (OBJS)
  */
 
-package org.cougaar.core.mts.socket;
-
-import java.io.*;
-import java.net.Socket;
+package org.cougaar.core.mts;
 
 
-/**
- *  Remove stream header from java.io.ObjectOutputStream.
-**/
-
-public class NoHeaderOutputStream extends ObjectOutputStream
+public class MessageIntegrityException extends Exception 
 {
-  private Socket socket;
-
-  public NoHeaderOutputStream (Socket socket) throws IOException
+  public MessageIntegrityException (String msg)
   {
-    super (socket.getOutputStream());
-    this.socket = socket;
+	super (msg);
   }
 
-  protected void writeStreamHeader () throws IOException
-  {}
-
-  public void close () throws IOException
+  public MessageIntegrityException (Throwable cause)
   {
-    super.close();
-    socket.close();
+	super (cause);
   }
 }

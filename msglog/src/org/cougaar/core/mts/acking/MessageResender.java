@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 25 Sep 2002: Revamped queue adds scheduling. (OBJS)
  * 12 Aug 2002: Reworked to resend autonomously. Renamed from AckWaiter. (OBJS)
  * 08 Jun 2002: Revamped and streamlined for 9.2.x. (OBJS)
  * 23 Apr 2002: Split out from MessageAckingAspect. (OBJS)
@@ -40,11 +41,12 @@ import org.cougaar.core.thread.CougaarThread;
 
 class MessageResender implements Runnable
 {
+  private static final int RESEND_DELAY_INCREMENT = 1000;
+
   private MessageAckingAspect aspect;
   private LoggingService log;
   private Vector queue;
   private AttributedMessage messages[];
-  private boolean haveNewData;
   private Comparator deadlineSort;
   private long minResendDeadline;
 
@@ -53,9 +55,8 @@ class MessageResender implements Runnable
     this.aspect = aspect;
     queue = new Vector();
     messages = new AttributedMessage[32];
-    haveNewData = false;
     deadlineSort = new DeadlineSort();
-    minResendDeadline = Long.MAX_VALUE;
+    minResendDeadline = 0;
   }
 
   public void add (AttributedMessage msg) 
@@ -64,8 +65,6 @@ class MessageResender implements Runnable
 
     if (MessageUtils.isSomePureAckMessage (msg)) return;
     if (MessageUtils.getMessageNumber(msg) == 0) return;
-
-    if (debug()) log.debug ("MessageResender: adding " +MessageUtils.toString(msg));
 
     //  Possibly add (or remove) the message to (from) the agent state
 
@@ -118,11 +117,16 @@ class MessageResender implements Runnable
 
     //  Add the message to the waiting queue
 
+    Ack ack = MessageUtils.getAck (msg);
+    long deadline = ack.getSendTime() + ack.getResendTimeout() + ack.getResendDelay();
+
     synchronized (queue) 
     {
       queue.add (msg);
-      ding();  // set minResendDeadline if nothing else
+      offerNewResendDeadline (deadline);
     }
+
+    if (debug()) log.debug ("MessageResender: added timeout=" +(deadline-now())+ " " +MessageUtils.toString(msg));
   }
 
   public void remove (AttributedMessage msg) 
@@ -131,8 +135,6 @@ class MessageResender implements Runnable
 
     if (MessageUtils.isSomePureAckMessage (msg)) return;
     if (MessageUtils.getMessageNumber(msg) == 0) return;
-
-    if (debug()) log.debug ("MessageResender: removing " +MessageUtils.toString(msg));
 
     //  Possibly remove the message from the agent state
 
@@ -161,12 +163,28 @@ class MessageResender implements Runnable
       if (removed && debug()) log.debug ("MessageResender: removed from agentState: " +MessageUtils.toString(msg));
     }
 
-    //  Remove the message from the waiting queue.  This can raise the minResendDeadline, 
-    //  but doesn't seem like enough of an event to do a ding().
+    //  Remove the message from the waiting queue
 
     synchronized (queue) 
     {
       queue.remove (msg);
+      if (queue.size() == 0) offerNewResendDeadline (0);
+    }
+
+    if (debug()) log.debug ("MessageResender: removed " +MessageUtils.toString(msg));
+  }
+
+  private void offerNewResendDeadline (long deadline)
+  {
+    if (deadline < 0) return;
+
+    synchronized (queue) 
+    {
+      if (deadline < minResendDeadline || (minResendDeadline == 0 && deadline > 0))
+      {
+        minResendDeadline = deadline;
+        queue.notify();
+      }
     }
   }
 
@@ -179,32 +197,47 @@ class MessageResender implements Runnable
       sched = queue.contains (msg);  // msg must already be on queue
     }
 
-    if (debug()) // don't want to log inside sync (log has alien methods)
+    if (!sched)
     {
-      String s = (sched ? "S" : "DID NOT s") + "chedule immediate resend ";
-      log.debug ("MessageResender: " + s + MessageUtils.toString(msg));
+      if (debug())
+      {
+        String s = "Msg not on queue, immediate resend abandoned: ";
+        log.debug ("MessageResender: " +s+ MessageUtils.toString(msg));
+      }
+      
+      return false;
     }
 
-    if (sched)
+    Ack ack = MessageUtils.getAck (msg);
+    int highTryCount = ack.getNumberOfLinkChoices();
+
+    if (ack.getSendTry() > highTryCount) 
     {
-      Ack ack = MessageUtils.getAck (msg);
-      ack.setSendTime (now() - (ack.getResendTimeout() + ack.getResendDelay() + 1));
-      ding();
+      if (debug())
+      {
+        String s = "Msg has high send try count, immediate resend abandoned: ";
+        log.debug ("MessageResender: " +s+ MessageUtils.toString(msg));
+      }
+      
+      ack.addResendDelay (RESEND_DELAY_INCREMENT);
+      return false;
     }
 
-    return sched;
+    if (debug())
+    {
+      String s = "Scheduling immediate resend: ";
+      log.debug ("MessageResender: " +s+ MessageUtils.toString(msg));
+    }
+    
+    ack.setSendTime (now() - (ack.getResendTimeout() + ack.getResendDelay() + 1));
+    ding();
+
+    return true;
   }
 
   public void ding ()
   {
-    //  We get dinged when new messages are added to our queue and when
-    //  new acks are received by the ack backend.
-
-    synchronized (queue) 
-    {
-      haveNewData = true;  // new msgs or acks
-      queue.notify();
-    }
+    offerNewResendDeadline (0);  // cause the waiting queue to review its holdings asap
   }
 
   private boolean debug ()
@@ -217,7 +250,7 @@ class MessageResender implements Runnable
   {
     while (true)
     {
-      String s = "MessageResender: Unexpected exception, restarting";
+      String s = "MessageResender: Unexpected exception, restarting thread";
 
       try
       { 
@@ -228,12 +261,12 @@ class MessageResender implements Runnable
         catch (Exception e) 
         {
           s += ": " + stackTraceToString (e);
-          if (log.isWarnEnabled()) log.warn (s);
+          log.error (s);
         }
       }
       catch (Exception e)
       {
-        try { System.err.println (s); } catch (Exception ex) { /* !! */ }
+        try { e.printStackTrace(); } catch (Exception ex) { /* !! */ }
       }
     }
   }
@@ -251,29 +284,17 @@ class MessageResender implements Runnable
       {
         while (true)
         {
-          //  If we have new data (new msgs and/or acks) and a non-empty msg queue, 
-          //  don't wait.  New data can arrive during waiting or during queue processing.
-
-          if (haveNewData)
-          {
-            haveNewData = false;
-            if (queue.size() > 0) break;
-          }
-
           //  Check how long to wait before we need to satisfy a resend deadline
 
           long waitTime = 0;  // 0 = wait till notify (or interrupt)
 
           if (queue.size() > 0)
           {
-            if (minResendDeadline < Long.MAX_VALUE)
-            {
-              waitTime = minResendDeadline - now();
-              if (waitTime <= 0) break;
-            }
+            waitTime = minResendDeadline - now();
+            if (waitTime <= 0) { minResendDeadline = 0;  break; }
           }
 
-          //  Wait for a specified time or until notify
+          //  Wait until timeout, notify, or interrupt
 
           try { queue.wait (waitTime); } catch (Exception e) {}
         }
@@ -284,7 +305,7 @@ class MessageResender implements Runnable
 
 // HACK - sync all the code to the queue so not caught out below with attribute
 // changes in the DestinationQueue.
-//    }
+//    }  <- formerly sync ended here
 
       //  Next we try to match the messages with the acks we've collected so far.
       //  Possible many-to-many relationship between the messages and the acks.
@@ -329,10 +350,8 @@ class MessageResender implements Runnable
         }
       }
       
-      //  For any remaining un-acked messages we need to decide if
-      //  it is time to try to resend the message.
-
-      minResendDeadline = Long.MAX_VALUE;
+      //  For any remaining un-acked messages we need to decide if it is time
+      //  to resend the message.
 
       for (int i=0; i<len; i++) if (messages[i] != null)
       {
@@ -345,8 +364,8 @@ class MessageResender implements Runnable
         long resendDeadline = ack.getSendTime() + timeout;
         long timeLeft = resendDeadline - now();
 
-        if (debug()) log.debug ("MessageResender: Msg " +MessageUtils.getMessageNumber(msg)+
-          ": timeout=" +timeout+ "  timeLeft=" +timeLeft+ "  " +MessageUtils.toShortSequenceID(msg));
+        if (debug()) log.debug ("MessageResender: timeLeft=" +timeLeft+ "  timeout=" +timeout+ 
+          "  Msg " +MessageUtils.getMessageNumber(msg)+ ": " +MessageUtils.toShortSequenceID(msg));
 
         if (timeLeft <= 0)
         {
@@ -360,18 +379,22 @@ class MessageResender implements Runnable
 
           //  Start adding delay to resending this message if it keeps coming back around
 
-          int highSendCount = ack.getNumberOfLinkChoices() + 1;
-          if (ack.getSendCount() > highSendCount) ack.addResendDelay (500);
+          int highSendCount = ack.getNumberOfLinkChoices();
+          if (ack.getSendCount() > highSendCount) ack.addResendDelay (RESEND_DELAY_INCREMENT);
         }
         else
         {
-          if (resendDeadline < minResendDeadline) minResendDeadline = resendDeadline;
+          //  Since the deadlines are time-ordered no other resends will (thread willing)
+          //  occur in this go round, so we can quit if we want to.
+
+          offerNewResendDeadline (resendDeadline);
+          if (!debug()) break;  // quit if not showing queue review
         }
       }
 
 // HACK - sync all the code to the queue so not caught out below with attribute
 // changes in the DestinationQueue (see above).
-      }
+    }  // temp sync end here
 
       Arrays.fill (messages, null);  // release references
     }

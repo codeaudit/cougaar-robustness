@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 27 Sep 2002: Add reception exception and inband ack creator. (OBJS)
  * 23 Apr 2002: Split out from MessageAckingAspect. (OBJS)
  * 17 May 2001: Created. (OBJS)
  */
@@ -30,6 +31,8 @@ import org.cougaar.core.mts.*;
 
 public class PureAckMessage extends AttributedMessage
 {
+  private Exception receptionException;
+
   public PureAckMessage () {}  // needed for incoming deserialization
 
   public PureAckMessage (AttributedMessage msg, PureAck pureAck)
@@ -51,9 +54,27 @@ public class PureAckMessage extends AttributedMessage
     pureAck.setMsg (this);
   }
 
+  public static PureAckMessage createInbandPureAckMessage (AttributedMessage msg)
+  {
+    PureAck pureAck = new PureAck();
+    String fromNode = MessageUtils.getFromAgentNode (msg);
+    pureAck.setLatestAcks (MessageAckingAspect.getAcksToSend (fromNode));
+    return new PureAckMessage (msg, pureAck);
+  }
+
   public PureAckMessage (PureAckMessage pureAckMsg)
   {
     super (pureAckMsg);
+  }
+
+  public void setReceptionException (Exception e)
+  {
+    receptionException = e;
+  }
+
+  public Exception getReceptionException ()
+  {
+    return receptionException;
   }
 
   public String toString ()

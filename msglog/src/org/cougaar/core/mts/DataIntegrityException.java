@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2002 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,25 +19,21 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 22 Oct  2001: Created. (OBJS)
+ * 17 Sep 2002: Created. (OBJS)
  */
 
-package org.cougaar.core.mts.email;
-
-import java.io.*;
+package org.cougaar.core.mts;
 
 
-/**
- *  Remove stream header from java.io.ObjectInputStream.
-**/
-
-public class NoHeaderInputStream extends ObjectInputStream
+public class DataIntegrityException extends Exception 
 {
-  public NoHeaderInputStream (InputStream in) throws IOException, StreamCorruptedException
+  public DataIntegrityException (String msg)
   {
-    super (in);
+	super (msg);
   }
 
-  protected void readStreamHeader () throws IOException, StreamCorruptedException
-  {}
+  public DataIntegrityException (Throwable cause)
+  {
+	super (cause);
+  }
 }

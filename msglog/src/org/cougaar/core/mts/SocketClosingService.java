@@ -19,27 +19,26 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 17 Aug 2002: Created. (OBJS)
+ * 19 Sep 2002: Created. (OBJS)
  */
 
-package org.cougaar.core.mts.socket;
+package org.cougaar.core.mts;
+
+import java.net.Socket;
+import java.net.DatagramSocket;
+
+import org.cougaar.core.component.Service;
 
 
-/**
- *  Wrapper class for a byte array.
- */ 
-
-public class ByteArrayObject implements java.io.Serializable
+public interface SocketClosingService extends Service
 {
-  private byte[] bytes;
+  public void scheduleClose (Socket socket, int timeout);
+  public void scheduleClose (DatagramSocket socket, int timeout);
 
-  public ByteArrayObject (byte[] bytes)
-  {
-    this.bytes = bytes;
-  }
+  public void scheduleClose (Socket socket, long deadline);
+  public void scheduleClose (DatagramSocket socket, long deadline);
 
-  public byte[] getBytes ()
-  {
-    return bytes;
-  }
+  public void unscheduleClose (Socket socket);
+  public void unscheduleClose (DatagramSocket socket);
 }
+

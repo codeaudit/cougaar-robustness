@@ -28,9 +28,12 @@ package org.cougaar.core.mts.udp;
 import java.io.*;
 import java.util.*;
 import java.net.*;
+import java.security.MessageDigest;
 
 import org.cougaar.core.mts.*;
 import org.cougaar.core.service.LoggingService;
+import org.cougaar.core.service.ThreadService;
+import org.cougaar.core.component.ServiceBroker;
 
 /**
  *  Outgoing UDP Link Protocol - send messages via UDP
@@ -39,11 +42,14 @@ import org.cougaar.core.service.LoggingService;
 public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
 {
   public static final String PROTOCOL_TYPE = "-UDP";
-  public static final int    MAX_UDP_MSG_SIZE = 64*1024;
+  public static final int    MAX_UDP_MSG_SIZE = (64*1024)-128;
 
   private static final int protocolCost;
+  private static final int socketTimeout;
+  private static final boolean embedMessageDigest;
 
   private LoggingService log;
+  private SocketClosingService socketCloser;
   private Hashtable specCache, addressCache;
   private HashMap links;
 
@@ -53,6 +59,12 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
 
     String s = "org.cougaar.message.protocol.udp.cost";  // one way
     protocolCost = Integer.valueOf(System.getProperty(s,"4000")).intValue();  // was 750
+
+    s = "org.cougaar.message.protocol.udp.outgoing.socketTimeout";
+    socketTimeout = Integer.valueOf(System.getProperty(s,"5000")).intValue();
+
+    s = "org.cougaar.message.protocol.udp.outgoing.embedMessageDigest";
+    embedMessageDigest = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
   }
  
   public OutgoingUDPLinkProtocol ()
@@ -68,6 +80,13 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
 
     log = loggingService;
     if (log.isInfoEnabled()) log.info ("Creating " + this);
+
+    if (socketTimeout > 0)
+    {
+      ServiceBroker sb = getServiceBroker();
+      socketCloser = (SocketClosingService) sb.getService (this, SocketClosingService.class, null);
+      if (socketCloser == null) log.error ("Cannot do socket timeouts - SocketClosingService not available!");
+    }
 
     if (startup() == false)
     {
@@ -186,6 +205,7 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
   {
     private MessageAddress destination;
     private DatagramSocket datagramSocket;
+    private String sockString = null;
 
     public UDPOutLink (MessageAddress dest) 
     {
@@ -254,7 +274,7 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
       //  Send message via udp
 
       boolean success = false;
-      Exception save = null;
+      Exception ex = null;
 
       try 
       {
@@ -262,8 +282,8 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
       } 
       catch (Exception e) 
       {
-        if (log.isDebugEnabled()) log.debug ("sendMessage: " +stackTraceToString(e));
-        save = e;
+        if (log.isDebugEnabled()) log.debug ("sendMessage exception: " +stackTraceToString(e));
+        ex = e;
       }
 
       //  Dump our cached data on failed sends and throw an exception
@@ -271,7 +291,7 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
       if (success == false)
       {
         dumpCachedData();
-        Exception e = (save==null ? new Exception ("UDP sendMessage unsuccessful") : save);
+        Exception e = (ex != null ? ex : new Exception ("UDP sendMessage unsuccessful"));
         throw new CommFailureException (e);
       }
 
@@ -290,12 +310,17 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
       //  NOTE:  UDP is an unreliable communications protocol.  We just send the message
       //  on its way and maybe it gets there.  Acking will tell us if it does or not.
 
-      //  Serialize the message into a byte array
+      //  Serialize the message into a byte array.  Optionally help insure message integrity
+      //  via a message digest (eg. an embedded MD5 hash of the message).
 
-      byte msgBytes[] = toBytes (msg);
+      MessageDigest digest = (embedMessageDigest ? MessageDigest.getInstance("MD5") : null);
+      byte msgBytes[] = MessageSerializationUtils.writeMessageToByteArray (msg, digest);
       if (msgBytes == null) return false;
 
       //  Make sure the message will fit into the 64 KB datagram packet size limitation
+      //  NOTE:  While 64 KB is the theoretical maximum, the practical maximum may be 
+      //  much smaller, such as perhaps 8 KB.  Will need to add code to monitor & test
+      //  the actual largest msg that can be successfully sent to a particular destination.
 
       if (msgBytes.length >= getMaxMessageSizeInBytes())
       {
@@ -313,18 +338,44 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
 
       InetAddress addr = spec.getInetAddress();
       int port = spec.getPortAsInt();
-      DatagramPacket dp = new DatagramPacket (msgBytes, msgBytes.length, addr, port); 
+      DatagramPacket packet = new DatagramPacket (msgBytes, msgBytes.length, addr, port); 
 
-      //  Make and connect new socket as needed
+      //  Make and connect a new datagram socket as needed
+      //  About connecting datagram sockets from the JavaDoc:
 
-      if (datagramSocket == null) 
+      /*  Connects the socket to a remote address for this socket. When a socket is connected 
+          to a remote address, packets may only be sent to or received from that address. 
+          By default a datagram socket is not connected.
+
+          If the remote destination to which the socket is connected does not exist, or is 
+          otherwise unreachable, and if an ICMP destination unreachable packet has been 
+          received for that address, then a subsequent call to send or receive may throw a 
+          PortUnreachableException. Note, there is no guarantee that the exception will be 
+          thrown.
+
+          A caller's permission to send and receive datagrams to a given host and port are 
+          checked at connect time. When a socket is connected, receive and send will not 
+          perform any security checks on incoming and outgoing packets, other than matching 
+          the packet's and the socket's address and port. On a send operation, if the 
+          packet's address is set and the packet's address and the socket's address do not 
+          match, an IllegalArgumentException will be thrown. 
+      */
+
+      if (datagramSocket == null || datagramSocket.isClosed()) 
       {
-        if (log.isDebugEnabled()) 
-          log.debug ("New datagram socket to " +addr+ ":" +port+ " for " + this);
+        if (log.isDebugEnabled()) log.debug ("Creating datagram socket to " +destination+ " with " +spec);
 
         datagramSocket = new DatagramSocket();
+        scheduleSocketClose (datagramSocket, socketTimeout);
         datagramSocket.connect (addr, port);  // new in Java 1.4
+
+        if (log.isDebugEnabled()) 
+        {
+          sockString = datagramSocketToString (datagramSocket);
+          log.debug ("Created datagram socket " +sockString);
+        }
       }
+      else scheduleSocketClose (datagramSocket, socketTimeout);
 
       //  Send the message.  If the target agent has moved to another node,
       //  we may get an IllegalArgumentException because the socket is connected
@@ -335,7 +386,15 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
       {
         try
         {
-          datagramSocket.send (dp);
+          if (log.isDebugEnabled()) 
+            log.debug ("Sending " +msgBytes.length+ " byte msg over " +sockString);
+
+          datagramSocket.send (packet);
+
+          if (log.isDebugEnabled()) 
+            log.debug ("Sending " +msgBytes.length+ " byte msg done " +sockString);
+
+          unscheduleSocketClose (datagramSocket);
           break; // success
         }
         catch (Exception e)
@@ -343,8 +402,8 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
           if (tryN == 1 && e instanceof IllegalArgumentException)
           {
             if (log.isDebugEnabled()) 
-              log.debug ("Reconnecting datagram socket to " +addr+ ":" +port+ " for " + this);
-
+              log.debug ("Reconnecting " +sockString+ " to " +spec+ " for " +destination);
+                
             datagramSocket.connect (addr, port);
           }
           else 
@@ -359,32 +418,23 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
       return true;  // send successful
     }
 
-    private synchronized byte[] toBytes (AttributedMessage msg)  // serialization has needed sync before
+    private void scheduleSocketClose (DatagramSocket socket, int timeout)
     {
-      ByteArrayOutputStream baos = new ByteArrayOutputStream();
-      ObjectOutputStream oos = null;
-
-      try 
-      {
-        oos = new ObjectOutputStream (baos);
-        oos.writeObject (msg);
-        oos.flush();
-      } 
-      catch (Exception e) 
-      {
-        if (log.isWarnEnabled()) log.warn ("Serialization exception for " +MessageUtils.toString(msg)+
-          ": " +stackTraceToString(e));
-        return null;
-      }
-
-      try 
-      {
-        oos.close();
-      } 
-      catch (Exception e) {}
-
-      return baos.toByteArray();
+      if (socketCloser != null) socketCloser.scheduleClose (socket, timeout);
     }
+
+    private void unscheduleSocketClose (DatagramSocket socket)
+    {
+      if (socketCloser != null) socketCloser.unscheduleClose (socket);
+    }
+  }
+
+  private static String datagramSocketToString (DatagramSocket ds)
+  {
+    if (ds == null) return "null";
+    boolean conn = ds.isConnected();
+    String data = conn ? ds.getInetAddress()+":"+ds.getPort() : "unconnected";
+    return "DatagramSocket[" +data+ "]";
   }
 
   private static String stackTraceToString (Exception e)

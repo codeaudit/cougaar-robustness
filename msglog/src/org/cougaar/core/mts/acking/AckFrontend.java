@@ -232,7 +232,7 @@ class AckFrontend extends DestinationLinkDelegateImplBase
         buf.append (MessageUtils.toShortSequenceID(msg));
 
         sendInfo = buf.toString();
-        log.info (sendInfo + " [try]");         
+        log.info (sendInfo + " (try)");         
       }
 
       if (log.isDebugEnabled())
@@ -270,8 +270,8 @@ class AckFrontend extends DestinationLinkDelegateImplBase
       //  we notify the message resender to reschedule the send.  Either way, a new link 
       //  selection will be made and the message will comes back thru and try again.
 
-      if (log.isInfoEnabled())  log.info (sendInfo + " [fail]");
-      if (log.isDebugEnabled()) log.debug ("Failure sending " +msgString+ ":\n" +stackTraceToString(e));
+      if (log.isInfoEnabled())  log.info (sendInfo + " (fail)");
+      if (log.isDebugEnabled()) log.debug ("Failure sending " +msgString+ ":\n" +e);
 
       ack.decrementSendCount();  // didn't actually send
 
@@ -288,6 +288,10 @@ class AckFrontend extends DestinationLinkDelegateImplBase
 
         if (ack.isAck())
         {
+          //  The resend is actually not so immediate if we have been trying 
+          //  for a while - delay is added in to handle the case when no link
+          //  able to send out messages.
+
           MessageAckingAspect.messageResender.scheduleImmediateResend (msg);
           return success;  // not really of course
         }
@@ -333,7 +337,7 @@ class AckFrontend extends DestinationLinkDelegateImplBase
       if (log.isDebugEnabled()) 
       {
         long t = pureAck.getSendDeadline() - now();
-        log.debug ("AckBackend: Resched next pure ack msg with timeout of " +t+ ": " +msgString);
+        log.debug ("AckFrontend: Resched next pure ack msg with timeout of " +t+ ": " +msgString);
       }
 
       MessageAckingAspect.pureAckSender.add ((PureAckMessage)msg);

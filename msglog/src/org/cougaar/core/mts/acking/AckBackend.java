@@ -302,23 +302,11 @@ Mobility issue: arriving agent is now local, msg was for it when it was on other
     //  For ackable messages we send back pure ack messages, and for pure ack 
     //  messages we send back pure ack-ack messages.  Howecer, if the link
     //  the received message came in on is excluded from acking, then we won't
-    //  send back any kind of pure ack messages.
+    //  send back a pure ack message because that message has already been acked.
 
-    //  Mobility Note:  If a pure ack message came to us addressed to another node 
-    //  (assumed to be the old node) we skip sending back an ack-ack.
-
-    boolean skip = false;
-  
-    if (ack.isPureAck() && !MessageUtils.getToAgentNode(msg).equals(aspect.getThisNode()))
+    if (ack.isAck() && msgNum != 0)
     {
-      if (log.isDebugEnabled()) log.debug ("AckBackend: Skipping ack-ack scheduling for ack not " +
-        "addressed to us: " +msgString);
-      skip = true;
-    }
-
-    if (!skip && !MessageAckingAspect.isExcludedLink (ack.getSendLink()))
-    {
-      if (ack.isAck() && msgNum != 0)
+      if (!MessageAckingAspect.isExcludedLink (ack.getSendLink()))
       {
         //  Create a pure ack for this message add it to our pure ack sender.  The sender ensures
         //  pure acks for received  messages get sent if there is not enough regular message 
@@ -340,7 +328,22 @@ Mobility issue: arriving agent is now local, msg was for it when it was on other
 
         MessageAckingAspect.pureAckSender.add (pureAckMsg);
       }
-      else if (ack.isPureAck())
+    }
+    else if (ack.isPureAck())
+    {
+      //  Mobility Note:  If a pure ack message came to us addressed to another node 
+      //  (assumed to be the old node) we skip sending back an ack-ack.
+
+      boolean skip = false;
+  
+      if (!MessageUtils.getToAgentNode(msg).equals(aspect.getThisNode()))
+      {
+        if (log.isDebugEnabled()) log.debug ("AckBackend: Skipping ack-ack scheduling for " +
+          "ack not addressed to us: " +msgString);
+        skip = true;
+      }
+
+      if (!skip)
       {
         //  Create an ack-ack for this ack message and add it to our pure ack-ack sender.  
         //  The sender ensures acks-acks for received acks get sent if there is not 

@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 24 Sep 2002: Add new serialization & socket closer support. (OBJS)
  * 18 Aug 2002: Various enhancements for Cougaar 9.4.1 release. (OBJS)
  * 18 Jun 2002: Restored Node name to outboxes properties to facilitate
                 CSMART test configuration. (OBJS)
@@ -52,6 +53,7 @@ import java.io.*;
 import java.util.*;
 import java.net.InetAddress;
 import javax.mail.URLName;
+import java.security.MessageDigest;
 
 import org.cougaar.core.mts.*;
 import org.cougaar.core.service.LoggingService;
@@ -115,15 +117,16 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
   public static final String PROTOCOL_TYPE = "-email";
 
   private static final int protocolCost;
-  public  static final long maxMessageSizeKB;
   private static final boolean useFQDNs;
-  private static final boolean debugMail;
+  private static final int socketTimeout;
+  private static final long maxMessageSizeKB;
+  private static final boolean embedMessageDigest;
+  private static final boolean showMailServerInteraction;
 
   private LoggingService log;
   private Hashtable mailDataCache;
   private HashMap links;
   private MailBox outboxes[];
-  private EmailMessageOutputStream messageOut;
 
   static
   {
@@ -132,14 +135,20 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     String s = "org.cougaar.message.protocol.email.cost";  // one way
     protocolCost = Integer.valueOf(System.getProperty(s,"10000")).intValue();  // was 5000
 
-    s = "org.cougaar.message.protocol.email.outgoing.maxMessageSizeKB";
-    maxMessageSizeKB = Integer.valueOf(System.getProperty(s,"1000")).intValue();
-
     s = "org.cougaar.message.protocol.email.useFQDNs";
     useFQDNs = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
 
-    s = "org.cougaar.message.protocol.email.debugMail";
-    debugMail = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
+    s = "org.cougaar.message.protocol.email.outgoing.socketTimeout";
+    socketTimeout = Integer.valueOf(System.getProperty(s,"5000")).intValue();
+
+    s = "org.cougaar.message.protocol.email.outgoing.maxMessageSizeKB";
+    maxMessageSizeKB = Integer.valueOf(System.getProperty(s,"1000")).intValue();
+
+    s = "org.cougaar.message.protocol.email.outgoing.embedMessageDigest";
+    embedMessageDigest = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
+
+    s = "org.cougaar.message.protocol.email.outgoing.showMailServerInteraction";
+    showMailServerInteraction = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
   }
 
   public OutgoingEmailLinkProtocol ()
@@ -154,6 +163,10 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     log = loggingService;
 
     if (log.isInfoEnabled()) log.info ("Creating " + this);
+
+    MailMan.setServiceBroker (getServiceBroker());
+    MailMan.setSmtpSocketTimeout (socketTimeout);
+    MailMan.setSmtpDebug (showMailServerInteraction);
 
     String nodeID = getRegistry().getIdentifier();
     String s = "org.cougaar.message.protocol.email.outboxes." + nodeID;
@@ -188,33 +201,30 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     {
       //  Speak up if a mail server is not accessible right now
 
-      if (MailMan.checkMailServerAccess (outbox) == false)
+      if (MailMan.checkOutboxAccess (outbox) == false)
       {
         if (log.isWarnEnabled())
         {
           log.warn 
           (
-            "ALERT: Is your mail server up?  Unable to access mail server: " +
-            outbox.toStringDiscreet()
+            "ALERT: Is your mail server up?  Outbox configured?\n" +
+            "Unable to access mail outbox: " +outbox.toStringDiscreet()
           );
         }
       }
-
-      messageOut = createMessageOutStream (outbox);
-      return true;
     }
     catch (Exception e)
     {
       log.error (stackTraceToString (e));
       return false;
     }
+
+    return true;
   }
 
   public synchronized void shutdown ()
   {
     outboxes = null;
-    if (messageOut != null) try { messageOut.close(); } catch (Exception e) {}
-    messageOut = null;
   }
 
   public MailBox[] parseOutboxes (String outboxesProp)
@@ -315,15 +325,6 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
   public String toString ()
   {
     return this.getClass().getName();
-  }
-
-  private EmailMessageOutputStream createMessageOutStream (MailBox mbox) throws IOException
-  {
-    EmailOutputStream emailOut = new EmailOutputStream (mbox);
-    emailOut.setInfoDebug (log.isDebugEnabled());  // informative progress debug
-    emailOut.setDebug (false);                     // low-level debug
-    emailOut.setDebugMail (debugMail);             // low-level mail server debug
-    return new EmailMessageOutputStream (emailOut);
   }
 
   private MailData lookupMailData (MessageAddress address)
@@ -499,12 +500,14 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     {
       if (log.isDebugEnabled()) log.debug ("Sending " +MessageUtils.toString(msg));
 
-      //  Serialize the message into a byte buffer
+      //  Serialize the message into a byte array.  Optionally help insure message integrity
+      //  via a message digest (eg. an embedded MD5 hash of the message).
 
-      byte msgBytes[] = toBytes (msg);
+      MessageDigest digest = (embedMessageDigest ? MessageDigest.getInstance("MD5") : null);
+      byte msgBytes[] = MessageSerializationUtils.writeMessageToByteArray (msg, digest);
       if (msgBytes == null) return false;
 
-      //  Make sure the message is not too large for an email message
+      //  Make sure the message is not too large (or small) for an email message
 
       if (msgBytes.length >= getMaxMessageSizeInBytes())
       {
@@ -517,26 +520,28 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
         MessageUtils.setMessageSize (msg, msgBytes.length);  // size stops link selection
         return false;
       }
-
-      //  Since it is a hassle to read variable length arrays on the other side, we wrap
-      //  the byte array in a simple object.
-
-      ByteArrayObject msgObject = new ByteArrayObject (msgBytes);
+      else if (msgBytes.length == 0)
+      {
+        if (log.isWarnEnabled()) log.warn ("No email sent as msg is 0 bytes");
+        return true;
+      }
 
       //  Send the message as an email
+
+      MailBox outbox = outboxes[0];  // currently only sending to one mail server
 
       try
       {
         //  Create email header
  
         String localnode = replaceSpaces (MessageUtils.getFromAgentNode (msg));
-        String localhost = outboxes[0].getServerHost();
+        String localhost = outbox.getServerHost();
 
         String remotenode = replaceSpaces (destAddr.getNodeID());
         String remoteuser = destAddr.getInbox().getUsername();
         String remotehost = destAddr.getInbox().getServerHost();
 
-        MailMessageHeader boxHeader = outboxes[0].getBoxHeader();
+        MailMessageHeader boxHeader = outbox.getBoxHeader();
 
         String from = "EmailStream#"+ localnode +"@"+ localhost;
         String replyTo = null, cc = null, bcc = null;
@@ -553,10 +558,18 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
 
         MailMessageHeader header = new MailMessageHeader (from, replyTo, to, cc, bcc, subject);
 
-        //  Send the message
+        //  Create email body
 
-        messageOut.writeMsgObject (msgObject);
-        messageOut.sendMsg (header);
+        MailMessageBody body = new MailMessageBody (msgBytes);
+
+        //  Create email message
+
+        MailMessage emailMsg = new MailMessage (header, body);
+
+        //  Send email message
+
+        if (log.isDebugEnabled()) log.debug ("Sending email:\n" + emailMsg);
+        MailMan.sendMessage (outbox, emailMsg);
       }
       catch (Exception e)
       {
@@ -570,33 +583,6 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     {
       return s.replace (' ', '_');  // replace spaces with underscores
     }
-  }
-
-  private synchronized byte[] toBytes (AttributedMessage msg)  // serialization has needed sync before
-  {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    ObjectOutputStream oos = null;
-
-    try 
-    {
-      oos = new ObjectOutputStream (baos);
-      oos.writeObject (msg);
-      oos.flush();
-    } 
-    catch (Exception e) 
-    {
-      if (log.isWarnEnabled()) log.warn ("Serialization exception for " +MessageUtils.toString(msg)+
-        ": " +stackTraceToString(e));
-      return null;
-    }
-
-    try 
-    {
-      oos.close();
-    } 
-    catch (Exception e) {}
-
-    return baos.toByteArray();
   }
 
   private static String stackTraceToString (Exception e)

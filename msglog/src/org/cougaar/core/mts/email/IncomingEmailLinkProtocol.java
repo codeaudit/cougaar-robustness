@@ -19,6 +19,8 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 24 Sep 2002: Add new serialization, socket closer support and remove
+ *              email streams stuff for more direct reading of email. (OBJS)
  * 19 Jun 2002: Removed "ignoreOldMessages" functionality - obsolete in
  *              a persistent world. (OBJS)
  * 18 Jun 2002: Restored Node name to inboxes properties due to facilitate
@@ -116,9 +118,10 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
   private static final MailMessageCache cache = new MailMessageCache();
 
   private static final boolean useFQDNs;
-  private static final int mailServerPollTime;
+  private static final int mailServerPollTimeSecs;
+  private static final int socketTimeout;
   private static final int initialReadDelaySecs;
-  private static final boolean debugMail;
+  private static final boolean showMailServerInteraction;
 
   private static boolean showTraffic;
   private static LoggingService log;
@@ -130,6 +133,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
   private Vector messageInThreads;
   private ThreadService threadService;
   private MessageAddress myAddress;
+  private MailFilters filters;
   private boolean firstTime = true;
 
   static
@@ -139,19 +143,23 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
     String s = "org.cougaar.message.protocol.email.useFQDNs";
     useFQDNs = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
 
-    s = "org.cougaar.message.protocol.email.mailServerPollTimeSecs";
-    mailServerPollTime = Integer.valueOf(System.getProperty(s,"5")).intValue();
+    s = "org.cougaar.message.protocol.email.incoming.mailServerPollTimeSecs";
+    mailServerPollTimeSecs = Integer.valueOf(System.getProperty(s,"5")).intValue();
 
-    s = "org.cougaar.message.protocol.email.initialReadDelaySecs";
+    s = "org.cougaar.message.protocol.email.incoming.socketTimeout";
+    socketTimeout = Integer.valueOf(System.getProperty(s,"10000")).intValue();
+
+    s = "org.cougaar.message.protocol.email.incoming.initialReadDelaySecs";
     initialReadDelaySecs = Integer.valueOf(System.getProperty(s,"20")).intValue();
 
-    s = "org.cougaar.message.protocol.email.debugMail";
-    debugMail = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
+    s = "org.cougaar.message.protocol.email.incoming.showMailServerInteraction";
+    showMailServerInteraction = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
   }
 
   public IncomingEmailLinkProtocol ()
   {
     messageInThreads = new Vector();
+    filters = new MailFilters();
   }
 
   public String toString ()
@@ -166,6 +174,10 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
 
     if (log.isInfoEnabled()) log.info ("Creating " + this);
 
+    MailMan.setServiceBroker (getServiceBroker());
+    MailMan.setPop3SocketTimeout (socketTimeout);
+    MailMan.setPop3Debug (showMailServerInteraction);
+
     String s = "org.cougaar.core.mts.ShowTrafficAspect";
     showTraffic = (getAspectSupport().findAspect(s) != null);
 
@@ -179,6 +191,10 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
       log.error (str);
       throw new RuntimeException (str);
     }
+
+    String fromFilter = "EmailStream#";
+    String toFilter = "To: " + nodeID;
+    filters.set (fromFilter, toFilter);
 
     if (startup (inboxesProp) == false)
     {
@@ -206,23 +222,23 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
 
       try
       {
-        //  Speak up if a mail server is not accessible right now
+        //  Speak up if a mailbox is not accessible right now
 
-        if (MailMan.checkMailBoxAccess (inboxes[i]) == false)
+        if (MailMan.checkInboxAccess (inboxes[i]) == false)
         {
           if (log.isWarnEnabled()) 
           {
             log.warn 
             (
-              "ALERT: Is your mail server up?  Unable to access mail server: " + 
-              inboxes[i].toStringDiscreet()
+              "ALERT: Is your mail server up?  Inbox configured?\n" +
+              "Unable to access mail inbox: " +inboxes[i].toStringDiscreet()
             );
           }
         }
 
         msgInThread = new MessageInThread (inboxes[i]);  // actually a Runnable
-        Schedulable thread = threadService().getThread (this, msgInThread, "inbox"+i);
-        msgInThread.setThread (thread);
+        // Schedulable thread = threadService().getThread (this, msgInThread, "inbox"+i);
+        Thread thread = new Thread (msgInThread, "inbox"+i);
         thread.start();
 
         registerMailData (nodeID, inboxes[i]);
@@ -427,9 +443,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
   private class MessageInThread implements Runnable
   { 
     private MailBox inbox;
-    private NoHeaderInputStream messageIn = null;
     private boolean quitNow;
-    private Schedulable thread;
     boolean firstTime = true;
 
     public MessageInThread (MailBox inbox)
@@ -440,11 +454,6 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
     public void quit ()
     {
       quitNow = true;
-
-      if (messageIn != null)
-      {
-        try { messageIn.close(); } catch (Exception e) {}
-      }
     }
 
     public void run() 
@@ -455,12 +464,9 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
       if (firstTime)
       {
         try { Thread.sleep (initialReadDelaySecs*1000); } catch (Exception e) {}
+        if (log.isInfoEnabled()) log.info ("Initial email reading delay now over for " +inbox);
         firstTime = false;
       }
-
-      //  We don't want this thread to stop until we want it to stop, so
-      //  we do things very carefully here.  Later on, this and other
-      //  sensitive threads should probably be monitored.
 
       boolean access;
       int n, waitTime;
@@ -476,11 +482,11 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
         {
           try
           {
-            access = MailMan.checkMailBoxAccess (inbox);
+            access = MailMan.checkInboxAccess (inbox);
           }
           catch (Exception e)
           {
-            log.error ("Checking inbox access: " + e);
+            log.error ("Checking inbox access: " +e);
           }
 
           if (access == false)
@@ -507,163 +513,76 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
           }
           else
           {
-            if (n > 0 && log.isInfoEnabled()) log.info ("Inbox is accessible again");
+            if (n > 0 && log.isInfoEnabled()) log.info ("Inbox is accessible again: " +inbox);
             break;
           }
         }
 
-        //  Ok, inbox is accessible, now create the email message instream
-
-        EmailInputStream emailIn = null;
-        n = 0;
+        //  Read and process incoming email messages.  If we encounter a failure we stop 
+        //  and go back to the top and start over establishing the inbox access.
 
         while (!quitNow)
         {
-          emailIn = createEmailInputStream (mailServerPollTime*1000);
-
-          if (emailIn == null)
-          {
-            //  This should not happen.  But in case it does, we'll try a few times
-            //  to see if we can successfully create the instream.  If we fail, 
-            //  we'll head back to checking the mailbox access.
-
-            n++;
-           
-            if (n < 5) waitTime = 5;
-            else break;
-
-            try { Thread.sleep (waitTime*1000); } catch (Exception e) {}
-          }
-          else break;
-        }
-
-        if (emailIn == null) continue;  // go back to check mailbox access
-
-        //  Finally, read and process incoming messages.  If we encounter a
-        //  failure, we close the stream and go back to the top of the loop
-        //  and start over establishing the inbox access and input stream.
-
-        while (!quitNow)
-        {
-          if (readAndDeliverMessage (emailIn) == false) break;
-        }
-
-        //  It's important to close the message stream due to its
-        //  underlying polling email stream.
-      
-        if (messageIn != null)
-        {
-          try { messageIn.close(); } catch (Exception e2) {}
-          messageIn = null;
+          if (readAndDeliverMessage (inbox) == false) break;
         }
       }    
     }
 
-    public void setThread (Schedulable thread)
+    private final synchronized boolean readAndDeliverMessage (MailBox mbox)
     {
-      this.thread = thread;
-    }
-
-    public Schedulable getThread ()
-    {
-      return thread;
-    }
-
-    private EmailInputStream createEmailInputStream (int pollTime) 
-    {
-      EmailInputStream emailIn = null;
-
-      try
-      {
-        emailIn = new EmailInputStream (inbox, pollTime, cache);
-        emailIn.setInfoDebug (log.isDebugEnabled());  // informative progress debug
-        emailIn.setDebug (false);                     // low-level debug
-        emailIn.setDebugMail (debugMail);             // low-level mail debug
-        emailIn.setFromFilter ("EmailStream#");
-        emailIn.setSubjectFilter ("To: " + nodeID);
-        emailIn.setPollTime (pollTime);
-        return emailIn;
-      }
-      catch (Exception e) 
-      { 
-        log.error ("Error creating email input stream: " +e);
-        if (emailIn != null) try { emailIn.close(); } catch (Exception e2) {}
-        return null;
-      }
-    }
-
-    private final synchronized boolean readAndDeliverMessage (EmailInputStream emailIn)
-    {
-      //  This method is synchronized to insure messages are delivered in
-      //  the same order they are read.
-
-      AttributedMessage msg = null;
+      MailMessage mailMsg = null;
 
       try 
       {
-        //  There's a bit of a tricky bit with this ObjectInputStream (creates its
-        //  own thread perhaps).  We do this here so that later errors on the stream
-        //  come out of the catch clause here.  NOTE:  This problem has been fixed
-        //  as a side effect of removing the stream headers from the object streams.
-        //  Before, with the regular ObjectInputStream, its construction caused 
-        //  a separate thread to be created to read the stream header.
-
-        if (messageIn == null)
-        {  
-           messageIn = new NoHeaderInputStream (emailIn);
-
-           if (!firstTime && log.isInfoEnabled()) log.info ("Email instream restored");
-           firstTime = false;
-        }
-
-        //  Sit and wait for a message to come in - the underlying email stream is 
-        //  polling its mail box.
+        //  Get next mail message, waiting for it if needed
       
-        ByteArrayObject msgObject = (ByteArrayObject) messageIn.readObject();
+        if (log.isDebugEnabled()) log.debug ("Waiting for next msg from " +mbox);
+        mailMsg = getNextMailMessage (mbox);
+        if (log.isDebugEnabled()) log.debug ("Got next msg from " +mbox);
         if (showTraffic) System.err.print ("<E");
-
-        //  Deserialize the read bytes into a Cougaar message
-
-        Object obj = getObjectFromBytes (msgObject.getBytes());
-
-        if (obj == null && log.isWarnEnabled()) 
-          log.warn ("Deserialization exception likely due to old email message read");
-
-        try
-        {
-          msg = (AttributedMessage) obj;  // possible cast exception
-        }
-        catch (Exception e)
-        {
-          if (log.isWarnEnabled()) log.warn ("Got non-AttributedMessage msg! (msg ignored): " +e);
-          return true;
-        }
-
-        if (log.isDebugEnabled()) log.debug ("reading " +MessageUtils.toString(msg));
       } 
       catch (Exception e) 
       {
         if (log.isInfoEnabled())
         {
-          String s;
-          if (msg == null) s = "Email instream lost... ";
-          else s = "Problem delivering msg " +MessageUtils.toString(msg)+ ": ";
-          log.info (s + stackTraceToString(e));
-        }
-      
-        //  It's important to close the message stream due to its
-        //  underlying polling email stream.
-      
-        if (messageIn != null)
-        {
-          try { messageIn.close(); } catch (Exception e2) {}
-          messageIn = null;
+          if (mailMsg == null) 
+          {
+            String detail = (log.isDebugEnabled() ? stackTraceToString(e) : "");
+            log.info ("Lost access to " +mbox+ "... " +detail);
+          }
         }
 
-        //  Return failure
-
-        return false;
+        return false;  // inbox reading failure
       }
+
+      if (mailMsg == null) return false;
+      byte[] msgBytes = mailMsg.getBodyBytes();
+
+      //  Deserialize the read bytes into a Cougaar message
+
+      AttributedMessage msg = null;
+
+      try
+      {
+        msg = MessageSerializationUtils.readMessageFromByteArray (msgBytes);
+      }
+      catch (MessageIntegrityException e)
+      {
+        if (log.isWarnEnabled()) log.warn ("Message integrity exception deserializing msg (msg ignored)");
+        return true;  
+      }
+      catch (ClassCastException e)
+      {
+        if (log.isWarnEnabled()) log.warn ("Got non-AttributedMessage msg (msg ignored): " +e);
+        return true;  
+      }
+      catch (Exception e)
+      {
+        if (log.isWarnEnabled()) log.warn ("Deserialization exception (msg ignored): " +e);
+        return true;  
+      }
+
+      if (log.isDebugEnabled()) log.debug ("Got " +MessageUtils.toString(msg));
 
       //  Deliver the message.  Nobody to send exceptions to, so we just log them.
 
@@ -682,32 +601,42 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
           log.warn ("Exception delivering " +MessageUtils.toString(msg)+ ": " +stackTraceToString(e));
       }
 
-      //  Return success
-
-      return true;
+      return true;  // mbox still accessible
     }
-  }
 
-  private static Object getObjectFromBytes (byte[] data) 
-  {
-	ObjectInputStream ois = null;
-	Object obj = null;
-
-	try 
+    private MailMessage getNextMailMessage (MailBox mbox) throws Exception
     {
-      ByteArrayInputStream bais = new ByteArrayInputStream (data);
-	  ois = new ObjectInputStream (bais);
-	  obj = ois.readObject();
-	} 
-    catch (Exception e) 
-    {
-      if (log.isWarnEnabled()) log.warn ("Deserialization exception: " +stackTraceToString(e));
-      return null;
-	}
-	
-	try { ois.close(); } catch (IOException e) {}
+      while (true)
+      {
+        //  Check the cache for a mail message
 
-	return obj;
+        MailMessage mailMsg = cache.getNextMessage();  // messages NOT necessarily in order
+        if (mailMsg != null) return mailMsg;
+
+        //  Try reading some messages from the inbox on the mail server.  If we
+        //  don't get any, sleep for awhile.  Otherwise put them in the cache
+        //  (where some message filtering may occur) and then try the cache again.
+
+        while (true)
+        {
+          MailMessage[] mailMsgs = MailMan.readMessages (mbox, filters, 0);
+          int n = (mailMsgs != null ? mailMsgs.length : 0);
+
+          if (n > 0) 
+          {
+            if (log.isDebugEnabled()) 
+              for (int i=0; i<n; i++) log.debug ("Read email:\n" + mailMsgs[i]);
+
+            cache.addMessages (mailMsgs);
+            break;
+          }
+          else 
+          {
+            try { Thread.sleep (mailServerPollTimeSecs*1000); } catch (Exception e) {}
+          }
+        }
+      }
+    }
   }
 
   private static String stackTraceToString (Exception e)

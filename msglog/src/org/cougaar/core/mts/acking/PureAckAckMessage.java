@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 27 Sep 2002: Add inband ack creator. (OBJS)
  * 23 Apr 2002: Split out from MessageAckingAspect. (OBJS)
  * 20 May 2001: Created. (OBJS)
  */
@@ -42,5 +43,14 @@ public class PureAckAckMessage extends PureAckMessage
   public PureAckAckMessage (PureAckAckMessage pureAckAckMsg)
   {
     super (pureAckAckMsg);
+  }
+
+  public static PureAckAckMessage createInbandPureAckAckMessage (PureAckMessage pam)
+  {
+    PureAck pureAck = (PureAck) MessageUtils.getAck (pam);
+    PureAckAck pureAckAck = new PureAckAck (pureAck);
+    String fromNode = MessageUtils.getFromAgentNode (pam);
+    pureAckAck.setLatestAcks (MessageAckingAspect.getAcksToSend (fromNode));
+    return new PureAckAckMessage (pam, pureAckAck);
   }
 }
