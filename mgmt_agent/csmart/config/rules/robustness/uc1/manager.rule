@@ -26,6 +26,11 @@ load_balancer_plugin	   ="org.cougaar.robustness.exnihilo.plugin.EN4JPlugin"
 #
 communityViewerServlet     = "org.cougaar.community.util.CommunityViewerServlet"
 
+# Define controller class
+society.each_node do |node|
+  node.override_parameter("-Dorg.cougaar.tools.robustness.controller.classname", "org.cougaar.tools.robustness.ma.controllers.NewRobustnessController")
+end
+
 #
 # Add components for management agents
 #
@@ -45,9 +50,6 @@ society.each_agent do |agent|
       c.classname = hb_server_plugin
     end
     agent.add_component do |c|
-      c.classname = node_health_monitor_plugin
-    end
-    agent.add_component do |c|
       c.classname = persistence_control_plugin
     end
     agent.add_component do |c|
@@ -63,10 +65,10 @@ society.each_agent do |agent|
       c.classname = ping_server_plugin
     end
     agent.add_component do |c|
-      c.classname = hb_server_plugin
+      c.classname = load_balancer_plugin
     end
     agent.add_component do |c|
-      c.classname = load_balancer_plugin
+      c.classname = node_health_monitor_plugin
     end
   end
 end
