@@ -29,7 +29,7 @@ import org.cougaar.coordinator.DefenseApplicabilityCondition;
 import org.cougaar.coordinator.DefenseApplicabilityConditionSnapshot;
 import org.cougaar.coordinator.DeconflictionPluginBase;
 
-import org.cougaar.coordinator.techspec.AssetName;
+import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.techspec.AssetType;
 import org.cougaar.coordinator.selection.ActionPatience;
 import org.cougaar.coordinator.timedDiagnosis.TimedDefenseDiagnosis;
