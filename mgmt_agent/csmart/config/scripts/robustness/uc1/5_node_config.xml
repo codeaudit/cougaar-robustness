@@ -9,7 +9,7 @@
   </Host>
 
   <Node Name="RobustnessManagerNode">
-    <Agent Name="RobustnessManager" />
+    <Agent Name="ARManager" />
   </Node>
 
   <Node Name="RestartNode"/>
