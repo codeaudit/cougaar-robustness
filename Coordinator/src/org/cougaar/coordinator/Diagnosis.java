@@ -490,7 +490,9 @@ public abstract class Diagnosis
         Diagnosis d = (Diagnosis) content;
         
         //At this pt it only propagates the getValue() attribute
-        this.setValue(d.getValue());
+        try {
+            this.setValue(d.getValue());
+        } catch (IllegalValueException ive) {} //"can't" happen
         this.setLastAssertedTimestamp(d.getLastAssertedTimestamp());
         this.setLastChangedTimestamp(d.getLastChangedTimestamp());
         return Relay.CONTENT_CHANGE;
