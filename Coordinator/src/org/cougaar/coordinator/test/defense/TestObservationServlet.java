@@ -27,7 +27,7 @@
 package org.cougaar.coordinator.test.defense;
 //org.cougaar.coordinator.test.defense.TestObservationServlet
 //import org.cougaar.coordinator.DefenseApplicabilityConditionSnapshot;
-//import org.cougaar.coordinator.costBenefit.CostBenefitDiagnosis;
+import org.cougaar.coordinator.costBenefit.CostBenefitDiagnosis;
 //import org.cougaar.coordinator.techspec.DefaultDefenseTechSpec;
 
 import java.io.PrintWriter;

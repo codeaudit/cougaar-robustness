@@ -36,24 +36,24 @@ public class TransProbability implements NotPersistable {
     
     
     /** Starting value of this state transition */
-    private StateValue start;
+    private AssetState start;
 
     /** Ending value of this state transition */
-    private StateValue end;
+    private AssetState end;
 
     /** Probability of this state transition */
     private double probability;
     
     /** Creates a new instance of TransProbability */
-    public TransProbability(StateValue start, StateValue end, double probability) {        
+    public TransProbability(AssetState start, AssetState end, double probability) {        
         this.start = start;
         this.end = end;
         this.probability = probability;
     }
     
-    public StateValue getStartValue() { return start; }
+    public AssetState getStartValue() { return start; }
 
-    public StateValue getEndValue() { return end; }
+    public AssetState getEndValue() { return end; }
 
     public double getProbability() { return probability; }
 }

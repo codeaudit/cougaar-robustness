@@ -84,12 +84,12 @@ public class MonitoringLevel implements NotPersistable {
      * @return the transition probability for the given states. Returns 0 if a
      * corresponding function is not found.
      */
-     public double getProbability(AssetStateDimension assetState, StateValue stateValue, StateValue diagnosisStateValue) {
+     public double getProbability(AssetStateDimension assetStateDim, AssetState stateValue, AssetState diagnosisStateValue) {
          
           Iterator iter = diagnoses.iterator();
           while (iter.hasNext()) {
               DiagnosisAccuracyFunction daf = (DiagnosisAccuracyFunction) iter.next();
-              if (daf.getAssetState().equals(assetState) && daf.getAssetStateValue().equals(stateValue) &&
+              if (daf.getAssetState().equals(assetStateDim) && daf.getAssetStateValue().equals(stateValue) &&
                   daf.getDiagnosisStateValue().equals(diagnosisStateValue))
                      return daf.getProbability();
           }
