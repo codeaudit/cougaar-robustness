@@ -1,7 +1,7 @@
 /*
  * DefenseOperatingMode.java
  *
- * @author David Wells - OBJS  
+ * @author David Wells - OBJS
  *
  * <copyright>
  *  Copyright 2003 Object Services and Consulting, Inc.
@@ -22,7 +22,7 @@
  *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
- */ 
+ */
 
 package org.cougaar.tools.robustness.disconnection;
 
@@ -57,11 +57,11 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     private ServiceBroker sb;
     private MessageAddress managerAddress;
     private long lateReportingForgiveness;
-    
+
     private IncrementalSubscription reconnectTimeConditionSubscription;
     private IncrementalSubscription ActionSubscription; // for both agent & node Actions
     private IncrementalSubscription managerAddressSubscription;
-    
+
     private RequestToDisconnectNodeDiagnosisIndex requestToDisconnectNodeDiagnosisIndex;
     private RequestToDisconnectAgentDiagnosisIndex requestToDisconnectAgentDiagnosisIndex;
     private DisconnectActionIndex disconnectActionIndex;
@@ -76,7 +76,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     // Legal Action Values
     private final static String ALLOW_DISCONNECT = DisconnectConstants.ALLOW_DISCONNECT;
     private final static String ALLOW_CONNECT = DisconnectConstants.ALLOW_CONNECT;
-    private final static String AUTONOMOUS_RESTART = DisconnectConstants.AUTONOMOUS_RESTART;  // only performed when agent is restarted 
+    private final static String AUTONOMOUS_RESTART = DisconnectConstants.AUTONOMOUS_RESTART;  // only performed when agent is restarted
 
     private static Set ALLOW_DISCONNECT_SET;
     private static Set ALLOW_CONNECT_SET;
@@ -85,7 +85,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     // index of individual actions still outstanding
     // used to match grants of agent-level disconnects to Node-level disconnects
     private Hashtable pendingRequests = new Hashtable();
-   
+
     // index of nodes that are disconnected and must be monitored to make sure they repoort back on time
     private Hashtable activeOverdueAlarms = new Hashtable();
 
@@ -101,13 +101,12 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     // an indicator that at least one permission request has timed out
     private boolean somethingRequestedExpired = false;
     private Set expiredRequestedAlarms = new HashSet();
-    
 
     public DisconnectManagerPlugin() {
         super();
     }
-    
-    
+
+
     public void load() {
         super.load();
 	sb = getServiceBroker();
@@ -132,7 +131,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         blackboard.publishAdd(requestToDisconnectNodeDiagnosisIndex);
         disconnectActionIndex = new DisconnectActionIndex();
         blackboard.publishAdd(disconnectActionIndex);
-        
+
         c = blackboard.query(NodeStatus.pred);
         iter = c.iterator();
         if (iter.hasNext()) {
@@ -150,10 +149,10 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
 
     }
 
-    
+
     private void getPluginParams() {
       // A forgiveness period for late reconnect reporting - mostly to compensate for messaging delays
-      Iterator iter = getParameters().iterator (); 
+      Iterator iter = getParameters().iterator ();
       if (iter.hasNext()) {
            lateReportingForgiveness = Long.parseLong((String)iter.next()) * 1000L;
            logger.debug("Setting lateReportingForgiveness = " + lateReportingForgiveness/1000L + " sec.");
@@ -167,7 +166,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     public void setupSubscriptions() {
 
         getPluginParams();
-        
+
         //Listen for the ManagerAddress
         managerAddressSubscription = (IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
             public boolean execute(Object o) {
@@ -177,7 +176,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                 return false ;
             }
         });
-        
+
         //Listen for changes to Conditions
         reconnectTimeConditionSubscription = (IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
             public boolean execute(Object o) {
@@ -187,24 +186,24 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                 return false ;
             }
         });
- 
+
         //Listen for changes to ANY Actions
         ActionSubscription = (IncrementalSubscription ) getBlackboardService().subscribe(DisconnectAction.pred);
 
         blackboard.setShouldBePersisted(false);
     }
-    
-    
-    
+
+
+
     public void execute() {
-    
+
         if (logger.isDebugEnabled()) logger.debug("Entering ** execute() **");
         if (logger.isDetailEnabled()) logger.detail("RTC's: " + reconnectTimeConditionSubscription.toString());
         if (logger.isDebugEnabled()) logger.debug("Added RTC's: " + reconnectTimeConditionSubscription.getAddedCollection().toString());
         if (logger.isDebugEnabled()) logger.debug("Changed RTC's: " + reconnectTimeConditionSubscription.getChangedCollection().toString());
 
         if (logger.isDetailEnabled()) logger.detail("OpModes's: " + blackboard.query(DisconnectDefenseAgentEnabler.pred).toString());
-       
+
 
         Iterator iter;
 
@@ -219,7 +218,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                    // create the Action(s) & Diagnosis(s) for the Node & its agents
                    NodeStatusRecord nsr = (NodeStatusRecord)iter2.next();
                    RequestToDisconnectNodeDiagnosis diag = createNodeDiagnosisAndAction(nsr.getNodeID(), nsr.getDiagnosis());
-                   if (nsr.getDiagnosis().equals(DISCONNECTED)) 
+                   if (nsr.getDiagnosis().equals(DISCONNECTED))
                         createOverdueAlarm(diag, nsr.getAgents(), (nsr.getReconnectTime()-System.currentTimeMillis() < 120000) ? 120000 :  (nsr.getReconnectTime()-System.currentTimeMillis())); // give the node at least 2 minutes from now due to the move
                    Iterator iter3 = nsr.getAgents().iterator();
                    while (iter3.hasNext()) {
@@ -231,7 +230,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             }
         }
 
-        // Handle timed-out requests & deny permission 
+        // Handle timed-out requests & deny permission
          if (somethingRequestedExpired) {
             iter = expiredRequestedAlarms.iterator();
             while(iter.hasNext()) {
@@ -243,7 +242,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         expiredRequestedAlarms.clear();
         somethingRequestedExpired = false;
         }
-        
+
 
         // Handle expired Alarms for overdue nodes
         if (somethingOverdueExpired) {
@@ -257,7 +256,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         expiredOverdueAlarms.clear();
         somethingOverdueExpired = false;
         }
-        
+
         if (managerAddress != null) {// already know the ManagerAgent, so create Diagnoes & Actions for newly announced Nodes & Agents
             if (logger.isDebugEnabled()) logger.debug("Know MA, so create Diagnosis & Action for newly announce Nodes & Agents");
             iter = reconnectTimeConditionSubscription.getAddedCollection().iterator();
@@ -266,7 +265,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                 createDiagnosisAndAction(new AssetID(rtc.getAsset(), AssetType.findAssetType(rtc.getAssetType())));
             }
         }
-        
+
         Iterator i = managerAddressSubscription.getAddedCollection().iterator();
         if (i.hasNext()) { // just found the ManagerAgentAddress
             managerAddress = ((RobustnessManagerID)i.next()).getMessageAddress();
@@ -276,9 +275,9 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             while (iter.hasNext()) {
                 ReconnectTimeCondition rtc = (ReconnectTimeCondition)iter.next();
                 createDiagnosisAndAction(new AssetID(rtc.getAsset(), AssetType.findAssetType(rtc.getAssetType())));
-            }            
+            }
         }
-        
+
         iter = reconnectTimeConditionSubscription.getChangedCollection().iterator();
         while (iter.hasNext()) {
             ReconnectTimeCondition rtc = (ReconnectTimeCondition)iter.next();
@@ -305,8 +304,8 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                 } catch (IllegalValueException e)  {
                 logger.error("Attempt to set: "+action.dump()+" with illegal value "+e.toString());
                 return;
-                } 
-            } 
+                }
+            }
         }
 
         if (anActionHasChangedPermittedValues) {
@@ -323,7 +322,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                     else {
                         if (logger.isDebugEnabled()) logger.debug(rr.getRequest() + " of: " + thisAction.getAssetID().toString() + " is NOT permitted");
                         allPermittedSoFar = false;
-                    }                            
+                    }
                 }
                 if (allPermittedSoFar) {
                     propagatePermissions(rr);
@@ -331,10 +330,10 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                     rr.getAlarm().cancel();
                     if (logger.isDebugEnabled()) logger.debug("Removing RequestedAlarm for: " + rr.getNodeID());
                 }
-            }                    
-        }        
+            }
+        }
     }
-    
+
 
     private Diagnosis createDiagnosisAndAction(AssetID id) {
         if (id.getType().getName().equalsIgnoreCase("Node"))  return createNodeDiagnosisAndAction(id);
@@ -404,7 +403,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             logger.error("TechSpec not found for NodeDisconnectAction");
             return null;
         }
-        if (logger.isDebugEnabled()) logger.debug("Created Diagnosis & Action for: " + id.toString());        
+        if (logger.isDebugEnabled()) logger.debug("Created Diagnosis & Action for: " + id.toString());
         return diag;
     }
 
@@ -470,10 +469,10 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             return null;
         }
 
-        if (logger.isDebugEnabled()) logger.debug("Created Diagnosis & Action for: " + id.toString());        
+        if (logger.isDebugEnabled()) logger.debug("Created Diagnosis & Action for: " + id.toString());
         return diag;
     }
-    
+
 
     private boolean handleNodeRequest(ReconnectTimeCondition rtc) {
         // Set the values of the Node Diagnosis & all Agent Diagnosiss
@@ -488,7 +487,8 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         Set whichToOffer;
 
         RequestToDisconnectNodeDiagnosis diag = requestToDisconnectNodeDiagnosisIndex.getDiagnosis(new AssetID(rtc.getAsset(), AssetType.findAssetType("Node")));
-        
+        rr.setOriginalDiagnosisValue(diag.getValue());
+
         if (request == DISCONNECT_REQUEST) {
             createOverdueAlarm(diag, rtc, time);
             whichToOffer = ALLOW_DISCONNECT_SET;
@@ -499,7 +499,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
 
 
         try {
-            diag.setValue(request); 
+            diag.setValue(request);
             if (logger.isDebugEnabled()) logger.debug("DisconnectChange set "
                     +diag.dump()+ " "+time
                     +" for the Coordinator");
@@ -555,7 +555,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         rr.setOriginalActions(originalActions);
         rr.setOriginalDiagnoses(originalDiagnoses);
         rr.setAgentVector(agentVector);
-        rr.setRequest(response); 
+        rr.setRequest(response);
         rr.setReconnectTime((long)time + System.currentTimeMillis());
         if (logger.isInfoEnabled()) { logger.info(rr.dump()); }
         return true;
@@ -565,7 +565,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     private boolean propagatePermissions(RequestRecord rr) {
 
         if (logger.isDebugEnabled()) logger.debug("Starting propagateChange() for: " + rr.getNodeID().toString());
-        
+
         DisconnectDefenseAgentEnabler enabler = DisconnectDefenseAgentEnabler.findOnBlackboard(rr.getNodeID().getType().toString(), rr.getNodeID().getName().toString(), blackboard);
         if (enabler == null) {
             logger.warn("could not find Enabler for" + rr.dump());
@@ -655,7 +655,9 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             while (iter.hasNext()) {
                 Diagnosis diag = (Diagnosis)iter.next();
                 try {
-                    diag.setValue(rr.getRequest().equals(ALLOW_DISCONNECT) ? CONNECTED : DISCONNECTED);
+                    // dlw - 9/23/04 diag.setValue(rr.getRequest().equals(ALLOW_DISCONNECT) ? CONNECTED : DISCONNECTED);
+                    if (logger.isInfoEnabled()) logger.info("Denying permission to: " + diag.getAssetID().toString() + "resetting Diagnoss to: " + rr.getOriginalDiagnosisValue().toString());
+                    diag.setValue(rr.getOriginalDiagnosisValue());
                     blackboard.publishChange(diag);
                 } catch (IllegalValueException e) {
                     logger.error("Attempt to set: "+diag.toString()+" with illegal value "+e.toString());
@@ -666,7 +668,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         else {
             logger.warn("could not find Enabler for" + rr.dump());
             return false;
-        } 
+        }
     }
 
     private void createOverdueAlarm(RequestToDisconnectNodeDiagnosis diag, ReconnectTimeCondition rtc, double time) {
@@ -681,7 +683,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     private void createOverdueAlarm(RequestToDisconnectNodeDiagnosis diag, AgentVector agents, double time) {
         OverdueAlarm overdueAlarm = new OverdueAlarm(diag, agents, time > 60000.0 ? (time + lateReportingForgiveness) : (60000.0 + lateReportingForgiveness));  // Don't monitor for less than 10 sec
         activeOverdueAlarms.put(diag.getAssetID(), overdueAlarm);
-        getAlarmService().addRealTimeAlarm(overdueAlarm);     
+        getAlarmService().addRealTimeAlarm(overdueAlarm);
         // nodeStatus.put(diag.getAssetID(), new NodeStatusRecord(diag.getAssetID(), agents, time, DISCONNECT_REQUEST));
         // blackboard.publishChange(nodeStatus);
         if (logger.isDebugEnabled()) logger.debug("Added alarm from handleNodeRequest()");
@@ -715,19 +717,19 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         private boolean expired;
         Diagnosis diag;
         AgentVector agentsAffected;
-        
+
         public OverdueAlarm(Diagnosis diag, AgentVector agentsAffected, double t) {
             detonate = System.currentTimeMillis() + (long) t;
             this.diag = diag;
             this.agentsAffected = agentsAffected;
             if (logger.isDebugEnabled()) logger.debug("OverdueAlarm created : "+diag.getAssetID()+ " with agents " + agentsAffected.toString() + " at time "+detonate + " for " + t/1000L + " seconds");
         }
-        
+
         public long getExpirationTime() {return detonate;
         }
 
         public AgentVector getAgentsAffected() { return agentsAffected; }
-        
+
         public void expire() {
             if (!expired) {
                 if (logger.isDebugEnabled()) logger.debug("expire(): Alarm expired for: " + diag.getAssetID());
@@ -785,7 +787,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                 cancelOverdueAlarm_Tardy(assetID);
             }
         }
-        
+
         public boolean hasExpired() {return expired;
         }
 
@@ -794,33 +796,33 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                 return expired = true;
             return false;
         }
-        
+
     }
-    
+
 
     private RequestedAlarm createRequestedAlarm(RequestRecord rr, double time) {
-        RequestedAlarm requestedAlarm = new RequestedAlarm(rr, time);  
-        getAlarmService().addRealTimeAlarm(requestedAlarm); 
+        RequestedAlarm requestedAlarm = new RequestedAlarm(rr, time);
+        getAlarmService().addRealTimeAlarm(requestedAlarm);
         pendingRequests.put(rr.getNodeID(), rr);
         if (logger.isDebugEnabled()) logger.debug("Adding RequestedAlarm for: " + rr.getNodeID());
         return requestedAlarm;
     }
 
-    
+
     public class RequestedAlarm implements Alarm {
         private long detonate;
         private boolean expired;
         private RequestRecord rr;
-        
+
         public RequestedAlarm(RequestRecord rr, double t) {
             detonate = System.currentTimeMillis() + (long) t;
             this.rr = rr;
             if (logger.isDebugEnabled()) logger.debug("RequestedAlarm created : "+rr.toString() + " at time "+detonate + " for " + t/1000L + " seconds");
         }
-        
+
         public long getExpirationTime() {return detonate;
         }
-        
+
         public void expire() {
             if (!expired) {
                 if (logger.isDebugEnabled()) logger.debug("expire(): RequestedAlarm expired for: " + rr.getNodeID());
@@ -837,7 +839,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             denyPermissions(rr);
             cancel();
         }
-        
+
         public boolean hasExpired() {return expired;
         }
 
@@ -846,7 +848,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                 return expired = true;
             return false;
         }
-        
+
     }
 }
 

@@ -9,7 +9,7 @@ package org.cougaar.tools.robustness.disconnection;
 /**
  *
  * @author  David Wells - OBJS
- * @version 
+ * @version
  */
 
 import java.util.Set;
@@ -25,6 +25,7 @@ public class RequestRecord extends java.util.Hashtable {
     private String request;
     private DisconnectManagerPlugin.RequestedAlarm alarm;
     private long reconnectTime;
+    private Object originalDiagnosisValue;
 
     /** Creates new RequestRecord */
     public RequestRecord() {
@@ -53,6 +54,9 @@ public class RequestRecord extends java.util.Hashtable {
 
     public void setReconnectTime(long time) { this.reconnectTime = time; }
     public long getReconnectTime() { return this.reconnectTime; }
+
+    public void setOriginalDiagnosisValue(Object value) { this.originalDiagnosisValue = value; }
+    public Object getOriginalDiagnosisValue() { return originalDiagnosisValue; }
 
     public String dump() {
         return "Request: " + request + ":" +nodeID.toString() + "\n"
