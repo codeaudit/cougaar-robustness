@@ -6,12 +6,13 @@ package org.cougaar.tools.robustness.ma;
 public class CommunityStatusChangeEvent {
 
   // Change event types
-  public static final int MEMBERS_ADDED      =  1;
-  public static final int MEMBERS_REMOVED    =  2;
-  public static final int LEADER_CHANGE      =  4;
-  public static final int STATE_CHANGE       =  8;
-  public static final int LOCATION_CHANGE    = 16;
-  public static final int STATE_EXPIRATION   = 32;
+  public static final int MEMBERS_ADDED          =  1;
+  public static final int MEMBERS_REMOVED        =  2;
+  public static final int LEADER_CHANGE          =  4;
+  public static final int STATE_CHANGE           =  8;
+  public static final int LOCATION_CHANGE        = 16;
+  public static final int STATE_EXPIRATION       = 32;
+  public static final int STATUS_UPDATE_RECEIVED = 64;
 
   private int changeFlags;
   private String name;
@@ -210,5 +211,14 @@ public class CommunityStatusChangeEvent {
    */
   public boolean stateExpired() {
     return (changeFlags & STATE_EXPIRATION) != 0;
+  }
+
+  /**
+   * Helper method for determining if event reflects a state expiration.
+   * @return True if a agents state has not been refreshed within expiration
+   * period
+   */
+  public boolean statusReceived() {
+    return (changeFlags & STATUS_UPDATE_RECEIVED) != 0;
   }
 }
