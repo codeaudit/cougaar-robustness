@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/SensorTypeModel.java,v $
- * $Revision: 1.30 $
- * $Date: 2004-08-09 20:46:41 $
+ * $Revision: 1.31 $
+ * $Date: 2004-09-21 00:43:49 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -37,7 +37,7 @@ import org.cougaar.core.util.UID;
  * needs concerning a SensorType (from the tech specs). 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.30 $Date: 2004-08-09 20:46:41 $
+ * @version $Revision: 1.31 $Date: 2004-09-21 00:43:49 $
  *
  */
 class SensorTypeModel extends Model
@@ -351,7 +351,7 @@ class SensorTypeModel extends Model
                 
             } // while diag_as_iter
 
-            if ( ! Precision.isEqual( obs_prob_sum, 1.0 ))
+            if ( ! Precision.isEqualModel( obs_prob_sum, 1.0 ))
                 throw new BelievabilityException
                         ( "SensorTypeModel.setContents(" + _name + ")",
                           "Observation probabilities do not sum to 1.0. (sum="

@@ -964,8 +964,8 @@ public class BelievabilityPlugin
         }
         catch (BelievabilityException be)
         {
-            if (logger.isDebugEnabled() ) 
-                logger.debug ("Problem forcing belief updates: "
+            if (logger.isErrorEnabled() ) 
+                logger.error ("Problem forcing belief updates: "
                               + be.getMessage() );
         }
 

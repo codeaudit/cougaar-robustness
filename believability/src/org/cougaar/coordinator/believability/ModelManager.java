@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManager.java,v $
- * $Revision: 1.29 $
- * $Date: 2004-09-10 17:25:31 $
+ * $Revision: 1.30 $
+ * $Date: 2004-09-21 00:43:49 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -47,7 +47,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * and provides information via the ModelManagerInterface. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.29 $Date: 2004-09-10 17:25:31 $
+ * @version $Revision: 1.30 $Date: 2004-09-21 00:43:49 $
  *
  */
 public class ModelManager extends Loggable
@@ -395,7 +395,7 @@ public class ModelManager extends Loggable
         }
         catch (BelievabilityException be)
         {
-            logDebug( "Cannot add SensorTypeModel "
+            logError( "Cannot add SensorTypeModel "
                       +  diag_ts.getName() + ": " + be.getMessage() );
             return;
         }
@@ -478,7 +478,7 @@ public class ModelManager extends Loggable
             }
             catch (BelievabilityException be)
             {
-                logDebug( "Cannot add stress "
+                logError( "Cannot add stress "
                           + stress.getName() + " to asset model : " 
                           + be.getMessage() );
                 return;
@@ -527,7 +527,7 @@ public class ModelManager extends Loggable
         }
         catch (BelievabilityException be)
         {
-            logDebug( "Cannot add ActuatorTypeModel: " + be.getMessage() );
+            logError( "Cannot add ActuatorTypeModel: " + be.getMessage() );
             return;
         }
 
@@ -648,7 +648,7 @@ public class ModelManager extends Loggable
         }
         catch (BelievabilityException be)
         {
-            logDebug( "Problem handling threat model change: "
+            logError( "Problem handling threat model change: "
                       + be.getMessage() );
         }
 
@@ -808,7 +808,7 @@ public class ModelManager extends Loggable
         }
         catch (BelievabilityException be)
         {
-            logDebug( "Cannot add AssetTypeModel "
+            logError( "Cannot add AssetTypeModel "
                       +  asset_type.getName() + ": " + be.getMessage() );
             return null;
         }

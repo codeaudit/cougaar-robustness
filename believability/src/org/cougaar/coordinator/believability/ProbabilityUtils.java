@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ProbabilityUtils.java,v $
- * $Revision: 1.25 $
- * $Date: 2004-08-09 20:46:41 $
+ * $Revision: 1.26 $
+ * $Date: 2004-09-21 00:43:49 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -28,7 +28,7 @@ import java.util.Random;
  * Utilities for dealing with probabilities.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.25 $Date: 2004-08-09 20:46:41 $
+ * @version $Revision: 1.26 $Date: 2004-09-21 00:43:49 $
  */
 public class ProbabilityUtils
 {
@@ -424,7 +424,7 @@ public class ProbabilityUtils
                 return false;
 
             for ( int j = 0; j < a1[i].length; j++ )
-                if ( ! Precision.isEqual( a1[i][j], a2[i][j] ))
+                if ( ! Precision.isEqualComputation( a1[i][j], a2[i][j] ))
                     return false;
         }
 
@@ -467,7 +467,7 @@ public class ProbabilityUtils
         ans = computeEventUnionProbability( arg1d );
         System.out.println( "Probability of event union: " + ans
                             + ", expecting: " + expect );
-        if ( ! Precision.isEqual( ans, expect ))
+        if ( ! Precision.isEqualComputation( ans, expect ))
             System.out.println( "** ERROR #" + (++err_count) + " **" );
         else
             System.out.println( "OK" );
@@ -480,7 +480,7 @@ public class ProbabilityUtils
         ans = computeEventUnionProbability( arg1d );
         System.out.println( "Probability of event union: " + ans
                             + ", expecting: " + expect );
-        if ( ! Precision.isEqual( ans, expect ))
+        if ( ! Precision.isEqualComputation( ans, expect ))
             System.out.println( "**ERROR #" + (++err_count) + " **" );
         else
             System.out.println( "OK" );
@@ -492,7 +492,7 @@ public class ProbabilityUtils
         ans = computeEventUnionProbability( arg1d );
         System.out.println( "Probability of event union: " + ans
                             + ", expecting: " + expect );
-        if ( ! Precision.isEqual( ans, expect ))
+        if ( ! Precision.isEqualComputation( ans, expect ))
             System.out.println( "**ERROR #" + (++err_count) + " **" );
         else
             System.out.println( "OK" );
@@ -504,7 +504,7 @@ public class ProbabilityUtils
         ans = computeEventUnionProbability( arg1d );
         System.out.println( "Probability of event union: " + ans
                             + ", expecting: " + expect );
-        if ( ! Precision.isEqual( ans, expect ))
+        if ( ! Precision.isEqualComputation( ans, expect ))
             System.out.println( "**ERROR #" + (++err_count) + " **" );
         else
             System.out.println( "OK" );
@@ -516,7 +516,7 @@ public class ProbabilityUtils
         ans = computeEventUnionProbability( arg1d );
         System.out.println( "Probability of event union: " + ans
                             + ", expecting: " + expect );
-        if ( ! Precision.isEqual( ans, expect ))
+        if ( ! Precision.isEqualComputation( ans, expect ))
             System.out.println( "**ERROR #" + (++err_count) + " **" );
         else
             System.out.println( "OK" );

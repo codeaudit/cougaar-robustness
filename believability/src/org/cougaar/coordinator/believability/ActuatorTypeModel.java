@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ActuatorTypeModel.java,v $
- * $Revision: 1.26 $
- * $Date: 2004-08-09 20:46:41 $
+ * $Revision: 1.27 $
+ * $Date: 2004-09-21 00:43:49 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -42,7 +42,7 @@ import org.cougaar.core.util.UID;
  * specs).
  *
  * @author Tony Cassandra
- * @version $Revision: 1.26 $Date: 2004-08-09 20:46:41 $
+ * @version $Revision: 1.27 $Date: 2004-09-21 00:43:49 $
  *
  */
 class ActuatorTypeModel extends Model
@@ -174,7 +174,7 @@ class ActuatorTypeModel extends Model
                       to_idx < num_state_values;
                       to_idx++ )
                 {
-                    if ( Precision.isZero
+                    if ( Precision.isZeroModel
                          ( _trans_prob[action_idx][from_idx][to_idx] ))
                         continue;
                     

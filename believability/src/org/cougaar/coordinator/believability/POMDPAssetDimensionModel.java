@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetDimensionModel.java,v $
- * $Revision: 1.29 $
- * $Date: 2004-08-09 20:46:41 $
+ * $Revision: 1.30 $
+ * $Date: 2004-09-21 00:43:49 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -29,7 +29,7 @@ import org.cougaar.coordinator.techspec.AssetType;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.29 $Date: 2004-08-09 20:46:41 $
+ * @version $Revision: 1.30 $Date: 2004-09-21 00:43:49 $
  *
  */
 class POMDPAssetDimensionModel extends Model
@@ -220,7 +220,7 @@ class POMDPAssetDimensionModel extends Model
         for ( int i = 0; i < next_belief_prob.length; i++ )
             sum += next_belief_prob[i];
 
-        if( ! Precision.isZero( 1.0 - sum ))
+        if( ! Precision.isZeroComputation( 1.0 - sum ))
             throw new BelievabilityException
                     ( "updateBeliefStateThreatTrans()",
                       "Resulting belief doesn't sum to 1.0 : "
@@ -320,7 +320,7 @@ class POMDPAssetDimensionModel extends Model
         for ( int i = 0; i < next_belief_prob.length; i++ )
             sum += next_belief_prob[i];
 
-        if( ! Precision.isZero( 1.0 - sum ))
+        if( ! Precision.isZeroComputation( 1.0 - sum ))
             throw new BelievabilityException
                     ( "updateBeliefStateActionTrans()",
                       "Resulting belief doesn't sum to 1.0 : "
@@ -415,7 +415,7 @@ class POMDPAssetDimensionModel extends Model
         // Thus, we choose to leave the belief state as is, which is
         // why we simply copy the arrays over. 
         //
-        if( Precision.isZero( denom ))
+        if( Precision.isZeroComputation( denom ))
         {
             logWarning( "updateBeliefStateDiagnosisObs(): "
                         + "Diagnosis is not possible. i.e., Pr("
