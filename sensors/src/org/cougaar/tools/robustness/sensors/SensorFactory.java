@@ -78,8 +78,6 @@ public class SensorFactory implements org.cougaar.core.domain.Factory {
    * this much later than specified by hbFrequency
    *
    * @return HeartbeatRequest
-   *
-   * @deprecated Use multiple targets version of this method instead.
    */
   public HeartbeatRequest newHeartbeatRequest(MessageAddress source,  
                                               MessageAddress target, 

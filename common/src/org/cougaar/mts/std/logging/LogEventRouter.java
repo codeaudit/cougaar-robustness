@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2002 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2002,2004 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,10 +19,11 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 23 Feb 2004: Port to 11.0
  * Created on February 12, 2003, 8:49 AM
  */
 
-package org.cougaar.core.mts.logging;
+package org.cougaar.mts.std.logging;
 
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.util.log.*;

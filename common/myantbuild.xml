@@ -1,24 +1,23 @@
-<project name="sensors" default="create_cougaar_overlay" basedir=".">
+<project name="common" default="create_cougaar_overlay" basedir=".">
 
 <property name="src" value="src"/>
 <property name="build" value="build"/>
-<property name="jar" value="sensors.jar"/>
+<property name="jar" value="msglog_common.jar"/>
 <property environment="env"/>
 <property name="cougaar" value="${env.COUGAAR_INSTALL_PATH}"/>
     
 	<path id="cougaar.libs">
-		<pathelement location="/var/www/html/jars/Robustness_objs_common_B11_0_B11_0.jar"/>
 		<fileset dir="${cougaar}/lib">
 			<include name="**/*.jar"/>
 		</fileset>
 		<fileset dir="${cougaar}/sys">
 			<include name="**/*.jar"/>
 		</fileset>
-  </path>
+        </path>
 
 	<target name="delete">
-      <delete dir="${build}"/>
-      <mkdir dir="${build}"/>
+        <delete dir="${build}"/>
+        <mkdir dir="${build}"/>
   </target>
 
   <target name="compile">
@@ -37,16 +36,13 @@
 
 	<target name="create_cougaar_overlay">
 		<mkdir dir="staging/lib"/>
-		<mkdir dir="staging/doc/Robustness/objs/sensors"/>
 		<antcall target="delete"/>
 		<antcall target="jar"/>
 		<signjar jar="${jar}" keystore="/var/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
-		<move file="${jar}" todir="staging/lib"/>
-		<copy todir="staging/doc/Robustness/objs/sensors/">
-			<fileset dir="doc"/>
-		</copy>
-		<zip zipfile="AR_objs_sensors.zip" basedir="staging"/>
-		<delete dir="staging"/>
+                <copy file="${jar}" todir="${cougaar}/lib"/>
+                <move file="${jar}" todir="staging/lib"/>
+                <zip zipfile="AR_objs_common.zip" basedir="staging"/>
+                <delete dir="staging"/>
 	</target>
 
 	<target name="clean" depends="delete,compile,jar"/>

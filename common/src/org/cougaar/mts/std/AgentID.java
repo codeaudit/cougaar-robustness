@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2002,2003 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2002,2003,2004 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,12 +19,13 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 23 Feb 2004: Ported to 11.0
  * 27 May 2003: Ported to 10.4 - rewrote WP access code (104B)
  * 04 Mar 2003: Ported to 10.2 - replaced TopologyService with WhitePagesService (OBJS)
  * 04 Jun 2002: Created. (OBJS)
  */
 
-package org.cougaar.core.mts;
+package org.cougaar.mts.std;
 
 import java.net.URI; //102
 import java.net.URISyntaxException; //104B
@@ -38,6 +39,10 @@ import org.cougaar.core.service.wp.Request; //104B
 import org.cougaar.core.service.wp.Response; //104B
 import org.cougaar.util.log.Logger; //104B
 import org.cougaar.util.log.Logging; //104B
+
+import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.mts.base.MessageTransportRegistryService;
+import org.cougaar.mts.base.UnregisteredNameException;
 
 /*
  * Class contains descriptive information about an agent. getAgentID() is used to

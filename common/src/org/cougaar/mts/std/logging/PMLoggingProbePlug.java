@@ -1,8 +1,6 @@
 /*
- * org.cougaar.core.mts.logging.PMLoggingProbePlug.java
- *
  * <copyright>
- *  Copyright 2002,2003 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2002,2003,2004 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  The code in this file is free software; you can redistribute it and/or modify
@@ -21,21 +19,21 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 23 Feb 2004: Port to 11.0
  * 20 Feb 2003: Created. (OBJS)
  */
 
-package org.cougaar.core.mts.logging;
-
-import org.cougaar.core.mts.*;
-import org.cougaar.core.service.LoggingService;
-
-import org.cougaar.core.component.ServiceBroker;
-
-import org.cougaar.util.log.*;
+package org.cougaar.mts.std.logging;
 
 import com.objs.surveyor.probemeister.probe.GenericArgumentArray;
-
-
+import org.cougaar.core.component.ServiceBroker;
+import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.service.LoggingService;
+import org.cougaar.mts.base.UnregisteredNameException;
+import org.cougaar.mts.std.AgentID;
+import org.cougaar.mts.std.AttributedMessage;
+import org.cougaar.mts.std.Constants;
+import org.cougaar.util.log.*;
 
 /*  This class contains probe plugs that 
  *  are called by probes stubs that have been inserted into Cougaar.

@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2003 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2003,2004 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,10 +19,11 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 23 Feb 2004: Port to 11.0
  * 30 May 2002: Created. (104B)
  */
 
-package org.cougaar.core.mts;
+package org.cougaar.mts.std;
 
 import java.net.URI;
 import java.util.Hashtable;

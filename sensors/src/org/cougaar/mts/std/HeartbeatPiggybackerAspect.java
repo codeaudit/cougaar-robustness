@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2003,2004 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,31 +19,41 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 24 Feb 2004: Port to 11.0 - Refactor MTS
  * 22 Jan 2003: Created. (OBJS)
  * 06 Mar 2003: Ported to Cougaar 10.2 (OBJS)
  */
 
-package org.cougaar.core.mts;
+package org.cougaar.mts.std;
 
-import java.io.*;
-import java.util.*;
-
-import org.cougaar.util.log.Logger;
-import org.cougaar.util.log.Logging;
-
-import org.cougaar.core.service.ThreadService;
+//import java.io.*;
+import java.net.URI;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Vector;
 
 import org.cougaar.core.component.ServiceBroker;
-
-import org.cougaar.core.service.wp.AddressEntry;
-import org.cougaar.core.service.wp.WhitePagesService;
-
+import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.mts.MessageAttributes;
+import org.cougaar.core.mts.SimpleMessageAttributes;
 import org.cougaar.core.qos.metrics.MetricsUpdateService;
 import org.cougaar.core.qos.metrics.Constants;
 import org.cougaar.core.qos.metrics.MetricImpl;
 import org.cougaar.core.qos.metrics.Metric;
-
-import java.net.URI;
+import org.cougaar.core.service.ThreadService;
+import org.cougaar.core.service.wp.AddressEntry;
+import org.cougaar.core.service.wp.WhitePagesService;
+import org.cougaar.mts.base.MessageDeliverer;
+import org.cougaar.mts.base.MessageDelivererDelegateImplBase;
+import org.cougaar.mts.base.MisdeliveredMessageException;
+import org.cougaar.mts.base.Router;
+import org.cougaar.mts.base.RouterDelegateImplBase;
+import org.cougaar.mts.base.StandardAspect;
+import org.cougaar.mts.base.UnregisteredNameException;
+import org.cougaar.util.log.Logger;
+import org.cougaar.util.log.Logging;
 
 /**
  **  An aspect which implements a heartbeat piggybacking / optimization scheme.
@@ -153,8 +163,8 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
     /* is this a heartbeat message? */
     public static boolean isHeartbeatMessage (AttributedMessage msg)
     {
-        String type = (String) msg.getAttribute (org.cougaar.core.mts.Constants.MSG_TYPE);
-        return (type != null && type.equals (org.cougaar.core.mts.Constants.MSG_TYPE_HEARTBEAT));
+        String type = (String) msg.getAttribute (org.cougaar.mts.std.Constants.MSG_TYPE);
+        return (type != null && type.equals (org.cougaar.mts.std.Constants.MSG_TYPE_HEARTBEAT));
     }
   
 
@@ -561,7 +571,7 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
         /* Returns the time (system time) by which this heartbeat should be sent */
         long getDeliverBy(AttributedMessage message) {
             long db;
-            Integer i = (Integer)message.getAttribute(org.cougaar.core.mts.Constants.SEND_TIMEOUT);
+            Integer i = (Integer)message.getAttribute(org.cougaar.mts.std.Constants.SEND_TIMEOUT);
             //set deliverby to 60 secs if null, or to now+timeout-(10 seconds)
             db = (i == null) ? 60000 : (i.longValue())-TIME_DELAY;
             if (log.isDebugEnabled()) 

@@ -4,7 +4,7 @@
  * Created on February 13, 2003, 1:27 PM
  */
 
-package org.cougaar.core.mts.logging;
+package org.cougaar.mts.std.logging;
 
 import org.apache.log4j.*;
 

@@ -1,6 +1,6 @@
 /* 
  * <copyright>
- * Copyright 2002 Object Services and Consulting, Inc.
+ * Copyright 2002-2004 Object Services and Consulting, Inc.
  * Copyright 2002 BBNT Solutions, LLC
  * under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
 
@@ -20,29 +20,27 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 24 Feb 2004: Port to 11.0
  * 13 Mar 2003: Moved constants to org.cougaar.core.mts.Constants in the Common module
  */
 
 package org.cougaar.tools.robustness.sensors;
 
-import java.util.Set;
-import java.util.Collections;
 import java.lang.reflect.Constructor;
-import org.cougaar.core.relay.*;
+import java.util.Collections;
+import java.util.Set;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.mts.MessageAttributes;
 import org.cougaar.core.mts.SimpleMessageAttributes;
-//100 import org.cougaar.core.mts.MessageUtils;
-import org.cougaar.core.mts.Constants; //102B
-import org.cougaar.core.util.UID;
-//100 import org.cougaar.core.util.XMLizable;
-//100 import org.cougaar.core.util.XMLize;
+import org.cougaar.mts.std.Constants;
 import org.cougaar.core.persist.NotPersistable;
+import org.cougaar.core.relay.*;
+import org.cougaar.core.util.UID;
 
 /**
  * A Ping Relay, the Blackboard object that is passed between PingRequesterPlugin to PingServerPlugin.
  **/
-public class Ping implements Relay.Source, Relay.Target, NotPersistable //100 , XMLizable
+public class Ping implements Relay.Source, Relay.Target, NotPersistable
 {
   private UID uid;
   private MessageAddress source;
