@@ -1,0 +1,17 @@
+#########################################################
+# Adds UC2 Deconfliction components to Robustness Manager
+# 
+
+omsp = "org.cougaar.core.adaptivity.OperatingModeServiceProvider"
+ompm = "org.cougaar.core.adaptivity.OperatingModePolicyManager"
+csp = "org.cougaar.core.adaptivity.ConditionServiceProvider"
+cp = "org.cougaar.tools.robustness.deconfliction.CoordinatorPlugin"
+mp = "org.cougaar.core.mts.MsglogPlugin"
+
+plugins = [omsp, ompm, csp, cp, mp]
+
+society.each_agent do |agent|
+    if agent.name =~ /.*ARManager.*/
+        agent.add_components(plugins)
+    end
+end

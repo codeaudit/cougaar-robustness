@@ -22,6 +22,7 @@
 module Cougaar
 
   module Actions
+    
     class MonitorProtocolSelection < Cougaar::Action
       def initialize(run, node=nil, protocol=nil)
         super(run)
@@ -38,6 +39,53 @@ module Cougaar
         end
       end
     end
+
+    class MonitorMsglogEnabling < Cougaar::Action
+      def initialize(run)
+        super(run)
+      end
+      def perform
+        @run.comms.on_cougaar_event do |event|
+          #puts event.data
+          if (event.component=="MsglogEnablingAspect") && event.data.include?("Messaging Enabled")
+            loop = false
+            puts event.data
+          end
+        end
+      end
+    end
+
+    # fashioned after ClearPersistenceAndLogs in $CIP/csmart/acme_scripting/src/lib/ultralog/operator.rb
+    class FlushMail < Cougaar::Action
+      PRIOR_STATES = ['OperatorServiceConnected','CommunicationsRunning']
+      DOCUMENTATION = Cougaar.document {
+        @description = "Flushes the inboxes for all Nodes in this society."
+        @example = "do_action 'FlushMail'"
+      }
+      def initialize(run)
+        super(run)
+      end
+      def perform
+        operator = @run['operator']
+        cip = operator.test.strip
+        op_host = @run.society.get_service_host('operator') 
+        @run.society.each_node do |node|
+          #puts "flushing email to " + node.name
+          inbox_param = "-Dorg.cougaar.message.protocol.email.inboxes." + node.name + "="
+          #puts "looking for inbox_param = " + inbox_param
+          node.parameters.each do |param|
+            #puts "comparing param = " + param
+            if param[0...(inbox_param.size)]==inbox_param
+              #puts "found param = " + param
+              uri = param[inbox_param.size..-1]
+              puts "flushing email at " + uri
+              @run.comms.new_message(op_host).set_body("command[rexec]#{cip}/operator/flushmail.csh #{cip} #{uri}").request(30) 
+            end
+          end
+        end
+      end
+    end
+
   end
 
   module States
