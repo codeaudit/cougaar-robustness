@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE SensorType >
+
+<SensorType name="org.cougaar.coordinator.test.defense.AggressiveLivenessDiagnosis" 
+            sensesAssetType="Agent"
+            sensesStateDimension="Liveness" 
+		sensorLatency="120000">
+    <PotentialDiagnoses>
+        <Diagnosis name="Live" />
+        <Diagnosis name="Dead" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="Live" >
+            <WillDiagnoseAs name="Live" withProbability="0.9" />
+            <WillDiagnoseAs name="Dead" withProbability="0.1" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Dead" >
+            <WillDiagnoseAs name="Dead" withProbability="0.99" />
+            <WillDiagnoseAs name="Live" withProbability="0.01" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>

@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE SensorType >
+
+<SensorTypes>
+
+<SensorType name="org.cougaar.coordinator.test.defense.msglog.RMI_LinkStatusSensor" sensesAssetType="agent"
+            sensesStateDimension="UnmediatedConnectionStatus" sensorLatency="5000">
+    <PotentialDiagnoses>
+        <Diagnosis name="Good" />
+        <Diagnosis name="Degraded" />
+        <Diagnosis name="Cannot_Communicate_With" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="OK" >
+            <WillDiagnoseAs name="Good" withProbability="0.999" />
+            <WillDiagnoseAs name="Degraded" withProbability="0.001" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Protocol_Failure" >
+            <WillDiagnoseAs name="Cannot_Communicate_With" withProbability="0.99" />
+            <WillDiagnoseAs name="Degraded" withProbability="0.01" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Stationary_Partition" >
+            <WillDiagnoseAs name="Cannot_Communicate_With" withProbability="0.99" />
+            <WillDiagnoseAs name="Degraded" withProbability="0.01" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Rolling_Partition" >
+            <WillDiagnoseAs name="Cannot_Communicate_With" withProbability="0.99" />
+            <WillDiagnoseAs name="Degraded" withProbability="0.01" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>
+
+<SensorType name="org.cougaar.coordinator.test.defense.msglog.AlternateDirectProtocols_LinkStatusSensor" sensesAssetType="agent"
+            sensesStateDimension="UnmediatedConnectionStatus" sensorLatency="10000">
+    <PotentialDiagnoses>
+        <Diagnosis name="Good" />
+        <Diagnosis name="Degraded" />
+        <Diagnosis name="Cannot_Communicate_With" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="OK" >
+            <WillDiagnoseAs name="Good" withProbability="0.999" />
+            <WillDiagnoseAs name="Degraded" withProbability="0.001" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Protocol_Failure" >
+            <WillDiagnoseAs name="Good" withProbability="0.99" />
+            <WillDiagnoseAs name="Degraded" withProbability="0.01" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Stationary_Partition" >
+            <WillDiagnoseAs name="Cannot_Communicate_With" withProbability="0.99" />
+            <WillDiagnoseAs name="Degraded" withProbability="0.01" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Rolling_Partition" >
+            <WillDiagnoseAs name="Cannot_Communicate_With" withProbability="0.99" />
+            <WillDiagnoseAs name="Degraded" withProbability="0.01" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>
+
+<SensorType name="org.cougaar.coordinator.test.defense.msglog.StoreAndForwardProtocols_LinkStatusSensor" sensesAssetType="agent"
+            sensesStateDimension="UnmediatedConnectionStatus" sensorLatency="30000">
+    <PotentialDiagnoses>
+        <Diagnosis name="Good" />
+        <Diagnosis name="Degraded" />
+        <Diagnosis name="Cannot_Communicate_With" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="OK" >
+            <WillDiagnoseAs name="Good" withProbability="0.999" />
+            <WillDiagnoseAs name="Degraded" withProbability="0.001" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Protocol_Failure" >
+            <WillDiagnoseAs name="Good" withProbability="0.999" />
+            <WillDiagnoseAs name="Degraded" withProbability="0.001" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Stationary_Partition" >
+            <WillDiagnoseAs name="Cannot_Communicate_With" withProbability="0.99" />
+            <WillDiagnoseAs name="Degraded" withProbability="0.01" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Rolling_Partition" >
+            <WillDiagnoseAs name="Degraded" withProbability="0.75" />
+            <WillDiagnoseAs name="Good" withProbability="0.25" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>
+
+
+<SensorType name="org.cougaar.coordinator.test.defense.msglog.MediatedConnectionStatusSensor" sensesAssetType="agent"
+            sensesStateDimension="MediatedConnectionStatus" sensorLatency="10000">
+    <PotentialDiagnoses>
+        <Diagnosis name="Good" />
+        <Diagnosis name="Degraded_1" />
+        <Diagnosis name="Degraded_2" />
+        <Diagnosis name="Degraded_3" />
+        <Diagnosis name="Cannot_Communicate_With" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="Good" >
+            <WillDiagnoseAs name="Good" withProbability="0.999" />
+            <WillDiagnoseAs name="Degraded_1" withProbability="0.001" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Degraded_1" >
+            <WillDiagnoseAs name="Good" withProbability="0.998" />
+            <WillDiagnoseAs name="Degraded_1" withProbability="0.001" />
+            <WillDiagnoseAs name="Degraded_2" withProbability="0.001" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Degraded_2" >
+            <WillDiagnoseAs name="Degraded_2" withProbability="0.998" />
+            <WillDiagnoseAs name="Degraded_1" withProbability="0.001" />
+            <WillDiagnoseAs name="Degraded_3" withProbability="0.001" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Degraded_3" >
+            <WillDiagnoseAs name="Degraded_3" withProbability="0.998" />
+            <WillDiagnoseAs name="Degraded_2" withProbability="0.001" />
+            <WillDiagnoseAs name="Cannot_Communicate_With" withProbability="0.001" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Cannot_Communicate_With" >
+            <WillDiagnoseAs name="Cannot_Communicate_With" withProbability="0.999" />
+            <WillDiagnoseAs name="Degraded_3" withProbability="0.001" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>
+
+</SensorTypes>

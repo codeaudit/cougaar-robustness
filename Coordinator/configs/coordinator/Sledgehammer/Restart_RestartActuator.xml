@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE ActuatorType >
+
+<ActuatorType name="org.cougaar.coordinator.test.defense.RestartAgentDefense" 
+              affectsAssetType="Agent" 
+              affectsStateDimension="Liveness" 
+              actionType="CORRECTIVE">
+    <Action name="Yes">
+        <Description value="Restart Enabled" />
+        <Transition WhenActualStateIs="*" EndStateWillBe="Live" IntermediateStateWillBe="Dead" >
+            <OneTimeCost>
+                <CPU intensity="HIGH" agentSizeFactor="TRUE" />
+                <Time duration="60000" />
+            </OneTimeCost>
+            <ContinuingCost>
+                <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
+            </ContinuingCost>
+        </Transition>
+    </Action>
+    
+    <Action name="No">
+        <Description value="Restart Disabled - Does nothing and costs nothing" />
+        <Transition WhenActualStateIs="Live" EndStateWillBe="Live"  IntermediateStateWillBe="Live"/>
+        <Transition WhenActualStateIs="Dead" EndStateWillBe="Dead"  IntermediateStateWillBe="Dead"/>
+    </Action>
+
+</ActuatorType>

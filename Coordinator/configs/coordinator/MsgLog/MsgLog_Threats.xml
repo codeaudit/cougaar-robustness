@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE Threat >
+<Threats>
+
+<Threat name="Stationary_Partition" affectsAssetType="Host" causesEvent="Stationary_Partition" defaultEventLikelihoodProb="LOW" />
+<Threat name="Rolling_Partition" affectsAssetType="Enclave" causesEvent="Rolling_Partition" defaultEventLikelihoodProb="LOW" />
+<Threat name="Heal_Partition" affectsAssetType="Host" causesEvent="Heal_Partition" defaultEventLikelihoodProb="MEDIUM" />
+
+<Threat name="Protocol_Failure" affectsAssetType="Host" causesEvent="Protocol_Failure" defaultEventLikelihoodProb="MEDIUM" />
+
+</Threats>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE AssetStateDimensions >
+
+<AssetStateDimensions assetType="Agent">
+
+  <StateDimension name="Liveness" >
+ 	<State name="Live" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" defaultStartState="TRUE" />
+ 	<State name="Dead" relativeMauCompleteness="0.0" relativeMauSecurity="1.0" />
+  </StateDimension>
+
+</AssetStateDimensions>
+
+
+
