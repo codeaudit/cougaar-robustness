@@ -43,6 +43,7 @@ parameters:
 
 include_scripts:
   - script: $CIP/csmart/lib/isat/clearPnLogs.rb
+  -script: $CIP/csmart/lib/isat/initialize_network.rb
 
   # Security scripts
   - script: $CIP/csmart/lib/security/scripts/setup_scripting.rb

@@ -88,15 +88,14 @@
       </node>
       <node name="rules" type="Folder">
         <node name="robustness" type="Folder">
+          <node name="communities" type="Folder">
+            <file path="csmart/config/rules/robustness/uc1/communities/essential_services.rule"/>
+          </node>
           <node name="uc1" type="Folder">
-            <node name="communities" type="Folder">
-              <file path="csmart/config/rules/robustness/uc1/communities/essential_services.rule"/>
-            </node>
             <node name="debug" type="Folder">
               <file path="csmart/config/rules/robustness/uc1/debug/mic.rule"/>
             </node>
             <node name="tuning" type="Folder">
-              <file path="csmart/config/rules/robustness/uc1/tuning/add_tuning_parameters.rule"/>
               <file path="csmart/config/rules/robustness/uc1/tuning/disable_autotuning.rule"/>
             </node>
             <file path="csmart/config/rules/robustness/uc1/aruc1.rule"/>

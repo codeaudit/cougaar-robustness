@@ -1,8 +1,0 @@
-####################################################
-# Activate learn mode to collect node latency stats
-# to auto-tune restarts
-####################################################
-
-society.each_node do |node|
-  node.override_parameter("-Dorg.cougaar.tools.robustness.collect.stats", "true")
-end

@@ -22,7 +22,8 @@ parameters:
     - $CIP/csmart/config/rules/robustness/uc9
 
   - community_rules:
-    - $CIP/csmart/config/rules/robustness/communities/community.rule
+    - $CIP/csmart/config/rules/robustness/communities
+    - $CIP/csmart/config/rules/robustness/uc1/communities
 
 include_scripts:
   - script: $CIP/csmart/lib/isat/clearPnLogs.rb
