@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2002-2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 12 Mar 2003: Moved some constants to org.cougaar.core.mts.Constants
  * 14 May 2002: Created. (OBJS)
  */
 
@@ -38,12 +39,12 @@ public final class MessageUtils
 {
   //  Message attributes
 
-  public static final String MSG_TYPE =              "MessageType";
+  //102B public static final String MSG_TYPE =              "MessageType";
   public static final String MSG_NUM =               "MessageNumber";
   public static final String FROM_AGENT =            "MessageFromAgent";
   public static final String TO_AGENT =              "MessageToAgent";
   public static final String ACK =                   "MessageAck";
-  public static final String SEND_TIMEOUT =          "MessageSendTimeout";
+  //102B public static final String SEND_TIMEOUT =          "MessageSendTimeout";
   public static final String SEND_DEADLINE =         "MessageSendDeadline";
   public static final String SEND_PROTOCOL_LINK =    "MessageSendProtocolLink";
   public static final String SRC_MSG_NUM =           "MessageSrcMsgNumber";
@@ -53,8 +54,8 @@ public final class MessageUtils
 
   public static final String MSG_TYPE_REGULAR =      "MessageTypeRegular";
   public static final String MSG_TYPE_LOCAL =        "MessageTypeLocal";
-  public static final String MSG_TYPE_HEARTBEAT =    "MessageTypeHeartbeat";
-  public static final String MSG_TYPE_PING =         "MessageTypePing";
+  //102B public static final String MSG_TYPE_HEARTBEAT =    "MessageTypeHeartbeat";
+  //102B public static final String MSG_TYPE_PING =         "MessageTypePing";
   public static final String MSG_TYPE_TRAFFIC_MASK = "MessageTypeTrafficMasking";
   public static final String MSG_TYPE_PURE_ACK =     "MessageTypePureAck";
   public static final String MSG_TYPE_PURE_ACK_ACK = "MessageTypePureAckAck";
@@ -66,8 +67,8 @@ public final class MessageUtils
   {
     MSG_TYPE_REGULAR,
     MSG_TYPE_LOCAL,
-    MSG_TYPE_HEARTBEAT,
-    MSG_TYPE_PING,
+    Constants.MSG_TYPE_HEARTBEAT,
+    Constants.MSG_TYPE_PING,
     MSG_TYPE_TRAFFIC_MASK,
     MSG_TYPE_PURE_ACK,
     MSG_TYPE_PURE_ACK_ACK
@@ -75,17 +76,17 @@ public final class MessageUtils
 
   static void setMessageType (AttributedMessage msg, String type)
   {
-    msg.setAttribute (MSG_TYPE, type);
+    msg.setAttribute (Constants.MSG_TYPE, type);
   }
 
   public static String getMessageType (AttributedMessage msg)
   {
-    return (String) msg.getAttribute (MSG_TYPE);
+    return (String) msg.getAttribute (Constants.MSG_TYPE);
   }
 
   public static boolean hasMessageType (AttributedMessage msg)
   {
-    return (msg.getAttribute (MSG_TYPE) != null);
+    return (msg.getAttribute (Constants.MSG_TYPE) != null);
   }
 
   public static String[] getValidMessageTypes ()
@@ -142,23 +143,23 @@ public final class MessageUtils
   public static boolean isHeartbeatMessage (AttributedMessage msg)
   {
     String type = getMessageType (msg);
-    return (type != null && type.equals (MSG_TYPE_HEARTBEAT));
+    return (type != null && type.equals (Constants.MSG_TYPE_HEARTBEAT));
   }
 
   public static void setMessageTypeToHeartbeat (AttributedMessage msg)
   {
-    setMessageType (msg, MSG_TYPE_HEARTBEAT);
+    setMessageType (msg, Constants.MSG_TYPE_HEARTBEAT);
   }
 
   public static boolean isPingMessage (AttributedMessage msg)
   {
     String type = getMessageType (msg);
-    return (type != null && type.equals (MSG_TYPE_PING));
+    return (type != null && type.equals (Constants.MSG_TYPE_PING));
   }
 
   public static void setMessageTypeToPing (AttributedMessage msg)
   {
-    setMessageType (msg, MSG_TYPE_PING);
+    setMessageType (msg, Constants.MSG_TYPE_PING);
   }
 
   public static boolean isTrafficMaskingMessage (AttributedMessage msg)
@@ -317,19 +318,19 @@ public final class MessageUtils
 
   public static void setSendTimeout (AttributedMessage msg, int millisecs)
   {
-    msg.setAttribute (SEND_TIMEOUT, new Integer (millisecs));
+    msg.setAttribute (Constants.SEND_TIMEOUT, new Integer (millisecs));
   }
 
   public static int getSendTimeout (AttributedMessage msg)
   {
-    Integer millisecs = (Integer) msg.getAttribute (SEND_TIMEOUT);
+    Integer millisecs = (Integer) msg.getAttribute (Constants.SEND_TIMEOUT);
     if (millisecs != null) return millisecs.intValue();
     return -1;  // no timeout
   }
 
   public static boolean haveSendTimeout (AttributedMessage msg)
   {
-    return (msg.getAttribute (SEND_TIMEOUT) != null);
+    return (msg.getAttribute (Constants.SEND_TIMEOUT) != null);
   }
 
   public static void setSendDeadline (AttributedMessage msg, long deadline)
