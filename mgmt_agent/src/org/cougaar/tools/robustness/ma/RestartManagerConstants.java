@@ -98,9 +98,9 @@ public interface RestartManagerConstants {
                    DEFAULT_STATUS_LATENCY_MEAN +
                    (DEFAULT_STATUS_LATENCY_STDDEV * DEFAULT_RESTART_CONFIDENCE)
   */
-  public static final long DEFAULT_STATUS_UPDATE_INTERVAL = 30000;
-  public static final long DEFAULT_STATUS_LATENCY_MEAN =   150000;
-  public static final long DEFAULT_STATUS_LATENCY_STDDEV =  25000;
+  public static final long DEFAULT_STATUS_UPDATE_INTERVAL = 60000;
+  public static final long DEFAULT_STATUS_LATENCY_MEAN =   120000;
+  public static final long DEFAULT_STATUS_LATENCY_STDDEV =  30000;
   public static final long DEFAULT_RESTART_CONFIDENCE = 4;
 
   // Minimum value for EN4J annealTime parameter
