@@ -40,6 +40,7 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
   private IncrementalSubscription sub;
   private BlackboardService bb;
   private LoggingService log;
+  private ProcessHeartbeatsAlarm nextAlarm = null;
 
   private UnaryPredicate hbReqPred = new UnaryPredicate() {
     public boolean execute(Object o) {
@@ -126,9 +127,27 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
         }
       }
     }
-    if (minFreq != Long.MAX_VALUE)
-      alarmService.addRealTimeAlarm(new ProcessHeartbeatsAlarm(minFreq));
+    if (minFreq != Long.MAX_VALUE) {
+      if (nextAlarm != null) nextAlarm.cancel();
+      nextAlarm =  new ProcessHeartbeatsAlarm(minFreq);
+      alarmService.addRealTimeAlarm(nextAlarm);
+    }
   } 
+
+  public void suspend() {
+    super.suspend();
+    if (nextAlarm != null) nextAlarm.cancel();
+    nextAlarm = null;
+  }
+
+  public void unload() {
+    super.unload();
+    if (nextAlarm != null) nextAlarm.cancel();
+    nextAlarm = null;
+    bb = null;
+    sub = null;
+    log = null;
+  }
 
   protected void setupSubscriptions() {
     log =  (LoggingService) getBindingSite().getServiceBroker().
@@ -155,8 +174,11 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
       if (log.isDebugEnabled()) 
         log.debug("\nHeartbeatServerPlugin.execute: published changed HbReq = " + req);
     } 
-    if (minFreq != Long.MAX_VALUE)
-      alarmService.addRealTimeAlarm(new ProcessHeartbeatsAlarm(minFreq));
+    if (minFreq != Long.MAX_VALUE) {
+      if (nextAlarm != null) nextAlarm.cancel();
+      nextAlarm =  new ProcessHeartbeatsAlarm(minFreq);
+      alarmService.addRealTimeAlarm(nextAlarm);
+    }
   } 
 
 }
