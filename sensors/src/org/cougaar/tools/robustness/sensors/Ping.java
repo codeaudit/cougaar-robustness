@@ -40,7 +40,7 @@ public class Ping implements Relay.Source, Relay.Target, XMLizable
   private MessageAddress target;
   private Object content;
   private Object response;
-  private transient Set _targets;
+  private transient Set _targets = null;
 
   /**
    * @param uid UID of this Ping object

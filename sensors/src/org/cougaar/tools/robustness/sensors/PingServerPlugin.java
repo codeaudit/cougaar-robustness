@@ -26,6 +26,7 @@ import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.Collections;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.mts.MessageAddress;
@@ -58,13 +59,15 @@ public class PingServerPlugin extends ComponentPlugin {
     Iterator iter = sub.getAddedCollection().iterator();
     while (iter.hasNext()) {
       Ping ping = (Ping)iter.next();
-      MessageAddress me = getBindingSite().getAgentIdentifier();
-      if (log.isDebugEnabled()) 
-        log.debug("PingServerPlugin.execute: received Ping = " + ping);
-      ping.updateResponse(me, "Got it!");
-      bb.publishChange(ping);
-      if (log.isDebugEnabled()) 
-        log.debug("PingServerPlugin.execute: published changed Ping = " + ping);
+      if (ping.getTargets() == Collections.EMPTY_SET) {  // make sure I'm the target, not the source
+        MessageAddress me = getBindingSite().getAgentIdentifier();
+        if (log.isDebugEnabled()) 
+          log.debug("PingServerPlugin.execute: received Ping = " + ping);
+        ping.updateResponse(me, "Got it!");
+        bb.publishChange(ping);
+        if (log.isDebugEnabled()) 
+          log.debug("PingServerPlugin.execute: published changed Ping = " + ping);
+      }
     }
   }
 
