@@ -1,7 +1,7 @@
 =begin script
 
 include_path: leash_on_restart.rb
-description: Leash All Defenses on a Full Society Restore and Unleash them at starting_stage
+description: Leash All Defenses on a Full Society Restore and Unleash them at society_running
 
 =end
 
@@ -14,7 +14,7 @@ insert_after :snapshot_restored do
   do_action "LeashOnRestart"
 end
 
-insert_after :starting_stage do
+insert_after :society_running do
   do_action "MonitorUnleash", 1
   do_action "Unleash", 1
   wait_for "Unleashed", 1
