@@ -26,6 +26,7 @@ module Cougaar
 	nodeObj = @run.society.nodes[@node]
         host = nodeObj.host
         url = "#{nodeObj.uri}/$#{@node}/Disconnect?Disconnect=Disconnect&expire=#{@seconds.to_s}"
+        puts "***** "+url
 	response, uri = Cougaar::Communications::HTTP.get(url)
         raise "Could not connect to #{@url}" unless response
         #puts "response="+response if response
@@ -158,10 +159,18 @@ module Cougaar
         loop = true
         while loop
           event = @run.get_next_event
-          #puts event.data
+          # puts event.data
           if event.component=="DisconnectNodePlugin" && event.data.include?(@node+" plans to Disconnect")
             loop = false
-#            puts event.data
+            puts event.data
+          end
+	    if event.component=="DisconnectNodePlugin" && event.data.include?(@node+" has Reconnected")
+            loop = false
+            puts "Not allowed to Disconnect - Permission Denied"
+          end
+	    if event.component=="DisconnectServlet" && event.data.include?("Defense not initialized")
+            loop = false
+            puts "Not allowed to Disconnect - Manager Not Ready"
           end
         end
       end
@@ -211,3 +220,4 @@ module Cougaar
   end
 
 end
+
