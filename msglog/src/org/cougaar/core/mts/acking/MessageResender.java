@@ -626,8 +626,8 @@ class MessageResender implements Runnable
 	    while (iter.hasNext()) {
 		AttributedMessage msg = (AttributedMessage)iter.next();
 		if (msg != null) {
-		    MessageAddress target = msg.getTarget();
-		    if (target.equals(addr)) {
+		    MessageAddress target = msg.getTarget().getPrimary();
+		    if (target.equals(addr.getPrimary())) {
 			if (debug()) 
 			    log.debug("MessageResender: holding msg "+MessageUtils.toString(msg));
 			msg.setAttribute(MSGLOG_HOLD,Boolean.TRUE);
@@ -649,8 +649,8 @@ class MessageResender implements Runnable
 	    while (iter.hasNext()) {
 		AttributedMessage msg = (AttributedMessage)iter.next();
 		if (msg != null) {
-		    MessageAddress target = msg.getTarget();
-		    if (target.equals(addr)) {
+		    MessageAddress target = msg.getTarget().getPrimary();
+		    if (target.equals(addr.getPrimary())) {
 			if (debug()) 
 			    log.debug("MessageResender: releasing msg "+MessageUtils.toString(msg));
 			msg.removeAttribute(MSGLOG_HOLD);

@@ -329,6 +329,7 @@ public class MsglogPlugin extends ComponentPlugin
 	// setup Deconfliction conditions and operating modes for new agent
         entry.applCond = 
 	    new MsglogApplicabilityCondition(name); 
+	entry.applCond.setUID(uidSvc.nextUID()); 
         entry.enabOpMode = 
 	    new MsglogEnablingOpMode(name); 
 	entry.enabOpMode.setUID(uidSvc.nextUID()); 

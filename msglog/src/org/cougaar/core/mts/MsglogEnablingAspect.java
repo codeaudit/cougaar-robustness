@@ -96,7 +96,7 @@ public class MsglogEnablingAspect extends StandardAspect
 		   CommFailureException, MisdeliveredMessageException
 	{
 	    // subscribe to MsglogEnable for remote agents only
-	    MessageAddress target = msg.getTarget();
+	    MessageAddress target = msg.getTarget().getPrimary();
 	    if (!getRegistry().isLocalClient(target)) {
 		synchronized (agents) {
 		    AgentEntry entry = (AgentEntry)agents.get(target);
@@ -114,7 +114,7 @@ public class MsglogEnablingAspect extends StandardAspect
 	{
 	    // Return Integer.MAX_VALUE if messaging is disabled to the target agent. 
 	    // This causes the LinkSelectionPolicy to not select a link.
-	    MessageAddress target = msg.getTarget();
+	    MessageAddress target = msg.getTarget().getPrimary();
 	    if (!getRegistry().isLocalClient(target)) {
 		synchronized (agents) {
 		    AgentEntry entry = (AgentEntry)agents.get(target);
@@ -146,7 +146,7 @@ public class MsglogEnablingAspect extends StandardAspect
 	    throws MisdeliveredMessageException
 	{ 
 	    // subscribe to MsglogEnable for remote agents only
-	    MessageAddress orig = msg.getOriginator();
+	    MessageAddress orig = msg.getOriginator().getPrimary();
 	    if (!getRegistry().isLocalClient(orig)) {
 		synchronized (agents) {
 		    AgentEntry entry = (AgentEntry)agents.get(orig);
