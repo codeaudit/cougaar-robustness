@@ -50,6 +50,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 import java.util.ArrayList;
+import java.util.Set;
 
 import org.w3c.dom.*;
 
@@ -191,16 +192,16 @@ public class SensorTypeLoader extends XMLLoader {
                 Element e = (Element) child;
                 String willState = e.getAttribute("name");
                 String p = e.getAttribute("withProbability");
-                
-                AssetState will_as = sensor.getStateDimension().findAssetState(willState);
-                if (will_as == null) {
-                    logger.error("Sensor Type XML Error - diagnosis asset state not found! unknown WillDiagnoseAs: "+willState+ " [AssetStateDimension="+sensor.getStateDimension()+"]for sensor = " + sensor.getName());
+    
+                Set s= sensor.getPossibleValues();
+                if ( s == null || !s.contains(willState) ) {
+                    logger.error("Sensor Type XML Error - diagnosis state not found! unknown WillDiagnoseAs: "+willState+ " for sensor = " + sensor.getName());
                     return;
                 }
                 
                 try {
                     float prob = Float.parseFloat(p);
-                    probs.addProbability(will_as, prob);
+                    probs.addProbability(willState, prob);
                 } catch (Exception ex) {
                     logger.warn("SensorType XML Error for ["+sensor.getName()+"]- Bad float in probability for ["+probs.getActualState()+"]: " + p);
                     continue; // ignore this one & move on.

@@ -57,23 +57,23 @@ public class DiagnosisProbability {
     }
     
     /** add a diagnosis probability */
-    public void addProbability(AssetState name, float prob) {
-        diagnosisProbs.add(new DiagnosisProbability.DiagnoseAs(name, prob));
+    public void addProbability(String willBe, float prob) {
+        diagnosisProbs.add(new DiagnosisProbability.DiagnoseAs(willBe, prob));
     }
     
     public class DiagnoseAs {
      
-        AssetState diagnosisState;
+        String diagnosisState;
         float prob;
         
-        public DiagnoseAs(AssetState name, float prob) {
+        public DiagnoseAs(String name, float prob) {
          
             this.diagnosisState = name;
             this.prob = prob;            
         }
         
         /** @return the name of the diagnosis state */
-        public AssetState getDiagnosisValue() { return diagnosisState; }
+        public String getDiagnosisValue() { return diagnosisState; }
 
         /** @return the name of the diagnosis state */
         public float getProbability() { return prob; }

@@ -48,6 +48,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 import java.util.ArrayList;
+import java.util.Set;
 
 import org.w3c.dom.*;
 
@@ -150,9 +151,16 @@ public class CrossDiagnosisLoader extends XMLLoader {
                     return;
                 }
                 
+                Set s= dtsi.getPossibleValues();
+                if ( s == null || !s.contains(willState) ) {
+                    logger.error("CrossDiagnosis XML Error - diagnosis state not found! unknown WillDiagnoseAs: "+willState+ " for sensor = " + dtsi.getName());
+                    return;
+                }
+                
+                
                 try {
                     float prob = Float.parseFloat(p);
-                    probs.addProbability(will_as, prob);
+                    probs.addProbability(willState, prob);
                 } catch (Exception ex) {
                     logger.warn("CrossDiagnosis XML Error for ["+whenActualStateIs+"]- Bad float in probability for ["+willState+"]: " + p);
                     continue; // ignore this one & move on.

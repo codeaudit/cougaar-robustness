@@ -4,7 +4,4 @@
     <fileobject name="DefaultThreatModel.java">
         <attr name="class_dependency_org.cougaar.coordinator.techspec.ThreatModelInterface" stringvalue="DefaultThreatModel"/>
     </fileobject>
-    <fileobject name="ActionTechSpecImpl.java">
-        <attr name="class_dependency_org.cougaar.coordinator.techspec.ActionTechSpecInterface" stringvalue="ActionTechSpecImpl"/>
-    </fileobject>
 </attributes>
