@@ -28,7 +28,7 @@
     <!-- Number of agents expected to join community.  Robustness manager
          will generate a "Community Ready" CougaarEvent when the
          number of active agents in the community hits this level.  -->
-    <Attribute ID="NumberOfAgents"            Value="73" />
+    <Attribute ID="NumberOfAgents"            Value="75" />
     <!-- Parameters used by Robustness Manager.  Parameters set for
          Entities override these values -->
     <Attribute ID="INITIAL_EXPIRATION"        Value="180000" />
@@ -40,9 +40,9 @@
     <Attribute ID="FAILED_RESTART_EXPIRATION" Value="30000" />
     <Attribute ID="MOVE_EXPIRATION"           Value="300000" />
     <Attribute ID="PING_TIMEOUT"              Value="120000" />
-    <Attribute ID="HEARTBEAT_REQUEST_TIMEOUT" Value="60000" />
+    <Attribute ID="HEARTBEAT_REQUEST_TIMEOUT" Value="120000" />
     <Attribute ID="HEARTBEAT_FREQUENCY"       Value="60000" />
-    <Attribute ID="HEARTBEAT_TIMEOUT"         Value="90000" />
+    <Attribute ID="HEARTBEAT_TIMEOUT"         Value="120000" />
     <Attribute ID="HEARTBEAT_PCT_OUT_OF_SPEC" Value="80" />
     <!-- Robustness Manager -->
     <Entity Name="1AD-REAR-ARManager" >
@@ -52,6 +52,11 @@
       <Attribute ID="Role" Value="RobustnessManager" />
     </Entity>
     <!-- Nodes -->
+    <Entity Name="REAR-MGMT-NODE" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
     <Entity Name="REAR-A" >
       <Attribute ID="EntityType" Value="Node" />
       <Attribute ID="Role" Value="Member" />
@@ -388,7 +393,7 @@
     <Attribute ID="CommunityType"             Value="Robustness" />
     <Attribute ID="CommunityManager"          Value="1AD-FWD-ARManager" />
     <Attribute ID="RobustnessManager"         Value="1AD-FWD-ARManager" />
-    <Attribute ID="NumberOfAgents"            Value="55" />
+    <Attribute ID="NumberOfAgents"            Value="56" />
     <Attribute ID="INITIAL_EXPIRATION"        Value="180000" />
     <Attribute ID="LOCATED_EXPIRATION"        Value="120000" />
     <Attribute ID="ACTIVE_EXPIRATION"         Value="120000" />
@@ -398,9 +403,9 @@
     <Attribute ID="FAILED_RESTART_EXPIRATION" Value="30000" />
     <Attribute ID="MOVE_EXPIRATION"           Value="300000" />
     <Attribute ID="PING_TIMEOUT"              Value="120000" />
-    <Attribute ID="HEARTBEAT_REQUEST_TIMEOUT" Value="60000" />
+    <Attribute ID="HEARTBEAT_REQUEST_TIMEOUT" Value="120000" />
     <Attribute ID="HEARTBEAT_FREQUENCY"       Value="60000" />
-    <Attribute ID="HEARTBEAT_TIMEOUT"         Value="90000" />
+    <Attribute ID="HEARTBEAT_TIMEOUT"         Value="120000" />
     <Attribute ID="HEARTBEAT_PCT_OUT_OF_SPEC" Value="80" />
     <!-- Robustness Manager -->
     <Entity Name="1AD-FWD-ARManager" >
@@ -410,6 +415,11 @@
       <Attribute ID="Role" Value="RobustnessManager" />
     </Entity>
     <!-- Nodes -->
+    <Entity Name="FWD-MGMT-NODE" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
     <Entity Name="FWD-A" >
       <Attribute ID="EntityType" Value="Node" />
       <Attribute ID="Role" Value="Member" />
@@ -676,7 +686,7 @@
     <Attribute ID="CommunityType"             Value="Robustness" />
     <Attribute ID="CommunityManager"          Value="1AD-CONUS-ARManager" />
     <Attribute ID="RobustnessManager"         Value="1AD-CONUS-ARManager" />
-    <Attribute ID="NumberOfAgents"            Value="4" />
+    <Attribute ID="NumberOfAgents"            Value="6" />
     <Attribute ID="INITIAL_EXPIRATION"        Value="180000" />
     <Attribute ID="LOCATED_EXPIRATION"        Value="120000" />
     <Attribute ID="ACTIVE_EXPIRATION"         Value="120000" />
@@ -686,9 +696,9 @@
     <Attribute ID="FAILED_RESTART_EXPIRATION" Value="30000" />
     <Attribute ID="MOVE_EXPIRATION"           Value="300000" />
     <Attribute ID="PING_TIMEOUT"              Value="120000" />
-    <Attribute ID="HEARTBEAT_REQUEST_TIMEOUT" Value="60000" />
+    <Attribute ID="HEARTBEAT_REQUEST_TIMEOUT" Value="120000" />
     <Attribute ID="HEARTBEAT_FREQUENCY"       Value="60000" />
-    <Attribute ID="HEARTBEAT_TIMEOUT"         Value="90000" />
+    <Attribute ID="HEARTBEAT_TIMEOUT"         Value="120000" />
     <Attribute ID="HEARTBEAT_PCT_OUT_OF_SPEC" Value="80" />
     <!-- Robustness Manager -->
     <Entity Name="1AD-CONUS-ARManager" >
@@ -698,6 +708,11 @@
       <Attribute ID="Role" Value="RobustnessManager" />
     </Entity>
     <!-- Nodes -->
+    <Entity Name="CONUS-MGMT-NODE" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
     <Entity Name="NCA-NODE" >
       <Attribute ID="EntityType" Value="Node" />
       <Attribute ID="Role" Value="Member" />
@@ -760,7 +775,7 @@
     <Attribute ID="CommunityType"             Value="Robustness" />
     <Attribute ID="CommunityManager"          Value="1AD-TRANS-ARManager" />
     <Attribute ID="RobustnessManager"         Value="1AD-TRANS-ARManager" />
-    <Attribute ID="NumberOfAgents"            Value="4" />
+    <Attribute ID="NumberOfAgents"            Value="8" />
     <Attribute ID="INITIAL_EXPIRATION"        Value="180000" />
     <Attribute ID="LOCATED_EXPIRATION"        Value="120000" />
     <Attribute ID="ACTIVE_EXPIRATION"         Value="120000" />
@@ -770,9 +785,9 @@
     <Attribute ID="FAILED_RESTART_EXPIRATION" Value="30000" />
     <Attribute ID="MOVE_EXPIRATION"           Value="300000" />
     <Attribute ID="PING_TIMEOUT"              Value="120000" />
-    <Attribute ID="HEARTBEAT_REQUEST_TIMEOUT" Value="60000" />
+    <Attribute ID="HEARTBEAT_REQUEST_TIMEOUT" Value="120000" />
     <Attribute ID="HEARTBEAT_FREQUENCY"       Value="60000" />
-    <Attribute ID="HEARTBEAT_TIMEOUT"         Value="90000" />
+    <Attribute ID="HEARTBEAT_TIMEOUT"         Value="120000" />
     <Attribute ID="HEARTBEAT_PCT_OUT_OF_SPEC" Value="80" />
     <!-- Robustness Manager -->
     <Entity Name="1AD-TRANS-ARManager" >
@@ -782,6 +797,11 @@
       <Attribute ID="Role" Value="RobustnessManager" />
     </Entity>
     <!-- Nodes -->
+    <Entity Name="TRANS-MGMT-NODE" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
     <Entity Name="TRANSCOM-NODE" >
       <Attribute ID="EntityType" Value="Node" />
       <Attribute ID="Role" Value="Member" />

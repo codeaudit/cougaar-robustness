@@ -16,7 +16,8 @@ Cougaar::ExperimentMonitor.enable_logging
 
 Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
 
-  do_action "LoadSocietyFromXML", "#{CIP}/configs/ul/SMALL-1AD-TRANS-1359.xml"
+  #do_action "LoadSocietyFromXML", "#{CIP}/configs/ul/SMALL-1AD-TRANS-1359.xml"
+  do_action "LoadSocietyFromScript", "#{CIP}/configs/ul/SMALL-1AD-TRANS-1359.rb"
   do_action "LayoutSociety", "#{CIP}/operator/uc1-small-1ad-layout.xml", HOSTS_FILE
 
   do_action "TransformSociety", false,
@@ -47,7 +48,7 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
   do_action "Sleep", 5.minutes
 
   # Kill node that does not contain robustness manager
-  do_action "SaveHostOfNode", "TRANS-NODE"
+  do_action "SaveHostOfNode", "1AD-SMALL-COMM", "TRANS-NODE"
   do_action "KillNodes", "TRANS-NODE"
 
   # Wait for restarts to complete
@@ -58,7 +59,7 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
   do_action "Sleep", 3.minutes
 
   # Kill node that contains robustness manager
-  do_action "SaveHostOfNode", "FWD-NODE"
+  do_action "SaveHostOfNode", "1AD-SMALL-COMM", "FWD-NODE"
   do_action "KillNodes", "FWD-NODE"
 
   # Wait for restarts to complete
@@ -69,7 +70,7 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
   do_action "Sleep", 3.minutes
 
   # Kill last of original nodes 
-  do_action "SaveHostOfNode", "REAR-NODE"
+  do_action "SaveHostOfNode", "1AD-SMALL-COMM", "REAR-NODE"
   do_action "KillNodes", "REAR-NODE"
 
   # Wait for restarts to complete

@@ -309,5 +309,38 @@
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="Member" />
     </Entity>
+    <!-- <Entity Name="NestedCommunity1" >
+      <Attribute ID="EntityType" Value="Community" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="NestedCommunity2" >
+      <Attribute ID="EntityType" Value="Community" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="NestedCommunity3" >
+      <Attribute ID="EntityType" Value="Community" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity> -->
   </Community>
+  <!-- <Community Name="NestedCommunity1" >
+    <Attribute ID="CommunityType" Value="Test" />
+    <Entity Name="TheaterGround" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+  </Community>
+  <Community Name="NestedCommunity2" >
+    <Attribute ID="CommunityType" Value="Test" />
+    <Entity Name="TRANSCOM" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+  </Community>
+  <Community Name="NestedCommunity3" >
+    <Attribute ID="CommunityType" Value="Test" />
+    <Entity Name="ShipPacker" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+  </Community> -->
 </Communities>
