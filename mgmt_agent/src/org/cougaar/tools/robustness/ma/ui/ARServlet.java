@@ -565,8 +565,8 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
   protected void modifyCommunityAttribute(String communityName,
                                           String attrId,
                                           String attrValue) {
-    if (log.isInfoEnabled()) {
-      log.info("modifyCommunityAttributes:" +
+    if (log.isDebugEnabled()) {
+      log.debug("modifyCommunityAttributes:" +
                " communityName=" + communityName +
                " attrId=" + attrId +
                " attrValue=" + attrValue);
@@ -671,8 +671,8 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
       HealthMonitorResponse hmrResp = null;
 
       if (target.equals(agentId)) {
-        if (log.isInfoEnabled()) {
-          log.info("Publishing HealthMonitorRequest:" + hmr);
+        if (log.isDebugEnabled()) {
+          log.debug("Publishing HealthMonitorRequest:" + hmr);
         }
         try {
           bb.openTransaction();
@@ -689,8 +689,8 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
         RelayAdapter hmrRa =
             new RelayAdapter(agentId, hmr, hmr.getUID());
         hmrRa.addTarget(target);
-        if (log.isInfoEnabled()) {
-          log.info("Publishing HealthMonitorRequest Relay:" +
+        if (log.isDebugEnabled()) {
+          log.debug("Publishing HealthMonitorRequest Relay:" +
                    " target=" + hmrRa.getTargets() +
                    " community-" + hmr.getCommunityName());
         }
@@ -795,8 +795,8 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
 
   protected void publishRequest(HealthMonitorRequest hmr) {
     MessageAddress target = getRobustnessManager(hmr.getCommunityName());
-    if (log.isInfoEnabled()) {
-      log.info("publishRequest: " + hmr);
+    if (log.isDebugEnabled()) {
+      log.debug("publishRequest: " + hmr);
     }
     Object request = hmr;
     if (!target.equals(agentId)) {
