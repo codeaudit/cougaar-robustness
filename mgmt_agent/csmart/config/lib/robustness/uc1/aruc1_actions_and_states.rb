@@ -8,6 +8,7 @@ module Cougaar
   ShiftFlag_CONST = "false" #do we need remove the first node in all node list?
   Times_CONST = [] # record time before and after restarting a node  
   KillHost_CONST = "" #the host of the most currently killed node
+  LoadBalancer_CONST = "false"
 
   class CommunityController
     def initialize(run, communityName, agentsCount)
@@ -55,10 +56,15 @@ module Cougaar
     def isCommunityReady
       @currentAgents = 0
       if KILLNODE_CONST.length != 0
-        if PORTS_CONST.has_key?(KILLNODE_CONST)
-          PORTS_CONST.delete(KILLNODE_CONST) 
-          puts "delete #{KILLNODE_CONST} from PORTS_CONST"
-        end
+        if LoadBalancer_CONST == "false"
+          if PORTS_CONST.has_key?(KILLNODE_CONST)
+            PORTS_CONST.delete(KILLNODE_CONST) 
+            puts "delete #{KILLNODE_CONST} from PORTS_CONST"
+          end
+	end
+      end
+      if LoadBalancer_CONST == "true"
+        LoadBalancer_CONST[0..LoadBalancer_CONST.length] = "false"
       end
       PORTS_CONST.each do |key, value|
         if !(value.include?":") #this is a new node, try to get it's port address
@@ -86,12 +92,8 @@ module Cougaar
             end
           end
         end # end if !(value.include?":")
-        result,uri = Cougaar::Communications::HTTP.get("http://#{value}/agents?format=text")
-        begin
-          result.each_line do |line|
-	    temp = line.strip
-	    if temp != key
-              result2,uri2 = Cougaar::Communications::HTTP.get("http://#{value}/$#{temp}/communityViewer")            
+	    begin
+              result2,uri2 = Cougaar::Communications::HTTP.get("http://#{value}/$#{key}/communityViewer")
 	      result2.each_line do |line2|
 		html = line2.strip
                 if html.include?"community="
@@ -100,7 +102,24 @@ module Cougaar
                   index = html.index('>')
                   html[index, html.length] = ""
                   if html == @community
-		    @currentAgents += 1
+		    #@currentAgents += 1
+		    result3,uri3 = Cougaar::Communications::HTTP.get("http://#{value}/$#{key}/communityViewer?community=#{@community}")
+		    result3.each_line do |line3|
+		     agent = line3.strip
+		      if agent.include?"</a>"
+		        index = agent.index('>')
+			agent[0, index+1] = ""
+			index = agent.index('</a>')
+			agent[index, agent.length] = ""
+			if !(agent.include?"Community ")
+			  if ALLNODES_CONST.include?(agent)
+			    next
+			  end
+			  @currentAgents += 1
+			  #puts "#{agent} is in community: #{@currentAgents}"
+			end
+		      end
+		    end
                     if @currentAgents >= @agentsCount
                       if ShiftFlag_CONST == "true"
   			one = ALLNODES_CONST.shift
@@ -112,11 +131,12 @@ module Cougaar
                       #KILLNODE_CONST[0..KILLNODE_CONST.length] = ALLNODES_CONST[0]
 		      return true
 		    end
+		    if @currentAgents < @agentsCount
+		      return false
+                    end
 		  end
 		end
 	      end
-            end
-          end
         rescue NameError
           next
         end
@@ -230,12 +250,15 @@ module Cougaar
         super(run, timeout, &block)
       end
       def process
-        controller = ::Cougaar::CommunityController.new(run, "1AD-ROBUSTNESS-COMM", 42)
+        controller = ::Cougaar::CommunityController.new(run, "TINY-1AD-ROBUSTNESS-COMM", 42)
         if PORTS_CONST.length == 0
-           sleep 3.minutes
+           sleep 2.minutes
            controller.getPorts
         end
         #result = controller.isCommunityReady
+        if LoadBalancer_CONST == "true"
+	  sleep 4.minutes
+	end
         while !(controller.isCommunityReady)
           sleep 5.seconds
         end
@@ -284,6 +307,7 @@ module Cougaar
         restartFails = @origtotal - @currenttotal
         restartFails = 0 if restartFails < 0
         restartSucceeds = @removeAgentsCount - restartFails
+	restartSucceeds = 0 if restartSucceeds < 0
         print "  Restarts performed: ", restartSucceeds, "\n"
         print "  Restarts failed:    ", restartFails, "\n"
         puts "  Agents count by node:"
@@ -356,7 +380,10 @@ module Cougaar
                  "org.cougaar.tools.robustness.sensors.HeartbeatRequesterPlugin",
                  "org.cougaar.community.CommunityPlugin",
 		 "org.cougaar.community.util.CommunityViewerServlet",
-                 "org.cougaar.tools.robustness.ma.ui.ARServlet"]
+                 "org.cougaar.tools.robustness.ma.ui.ARServlet",
+		 "com.boeing.pw.mct.exnihilo.plugin.EN4JPlugin",
+                 "org.cougaar.core.mobility.service.RedirectMovePlugin",
+                 "org.cougaar.core.mobility.service.RootMobilityPlugin"]
              newNode.add_components(components)
              sensorDomain = Cougaar::Model::Component.new("org.cougaar.tools.robustness.sensors.SensorDomain")
              sensorDomain.agent = @nodeName
@@ -465,6 +492,19 @@ module Cougaar
         rmPersistence = %Q[rm -rf #{persistence}]
         `#{rmLog}`
         `#{rmPersistence}`
+      end
+    end
+    
+    class LoadBalancer < Cougaar::Action
+      DEFAULT_TIMEOUT = 30.minutes
+      def initialize(run)
+        super(run)
+      end
+      def perform
+        node = ALLNODES_CONST[0]
+	value = PORTS_CONST[node]
+	LoadBalancer_CONST[0..LoadBalancer_CONST.length] = "true"
+        result,uri = Cougaar::Communications::HTTP.get("http://#{value}/$#{node}/ar?loadBalance=Load+Balance");
       end
     end
     
