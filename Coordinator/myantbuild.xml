@@ -44,6 +44,7 @@
                 <mkdir dir="staging/coordinator/examples"/>
 		<mkdir dir="staging/coordinator/test"/>
 		<mkdir dir="staging/csmart"/>
+		<mkdir dir="staging/sys"/>
 		<antcall target="delete"/>
 		<antcall target="jar"/>
 	        <signjar jar="${jar}" keystore="/var/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
@@ -63,6 +64,9 @@
 		</copy>	
                 <copy todir="staging/csmart/">
 			<fileset dir="csmart/"/>
+		</copy>	
+                <copy todir="staging/sys/">
+			<fileset dir="sys/"/>
 		</copy>	
                 <zip basedir="staging" zipfile="AC_objs_coordinator.zip"/>
                 <delete dir="staging"/>
