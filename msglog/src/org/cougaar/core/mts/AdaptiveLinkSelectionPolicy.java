@@ -117,7 +117,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
   private static boolean debug;
   private static boolean showTraffic; 
 
-  private static final boolean useRTTService; 
+  private static boolean useRTTService; 
   private static final int initialNodeTime;
   private static final int tryOtherLinksInterval;
   private static final int upgradeMetricMultiplier;
@@ -168,20 +168,21 @@ commStartDelaySeconds = Integer.valueOf(System.getProperty(s,"0")).intValue();
   public AdaptiveLinkSelectionPolicy ()
   {}
 
-  public void initialize () 
-  {
-    super.initialize();
-
-    if (useRTTService)
-    {
-      rttService = (RTTService) getServiceBroker().getService (this, RTTService.class, null);
-    }
-  }
-
   public void load () 
   {
     super.load();
     log = loggingService;
+
+    if (useRTTService)
+    {
+      rttService = (RTTService) getServiceBroker().getService (this, RTTService.class, null);
+
+      if (rttService == null) 
+      {
+        log.error ("Missing RTTAspect! (useRTTService reset to false)");
+        useRTTService = false;
+      }
+    }
 
     String sta = "org.cougaar.core.mts.ShowTrafficAspect";
     showTraffic = (getAspectSupport().findAspect(sta) != null);
@@ -1540,11 +1541,16 @@ if (commStartDelaySeconds > 0)
     System.out.print (letter.toLowerCase());
   }
 
+  public static String getLinkType (DestinationLink link)
+  {
+    return getLinkType (getName (link));
+  }
+
   public static String getLinkType (String classname)
   {
-    if (classname == null) return null;
-
     String type = "unknown";
+
+    if (classname == null) return type;
 
     if      (classname.equals("org.cougaar.core.mts.LoopbackLinkProtocol")) type = "loopback";
     else if (classname.equals("org.cougaar.core.mts.RMILinkProtocol")) type = "rmi";

@@ -100,6 +100,18 @@ public final class MessageUtils
                                       return "?";  // unknown
   }
 
+  public static String getMessageTypeString (AttributedMessage msg)
+  {
+    if (isRegularMessage(msg))        return "Regular";
+    if (isLocalMessage(msg))          return "Local";
+    if (isHeartbeatMessage(msg))      return "Heartbeat";
+    if (isPingMessage(msg))           return "Ping";
+    if (isTrafficMaskingMessage(msg)) return "TrafficMasking";
+    if (isPureAckMessage(msg))        return "PureAck";
+    if (isPureAckAckMessage(msg))     return "PureAckAck";
+                                      return "?";  // unknown
+  }
+
   public static boolean isRegularMessage (AttributedMessage msg)
   {
     String type = getMessageType (msg);
@@ -266,6 +278,18 @@ public final class MessageUtils
     return (Ack) msg.getAttribute (ACK);
   }
 
+  public static int getSendTry (AttributedMessage msg)
+  {
+    Ack ack = getAck (msg);
+    return (ack != null ? ack.getSendTry() : -1); 
+  }
+
+  public static int getSendCount (AttributedMessage msg)
+  {
+    Ack ack = getAck (msg);
+    return (ack != null ? ack.getSendCount() : 0);
+  }
+
   public static void setMessageSize (AttributedMessage msg, int size)
   {
     msg.setLocalAttribute (MSG_SIZE, new Integer (size));  // note LOCAL attribute
@@ -314,12 +338,6 @@ public final class MessageUtils
   public static void setSendProtocolLink (AttributedMessage msg, String protocolLink)
   {
     msg.setAttribute (SEND_PROTOCOL_LINK, protocolLink);
-  }
-
-  public static int getSendTry (AttributedMessage msg)
-  {
-    Ack ack = getAck (msg);
-    return (ack != null ? ack.getSendTry() : -1); 
   }
 
   public static String getSendProtocolLink (AttributedMessage msg)
