@@ -522,7 +522,7 @@
     <copy toDir="staging/robustness/doc">
       <fileset dir="doc"/>
     </copy>
-    <zip zipfile="Robustness_mic_mgmt_agent_overlay.zip" basedir="staging"/>
+    <zip zipfile="AR_mic.zip" basedir="staging"/>
     <delete dir="staging"/>
   </target>
 
