@@ -191,8 +191,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 
   }
 
-
-  
+/* original implementation of selectActions
   private void selectActions(CostBenefitEvaluation cbe, ActionSelectionKnob knob) {
 
     boolean done = false;
@@ -209,7 +208,41 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 		|| (outOfResources())
 		|| (index == knob.getMaxActions()))
 		done = true; 
-        } else done = true;
+        } 
+    }
+  }
+*/
+  
+  private void selectActions(CostBenefitEvaluation cbe, ActionSelectionKnob knob) {
+
+    boolean done = false;
+    int index = 0;
+    while (!done) {
+        SelectedAction thisAction = selectBest(cbe, knob); 
+        if (thisAction != null) {
+	    if (logger.isDebugEnabled()) 
+		logger.debug("SelectAction: thisAction="+thisAction.toString());
+            publishAdd(thisAction);
+            index++;
+            Action a = thisAction.getActionEvaluation().getAction();
+	    ActionTechSpecInterface ats = actionTechSpecService.getActionTechSpec(a.getClass().getName());
+	    if (ats == null) {
+		if (logger.isErrorEnabled()) 
+		    logger.error("Cannot find ActionTechSpec for "+a.getClass().getName());
+	    }
+	    if (outOfResources() || (index >= knob.getMaxActions())) {
+		done = true;
+	    } else if (ats != null && 
+                      // Because we try only one corrective action at a time
+		      ats.getActionType() == ActionTechSpecInterface.CORRECTIVE_ACTIONTYPE) {
+		done = true;
+	    } else {
+		done = false;
+	    }
+	} else {
+	    // exit on first null result from SelectBest
+	    done = true; // done because can't find anything useful to do
+	}
     }
   }
 
