@@ -36,11 +36,12 @@
 
 	<target name="create_cougaar_overlay">
 		<mkdir dir="staging/lib"/>
-		<mkdir dir="staging/sys"/>
 		<antcall target="delete"/>
 		<antcall target="jar"/>
-		<signjar jar="${jar}" keystore="signingCA.keystore" alias="privileged" storepass="keystore"/>
-                <move file="${jar}" todir="${cougaar}/lib"/>
+		<signjar jar="${jar}" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
+    <move file="${jar}" todir="staging/lib"/>
+    <zip zipfile="Robustness_objs_common_overlay.zip" basedir="staging"/>
+    <delete dir="staging"/>
 	</target>
 
 	<target name="clean" depends="delete,compile,jar"/>
