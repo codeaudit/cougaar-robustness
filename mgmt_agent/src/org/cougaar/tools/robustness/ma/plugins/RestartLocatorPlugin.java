@@ -139,7 +139,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
     StringBuffer startMsg = new StringBuffer();
     startMsg.append("RestartLocatorPlugin started: ");
     startMsg.append(paramsToString());
-    log.info(startMsg.toString());
+    log.debug(startMsg.toString());
 
   }
 

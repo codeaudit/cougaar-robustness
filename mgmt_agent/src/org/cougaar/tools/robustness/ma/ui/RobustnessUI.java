@@ -188,7 +188,7 @@ public class RobustnessUI extends JPanel
     List nodes = new ArrayList();
     path.clear(); //empty the expanded list of the tree
     nodeandpath.clear(); //empty the node and path list.
-    Hashtable table = getInfoFromServlet(); //get hashtable fetehed from the servlet
+    Hashtable table = getInfoFromServlet(); //get hashtable fetched from the servlet
     topology = (Hashtable)table.get("Topology"); //get topology list of the society.
     DefaultMutableTreeNode root = new DefaultMutableTreeNode();
     final Hashtable c = (Hashtable)table.get("Communities");
@@ -362,6 +362,9 @@ public class RobustnessUI extends JPanel
         isMgmtCommunity = true;
         mgmtAgents.put(name, mgmtAgent);
       }
+      Hashtable emptyNodes = null; //save all empty nodes of this community
+      if(DNDJTree.getEmptyNodes().containsKey(name))
+        emptyNodes = (Hashtable)DNDJTree.getEmptyNodes().get(name);
 
       DefaultMutableTreeNode cnode = new DefaultMutableTreeNode("Community: " + name);
       nodes.add(cnode);
@@ -447,6 +450,13 @@ public class RobustnessUI extends JPanel
           for(Enumeration enum = hosts.keys(); enum.hasMoreElements();)
           {
             String hostName = (String)enum.nextElement(); //host name
+            List emptys = null;
+            if(emptyNodes != null)
+            {
+              if(emptyNodes.containsKey(hostName))
+                emptys = (List)emptyNodes.get(hostName);
+            }
+
             List nodeNames = new ArrayList();
             EntityInfo hostEI = new EntityInfo(hostName, "host", null, isMgmtCommunity);
             EntityNode hostNameNode = new EntityNode(hostEI);
@@ -493,7 +503,24 @@ public class RobustnessUI extends JPanel
                   }
               }
             }
-
+            //add empty nodes
+            if(emptys != null)
+            {
+              for(int i=0; i<emptys.size(); i++)
+              {
+                String emptyNode = (String)emptys.get(i);
+                if(nodeNames.contains(emptyNode))
+                  DNDJTree.removeEmptyNode(name, hostName, emptyNode);
+                else
+                {
+                  EntityInfo ei = new EntityInfo(emptyNode, "node", null, isMgmtCommunity);
+                  EntityNode en = new EntityNode(ei);
+                  hostNameNode.add(en);
+                  nodes.add(en);
+                  nodeNames.add(emptyNode);
+                }
+              }
+            }
           }
 
           //add hosts who have restart nodes but not in this community
@@ -605,6 +632,7 @@ public class RobustnessUI extends JPanel
           {//System.out.println("Add agent " + sourceName + " to node " + nodeName);
             EntityNode newen = new EntityNode(sourceInfo);
             node.add(newen);
+            newen.addAttributes(sourceInfo.getAttributes());
             namesAndNodes.put(sourceName, newen);
             nodes.add(newen);
           }
@@ -760,6 +788,7 @@ public class RobustnessUI extends JPanel
     {
       String agentName = (String)enums.nextElement();
       JScrollPane xml_sp = (JScrollPane)agentsWithXml.get(agentName);
+      Point xmlLastPoint = xml_sp.getViewport().getViewPosition();
       //Document doc = (Document)publishRequest("viewXml", agentName, null, null);
       Document doc = fetchXmlFromServlet(agentName);
       if(doc != null)
@@ -786,6 +815,7 @@ public class RobustnessUI extends JPanel
         }
         //((DefaultTreeModel)mytree.getModel()).reload();
         xml_sp.getViewport().add(mytree);
+        xml_sp.getViewport().setViewPosition(xmlLastPoint);
       }
     }
   }

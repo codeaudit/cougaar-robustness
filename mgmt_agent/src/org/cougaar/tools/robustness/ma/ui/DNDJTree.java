@@ -25,6 +25,7 @@ public class DNDJTree extends JTree
   DropTarget dropTarget = null;  // enables component to be a dropTarget
   DragSource dragSource = null;  // enables component to be a dragSource
   DefaultMutableTreeNode[] dragSourceNodes;     // The (TreeNodes) that are being dragged from here
+  private static Hashtable emptyNodes = new Hashtable(); //saves all empty nodes after DND
 
   private transient Logger log;
 
@@ -384,8 +385,17 @@ public class DNDJTree extends JTree
   public void removeElement(){
     if (dragSourceNodes != null) {
       for (int i = 0; i < dragSourceNodes.length; i++) {
+EntityNode parent = (EntityNode)dragSourceNodes[i].getParent();
         ((DefaultTreeModel) getModel())
           .removeNodeFromParent(dragSourceNodes[i]);
+if(parent.getChildCount() == 0)
+{
+  String node = ((EntityInfo)parent.getUserObject()).getName();
+  String host = ((EntityInfo)((EntityNode)parent.getParent()).getUserObject()).getName();
+  String community = (String)((DefaultMutableTreeNode)parent.getParent().getParent().getParent()).getUserObject();
+  community = community.substring(community.indexOf(" "), community.length()).trim();
+  addEmptyNode(community, host, node);
+}
       }
       dragSourceNodes = null;
     }
@@ -582,6 +592,48 @@ public class DNDJTree extends JTree
           }
         }
       }
+
+
+    protected static void addEmptyNode(String community, String host, String node)
+    {
+      if(!emptyNodes.containsKey(community))
+      {
+        Hashtable hosts = new Hashtable();
+        java.util.List nodes = new ArrayList();
+        nodes.add(node);
+        hosts.put(host, nodes);
+        emptyNodes.put(community, hosts);
+      }
+      else
+      {
+        Hashtable hosts = (Hashtable)emptyNodes.get(community);
+        if(hosts.containsKey(host))
+        {
+          java.util.List nodes = (java.util.List)hosts.get(host);
+          nodes.add(node);
+        }
+        else
+        {
+          java.util.List nodes = new ArrayList();
+          nodes.add(node);
+          hosts.put(host, nodes);
+        }
+      }
+    }
+
+    protected static void removeEmptyNode(String community, String host, String node)
+    {
+      Hashtable hosts = (Hashtable)emptyNodes.get(community);
+      java.util.List nodes = (java.util.List)hosts.get(host);
+      nodes.remove(node);
+      if(nodes.size() == 0)
+        hosts.remove(host);
+      if(hosts.size() == 0)
+        emptyNodes.remove(community);
+    }
+
+    protected static Hashtable getEmptyNodes()
+    { return emptyNodes; }
 
   public static void main(String args[]) {
 
