@@ -142,8 +142,14 @@
                <xsl:attribute name="disabled">true</xsl:attribute>
            </xsl:if>
           <xsl:variable name="currentnode"><xsl:value-of select=".//agent[1]/location/@current" /></xsl:variable>
-          <xsl:for-each select=".//node">
+          <xsl:for-each select=".//healthMonitor">
+            <xsl:variable name="nodeType">node</xsl:variable>
+            <xsl:variable name="type"><xsl:value-of select="@type" /></xsl:variable>
+            <xsl:if test="$type=$nodeType">
              <xsl:variable name="node"><xsl:value-of select="@name" /></xsl:variable>
+             <xsl:variable name="dead">DEAD</xsl:variable>
+             <xsl:variable name="state"><xsl:value-of select="./status/@state" /></xsl:variable>
+             <xsl:if test="not($state=$dead)">
              <xsl:element name="option">
                <xsl:if test="$hasticket>0">
                  <xsl:variable name="mobileAgent"><xsl:value-of select="//CurrentTicket/mobileAgent" /></xsl:variable>
@@ -167,6 +173,8 @@
                </xsl:if>
                <xsl:value-of select="$node" />
              </xsl:element>
+             </xsl:if>
+            </xsl:if>
           </xsl:for-each>
        </xsl:element></td>
      </tr>
@@ -261,3 +269,4 @@
 </xsl:template>
 
 </xsl:stylesheet>
+
