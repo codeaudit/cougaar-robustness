@@ -57,10 +57,15 @@ public class AgentID implements java.io.Serializable
   private String nodeName;
   private String agentName;
   private String agentIncarnation;
-  private static String wpAgentName = null; //104B
+  //private static String wpAgentName = null; //104B
   private static Hashtable nodeCbTbl= new Hashtable(); //104B
   private static Hashtable incCbTbl= new Hashtable(); //104B
   private static Object cbLock = new Object(); //104B
+
+ //1045B
+  private static int numWPservers;
+  //private static Random randomNumGen;
+  private static Hashtable wpAgentTbl = new Hashtable();
 
   static
   {
@@ -68,6 +73,13 @@ public class AgentID implements java.io.Serializable
 
     String s = "org.cougaar.message.transport.mts.AgentID.callTimeout";  //102
     callTimeout = Integer.valueOf(System.getProperty(s,"500")).intValue();
+
+    //1045B
+    s = "org.cougaar.message.transport.mts.AgentID.numberOfWPServers";  
+    numWPservers = Integer.valueOf(System.getProperty(s,"12")).intValue();
+
+    //1045B
+    //randomnumgen = new Random(System.currentTimeMillis()); 
   }
 
   /*
@@ -300,17 +312,59 @@ public class AgentID implements java.io.Serializable
       //104B Temporary hack to handle messages to node agent where WP Server 
       //     resides without having to access the remote WP Server by sending
       //     it a message and therefore causing a deadlock
-      if (wpAgentName == null) {
-        AddressEntry ae = wp.get("WP", "alias", -1); // -1 = only try local cache
-        if (log.isDebugEnabled())
-          log.debug("ae="+ae);
-        if (ae != null && ae.getURI() != null)
-          wpAgentName = ae.getURI().getPath().substring(1);
-        if (log.isDebugEnabled())
-          log.debug("wpAgentName="+wpAgentName);
+      //1045B Make this handle multiple WP servers
+      synchronized (wpAgentTbl) {
+	  if (log.isDebugEnabled())
+	      log.debug("wpAgentTbl="+wpAgentTbl);
+	  if (wpAgentTbl.isEmpty()) {
+	      if (log.isDebugEnabled())
+		  log.debug("wpAgentTbl is empty.");
+	      AddressEntry ae = null;
+	      //int wpServerNum = randomNumGen.nextInt(numWPservers)+1;
+	      if (log.isDebugEnabled())
+		  log.debug("numWPservers="+numWPservers);
+	      int i;
+	      for(i=1; i<numWPservers; i++) {
+		  if (log.isDebugEnabled())
+		      log.debug("i="+i);
+		  String wpAgentName = null;
+		  String alias = null;
+		  if (log.isDebugEnabled())
+		      log.debug("alias="+alias);
+		  if (i == 1) {
+		      if (log.isDebugEnabled())
+			  log.debug("i="+i);
+		      alias = "WP";
+		      if (log.isDebugEnabled())
+			  log.debug("alias="+alias);
+		  } else {
+		      if (log.isDebugEnabled())
+			  log.debug("i="+i);
+		      alias = "WP-" + i;
+		      if (log.isDebugEnabled())
+			  log.debug("alias="+alias);
+		  }
+		  ae = wp.get(alias, "alias", -1); // -1 = only try local cache
+		  if (log.isDebugEnabled())
+		      log.debug("ae="+ae);
+		  if (ae != null && (ae.getURI() != null))
+		      wpAgentName = ae.getURI().getPath().substring(1);
+		  if (log.isDebugEnabled())
+		      log.debug("wpAgentName="+wpAgentName);
+		  if (wpAgentName == null) {
+		      if (wpAgentTbl.isEmpty()) {
+			  if (log.isDebugEnabled())
+			      log.debug("WP alias not found yet. Will retry.");
+			  return null;
+		      }
+		  } else {
+		      wpAgentTbl.put(wpAgentName,wpAgentName);
+		  }
+	      }
+	  }
       }
-      if (wpAgentName.equals(agentName))
-        return new AgentID(agentName, agentName, "0");      
+      if (wpAgentTbl.get(agentName) != null)
+	  return new AgentID(agentName, agentName, "0");
       
       //104B First check via registry if node is local before going to WhitePages
       if (registry == null)
