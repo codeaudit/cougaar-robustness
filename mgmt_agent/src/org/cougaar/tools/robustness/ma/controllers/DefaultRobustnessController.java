@@ -626,12 +626,14 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
             }
           }
         }
-        getLoadBalancer().doLayout(LoadBalancer.DEFAULT_ANNEAL_TIME,
-                                   true,
-                                   new ArrayList(newNodes),
-                                   new ArrayList(deadNodes),
-                                   new ArrayList(getExcludedNodes()),
-                                   lbl);
+        if (!newNodes.isEmpty()) {
+          getLoadBalancer().doLayout(LoadBalancer.DEFAULT_ANNEAL_TIME,
+                                     true,
+                                     new ArrayList(newNodes),
+                                     new ArrayList(deadNodes),
+                                     new ArrayList(getExcludedNodes()),
+                                     lbl);
+        }
         newNodes.clear();
         deadNodes.clear();
       }
