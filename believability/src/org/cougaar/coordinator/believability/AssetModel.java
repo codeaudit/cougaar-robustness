@@ -67,6 +67,7 @@ public class AssetModel extends Loggable
                        ModelManagerInterface model_manager,
                        StateEstimationPublisher se_publisher,
                        long initial_time ) 
+            throws BelievabilityException
     {
         
      // Save construction parameters and information

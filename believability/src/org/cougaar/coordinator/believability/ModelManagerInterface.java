@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManagerInterface.java,v $
- * $Revision: 1.26 $
- * $Date: 2004-08-06 04:18:46 $
+ * $Revision: 1.28 $
+ * $Date: 2004-08-09 20:46:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -39,7 +39,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * tech spec information. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.26 $Date: 2004-08-06 04:18:46 $
+ * @version $Revision: 1.28 $Date: 2004-08-09 20:46:41 $
  *
  */
 public interface ModelManagerInterface
@@ -123,6 +123,20 @@ public interface ModelManagerInterface
      *
      */
     public BeliefState getInitialBeliefState( AssetID asset_id )
+            throws BelievabilityException;
+
+    //************************************************************
+    /**
+     * Gets a belief state with each state dimension set to the
+     * value representing the initial belief when there is no
+     * information available (e,g. during a rehydration).
+     *
+     * @param asset_id The ID of the asset
+     * @return A new belief states set to the distributions to use
+     * with no information.
+     *
+     */
+    public BeliefState getNoInformationBeliefState( AssetID asset_id )
             throws BelievabilityException;
 
     //************************************************************

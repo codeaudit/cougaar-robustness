@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefState.java,v $
- * $Revision: 1.26 $
- * $Date: 2004-08-06 04:18:46 $
+ * $Revision: 1.28 $
+ * $Date: 2004-08-09 20:46:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -34,7 +34,7 @@ import org.cougaar.coordinator.techspec.AssetStateDimension;
  * asset instance.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.26 $Date: 2004-08-06 04:18:46 $
+ * @version $Revision: 1.28 $Date: 2004-08-09 20:46:41 $
  * 
  *
  */
@@ -266,6 +266,31 @@ public class BeliefState implements Cloneable
         } // while enum
 
     } // method setAssetID
+
+    //************************************************************
+    /**
+     * This routine will blur the belief state probabilities for each
+     * state dimension.  The bluring means it take some amount of
+     * probability (the blur factor) and distributes that evenly
+     * across all possibly states, then renormalizing afterwards.  It
+     * will do this for each state dimension.
+    *
+     * @param blur_factor The amount of probability to spread across
+     *each state dimension 
+     */
+    void blurProbabilities( double blur_factor )
+    {
+        Enumeration belief_dim_enum = _belief_dimensions.elements();
+        while( belief_dim_enum.hasMoreElements() )
+        {
+            BeliefStateDimension belief_dim
+                    = (BeliefStateDimension) belief_dim_enum.nextElement();
+
+            belief_dim.blurProbabilities( blur_factor );
+
+        } // while belief_dim_enum
+
+    } // method blurProbabilities
 
     //------------------------------------------------------------
     // protected interface

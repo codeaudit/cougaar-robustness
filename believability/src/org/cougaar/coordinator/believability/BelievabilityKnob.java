@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BelievabilityKnob.java,v $
- * $Revision: 1.10 $
- * $Date: 2004-08-06 04:18:46 $
+ * $Revision: 1.12 $
+ * $Date: 2004-08-09 20:46:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.util.UnaryPredicate;
  * want to have external, dynamic control over.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.10 $Date: 2004-08-06 04:18:46 $
+ * @version $Revision: 1.12 $Date: 2004-08-09 20:46:41 $
  *
  */
 public class BelievabilityKnob implements Serializable 
@@ -49,6 +49,7 @@ public class BelievabilityKnob implements Serializable
     public static final long DEFAULT_MAX_PUBLISH_INTERVAL = 900000;
     public static final long DEFAULT_PUBLISH_DELAY_INTERVAL = 500;
     public static final boolean DEFAULT_IS_LEASHED   = true;
+    public static final double DEFAULT_INITIAL_BELIEF_BLUR_AMOUNT = 0.10;
 
     /**
      * Convenience predicate for subscriptions for subscribing to this
@@ -98,6 +99,11 @@ public class BelievabilityKnob implements Serializable
         return _is_leashed;
     }
 
+    public double getInitialBeliefBlurAmount()
+    {
+        return _init_belief_blur_amount;
+    }
+
     //------------------------------------------------------------
     // Mutators
     //------------------------------------------------------------
@@ -120,6 +126,11 @@ public class BelievabilityKnob implements Serializable
     public void setIsLeashed( boolean value )
     {
         _is_leashed = value;
+    }
+
+    public void setInitialBeliefBlurAmount( double value )
+    {
+        _init_belief_blur_amount = value;
     }
 
     //------------------------------------------------------------
@@ -164,5 +175,26 @@ public class BelievabilityKnob implements Serializable
      * rendering actions/diagnoses invalid.
      */
     private boolean _is_leashed = DEFAULT_IS_LEASHED;
+
+    /**
+     * In certain circumstances (such as rehydrating) the
+     * believability plugin will lose track of the states of assets,
+     * and thus have to recreate the belief state with limited
+     * information. The tech-spec derived initial belief state only
+     * makes sense to use as the a priori belief if you know the asset
+     * has just started (by definition of the a priori belief state.
+     * Because committing to the wrong initial belief could lead to
+     * bad results, we always want to entertain some probability for
+     * every possible state the asset could be in.  However, we want
+     * to be biased toward the tech spec initial belief state.  Thus,
+     * when we have no other information about an asset's belief
+     * state, we will take the techspec initial belief and then blur
+     * the probabilities here so that no state has zero probability.
+     * The amount of probabiolity to distribute is this quantity.
+     * Note that we spread this across all states, not just the zero
+     * probability states.  We also need to renormalize afterwards.
+     */
+    private double _init_belief_blur_amount 
+            = DEFAULT_INITIAL_BELIEF_BLUR_AMOUNT;
 
 } // class BelievabilityKnob

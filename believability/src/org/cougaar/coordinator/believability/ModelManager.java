@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManager.java,v $
- * $Revision: 1.26 $
- * $Date: 2004-08-06 04:18:46 $
+ * $Revision: 1.28 $
+ * $Date: 2004-08-09 20:46:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -47,7 +47,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * and provides information via the ModelManagerInterface. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.26 $Date: 2004-08-06 04:18:46 $
+ * @version $Revision: 1.28 $Date: 2004-08-09 20:46:41 $
  *
  */
 public class ModelManager extends Loggable
@@ -683,8 +683,10 @@ public class ModelManager extends Loggable
     {
         _rehydration_happening = value;
 
-        if ( value )
-            _is_in_rehydrated_state = true;
+        // Whether we are beginning or ending the rehydration, we know
+        // for sure that we must be in the rehydrated state.
+        //
+        _is_in_rehydrated_state = true;
 
     } // method setRehydrationHappening
 
@@ -744,16 +746,6 @@ public class ModelManager extends Loggable
     {
 
         _unleashing_happening = value;
-
-        // If unleashing occurs after rehydration, then we will treat
-        // the state of the plugin to be sort of reset.  This is used
-        // to determine what initial belief state to use.  When
-        // rehydrated, we use the uniform distribution, when
-        // unleashed, we use the techspec-derived a priori initial
-        // belief state.
-        //
-        if ( value )
-            _is_in_rehydrated_state = false;
 
     } // method setUnleashingHappening
 
@@ -945,6 +937,53 @@ public class ModelManager extends Loggable
          return belief;
          
      } // method getInitialBeliefState
+
+    //************************************************************
+    /**
+     * Gets a belief state with each state dimension set to the
+     * value representing the initial belief when there is no
+     * information available (e,g. during a rehydration).
+     *
+     * @param asset_id The ID of the asset
+     * @return A new belief states set to the distributions to use
+     * with no information.
+     *
+     */
+    public BeliefState getNoInformationBeliefState( AssetID asset_id )
+           throws BelievabilityException
+     {
+         // Here we first get the initial belief state which is close
+         // to what we want.  However, for each state dimension, we
+         // want to make surew we spinkle some amount of probability
+         // evenly across all state dimensions so that no dimension
+         // has zero probability.  This has the effect of blurring the
+         // belief state.
+         //
+
+         if (( asset_id == null )
+             || ( asset_id.getType() == null ))
+             throw new BelievabilityException
+                     ( "ModelManager.getNoInformationBeliefState()",
+                       "NULL asset or asset type passed in." );
+         
+         // The uniform belief is only based on the asset type, so is
+         // the same for all assets of a given type.
+         //
+         POMDPAssetModel pomdp_model = getPOMDPModel( asset_id.getType() );
+         
+         BeliefState belief = pomdp_model.getInitialBeliefState();
+         belief.setAssetID( asset_id );
+
+         logDetail( "Blurring initial belief probabilities." );
+
+         // This is the routine that does the main work here.
+         //
+         belief.blurProbabilities
+                 ( _believability_knob.getInitialBeliefBlurAmount() );
+         
+         return belief;
+         
+     } // method getNoInformationBeliefState
 
     //************************************************************
     /**

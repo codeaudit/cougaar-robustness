@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefTriggerHistory.java,v $
- * $Revision: 1.14 $
- * $Date: 2004-08-06 04:18:46 $
+ * $Revision: 1.16 $
+ * $Date: 2004-08-09 20:46:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -99,7 +99,7 @@ import org.cougaar.core.agent.service.alarm.Alarm;
  * an instance of this class: one for each of these.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.14 $Date: 2004-08-06 04:18:46 $
+ * @version $Revision: 1.16 $Date: 2004-08-09 20:46:41 $
  * @see BeliefTriggerManager
  */
 class BeliefTriggerHistory 
@@ -127,6 +127,7 @@ class BeliefTriggerHistory
                           ModelManagerInterface model_manager,
                           BeliefConsumer consumer,
                           IntervalAlarmHandler alarm_handler )
+            throws BelievabilityException
     {
         super();
 
@@ -137,6 +138,29 @@ class BeliefTriggerHistory
         this._consumer = consumer;
         this._alarm_handler = alarm_handler;
 
+        // If the plugin is rehydrated, then using the tech spec
+        // initial belief will not make sense since we have no idea
+        // what the state of the asset was prior to rehydrating.
+        // Thus, the safest thing to use is the uniform distribution
+        // for the initial state whch effectively assumes we have no a
+        // priori information about the current state of the asset.
+        //
+        if ( _model_manager.isInRehydratedState())
+        {
+            logDetail( "Will use blurred initial belief for: " + asset_id );
+
+            this._default_belief 
+                    = _model_manager.getNoInformationBeliefState( _asset_id );
+            
+        }
+        else
+        {
+            logDetail( "Will use techspec initial belief for: " + asset_id );
+
+            this._default_belief 
+                    = _model_manager.getInitialBeliefState( _asset_id );
+        }
+  
     }  // constructor BeliefTriggerHistory
 
     //************************************************************
@@ -407,18 +431,11 @@ class BeliefTriggerHistory
         //
         if ( _last_computed_belief == null )
         {
-            // Some special events might explcitly define what we need
-            // to use for the initial belief state when we have no
-            // record of a last computed belief.  If this happens, we
-            // use that explicitly set value, otherwise, we get the
-            // default techspec-defined a priori belief from the model
-            // manager.
+            // The default belief to use when we have no record of a
+            // previous belief is defined in the constructor, based on
+            // the state of the plugin.
             //
-            if ( _default_belief != null )
-                _last_computed_belief = _default_belief;
-            else
-                _last_computed_belief
-                        = _model_manager.getInitialBeliefState( _asset_id );
+            _last_computed_belief = _default_belief;
 
             _last_computed_belief.setTimestamp
                     ( getEarliestCurrentTriggerTime() );
@@ -477,42 +494,17 @@ class BeliefTriggerHistory
             throws BelievabilityException
     {
 
-        // If we are handling a trigger while rehydrated, then this
-        // measn that this is an asset that (more than likely) existed
-        // before rehydration, and thus we want to make sure we use
-        // the uniform distribution for the initial belief state.
-        //
-        if ( _model_manager.isInRehydratedState() )
-        {
-
-            // If we are rehydrating the plugin, then using the tech spec
-            // initial belief will not make sense since we have no idea
-            // what the state of the asset was prior to rehydrating.
-            // Thus, the safest thing to use is the uniform distribution
-            // for the initial state whch effectively assumes we have no a
-            // priori information about the current state of the asset.
-            //
-            _default_belief 
-                    = _model_manager.getUniformBeliefState( _asset_id );
-        }
-
         // If we are processing a trigger during the course of
         // unleashing, then we essentially want to treat this like a
-        // reset.  Thus, we will use the techspec-defined initial
-        // belief state.  Note that it is possible to be unleashed
-        // after rehydration, so we might well be overriding the
-        // uniform distribution set earlier from a rehydration.  This
-        // is the desired behavior.
+        // reset.  
         //
-        else if ( _model_manager.isUnleashingHappening() )
+        if ( _model_manager.isUnleashingHappening() )
         {
-            _default_belief 
-                    = _model_manager.getInitialBeliefState( _asset_id );
-
             // When unleashing, we always want to act as if the first
             // post-leash diagnosis is the first things we know about
             // an asset, thus we "forget" about any previously
-            // computed belief state we might have.
+            // computed belief state we might have during the
+            // unleashing process.
             //
             _last_computed_belief = null;
         }

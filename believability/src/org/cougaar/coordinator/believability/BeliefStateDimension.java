@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefStateDimension.java,v $
- * $Revision: 1.27 $
- * $Date: 2004-08-06 04:18:46 $
+ * $Revision: 1.29 $
+ * $Date: 2004-08-09 20:46:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -20,6 +20,8 @@
  */
 
 package org.cougaar.coordinator.believability;
+
+import java.text.DecimalFormat;
 
 import java.util.Vector;
 
@@ -33,7 +35,7 @@ import org.cougaar.coordinator.techspec.AssetStateDimension;
  * dimensions. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.27 $Date: 2004-08-06 04:18:46 $
+ * @version $Revision: 1.29 $Date: 2004-08-09 20:46:41 $
  */
 public class BeliefStateDimension
         implements Cloneable
@@ -128,7 +130,7 @@ public class BeliefStateDimension
         buff.append( _state_dim_name + ": [" );
         
         for ( int i = 0; i < _belief_probs.length; i++ )
-            buff.append( " " + _belief_probs[i] );
+            buff.append( " " + _double_format.format(_belief_probs[i]) );
         
         buff.append( " ]" );
         
@@ -186,7 +188,38 @@ public class BeliefStateDimension
             _belief_probs[i] = probs[i];
 
     }
+ 
+   //************************************************************
+    /**
+     * This routine will blur the belief state probabilities.  The
+     * bluring means it take some amount of probability (the blur
+     * factor) and distributes that evenly across all possibly states,
+     * then renormalizing afterwards.  
+    *
+     * @param blur_factor The amount of probability to spread across
+     * each state
+     */
+    void blurProbabilities( double blur_factor )
+    {
 
+        // Distributing the blur_factor evenly means that the number
+        // of states affects what will be added.  
+        //
+        double blur_amount = blur_factor / _belief_probs.length;
+
+        double sum = 0.0;
+        for ( int i = 0; i < _belief_probs.length; i++ )
+        {
+            _belief_probs[i] += blur_amount;
+            sum += _belief_probs[i];
+        } // for i
+
+        for ( int i = 0; i < _belief_probs.length; i++ )
+            _belief_probs[i] /= sum;
+
+    } // method blurProbabilities
+
+ 
     //------------------------------------------------------------
     // protected interface
     //------------------------------------------------------------
@@ -221,5 +254,7 @@ public class BeliefStateDimension
     private String _state_dim_name;
 
     private double[] _belief_probs;
+
+    private DecimalFormat _double_format = new DecimalFormat("0.0000");
 
 } // class BeliefStateDimension
