@@ -75,6 +75,9 @@ public abstract class Diagnosis
     /** The possible values that getValue() can return */
     static private Set possibleValues;
     
+    /** Logger  */
+    Logger logger = null;
+    
     /** The possible values that getValue() can return -- cloned for dissemination to others */
     //static protected Set possibleValuesCloned;
 
@@ -160,6 +163,8 @@ public abstract class Diagnosis
         initPossibleValues();
      
         this.inited = true;
+
+        logger = Logging.getLogger(getClass());
         
         return inited;
     }
@@ -327,6 +332,12 @@ public abstract class Diagnosis
             if ( possibleValues.contains(newValue) ) {
                 value = newValue;
             } else {
+                String valuesStr = "";
+                for (Iterator i = this.getPossibleValues().iterator(); i.hasNext();) {
+                    valuesStr = (String)i.next() + ";";
+                }
+                
+                logger.debug("Possible Values are: "+valuesStr);
                 throw new IllegalValueException("The following value is not a possible value: " + newValue.toString() );
             }        
         }        
