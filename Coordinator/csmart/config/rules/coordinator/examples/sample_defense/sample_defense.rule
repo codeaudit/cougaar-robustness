@@ -10,7 +10,10 @@ plugins = [sact,ssen,ssrv]
 
 ltsp = "org.cougaar.coordinator.techspec.xml.LoadTechSpecsPlugin"
 
-techspecs = ['SampleDefense_SampleSensor.xml', 
+techspecs = ['SampleDefense_AgentAssetStateDimensions.xml', 
+             'SampleDefense_Threats.xml', 
+             'SampleDefense_Events.xml', 
+             'SampleDefense_SampleSensor.xml', 
              'SampleDefense_SampleActuator.xml']
 
 society.each_agent(false) do |agent|
