@@ -15,7 +15,6 @@ insert_after parameters[:location] do
   actual = eval(parameters[:actual_disconnect].to_s)
   verb = parameters[:verbose]
   do_action "Sleep", 2.minutes
-  do_action "MonitorPlannedDisconnectEvents", parameters[:nodes], verb
   do_action "PlannedDisconnect", parameters[:nodes], planned, actual, verb
 end
 

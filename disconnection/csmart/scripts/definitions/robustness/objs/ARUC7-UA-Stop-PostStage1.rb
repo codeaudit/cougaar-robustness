@@ -49,7 +49,7 @@ include_scripts:
       - planned_disconnect: 12.minutes
       - actual_disconnect: 8.minutes
       - timeout: 30.minutes
-      - verbose: 1
+      - verbose: 2
   - script: $CIP/csmart/lib/coordinator/unleash_defenses.rb 
 
 =end
