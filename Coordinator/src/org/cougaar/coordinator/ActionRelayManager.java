@@ -63,6 +63,7 @@ public class ActionRelayManager extends DeconflictionPluginBase implements NotPe
       */
     public ActionRelayManager() {
         super();
+        relayFilters = new Vector();
     }
     
     /**
@@ -152,7 +153,7 @@ public class ActionRelayManager extends DeconflictionPluginBase implements NotPe
             if (iter.hasNext()) {
               // find & set the ManagerAgent address
                managerAddress = ((RobustnessManagerID)iter.next()).getMessageAddress();
-               if (logger.isDebugEnabled()) logger.debug("ManagerAddress: "+managerAddress.toString());
+               if (logger.isDebugEnabled()) logger.debug("++++++++++++++++++++++++++++> ManagerAddress: "+managerAddress.toString());
                
                //Update the knob with status -- we know where the coordinator is
                iter = knobSubscription.getCollection().iterator();        
@@ -160,7 +161,9 @@ public class ActionRelayManager extends DeconflictionPluginBase implements NotPe
                    ActionRelayManagerKnob = (ActionRelayManagerKnob)iter.next();
                    ActionRelayManagerKnob.setFoundCoordinator(managerAddress);
                }               
-            }
+            } else {
+               if (logger.isDebugEnabled()) logger.debug("++++++++++++++++++++++++++++> ManagerAddress subscription empty.");
+            }                
         }
         
         if (managerAddress == null || !shouldRelayActions) 
@@ -180,6 +183,7 @@ public class ActionRelayManager extends DeconflictionPluginBase implements NotPe
             Collection added   = actionsSubscription.getAddedCollection();
             for ( iter = added.iterator(); iter.hasNext() ; ) 
             {
+                logger.debug("============= Saw new Action -- Wrapping it.");
                 Action a = (Action)iter.next();                
                 UID uid = this.us.nextUID(); //gen UID for this wrapper
                 ActionsWrapper aw = new ActionsWrapper(a, this.agentId, managerAddress, uid); //wrap the Action

@@ -265,6 +265,7 @@ public abstract class Diagnosis
         Iterator i = values.iterator();
         Object o;
         //boolean canClone = true;
+        possibleValues.clear();
         while (i.hasNext()) {
             o = getValueFromXML((String) i.next());
             possibleValues.add(o);

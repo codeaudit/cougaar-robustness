@@ -79,7 +79,7 @@ public abstract class Action
     static private ServiceBroker serviceBroker = null;
         
     /** The ActionTechSpec for this action class */
-    static private ActionTechSpecInterface actionTechSpec;
+    static private ActionTechSpecInterface actionTechSpec = null;
     
     /** 
      *  The address of the node agent. May change if the action is moved. 
@@ -105,6 +105,8 @@ public abstract class Action
 
     /** The last action set */
     
+    /** Logger */
+    Logger logger = null;
     
     /** ActionHistory of this action. What actions took place when. Populated from start/stop methods. */
     //ActionHistory actionHistory = null;
@@ -117,6 +119,10 @@ public abstract class Action
     
     /** The values the action offers to perform */
     Set valuesOffered = null;
+
+    static {
+        possibleValues = new LinkedHashSet(); //initialize
+    }
     
     /**
      * Creates an action instance for actions to be performed on the specified asset
@@ -124,9 +130,11 @@ public abstract class Action
     public Action(String assetName, ServiceBroker serviceBroker) throws TechSpecNotFoundException
     {
 
+        logger = Logging.getLogger(getClass());         
+
         this.serviceBroker = serviceBroker;        
         this.assetName = assetName;
-        this.possibleValues = new LinkedHashSet(); //initialize
+
         this.permittedValues = new LinkedHashSet(); //initialize
         this.valuesOffered = new LinkedHashSet(); //initialize
 
@@ -271,6 +279,7 @@ public abstract class Action
         Iterator i = values.iterator();
         Object o;
         //boolean canClone = true;
+        possibleValues.clear();
         while (i.hasNext()) {
             o = getValueFromXML((String) i.next());
             possibleValues.add(o);
@@ -448,12 +457,13 @@ public abstract class Action
      */
     void setPermittedValues (Set values) throws IllegalValueException { 
     
-System.out.println("Updating permitted values.");        
         Object o;
         Iterator i = values.iterator();
+        permittedValues.clear();
         while (i.hasNext()) {
             o = i.next() ;
             if ( possibleValues.contains(o) ) {
+logger.debug("///////////////////////////////////Adding permitted value: "+o);                
                 permittedValues.add(o);
             } else {
                 throw new IllegalValueException("The following value is not a permitted value: " + o.toString() );
@@ -543,6 +553,7 @@ System.out.println("Updating permitted values.");
      * singleton set contain just one target.
      **/
     public Set getTargets() {
+        logger.debug("**** getTargets called.");
         return Collections.singleton(nodeId);
     }
     
@@ -559,6 +570,7 @@ System.out.println("Updating permitted values.");
      * @return a factory to convert the content to a Relay Target.
      **/
     public Relay.TargetFactory getTargetFactory() {
+        logger.debug("**** getTargetFactory called.");
         return null;
     }
     
@@ -615,7 +627,7 @@ System.out.println("Updating permitted values.");
     /**
      * The ActionsWrapper that is wrapping this object
      **/
-    ActionsWrapper wrapper;
+    ActionsWrapper wrapper = null;
     /**
      * @return the ActionsWrapper that is wrapping this diagnosis
      **/
