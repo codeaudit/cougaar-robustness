@@ -48,16 +48,18 @@ public class ActionTechSpecImpl implements ActionTechSpecInterface   {
     AssetStateDimension assetDim;
     Vector actions;
     String revision = "0.1";
+    int actionType;
     
     HashSet possibleValues = null;
     
     /** Creates a new instance of ActionTechSpecImpl */
-    public ActionTechSpecImpl(String name, UID uid, AssetType type, AssetStateDimension assetDim) {
+    public ActionTechSpecImpl(String name, UID uid, AssetType type, AssetStateDimension assetDim, int actionType) {
 
         this.name = name;
         this.uid = uid;
         this.assetType = type;
         this.assetDim = assetDim;
+        this.actionType = actionType;
 
         actions = new Vector();
         possibleValues = new HashSet();
@@ -90,6 +92,11 @@ public class ActionTechSpecImpl implements ActionTechSpecInterface   {
                 
         return assetDim;
     }
+
+    /**
+     * Get the type of the action
+     */
+    public int getActionType() { return actionType; }
     
     /**
      * @return the ActionDescriptions for this Actuator

@@ -74,6 +74,12 @@ public class SampleActionTechSpec implements ActionTechSpecInterface {
         return "0.1";
     }
     
+    /**
+     * Get the type of the action
+     */
+    public int getActionType() { return ActionTechSpecInterface.CORRECTIVE_ACTIONTYPE; }
+    
+    
     /** @return a unique cougaar level name for this TechSpec
      *
      */
@@ -94,5 +100,5 @@ public class SampleActionTechSpec implements ActionTechSpecInterface {
     
     /** @return the actions for this actuator. This class returns NULL. */
     public Vector getActions() { return null; }
-    
+     
 }

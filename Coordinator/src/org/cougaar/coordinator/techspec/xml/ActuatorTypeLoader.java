@@ -120,6 +120,7 @@ public class ActuatorTypeLoader extends XMLLoader {
         String actuatorName = element.getAttribute("name");
         String type = element.getAttribute("affectsAssetType");
         String stateDim = element.getAttribute("affectsStateDimension");
+        String actionType = element.getAttribute("actionType");
         
         AssetType affectsAssetType = AssetType.findAssetType(type);
 
@@ -136,13 +137,19 @@ public class ActuatorTypeLoader extends XMLLoader {
             return null;
         }
         
+        //assign actionType
+        int actionTypeInt = ActionTechSpecInterface.CORRECTIVE_ACTIONTYPE; //default
+        if (actionType == null || actionType.equalsIgnoreCase("CORRECTIVE") ) { actionTypeInt = ActionTechSpecInterface.CORRECTIVE_ACTIONTYPE; }
+        else if (actionType.equalsIgnoreCase("PREVENTIVE") ) { actionTypeInt = ActionTechSpecInterface.PREVENTIVE_ACTIONTYPE; }
+        else if (actionType.equalsIgnoreCase("APPLICATION") ) { actionTypeInt = ActionTechSpecInterface.APPLICATION_ACTIONTYPE; }
+        
         
         if (us == null) {
             logger.warn("ActuatorType["+actuatorName+"]  XML Error - UIDService is null!");
             return null;
         }
         UID uid = us.nextUID();
-        ActionTechSpecImpl actuator = new ActionTechSpecImpl( actuatorName, uid, affectsAssetType, asd);
+        ActionTechSpecImpl actuator = new ActionTechSpecImpl( actuatorName, uid, affectsAssetType, asd, actionTypeInt);
         actionTechSpecService.addActionTechSpec( actuatorName, actuator );
 
         //Create an ActuatorType

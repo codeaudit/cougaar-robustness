@@ -440,7 +440,7 @@ logger.warn("!!!! **********************************************************");
     }
     
     
-    /** Return a host asset for the given host name. Create a new host asset if one is not found. */
+    /** Return a node asset for the given node name. Create a new node asset if one is not found. */
     private DefaultAssetTechSpec getNode(AssetTechSpecInterface hostAsset, String nodeName) {
         
         if (nodeName == null || nodeName.length() == 0) { return null; }

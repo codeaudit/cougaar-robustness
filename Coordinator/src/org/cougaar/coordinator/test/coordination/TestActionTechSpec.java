@@ -75,6 +75,11 @@ public class TestActionTechSpec implements ActionTechSpecInterface {
         return null;
     }
     
+    /**
+     * Get the type of the action
+     */
+    public int getActionType() { return ActionTechSpecInterface.CORRECTIVE_ACTIONTYPE; }
+    
     /** @return the actions for this actuator. This class returns NULL. */
     public Vector getActions() { return null; }
     
