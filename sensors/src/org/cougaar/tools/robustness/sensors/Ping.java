@@ -1,7 +1,7 @@
 /* 
  * <copyright>
- * Copyright 2002 BBNT Solutions, LLC
  * Copyright 2002 Object Services and Consulting, Inc.
+ * Copyright 2002 BBNT Solutions, LLC
  * under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
 
  * This program is free software; you can redistribute it and/or modify
@@ -18,6 +18,9 @@
  * TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
+ *
+ * CHANGE RECORD 
+ * 13 Mar 2003: Moved constants to org.cougaar.core.mts.Constants in the Common module
  */
 
 package org.cougaar.tools.robustness.sensors;
@@ -30,6 +33,7 @@ import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.mts.MessageAttributes;
 import org.cougaar.core.mts.SimpleMessageAttributes;
 //100 import org.cougaar.core.mts.MessageUtils;
+import org.cougaar.core.mts.Constants; //102B
 import org.cougaar.core.util.UID;
 //100 import org.cougaar.core.util.XMLizable;
 //100 import org.cougaar.core.util.XMLize;
@@ -47,6 +51,7 @@ public class Ping implements Relay.Source, Relay.Target, NotPersistable //100 , 
   private Object response;
   private transient Set _targets = null;
 
+/* //102B moved to org.cougaar.core.mts.Constants in the Common module
   //100 copied from org.cougaar.core.mts.MessageUtils.java until MsgLog is ported
   private final class MessageUtils
   {
@@ -54,6 +59,7 @@ public class Ping implements Relay.Source, Relay.Target, NotPersistable //100 , 
     private static final String SEND_TIMEOUT =          "MessageSendTimeout";   //100 
     private static final String MSG_TYPE_PING =         "MessageTypePing";      //100 
   }
+*/
 
   /**
    * @param uid UID of this Ping object
@@ -97,11 +103,11 @@ public class Ping implements Relay.Source, Relay.Target, NotPersistable //100 , 
           addr = MessageAddress.getMessageAddress(addr,attrs); //100
         }
         // a ping is acked and resent, but not sequenced
-        attrs.setAttribute(MessageUtils.MSG_TYPE, MessageUtils.MSG_TYPE_PING);
+        attrs.setAttribute(Constants.MSG_TYPE, Constants.MSG_TYPE_PING);
         if (content instanceof PingContent) {
           long timeout = ((PingContent)content).getTimeout();
           if (timeout > 0) {
-            attrs.setAttribute(MessageUtils.SEND_TIMEOUT, new Integer((int)timeout));
+            attrs.setAttribute(Constants.SEND_TIMEOUT, new Integer((int)timeout));
           }
         }
       } catch (Exception e) {
@@ -226,11 +232,11 @@ public class Ping implements Relay.Source, Relay.Target, NotPersistable //100 , 
         e.printStackTrace();
       }
       // a ping is acked and resent, but not sequenced
-      attrs.setAttribute(MessageUtils.MSG_TYPE, MessageUtils.MSG_TYPE_PING);
+      attrs.setAttribute(Constants.MSG_TYPE, Constants.MSG_TYPE_PING);
       if (content instanceof PingContent) {
         long timeout = ((PingContent)content).getTimeout();
         if (timeout > 0)
-          attrs.setAttribute(MessageUtils.SEND_TIMEOUT, new Integer((int)timeout));
+          attrs.setAttribute(Constants.SEND_TIMEOUT, new Integer((int)timeout));
       }
     }
     this.source = addr;
