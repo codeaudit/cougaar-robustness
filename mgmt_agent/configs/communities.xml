@@ -593,7 +593,7 @@
     <Attribute ID="hbPctLate" Value="90.0" />
     <Attribute ID="pingRetries" Value="0" />
     <Attribute ID="pingTimeout" Value="30000" />
-    <Attribute ID="numAgents" Value="7" />
+    <Attribute ID="numAgents" Value="4" />
     <Entity Name="1AD-CONUS-ARManager" >
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="ManagementAgent" />
