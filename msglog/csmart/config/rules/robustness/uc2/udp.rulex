@@ -5,8 +5,8 @@
 #          and after any other rule that adds the LoopbackLinkProtocol
 #
 
-udpOut = "org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol"
-udpIn  = "org.cougaar.core.mts.udp.IncomingUDPLinkProtocol"
+udpOut = "org.cougaar.mts.std.udp.OutgoingUDPLinkProtocol"
+udpIn  = "org.cougaar.mts.std.udp.IncomingUDPLinkProtocol"
 
 protocols = [udpOut, udpIn]
 

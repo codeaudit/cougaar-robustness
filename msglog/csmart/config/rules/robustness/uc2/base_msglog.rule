@@ -6,34 +6,34 @@
 #          https://cvs.ultralog.net/ultralog/AspectConfiguration.  
 #          Changes made there must be propagated here.  
 #
-# Warning: org.cougaar.core.mts.LoopbackLinkProtocol should be loaded 
+# Warning: org.cougaar.mts.std.LoopbackLinkProtocol should be loaded 
 #          before all other protocols.       
 #
 # Warning: If deconfliction.rule is applied, it must be applied BEFORE this rule
 #
 
-policy = "org.cougaar.core.mts.AdaptiveLinkSelectionPolicy"
+policy = "org.cougaar.mts.std.AdaptiveLinkSelectionPolicy"
 
 # this one will eventually be built in
-mta  = [ 10, "org.cougaar.core.mts.MessageTimeoutAspect"]
+mta  = [ 10, "org.cougaar.mts.std.MessageTimeoutAspect"]
 
-rsca = [325, "org.cougaar.core.mts.RMISocketControlAspect"]
-sta  = [330, "org.cougaar.core.mts.ShowTrafficAspect"]
-sa   = [140, "org.cougaar.core.mts.StatisticsAspect"]
-rsta = [335, "org.cougaar.core.mts.RMISendTimeoutAspect"]
-msha = [340, "org.cougaar.core.mts.MessageSendHistoryAspect"]
-maa  = [350, "org.cougaar.core.mts.acking.MessageAckingAspect"]
-rtta = [360, "org.cougaar.core.mts.RTTAspect"]
-mna  = [370, "org.cougaar.core.mts.MessageNumberingAspect"]
-moa  = [380, "org.cougaar.core.mts.MessageOrderingAspect"]
+rsca = [325, "org.cougaar.mts.std.RMISocketControlAspect"]
+sta  = [330, "org.cougaar.mts.std.ShowTrafficAspect"]
+sa   = [140, "org.cougaar.mts.std.StatisticsAspect"]
+rsta = [335, "org.cougaar.mts.std.RMISendTimeoutAspect"]
+msha = [340, "org.cougaar.mts.std.MessageSendHistoryAspect"]
+maa  = [350, "org.cougaar.mts.std.acking.MessageAckingAspect"]
+rtta = [360, "org.cougaar.mts.std.RTTAspect"]
+mna  = [370, "org.cougaar.mts.std.MessageNumberingAspect"]
+moa  = [380, "org.cougaar.mts.std.MessageOrderingAspect"]
 
 # not sure about this aspect's position or necessity
-nsta = "org.cougaar.core.mts.NameSupportTimeoutAspect" 
+nsta = "org.cougaar.mts.std.NameSupportTimeoutAspect" 
 
 aspects = [mta, rsca, sta, sa, rsta, msha, maa, rtta, mna, moa]
 
-loopback = "org.cougaar.core.mts.LoopbackLinkProtocol"
-rmi      = "org.cougaar.core.mts.RMILinkProtocol"
+loopback = "org.cougaar.mts.std.LoopbackLinkProtocol"
+rmi      = "org.cougaar.mts.std.RMILinkProtocol"
 
 protocols = [loopback, rmi]
 

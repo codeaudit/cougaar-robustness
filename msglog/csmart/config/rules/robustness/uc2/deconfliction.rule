@@ -10,7 +10,7 @@ omsp = "org.cougaar.core.adaptivity.OperatingModeServiceProvider"
 ompm = "org.cougaar.core.adaptivity.OperatingModePolicyManager"
 csp  = "org.cougaar.core.adaptivity.ConditionServiceProvider"
 cp   = "org.cougaar.tools.robustness.deconfliction.CoordinatorPlugin"
-mp   = "org.cougaar.core.mts.MsglogPlugin"
+mp   = "org.cougaar.mts.std.MsglogPlugin"
 
 plugins = [omsp, ompm, csp, cp, mp]
 
@@ -20,10 +20,10 @@ society.each_agent do |agent|
     end
 end
 
-mea  = [310, "org.cougaar.core.mts.MsglogEnablingAspect"]
-lsea = [320, "org.cougaar.core.mts.LastSpokeErrorAspect"]
-ga   = [230, "org.cougaar.core.mts.GossipAspect"]
-gssa = [240, "org.cougaar.core.mts.GossipStatisticsServiceAspect"]
+mea  = [310, "org.cougaar.mts.std.MsglogEnablingAspect"]
+lsea = [320, "org.cougaar.mts.std.LastSpokeErrorAspect"]
+ga   = [230, "org.cougaar.mts.std.GossipAspect"]
+gssa = [240, "org.cougaar.mts.std.GossipStatisticsServiceAspect"]
 
 aspects = [mea, lsea, ga, gssa]
 

@@ -26,8 +26,8 @@ society.each_host do |host|
     end
 end
 
-emailOut = "org.cougaar.core.mts.email.OutgoingEmailLinkProtocol"
-emailIn  = "org.cougaar.core.mts.email.IncomingEmailLinkProtocol"
+emailOut = "org.cougaar.mts.std.email.OutgoingEmailLinkProtocol"
+emailIn  = "org.cougaar.mts.std.email.IncomingEmailLinkProtocol"
 
 protocols = [emailOut, emailIn]
 
