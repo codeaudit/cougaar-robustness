@@ -92,13 +92,14 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
   public static final String COMMUNITY_TYPE = "Robustness";
   public static final String ENTITY_TYPE = "Node";
 
-  public static final long NODE_CHECK_INTERVAL = 10 * 1000;
+  public static final long NODE_CHECK_INTERVAL = 30 * 1000;
 
   private String NODE_NAME;
 
   CommunityStatusModel model;
   RobustnessController controller;
   RelayAdapter nodeStatusRelay;
+  WakeAlarm wakeAlarm;
 
   private Set myUIDs = new HashSet();
 
@@ -116,13 +117,10 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
     logger =
       (LoggingService)getBindingSite().getServiceBroker().getService(this, LoggingService.class, null);
     logger = org.cougaar.core.logging.LoggingServiceWithPrefix.add(logger, agentId + ": ");
-
     uidService =
       (UIDService) getBindingSite().getServiceBroker().getService(this, UIDService.class, null);
-
     eventService =
       (EventService) getBindingSite().getServiceBroker().getService(this, EventService.class, null);
-
     commSvc =
       (CommunityService) getBindingSite().getServiceBroker().getService(this, CommunityService.class, null);
 
@@ -169,10 +167,18 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
                                               Community.COMMUNITIES_ONLY));
 
     // Start timer to periodically check status of agents
-    getAlarmService().addRealTimeAlarm(new NodeCheckTimer(NODE_CHECK_INTERVAL));
+    wakeAlarm = new WakeAlarm((new Date()).getTime() + NODE_CHECK_INTERVAL);
+    alarmService.addRealTimeAlarm(wakeAlarm);
   }
 
   protected void execute() {
+    if ((wakeAlarm != null) &&
+        ((wakeAlarm.hasExpired()))) {
+      updateAndSendNodeStatus();
+      wakeAlarm = new WakeAlarm((new Date()).getTime() + NODE_CHECK_INTERVAL);
+      alarmService.addRealTimeAlarm(wakeAlarm);
+    }
+
     for (Iterator it = searchRequests.getChangedCollection().iterator(); it.hasNext(); ) {
       SearchCommunity cs = (SearchCommunity) it.next();
       Collection robustnessCommunities = (Collection)cs.getResponse().getContent();
@@ -256,9 +262,9 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
 
   private Set getHealthMonitorPeers(String communityName) {
     Community community = commSvc.getCommunity(communityName, null);
-      if (community != null && community.getName().equals(communityName)) {
-        return getHealthMonitorPeers(community);
-      }
+    if (community != null && community.getName().equals(communityName)) {
+      return getHealthMonitorPeers(community);
+    }
     return Collections.EMPTY_SET;
   }
 
@@ -266,7 +272,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
    * Returns set of MessageAddress objects corresponding to member nodes of
    * specified community.
    */
-   private Set getHealthMonitorPeers(Community community) {
+  private Set getHealthMonitorPeers(Community community) {
     Set nodes = new HashSet();
     Set entities = community.search("(Role=" + HEALTH_MONITOR_ROLE + ")",
                                     Community.AGENTS_ONLY);
@@ -277,6 +283,38 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
     return nodes;
   }
 
+  private void showParents(final String communityName) {
+    CommunityResponseListener crl = new CommunityResponseListener() {
+      public void getResponse(CommunityResponse resp) {
+        Collection parents = (Collection)resp.getContent();
+        logger.info("Community " + communityName +
+                    " parents=" + collectionToArray(parents) +
+                    " fromCache=false");
+      }
+    };
+    Collection parents =
+        ((org.cougaar.community.CommunityServiceImpl)commSvc).listParentCommunities(communityName, crl);
+    if (parents != null) {
+      for (Iterator it = parents.iterator(); it.hasNext();) {
+        showParents((String)it.next());
+      }
+    }
+    if (parents != null) {
+      logger.info("Community " + communityName +
+                  " parents=" + collectionToArray(parents) +
+                  " fromCache=true");
+    }
+  }
+
+  private String collectionToArray(Collection c) {
+    StringBuffer sb = new StringBuffer("[");
+    for (Iterator it = c.iterator(); it.hasNext();) {
+      sb.append((String)it.next());
+      if (it.hasNext()) sb.append(",");
+    }
+    sb.append("]");
+    return sb.toString();
+  }
 
   /**
    * Update set of communities to monitor.
@@ -284,6 +322,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
   private void processCommunityChanges(Collection communities) {
     for(Iterator it = communities.iterator(); it.hasNext(); ) {
       Community community = (Community)it.next();
+      showParents(community.getName());
       if (model == null) {
         initializeModel(community.getName());
       }
@@ -324,7 +363,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
       }
       model = new CommunityStatusModel(NODE_NAME,
                                        communityName,
-                                       getServiceBroker());
+                                       getBindingSite());
       controller =
           new DefaultRobustnessController(NODE_NAME, getBindingSite(), model);
       model.setController(controller);
@@ -443,7 +482,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
 
       // Dissemminate status to peer managers
       if (nodeStatusRelay != null) {
-        NodeStatusRelayImpl nsr = (NodeStatusRelayImpl)nodeStatusRelay.
+       NodeStatusRelayImpl nsr = (NodeStatusRelayImpl)nodeStatusRelay.
             getContent();
         nsr.setAgentStatus(agentStatus);
         nsr.setLeaderVote(model.getLeaderVote(NODE_NAME));
@@ -460,64 +499,40 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
                      " agents=" + nsr.getAgentStatus().length +
                      //" agents=" + agentStatusToString(nsr.getAgentStatus()) +
                      " leaderVote=" + nsr.getLeaderVote());
-        blackboard.openTransaction();
         blackboard.publishChange(nodeStatusRelay);
-        blackboard.closeTransaction();
       } else {
-        logger.info("RelayAdapter not found for community " +
-                    communityName);
+        //logger.info("RelayAdapter not found for community " +
+        //            communityName);
       }
     } else {
       //logger.info("Community Status Model is null");
     }
   }
 
-  /**
-   * Timer used trigger periodic check of node composition and state.
-   */
-  private class NodeCheckTimer implements Alarm {
-    private long expirationTime = -1;
+  private class WakeAlarm implements Alarm {
+    private long expiresAt;
     private boolean expired = false;
-    public NodeCheckTimer (long delay) {
-      expirationTime = delay + System.currentTimeMillis();
+    public WakeAlarm (long expirationTime) {
+      expiresAt = expirationTime;
     }
-
-    public void expire() {
+    public long getExpirationTime() {
+      return expiresAt;
+    }
+    public synchronized void expire() {
       if (!expired) {
-        try {
-          ThreadService ts =
-              (ThreadService)getServiceBroker().getService(this, ThreadService.class, null);
-          Schedulable nodeStatusThread = ts.getThread(this, new Runnable() {
-            public void run() {
-              updateAndSendNodeStatus();
-            }
-          }, "NodeStatusThread");
-          getServiceBroker().releaseService(this, ThreadService.class, ts);
-          nodeStatusThread.start();
-        } finally {
-          AlarmService as = (AlarmService)getServiceBroker().getService(this,
-              AlarmService.class, null);
-          getAlarmService().addRealTimeAlarm(new NodeCheckTimer(
-              NODE_CHECK_INTERVAL));
-          getServiceBroker().releaseService(this, AlarmService.class, as);
-          expired = true;
-        }
+        expired = true;
+        if (blackboard != null) blackboard.signalClientActivity();
       }
     }
-
-    public long getExpirationTime() {
-      return expirationTime;
-    }
-
     public boolean hasExpired() {
       return expired;
     }
-
     public synchronized boolean cancel() {
-      if (!expired)
-        return expired = true;
-      return false;
+      boolean was = expired;
+      expired = true;
+      return was;
     }
-}
+  }
+
 
 }
