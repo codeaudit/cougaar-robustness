@@ -1,0 +1,45 @@
+#!/bin/tcsh -f
+
+set COUGAAR_VERS="B10_4_5"
+set UL_VERS="HEAD_B10_4_5"
+
+set cougaar_packages="cougaar.zip cougaar-support.zip"
+
+set ultralog_packages="AL_bbn_$UL_VERS.zip AR_common_$UL_VERS.zip AR_objs_common_$UL_VERS.zip AR_objs_deconfliction_$UL_VERS.zip AR_objs_sensors_$UL_VERS.zip AR_boeing_exnihilo_$UL_VERS.zip AR_mic_$UL_VERS.zip bbn_commons_$UL_VERS.zip BBN_ulconfigs_B10_4_5_B10_4_5.zip isat_plugins_$UL_VERS.zip isat_acme_$UL_VERS.zip isat_oplan_$UL_VERS.zip"
+
+if (!(-d $1)) then
+  mkdir $1
+endif
+chgrp asmt $1
+chmod +s $1
+cd $1
+
+if (!(-d zips)) then
+  mkdir zips
+endif
+
+foreach package ($cougaar_packages)
+  wget http://www.alpine.bbn.com/~mthome/autobuild/$COUGAAR_VERS/latest_success/$package --output-document=zips/$package
+  unzip -o zips/$package > /dev/null
+end
+
+foreach package ($ultralog_packages)
+  wget https://cvs.ultralog.net/dist/$package --http-user=TICCVS --http-passwd=T1CCVS --output-document=zips/$package
+  unzip -o zips/$package > /dev/null
+end
+
+cd csmart/config/societies/ad
+unzip -o 1ad-configs.zip > /dev/null
+#../../../../csmart/config/bin/convert_society.rb -i FULL-1AD-TRANS-1359.xml
+#../../../../csmart/config/bin/convert_society.rb -i SMALL-1AD-TRANS-1359.xml
+cd ../../../..
+
+cp -f robustness/configs/loggingConfig.conf configs/common
+cp -f robustness/configs/mic-local/mic.rule csmart/config/rules/robustness/uc1
+
+# Get mgmt_agent CVS files
+#cvs -d :ext:rsnyder@cvs.ultralog.net:/cvs/robustness/mic checkout mgmt_agent
+
+cd ..
+chgrp -R asmt $1
+chmod g+w -R $1

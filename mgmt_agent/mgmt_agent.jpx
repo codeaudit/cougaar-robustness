@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--JBuilder XML Project-->
 <project>
-  <property category="javaFormatting" name="packageThreshold" value="0"/>
+  <property category="javaFormatting" name="arrayInitDataOnNewLine" value="0"/>
+  <property category="javaFormatting" name="catchOnNewLine" value="0"/>
+  <property category="javaFormatting" name="elseOnNewLine" value="0"/>
+  <property category="javaFormatting" name="extendsOnNewLine" value="0"/>
+  <property category="javaFormatting" name="finallyOnNewLine" value="0"/>
+  <property category="javaFormatting" name="implementsOnNewLine" value="0"/>
+  <property category="javaFormatting" name="whileOnNewLine" value="0"/>
   <property category="javadoc" name="custom.tags.1" value="todo;a;To Do:"/>
   <property category="runtime" name="DefaultConfiguration" value="-1"/>
   <property category="runtime" name="ExcludeDefaultForZero" value="1"/>
@@ -53,9 +59,6 @@
       </node>
       <node name="rules" type="Folder">
         <node name="robustness" type="Folder">
-          <node name="communities" type="Folder">
-            <file path="csmart/config/rules/robustness/communities/uc1_community.rule"/>
-          </node>
           <node name="uc1" type="Folder">
             <file path="csmart/config/rules/robustness/uc1/aruc1.rule"/>
             <file path="csmart/config/rules/robustness/uc1/deconfliction.rule"/>
