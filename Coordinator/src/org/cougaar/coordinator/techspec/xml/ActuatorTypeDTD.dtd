@@ -6,7 +6,7 @@
     name CDATA #REQUIRED
     affectsAssetType CDATA #REQUIRED
     affectsStateDimension CDATA #REQUIRED
-    actionType (CORRECTIVE | PREVENTIVE | APPLICATION) 'CORRECTIVE'
+    actionType (CORRECTIVE | PREVENTIVE | APPLICATION | COMPENSATORY ) 'CORRECTIVE'
 >
 
 <!ELEMENT Action (Description, Transition+)  >

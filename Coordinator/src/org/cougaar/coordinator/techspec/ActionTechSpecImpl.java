@@ -151,6 +151,7 @@ public class ActionTechSpecImpl implements ActionTechSpecInterface   {
         if (actionType == this.APPLICATION_ACTIONTYPE) { actionTypeStr = "APPLICATION"; }
         else if (actionType == this.CORRECTIVE_ACTIONTYPE) { actionTypeStr = "CORRECTIVE"; }
         else if (actionType == this.PREVENTIVE_ACTIONTYPE) { actionTypeStr = "PREVENTIVE"; }
+        else if (actionType == this.COMPENSATORY_ACTIONTYPE) { actionTypeStr = "COMPENSATORY"; }
         
         String s = "Actuator ["+this.getName()+"], uid="+this.getUID()+" ActionType="+actionTypeStr+"\n";
         s += "    Affects AssetType["+this.getAssetType()+"] and AssetStateDimension["+this.assetDim+"]\n";

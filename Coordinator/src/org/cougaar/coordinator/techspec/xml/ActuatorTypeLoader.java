@@ -142,6 +142,7 @@ public class ActuatorTypeLoader extends XMLLoader {
         if (actionType == null || actionType.equalsIgnoreCase("CORRECTIVE") ) { actionTypeInt = ActionTechSpecInterface.CORRECTIVE_ACTIONTYPE; }
         else if (actionType.equalsIgnoreCase("PREVENTIVE") ) { actionTypeInt = ActionTechSpecInterface.PREVENTIVE_ACTIONTYPE; }
         else if (actionType.equalsIgnoreCase("APPLICATION") ) { actionTypeInt = ActionTechSpecInterface.APPLICATION_ACTIONTYPE; }
+        else if (actionType.equalsIgnoreCase("COMPENSATORY") ) { actionTypeInt = ActionTechSpecInterface.COMPENSATORY_ACTIONTYPE; }
         else {
             actionTypeInt = ActionTechSpecInterface.CORRECTIVE_ACTIONTYPE; //default
             logger.warn("ActuatorType["+actuatorName+"]  did not specify an action type. Defaulting to corrective.");
