@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetModel.java,v $
- * $Revision: 1.21 $
- * $Date: 2004-08-03 22:05:50 $
+ * $Revision: 1.24 $
+ * $Date: 2004-08-04 23:45:19 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.21 $Date: 2004-08-03 22:05:50 $
+ * @version $Revision: 1.24 $Date: 2004-08-04 23:45:19 $
  *
  */
 class POMDPAssetModel extends Model
@@ -211,7 +211,7 @@ class POMDPAssetModel extends Model
     {
         if ( start_belief == null )
             throw new BelievabilityException
-                    ( "POMDPAssetModel.updateBeliefState()",
+                    ( "POMDPAssetModel.updateBeliefStateForTime()",
                       "NULL starting belief passed in." );
 
         long end_time;
@@ -247,7 +247,7 @@ class POMDPAssetModel extends Model
 
         if ( start_time > end_time )
         {
-            logDebug( "updateBeliefState(): Found a negative update interval."
+            logDebug( "updateBeliefStateForTime(): Found a negative update interval."
                      + "[ " + start_time + ", " + end_time + "]"
                      + " for asset " + start_belief.getAssetID()
                      + ". Ignoring threats." );
@@ -256,7 +256,7 @@ class POMDPAssetModel extends Model
 
         if ( (end_time - start_time) < SMALLEST_THREAT_INTERVAL_MS/2 )
         {
-            logDetail( "updateBeliefState(): Found miniscule update interval."
+            logDetail( "updateBeliefStateForTime(): Found miniscule update interval."
                       + "[ " + start_time + ", " + end_time + "]"
                       + " for asset " + start_belief.getAssetID()
                       + ". Rounding to zero and ignoring threats." );
@@ -265,7 +265,7 @@ class POMDPAssetModel extends Model
 
         if ( (end_time - start_time) < SMALLEST_THREAT_INTERVAL_MS )
         {
-            logDetail( "updateBeliefState(): Found small update interval."
+            logDetail( "updateBeliefStateForTime(): Found small update interval."
                      + "[ " + start_time + ", " + end_time + "]"
                      + " for asset " + start_belief.getAssetID()
                      + ". Rounding to " 
@@ -317,8 +317,8 @@ class POMDPAssetModel extends Model
      * @return the update belief state
      *
      */
-    BeliefState updateBeliefState( BeliefState start_belief,
-                                   BeliefUpdateTrigger trigger )
+    synchronized BeliefState updateBeliefState( BeliefState start_belief,
+                                                BeliefUpdateTrigger trigger )
             throws BelievabilityException
     {
         if (( start_belief == null )
@@ -367,15 +367,19 @@ class POMDPAssetModel extends Model
                     ( "POMDPAssetModel.updateBeliefState()",
                       "Found NULL state dimension in trigger." );
         
-      // First, fetch the appropriate POMDP model for this dimension...
+        // First, fetch the appropriate POMDP model for this
+        // dimension...
+        //
         POMDPAssetDimensionModel pomdp_model_dim
                 = getPOMDPAssetDimensionModel( state_dim_name );
         
-        // ...and then the appropriate next belief state dimension...
+        // ...and then the appropriate next belief state dimension... 
+        //
         BeliefStateDimension next_belief_dim
                 = next_belief.getBeliefStateDimension( state_dim_name );
 
         // ..and a clone for the starting point...
+        //
         BeliefStateDimension start_belief_dim 
                 = (BeliefStateDimension) next_belief_dim.clone();
 
