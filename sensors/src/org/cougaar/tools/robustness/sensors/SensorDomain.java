@@ -1,7 +1,7 @@
 /*
  * <copyright>
+ *  Copyright 2002-2003 Object Services and Consulting, Inc.
  *  Copyright 1997-2001 BBNT Solutions, LLC
- *  Copyright 2002-2003// Object Services and Consulting, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -30,7 +30,7 @@ import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.component.ServiceBroker; //100
 import org.cougaar.core.domain.DomainAdapter;
 //100 import org.cougaar.core.domain.DomainBindingSite;
-import org.cougaar.tools.manager.Constants;
+//102B import org.cougaar.tools.manager.Constants;
 import org.cougaar.core.service.UIDService; //100
 
 /**
@@ -67,7 +67,7 @@ public class SensorDomain extends DomainAdapter {
    **/
   public void initialize() {
     super.initialize();
-    Constants.Role.init();    // Insure that our Role constants are initted
+    //102B Constants.Role.init();    // Insure that our Role constants are initted
   }
 
   public void unload() {

@@ -27,12 +27,8 @@ if exist makeassets.bat call makeassets
 
 rem compile the code
 if not exist lib mkdir lib
-set LIBPATHS=%COUGAAR_INSTALL_PATH%\lib\bootstrap.jar
-set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\core.jar
+set LIBPATHS=%COUGAAR_INSTALL_PATH%\lib\core.jar
 set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\util.jar
-set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\planning.jar
-set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\manager.jar
-REM set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\msglog.jar
 set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\msglog_common.jar
 
 set FILES=src\org\cougaar\tools\robustness\sensors\*.java

@@ -1,6 +1,6 @@
 /* 
  * <copyright>
- * Copyright 2002 Object Services and Consulting, Inc.
+ * Copyright 2002-2003 Object Services and Consulting, Inc.
  * Copyright 2002 BBNT Solutions, LLC
  * under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
 
@@ -78,6 +78,6 @@ public class MetricsTestPlugin extends ServiceUserPlugin {
     } else {
       logger.warn("metric is null");
     }
-    startTimer(1000);
+    resetTimer(1000); //102B
   }
 }
