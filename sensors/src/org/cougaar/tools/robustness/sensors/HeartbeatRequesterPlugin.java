@@ -173,7 +173,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
             MessageAddress target = (MessageAddress)targets.next();
             Date lastHbDate = (Date)hbTable.get(target);
             long lastHbTime = lastHbDate.getTime();
-            long outOfSpec = lastHbTime - lastHbDue;
+            long outOfSpec = lastHbDue - lastHbTime;
             float thisPercentOutOfSpec =  ((float)outOfSpec / (float)hbFreq) * 100.0f;
             // send report if requester wants report whether in or out of spec
             // or if the heartbeat is enough out of spec
