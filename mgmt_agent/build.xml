@@ -1,0 +1,243 @@
+<?xml version="1.0"?>
+<!-- ==================================================== -->
+<!--     Ant build file for:                              -->
+<!--     MIC Robustness Components                        -->
+<!-- ==================================================== -->
+
+<project name="mic-robustness" default="build" basedir=".">
+
+  <!-- set global properties for this build -->
+  <property environment="env"/>
+  <property name="cougaar" value="${env.COUGAAR_INSTALL_PATH}"/>
+
+  <!-- Define location of 3rd-party libraries -->
+  <property name="objs" value="/shares/packages/sensors/lib" />
+
+  <!-- for JavaDoc -->
+  <property name="packageName" value="org.cougaar.tools.robustness.ma"/>
+  <property name="packageDir" value="org/cougaar/toosl/robustness"/>
+
+  <!-- standard directories -->
+  <property name="classes" value="classes"/>
+  <property name="doc" value="doc"/>
+  <property name="src" value="src"/>
+  <property name="test" value="test"/>
+
+  <!-- Initialization target -->
+  <target name="init" >
+    <mkdir dir="${classes}"/>
+  </target>
+
+  <target name="build" depends="init, compile, compile-test, jar">
+    <mkdir dir="${classes}"/>
+  </target>
+
+  <target name="compile" description="Compiles source code">
+    <!-- Compile the java code into ${classes} -->
+    <javac srcdir="${src}" destdir="${classes}">
+      <classpath>
+        <pathelement location="${objs}"/>
+        <fileset dir="${cougaar}/lib">
+          <include name="**/*.jar"/>
+        </fileset>
+        <fileset dir="${cougaar}/sys">
+          <include name="**/*.jar"/>
+        </fileset>
+      </classpath>
+    </javac>
+  </target>
+
+  <target name="compile-test" description="Compiles test code">
+    <!-- Compile the test code into ${classes} -->
+    <javac srcdir="${test}/src" destdir="${classes}">
+      <classpath>
+        <fileset dir="${cougaar}/lib">
+          <include name="**/*.jar"/>
+        </fileset>
+        <fileset dir="${cougaar}/sys">
+          <include name="**/*.jar"/>
+        </fileset>
+      </classpath>
+    </javac>
+  </target>
+
+  <!-- Builds jar file -->
+  <target name="jar" description="Creates jar file">
+    <!-- Put everything in ${classes} into a jar file -->
+    <delete file="${ant.project.name}.jar" />
+    <jar jarfile="${ant.project.name}.jar">
+      <fileset dir="${classes}"
+        includes="${packageDir}/**"
+        excludes="**/cvs/*,**/*.bak"
+      />
+    </jar>
+  </target>
+
+  <!-- Deletes generated files -->
+  <target name="clean" description="Deletes generated files">
+    <delete dir="${classes}"/>
+    <delete dir="${doc}/api"/>
+  </target>
+
+  <!-- Generates javadoc -->
+  <target name="javadoc" description="Creates JavaDoc documentation">
+    <mkdir dir="doc/api"/>
+    <javadoc packagenames="${packageName}"
+           sourcepath="src"
+           destdir="doc/api"
+           author="false"
+           version="false"
+           use="true"
+           windowtitle="Ultralog Robustness"
+           doctitle="Ultralog Robustness">
+      <group title="Robustness" packages="${packageName}"/>
+      <classpath>
+        <pathelement location="${basedir}/${classes}"/>
+        <fileset dir="${cougaar}/lib">
+          <include name="**/*.jar"/>
+        </fileset>
+        <fileset dir="${cougaar}/sys">
+          <include name="**/*.jar"/>
+        </fileset>
+      </classpath>
+    </javadoc>
+  </target>
+
+  <!-- creates zip archive of development files -->
+  <target name="zip" description="Creates zip archive of development files">
+    <tstamp/>
+    <zip zipfile="${ant.project.name}-${DSTAMP}.zip"
+      basedir="${basedir}"
+      includes="src/**,
+	data/**,
+        doc/**,
+        example/**,
+        regress/**,
+        test/**,
+        build.xml"
+      excludes="**/cvs/**,doc/api/**,**/*.bak,.cvsignore"
+    />
+  </target>
+
+
+  <!-- Runs automated unit/integration -->
+    <target name="test" description="Runs automated unit tests">
+    <java dir="${basedir}" fork="yes"
+      maxmemory="350m"
+      classname="org.cougaar.bootstrap.Bootstrapper">
+      <jvmarg value="-Xms100m" />
+      <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
+      <classpath>
+        <pathelement location="${basedir}/${classes}"/>
+        <fileset dir="${cougaar}/lib">
+          <include name="**/*.jar"/>
+        </fileset>
+      </classpath>
+      <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
+      <sysproperty key="org.cougaar.class.path" value="./classes"/>
+      <sysproperty key="org.cougaar.config.path" value="$$CWD/${test}/data;$$CWD/${test}/configs/demo;$$CWD/${test}/configs/minitestconfig;$$CWD/${test}/configs/common;$$INSTALL/configs/minitestconfig;$$INSTALL/configs/common"/>
+      <arg line="org.cougaar.core.node.Node TestNode"/>
+    </java>
+  </target>
+
+  <!-- Runs ManagementAgent -->
+    <target name="manager" description="Runs ManagementAgent">
+    <java dir="${basedir}" fork="yes"
+      maxmemory="350m"
+      classname="org.cougaar.bootstrap.Bootstrapper">
+      <jvmarg value="-Xms100m"/>
+      <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
+      <classpath>
+        <pathelement location="${basedir}/${classes}"/>
+        <fileset dir="${cougaar}/lib">
+          <include name="**/*.jar"/>
+        </fileset>
+      </classpath>
+      <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
+      <sysproperty key="org.cougaar.class.path" value="./classes"/>
+      <sysproperty key="org.cougaar.config.path" value="$$CWD/test/configs/ma;$$CWD/test/configs/common;$$INSTALL/configs/common"/>
+      <arg line="org.cougaar.core.node.Node ManagerNode"/>
+    </java>
+  </target>
+
+  <!-- Runs MiniTestConfig on one node -->
+    <target name="minitestconfig" description="Runs MiniTestConfig society on a single node">
+    <java dir="${basedir}" fork="yes"
+      maxmemory="350m"
+      classname="org.cougaar.bootstrap.Bootstrapper">
+      <jvmarg value="-Xms100m"/>
+      <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
+      <classpath>
+        <pathelement location="${basedir}/${classes}"/>
+        <fileset dir="${cougaar}/lib">
+          <include name="**/*.jar"/>
+        </fileset>
+      </classpath>
+      <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
+      <sysproperty key="org.cougaar.class.path" value="./classes"/>
+      <sysproperty key="org.cougaar.config.path" value="$$CWD/test/configs/ma;$$CWD/test/configs/common;$$INSTALL/configs/common"/>
+      <arg line="org.cougaar.core.node.Node MiniTestConfigNode"/>
+    </java>
+  </target>
+
+  <!-- Runs partial MiniTestConfig society on one node -->
+    <target name="minitestconfig-1" description="Runs Partial MiniTestConfig society (1BDE, 3-69-ARBN, MCCGlobalMode) on a single node">
+    <java dir="${basedir}" fork="yes"
+      maxmemory="350m"
+      classname="org.cougaar.bootstrap.Bootstrapper">
+      <jvmarg value="-Xms100m"/>
+      <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
+      <classpath>
+        <pathelement location="${basedir}/${classes}"/>
+        <fileset dir="${cougaar}/lib">
+          <include name="**/*.jar"/>
+        </fileset>
+      </classpath>
+      <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
+      <sysproperty key="org.cougaar.class.path" value="./classes"/>
+      <sysproperty key="org.cougaar.config.path" value="$$CWD/test/configs/ma;$$CWD/test/configs/common;$$INSTALL/configs/common"/>
+      <arg line="org.cougaar.core.node.Node MiniNode1"/>
+    </java>
+  </target>
+
+  <!-- Runs partial MiniTestConfig society on one node -->
+    <target name="minitestconfig-2" description="Runs Partial MiniTestConfig society (3ID) on a single node">
+    <java dir="${basedir}" fork="yes"
+      maxmemory="350m"
+      classname="org.cougaar.bootstrap.Bootstrapper">
+      <jvmarg value="-Xms100m"/>
+      <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
+      <classpath>
+        <pathelement location="${basedir}/${classes}"/>
+        <fileset dir="${cougaar}/lib">
+          <include name="**/*.jar"/>
+        </fileset>
+      </classpath>
+      <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
+      <sysproperty key="org.cougaar.class.path" value="./classes"/>
+      <sysproperty key="org.cougaar.config.path" value="$$CWD/test/configs/ma;$$CWD/test/configs/common;$$INSTALL/configs/common"/>
+      <arg line="org.cougaar.core.node.Node MiniNode2"/>
+    </java>
+  </target>
+
+  <!-- Runs ManagementAgent and MiniTestConfig on one node -->
+    <target name="combinednode" description="Runs ManagementAgent and MiniTestConfig society on a single node">
+    <java dir="${basedir}" fork="yes"
+      maxmemory="350m"
+      classname="org.cougaar.bootstrap.Bootstrapper">
+      <jvmarg value="-Xms100m"/>
+      <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
+      <classpath>
+        <pathelement location="${basedir}/${classes}"/>
+        <fileset dir="${cougaar}/lib">
+          <include name="**/*.jar"/>
+        </fileset>
+      </classpath>
+      <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
+      <sysproperty key="org.cougaar.class.path" value="./classes"/>
+      <sysproperty key="org.cougaar.config.path" value="$$CWD/test/configs/ma;$$CWD/test/configs/common;$$INSTALL/configs/common"/>
+      <arg line="org.cougaar.core.node.Node CombinedNode"/>
+    </java>
+  </target>
+
+  </project>
