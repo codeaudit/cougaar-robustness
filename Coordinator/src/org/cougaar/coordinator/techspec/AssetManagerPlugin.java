@@ -75,6 +75,7 @@ public class AssetManagerPlugin extends ComponentPlugin implements NotPersistabl
     private boolean haveServices = false;
     
     private Vector allAssets;
+    private Vector pendingAssets;
     
     //CommunityStatusModel
     private CommunityStatusModel csm = null;
@@ -120,7 +121,7 @@ public class AssetManagerPlugin extends ComponentPlugin implements NotPersistabl
                 removedAsset = false;
 
 
-//logger.warn("!!!! [STATUS CHANGED CALLED] on asset="+csce[i].getName()+" with:  \n= "+csce[i].toString()+"  getCurrentLocation = " + csce[i].getCurrentLocation()+" getPriorLocation = " + csce[i].getPriorLocation());
+            if (logger.isDebugEnabled()) logger.debug("!!!! [STATUS CHANGED CALLED] on asset="+csce[i].getName()+" with:  \n= "+csce[i].toString()+"  getCurrentLocation = " + csce[i].getCurrentLocation()+" getPriorLocation = " + csce[i].getPriorLocation());
                 
 /*                
 logger.warn("!!!! ****************************************************");
@@ -175,7 +176,8 @@ logger.warn("!!!! **********************************************************");
                     }
                     
                     if (hostName == null || nodeName == null || hostName.length() == 0 || nodeName.length() == 0) {
-                      //  logger.warn("!!!- [ASSET NOT ADDED] Saw new agent asset ["+agentName+"] without host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
+                        if (logger.isDebugEnabled()) logger.debug("!!!- Queued new agent asset ["+agentName+"] without host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
+                        pendingAssets.add(csce[i]);
                         continue;
                     } else { //continue
                         hostAsset = getHost(hostName);
@@ -256,6 +258,54 @@ logger.warn("!!!! **********************************************************");
                    // logger.debug("!!!! [STATUS CHANGED CALLED] - UNKNOWN change");
                 }
             }
+
+            // dw - check if any of the agents for which there was previously incomplete info can now be completed
+            Iterator iter = pendingAssets.iterator();
+            while (iter.hasNext()) {
+                CommunityStatusChangeEvent thisCSCE = (CommunityStatusChangeEvent) iter.next();
+                agentName = thisCSCE.getName();
+                if (logger.isDebugEnabled()) logger.debug("Considering the pending CSCE: " + thisCSCE.toString());
+                // this is basically a clone of the handling of the original handling - really should be merged
+                if ( thisCSCE.getType() == CommunityStatusModel.AGENT ) {
+                    nodeName = thisCSCE.getCurrentLocation();
+                    hostName = csm.getLocation(nodeName);
+                }
+                else if ( thisCSCE.getType() == CommunityStatusModel.NODE ) { //node & node agent have the same name
+                    nodeName = agentName;
+                    hostName = thisCSCE.getCurrentLocation();
+                }
+
+                if (hostName == null || nodeName == null || hostName.length() == 0 || nodeName.length() == 0) {
+                    if (logger.isDebugEnabled()) logger.debug("!!!- Still incomplete: "+agentName+"] without host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
+                    continue;
+                } else { //continue
+                    hostAsset = getHost(hostName);
+                    nodeAsset = getNode(hostAsset, nodeName);
+                }
+
+                //*** Handle an agent whose info is now complete - it becomes a new agent entry
+
+                //Make sure we haven't seen this agent before we create a new one! - this should be impossible when handling pending requests
+                agentAsset = DefaultAssetTechSpec.findAssetByID(new AssetID(agentName, AssetType.AGENT));
+                if (agentAsset != null) {
+                    if (logger.isDebugEnabled()) logger.debug("************************>>> Saw DUPLICATE agent asset ["+agentName+"] with host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
+                    continue;
+                }                    
+
+
+                if (logger.isDebugEnabled()) logger.debug("============>>> Saw new agent asset from pending queue ["+agentName+"] with host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
+                agentAsset = new DefaultAssetTechSpec( hostAsset, nodeAsset,  agentName, AssetType.AGENT, us.nextUID());
+                //Use NODE name to assign FWD / REAR property -- doing this also for nodes in getNode()
+                if (nodeName.startsWith("REAR")) {
+                    agentAsset.addProperty(new AgentAssetProperty(AgentAssetProperty.location, "REAR"));
+                } else if (nodeName.startsWith("FWD")) {
+                    agentAsset.addProperty(new AgentAssetProperty(AgentAssetProperty.location, "FORWARD"));
+                }
+                iter.remove();
+
+                queueChangeEvent(new AssetChangeEvent( agentAsset, AssetChangeEvent.NEW_ASSET));
+                                        
+            }
         }
     };
 
@@ -300,6 +350,7 @@ logger.warn("!!!! **********************************************************");
         if (logger.isDebugEnabled()) logger.debug("************************ AssetManagerPlugin loaded...");
 
         allAssets = new Vector(100,100);
+        pendingAssets = new Vector(100);
         
         // Subscribe to CommunityStatusModel
         communityStatusModelSub =
