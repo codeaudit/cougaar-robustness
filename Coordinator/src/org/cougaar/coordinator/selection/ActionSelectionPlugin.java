@@ -399,7 +399,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 	    Action thisAction = thisWrapper.getAction();
 	    if ((thisAction.getValue() != null && thisAction.getValue().isActive()) 
                     && (thisAction.getValuesOffered()==null 
-                              || (thisAction.getValuesOffered().size==1 && thisAction.getValuesOffered().contains(thisAction.getValue().getAction()))) {
+                              || (thisAction.getValuesOffered().size==1 && thisAction.getValuesOffered().contains(thisAction.getValue().getAction())))) {
 		activeActions.add(thisAction);
 	    }
 	}
