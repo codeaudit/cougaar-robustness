@@ -19,8 +19,8 @@ heartbeat_pct_out_of_spec =     "80"
 society.each_enclave do |enclave|
   society.communities.add("1AD-#{enclave}-COMM") do |community|
     community.add_attribute("CommunityType", "Robustness")
-    community.add_attribute("CommunityManager", "1AD-#{enclave}-ARManager")
-    community.add_attribute("RobustnessManager", "1AD-#{enclave}-ARManager")
+    community.add_attribute("CommunityManager", "#{enclave}-ARManager")
+    community.add_attribute("RobustnessManager", "#{enclave}-ARManager")
     community.add_attribute("UNDEFINED_EXPIRATION", default_expiration)
     community.add_attribute("INITIAL_EXPIRATION", initial_expiration)
     community.add_attribute("LOCATED_EXPIRATION", located_expiration)
@@ -28,7 +28,7 @@ society.each_enclave do |enclave|
     community.add_attribute("HEALTH_CHECK_EXPIRATION", health_check_expiration)
     community.add_attribute("DEAD_EXPIRATION", dead_expiration)
     community.add_attribute("RESTART_EXPIRATION", restart_expiration)
-    community.add_attribute("FAILED_RESTART_EXPIRATION", "failed_restart_expiration")
+    community.add_attribute("FAILED_RESTART_EXPIRATION", failed_restart_expiration)
     community.add_attribute("MOVE_EXPIRATION", move_expiration)
     community.add_attribute("PING_TIMEOUT", ping_timeout)
     community.add_attribute("HEARTBEAT_REQUEST_TIMEOUT", heartbeat_request_timeout)
@@ -36,26 +36,19 @@ society.each_enclave do |enclave|
     community.add_attribute("HEARTBEAT_TIMEOUT", heartbeat_timeout)
     community.add_attribute("HEARTBEAT_PCT_OUT_OF_SPEC", heartbeat_pct_out_of_spec)
 
-    #community.add_agent("1AD-#{enclave}-ARManager") do |entity|
-      #entity.add_role("Member")
-      #entity.add_role("HealthMonitor")
-      #entity.add_role("RobustnessManager")
-    #end
     num_agents = 0
     society.each_enclave_node(enclave) do |node|
-      unless node.has_facet?(:role)
-        community.add_node(node.name) do |entity|
+      community.add_node(node.name) do |entity|
+        entity.add_role("Member")
+        entity.add_role("HealthMonitor")
+      end
+      node.each_agent do |agent|
+        num_agents += 1
+        community.add_agent(agent.name) do |entity|
           entity.add_role("Member")
-	  entity.add_role("HealthMonitor")
-        end
-        node.each_agent do |agent|
-          num_agents += 1
-          community.add_agent(agent.name) do |entity|
-            entity.add_role("Member")
-	    if agent.name =~ /.*ARManager.*/
-	      entity.add_role("HealthMonitor")
-              entity.add_role("RobustnessManager")
-	    end
+          if agent.name =~ /.*ARManager.*/
+            entity.add_role("HealthMonitor")
+            entity.add_role("RobustnessManager")
           end
         end
       end
