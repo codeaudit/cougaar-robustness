@@ -5,7 +5,7 @@ The plugin org.cougaar.tools.robustness.sensors.PingServerPlugin is
 loaded in MonitoredAgent.ini.
 
 The plugin org.cougaar.tools.robustness.sensors.PingRequestorPlugin is 
-loaded, and the ping Domain is declared, in ManagerAgent.ini.
+loaded, and the sensors Domain is declared, in ManagerAgent.ini.
 
 The sample user plugin PingTesterPlugin is also loaded in ManagerAgent.ini,
 and it is passed two arguments, (MonitoredAgent, 0).  The first is the
@@ -15,7 +15,7 @@ will indicate the number of milliseconds to wait before returning a FAILED
 status to the requestor.  
 
 To run the test, open two cmd windows, cd to test\configs\ping_test in each, and
-run "run MonitoredAgentNode" in one, and "run ManagerAgentNode" in the other.
+run "Node MonitoredAgentNode" in one, and "Node ManagerAgentNode" in the other.
 
 The following should be printed in the windows:
 

@@ -49,24 +49,40 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
     private long detonate = -1;
     private boolean expired = false;
 
+    /**
+     * Create an Alarm to go off in the milliseconds specified,
+     * to send out heartbeats on schedule.
+     **/
     public ProcessHeartbeatsAlarm (long delay) {
       detonate = delay + System.currentTimeMillis();
     }
 
+    /** @return absolute time (in milliseconds) that the Alarm should
+     * go off.  
+     * This value must be implemented as a fixed value.
+     **/
     public long getExpirationTime () {
       return detonate;
     }
 
+    /** 
+     * Called by the cluster clock when clock-time >= getExpirationTime().
+     **/
     public void expire () {
       if (!expired) 
         processHeartbeats();
       expired = true;
     }
 
+    /** @return true IFF the alarm has expired or was canceled. **/
     public boolean hasExpired () {
       return expired;
     }
 
+    /** can be called by a client to cancel the alarm.  May or may not remove
+     * the alarm from the queue, but should prevent expire from doing anything.
+     * @return false IF the the alarm has already expired or was already canceled.
+     **/
     public boolean cancel () {
       if (!expired)
         return expired = true;
