@@ -19,7 +19,7 @@
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
  */
-
+ 
 package org.cougaar.coordinator.examples.SampleDefense;
 
 import java.util.Set;
@@ -160,8 +160,8 @@ public class SampleDiagnosisTechSpec implements DiagnosisTechSpecInterface  {
        //do nothing
     }
     
-    public String getStateDimension() {
-        return "SampleDimension"; // added by DW
+    public AssetStateDimension getStateDimension() {
+        return AssetType.AGENT.findStateDimension("LIVENESS"); // added by DW
     }
 
     public int getLatency() {
