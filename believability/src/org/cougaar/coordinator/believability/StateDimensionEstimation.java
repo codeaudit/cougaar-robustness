@@ -1,9 +1,12 @@
 /*
- * StateDimensionEstimation.java
+ *<SOURCE_HEADER>
  *
- * Created on April 21, 2004
+ *<NAME>
+ * $RCSfile: StateDimensionEstimation.java,v $
+ *</NAME>
+ *
  * <copyright>
- *  Copyright 2004 Telcordia Technoligies, Inc.
+ *  Copyright 2004 Telcordia Technologies, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
  *  and the Defense Logistics Agency (DLA).
  * 

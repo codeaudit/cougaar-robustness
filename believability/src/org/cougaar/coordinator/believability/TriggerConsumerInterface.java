@@ -1,9 +1,12 @@
 /**
- * TriggerConsumerInterface.java
+ *<SOURCE_HEADER>
  *
- * Created on May 6, 2004
+ *<NAME>
+ * $RCSfile: TriggerConsumerInterface.java,v $
+ *</NAME>
+ *
  * <copyright>
- *  Copyright 2004 Telcordia Technoligies, Inc.
+ *  Copyright 2004 Telcordia Technologies, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
  *  and the Defense Logistics Agency (DLA).
  * 
@@ -30,7 +33,7 @@ package org.cougaar.coordinator.believability;
  * and take the appropriate action.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.17 $Date: 2004-08-09 20:46:41 $
+ * @version $Revision: 1.18 $Date: 2004-12-14 01:41:47 $
  * 
  */
 public interface TriggerConsumerInterface {

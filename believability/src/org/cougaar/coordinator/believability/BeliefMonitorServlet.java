@@ -1,6 +1,12 @@
 /*
+ *<SOURCE_HEADER>
+ *
+ *<NAME>
+ * $RCSfile: BeliefMonitorServlet.java,v $
+ *</NAME>
+ *
  * <copyright>
- *  Copyright 2004 Object Services and Consulting, Inc.
+ *  Copyright 2004 Telcordia Technologies, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
  *  and the Defense Logistics Agency (DLA).
  * 

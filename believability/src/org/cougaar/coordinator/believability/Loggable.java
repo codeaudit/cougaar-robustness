@@ -1,9 +1,12 @@
 /*
- * Loggable.java
+ *<SOURCE_HEADER>
  *
- * Created on May 24, 2004
+ *<NAME>
+ * $RCSfile: Loggable.java,v $
+ *</NAME>
+ *
  * <copyright>
- *  Copyright 2004 Telcordia Technoligies, Inc.
+ *  Copyright 2004 Telcordia Technologies, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
  *  and the Defense Logistics Agency (DLA).
  * 
@@ -33,7 +36,7 @@ import org.cougaar.util.log.Logger;
  * logging mechanism. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.29 $Date: 2004-10-20 16:48:21 $
+ * @version $Revision: 1.30 $Date: 2004-12-14 01:41:47 $
  * @deprecated This class no longer used do to string cons'ing inefficiency.
  *
  */
