@@ -19,14 +19,15 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 15 Dec  2001: Rework filtering to deal with possible "-" msg num, and re-base
- *               sorting from message number to sent date. (OBJS)
- * 29 Nov  2001: Redesign to a much simpler cache to fit with new MessageAckingAspect 
- *               which handles message caching and sequence ordering now. (OBJS)
- * 19 Oct  2001: Redesign to fix limitation where messages from different
- *               nodes would get confused with each other. (OBJS)
- * 08 Sept 2001: Relaxed getNextMessage to allow gaps going forward. (OBJS)
- * 08 July 2001: Created. (OBJS)
+ * 07 Sep 2002: Now allow email message numbers of 0. (OBJS)
+ * 15 Dec 2001: Rework filtering to deal with possible "-" msg num, and re-base
+ *              sorting from message number to sent date. (OBJS)
+ * 29 Nov 2001: Redesign to a much simpler cache to fit with new MessageAckingAspect 
+ *              which handles message caching and sequence ordering now. (OBJS)
+ * 19 Oct 2001: Redesign to fix limitation where messages from different
+ *              nodes would get confused with each other. (OBJS)
+ * 08 Sep 2001: Relaxed getNextMessage to allow gaps going forward. (OBJS)
+ * 08 Jul 2001: Created. (OBJS)
  */
 
 package org.cougaar.core.mts.email;
@@ -34,6 +35,7 @@ package org.cougaar.core.mts.email;
 import java.io.PrintStream;
 import java.util.*;
 
+import org.cougaar.util.log.Logging;
 
 /**
  *  A simple cache of mail messages read from a mail server.  Needed as
@@ -59,7 +61,7 @@ public class MailMessageCache
 
     for (int i=0; i<msgs.length; i++)
     {
-      //  A valid message number string is a non-zero integer or the string "-"
+      //  A valid message number string is an integer or the string "-"
 
       String num = getMessageNum (msgs[i]);
       boolean valid = false;
@@ -72,9 +74,16 @@ public class MailMessageCache
         }
         else 
         {
-          int n = 0;
-          try  { n = Integer.valueOf(num).intValue(); } catch (Exception e) {}
-          if (n != 0) valid = true;
+          try  
+          { 
+            Integer.valueOf(num).intValue();
+            valid = true;
+          } 
+          catch (Exception e) 
+          {
+            String hdr = msgs[i].getHeader().toString();
+            Logging.getLogger(MailMessageCache.class).error ("Invalid email msg num: " +hdr);
+          }
         }
       }
 
