@@ -2,7 +2,7 @@
 
 name: MOAS-II-RESTORE-Stressed-KillsOnly-Stage2
 group: nogroup
-type: baseline 
+type: baseline
 description: MOAS-II-Stage2-RESTORE_Kills
 script: $CIP/csmart/scripts/definitions/RestoreTemplate.rb
 parameters:
@@ -30,6 +30,7 @@ include_scripts:
   # Robustness
   - script: $CIP/csmart/lib/robustness/mic/prepare_kills.rb
   - script: $CIP/csmart/lib/robustness/objs/deconfliction.rb
+  - script: $CIP/csmart/lib/coordinator/unleash_defenses.rb
   - script: $CIP/csmart/lib/isat/standard_kill_nodes.rb
     parameters:
       - start_tag: starting_stage

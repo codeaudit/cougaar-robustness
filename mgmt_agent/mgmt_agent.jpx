@@ -49,6 +49,16 @@
     </node>
   </node>
   <node name="configs" type="Folder">
+    <node name="coordinator" type="Folder">
+      <file path="configs/coordinator/Restart_AgentAssetStateDimensions.xml"/>
+      <file path="configs/coordinator/Restart_AggressiveLivenessSensor.xml"/>
+      <file path="configs/coordinator/Restart_Events.xml"/>
+      <file path="configs/coordinator/Restart_HostAssetStateDimensions.xml"/>
+      <file path="configs/coordinator/Restart_LivenessSensor.xml"/>
+      <file path="configs/coordinator/Restart_NodeAssetStateDimensions.xml"/>
+      <file path="../mgmt_agent/configs/coordinator/Restart_RestartActuator.xml"/>
+      <file path="configs/coordinator/Restart_Threats.xml"/>
+    </node>
     <node name="mic-local" type="Folder">
       <file path="configs/mic-local/install_acme_service"/>
       <file path="configs/mic-local/install_cougaar"/>
@@ -142,6 +152,18 @@
           <file path="csmart/lib/robustness/mic/ua_big_kill.rb"/>
           <file path="csmart/lib/robustness/mic/ua_kill.rb"/>
           <file path="csmart/lib/robustness/mic/ua_kill_w_mgr.rb"/>
+        </node>
+      </node>
+    </node>
+    <node name="scripts" type="Folder">
+      <node name="definitions" type="Folder">
+        <node name="robustness" type="Folder">
+          <node name="mic" type="Folder">
+            <file path="csmart/scripts/definitions/robustness/mic/ALARAS-MOAS-II-Kills-PreStage2.rb"/>
+            <file path="csmart/scripts/definitions/robustness/mic/ALARAS-MOAS-II-SAVE-PreStage2.rb"/>
+            <file path="csmart/scripts/definitions/robustness/mic/ALARAS-RESTORE-KILLS-Prestage2-Stressed.rb"/>
+            <file path="csmart/scripts/definitions/robustness/mic/aruc1-small.rb"/>
+          </node>
         </node>
       </node>
     </node>

@@ -26,7 +26,6 @@ import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.SchedulerService;
 import org.cougaar.core.service.UIDService;
-import org.cougaar.core.service.OperatingModeService;
 import org.cougaar.core.service.ConditionService;
 import org.cougaar.core.service.EventService;
 import org.cougaar.core.blackboard.BlackboardClientComponent;
@@ -51,13 +50,9 @@ import java.util.Iterator;
  * Provides convenience methods for invoking deconflictor. This helper only applies
  * to the robustness manager.
  */
-public class DeconflictHelper extends BlackboardClientComponent {
-  /*//prefix of applicable condition name for the agents
-  public static final String MYCONDITION = "RestartApplicableAgent";
-  //prefix of defense op mode name
-  public static final String MYDEF_OPMODE = "RestartEnablerAgent";
-  //prefix of monitor mode name
-  public static final String MYMONITOR_OPMODE = "RestartMonitorAgent";*/
+public class DeconflictHelper extends BlackboardClientComponent
+    implements CoordinatorHelper {
+
   public static final String assetType = "Agent";
   public static final String defenseName = "Restart";
 
@@ -66,17 +61,13 @@ public class DeconflictHelper extends BlackboardClientComponent {
   private LoggingService logger;
   private UIDService uidService;
   private ConditionService conditionService;
-  private OperatingModeService operatingModeService;
   private EventService eventService;
 
   private IncrementalSubscription opModeSubscription;
-  private IncrementalSubscription monitorModeSubscription;
   private IncrementalSubscription conditionSubscription;
 
-  private CommunityStatusModel model;
-
   private ArrayList listeners = new ArrayList(); //store all deconflict listeners
-  private ArrayList agentsObjs = new ArrayList(); //store all agents who need to publish deconflict objects
+  private ArrayList agents = new ArrayList(); //store all agents who need to publish deconflict objects
   private ArrayList opModeEnabled = new ArrayList(); //store all agents whose defense opmode is enabled
   private List conditionEnabled = Collections.synchronizedList(new ArrayList()); //store all agents whose condition is true
 
@@ -90,15 +81,12 @@ public class DeconflictHelper extends BlackboardClientComponent {
  * @param bs The binding site
  * @param csm The community status model
  */
-  public DeconflictHelper(BindingSite bs, CommunityStatusModel csm) {
+  public DeconflictHelper(BindingSite bs) {
     this.setBindingSite(bs);
-    this.model = csm;
     initialize();
     load();
     start();
   }
-
-  //public void setConditionService (ConditionService cs) { this.conditionService = cs; }
 
   public void load() {
     setAgentIdentificationService(
@@ -118,29 +106,12 @@ public class DeconflictHelper extends BlackboardClientComponent {
     if(conditionService == null && logger.isWarnEnabled()) {
       logger.warn("No ConditionService?");
     }
-    //conditionService = getConditionService();
-    //operatingModeService = (OperatingModeService) getServiceBroker().getService(this, OperatingModeService.class, null);
     super.load();
   }
 
   public void start() {
     super.start();
   }
-
- /* private ConditionService getConditionService() {
-    int counter = 0;
-    ConditionService cs = null;
-    while (!getServiceBroker().hasService(ConditionService.class)) {
-      // Print a message after waiting for 30 seconds
-      if (++counter == 60) logger.info("Waiting for ConditionService ... ");
-      try { Thread.sleep(500); } catch (Exception ex) {}
-    }
-    return (ConditionService)getServiceBroker().getService(this, ConditionService.class,
-      new ServiceRevokedListener() {
-        public void serviceRevoked(ServiceRevokedEvent re) {}
-    });
-  }*/
-
 
   public void setupSubscriptions() {
 
@@ -153,16 +124,6 @@ public class DeconflictHelper extends BlackboardClientComponent {
             return false ;
         }
     });
-
-    //Listen for changes in our enabling mode object
-     /*monitorModeSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
-        public boolean execute(Object o) {
-            if ( o instanceof RestartMonitoringEnabler ) {
-                return true ;
-            }
-            return false ;
-        }
-     }) ;*/
 
      conditionSubscription = (IncrementalSubscription) getBlackboardService().subscribe(new UnaryPredicate() {
        public boolean execute(Object o) {
@@ -187,31 +148,11 @@ public class DeconflictHelper extends BlackboardClientComponent {
       publishChangeCondition();
     }
 
-    /*Iterator iter = monitorModeSubscription.getAddedCollection().iterator();
-    while(iter.hasNext()) {
-      RestartMonitoringEnabler rme = (RestartMonitoringEnabler)iter.next();
-      logger.info("get monitor mode: " + rme.getName() + "=" + rme.getValue());
-    }
-    iter = conditionSubscription.getAddedCollection().iterator();
-    while(iter.hasNext()) {
-      RestartDefenseCondition rdc = (RestartDefenseCondition)iter.next();
-      logger.info("get condition: " + rdc.getName() + "=" + rdc.getValue());
-    }
-    iter = opModeSubscription.getAddedCollection().iterator();
-    while(iter.hasNext()) {
-      RestartDefenseEnabler rme = (RestartDefenseEnabler)iter.next();
-      logger.info("get op mode: " + rme.getName() + "=" + rme.getValue());
-    }*/
-
-    //conditionEnabled.clear();
     List temp = new ArrayList();
     Iterator it = conditionSubscription.getCollection().iterator();
     while(it.hasNext()) {
       RestartDefenseCondition rdc = (RestartDefenseCondition)it.next();
-      //if(rdc.getValue().toString().equalsIgnoreCase("true")) {
-        //if(rdc.getAssetType().equals(assetType))
-          temp.add(rdc);
-      //}
+      temp.add(rdc);
     }
     synchronized(conditionEnabled) {
       conditionEnabled.clear();
@@ -239,12 +180,12 @@ public class DeconflictHelper extends BlackboardClientComponent {
     }
   }
 
-  public void addListener(DeconflictListener dl) {
+  public void addListener(CoordinatorListener dl) {
     if(!listeners.contains(dl))
       listeners.add(dl);
   }
 
-  public void removeListener(DeconflictListener dl) {
+  public void removeListener(CoordinatorListener dl) {
     if(listeners.contains(dl))
       listeners.remove(dl);
   }
@@ -255,9 +196,9 @@ public class DeconflictHelper extends BlackboardClientComponent {
    */
   public void opmodeEnabled(String name) {
     for(Iterator it = listeners.iterator(); it.hasNext();) {
-      DeconflictListener dl = (DeconflictListener)it.next();
+      CoordinatorListener cl = (CoordinatorListener)it.next();
       opModeEnabled.add(name);
-      dl.defenseOpModeEnabled(name);
+      cl.actionEnabled(name);
     }
   }
 
@@ -285,43 +226,36 @@ public class DeconflictHelper extends BlackboardClientComponent {
   }
 
   /**
-   * Publish deconflict objects for every agent. For this defense, we have three
-   * deconflict objects for every agent: the RestartDefenseCondition(default to
-   * FALSE), the RestartDefenseEnabler(default to DISABLED) and the RestartMonitoringEnabler
-   * (default to DISABLED).
+   * Publish Coordinators objects for  agent.
    */
-  public void initObjs() {
-    String[] agents = model.listEntries(CommunityStatusModel.AGENT);
-    for(int i=0; i<agents.length; i++) {
-      if(!agentsObjs.contains(agents[i])) {
-        fireLater(new RestartDefenseCondition(assetType, agents[i], defenseName, DefenseConstants.BOOL_FALSE));
-        fireLater(new RestartDefenseEnabler(assetType, agents[i], defenseName));
-        fireLater(new RestartMonitoringEnabler(assetType, agents[i], defenseName));
-        /*fireLater(new RestartDefenseCondition(defenseName + ":" + agents[i], DefenseConstants.BOOL_FALSE));
-        fireLater(new RestartDefenseEnabler(defenseName + ":" + agents[i]));
-        fireLater(new RestartMonitoringEnabler(defenseName + ":" + agents[i]));*/
-        agentsObjs.add(agents[i]);
-      }
+  public void addAgent(String agentName) {
+    if (!agents.contains(agentName)) {
+      fireLater(new RestartDefenseCondition(assetType, agentName, defenseName,
+                                            DefenseConstants.BOOL_FALSE));
+      fireLater(new RestartDefenseEnabler(assetType, agentName, defenseName));
+      fireLater(new RestartMonitoringEnabler(assetType, agentName, defenseName));
+      agents.add(agentName);
     }
+  }
+
+  /**
+   * Publish Coordinators objects for  agent.
+   */
+  public void removeAgent(String agentName) {
+    // Nothing for now.
   }
 
   /**
    * Modify the applicable condition value of given agent if current condition value
    * is not equals desired value.
    * @param name the agent name
-   * @return A boolean value
    */
-  public boolean changeApplicabilityCondition(String name) {
-    String condition = defenseName + ":" + name;
+  public void changeApplicabilityCondition(String name) {
 
     List l;
     synchronized(conditionEnabled) {
       l = new ArrayList(conditionEnabled);
     }
-    //try{
-      //blackboard.openTransaction();
-      //col = blackboard.query(conditionSubscription);
-    //}finally {blackboard.closeTransactionDontReset();}
     Iterator it = l.iterator();
     while(it.hasNext()) {
       RestartDefenseCondition rdc = (RestartDefenseCondition)it.next();
@@ -333,32 +267,16 @@ public class DeconflictHelper extends BlackboardClientComponent {
         if (logger.isDebugEnabled())
           logger.debug("** setRestartCondition - " + rdc.getName() + "=" + rdc.getValue());
         defenseConditionQueue.add(rdc);
-        return true;
       }
     }
-    return false;
-
   }
 
   public boolean isDefenseApplicable(String agentName) {
-    /*String condition = defenseName + ":" + agentName;
-
-    RestartDefenseCondition rdc = (RestartDefenseCondition)conditionService.getConditionByName(condition);
-    if(rdc != null) {
-      if(rdc.getValue().toString().equalsIgnoreCase("true"))
-        return true;
-    }*/
-
     List l;
     synchronized(conditionEnabled) {
       l = new ArrayList(conditionEnabled);
     }
 
-    //Collection col;
-    //try{
-      //blackboard.openTransaction();
-      //col = blackboard.query(conditionSubscription);
-    //}finally {blackboard.closeTransactionDontReset();}
     if(l != null) {
       Iterator it = l.iterator();
       while (it.hasNext()) {
@@ -482,14 +400,5 @@ public class DeconflictHelper extends BlackboardClientComponent {
       super.setValue(newValue);
     }
   }
-
- /* UnaryPredicate conditionSubscription = new UnaryPredicate() {
-        public boolean execute(Object o) {
-            if ( o instanceof RestartDefenseEnabler ) {
-                return true ;
-            }
-            return false ;
-        }
-  };*/
 
 }

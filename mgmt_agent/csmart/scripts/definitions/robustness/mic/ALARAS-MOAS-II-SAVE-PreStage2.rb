@@ -8,7 +8,7 @@ parameters:
   - society_file: $CIP/csmart/config/societies/ua/full-tc20-232a703v.plugins.rb
   - layout_file: $CIP/operator/layouts/FULL-UA-MNGR-33H63N-layout.xml
   - archive_dir: $CIP/Logs
-  
+
   - rules:
     - $CIP/csmart/config/rules/isat
     - $CIP/csmart/config/rules/yp
@@ -54,6 +54,7 @@ include_scripts:
 
   # Robustness scripts
   #- script: $CIP/csmart/lib/robustness/objs/deconfliction.rb
+  - script: $CIP/csmart/lib/coordinator/unleash_defenses.rb
 
   - script: $CIP/csmart/lib/isat/save_snapshot.rb
     parameters:

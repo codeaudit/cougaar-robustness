@@ -23,7 +23,8 @@ import org.cougaar.tools.robustness.ma.ReaffiliationNotificationHandler;
 import org.cougaar.tools.robustness.ma.HostLossThreatAlertHandler;
 import org.cougaar.tools.robustness.ma.SecurityAlertHandler;
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorRequest;
-import org.cougaar.tools.robustness.ma.util.DeconflictListener;
+import org.cougaar.tools.robustness.ma.util.CoordinatorHelperFactory;
+import org.cougaar.tools.robustness.ma.util.CoordinatorListener;
 import org.cougaar.tools.robustness.ma.util.HeartbeatListener;
 import org.cougaar.tools.robustness.ma.util.LoadBalancer;
 import org.cougaar.tools.robustness.ma.util.LoadBalancerListener;
@@ -135,11 +136,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (thisAgent.equals(preferredLeader())) {
         //for deconflict: the applicability condition of one active agent should
         //be true and the defense op mode should be disabled.
-        if (isDeconflictionEnabled()) {
-          if (getDeconflictHelper().isDefenseApplicable(name)) {
-            getDeconflictHelper().changeApplicabilityCondition(name);
+        if (isCoordinatorEnabled()) {
+          if (getCoordinatorHelper().isDefenseApplicable(name)) {
+            getCoordinatorHelper().changeApplicabilityCondition(name);
           }
-          getDeconflictHelper().opmodeDisabled(name);
+          getCoordinatorHelper().opmodeDisabled(name);
         }
         checkCommunityReady();
       }
@@ -173,31 +174,30 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    * </pre>
    */
   class DeconflictStateController extends    StateControllerBase
-                                  implements DeconflictListener {
-    { addDeconflictListener(this); }
+                                  implements CoordinatorListener {
     public void enter(String name) {
-      if (isDeconflictionEnabled()) {
-        if (getDeconflictHelper().isOpEnabled(name)) {
+      if (isCoordinatorEnabled()) {
+        if (getCoordinatorHelper().isOpEnabled(name)) {
           newState(name, RESTART);
-        } else if (!getDeconflictHelper().isDefenseApplicable(name)) {
-          getDeconflictHelper().changeApplicabilityCondition(name);
+        } else if (!getCoordinatorHelper().isDefenseApplicable(name)) {
+          getCoordinatorHelper().changeApplicabilityCondition(name);
         }
       } else {
         newState(name, HEALTH_CHECK);
       }
     }
 
-    public void defenseOpModeEnabled(String name) {
+    public void actionEnabled(String agentName) {
       if (logger.isDebugEnabled()) {
-        logger.debug("deconflictCallback: agent=" + name);
+        logger.debug("deconflictCallback: agent=" + agentName);
       }
-      if (isDeconflictionEnabled() &&
-          !getDeconflictHelper().isDefenseApplicable(name)) {
-        getDeconflictHelper().changeApplicabilityCondition(name);
+      if (isCoordinatorEnabled() &&
+          !getCoordinatorHelper().isDefenseApplicable(agentName)) {
+        getCoordinatorHelper().changeApplicabilityCondition(agentName);
       }
       // Verify that agent state hasn't changed while defense was disabled
-      if (getState(name) == DECONFLICT) {
-        newState(name, RESTART);
+      if (getState(agentName) == DECONFLICT) {
+        newState(agentName, RESTART);
       }
     }
   }
@@ -487,7 +487,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     suppressPingsOnRestart =
         (propValue != null && propValue.equalsIgnoreCase("true"));
     addController(INITIAL,        "INITIAL", new InitialStateController());
-    //addController(LOCATED,        "LOCATED", new LocatedStateController());
     addController(DefaultRobustnessController.ACTIVE, "ACTIVE",  new ActiveStateController());
     addController(HEALTH_CHECK,   "HEALTH_CHECK",  new HealthCheckStateController());
     addController(DEAD,           "DEAD",  new DeadStateController());
@@ -669,8 +668,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     return hosts;
   }
 
-  private boolean isDeconflictionEnabled() {
-   return getDeconflictHelper() != null;
+  private boolean isCoordinatorEnabled() {
+   return getCoordinatorHelper() != null;
   }
 
   private boolean useGlobalSolver() {
@@ -765,7 +764,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   /**
    * Receives notification of membership changes.
    */
-  public void membershipChange(String name) {
+  public void memberAdded(String name) {
+    //robustness manager should publish deconfliction objects for every agent member.
+    if (coordinatorHelper != null) {
+      coordinatorHelper.addAgent(name);
+    }
     if (isNode(name)) {
       if (logger.isInfoEnabled()) {
         logger.info("New node detected: name=" + name);
@@ -777,6 +780,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     if (didRestart && getState(name) == -1 && !suppressPingsOnRestart) {
       newState(name, HEALTH_CHECK);
     }
+  }
+
+  public void memberRemoved(String name) {
   }
 
   /**
@@ -793,6 +799,22 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     if (didRestart && !suppressPingsOnRestart) {
       newState(model.listEntries(model.AGENT, -1), HEALTH_CHECK);
       newState(model.listEntries(model.NODE, -1), HEALTH_CHECK);
+    }
+
+    // Setup defense coordination
+    if (agentId.toString().equals(preferredLeader()) && coordinatorHelper == null) {
+      coordinatorHelper = CoordinatorHelperFactory.getCoordinatorHelper(getBindingSite());
+      coordinatorHelper.addListener((DeconflictStateController)getController(DECONFLICT));
+      String enable = System.getProperty(DECONFLICTION, PROPERTY_ENABLED);
+      if (enable.equalsIgnoreCase(PROPERTY_ENABLED)) {
+        if (logger.isInfoEnabled()) {
+          logger.info("Deconfliction enabled: community=" + model.getCommunityName());
+        }
+        String allAgents[] = model.listEntries(CommunityStatusModel.AGENT);
+        for (int i = 0; i < allAgents.length; i++) {
+          coordinatorHelper.addAgent(allAgents[i]);
+        }
+      }
     }
   }
 

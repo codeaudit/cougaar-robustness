@@ -8,7 +8,7 @@ parameters:
   - society_file: $CIP/csmart/config/societies/ua/full-tc20-232a703v.plugins.rb
   - layout_file: $CIP/operator/layouts/FULL-UA-MNGR-33H63N-layout.xml
   - archive_dir: $CIP/Logs
-  
+
   - rules:
     - $CIP/csmart/config/rules/isat
     - $CIP/csmart/config/rules/yp
@@ -54,6 +54,7 @@ include_scripts:
 
   # Robustness scripts
   - script: $CIP/csmart/lib/robustness/objs/deconfliction.rb
+  - script: $CIP/csmart/lib/coordinator/unleash_defenses.rb
   - script: $CIP/csmart/lib/robustness/mic/ua_big_kill_s.rb
   #- script: $CIP/csmart/lib/robustness/mic/ua_kill_rear_mgr.rb
 
@@ -61,11 +62,11 @@ include_scripts:
     #parameters:
       #- use_default: false
       #- kbw: 10000kbit
- 
+
   - script: $CIP/csmart/lib/isat/stop_society.rb
     parameters:
       - stop_location: before_stage_2
- 
+
 
 
 =end

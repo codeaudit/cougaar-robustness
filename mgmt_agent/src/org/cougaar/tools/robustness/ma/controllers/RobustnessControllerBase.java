@@ -32,8 +32,7 @@ import org.cougaar.tools.robustness.ma.util.RestartListener;
 import org.cougaar.tools.robustness.ma.util.MoveHelper;
 import org.cougaar.tools.robustness.ma.util.MoveListener;
 import org.cougaar.tools.robustness.ma.util.LoadBalancer;
-import org.cougaar.tools.robustness.ma.util.DeconflictHelper;
-import org.cougaar.tools.robustness.ma.util.DeconflictListener;
+import org.cougaar.tools.robustness.ma.util.CoordinatorHelper;
 import org.cougaar.tools.robustness.ma.util.StatCalc;
 
 import org.cougaar.core.blackboard.BlackboardClientComponent;
@@ -105,8 +104,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
   protected PingHelper pingHelper;
   protected RestartHelper restartHelper;
   protected LoadBalancer loadBalancer;
-  protected DeconflictHelper deconflictHelper = null;
-  protected DeconflictListener dl = null;
+  protected CoordinatorHelper coordinatorHelper = null;
 
   protected CommunityService communityService;
 
@@ -194,6 +192,16 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
   }
 
   /**
+   * Get a StateController.
+   * @param state     State number
+   * @return StateController controller
+   */
+  public StateController getController(int state) {
+    ControllerEntry ce = (ControllerEntry)controllers.get(new Integer(state));
+    return ce != null ? ce.controller : null;
+  }
+
+  /**
    * Get reference to controllers move helper.
    */
   public MoveHelper getMoveHelper() {
@@ -224,8 +232,8 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
   /**
    * Get reference to controllers deconflict helper.
    */
-  public DeconflictHelper getDeconflictHelper() {
-    return deconflictHelper;
+  public CoordinatorHelper getCoordinatorHelper() {
+    return coordinatorHelper;
   }
 
   /**
@@ -278,14 +286,12 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * @param csm   Status model associated with event
    */
   protected void processMembershipChanges(CommunityStatusChangeEvent csce) {
-    //robustness manager should publish deconfliction objects for every agent member.
-    if(deconflictHelper != null) {
-      deconflictHelper.initObjs();
+    if (csce.membersAdded()) {
+      memberAdded(csce.getName());
+    } else if (csce.membersRemoved()) {
+      memberRemoved(csce.getName());
     }
-    membershipChange(csce.getName());
   }
-
-  private static final String ROBUSTNESS_MANAGER = "RobustnessManager";
 
   /**
    * Default handler for changes in health monitor leader.
@@ -293,23 +299,6 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * @param csm   Status model associated with event
    */
   protected void processLeaderChanges(CommunityStatusChangeEvent csce) {
-    String manager = model.getStringAttribute(ROBUSTNESS_MANAGER); //the robustness manager
-    //the robustness manager invokes DeconflictHelper object and add necessary deconflict
-    //listener.
-    if(agentId.toString().equals(manager) && deconflictHelper == null) {
-      String enable = System.getProperty(DECONFLICTION, PROPERTY_ENABLED);
-      if(enable.equalsIgnoreCase(PROPERTY_ENABLED)) {
-        deconflictHelper = new DeconflictHelper(getBindingSite(), model);
-        if (dl != null)
-          deconflictHelper.addListener(dl);
-        if (logger.isInfoEnabled()) {
-          logger.info("Deconfliction enabled: community=" +
-                      model.getCommunityName());
-        }
-        deconflictHelper.initObjs();
-      }
-    }
-
     leaderChange(csce.getPriorLeader(), csce.getCurrentLeader());
   }
 
@@ -734,18 +723,6 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    */
   protected void addMoveListener(MoveListener ml) {
     getMoveHelper().addListener(ml);
-  }
-
-  /**
-   * Add deconflict listener to receive deconflict events.
-   * @param dl Listener
-   */
-  protected void addDeconflictListener(DeconflictListener dl) {
-    if(getDeconflictHelper() == null) {
-      this.dl = dl;
-    }
-    else
-      getDeconflictHelper().addListener(dl);
   }
 
  /**

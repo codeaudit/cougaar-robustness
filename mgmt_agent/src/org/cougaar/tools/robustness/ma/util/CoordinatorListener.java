@@ -22,8 +22,8 @@ package org.cougaar.tools.robustness.ma.util;
 /**
  * Listener listens to deconflict objects activity.
  */
-public interface DeconflictListener {
+public interface CoordinatorListener {
 
-  public void defenseOpModeEnabled(String name);
+  public void actionEnabled(String agentName);
 
 }

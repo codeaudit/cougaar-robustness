@@ -100,11 +100,17 @@
     <copy todir="${cougaar}/csmart/config/rules/robustness/uc4">
       <fileset dir="csmart/config/rules/robustness/uc4" />
     </copy>
+    <copy todir="${cougaar}/csmart/config/scripts/robustness/uc4">
+      <fileset dir="csmart/config/scripts/robustness/uc4" />
+    </copy>
     <copy todir="${cougaar}/csmart/lib/robustness/mic">
       <fileset dir="csmart/lib/robustness/mic" />
     </copy>
-    <copy todir="${cougaar}/csmart/config/scripts/robustness/uc4">
-      <fileset dir="csmart/config/scripts/robustness/uc4" />
+    <copy todir="${cougaar}/csmart/scripts/definitions/robustness/mic">
+      <fileset dir="csmart/scripts/definitions/robustness/mic" />
+    </copy>
+    <copy todir="${cougaar}/configs/coordinator/Sledgehammer">
+      <fileset dir="configs/coordinator" />
     </copy>
     <copy file="configs/mic-local/uc1-small-1ad-layout.xml" toDir="${cougaar}/operator/"/>
     <copy file="configs/mic-local/ron1-hosts.xml" toDir="${cougaar}/operator"/>
@@ -213,6 +219,9 @@
     <mkdir dir="staging/csmart/lib/robustness/mic"/>
     <mkdir dir="staging/csmart/scripts/definitions/robustness/mic"/>
 
+    <!-- Coordinator tech specs -->
+    <mkdir dir="staging/configs/coordinator/Sledgehammer"/>
+
     <antcall target="init"/>
     <antcall target="overlay-compile"/>
     <antcall target="jar"/>
@@ -263,6 +272,9 @@
     </copy>
     <copy toDir="staging/robustness/doc">
       <fileset dir="doc"/>
+    </copy>
+    <copy toDir="staging/configs/coordinator/Sledgehammer">
+      <fileset dir="configs/coordinator"/>
     </copy>
     <zip zipfile="AR_mic.zip" basedir="staging"/>
     <delete dir="staging"/>

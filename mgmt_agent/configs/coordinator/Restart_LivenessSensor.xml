@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE SensorType  SYSTEM "SensorTypeDTD.dtd" >
+
+<SensorType name="org.cougaar.tools.robustness.ma.util.AgentLivenessDiagnosis"
+            sensesAssetType="Agent"
+            sensesStateDimension="Liveness"
+            sensorLatency="30000">
+    <PotentialDiagnoses>
+        <Diagnosis name="Live" defaultValue="TRUE" />
+        <Diagnosis name="Dead" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="Live" >
+            <WillDiagnoseAs name="Live" withProbability="0.99" />
+            <WillDiagnoseAs name="Dead" withProbability="0.01" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Dead" >
+            <WillDiagnoseAs name="Dead" withProbability="0.99" />
+            <WillDiagnoseAs name="Live" withProbability="0.01" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>

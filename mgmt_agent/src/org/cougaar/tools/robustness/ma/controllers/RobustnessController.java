@@ -57,6 +57,13 @@ public interface RobustnessController extends StatusChangeListener {
                             StateController sc);
 
   /**
+   * Get reference to loaded controller
+   * @param state State code
+   * @return StateController
+   */
+  public StateController getController(int state);
+
+  /**
    * Get reference to controllers move helper.
    */
   public MoveHelper getMoveHelper();
@@ -94,7 +101,12 @@ public interface RobustnessController extends StatusChangeListener {
   /**
    * Receives notification of change in robustness community membership.
    */
-  public void membershipChange(String name);
+  public void memberAdded(String name);
+
+  /**
+   * Receives notification of change in robustness community membership.
+   */
+  public void memberRemoved(String name);
 
   /**
    * Returns a String containing top-level health status of monitored community.

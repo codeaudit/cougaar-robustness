@@ -55,13 +55,19 @@ public interface RestartManagerConstants {
   public static final String HEALTH_MONITOR_ROLE = "HealthMonitor";
   public static final String COMMUNITY_TYPE =      "Robustness";
 
+  public static final String ROBUSTNESS_MANAGER = "RobustnessManager";
+
   // Property used to define the name of a robustness community to monitor
   public static final String COMMUNITY_PROPERTY = "org.cougaar.tools.robustness.community";
 
   // Defines class to use for Robustness Controller
   public static final String CONTROLLER_CLASS_PROPERTY = "org.cougaar.tools.robustness.controller.classname";
-  public static final String DEFAULT_ROBUSTNESS_CONTROLLER_CLASSNAME =
-      "org.cougaar.tools.robustness.ma.controllers.DefaultRobustnessController";
+  public static final String DEFAULT_ROBUSTNESS_CONTROLLER_CLASSNAME = "org.cougaar.tools.robustness.ma.controllers.DefaultRobustnessController";
+
+  // Defines class to use for Defense Coordinator
+  public static final String COORDINATOR_CLASS_PROPERTY = "org.cougaar.tools.robustness.coordinator.classname";
+  public static final String DEFAULT_COORDINATOR_CLASSNAME = "org.cougaar.tools.robustness.ma.util.CoordinatorHelperImpl";
+  // Old coordinator impl = "org.cougaar.tools.robustness.ma.util.DeconflictionHelper";
 
   // Property for enabling/disabling deconfliction
   public static final String DECONFLICTION = "org.cougaar.tools.robustness.restart.deconfliction";
