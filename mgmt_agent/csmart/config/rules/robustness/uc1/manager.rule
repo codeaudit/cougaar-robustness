@@ -17,7 +17,6 @@ ping_requester_plugin      = "org.cougaar.tools.robustness.sensors.PingRequester
 ar_servlet                 = "org.cougaar.tools.robustness.ma.ui.ARServlet"
 node_health_monitor_plugin = "org.cougaar.tools.robustness.ma.plugins.NodeHealthMonitorPlugin"
 persistence_control_plugin = "org.cougaar.tools.robustness.ma.plugins.PersistenceControlPlugin"
-community_attributes_servlet = "org.cougaar.tools.robustness.ma.util.CommunityAttributeServlet"
 
 # Boeing components
 load_balancer_plugin	   ="org.cougaar.robustness.exnihilo.plugin.EN4JPlugin"
@@ -68,9 +67,6 @@ society.each_agent do |agent|
     end
     agent.add_component do |c|
       c.classname = load_balancer_plugin
-    end
-    agent.add_component do |c|
-      c.classname = community_attributes_servlet
     end
   end
 end

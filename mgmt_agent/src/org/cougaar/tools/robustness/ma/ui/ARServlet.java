@@ -36,6 +36,15 @@ import org.cougaar.tools.robustness.ma.ldm.HealthMonitorResponse;
 import org.cougaar.tools.robustness.ma.ldm.RelayAdapter;
 
 import org.cougaar.core.service.community.Community;
+import org.cougaar.core.service.community.CommunityResponse;
+import org.cougaar.core.service.community.CommunityResponseListener;
+
+import javax.naming.NamingException;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.BasicAttribute;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.ModificationItem;
 
 import javax.xml.transform.*;
 import javax.xml.transform.stream.*;
@@ -155,7 +164,8 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     private String action = "", format = "", dest="";
     private String robustnessCommunity = ""; //current community
     private String lastop="", lastma="", laston="", lastdn=""; //lastfs="";
-
+    private String attrId = null;
+    private String attrValue = null;
     public void execute(HttpServletRequest req, HttpServletResponse res)
       throws IOException, ServletException
     {
@@ -226,6 +236,15 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
             if(name.equals("loadBalance")) {
               action = "loadBalance";
             }
+            if(name.equalsIgnoreCase("modCommAttr")) {
+              action = "modCommAttr";
+            }
+            if(name.equals("id")) {
+              attrId = value;
+            }
+            if(name.equals("value")) {
+              attrValue = value;
+            }
           }
         };
       // visit the URL parameters
@@ -265,10 +284,9 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
           currentCommunityXML = displayStatus(robustnessCommunity);
           writeSuccess(format);
         }
-      }
-      else if(command.equals("refresh"))
+      } else if(command.equals("refresh")) {
         writeSuccess(format);
-      else if(command.equals("removeTicket")) {
+      } else if(command.equals("removeTicket")) {
         try {
             UID uid = UID.toUID(value);
             AgentControl ac = queryAgentControl(uid);
@@ -280,16 +298,16 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
             return;
         }
         writeSuccess(format);
-      }
-      else if(command.equals("loadBalance")) {
+      } else if(command.equals("loadBalance")) {
         if(currentCommunityXML.equals(""))
           currentCommunityXML = displayStatus(robustnessCommunity);
         log.debug("current community status xml: \n" + currentCommunityXML);
         loadBalance(robustnessCommunity);
         writeSuccess(format);
-      }
-      else if(command.equals("showAgent")) {
+      } else if(command.equals("showAgent")) {
         showAgentAttributes(format, value);
+      } else if (command.equalsIgnoreCase("modCommAttr")) {
+        modifyCommunityAttribute(robustnessCommunity, attrId, attrValue);
       }
     }
 
@@ -614,6 +632,69 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
         bb.closeTransactionDontReset();
       }
    }
+  }
+
+  /**
+   * Modify specified community attribute.  Attribute is created if it doesn't
+   * exist.
+   * @param communityName Name of affected community
+   * @param attrId        ID of attribute to modify
+   * @param attrValue     New value
+   */
+  protected void modifyCommunityAttribute(String communityName,
+                                          String attrId,
+                                          String attrValue) {
+    log.info("modifyCommunityAttributes:" +
+                 " communityName=" + communityName +
+                 " attrId=" + attrId +
+                 " attrValue=" + attrValue);
+    if (communityName != null && attrId != null && attrValue != null) {
+      changeAttributes(communityName,
+                       new Attribute[] {new BasicAttribute(attrId, attrValue)});
+    }
+
+  }
+  /**
+   * Modify one or more attributes of a community or entity.
+   * @param community      Target community
+   * @param newAttrs       New attributes
+   */
+  protected void changeAttributes(final String communityName, Attribute[] newAttrs) {
+    Community community = commSvc.getCommunity(communityName, null);
+    if (community != null) {
+      List mods = new ArrayList();
+      for (int i = 0; i < newAttrs.length; i++) {
+        try {
+          Attributes attrs = community.getAttributes();
+          Attribute attr = attrs.get(newAttrs[i].getID());
+          if (attr == null || !attr.contains(newAttrs[i].get())) {
+            int type = attr == null
+                ? DirContext.ADD_ATTRIBUTE
+                : DirContext.REPLACE_ATTRIBUTE;
+            mods.add(new ModificationItem(type, newAttrs[i]));
+          }
+        } catch (NamingException ne) {
+          log.error("Error setting community attribute:" +
+                       " community=" + community.getName() +
+                       " attribute=" + newAttrs[i]);
+        }
+      }
+      if (!mods.isEmpty()) {
+        CommunityResponseListener crl = new CommunityResponseListener() {
+          public void getResponse(CommunityResponse resp) {
+            if (resp.getStatus() != CommunityResponse.SUCCESS) {
+              log.warn("Unexpected status from CommunityService modifyAttributes request:" +
+                          " status=" + resp.getStatusAsString() +
+                          " community=" + communityName);
+            }
+          }
+      };
+        commSvc.modifyAttributes(communityName,
+                            null,
+                            (ModificationItem[])mods.toArray(new ModificationItem[0]),
+                            crl);
+      }
+    }
   }
 
   /**

@@ -322,7 +322,7 @@ module Cougaar
       def perform
         @run.society.each_agent do |agent|
           if agent.name =~ /.*ARManager.*/
-	    result, uri = Cougaar::Communications::HTTP.get(agent.uri+"/modcommattr?id=PING_TIMEOUT&value=99999999")
+	    result, uri = Cougaar::Communications::HTTP.get(agent.uri+"/ar?operation=modcommattr&id=PING_TIMEOUT&value=99999999")
 	  end
 	end
       end
