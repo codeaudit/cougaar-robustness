@@ -11,9 +11,9 @@
         <Description value="NoEncryption" />
         <Transition WhenActualStateIs="HighVulnerability" EndStateWillBe="HighVulnerability" IntermediateStateWillBe="HighVulnerability" >
             <OneTimeCost>
-                <CPU intensity="MEDIUM" />
+                <CPU intensity="LOW" />
                 <Memory intensity="LOW" />
-                <Time intensity="MEDIUM" />
+                <Time duration="0" />
             </OneTimeCost>
             <ContinuingCost>
                 <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
@@ -22,9 +22,9 @@
         </Transition>
         <Transition WhenActualStateIs="MediumVulnerability" EndStateWillBe="MediumVulnerability" IntermediateStateWillBe="MediumVulnerability" >
             <OneTimeCost>
-                <CPU intensity="MEDIUM" />
+                <CPU intensity="LOW" />
                 <Memory intensity="LOW" />
-                <Time intensity="MEDIUM" />
+                <Time duration="0" />
             </OneTimeCost>
             <ContinuingCost>
                 <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
@@ -33,9 +33,9 @@
         </Transition>
         <Transition WhenActualStateIs="LowVulnerability" EndStateWillBe="LowVulnerability" IntermediateStateWillBe="LowVulnerability" >
             <OneTimeCost>
-                <CPU intensity="MEDIUM" />
+                <CPU intensity="LOW" />
                 <Memory intensity="LOW" />
-                <Time intensity="MEDIUM" />
+                <Time duration="0" />
             </OneTimeCost>
             <ContinuingCost>
                 <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
@@ -44,9 +44,9 @@
         </Transition>
         <Transition WhenActualStateIs="NoVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="NoVulnerability" >
             <OneTimeCost>
-                <CPU intensity="MEDIUM" />
+                <CPU intensity="LOW" />
                 <Memory intensity="LOW" />
-                <Time intensity="MEDIUM" />
+                <Time duration="0" />
             </OneTimeCost>
             <ContinuingCost>
                 <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
@@ -61,7 +61,7 @@
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="LOW" />
-                <Time intensity="MEDIUM" />
+                <Time duration="10000" />
             </OneTimeCost>
             <ContinuingCost>
                 <CPU intensity="LOW" msgSizeFactor="TRUE" />
@@ -72,7 +72,7 @@
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="LOW" />
-                <Time intensity="MEDIUM" />
+                <Time duration="10000" />
             </OneTimeCost>
             <ContinuingCost>
                 <CPU intensity="LOW" msgSizeFactor="TRUE" />
@@ -83,7 +83,7 @@
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="LOW" />
-                <Time intensity="MEDIUM" />
+                <Time duration="10000" />
             </OneTimeCost>
             <ContinuingCost>
                 <CPU intensity="LOW" msgSizeFactor="TRUE" />
@@ -92,9 +92,9 @@
         </Transition>
         <Transition WhenActualStateIs="NoVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="NoVulnerability" >
             <OneTimeCost>
-                <CPU intensity="MEDIUM" />
+                <CPU intensity="LOW" />
                 <Memory intensity="LOW" />
-                <Time intensity="MEDIUM" />
+                <Time duration="0" />
             </OneTimeCost>
             <ContinuingCost>
                 <CPU intensity="LOW" msgSizeFactor="TRUE" />
@@ -109,7 +109,7 @@
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="LOW" />
-                <Time intensity="MEDIUM" />
+                <Time duration="10000" />
             </OneTimeCost>
             <ContinuingCost>
                 <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
@@ -120,7 +120,7 @@
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="LOW" />
-                <Time intensity="MEDIUM" />
+                <Time duration="10000" />
             </OneTimeCost>
             <ContinuingCost>
                 <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
@@ -131,7 +131,7 @@
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="LOW" />
-                <Time intensity="MEDIUM" />
+                <Time duration="10000" />
             </OneTimeCost>
             <ContinuingCost>
                 <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
@@ -140,9 +140,9 @@
         </Transition>
         <Transition WhenActualStateIs="NoVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="NoVulnerability" >
             <OneTimeCost>
-                <CPU intensity="MEDIUM" />
+                <CPU intensity="LOW" />
                 <Memory intensity="LOW" />
-                <Time intensity="MEDIUM" />
+                <Time duration="0" />
             </OneTimeCost>
             <ContinuingCost>
                 <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
@@ -157,7 +157,7 @@
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="LOW" />
-                <Time intensity="MEDIUM" />
+                <Time duration="10000" />
             </OneTimeCost>
             <ContinuingCost>
                 <CPU intensity="HIGH" msgSizeFactor="TRUE" />
@@ -168,7 +168,7 @@
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="LOW" />
-                <Time intensity="MEDIUM" />
+                <Time duration="10000" />
             </OneTimeCost>
             <ContinuingCost>
                 <CPU intensity="HIGH" msgSizeFactor="TRUE" />
@@ -179,7 +179,7 @@
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="LOW" />
-                <Time intensity="MEDIUM" />
+                <Time duration="10000" />
             </OneTimeCost>
             <ContinuingCost>
                 <CPU intensity="HIGH" msgSizeFactor="TRUE" />
@@ -188,9 +188,9 @@
         </Transition>
         <Transition WhenActualStateIs="NoVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="NoVulnerability" >
             <OneTimeCost>
-                <CPU intensity="MEDIUM" />
+                <CPU intensity="LOW" />
                 <Memory intensity="LOW" />
-                <Time intensity="MEDIUM" />
+                <Time duration="0" />
             </OneTimeCost>
             <ContinuingCost>
                 <CPU intensity="HIGH" msgSizeFactor="TRUE" />
