@@ -32,11 +32,6 @@ import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.component.ServiceAvailableListener;
 import org.cougaar.core.component.ServiceAvailableEvent;
 
-import org.cougaar.core.service.community.CommunityService;
-import org.cougaar.core.service.community.Community;
-import org.cougaar.core.service.community.CommunityResponse;
-import org.cougaar.core.service.community.CommunityResponseListener;
-
 import java.util.*;
 import javax.naming.NamingException;
 import javax.naming.directory.Attributes;
@@ -53,7 +48,6 @@ public abstract class RobustnessThreatAlertHandlerBase extends ThreatAlertHandle
   protected CommunityStatusModel model;
   protected RobustnessController controller;
   protected MoveHelper moveHelper;
-  protected CommunityService commSvc;
 
   public RobustnessThreatAlertHandlerBase(BindingSite          bs,
                                           MessageAddress       agentId,
@@ -63,21 +57,6 @@ public abstract class RobustnessThreatAlertHandlerBase extends ThreatAlertHandle
     this.model = model;
     this.controller = controller;
     this.moveHelper = controller.getMoveHelper();
-    final ServiceBroker sb = bs.getServiceBroker();
-    if (sb.hasService(CommunityService.class)) {
-      commSvc =
-          (CommunityService) sb.getService(this, CommunityService.class, null);
-    }
-    else {
-      sb.addServiceListener(new ServiceAvailableListener() {
-        public void serviceAvailable(ServiceAvailableEvent sae) {
-          if (sae.getService().equals(CommunityService.class)) {
-            commSvc =
-                (CommunityService) sb.getService(this, CommunityService.class, null);
-          }
-        }
-      });
-    }
   }
 
   /**
@@ -131,53 +110,6 @@ public abstract class RobustnessThreatAlertHandlerBase extends ThreatAlertHandle
 
   protected String preferredLeader() {
     return model.getStringAttribute(model.MANAGER_ATTR);
-  }
-
-  /**
-   * Modify one or more attributes of a community or entity.
-   * @param communityName  Affected community
-   * @param entityName     Name of entity or null to modify community attributes
-   * @param newAttrs       New attributes
-   */
-  protected void changeAttributes(String communityName, final String entityName, final Attribute[] newAttrs) {
-    Community community =
-      commSvc.getCommunity(communityName, new CommunityResponseListener() {
-        public void getResponse(CommunityResponse resp) {
-          changeAttributes((Community) resp.getContent(), entityName, newAttrs);
-        }
-      }
-    );
-    if (community != null) {
-      changeAttributes(community, entityName, newAttrs);
-    }
-  }
-
-  protected void changeAttributes(Community community, final String entityName, Attribute[] newAttrs) {
-    if (community != null) {
-      List mods = new ArrayList();
-      for (int i = 0; i < newAttrs.length; i++) {
-        try {
-          Attributes attrs = community.getAttributes();
-          Attribute attr = attrs.get(newAttrs[i].getID());
-          if (attr == null || !attr.contains(newAttrs[i].get())) {
-            int type = attr == null
-                ? DirContext.ADD_ATTRIBUTE
-                : DirContext.REPLACE_ATTRIBUTE;
-            mods.add(new ModificationItem(type, newAttrs[i]));
-          }
-        } catch (NamingException ne) {
-          logger.error("Error setting community attribute:" +
-                       " community=" + community.getName() +
-                       " attribute=" + newAttrs[i]);
-        }
-      }
-      if (!mods.isEmpty()) {
-        commSvc.modifyAttributes(community.getName(),
-                            entityName,
-                            (ModificationItem[])mods.toArray(new ModificationItem[0]),
-                            null);
-      }
-    }
   }
 
 }
