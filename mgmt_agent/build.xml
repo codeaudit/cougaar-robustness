@@ -30,9 +30,6 @@
   <property name="cachemode" value="LAZY" />
   <property name="dbserver" value="${host}"/>
 
-  <!-- Define location of 3rd-party libraries -->
-  <property name="lib" value="lib" />
-
   <!-- for JavaDoc -->
   <property name="packageNames" value="org.cougaar.tools.robustness.ma.plugins,
                                        org.cougaar.tools.robustness.ma.test"/>
@@ -44,6 +41,7 @@
   <property name="test" value="test"/>
   <property name="lib" value="lib"/>
   <property name="jar" value="ar_mic.jar"/>
+  <property name="configs" value="configs" />
   <property name="release" value="../mic-tic"/>
 
   <!-- Initialization target -->
@@ -106,9 +104,12 @@
     </jar>
   </target>
 
-  <!-- Adds jar file to Cougaar lib -->
-  <target name="deploy" depends="build" description="Copies jar file to $CIP/lib">
+  <!-- Adds needed files to Cougaar install path -->
+  <target name="deploy" depends="build" description="Copies needed files to $CIP">
     <copy file="${lib}/${jar}" toDir="${cougaar}/lib"/>
+    <mkdir dir="${cougaar}/robustness/configs"/>
+    <copy file="${configs}/communities.xml" toDir="${cougaar}/robustness/configs"/>
+    <copy file="${configs}/loggingConfig.conf" toDir="${cougaar}/robustness/configs"/>
   </target>
 
   <!-- Deletes generated files -->
@@ -396,9 +397,9 @@
     <antcall target="init"/>
     <antcall target="compile"/>
     <antcall target="jar"/>
-    
+
     <signjar jar="${lib}/${jar}" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
-    
+
     <move file="${lib}/${jar}" toDir="staging/lib"/>
     <copy file="build.xml" toDir="staging/robustness"/>
     <copy toDir="staging/robustness/configs">
