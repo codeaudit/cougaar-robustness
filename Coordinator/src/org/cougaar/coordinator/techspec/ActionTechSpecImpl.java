@@ -128,7 +128,12 @@ public class ActionTechSpecImpl implements ActionTechSpecInterface   {
     /** @return a String that details info about this actuator, its actions and transition costs */
     public String toString() {
      
-        String s = "Actuator ["+this.getName()+"], uid="+this.getUID()+"\n";
+        String actionTypeStr = "UNKNOWN";
+        if (actionType == this.APPLICATION_ACTIONTYPE) { actionTypeStr = "APPLICATION"; }
+        else if (actionType == this.CORRECTIVE_ACTIONTYPE) { actionTypeStr = "CORRECTIVE"; }
+        else if (actionType == this.PREVENTIVE_ACTIONTYPE) { actionTypeStr = "PREVENTIVE"; }
+        
+        String s = "Actuator ["+this.getName()+"], uid="+this.getUID()+" ActionType="+actionTypeStr+"\n";
         s += "    Affects AssetType["+this.getAssetType()+"] and AssetStateDimension["+this.assetDim+"]\n";
         
         Iterator i = this.getActions().iterator();

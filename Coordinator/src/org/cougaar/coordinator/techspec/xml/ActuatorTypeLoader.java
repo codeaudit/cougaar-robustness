@@ -138,11 +138,14 @@ public class ActuatorTypeLoader extends XMLLoader {
         }
         
         //assign actionType
-        int actionTypeInt = ActionTechSpecInterface.CORRECTIVE_ACTIONTYPE; //default
+        int actionTypeInt;
         if (actionType == null || actionType.equalsIgnoreCase("CORRECTIVE") ) { actionTypeInt = ActionTechSpecInterface.CORRECTIVE_ACTIONTYPE; }
         else if (actionType.equalsIgnoreCase("PREVENTIVE") ) { actionTypeInt = ActionTechSpecInterface.PREVENTIVE_ACTIONTYPE; }
         else if (actionType.equalsIgnoreCase("APPLICATION") ) { actionTypeInt = ActionTechSpecInterface.APPLICATION_ACTIONTYPE; }
-        
+        else {
+            actionTypeInt = ActionTechSpecInterface.CORRECTIVE_ACTIONTYPE; //default
+            logger.warn("ActuatorType["+actuatorName+"]  did not specify an action type. Defaulting to corrective.");
+        }
         
         if (us == null) {
             logger.warn("ActuatorType["+actuatorName+"]  XML Error - UIDService is null!");
