@@ -100,7 +100,7 @@ public class SecurityAlertHandler extends RobustnessThreatAlertHandlerBase
     controls.setProperty("lazyInterval", Long.toString(persistenceInterval));
     persistenceHelper.controlPersistence(model.listEntries(model.AGENT), true, controls);
 
-    long statusUpdateInterval = model.getLongAttribute(STATUS_UPDATE_ATTRIBUTE);
+    long statusUpdateInterval = model.getLongAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE);
     double pingThreatconCoefficient = 1.0;
     double statusUpdateAdjustmentCoefficient = 1.0;
     if (!resetToDefault && sa.getSeverityLevel() > sa.MEDIUM_SEVERITY) {
@@ -109,8 +109,8 @@ public class SecurityAlertHandler extends RobustnessThreatAlertHandlerBase
     }
     statusUpdateInterval = (long)((double)statusUpdateInterval * statusUpdateAdjustmentCoefficient);
     Attribute mods[] =
-        new Attribute[] {new BasicAttribute(STATUS_UPDATE_ATTRIBUTE, Long.toString(statusUpdateInterval)),
-                         new BasicAttribute(PING_ADJUSTMENT, Double.toString(pingThreatconCoefficient))};
+        new Attribute[] {new BasicAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE, Long.toString(statusUpdateInterval)),
+                         new BasicAttribute(PING_ADJUSTMENT_ATTRIBUTE, Double.toString(pingThreatconCoefficient))};
     changeAttributes(model.getCommunityName(), null, mods);
   }
 

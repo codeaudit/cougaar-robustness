@@ -145,7 +145,7 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
    */
   protected void adjustRobustnessParameters(ThreatAlert ta, Set affectedAgents) {
     logger.info("Adjusting robustness parameters: threatLevel=" + ta.getSeverityLevelAsString());
-    long newStatusUpdateInterval = model.getLongAttribute(STATUS_UPDATE_ATTRIBUTE);
+    long newStatusUpdateInterval = model.getLongAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE);
     if (newStatusUpdateInterval > 0) {
       if (ta.isActive()) {
         newStatusUpdateInterval = newStatusUpdateInterval / 2;

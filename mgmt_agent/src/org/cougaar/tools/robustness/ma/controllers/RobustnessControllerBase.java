@@ -606,7 +606,9 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
   protected void doPing(String[] agents,
                         final int stateOnSuccess,
                         final int stateOnFail) {
-    long pingTimeout = getLongAttribute(agents[0], "PING_TIMEOUT", PING_TIMEOUT);
+    long pingTimeout = getLongAttribute(agents[0],
+                                        PING_TIMEOUT_ATTRIBUTE,
+                                        DEFAULT_PING_TIMEOUT);
     pingHelper.ping(agents, pingTimeout, new PingListener() {
       public void pingComplete(PingResult[] pr) {
         for (int i = 0; i < pr.length; i++) {
@@ -633,10 +635,18 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * @param name Agent name
    */
   protected void startHeartbeats(String name) {
-    long hbReqTimeout = getLongAttribute(name, "HEARTBEAT_REQUEST_TIMEOUT", HEARTBEAT_REQUEST_TIMEOUT);
-    long hbFreq = getLongAttribute(name, "HEARTBEAT_FREQUENCY", HEARTBEAT_FREQUENCY);
-    long hbTimeout =getLongAttribute(name, "HEARTBEAT_TIMEOUT", HEARTBEAT_TIMEOUT);
-    long hbPctOutofSpec = getLongAttribute(name, "HEARTBEAT_PCT_OUT_OF_SPEC", HEARTBEAT_PCT_OUT_OF_SPEC);
+    long hbReqTimeout = getLongAttribute(name,
+                                         HEARTBEAT_REQUEST_TIMEOUT_ATTRIBUTE,
+                                         DEFAULT_HEARTBEAT_REQUEST_TIMEOUT);
+    long hbFreq = getLongAttribute(name,
+                                   HEARTBEAT_FREQUENCY_ATTRIBUTE,
+                                   DEFAULT_HEARTBEAT_FREQUENCY);
+    long hbTimeout =getLongAttribute(name,
+                                     HEARTBEAT_TIMEOUT_ATTRIBUTE,
+                                     DEFAULT_HEARTBEAT_TIMEOUT);
+    long hbPctOutofSpec = getLongAttribute(name,
+                                           HEARTBEAT_PCT_OUT_OF_SPEC_ATTRIBUTE,
+                                           DEFAULT_HEARTBEAT_PCT_OUT_OF_SPEC);
     getHeartbeatHelper().startHeartbeats(name,
                                          hbReqTimeout,
                                          hbFreq,
@@ -688,64 +698,6 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
       getDeconflictHelper().addListener(dl);
   }
 
-  /**
-   * Returns true if the CPU load average for a least 1 node in community
-   * exceeds the NodeBusyThreshold or if the aggregate community load average
-   * exceeds the CommunityBusyThreshold.  The threshold values are obtained
-   * from the attributes in the community descriptor.
-   * @return True if a nodes exceeds node threshold or aggreagate exceeds
-   *         community threshold
-   */
-  protected boolean isCommunityBusy() {
-    double communityBusyThreshold = model.getDoubleAttribute(COMMUNITY_BUSY_ATTRIBUTE);
-    double nodeBusyThreshold = model.getDoubleAttribute(NODE_BUSY_ATTRIBUTE);
-    if (communityBusyThreshold == Double.NaN ||
-        nodeBusyThreshold == Double.NaN) return false;
-    double communityLoadAvg = 0.0;
-    String nodes[] = model.listEntries(CommunityStatusModel.NODE, getNormalState());
-    for (int i = 0; i < nodes.length; i++) {
-      double nodeLoadAvg = getNodeLoadAverage(nodes[i]);
-      if (nodeLoadAvg > nodeBusyThreshold) return true;
-      communityLoadAvg += nodeLoadAvg;
-    }
-    if (communityLoadAvg > 0.0 && nodes.length > 0) communityLoadAvg = communityLoadAvg/(double)nodes.length;
-    return communityLoadAvg > communityBusyThreshold;
-  }
-
-  /**
-   * Returns true if the CPU load average for named node exceeds the value
-   * specified in the communities "NodeBusyThreshold" attribute.
-   * @param nodeName
-   * @return True if CPU average exceeds threshold
-   */
-  protected boolean isNodeBusy(String nodeName) {
-    double busyThreshold = model.getDoubleAttribute(NODE_BUSY_ATTRIBUTE);
-    if (busyThreshold == Double.NaN) return false;
-    return getNodeLoadAverage(nodeName) > busyThreshold;
-  }
-
-  /**
-   * Returns "LoadAverage" value from metrics service for specified node.
-   * @param nodeName  Node name
-   * @return          "LoadAverage" value from Metrics Service
-   */
-  protected double getNodeLoadAverage(String nodeName) {
-    return model.getMetricAsDouble(nodeName, LOAD_AVERAGE_METRIC);
-  }
-
-  /**
-   * Returns aggregated CPU "LoadAverage" for all nodes in community.
-   * @return Aggregate CPU "LoadAverage" as obtained from Metrics Service
-   */
-  protected double getCommunityLoadAverage() {
-    double loadAvg = 0.0;
-    String nodes[] = model.listEntries(CommunityStatusModel.NODE, getNormalState());
-      for (int i = 0; i < nodes.length; i++) {
-      loadAvg += getNodeLoadAverage(nodes[i]);
-    }
-    return (nodes.length == 0 || loadAvg == 0.0) ? 0.0 : loadAvg/(double)nodes.length;
-  }
-
  /**
    * Returns a String containing top-level health status of monitored community.
    */
@@ -754,17 +706,10 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
     String agents[] = model.listEntries(CommunityStatusModel.AGENT);
     StringBuffer summary = new StringBuffer("community=" + model.getCommunityName());
     summary.append(" leader=" + model.getLeader());
-    //summary.append(" busyThreshold=" + model.getDoubleAttribute(COMMUNITY_BUSY_ATTRIBUTE));
-    summary.append(" isBusy=" + isCommunityBusy());
-    summary.append(" pingStats=(" + pingStats.getCount() + "," +
-                   (long)pingStats.getMean() + "," +
-                   (long)pingStats.getHigh() + "," +
-                   (long)pingStats.getStandardDeviation() + ")");
     summary.append(" activeNodes=[");
     for (int i = 0; i < activeNodes.length; i++) {
-      double loadAverage = getNodeLoadAverage(activeNodes[i]);
       int agentsOnNode = model.entitiesAtLocation(activeNodes[i], model.AGENT).length;
-      summary.append(activeNodes[i] + "(" + agentsOnNode + "," + loadAverage + ")");
+      summary.append(activeNodes[i] + "(" + agentsOnNode + ")");
       if (i < activeNodes.length - 1) summary.append(",");
     }
     summary.append("]");
@@ -806,7 +751,8 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
     Set excludedNodes = new HashSet();
     String allNodes[] = model.listEntries(model.NODE);
     for (int i = 0; i < allNodes.length; i++) {
-      if (model.hasAttribute(model.getAttributes(allNodes[i]), "UseForRestarts", "False")) {
+      if (model.hasAttribute(model.getAttributes(allNodes[i]),
+                             USE_FOR_RESTARTS_ATTRIBUTE, "False")) {
         excludedNodes.add(allNodes[i]);
       }
     }

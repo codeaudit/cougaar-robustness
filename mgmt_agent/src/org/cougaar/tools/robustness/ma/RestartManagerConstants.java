@@ -22,17 +22,34 @@ package org.cougaar.tools.robustness.ma;
  */
 public interface RestartManagerConstants {
 
-  public static final String PERSISTENCE_INTERVAL_ATTRIBUTE  = "PERSISTENCE_INTERVAL";
-  public static final String SOLVER_MODE_ATTRIBUTE           = "SOLVER_MODE";
-  public static final String AUTO_LOAD_BALANCE_ATTRIBUTE     = "AUTO_LOAD_BALANCE";
-  public static final String PING_ADJUSTMENT                 = "PING_ADJUSTMENT";
-  public static final String COMMUNITY_BUSY_ATTRIBUTE        = "COMMUNITY_BUSY_THRESHOLD";
-  public static final String NODE_BUSY_ATTRIBUTE             = "NODE_BUSY_THRESHOLD";
-  public static final String STATUS_UPDATE_ATTRIBUTE         = "STATUS_UPDATE_INTERVAL";
+  /////////////////////////////////////////////////////////////////////////////
+  // Community attributes used
+  /////////////////////////////////////////////////////////////////////////////
+  public static final String SOLVER_MODE_ATTRIBUTE            = "SOLVER_MODE";
+  public static final String AUTO_LOAD_BALANCE_ATTRIBUTE      = "AUTO_LOAD_BALANCE";
+
+  public static final String PING_TIMEOUT_ATTRIBUTE           = "PING_TIMEOUT";
+
+  public static final String HEARTBEAT_REQUEST_TIMEOUT_ATTRIBUTE = "HEARTBEAT_REQUEST_TIMEOUT";
+  public static final String HEARTBEAT_FREQUENCY_ATTRIBUTE       = "HEARTBEAT_FREQUENCY";
+  public static final String HEARTBEAT_TIMEOUT_ATTRIBUTE         = "HEARTBEAT_TIMEOUT";
+  public static final String HEARTBEAT_PCT_OUT_OF_SPEC_ATTRIBUTE = "HEARTBEAT_PCT_OUT_OF_SPEC";
+
+  public static final String STATUS_UPDATE_INTERVAL_ATTRIBUTE        = "STATUS_UPDATE_INTERVAL";
+  public static final String DEFAULT_STATUS_LATENCY_MEAN_ATTRIBUTE   = "DEFAULT_STATUS_LATENCY_MEAN";
+  public static final String DEFAULT_STATUS_LATENCY_STDDEV_ATTRIBUTE = "DEFAULT_STATUS_LATENCY_STDDEV";
+  public static final String RESTART_CONFIDENCE_ATTRIBUTE            = "RESTART_CONFIDENCE";
+
   public static final String CURRENT_STATUS_UPDATE_ATTRIBUTE = "CURRENT_STATUS_UPDATE_INTERVAL";
   public static final String PERSISTENCE_INTERVAL_THREATCON_HIGH_COEFFICIENT = "PERSISTENCE_INTERVAL_THREATCON_HIGH_COEFFICIENT";
   public static final String STATUS_UPDATE_INTERVAL_THREATCON_HIGH_COEFFICIENT = "STATUS_UPDATE_INTERVAL_THREATCON_HIGH_COEFFICIENT";
   public static final String PING_TIMEOUT_THREATCON_HIGH_COEFFICIENT = "PING_TIMEOUT_THREATCON_HIGH_COEFFICIENT";
+
+  public static final String USE_FOR_RESTARTS_ATTRIBUTE      = "USE_FOR_RESTARTS";
+  public static final String EXPECTED_AGENTS_ATTRIBUTE       = "NumberOfAgents";
+  public static final String PERSISTENCE_INTERVAL_ATTRIBUTE  = "PERSISTENCE_INTERVAL";
+  public static final String PING_ADJUSTMENT_ATTRIBUTE       = "PING_ADJUSTMENT";
+
   // Defines attribute to use in selection of community to monitor
   public static final String HEALTH_MONITOR_ROLE = "HealthMonitor";
   public static final String COMMUNITY_TYPE =      "Robustness";
@@ -40,10 +57,8 @@ public interface RestartManagerConstants {
   // Property used to define the name of a robustness community to monitor
   public static final String COMMUNITY_PROPERTY = "org.cougaar.tools.robustness.community";
 
-  // Defines default class to use for Robustness Controller
-  public static final String CONTROLLER_CLASS_PROPERTY =
-      "org.cougaar.tools.robustness.controller.classname";
-
+  // Defines class to use for Robustness Controller
+  public static final String CONTROLLER_CLASS_PROPERTY = "org.cougaar.tools.robustness.controller.classname";
   public static final String DEFAULT_ROBUSTNESS_CONTROLLER_CLASSNAME =
       "org.cougaar.tools.robustness.ma.controllers.DefaultRobustnessController";
 
@@ -53,19 +68,21 @@ public interface RestartManagerConstants {
 
   // Defines how often status updates are broadcast to peers
   public static final String STATUS_UPDATE_PROPERTY = "org.cougaar.tools.robustness.update.interval";
+
   public static final int NEVER = -1;
 
-  // Default parameter values, may be overridden by community attributes
-  public static long DEFAULT_EXPIRATION = 5 * 60 * 1000;
-  public static final long PING_TIMEOUT = 5 * 60 * 1000;
-  public static final long MINIMUM_PING_TIMEOUT = 1 * 60 * 1000;
-  public static final long HEARTBEAT_REQUEST_TIMEOUT = 1 * 60 * 1000;
-  public static final long HEARTBEAT_FREQUENCY = 60 * 1000;
-  public static final long HEARTBEAT_TIMEOUT = 2 * 60 * 1000;
-  public static final long HEARTBEAT_PCT_OUT_OF_SPEC = 80;
+  // Default parameter values, may be overridden by applicable community attributes
+  public static final long DEFAULT_EXPIRATION = 5 * 60 * 1000;
+  public static final long DEFAULT_PING_TIMEOUT = 5 * 60 * 1000;
+  public static final long DEFAULT_MINIMUM_PING_TIMEOUT = 1 * 60 * 1000;
+  public static final long DEFAULT_HEARTBEAT_REQUEST_TIMEOUT = 1 * 60 * 1000;
+  public static final long DEFAULT_HEARTBEAT_FREQUENCY = 60 * 1000;
+  public static final long DEFAULT_HEARTBEAT_TIMEOUT = 2 * 60 * 1000;
+  public static final long DEFAULT_HEARTBEAT_PCT_OUT_OF_SPEC = 80;
 
-  public static final String COLLECT_NODE_STATS_PROPERTY =
-      "org.cougaar.tools.robustness.collect.stats";
+  public static final String COLLECT_NODE_STATS_PROPERTY = "org.cougaar.tools.robustness.collect.stats";
+  public static final long MIN_SAMPLES = 25;
+  public static final long MIN_SAMPLE_VALUE = 10000;
 
   /*
     Restart time = DEFAULT_STATUS_UPDATE_INTERVAL +
@@ -79,18 +96,5 @@ public interface RestartManagerConstants {
 
   // Minimum value for EN4J annealTime parameter
   public static final int MINIMUM_ANNEAL_TIME = 10;
-
-  // Defines constants used to increase ping timeout based on cpu load
-  // of destination.  The MAX_CPU_LOAD_FOR_ADJUSTMENT constant defines
-  // the upper range of cpu loads used to calculate the scaling
-  // coefficient.  The MAX_CPU_LOAD_SCALING defines the maximum
-  // value of the coefficient.
-  public static final double MAX_CPU_LOAD_FOR_ADJUSTMENT = 8.0;
-  public static final double MAX_CPU_LOAD_SCALING = 3.0;
-
-  // Metrics used
-  public static final String LOAD_AVERAGE_METRIC = "LoadAverage";
-
-
 
 }
