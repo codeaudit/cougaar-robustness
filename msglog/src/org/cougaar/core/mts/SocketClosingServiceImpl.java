@@ -247,7 +247,7 @@ public class SocketClosingServiceImpl implements SocketClosingService, ServicePr
         if (queue.size() == 0) offerNewCloseDeadline (0);
       }
 
-      if (debug() && oldsr !=null) log.debug ("SocketCloser: removed " +oldsr);
+      if (debug() && oldsr != null) log.debug ("SocketCloser: removed " +oldsr);
     }
     
     private void offerNewCloseDeadline (long deadline)

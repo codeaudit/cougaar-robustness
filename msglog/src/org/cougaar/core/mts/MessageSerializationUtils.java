@@ -25,6 +25,8 @@
 package org.cougaar.core.mts;
 
 import java.io.*;
+import java.net.DatagramSocket;
+import java.net.DatagramPacket;
 import java.security.*;
 
 
@@ -278,6 +280,43 @@ public final class MessageSerializationUtils
     if (n == -1) throw new EOFException ("Got a -1 on the read");
 
     return buf;
+  }
+
+  public static DatagramPacket readByteArrayPacket (DatagramSocket socket, DatagramPacket packet)
+    throws DataIntegrityException, IOException
+  {
+    packet.setData (readByteArray (socket, packet.getData()));
+    return packet;
+  }
+
+  public static byte[] readByteArray (DatagramSocket socket)
+    throws DataIntegrityException, IOException
+  {
+    return readByteArray (socket, null);
+  }
+
+  public static byte[] readByteArray (DatagramSocket socket, byte[] buf)
+    throws DataIntegrityException, IOException
+  {
+    int hdrLen = getByteArrayHeaderLength();
+    if (buf == null || buf.length < hdrLen) buf = new byte[hdrLen];
+
+    DatagramPacket packet = new DatagramPacket (buf, hdrLen);
+    socket.receive (packet);
+
+    int msgLen = readByteArrayHeader (packet.getData());
+
+    if (buf.length < msgLen) 
+    {
+      byte[] newbuf = new byte[msgLen];
+      for (int i=0; i<hdrLen; i++) newbuf[i] = buf[i];
+      buf = newbuf;
+    }
+
+    packet = new DatagramPacket (buf, hdrLen, msgLen-hdrLen);
+    socket.receive (packet);
+
+    return packet.getData();
   }
 
   public static String byteBufferDigestToString (byte[] buf)

@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD
+ * 27 Sep 2002: Add inband acking. (OBJS)
  * 22 Sep 2002: Revamp for new serialization & socket closer. (OBJS)
  * 18 Aug 2002: Various enhancements for Cougaar 9.4.1 release. (OBJS)
  * 16 May 2002: Port to Cougaar 9.2.x (OBJS)
@@ -104,6 +105,7 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
   private static final boolean useMessageDigest;
   private static final String messageDigestType;
   private static final int socketTimeout;
+  private static final int inbandAckSoTimeout;
   private static final boolean oneSendPerConnection;
 
   private LoggingService log;
@@ -134,6 +136,9 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
     s = "org.cougaar.message.protocol.socket.outgoing.socketTimeout";
     socketTimeout = Integer.valueOf(System.getProperty(s,"5000")).intValue();
 
+    s = "org.cougaar.message.protocol.socket.outgoing.inbandAckSoTimeout";
+    inbandAckSoTimeout = Integer.valueOf(System.getProperty(s,"2000")).intValue();
+
     s = "org.cougaar.message.protocol.socket.outgoing.oneSendPerConnection";
     oneSendPerConnection = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
   }
@@ -150,7 +155,7 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
     super_load();
 
     log = loggingService;
-    if (log.isInfoEnabled()) log.info ("Creating " + this);
+    if (doInfo()) log.info ("Creating " + this);
 
     if (socketTimeout > 0)
     {
@@ -196,8 +201,6 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
       {
         SocketSpec spec = (SocketSpec) obj;
 
-if (log.isDebugEnabled()) log.debug ("Looked up socket spec for " +address+ " in NameSupport: " +spec);
-
         try
         {
           spec.setInetAddress (getInetAddress (spec.getHost()));
@@ -214,9 +217,13 @@ if (log.isDebugEnabled()) log.debug ("Looked up socket spec for " +address+ " in
         log.error ("Invalid SocketSpec from nameserver lookup!");
       }
     }
-else if (log.isDebugEnabled()) log.debug ("Got null for socket spec for " +address+ " in NameSupport");
 
     return null;
+  }
+
+  private SocketSpec getSocketSpecByNode (String node) throws NameLookupException
+  {
+    return getSocketSpec (new MessageAddress (node+ "(MTS" +PROTOCOL_TYPE+ ")"));
   }
 
   private SocketSpec getSocketSpec (MessageAddress address) throws NameLookupException
@@ -335,14 +342,17 @@ else if (log.isDebugEnabled()) log.debug ("Got null for socket spec for " +addre
 
       if (MessageUtils.getSendTry (msg) > 1) dumpCachedData();
 
-      //  Get socket spec for destination
+      //  Get the socket spec for the destination node.  Note we use node instead
+      //  of agent as the receiver can move his socket to another port at will, making
+      //  any and all client (ie. agent) socket spec registrations out of date.
 
-      SocketSpec destSpec = getSocketSpec (destination);
+      String toNode = MessageUtils.getToAgentNode (msg);
+      SocketSpec destSpec = getSocketSpecByNode (toNode);
 
       if (destSpec == null)
       {
         String s = "No nameserver info for " +destination;
-        if (log.isWarnEnabled()) log.warn (s);
+        if (doWarn()) log.warn (s);
         throw new NameLookupException (new Exception (s));
       }
 
@@ -357,7 +367,7 @@ else if (log.isDebugEnabled()) log.debug ("Got null for socket spec for " +addre
       } 
       catch (Exception e) 
       {
-        if (log.isDebugEnabled()) log.debug ("sendMessage exception: " +stackTraceToString(e));
+        if (doDebug()) log.debug ("sendMessage exception: " +stackTraceToString(e));
         ex = e;
       }
 
@@ -380,10 +390,10 @@ else if (log.isDebugEnabled()) log.debug ("Got null for socket spec for " +addre
 
     private synchronized boolean sendMessage (AttributedMessage msg, SocketSpec spec) throws Exception
     {
-      if (log.isDebugEnabled()) log.debug ("Sending " +MessageUtils.toString(msg));
+      if (doDebug()) log.debug ("Sending " +MessageUtils.toString(msg));
 
       //  Serialize the message into a byte array.  Depending on properties set, we possibly help
-      //  insure message integrity via a message digest (eg. an embedded MD5 hash of the message).
+      //  insure message integrity via a message digest (eg an embedded MD5 hash of the message).
 
       byte msgBytes[] = MessageSerializationUtils.writeMessageToByteArray (msg, getDigest());
       if (msgBytes == null) return false;
@@ -406,9 +416,9 @@ else if (log.isDebugEnabled()) log.debug ("Got null for socket spec for " +addre
           {
             tryN = 2;  // only try once with a new socket
 
-            if (log.isDebugEnabled()) log.debug ("Creating socket to " +destination+ " with " +spec);
+            if (doDebug()) log.debug ("Creating socket to " +destination+ " with " +spec);
             socket = getSocket (spec);
-            if (log.isDebugEnabled()) log.debug ("Created socket " + (sockString = socket.toString()));
+            if (doDebug()) log.debug ("Created socket " + (sockString = socket.toString()));
 
             socketOut = new BufferedOutputStream (socket.getOutputStream());
             if (doInbandAcking) socketIn = new BufferedInputStream (socket.getInputStream());
@@ -416,12 +426,11 @@ else if (log.isDebugEnabled()) log.debug ("Got null for socket spec for " +addre
 
           //  Send the message
 
-          if (log.isDebugEnabled()) log.debug ("Sending " +msgBytes.length+ " byte msg over " +sockString);
+          if (doDebug()) log.debug ("Sending " +msgBytes.length+ " byte msg thru " +sockString);
           sendTime = now();
           MessageSerializationUtils.writeByteArray (socketOut, msgBytes);
-          if (log.isDebugEnabled()) log.debug ("Sending " +msgBytes.length+ " byte msg done " +sockString);
-
-          break;
+          if (doDebug()) log.debug ("Sending " +msgBytes.length+ " byte msg done " +sockString);
+          break;  // success
         }
         catch (Exception e)
         {
@@ -442,10 +451,10 @@ else if (log.isDebugEnabled()) log.debug ("Got null for socket spec for " +addre
         {
           //  See if we get an ack
 
-          if (log.isDebugEnabled()) log.debug ("Waiting for ack over " +sockString);
+          if (doDebug()) log.debug ("Waiting for ack from " +sockString);
           byte[] ackBytes = MessageSerializationUtils.readByteArray (socketIn);
           receiveTime = now();
-          if (log.isDebugEnabled()) log.debug ("Waiting for ack done " +sockString);
+          if (doDebug()) log.debug ("Waiting for ack done " +sockString);
           pam = processAck (ackBytes);
 
           //  Send an ack-ack
@@ -456,15 +465,15 @@ else if (log.isDebugEnabled()) log.debug ("Got null for socket spec for " +addre
           if (!pam.hasReceptionException())
           {
             byte[] ackAckBytes = createAckAck (pam, receiveTime);
-            if (log.isDebugEnabled()) log.debug ("Sending ack-ack over " +sockString);
+            if (doDebug()) log.debug ("Sending ack-ack thru " +sockString);
             MessageSerializationUtils.writeByteArray (socketOut, ackAckBytes);
-            if (log.isDebugEnabled()) log.debug ("Sending ack-ack done " +sockString);
+            if (doDebug()) log.debug ("Sending ack-ack done " +sockString);
           }
           else
           {
             Exception e = pam.getReceptionException();
 
-            if (log.isWarnEnabled()) 
+            if (doWarn()) 
             {
               String node = pam.getReceptionNode();
               log.warn ("Got reception exception from node " +node+ " " +sockString+ ": " +e);
@@ -477,8 +486,12 @@ else if (log.isDebugEnabled()) log.debug ("Got null for socket spec for " +addre
         {
           //  Any acking that did not complete will be taken care of in later acking
 
-          if (log.isDebugEnabled()) log.debug ("Inband acking stopped for " +sockString+ ": " +e);
-          closeSocket();
+          if (doDebug()) log.debug ("Inband acking stopped for " +sockString+ ": " +e);
+
+          //  Selectively close the socket 
+
+          if (oneSendPerConnection || pam == null || !pam.hasReceptionException()) closeSocket();
+          else unscheduleSocketClose (socket);
 
           //  Selectively throw exceptions back up
 
@@ -538,7 +551,7 @@ else if (log.isDebugEnabled()) log.debug ("Got null for socket spec for " +addre
     {
       if (socket != null)
       {
-        try { socket.close(); } catch (Exception ee) {}
+        try { socket.close(); } catch (Exception e) {}
 
         socket = null;
         socketOut = null;
@@ -558,7 +571,7 @@ else if (log.isDebugEnabled()) log.debug ("Got null for socket spec for " +addre
 
       if (latestAcks != null)
       {
-        if (log.isDebugEnabled())
+        if (doDebug())
         {
           StringBuffer buf = new StringBuffer();
           AckList.printAcks (buf, "  latest", latestAcks);
@@ -571,7 +584,7 @@ else if (log.isDebugEnabled()) log.debug ("Got null for socket spec for " +addre
         String fromNode = MessageUtils.getFromAgentNode (pam);
         MessageAckingAspect.addReceivedAcks (fromNode, latestAcks);
       }
-      else if (log.isDebugEnabled()) log.debug ("Got empty inband ack!");
+      else if (doDebug()) log.debug ("Got empty inband ack!");
 
       return pam;
     }
@@ -588,6 +601,21 @@ else if (log.isDebugEnabled()) log.debug ("Got null for socket spec for " +addre
   private static MessageDigest getDigest () throws java.security.NoSuchAlgorithmException
   {
     return (useMessageDigest ? MessageDigest.getInstance(messageDigestType) : null);
+  }
+
+  private boolean doDebug ()
+  {
+    return (log !=null && log.isDebugEnabled());
+  }
+
+  private boolean doInfo ()
+  {
+    return (log !=null && log.isInfoEnabled());
+  }
+
+  private boolean doWarn ()
+  {
+    return (log !=null && log.isWarnEnabled());
   }
 
   private static long now ()

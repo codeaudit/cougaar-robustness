@@ -30,14 +30,13 @@ import java.net.InetAddress;
 /**
  *  DatagramSocketSpec holds information about the host and port for a
  *  datagram (UDP) socket connection.  Additionally, it has a slot to
- *  cache Inet Address data on the client side.
+ *  cache InetAddress data on the client side.
  */
 
 public class DatagramSocketSpec implements java.io.Serializable
 {
   private String host;
   private String port;
-
   private transient InetAddress inetAddress;
 
   public DatagramSocketSpec (String port)

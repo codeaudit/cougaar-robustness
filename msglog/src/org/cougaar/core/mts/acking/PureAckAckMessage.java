@@ -31,6 +31,8 @@ import org.cougaar.core.mts.*;
 
 public class PureAckAckMessage extends PureAckMessage
 {
+  private static final String INBAND_ACK_SEND_TIME = "InbandAckSendTime";
+
   public PureAckAckMessage () {}  // needed for incoming deserialization
 
   public PureAckAckMessage (AttributedMessage msg, PureAckAck pureAckAck)
@@ -51,6 +53,29 @@ public class PureAckAckMessage extends PureAckMessage
     PureAckAck pureAckAck = new PureAckAck (pureAck);
     String fromNode = MessageUtils.getFromAgentNode (pam);
     pureAckAck.setLatestAcks (MessageAckingAspect.getAcksToSend (fromNode));
-    return new PureAckAckMessage (pam, pureAckAck);
+    PureAckAckMessage paam = new PureAckAckMessage (pam, pureAckAck);
+    paam.setInbandAckSendTime (0);  // temp HACK
+    return paam;
+  }
+
+  public boolean isInbandAckAck ()
+  {
+    return hasInbandAckSendTime();  // bit of a HACK
+  }
+
+  public void setInbandAckSendTime (long time)
+  {
+    setAttribute (INBAND_ACK_SEND_TIME, new Long (time));
+  }
+
+  public long getInbandAckSendTime ()
+  {
+    Long t = (Long) getAttribute (INBAND_ACK_SEND_TIME);
+    return (t != null ? t.longValue() : -1);
+  }
+
+  public boolean hasInbandAckSendTime ()
+  {
+    return (getAttribute (INBAND_ACK_SEND_TIME) != null);
   }
 }

@@ -19,6 +19,8 @@
  * </copyright>
  *
  * CHANGE RECORD
+ * 30 Sep 2002: Add inband acking. (OBJS)
+ * 22 Sep 2002: Revamp for new serialization & socket closer. (OBJS)
  * 18 Aug 2002: Various enhancements for Cougaar 9.4.1 release. (OBJS)
  * 26 Apr 2002: Created from socket link protocol. (OBJS)
  */
@@ -31,25 +33,33 @@ import java.net.*;
 import java.security.MessageDigest;
 
 import org.cougaar.core.mts.*;
+import org.cougaar.core.mts.acking.*;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.ThreadService;
 import org.cougaar.core.component.ServiceBroker;
 
 /**
- *  Outgoing UDP Link Protocol - send messages via UDP
+ *  Outgoing UDP Link Protocol - send Cougaar messages via UDP
  */
 
 public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
 {
   public static final String PROTOCOL_TYPE = "-UDP";
   public static final int    MAX_UDP_MSG_SIZE = (64*1024)-128;
+  public static final int    MAX_ACK_MSG_SIZE = 4*1024;  // for inband acks
 
-  private static final int protocolCost;
+  private static final String localhost;
+  private static final int linkCost;
+  private static final boolean doInbandAcking;
+  private static final boolean doInbandRTTUpdates;
+  private static final boolean useMessageDigest;
+  private static final String messageDigestType;
   private static final int socketTimeout;
-  private static final boolean embedMessageDigest;
+  private static final int inbandAckSoTimeout;
 
   private LoggingService log;
   private SocketClosingService socketCloser;
+  private RTTService rttService;
   private Hashtable specCache, addressCache;
   private HashMap links;
 
@@ -57,14 +67,29 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
   {
     //  Read external properties
 
-    String s = "org.cougaar.message.protocol.udp.cost";  // one way
-    protocolCost = Integer.valueOf(System.getProperty(s,"4000")).intValue();  // was 750
+    String s = "org.cougaar.message.protocol.udp.localhost";
+    localhost = System.getProperty (s, getLocalHost());
+
+    s = "org.cougaar.message.protocol.udp.cost";  // one way
+    linkCost = Integer.valueOf(System.getProperty(s,"4000")).intValue();  // was 750
+
+    s = "org.cougaar.message.protocol.udp.doInbandAcking";
+    doInbandAcking = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
+
+    s = "org.cougaar.message.protocol.udp.doInbandRTTUpdates";
+    doInbandRTTUpdates = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
+
+    s = "org.cougaar.message.protocol.udp.useMessageDigest";
+    useMessageDigest = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
+
+    s = "org.cougaar.message.protocol.udp.messageDigestType";
+    messageDigestType = System.getProperty (s, "MD5");
 
     s = "org.cougaar.message.protocol.udp.outgoing.socketTimeout";
     socketTimeout = Integer.valueOf(System.getProperty(s,"5000")).intValue();
 
-    s = "org.cougaar.message.protocol.udp.outgoing.embedMessageDigest";
-    embedMessageDigest = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
+    s = "org.cougaar.message.protocol.udp.outgoing.inbandAckSoTimeout";
+    inbandAckSoTimeout = Integer.valueOf(System.getProperty(s,"2000")).intValue();
   }
  
   public OutgoingUDPLinkProtocol ()
@@ -79,13 +104,18 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
     super_load();
 
     log = loggingService;
-    if (log.isInfoEnabled()) log.info ("Creating " + this);
+    if (doInfo()) log.info ("Creating " + this);
 
     if (socketTimeout > 0)
     {
       ServiceBroker sb = getServiceBroker();
       socketCloser = (SocketClosingService) sb.getService (this, SocketClosingService.class, null);
       if (socketCloser == null) log.error ("Cannot do socket timeouts - SocketClosingService not available!");
+    }
+
+    if (doInbandRTTUpdates)
+    {
+      rttService = (RTTService) getServiceBroker().getService (this, RTTService.class, null);
     }
 
     if (startup() == false)
@@ -138,6 +168,11 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
     }
 
     return null;
+  }
+
+  private DatagramSocketSpec getDatagramSocketSpecByNode (String node) throws NameLookupException
+  {
+    return getDatagramSocketSpec (new MessageAddress (node+ "(MTS" +PROTOCOL_TYPE+ ")"));
   }
 
   private DatagramSocketSpec getDatagramSocketSpec (MessageAddress address) throws NameLookupException
@@ -204,8 +239,8 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
   class UDPOutLink implements DestinationLink 
   {
     private MessageAddress destination;
-    private DatagramSocket datagramSocket;
-    private String sockString = null;
+    private DatagramSocket dsocket;
+    private String dsockString = null;
 
     public UDPOutLink (MessageAddress dest) 
     {
@@ -229,8 +264,8 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
    
     public int cost (AttributedMessage msg) 
     {
-      if (msg == null) return protocolCost;  // forced HACK
-      return (addressKnown(destination) ? protocolCost : Integer.MAX_VALUE);
+      if (msg == null) return linkCost;  // forced HACK
+      return (addressKnown(destination) ? linkCost : Integer.MAX_VALUE);
     }
 
     public Object getRemoteReference ()
@@ -249,7 +284,7 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
     private synchronized void dumpCachedData ()
     {
       clearCaches();
-      datagramSocket = null;
+      dsocket = null;
     }
 
     public synchronized MessageAttributes forwardMessage (AttributedMessage msg) 
@@ -260,13 +295,16 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
 
       if (MessageUtils.getSendTry (msg) > 1) dumpCachedData();
 
-      //  Get datagram socket spec for destination
+      //  Get datagram socket spec for destination node.  Note we use node instead
+      //  of agent as the receiver can move his socket to another port at will, making
+      //  any and all client (ie. agent) socket spec registrations out of date.
 
-      DatagramSocketSpec destSpec = getDatagramSocketSpec (destination);
+      String toNode = MessageUtils.getToAgentNode (msg);
+      DatagramSocketSpec destSpec = getDatagramSocketSpecByNode (toNode);
 
       if (destSpec == null)
       {
-        String s = "No nameserver info for " +destination;
+        String s = "No DatagramSocketSpec in nameserver for node " +toNode;
         if (log.isWarnEnabled()) log.warn (s);
         throw new NameLookupException (new Exception (s));
       }
@@ -282,7 +320,7 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
       } 
       catch (Exception e) 
       {
-        if (log.isDebugEnabled()) log.debug ("sendMessage exception: " +stackTraceToString(e));
+        if (doDebug()) log.debug ("sendMessage exception: " +stackTraceToString(e));
         ex = e;
       }
 
@@ -305,33 +343,34 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
    
     private synchronized boolean sendMessage (AttributedMessage msg, DatagramSocketSpec spec) throws Exception
     {
-      if (log.isDebugEnabled()) log.debug ("Sending " +MessageUtils.toString(msg));
+      if (doDebug()) log.debug ("Sending " +MessageUtils.toString(msg));
 
       //  NOTE:  UDP is an unreliable communications protocol.  We just send the message
       //  on its way and maybe it gets there.  Acking will tell us if it does or not.
 
-      //  Serialize the message into a byte array.  Optionally help insure message integrity
-      //  via a message digest (eg. an embedded MD5 hash of the message).
+      //  Serialize the message into a byte array.  Depending on properties set, we possibly help
+      //  insure message integrity via a message digest (eg an embedded MD5 hash of the message).
 
-      MessageDigest digest = (embedMessageDigest ? MessageDigest.getInstance("MD5") : null);
-      byte msgBytes[] = MessageSerializationUtils.writeMessageToByteArray (msg, digest);
+      byte msgBytes[] = MessageSerializationUtils.writeMessageToByteArray (msg, getDigest());
       if (msgBytes == null) return false;
 
-      //  Make sure the message will fit into the 64 KB datagram packet size limitation
-      //  NOTE:  While 64 KB is the theoretical maximum, the practical maximum may be 
-      //  much smaller, such as perhaps 8 KB.  Will need to add code to monitor & test
+      //  Make sure the message will fit into the 64KB datagram packet size limitation
+      //  NOTE:  While 64KB is the theoretical maximum, the practical maximum may be 
+      //  much smaller, such as perhaps 8KB.  Will need to add code to monitor & test
       //  the actual largest msg that can be successfully sent to a particular destination.
 
       if (msgBytes.length >= getMaxMessageSizeInBytes())
       {
+        int msgSizeKB = msgBytes.length/1024;
+
         if (log.isWarnEnabled())
         {
-          log.warn ("Msg exceeds " +(getMaxMessageSizeInBytes()/1024)+ " KB max UDP " +
-            "message size! (" +(msgBytes.length/1024)+ " KB): " +MessageUtils.toString(msg));
+          log.warn ("Msg exceeds " +(getMaxMessageSizeInBytes()/1024)+ "KB max UDP " +
+            "message size! (" +msgSizeKB+ "KB): " +MessageUtils.toString(msg));
         }
 
-        MessageUtils.setMessageSize (msg, msgBytes.length);  // size stops this link selection
-        return false;
+        MessageUtils.setMessageSize (msg, msgBytes.length);  // prevent this link selection
+        throw new MessageSizeException ("Message too large for UDP (" +msgSizeKB+ "KB)");
       }
 
       //  Build the datagram for the message
@@ -361,61 +400,167 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
           match, an IllegalArgumentException will be thrown. 
       */
 
-      if (datagramSocket == null || datagramSocket.isClosed()) 
+      if (dsocket == null || dsocket.isClosed()) 
       {
-        if (log.isDebugEnabled()) log.debug ("Creating datagram socket to " +destination+ " with " +spec);
+        if (doDebug()) log.debug ("Creating datagram socket to " +destination+ " with " +spec);
 
-        datagramSocket = new DatagramSocket();
-        scheduleSocketClose (datagramSocket, socketTimeout);
-        datagramSocket.connect (addr, port);  // new in Java 1.4
+        dsocket = new DatagramSocket();
+        scheduleSocketClose (dsocket, socketTimeout);
+        dsocket.connect (addr, port);  // new in Java 1.4
 
-        if (log.isDebugEnabled()) 
+        if (doDebug()) 
         {
-          sockString = datagramSocketToString (datagramSocket);
-          log.debug ("Created datagram socket " +sockString);
+          dsockString = datagramSocketToString (dsocket);
+          log.debug ("Created datagram socket " +dsockString);
         }
       }
-      else scheduleSocketClose (datagramSocket, socketTimeout);
+      else scheduleSocketClose (dsocket, socketTimeout);
 
       //  Send the message.  If the target agent has moved to another node,
       //  we may get an IllegalArgumentException because the socket is connected
       //  to an out of date addr & port in relation to the datagram.  If we
       //  detect this situation we re-connect the socket and try the send again.
 
+      PureAckMessage pam = null;
+      long sendTime = 0, receiveTime = 0;
+  
       for (int tryN=1; tryN<=2; tryN++) // try at most twice
       {
         try
         {
-          if (log.isDebugEnabled()) 
-            log.debug ("Sending " +msgBytes.length+ " byte msg over " +sockString);
-
-          datagramSocket.send (packet);
-
-          if (log.isDebugEnabled()) 
-            log.debug ("Sending " +msgBytes.length+ " byte msg done " +sockString);
-
-          unscheduleSocketClose (datagramSocket);
+          if (doDebug()) log.debug ("Sending " +msgBytes.length+ " byte msg thru " +dsockString);
+          sendTime = now();
+          dsocket.send (packet);
+          if (doDebug()) log.debug ("Sending " +msgBytes.length+ " byte msg done " +dsockString);
           break; // success
         }
         catch (Exception e)
         {
           if (tryN == 1 && e instanceof IllegalArgumentException)
           {
-            if (log.isDebugEnabled()) 
-              log.debug ("Reconnecting " +sockString+ " to " +spec+ " for " +destination);
-                
-            datagramSocket.connect (addr, port);
+            if (doDebug()) log.debug ("Reconnecting " +dsockString+ " to " +spec+ " for " +destination);
+            dsocket.connect (addr, port);
           }
           else 
           {
-            datagramSocket.close();
-            datagramSocket = null;
+            dsocket.close();
+            dsocket = null;
             throw (e);
           }
         }
       }
- 
-      return true;  // send successful
+
+      //  Optionally do inband acking
+
+      if (doInbandAcking && MessageUtils.isAckableMessage (msg))
+      {
+        try
+        {
+          //  See if we get an ack
+
+          if (packet.getData().length < MAX_ACK_MSG_SIZE) packet.setData (new byte[MAX_ACK_MSG_SIZE]);
+          if (doDebug()) log.debug ("Waiting for ack from " +dsockString);
+          dsocket.setSoTimeout (inbandAckSoTimeout);
+          dsocket.receive (packet);
+          receiveTime = now();
+          if (doDebug()) log.debug ("Waiting for ack done " +dsockString);
+          pam = processAck (packet.getData());
+
+          //  Send an ack-ack
+          //
+          //  The inband acking protocol is that if the ack back reports a message
+          //  reception exception then no ack-ack is sent for the ack.
+
+          if (!pam.hasReceptionException())
+          {
+            packet.setData (createAckAck (pam, receiveTime));
+            if (doDebug()) log.debug ("Sending ack-ack thru " +dsockString);
+            dsocket.send (packet);
+            if (doDebug()) log.debug ("Sending ack-ack done " +dsockString);
+          }
+          else
+          {
+            Exception e = pam.getReceptionException();
+
+            if (doWarn()) 
+            {
+              String node = pam.getReceptionNode();
+              log.warn ("Got reception exception from node " +node+ " " +dsockString+ ": " +e);
+            }
+
+            throw e;
+          }
+        }
+        catch (Exception e)
+        {
+          //  Any acking that did not complete will be taken care of in later acking
+
+          if (doDebug()) log.debug ("Inband acking stopped for " +dsockString+ ": " +e);
+
+          //  Selectively close the socket 
+
+          if (pam == null || !pam.hasReceptionException()) closeSocket();
+          else unscheduleSocketClose (dsocket); 
+
+          //  Selectively throw exceptions back up
+
+          if (e instanceof MessageDeserializationException) throw e;
+        } 
+      }
+
+      //  Allow socket reuse
+
+      if (dsocket != null && !dsocket.isClosed()) unscheduleSocketClose (dsocket); 
+
+      //  Update the inband RTT if possible
+
+      if (rttService != null && pam != null)
+      {
+        DestinationLink sendLink = this;
+        String node = MessageUtils.getToAgentNode (msg);
+        int rtt = ((int)(receiveTime - sendTime)) - pam.getInbandNodeTime();
+        rttService.updateInbandRTT (sendLink, node, rtt);
+      }
+
+      return true;  // msg send successful
+    }
+
+    private PureAckMessage processAck (byte[] ackBytes) throws Exception
+    {
+      AttributedMessage msg = MessageSerializationUtils.readMessageFromByteArray (ackBytes);
+      PureAckMessage pam = (PureAckMessage) msg;
+
+      if (pam.hasReceptionException()) return pam;  // no more ack to process
+
+      PureAck pureAck = (PureAck) MessageUtils.getAck (pam);
+      Vector latestAcks = pureAck.getLatestAcks();
+
+      if (latestAcks != null)
+      {
+        if (doDebug())
+        {
+          StringBuffer buf = new StringBuffer();
+          AckList.printAcks (buf, "  latest", latestAcks);
+          log.debug ("Got inband ack:\n" +buf);
+        }
+
+        for (Enumeration a=latestAcks.elements(); a.hasMoreElements(); )
+          NumberList.checkListValidity ((AckList) a.nextElement());
+
+        String fromNode = MessageUtils.getFromAgentNode (pam);
+        MessageAckingAspect.addReceivedAcks (fromNode, latestAcks);
+      }
+      else if (doDebug()) log.debug ("Got empty inband ack!");
+
+      return pam;
+    }
+
+    private byte[] createAckAck (PureAckMessage pam, long receiveTime) throws Exception
+    {
+      PureAckAckMessage paam = PureAckAckMessage.createInbandPureAckAckMessage (pam);
+      paam.setInbandNodeTime ((int)(now()-receiveTime));
+      byte ackAckBytes[] = MessageSerializationUtils.writeMessageToByteArray (paam, getDigest());
+      return ackAckBytes;
     }
 
     private void scheduleSocketClose (DatagramSocket socket, int timeout)
@@ -427,14 +572,61 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
     {
       if (socketCloser != null) socketCloser.unscheduleClose (socket);
     }
+
+    private void closeSocket ()
+    {
+      if (dsocket != null)
+      {
+        try { dsocket.close(); } catch (Exception e) {}
+        dsocket = null;
+      } 
+    }
+  }
+
+  private static String getLocalHost ()
+  {
+    try
+    {
+      // return InetAddress.getLocalHost().getHostAddress();    // hostname as IP address
+      return InetAddress.getLocalHost().getCanonicalHostName(); // now using 1.4
+    }
+    catch (Exception e)
+    {
+      throw new RuntimeException (e.toString());
+    }
   }
 
   private static String datagramSocketToString (DatagramSocket ds)
   {
     if (ds == null) return "null";
-    boolean conn = ds.isConnected();
-    String data = conn ? ds.getInetAddress()+":"+ds.getPort() : "unconnected";
-    return "DatagramSocket[" +data+ "]";
+    String r = ds.isConnected() ? "remote:"+ds.getInetAddress()+":"+ds.getPort()+" " : "";
+    String l = ds.isBound() ? "local:"+localhost+":"+ds.getLocalPort() : "";
+    return "DatagramSocket[" +r+l+ "]";
+  }
+
+  private static MessageDigest getDigest () throws java.security.NoSuchAlgorithmException
+  {
+    return (useMessageDigest ? MessageDigest.getInstance(messageDigestType) : null);
+  }
+
+  private boolean doDebug ()
+  {
+    return (log != null && log.isDebugEnabled());
+  }
+
+  private boolean doInfo ()
+  {
+    return (log != null && log.isInfoEnabled());
+  }
+
+  private boolean doWarn ()
+  {
+    return (log != null && log.isWarnEnabled());
+  }
+
+  private static long now ()
+  {
+    return System.currentTimeMillis();
   }
 
   private static String stackTraceToString (Exception e)

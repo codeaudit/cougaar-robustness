@@ -19,6 +19,8 @@
  * </copyright>
  *
  * CHANGE RECORD
+ * 02 Oct 2002: Add a receiver queue to manage incoming message threads. (OBJS)
+ * 27 Sep 2002: Add inband acking. (OBJS)
  * 22 Sep 2002: Revamp for new serialization & socket closer. (OBJS)
  * 18 Aug 2002: Various enhancements for Cougaar 9.4.1 release. (OBJS)
  * 11 Jun 2002: Move to Cougaar threads. (OBJS)
@@ -92,16 +94,22 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 {
   public static final String PROTOCOL_TYPE = "-socket";
 
+  private static final SocketSpec emptySpec = new SocketSpec ("","");
+
   private static final String localhost;
   private static final boolean doInbandAcking;
   private static final boolean doInbandRTTUpdates;
   private static final boolean useMessageDigest;
   private static final String messageDigestType;
+  private static final int socketTimeout;
   private static final int firstMsgSoTimeout;
   private static final int subsequentMsgsSoTimeout;
-  private static final int socketTimeout;
+  private static final int inbandAckAckSoTimeout;
   private static final int serverSocketTimeout;
   private static final int backlog;
+  private static final int minThreads;
+  private static final int maxThreads;
+  private static final int idleTimeout;
 
   private static LoggingService log;
   private SocketClosingService socketCloser;
@@ -109,9 +117,10 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
   private String nodeID;
   private boolean showTraffic;
   private SocketSpec socketSpecs[];
-  private SocketSpec mySocket;
+  private SocketSpec mySocketSpec;
   private Vector serverSocketListeners;
   private Vector messageInListeners;
+  private WorkQueue receiverQueue;
   private ThreadService threadService;
   private MessageAddress myAddress;
 
@@ -134,20 +143,32 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     s = "org.cougaar.message.protocol.socket.messageDigestType";
     messageDigestType = System.getProperty (s, "MD5");
 
+    s = "org.cougaar.message.protocol.socket.incoming.socketTimeout";
+    socketTimeout = Integer.valueOf(System.getProperty(s,"10000")).intValue();
+
     s = "org.cougaar.message.protocol.socket.incoming.firstMsgSoTimeout";
-    firstMsgSoTimeout = Integer.valueOf(System.getProperty(s,"5000")).intValue();
+    firstMsgSoTimeout = Integer.valueOf(System.getProperty(s,"500")).intValue();
 
     s = "org.cougaar.message.protocol.socket.incoming.subsequentMsgsSoTimeout";
     subsequentMsgsSoTimeout = Integer.valueOf(System.getProperty(s,"100")).intValue();
 
-    s = "org.cougaar.message.protocol.socket.incoming.socketTimeout";
-    socketTimeout = Integer.valueOf(System.getProperty(s,"10000")).intValue();
+    s = "org.cougaar.message.protocol.socket.incoming.inbandAckAckSoTimeout";
+    inbandAckAckSoTimeout = Integer.valueOf(System.getProperty(s,"3000")).intValue();
 
     s = "org.cougaar.message.protocol.socket.incoming.serverSocketTimeout";
     serverSocketTimeout = Integer.valueOf(System.getProperty(s,"0")).intValue();
 
     s = "org.cougaar.message.protocol.socket.incoming.serverSocketBacklog";
     backlog = Integer.valueOf(System.getProperty(s,"50")).intValue();
+
+    s = "org.cougaar.message.protocol.socket.incoming.receiverQueueMinThreads";
+    minThreads = Integer.valueOf(System.getProperty(s,"1")).intValue();
+
+    s = "org.cougaar.message.protocol.socket.incoming.receiverQueueMaxThreads";
+    maxThreads = Integer.valueOf(System.getProperty(s,"5")).intValue();
+
+    s = "org.cougaar.message.protocol.socket.incoming.receiverQueueIdleThreadTimeout";
+    idleTimeout = Integer.valueOf(System.getProperty(s,"5000")).intValue();
   }
  
   public IncomingSocketLinkProtocol ()
@@ -170,8 +191,8 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     super_load();
     log = loggingService;
 
-    if (log.isInfoEnabled()) log.info ("Creating " + this);
-    if (log.isInfoEnabled()) log.info ("Using " +localhost+ " as the name of the local host");
+    if (doInfo()) log.info ("Creating " + this);
+    if (doInfo()) log.info ("Using " +localhost+ " as the name of the local host");
 
     if (socketTimeout > 0 || serverSocketTimeout > 0)
     {
@@ -207,13 +228,17 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
   {
     shutdown();
 
+    //  Create the receiver work queue
+
+    receiverQueue = new WorkQueue (minThreads, maxThreads, idleTimeout, log); 
+
     //  Create any sockets in socketSpecs
 
     int count = 0;
 
     for (int i=0; i<socketSpecs.length; i++) 
     {
-      int port = createServerSocket (socketSpecs[i].getPortAsInt());
+      int port = createServerSocketListener (socketSpecs[i].getPortAsInt());
       socketSpecs[i].setPort (port);  // potentially new port number
       if (port > 0) count++;          // if port < 1 bad port
     }
@@ -227,6 +252,14 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
   {
     myAddress = null;
     unregisterSocketSpec();
+
+    //  Shut down the receiver work queue
+
+    if (receiverQueue != null)
+    {
+      receiverQueue.shutdown();
+      receiverQueue = null;
+    }
 
     //  Remove and quit all of the server socket listners and message-in threads
 
@@ -250,75 +283,76 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     return this.getClass().getName();
   }
 
-  private void registerSocketSpec (String host, int port)
+  private void registerSocketSpec (SocketSpec spec)
   {
-    //  Update the name server
+    //  Update the name server.  Note: Allow any exceptions to be thrown.
   
-    mySocket = new SocketSpec (host, port);
-    MessageAddress nodeAddress = getNameSupport().getNodeMessageAddress();
-    getNameSupport().registerAgentInNameServer (mySocket, nodeAddress, PROTOCOL_TYPE);
+    mySocketSpec = spec;
+    MessageAddress address = new MessageAddress (nodeID+ "(MTS" +PROTOCOL_TYPE+ ")");
+    getNameSupport().registerAgentInNameServer (mySocketSpec, address, PROTOCOL_TYPE);
   }
 
   private void unregisterSocketSpec ()
   {
     //  Update the name server
 
-    if (mySocket == null) return;  // no socket spec to unregister
-    MessageAddress nodeAddress = getNameSupport().getNodeMessageAddress();
-    getNameSupport().unregisterAgentInNameServer (mySocket, nodeAddress, PROTOCOL_TYPE);
+    try
+    {
+      if (mySocketSpec == null) return;
+      MessageAddress address = new MessageAddress (nodeID+ "(MTS" +PROTOCOL_TYPE+ ")");
+      getNameSupport().unregisterAgentInNameServer (mySocketSpec, address, PROTOCOL_TYPE);
+    }
+    catch (Exception e)
+    {
+      log.error ("unregisterSocketSpec: " +stackTraceToString(e));
+    }
   }
 
   public final void registerClient (MessageTransportClient client) 
   {
+    //  Useful in adaptive link selection to know if link is good for agent
+
     try 
     {
-log.debug ("registerClient: Agent " +client.getMessageAddress()+ " registering as client with " +mySocket);
-      if (mySocket == null) return;  // no socket spec to register
       MessageAddress clientAddress = client.getMessageAddress();
-      getNameSupport().registerAgentInNameServer (mySocket, clientAddress, PROTOCOL_TYPE);
+      getNameSupport().registerAgentInNameServer (emptySpec, clientAddress, PROTOCOL_TYPE);
     } 
     catch (Exception e) 
     {
-      log.error ("registerClient: " +e);
+      log.error ("registerClient: " +stackTraceToString(e));
     }
   }
 
   public final void unregisterClient (MessageTransportClient client) 
   { 
+    //  Useful in adaptive link selection to know if link is good for agent
+
     try 
     {
-log.debug ("registerClient: Agent " +client.getMessageAddress()+ " UNregistering as client with " +mySocket);
-      if (mySocket == null) return;  // no socket spec to unregister
       MessageAddress clientAddress = client.getMessageAddress();
-      getNameSupport().unregisterAgentInNameServer (mySocket, clientAddress, PROTOCOL_TYPE);
+      getNameSupport().unregisterAgentInNameServer (emptySpec, clientAddress, PROTOCOL_TYPE);
     } 
     catch (Exception e) 
     {
-      log.error ("unregisterClient: " +e);
+      log.error ("unregisterClient: " +stackTraceToString(e));
     }
   }
 
-  public final void registerMTS (MessageAddress addr)
+  public final void registerMTS (MessageAddress address)
   {
+    //  Of uknown utility
+
     try 
     {
-      if (mySocket == null) return;  // no socket spec to register
-      getNameSupport().registerAgentInNameServer (mySocket, addr, PROTOCOL_TYPE);
+      getNameSupport().registerAgentInNameServer (emptySpec, address, PROTOCOL_TYPE);
     } 
     catch (Exception e) 
     {
-      log.error ("registerMTS: " +e);
+      log.error ("registerMTS: " +stackTraceToString(e));
     }
   }
 
-  private ThreadService threadService () 
-  {
-	if (threadService != null) return threadService;
-	threadService = (ThreadService) getServiceBroker().getService (this, ThreadService.class, null);
-	return threadService;
-  }
-
-  private int createServerSocket (int port)
+  private int createServerSocketListener (int port)
   {
     ServerSocketListener listener = null;
 
@@ -331,14 +365,14 @@ log.debug ("registerClient: Agent " +client.getMessageAddress()+ " UNregistering
       Thread thread = new Thread (listener, "ServerSock_"+port);
       thread.start();
 
-      registerSocketSpec (localhost, port);
+      registerSocketSpec (new SocketSpec (localhost, port));
       serverSocketListeners.add (listener);
 
-      if (log.isDebugEnabled()) log.debug ("Created server socket on port " +port);
+      if (doDebug()) log.debug ("Incoming server socket created on port " +port);
     }
     catch (Exception e)
     {
-      log.error ("Error creating server socket on port " +port+ ": " +stackTraceToString(e));
+      log.error ("Creating server socket listener on port " +port+ ": " +stackTraceToString(e));
       if (listener != null) listener.quit();
       listener = null;
       return -1;
@@ -347,14 +381,14 @@ log.debug ("registerClient: Agent " +client.getMessageAddress()+ " UNregistering
     return port;
   }
 
-  private void destroyServerSocket (ServerSocketListener listener)
+  private void destroyServerSocketListener (ServerSocketListener listener)
   {
     if (listener == null) return;
     int port = listener.getPort();
 
     try
     {
-      if (log.isDebugEnabled()) log.debug ("Server socket destroyed on port " +port);
+      if (doDebug()) log.debug ("Server socket listener on port " +port+ " destroyed");
       listener.quit();
       // unregisterSocketSpec();   // synchronization problem?
       serverSocketListeners.remove (listener);
@@ -427,27 +461,36 @@ log.debug ("registerClient: Agent " +client.getMessageAddress()+ " UNregistering
       {
         try 
         {
+          //  If we are getting too many invalid messages, its time to move to another port
+
+          if (false /* nodeID.equals ("PerformanceNodeB") && cnt++ > 5 */)
+          {
+            if (doWarn()) log.warn ("Too many bad messages, moving server socket");
+            receiverQueue.flush();  // flush any outstanding work (likely more bad msgs)
+            quitNow = true;
+            break;
+          }
+
           //  Sit and wait for an incoming socket connect request
 
           Socket s = serverSock.accept();
           if (!doInbandAcking) s.shutdownOutput();  // we'll be only reading
 
-          //  Create a message listener and get a thread 
-          //  to run it in and kick it off.
+          //  Create a message listener and add it to our work queue
 
           MessageInListener listener = new MessageInListener (s);
-          // Schedulable thread = threadService().getThread (this, listener, "MessageIn_"+s.getPort());
-          Thread thread = new Thread (listener, "MessageIn_"+s.getPort());
-          thread.start();
           messageInListeners.add (listener);
+          receiverQueue.add (listener);
         }
         catch (Exception e) 
         {
-          if (log.isWarnEnabled()) log.warn ("Waiting for or processing new connection: " +e);
+          if (doWarn()) log.warn ("Waiting for or processing new connection: " +stackTraceToString(e));
           quitNow = true;
           break;
         }
       }
+
+      //  Close the server socket
 
       if (serverSock != null)
       {
@@ -455,14 +498,18 @@ log.debug ("registerClient: Agent " +client.getMessageAddress()+ " UNregistering
         serverSock = null;
       }
 
-      //  Destroy this server socket and create another
+      //  Flush any outstanding work for this server socket
 
-      destroyServerSocket (this);
-      createServerSocket (0);  // new server socket on new port
+      receiverQueue.flush();
+
+      //  Destroy this server socket listener and create another
+
+      destroyServerSocketListener (this);
+      createServerSocketListener (0);  // new server socket on new port
     }
   }
 
-  private class MessageInListener implements Runnable
+  private class MessageInListener implements QuitableRunnable
   { 
     private Socket socket;
     private BufferedInputStream socketIn;
@@ -472,13 +519,16 @@ log.debug ("registerClient: Agent " +client.getMessageAddress()+ " UNregistering
 
     public MessageInListener (Socket s) throws IOException
     {
-      if (log.isDebugEnabled()) log.debug ("Creating new msg in listener for " +s);
-
       socket = s;
+
+      if (doDebug()) 
+      {
+        sockString = socket.toString();
+        log.debug ("Creating new msg in listener for " +sockString);
+      }
+
       socketIn = new BufferedInputStream (socket.getInputStream());
       if (doInbandAcking) socketOut = new BufferedOutputStream (socket.getOutputStream());
-
-      if (log.isDebugEnabled()) sockString = socket.toString();
     }
 
     public void quit ()
@@ -514,10 +564,10 @@ log.debug ("registerClient: Agent " +client.getMessageAddress()+ " UNregistering
           //  Read a message
 
           scheduleSocketClose (socket, socketTimeout);
-          if (log.isDebugEnabled()) log.debug ("Waiting for msg over " +sockString);
+          if (doDebug()) log.debug ("Waiting for msg from " +sockString);
           msgBytes = MessageSerializationUtils.readByteArray (socketIn);
           receiveTime = now();
-          if (log.isDebugEnabled()) log.debug ("Waiting for msg done " +sockString);
+          if (doDebug()) log.debug ("Waiting for msg done " +sockString);
           unscheduleSocketClose (socket);
           if (showTraffic) System.err.print ("<S");
         }
@@ -526,7 +576,7 @@ log.debug ("registerClient: Agent " +client.getMessageAddress()+ " UNregistering
           //  Socket SO timeout (set above).  Socket is still good, but we will close
           //  it as a timeout has been reached.
 
-          if (log.isDebugEnabled()) log.debug ("Closing socket due to SO timeout: " +e);
+          if (doDebug()) log.debug ("Closing socket due to SO timeout: " +e);
           quitNow = true;
           break;
         }
@@ -536,13 +586,13 @@ log.debug ("registerClient: Agent " +client.getMessageAddress()+ " UNregistering
           //  If the OutgoingSocketLinkProtocol has oneSendPerConnection set to true, it will
           //  close its connection after each message send and this will happen all the time.
 
-          if (log.isDebugEnabled()) log.debug ("Remote socket closed: " +e);
+          if (doDebug()) log.debug ("Remote socket closed: " +e);
           quitNow = true;
           break;
         }
         catch (DataIntegrityException e)
         {
-          if (log.isWarnEnabled()) log.warn ("Non-Cougaar message received (msg ignored)");
+          if (doWarn()) log.warn ("Non-Cougaar message received (msg ignored)");
           quitNow = true;
           break;
         }
@@ -550,7 +600,7 @@ log.debug ("registerClient: Agent " +client.getMessageAddress()+ " UNregistering
         { 
           //  Some other exception.  Prints the stack trace for more detail.
 
-          if (log.isDebugEnabled()) log.debug ("Terminating socket exception: " +stackTraceToString(e));
+          if (doDebug()) log.debug ("Terminating socket exception: " +stackTraceToString(e));
           quitNow = true;
           break;
         }
@@ -566,7 +616,7 @@ log.debug ("registerClient: Agent " +client.getMessageAddress()+ " UNregistering
         }
         catch (MessageDeserializationException e)
         {
-          if (log.isWarnEnabled()) log.warn ("Deserialization exception (msg ignored): " +e);
+          if (doWarn()) log.warn ("Deserialization exception (msg ignored): " +e);
           exception = e;
         }
 
@@ -576,7 +626,7 @@ log.debug ("registerClient: Agent " +client.getMessageAddress()+ " UNregistering
 
         if (msg != null)
         {
-          if (log.isDebugEnabled()) 
+          if (doDebug()) 
           {
             InetAddress addr = socket.getInetAddress();
             int port = socket.getPort();
@@ -590,12 +640,12 @@ log.debug ("registerClient: Agent " +client.getMessageAddress()+ " UNregistering
           }
           catch (MisdeliveredMessageException e)
           { 
-            if (log.isDebugEnabled()) log.debug ("Delivery exception for " +msgString+ ": " +e);
+            if (doDebug()) log.debug ("Delivery exception for " +msgString+ ": " +e);
             exception = e;
           }
           catch (Exception e)
           { 
-            if (log.isWarnEnabled()) log.warn ("Exception delivering " +msgString+ ": " +stackTraceToString(e));
+            if (doDebug()) log.debug ("Exception delivering " +msgString+ ": " +stackTraceToString(e));
             exception = e;
           }
         }
@@ -610,10 +660,10 @@ log.debug ("registerClient: Agent " +client.getMessageAddress()+ " UNregistering
 
             byte[] ackBytes = createAck (msg, receiveTime, exception);
             scheduleSocketClose (socket, socketTimeout);
-            if (log.isDebugEnabled()) log.debug ("Sending ack over " +sockString);
+            if (doDebug()) log.debug ("Sending ack thru " +sockString);
             sendTime = now();
             MessageSerializationUtils.writeByteArray (socketOut, ackBytes);
-            if (log.isDebugEnabled()) log.debug ("Sending ack done " +sockString);
+            if (doDebug()) log.debug ("Sending ack done " +sockString);
             unscheduleSocketClose (socket);
 
             //  See if we get an ack-ack back  
@@ -626,10 +676,10 @@ log.debug ("registerClient: Agent " +client.getMessageAddress()+ " UNregistering
             if (exception == null)
             {
               scheduleSocketClose (socket, socketTimeout);
-              if (log.isDebugEnabled()) log.debug ("Waiting for ack-ack over " +sockString);
+              if (doDebug()) log.debug ("Waiting for ack-ack from " +sockString);
               byte[] ackAckBytes = MessageSerializationUtils.readByteArray (socketIn);
               receiveTime = now();
-              if (log.isDebugEnabled()) log.debug ("Waiting for ack-ack done " +sockString);
+              if (doDebug()) log.debug ("Waiting for ack-ack done " +sockString);
               unscheduleSocketClose (socket);
               PureAckAckMessage paam = processAckAck (ackAckBytes);
 
@@ -645,7 +695,7 @@ log.debug ("registerClient: Agent " +client.getMessageAddress()+ " UNregistering
             }
             else
             {
-              if (log.isDebugEnabled()) log.debug ("Not waiting for ack-ack due to " +
+              if (doDebug()) log.debug ("Not waiting for ack-ack due to " +
                 "message reception exception " +sockString);
             }
           }
@@ -653,7 +703,7 @@ log.debug ("registerClient: Agent " +client.getMessageAddress()+ " UNregistering
           {
             //  Any acking that did not complete will be taken care of in later acking
 
-            if (log.isDebugEnabled()) log.debug ("Inband acking stopped for " +sockString+ ": " +e);
+            if (doDebug()) log.debug ("Inband acking stopped for " +sockString+ ": " +e);
             quitNow = true;
             break;
           }
@@ -663,7 +713,7 @@ log.debug ("registerClient: Agent " +client.getMessageAddress()+ " UNregistering
       //  Cleanup
 
       closeSocket();
-      if (log.isDebugEnabled()) log.debug ("Removing msg in listener for " +sockString);
+      if (doDebug()) log.debug ("Removing msg in listener for " +sockString);
       messageInListeners.remove (this);
     }
 
@@ -691,7 +741,7 @@ log.debug ("registerClient: Agent " +client.getMessageAddress()+ " UNregistering
       Vector latestAcks = pureAckAck.getLatestAcks();
       String fromNode = MessageUtils.getFromAgentNode (paam);
 
-      if (log.isDebugEnabled())
+      if (doDebug())
       {
         StringBuffer sbuf = null, lbuf = null;
 
@@ -741,7 +791,7 @@ log.debug ("registerClient: Agent " +client.getMessageAddress()+ " UNregistering
     {
       if (socket != null)
       {
-        try { socket.close(); } catch (Exception ee) {}
+        try { socket.close(); } catch (Exception e) {}
 
         socket = null;
         socketOut = null;
@@ -784,6 +834,21 @@ log.debug ("registerClient: Agent " +client.getMessageAddress()+ " UNregistering
   private static MessageDigest getDigest () throws java.security.NoSuchAlgorithmException
   {
     return (useMessageDigest ? MessageDigest.getInstance(messageDigestType) : null);
+  }
+
+  private boolean doDebug ()
+  {
+    return (log != null && log.isDebugEnabled());
+  }
+
+  private boolean doInfo ()
+  {
+    return (log != null && log.isInfoEnabled());
+  }
+
+  private boolean doWarn ()
+  {
+    return (log != null && log.isWarnEnabled());
   }
 
   private static long now ()
