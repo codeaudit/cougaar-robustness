@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/AssetTypeDimensionModel.java,v $
- * $Revision: 1.18 $
- * $Date: 2004-08-03 22:05:50 $
+ * $Revision: 1.20 $
+ * $Date: 2004-08-04 23:45:19 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -44,7 +44,7 @@ import org.cougaar.coordinator.techspec.ThreatModelChangeEvent;
  * corresponds to the tech-spec AssetSatteDimension objects.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.18 $Date: 2004-08-03 22:05:50 $
+ * @version $Revision: 1.20 $Date: 2004-08-04 23:45:19 $
  * @see AssetTypeModel
  * @see AssetStateDimension
  */
@@ -697,6 +697,58 @@ class AssetTypeDimensionModel extends Model
         return max_latency;
 
     } // method getMaxSensorLatency
+
+    //************************************************************
+    /**
+     * Check to see if we have a sensor of the given name
+     *
+     * @param sensor_name The name of the sensor
+     */
+    boolean hasSensorName( String sensor_name )
+    {
+        Enumeration sensor_enum = _sensor_model_set.elements();
+
+        while ( sensor_enum.hasMoreElements() )
+        {
+            SensorTypeModel s_model
+                    = (SensorTypeModel) sensor_enum.nextElement();
+
+            if ( s_model.getName().equalsIgnoreCase( sensor_name ))
+                return true;
+
+        } // while sensor_iter
+
+        return false;
+
+    } // method getSensorLatency
+
+    //************************************************************
+    /**
+     * Return the sensor latency
+     *
+     * @param sensor_name The name of the sensor
+     */
+    long getSensorLatency( String sensor_name )
+            throws BelievabilityException
+    {
+        Enumeration sensor_enum = _sensor_model_set.elements();
+
+        while ( sensor_enum.hasMoreElements() )
+        {
+            SensorTypeModel s_model
+                    = (SensorTypeModel) sensor_enum.nextElement();
+
+            if ( s_model.getName().equalsIgnoreCase( sensor_name ))
+                return s_model.getLatency();
+
+        } // while sensor_iter
+
+        throw new BelievabilityException
+                ( "AssetTypeDimensionModel.getSensorLatency()",
+                  "Did not find sensor name " + sensor_name
+                  + " for asset dimension " + _state_dim_name );
+
+    } // method getSensorLatency
 
     //************************************************************
     /**

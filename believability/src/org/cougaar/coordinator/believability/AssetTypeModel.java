@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/AssetTypeModel.java,v $
- * $Revision: 1.20 $
- * $Date: 2004-08-03 22:05:50 $
+ * $Revision: 1.22 $
+ * $Date: 2004-08-04 23:45:19 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -47,7 +47,7 @@ import org.cougaar.coordinator.techspec.ThreatModelChangeEvent;
  * be notified is there is a change.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.20 $Date: 2004-08-03 22:05:50 $
+ * @version $Revision: 1.22 $Date: 2004-08-04 23:45:19 $
  *
  */
 class AssetTypeModel extends Model
@@ -602,6 +602,30 @@ class AssetTypeModel extends Model
         } // for dim_idx
 
         return max_latency;
+    } // method getMaxSensorLatency
+
+    //************************************************************
+    /**
+     * Gets the sensor latency for a sensor on this asset type.
+     *
+     * @param sensor_name The name of the sensor
+     */
+    public long getSensorLatency( String sensor_name )
+            throws BelievabilityException
+    {
+        for ( int dim_idx = 0; dim_idx < _dim_model.length; dim_idx++ )
+        {
+            if ( _dim_model[dim_idx].hasSensorName( sensor_name ))
+                return  _dim_model[dim_idx].getSensorLatency( sensor_name );
+
+        } // for dim_idx
+
+        throw new BelievabilityException
+                ( "AssetTypeModel.getSensorLatency()",
+                  "Cannot find sensor name '"
+                  + sensor_name + "for asset type '"
+                  + _name + "'." );
+
     } // method getMaxSensorLatency
 
     //************************************************************

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManager.java,v $
- * $Revision: 1.19 $
- * $Date: 2004-08-03 22:05:50 $
+ * $Revision: 1.20 $
+ * $Date: 2004-08-04 15:17:35 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -47,7 +47,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * and provides information via the ModelManagerInterface. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.19 $Date: 2004-08-03 22:05:50 $
+ * @version $Revision: 1.20 $Date: 2004-08-04 15:17:35 $
  *
  */
 public class ModelManager extends Loggable
@@ -211,6 +211,36 @@ public class ModelManager extends Loggable
         return at_model.getMaxSensorLatency( );
 
     } // method getMaxSensorLatency
+
+    //************************************************************
+    /**
+     * Retrieves the sensor latency for the given sensor of the given
+     * asset type.
+     *
+     * @param asset_type The asset type
+     * @param sensor_name The name of the sensor
+     */
+    public long getSensorLatency( AssetType asset_type,
+                                  String sensor_name )
+            throws BelievabilityException
+    {
+
+        logDetail( "==== getSensorLatency() ====" );
+
+        AssetTypeModel at_model 
+                =  (AssetTypeModel) _asset_type_container.get
+                ( asset_type.getName() );
+        
+        if ( at_model == null )
+        {
+            throw new BelievabilityException
+                    ( "ModelManager.getSensorLatency()",
+                      "Cannot find asset type model." );
+        }
+
+        return at_model.getSensorLatency( sensor_name );
+
+    } // method getSensorLatency
 
 
     //************************************************************

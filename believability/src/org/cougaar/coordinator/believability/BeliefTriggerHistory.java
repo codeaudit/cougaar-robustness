@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefTriggerHistory.java,v $
- * $Revision: 1.7 $
- * $Date: 2004-08-03 22:05:50 $
+ * $Revision: 1.8 $
+ * $Date: 2004-08-04 15:17:35 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -71,7 +71,8 @@ import org.cougaar.core.agent.service.alarm.Alarm;
  *    passed since we last heard from a sensor, and the sensor should
  *    be viewed as having "implicit" diagnoses, then factor in the last
  *    diagnosis value from this sensor into the belief update
- *    calculation.
+ *    calculation.  (Note that 'delta1' is currently defined to be the
+ *    sensor latency length.)  
  *
  * 5) If no state estimates have been published for an asset after
  *    'delta2' amount of time, then force the calculation, accounting
@@ -98,7 +99,7 @@ import org.cougaar.core.agent.service.alarm.Alarm;
  * an instance of this class: one for each of these.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.7 $Date: 2004-08-03 22:05:50 $
+ * @version $Revision: 1.8 $Date: 2004-08-04 15:17:35 $
  * @see BeliefTriggerManager
  */
 class BeliefTriggerHistory 
@@ -505,9 +506,10 @@ class BeliefTriggerHistory
      * Some sensors do not report even when they have made a
      * diagnosis.  This happens for efficiency reasons when the sensor
      * has not detected any change.  Not reporting a diagnosis is
-     * different from having a diagnosis, so we make the assumption that
-     * for certain sensors, no report should be taken to be the same
-     * as not reporting (and not 'no information').
+     * different from not having a diagnosis, so we make the
+     * assumption that for certain sensors, "no report" should be
+     * taken to be the same as not reporting (and not 'no
+     * information').
      *
      * @param time The time to use for any added implicit diagnoses.
      */
@@ -617,14 +619,20 @@ class BeliefTriggerHistory
             return false;
         }
 
+        // The sensor latency is defined to be the period at which a
+        // sensor generates diagnoses (as per David Wells on
+        // 8/4/2004).
+        //
+        long sensor_latency
+                = _model_manager.getSensorLatency( _asset_id.getType(),
+                                                   sensor_name );
+
         // This is the main check that happens in this method.  The
         // minimum time between adding implicit diagnoses is a
         // policy/model decision so we always go to the model manager
         // for this information.
         //
-        if ( (time - last_time) 
-             > _model_manager.getImplicitDiagnosisInterval
-             ( _asset_id.getType(), sensor_name ) )
+        if ( (time - last_time) >= sensor_latency )
             return true;
 
         return false;

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManagerInterface.java,v $
- * $Revision: 1.19 $
- * $Date: 2004-08-03 22:05:50 $
+ * $Revision: 1.20 $
+ * $Date: 2004-08-04 15:17:35 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -39,7 +39,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * tech spec information. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.19 $Date: 2004-08-03 22:05:50 $
+ * @version $Revision: 1.20 $Date: 2004-08-04 15:17:35 $
  *
  */
 public interface ModelManagerInterface
@@ -69,6 +69,10 @@ public interface ModelManagerInterface
     public double[] getMAUWeights();
 
     public long getMaxSensorLatency( AssetType asset_type )
+            throws BelievabilityException;
+
+    public long getSensorLatency( AssetType asset_type,
+                                  String sensor_name )
             throws BelievabilityException;
 
     public long getNumberOfSensors( AssetType asset_type )
