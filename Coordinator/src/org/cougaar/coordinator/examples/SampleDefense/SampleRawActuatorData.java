@@ -42,9 +42,13 @@ class SampleRawActuatorData implements NotPersistable, Serializable
 	             START = 2,
 	             STOP = 3;
 
-    SampleRawActuatorData(String assetName, Set possibleValues) {
+    SampleRawActuatorData(String assetName, Set possibleValues, Set valuesOffered, 
+			  Set permittedValues, Object actionValue) {
 	this.assetName = assetName;
         this.possibleValues = possibleValues;
+        this.valuesOffered = valuesOffered;
+        this.permittedValues = permittedValues;
+        this.actionValue = actionValue;
     }
 
     String getAssetName() { return assetName; }	

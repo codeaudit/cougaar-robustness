@@ -123,7 +123,7 @@ public class SampleActuator extends ComponentPlugin
 	    log.error("TechSpec not found for SampleAction", e);
 	}
 */
-	alarmService.addRealTimeAlarm(new DelayedStartAlarm(0));
+	alarmService.addRealTimeAlarm(new DelayedStartAlarm(120000));
     } 
     
     public synchronized void execute() {
@@ -134,7 +134,11 @@ public class SampleActuator extends ComponentPlugin
 		blackboard.publishAdd(action);
 		if (log.isDebugEnabled()) log.debug(action + " added.");
                 if (log.isDetailEnabled()) log.detail(action.dump());
-		data = new SampleRawActuatorData(agentId.toString(), action.getPossibleValues());
+		data = new SampleRawActuatorData(agentId.toString(), 
+						 action.getPossibleValues(),
+						 action.getValuesOffered(),
+						 action.getPermittedValues(),
+						 action.getValue());
 		blackboard.publishAdd(data);
 		if (log.isDebugEnabled()) log.debug(data+" added.");	
 	    } catch (TechSpecNotFoundException e) {
