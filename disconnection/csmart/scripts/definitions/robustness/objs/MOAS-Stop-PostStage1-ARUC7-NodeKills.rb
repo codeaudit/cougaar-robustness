@@ -1,6 +1,6 @@
 =begin experiment
 
-name: MOAS-II-ARUC7-TimelyReturn-Stop-PostStage1
+name: MOAS-II-ARUC7-NodeKills-Stop-PostStage1
 group: Save
 description: Adaptive Robustness Use Case #7 (Planned Disconnect) (UA) Stop After Stage1
 script: $CIP/csmart/scripts/definitions/UR-BaselineTemplate-ExtOplan.rb
