@@ -42,7 +42,8 @@ public class LogPointEntry {
         try {
             seqNum = Integer.parseInt(seqNumStr);
         } catch (NumberFormatException nfe) {
-            System.out.println(">>>>>>>>>LogPointEvent seq # is faulty: " + seqNumStr + ". Assigned -1 value");
+            System.out.println(">>>>>>>>>LogPointEntry seq # is faulty: " + seqNumStr + ". Assigned -1 value");
+            System.out.println(">>>>>>>>>LogPointEntry was:" + this.toString());
             seqNum = 0;
         }
         
@@ -75,6 +76,13 @@ public class LogPointEntry {
 
     public void setMsgRoot(Message _msg) { msgRoot = _msg; }
     public Message getMsgRoot() { return msgRoot; }
+    
+    //"TYPE", "TRAFFIC_EVENT", "lpName", tag, "time", "" + now(), "from", from, "to", to, 
+    //    "num", numS
+    public String toString() {
+        return "to="+dest()+" from="+from()+" num="+seqNumber()+
+               " time="+time()+" lpName="+logPointName();
+    }
     
     public boolean isFinalLogPoint() { return isFinalLogPoint; }
     
