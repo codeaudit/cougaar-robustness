@@ -39,6 +39,10 @@ public class TestAction extends Action {
         super(assetName, initialValuesOffered, serviceBroker);
         setOffered(this.getPossibleValues());
     }        
+
+    public TestAction(TestAction action) {
+	super(action);
+    }
     
     /** Sets the values Offered to the possible values */
     private void setOffered(Set s) {

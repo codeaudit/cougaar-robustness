@@ -37,7 +37,11 @@ public class FakeCommDefense extends Action {
 
         super(assetName, serviceBroker);
         
-    }        
+    }    
+
+    public FakeCommDefense(FakeCommDefense action) {
+	super(action);
+    }    
 
     /* Set the value of the diagnosis. Since the value is a simple string
      * no mapping is required.

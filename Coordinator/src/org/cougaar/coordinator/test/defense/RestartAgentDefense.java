@@ -40,6 +40,10 @@ public class RestartAgentDefense extends Action {
         
     }        
 
+    public RestartAgentDefense(RestartAgentDefense action) {
+	super(action);
+    }
+
     /* Set the value of the diagnosis. Since the value is a simple string
      * no mapping is required.
      */
