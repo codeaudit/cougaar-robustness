@@ -51,5 +51,9 @@ public  class DiagnosisUtils
         else { return null; }        
     }
     
-    
+    public static String getSensorType(Diagnosis d) {
+        if (d != null) { return d.getClass().getName(); }
+        else { return null; }
+    }
+
 }

@@ -54,6 +54,12 @@ public  class ActionUtils
         else { return null; }
     }
 
+    public static String getActuatorType(Action a) {
+        if (a != null) { return a.getClass().getName(); }
+        else { return null; }
+    }
+
+    
     /**
      * @return expanded name - "type:name"
      */
