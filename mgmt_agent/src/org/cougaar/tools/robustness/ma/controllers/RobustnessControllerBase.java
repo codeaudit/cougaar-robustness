@@ -264,7 +264,7 @@ public abstract class RobustnessControllerBase
         deconflictHelper = new DeconflictHelper(bindingSite, model);
         if (dl != null)
           deconflictHelper.addListener(dl);
-        logger.info("==========deconflictHelper applies to " + thisAgent);
+        logger.info("==========deconflictHelper applies to " + agentId);
         deconflictHelper.initObjs();
       }
     }
