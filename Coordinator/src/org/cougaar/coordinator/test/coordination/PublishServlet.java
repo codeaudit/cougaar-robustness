@@ -46,6 +46,7 @@ import javax.servlet.Servlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.cougaar.core.util.UID;
 
 import org.cougaar.core.servlet.ComponentServlet;
 
@@ -249,8 +250,12 @@ public class PublishServlet extends BaseServletComponent implements BlackboardCl
 
     
     private void createDiagnoses(String s) throws IllegalValueException, TechSpecNotFoundException {
-        blackboard.publishAdd( new AgentCommunicationDiagnosis1(s, serviceBroker));        
-        blackboard.publishAdd( new AgentCommunicationDiagnosis2(s, serviceBroker));        
+        Diagnosis d1 = new AgentCommunicationDiagnosis1(s, serviceBroker);
+        blackboard.publishAdd(d1);
+        blackboard.publishAdd( new DiagnosesWrapper(d1, null, null, new UID()));
+        Diagnosis d2 = new AgentCommunicationDiagnosis2(s, serviceBroker);        
+        blackboard.publishAdd(d2);
+        blackboard.publishAdd( new DiagnosesWrapper(d2, null, null, new UID()));
         logger.debug("**** Published Diagnoses for: "+s);
         return;
     }
