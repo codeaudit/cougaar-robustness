@@ -170,7 +170,7 @@ public class LinksStatusSensor extends ComponentPlugin
 		    communitySearch(); }
 		public String getCommunityName() { 
 		    return (community != null) ? community.getName() : null; } });
-    } 
+    }
     
     public synchronized void execute() {
 	if (community == null) return;
@@ -204,10 +204,15 @@ public class LinksStatusSensor extends ComponentPlugin
 	    bb.publishAdd(altDiag);
 	    bb.publishAdd(allDiag);
 	    iter.remove();
+	     
+	    if (statsAlarm == null) {
+		statsAlarm = new ProcessStatsAlarm(period);
+		alarmService.addRealTimeAlarm(statsAlarm);
+	    }
 	}
 
 	//process stats
-	if (statsAlarm.hasExpired() == true) {
+	if (statsAlarm != null && statsAlarm.hasExpired()) {
 	    Vector q;
 	    long notTooOld = System.currentTimeMillis()-period-latency;
 	    synchronized (statsQueue) {
@@ -303,6 +308,8 @@ public class LinksStatusSensor extends ComponentPlugin
 		updateDiag(diags.altDiag, altSends, altSuccesses);
 		updateDiag(diags.allDiag, allSends, allSuccesses);
 	    }           
+	    statsAlarm = new ProcessStatsAlarm(period);
+	    alarmService.addRealTimeAlarm(statsAlarm);
 	}
     }
     
@@ -314,7 +321,8 @@ public class LinksStatusSensor extends ComponentPlugin
 		bb.publishChange(diag);
 	    } catch (IllegalValueException e) {
 		if(log.isWarnEnabled())
-		    log.warn("updateDiag: attempt to set an illegal value failed. Diagnosis="+diag+", bad value="+newValue);
+		    log.warn("updateDiag: attempt to set an illegal value failed. Diagnosis="
+			     +diag+", bad value="+newValue);
 	    }
 	}
     }
