@@ -49,18 +49,18 @@ public class BelievabilityDiagnosis extends BeliefUpdateTrigger
 
         super( DiagnosisUtils.getAssetID( diag ) );
 
-	_blackboard_diagnosis = diag;
-	
-	// Copy relevant information from the diagnosis, as it may change
-	_diagnosis_value = (String) _blackboard_diagnosis.getValue();
-	_diagnosis_name = _blackboard_diagnosis.getClass().getName();
-	_diagnosis_state_dimension = 
-	    _blackboard_diagnosis.getAssetStateDimensionName();
+     _blackboard_diagnosis = diag;
+     
+     // Copy relevant information from the diagnosis, as it may change
+     _diagnosis_value = (String) _blackboard_diagnosis.getValue();
+     _sensor_name = _blackboard_diagnosis.getClass().getName();
+     _diagnosis_state_dimension = 
+         _blackboard_diagnosis.getAssetStateDimensionName();
 
-	_last_asserted_timestamp = 
-	    _blackboard_diagnosis.getLastAssertedTimestamp();
-	_last_changed_timestamp =
-	    _blackboard_diagnosis.getLastChangedTimestamp();
+     _last_asserted_timestamp = 
+         _blackboard_diagnosis.getLastAssertedTimestamp();
+     _last_changed_timestamp =
+         _blackboard_diagnosis.getLastChangedTimestamp();
     }
 
 
@@ -113,7 +113,7 @@ public class BelievabilityDiagnosis extends BeliefUpdateTrigger
      * @return 
      **/
     public String getSensorName() { 
-     return _diagnosis_name;
+     return _sensor_name;
     }
 
 
@@ -124,6 +124,8 @@ public class BelievabilityDiagnosis extends BeliefUpdateTrigger
      StringBuffer sb = new StringBuffer();
      sb.append( "BelievabilityDiagnosis: asset " );
      sb.append( this.getAssetID().toString() );
+     sb.append( " with sensor " );
+     sb.append( _sensor_name );
      sb.append( " asserted diagnosis " );
      sb.append( _diagnosis_value );
      sb.append( " at time " + _last_asserted_timestamp );
@@ -141,8 +143,8 @@ public class BelievabilityDiagnosis extends BeliefUpdateTrigger
     // The value of the diagnosis, in the terms that the sensor uses
     private String _diagnosis_value;
 
-    // The name of the diagnosis
-    private String _diagnosis_name;
+    // The name of the sensor
+    private String _sensor_name;
 
     // The state dimension that the diagnosis concerns
     private String _diagnosis_state_dimension;

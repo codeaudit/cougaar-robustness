@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetDimensionModel.java,v $
- * $Revision: 1.13 $
- * $Date: 2004-07-12 19:30:46 $
+ * $Revision: 1.14 $
+ * $Date: 2004-07-12 20:29:34 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -29,7 +29,7 @@ import org.cougaar.coordinator.techspec.AssetType;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.13 $Date: 2004-07-12 19:30:46 $
+ * @version $Revision: 1.14 $Date: 2004-07-12 20:29:34 $
  *
  */
 class POMDPAssetDimensionModel extends Model
@@ -385,6 +385,13 @@ class POMDPAssetDimensionModel extends Model
 
         int obs_idx = sensor_model.getObsNameIndex( diagnosis_value );
 
+        if ( obs_idx < 0 )
+            throw new BelievabilityException
+                    ( "updateBeliefStateDiagnosisObs()",
+                      "Diagnosis value '" 
+                      + diagnosis_value + "' not found. "
+                      + diagnosis.toString() );
+ 
         logDetail( "Pre-update: " 
                   + ProbabilityUtils.arrayToString( prev_belief_prob ));
 
