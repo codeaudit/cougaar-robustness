@@ -143,7 +143,7 @@ public class ActionEvaluation implements Comparable {
         if (this.getAction().getClass().getName().equals("org.cougaar.robustness.dos.coordinator.RMIAction")) return true;
         if (this.getAction().getClass().getName().equals("org.cougaar.robustness.dos.coordinator.FuseResetAction")) return true;
         if (this.getAction().getClass().getName().equals("org.cougaar.robustness.dos.coordinator.AttackResetAction")) return true;
-        if (this.getAction().getClass().getName().equals("org.cougaar.core.security.coordinator.SecurityLevelAction")) return true;
+        if (this.getAction().getClass().getName().equals("org.cougaar.core.security.coordinator.ThreatConAction")) return true;
         return false;
     }
 
@@ -159,7 +159,7 @@ public class ActionEvaluation implements Comparable {
         if (this.getAction().getClass().getName().equals("org.cougaar.robustness.dos.coordinator.RMIAction")) return true;
         if (this.getAction().getClass().getName().equals("org.cougaar.robustness.dos.coordinator.FuseResetAction")) return true;
         if (this.getAction().getClass().getName().equals("org.cougaar.robustness.dos.coordinator.AttackResetAction")) return true;
-        if (this.getAction().getClass().getName().equals("org.cougaar.core.security.coordinator.SecurityLevelAction")) return true;
+        if (this.getAction().getClass().getName().equals("org.cougaar.core.security.coordinator.ThreatConAction")) return true;
         if (this.getAction().getClass().getName().equals("org.cougaar.mts.std.LinksEnablingAction")) {
             if (ve.getVariantName().equals("Disable")) return true;
             else {
