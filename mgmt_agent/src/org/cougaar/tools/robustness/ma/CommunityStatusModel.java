@@ -466,7 +466,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
    * @param loc   New location
    * @param state New state
    */
-  private void setLocationAndState(String name, String loc, int state) {
+  public void setLocationAndState(String name, String loc, int state) {
     logger.debug("setLocationAndState" +
                  " agent=" + name +
                  " location=" + loc +

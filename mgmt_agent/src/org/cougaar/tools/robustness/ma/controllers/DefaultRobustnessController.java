@@ -350,7 +350,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
               " community=" + community);
         RestartDestinationLocator.restartSuccess(name);
         logger.debug("Next Status:" + " agent=" + name + " state=INITIAL");
-        newState(name, DefaultRobustnessController.INITIAL);
+        //newState(name, DefaultRobustnessController.INITIAL);
+        model.setLocationAndState(name, thisAgent, LOCATED);
       } else {
         event("Restart failed: agent=" + name + " location=" + dest +
               " community=" + community);
