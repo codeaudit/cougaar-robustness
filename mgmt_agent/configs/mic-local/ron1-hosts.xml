@@ -9,10 +9,10 @@
   <host name='ron'>
     <facet service="operator"/>
   </host>
-  <host name='net5'>
+  <host name='net3'>
     <facet service="acme"/>
   </host>
-  <host name='net3'>
+  <host name='net5'>
     <facet service="acme"/>
   </host>
   <host name='wayne'>
