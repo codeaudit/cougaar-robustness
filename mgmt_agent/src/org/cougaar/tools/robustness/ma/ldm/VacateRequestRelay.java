@@ -9,13 +9,15 @@ import java.io.ByteArrayOutputStream;
 import org.cougaar.core.relay.*;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.util.UID;
-import org.cougaar.core.util.XMLizable;
-import org.cougaar.core.util.XMLize;
-import org.cougaar.core.agent.ClusterIdentifier;
+//import org.cougaar.core.util.XMLizable;
+//import org.cougaar.core.util.XMLize;
+import org.cougaar.planning.servlet.XMLize;
+//import org.cougaar.core.agent.ClusterIdentifier;
+import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.persist.NotPersistable;
 
 
-public class VacateRequestRelay implements Relay.Source, Relay.Target, XMLizable, NotPersistable
+public class VacateRequestRelay implements Relay.Source, Relay.Target, /*XMLizable,*/ NotPersistable
 {
    private UID uid;
    private MessageAddress source;
