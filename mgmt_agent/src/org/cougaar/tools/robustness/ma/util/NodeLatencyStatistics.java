@@ -47,11 +47,11 @@ public class NodeLatencyStatistics {
   }
 
   public void put(StatCalc sc) {
-    scMap.put(sc.getId(), sc);
+    scMap.put(sc.getNodeName(), sc);
   }
 
-  public StatCalc get(String id) {
-    return (StatCalc)scMap.get(id);
+  public StatCalc get(String nodeName) {
+    return (StatCalc)scMap.get(nodeName);
   }
 
   public List list() {
@@ -128,8 +128,9 @@ public class NodeLatencyStatistics {
 
     public void startElement(String uri, String localname, String rawname,
                              Attributes p3) {
-      String id = "";
-      int count = 0;
+      String community = "";
+      String node = "";
+      int samples = 0;
       double sum = 0;
       double sumSquares = 0;
       double high = 0;
@@ -137,10 +138,12 @@ public class NodeLatencyStatistics {
       try {
         if (localname.equals("Item")) {
           for (int i = 0; i < p3.getLength(); i++) {
-            if (p3.getLocalName(i).equals("id")) {
-              id = p3.getValue(i);
-            } else if (p3.getLocalName(i).equals("count")) {
-              count = Integer.parseInt(p3.getValue(i));
+            if (p3.getLocalName(i).equals("community")) {
+              community = p3.getValue(i);
+            } else if (p3.getLocalName(i).equals("node")) {
+              node = p3.getValue(i);
+            } else if (p3.getLocalName(i).equals("samples")) {
+              samples = Integer.parseInt(p3.getValue(i));
             } else if (p3.getLocalName(i).equals("sum")) {
               sum = Double.parseDouble(p3.getValue(i));
             } else if (p3.getLocalName(i).equals("sumSquares")) {
@@ -151,7 +154,7 @@ public class NodeLatencyStatistics {
               low = Double.parseDouble(p3.getValue(i));
             }
           }
-          put(new StatCalc(id, count, sum, sumSquares, high, low));
+          put(new StatCalc(community, node, samples, sum, sumSquares, high, low));
         }
       } catch (Exception ex) {
         System.out.println("Exception parsing statCalc data");

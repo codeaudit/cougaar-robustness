@@ -26,8 +26,9 @@ package org.cougaar.tools.robustness.ma.util;
 
 public class StatCalc implements Cloneable {
 
-   private String id;
-   private int count;   // Number of numbers that have been entered.
+   private String community;
+   private String node;
+   private int samples;   // Number of numbers that have been entered.
    private double sum;  // The sum of all the items that have been entered.
    private double sumSquares;  // The sum of the squares of all the items.
    private double high = Double.NaN;
@@ -35,18 +36,21 @@ public class StatCalc implements Cloneable {
 
    public StatCalc() {}
 
-   public StatCalc(String id) {
-     this.id = id;
+   public StatCalc(String community, String node) {
+     this.community = community;
+     this.node = node;
    }
 
-   public StatCalc(String id,
+   public StatCalc(String community,
+                   String node,
                    int count,
                    double sum,
                    double sumSquares,
                    double high,
                    double low) {
-     this.id = id;
-     this.count = count;
+     this.community = community;
+     this.node = node;
+     this.samples = samples;
      this.sum = sum;
      this.sumSquares = sumSquares;
      this.high = high;
@@ -55,20 +59,24 @@ public class StatCalc implements Cloneable {
 
    public void enter(double num) {
          // Add the number to the dataset.
-      if (count == 0 || num > high) high = num;
-      if (count == 0 || num < low) low = num;
-      count++;
+      if (samples == 0 || num > high) high = num;
+      if (samples == 0 || num < low) low = num;
+      samples++;
       sum += num;
       sumSquares += num*num;
    }
 
-   public String getId() {
-      return id;
+   public String getCommunityName() {
+      return community;
+   }
+
+   public String getNodeName() {
+      return node;
    }
 
    public int getCount() {
          // Return number of items that have been entered.
-      return count;
+      return samples;
    }
 
    public double getSum() {
@@ -87,14 +95,14 @@ public class StatCalc implements Cloneable {
    public double getMean() {
          // Return average of all the items that have been entered.
          // Value is Double.NaN if count == 0.
-      return sum / count;
+      return sum / samples;
    }
 
    public double getStandardDeviation() {
         // Return standard deviation of all the items that have been entered.
         // Value will be Double.NaN if count == 0.
       double mean = getMean();
-      return Math.sqrt( sumSquares/count - mean*mean );
+      return Math.sqrt( sumSquares/samples - mean*mean );
    }
 
    public Object clone() {
@@ -107,13 +115,14 @@ public class StatCalc implements Cloneable {
    }
 
    public String toString() {
-     return "count=" + count + " sum=" + sum + " low=" + low + " high=" + high +
+     return "samples=" + samples + " sum=" + sum + " low=" + low + " high=" + high +
          " mean=" + getMean() + " stdDev=" + getStandardDeviation();
    }
 
    public String toXML() {
-     return "<Item id=\"" + id + "\" " +
-                  "count=\"" + count + "\" " +
+     return "<Item community=\"" + community + "\" " +
+                  "node=\"" + node + "\" " +
+                  "samples=\"" + samples + "\" " +
                   "sum=\"" + sum + "\" " +
                   "sumSquares=\"" + sumSquares + " \" " +
                   "low=\"" + low + " \" " +
