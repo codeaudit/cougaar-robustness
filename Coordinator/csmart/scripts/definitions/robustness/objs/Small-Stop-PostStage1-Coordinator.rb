@@ -29,7 +29,7 @@ parameters:
 
 include_scripts:
   - script: $CIP/csmart/lib/isat/clearPnLogs.rb
-#  - script: $CIP/csmart/lib/robustness/objs/deconfliction.rb 
+  - script: $CIP/csmart/lib/robustness/objs/deconfliction.rb 
   - script: $CIP/csmart/lib/coordinator/unleash_defenses.rb 
 #  - script: $CIP/csmart/lib/robustness/objs/disconnect.rb
 #    parameters:
