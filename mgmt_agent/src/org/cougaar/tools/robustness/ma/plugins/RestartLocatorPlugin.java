@@ -50,11 +50,17 @@ import org.cougaar.core.service.community.*;
 import org.cougaar.community.*;
 
 /**
- * This plugin selects a destination node or host for an agent restart
- * or move.  By default any host or node currently used by a community
- * member is a candidate destination.  Additional nodes and hosts may
- * be specified using the "restartNodes" and/or "restartHosts" plugin
- * arguments.  Each argument accepts a space separated list of names.
+ * This plugin selects a destination node for an agent restart
+ * or move.  By default any node currently used by a community
+ * member is a candidate destination.  Specific nodes may
+ * be specified using the "restartNode" plugin
+ * arguments (multiple node names are separated by spaces).  This plugin
+ * performs rudimentary load balancing based on agent count.  When a
+ * request is received the current agent count on candidate nodes is
+ * calculated using information obtained from the Topology service.  The
+ * node with the fewest agents is selected as the destination for the
+ * restart/move.  The selected node is then pinged to verify that it is
+ * operational.
  */
 public class RestartLocatorPlugin extends SimplePlugin {
 
@@ -91,6 +97,9 @@ public class RestartLocatorPlugin extends SimplePlugin {
   private List specifiedHosts;
   private long pingTimeout;
 
+  /**
+   * Obtain needed services and create blackboard subscriptions.
+   */
   protected void setupSubscriptions() {
 
     log =  (LoggingService) getBindingSite().getServiceBroker().
@@ -156,7 +165,9 @@ public class RestartLocatorPlugin extends SimplePlugin {
    */
   public void execute() {
 
-    // Get Parameter changes
+    ///////////////////////////////////////////////////////////////////////
+    // Process Parameter changes
+    ///////////////////////////////////////////////////////////////////////
     for (Iterator it = mgmtAgentProps.getChangedCollection().iterator();
          it.hasNext();) {
       ManagementAgentProperties props = (ManagementAgentProperties)it.next();
@@ -164,23 +175,36 @@ public class RestartLocatorPlugin extends SimplePlugin {
       log.info("Parameters modified: " + paramsToString());
     }
 
-    // Get RestartLocationRequests
+    ///////////////////////////////////////////////////////////////////////
+    // Process RestartLocationRequests
+    ///////////////////////////////////////////////////////////////////////
     for (Iterator it = restartRequests.getAddedCollection().iterator();
          it.hasNext();) {
       RestartLocationRequest req = (RestartLocationRequest)it.next();
-      //log.info("Got RestartLocationRequest: agent(s)=" + req.getAgents());
+
+      // Update community topology information to get current laydown of
+      // community agents to nodes/hosts
       getCommunityTopology();
+
+      // Get ordered collection of candidate destinations.  The collection is
+      // sorted in ascending order by current agent count.
       Collection destinations =
         destinations = selectDestinationNodes(req.getAgents(), req.getExcludedNodes(),
           req.getExcludedHosts());
+
+
       if (destinations != null && destinations.size() > 0) {
-        // get first candidate destination
         log.debug("RestartLocationRequest: " + destinationsToString(destinations));
+
+        // Save copy of original request and selected destinations for use
+        // in subsequent execute cycles.
         restartRequestMap.put(req, destinations);
+
+        // Ping first candidate destination node to verify that it's alive
         Destination dest = (Destination)destinations.iterator().next();
-        // Ping destination node to verify that it's alive
         doPing(new ClusterIdentifier(dest.node));
-      } else {
+
+      } else {  // No candidate destinations, log error message
         req.setStatus(RestartLocationRequest.FAIL);
         bbs.publishChange(req);
         StringBuffer msg =
@@ -194,19 +218,21 @@ public class RestartLocatorPlugin extends SimplePlugin {
       }
     }
 
-    // Get PingRequests
+    ///////////////////////////////////////////////////////////////////////
+    // Process PingRequests
+    ///////////////////////////////////////////////////////////////////////
+
     for (Iterator it = pingRequests.getChangedCollection().iterator();
          it.hasNext();) {
-      PingRequest req = (PingRequest)it.next();
-      int status = req.getStatus();
-      String node = req.getTarget().toString();
-      //if (log.isDebugEnabled()) {
-      //  log.debug("PingRequest changed, agent=" + node + " request" + req);
-      //}
+      PingRequest pingReq = (PingRequest)it.next();
+      int status = pingReq.getStatus();
+      String node = pingReq.getTarget().toString();
       switch (status) {
         case PingRequest.SENT:
           break;
         case PingRequest.RECEIVED:
+          // When a ping is received, update the status of all nodes referenced
+          // in the map of pending restart requests
           for (Iterator it1 = restartRequestMap.entrySet().iterator(); it1.hasNext();) {
             Map.Entry me = (Map.Entry)it1.next();
             RestartLocationRequest rlr = (RestartLocationRequest)me.getKey();
@@ -215,15 +241,16 @@ public class RestartLocatorPlugin extends SimplePlugin {
               Destination dest = (Destination)it2.next();
               if (dest.node.equals(node) && dest.pingStatus == PingRequest.NEW) {
                 dest.pingStatus = PingRequest.RECEIVED;
-                //log.debug("Ping succeeded, agent=" + node);
-                // Remove PingRequest from BB and our internal list
-                if (pingUIDs.contains(req.getUID())) pingUIDs.remove(req.getUID());
-                bbs.publishRemove(req);
+                // Do some bookkeeping:
+                if (pingUIDs.contains(pingReq.getUID())) pingUIDs.remove(pingReq.getUID());
+                bbs.publishRemove(pingReq);
+                it1.remove();
+
+                // Update/publish RestartLocationRequest with name of selected node/host
                 rlr.setHost(dest.host);
                 rlr.setNode(dest.node);
                 rlr.setStatus(RestartLocationRequest.SUCCESS);
                 bbs.publishChange(rlr);
-                it1.remove();
                 if (log.isInfoEnabled()) {
                   StringBuffer msg =
                     new StringBuffer("Completed RestartLocation request: agent(s)=[");
@@ -240,6 +267,8 @@ public class RestartLocatorPlugin extends SimplePlugin {
           }
           break;
         case PingRequest.FAILED:
+          // When a ping fails, update the status of all nodes referenced
+          // in the map of pending restart requests
           for (Iterator it1 = restartRequestMap.entrySet().iterator(); it1.hasNext();) {
             Map.Entry me = (Map.Entry)it1.next();
             RestartLocationRequest rlr = (RestartLocationRequest)me.getKey();
@@ -250,9 +279,12 @@ public class RestartLocatorPlugin extends SimplePlugin {
                 dest.pingStatus = PingRequest.FAILED;
                 log.debug("Ping failed, agent=" + node);
                 if (it2.hasNext()) {
+                  // If there are more candidate nodes, ping the next one in the list
                   dest = (Destination)it2.next();
                   doPing(new ClusterIdentifier(dest.node));
                 } else {
+                  // If there are no more candidates, log the event and
+                  // publish a failed RestartLocationRequest
                   rlr.setStatus(RestartLocationRequest.FAIL);
                   StringBuffer msg =
                     new StringBuffer("No nodes/hosts available for restart: agent(s)=[");
@@ -268,8 +300,8 @@ public class RestartLocatorPlugin extends SimplePlugin {
               }
             }
           }
-          if (pingUIDs.contains(req.getUID())) pingUIDs.remove(req.getUID());
-          bbs.publishRemove(req);
+          if (pingUIDs.contains(pingReq.getUID())) pingUIDs.remove(pingReq.getUID());
+          bbs.publishRemove(pingReq);
           break;
         default:
       }

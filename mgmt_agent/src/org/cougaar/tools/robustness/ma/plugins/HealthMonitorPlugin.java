@@ -201,11 +201,6 @@ public class HealthMonitorPlugin extends SimplePlugin implements
   private CommunityRoster roster = null;
   private Object rosterLock = new Object();
 
-  private StatCalc pingStats = new StatCalc();
-  private int pingCtr = 0;
-  private long pingStatInterval = 300000;
-  private Date lastPingStatTime = null;
-
 
   /**
    * This method obtains a roster for the community to be monitored and sends
@@ -554,7 +549,6 @@ public class HealthMonitorPlugin extends SimplePlugin implements
             // Agent hasn't moved, log timeout and see if threshold was
             // exceeded
             } else {
-              pingStats.enter(hs.getPingRequest().getRoundTripTime());
               log.debug("Heartbeat timeout, ping successful:" +
                 " agent=" + hs.getAgentId() +
                 " hBPctLate=" + hs.getHeartbeatEntry().getPercentLate());
@@ -612,7 +606,6 @@ public class HealthMonitorPlugin extends SimplePlugin implements
               }
           } else if (pingStatus == PingRequest.RECEIVED) {
             // As expected
-            pingStats.enter(hs.getPingRequest().getRoundTripTime());
             if (hs.getPingRetryCtr() > 0) {
               // If this is a successful retry print success message
               log.info("Active Ping SUCCEEDED: agent=" + hs.getAgentId());
@@ -1166,18 +1159,6 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     }
     previousStateMap = stateMap;
 
-    // Log ping statistics
-    if (pingCtr != pingStats.getCount() &&
-        (lastPingStatTime == null ||
-         elapsedTime(lastPingStatTime, now()) > pingStatInterval)) {
-      pingCtr = pingStats.getCount();
-      lastPingStatTime = now();
-      log.info("Ping stats: num=" + pingStats.getCount() +
-        " avg=" + pingStats.getMean() +
-        " stdDev=" + pingStats.getStandardDeviation() +
-        " min=" + pingStats.getMin() +
-        " max=" + pingStats.getMax());
-    }
   }
 
   /**
