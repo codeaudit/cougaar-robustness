@@ -382,6 +382,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
       model = new CommunityStatusModel(myName,
                                        communityName,
                                        getBindingSite());
+      blackboard.publishAdd(model);
       String controllerClassname =
           System.getProperty(CONTROLLER_CLASS_PROPERTY,
                              DEFAULT_ROBUSTNESS_CONTROLLER_CLASSNAME);
