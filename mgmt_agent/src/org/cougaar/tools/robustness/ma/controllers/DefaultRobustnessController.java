@@ -24,6 +24,7 @@ import org.cougaar.tools.robustness.ma.SecurityAlertHandler;
 import org.cougaar.tools.robustness.ma.util.DeconflictHelper;
 import org.cougaar.tools.robustness.ma.util.DeconflictListener;
 import org.cougaar.tools.robustness.ma.util.HeartbeatListener;
+import org.cougaar.tools.robustness.ma.util.LoadBalancer;
 import org.cougaar.tools.robustness.ma.util.LoadBalancerListener;
 import org.cougaar.tools.robustness.ma.util.MoveHelper;
 import org.cougaar.tools.robustness.ma.util.MoveListener;
@@ -211,17 +212,28 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       } else if (isNode(name)) {
         setExpiration(name, NEVER);
         deadNodes.add(name);
-        if (useGlobalSolver) {
+        if (thisAgent.equals(preferredLeader()) && useGlobalSolver()) {
           LoadBalancerListener lbl = new LoadBalancerListener() {
             public void layoutReady(Map layout) {
-              //TODO: Use layout to update RestartDestinationLocator
+              logger.info("layout from EN4J: " + layout);
+              RestartDestinationLocator.setPreferredRestartLocations(layout);
             }
           };
-          getLoadBalancer().doLayout(true,
-                                      new ArrayList(newNodes),
-                                      new ArrayList(deadNodes),
-                                      new ArrayList(getExcludedNodes()),
-                                      lbl);
+          if (!newNodes.isEmpty()) {
+            for (Iterator it = newNodes.iterator(); it.hasNext(); ) {
+              if (model.entitiesAtLocation((String)it.next()).length > 0) {
+                it.remove();
+              }
+            }
+          }
+          long pingTimeout = getLongAttribute(name, "PING_TIMEOUT", PING_TIMEOUT);
+          long annealTime = pingTimeout > 0 ? pingTimeout/2/1000/2 : LoadBalancer.DEFAULT_ANNEAL_TIME;
+          getLoadBalancer().doLayout((int)annealTime,
+                                     true,
+                                     new ArrayList(newNodes),
+                                     new ArrayList(deadNodes),
+                                     new ArrayList(getExcludedNodes()),
+                                     lbl);
         }
       } else if (isLocal(name)) {
         stopHeartbeats(name);
@@ -364,7 +376,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
   }
 
-
   /**
    * State Controller: DECONFLICT
    * <pre>
@@ -412,8 +423,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   private List newNodes = Collections.synchronizedList(new ArrayList());
   private String thisAgent;
   private WakeAlarm wakeAlarm;
-  private boolean autoLoadBalance = false;
-  private boolean useGlobalSolver = false;
 
   /**
    * Initializes services and loads state controller classes.
@@ -436,10 +445,16 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     RestartDestinationLocator.setLoggingService(logger);
     new HostLossThreatAlertHandler(getBindingSite(), agentId, this, csm);
     new SecurityAlertHandler(getBindingSite(), agentId, this, csm);
+  }
+
+  private boolean useGlobalSolver() {
     String solverModeAttr = model.getStringAttribute(SOLVER_MODE_ATTRIBUTE);
-    useGlobalSolver = (solverModeAttr != null && solverModeAttr.equalsIgnoreCase("global"));
+    return (solverModeAttr != null && solverModeAttr.equalsIgnoreCase("global"));
+  }
+
+  private boolean autoLoadBalance() {
     String autoLoadBalanceAttr = model.getStringAttribute(AUTO_LOAD_BALANCE_ATTRIBUTE);
-    autoLoadBalance = (autoLoadBalanceAttr != null && autoLoadBalanceAttr.equalsIgnoreCase("true"));
+    return (autoLoadBalanceAttr != null && autoLoadBalanceAttr.equalsIgnoreCase("true"));
   }
 
   boolean communityReady = false;
@@ -454,7 +469,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         ((wakeAlarm.hasExpired()))) {
       if (thisAgent.equals(preferredLeader())) {
         logger.info(statusSummary());
-        autoLoadBalance();
+        checkLoadBalance();
       }
       wakeAlarm = new WakeAlarm((new Date()).getTime() + STATUS_INTERVAL);
       alarmService.addRealTimeAlarm(wakeAlarm);
@@ -590,10 +605,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     return excludedNodes;
   }
 
-  protected void autoLoadBalance() {
+  protected void checkLoadBalance() {
 
     // Dont load balance if community is not ready or is busy
-    if (autoLoadBalance && communityReady && !isCommunityBusy()) {
+    if (autoLoadBalance() && communityReady && !isCommunityBusy()) {
       // Remove occupied nodes from newNodes list
       if (!newNodes.isEmpty()) {
         for (Iterator it = newNodes.iterator(); it.hasNext(); ) {
