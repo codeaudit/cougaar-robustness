@@ -283,38 +283,6 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
     return nodes;
   }
 
-  private void showParents(final String communityName) {
-    CommunityResponseListener crl = new CommunityResponseListener() {
-      public void getResponse(CommunityResponse resp) {
-        Collection parents = (Collection)resp.getContent();
-        logger.info("Community " + communityName +
-                    " parents=" + collectionToArray(parents) +
-                    " fromCache=false");
-      }
-    };
-    Collection parents =
-        ((org.cougaar.community.CommunityServiceImpl)commSvc).listParentCommunities(communityName, crl);
-    if (parents != null) {
-      for (Iterator it = parents.iterator(); it.hasNext();) {
-        showParents((String)it.next());
-      }
-    }
-    if (parents != null) {
-      logger.info("Community " + communityName +
-                  " parents=" + collectionToArray(parents) +
-                  " fromCache=true");
-    }
-  }
-
-  private String collectionToArray(Collection c) {
-    StringBuffer sb = new StringBuffer("[");
-    for (Iterator it = c.iterator(); it.hasNext();) {
-      sb.append((String)it.next());
-      if (it.hasNext()) sb.append(",");
-    }
-    sb.append("]");
-    return sb.toString();
-  }
 
   /**
    * Update set of communities to monitor.
@@ -322,7 +290,6 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
   private void processCommunityChanges(Collection communities) {
     for(Iterator it = communities.iterator(); it.hasNext(); ) {
       Community community = (Community)it.next();
-      showParents(community.getName());
       if (model == null) {
         initializeModel(community.getName());
       }
