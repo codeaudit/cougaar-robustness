@@ -20,10 +20,6 @@ mgrPlugins = [comm, omsp, ompm, csp, dmp, rmfp]
 society.each_agent do |agent|
     if agent.name =~ /.*ARManager.*/
         agent.add_components(mgrPlugins)
-        agent.add_component do |c|
-            c.classname = cp
-            c.add_argument("10")
-        end	
     else
         agent.add_components(agentPlugins)
     end
