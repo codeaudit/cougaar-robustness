@@ -5,7 +5,9 @@
 <Events>
     <Event name="Compromise" affectsAssetType="Agent" affectsStateDimension="Compromised">
         <DirectEffect>
-            <Transition WhenActualStateIs="*" EndStateWillBe="Yes" />
+            <Transition WhenActualStateIs="No" EndStateWillBe="Yes" />
+            <Transition WhenActualStateIs="Yes" EndStateWillBe="Yes" />
+            <Transition WhenActualStateIs="Isolated" EndStateWillBe="Isolated" />
         </DirectEffect>
     </Event>
 </Events>

@@ -141,8 +141,8 @@ public class LeashRequestServlet extends BaseServletComponent implements Blackbo
   private class MyServlet extends HttpServlet {
       
       public void doGet(HttpServletRequest request, HttpServletResponse response) {
-        String suppress = request.getParameter(LeashRequestDiagnosis.LEASHED);
-        String allow = request.getParameter(LeashRequestDiagnosis.UNLEASHED);
+        String suppress = request.getParameter(LeashRequestDiagnosis.LEASH);
+        String allow = request.getParameter(LeashRequestDiagnosis.UNLEASH);
         response.setContentType("text/html");
 
         try {
@@ -174,7 +174,7 @@ public class LeashRequestServlet extends BaseServletComponent implements Blackbo
              td = (LeashRequestDiagnosis)iter.next();
           }        
           if (td != null) {
-              td.setValue(LeashRequestDiagnosis.LEASHED);
+              td.setValue(LeashRequestDiagnosis.LEASH);
               out.println("<center><h2>Status Changed - Defense Suppression Requested</h2></center><br>" );
               blackboard.publishChange(td); 
               if (logger.isDebugEnabled()) logger.debug("Status Changed - Defense Suppression Requested");
@@ -197,7 +197,7 @@ public class LeashRequestServlet extends BaseServletComponent implements Blackbo
               }
 
               if (td != null) {
-                  td.setValue(LeashRequestDiagnosis.UNLEASHED);
+                  td.setValue(LeashRequestDiagnosis.UNLEASH);
                   out.println("<center><h2>Status Changed - Defenses Allowed Requested</h2></center><br>" );
                   blackboard.publishChange(td); 
                   if (logger.isDebugEnabled()) logger.debug("Status Changed - Defenses Allowed Requested");
