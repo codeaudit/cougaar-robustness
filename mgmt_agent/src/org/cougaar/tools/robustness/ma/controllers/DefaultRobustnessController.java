@@ -166,13 +166,13 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (isLocal(name) || thisAgent.equals(name)) {
         setExpiration(name, NEVER);
       } else if (isNode(name)) {
-        setExpiration(name, (int) getNodeStatusExpiration(name));
+        setExpiration(name, (int) getTimeout(name));
       } else if (isAgent(name)) {
-        int nodeExpiration = (int) getNodeStatusExpiration(getLocation(name));
+        int nodeExpiration = (int) getTimeout(getLocation(name));
         int updateInterval = (int) getLongAttribute(
             STATUS_UPDATE_INTERVAL_ATTRIBUTE, DEFAULT_STATUS_UPDATE_INTERVAL);
         // Increase timeout for agents so they don't timeout before node
-        int agentExpiration = nodeExpiration + updateInterval * MS_PER_MIN * 2;
+        int agentExpiration = nodeExpiration + updateInterval * MS_PER_MIN * 3;
         setExpiration(name, agentExpiration);
       }
     }
@@ -277,7 +277,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (logger.isInfoEnabled()) {
         logger.info("Dead agent detected: agent=" + name);
       }
-      setExpiration(name, NEVER);
+      if (isNode(name)) {
+        setExpiration(name, NEVER);
+      }
       communityReady = false; // For ACME Community Ready Events
 
       if (isSentinel()) {
@@ -295,11 +297,12 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         } else { // a node
           deadNodes.add(name);
           if (!useGlobalSolver()) {
-            newState(agentsOnNode(name, DefaultRobustnessController.ACTIVE), DEAD);
-            //newState(agentsOnNode(name), DEAD);
+            //newState(agentsOnNode(name, DefaultRobustnessController.ACTIVE), DEAD);
+            newState(agentsOnNode(name), DEAD);
             removeFromCommunity(name);
           } else {
-            if (agentsOnNode(name, DefaultRobustnessController.ACTIVE).size() > 0) {
+            if (agentsOnNode(name, DefaultRobustnessController.ACTIVE).size() >
+                0) {
               getLayout(new LoadBalancerListener() {
                 public void layoutReady(Map layout) {
                   if (getState(name) == DEAD) {
@@ -307,9 +310,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                       logger.info("layout from EN4J: " + layout);
                     }
                     getRestartLocator().setPreferredRestartLocations(layout);
-                    newState(agentsOnNode(name, DefaultRobustnessController.ACTIVE), DEAD);
-                    //newState(agentsOnNode(name), DEAD);
-                    removeFromCommunity(name);
+                    //newState(agentsOnNode(name, DefaultRobustnessController.ACTIVE), DEAD);
+                    newState(agentsOnNode(name), DEAD);
+                    //removeFromCommunity(name);
                   } else { // Abort, node no longer classified as DEAD
                     deadNodes.remove(name);
                     if (logger.isInfoEnabled()) {
@@ -318,18 +321,26 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                     }
                   }
                 }
-              }, name);
+              }
+
+              , name);
             } else {
               removeFromCommunity(name);
             }
           }
         }
-      } else {  // I'm not the manager agent
+      } else { // I'm not the manager agent
         if (isNode(name)) {
           newState(agentsOnNode(name, DefaultRobustnessController.ACTIVE), DEAD);
         }
       }
     }
+
+    // Shouldn't happen, but just in case ...
+    public void expired(String name) {
+      newState(name, DECONFLICT);
+    }
+
   }
 
   /**
@@ -346,9 +357,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   class RestartStateController extends StateControllerBase implements RestartListener {
     { addRestartListener(this); }
     public void enter(String name) {
-        if (isAgent(name) && canRestartAgent(name)) {
-          restartAgent(name);
-        }
+      setExpiration(name, (int)getTimeout(name));
+      if (isAgent(name) && canRestartAgent(name)) {
+        restartAgent(name);
+      }
     }
 
     public void expired(String name) {
@@ -359,7 +371,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
     public void actionInitiated(String name, int action, String dest) {
       if (action == HealthMonitorRequest.RESTART) {
-        event("Restarting agent=" + name + " dest=" + dest);
+        event("Restarting agent=" + name + " dest=" + dest +
+              " timeout=" + model.getStateExpiration(name));
       }
     }
 
@@ -637,45 +650,51 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   }
 
   /**
-   * Calculate expiration time for node status.  This value determines how long
+   * Calculate node timout.  This value determines how long
    * the manager waits for a status update before reporting the problem and
    * initiating a restart.  The expiration time is based on statistical data
    * obtained from the community attributes.
    * @param nodeName String  Name of node
    * @return long Expiration in milliseconds
    */
-  private long getNodeStatusExpiration(String nodeName) {
+  private long getTimeout(String name) {
 
-    // Community-wide default values
     long defaultTimeout = getLongAttribute(DEFAULT_TIMEOUT_ATTRIBUTE,
-                                              DEFAULT_TIMEOUT);
-    long commRestartAgressiveness = getLongAttribute(RESTART_AGGRESSIVENESS_ATTRIBUTE,
-                                        DEFAULT_RESTART_AGGRESSIVENESS);
-    long nodeRestartAgressiveness = getLongAttribute(nodeName, RESTART_AGGRESSIVENESS_ATTRIBUTE,
-                                        commRestartAgressiveness);
+                                           DEFAULT_TIMEOUT);
+    long commRestartAgressiveness = getLongAttribute(
+        RESTART_AGGRESSIVENESS_ATTRIBUTE,
+        DEFAULT_RESTART_AGGRESSIVENESS);
 
-    NodeStatistics ns = getNodeStats();
-    StatCalc sc = ns.get(nodeName);
-    if (sc == null) { // Create new entry
-      sc = new StatCalc(model.getCommunityName(), nodeName);
-      long seed = defaultTimeout * 12000;
-      sc.enter(seed);
-      sc.enter(seed * 3);
-      ns.putOriginal(sc);
-      if (isSentinel()) {
-        ns.save();
+    String nodeName = isNode(name) ? name : model.getLocation(name);
+    if (nodeName == null) {
+      return defaultTimeout * MS_PER_MIN;
+
+    } else {
+
+      long nodeRestartAgressiveness = getLongAttribute(nodeName,
+          RESTART_AGGRESSIVENESS_ATTRIBUTE, commRestartAgressiveness);
+      NodeStatistics ns = getNodeStats();
+      StatCalc sc = ns.get(nodeName);
+      if (sc == null) { // Create new entry
+        sc = new StatCalc(model.getCommunityName(), nodeName);
+        long seed = defaultTimeout * 12000;
+        sc.enter(seed);
+        sc.enter(seed * 3);
+        ns.putOriginal(sc);
+        if (isSentinel()) {
+          ns.save();
+        }
       }
-    }
 
-    long mean = (long)sc.getMean();
-    long stddev = (long)sc.getStandardDeviation();
-    long expiration = mean + (stddev * nodeRestartAgressiveness);
+      long mean = (long) sc.getMean();
+      long stddev = (long) sc.getStandardDeviation();
+      long timeout = mean + (stddev * nodeRestartAgressiveness);
 
-    if (logger.isDebugEnabled()) {
-      logger.debug("getNodeStateExpiration: node=" + nodeName + " expiration=" +
-                  expiration);
+      if (logger.isDebugEnabled()) {
+        logger.debug("getTimeout: name=" + name + " timeout=" + timeout);
+      }
+      return timeout;
     }
-    return expiration;
   }
 
   private boolean canRestartAgent(String name) {
@@ -719,7 +738,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       logger.info("Restarting agent:" +
                   " agent=" + name +
                   " origin=" + getLocation(name) +
-                  " dest=" + dest);
+                  " dest=" + dest +
+                  " statusTimestamp=" + df.format(new Date(model.getTimestamp(name))) +
+                  " timeout=" + model.getStateExpiration(name));
     }
     if (retries.contains(name)) {
       retries.remove(name);
@@ -860,7 +881,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (isNode(name)) {
         if (logger.isInfoEnabled()) {
           logger.info("New node detected: node=" + name +
-                      " timeout=" + getNodeStatusExpiration(name));
+                      " timeout=" + getTimeout(name));
         }
         if (deadNodes.contains(name)) {
           deadNodes.remove(name);
@@ -1023,16 +1044,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   private void doPing(String name,
                         final int stateOnSuccess,
                         final int stateOnFail) {
-    long timeout = getLongAttribute(DEFAULT_TIMEOUT_ATTRIBUTE,
-                                    DEFAULT_TIMEOUT) * MS_PER_MIN;
-    if (isNode(name)) {
-      timeout = getNodeStatusExpiration(name);
-    } else {
-      String node = model.getLocation(name);
-      if (node != null) {
-        timeout = getNodeStatusExpiration(name);
-      }
-    }
+    long timeout = getTimeout(name);
     if (logger.isDebugEnabled()) {
       logger.debug("doPing:" +
                   " agent=" + name +
@@ -1151,14 +1163,18 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    StringBuffer detail = new StringBuffer();
    double now = System.currentTimeMillis();
    for (int i=0; i<nodes.length; i++) {
-     double timeout = getNodeStatusExpiration(nodes[i]);
-     double howRecent = now - model.getTimestamp(nodes[i]);
-     double confidence = howRecent < timeout
-                 ? (timeout - howRecent)/timeout
-                 : 0.0;
-     detail.append(nodes[i] + "(" + nf.format(confidence) + ") ");
-     if (!nodes[i].equals(deadNode) && confidence < 0.5) {
+     if (model.getCurrentState(nodes[i]) != DefaultRobustnessController.ACTIVE) {
+       excluded.add(nodes[i]);
+     } else {
+       double timeout = getTimeout(nodes[i]);
+       double howRecent = now - model.getTimestamp(nodes[i]);
+       double confidence = howRecent < timeout
+           ? (timeout - howRecent) / timeout
+           : 0.0;
+       detail.append(nodes[i] + "(" + nf.format(confidence) + ") ");
+       if (!nodes[i].equals(deadNode) && confidence < 0.7) {
          excluded.add(nodes[i]);
+       }
      }
    }
    if (logger.isDebugEnabled()) {
