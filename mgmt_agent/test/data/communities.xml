@@ -1243,7 +1243,7 @@
       <Attribute ID="Role" Value="Member" />
     </Entity>
   </Community>
-  <Community Name="MiniTestConfigEnclave-COMM" >
+  <Community Name="MiniTestConfig-COMM" >
     <Attribute ID="CommunityType" Value="Robustness" />
     <Attribute ID="CommunityManager" Value="Manager" />
     <Entity Name="Manager" >

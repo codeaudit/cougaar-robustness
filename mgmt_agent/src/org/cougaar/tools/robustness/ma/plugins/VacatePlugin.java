@@ -26,9 +26,11 @@ import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.plugin.SimplePlugin;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.BlackboardService;
+import org.cougaar.core.service.TopologyReaderService;
 import org.cougaar.core.mts.MessageAddress;
 
 import org.cougaar.util.UnaryPredicate;
+import org.cougaar.robustness.restart.plugin.NodeMove;
 
 /**
  * This plugin moves all community members from a specified node or host to
@@ -37,6 +39,7 @@ import org.cougaar.util.UnaryPredicate;
 public class VacatePlugin extends SimplePlugin {
 
   private LoggingService log;
+  private TopologyReaderService trs;
   private BlackboardService bbs = null;
 
   // Defines default values for configurable parameters.
@@ -49,6 +52,9 @@ public class VacatePlugin extends SimplePlugin {
 
     log =  (LoggingService) getBindingSite().getServiceBroker().
       getService(this, LoggingService.class, null);
+
+    trs = (TopologyReaderService)getBindingSite().getServiceBroker().
+      getService(this, TopologyReaderService.class, null);
 
     bbs = getBlackboardService();
 
@@ -63,6 +69,9 @@ public class VacatePlugin extends SimplePlugin {
     // Subscribe to VacateRequest objects
     vacateRequests =
       (IncrementalSubscription)bbs.subscribe(vacateRequestPredicate);
+
+    restartLocationRequests =
+      (IncrementalSubscription)bbs.subscribe(restartLocationRequestPredicate);
 
     // Print informational message defining current parameters
     StringBuffer startMsg = new StringBuffer();
@@ -85,8 +94,52 @@ public class VacatePlugin extends SimplePlugin {
     for (Iterator it = vacateRequests.getAddedCollection().iterator();
          it.hasNext();) {
       VacateRequest vr = (VacateRequest)it.next();
-      log.debug("Received VacateRequest: host=" + vr.getHost() +
+      //log.debug("Received VacateRequest: host=" + vr.getHost() +
+        //" node=" + vr.getNode());
+      System.out.println("Received VacateRequest: host=" + vr.getHost() +
         " node=" + vr.getNode());
+      if(vr.getRequestType() == VacateRequest.VACATE_HOST)
+      {
+        RestartLocationRequest rlr = new RestartLocationRequest(RestartLocationRequest.LOCATE_HOST);
+        Set memberNodes = trs.getChildrenOnParent(TopologyReaderService.NODE,
+            TopologyReaderService.HOST, vr.getHost());
+        rlr.setExcludedNodes(memberNodes);
+        for(Iterator iter = memberNodes.iterator(); iter.hasNext();)
+        {
+          Set memberAgents = trs.getChildrenOnParent(TopologyReaderService.AGENT,
+            TopologyReaderService.NODE, (String)iter.next());
+          for(Iterator ait = memberAgents.iterator(); ait.hasNext();)
+            rlr.addAgent(new MessageAddress((String)ait.next()));
+        }
+        Collection hosts = new ArrayList();
+        hosts.add(vr.getHost());
+        rlr.setExcludedHosts(hosts);
+        rlr.setStatus(RestartLocationRequest.NEW);
+        bbs.publishAdd(rlr);
+      }
+    }
+
+    //get updated RestartLocationRequest objects, publish a NodeMove object to the
+    //blackboard for each node in the vacate host.
+    for(Iterator it = restartLocationRequests.getChangedCollection().iterator(); it.hasNext();)
+    {
+      RestartLocationRequest rlr = (RestartLocationRequest)it.next();
+      if(rlr.getStatus() == RestartLocationRequest.SUCCESS)
+      {
+        String destHost = rlr.getHost();
+        for(Iterator iter = rlr.getExcludedHosts().iterator(); iter.hasNext();)
+        {
+          String hostName = (String)iter.next();
+          Set memberNodes = trs.getChildrenOnParent(TopologyReaderService.NODE,
+            TopologyReaderService.HOST, hostName);
+          for(Iterator nit = memberNodes.iterator(); nit.hasNext();)
+          {
+            String sourceNode = (String)nit.next();
+            NodeMove nm = new NodeMove(hostName, destHost, sourceNode);
+            bbs.publishAdd(nm);
+          }
+        }
+      }
     }
   }
 
@@ -134,6 +187,15 @@ public class VacatePlugin extends SimplePlugin {
   private UnaryPredicate vacateRequestPredicate = new UnaryPredicate() {
     public boolean execute(Object o) {
       return (o instanceof VacateRequest);
+  }};
+
+  /**
+   * Predicate for RestartLocationRequest objects
+   */
+  private IncrementalSubscription restartLocationRequests;
+  private UnaryPredicate restartLocationRequestPredicate = new UnaryPredicate() {
+    public boolean execute(Object o) {
+      return (o instanceof RestartLocationRequest);
   }};
 
 

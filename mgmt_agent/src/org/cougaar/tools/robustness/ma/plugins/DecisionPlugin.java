@@ -25,7 +25,12 @@ import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.plugin.SimplePlugin;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.BlackboardService;
+import org.cougaar.core.service.DomainService;
 import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.agent.ClusterIdentifier;
+
+import org.cougaar.core.mobility.ldm.*;
+import org.cougaar.core.mobility.AddTicket;
 
 import org.cougaar.util.UnaryPredicate;
 
@@ -46,13 +51,35 @@ public class DecisionPlugin extends SimplePlugin {
   ManagementAgentProperties decisionProps =
     ManagementAgentProperties.makeProps(this.getClass().getName(), defaultParams);
 
-  protected void setupSubscriptions() {
+  protected MobilityFactory mobilityFactory;
 
+  IncrementalSubscription sub;
+
+  /*
+  public void setDomainService(DomainService domain) {
+    log.info("setDomainService");
+    this.domain = domain;
+    mobilityFactory = (MobilityFactory) domain.getFactory("mobility");
+  }
+  */
+
+  protected void setupSubscriptions() {
     log =  (LoggingService) getBindingSite().getServiceBroker().
       getService(this, LoggingService.class, null);
 
+    DomainService domainService =
+      (DomainService) getBindingSite().getServiceBroker().
+      getService(this, DomainService.class, null);
+
+    mobilityFactory = (MobilityFactory) domainService.getFactory("mobility");
+    if (mobilityFactory == null) {
+      log.error("Mobility factory (and domain) not enabled");
+      //throw new RuntimeException("Mobility factory (and domain) not enabled");
+    }
+
     bbs = getBlackboardService();
 
+    sub = (IncrementalSubscription) bbs.subscribe(AGENT_CONTROL_PRED);
     // Initialize configurable paramaeters from defaults and plugin arguments.
     updateParams(decisionProps);
     bbs.publishAdd(decisionProps);
@@ -73,6 +100,10 @@ public class DecisionPlugin extends SimplePlugin {
     // Subscribe to AgentStart objects
     agentStartStatus =
       (IncrementalSubscription)bbs.subscribe(agentStartStatusPredicate);
+
+    // Subscribe to AgentControl objects
+    agentControlStatus =
+      (IncrementalSubscription) bbs.subscribe(AGENT_CONTROL_PRED);
 
     // Print informational message defining current parameters
     StringBuffer startMsg = new StringBuffer();
@@ -99,7 +130,7 @@ public class DecisionPlugin extends SimplePlugin {
       evaluate(hs);
     }
 
-     // Get AgentStart objects
+    // Get AgentStart objects
     for (Iterator it = agentStartStatus.getChangedCollection().iterator();
          it.hasNext();) {
       AgentStart action = (AgentStart)it.next();
@@ -115,6 +146,22 @@ public class DecisionPlugin extends SimplePlugin {
       }
       log.debug("Received AgentStart response, restart result= " + statusStr);
       bbs.publishRemove(action);
+    }
+
+    // Get AgentControl objects
+    if (agentControlStatus.hasChanged()) {
+      for (Enumeration en = agentControlStatus.getAddedList(); en.hasMoreElements(); ) {
+	      AgentControl ac = (AgentControl) en.nextElement();
+        System.out.println("ADDED "+ac);
+      }
+      for (Enumeration en = agentControlStatus.getChangedList(); en.hasMoreElements(); ) {
+	      AgentControl ac = (AgentControl) en.nextElement();
+        System.out.println("CHANGED "+ac);
+      }
+      for (Enumeration en = agentControlStatus.getRemovedList(); en.hasMoreElements(); ) {
+	      AgentControl ac = (AgentControl) en.nextElement();
+        System.out.println("REMOVED "+ac);
+      }
     }
 
     // Get RestartLocationRequests
@@ -166,25 +213,64 @@ public class DecisionPlugin extends SimplePlugin {
   }
 
   /**
+   * Returns a string representation of a Set of agent addresses.
+   * @param agents Set of agent addresses
+   * @return String of agent names
+   */
+  private String agentSetToString(Set agents) {
+    StringBuffer sb = new StringBuffer();
+    if (agents != null) {
+      for (Iterator it = agents.iterator(); it.hasNext();) {
+        sb.append(((MessageAddress)it.next()).toString());
+        if (it.hasNext()) sb.append(" ");
+      }
+    }
+    return sb.toString();
+  }
+
+  /**
    * Initiates a restart.
    * @param agents  Set of MessageAddresses of agents to be restarted
    * @param host    Name of restart host
    */
   private void restartAgents(Set agents, String nodeName) {
-    if (log.isInfoEnabled()) {
-      StringBuffer msg = new StringBuffer("Initiating agent restart: agent(s)=[");
-      for (Iterator it = agents.iterator(); it.hasNext();) {
-        msg.append(((MessageAddress)it.next()).toString());
-        if (it.hasNext()) msg.append(" ");
+    if (nodeName == null) {
+      log.warn("Unable to perform restart, no node selected: agents=[" +
+        agentSetToString(agents) + "]");
+    } else {
+      if (log.isInfoEnabled()) {
+        log.info("Initiating agent restart: agent(s)=[" +
+          agentSetToString(agents) + "], nodeName=" + nodeName);
       }
-      msg.append("], nodeName=" + nodeName);
-      log.info(msg.toString());
+      for (Iterator it = agents.iterator(); it.hasNext();) {
+        String agentName = ((MessageAddress)it.next()).toString();
+        //AgentStart as = new AgentStart(nodeName, agentName);
+        //bbs.publishAdd(as);
+
+        // add the AgentControl request
+        addAgent(agentName, nodeName);
+      }
     }
-    for (Iterator it = agents.iterator(); it.hasNext();) {
-      String agentName = ((MessageAddress)it.next()).toString();
-      AgentStart as = new AgentStart(nodeName, agentName);
-      bbs.publishAdd(as);
+  }
+
+  protected void addAgent(String newAgent, String destNode) {
+
+    MessageAddress newAgentAddr = null;
+    MessageAddress destNodeAddr = null;
+    if (newAgent != null) {
+      newAgentAddr = new ClusterIdentifier(newAgent);
     }
+    if (destNode != null) {
+      destNodeAddr = new MessageAddress(destNode);
+    }
+    Object ticketId = mobilityFactory.createTicketIdentifier();
+    AddTicket addTicket = new AddTicket(ticketId, newAgentAddr, destNodeAddr);
+
+    AgentControl ac =
+      mobilityFactory.createAgentControl(null, destNodeAddr, addTicket);
+
+    System.out.println("CREATED "+ac);
+    bbs.publishAdd(ac);
   }
 
   /**
@@ -193,9 +279,9 @@ public class DecisionPlugin extends SimplePlugin {
    * @param value Adjustment value
    */
   private void adjustHbSensitivity(HealthStatus hs, float value) {
-    float hbFailureRateThreshold = hs.getHbFailureRateThreshold();
+    float hbFailureRateThreshold = hs.getHbFailRate();
     hbFailureRateThreshold = hbFailureRateThreshold * (1.0f + value);
-    hs.setHbFailureRateThreshold(hbFailureRateThreshold);
+    hs.setHbFailRate(hbFailureRateThreshold);
     if (log.isInfoEnabled()) {
       StringBuffer msg = new StringBuffer("Adjusting heartbeat sensitivity: ");
       msg.append("agent=" + hs.getAgentId());
@@ -240,6 +326,15 @@ public class DecisionPlugin extends SimplePlugin {
   private void updateParams(Properties props) {
      // None for now
   }
+
+ /**
+  * Predicate for AgentControl objects
+  */
+  private IncrementalSubscription agentControlStatus;
+  protected UnaryPredicate AGENT_CONTROL_PRED = new UnaryPredicate() {
+	  public boolean execute(Object o) {
+	    return (o instanceof AgentControl);
+  }};
 
  /**
   * Predicate for AgentStart objects

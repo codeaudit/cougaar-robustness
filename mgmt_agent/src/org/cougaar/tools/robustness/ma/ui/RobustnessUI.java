@@ -23,6 +23,7 @@ import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
+import java.util.List;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
@@ -32,7 +33,6 @@ import javax.naming.directory.Attributes;
 import javax.naming.directory.Attribute;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
-import java.util.List;
 
 import org.cougaar.lib.web.arch.root.GlobalEntry;
 import org.cougaar.core.mts.MTImpl;
@@ -48,7 +48,8 @@ public class RobustnessUI extends JPanel
   private Hashtable nodeandpath = new Hashtable();
   private Point lastVisiblePoint;
   private JScrollPane pane;
-  //private DefaultMutableTreeNode selectedNode;
+  private DefaultMutableTreeNode selectedNode;
+  private URL url1 = null;
 
   private static String host = "localhost";
   private static String port = "8800";
@@ -159,11 +160,11 @@ public class RobustnessUI extends JPanel
     tree.expandRow(1);
     //final DefaultMutableTreeNode selectedNode;
     final JPopupMenu popup = new JPopupMenu();
-    final JMenuItem command = new JMenuItem("command");
+    final JMenuItem command = new JMenuItem("vacate");
       command.addActionListener(new ActionListener(){
         public void actionPerformed(ActionEvent e)
         {
-
+          publishRequest((String)selectedNode.getUserObject());
         }
       });
       popup.add(command);
@@ -183,7 +184,7 @@ public class RobustnessUI extends JPanel
             TreePath path = tree.getPathForRow(row);
             if(path != null)
             {
-              DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode)tree.getLastSelectedPathComponent();
+              selectedNode = (DefaultMutableTreeNode)tree.getLastSelectedPathComponent();
               if(((DefaultMutableTreeNode)selectedNode.getParent()).getUserObject().equals("hosts"))
                 popup.show(e.getComponent(), e.getX(), e.getY());
             }
@@ -502,7 +503,7 @@ public class RobustnessUI extends JPanel
   private Hashtable getInfoFromServlet()
   {
     Hashtable idc = null;
-    URL url1 = null;
+    url1 = null;
     ObjectInputStream oin = null;
     try{
       // First, try using the servlet in the TestAgent
@@ -555,6 +556,51 @@ public class RobustnessUI extends JPanel
         expandTreeNode(tree2, expandPath);
         pane.getViewport().setViewPosition(point);
   }
+
+  private void publishRequest(String hostName)
+  {
+    try{
+      URLConnection conn = url1.openConnection();
+      ((HttpURLConnection)conn).setRequestMethod("PUT");
+      conn.setDoInput(true);
+      conn.setDoOutput(true);
+      OutputStream os = conn.getOutputStream();
+      ObjectOutputStream oos = new ObjectOutputStream(os);
+      oos.writeObject(hostName);
+      oos.close();
+      InputStream is = conn.getInputStream();
+    }catch(Exception e){}
+  }
+
+ /* private String getMoveTarget(String hostName)
+  {
+    final String target = null;
+    final JFrame mFrame = new JFrame("Move members");
+    mFrame.setSize(250, 100);
+    JLabel label = new JLabel("Move members of " + hostName + " to:");
+    final JTextField field = new JTextField();
+    field.addActionListener(new ActionListener(){
+      public void actionPerformed(ActionEvent e)
+      {
+        if(field.getText().equals("hostName") || !hostNames.contains(field.getText()))
+          JOptionPane.showMessageDialog(mFrame, "Invalid host name.", "Error", JOptionPane.ERROR_MESSAGE);
+        mFrame.setVisible(false);
+        target =  field.getText();
+      }
+    });
+    JPanel panel = new JPanel(new GridLayout(2, 1));
+    panel.setBorder(BorderFactory.createEmptyBorder(1, 10, 5, 10));
+    panel.add(label);
+    panel.add(field);
+    mFrame.getContentPane().add(panel, BorderLayout.CENTER);
+    relocateFrame(mFrame);
+    mFrame.addWindowListener(new WindowAdapter() {
+      public void windowClosing(WindowEvent e) {
+        target = null; }
+     });
+    mFrame.show();
+    return target;
+  }*/
 
   /**
    * Position the frame in the middle of screen.

@@ -18,6 +18,8 @@
 package org.cougaar.tools.robustness.ma.plugins;
 
 import java.util.*;
+import javax.naming.*;
+import javax.naming.directory.*;
 
 import org.cougaar.tools.robustness.sensors.SensorFactory;
 import org.cougaar.tools.robustness.sensors.HeartbeatRequest;
@@ -154,7 +156,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
   private BlackboardService bbs = null;
 
   // HealthStatus objects for agents in monitored community
-  private Collection membersHealthStatus = new Vector();
+  private Map membersHealthStatus = new HashMap();
 
   private CommunityService communityService = null;
 
@@ -334,11 +336,11 @@ public class HealthMonitorPlugin extends SimplePlugin {
    * Periodically evaluates the HealthStatus of monitored agents.
    */
   private void evaluateHealthStatus() {
-    //synchronized (membersHealthStatus) {
-    for (Iterator it = membersHealthStatus.iterator(); it.hasNext();) {
-      HealthStatus hs = (HealthStatus)it.next();
+    Collection currentAgents = findMonitoredAgents();
+    for (Iterator it = currentAgents.iterator(); it.hasNext();) {
+      HealthStatus hs = getHealthStatus((MessageAddress)it.next());
       String state = hs.getState();
-      //log.debug(hs.getAgentId() + " state=" + state);
+      log.debug("Evaluating agent " + hs.getAgentId() + " state=" + state);
       if (state.equals(HealthStatus.INITIAL)) {
         switch (hs.getHeartbeatRequestStatus()) {
           case HealthStatus.UNDEFINED:
@@ -353,23 +355,24 @@ public class HealthMonitorPlugin extends SimplePlugin {
             //}
             break;
           case HeartbeatRequest.ACCEPTED:
+            log.debug("HeartbeatRequest for agent '" + hs.getAgentId() + "' ACCEPTED");
             hs.setState(HealthStatus.NORMAL);
             hs.setHeartbeatStatus(HealthStatus.OK);
-            hs.setHeartbeatRequestRetries(0);
+            hs.setHbReqRetryCtr(0);
             break;
           case HeartbeatRequest.REFUSED:
             log.warn("HeartbeatRequest for agent '" + hs.getAgentId() + "' REFUSED");
             //doHealthCheck(hs, HealthStatus.NO_RESPONSE);
             break;
           case HeartbeatRequest.FAILED:
-            int retries = hs.getHeartbeatRequestRetries();
-            if (retries < heartbeatRequestRetries) {
-              log.debug("HeartbeatRequest for agent '" + hs.getAgentId() + "' FAILED, retrying");
-			        hs.setHeartbeatRequestRetries(++retries);
+            int retries = hs.getHbReqRetryCtr();
+            if (retries < hs.getHbReqRetries()) {
+              log.info("HeartbeatRequest for agent '" + hs.getAgentId() + "' FAILED, retrying");
+			        hs.setHbReqRetryCtr(++retries);
               hs.setHeartbeatRequestStatus(HealthStatus.UNDEFINED);
 		        } else {
               log.warn("HeartbeatRequest for agent '" + hs.getAgentId() + "' FAILED");
-			        hs.setHeartbeatRequestRetries(0);
+			        hs.setHbReqRetryCtr(0);
               doHealthCheck(hs, HealthStatus.NO_RESPONSE);
 			      }
             break;
@@ -382,10 +385,10 @@ public class HealthMonitorPlugin extends SimplePlugin {
             int pingStatus = hs.getPingStatus();
             switch (pingStatus) {
               case HealthStatus.UNDEFINED:
-                //log.debug("Heartbeat timeout: agent=" + hs.getAgentId());
-                log.debug("Performing ping: agent=" + hs.getAgentId());
+                log.info("Heartbeat timeout: agent=" + hs.getAgentId());
+                log.info("Performing ping: agent=" + hs.getAgentId());
                 hs.setPingTimestamp(new Date());
-                doPing(hs.getAgentId());
+                doPing(hs);
                 break;
               case PingRequest.RECEIVED:
             	log.debug("Received ping, agent=" + hs.getAgentId());
@@ -396,17 +399,17 @@ public class HealthMonitorPlugin extends SimplePlugin {
                 }
                 hs.setPingStatus(HealthStatus.UNDEFINED);
                 hs.setHeartbeatStatus(HealthStatus.OK);
-                hs.setPingRetries(0);
+                hs.setPingRetryCtr(0);
                 break;
               case PingRequest.FAILED:
-                int retries = hs.getPingRetries();
-                if (retries < pingRetries) {
-                  log.debug("Ping failed: agent=" + hs.getAgentId() + ", retrying");
-			            hs.setPingRetries(++retries);
+                int retries = hs.getPingRetryCtr();
+                if (retries < hs.getPingRetries()) {
+                  log.debug("info failed: agent=" + hs.getAgentId() + ", retrying");
+			            hs.setPingRetryCtr(++retries);
                   hs.setPingStatus(HealthStatus.UNDEFINED);
 		            } else {
                   log.error("Ping failed: agent=" + hs.getAgentId());
-			            hs.setPingRetries(0);
+			            hs.setPingRetryCtr(0);
                   hs.setPingStatus(HealthStatus.UNDEFINED);
                   doHealthCheck(hs, HealthStatus.NO_RESPONSE);
 		            }
@@ -421,7 +424,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
         switch (pingStatus) {
           case HealthStatus.UNDEFINED:
             hs.setPingTimestamp(new Date());
-            doPing(hs.getAgentId());
+            doPing(hs);
             log.debug("Sending ping: agent=" + hs.getAgentId() + ", state=RESTART");
             break;
           case PingRequest.RECEIVED:
@@ -440,7 +443,6 @@ public class HealthMonitorPlugin extends SimplePlugin {
         log.warn("Invalid run state: agent=" + hs.getAgentId() + ", state=" + state);
       }
     }
-    //}
   }
 
   /**
@@ -451,22 +453,15 @@ public class HealthMonitorPlugin extends SimplePlugin {
   private void processRosterChanges(CommunityRoster roster) {
     Collection cmList = roster.getMembers();
     // If first time, copy members from roster to local list
-    //synchronized (membersHealthStatus) {
     if (membersHealthStatus.isEmpty()) {
       //log.debug(roster.toString());
       for (Iterator it = cmList.iterator(); it.hasNext();) {
         CommunityMember cm = (CommunityMember)it.next();
         if (cm.isAgent()) {
-          //HealthStatus hs = new HealthStatus(getAgentId());
-          HealthStatus hs = new HealthStatus(
-              new ClusterIdentifier(cm.getName()),
-              communityToMonitor,
-              getBindingSite().getServiceBroker(),
-              heartbeatFrequency,
-              heartbeatFailureRateWindow,
-              heartbeatFailureRateThreshold);
+          HealthStatus hs = newHealthStatus(new ClusterIdentifier(cm.getName()));
           hs.setState(HealthStatus.INITIAL);
-          membersHealthStatus.add(hs);
+          addHealthStatus(hs);
+          //membersHealthStatus.put(hs.getAgentId(),hs);
           log.info("Adding " + cm.getName());
         }
       }
@@ -475,23 +470,19 @@ public class HealthMonitorPlugin extends SimplePlugin {
       Collection newMembers = new Vector();
       for (Iterator it = cmList.iterator(); it.hasNext();) {
         CommunityMember cm = (CommunityMember)it.next();
-        if (cm.isAgent() && !hasHealthStatus(new ClusterIdentifier(cm.getName()))) {
-          HealthStatus hs = new HealthStatus(
-            new ClusterIdentifier(cm.getName()),
-            communityToMonitor,
-            getBindingSite().getServiceBroker(),
-            heartbeatFrequency,
-            heartbeatFailureRateWindow,
-            heartbeatFailureRateThreshold);
+        ClusterIdentifier agent = new ClusterIdentifier(cm.getName());
+        if (cm.isAgent() && !hasHealthStatus(agent)) {
+          HealthStatus hs = newHealthStatus(agent);
           hs.setState(HealthStatus.INITIAL);
-          membersHealthStatus.add(hs);
+          //membersHealthStatus.put(hs.getAgentId(),hs);
+          addHealthStatus(hs);
           newMembers.add(hs);
           log.info("Adding " + cm.getName());
         }
       }
       // Look for deletions
-      for (Iterator it = membersHealthStatus.iterator(); it.hasNext();) {
-        HealthStatus hs = (HealthStatus)it.next();
+      for (Iterator it = findMonitoredAgents().iterator(); it.hasNext();) {
+        HealthStatus hs = getHealthStatus((MessageAddress)it.next());
         boolean found = false;
         for (Iterator it1 = cmList.iterator(); it1.hasNext();) {
           CommunityMember cm = (CommunityMember)it1.next();
@@ -506,9 +497,67 @@ public class HealthMonitorPlugin extends SimplePlugin {
         }
       }
     }
-    //}
   }
 
+  /**
+   * Creates a new HealthStatus object to include any agent-specific parameters.
+   * @param agentId Message address for agent
+   * @return  new HealthStatus object
+   */
+  private HealthStatus newHealthStatus(MessageAddress agentId) {
+    // Create a HealthStatus object with default parameters
+    HealthStatus hs = new HealthStatus(agentId,
+                         communityToMonitor,
+                         getBindingSite().getServiceBroker(),
+                         heartbeatRequestTimeout,
+                         heartbeatRequestRetries,
+                         heartbeatFrequency,
+                         heartbeatTimeout,
+                         heartbeatPctLateThreshold,
+                         heartbeatFailureRateWindow,
+                         heartbeatFailureRateThreshold,
+                         pingTimeout,
+                         pingRetries);
+    // Get agent attributes from community service and set any agent-specific
+    // parameters
+    Attributes attrs =
+      communityService.getEntityAttributes(communityToMonitor, agentId.toString());
+    NamingEnumeration enum = attrs.getAll();
+    try {
+      while (enum.hasMoreElements()) {
+        boolean found = true;
+        Attribute attr = (Attribute)enum.nextElement();
+        if (attr.getID().equalsIgnoreCase("hbReqTimeout")) {
+          hs.setHbReqTimeout(Long.parseLong((String)attr.get()));
+        } else if (attr.getID().equalsIgnoreCase("hbReqRetries")) {
+          hs.setHbReqRetries(Long.parseLong((String)attr.get()));
+        } else if (attr.getID().equalsIgnoreCase("hbFreq")) {
+          hs.setHbFrequency(Long.parseLong((String)attr.get()));
+        } else if (attr.getID().equalsIgnoreCase("hbTimeout")) {
+          hs.setHbTimeout(Long.parseLong((String)attr.get()));
+        } else if (attr.getID().equalsIgnoreCase("hbPctLate")) {
+          hs.setHbPctLate(Float.parseFloat((String)attr.get()));
+        } else if (attr.getID().equalsIgnoreCase("hbWindow")) {
+          hs.setHbWindow(Long.parseLong((String)attr.get()));
+        } else if (attr.getID().equalsIgnoreCase("hbFailRate")) {
+          hs.setHbFailRate(Float.parseFloat((String)attr.get()));
+        } else if (attr.getID().equalsIgnoreCase("pingTimeout")) {
+          hs.setPingTimeout(Long.parseLong((String)attr.get()));
+        } else if (attr.getID().equalsIgnoreCase("pingRetries")) {
+          hs.setPingRetries(Long.parseLong((String)attr.get()));
+        } else {
+          found = false;
+        }
+        if (log.isDebugEnabled() && found)
+          log.debug("Setting agent health parameter: agent=" + agentId +
+                    " parameter=" + attr.getID() +
+                    " value=" + (String)attr.get());
+      }
+    } catch (Exception ex) {
+      log.error("Exception parsing agent health monitor parameters, " + ex);
+    }
+    return hs;
+  }
 
   /**
    * Get ping results.
@@ -607,13 +656,9 @@ public class HealthMonitorPlugin extends SimplePlugin {
    * @return  True if the agent is currently being monitored
    */
   private boolean hasHealthStatus(ClusterIdentifier agentId) {
-    //synchronized (membersHealthStatus) {
-    for (Iterator it = membersHealthStatus.iterator(); it.hasNext();) {
-      HealthStatus hs = (HealthStatus)it.next();
-      if (hs.getAgentId().equals(agentId)) return true;
+    synchronized (membersHealthStatus) {
+      return membersHealthStatus.containsKey(agentId);
     }
-    //}
-    return false;
   }
 
   /**
@@ -622,13 +667,43 @@ public class HealthMonitorPlugin extends SimplePlugin {
    * @return  HealthStatus object associated with specified agent ID
    */
   private HealthStatus getHealthStatus(MessageAddress agentId) {
-    //synchronized (membersHealthStatus) {
-    for (Iterator it = membersHealthStatus.iterator(); it.hasNext();) {
-      HealthStatus hs = (HealthStatus)it.next();
-      if (hs.getAgentId().equals(agentId)) return hs;
+    synchronized (membersHealthStatus) {
+      return (HealthStatus)membersHealthStatus.get(agentId);
     }
-    //}
-    return null;
+  }
+
+  /**
+   * Returns a collection of AgentIds associated with the agents currently
+   * being monitored.
+   * @return  Collection of MessageAddresses
+   */
+  private Collection findMonitoredAgents() {
+    Collection agentIds = new Vector();
+    synchronized (membersHealthStatus) {
+      for (Iterator it = membersHealthStatus.keySet().iterator(); it.hasNext();)
+        agentIds.add(it.next());
+    }
+    return agentIds;
+  }
+
+  /**
+   * Adds an agent to the HealthStatus map.
+   * @param agentId
+   */
+  private void addHealthStatus(HealthStatus hs) {
+    synchronized (membersHealthStatus) {
+      membersHealthStatus.put(hs.getAgentId(), hs);
+    }
+  }
+
+  /**
+   * Removes an agent from the HealthStatus map.
+   * @param agentId
+   */
+  private void removeHealthStatus(MessageAddress agentId) {
+    synchronized (membersHealthStatus) {
+      membersHealthStatus.remove(agentId);
+    }
   }
 
   /**
@@ -643,13 +718,13 @@ public class HealthMonitorPlugin extends SimplePlugin {
       HeartbeatRequest hbr = hs.getHeartbeatRequest();
       if (hbr == null) {
       	hbr = sensorFactory.newHeartbeatRequest(
-                  myAgent,                  // Source address
-                  targets,                  // Target addresses
-                  heartbeatRequestTimeout,  // Request timeout
-                  heartbeatFrequency,       // Heartbeat frequency
-                  heartbeatTimeout,         // Heartbeat timeout
-                  true,                     // Only out of spec.
-                  heartbeatPctLateThreshold // Percent out of spec
+                  myAgent,                 // Source address
+                  targets,                 // Target addresses
+                  hs.getHbReqTimeout(),    // Request timeout
+                  hs.getHbFrequency(),     // Heartbeat frequency
+                  hs.getHbTimeout(),       // Heartbeat timeout
+                  true,                    // Only out of spec.
+                  hs.getHbPctLate()        // Percent out of spec
       	);
       	hs.setHeartbeatRequest(hbr);
       	bbs.openTransaction();
@@ -668,8 +743,10 @@ public class HealthMonitorPlugin extends SimplePlugin {
    * Sends a ping to a monitored agent.
    * @param target  Monitored agents address
    */
-  private void doPing(MessageAddress target) {
-    PingRequest req = sensorFactory.newPingRequest(myAgent, target, pingTimeout);
+  private void doPing(HealthStatus hs) {
+    PingRequest req = sensorFactory.newPingRequest(myAgent,
+                                                   hs.getAgentId(),
+                                                   hs.getPingTimeout());
     bbs.openTransaction();
     bbs.publishAdd(req);
     bbs.closeTransaction();

@@ -29,10 +29,13 @@ import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.servlet.BaseServletComponent;
 import org.cougaar.core.servlet.ServletService;
 import org.cougaar.core.service.NamingService;
+import org.cougaar.core.service.LoggingService;
+import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.util.PropertyNameValue;
 import org.cougaar.core.node.NodeIdentificationService;
 import org.cougaar.core.service.TopologyReaderService;
 import org.cougaar.core.service.TopologyEntry;
+import org.cougaar.core.blackboard.BlackboardClient;
 
 import org.cougaar.core.service.community.CommunityMember;
 
@@ -41,15 +44,20 @@ import org.cougaar.lib.web.arch.root.GlobalEntry;
 import org.cougaar.core.mts.MTImpl;
 import org.cougaar.core.node.NodeIdentifier;
 
+import org.cougaar.tools.robustness.ma.ldm.VacateRequest;
+import org.cougaar.tools.robustness.ma.ldm.RestartLocationRequest;
+
 /**
  * This servlet provides an interface to the ManagementAgent for the
  * RobustnessUI.  This servlet is used to retrieve community information
  * from the name server and to publish vacate requests to ManagementAgents
  * blackboard.
  */
-public class RobustnessServlet extends BaseServletComponent
+public class RobustnessServlet extends BaseServletComponent implements BlackboardClient
 {
   private NamingService ns;
+  private BlackboardService bb;
+  private LoggingService log;
   private TopologyReaderService trs;
   private String indexName = "Communities";
 
@@ -58,6 +66,19 @@ public class RobustnessServlet extends BaseServletComponent
    */
   protected String getPath() {
     return "/robustness";
+  }
+
+  /*public void load() {
+    org.cougaar.core.plugin.PluginBindingSite pbs =
+      (org.cougaar.core.plugin.PluginBindingSite) bindingSite;
+    this.agentId = pbs.getAgentIdentifier();
+    uids = (UIDService)serviceBroker.getService(this, UIDService.class, null);
+    super.load();
+  }*/
+
+  public void setBlackboardService(BlackboardService blackboard) {
+    this.bb = blackboard;
+    //blackboard.setShouldBePersisted(true);
   }
 
   /**
@@ -71,7 +92,7 @@ public class RobustnessServlet extends BaseServletComponent
     }
     trs = (TopologyReaderService)serviceBroker.getService(this, TopologyReaderService.class, null);
     if(trs == null) throw new RuntimeException("no topology reader service.");
-
+    log =  (LoggingService) serviceBroker.getService(this, LoggingService.class, null);
     return new MyServlet();
   }
 
@@ -89,6 +110,30 @@ public class RobustnessServlet extends BaseServletComponent
   }
 
   private class MyServlet extends HttpServlet {
+    public void doPut(HttpServletRequest req, HttpServletResponse res) throws IOException
+    {
+      ServletInputStream in = req.getInputStream();
+      ObjectInputStream ois = new ObjectInputStream(in);
+      String host = null;
+      try{
+        host = (String)ois.readObject();
+      }catch(ClassNotFoundException e){log.error("RobustnessServlet:: class String not found");}
+      VacateRequest request = new VacateRequest(VacateRequest.VACATE_HOST);
+      request.setHost(host);
+      try{
+        bb.openTransaction();
+        bb.publishAdd(request);
+      }finally
+      { bb.closeTransaction(); }
+
+      ServletOutputStream outs = res.getOutputStream();
+      ObjectOutputStream oout = new ObjectOutputStream(outs);
+      try{
+          oout.writeObject("succeed");
+      }catch(java.util.NoSuchElementException e){log.error(e.getMessage());}
+      catch(java.lang.NullPointerException e){log.error(e.getMessage());}
+    }
+
     public void doGet(
         HttpServletRequest req,
         HttpServletResponse res) throws IOException {
@@ -101,7 +146,7 @@ public class RobustnessServlet extends BaseServletComponent
         Hashtable communities = buildCommunitiesTable(idc, indexName);
         totalList.put("Communities", communities);
         oout.writeObject(totalList);
-      }catch(NamingException e){e.printStackTrace();}
+      }catch(NamingException e){log.error(e.getMessage());}
     }
 
     private Attributes getAttributes(DirContext context, String name)
@@ -109,7 +154,7 @@ public class RobustnessServlet extends BaseServletComponent
       Attributes attrs = null;
       try{
         attrs = context.getAttributes(name);
-      }catch(NamingException e){e.printStackTrace();}
+      }catch(NamingException e){log.error(e.getMessage());}
       return attrs;
     }
 
@@ -181,7 +226,7 @@ public class RobustnessServlet extends BaseServletComponent
              contents.add(allnodes);
              list.put(ncPair.getName(), contents);
         }
-      }catch(NamingException e){e.printStackTrace();}
+      }catch(NamingException e){log.error(e.getMessage());}
       return list;
     }
 
@@ -205,7 +250,7 @@ public class RobustnessServlet extends BaseServletComponent
           else
             table.put(name, ncPair.getClassName());
         }
-      }catch(NamingException e){e.printStackTrace();}
+      }catch(NamingException e){log.error(e.getMessage());}
       return table;
     }
 
@@ -222,7 +267,7 @@ public class RobustnessServlet extends BaseServletComponent
           GlobalEntry o = (GlobalEntry)dc.lookup(name);
           table.put(name, o);
         }
-      }catch(NamingException e){e.printStackTrace();}
+      }catch(NamingException e){log.error(e.getMessage());}
       return table;
     }
 
@@ -239,10 +284,29 @@ public class RobustnessServlet extends BaseServletComponent
           MTImpl o = (MTImpl)dc.lookup(name);
           try{
           table.put(name, o.getClientHost());
-          }catch(java.rmi.server.ServerNotActiveException e){e.printStackTrace();}
+          }catch(java.rmi.server.ServerNotActiveException e){log.error(e.getMessage());}
         }
-      }catch(NamingException e){e.printStackTrace();}
+      }catch(NamingException e){log.error(e.getMessage());}
       return table;
     }
+  }
+
+  // odd BlackboardClient method:
+  public String getBlackboardClientName() {
+    return toString();
+  }
+
+  // odd BlackboardClient method:
+  public long currentTimeMillis() {
+    throw new UnsupportedOperationException(
+        this+" asked for the current time???");
+  }
+
+  // unused BlackboardClient method:
+  public boolean triggerEvent(Object event) {
+    // if we had Subscriptions we'd need to implement this.
+    throw new UnsupportedOperationException(
+        this+" only supports Blackboard queries, but received "+
+        "a \"trigger\" event: "+event);
   }
 }

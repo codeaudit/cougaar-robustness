@@ -24,6 +24,7 @@ import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.service.community.CommunityService;
 import org.cougaar.core.blackboard.Publishable;
 import org.cougaar.tools.robustness.sensors.HeartbeatRequest;
+import org.cougaar.util.log.*;
 
 import javax.naming.directory.*;
 
@@ -34,6 +35,8 @@ import javax.naming.directory.*;
 public class HealthStatus implements
   Publishable, org.cougaar.core.persist.NotPersistable {
 
+  private Logger log =
+    Logging.getLogger(org.cougaar.tools.robustness.ma.plugins.HealthStatus.class.getName());
   public static final int UNDEFINED   = -1;
 
   // Run States
@@ -64,9 +67,35 @@ public class HealthStatus implements
   private int pingStatus = UNDEFINED;
   private Date pingTimestamp;
 
-  private long  hbFrequency;
-  private long  hbWindow;
-  private float hbFailureRateThreshold;
+  private long hbReqTimeout;  // Defines the timeout period (in milliseconds)
+                              // for a Heartbeat Request,
+  private long hbReqRetries;  // Defines the number of times to retry a
+                              // HeartbeatRequest when a failure is encountered
+  private long hbFreq;        // Defines the frequency (in milliseconds) at
+                              // which the monitored agents are to send
+                              // heartbeats to the management agent.
+  private long hbTimeout;     // Defines the timeout period (in milliseconds)
+                              // for heartbeats.
+  private float hbPctLate;    // Defines a tolerance for late heartbeats before
+                              // they are reported in a HeartbeatHealthReport
+                              // from sensor plugins.  The value is defined as a
+                              // Float number representing a percentage of the
+                              // hbTimeout.
+  private long hbWindow;      // Defines the interval (in milliseconds) over
+                              // which a Heartbeat failure rate is calculated.
+                              // The heartbeat failure rate is the percentage of
+                              // late hearbeats vs expected heartbeats.
+  private float hbFailRate;   // Defines the heartbeat failure rate threshold.
+                              // When the calculated heartbeat failure rate
+                              // exceeds this threshold the monitored agent is
+                              // placed in a "HEALTH-CHECK" state for further
+                              // evaluation by the Management Agent.  This value
+                              // is defined as a Float number that represents
+                              // the maximum acceptable heartbeat failure rate.
+  private long pingTimeout;   // Defines the ping timeout period
+                              // (in milliseconds).
+  private long pingRetries;   // Defines the number of times to retry a ping
+
 
   private List heartbeatTimeouts = new Vector();
   private Date statusTimestamp;
@@ -75,8 +104,8 @@ public class HealthStatus implements
   private String communityName;
 
   private HeartbeatRequest hbr;
-  private int heartbeatRequestRetries = 0;
-  private int pingRetries = 0;
+  private int hbReqRetryCtr = 0;
+  private int pingRetryCtr = 0;
 
   private CommunityService commSvc = null;
 
@@ -86,40 +115,106 @@ public class HealthStatus implements
    * @param agentId        MessageAddress of monitored agent.
    * @param communityName  Name of agents Robustness community.
    * @param sb             Reference to ManagementAgents ServiceBroker
-   * @param hbFrequency    Rate at which heartbeats are received
+   * @param hbReqTimeout   Timeout period for Heartbeat Requests
+   * @param hbReqRetries   Number of times to retry a Heartbeat request
+   * @param hbFreq         Rate at which heartbeats are received
+   * @param hbTimeout      Heartbeat timeout period
+   * @param hbPctLate      Period at which a late Heartbeat is reported
    * @param hbWindow       Lookback period for calculating heartbeat failure rate
-   * @param hbFailureRateThreshold  Threshold for heartbeat failures
+   * @param hbFailRate     Threshold for heartbeat failures
+   * @param pingTimeout    Timeout period for pings
+   * @param pingRetries    Number of times to retry a ping
    */
   protected HealthStatus(MessageAddress agentId,
                          String communityName,
                          ServiceBroker sb,
-                         long hbFrequency,
+                         long hbReqTimeout,
+                         long hbReqRetries,
+                         long hbFreq,
+                         long hbTimeout,
+                         float hbPctLate,
                          long hbWindow,
-                         float hbFailureRateThreshold) {
+                         float hbFailRate,
+                         long pingTimeout,
+                         long pingRetries) {
     this.agentId = agentId;
     this.communityName = communityName;
     this.commSvc =
       (CommunityService)sb.getService(this, CommunityService.class, null);
-    this.hbFrequency = hbFrequency;
+    this.hbReqTimeout = hbReqTimeout;
+    this.hbReqRetries = hbReqRetries;
+    this.hbFreq = hbFreq;
+    this.hbTimeout = hbTimeout;
+    this.hbPctLate = hbPctLate;
     this.hbWindow = hbWindow;
-    this.hbFailureRateThreshold = hbFailureRateThreshold;
+    this.hbFailRate = hbFailRate;
+    this.pingTimeout = pingTimeout;
+    this.pingRetries = pingRetries;
     setState(currentState);
+  }
+
+  /**
+   * Returns current Heartbeat frequency.
+   * @return Heartbeat frequency
+   */
+  protected long getHbFrequency() {
+    return hbFreq;
+  }
+
+  /**
+   * Sets agents Heartbeat frequency.
+   * @param freq New frequency
+   */
+  protected void setHbFrequency(long freq) {
+    this.hbFreq = freq;
+  }
+
+  /**
+   * Returns Heartbeat Request timeout.
+   * @return Heartbeat request timeout
+   */
+  protected long getHbReqTimeout() {
+    return hbReqTimeout;
+  }
+
+  /**
+   * Sets agents Heartbeat request timeout.
+   * @param timeout New timeout
+   */
+  protected void setHbReqTimeout(long timeout) {
+    this.hbReqTimeout = timeout;
+  }
+
+  /**
+   * Returns Heartbeat Request retries.
+   * @return Heartbeat request retries
+   */
+  protected long getHbReqRetries() {
+    return hbReqRetries;
+  }
+
+  /**
+   * Sets agents Heartbeat request retries.
+   * @param retries Number of retries to perform
+   */
+  protected void setHbReqRetries(long retries) {
+    this.hbReqRetries = retries;
   }
 
   /**
    * Returns current Heartbeat failure rate threshold.
    * @return Heartbeat failure rate threshold
    */
-  protected float getHbFailureRateThreshold() {
-    return hbFailureRateThreshold;
+  protected float getHbFailRate() {
+    return hbFailRate;
   }
 
   /**
    * Sets agents Heartbeat failure rate threshold.
    * @param rate New rate.
    */
-  protected void setHbFailureRateThreshold(float rate) {
-    this.hbFailureRateThreshold = rate;
+  protected void setHbFailRate(float rate) {
+    this.hbFailRate = rate;
   }
 
   /**
@@ -141,13 +236,77 @@ public class HealthStatus implements
   }
 
   /**
+   * Returns Heartbeat timeout value.
+   * @return Heartbeat timeout
+   */
+  protected long getHbTimeout() {
+    return hbTimeout;
+  }
+
+  /**
+   * Sets agents Heartbeat timeout value
+   * @param timeout Heartbeat timeout
+   */
+  protected void setHbTimeout(long timeout) {
+    this.hbTimeout = timeout;
+  }
+
+  /**
+   * Returns Heartbeat pct late value.
+   * @return Heartbeat pct late
+   */
+  protected float getHbPctLate() {
+    return hbPctLate;
+  }
+
+  /**
+   * Sets agents Heartbeat pct late value
+   * @param pct  Pct late tolerance
+   */
+  protected void setHbPctLate(float pct) {
+    this.hbPctLate = pct;
+  }
+
+  /**
+   * Returns ping timeout.
+   * @return Ping timeout
+   */
+  protected long getPingTimeout() {
+    return pingTimeout;
+  }
+
+  /**
+   * Sets agents ping timeout.
+   * @param timeout New timeout
+   */
+  protected void setPingTimeout(long timeout) {
+    this.pingTimeout = timeout;
+  }
+
+  /**
+   * Returns Ping retries.
+   * @return Ping retries
+   */
+  protected long getPingRetries() {
+    return pingRetries;
+  }
+
+  /**
+   * Sets agents Ping retries.
+   * @param retries Number of retries to perform
+   */
+  protected void setPingRetries(long retries) {
+    this.pingRetries = retries;
+  }
+
+  /**
    * Determines if current failure rate exceeds threshold.
    * Heartbeat failure rate.
    * @return True if rate is above limit established by
    *         HeartbeatFailureRateThreshold
    */
   protected boolean hbFailureRateInSpec() {
-    return getFailureRate() < hbFailureRateThreshold;
+    return getFailureRate() < hbFailRate;
   }
 
   /**
@@ -258,7 +417,7 @@ public class HealthStatus implements
    * @param timeout  Time of detected timeout.
    */
   protected void addHeartbeatTimeout(Date timeout) {
-    long tolerance = hbFrequency/2;
+    long tolerance = hbFreq/2;
     pruneTimeoutList();
     long to = timeout.getTime();
     for (Iterator it = heartbeatTimeouts.iterator(); it.hasNext();) {
@@ -294,7 +453,7 @@ public class HealthStatus implements
     pruneTimeoutList();
     float lateHeartbeats = heartbeatTimeouts.size();
     if (lateHeartbeats == 0) return 0.0f;
-    float totalHeartbeats = hbWindow/hbFrequency;
+    float totalHeartbeats = hbWindow/hbFreq;
     float rate = lateHeartbeats/totalHeartbeats;
     return (rate > 1.0f ? 1.0f : rate);
   }
@@ -303,7 +462,7 @@ public class HealthStatus implements
   protected String failureRateData() {
     pruneTimeoutList();
     float lateHeartbeats = heartbeatTimeouts.size();
-    float totalHeartbeats = hbWindow/hbFrequency;
+    float totalHeartbeats = hbWindow/hbFreq;
     float rate = lateHeartbeats/totalHeartbeats;
     return "HbFailureRateData: agent=" + getAgentId() +
       ", lateHeartbeats=" + lateHeartbeats +
@@ -332,32 +491,32 @@ public class HealthStatus implements
    * Sets HeartbeatRequestRetries counter
    * @param retries  Number of retries to attempt
    */
-  protected void setHeartbeatRequestRetries(int retries) {
-    this.heartbeatRequestRetries = retries;
+  protected void setHbReqRetryCtr(int retries) {
+    this.hbReqRetryCtr = retries;
   }
 
   /**
    * Gets HeartbeatRequestRetries counter
    * @return  Number of times HeartbeatRequests have been resent
    */
-  protected int getHeartbeatRequestRetries() {
-    return this.heartbeatRequestRetries;
+  protected int getHbReqRetryCtr() {
+    return this.hbReqRetryCtr;
   }
 
   /**
    * Sets PingRetries counter
    * @param retries  Number of retries to attempt
    */
-  protected void setPingRetries(int retries) {
-    this.pingRetries = retries;
+  protected void setPingRetryCtr(int retries) {
+    this.pingRetryCtr = retries;
   }
 
   /**
    * Gets PingRetries counter
    * @return  Number of times Pings have been resent
    */
-  protected int getPingRetries() {
-    return this.pingRetries;
+  protected int getPingRetryCtr() {
+    return this.pingRetryCtr;
   }
 
   /**
@@ -371,9 +530,14 @@ public class HealthStatus implements
    * @param state Current run state of monitored agent
    */
   protected void setState(String state) {
+    log.debug("SetState: agent=" + agentId + " state=" + state);
     currentState = state;
-    Attributes attrs = new BasicAttributes("RunState", currentState);
-    commSvc.setEntityAttributes(communityName, agentId.toString(), attrs);
+    ModificationItem mods[] = new ModificationItem[1];
+    mods[0] = new ModificationItem(DirContext.REPLACE_ATTRIBUTE,
+      new BasicAttribute("RunState", currentState));
+    commSvc.modifyEntityAttributes(communityName, agentId.toString(), mods);
+    //Attributes attrs = new BasicAttributes("RunState", currentState);
+    //commSvc.setEntityAttributes(communityName, agentId.toString(), attrs);
   }
 
   /**
@@ -381,8 +545,9 @@ public class HealthStatus implements
    * @return Current run state for agent.
    */
   protected String getState() {
-    //return currentState;
+    return currentState;
 
+    /*
     try {
       Attributes attrs =
         commSvc.getEntityAttributes(communityName, agentId.toString());
@@ -391,11 +556,16 @@ public class HealthStatus implements
         String state = (String)stateAttr.get();
         if (state == null || state.trim().length() == 0) {
           setState(currentState);
+          log.debug("GetState: agent=" + agentId +
+            " state is null/empty, setting state to " + currentState);
           return currentState;
         } else {
+          log.debug("GetState: agent=" + agentId + " state=" + state);
           return state;
         }
       } else {
+        log.debug("GetState: agent=" + agentId +
+          " state attribute not defined, setting state to " + currentState);
         setState(currentState);
         return currentState;
       }
@@ -403,6 +573,7 @@ public class HealthStatus implements
       ex.printStackTrace();
       return new String();
     }
+    */
 
   }
 

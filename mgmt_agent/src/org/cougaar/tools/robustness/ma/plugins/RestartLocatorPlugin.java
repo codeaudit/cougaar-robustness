@@ -110,6 +110,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
     startMsg.append("RestartLocatorPlugin started: ");
     startMsg.append(paramsToString());
     log.info(startMsg.toString());
+
   }
 
   /**
