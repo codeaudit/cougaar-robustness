@@ -64,8 +64,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
   private IncrementalSubscription actionPatienceSubscription;
   private IncrementalSubscription knobSubscription;
   private IncrementalSubscription testServletSubscription;
-
-   private IncrementalSubscription diagnosesWrapperSubscription;  // FIX
+  private IncrementalSubscription actionsWrapperSubscription;
 
   private Hashtable alarmTable = new Hashtable();
   private ActionSelectionKnob knob;
@@ -117,6 +116,15 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
      //Listen for Failed Actions
      actionPatienceSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(ActionPatience.pred);
 
+     actionsWrapperSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
+        public boolean execute(Object o) {
+            if ( o instanceof ActionsWrapper) {
+                return true ;
+            }
+            return false ;
+        }
+     }) ;
+
      //Unsure of use...
      if (blackboard.didRehydrate()) { //reset to null so it gets established again after rehydration -- IS THIS RIGHT??
          //this.testServlet = null;
@@ -147,15 +155,22 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
             knob = (ActionSelectionKnob) iter.next();
         }      
 
-/*      
-      if (testServlet == null) {
-          iter = testServletSubscription.getAddedCollection().iterator();
-          if (iter.hasNext()) {
-              testServlet = (TestObservationServlet)iter.next(); 
-              if (logger.isDebugEnabled()) logger.debug("Found TestObservationServlet");
-           }
-      }
-*/      
+     // Check any changed Actions to see if the change is a change to offeredActions
+     //    and there is a currently open CBE for the asset
+     //    and there are currently fewer then maxActions actions permitted on he asset
+     iter = actionsWrapperSubscription.iterator();
+     while (iter.hasNext()) {
+        ActionsWrapper aw = (ActionsWrapper) iter.next();
+        Action action = aw.getAction();
+        CostBenefitEvaluation thisCBE = findCostBenefitEvaluation(action.getAssetID());
+        if (thisCBE != null) {
+            if (thisCBE.numOpenActions() < knob.getMaxActions()) {
+                selectActions(thisCBE, knob);
+            }
+        }        
+     }
+
+
       //********* Process new CostBenefit objects ************    
 
       iter = costBenefitSubscription.getAddedCollection().iterator();
@@ -217,27 +232,6 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 
   }
 
-/* original implementation of selectActions
-  private void selectActions(CostBenefitEvaluation cbe, ActionSelectionKnob knob) {
-
-    boolean done = false;
-    int index = 0;
-    while (!done) {
-        SelectedAction thisAction = selectBest(cbe, knob); 
-        if (logger.isDebugEnabled()) 
-	    logger.debug("SelectAction: thisAction="+((thisAction != null)?thisAction.toString():null));
-        if (thisAction != null) {
-            publishAdd(thisAction);
-            index++;
-            done = true; // done because can't find anything useful to do
-            if ((thisAction.getActionEvaluation().getAction().getTechSpec().getActionType() == ActionTechSpecInterface.CORRECTIVE_ACTIONTYPE) // Because we try only one corrective action at a time
-		|| (outOfResources())
-		|| (index == knob.getMaxActions()))
-		done = true; 
-        } 
-    }
-  }
-*/
   
   private void selectActions(CostBenefitEvaluation cbe, ActionSelectionKnob knob) {
 
@@ -270,6 +264,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 	    done = true; // done because can't find anything useful to do
 	}
     }
+    cbe.setNumOpenActions(index);
   }
 
 

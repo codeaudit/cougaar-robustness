@@ -48,6 +48,7 @@ public class CostBenefitEvaluation implements NotPersistable {
     private long horizon;
     private StateEstimation se;
     private Hashtable actionEvaluations;
+    private int openActions = 0;
         
     /** Creates a new instance of CostBenefitDiagnosis */
     protected CostBenefitEvaluation(AssetID assetID, long horizon, StateEstimation se) {
@@ -64,6 +65,8 @@ public class CostBenefitEvaluation implements NotPersistable {
     public StateEstimation getStateEstimation() { return se; }
     public Hashtable getActionEvaluations() { return actionEvaluations; }
     public ActionEvaluation getActionEvaluation(Action action) { return (ActionEvaluation)actionEvaluations.get(action); }
+    public int numOpenActions() { return openActions; }
+    public void setNumOpenActions(int n) { openActions = n; }
     
     public String toString() {
         String result = "CBE for: " + assetID.toString()+"\n";
