@@ -68,6 +68,7 @@ import org.cougaar.core.service.LoggingService;
 import org.cougaar.util.log.Logger;
 
 import org.cougaar.util.UnaryPredicate;
+import org.cougaar.coordinator.selection.ActionSelectionKnob;
 
 
 public class LeashRequestServlet extends BaseServletComponent implements BlackboardClient
@@ -101,13 +102,14 @@ public class LeashRequestServlet extends BaseServletComponent implements Blackbo
     if (blackboard == null) {
       throw new RuntimeException("Unable to obtain blackboard service");
     }
-    try {
+/*    try {
         blackboard.openTransaction();
         blackboard.publishAdd(new LeashRequestDiagnosis("ENCLAVE", "LeashDefenses", serviceBroker));
         blackboard.closeTransaction();
     } 
     catch (IllegalValueException e) { logger.error("Attempt to initialize the LeashRequestDiagnosis to illegal vale: "+ e); }
     catch (TechSpecNotFoundException e) { logger.error("Could not find TechSPec for LeashRequestDiagnosis: "+ e); }
+*/
     super.load();
   }
 
@@ -151,7 +153,6 @@ public class LeashRequestServlet extends BaseServletComponent implements Blackbo
         String suppress = request.getParameter(LeashRequestDiagnosis.LEASH);
         String allow = request.getParameter(LeashRequestDiagnosis.UNLEASH);
         response.setContentType("text/html");
-        if (logger.isDebugEnabled()) logger.debug("Response is: " + response.toString());
 
         try {
           PrintWriter out = response.getWriter();
@@ -175,20 +176,19 @@ public class LeashRequestServlet extends BaseServletComponent implements Blackbo
       private void suppress(HttpServletRequest request, PrintWriter out) throws IllegalValueException {
 
           blackboard.openTransaction();
-          LeashRequestDiagnosis td = null;
-          Collection c = blackboard.query(LeashRequestDiagnosis.pred);
+          ActionSelectionKnob ask = null;
+          Collection c = blackboard.query(ActionSelectionKnob.pred);
           Iterator iter = c.iterator();
           if (iter.hasNext()) {
-             td = (LeashRequestDiagnosis)iter.next();
+             ask = (ActionSelectionKnob)iter.next();
           }        
-          if (td != null) {
-              td.setValue(LeashRequestDiagnosis.LEASH);
+          if (ask != null) {
+              ask.leash();
               out.println("<center><h2>Status Changed - Defense Suppression Requested</h2></center><br>" );
-              blackboard.publishChange(td); 
+              blackboard.publishChange(ask); 
               if (logger.isDebugEnabled()) logger.debug("Status Changed - Defense Suppression Requested");
           }
           blackboard.closeTransaction();
-          System.out.println("Leaving suppress(), with: " + td.areDefensesLeashed());
 
     } 
 
@@ -198,20 +198,19 @@ public class LeashRequestServlet extends BaseServletComponent implements Blackbo
 
           try {
               blackboard.openTransaction();
-              LeashRequestDiagnosis td = null;
-              Collection c = blackboard.query(LeashRequestDiagnosis.pred);
+              ActionSelectionKnob ask = null;
+              Collection c = blackboard.query(ActionSelectionKnob.pred);
               Iterator iter = c.iterator();
               if (iter.hasNext()) {
-                 td = (LeashRequestDiagnosis)iter.next();
+                 ask = (ActionSelectionKnob)iter.next();
               }
 
-              if (td != null) {
-                  td.setValue(LeashRequestDiagnosis.UNLEASH);
+              if (ask != null) {
+                  ask.unleash();
                   out.println("<center><h2>Status Changed - Defenses Allowed Requested</h2></center><br>" );
-                  blackboard.publishChange(td); 
+                  blackboard.publishChange(ask); 
                   if (logger.isDebugEnabled()) logger.debug("Status Changed - Defenses Allowed Requested");
               blackboard.closeTransaction();
-              System.out.println("Leaving allow(), with: " + td.areDefensesLeashed());
               }
           } finally {
                 if (blackboard.isTransactionOpen()) blackboard.closeTransactionDontReset();
