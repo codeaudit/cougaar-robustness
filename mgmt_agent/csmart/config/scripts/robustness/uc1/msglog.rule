@@ -1,0 +1,43 @@
+
+# Msglog
+#----------
+mp = "org.cougaar.core.mts.MsglogPlugin"
+
+society.each_agent do |agent|
+  if agent.name =~ /.*ARManager.*/
+    agent.add_component do |c|
+      c.classname = mp
+      c.add_argument("10000")
+    end
+  end
+end
+
+# Msglog aspects
+#--------------------
+policy = "org.cougaar.core.mts.AdaptiveLinkSelectionPolicy"
+
+aspects = "org.cougaar.core.mts.MsglogEnablingAspect," +
+          "org.cougaar.core.mts.LastSpokeErrorAspect," +
+          "org.cougaar.core.mts.GossipAspect," +
+          "org.cougaar.core.mts.GossipStatisticsServiceAspect," +
+          #"org.cougaar.core.mts.ShowTrafficAspect," +
+          "org.cougaar.core.mts.StatisticsAspect," + 
+          "org.cougaar.core.mts.MessageSendHistoryAspect," + 
+          "org.cougaar.core.mts.acking.MessageAckingAspect," + 
+          "org.cougaar.core.mts.RTTAspect," + 
+          "org.cougaar.core.mts.MessageNumberingAspect," +
+          "org.cougaar.core.mts.MessageOrderingAspect"
+
+protocols = "org.cougaar.core.mts.LoopbackLinkProtocol," +
+            "org.cougaar.core.mts.RMILinkProtocol"
+
+society.each_node do |node|
+    node.override_parameter("-Dorg.cougaar.message.transport.policy", policy)
+    node.override_parameter("-Dorg.cougaar.message.transport.aspects", aspects)
+    node.override_parameter("-Dorg.cougaar.message.protocol.classes", protocols)
+end
+
+
+
+
+

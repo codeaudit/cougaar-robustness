@@ -141,7 +141,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       }
     }
     public void expired(String name) {
-      logger.info("Expired Status:" + " agent=" + name + " state=ACTIVE");
+      //logger.info("Expired Status:" + " agent=" + name + " state=ACTIVE");
       if ((isLocal(name) || isNode(name)) ||
           (thisAgent.equals(preferredLeader()) && getState(getLocation(name)) == DEAD) ||
           isLeader(name)) {

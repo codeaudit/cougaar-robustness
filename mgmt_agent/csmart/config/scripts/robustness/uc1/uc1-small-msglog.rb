@@ -22,11 +22,16 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
   do_action "LoadSocietyFromScript", "#{CIP}/csmart/config/societies/ad/SMALL-1AD-TRANS-1359.rb"
   do_action "LayoutSociety", "#{CIP}/operator/uc1-small-1ad-layout.xml", HOSTS_FILE
   
+  do_action "SetupCommunityPlugins"
+  do_action "SetupPingTimers", 1000
+  #do_action "DisableDeconfliction"
+
   do_action "TransformSociety", false,
     "#{RULES}/isat",
     "#{RULES}/logistics",
     "#{RULES}/robustness/uc1",
-    "disconnection.rule"
+    "disconnection.rule",
+    "msglog.rule"
   do_action "TransformSociety", false, "#{RULES}/robustness"
   do_action "TransformSociety", false, "disableMgmtNodeRestart.rule"
   
@@ -60,7 +65,7 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
   do_action "Sleep", 2.minutes
   wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
   
-  do_action "StartPlannedDisconnect", "FWD-NODE", "500"
+  do_action "StartPlannedDisconnect", "TRANS-NODE", "500"
   do_action "Sleep", 1.minutes
   do_action "KillAgents", "GlobalAir", "1-35-ARBN" #Since 1-35-ARBN is already planned disconnect, shouldn't be restart in that 300 secondes.
    # GlobalAir should restart immediately
