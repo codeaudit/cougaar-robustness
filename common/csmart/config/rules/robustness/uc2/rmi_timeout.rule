@@ -1,0 +1,24 @@
+rsca = [325, "org.cougaar.mts.std.RMISocketControlAspect"]
+rsta = [335, "org.cougaar.mts.std.RMISendTimeoutAspect"]
+
+aspects = [rsca,rsta]
+
+society.each_node_agent do |node_agent|
+
+    aspects.each { |aspect| 
+        node_agent.add_component do |c|
+            c.order = aspect[0]
+            c.classname = aspect[1]
+            c.insertionpoint = "Node.AgentManager.Agent.MessageTransport.Aspect"
+        end
+    }
+
+end
+
+society.each_node do |node|
+    
+    node.override_parameter("-Dorg.cougaar.message.transport.aspects.RMISendTimeoutAspect.connectTimeout", "300000")
+    node.override_parameter("-Dorg.cougaar.message.transport.aspects.RMISendTimeoutAspect.readTimeout", "300000")
+    node.override_parameter("-Dorg.cougaar.message.transport.aspects.RMISendTimeoutAspect.writeTimeout", "300000")
+
+end

@@ -15,7 +15,7 @@
 		</fileset>
         </path>
 
-	<target name="delete">
+  <target name="delete">
       <delete dir="${build}"/>
       <mkdir dir="${build}"/>
   </target>
@@ -28,7 +28,7 @@
                 destdir="${build}">
                 <classpath refid="cougaar.libs"/>
         </javac>
-	</target>
+  </target>
 
 	<target name="jar" depends="compile">
 		<jar jarfile="${jar}" baseDir="${build}"/>
@@ -36,12 +36,16 @@
 
 	<target name="create_cougaar_overlay">
 		<mkdir dir="staging/lib"/>
+		<mkdir dir="staging/csmart"/>
 		<antcall target="delete"/>
 		<antcall target="jar"/>
 		<signjar jar="${jar}" keystore="/var/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
-    <move file="${jar}" todir="staging/lib"/>
-    <zip zipfile="AR_objs_common.zip" basedir="staging"/>
-    <delete dir="staging"/>
+		<move file="${jar}" todir="staging/lib"/>
+		<copy todir="staging/csmart/">
+			<fileset dir="csmart/"/>
+		</copy>
+		<zip zipfile="AR_objs_common.zip" basedir="staging"/>
+		<delete dir="staging"/>
 	</target>
 
 	<target name="clean" depends="delete,compile,jar"/>
