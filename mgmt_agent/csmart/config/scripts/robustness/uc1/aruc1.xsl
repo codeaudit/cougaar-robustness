@@ -40,7 +40,7 @@
 
 <xsl:template match="Agent">
   <xsl:variable name="currentAgent" select="@Name" />
-  <xsl:variable name="managerAgent">RobustnessManager</xsl:variable>
+  <xsl:variable name="managerAgent">ARManager</xsl:variable>
   <!--Automatically creat the manager agent.-->
   <xsl:if test="contains($currentAgent, $managerAgent)">
     <agent>
