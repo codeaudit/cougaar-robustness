@@ -416,14 +416,18 @@ public abstract class Action
      * (e.g. 0 gal, 1 gal, 2 gal, 5 gal).  
      *     Not for public viewing / access - should only be called by the action/actuator.
      */
-    protected void setValuesOffered ( Set values) throws  IllegalValueException 
-    {        
+    protected void setValuesOffered( Set values) throws IllegalValueException {
+
         if (values == null) {
-            throw new IllegalValueException ("setValuesOffered must not be called with a null value. An empty set IS permitted.");
+            throw new IllegalValueException("setValuesOffered must not be called with a null value. An empty set IS permitted.");
         }
 
+        //Empty the valuesOffered set
+        valuesOffered.clear();
+        
+        Set newValuesOffered = new LinkedHashSet(values);
         Object o;
-        Iterator i = values.iterator();
+        Iterator i = newValuesOffered.iterator();
         while (i.hasNext()) {
             o = i.next() ;
             if ( possibleValues.contains(o) ) {
@@ -433,6 +437,7 @@ public abstract class Action
             }
         }
     }
+    
    
     /**
      * @return the subset of the PossibleValues that the Actuator is offering to execute at the 
