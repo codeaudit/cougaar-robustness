@@ -150,32 +150,19 @@ public class MobileHostsAspect extends StandardAspect
 		    log.info("run: myHost initialized to "+myHost);
 		}
 	    } else if (!addr.equals(myAddr) && host.equals(myHost)) {
-		if (log.isInfoEnabled())
-		    log.info("run: "+myHost+"'s address changed from "+myAddr+" to "+addr+".  Re-registering clients.");
 		if (eventSvc.isEventEnabled())
 		    eventSvc.event("IP Address of "+myHost+" changed from "+myAddr+" to "+addr);
 		myAddr = addr;
-		synchronized (clients) {
-		    Iterator iter = clients.iterator();
-		    while (iter.hasNext()) {
-			MessageTransportClient client = (MessageTransportClient)iter.next();
-			if (log.isInfoEnabled())
-			    log.info("run: Unregistering client "+client);
-			registry.unregisterClient(client);
-			try {
-			    System.setProperty("java.rmi.server.hostname",myAddr);
-			} catch (Exception e) {
-			    log.error("run: ERROR calling System.setProperty(\"java.rmi.server.hostname\","+myAddr+")",e);
-			}
-			if (log.isInfoEnabled())
-			    log.info("run: Registering client "+client);		
-			registry.registerClient(client);
-		    }
-		}					
+		try {
+		    System.setProperty("java.rmi.server.hostname",myAddr);
+		    registry.ipAddressChanged();
+		} catch (Exception e) {
+		    log.error("run: ERROR calling System.setProperty(\"java.rmi.server.hostname\","+myAddr+")",e);
+		}
 	    }
 	} catch (java.net.UnknownHostException e) {
 	    log.error("run: getLocalHost returned an unknown host.", e);
 	}
     }
-
+    
 }
