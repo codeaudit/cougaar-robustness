@@ -33,6 +33,7 @@ society.each_agent(true) do |agent|
 end
 
 society.each_node do |node|
+    node.override_parameter("-Dorg.cougaar.core.logging.config.filename","loggingCoordinator.conf")
     mgr_node = false
     if node.has_facet?("role")
         node.each_facet("role") do |facet|
