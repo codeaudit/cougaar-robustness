@@ -8,6 +8,7 @@ $:.unshift File.join(CIP, 'csmart', 'config', 'lib')
 require 'cougaar/scripting'
 require 'ultralog/scripting'
 require 'robustness/uc1/aruc1_actions_and_states'
+require 'robustness/uc4/aruc4_actions_and_states'
 require 'robustness/uc1/deconfliction'
 
 HOSTS_FILE = Ultralog::OperatorUtils::HostManager.new.get_hosts_file
@@ -66,12 +67,12 @@ Cougaar.new_experiment("ARUC4_HostLossThreatAlert").run(1) {
   #   alert level(select from: maximum, high, medium, low, minimum, undefined),
   #   alert duration, and
   #   assets
-  assets = Hash['node'=>'REAR-A-NODE', 'node'=>'REAR-B-NODE']
+  assets = {'node' => 'REAR-A-NODE, REAR-B-NDOE'}
   do_action "PublishThreatAlert",
             "org.cougaar.tools.robustness.ma.HostLossThreatAlert",
             "CONUS-REAR-COMM",
             "HealthMonitor",
-            "medium",
+            "high",
             10.minutes,
             assets
 
