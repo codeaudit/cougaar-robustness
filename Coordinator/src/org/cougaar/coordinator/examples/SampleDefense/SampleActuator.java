@@ -36,7 +36,7 @@ public class SampleActuator extends ComponentPlugin
 {
     private LoggingService log;
     private SampleAction action;
-    private SampleRawActuatorData rawActuatorData;
+    private SampleRawActuatorData data;
     private ServiceBroker sb;
     
     private IncrementalSubscription actionSub;
@@ -80,7 +80,7 @@ public class SampleActuator extends ComponentPlugin
 	    action = new SampleAction(agentId.toString(), initialValuesOffered, sb);
 	    blackboard.publishAdd(action);
 	    if (log.isDebugEnabled()) log.debug(action + " added.");
-	    SampleRawActuatorData data = new SampleRawActuatorData(agentId.toString(), action.getPossibleValues());
+	    data = new SampleRawActuatorData(agentId.toString(), action.getPossibleValues());
 	    blackboard.publishAdd(data);
 	    if (log.isDebugEnabled()) log.debug(data + " added.");	
 	} catch (IllegalValueException e) {
@@ -94,12 +94,12 @@ public class SampleActuator extends ComponentPlugin
 	
 	Iterator iter = rawActuatorDataSub.getChangedCollection().iterator();
 	while (iter.hasNext()) {
-	    rawActuatorData = (SampleRawActuatorData)iter.next();
-	    if (rawActuatorData != null) {
-		int command = rawActuatorData.getCommand();
+	    SampleRawActuatorData data = (SampleRawActuatorData)iter.next();
+	    if (data != null) {
+		int command = data.getCommand();
 		switch (command) {
 		case SampleRawActuatorData.SET_VALUES_OFFERED:
-		    Set valuesOffered = rawActuatorData.getValuesOffered();
+		    Set valuesOffered = data.getValuesOffered();
 		    try {
 			action.setValuesOffered(valuesOffered);
 			blackboard.publishChange(action);
@@ -110,7 +110,7 @@ public class SampleActuator extends ComponentPlugin
 		    }
 		    break;
 		case SampleRawActuatorData.START:
-		    Object actionValue = rawActuatorData.getActionValue();
+		    Object actionValue = data.getActionValue();
 		    try {
 			action.start(actionValue);
 			blackboard.publishChange(action);
@@ -121,7 +121,7 @@ public class SampleActuator extends ComponentPlugin
 		    }	
 		    break;
 		case SampleRawActuatorData.STOP:
-		    String codeStr = rawActuatorData.getCompletionCode();
+		    String codeStr = data.getCompletionCode();
                     Action.CompletionCode code = (Action.CompletionCode)codeTbl.get(codeStr);
 		    try {
 			action.stop(code);
@@ -141,11 +141,11 @@ public class SampleActuator extends ComponentPlugin
 	while (iter.hasNext()) {
 	    SampleAction action = (SampleAction)iter.next();
 	    if (action != null) {
-                rawActuatorData.setPermittedValues(action.getPermittedValues());
-                rawActuatorData.setCommand(SampleRawActuatorData.SET_PERMITTED_VALUES);
-                blackboard.publishChange(rawActuatorData);
+                data.setPermittedValues(action.getPermittedValues());
+                data.setCommand(SampleRawActuatorData.SET_PERMITTED_VALUES);
+                blackboard.publishChange(data);
 		if (log.isDebugEnabled()) 
-		    log.debug(rawActuatorData + " changed.");
+		    log.debug(data + " changed.");
 	    }
 	}
         
