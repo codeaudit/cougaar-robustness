@@ -10,6 +10,75 @@ ps   = "org.cougaar.coordinator.test.coordination.PublishServlet"
 
 plugins = [awmp,dwmp,ams,dms,ps]
 
+ltsp = "org.cougaar.coordinator.techspec.xml.LoadTechSpecsPlugin"
+
+# Sensors TechSpecs
+acs  = 'AgentCommSensors.xml'
+tss  = 'ThrashingSuppressionSensor.xml'
+
+# Actuator TechSpecs
+ra   = 'RestartActuator.xml'
+fca  = 'FakeCommActuator.xml'
+
+# Cross Diagnosis TechSpecs
+cd   = 'CrossDiagnosis.xml'
+
+mgr_node_techspecs   = [acs,tss,ra,fca,cd]
+other_node_techspecs = [acs,tss,ra,fca]
+
 society.each_agent(true) do |agent|
     agent.add_components(plugins)
+end
+
+society.each_node do |node|
+    mgr_node = false
+    if node.has_facet?("role")
+        node.each_facet("role") do |facet|
+            if facet["role"] == "AR-Management"
+                mgr_node = true
+            end
+        end
+    end
+    found = false
+    if mgr_node == true
+        node.each_component do |c|
+            next unless c.classname == ltsp
+	    mgr_node_techspecs.each do |ts|
+                c.add_argument(ts) unless c.has_argument?(ts)
+            end
+            c.name = c.comparison_name
+            found = true
+            break
+        end
+        unless found
+            node.add_component do |c|
+                c.classname = ltsp
+#               c.priority = 'HIGH'
+                c.insertionpoint = 'Node.AgentManager.Agent.PluginManager.Plugin'
+                mgr_node_techspecs.each do |ts|
+                    c.add_argument(ts)
+                end
+            end
+	end
+    else
+        node.each_component do |c|
+            next unless c.classname == ltsp
+	    other_node_techspecs.each do |ts|
+                c.add_argument(ts) unless c.has_argument?(ts)
+            end
+            c.name = c.comparison_name
+            found = true
+            break
+        end
+        unless found
+            node.add_component do |c|
+                c.classname = ltsp
+#               c.priority = 'HIGH'
+                c.insertionpoint = 'Node.AgentManager.Agent.PluginManager.Plugin'
+                other_node_techspecs.each do |ts|
+                    c.add_argument(ts)
+                end
+            end
+	end
+    end
 end

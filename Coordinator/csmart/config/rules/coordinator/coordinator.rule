@@ -14,31 +14,18 @@ amp  = "org.cougaar.coordinator.techspec.AssetManagerPlugin"
 tmmp = "org.cougaar.coordinator.techspec.ThreatModelManagerPlugin"
 ltsp = "org.cougaar.coordinator.techspec.xml.LoadTechSpecsPlugin"
 
-# Coordinator TechSpecs
-aasd = 'AgentAssetTest.xml'
-nasd = 'NodeAssetTest.xml'
-hasd = 'HostAssetTest.xml'
-easd = 'EnclaveAssetTest.xml'
-t    = 'ThreatTestXML.xml'
-e    = 'EventTestXML.xml'
+# TechSpecs
+aasd = 'AgentAssetStateDimensions.xml'
+nasd = 'NodeAssetStateDimensions.xml'
+hasd = 'HostAssetStateDimensions.xml'
+easd = 'EnclaveAssetStateDimensions.xml'
+t    = 'Threats.xml'
+e    = 'Events.xml'
 
-# Sensors TechSpecs
-as   = 'AgentSensorTypeTest.xml'
-tss  = 'ThrashingSuppressionSensorTypeTest.xml'
-
-# Actuator TechSpecs
-ra   = 'RestartActuatorTypeTestXML.xml'
-fca  = 'FakeCommActuatorTypeTestXML.xml'
-
-# Cross Diagnosis TechSpecs
-cd   = 'CrossDiagnosisTestXML.xml'
-
-mgr_node_techspecs = [aasd,nasd,hasd,easd,t,e,as,tss,ra,fca,cd]
-
-other_node_techspecs = [aasd,nasd,hasd,easd,as,tss,ra,fca,   t,e]
+mgr_node_techspecs = [aasd,nasd,hasd,easd,t,e]
+other_node_techspecs = [aasd,nasd,hasd,easd,    t,e]
 
 nodePlugins = [arm,drm,rmfp]
-
 mgrPlugins = [bp,cbp,cmp,asp,tmmp]
 
 society.each_agent do |agent|
@@ -48,6 +35,7 @@ society.each_agent do |agent|
 end
 
 society.each_node do |node|
+    node.append_value_on_parameter("-Dorg.cougaar.config.path", "$COUGAAR_INSTALL_PATH/configs/coordinator")
     node.add_components(nodePlugins)
     mgr_node = false
     if node.has_facet?("role")
@@ -57,18 +45,48 @@ society.each_node do |node|
             end
         end
     end
-    node.add_component do |c|
-        c.classname = ltsp
-#        c.priority = 'HIGH'
-        c.insertionpoint = 'Node.AgentManager.Agent.PluginManager.Plugin'
-        if mgr_node == true
+    found = false
+    if mgr_node == true
+        node.each_component do |c|
+            next unless c.classname == ltsp
 	    mgr_node_techspecs.each do |ts|
-                c.add_argument(ts)
+                c.add_argument(ts) unless c.has_argument?(ts)
             end
-        else
-            other_node_techspecs.each do |ts|
-                c.add_argument(ts)
-            end
+            c.name = c.comparison_name
+            found = true
+            break
         end
+        unless found
+            node.add_component do |c|
+                c.classname = ltsp
+#               c.priority = 'HIGH'
+                c.insertionpoint = 'Node.AgentManager.Agent.PluginManager.Plugin'
+                mgr_node_techspecs.each do |ts|
+                    c.add_argument(ts)
+                end
+            end
+	end
+    else
+        node.each_component do |c|
+            next unless c.classname == ltsp
+	    other_node_techspecs.each do |ts|
+                c.add_argument(ts) unless c.has_argument?(ts)
+            end
+            c.name = c.comparison_name
+            found = true
+            break
+        end
+        unless found
+            node.add_component do |c|
+                c.classname = ltsp
+#               c.priority = 'HIGH'
+                c.insertionpoint = 'Node.AgentManager.Agent.PluginManager.Plugin'
+                other_node_techspecs.each do |ts|
+                    c.add_argument(ts)
+                end
+            end
+	end
     end
 end
+
+
