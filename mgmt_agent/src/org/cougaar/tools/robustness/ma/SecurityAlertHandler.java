@@ -50,7 +50,7 @@ public class SecurityAlertHandler extends RobustnessThreatAlertHandlerBase {
   public void newAlert(ThreatAlert ta) {
     if (ta instanceof SecurityAlert) {
       SecurityAlert sa = (SecurityAlert)ta;
-      logger.info("Received SecurityThreatAlert: " + sa);
+      logger.info("Received new SecurityThreatAlert: " + sa);
       if (agentId.toString().equals(preferredLeader())) {
         Set affectedNodes = new HashSet();
         Set affectedAgents = new HashSet();
@@ -73,6 +73,20 @@ public class SecurityAlertHandler extends RobustnessThreatAlertHandlerBase {
     }
   }
 
+  public void changedAlert(ThreatAlert ta) {
+    if (ta instanceof SecurityAlert) {
+      SecurityAlert sa = (SecurityAlert) ta;
+      logger.info("SecurityThreatAlert changed: " + sa);
+    }
+  }
+
+  public void removedAlert(ThreatAlert ta) {
+    if (ta instanceof SecurityAlert) {
+      SecurityAlert sa = (SecurityAlert) ta;
+      logger.info("SecurityThreatAlert removed: " + sa);
+    }
+  }
+
   /**
    * Adjust key robustness parameters based on new security level.
    * @param ta
@@ -82,7 +96,7 @@ public class SecurityAlertHandler extends RobustnessThreatAlertHandlerBase {
     CommunityService cs =
         (CommunityService) bindingSite.getServiceBroker().getService(this, CommunityService.class, null);
     Attributes attrs = cs.getCommunityAttributes(model.getCommunityName());
-    changeAttribute(attrs, "UPDATE_INTERVAL", "15000");
+    changeAttribute(attrs, "UPDATE_INTERVAL", "60000");
     cs.setCommunityAttributes(model.getCommunityName(), attrs);
   }
 

@@ -50,7 +50,7 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
 
   public void newAlert(ThreatAlert ta) {
     if (ta instanceof HostLossThreatAlert) {
-      logger.info("Received HostLossThreatAlert: " + ta);
+      logger.info("Received new HostLossThreatAlert: " + ta);
       if (agentId.toString().equals(preferredLeader())) {
         Set affectedNodes = new HashSet();
         Set affectedAgents = new HashSet();
@@ -73,6 +73,18 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
         }
         adjustRobustnessParameters(ta, affectedAgents);
       }
+    }
+  }
+
+  public void changedAlert(ThreatAlert ta) {
+    if (ta instanceof HostLossThreatAlert) {
+      logger.info("Received changed HostLossThreatAlert: " + ta);
+    }
+  }
+
+  public void removedAlert(ThreatAlert ta) {
+    if (ta instanceof HostLossThreatAlert) {
+      logger.info("Received removed HostLossThreatAlert: " + ta);
     }
   }
 

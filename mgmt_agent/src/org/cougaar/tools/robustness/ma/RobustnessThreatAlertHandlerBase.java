@@ -36,7 +36,7 @@ import javax.naming.directory.Attribute;
 import javax.naming.directory.BasicAttribute;
 
 /**
- * Based class for robustness ThreatAlert handlers.
+ * Base class for robustness ThreatAlert handlers.
  */
 public abstract class RobustnessThreatAlertHandlerBase extends ThreatAlertHandlerBase {
 
