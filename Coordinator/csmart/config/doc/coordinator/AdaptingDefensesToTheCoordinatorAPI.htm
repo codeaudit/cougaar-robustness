@@ -38,7 +38,8 @@ be reviewed and corrected as necessary. See <a
 and <a
  href="https://docs.ultralog.net/dscgi/ds.py/Get/File-5153/UC1_Figure.jpg">https://docs.ultralog.net/dscgi/ds.py/Get/File-5153/UC1_Figure.jpg</a>.
 The TechSpecs for several of these are already present in
-configs/coordinator/… Our intention is to provide the remainder in the
+subdirectories of $CIP/configs/coordinator.&nbsp; Our intention is to
+provide the remainder in the
 next week or so.</p>
   <p>$CIP/configs/coordinator/SampleDefense contains a simple example
 of a complete set of TechSpecs. While it is not necessary to follow the
@@ -674,31 +675,119 @@ To exercise it try the following in sequnce:<br>
   <li>Select both of the items in the Sample Action's (bottom 1/2 of
 servlet) PossibleValues menu and press the "Set Values Offered"
 button.&nbsp; The two values should be displayed in the ValuesOffered
-menu, and the Coordinator will be notified that the SampleAction in
-this agent is able and willing to execute those actions.&nbsp; <br>
+menu along with the phrase <b><font color="Blue">"Values Offered
+updated."</font></b>, and the Coordinator will be notified that the
+SampleAction in this agent is able and willing to execute those
+actions.&nbsp; (Note: the servlet updates every 10 seconds, so make
+sure your selections are still highlighted when you press the button.)<br>
   </li>
   <li>The current value of the SampleDiagnosis is "Secure".&nbsp; Given
 that and the current TechSpecs, the Coordinator will not decide any
 action by the SampleActuator is appropriate, so no PermittedValues will
 be set.</li>
   <li>Now select "Compromised" from the Sample Diagnosis's (top half of
-servlet) PossibleValues menu and press the "Set Sensor Value" button.<br>
+servlet) PossibleValues menu and press the "Set Sensor Value"
+button.&nbsp; Immediately. t<span style="color: rgb(0, 0, 0);">he </span><font
+ color="Blue" style="color: rgb(0, 0, 0);">phrase </font><b><font
+ color="Blue">"Sensor Value updated."</font></b><font color="Blue"><span
+ style="color: rgb(0, 0, 0);"> will be displayed, the </span></font><b>"Current
+Sensor Value" </b>will change to&nbsp; "Compromised" and the new
+Sensor value will be relayed to Coordinator.&nbsp; (Note, the <b><font
+ color="Blue">"Sensor Value updated." </font></b><font color="Blue"><span
+ style="color: rgb(0, 0, 0);">will disappear after the next refresh.)</span><br>
+    </font></li>
+  <li>Given the probabilities in the TechSpecs, and the current
+ValuesOffered, the Coordinator should select a new PermittedValue,
+"Quarantine", and relay it back to the SampleAction in this
+agent.&nbsp; When the servlet refreshes, it should be displayed in the
+list of PermittedValues.&nbsp; [Note: depending on the timing values in
+the TechSpecs and how long you waiting to press the buttons, its
+possible that the Coordinator will not believe the diagnosis
+sufficiently to recommend "Quarantine".&nbsp; If "Quarantine" is not
+displayed, try diagnosing is again by repeating Step #3.</li>
+  <li>Now indicate to the Coordinator that the Actuator is executing
+the Permitted Action by selecting "Quarantine" from the list of
+PermittedValues and pressing the Start button. <br>
   </li>
+  <li><b><font color="Blue">"Action Quarantine Started.</font></b><b>" </b>will
+be displayed immediately and "<b>Current Action:" </b>will display<b> "</b>Quarantine".</li>
+  <li>Now select "COMPLETED" from the Completion Codes menu and press
+the Stop button.</li>
+  <li><b><font color="Blue">"Action COMPLETED." </font></b><font
+ color="Blue" style="color: rgb(0, 0, 0);">will be displayed
+immediately and </font><b><font color="Blue">"</font></b><b>Current
+CompletionCode:" </b>will display <b>"</b>COMPLETED".</li>
+  <li>You're on your own.&nbsp; You might try setting the Diagnosis to
+"Secure" and see if the Coordinator believes you and recommends
+"Release".&nbsp; It might take several attempts before it does.</li>
 </ol>
-<a href="http://localhost:8800/$TestAgent/SampleDefense"><br>
-</a>
-<div style="margin-left: 40px;"><br>
-<br>
-<br>
-<br>
-</div>
 </div>
 <ol start="6">
   <li><span style="font-family: arial,helvetica;"><span
- style="font-weight: bold;">dddd</span></span></li>
-  <li><span style="font-family: arial,helvetica;"><span
- style="font-weight: bold;">dddd</span></span></li>
+ style="font-weight: bold;">Notes</span></span><br>
+  </li>
 </ol>
+<ol style="margin-left: 40px;">
+  <li>All the source for the SampleDefense is
+src/examples/SampleDefense directory. Get it from the Dashboard:</li>
+</ol>
+<div style="margin-left: 80px;">&nbsp;
+<a
+ href="https://cvs.ultralog.net/src/Robustness_objs_Coordinator_HEAD_B11_0_src.zip">https://cvs.ultralog.net/src/Robustness_objs_Coordinator_HEAD_B11_0_src.zip</a><br>
+</div>
+<br>
+<div style="margin-left: 80px;">or cvs (root=/cvs/robustness/objs,
+module=Coordinator).&nbsp;
+As mentioned above, the SampleDefense TechSpecs are in
+$CIP/configs/coordinator/SampleDefense. Our claim is that no knowledge
+of or changes to any other Coordinator code should be required to
+implement other Defenses conforming to the Coordinator API.&nbsp;
+Changes to
+the TechSpecs are likely however.&nbsp; We've taken a first crack at
+sets
+for the Restart, PlannedDisconnect, and MsgLog Defenses (in
+$CIP/configs/coordinator), just to give developers an idea.&nbsp; We'll
+work
+with you to get them, and your implementation, correct.</div>
+<ol style="margin-left: 40px;" start="2">
+  <li>In the SampleDefense implementation, raw sensor data and raw
+actuator data originates in the SampleServlet and is posted to the
+Agent's blackboard as instances of SampleRawSensorData and
+SampleRawActuatorData.&nbsp; This has nothing to do with the
+Coordinator or its API.&nbsp;&nbsp; Its an attempt to separate the
+implementation of the Coordinator API from the mechanism by which the
+data is provided.&nbsp; Each Defense already has its own mechanism for
+providing that data.<br>
+  </li>
+</ol>
+<ol style="margin-left: 40px;" start="3">
+  <li>The Coordinator Team is:</li>
+</ol>
+<ol style="margin-left: 40px;" start="2">
+  <ol>
+    <li style="font-family: monospace;">Shilpa Bondale &nbsp;&nbsp; <a
+ href="mailto:shilpa@research.telcordia.com">mailto:shilpa@research.telcordia.com</a></li>
+    <li style="font-family: monospace;">Marshall Brinn&nbsp; &nbsp; <a
+ href="mailto:mbrinn@bbn.com">mailto:mbrinn@bbn.com</a></li>
+    <li style="font-family: monospace;">Tony Cassandra &nbsp;&nbsp; <a
+ href="mailto:arc@research.telcordia.com">mailto:arc@research.telcordia.com</a><br>
+    </li>
+    <li style="font-family: monospace;">Steve
+Ford&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; <a
+ href="mailto:ford@objs.com">mailto:ford@objs.com</a></li>
+    <li style="font-family: monospace;">Aaron Helsinger &nbsp; <a
+ href="mailto:ahelsing@bbn.com">mailto:ahelsing@bbn.com</a></li>
+    <li style="font-family: monospace;">Misty Nodine&nbsp;&nbsp;
+&nbsp;&nbsp; <a href="mailto:nodine@research.telcordia.com">mailto:nodine@research.telcordia.com</a></li>
+    <li style="font-family: monospace;">Paul Pazandak&nbsp;
+&nbsp;&nbsp; <a href="mailto:pazandak@objs.com">mailto:pazandak@objs.com</a></li>
+    <li style="font-family: monospace;">David Wells&nbsp;&nbsp; &nbsp;
+&nbsp; <a href="mailto:wells@objs.com">mailto:wells@objs.com</a></li>
+  </ol>
+</ol>
+<div style="margin-left: 80px;">Please send questions and comments to
+our team's mailing list <a href="mailto:ul-architecture@ultralog.net"
+ style="font-family: monospace;">mailto:ul-architecture@ultralog.net</a></div>
 <br>
 <br>
 <br>
