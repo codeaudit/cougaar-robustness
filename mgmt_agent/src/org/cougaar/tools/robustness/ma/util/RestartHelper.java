@@ -230,8 +230,8 @@ public class RestartHelper extends BlackboardClientComponent {
           myUIDs.add(acUID);
           AgentControl ac =
               mobilityFactory.createAgentControl(acUID, agentId, addTicket);
-          restartInitiated(agent);
-          event("Restarting agent: agent=" + agent + " dest=" + agentId);
+          restartInitiated(agent, agentId);
+          //event("Restarting agent: agent=" + agent + " dest=" + agentId);
           blackboard.publishAdd(ac);
           if (logger.isInfoEnabled()) {
             StringBuffer sb =
@@ -262,7 +262,7 @@ public class RestartHelper extends BlackboardClientComponent {
         if (expiration < now) {
           it.remove();
           logger.debug("Restart timeout: agent=" + agent);
-          restartComplete(agent, FAIL);
+          restartComplete(agent, agentId, FAIL);
         }
       }
   }
@@ -277,33 +277,43 @@ public class RestartHelper extends BlackboardClientComponent {
           AddTicket addTicket = (AddTicket) ticket;
           switch (ac.getStatusCode()) {
             case AgentControl.CREATED:
+              /*
               event("Restart successful:" +
                     " agent=" + addTicket.getMobileAgent() +
                     " dest=" + addTicket.getDestinationNode() +
                     " status=" + ac.getStatusCodeAsString());
+              */
               blackboard.publishRemove(ac);
               myUIDs.remove(ac.getOwnerUID());
               restartComplete(addTicket.getMobileAgent(),
+                              addTicket.getDestinationNode(),
                               SUCCESS);
               break;
             case AgentControl.ALREADY_EXISTS:
+              /*
               event("Restart successful:" +
                     " agent=" + addTicket.getMobileAgent() +
                     " dest=" + addTicket.getDestinationNode() +
                     " status=" + ac.getStatusCodeAsString());
+              */
               blackboard.publishRemove(ac);
               myUIDs.remove(ac.getOwnerUID());
               restartComplete(addTicket.getMobileAgent(),
+                              addTicket.getDestinationNode(),
                               SUCCESS);
               break;
             case AgentControl.FAILURE:
+              /*
               event("Restart failed:" +
                     " agent=" + addTicket.getMobileAgent() +
                     " dest=" + addTicket.getDestinationNode() +
                     " status=" + ac.getStatusCodeAsString());
+              */
               blackboard.publishRemove(ac);
               myUIDs.remove(ac.getOwnerUID());
-              restartComplete(addTicket.getMobileAgent(), FAIL);
+              restartComplete(addTicket.getMobileAgent(),
+                              addTicket.getDestinationNode(),
+                              FAIL);
               break;
             case AgentControl.NONE:
               break;
@@ -342,12 +352,12 @@ public class RestartHelper extends BlackboardClientComponent {
   /**
     * Notify restart listeners.
     */
-   private void restartInitiated(MessageAddress agent) {
-     logger.debug("RestartInitiated: agent=" + agent);
+   private void restartInitiated(MessageAddress agent, MessageAddress dest) {
+     logger.debug("RestartInitiated: agent=" + agent + " dest=" + dest);
      synchronized (listeners) {
        for (Iterator it = listeners.iterator(); it.hasNext(); ) {
          RestartListener rl = (RestartListener) it.next();
-         rl.restartInitiated(agent.toString());
+         rl.restartInitiated(agent.toString(), dest.toString());
        }
      }
    }
@@ -356,12 +366,12 @@ public class RestartHelper extends BlackboardClientComponent {
   /**
    * Notify restart listeners.
    */
-  private void restartComplete(MessageAddress agent, int status) {
-    logger.debug("RestartComplete: agent=" + agent);
+  private void restartComplete(MessageAddress agent, MessageAddress dest, int status) {
+    logger.debug("RestartComplete: agent=" + agent + " dest=" + dest + " status=" + status);
     synchronized (listeners) {
       for (Iterator it = listeners.iterator(); it.hasNext(); ) {
         RestartListener rl = (RestartListener) it.next();
-        rl.restartComplete(agent.toString(), status);
+        rl.restartComplete(agent.toString(), dest.toString(), status);
       }
     }
     restartsInProcess.remove(agent);
