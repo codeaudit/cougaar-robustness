@@ -49,8 +49,7 @@ public class PingServerPlugin extends ComponentPlugin {
   };
 
   protected void setupSubscriptions() {
-    log =  (LoggingService) getBindingSite().getServiceBroker().
-      getService(this, LoggingService.class, null);
+    log =  (LoggingService) getServiceBroker().getService(this, LoggingService.class, null);
     bb = getBlackboardService();
     sub = (IncrementalSubscription)bb.subscribe(pingPred);
   }
@@ -60,7 +59,7 @@ public class PingServerPlugin extends ComponentPlugin {
     while (iter.hasNext()) {
       Ping ping = (Ping)iter.next();
       if (ping.getTargets() == Collections.EMPTY_SET) {  // make sure I'm the target, not the source
-        MessageAddress me = getBindingSite().getAgentIdentifier();
+        MessageAddress me = getAgentIdentifier();
         if (log.isDebugEnabled()) 
           log.debug("PingServerPlugin.execute: received Ping = " + ping);
         ping.updateResponse(me, "Got it!");

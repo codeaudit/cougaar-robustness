@@ -60,7 +60,7 @@ public class PingRequesterPlugin extends ComponentPlugin {
   };
 
   private void sendPing (PingRequest req) {
-    MessageAddress source = getBindingSite().getAgentIdentifier();
+    MessageAddress source = getAgentIdentifier();
     MessageAddress target = req.getTarget();
     UID reqUID = req.getUID();
     UIDtable.add(req);
@@ -110,7 +110,7 @@ public class PingRequesterPlugin extends ComponentPlugin {
       PingRequest req = (PingRequest)iter.next();
       if (log.isDebugEnabled()) 
         log.debug("PingRequesterPlugin.execute: new PingRequest received = " + req);
-      MessageAddress myAddr = getBindingSite().getAgentIdentifier();
+      //MessageAddress myAddr = getAgentIdentifier();
       if (req.getStatus() == PingRequest.NEW) {   
         sendPing(req);
       }
@@ -121,7 +121,7 @@ public class PingRequesterPlugin extends ComponentPlugin {
       Ping ping = (Ping)iter.next();
       if (log.isDebugEnabled()) 
         log.debug("PingRequesterPlugin.execute: changed Ping received = " + ping);
-      MessageAddress myAddr = getBindingSite().getAgentIdentifier();
+      MessageAddress myAddr = getAgentIdentifier();
       if (ping.getSource().equals(myAddr)) {
         updatePingRequest(ping);
       }

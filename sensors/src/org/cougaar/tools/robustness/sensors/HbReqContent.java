@@ -131,6 +131,13 @@ public final class HbReqContent implements java.io.Serializable //, NotPersistab
   }
 
   /**
+  * Returns a hash code for this object.
+  */
+  public int hashCode() {
+    return super.hashCode();
+  }
+
+  /**
   * Returns a String represention for this object.
   */
   public String toString() {

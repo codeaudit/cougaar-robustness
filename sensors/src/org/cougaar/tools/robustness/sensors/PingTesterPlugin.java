@@ -57,13 +57,13 @@ public class PingTesterPlugin extends ComponentPlugin {
   };
 
   protected void setupSubscriptions() {
-    ServiceBroker sb = (ServiceBroker)getBindingSite().getServiceBroker();
+    ServiceBroker sb = getServiceBroker();
     log =  (LoggingService) sb.getService(this, LoggingService.class, null);
     DomainService domainService = (DomainService) sb.getService(this, DomainService.class, null);
     sensorFactory = (SensorFactory)domainService.getFactory("sensors");
     bb = getBlackboardService();
     sub = (IncrementalSubscription)bb.subscribe(pred);
-    MessageAddress source = getBindingSite().getAgentIdentifier();
+    MessageAddress source = getAgentIdentifier();
     // target is first parameter (from .ini)
     MessageAddress target = null;
     Iterator iter = this.getParameters().iterator();  
@@ -86,7 +86,7 @@ public class PingTesterPlugin extends ComponentPlugin {
       PingRequest req = (PingRequest)iter.next();
       if (log.isInfoEnabled()) 
         log.info("PingTesterPlugin.execute: received changed PingRequest = " + req);
-      MessageAddress myAddr = getBindingSite().getAgentIdentifier();
+      MessageAddress myAddr = getAgentIdentifier();
       if (req.getSource().equals(myAddr)) {
         int status = req.getStatus();
 	  switch (status) {

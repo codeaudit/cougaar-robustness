@@ -211,8 +211,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
   }
 
   protected void setupSubscriptions() {
-    log = (LoggingService) getBindingSite().getServiceBroker().
-      getService(this, LoggingService.class, null);
+    log = (LoggingService) getServiceBroker().getService(this, LoggingService.class, null);
     reqTable = new UniqueObjectSet();
     hbTable = new Hashtable();
     reportTable = new Hashtable();
@@ -233,7 +232,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
       HbReq hbReq = (HbReq)iter.next();
       if (log.isDebugEnabled()) 
         log.debug("\nHeartbeatRequesterPlugin.execute: changed HbReq received = " + hbReq);
-      MessageAddress myAddr = getBindingSite().getAgentIdentifier();
+      MessageAddress myAddr = getAgentIdentifier();
       if (hbReq.getSource().equals(myAddr)) {
         HbReqResponse response = (HbReqResponse)hbReq.getResponse();
         int status = response.getStatus();
@@ -281,7 +280,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
       if (status == HeartbeatRequest.NEW) {
         if (log.isDebugEnabled()) 
           log.debug("\nHeartbeatRequesterPlugin.prepareHealthReports: new HeartbeatRequest received = " + req);
-        MessageAddress source = getBindingSite().getAgentIdentifier();
+        MessageAddress source = getAgentIdentifier();
         Set targets = req.getTargets();
         UID reqUID = req.getUID();
         reqTable.add(req);

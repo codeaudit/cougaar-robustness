@@ -202,8 +202,11 @@ public class HeartbeatRequest implements UniqueObject, NotPersistable
   */
   public MessageAddress getTarget() { 
     Iterator iter = targets.iterator();
-    if (iter.hasNext()) return (MessageAddress)iter.next();
-    else return null;
+    if (iter.hasNext()) {
+      return (MessageAddress)iter.next();
+    } else {
+      return null;
+    }
   }
 
   /**

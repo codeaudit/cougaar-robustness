@@ -33,7 +33,6 @@ import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.agent.ClusterIdentifier;
 import org.cougaar.core.mts.MessageAddress;
-import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.component.ServiceBroker;
 
 /**
@@ -71,14 +70,14 @@ public class HeartbeatTesterPlugin extends ComponentPlugin {
   };
 
   protected void setupSubscriptions() {
-    ServiceBroker sb = (ServiceBroker)getBindingSite().getServiceBroker();
+    ServiceBroker sb = getServiceBroker();
     log =  (LoggingService) sb.getService(this, LoggingService.class, null);
     DomainService domainService = (DomainService) sb.getService(this, DomainService.class, null);
     sensorFactory = (SensorFactory)domainService.getFactory("sensors");
     bb = getBlackboardService();
     reqSub = (IncrementalSubscription)bb.subscribe(reqPred);
     reportSub = (IncrementalSubscription)bb.subscribe(reportPred);
-    MessageAddress source = getBindingSite().getAgentIdentifier();
+    MessageAddress source = getAgentIdentifier();
 
     Iterator iter = this.getParameters().iterator(); //from .ini
     long requestTimeout = 0;
@@ -103,7 +102,7 @@ public class HeartbeatTesterPlugin extends ComponentPlugin {
     }
     // the rest of the parameters are targets
     HashSet targets = new HashSet();
-    MessageAddress target = null;
+    //MessageAddress target = null;
     while (iter.hasNext()) {
       targets.add(new ClusterIdentifier((String)iter.next()));
     }
@@ -124,7 +123,7 @@ public class HeartbeatTesterPlugin extends ComponentPlugin {
     Iterator iter = reqSub.getChangedCollection().iterator();
     while (iter.hasNext()) {
       HeartbeatRequest req = (HeartbeatRequest)iter.next();
-      MessageAddress myAddr = getBindingSite().getAgentIdentifier();
+      MessageAddress myAddr = getAgentIdentifier();
       if (req.getSource().equals(myAddr)) {
         if (log.isInfoEnabled()) 
           log.info("\nHeartbeatTesterPlugin.execute: received changed HeartbeatRequest = " + req);

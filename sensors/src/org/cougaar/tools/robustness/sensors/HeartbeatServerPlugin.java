@@ -78,7 +78,6 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
           bb.openTransaction();
           processHeartbeats();
         } catch (Exception e) {
-          System.err.println("Caught " + e);
           e.printStackTrace();
         } finally {
           expired = true;
@@ -125,7 +124,7 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
         long nextHbDueFromNow = lastHbDue + freq - now;
         if (minFreq > nextHbDueFromNow) minFreq = nextHbDueFromNow;
         if (lastHbDue > lastHbSent) {   // its time for this one
-          MessageAddress me = getBindingSite().getAgentIdentifier();
+          MessageAddress me = getAgentIdentifier();
           response.setResponder(me);
 
           response.setStatus(HbReqResponse.HEARTBEAT);
@@ -161,7 +160,7 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
   }
 
   protected void setupSubscriptions() {
-    log =  (LoggingService) getBindingSite().getServiceBroker().
+    log =  (LoggingService) getServiceBroker().
       getService(this, LoggingService.class, null);
     bb = getBlackboardService();
     sub = (IncrementalSubscription)bb.subscribe(hbReqPred);
@@ -180,7 +179,7 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
       long now = System.currentTimeMillis();
       long freq = content.getHbFrequency();
       if (minFreq > freq) minFreq = freq;
-      MessageAddress me = getBindingSite().getAgentIdentifier();
+      MessageAddress me = getAgentIdentifier();
       req.updateResponse(me, new HbReqResponse(me, HeartbeatRequest.ACCEPTED, now, now));
       bb.publishChange(req);
       if (log.isDebugEnabled()) 

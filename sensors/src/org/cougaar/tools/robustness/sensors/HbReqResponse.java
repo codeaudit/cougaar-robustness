@@ -143,6 +143,13 @@ public final class HbReqResponse implements java.io.Serializable //, NotPersista
   }
 
   /**
+  * Returns a hash code for this object.
+  */
+  public int hashCode() {
+    return super.hashCode();
+  }
+
+  /**
   * Convert the status code to a human-readable String.
   */
   public static String statusToString(int status) {
