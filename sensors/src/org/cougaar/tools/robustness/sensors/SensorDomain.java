@@ -1,7 +1,7 @@
 /*
  * <copyright>
  *  Copyright 1997-2001 BBNT Solutions, LLC
- *  Copyright 2002 Object Services and Consulting, Inc.
+ *  Copyright 2002-2003// Object Services and Consulting, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -23,19 +23,23 @@
 package org.cougaar.tools.robustness.sensors;
 
 import java.util.*;
-import org.cougaar.core.agent.ClusterServesLogicProvider;
-import org.cougaar.core.blackboard.LogPlan;
-import org.cougaar.core.blackboard.XPlanServesBlackboard;
+//100 import org.cougaar.core.agent.ClusterServesLogicProvider;
+//100 import org.cougaar.core.blackboard.LogPlan;
+//100 import org.cougaar.core.blackboard.XPlanServesBlackboard;
 import org.cougaar.core.component.BindingSite;
+import org.cougaar.core.component.ServiceBroker; //100
 import org.cougaar.core.domain.DomainAdapter;
-import org.cougaar.core.domain.DomainBindingSite;
+//100 import org.cougaar.core.domain.DomainBindingSite;
 import org.cougaar.tools.manager.Constants;
+import org.cougaar.core.service.UIDService; //100
 
 /**
  * Domain for Sensors, named "sensors".
  **/
 public class SensorDomain extends DomainAdapter {
   private static final String SENSORS_NAME = "sensors".intern();
+
+  private UIDService uidService; //100
 
   /**
    * getDomainName - returns the Domain name. Used as domain identifier in 
@@ -54,12 +58,26 @@ public class SensorDomain extends DomainAdapter {
     super();
   }
 
+  public void setUIDService(UIDService uidService) {
+    this.uidService = uidService;
+  }
+
   /**
    * initialize method from GenericStateModelAdapter
    **/
   public void initialize() {
     super.initialize();
     Constants.Role.init();    // Insure that our Role constants are initted
+  }
+
+  public void unload() {
+    ServiceBroker sb = getBindingSite().getServiceBroker();
+    if (uidService != null) {
+      sb.releaseService(
+          this, UIDService.class, uidService);
+      uidService = null;
+    }
+    super.unload();
   }
 
   /**
@@ -70,20 +88,23 @@ public class SensorDomain extends DomainAdapter {
   }
 
   protected void loadFactory() {
+/* //100
     DomainBindingSite bindingSite = (DomainBindingSite) getBindingSite();
 
     if (bindingSite == null) {
       throw new RuntimeException("Binding site for the domain has not be set.\n" +
                                  "Unable to initialize domain Factory without a binding site.");
     } 
+*/ //100
+    getLoggingService().debug("Sensor domain:: loadfactory");
 
-    getLoggingService().debug("Aggregation domain:: loadfactory");
 
-
-    setFactory(new SensorFactory(bindingSite.getClusterServesLogicProvider().getLDM()));
+    //100 setFactory(new SensorFactory(bindingSite.getClusterServesLogicProvider().getLDM()));
+    setFactory(new SensorFactory(uidService)); //100
   }
 
   protected void loadXPlan() {
+/* //100
     DomainBindingSite bindingSite = (DomainBindingSite) getBindingSite();
 
     if (bindingSite == null) {
@@ -109,6 +130,7 @@ public class SensorDomain extends DomainAdapter {
     }
     
     setXPlan(logPlan);
+*/ //100
   }
 
   protected void loadLPs() {

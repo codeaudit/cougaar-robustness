@@ -1,7 +1,7 @@
 /*
  * <copyright>
  *  Copyright 1997-2001 BBNT Solutions, LLC
- *  Copyright 2002 Object Services and Consulting, Inc.
+ *  Copyright 2002-2003 Object Services and Consulting, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -24,8 +24,9 @@ package org.cougaar.tools.robustness.sensors;
 
 import java.util.Set;
 import org.cougaar.core.domain.Factory;
-import org.cougaar.core.domain.RootFactory;
-import org.cougaar.core.domain.LDMServesPlugin;
+//100 import org.cougaar.core.domain.RootFactory;
+import org.cougaar.core.domain.Factory;
+//100 import org.cougaar.core.domain.LDMServesPlugin;
 import org.cougaar.core.util.UID;
 import org.cougaar.core.service.UIDServer;
 import org.cougaar.core.mts.MessageAddress;
@@ -34,14 +35,16 @@ import org.cougaar.core.mts.MessageAddress;
  * Factory for PingRequests & HeartbeatRequests.
  **/
 public class SensorFactory implements org.cougaar.core.domain.Factory {
-  UIDServer myUIDServer;
+  UIDServer uidServer; //100
 
   /**
    * Constructor
    **/
-  public SensorFactory(LDMServesPlugin ldm) {
+  //100 public SensorFactory(LDMServesPlugin ldm) {
+  public SensorFactory(UIDServer uidServer) { //100
     //RootFactory rf = ldm.getFactory();
-    myUIDServer = ldm.getUIDServer();
+    //100 myUIDServer = ldm.getUIDServer();
+    this.uidServer = uidServer;  //100
   }
 
   /** 
@@ -56,7 +59,7 @@ public class SensorFactory implements org.cougaar.core.domain.Factory {
   public PingRequest newPingRequest(MessageAddress source, 
                                     MessageAddress target, 
                                     long timeout) {
-    UID uid = myUIDServer.nextUID();
+    UID uid = uidServer.nextUID();
     PingRequest req = new PingRequest(uid, source, target, timeout);
     return req;
   }
@@ -85,7 +88,7 @@ public class SensorFactory implements org.cougaar.core.domain.Factory {
                                               long hbTimeout,
                                               boolean onlyOutOfSpec,
                                               float percentOutOfSpec) {
-    UID uid = myUIDServer.nextUID();
+    UID uid = uidServer.nextUID();
     HeartbeatRequest req = new HeartbeatRequest(uid, 
                                                 source,
                                                 target,
@@ -119,7 +122,7 @@ public class SensorFactory implements org.cougaar.core.domain.Factory {
                                               long hbTimeout,
                                               boolean onlyOutOfSpec,
                                               float percentOutOfSpec) {
-    UID uid = myUIDServer.nextUID();
+    UID uid = uidServer.nextUID();
     HeartbeatRequest req = new HeartbeatRequest(uid, 
                                                 source,
                                                 targets,
@@ -132,17 +135,3 @@ public class SensorFactory implements org.cougaar.core.domain.Factory {
   }
 
 }
-  
-
-
-
-
-
-
-
-
-
-
-
-
-

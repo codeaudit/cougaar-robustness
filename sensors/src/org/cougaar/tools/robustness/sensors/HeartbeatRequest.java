@@ -29,8 +29,8 @@ import java.util.Iterator;
 import org.cougaar.core.relay.*;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.util.UID;
-import org.cougaar.core.util.XMLizable;
-import org.cougaar.core.util.XMLize;
+//100 import org.cougaar.core.util.XMLizable;
+//100 import org.cougaar.core.util.XMLize;
 import org.cougaar.core.util.UniqueObject;
 import org.cougaar.core.persist.NotPersistable;
 

@@ -31,7 +31,7 @@ import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.AgentIdentificationService;
-import org.cougaar.core.agent.ClusterIdentifier;
+//100 import org.cougaar.core.agent.ClusterIdentifier;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.component.ServiceBroker;
 
@@ -84,7 +84,8 @@ public class HeartbeatTesterMICPlugin extends ComponentPlugin {
     MessageAddress source = getAgentIdentifier();
     MessageAddress target = null;
     while (iter.hasNext()) {
-      target = new ClusterIdentifier((String)iter.next());
+      //100 target = new ClusterIdentifier((String)iter.next());
+      target = MessageAddress.getMessageAddress((String)iter.next()); //100
       HeartbeatRequest req = sensorFactory.newHeartbeatRequest(source, 
                                                                target, 
                                                                requestTimeout, 
@@ -116,7 +117,7 @@ public class HeartbeatTesterMICPlugin extends ComponentPlugin {
     while (iter.hasNext()) {
       HeartbeatRequest req = (HeartbeatRequest)iter.next();
       MessageAddress myAddr = getAgentIdentifier();
-      if (req.getSource().equals(myAddr)) {
+      if (req.getSource().getPrimary().equals(myAddr.getPrimary())) { //100 added getPrimary
         if (log.isInfoEnabled()) 
           log.info("execute: received changed HeartbeatRequest = " + req);
         int status = req.getStatus();

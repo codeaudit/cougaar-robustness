@@ -31,7 +31,7 @@ import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.AgentIdentificationService;
-import org.cougaar.core.agent.ClusterIdentifier;
+//100 import org.cougaar.core.agent.ClusterIdentifier;
 import org.cougaar.core.mts.MessageAddress;
 
 /**
@@ -68,7 +68,8 @@ public class PingTesterPlugin extends ComponentPlugin {
     MessageAddress target = null;
     Iterator iter = this.getParameters().iterator();  
     if (iter.hasNext()) {
-      target = new ClusterIdentifier((String)iter.next());
+      //100 target = new ClusterIdentifier((String)iter.next());
+      target = MessageAddress.getMessageAddress((String)iter.next()); //100
     }
     long timeout = 0;
     if (iter.hasNext()) {
@@ -87,7 +88,7 @@ public class PingTesterPlugin extends ComponentPlugin {
       if (log.isInfoEnabled()) 
         log.info("execute: received changed PingRequest = " + req);
       MessageAddress myAddr = getAgentIdentifier();
-      if (req.getSource().equals(myAddr)) {
+      if (req.getSource().getPrimary().equals(myAddr.getPrimary())) { //100 added getPrimary
         int status = req.getStatus();
 	  switch (status) {
           case PingRequest.NEW:

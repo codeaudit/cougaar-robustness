@@ -205,7 +205,7 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
     iter = sub.getAddedCollection().iterator();
     while (iter.hasNext()) {
       HbReq req = (HbReq)iter.next();
-      if (!req.getSource().equals(getAgentIdentifier())) {
+      if (!req.getSource().getPrimary().equals(getAgentIdentifier().getPrimary())) {  //100 added getPrimary
         if (log.isDebugEnabled()) 
           log.debug("execute: received added HbReq = " + req);
         HbReqContent content = (HbReqContent)req.getContent();

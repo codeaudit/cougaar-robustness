@@ -1,7 +1,7 @@
 /* 
  * <copyright>
  * Copyright 2002 BBNT Solutions, LLC
- * Copyright 2002 Object Services and Consulting, Inc.
+ * Copyright 2002-2003 Object Services and Consulting, Inc.
  * under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
 
  * This program is free software; you can redistribute it and/or modify
@@ -33,18 +33,18 @@ import org.cougaar.core.relay.*;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.mts.MessageAttributes;
 import org.cougaar.core.mts.SimpleMessageAttributes;
-import org.cougaar.core.mts.MessageUtils;
+//100 import org.cougaar.core.mts.MessageUtils;
 import org.cougaar.core.util.UID;
-import org.cougaar.core.util.XMLizable;
-import org.cougaar.core.util.XMLize;
-import org.cougaar.core.agent.ClusterIdentifier;
+//100 import org.cougaar.core.util.XMLizable;
+//100 import org.cougaar.core.util.XMLize;
+//100 import org.cougaar.core.agent.ClusterIdentifier;
 import org.cougaar.core.persist.NotPersistable;
 
 /**
  * A Heartbeat Request Relay, the Blackboard object that is passed
  * between HeartbeatRequesterPlugin to HeartbeatServerPlugin.
  **/
-public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersistable
+public class HbReq implements Relay.Source, Relay.Target, NotPersistable //100 , XMLizable
 {
   private UID uid;
   private MessageAddress source;
@@ -52,6 +52,16 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersista
   private Object content;
   private Object response;
   private boolean heartbeat = false;
+
+  //100 copied from org.cougaar.core.mts.MessageUtils.java until MsgLog is ported
+  private final class MessageUtils
+  {
+    private static final String MSG_TYPE =              "MessageType";
+    private static final String MSG_NUM =               "MessageNumber";
+    private static final String SEND_TIMEOUT =          "MessageSendTimeout";
+    private static final String MSG_TYPE_HEARTBEAT =    "MessageTypeHeartbeat";
+    private static final String MSG_TYPE_PING =         "MessageTypePing";
+  }
 
   /**
    * @param uid UID of this HbReq object
@@ -77,9 +87,11 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersista
       Iterator iter = targets.iterator();
       while (iter.hasNext()) {
         MessageAddress addr = (MessageAddress)iter.next();
-        MessageAttributes attrs = addr.getQosAttributes();
+        //100 MessageAttributes attrs = addr.getQosAttributes();
+        MessageAttributes attrs = addr.getMessageAttributes(); //100
         try {
           if (attrs == null) {
+/* //100
             Class[] classes = new Class[2];
             classes[0] = MessageAttributes.class;
             classes[1] = String.class;
@@ -90,6 +102,9 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersista
             args[0] = attrs;
             args[1] = addrStr;
             addr = (MessageAddress)x.newInstance(args);
+*/
+            attrs = new SimpleMessageAttributes();
+            addr = MessageAddress.getMessageAddress(addr,attrs);
           }  
           // a ping is acked, but not sequenced
           attrs.setAttribute(MessageUtils.MSG_TYPE, MessageUtils.MSG_TYPE_PING);
@@ -205,9 +220,11 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersista
     // on the source address on the source side, so I put them on when
     // this method is called on the target side.
     MessageAddress addr = source;
-    MessageAttributes attrs = addr.getQosAttributes();
+    //100 MessageAttributes attrs = addr.getQosAttributes();
+    MessageAttributes attrs = addr.getMessageAttributes(); //100
     if (attrs == null) {
       try {
+/* //100
         Class[] classes = new Class[2];
         classes[0] = MessageAttributes.class;
         classes[1] = String.class;
@@ -218,8 +235,11 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersista
         args[0] = attrs;
         args[1] = addrStr;
         addr = (MessageAddress)x.newInstance(args);
-        if (content instanceof PingContent) {
-          long timeout = ((PingContent)content).getTimeout();
+*/
+        attrs = new SimpleMessageAttributes();
+        addr = MessageAddress.getMessageAddress(addr,attrs);
+        if (content instanceof HbReqContent) {
+          long timeout = ((HbReqContent)content).getHbTimeout();
           if (timeout > 0)
             attrs.setAttribute(MessageUtils.SEND_TIMEOUT, new Integer((int)timeout));
         }
@@ -232,7 +252,7 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersista
         // heartbeats are not sequenced, acked or resent
         attrs.setAttribute(MessageUtils.MSG_TYPE, MessageUtils.MSG_TYPE_HEARTBEAT);
       } else {
-        // pings are acked and resent, but not sequenced
+        // responses to hb requests (like pings) are acked and resent, but not sequenced
         attrs.setAttribute(MessageUtils.MSG_TYPE, MessageUtils.MSG_TYPE_PING);
       }
     }
@@ -262,9 +282,9 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersista
   /**
   * XMLizable method for UI, other clients
   */
-  public org.w3c.dom.Element getXML(org.w3c.dom.Document doc) {
-    return XMLize.getPlanObjectXML(this, doc);
-  }
+  //100 public org.w3c.dom.Element getXML(org.w3c.dom.Document doc) {
+  //100   return XMLize.getPlanObjectXML(this, doc);
+  //100 }
 
   /**
   * Returns true if this object's UID equals the argument's UID.

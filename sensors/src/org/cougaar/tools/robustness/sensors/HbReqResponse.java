@@ -134,7 +134,7 @@ public final class HbReqResponse implements java.io.Serializable //, NotPersista
     } else {
       HbReqResponse r = (HbReqResponse)o;
       if (this.status == r.getStatus() &&
-          this.responder.equals(r.getResponder()) &&
+          this.responder.getPrimary().equals(r.getResponder().getPrimary()) &&   //100 added getPrimary
           this.firstHbSent == r.getFirstHbSent() &&
           this.lastHbSent == r.getLastHbSent()) 
         return true;

@@ -29,16 +29,16 @@ import org.cougaar.core.relay.*;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.mts.MessageAttributes;
 import org.cougaar.core.mts.SimpleMessageAttributes;
-import org.cougaar.core.mts.MessageUtils;
+//100 import org.cougaar.core.mts.MessageUtils;
 import org.cougaar.core.util.UID;
-import org.cougaar.core.util.XMLizable;
-import org.cougaar.core.util.XMLize;
+//100 import org.cougaar.core.util.XMLizable;
+//100 import org.cougaar.core.util.XMLize;
 import org.cougaar.core.persist.NotPersistable;
 
 /**
  * A Ping Relay, the Blackboard object that is passed between PingRequesterPlugin to PingServerPlugin.
  **/
-public class Ping implements Relay.Source, Relay.Target, XMLizable, NotPersistable
+public class Ping implements Relay.Source, Relay.Target, NotPersistable //100 , XMLizable
 {
   private UID uid;
   private MessageAddress source;
@@ -46,6 +46,16 @@ public class Ping implements Relay.Source, Relay.Target, XMLizable, NotPersistab
   private Object content;
   private Object response;
   private transient Set _targets = null;
+
+  //100 copied from org.cougaar.core.mts.MessageUtils.java until MsgLog is ported
+  private final class MessageUtils
+  {
+    private static final String MSG_TYPE =              "MessageType";          //100 
+    private static final String MSG_NUM =               "MessageNumber";        //100 
+    private static final String SEND_TIMEOUT =          "MessageSendTimeout";   //100 
+    private static final String MSG_TYPE_HEARTBEAT =    "MessageTypeHeartbeat"; //100 
+    private static final String MSG_TYPE_PING =         "MessageTypePing";      //100 
+  }
 
   /**
    * @param uid UID of this Ping object
@@ -69,9 +79,11 @@ public class Ping implements Relay.Source, Relay.Target, XMLizable, NotPersistab
       this.target = null;
     } else {
       MessageAddress addr = target;
-      MessageAttributes attrs = addr.getQosAttributes();
+      //100 MessageAttributes attrs = addr.getQosAttributes();
+      MessageAttributes attrs = addr.getMessageAttributes(); //100
       try {
         if (attrs == null) {
+/* //100
           Class[] classes = new Class[2];
           classes[0] = MessageAttributes.class;
           classes[1] = String.class;
@@ -82,6 +94,9 @@ public class Ping implements Relay.Source, Relay.Target, XMLizable, NotPersistab
           args[0] = attrs;
           args[1] = addrStr;
           addr = (MessageAddress)x.newInstance(args);
+*/ //100
+          attrs = new SimpleMessageAttributes(); //100
+          addr = MessageAddress.getMessageAddress(addr,attrs); //100
         }
         // a ping is acked and resent, but not sequenced
         attrs.setAttribute(MessageUtils.MSG_TYPE, MessageUtils.MSG_TYPE_PING);
@@ -191,9 +206,11 @@ public class Ping implements Relay.Source, Relay.Target, XMLizable, NotPersistab
     // on the source address on the source side, so I put them on when
     // this method is called on the target side.
     MessageAddress addr = source;
-    MessageAttributes attrs = addr.getQosAttributes();
+    //100 MessageAttributes attrs = addr.getQosAttributes();
+    MessageAttributes attrs = addr.getMessageAttributes(); //100
     if (attrs == null) {
       try {
+/* //100
         Class[] classes = new Class[2];
         classes[0] = MessageAttributes.class;
         classes[1] = String.class;
@@ -204,15 +221,18 @@ public class Ping implements Relay.Source, Relay.Target, XMLizable, NotPersistab
         args[0] = attrs;
         args[1] = addrStr;
         addr = (MessageAddress)x.newInstance(args);
-        // a ping is acked and resent, but not sequenced
-        attrs.setAttribute(MessageUtils.MSG_TYPE, MessageUtils.MSG_TYPE_PING);
-        if (content instanceof PingContent) {
-          long timeout = ((PingContent)content).getTimeout();
-          if (timeout > 0)
-            attrs.setAttribute(MessageUtils.SEND_TIMEOUT, new Integer((int)timeout));
-        }
+*/ //100
+        attrs = new SimpleMessageAttributes(); //100
+        addr = MessageAddress.getMessageAddress(addr,attrs); //100
       } catch (Exception e) {
         e.printStackTrace();
+      }
+      // a ping is acked and resent, but not sequenced
+      attrs.setAttribute(MessageUtils.MSG_TYPE, MessageUtils.MSG_TYPE_PING);
+      if (content instanceof PingContent) {
+        long timeout = ((PingContent)content).getTimeout();
+        if (timeout > 0)
+          attrs.setAttribute(MessageUtils.SEND_TIMEOUT, new Integer((int)timeout));
       }
     }
     this.source = addr;
@@ -241,9 +261,9 @@ public class Ping implements Relay.Source, Relay.Target, XMLizable, NotPersistab
   /**
   * XMLizable method for UI, other clients
   */
-  public org.w3c.dom.Element getXML(org.w3c.dom.Document doc) {
-    return XMLize.getPlanObjectXML(this, doc);
-  }
+  //100 public org.w3c.dom.Element getXML(org.w3c.dom.Document doc) {
+  //100    return XMLize.getPlanObjectXML(this, doc);
+  //100 }
 
   /**
   * Returns true if this object's UID equals the argument's UID.

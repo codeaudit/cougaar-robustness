@@ -122,7 +122,7 @@ public class PingRequesterPlugin extends ComponentPlugin {
       if (log.isDebugEnabled()) 
         log.debug("execute: changed Ping received = " + ping);
       MessageAddress myAddr = getAgentIdentifier();
-      if (ping.getSource().equals(myAddr)) {
+      if (ping.getSource().getPrimary().equals(myAddr.getPrimary())) { //100 added getPrimary
         updatePingRequest(ping);
       }
     }

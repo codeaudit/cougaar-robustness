@@ -293,7 +293,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
       if (log.isDebugEnabled()) 
         log.debug("execute: received changed HbReq = " + hbReq);
       MessageAddress myAddr = getAgentIdentifier();
-      if (hbReq.getSource().equals(myAddr)) {
+      if (hbReq.getSource().getPrimary().equals(myAddr.getPrimary())) {  //100 added getPrimary
         HbReqResponse response = (HbReqResponse)hbReq.getResponse();
         int status = response.getStatus();
         Date now = new Date();
