@@ -361,7 +361,6 @@ public class CommunityStatusModel extends BlackboardClientComponent
   public void setCurrentState(String name, int state, long expiration) {
     StatusEntry se = (StatusEntry)statusMap.get(name);
     if (se != null) {
-      se.timestamp = now();
       if (se.currentState != state) {
         se.priorState = se.currentState;
         se.currentState = state;
@@ -494,7 +493,6 @@ public class CommunityStatusModel extends BlackboardClientComponent
     }
     StatusEntry se = (StatusEntry)statusMap.get(name);
     if (se != null) {
-      se.timestamp = now();
       if (se.currentLocation == null || !se.currentLocation.equals(loc)) {
         se.priorLocation = se.currentLocation;
         se.currentLocation = loc;
@@ -524,7 +522,6 @@ public class CommunityStatusModel extends BlackboardClientComponent
                    " state=" + state);
     }
     StatusEntry se = (StatusEntry)statusMap.get(name);
-    se.timestamp = now();
     int changeFlags = 0;
     if (se != null) {
       if (se.currentLocation == null || !se.currentLocation.equals(loc)) {
@@ -725,6 +722,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
                      " numAgents=" + as.length);
       }
       if (statusMap.containsKey(nodeName)) {
+        setTimestamp(nodeName);
         setCurrentState(nodeName, nodeStatus);
         setLeaderVote(nodeName, vote);
         setLocation(nodeName, host);
@@ -739,6 +737,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
       for (int i = 0; i < as.length; i++) {
         String agentName = as[i].getName();
         if (statusMap.containsKey(agentName)) {
+          setTimestamp(as[i].getName());
           setVersion(agentName, as[i].getVersion());
           setLocation(agentName, nodeName);
           setCurrentState(agentName, as[i].getStatus());

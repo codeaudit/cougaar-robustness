@@ -60,7 +60,9 @@ import java.util.Map;
 import java.util.Set;
 
 import java.text.DateFormat;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
+import java.text.DecimalFormat;
 
 public class DefaultRobustnessController extends RobustnessControllerBase {
 
@@ -76,6 +78,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   public static final int FORCED_RESTART = 9;
 
   private static DateFormat df = new SimpleDateFormat("HH:mm:ss");
+  private static NumberFormat nf = new DecimalFormat("0.00");
 
   // Determines how often the status summary is logged
   public static final long STATUS_INTERVAL = 2 * 60 * 1000;
@@ -293,6 +296,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
           deadNodes.add(name);
           if (!useGlobalSolver()) {
             newState(agentsOnNode(name, DefaultRobustnessController.ACTIVE), DEAD);
+            //newState(agentsOnNode(name), DEAD);
             removeFromCommunity(name);
           } else {
             if (agentsOnNode(name, DefaultRobustnessController.ACTIVE).size() > 0) {
@@ -304,6 +308,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                     }
                     getRestartLocator().setPreferredRestartLocations(layout);
                     newState(agentsOnNode(name, DefaultRobustnessController.ACTIVE), DEAD);
+                    //newState(agentsOnNode(name), DEAD);
                     removeFromCommunity(name);
                   } else { // Abort, node no longer classified as DEAD
                     deadNodes.remove(name);
@@ -1142,20 +1147,23 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
  private Set getAdditionalExcludedNodes(String deadNode) {
    Set excluded = new HashSet();
-   long deadtime = model.getTimestamp(deadNode);
-   long defaultTimeout =
-       getLongAttribute(DEFAULT_TIMEOUT_ATTRIBUTE, DEFAULT_TIMEOUT);
-   long activetime = deadtime - defaultTimeout * MS_PER_MIN;
    String[] nodes = model.listEntries(model.NODE);
-   for(int i=0; i<nodes.length; i++) {
-     if(!nodes[i].equals(deadNode)) {
-       long time = model.getTimestamp(nodes[i]);
-       if(time <= activetime) {
-         if(logger.isDebugEnabled())
-           logger.debug("last hearbeat of " + nodes[i] + " is before " + deadNode + ", put " + nodes[i] + " in excluded list");
+   StringBuffer detail = new StringBuffer();
+   double now = System.currentTimeMillis();
+   for (int i=0; i<nodes.length; i++) {
+     double timeout = getNodeStatusExpiration(nodes[i]);
+     double howRecent = now - model.getTimestamp(nodes[i]);
+     double confidence = howRecent < timeout
+                 ? (timeout - howRecent)/timeout
+                 : 0.0;
+     detail.append(nodes[i] + "(" + nf.format(confidence) + ") ");
+     if (!nodes[i].equals(deadNode) && confidence < 0.5) {
          excluded.add(nodes[i]);
-       }
      }
+   }
+   if (logger.isDebugEnabled()) {
+     logger.info("getAdditionalExcludedNodes: nodes=[" + detail +
+                 "] excluded=" + excluded);
    }
    return excluded;
  }
