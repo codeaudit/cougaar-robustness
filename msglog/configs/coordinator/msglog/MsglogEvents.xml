@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE Events SYSTEM "EventDTD.dtd"  >
+
+<Events>
+
+<Event name="Stationary_Partition" affectsAssetType="Host" affectsStateDimension="UnmediatedConnectionStatus">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="Stationary_Partition" />
+    </DirectEffect>
+    <TransitiveEffect>
+        <CausesEvent name="Stationary_Partition" assetType="Node"/>
+        <VulnerableAssets>
+            <ContainmentFilter eventAssetContainerName="Node" />
+            <EventLikelihood probability="ALWAYS" />
+        </VulnerableAssets>
+    </TransitiveEffect> 
+</Event>
+
+<Event name="Stationary_Partition" affectsAssetType="Node" affectsStateDimension="UnmediatedConnectionStatus">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="Stationary_Partition" />
+    </DirectEffect>
+    <TransitiveEffect>
+        <CausesEvent name="Stationary_Partition" assetType="Agent"/>
+        <VulnerableAssets>
+            <ContainmentFilter eventAssetContainerName="Agent" />
+            <EventLikelihood probability="ALWAYS" />
+        </VulnerableAssets>
+    </TransitiveEffect> 
+</Event>
+
+<Event name="Stationary_Partition" affectsAssetType="Agent" affectsStateDimension="UnmediatedConnectionStatus">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="Stationary_Partition" />
+    </DirectEffect>
+</Event>
+
+
+<Event name="Rolling_Partition" affectsAssetType="Host" affectsStateDimension="UnmediatedConnectionStatus">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="Rolling_Partition" />
+    </DirectEffect>
+    <TransitiveEffect>
+        <CausesEvent name="Rolling_Partition" assetType="Node"/>
+        <VulnerableAssets>
+            <ContainmentFilter eventAssetContainerName="Node" />
+            <EventLikelihood probability="ALWAYS" />
+        </VulnerableAssets>
+    </TransitiveEffect> 
+</Event>
+
+<Event name="Rolling_Partition" affectsAssetType="Node" affectsStateDimension="UnmediatedConnectionStatus">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="Rolling_Partition" />
+    </DirectEffect>
+    <TransitiveEffect>
+        <CausesEvent name="Rolling_Partition" assetType="Agent"/>
+        <VulnerableAssets>
+            <ContainmentFilter eventAssetContainerName="Agent" />
+            <EventLikelihood probability="ALWAYS" />
+        </VulnerableAssets>
+    </TransitiveEffect> 
+</Event>
+
+<Event name="Rolling_Partition" affectsAssetType="Agent" affectsStateDimension="UnmediatedConnectionStatus">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="Rolling_Partition" />
+    </DirectEffect>
+</Event>
+
+
+<Event name="Heal_Partition" affectsAssetType="Host" affectsStateDimension="UnmediatedConnectionStatus">
+    <DirectEffect>
+        <Transition WhenActualStateIs="Stationary_Partition" EndStateWillBe="OK" />
+        <Transition WhenActualStateIs="Rolling_Partition" EndStateWillBe="OK" />
+        <Transition WhenActualStateIs="OK" EndStateWillBe="OK" />
+        <Transition WhenActualStateIs="Protocol_Failure" EndStateWillBe="Protocol_Failure" />
+    </DirectEffect>
+    <TransitiveEffect>
+        <CausesEvent name="Heal_Partition" assetType="Node"/>
+        <VulnerableAssets>
+            <ContainmentFilter eventAssetContainerName="Node" />
+            <EventLikelihood probability="ALWAYS" />
+        </VulnerableAssets>
+    </TransitiveEffect> 
+</Event>
+
+<Event name="Heal_Partition" affectsAssetType="Node" affectsStateDimension="UnmediatedConnectionStatus">
+    <DirectEffect>
+        <Transition WhenActualStateIs="Stationary_Partition" EndStateWillBe="OK" />
+        <Transition WhenActualStateIs="Rolling_Partition" EndStateWillBe="OK" />
+        <Transition WhenActualStateIs="OK" EndStateWillBe="OK" />
+        <Transition WhenActualStateIs="Protocol_Failure" EndStateWillBe="Protocol_Failure" />
+    </DirectEffect>
+    <TransitiveEffect>
+        <CausesEvent name="Heal_Partition" assetType="Agent"/>
+        <VulnerableAssets>
+            <ContainmentFilter eventAssetContainerName="Agent" />
+            <EventLikelihood probability="ALWAYS" />
+        </VulnerableAssets>
+    </TransitiveEffect> 
+</Event>
+
+<Event name="Heal_Partition" affectsAssetType="Agent" affectsStateDimension="UnmediatedConnectionStatus">
+    <DirectEffect>
+        <Transition WhenActualStateIs="Stationary_Partition" EndStateWillBe="OK" />
+        <Transition WhenActualStateIs="Rolling_Partition" EndStateWillBe="OK" />
+        <Transition WhenActualStateIs="OK" EndStateWillBe="OK" />
+        <Transition WhenActualStateIs="Protocol_Failure" EndStateWillBe="Protocol_Failure" />
+    </DirectEffect>
+</Event>
+
+
+<Event name="Protocol_Failure" affectsAssetType="Host" affectsStateDimension="UnmediatedConnectionStatus">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="Protocol_Failure" />
+    </DirectEffect>
+    <TransitiveEffect>
+        <CausesEvent name="Protocol_Failure" assetType="Node"/>
+        <VulnerableAssets>
+            <ContainmentFilter eventAssetContainerName="Node" />
+            <EventLikelihood probability="ALWAYS" />
+        </VulnerableAssets>
+    </TransitiveEffect> 
+</Event>
+
+<Event name="Protocol_Failure" affectsAssetType="Node" affectsStateDimension="UnmediatedConnectionStatus">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="Protocol_Failure" />
+    </DirectEffect>
+    <TransitiveEffect>
+        <CausesEvent name="Protocol_Failure" assetType="Agent"/>
+        <VulnerableAssets>
+            <ContainmentFilter eventAssetContainerName="Agent" />
+            <EventLikelihood probability="ALWAYS" />
+        </VulnerableAssets>
+    </TransitiveEffect> 
+</Event>
+
+<Event name="Protocol_Failure" affectsAssetType="Agent" affectsStateDimension="UnmediatedConnectionStatus">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="Protocol_Failure" />
+    </DirectEffect>
+</Event>
+
+<Event name="Protocol_Recovery" affectsAssetType="Host" affectsStateDimension="UnmediatedConnectionStatus">
+    <DirectEffect>
+        <Transition WhenActualStateIs="Protocol_Failure" EndStateWillBe="OK" />
+        <Transition WhenActualStateIs="Stationary_Partition" EndStateWillBe="Stationary_Partition" />
+        <Transition WhenActualStateIs="Rolling_Partition" EndStateWillBe="Rolling_Partition" />
+        <Transition WhenActualStateIs="OK" EndStateWillBe="OK" />
+    </DirectEffect>
+    <TransitiveEffect>
+        <CausesEvent name="Protocol_Recovery" assetType="Node"/>
+        <VulnerableAssets>
+            <ContainmentFilter eventAssetContainerName="Node" />
+            <EventLikelihood probability="ALWAYS" />
+        </VulnerableAssets>
+    </TransitiveEffect> 
+</Event>
+
+<Event name="Protocol_Recovery" affectsAssetType="Node" affectsStateDimension="UnmediatedConnectionStatus">
+    <DirectEffect>
+        <Transition WhenActualStateIs="Protocol_Failure" EndStateWillBe="OK" />
+        <Transition WhenActualStateIs="Stationary_Partition" EndStateWillBe="Stationary_Partition" />
+        <Transition WhenActualStateIs="Rolling_Partition" EndStateWillBe="Rolling_Partition" />
+        <Transition WhenActualStateIs="OK" EndStateWillBe="OK" />
+    </DirectEffect>
+    <TransitiveEffect>
+        <CausesEvent name="Protocol_Recovery" assetType="Agent"/>
+        <VulnerableAssets>
+            <ContainmentFilter eventAssetContainerName="Agent" />
+            <EventLikelihood probability="ALWAYS" />
+        </VulnerableAssets>
+    </TransitiveEffect> 
+</Event>
+
+<Event name="Protocol_Recovery" affectsAssetType="Agent" affectsStateDimension="UnmediatedConnectionStatus">
+    <DirectEffect>
+        <Transition WhenActualStateIs="Protocol_Failure" EndStateWillBe="OK" />
+        <Transition WhenActualStateIs="Stationary_Partition" EndStateWillBe="Stationary_Partition" />
+        <Transition WhenActualStateIs="Rolling_Partition" EndStateWillBe="Rolling_Partition" />
+        <Transition WhenActualStateIs="OK" EndStateWillBe="OK" />
+    </DirectEffect>
+</Event>
+
+</Events>

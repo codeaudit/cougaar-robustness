@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE ActuatorType SYSTEM "ActuatorTypeDTD.dtd">
+
+<ActuatorType name="org.cougaar.coordinator.test.defense.MsgLogActuator" 
+              affectsAssetType="Agent" 
+              affectsStateDimension="MsgLogSetting" 
+              actionType="COMPENSATORY">
+
+    <Action name="Suppress_Communications">
+        <Description value="Suppresses attempts to communicate" />
+        <Transition WhenActualStateIs="*" EndStateWillBe="Suppress_Communications" IntermediateStateWillBe="Suppress_Communications" >
+            <OneTimeCost>
+                <Time duration="100" />
+            </OneTimeCost>
+        </Transition>
+    </Action>
+    
+    <Action name="Normal">
+        <Description value="Tries Normal RMI Communications only" />
+        <Transition WhenActualStateIs="*" EndStateWillBe="Normal_RMI_Protocol" IntermediateStateWillBe="Suppress_Communications" >
+            <OneTimeCost>
+                <Time duration="100" />
+            </OneTimeCost>
+            <ContinuingCost>
+                <Bandwidth intensity="LOW" msgSizeFactor="TRUE" />
+            </ContinuingCost>
+        </Transition>
+    </Action>
+
+    <Action name="Alternate_Direct_Protocols">
+        <Description value="Adds other Direct Protocols to RMI" />
+        <Transition WhenActualStateIs="*" EndStateWillBe="Alternate_Direct_Protocols" IntermediateStateWillBe="Suppress_Communications">
+            <OneTimeCost>
+                <Time duration="100" />
+            </OneTimeCost>
+            <ContinuingCost>
+                <Bandwidth intensity="LOW" msgSizeFactor="TRUE" />
+	          <CPU intensity="LOW" msgSizeFactor="TRUE" />
+            </ContinuingCost>
+        </Transition>
+    </Action>
+
+    <Action name="Store_And_Forward_Protocols">
+        <Description value="Adds the use of Store and Forward Protocols" />
+        <Transition WhenActualStateIs="*" EndStateWillBe="Store_And_Forward_Protocols" IntermediateStateWillBe="Suppress_Communications" >
+            <OneTimeCost>
+                <Time duration="1000" />
+            </OneTimeCost>
+            <ContinuingCost>
+                <Bandwidth intensity="MEDIUM" msgSizeFactor="TRUE" />
+	          <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
+            </ContinuingCost>
+        </Transition>
+    </Action>
+
+</ActuatorType>

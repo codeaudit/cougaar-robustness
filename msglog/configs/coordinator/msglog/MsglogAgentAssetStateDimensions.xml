@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE AssetStateDimensions SYSTEM "AssetStateDimensionsDTD.dtd" >
+
+<AssetStateDimensions assetType="Agent">
+
+  <StateDimension name="UnmediatedConnectionStatus" >
+ 	<State name="OK" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" defaultStartState="TRUE" />
+ 	<State name="Protocol_Failure" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
+ 	<State name="Stationary_Partition" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
+ 	<State name="Rolling_Partition" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
+  </StateDimension>
+
+  <StateDimension name="MediatedConnectionStatus" >
+ 	<State name="Excellent" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" defaultStartState="TRUE" />
+ 	<State name="Good" relativeMauCompleteness="0.9" relativeMauSecurity="0.9" />
+ 	<State name="Fair" relativeMauCompleteness="0.7" relativeMauSecurity="0.7" />
+ 	<State name="Poor" relativeMauCompleteness="0.5" relativeMauSecurity="0.5" />
+ 	<State name="None" relativeMauCompleteness="0.3" relativeMauSecurity="0.3" />
+ 	<State name="NoData" relativeMauCompleteness="0.5" relativeMauSecurity="0.5" />
+  </StateDimension>
+
+  <StateDimension name="MsgLogSetting" >
+ 	<State name="Normal_RMI_Protocol" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" defaultStartState="TRUE" />
+ 	<State name="Alternate_Direct_Protocols" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
+ 	<State name="Store_And_Forward_Protocols" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
+ 	<State name="Allow_Alternate_Network" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
+ 	<State name="Suppress_Communications" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
+  </StateDimension>
+
+</AssetStateDimensions>
+
+
+

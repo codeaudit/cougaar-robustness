@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE SensorTypes SYSTEM "SensorTypeDTD.dtd" >
+
+<SensorTypes>
+
+<SensorType name="org.cougaar.mts.std.RMILinksStatusDiagnosis" sensesAssetType="agent"
+            sensesStateDimension="UnmediatedConnectionStatus" sensorLatency="5000">
+    <PotentialDiagnoses>
+        <Diagnosis name="Excellent" />
+        <Diagnosis name="Good" />
+        <Diagnosis name="Fair" />
+        <Diagnosis name="Poor" />
+        <Diagnosis name="None" />
+        <Diagnosis name="NoData" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="OK" >
+            <WillDiagnoseAs name="Excellent" withProbability="0.98" />
+            <WillDiagnoseAs name="Good" withProbability="0.01" />
+            <WillDiagnoseAs name="NoData" withProbability="0.01" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Protocol_Failure" >
+            <WillDiagnoseAs name="Poor" withProbability="0.01" />
+            <WillDiagnoseAs name="None" withProbability="0.98" />
+            <WillDiagnoseAs name="NoData" withProbability="0.01" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Stationary_Partition" >
+            <WillDiagnoseAs name="Poor" withProbability="0.01" />
+            <WillDiagnoseAs name="None" withProbability="0.98" />
+            <WillDiagnoseAs name="NoData" withProbability="0.01" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Rolling_Partition" >
+            <WillDiagnoseAs name="Poor" withProbability="0.01" />
+            <WillDiagnoseAs name="None" withProbability="0.98" />
+            <WillDiagnoseAs name="NoData" withProbability="0.01" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>
+
+<SensorType name="org.cougaar.mts.std.AlternateDirectLinksStatusDiagnosis" sensesAssetType="agent"
+            sensesStateDimension="UnmediatedConnectionStatus" sensorLatency="10000">
+    <PotentialDiagnoses>
+        <Diagnosis name="Excellent" />
+        <Diagnosis name="Good" />
+        <Diagnosis name="Fair" />
+        <Diagnosis name="Poor" />
+        <Diagnosis name="None" />
+        <Diagnosis name="NoData" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="OK" >
+            <WillDiagnoseAs name="Excellent" withProbability="0.98" />
+            <WillDiagnoseAs name="Good" withProbability="0.01" />
+            <WillDiagnoseAs name="NoData" withProbability="0.01" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Protocol_Failure" >
+            <WillDiagnoseAs name="Poor" withProbability="0.01" />
+            <WillDiagnoseAs name="None" withProbability="0.98" />
+            <WillDiagnoseAs name="NoData" withProbability="0.01" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Stationary_Partition" >
+            <WillDiagnoseAs name="Poor" withProbability="0.01" />
+            <WillDiagnoseAs name="None" withProbability="0.98" />
+            <WillDiagnoseAs name="NoData" withProbability="0.01" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Rolling_Partition" >
+            <WillDiagnoseAs name="Poor" withProbability="0.01" />
+            <WillDiagnoseAs name="None" withProbability="0.98" />
+            <WillDiagnoseAs name="NoData" withProbability="0.01" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>
+
+<SensorType name="org.cougaar.mts.std.StoreAndForwardLinksStatusDiagnosis" sensesAssetType="agent"
+            sensesStateDimension="UnmediatedConnectionStatus" sensorLatency="30000">
+    <PotentialDiagnoses>
+        <Diagnosis name="Excellent" />
+        <Diagnosis name="Good" />
+        <Diagnosis name="Fair" />
+        <Diagnosis name="Poor" />
+        <Diagnosis name="None" />
+        <Diagnosis name="NoData" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="OK" >
+            <WillDiagnoseAs name="Excellent" withProbability="0.97" />
+            <WillDiagnoseAs name="Good" withProbability="0.01" />
+            <WillDiagnoseAs name="NoData" withProbability="0.01" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Protocol_Failure" >
+            <WillDiagnoseAs name="Poor" withProbability="0.01" />
+            <WillDiagnoseAs name="None" withProbability="0.98" />
+            <WillDiagnoseAs name="NoData" withProbability="0.01" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Stationary_Partition" >
+            <WillDiagnoseAs name="Poor" withProbability="0.01" />
+            <WillDiagnoseAs name="None" withProbability="0.98" />
+            <WillDiagnoseAs name="NoData" withProbability="0.01" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Rolling_Partition" >
+            <WillDiagnoseAs name="Excellent" withProbability="0.40" />
+	    <WillDiagnoseAs name="Good" withProbability="0.40" />
+            <WillDiagnoseAs name="Fair" withProbability="0.19" />
+            <WillDiagnoseAs name="NoData" withProbability="0.01" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>
+
+<SensorType name="org.cougaar.mts.std.AllLinksStatusDiagnosis" sensesAssetType="agent"
+            sensesStateDimension="MediatedConnectionStatus" sensorLatency="60000">
+    <PotentialDiagnoses>
+        <Diagnosis name="Excellent" />
+        <Diagnosis name="Good" />
+        <Diagnosis name="Fair" />
+        <Diagnosis name="Poor" />
+        <Diagnosis name="None" />
+        <Diagnosis name="NoData" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="Excellent" >
+            <WillDiagnoseAs name="Excellent" withProbability="0.98" />
+            <WillDiagnoseAs name="Good" withProbability="0.01" />
+            <WillDiagnoseAs name="NoData" withProbability="0.01" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Good" >
+            <WillDiagnoseAs name="Excellent" withProbability="0.01" />
+            <WillDiagnoseAs name="Good" withProbability="0.97" />
+            <WillDiagnoseAs name="Fair" withProbability="0.01" />
+            <WillDiagnoseAs name="NoData" withProbability="0.01" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Fair" >
+            <WillDiagnoseAs name="Good" withProbability="0.01" />
+            <WillDiagnoseAs name="Fair" withProbability="0.97" />
+            <WillDiagnoseAs name="Poor" withProbability="0.01" />
+            <WillDiagnoseAs name="NoData" withProbability="0.01" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Poor" >
+            <WillDiagnoseAs name="Fair" withProbability="0.01" />
+            <WillDiagnoseAs name="Poor" withProbability="0.97" />
+            <WillDiagnoseAs name="None" withProbability="0.01" />
+            <WillDiagnoseAs name="NoData" withProbability="0.01" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="None" >
+            <WillDiagnoseAs name="Poor" withProbability="0.01" />
+            <WillDiagnoseAs name="None" withProbability="0.97" />
+            <WillDiagnoseAs name="NoData" withProbability="0.01" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="NoData" >
+            <WillDiagnoseAs name="NoData" withProbability="1.0" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>
+
+</SensorTypes>
