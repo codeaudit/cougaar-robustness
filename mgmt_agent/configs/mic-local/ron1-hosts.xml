@@ -11,7 +11,7 @@
   <host name='net3'>
     <facet service="acme"/>
   </host>
-  <host name='doug'>
+  <host name='wayne'>
     <facet service="acme"/>
   </host>
   <host name='net5'>
