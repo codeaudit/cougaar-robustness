@@ -249,12 +249,14 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
         return cbe;
     }
 
-    private double aggregateCost(ActionCost actionCost, double memSize, double bandwidthSize) {
+    private double aggregateCost(ActionCost actionCost) {
         if (actionCost == null) return 0.0; // there is no cost component (often true of continuing costs)
-        double memoryComponent = computeCostComponent(actionCost.getMemoryCost(), memSize, bandwidthSize);
-        double bandwidthComponent = computeCostComponent(actionCost.getBandwidthCost(), memSize, bandwidthSize);
-        double cpuComponent = computeCostComponent(actionCost.getCPUCost(), memSize, bandwidthSize);
-        return (0.6*memoryComponent + 0.3*bandwidthComponent+0.1*cpuComponent);
+        //  currently only considering the CPU component as representative - costs eventually should become multi-dimensional -- dlw
+        //double memoryComponent = computeCostComponent(actionCost.getMemoryCost(), memSize, bandwidthSize);
+        //double bandwidthComponent = computeCostComponent(actionCost.getBandwidthCost(), memSize, bandwidthSize);
+        double cpuComponent = computeCostComponent(actionCost.getCPUCost(), 1.0, 1.0);  // use nominal sizes of 1.0 - we have no sensors
+        //return (0.6*memoryComponent + 0.3*bandwidthComponent+0.1*cpuComponent);
+        return cpuComponent;
     }
 
 
@@ -281,8 +283,6 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
     }
 
    private VariantEvaluation createCorrectiveVariantEvaluation(AssetID assetID, AssetStateDimension asd, StateDimensionEstimation currentStateDimensionEstimation, ActionDescription thisVariantDescription, ActionEvaluation thisActionEvaluation, boolean isActive, CostBenefitKnob knob) {
-        double memorySize = 1000.0; // FIX _ needs to be dynamic
-        double bandwidthSize = 1000.0; // FIX -needs to be dynamic
         double predictedCost = 0.0; // total predicted cost
         double predictedBenefit = 0.0;
         long maxTransitionTime = 0L;
@@ -327,13 +327,13 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                         predictedBenefit = predictedBenefit + startStateProb * stateBenefit;
                         if (logger.isDebugEnabled()) logger.debug("**** stateBenefit for: " + startStateName + " is: " + stateBenefit + " with prob: " + startStateProb);
                         predictedCost = predictedCost + startStateProb*(transitionTime
-                                * aggregateCost(oneTimeCost, memorySize, bandwidthSize) + (horizon-transitionTime)*aggregateCost(continuingCost, memorySize, bandwidthSize));
+                                * aggregateCost(oneTimeCost) + (horizon-transitionTime)*aggregateCost(continuingCost));
                         }
                     else  { // transition takes longer than the planning horizon, so action transition will not complete
                         double stateBenefit = horizon*intermediateStateBenefit;
                         predictedBenefit = predictedBenefit + startStateProb * stateBenefit;
                         if (logger.isDebugEnabled()) logger.debug("**** stateBenefit for: " + startStateName + " is: " + stateBenefit + " with prob: " + startStateProb);
-                        predictedCost = predictedCost + startStateProb*(horizon*aggregateCost(oneTimeCost, memorySize, bandwidthSize));
+                        predictedCost = predictedCost + startStateProb*(horizon*aggregateCost(oneTimeCost));
                         }
                     if (logger.isDebugEnabled()) logger.debug("**** Cumlative Benefit: " + predictedBenefit);
                     maxTransitionTime = Math.max(maxTransitionTime, transitionTime);
@@ -397,12 +397,12 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
         if (isVariantActive) {
             predictedBenefit = knob.horizon * computeBenefit(endStateCompensatedProbs, compensatedStateDimension, knob);
-            predictedCost = knob.horizon * aggregateCost(continuingCost, memorySize, bandwidthSize);
+            predictedCost = knob.horizon * aggregateCost(continuingCost);
         }
         else {
             predictedBenefit = knob.horizon * computeBenefit(endStateCompensatedProbs, compensatedStateDimension, knob);
-            predictedCost = transitionTime * aggregateCost(oneTimeCost, memorySize, bandwidthSize) 
-                         + (knob.horizon-transitionTime)*aggregateCost(continuingCost, memorySize, bandwidthSize);
+            predictedCost = transitionTime * aggregateCost(oneTimeCost) 
+                         + (knob.horizon-transitionTime)*aggregateCost(continuingCost);
         }
 
         return new VariantEvaluation(proposedVariantDescription, thisActionEvaluation, predictedCost, predictedCost/knob.getHorizon(), predictedBenefit, transitionTime);
