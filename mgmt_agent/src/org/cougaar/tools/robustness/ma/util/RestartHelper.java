@@ -178,7 +178,7 @@ public class RestartHelper extends BlackboardClientComponent {
 
     for (Iterator it = healthMonitorRequests.getAddedCollection().iterator(); it.hasNext(); ) {
       HealthMonitorRequest hsm = (HealthMonitorRequest) it.next();
-      logger.debug("Received HealthMonitorRequest:" + hsm);
+      logger.debug("Received " + hsm);
       doAction(hsm);
     }
   }
@@ -313,21 +313,19 @@ public class RestartHelper extends BlackboardClientComponent {
         }
         break;
       case HealthMonitorRequest.KILL:
-        if (origNode != null) {
-          if (!agentId.toString().equals(origNode)) {
-            // Forward request to destination node
-            logger.debug("doAction, forwarding request: " + hmr);
-            sendRemoteRequest(new RemoteRequest(hmr.getAgents(),
-                                                hmr.getRequestType(),
-                                                origNode,
-                                                destNode,
-                                                hmr.getCommunityName()));
+        if (origNode != null && !agentId.toString().equals(origNode)) {
+          // Forward request to destination node
+          logger.debug("doAction, forwarding request: " + hmr);
+          sendRemoteRequest(new RemoteRequest(hmr.getAgents(),
+                                              hmr.getRequestType(),
+                                              origNode,
+                                              destNode,
+                                              hmr.getCommunityName()));
 
-          } else { // local request
-            String agentNames[] = hmr.getAgents();
-            for (int i = 0; i < agentNames.length; i++) {
-              doLocalAction(agentNames[i], hmr.getRequestType());
-            }
+        } else { // local request
+          String agentNames[] = hmr.getAgents();
+          for (int i = 0; i < agentNames.length; i++) {
+            doLocalAction(agentNames[i], hmr.getRequestType());
           }
         }
         break;

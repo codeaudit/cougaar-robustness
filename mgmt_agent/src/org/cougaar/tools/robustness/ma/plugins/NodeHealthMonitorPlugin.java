@@ -263,10 +263,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
     // Get HealthMonitorRequests
     for (Iterator it = healthMonitorRequests.getAddedCollection().iterator(); it.hasNext(); ) {
       HealthMonitorRequest hsm = (HealthMonitorRequest)it.next();
-      logger.info("Received HealthMonitorRequest:" + hsm);
       switch (hsm.getRequestType()) {
-        case HealthMonitorRequest.MOVE:
-          break;
         case HealthMonitorRequest.GET_STATUS:
           int respStatus = HealthMonitorResponse.FAIL;
           String respObj = null;

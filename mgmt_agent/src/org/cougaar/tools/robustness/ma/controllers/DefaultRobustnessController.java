@@ -394,7 +394,16 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         String agentsToRestart[] = hmr.getAgents();
         for (int i = 0; i < agentsToRestart.length; i++) {
           killAgent(agentsToRestart[i]);
-          restartAgent(agentsToRestart[i]);
+          String curNode = model.getLocation(agentsToRestart[i]);
+          String destNode = hmr.getDestinationNode();
+          if (destNode == null) {
+            Set excludedNodes = getExcludedNodes();  // dead nodes
+            excludedNodes.add(curNode);  // agents current node
+            destNode =
+                RestartDestinationLocator.getRestartLocation(agentsToRestart[i],
+                getExcludedNodes());
+          }
+          restartAgent(agentsToRestart[i], destNode);
         }
       }
     }
