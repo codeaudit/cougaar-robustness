@@ -191,28 +191,15 @@ public class BeliefMonitorServlet extends ComponentPlugin
               
         buff.append( "  <tr valign=\"top\">\n" );
               
-        Iterator state_dim_iter = state_dim_list.iterator();
-              
-        for ( int dim_idx = 0; state_dim_iter.hasNext(); dim_idx++ )
+        Enumeration se_dim_enum = se.getStateDimensionEstimations();
+        while ( se_dim_enum.hasMoreElements() )
         {
-                  
-            buff.append( "    <td>\n" );
-                  
+            StateDimensionEstimation se_dim
+                    = (StateDimensionEstimation) se_dim_enum.nextElement();
+            
             AssetStateDimension state_dim 
-                    = (AssetStateDimension) state_dim_iter.next();
-                  
-            String dim_name =  state_dim.getStateName();
-                  
-            StateDimensionEstimation se_dim;
-            try {
-                se_dim = se.getStateDimensionEstimation( state_dim );
-            } catch ( BelievabilityException be)
-            {
-                buff.append( "    " + dim_name + "<br>No Data"
-                             + "    </td>\n" );
-                continue;
-            }
-                  
+                    = se_dim.getBeliefStateDimension().getAssetStateDimension();
+
             // This will allow us to enumerate all the
             // possible states this dimension can be in.
             //
@@ -225,12 +212,14 @@ public class BeliefMonitorServlet extends ComponentPlugin
                 continue;  // don't deal with errors for now
                   
                   
+            buff.append( "    <td>\n" );
+                  
             buff.append( "      <table border=\"1\""
                          + " cellpadding=\"2\">\n" );
                   
             buff.append( "        <tr><th colspan=\"2\"" 
                          + " bgcolor=\"#dadada\"\">" 
-                         + dim_name + "</th></tr>\n" );
+                         + state_dim.getStateName() + "</th></tr>\n" );
                   
             Iterator asset_state_iter = asset_state_list.iterator();
                   
@@ -245,8 +234,8 @@ public class BeliefMonitorServlet extends ComponentPlugin
                 } catch ( BelievabilityException be)
                 {
                     buff.append( "        <tr><td colspan=\"2\">" 
-                                 + "No Data"
-                                 + "</td></tr>\n" );
+                                 + "No Data (" + be.getMessage()
+                                 + ")</td></tr>\n" );
                     continue;
                 }
                       
