@@ -51,6 +51,11 @@ public class PureAckMessage extends AttributedMessage
     pureAck.setMsg (this);
   }
 
+  public PureAckMessage (PureAckMessage pureAckMsg)
+  {
+    super (pureAckMsg);
+  }
+
   public String toString ()
   {
     return MessageUtils.toString (this);

@@ -24,13 +24,15 @@
 
 package org.cougaar.core.mts;
 
-import java.util.HashMap;
 import org.cougaar.core.thread.Schedulable;
+import org.cougaar.core.mts.acking.*;
 
 public class SendTimeoutAspect extends StandardAspect
 {
-  private static final String FAST_TIMEOUT = "org.cougaar.message.transport.aspects.SendTimeoutAspect.fastTimeout";
-  private static final String SLOW_TIMEOUT = "org.cougaar.message.transport.aspects.SendTimeoutAspect.slowTimeout";
+  private static final String FAST_TIMEOUT = 
+    "org.cougaar.message.transport.aspects.SendTimeoutAspect.fastTimeout";
+  private static final String SLOW_TIMEOUT = 
+    "org.cougaar.message.transport.aspects.SendTimeoutAspect.slowTimeout";
   private static final int fastTimeout;
   private static final int slowTimeout;
 
@@ -76,59 +78,87 @@ public class SendTimeoutAspect extends StandardAspect
              CommFailureException, MisdeliveredMessageException
     {
       if (timeoutp == true) {
+       
+          // Forward the message in another thread so we can timeout on it here
 
-        // Forward the message in another thread so we can timeout on it here
-        ForwardMessageThread t = new ForwardMessageThread(msg,link);
-        Schedulable thread = threadService.getThread(this, t, "foo");
-        thread.start();
+          // shallow copy the AttributedMessage
+          //AttributedMessage msgCopy = new AttributedMessage(msg); 
+          AttributedMessage msgCopy; 
+
+          if (msg instanceof PureAckAckMessage) msgCopy = new PureAckAckMessage((PureAckAckMessage)msg);
+          else if (msg instanceof PureAckMessage) msgCopy = new PureAckMessage((PureAckMessage)msg);
+          else msgCopy = new AttributedMessage(msg);
+
+          // deep copy our MessageAttributes
+          MessageUtils.setFromAgent(msgCopy,new AgentID(MessageUtils.getFromAgent(msg)));
+          MessageUtils.setToAgent(msgCopy,new AgentID(MessageUtils.getToAgent(msg)));
+          MessageUtils.setAck(msgCopy,Ack.clone(MessageUtils.getAck(msg),msgCopy));
+          RTTAspect.setRTTDataAttribute(
+            msgCopy,
+            RTTAspect.cloneRTTData(RTTAspect.getRTTDataAttribute(msg))); 
+
+          ForwardMessageThread t = new ForwardMessageThread(msgCopy,link);
+          Schedulable thread = threadService.getThread(this, t, "SendTimeoutAspect");
+          thread.start();
  
-        // check on its progress periodically, and close it if it exceeds timeout
-        final int POLL_TIME = 100;
-        int sleepTime = 0;
+          // check on its progress periodically, and close it if it exceeds timeout
+          final int POLL_TIME = 100;
+          int sleepTime = 0;
  
-        int timeout;
-        if (fastp == true) {
-          timeout = fastTimeout;
-        } else {
-          timeout = slowTimeout;
-        }
-        while (true) {
-          if (t.isDone()) return t.getAttributes();
-          if (t.isException()) {
-            Exception e = t.getException();
-            if (e instanceof UnregisteredNameException) 
-              throw (UnregisteredNameException)e;
-            if (e instanceof NameLookupException) 
-              throw (NameLookupException)e;
-            if (e instanceof CommFailureException) 
-              throw (CommFailureException)e;
-            if (e instanceof MisdeliveredMessageException) 
-              throw (MisdeliveredMessageException)e;
-            throw new CommFailureException(e);
+          int timeout;
+          if (fastp == true) {
+            timeout = fastTimeout;
+          } else {
+            timeout = slowTimeout;
           }
-          try { Thread.sleep (POLL_TIME); } catch (Exception e) {}
-          sleepTime += POLL_TIME;
-          if (sleepTime > timeout) {
-            String s = "SendTimeoutAspect: Timeout sending message " +MessageUtils.toString(msg);
-            throw new CommFailureException(new Exception(s));
+          while (true) {
+            if (t.isDone()) return t.getAttributes();
+            if (t.isException()) {
+              Exception ex = t.getException();
+//System.out.println("\nSendTimeoutAspect: got exception = " + ex);
+              if (ex instanceof UnregisteredNameException) 
+                throw (UnregisteredNameException)ex;
+              if (ex instanceof NameLookupException) 
+                throw (NameLookupException)ex;
+              if (ex instanceof CommFailureException) 
+                throw (CommFailureException)ex;
+              if (ex instanceof MisdeliveredMessageException) 
+                throw (MisdeliveredMessageException)ex;
+              throw new CommFailureException(ex);
+            }
+            try { Thread.sleep (POLL_TIME); } catch (Exception e) {}
+            sleepTime += POLL_TIME;
+            if (sleepTime > timeout) {
+              String s = "SendTimeoutAspect: Timeout sending message " + 
+                         MessageUtils.toString(msgCopy);
+              throw new CommFailureException(new Exception(s));
+            }
           }
-        }
       } else {
         return link.forwardMessage(msg);
       }
     }
   }
 
-  private static class ForwardMessageThread implements Runnable
+  private class ForwardMessageThread implements Runnable
   {
     private AttributedMessage msg = null;
     private DestinationLink link = null;
-    private MessageAttributes attrs = null;
-    private Exception ex = null;
+    private MessageAttributes attrs;
+    private Exception ex;
 
     public ForwardMessageThread (AttributedMessage msg, DestinationLink link) {
       this.msg = msg;
       this.link = link;
+      attrs = null;
+      ex = null;
+    }
+    public void run () {
+        try {
+          attrs = link.forwardMessage(msg);
+        } catch (Exception e) {
+          ex = e;
+        }
     }
     protected MessageAttributes getAttributes() {
       return attrs;
@@ -141,13 +171,6 @@ public class SendTimeoutAspect extends StandardAspect
     }
     protected boolean isDone () {
       return (attrs != null);
-    }
-    public void run () {
-      try {
-        attrs = link.forwardMessage(msg);
-      } catch (Exception e) {
-        ex = e;
-      }
     }
   }
 }

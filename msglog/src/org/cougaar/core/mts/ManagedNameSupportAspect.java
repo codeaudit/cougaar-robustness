@@ -211,6 +211,7 @@ public class ManagedNameSupportAspect extends StandardAspect
     private String transportType;
     private Object lookup;
     private Exception exception;
+    private boolean callFinished;
 
     public AddressLookup (NameSupport nameSupport, MessageAddress address, String transportType)
     {
@@ -223,6 +224,7 @@ public class ManagedNameSupportAspect extends StandardAspect
     {
       lookup = null;
       exception = null;
+      callFinished = false;
 
       try
       {
@@ -235,11 +237,13 @@ public class ManagedNameSupportAspect extends StandardAspect
         if (doDebug()) debug ("timed lookupAddressInNameServer() exception: " +stackTraceToString(e));
         exception = e;
       }
+
+      callFinished = true;
     }
 
     public boolean isFinished ()
     {
-      return (lookup != null || exception != null);
+      return callFinished;
     }
 
     public boolean hadException ()

@@ -209,8 +209,8 @@ public class AgentID implements java.io.Serializable
     {
       if (topoLookup.isFinished()) 
       {
-        hadException = topoLookup.hadException();
         entry = topoLookup.getLookup();
+        hadException = topoLookup.hadException();
         break;
       }
 
@@ -253,6 +253,7 @@ public class AgentID implements java.io.Serializable
     private boolean refreshCache;
     private TopologyEntry entry;
     private Exception exception;
+    private boolean callFinished;
 
     public TopologyLookup (TopologyReaderService svc, MessageAddress agent, boolean refreshCache)
     {
@@ -265,6 +266,7 @@ public class AgentID implements java.io.Serializable
     {
       entry = null;
       exception = null;
+      callFinished = false;
 
       try
       {
@@ -280,11 +282,13 @@ public class AgentID implements java.io.Serializable
 System.err.println ("timed topology lookup exception: " +stackTraceToString(e));
         exception = e;
       }
+
+      callFinished = true;
     }
 
     public boolean isFinished ()
     {
-      return (entry != null || exception != null);
+      return callFinished;
     }
 
     public boolean hadException ()

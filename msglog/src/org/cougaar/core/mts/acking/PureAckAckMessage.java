@@ -38,4 +38,9 @@ public class PureAckAckMessage extends PureAckMessage
     MessageUtils.setMessageTypeToPureAckAck (this);
     pureAckAck.setMsg (this);
   }
+
+  public PureAckAckMessage (PureAckAckMessage pureAckAckMsg)
+  {
+    super (pureAckAckMsg);
+  }
 }

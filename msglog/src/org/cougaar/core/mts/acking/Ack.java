@@ -85,7 +85,7 @@ public class Ack implements Serializable
     receiveTime = ack.receiveTime;
   }
 
-  public Ack clone (Ack ack, AttributedMessage msg)
+  public static Ack clone (Ack ack, AttributedMessage msg)
   {
          if (ack.isAck())        return new Ack (ack, msg);
     else if (ack.isPureAck())    return new PureAck ((PureAck)ack, (PureAckMessage)msg);
