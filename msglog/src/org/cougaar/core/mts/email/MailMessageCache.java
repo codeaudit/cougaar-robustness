@@ -79,16 +79,21 @@ public class MailMessageCache
             Integer.valueOf(num).intValue();
             valid = true;
           } 
-          catch (Exception e) 
-          {
-            String hdr = msgs[i].getHeader().toString();
-            Logging.getLogger(MailMessageCache.class).error ("Invalid email msg num: " +hdr);
-          }
+          catch (Exception e) {}
         }
       }
 
-      if (valid) nMsgs++;
-      else msgs[i] = null;
+      if (!valid)
+      {
+        if (Logging.getLogger(MailMessageCache.class).isWarnEnabled())
+        {
+          String hdr = msgs[i].getHeader().toString();
+          Logging.getLogger(MailMessageCache.class).warn ("Invalid email msg num (msg ignored): " +hdr);
+        }
+
+        msgs[i] = null;
+      }
+      else nMsgs++;
     }
 
     //  Sort the messages by their sent date

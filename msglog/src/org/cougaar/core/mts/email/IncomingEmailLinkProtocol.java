@@ -115,6 +115,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
 
   private static final MailMessageCache cache = new MailMessageCache();
 
+  private static final boolean useFQDNs;
   private static final int mailServerPollTime;
   private static final int initialReadDelaySecs;
   private static final boolean debugMail;
@@ -134,7 +135,10 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
   {
     //  Read external properties
 
-    String s = "org.cougaar.message.protocol.email.mailServerPollTimeSecs";
+    String s = "org.cougaar.message.protocol.email.useFQDNs";
+    useFQDNs = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
+
+    s = "org.cougaar.message.protocol.email.mailServerPollTimeSecs";
     mailServerPollTime = Integer.valueOf(System.getProperty(s,"5")).intValue();
 
     s = "org.cougaar.message.protocol.email.initialReadDelaySecs";
@@ -157,15 +161,15 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
   public void load ()
   {
     super_load();
-
     log = loggingService;
+
     if (log.isInfoEnabled()) log.info ("Creating " + this);
 
-    String sta = "org.cougaar.core.mts.ShowTrafficAspect";
-    showTraffic = (getAspectSupport().findAspect(sta) != null);
+    String s = "org.cougaar.core.mts.ShowTrafficAspect";
+    showTraffic = (getAspectSupport().findAspect(s) != null);
 
     nodeID = getRegistry().getIdentifier();
-    String s = "org.cougaar.message.protocol.email.inboxes." +nodeID;
+    s = "org.cougaar.message.protocol.email.inboxes." +nodeID;
     inboxesProp = System.getProperty (s);
 
     if (inboxesProp == null || inboxesProp.equals(""))
@@ -201,6 +205,8 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
 
       try
       {
+        //  Speak up if a mail server is not accessible right now
+
         if (MailMan.checkMailBoxAccess (inboxes[i]) == false)
         {
           if (log.isWarnEnabled()) 
@@ -223,7 +229,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
       }
       catch (Exception e)
       {
-        log.error ("startup inbox"+i+" exception: " +stackTraceToString(e));
+        log.error ("startup: inbox"+i+" exception: " +stackTraceToString(e));
         if (messageIn != null) messageIn.quit();
       }
     }
@@ -297,16 +303,23 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
           {
             try
             {
-              String host = getFQDN (nextParm (st));
+              String host = nextParm (st);
               String port = nextParm (st);
               String user = nextParm (st);
               String pswd = nextParm (st);
+
+              if (useFQDNs)
+              {
+                String hostFQDN = getHostnameFQDN (host);
+                if (log.isInfoEnabled()) log.info ("Using FQDN " +hostFQDN+ " for specified mailhost " +host);
+                host = hostFQDN;
+              }
 
               in.add (new MailBox (protocol, host, port, user, pswd, "Inbox"));
             }
             catch (Exception e)
             {
-              log.error ("Bad inbox spec: " +spec+ " (ignored)");
+              log.error ("Bad inbox spec: " +spec+ " (ignored): " +e);
             }
           }
           else break;
@@ -329,34 +342,6 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
     }
   }
 
-  private String getFQDN (String host)
-  {
-    //  Now with Java 1.4 we can get the fully qualified domain name
-    //  (FQDN) for hosts (via the new InetAddress getCanonicalHostname())
-    //  when running on Windows.  So we will no longer require that the 
-    //  hostnames in mailbox properties are FQDN names, although this
-    //  is not exactly clearly working, so we will still complain about
-    //  the hostname 'localhost'.
-
-    if (host.equals ("localhost"))
-    {
-      String s = "Only fully qualified domain names allowed as mailhost names: " +host;
-      log.error (s);
-      throw new RuntimeException (s);
-    }
-
-    try
-    {
-      String FQDN = InetAddress.getByName(host).getCanonicalHostName();
-      if (log.isDebugEnabled()) log.debug ("FDQN for " +host+ " is " +FQDN);
-      return FQDN;
-    }
-    catch (Exception e)
-    {
-      throw new RuntimeException (e.toString());
-    }
-  }
-
   private String nextParm (StringTokenizer st)
   {
     //  Convert "-" strings into nulls
@@ -364,6 +349,11 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
     String next = st.nextToken().trim();
     if (next.equals("-")) next = null;
     return next;
+  }
+
+  private String getHostnameFQDN (String hostname) throws java.net.UnknownHostException
+  {
+    return InetAddress.getByName(hostname).getCanonicalHostName();
   }
 
   private void registerMailData (String nodeID, MailBox mbox)
@@ -670,7 +660,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
     }
   }
 
-  private String stackTraceToString (Exception e)
+  private static String stackTraceToString (Exception e)
   {
     StringWriter stringWriter = new StringWriter();
     PrintWriter printWriter = new PrintWriter (stringWriter);

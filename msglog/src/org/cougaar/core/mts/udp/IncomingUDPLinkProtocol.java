@@ -78,16 +78,19 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
   public void load () 
   {
     super_load();
-
     log = loggingService;
-    if (log.isInfoEnabled()) log.info ("Creating " + this);
 
-    String sta = "org.cougaar.core.mts.ShowTrafficAspect";
-    showTraffic = (getAspectSupport().findAspect(sta) != null);
+    if (log.isInfoEnabled()) log.info ("Creating " + this);
+    if (log.isInfoEnabled()) log.info ("Using " +localhost+ " as name of local host");
+
+    String s = "org.cougaar.core.mts.ShowTrafficAspect";
+    showTraffic = (getAspectSupport().findAspect(s) != null);
 
     if (startup() == false)
     {
-      throw new RuntimeException ("Failure starting " +this);
+      String str = "Failure starting up " + this;
+      log.error (str);
+      throw new RuntimeException (str);
     }
   }
 
@@ -233,11 +236,11 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
       listener.quit();
 //    unregisterSocketSpec();   // synchronization problem?
       datagramSocketListeners.remove (listener);
-      if (log.isInfoEnabled()) log.info ("Datagram socket destroyed on port " +port);
+      if (log.isDebugEnabled()) log.debug ("Datagram socket destroyed on port " +port);
     }
     catch (Exception e)
     {
-      log.error ("Error destroying datagram socket on port " +listener.getPort()+ ": " +e);
+      if (log.isWarnEnabled()) log.warn ("Error destroying datagram socket on port " +listener.getPort()+ ": " +e);
     }
   }
 
@@ -303,7 +306,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
           }
           catch (Exception e)
           {
-            log.error ("Got non (or broken) AttributedMessage! (msg ignored): " +e);
+            if (log.isWarnEnabled()) log.warn ("Got non AttributedMessage msg! (ignored): " +e);
             continue;
           }
 
@@ -318,9 +321,9 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
           //  other end closes their socket connection, but this is not
           //  the case here with datagram sockets.
 
-          if (log.isInfoEnabled()) 
+          if (log.isDebugEnabled()) 
           {
-            log.info ("Terminating datagram socket exception:\n" +stackTraceToString(e));
+            log.debug ("Terminating datagram socket exception:\n" +stackTraceToString(e));
           }
 
           quitNow = true;
@@ -377,14 +380,6 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
     }
   }
 
-  private String stackTraceToString (Exception e)
-  {
-    StringWriter stringWriter = new StringWriter();
-    PrintWriter printWriter = new PrintWriter (stringWriter);
-    e.printStackTrace (printWriter);
-    return stringWriter.getBuffer().toString();
-  }
-
   private static Object getObjectFromBytes (byte[] data) 
   {
 	ObjectInputStream ois = null;
@@ -398,7 +393,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 	} 
     catch (Exception e) 
     {
-      if (log.isDebugEnabled()) log.debug ("Deserialization exception: " +e);
+      if (log.isWarnEnabled()) log.warn ("Deserialization exception: " +stackTraceToString(e));
       return null;
 	}
 	
@@ -410,5 +405,13 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
   private static String showAddress (DatagramPacket dp)
   {
     return dp.getSocketAddress().toString().substring(1);  // drop leading '/'
+  }
+
+  private static String stackTraceToString (Exception e)
+  {
+    StringWriter stringWriter = new StringWriter();
+    PrintWriter printWriter = new PrintWriter (stringWriter);
+    e.printStackTrace (printWriter);
+    return stringWriter.getBuffer().toString();
   }
 }

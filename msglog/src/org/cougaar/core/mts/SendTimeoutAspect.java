@@ -85,7 +85,7 @@ public class SendTimeoutAspect extends StandardAspect
                 + (MessageUtils.getAck(msg).getSendCount()+1) + " "
                 + MessageUtils.getMessageTypeLetter(msg) + "("
                 + (MessageUtils.getAck(msg).isSomePureAck() ? String.valueOf(MessageUtils.getSrcMsgNumber(msg)) : "") + ") "
-                + MessageUtils.toAltShortSequenceID(msg) + " via "   
+                + MessageUtils.toShortSequenceID(msg) + " via "   
                 + AdaptiveLinkSelectionPolicy.getLinkType(link.getProtocolClass().getName());
             loggingService.debug("forwardMessage: enter " + s);
           }

@@ -213,6 +213,8 @@ class AckFrontend extends DestinationLinkDelegateImplBase
 
     //  Try sending the message
 
+    String sendInfo = null;
+
     try
     {
       if (log.isInfoEnabled())
@@ -235,8 +237,10 @@ class AckFrontend extends DestinationLinkDelegateImplBase
         }
 
         buf.append (" ");
-        buf.append (MessageUtils.toAltShortSequenceID(msg));
-        log.info (buf.toString());         
+        buf.append (MessageUtils.toShortSequenceID(msg));
+
+        sendInfo = buf.toString();
+        log.info (sendInfo + " Try");         
       }
 
       if (log.isDebugEnabled())
@@ -286,7 +290,9 @@ class AckFrontend extends DestinationLinkDelegateImplBase
       //  we notify the message resender to reschedule the send.  Either way, a new link 
       //  selection will be made and the message will comes back thru and try again.
 
-      if (log.isInfoEnabled()) log.info ("Failure sending " +msgString+ ":\n" +stackTraceToString(e));
+      if (log.isInfoEnabled())  log.info (sendInfo + " Fail");
+      if (log.isDebugEnabled()) log.debug ("Failure sending " +msgString+ ":\n" +stackTraceToString(e));
+
       ack.decrementSendCount();  // didn't actually send
 
       if (ack.getSendCount() == 0) 

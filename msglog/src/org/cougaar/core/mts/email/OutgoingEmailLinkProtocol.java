@@ -115,6 +115,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
   public static final String PROTOCOL_TYPE = "-email";
 
   private static final int protocolCost;
+  private static final boolean useFQDNs;
   private static final boolean debugMail;
 
   private LoggingService log;
@@ -127,7 +128,10 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     //  Read external properties
 
     String s = "org.cougaar.message.protocol.email.cost";  // one way
-    protocolCost = Integer.valueOf(System.getProperty(s,"5000")).intValue();
+    protocolCost = Integer.valueOf(System.getProperty(s,"10000")).intValue();  // was 5000
+
+    s = "org.cougaar.message.protocol.email.useFQDNs";
+    useFQDNs = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
 
     s = "org.cougaar.message.protocol.email.debugMail";
     debugMail = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
@@ -141,8 +145,8 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
   public void load ()
   {
     super_load();
-
     log = loggingService;
+
     if (log.isInfoEnabled()) log.info ("Creating " + this);
 
     String nodeID = getRegistry().getIdentifier();
@@ -176,6 +180,8 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
 
     try
     {
+      //  Speak up if a mail server is not accessible right now
+
       if (MailMan.checkMailServerAccess (outbox) == false)
       {
         if (log.isWarnEnabled())
@@ -186,7 +192,6 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
             outbox.toStringDiscreet()
           );
         }
-return false;
       }
 
       messageOut = createMessageOutStream (outbox);
@@ -238,8 +243,15 @@ return false;
           {
             try
             {
-              String host = getFQDN (nextParm (st));
+              String host = nextParm (st);
               String port = nextParm (st);
+
+              if (useFQDNs)
+              {
+                String hostFQDN = getHostnameFQDN (host);
+                if (log.isInfoEnabled()) log.info ("Using FQDN " +hostFQDN+ " for specified mailhost " +host);
+                host = hostFQDN;
+              }
 
               MailBox mbox = new MailBox (protocol, host, port);
 
@@ -257,7 +269,7 @@ return false;
             }
             catch (Exception e)
             {
-              log.error ("Bad outbox spec: " +spec+ " (ignored)");
+              log.error ("Bad outbox spec: " +spec+ " (ignored): " +e);
             }
           }
           else break;
@@ -280,39 +292,6 @@ return false;
     }
   }
 
-  public String toString ()
-  {
-    return this.getClass().getName();
-  }
-
-  private String getFQDN (String host)
-  {
-    //  Now with Java 1.4 we can get the fully qualified domain name
-    //  (FQDN) for hosts (via the new InetAddress getCanonicalHostname())
-    //  when running on Windows.  So we will no longer require that the 
-    //  hostnames in mailbox properties are FQDN names, although this
-    //  is not exactly clearly working, so we will still complain about
-    //  the hostname 'localhost'.
-
-    if (host.equals ("localhost"))
-    {
-      String s = "Only fully qualified domain names allowed as mailhost names: " +host;
-      log.error (s);
-      throw new RuntimeException (s);
-    }
-
-    try
-    {
-      String FQDN = InetAddress.getByName(host).getCanonicalHostName();
-      if (log.isDebugEnabled()) log.debug ("FDQN for " +host+ " is " +FQDN);
-      return FQDN;
-    }
-    catch (Exception e)
-    {
-      throw new RuntimeException (e.toString());
-    }
-  }
-
   private String nextParm (StringTokenizer st)
   {
     //  Convert "-" strings into nulls
@@ -320,6 +299,16 @@ return false;
     String next = st.nextToken().trim();
     if (next.equals("-")) next = null;
     return next;
+  }
+
+  private String getHostnameFQDN (String hostname) throws java.net.UnknownHostException
+  {
+    return InetAddress.getByName(hostname).getCanonicalHostName();
+  }
+
+  public String toString ()
+  {
+    return this.getClass().getName();
   }
 
   private EmailMessageOutputStream createMessageOutStream (MailBox mbox) throws IOException
@@ -343,7 +332,7 @@ return false;
       }
       else
       {
-        log.error ("Invalid data in name server!");
+        log.error ("Invalid mail data in name server!");
       }
     }
 

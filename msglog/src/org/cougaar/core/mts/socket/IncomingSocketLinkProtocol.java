@@ -96,6 +96,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
   private static final String localhost;
   private static final int idleTimeout;
+  private static final boolean keepConnectionsAlive;
 
   private SocketSpec socketSpecs[];
   private SocketSpec mySocket;
@@ -111,8 +112,11 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     String s = "org.cougaar.message.protocol.socket.localhost";
     localhost = System.getProperty (s, getLocalHost());
 
-    s = "org.cougaar.message.protocol.socket.incoming.idleTimeoutMinutes";
-    idleTimeout = Integer.valueOf(System.getProperty(s,"5")).intValue();
+    s = "org.cougaar.message.protocol.socket.incoming.idleTimeoutSeconds";
+    idleTimeout = Integer.valueOf(System.getProperty(s,"1")).intValue();
+
+    s = "org.cougaar.message.protocol.socket.incoming.keepConnectionsAlive";
+    keepConnectionsAlive = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
   }
  
   public IncomingSocketLinkProtocol ()
@@ -133,16 +137,19 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
   public void load () 
   {
     super_load();
-
     log = loggingService;
-    if (log.isInfoEnabled()) log.info ("Creating " + this);
 
-    String sta = "org.cougaar.core.mts.ShowTrafficAspect";
-    showTraffic = (getAspectSupport().findAspect(sta) != null);
+    if (log.isInfoEnabled()) log.info ("Creating " + this);
+    if (log.isInfoEnabled()) log.info ("Using " +localhost+ " as name of local host");
+
+    String s = "org.cougaar.core.mts.ShowTrafficAspect";
+    showTraffic = (getAspectSupport().findAspect(s) != null);
 
     if (startup() == false)
     {
-      throw new RuntimeException ("Failure starting " +this);
+      String str = "Failure starting up " + this;
+      log.error (str);
+      throw new RuntimeException (str);
     }
   }
 
@@ -397,7 +404,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     {
       try
       {
-        socket.setSoTimeout (idleTimeout*60*1000);
+        socket.setSoTimeout (idleTimeout*1000);
         socketIn = new NoHeaderInputStream (socket.getInputStream());
       }
       catch (Exception e)
@@ -428,7 +435,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
           }
           catch (Exception e)
           {
-            log.error ("Got non (or broken) AttributedMessage! (msg ignored): " +e);
+            if (log.isWarnEnabled()) log.warn ("Got non AttributedMessage msg! (ignored): " +e);
             continue;
           }
 
@@ -472,6 +479,10 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
         { 
           log.error ("Exception delivering " +MessageUtils.toString(msg)+ ": " +stackTraceToString(e));
         }
+
+        //  Quit thread if not keeping socket connection alive for more messages
+
+        if (!keepConnectionsAlive) break;
       }
 
       if (socketIn != null)
@@ -497,7 +508,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 	} 
     catch (Exception e) 
     {
-      if (log.isDebugEnabled()) log.debug ("Deserialization exception: " +e);
+      if (log.isWarnEnabled()) log.warn ("Deserialization exception: " +stackTraceToString(e));
       return null;
 	}
 	
@@ -522,7 +533,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     }
     catch (Exception e)
     {
-      log.error ("Getting local host inet addr" +stackTraceToString(e));
+      log.error ("Getting FQDN for localhost: " +stackTraceToString(e));
       throw new RuntimeException (e.toString());
     }
   }

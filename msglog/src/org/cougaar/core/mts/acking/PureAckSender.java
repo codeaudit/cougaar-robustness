@@ -164,7 +164,7 @@ class PureAckSender implements Runnable
 
             if (debug()) log.debug ("PureAckSender: Sending pure ack " +pam);
             remove (pam);  // remove first to avoid race condition with send
-            SendMessage.sendMsg (pam);
+            aspect.sendMessage (pam);
           }
           else 
           {

@@ -52,7 +52,7 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
     //  Read external properties
 
     String s = "org.cougaar.message.protocol.udp.cost";  // one way
-    protocolCost = Integer.valueOf(System.getProperty(s,"750")).intValue();
+    protocolCost = Integer.valueOf(System.getProperty(s,"5000")).intValue();  // was 750
   }
  
   public OutgoingUDPLinkProtocol ()
@@ -361,29 +361,39 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
       return true;  // send successful
     }
 
-    private synchronized byte[] toBytes (Object data)  // serialization has needed sync before
+    private synchronized byte[] toBytes (AttributedMessage msg)  // serialization has needed sync before
     {
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
       ObjectOutputStream oos = null;
 
       try 
       {
-	    oos = new ObjectOutputStream (baos);
-	    oos.writeObject (data);
+        oos = new ObjectOutputStream (baos);
+        oos.writeObject (msg);
         oos.flush();
       } 
       catch (Exception e) 
       {
-	    return null;
+        if (log.isWarnEnabled()) log.warn ("Serialization exception for " +MessageUtils.toString(msg)+
+          ": " +stackTraceToString(e));
+        return null;
       }
 
       try 
       {
-	    oos.close();
+        oos.close();
       } 
       catch (Exception e) {}
 
       return baos.toByteArray();
     }
   }
+
+  private static String stackTraceToString (Exception e)
+  {
+    StringWriter stringWriter = new StringWriter();
+    PrintWriter printWriter = new PrintWriter (stringWriter);
+    e.printStackTrace (printWriter);
+    return stringWriter.getBuffer().toString();
+  } 
 }

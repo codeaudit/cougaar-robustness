@@ -106,7 +106,7 @@ class AckBackend extends MessageDelivererDelegateImplBase
       }
 
       buf.append (" ");
-      buf.append (MessageUtils.toAltShortSequenceID(msg));
+      buf.append (MessageUtils.toShortSequenceID(msg));
       log.info (buf.toString());
     }
 

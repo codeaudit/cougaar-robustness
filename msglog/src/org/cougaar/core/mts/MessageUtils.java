@@ -418,10 +418,4 @@ public final class MessageUtils
     if (msg == null) return "[null msg]";
     return AgentID.makeShortSequenceID (getFromAgent(msg), getToAgent(msg));
   }
-
-  public static String toAltShortSequenceID (AttributedMessage msg)
-  {
-    if (msg == null) return "[null msg]";
-    return AgentID.makeAltShortSequenceID (getFromAgent(msg), getToAgent(msg));
-  }
 }

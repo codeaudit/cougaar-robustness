@@ -150,7 +150,8 @@ private static long startTime = 0;
     useRTTService = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
 
     s = "org.cougaar.message.transport.policy.adaptive.initialNodeTime";
-    initialNodeTime = Integer.valueOf(System.getProperty(s,"1000")).intValue();
+//  initialNodeTime = Integer.valueOf(System.getProperty(s,"1000")).intValue();
+    initialNodeTime = Integer.valueOf(System.getProperty(s,"20000")).intValue();
 
     s = "org.cougaar.message.transport.policy.adaptive.tryOtherLinksInterval";
     tryOtherLinksInterval = Integer.valueOf(System.getProperty(s,"50")).intValue();
@@ -262,6 +263,9 @@ if (commStartDelaySeconds > 0)
          AttributedMessage failedMsg, int retryCount, Exception last)
   {
     debug = log.isDebugEnabled();
+
+    if (debug) log.debug ("Entered selectLink: msg= " +MessageUtils.toString(msg)+
+                          " failedMsg=" +MessageUtils.toString(failedMsg));
 
 //  HACK to attempt to get around nameserver/topology lookup problems
 
@@ -388,7 +392,7 @@ if (commStartDelaySeconds > 0)
 
       int timeout = MessageUtils.getSendTimeout (msg);
       if (timeout >= 0) MessageUtils.setSendDeadline (msg, now() + timeout);
-      else log.error ("Msg has bad send timeout (" +timeout+ ") (ignored): " +msgString);
+      else log.warn ("Msg has bad send timeout (" +timeout+ ") (timeout ignored): " +msgString);
     }
 
     if (MessageUtils.getSendDeadline (msg) < now())  // default deadline is no deadline
@@ -1466,10 +1470,10 @@ if (commStartDelaySeconds > 0)
 
   private int getInitialOneWayTripTime (DestinationLink link)
   {
-    if (getName(link).equals("org.cougaar.core.mts.RMILinkProtocol"))         return 500;   // yep, a HACK
-    if (getName(link).equals("org.cougaar.core.mts.SerialedRMILinkProtocol")) return 500;   // yep, a HACK
-    if (getName(link).equals("org.cougaar.core.mts.CorbaLinkProtocol"))       return 500;   // yep, a HACK
-    if (getName(link).equals("org.cougaar.core.mts.SSLRMILinkProtocol"))      return 1000;  // yep, a HACK
+    if (getName(link).equals("org.cougaar.core.mts.RMILinkProtocol"))         return 5000;   // yep, a HACK
+    if (getName(link).equals("org.cougaar.core.mts.SerialedRMILinkProtocol")) return 5000;   // yep, a HACK
+    if (getName(link).equals("org.cougaar.core.mts.CorbaLinkProtocol"))       return 5000;   // yep, a HACK
+    if (getName(link).equals("org.cougaar.core.mts.SSLRMILinkProtocol"))      return 5000;   // yep, a HACK
 
     int cost = getLinkCost (link, null);  // another HACK (note null msg)
 

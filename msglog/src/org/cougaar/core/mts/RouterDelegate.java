@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2002 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,32 +19,20 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 23 Apr 2002: Split out from MessageAckingAspect. (OBJS)
+ * 07 Sep 2002: Created to get around Router package protection. (OBJS)
  */
 
-package org.cougaar.core.mts.acking;
+package org.cougaar.core.mts;
 
-import org.cougaar.core.mts.*;
-
-
-class SendMessage extends SendQueueDelegateImplBase 
+public class RouterDelegate extends RouterDelegateImplBase 
 {
-  private static SendQueue staticQueue;
-
-  public SendMessage (SendQueue queue)
+  public RouterDelegate (Object router)
   {
-    super (queue);
-    staticQueue = queue;
+    super ((Router) router);
   }
 
-  public static void sendMsg (AttributedMessage msg)
+  public static boolean isRouterClass (Class type)
   {
-    staticQueue.sendMessage (msg);
-  }
-
-  public static int getSendQueueLength ()
-  {
-    return staticQueue.size();
+    return type == Router.class;
   }
 }
-

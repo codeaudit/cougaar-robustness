@@ -109,7 +109,7 @@ private int cnt=0;  // temp
     //  Read external properties
 
     String s = "org.cougaar.message.protocol.socket.cost";  // one way
-    protocolCost = Integer.valueOf(System.getProperty(s,"1000")).intValue();
+    protocolCost = Integer.valueOf(System.getProperty(s,"5000")).intValue();  // was 1000
 
     s = "org.cougaar.message.protocol.socket.connectTimeoutSecs";
     connectTimeout = Integer.valueOf(System.getProperty(s,"5")).intValue();
@@ -434,7 +434,7 @@ private int cnt=0;  // temp
     }
   }
 
-  private synchronized byte[] toBytes (Object data)  // serialization has needed sync before
+  private synchronized byte[] toBytes (AttributedMessage msg)  // serialization has needed sync before
   {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     ObjectOutputStream oos = null;
@@ -442,11 +442,13 @@ private int cnt=0;  // temp
     try 
     {
       oos = new ObjectOutputStream (baos);
-      oos.writeObject (data);
+      oos.writeObject (msg);
       oos.flush();
     } 
     catch (Exception e) 
     {
+      if (log.isWarnEnabled()) log.warn ("Serialization exception for " +MessageUtils.toString(msg)+
+        ": " +stackTraceToString(e));
       return null;
     }
 
@@ -457,5 +459,13 @@ private int cnt=0;  // temp
     catch (Exception e) {}
 
     return baos.toByteArray();
+  }
+
+  private static String stackTraceToString (Exception e)
+  {
+    StringWriter stringWriter = new StringWriter();
+    PrintWriter printWriter = new PrintWriter (stringWriter);
+    e.printStackTrace (printWriter);
+    return stringWriter.getBuffer().toString();
   }
 }

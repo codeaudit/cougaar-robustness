@@ -59,6 +59,8 @@ static final boolean skipIncarnationCheck;
 
   private LoggingService log;
   private ThreadService threadService;
+  private SendQueueDelegate sendQueueDelegate;
+  private RouterDelegate routerDelegate;
 
   private static final Hashtable receivedAcksTable = new Hashtable();
   private static final Hashtable acksToSendTable = new Hashtable();
@@ -99,7 +101,6 @@ static final boolean skipIncarnationCheck;
 
 s = "org.cougaar.message.transport.aspects.acking.skipIncarnationCheck";
 skipIncarnationCheck = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
-
   }
 
   public MessageAckingAspect () 
@@ -134,9 +135,17 @@ skipIncarnationCheck = Boolean.valueOf(System.getProperty(s,"true")).booleanValu
 
   public Object getDelegate (Object delegate, Class type) 
   {
+/*
     if (type == SendQueue.class) 
     {
-      return new SendMessage ((SendQueue) delegate);
+      sendQueueDelegate = new SendQueueDelegate ((SendQueue) delegate);
+      return sendQueueDelegate;
+    }
+*/
+    if (RouterDelegate.isRouterClass (type))
+    {
+      routerDelegate = new RouterDelegate (delegate);
+      return routerDelegate;
     }
     else if (type == SendLink.class) 
     {
@@ -160,6 +169,24 @@ skipIncarnationCheck = Boolean.valueOf(System.getProperty(s,"true")).booleanValu
     }
 
     return null;
+  }
+
+  class SendQueueDelegate extends SendQueueDelegateImplBase 
+  {
+    public SendQueueDelegate (SendQueue queue)
+    {
+      super (queue);
+    }
+  }
+
+  void sendMessage (AttributedMessage msg)
+  {
+/*
+    if (sendQueueDelegate != null) sendQueueDelegate.sendMessage (msg);
+    else if (log.isDebugEnabled()) log.debug ("sendMessage: null sendQueueDelegate, dropping " +MessageUtils.toString(msg));
+*/
+    if (routerDelegate != null) routerDelegate.routeMessage (msg);
+    else if (log.isDebugEnabled()) log.debug ("sendMessage: null routerDelegate, dropping " +MessageUtils.toString(msg));
   }
 
   private ThreadService threadService () 
