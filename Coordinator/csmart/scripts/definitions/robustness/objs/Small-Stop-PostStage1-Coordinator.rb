@@ -1,7 +1,7 @@
 =begin experiment
 
-name: Save-Small-preStage2-AR-UC7 
-description: Save Small preStage2 AR UC7
+name: Stop-Small-postStage1-Coordinator 
+description: Stop Small postStage1 Coordinator
 script: $CIP/csmart/scripts/definitions/BaselineTemplate.rb
 parameters:
   - run_count: 1
@@ -13,9 +13,11 @@ parameters:
     - $CIP/csmart/config/rules/isat
     - $CIP/csmart/config/rules/yp
     - $CIP/csmart/config/rules/logistics
-    - $CIP/csmart/config/rules/coordinator
     - $CIP/csmart/config/rules/robustness
-#    - $CIP/csmart/config/rules/robustness/uc1
+    - $CIP/csmart/config/rules/coordinator
+    - $CIP/csmart/config/rules/coordinator/examples/sample_defense
+    - $CIP/csmart/config/rules/coordinator/test
+    - $CIP/csmart/config/rules/robustness/uc1
 #    - $CIP/csmart/config/rules/robustness/uc7
 #    - $CIP/csmart/config/rules/robustness/uc9
   - community_rules:
