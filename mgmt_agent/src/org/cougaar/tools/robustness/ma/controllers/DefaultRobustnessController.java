@@ -63,9 +63,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                                implements HeartbeatListener {
     { addHeartbeatListener(this); }
     public void enter(String name) {
+      logger.info("INITIAL: agent=" + name + " loc=" + getLocation(name));
       if (isLocal(name)) {
         if (isAgent(name)) {
-          startHeartbeats(name);
+          //startHeartbeats(name);
+          newState(name, DefaultRobustnessController.ACTIVE);
         } else { // is node
           model.setCurrentState(name, DefaultRobustnessController.ACTIVE, NEVER);
         }
@@ -76,7 +78,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
     public void heartbeatStarted(String name) {
       if (isLocal(name)) {
-        logger.debug("Heartbeats started: agent=" + name);
+        logger.info("Heartbeats started: agent=" + name);
         newState(name, DefaultRobustnessController.ACTIVE);
       }
     }
@@ -100,12 +102,14 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   class ActiveStateController extends StateControllerBase {
     public void enter(String name) {
+      /*
       if (isLeader()) {
         if (communityReady == false && liveAgents() == expectedAgents()) {
           communityReady = true;
           event("Community " + model.getCommunityName() + " Ready");
         }
       }
+      */
       //logger.info("enter: state=ACTIVE agent=" + name);
       if (isLocal(name)) {
         setExpiration(name, NEVER);  // Set expiration to never, let
@@ -195,7 +199,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     public void restartComplete(String name, String dest, int status) {
       if (status == RestartHelper.SUCCESS) {
         event("Restart complete: agent=" + name + " location=" + dest);
-        updateLocationAndSetState(name, INITIAL);
+        //updateLocationAndSetState(name, INITIAL);
+        setLocation(name, dest);
+        newState(name, INITIAL);
       } else {
         event("Restart failed: agent=" + name + " location=" + dest);
         newState(name, FAILED_RESTART);

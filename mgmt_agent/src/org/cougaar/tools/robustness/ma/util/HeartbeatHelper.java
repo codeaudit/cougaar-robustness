@@ -151,6 +151,8 @@ public class HeartbeatHelper extends BlackboardClientComponent {
       if (status == HeartbeatRequest.ACCEPTED) {
         heartbeatsStarted(hbr.getTarget());
       } else if (status == HeartbeatRequest.FAILED || status == HeartbeatRequest.REFUSED) {
+        logger.info("Heartbeat request failed: agent=" + hbr.getTarget() +
+                    " status=" + hbr.statusToString(hbr.getStatus()));
         heartbeatFailure(hbr.getTarget());
       }
     }
@@ -205,10 +207,8 @@ public class HeartbeatHelper extends BlackboardClientComponent {
    * @param hbl  HeartbeatListener to add
    */
   public void addListener(HeartbeatListener hbl) {
-    synchronized (listeners) {
       if (!listeners.contains(hbl))
         listeners.add(hbl);
-    }
   }
 
   /**
@@ -216,10 +216,8 @@ public class HeartbeatHelper extends BlackboardClientComponent {
    * @param ml  HeartbeatListener to remove
    */
   public void removeListener(HeartbeatListener hbl) {
-    synchronized (listeners) {
       if (listeners.contains(hbl))
         listeners.remove(hbl);
-    }
   }
 
   /**
@@ -227,21 +225,17 @@ public class HeartbeatHelper extends BlackboardClientComponent {
    */
   private void heartbeatFailure(MessageAddress agent) {
     logger.debug("Heartbeat failed: agent=" + agent);
-    synchronized (listeners) {
       for (Iterator it = listeners.iterator(); it.hasNext(); ) {
         HeartbeatListener hbl = (HeartbeatListener)it.next();
         hbl.heartbeatFailure(agent.toString());
       }
-    }
   }
 
   private void heartbeatsStarted(MessageAddress agent) {
     logger.debug("Heartbeats started: agent=" + agent);
-    synchronized (listeners) {
       for (Iterator it = listeners.iterator(); it.hasNext(); ) {
         HeartbeatListener hbl = (HeartbeatListener)it.next();
         hbl.heartbeatStarted(agent.toString());
       }
-    }
   }
 }

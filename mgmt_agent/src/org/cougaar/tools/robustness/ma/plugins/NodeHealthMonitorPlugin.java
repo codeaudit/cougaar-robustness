@@ -137,6 +137,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
       roles.add(HEALTH_MONITOR_ROLE);
       memberAttrs.put(roles);
       memberAttrs.put("EntityType", ENTITY_TYPE);
+      memberAttrs.put("CanBeManager", "False");
       blackboard.publishAdd(new JoinCommunity(initialCommunity,
                                               NODE_NAME,
                                               CommunityService.AGENT,
@@ -277,13 +278,12 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
    * Update set of communities to monitor.
    */
   private void processCommunityChanges(Collection communities) {
-    for (Iterator it = communities.iterator(); it.hasNext(); ) {
+    for(Iterator it = communities.iterator(); it.hasNext(); ) {
       Community community = (Community)it.next();
       if (model == null) {
-        if (logger.isInfoEnabled()) {
-          logger.info("Monitoring community: " + community.getName());
-        }
         initializeModel(community.getName());
+      }
+      if (nodeStatusRelay == null) {
         AgentStatus agentStatus[] = getLocalAgentStatus(community.getName());
         NodeStatusRelayImpl nsr =
             new NodeStatusRelayImpl(agentId,
@@ -295,27 +295,29 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
         nodeStatusRelay = new RelayAdapter(agentId, nsr, nsr.getUID());
 
         Set targets = getHealthMonitorPeers(community);
-        for (Iterator it1 = targets.iterator(); it1.hasNext(); ) {
+        for(Iterator it1 = targets.iterator(); it1.hasNext(); ) {
           MessageAddress target = (MessageAddress)it1.next();
-          if (!target.equals(agentId))
+          if(!target.equals(agentId))
             nodeStatusRelay.addTarget(target);
         }
 
         blackboard.publishAdd(nodeStatusRelay);
-        if (logger.isDebugEnabled()) {
+        if(logger.isDebugEnabled()) {
           logger.debug("publishAdd NodeStatusRelay:" +
                        " targets=" + targetsToString(nodeStatusRelay.getTargets()) +
                        " community=" + community.getName() +
                        " agents=" + agentStatus.length);
         }
       }
-      if (model != null)
-        model.update(community);
+      model.update(community);
     }
   }
 
   private void initializeModel(String communityName) {
     if (model == null) {
+      if (logger.isInfoEnabled()) {
+        logger.info("Monitoring community: " + communityName);
+      }
       model = new CommunityStatusModel(NODE_NAME,
                                        communityName,
                                        getServiceBroker());
@@ -323,10 +325,6 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
           new DefaultRobustnessController(NODE_NAME, getBindingSite(), model);
       model.setController(controller);
       model.addChangeListener(controller);
-      if (logger.isInfoEnabled()) {
-        logger.debug("Adding community to status map:" +
-                     " community=" + communityName);
-      }
     }
   }
 
@@ -344,6 +342,16 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
     for (Iterator it = targets.iterator(); it.hasNext();) {
       sb.append(it.next());
       if (it.hasNext()) sb.append(",");
+    }
+    sb.append("]");
+    return sb.toString();
+  }
+
+  public static String agentStatusToString(AgentStatus[] as) {
+    StringBuffer sb = new StringBuffer("[");
+    for (int i = 0; i < as.length; i++) {
+      sb.append("(" + as[i].toString() + ")");
+      if (i < as.length - 1) sb.append(",");
     }
     sb.append("]");
     return sb.toString();
@@ -445,15 +453,18 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
                      " source=" + nsr.getSource() +
                      " targets=" + targetsToString(nodeStatusRelay.getTargets()) +
                      " community=" + nsr.getCommunityName() +
-                     " agents=" + nsr.getAgentStatus().length +
+                     //" agents=" + nsr.getAgentStatus().length +
+                     " agents=" + agentStatusToString(nsr.getAgentStatus()) +
                      " leaderVote=" + nsr.getLeaderVote());
         blackboard.openTransaction();
         blackboard.publishChange(nodeStatusRelay);
         blackboard.closeTransaction();
       } else {
-        //logger.info("RelayAdapter not found for community " +
-        //            communityName);
+        logger.info("RelayAdapter not found for community " +
+                    communityName);
       }
+    } else {
+      //logger.info("Community Status Model is null");
     }
   }
 

@@ -32,6 +32,9 @@ import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.service.AlarmService;
 import org.cougaar.core.agent.service.alarm.Alarm;
+import org.cougaar.core.service.ThreadService;
+
+import org.cougaar.core.thread.Schedulable;
 
 import org.cougaar.core.service.wp.AddressEntry;
 import org.cougaar.core.service.wp.WhitePagesService;
@@ -64,6 +67,7 @@ public class CommunityStatusModel {
   public static final int NODE  = 1;
 
   public static final long NOTIFICATION_INTERVAL = 2 * 1000;
+      public static final long LOCATION_UPDATE_INTERVAL = 15 * 1000;
 
   private long DEFAULT_TTL = 3 * 60 * 1000; // Time to Live for status entries,
                                  // used in calculation of status expirations
@@ -71,6 +75,8 @@ public class CommunityStatusModel {
   private Logger logger = LoggerFactory.getInstance().createLogger(CommunityStatusModel.class);
   private ServiceBroker serviceBroker;
   private AlarmService alarmService;
+  private ThreadService threadService;
+  private WhitePagesService whitePagesService;
 
   /**
    * Status info for a single node/agent.
@@ -90,6 +96,8 @@ public class CommunityStatusModel {
   private Attributes communityAttrs;
   private String thisAgent;
   private SortedMap statusMap = new TreeMap();
+
+  private Set prior = new HashSet();
 
   private String preferredLeader = null;
   private String leader = null;
@@ -119,10 +127,15 @@ public class CommunityStatusModel {
                               ServiceBroker        sb) {
     this.communityName = communityName;
     this.thisAgent = thisAgent;
-     this.serviceBroker = sb;
+    this.serviceBroker = sb;
+    whitePagesService =
+        (WhitePagesService)serviceBroker.getService(this, WhitePagesService.class, null);
+    threadService =
+         (ThreadService)serviceBroker.getService(this, ThreadService.class, null);
     alarmService =
        (AlarmService)serviceBroker.getService(this, AlarmService.class, null);
     alarmService.addRealTimeAlarm(new ChangeNotificationTimer(NOTIFICATION_INTERVAL));
+    //alarmService.addRealTimeAlarm(new LocationUpdateTimer(LOCATION_UPDATE_INTERVAL));
   }
 
   public void setController(RobustnessController rc) {
@@ -145,6 +158,7 @@ public class CommunityStatusModel {
           l.add(se.name);
         }
       }
+      l.addAll(prior);
       return (String[])l.toArray(new String[0]);
     }
   }
@@ -179,6 +193,14 @@ public class CommunityStatusModel {
     synchronized (statusMap) {
       return (name != null && statusMap.containsKey(name))
           ? ((StatusEntry)statusMap.get(name)).currentState
+          : -1;
+    }
+  }
+
+  public long getStateExpiration(String name) {
+    synchronized (statusMap) {
+      return (name != null && statusMap.containsKey(name))
+          ? ((StatusEntry)statusMap.get(name)).ttl
           : -1;
     }
   }
@@ -250,6 +272,7 @@ public class CommunityStatusModel {
      if (se.type == NODE) {
        electLeader();
      }
+     //updateLocation(name, 0);
      queueChangeEvent(
        new CommunityStatusChangeEvent(CommunityStatusChangeEvent.STATE_CHANGE,
                                       se.name,
@@ -297,7 +320,8 @@ public class CommunityStatusModel {
    * @param name Name of peer node
    */
   public String getLeaderVote(String name) {
-    return ((StatusEntry)statusMap.get(name)).leaderVote;
+    StatusEntry se = (StatusEntry)statusMap.get(name);
+    return (se != null ? se.leaderVote : null);
   }
 
   /**
@@ -306,10 +330,15 @@ public class CommunityStatusModel {
    * @param loc  Name of containing node or host
    */
   public void setLocation(String name, String loc) {
+    logger.debug("setLocation: agent=" + name + " loc=" + loc);
     StatusEntry se = (StatusEntry)statusMap.get(name);
     se.timestamp = new Date();
     if (se.location == null || !se.location.equals(loc)) {
       String priorLocation = se.location;
+      if (thisAgent.equals(priorLocation)) {
+        //logger.info("Adding " + name + " to Prior list, prior=" + priorLocation + " new=" + loc);
+        //prior.add(name);
+      }
       se.location = loc;
       queueChangeEvent(
         new CommunityStatusChangeEvent(CommunityStatusChangeEvent.LOCATION_CHANGE,
@@ -400,7 +429,7 @@ public class CommunityStatusModel {
           se.timestamp = new Date();
           se.attrs = entity.getAttributes();
           statusMap.put(se.name, se);
-          getLocationFromWPS(entity.getName());
+          updateLocations(new String[]{entity.getName()}, 0);
           queueChangeEvent(
             new CommunityStatusChangeEvent(CommunityStatusChangeEvent.MEMBERS_ADDED,
                                            se.name,
@@ -437,9 +466,9 @@ public class CommunityStatusModel {
         se.name = nodeName;
         se.type = NODE;
         se.timestamp = new Date();
-        se.currentState = nodeStatus;
         se.ttl = DEFAULT_TTL;
         se.location = nodeName;
+        se.currentState = nodeStatus;
         se.leaderVote = leader;
         statusMap.put(se.name, se);
         //leaderVoteChange = true;
@@ -480,6 +509,10 @@ public class CommunityStatusModel {
       // Apply agent status changes
       for (int i = 0; i < as.length; i++) {
         se = (StatusEntry)statusMap.get(as[i].getName());
+        if (prior.contains(as[i].getName())) {
+          logger.info("Removing " + as[i].getName() + " from Prior list, update received from " + nodeName);
+          prior.remove(as[i].getName());
+        }
         if (se != null) {
           setCurrentState(as[i].getName(), as[i].getStatus());
           if (se.location == null || !se.location.equals(as[i].getLocation())) {
@@ -611,26 +644,20 @@ public class CommunityStatusModel {
     }
   }
 
-  public MessageAddress getLocationFromWPS(String agentName) {
-      MessageAddress ret = null;
-      if (communityName != null) {
-        WhitePagesService wps =
-            (WhitePagesService)serviceBroker.getService(this, WhitePagesService.class, null);
+  public void updateLocations(String agentNames[], int newStateIfLocal) {
         try {
-          getLocation(agentName, wps);
+          for (int i = 0; i < agentNames.length; i++)
+            updateLocation(agentNames[i], newStateIfLocal);
         } catch (Exception ex) {
-          ex.printStackTrace();
-        } finally {
-          serviceBroker.releaseService(this, WhitePagesService.class, wps);
+          logger.error("Exception in updateLocations", ex);
         }
-      }
-      return ret;
     }
 
     /** find an agent's address by looking in the white pages */
-    private void getLocation(final String agentName,
-                             WhitePagesService wps) throws Exception {
-      wps.get(agentName, "topology",
+    private void updateLocation(final String agentName,
+                             final int newStateIfLocal) throws Exception {
+     //logger.info("updateLocation: name=" + agentName);
+      whitePagesService.get(agentName, "topology",
               new Callback() {
         public void execute(Response resp) {
           if (resp.isAvailable()) {
@@ -641,36 +668,60 @@ public class CommunityStatusModel {
                   URI uri = entry.getURI();
                   String host = uri.getHost();
                   String node = uri.getPath().substring(1);
-                  logger.debug("getLocation:" +
+                  logger.debug("updateLocation:" +
                               " agent=" + agentName +
                               " host=" + host +
                               " node=" + node +
-                              " modelValue=" + getLocation(agentName));
+                              " modelValue=" + getLocation(agentName) +
+                              " state=" + getCurrentState(agentName));
                   if (!node.equals(getLocation(agentName))) {
                     setLocation(agentName, node);
-                    setCurrentState(agentName, 0);
+                    //setCurrentState(agentName, newStateIfLocal);
+                    if (node.equals(thisAgent) && getCurrentState(agentName) != newStateIfLocal) {
+                      setCurrentState(agentName, newStateIfLocal);
+                      //logger.info("Setting state: agent=" + agentName + " state=" + newStateIfLocal);
+                    }
                   }
+                } else {
+                  logger.info("AddressEntry is null: agent=" + agentName);
                 }
               } catch (Exception ex) {
-                logger.error("Exception in getLocation:", ex);
+                logger.error("Exception in updateLocation:", ex);
               } finally {
                 resp.removeCallback(this);
               }
             } else {
-              resp.addCallback(this);
+              //resp.addCallback(this);
             }
           } else {
-            resp.addCallback(this);
+            logger.info("Response not available: agent=" + agentName);
+            //resp.addCallback(this);
           }
         }
       });
     }
 
-  public boolean hasAttribute(Attributes attrs, String id) {
+  public boolean hasAttribute(String name, String id) {
+    return hasAttribute(getAttributes(name), id);
+  }
+
+  public boolean hasAttribute(String id) {
+    return hasAttribute(getCommunityAttributes(), id);
+  }
+
+  private boolean hasAttribute(Attributes attrs, String id) {
     return attrs != null && attrs.get(id) != null;
   }
 
-  public String getStringAttribute(Attributes attrs, String id) {
+  public String getStringAttribute(String name, String id) {
+    return getStringAttribute(getAttributes(name), id);
+  }
+
+  public String getStringAttribute(String id) {
+    return getStringAttribute(getCommunityAttributes(), id);
+  }
+
+  private String getStringAttribute(Attributes attrs, String id) {
     String value = null;
     try {
       if (attrs != null && id != null) {
@@ -682,7 +733,15 @@ public class CommunityStatusModel {
     return value;
   }
 
-  public long getLongAttribute(Attributes attrs, String id) {
+  public long getLongAttribute(String name, String id) {
+    return getLongAttribute(getAttributes(name), id);
+  }
+
+  public long getLongAttribute(String id) {
+    return getLongAttribute(getCommunityAttributes(), id);
+  }
+
+  private long getLongAttribute(Attributes attrs, String id) {
     long value = Long.MIN_VALUE;
     try {
       if (attrs != null && id != null) {
@@ -809,6 +868,11 @@ public class CommunityStatusModel {
     }
   }
 
+  private void updateAgentLocations() {
+    logger.info("updateAgentLocations");
+    updateLocations(listEntries(AGENT), 0);
+  }
+
   /**
    * Adds a StatusChangeListener to community.
    * @param scl  StatusChangeListener to add
@@ -893,28 +957,61 @@ public class CommunityStatusModel {
     }
 
     public void expire() {
-      if (!expired) {
+      if(!expired) {
         try {
-          checkExpirations();
-          sendEvents();
-        } catch (Exception ex) {
-          logger.error(ex.getMessage(), ex);
+          threadService.getThread(this, new Runnable() {
+            public void run() {
+              checkExpirations();
+              sendEvents();
+            }
+          }, "ModelUpdateThread").start();
         } finally {
-          expired = true;
           alarmService.addRealTimeAlarm(new ChangeNotificationTimer(
               NOTIFICATION_INTERVAL));
+          expired = true;
         }
       }
     }
 
-    public long getExpirationTime() {
-      return expirationTime;
+    public long getExpirationTime() { return expirationTime; }
+    public boolean hasExpired() { return expired; }
+    public synchronized boolean cancel() {
+      if (!expired)
+        return expired = true;
+      return false;
+    }
+  }
+
+  /**
+   * Timer used to trigger periodic checks for agent location changes.
+   */
+  private class LocationUpdateTimer implements Alarm {
+    private long expirationTime = -1;
+    private boolean expired = false;
+    public LocationUpdateTimer(long delay) {
+      expirationTime = delay + System.currentTimeMillis();
     }
 
-    public boolean hasExpired() {
-      return expired;
+    public void expire() {
+      if(!expired) {
+        try {
+          threadService.getThread(this, new Runnable() {
+            public void run() {
+              updateAgentLocations();
+            }
+          }, "LocationUpdateThread").start();
+        } catch (Exception ex) {
+          logger.error("Excepiton in LocationUpdateThread", ex);
+        } finally {
+          alarmService.addRealTimeAlarm(new LocationUpdateTimer(
+              LOCATION_UPDATE_INTERVAL));
+          expired = true;
+        }
+      }
     }
 
+    public long getExpirationTime() { return expirationTime; }
+    public boolean hasExpired() { return expired; }
     public synchronized boolean cancel() {
       if (!expired)
         return expired = true;

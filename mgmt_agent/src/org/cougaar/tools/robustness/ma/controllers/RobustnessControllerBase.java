@@ -300,7 +300,12 @@ public abstract class RobustnessControllerBase implements
     model.setLocation(name, location);
   }
 
+  protected String getLocation(String name) {
+    return model.getLocation(name);
+  }
+
   protected void updateLocationAndSetState(String name, int newState) {
+    logger.info("updateLocationAndSetState: agent=" + name + " newState=" + stateName(newState));
     model.updateLocations(new String[]{name}, newState);
   }
 
