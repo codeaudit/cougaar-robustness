@@ -484,8 +484,8 @@ if (log.isDebugEnabled()) log.debug("Enter forwardMessage("+MessageUtils.toStrin
 
       if (uri == null)
       {
-        String s = "No Email Address found for " + destination;
-        if (log.isWarnEnabled()) log.warn (s);
+        String s = "No Email Address found for " + destination + " Will retry.";
+        if (log.isInfoEnabled()) log.info(s);
 if (log.isDebugEnabled()) log.debug("Exit forwardMessage("+MessageUtils.toString(msg)+")");
 //if (log.isDebugEnabled()) log.debug("raw msg = "+msg.getRawMessage());
         throw new UnregisteredNameException(destination);

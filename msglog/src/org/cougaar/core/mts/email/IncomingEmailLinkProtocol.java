@@ -490,7 +490,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
         if (log.isDebugEnabled()) 
         {
           rid = "r" +getNextReceiveID()+ " ";
-          log.debug (rid+ "Waiting for next msg from " +mbox);
+          log.debug (rid+ " Waiting for next msg from " +mbox);
         }
 
         mailMsg = getNextMailMessage (rid, mbox);
@@ -524,7 +524,8 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
       }
       catch (MessageDeserializationException e)
       {
-        if (log.isWarnEnabled()) log.warn (rid+ "Deserialization exception (msg ignored): " +e);
+        if (log.isWarnEnabled()) log.warn(rid+ " Deserialization exception d): " +e);
+        if (log.isWarnEnabled()) log.warn("A few of these are ok, else lengthen email stream timeouts.");
         return true;  
       }
 
