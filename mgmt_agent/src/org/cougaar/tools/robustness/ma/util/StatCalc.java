@@ -16,6 +16,10 @@
  * </copyright>
  */
 package org.cougaar.tools.robustness.ma.util;
+
+import java.text.NumberFormat;
+import java.text.DecimalFormat;
+
 /*
    An object of class StatCalc can be used to compute several simple statistics
    for a set of numbers.  Numbers are entered into the dataset using
@@ -23,8 +27,10 @@ package org.cougaar.tools.robustness.ma.util;
    statistics for the set of numbers that have been entered: The number
    of items, the sum of the items, the average, and the standard deviation.
 */
-
 public class StatCalc implements Cloneable {
+
+  private static DecimalFormat df = (DecimalFormat)NumberFormat.getNumberInstance();
+  static { df.applyPattern("0"); }
 
    private String community;
    private String node;
@@ -34,22 +40,23 @@ public class StatCalc implements Cloneable {
    private double high = Double.NaN;
    private double low = Double.NaN;
 
-   public StatCalc() {}
+   public StatCalc() {
+  }
 
    public StatCalc(String community, String node) {
+     this();
      this.community = community;
      this.node = node;
    }
 
    public StatCalc(String community,
                    String node,
-                   int count,
+                   int samples,
                    double sum,
                    double sumSquares,
                    double high,
                    double low) {
-     this.community = community;
-     this.node = node;
+     this(community, node);
      this.samples = samples;
      this.sum = sum;
      this.sumSquares = sumSquares;
@@ -122,13 +129,13 @@ public class StatCalc implements Cloneable {
    public String toXML() {
      return "<Item community=\"" + community + "\" " +
                   "node=\"" + node + "\" " +
-                  "samples=\"" + samples + "\" " +
-                  "sum=\"" + sum + "\" " +
-                  "sumSquares=\"" + sumSquares + " \" " +
-                  "low=\"" + low + " \" " +
-                  "high=\"" + high + "\" " +
-                  "mean=\"" + getMean() + "\" " +
-                  "stdev=\"" + getStandardDeviation() + "\" " +
+                  "samples=\"" + df.format(samples) + "\" " +
+                  "sum=\"" + df.format(sum) + "\" " +
+                  "sumSquares=\"" + df.format(sumSquares) + " \" " +
+                  "low=\"" + df.format(low) + " \" " +
+                  "high=\"" + df.format(high) + "\" " +
+                  "mean=\"" + df.format(getMean()) + "\" " +
+                  "stdev=\"" + df.format(getStandardDeviation()) + "\" " +
                   "/>";
    }
 
