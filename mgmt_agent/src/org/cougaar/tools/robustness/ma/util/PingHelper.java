@@ -67,9 +67,13 @@ public class PingHelper extends BlackboardClientComponent {
   public static final int SUCCESS = 0;
   public static final int FAIL = 1;
 
+  public static final long MAX_CONCURRENT_PINGS = -1;
 
-  private Map myUIDs = new HashMap();
-  private List pingQueue = new ArrayList();
+  //private Map myUIDs = new HashMap();
+
+  private List pingQueue = Collections.synchronizedList(new ArrayList());
+  private Map pingsInProcess = Collections.synchronizedMap(new HashMap());
+
   private LoggingService logger;
   private UIDService uidService = null;
   protected EventService eventService;
@@ -81,7 +85,7 @@ public class PingHelper extends BlackboardClientComponent {
     public boolean execute(Object o) {
       if (o instanceof PingRequest) {
         PingRequest pr = (PingRequest)o;
-        return (myUIDs.keySet().contains(pr.getUID()));
+        return (pingsInProcess.keySet().contains(pr.getUID()));
       }
       return false;
   }};
@@ -131,7 +135,7 @@ public class PingHelper extends BlackboardClientComponent {
   }
 
   public void execute() {
-    fireAll();
+    sendPings();
 
     // Get PingRequests
     for (Iterator it = pingRequests.getChangedCollection().iterator(); it.hasNext();) {
@@ -142,16 +146,18 @@ public class PingHelper extends BlackboardClientComponent {
           logger.debug("PingAgent:" +
                       " agent=" + pr.getTarget().toString() +
                       " status=SUCCESS");
-          ((PingListener)myUIDs.remove(pr.getUID())).
+          ((PingListener)pingsInProcess.remove(pr.getUID())).
               pingComplete(pr.getTarget().toString(), SUCCESS, pr.getRoundTripTime());
           blackboard.publishRemove(pr);
+          pingsInProcess.remove(pr.getUID());
           break;
         case PingRequest.FAILED:
           logger.debug("PingAgent:" +
                       " agent=" + pr.getTarget().toString() +
                       " status=FAIL");
-          ((PingListener)myUIDs.get(pr.getUID())).
+          ((PingListener)pingsInProcess.get(pr.getUID())).
               pingComplete(pr.getTarget().toString(), FAIL, pr.getRoundTripTime());
+          pingsInProcess.remove(pr.getUID());
           break;
       }
     }
@@ -161,12 +167,12 @@ public class PingHelper extends BlackboardClientComponent {
     if (agentId.toString().equals(agentName)) {
       pl.pingComplete(agentName, SUCCESS, 0l);  // Can't ping self, return SUCCESS
     } else {
-      fireLater(new QueueEntry(MessageAddress.getMessageAddress(agentName),
+      queuePing(new QueueEntry(MessageAddress.getMessageAddress(agentName),
                                timeout, pl));
     }
   }
 
-  protected void fireLater(QueueEntry qe) {
+  protected void queuePing(QueueEntry qe) {
     synchronized (pingQueue) {
       pingQueue.add(qe);
     }
@@ -175,26 +181,21 @@ public class PingHelper extends BlackboardClientComponent {
     }
   }
 
-  private void fireAll() {
-    int n;
-    List l;
-    synchronized (pingQueue) {
-      n = pingQueue.size();
-      if (n <= 0) {
-        return;
-      }
-      l = new ArrayList(pingQueue);
-      pingQueue.clear();
-    }
-    for (int i = 0; i < n; i++) {
-      QueueEntry qe = (QueueEntry) l.get(i);
+  private void sendPings() {
+    List l = new ArrayList();
+    while ((MAX_CONCURRENT_PINGS == -1 ||
+           pingsInProcess.size() < MAX_CONCURRENT_PINGS) &&
+           !pingQueue.isEmpty()) {
+      QueueEntry qe = (QueueEntry) pingQueue.remove(0);
       PingRequest pr = sensorFactory.newPingRequest(agentId,
-                                                    qe.agent,
-                                                    qe.timeout);
-      myUIDs.put(pr.getUID(), qe.listener);
+          qe.agent,
+          qe.timeout);
+      pingsInProcess.put(pr.getUID(), qe.listener);
+      logger.debug("sendPing: " + pr);
       blackboard.publishAdd(pr);
     }
   }
+
 
   static class QueueEntry {
     MessageAddress agent;
