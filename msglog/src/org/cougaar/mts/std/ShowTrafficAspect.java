@@ -46,8 +46,8 @@ import org.cougaar.mts.base.UnregisteredNameException;
  * <p>
  * <b>org.cougaar.message.transport.aspects</b>
  * To cause this aspect to be loaded at init time, add 
- * org.cougaar.core.mts.ShowTrafficAspect to this property.
- * <br>(e.g. -Dorg.cougaar.message.transport.aspects=org.cougaar.core.mts.ShowTrafficAspect)
+ * org.cougaar.mts.std.ShowTrafficAspect to this property.
+ * <br>(e.g. -Dorg.cougaar.message.transport.aspects=org.cougaar.mts.std.ShowTrafficAspect)
  * */
 
 public class ShowTrafficAspect extends StandardAspect
@@ -103,29 +103,19 @@ if (attr.equals (MessageAttributes.DELIVERY_STATUS_DELIVERED)) showTraffic (link
       try 
       { 
         Class protocolClass = link.getProtocolClass();
-/* 8.6.1
-        if (protocolClass.getName().equals("org.cougaar.mts.base.LoopbackLinkProtocol")) 
-        {
-          System.err.print (">L");
-        } 
-        else 
-        {
-          String prot = (String) protocolClass.getField("PROTOCOL_TYPE").get(null); 
-          char statusChar = Character.toUpperCase (prot.charAt (1));
-8.6.1 */
-        String name = protocolClass.getName();                                                            //8.6.1
-        char statusChar;                                                                                  //8.6.1
-        if (name.equals("org.cougaar.mts.base.LoopbackLinkProtocol")) statusChar = 'L';                   //8.6.1
-        else if (name.equals("org.cougaar.mts.base.RMILinkProtocol")) statusChar = 'R';                   //8.6.1
-        else if (name.equals("org.cougaar.core.mts.email.OutgoingEmailLinkProtocol")) statusChar = 'E';   //8.6.1
-        else if (name.equals("org.cougaar.core.mts.socket.OutgoingSocketLinkProtocol")) statusChar = 'S'; //8.6.1
-        else if (name.equals("org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol")) statusChar = 'U'; 
-        else if (name.equals("org.cougaar.core.mts.NNTPLinkProtocol")) statusChar = 'N';                  //8.6.1
-        else if (name.equals("org.cougaar.mts.base.SSLRMILinkProtocol")) statusChar = 'V';                //8.6.1
-        else if (name.equals("org.cougaar.mts.base.SerializedRMILinkProtocol")) statusChar = 'Z';         //8.6.1
-        else if (name.equals("org.cougaar.core.mts.FutileSerializingRMILinkProtocol")) statusChar = 'F';  //8.6.1
-        else if (name.equals("org.cougaar.lib.quo.CorbaLinkProtocol")) statusChar = 'C';                  //8.6.1
-        else statusChar = '?';                                                                            //8.6.1
+        String name = protocolClass.getName();                                                        
+        char statusChar;                                                                             
+        if      (name.equals("org.cougaar.mts.base.LoopbackLinkProtocol"))             statusChar = 'L';
+        else if (name.equals("org.cougaar.mts.base.RMILinkProtocol"))                  statusChar = 'R';
+        else if (name.equals("org.cougaar.mts.std.SSLRMILinkProtocol"))                statusChar = 'S';
+        else if (name.equals("org.cougaar.mts.std.email.OutgoingEmailLinkProtocol"))   statusChar = 'E';
+        else if (name.equals("org.cougaar.mts.std.socket.OutgoingSocketLinkProtocol")) statusChar = 'T'; // for TCP
+        else if (name.equals("org.cougaar.mts.std.udp.OutgoingUDPLinkProtocol"))       statusChar = 'U';
+        else if (name.equals("org.cougaar.mts.std.NNTPLinkProtocol"))                  statusChar = 'N';
+        else if (name.equals("org.cougaar.mts.std.SerializedRMILinkProtocol"))         statusChar = 'X';
+        else if (name.equals("org.cougaar.mts.std.FutileSerializingLinkProtocol"))     statusChar = 'F';
+        else if (name.equals("org.cougaar.lib.mquo.CorbaLinkProtocol"))                statusChar = 'C';
+        else                                                                           statusChar = '?';
 
         System.out.print(">"+statusChar);
       } 

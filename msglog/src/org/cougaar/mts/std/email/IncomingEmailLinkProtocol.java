@@ -76,11 +76,11 @@ import org.cougaar.core.thread.Schedulable;
  * <p>
  * <b>org.cougaar.message.protocol.classes</b>
  * Cause this link protocol to be loaded at init time by adding
- * org.cougaar.core.mts.email.IncomingEmailLinkProtocol to this System
+ * org.cougaar.mts.std.email.IncomingEmailLinkProtocol to this System
  * property defined in your setarguments.bat file. If you don't have such a property, add one. 
  * Multiple protocols are separated by commas.
- * <br>(e.g. -Dorg.cougaar.message.protocol.classes=org.cougaar.core.mts.email.OutgoingEmailLinkProtocol,
- * org.cougaar.core.mts.email.IncomingEmailLinkProtocol)
+ * <br>(e.g. -Dorg.cougaar.message.protocol.classes=org.cougaar.mts.std.email.OutgoingEmailLinkProtocol,
+ * org.cougaar.mts.std.email.IncomingEmailLinkProtocol)
  * <p>
  * <b>org.cougaar.message.protocol.email.inboxes.<node-name></b> 
  * Specify the inbound POP3 mailboxes for a node by setting this property 
@@ -177,7 +177,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
     MailMan.setPop3SocketTimeout (socketTimeout);
     MailMan.setPop3Debug (showMailServerInteraction);
 
-    String s = "org.cougaar.core.mts.ShowTrafficAspect";
+    String s = "org.cougaar.mts.std.ShowTrafficAspect";
     showTraffic = (getAspectSupport().findAspect(s) != null);
 
     nodeID = getRegistry().getIdentifier();

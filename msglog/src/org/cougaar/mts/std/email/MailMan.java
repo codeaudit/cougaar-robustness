@@ -98,7 +98,7 @@ public class MailMan
 
       if (withCougaar) {
 	  //  POP3 socket factory initialization
-	  String pop3SocFac = "org.cougaar.core.mts.email.Pop3TimeoutSocketFactory";
+	  String pop3SocFac = "org.cougaar.mts.std.email.Pop3TimeoutSocketFactory";
 	  if (Pop3TimeoutSocketFactory.getServiceBroker() == null)
 	      {
 		  Pop3TimeoutSocketFactory.setServiceBroker (serviceBroker);
@@ -574,7 +574,7 @@ public class MailMan
   {
     //  SMTP socket factory initialization
 
-    String smtpSocFac = "org.cougaar.core.mts.email.SmtpTimeoutSocketFactory";
+    String smtpSocFac = "org.cougaar.mts.std.email.SmtpTimeoutSocketFactory";
 
     if (SmtpTimeoutSocketFactory.getServiceBroker() == null)
     {

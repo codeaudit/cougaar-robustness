@@ -116,14 +116,14 @@ import org.cougaar.mts.std.udp.OutgoingUDPLinkProtocol;
  * <p>
  * <b>org.cougaar.message.transport.policy</i>
  * To use this selection policy, set this property to the classname.
- * <br>(i.e. -Dorg.cougaar.message.transport.policy=org.cougaar.core.mts.AdaptiveLinkSelectionPolicy)
+ * <br>(i.e. -Dorg.cougaar.message.transport.policy=org.cougaar.mts.std.AdaptiveLinkSelectionPolicy)
  * <p>
  * <b>org.cougaar.message.transport.aspects</b>
  * To use this selection policy, you must also add two aspects, 
- * <i>org.cougaar.core.mts.MessageSendHistoryAspect</i> and <i>org.cougaar.core.mts.MessageNumberAspect</i>, 
+ * <i>org.cougaar.mts.std.MessageSendHistoryAspect</i> and <i>org.cougaar.mts.std.MessageNumberAspect</i>, 
  * to this property, adjacent to each other, and in this order.
- * <br>(i.e. -Dorg.cougaar.message.transport.aspects=org.cougaar.core.mts.MessageSendHistoryAspect,
- * org.cougaar.core.mts.MessageNumberAspect)
+ * <br>(i.e. -Dorg.cougaar.message.transport.aspects=org.cougaar.mts.std.MessageSendHistoryAspect,
+ * org.cougaar.mts.std.MessageNumberAspect)
  * <p>
  * <b>org.cougaar.message.transport.policy.adaptive.showTraffic</b> 
  * If true, the default, prints a single character to System.out
@@ -240,7 +240,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     if (ackSvc == null)
       if (log.isErrorEnabled()) log.error("MessageAckingService not found.");
  
-    String sta = "org.cougaar.core.mts.ShowTrafficAspect";
+    String sta = "org.cougaar.mts.std.ShowTrafficAspect";
     showTraffic = (getAspectSupport().findAspect(sta) != null);
 
     thisNode = getRegistry().getIdentifier();
@@ -328,37 +328,37 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
     if (debug) log.debug ("Entered selectLink: msg= " +MessageUtils.toString(msg)+
       " failedMsg=" +MessageUtils.toString(failedMsg));
-    if (debug) {
+    if (log.isDetailEnabled()) {
 	Message raw = msg.getRawMessage();
-	log.debug("raw msg = " + raw);
-	log.debug("raw.getClass() = " + raw.getClass());
+	log.detail("raw msg = " + raw);
+	log.detail("raw.getClass() = " + raw.getClass());
 	/*
 	if (raw instanceof DirectiveMessage) {
 	    DirectiveMessage dirMsg = (DirectiveMessage)raw;
 	    Directive dirs[] = dirMsg.getDirectives();
             for (int i=0; i<dirs.length; i++) {
 		Directive dir = dirs[i];
-        	log.debug("dir.getClass() = " + dir.getClass());
+        	log.detail("dir.getClass() = " + dir.getClass());
                 if (dir instanceof RelayDirective.Change) {
 		    RelayDirective.Change chg = (RelayDirective.Change)dir;
-                    log.debug("RelayDirective.Change content = " + chg.getContent());
+                    log.detail("RelayDirective.Change content = " + chg.getContent());
 		} else if (dir instanceof DirectiveMessage.DirectiveWithChangeReports) {
 		    DirectiveMessage.DirectiveWithChangeReports dwcr = (DirectiveMessage.DirectiveWithChangeReports)dir;
-                    log.debug("DirectiveMessage.DirectiveWithChangeReports  = " + dwcr);
+                    log.detail("DirectiveMessage.DirectiveWithChangeReports  = " + dwcr);
                     Directive d = dwcr.getDirective();
                     if (d instanceof RelayDirective.Response) {
 			RelayDirective.Response res = (RelayDirective.Response)d;
-			log.debug("DirectiveWithChangeReports.getDirective() is RelayDirective.Response response = " + res.getResponse());
+			log.detail("DirectiveWithChangeReports.getDirective() is RelayDirective.Response response = " + res.getResponse());
 		    }
                     if (d instanceof RelayDirective.Change) {
 			RelayDirective.Change chg = (RelayDirective.Change)d;
-			log.debug("DirectiveWithChangeReports.getDirective() is RelayDirective.Change content = " + chg.getContent());
+			log.detail("DirectiveWithChangeReports.getDirective() is RelayDirective.Change content = " + chg.getContent());
 		    }
                     Collection changes = dwcr.getChangeReports();
 		    if (changes != null) {
 			Iterator it = changes.iterator();
                         while (it.hasNext()) {
-			    log.debug("ChangeReport = " + it.next());
+			    log.detail("ChangeReport = " + it.next());
 			}
 		    }
 		}			
@@ -730,19 +730,19 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
         if (cost == Integer.MAX_VALUE) continue; 
 
-//        if (cost == 1 && getName(link).equals ("org.cougaar.mts.base.SSLRMILinkProtocol"))
+//        if (cost == 1 && getName(link).equals ("org.cougaar.mts.std.SSLRMILinkProtocol"))
 //        {
 //          return linkChoice (link, msg);  //  Temp HACK for UC3
 //        }
 
         //  Drop links that cannot handle messages beyond a certain size
 
-        if (getName(link).equals ("org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol"))
+        if (getName(link).equals ("org.cougaar.mts.std.udp.OutgoingUDPLinkProtocol"))
         {
           int msgSize = MessageUtils.getMessageSize (msg);
           if (msgSize >= OutgoingUDPLinkProtocol.getMaxMessageSizeInBytes()) continue;
         }
-        else if (getName(link).equals ("org.cougaar.core.mts.email.OutgoingEmailLinkProtocol"))
+        else if (getName(link).equals ("org.cougaar.mts.std.email.OutgoingEmailLinkProtocol"))
         {
           int msgSize = MessageUtils.getMessageSize (msg);
           if (msgSize >= OutgoingEmailLinkProtocol.getMaxMessageSizeInBytes()) continue;
@@ -1738,10 +1738,10 @@ was new, now old; should be deleted soon
 
   private int getInitialOneWayTripTime (DestinationLink link)
   {
-    if (getName(link).equals("org.cougaar.mts.base.RMILinkProtocol"))         return 5000;   // yep, a HACK
-    if (getName(link).equals("org.cougaar.core.mts.SerialedRMILinkProtocol")) return 5000;   // yep, a HACK
-    if (getName(link).equals("org.cougaar.core.mts.CorbaLinkProtocol"))       return 5000;   // yep, a HACK
-    if (getName(link).equals("org.cougaar.mts.base.SSLRMILinkProtocol"))      return 5000;   // yep, a HACK
+    if (getName(link).equals("org.cougaar.mts.std.SSLRMILinkProtocol"))         return 5000;   // yep, a HACK
+    if (getName(link).equals("org.cougaar.mts.base.RMILinkProtocol"))           return 5000;   // yep, a HACK
+    if (getName(link).equals("org.cougaar.mts.std.SerializedRMILinkProtocol"))  return 5000;   // yep, a HACK
+    if (getName(link).equals("org.cougaar.lib.mquo.CorbaLinkProtocol"))         return 5000;   // yep, a HACK
 
     int cost = getLinkCost (link, null);  // another HACK (note null msg)
 
@@ -1797,16 +1797,16 @@ was new, now old; should be deleted soon
 
     String letter;
 
-         if (link.equals("org.cougaar.mts.base.LoopbackLinkProtocol"))              letter = "L";             
-    else if (link.equals("org.cougaar.mts.base.RMILinkProtocol"))                   letter = "R";                  
-    else if (link.equals("org.cougaar.core.mts.email.OutgoingEmailLinkProtocol"))   letter = "E";  
-    else if (link.equals("org.cougaar.core.mts.socket.OutgoingSocketLinkProtocol")) letter = "S";
-    else if (link.equals("org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol"))       letter = "U";
-    else if (link.equals("org.cougaar.core.mts.NNTPLinkProtocol"))                  letter = "N";                 
-    else if (link.equals("org.cougaar.mts.base.SSLRMILinkProtocol"))                letter = "V";               
-    else if (link.equals("org.cougaar.mts.base.SerializedRMILinkProtocol"))         letter = "Z";        
-    else if (link.equals("org.cougaar.core.mts.FutileSerializingRMILinkProtocol"))  letter = "F"; 
-    else if (link.equals("org.cougaar.lib.quo.CorbaLinkProtocol"))                  letter = "C";                 
+    if      (link.equals("org.cougaar.mts.base.LoopbackLinkProtocol"))              letter = "L";
+    else if (link.equals("org.cougaar.mts.base.RMILinkProtocol"))                   letter = "R";
+    else if (link.equals("org.cougaar.mts.std.email.OutgoingEmailLinkProtocol"))    letter = "E";
+    else if (link.equals("org.cougaar.mts.std.socket.OutgoingSocketLinkProtocol"))  letter = "T"; //for TCP
+    else if (link.equals("org.cougaar.mts.std.udp.OutgoingUDPLinkProtocol"))        letter = "U";
+    else if (link.equals("org.cougaar.mts.std.NNTPLinkProtocol"))                   letter = "N";
+    else if (link.equals("org.cougaar.mts.std.SSLRMILinkProtocol"))                 letter = "S";
+    else if (link.equals("org.cougaar.mts.std.SerializedRMILinkProtocol"))          letter = "X";
+    else if (link.equals("org.cougaar.mts.std.FutileSerializingLinkProtocol")   )   letter = "F";
+    else if (link.equals("org.cougaar.lib.mquo.CorbaLinkProtocol"))                 letter = "C";
     else                                                                            letter = "?";
 
     return letter;
@@ -1829,19 +1829,19 @@ was new, now old; should be deleted soon
 
     if (classname == null) return type;
 
-    if      (classname.equals("org.cougaar.mts.base.LoopbackLinkProtocol")) type = "loopback";
-    else if (classname.equals("org.cougaar.mts.base.RMILinkProtocol")) type = "rmi";
-    else if (classname.equals("org.cougaar.core.mts.email.OutgoingEmailLinkProtocol")) type = "email";
-    else if (classname.equals("org.cougaar.core.mts.email.IncomingEmailLinkProtocol")) type = "email";
-    else if (classname.equals("org.cougaar.core.mts.socket.OutgoingSocketLinkProtocol")) type = "socket";
-    else if (classname.equals("org.cougaar.core.mts.socket.IncomingSocketLinkProtocol")) type = "socket";
-    else if (classname.equals("org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol")) type = "udp";
-    else if (classname.equals("org.cougaar.core.mts.udp.IncomingUDPLinkProtocol")) type = "udp";
-    else if (classname.equals("org.cougaar.core.mts.NNTPLinkProtocol")) type = "nntp";
-    else if (classname.equals("org.cougaar.mts.base.SSLRMILinkProtocol")) type = "rmi-ssl";
-    else if (classname.equals("org.cougaar.mts.base.SerializedRMILinkProtocol")) type = "rmi-ser";
-    else if (classname.equals("org.cougaar.core.mts.FutileSerializingRMILinkProtocol")) type = "rmi-fser";
-    else if (classname.equals("org.cougaar.lib.quo.CorbaLinkProtocol")) type = "corba";
+    if      (classname.equals("org.cougaar.mts.base.LoopbackLinkProtocol"))             type = "loopback";
+    else if (classname.equals("org.cougaar.mts.base.RMILinkProtocol"))                  type = "rmi";
+    else if (classname.equals("org.cougaar.mts.std.SSLRMILinkProtocol"))                type = "ssl";
+    else if (classname.equals("org.cougaar.mts.std.email.OutgoingEmailLinkProtocol"))   type = "email";
+    else if (classname.equals("org.cougaar.mts.std.email.IncomingEmailLinkProtocol"))   type = "email";
+    else if (classname.equals("org.cougaar.mts.std.socket.OutgoingSocketLinkProtocol")) type = "tcp";
+    else if (classname.equals("org.cougaar.mts.std.socket.IncomingSocketLinkProtocol")) type = "tcp";
+    else if (classname.equals("org.cougaar.mts.std.udp.OutgoingUDPLinkProtocol"))       type = "udp";
+    else if (classname.equals("org.cougaar.mts.std.udp.IncomingUDPLinkProtocol"))       type = "udp";
+    else if (classname.equals("org.cougaar.mts.std.NNTPLinkProtocol"))                  type = "nntp";
+    else if (classname.equals("org.cougaar.mts.std.SerializedRMILinkProtocol"))         type = "serialized";
+    else if (classname.equals("org.cougaar.mts.std.FutileSerializingLinkProtocol"))     type = "futile";
+    else if (classname.equals("org.cougaar.lib.mquo.CorbaLinkProtocol"))                type = "corba";
 
     return type;
   }

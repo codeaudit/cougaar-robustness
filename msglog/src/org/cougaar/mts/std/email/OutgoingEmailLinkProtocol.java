@@ -94,11 +94,11 @@ import org.cougaar.mts.std.MessageUtils;
  * <p>
  * <b>org.cougaar.message.protocol.classes</b>
  * Cause this link protocol to be loaded at init time by adding
- * org.cougaar.core.mts.email.OutgoingEmailLinkProtocol to this System
+ * org.cougaar.mts.std.email.OutgoingEmailLinkProtocol to this System
  * property defined in your setarguments.bat file. If you don't have such a property, add one. 
  * Multiple protocols are separated by commas.
- * <br>(e.g. -Dorg.cougaar.message.transport.classes=org.cougaar.core.mts.email.OutgoingEmailLinkProtocol,
- * org.cougaar.core.mts.email.IncomingEmailLinkProtocol)
+ * <br>(e.g. -Dorg.cougaar.message.transport.classes=org.cougaar.mts.std.email.OutgoingEmailLinkProtocol,
+ * org.cougaar.mts.std.email.IncomingEmailLinkProtocol)
  * <p>
  * <b>org.cougaar.message.protocol.email.outboxes.<node-name></b> 
  * Specify the outbound SMTP servers for a node by setting this property 
