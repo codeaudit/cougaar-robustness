@@ -31,8 +31,9 @@ package org.cougaar.coordinator.selection;
 
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.persist.NotPersistable;
+import java.io.Serializable;
 
-public class ActionSelectionKnob implements NotPersistable {
+public class ActionSelectionKnob  implements Serializable {
 
     private int maxActions;
     private double patienceFactor; // how much extra time to give an Action to complete before giving up

@@ -82,7 +82,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
   public void load() {
       super.load();
       getPluginParams();
-      initObjects(); 
+      if (!blackboard.didRehydrate()) initObjects(); 
       cancelTimer();
   }
   
