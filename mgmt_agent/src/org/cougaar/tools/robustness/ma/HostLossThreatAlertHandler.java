@@ -28,10 +28,7 @@ import org.cougaar.tools.robustness.threatalert.*;
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.mts.MessageAddress;
 
-import org.cougaar.core.service.community.CommunityService;
-
 import java.util.*;
-import javax.naming.directory.Attributes;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.BasicAttribute;
 
@@ -137,11 +134,9 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
    */
   protected void adjustRobustnessParameters(ThreatAlert ta, Set affectedAgents) {
     logger.info("Adjusting robustness parameters: threatLevel=" + ta.getSeverityLevelAsString());
-    CommunityService cs =
-        (CommunityService) bindingSite.getServiceBroker().getService(this, CommunityService.class, null);
-    Attributes attrs = cs.getCommunityAttributes(model.getCommunityName());
-    changeAttribute(attrs, "UPDATE_INTERVAL", "15000");
-    cs.setCommunityAttributes(model.getCommunityName(), attrs);
+    Attribute mods[] =
+        new Attribute[] {new BasicAttribute("UPDATE_INTERVAL", "15000")};
+    changeAttributes(model.getCommunityName(), null, mods);
   }
 
 }
