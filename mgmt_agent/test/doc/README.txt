@@ -2,7 +2,7 @@
 
 README file for Robustness Management Agent
 
-Date: 13-June-2002
+Date: 11-July-2002
 
 ###############################################################################
 
@@ -21,6 +21,21 @@ CONTACT INFO:
   email: ron@mobile-intelligence.com
   phone: 734-367-0430 x50
 
+
+CHANGES IN THIS VERSION:
+
+  1) HealthMonitorPlugin no longer requires that the name of the community to
+     be monitores be specified as an argument.  The HealthMonitorPlugin now
+     automatically determines the community name by looking for a community
+     with the attribute "ComunityManager" with its name as an argument.
+  2) RestartLocatorPlugin no longer requires that the name of restart hosts
+     be specified as an argument.  By default the RestartLocatorPlugin will
+     consider any community host/node as a potential restart location.
+     Additional nodes and/or hosts may optionally be specified by the
+     "restartNodes" and "restartHosts" arguments.
+
+     The above changes eliminate the need to create ManagementAgent unqiue
+     recipes for each robustness community in CSMART.
 
 OVERVIEW:
 
@@ -95,27 +110,72 @@ SETUP:
 
      Restart communities are defined in the configuration database.  Community
      definitions in the configuration database are used by the Community Service
-     to assign an agent to its initial communities during startup.  Cougaar 9.4
-     will provide the capability to create/edit community definitions using from
-     the CSMART tool.  Prior to that community definitions may be created in an
+     to assign an agent to its initial communities during startup.  Starting
+     with Cougaar 9.4 CSMART provides the capability to create/edit community
+     definitions.  Community definitions may also be created in an
      XML text file and imported into the database using a utility program.
      Community definitions for the MiniTestConfig and 1AD societies are part
      of this package and are found in file "test/configs/data/communities.xml".
      After editing this XML file the modified configurations can be imported
      into the configuration database by running the ant tool with the target
-     "xmltodb".
+     "dbimport".  This ant target accepts 3 optional arguments that may be
+     specified with the "-D" option.  Note that "experiment" and "assembly"
+     are mutually exclusive.  Only one of these may be specified.  The most
+     common use of this utility will be to import an experiment into CSMART
+     and use the corresponding experiment name in the dbimport invocation.
 
-     > ant xmltodb
+       -Dexperiment=EXPERIMENT_NAME  Name of experiment that will use the
+                                     community definition.
+       -Dassembly=ASSEMBLY_ID        Assembly ID to associate community
+                                     definitions.  By default this will be
+                                     "COMM-DEFAULT_CONFIG".
+       -Dfile=XML_FILENAME           The name of the community xml file that
+                                     contains the community definitions.  The
+                                     location of this file is determined by
+                                     the org.cougaar.config.path property.  By
+                                     default the dbimport ant target adds the
+                                     directory "test/data" to the config path.
+                                     If this argument is not specified the
+                                     default is "communities.xml".
 
 
-  2) Supplying the name of the robustness community to the ManagementAgent.
+     Examples:
+
+     Import the community definitions in the file "communities.xml" and
+     associate with the community Assembly_Id used by experiment
+     "tiny-1ad-trans-exprt".
+
+     > ant -Dexperiment=tiny-1ad-trans-exprt -Dfile=communities.xml dbimport
+
+     Import the community definitions in the file "communities.xml" and
+     associate with the community Assembly_Id "COMM-DEFAULT_CONFIG".
+
+     > ant -Dassembly=COMM-DEFAULT_CONFIG -Dfile=communities.xml dbimport
+
+
+  2) Associating the name of a robustness community with a ManagementAgent.
 
      The ManagementAgent will monitor all members agents from a specified
-     community.  The name of the community to be monitored is provided to the
-     ManagementAgent as a parameter to the HealthMonitorPlugin.  The parameter
-     is defined by the argument "community=XXX".  The HealthMonitorPlugin will
-     use the Community Service to obtain a membership roster for the named
-     community and will monitor all active agents in the community.
+     community.  The name of the community to be monitored is determined by the
+     ManagementAgent during startup.  The ManagementAgent will look for a
+     community that has the attribute "CommunityManager" with the value equal
+     to its name.  The community definition that defines the restart community
+     must define this attribute.
+
+     Example:
+
+      <Community Name="Enclave1Robustness-COMM" >
+        <Attribute ID="CommunityManager" Value="Enclave1RobustnessManager" />
+        <Attribute ID="CommunityType" Value="Robustness" />
+        <Entity Name="Enclave1RobustnessManager" >
+          <Attribute ID="EntityType" Value="Agent" />
+          <Attribute ID="Role" Value="HealthReportConsumer" />
+          <Attribute ID="Role" Value="ManagementAgent" />
+        </Entity>
+        <Entity Name="1-27-FABN" >
+          ...
+        </Entity>
+     </Community>
 
 
 TESTS:
@@ -163,12 +223,11 @@ TESTS:
 
        5 - If the configuration database has not previously been loaded with
            the test community configurations import the definitions from the
-           provided communities.xml file.  Use the ant target "xmltodb".
-
-           > ant xmltodb
+           provided communities.xml file.  Use the ant target "dbimport".
 
        6 - Delete previous persistence files.  These are written to the
-           subdirectory tmp/P.  If this directory exists delete it.
+           subdirectory $COUGAAR_INSTALL_PATH/workspace/P.  If this directory
+           exists delete it.
 
 
        Test Execution:
@@ -179,17 +238,12 @@ TESTS:
 
            > ant manager
 
-       2 - In the second console start an empty node to be used as the
-           destination for the restarted agent.  Use the ant target "newrestartnode".
-
-           > ant newrestartnode
-
-       3 - Start agents 1BDE, 3-69-ARBN and MCCGlobalMode on the node
+       2 - Start agents 1BDE, 3-69-ARBN and MCCGlobalMode on the node
            MiniNode1.  Use the ant target "mininode1" for this.
 
            > ant mininode1
 
-       4 - Start agent 3ID on a MiniNode2.  Use the ant target "mininode2".
+       3 - Start agent 3ID on a MiniNode2.  Use the ant target "mininode2".
            This node has persistence enabled with a frequency of 30 seconds.
            Shortly after the 3ID has started you should see a message indicating
            that a persistence snapshot has been created.
@@ -200,37 +254,32 @@ TESTS:
        print the message "Adding AGENTNAME" indicating that it has detected the
        agent and is sending a HeartbeatRequest.
 
-       5 - After MiniNode2 has printed a message indicating that agent 3ID was
-           persisted kill the node by typing CTRL-C in the MiniNode2 console
+       4 - After MiniNode2 has printed a message indicating that agent 3ID was
+           persisted, kill the node by typing CTRL-C in the MiniNode2 console
            window.  Shortly after this the ManagementAgent should print some
            messages to its console indicating that heartbeats are not being
            received from agent 3ID.  A ping will be sent by the ManagementAgent
            to 3ID to confirm its status.  At this point the DecisionPlugin will
-           obtain a hostname (localhost for this test) from the
+           obtain a nodename (mininode1 for this test) from the
            RestartLocatorPlugin and will initiate a restart of 3ID on the
-           RestartNode using the AgentActionPlugin.
+           restart node using the AgentActionPlugin.
 
-       6 - If all goes well agent 3ID should restart on the RestartNode.  This
+       5 - If all goes well agent 3ID should restart on the mininode1.  This
            will be evident by the generation of the dialog boxes used by 3ID.
 
 
     b) Multi computer test.  This test uses 2 or more comupters.  While
        various combinations are possible the best setup would be to run the
-       ManagerNode, MiniNode1, MiniNode2, and RestartNode(s) on separate
+       ManagerNode, MiniNode1, and MiniNode2 on separate
        computers.  At a minimum MiniNode2 should run alone to simulate the
        loss of a computer.
 
        Test Setup:
        -----------
 
-       Steps 1 - 6 from one computer test defined in section "a" above.
+       Steps 1 - 5 from the one computer test defined in section "a" above.
 
-       7 - Update the test/configs/ma/manager.ini file to include the name
-           of the host(s) to be used as a target for an agent restart.  Modify
-           the "hosts=" argument used by the RestartLocatorPlugin.  This
-           argument takes 1 or more host names separated by a space.
-
-       8 - Verify the the alpreg.ini file references the name of the host that
+       6 - Verify the the alpreg.ini file references the name of the host that
            will contain the name server.  This should be either the host that
            is running the manager node or the MiniNode1.
 
@@ -242,33 +291,25 @@ TESTS:
 
            > ant manager
 
-       2 - Start the empty node(s) to be used a destination for the restarted
-           agent.  A "-D" argument must be provided to ant to identify the
-           host name of the computer.  This name must match one of the names
-           specified as an argument to the RestartLocatorPlugin.
-
-           > ant -Dhost=XXXX newrestartnode
-
-       3 - Start agents 1BDE, 3-69-ARBN and MCCGlobalMode on the node
+       2 - Start agents 1BDE, 3-69-ARBN and MCCGlobalMode on the node
            MiniNode1.
 
            > ant mininode1
 
-       4 - Start agent 3ID on a MiniNode2.  This should ideally be on a computer
+       3 - Start agent 3ID on a MiniNode2.  This should ideally be on a computer
            without any other nodes.
 
            > ant mininode2
 
-       5 - After MiniNode2 has printed a message indicating that agent 3ID was
+       4 - After MiniNode2 has printed a message indicating that agent 3ID was
            persisted kill the node by typing CTRL-C in the MiniNode2 console
            window.
 
-       6 - If all goes well agent 3ID should restart on one of the computers
-           running an RestartNode.  If multiple RestartNodes were started, 3ID
-           can be killed in its new location and it will be restarted by the
-           ManagementAgent on another computer with an RestartNode.
+       6 - If all goes well agent 3ID should restart on the host
+           running an mininode1.
 
 
   2) Using 1AD society and CSMART.
 
-     ...
+     Refer to the document Tiny1AD-howto.txt found at
+     https://cvs.ultralog.net/bbn_robustness/source/bbn/Tiny1AD_howto.txt
