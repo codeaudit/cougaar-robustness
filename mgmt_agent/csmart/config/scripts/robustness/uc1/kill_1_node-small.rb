@@ -27,11 +27,13 @@ Cougaar.new_experiment("ARUC1_Kill_1_Node").run(1) {
     "#{RULES}/robustness/uc1/manager.rule",
     "#{RULES}/robustness/uc1/aruc1.rule",
     "#{RULES}/robustness/uc1/mic.rule",
+    "#{RULES}/robustness/uc1/collect_stats.rule",
     "#{RULES}/robustness/uc9/deconfliction.rule",
     "#{RULES}/metrics/basic",
     "#{RULES}/metrics/sensors"
 
   do_action "TransformSociety", false, "#{RULES}/robustness/communities"
+  #do_action "AddNodeStatisticsToCommunity", "#{CIP}/configs/common/nodestats.xml"
 
   #do_action "SaveCurrentSociety", "mySociety.xml"
   #do_action "SaveCurrentCommunities", "myCommunities.xml"
@@ -59,8 +61,6 @@ Cougaar.new_experiment("ARUC1_Kill_1_Node").run(1) {
     end
   end
 
-  #wait_for "Command", "ok"
-
   wait_for  "GLSConnection", true
   wait_for  "NextOPlanStage"
   do_action "Sleep", 30.seconds
@@ -68,16 +68,11 @@ Cougaar.new_experiment("ARUC1_Kill_1_Node").run(1) {
 
   do_action "UnleashDefenses"
 
-  # After CommunityReady event is received wait for persistence
-  wait_for "CommunitiesReady", ["SMALL-COMM"]
+  # Allow time for 1st persistence snapshot befor kill
   do_action "Sleep", 5.minutes
 
-  # Kill single agent
-  do_action "KillNodes", "TRANS-NODE"
-
-  # Wait for agent restart to complete
-  wait_for "CommunitiesReady", ["SMALL-COMM"]
-  do_action "Sleep", 10.minutes
+  # Kill node
+  do_action "KillNodes", "ConusTRANSCOM-NODE"
 
   wait_for  "SocietyQuiesced"  do
     wait_for  "Command", "shutdown"
