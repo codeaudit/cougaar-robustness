@@ -121,7 +121,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         //for deconflict: the applicability condition of one active agent should
         //be true and the defense op mode should be disabled.
         if(getDeconflictHelper() != null) {
-          getDeconflictHelper().changeApplicabilityCondition(name, false);
+          if(getDeconflictHelper().isDefenseApplicable(name))
+            getDeconflictHelper().changeApplicabilityCondition(name);
           getDeconflictHelper().opmodeDisabled(name);
         }
         checkCommunityReady();
@@ -348,7 +349,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     { addDeconflictListener(this); }
     public void enter(String name) {
       if(getDeconflictHelper() != null && getDeconflictHelper().isOpEnabaled(name)) {
-        getDeconflictHelper().changeApplicabilityCondition(name, true);
+        if(!getDeconflictHelper().isDefenseApplicable(name))
+          getDeconflictHelper().changeApplicabilityCondition(name);
         newState(name, RESTART);
       }
       if(getDeconflictHelper() == null)
@@ -360,7 +362,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     public void defenseOpModeEnabled(String name){
       if(getState(name) == DEAD) {
         if(getDeconflictHelper() != null)
-          getDeconflictHelper().changeApplicabilityCondition(name, true);
+          if(!getDeconflictHelper().isDefenseApplicable(name))
+            getDeconflictHelper().changeApplicabilityCondition(name);
         newState(name, RESTART);
       }
       else {
