@@ -162,14 +162,20 @@ public class LoadTechSpecsPlugin extends ServiceUserPluginBase implements NotPer
                 throw new RuntimeException(
                 "Unable to obtain node id");
             }
-            
+
+            // first check if these services all ready exist
+            diagnosisTechSpecService =
+            (DiagnosisTechSpecService) getServiceBroker().getService(this, DiagnosisTechSpecService.class, null);
+
+            actionTechSpecService =
+            (ActionTechSpecService) getServiceBroker().getService(this, ActionTechSpecService.class, null);
+
             isMgmtAgent = (!nodeId.equals(agentId) );
             if (isMgmtAgent) {
                 if (logger.isDebugEnabled()) logger.debug("*****************************************************************************Loaded on mgmt agent.");
             } else {            
                 if (logger.isDebugEnabled()) logger.debug("*****************************************************************************Loaded on node.");
             }
-            
             
             if (!isMgmtAgent) {
                 
@@ -188,28 +194,28 @@ public class LoadTechSpecsPlugin extends ServiceUserPluginBase implements NotPer
                 rootsb = getServiceBroker();
             }
 
-            // create and advertise our service node-wide
-            this.dtssp = new DiagnosisTechSpecServiceProvider();
-            rootsb.addService(DiagnosisTechSpecService.class, dtssp);
+	    if (diagnosisTechSpecService == null) {
+		// create and advertise our service node-wide
+		this.dtssp = new DiagnosisTechSpecServiceProvider();
+		rootsb.addService(DiagnosisTechSpecService.class, dtssp);
+		diagnosisTechSpecService =
+		    (DiagnosisTechSpecService) getServiceBroker().getService(this, DiagnosisTechSpecService.class, null);
+		if (diagnosisTechSpecService == null) {
+		    logger.error("Unable to obtain DiagnosisTechSpecService");
+		}
+	    }
 
-            // create and advertise our service node-wide
-            this.atssp = new ActionTechSpecServiceProvider();
-            rootsb.addService(ActionTechSpecService.class, atssp);
-
-            diagnosisTechSpecService =
-            (DiagnosisTechSpecService) getServiceBroker().getService(this, DiagnosisTechSpecService.class, null);
-            if (diagnosisTechSpecService == null) {
-                logger.error(
-                "Unable to obtain DiagnosisTechSpecService");
-            } 
-
-            actionTechSpecService =
-            (ActionTechSpecService) getServiceBroker().getService(this, ActionTechSpecService.class, null);
-            if (actionTechSpecService == null) {
-                logger.error(
-                "Unable to obtain ActionTechSpecService");
-            } 
-            
+	    if (actionTechSpecService == null) {
+		// create and advertise our service node-wide
+		this.atssp = new ActionTechSpecServiceProvider();
+		rootsb.addService(ActionTechSpecService.class, atssp);
+		actionTechSpecService =
+		    (ActionTechSpecService) getServiceBroker().getService(this, ActionTechSpecService.class, null);
+		if (actionTechSpecService == null) {
+		    logger.error(
+				 "Unable to obtain ActionTechSpecService");
+		}
+	    }
             return true;
 //        }
 //        else if (logger.isDebugEnabled()) logger.error(".haveServices - at least one service not available!");
