@@ -1,17 +1,19 @@
 <sect1 id="setup">
-  <title>Setup</title>
+  <title>Basic Setup</title>
 
-<sect2 id="required_overlays">
+<sect2 id="basic_setup">
   <title>Required Overlays</title>
   <para>
+    This section provides instructions for configuring a basic setup containing
+    a manager agent and a community of one or more agents to be monitored.
     The table below defines the minimal configuration required for the Agent
     Liveness defense.  These overlays are provided in .zip archive files that are
-    installed by simply unzipping the files the top level directory of the Cougaar install path.
+    installed by simply unzipping the files into the top level directory of the Cougaar install path.
     The overlays augment the capabilities provided by the Cougaar core components
     and provide the essential jar files and configuration data for the
     detection and restart of dead agents.
   </para>
-    <table id="overlay_table_1">
+    <table id="required_overlay_table">
       <title>Required Overlays</title>
       <tgroup cols="2" pgwide="0">
       <colspec colnum="1" colwidth="1.5in" />
@@ -41,9 +43,13 @@
 <sect2 id="optional_overlays">
   <title>Optional Overlays</title>
   <para>
+    The table below identifies some optional overlays that can be used to extend
+    the basic capabilities of the agent liveness defense.  These ovelays are used
+    by the Ultralog program to; 1) provide coordination among multiple defenses, and
+    2) provide advanced load balancing solutions.
   </para>
-    <table id="overlay_table_2">
-      <title>Required Overlays</title>
+    <table id="optional_overlay_table">
+      <title>Optional Overlays</title>
       <tgroup cols="2" pgwide="0">
       <colspec colnum="1" colwidth="1.5in" />
       <thead valign="middle">
@@ -63,6 +69,10 @@
         </row>
         <row>
           <entry>Telcordia believability/coordinator</entry>
+        </row>
+        <row>
+          <entry>Boeing ExNihilo</entry>
+          <entry valign="middle">External load balancer.</entry>
         </row>
       </tbody>
       </tgroup>
