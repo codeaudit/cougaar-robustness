@@ -8,3 +8,6 @@ mic-tic.jpx~
 mic-tic.jpx.local~
 lib
 mic-tic.jpx
+AntRunner.properties
+*.*~
+*.jpx*
