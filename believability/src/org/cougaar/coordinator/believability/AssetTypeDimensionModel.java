@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/AssetTypeDimensionModel.java,v $
- * $Revision: 1.4 $
- * $Date: 2004-06-21 22:36:16 $
+ * $Revision: 1.5 $
+ * $Date: 2004-06-22 01:35:25 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -43,7 +43,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * corresponds to the tech-spec AssetSatteDimension objects.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.4 $Date: 2004-06-21 22:36:16 $
+ * @version $Revision: 1.5 $Date: 2004-06-22 01:35:25 $
  * @see AssetTypeModel
  * @see AssetStateDimension
  */
@@ -58,7 +58,7 @@ class AssetTypeDimensionModel extends Model
     // calculations.  The tech spec derived probabilities are
     // time-dependent making testing difficult.
     //
-    private static final boolean OVERRIDE_EVENT_PROBABILITIES = true;
+    private static final boolean OVERRIDE_EVENT_PROBABILITIES = false;
     
     //------------------------------------------------------------
     // public interface
