@@ -1,0 +1,18 @@
+# AE Manager Node Plugins
+# -----------------------
+omsp = "org.cougaar.core.adaptivity.OperatingModeServiceProvider"
+ompm = "org.cougaar.core.adaptivity.OperatingModePolicyManager"
+csp  = "org.cougaar.core.adaptivity.ConditionServiceProvider"
+co = "org.cougaar.tools.robustness.deconfliction.CoordinatorPlugin"
+
+managerPluginsToAdd = [omsp, ompm, csp, co]
+
+society.each_agent do |agent|
+  if (agent.name == "ARManager")
+    agent.add_components(managerPluginsToAdd)
+  end
+end
+
+
+
+
