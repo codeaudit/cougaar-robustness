@@ -226,7 +226,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                             while (variantIter.hasNext()) {
                                 // Get TechSpec for this Variant
                                 ActionDescription thisVariantDescription = (ActionDescription) variantIter.next();
-                                boolean thisVariantActiveP = thisAction.getValue().isActive() && thisAction.getValue().getAction().equals(thisVariantDescription.name());
+                                boolean thisVariantActiveP = thisAction.getValue()!=null && thisAction.getValue().isActive() && thisAction.getValue().getAction().equals(thisVariantDescription.name());
                                 // Add an entry to the current Action containing the information about this Variant
                                 thisActionEvaluation.addVariantEvaluation(createCompensatoryVariantEvaluation
                                        (thisVariantDescription, thisActionEvaluation, currentEstimatedBaseStateDimension, thisAction, 
