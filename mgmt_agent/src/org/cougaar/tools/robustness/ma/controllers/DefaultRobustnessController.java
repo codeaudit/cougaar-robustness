@@ -205,7 +205,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                   " isAgent=" + isAgent(name));
       communityReady = false; // For ACME Community Ready Events
       //if (isAgent(name) && canRestartAgent(name)) {
-      if (thisAgent.equals(preferredLeader())) {
+      if (isAgent(name) && thisAgent.equals(preferredLeader())) {
         // Interface point for Deconfliction
         // If Ok'd by Deconflictor set state to RESTART
         if(getDeconflictHelper() != null) {
@@ -235,15 +235,18 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
               }
             }
           }
-          long pingTimeout = getLongAttribute(name, "PING_TIMEOUT", PING_TIMEOUT);
+          //long pingTimeout = getLongAttribute(name, "PING_TIMEOUT", PING_TIMEOUT);
           //long annealTime = pingTimeout > 0 ? pingTimeout/2/1000 : LoadBalancer.DEFAULT_ANNEAL_TIME;
           long annealTime = LoadBalancer.DEFAULT_ANNEAL_TIME;
+          logger.debug("Get restart destinations from LoadBalancer");
           getLoadBalancer().doLayout((int)annealTime,
                                      true,
                                      new ArrayList(newNodes),
                                      new ArrayList(deadNodes),
                                      new ArrayList(getExcludedNodes()),
                                      lbl);
+          newNodes.clear();
+          deadNodes.clear();
         }
       } else if (isLocal(name)) {
         stopHeartbeats(name);
@@ -334,6 +337,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   class FailedRestartStateController extends StateControllerBase {
 
     public void enter(String name) {
+      logger.info("New state (FAILED_RESTART):" +
+                  " name=" + name);
       if (isLeader(thisAgent) && isAgent(name)) {
         newState(name, HEALTH_CHECK);
       }
@@ -463,8 +468,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   private boolean canRestartAgent(String name) {
     String preferredLeader = preferredLeader();
     return thisAgent.equals(preferredLeader()) ||
-        (isLeader(thisAgent) && name.equals(preferredLeader) &&
-        model.getCurrentState(preferredLeader) == DEAD);
+        (isLeader(thisAgent) && name.equals(preferredLeader));
     //return thisAgent.equals(preferredLeader()) ||
     // isLeader(thisAgent) && name.equals(preferredLeader());
   }
@@ -654,6 +658,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
               getLoadBalancer().moveAgents(layout);
             }
           };
+          logger.info("autoLoadBalance");
           getLoadBalancer().doLayout(LoadBalancer.DEFAULT_ANNEAL_TIME,
                                      true,
                                      new ArrayList(newNodes),
