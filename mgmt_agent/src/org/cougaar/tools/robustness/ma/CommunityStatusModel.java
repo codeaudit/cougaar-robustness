@@ -810,6 +810,26 @@ public class CommunityStatusModel extends BlackboardClientComponent {
     return value;
   }
 
+  public double getDoubleAttribute(String name, String id) {
+    return getDoubleAttribute(getAttributes(name), id);
+  }
+
+  public double getDoubleAttribute(String id) {
+    return getDoubleAttribute(getCommunityAttributes(), id);
+  }
+
+  public double getDoubleAttribute(Attributes attrs, String id) {
+    double value = Double.NaN;
+    try {
+      if (attrs != null && id != null) {
+        Attribute attr = attrs.get(id);
+        if (attr != null)
+          value = Double.parseDouble((String)attr.get());
+      }
+    } catch (Exception ex) {}
+    return value;
+  }
+
   /**
    * Finds agents/nodes that could porentially become the health monitor
    * leader.  Expired nodes/agents are not selected.

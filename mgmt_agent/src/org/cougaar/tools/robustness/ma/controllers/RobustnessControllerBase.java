@@ -473,6 +473,37 @@ public abstract class RobustnessControllerBase
   }
 
   /**
+   * Get community attribute from model.
+   * @param id  Attribute identifier
+   * @param defaultValue  Default value if attribute not found
+   * @return Attribute value as a double
+   */
+  protected double getDoubleAttribute(String id, long defaultValue) {
+    if (model.hasAttribute(id)) {
+      return model.getDoubleAttribute(id);
+    } else {
+      return defaultValue;
+    }
+  }
+
+  /**
+   * Get agent/node attribute from model.
+   * @param name Agent/node name
+   * @param id  Attribute identifier
+   * @param defaultValue  Default value if attribute not found
+   * @return Attribute value as a double
+   */
+  protected double getDoubleAttribute(String name, String id, long defaultValue) {
+    if (model.hasAttribute(name, id)) {
+      return model.getDoubleAttribute(name, id);
+    } else if (model.hasAttribute(id)) {
+      return model.getDoubleAttribute(id);
+    } else {
+      return defaultValue;
+    }
+  }
+
+  /**
    * Initiate an agent restart.
    * @param name Agent to be restarted
    * @param dest Name of destination node
@@ -628,6 +659,17 @@ public abstract class RobustnessControllerBase
    */
   protected void setExpiration(String name, String stateName) {
     String propertyName = stateName + "_EXPIRATION";
+    long expiration = DEFAULT_EXPIRATION;
+    if (model.hasAttribute(name, propertyName)) {
+      expiration = model.getLongAttribute(name, propertyName);
+    } else if (model.hasAttribute(propertyName)){
+      expiration = model.getLongAttribute(propertyName);
+    }
+    model.setStateExpiration(name, expiration);
+  }
+
+  protected void setExpiration(String name) {
+    String propertyName = stateName(model.getCurrentState(name)) + "_EXPIRATION";
     long expiration = DEFAULT_EXPIRATION;
     if (model.hasAttribute(name, propertyName)) {
       expiration = model.getLongAttribute(name, propertyName);
