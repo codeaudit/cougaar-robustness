@@ -22,40 +22,39 @@ import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.mts.SimpleMessageAddress;
 
-import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.AlarmService;
+import org.cougaar.core.service.BlackboardService;
+import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.UIDService;
-//import org.cougaar.core.node.ComponentInitializerService;
 
-import org.cougaar.core.service.EventService;
+import org.cougaar.core.service.wp.AddressEntry;
+import org.cougaar.core.service.wp.WhitePagesService;
+import org.cougaar.core.service.wp.Callback;
+import org.cougaar.core.service.wp.Response;
 
 import org.cougaar.core.agent.service.alarm.Alarm;
-import org.cougaar.core.service.ThreadService;
-
-import org.cougaar.core.thread.Schedulable;
 
 import org.cougaar.core.util.UID;
 
 import org.cougaar.core.blackboard.IncrementalSubscription;
+
 import org.cougaar.util.UnaryPredicate;
 
-import org.cougaar.core.service.community.CommunityService;
-import org.cougaar.core.service.community.Community;
 import org.cougaar.core.service.community.Agent;
-import org.cougaar.core.service.community.Entity;
-import org.cougaar.community.requests.JoinCommunity;
-import org.cougaar.community.requests.SearchCommunity;
-
+import org.cougaar.core.service.community.Community;
+import org.cougaar.core.service.community.CommunityService;
 import org.cougaar.core.service.community.CommunityChangeEvent;
 import org.cougaar.core.service.community.CommunityChangeListener;
 import org.cougaar.core.service.community.CommunityResponseListener;
 import org.cougaar.core.service.community.CommunityResponse;
+import org.cougaar.core.service.community.Entity;
+
+import org.cougaar.community.requests.JoinCommunity;
+import org.cougaar.community.requests.SearchCommunity;
 
 import org.cougaar.tools.robustness.ma.controllers.RobustnessController;
-import org.cougaar.tools.robustness.ma.controllers.DefaultRobustnessController;
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
-
 import org.cougaar.tools.robustness.ma.ldm.RelayAdapter;
 import org.cougaar.tools.robustness.ma.ldm.AgentStatus;
 import org.cougaar.tools.robustness.ma.ldm.NodeStatusRelay;
@@ -63,20 +62,11 @@ import org.cougaar.tools.robustness.ma.ldm.NodeStatusRelayImpl;
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorRequest;
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorResponse;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Iterator;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
 
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
@@ -85,33 +75,103 @@ import javax.naming.directory.BasicAttributes;
 
 import java.net.URI;
 
+/**
+ * Primary class used to monitor/maintain agent liveness in a community.  This
+ * plugin performs the following functions:
+ * <pre>
+ *   1) Detects the addition of the host agent to a robustness community to
+ *      monitor.
+ *   2) Creates a status model for the monitored community.
+ *   3) Creates a RobustnessController for the monitored community.
+ *   4) Periodically sends status update to peer health monitors in the
+ *      monitored community.
+ *   5) Receives status updates from peers and updates model.
+ *   6) Respond to status requests from ARServlet.
+ * </pre>
+ */
 public class NodeHealthMonitorPlugin extends ComponentPlugin {
 
+  // Property used to define the name of a robustness community to monitor
   public static final String COMMUNITY_PROP_NAME = "org.cougaar.tools.robustness.community";
+
+  // Defines attribute to use in selection of community to monitor
   public static final String HEALTH_MONITOR_ROLE = "HealthMonitor";
-  public static final String COMMUNITY_TYPE = "Robustness";
-  public static final String ENTITY_TYPE = "Node";
+  public static final String COMMUNITY_TYPE =      "Robustness";
 
-  public static final long NODE_CHECK_INTERVAL = 30 * 1000;
+  // Defines class to use for Robustness Controller
+  public static final String CONTROLLER_CLASS_PROPERTY =
+      "org.cougaar.tools.robustness.controller.classname";
+  public static final String DEFAULT_ROBUSTNESS_CONTROLLER_CLASSNAME =
+      "org.cougaar.tools.robustness.ma.controllers.DefaultRobustnessController";
 
-  private String NODE_NAME;
+  // Defines how often status updates are broadcast to peers
+  public static final String STATUS_UPDATE_PROPERTY =
+      "org.cougaar.tools.robustness.update.interval";
+  public static final String DEFAULT_STATUS_UPDATE_INTERVAL = "30000";
+  public static long updateInterval;
 
-  CommunityStatusModel model;
-  RobustnessController controller;
-  RelayAdapter nodeStatusRelay;
-  WakeAlarm wakeAlarm;
+  // Info associated with this health monitor
+  private String myName;
+  private String myType = "Agent";
+  private String myNode;
+  private String myHost;
+  private boolean joinedStartupCommunity = false;
+
+  // Status model and controller associated with monitored community
+  private CommunityStatusModel model;
+  private RobustnessController controller;
+
+  // Relay used to send status info to peers
+  private RelayAdapter nodeStatusRelay;
+
+  // Status send timer
+  private WakeAlarm wakeAlarm;
 
   private Set myUIDs = new HashSet();
 
   // Services used
-  protected LoggingService logger;
+  private LoggingService logger;
   private UIDService uidService = null;
   private EventService eventService;
-
   private CommunityService commSvc;
+  private WhitePagesService whitePagesService;
 
-  protected void setupSubscriptions() {
-    NODE_NAME = agentId.toString();
+  public void setWhitePagesService(WhitePagesService wps) {
+    whitePagesService = wps;
+  }
+
+  public void setCommunityService(CommunityService cs) {
+    commSvc = cs;
+  }
+
+  // Join Robustness Community designated by startup parameter
+  private void joinStartupCommunity() {
+    String initialCommunity = System.getProperty(COMMUNITY_PROP_NAME);
+    if (initialCommunity != null) {
+      logger.debug("Joining community " + initialCommunity);
+      UID joinRequestUID = uidService.nextUID();
+      myUIDs.add(joinRequestUID);
+      Attributes memberAttrs = new BasicAttributes();
+      Attribute roles = new BasicAttribute("Role", "Member");
+      roles.add(HEALTH_MONITOR_ROLE);
+      memberAttrs.put(roles);
+      memberAttrs.put("EntityType", myType);
+      memberAttrs.put("CanBeManager", "False");
+      blackboard.publishAdd(new JoinCommunity(initialCommunity,
+                                              myName,
+                                              CommunityService.AGENT,
+                                              memberAttrs,
+                                              false,
+                                              null,
+                                              joinRequestUID));
+    } else {
+      logger.debug("No initial community defined");
+    }
+    joinedStartupCommunity = true;
+  }
+
+  public void setupSubscriptions() {
+    myName = agentId.toString();
 
     // Get required services
     logger =
@@ -121,31 +181,6 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
       (UIDService) getBindingSite().getServiceBroker().getService(this, UIDService.class, null);
     eventService =
       (EventService) getBindingSite().getServiceBroker().getService(this, EventService.class, null);
-    commSvc =
-      (CommunityService) getBindingSite().getServiceBroker().getService(this, CommunityService.class, null);
-
-    // Join Robustness Community designated by startup parameter
-    String initialCommunity = System.getProperty(COMMUNITY_PROP_NAME);
-    if (initialCommunity != null) {
-      logger.info("Joining community " + initialCommunity);
-      UID joinRequestUID = uidService.nextUID();
-      myUIDs.add(joinRequestUID);
-      Attributes memberAttrs = new BasicAttributes();
-      Attribute roles = new BasicAttribute("Role", "Member");
-      roles.add(HEALTH_MONITOR_ROLE);
-      memberAttrs.put(roles);
-      memberAttrs.put("EntityType", ENTITY_TYPE);
-      memberAttrs.put("CanBeManager", "False");
-      blackboard.publishAdd(new JoinCommunity(initialCommunity,
-                                              NODE_NAME,
-                                              CommunityService.AGENT,
-                                              memberAttrs,
-                                              false,
-                                              null,
-                                              joinRequestUID));
-    } else {
-      logger.info("No initial community defined");
-    }
 
     // Subscribe to Node Status updates sent by peer Health Monitors via Relay
     nodeStatusRelaySub =
@@ -154,6 +189,9 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
     // Subscribe to external requests
     healthMonitorRequests =
         (IncrementalSubscription)blackboard.subscribe(healthMonitorRequestPredicate);
+
+    // Determine identify node and host
+    getTopologyInfo();
 
     // Publish SearchCommunity request to look for Robustness Communities
     searchRequests =
@@ -167,18 +205,32 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
                                               Community.COMMUNITIES_ONLY));
 
     // Start timer to periodically check status of agents
-    wakeAlarm = new WakeAlarm((new Date()).getTime() + NODE_CHECK_INTERVAL);
+    String updateIntervalStr =
+        System.getProperty(STATUS_UPDATE_PROPERTY, DEFAULT_STATUS_UPDATE_INTERVAL);
+    updateInterval = Long.parseLong(updateIntervalStr);
+    wakeAlarm = new WakeAlarm(now() + updateInterval);
     alarmService.addRealTimeAlarm(wakeAlarm);
   }
 
-  protected void execute() {
+  /**
+   * Return current time in milliseconds.
+   * @return Current time
+   */
+  private long now() {
+    return System.currentTimeMillis();
+  }
+
+  public void execute() {
     if ((wakeAlarm != null) &&
         ((wakeAlarm.hasExpired()))) {
+      if (myNode != null && !joinedStartupCommunity) {
+        joinStartupCommunity();
+      }
       updateAndSendNodeStatus();
-      wakeAlarm = new WakeAlarm((new Date()).getTime() + NODE_CHECK_INTERVAL);
+      wakeAlarm = new WakeAlarm(now() + updateInterval);
       alarmService.addRealTimeAlarm(wakeAlarm);
     }
-
+    // Get updates in monitored community
     for (Iterator it = searchRequests.getChangedCollection().iterator(); it.hasNext(); ) {
       SearchCommunity cs = (SearchCommunity) it.next();
       Collection robustnessCommunities = (Collection)cs.getResponse().getContent();
@@ -188,10 +240,11 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
           logger.debug("Received changed SearchCommunity:" +
                       " community=" + (c != null ? c.getName() : null));
         }
+        // update status model
         processCommunityChanges(robustnessCommunities);
       }
     }
-    // Get status from other node agents in community
+    // Get status from health monitor peers
     Collection nsCollection = nodeStatusRelaySub.getAddedCollection();
     for (Iterator it = nsCollection.iterator(); it.hasNext(); ) {
       NodeStatusRelay nsr = (NodeStatusRelay)it.next();
@@ -200,6 +253,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
                   " source=" + nsr.getSource() +
                   " numAgents=" + nsr.getAgentStatus().length +
                   " leaderVote=" + nsr.getLeaderVote());
+      // update status model
       updateCommunityStatus(nsr.getCommunityName(),
                             nsr.getSource().toString(),
                             nsr.getNodeStatus(),
@@ -214,6 +268,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
                   " source=" + nsr.getSource() +
                   " numAgents=" + nsr.getAgentStatus().length +
                   " leaderVote=" + nsr.getLeaderVote());
+     // update status model
       updateCommunityStatus(nsr.getCommunityName(),
                             nsr.getSource().toString(),
                             nsr.getNodeStatus(),
@@ -243,27 +298,14 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
   }
 
   /**
-   * Get name of all agents in this node.
+   * Finds peer health monitors based on entity attributes in monitored community.
+   * @param communityName  Name of monitored community
+   * @return  Set of peer agent/node health monitors
    */
-  private Set getAgentsInNode(String communityName) {
-    Set agentsInNode = new HashSet();
-    String namesFromModel[] = new String[0];
-    if (model != null) {
-      namesFromModel = model.agentsOnNode(NODE_NAME);
-      for (int i = 0; i < namesFromModel.length; i++) {
-        agentsInNode.add(namesFromModel[i]);
-      }
-    }
-      logger.debug("AgentsInNode:" +
-                   " agentsInNode=" + agentsInNode.size() + agentsInNode +
-                   " agentsFromModel=" + namesFromModel.length);
-    return agentsInNode;
-  }
-
-  private Set getHealthMonitorPeers(String communityName) {
+  private Set findHealthMonitorPeers(String communityName) {
     Community community = commSvc.getCommunity(communityName, null);
     if (community != null && community.getName().equals(communityName)) {
-      return getHealthMonitorPeers(community);
+      return findHealthMonitorPeers(community);
     }
     return Collections.EMPTY_SET;
   }
@@ -272,7 +314,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
    * Returns set of MessageAddress objects corresponding to member nodes of
    * specified community.
    */
-  private Set getHealthMonitorPeers(Community community) {
+  private Set findHealthMonitorPeers(Community community) {
     Set nodes = new HashSet();
     Set entities = community.search("(Role=" + HEALTH_MONITOR_ROLE + ")",
                                     Community.AGENTS_ONLY);
@@ -283,7 +325,6 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
     return nodes;
   }
 
-
   /**
    * Update set of communities to monitor.
    */
@@ -293,7 +334,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
       if (model == null) {
         initializeModel(community.getName());
       }
-      if (nodeStatusRelay == null) {
+      if (nodeStatusRelay == null && myType.equals("Node")) {
         AgentStatus agentStatus[] = getLocalAgentStatus(community.getName());
         NodeStatusRelayImpl nsr =
             new NodeStatusRelayImpl(agentId,
@@ -304,7 +345,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
                                     uidService.nextUID());
         nodeStatusRelay = new RelayAdapter(agentId, nsr, nsr.getUID());
 
-        Set targets = getHealthMonitorPeers(community);
+        Set targets = findHealthMonitorPeers(community);
         for(Iterator it1 = targets.iterator(); it1.hasNext(); ) {
           MessageAddress target = (MessageAddress)it1.next();
           if(!target.equals(agentId))
@@ -325,24 +366,34 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
 
   private void initializeModel(String communityName) {
     if (model == null) {
-      if (logger.isInfoEnabled()) {
-        logger.info("Monitoring community: " + communityName);
-      }
-      model = new CommunityStatusModel(NODE_NAME,
+      model = new CommunityStatusModel(myName,
                                        communityName,
                                        getBindingSite());
-      controller =
-          new DefaultRobustnessController(NODE_NAME, getBindingSite(), model);
+      String controllerClassname =
+          System.getProperty(CONTROLLER_CLASS_PROPERTY,
+                             DEFAULT_ROBUSTNESS_CONTROLLER_CLASSNAME);
+      try {
+        controller =
+            (RobustnessController)Class.forName(controllerClassname).newInstance();
+        controller.initialize(agentId.toString(), getBindingSite(), model);
+      } catch (Exception ex) {
+        logger.error("Exception creating RobustnessController", ex);
+      }
       model.setController(controller);
       model.addChangeListener(controller);
+    }
+    if (logger.isInfoEnabled()) {
+      logger.info("Monitoring community:" +
+                  " community=" + communityName +
+                  " controller=" + controller.getClass().getName());
     }
   }
 
   private AgentStatus[] getLocalAgentStatus(String communityName) {
-    String agents[] = model.agentsOnNode(NODE_NAME);
+    String agents[] = model.agentsOnNode(myName);
     AgentStatus as[] = new AgentStatus[agents.length];
     for (int i = 0; i < as.length; i++) {
-      as[i] = new AgentStatus(agents[i], NODE_NAME, model.getCurrentState(agents[i]));
+      as[i] = new AgentStatus(agents[i], myName, model.getCurrentState(agents[i]));
     }
     return as;
   }
@@ -352,16 +403,6 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
     for (Iterator it = targets.iterator(); it.hasNext();) {
       sb.append(it.next());
       if (it.hasNext()) sb.append(",");
-    }
-    sb.append("]");
-    return sb.toString();
-  }
-
-  public static String agentStatusToString(AgentStatus[] as) {
-    StringBuffer sb = new StringBuffer("[");
-    for (int i = 0; i < as.length; i++) {
-      sb.append("(" + as[i].toString() + ")");
-      if (i < as.length - 1) sb.append(",");
     }
     sb.append("]");
     return sb.toString();
@@ -388,14 +429,6 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
       sb.append(((Class)it.next()).getName() + "\n");
     }
     return sb.toString();
-  }
-
-  /**
-   * Sends Cougaar event via EventService.
-   */
-  private void event(String message) {
-    if (eventService != null && eventService.isEventEnabled())
-      eventService.event(message);
   }
 
   // Converts a collection of Entities to a compact string representation of names
@@ -452,8 +485,8 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
        NodeStatusRelayImpl nsr = (NodeStatusRelayImpl)nodeStatusRelay.
             getContent();
         nsr.setAgentStatus(agentStatus);
-        nsr.setLeaderVote(model.getLeaderVote(NODE_NAME));
-        Set targets = getHealthMonitorPeers(nsr.getCommunityName());
+        nsr.setLeaderVote(model.getLeaderVote(myName));
+        Set targets = findHealthMonitorPeers(nsr.getCommunityName());
         for (Iterator it1 = targets.iterator(); it1.hasNext(); ) {
           MessageAddress target = (MessageAddress)it1.next();
           if (!target.equals(agentId))
@@ -464,16 +497,54 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
                      " targets=" + targetsToString(nodeStatusRelay.getTargets()) +
                      " community=" + nsr.getCommunityName() +
                      " agents=" + nsr.getAgentStatus().length +
-                     //" agents=" + agentStatusToString(nsr.getAgentStatus()) +
                      " leaderVote=" + nsr.getLeaderVote());
         blackboard.publishChange(nodeStatusRelay);
-      } else {
-        //logger.info("RelayAdapter not found for community " +
-        //            communityName);
       }
-    } else {
-      //logger.info("Community Status Model is null");
     }
+  }
+
+  /** Find component info using white pages */
+  private void getTopologyInfo() {
+    Callback cb = new Callback() {
+      public void execute(Response resp) {
+        boolean isAvailable = resp.isAvailable();
+        boolean isSuccess = resp.isSuccess();
+        AddressEntry entry = null;
+        String agentName = null;
+        if (isAvailable && isSuccess) {
+          entry = ((Response.Get)resp).getAddressEntry();
+        }
+        if (entry != null) {
+          try {
+            if (entry != null) {
+              URI uri = entry.getURI();
+              myHost = uri.getHost();
+              myNode = uri.getPath().substring(1);
+              myType = (myName.equals(myNode)) ? "Node" : "Agent";
+              if (logger.isInfoEnabled()) {
+                logger.debug("toplogyInfo:" +
+                            " name=" + myName +
+                            " type=" + myType +
+                            " host=" + myHost +
+                            " node=" + myNode);
+              }
+            }
+            if (blackboard != null) blackboard.signalClientActivity();
+          } catch (Exception ex) {
+            logger.error("Exception in updateLocation:", ex);
+          } finally {
+            resp.removeCallback(this);
+          }
+
+        }
+        logger.debug("getToplogyInfo callback:" +
+                      " name=" + myName +
+                      " resp.isAvailable=" + isAvailable +
+                      " resp.isSuccess=" + isSuccess +
+                      " entry=" + entry);
+      }
+    };
+    whitePagesService.get(myName, "topology", cb);
   }
 
   private class WakeAlarm implements Alarm {

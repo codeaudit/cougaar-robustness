@@ -42,6 +42,26 @@ public class CommunityStatusChangeEvent {
     this.priorLeader = priorLeader;
   }
 
+  public CommunityStatusChangeEvent(int changeFlags,
+                                    CommunityStatusModel.StatusEntry se,
+                                    String currentLeader,
+                                    String priorLeader) {
+    this(changeFlags,
+         se.name,
+         se.type,
+         se.currentState,
+         se.priorState,
+         se.currentLocation,
+         se.priorLocation,
+         currentLeader,
+         priorLeader);
+  }
+
+  public CommunityStatusChangeEvent(int changeFlags,
+                                    CommunityStatusModel.StatusEntry se) {
+    this(changeFlags, se, null, null);
+  }
+
   public String toString() {
     StringBuffer sb = new StringBuffer("CommunityStatusChangeEvent:");
     sb.append(" changeFlags=" + changeFlags);

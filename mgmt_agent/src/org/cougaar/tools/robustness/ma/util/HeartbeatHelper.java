@@ -146,6 +146,9 @@ public class HeartbeatHelper extends BlackboardClientComponent {
   }
 
   public void execute() {
+
+    fireAll();
+
     // Get HeartbeatRequests
     for (Iterator it = heartbeatRequestSub.getChangedCollection().iterator(); it.hasNext();) {
       HeartbeatRequest hbr = (HeartbeatRequest) it.next();
@@ -154,7 +157,7 @@ public class HeartbeatHelper extends BlackboardClientComponent {
         heartbeatRequests.put(hbr.getTarget(), hbr);
         heartbeatsStarted(hbr.getTarget());
       } else if (status == HeartbeatRequest.FAILED || status == HeartbeatRequest.REFUSED) {
-        logger.info("Heartbeat request failed: agent=" + hbr.getTarget() +
+        logger.debug("Heartbeat request failed: agent=" + hbr.getTarget() +
                     " status=" + hbr.statusToString(hbr.getStatus()));
         heartbeatFailure(hbr.getTarget());
       }

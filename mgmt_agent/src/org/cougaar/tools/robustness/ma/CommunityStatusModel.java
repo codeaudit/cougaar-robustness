@@ -31,24 +31,15 @@ import org.cougaar.core.mts.MessageAddress;
 
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.service.AlarmService;
+import org.cougaar.core.agent.service.alarm.Alarm;
 import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.service.BlackboardService;
-import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.SchedulerService;
 import org.cougaar.core.blackboard.BlackboardClientComponent;
 import org.cougaar.core.component.ServiceBroker;
 
-import org.cougaar.core.agent.service.alarm.Alarm;
-
-import org.cougaar.core.service.wp.AddressEntry;
-import org.cougaar.core.service.wp.WhitePagesService;
-import org.cougaar.core.service.wp.Callback;
-import org.cougaar.core.service.wp.Response;
-
 import org.cougaar.core.node.NodeControlService;
-
-import java.net.URI;
 
 import org.cougaar.tools.robustness.ma.ldm.*;
 
@@ -58,6 +49,7 @@ import java.util.*;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
+import javax.naming.directory.BasicAttributes;
 
 /**
  * Holds community status information used by robustness health monitor
@@ -73,45 +65,60 @@ public class CommunityStatusModel extends BlackboardClientComponent {
   public static final int AGENT = 0;
   public static final int NODE  = 1;
 
-  public static final long NOTIFICATION_INTERVAL = 2 * 1000;
+  // Predefined states.  These must match the states used by the associated
+  // RobustnessController.
+  public static final int UNDEFINED = -1;
+  public static final int INITIAL = 0;
+  public static final int LOCATED = 1;
+
+  // Default state expiration
+  public static final int NEVER = -1;
+
+  // Community attribute designating the communities manager agent
+  public static final String MANAGER_ROLE = "RobustnessManager";
+
+  // Defines how often expirations are checked and events are dissemminated
+  public static final long TIMER_INTERVAL = 10 * 1000;
+  private WakeAlarm wakeAlarm;        // Event notification alarm
+
+  // Defines how often the local node is check for new/removed agents
   public static final long LOCATION_UPDATE_INTERVAL = 15 * 1000;
-  public static final long TIMER_INTERVAL = 10000;
 
-  public static final int INITIAL_STATE = 0;
-
-  private long DEFAULT_TTL = 3 * 60 * 1000; // Time to Live for status entries,
-                                 // used in calculation of status expirations
-
-  //private Logger logger = LoggerFactory.getInstance().createLogger(CommunityStatusModel.class);
+  // Services used
   private LoggingService logger;
   private ServiceBroker serviceBroker;
-  //private AlarmService alarmService;
-  //private ThreadService threadService;
-  private WhitePagesService whitePagesService;
   private NodeControlService nodeControlService;
 
   /**
    * Status info for a single node/agent.
    */
-  private class StatusEntry implements java.io.Serializable {
-    Date timestamp;
+  protected class StatusEntry implements java.io.Serializable {
+    long timestamp;
     Attributes attrs;
-    long ttl;
+    long expiration;
     String name;
     String currentLocation;
     String priorLocation;
-    int type;            // AGENT or NODE
+    int type;
     int currentState;
+    int priorState;
     String leaderVote;
+    StatusEntry(String name, int type, Attributes attrs) {
+      this.name = name;
+      this.type = type;
+      this.attrs = attrs;
+      this.currentState = UNDEFINED;
+      this.expiration = NEVER;
+      this.timestamp = now();
+    }
   }
 
-  private String communityName;
-  private Attributes communityAttrs;
   private String thisAgent;
+
+  private String communityName;
+  private Attributes communityAttrs;  // Community-level attributes
   private SortedMap statusMap = new TreeMap();
 
-  private Set prior = new HashSet();
-  private WakeAlarm wakeAlarm;
 
   private String preferredLeader = null;
   private String leader = null;
@@ -119,7 +126,7 @@ public class CommunityStatusModel extends BlackboardClientComponent {
   private RobustnessController controller;
 
   // States used by leader elector.  These are initially set to states which
-  // should never occur.  Once a controller is assigned (see setController()
+  // should never occur.  Once a controller is assigned (via setController()
   // method) the correct state are retrieved.
   private int normalState = -2;
   private int triggerState = -2;
@@ -131,10 +138,7 @@ public class CommunityStatusModel extends BlackboardClientComponent {
    * Constructor.
    * @param thisAgent      Name of health monitor agent
    * @param communityName  Name of monitored community
-   * @param defaultTTL     How long health status from a monitored node/agent
-   *                       is considered valid
-   * @param leaderState    Valid state for leader
-   * @param as             Alarm service for notification timer
+   * @param bs             BindingSite
    */
   public CommunityStatusModel(String      thisAgent,
                               String      communityName,
@@ -148,57 +152,57 @@ public class CommunityStatusModel extends BlackboardClientComponent {
     logger = (LoggingService)serviceBroker.getService(this, LoggingService.class, null);
     logger = org.cougaar.core.logging.LoggingServiceWithPrefix.add(logger,
         agentId + ": ");
-    //setSchedulerService(
-    //    (SchedulerService)serviceBroker.getService(this, SchedulerService.class, null));
-    //setAlarmService((AlarmService)serviceBroker.getService(this, AlarmService.class, null));
-    //setBlackboardService(
-    //    (BlackboardService)serviceBroker.getService(this,
-    //                                     BlackboardService.class, null));
     initialize();
     load();
     start();
-//    alarmService =
-//       (AlarmService)serviceBroker.getService(this, AlarmService.class, null);
     this.thisAgent = thisAgent;
-    //logger.info("thisAgent=" + thisAgent);
-    //alarmService.addRealTimeAlarm(new ChangeNotificationTimer(NOTIFICATION_INTERVAL));
-    //alarmService.addRealTimeAlarm(new LocationUpdateTimer(LOCATION_UPDATE_INTERVAL));
   }
 
+  /**
+   * Load required services.
+   */
   public void load() {
-    //setAgentIdentificationService(
-    //  (AgentIdentificationService)getServiceBroker().getService(this, AgentIdentificationService.class, null));
     setSchedulerService(
       (SchedulerService)getServiceBroker().getService(this, SchedulerService.class, null));
     setAlarmService((AlarmService)serviceBroker.getService(this, AlarmService.class, null));
     setBlackboardService(
       (BlackboardService)getServiceBroker().getService(this, BlackboardService.class, null));
-    whitePagesService =
-      (WhitePagesService)serviceBroker.getService(this, WhitePagesService.class, null);
     nodeControlService =
       (NodeControlService)serviceBroker.getService(this, NodeControlService.class, null);
     super.load();
   }
 
+  /**
+   * Setup wakeAlarm.
+   */
   public void setupSubscriptions() {
-    wakeAlarm = new WakeAlarm((new Date()).getTime() + TIMER_INTERVAL);
+    wakeAlarm = new WakeAlarm(now() + TIMER_INTERVAL);
     alarmService.addRealTimeAlarm(wakeAlarm);
   }
 
+  /**
+   * Performs periodic tasks when wakeAlarm fires.
+   */
   public void execute() {
     if ((wakeAlarm != null) &&
         ((wakeAlarm.hasExpired()))) {
+      logger.debug("Perform periodic tasks");
       checkExpirations();
       sendEvents();
-      findLocalAgents();
-      wakeAlarm = new WakeAlarm((new Date()).getTime() + TIMER_INTERVAL);
+      if (getType(thisAgent) == NODE) {
+        findLocalAgents();
+      }
+      wakeAlarm = new WakeAlarm(now() + TIMER_INTERVAL);
       alarmService.addRealTimeAlarm(wakeAlarm);
     }
   }
 
+  /**
+   * Sets reference to RobustnessController associated with this model.
+   * @param rc  RobustnessController
+   */
   public void setController(RobustnessController rc) {
     this.controller = rc;
-    DEFAULT_TTL = controller.getDefaultStateExpiration();
     normalState = controller.getNormalState();
     triggerState = controller.getLeaderElectionTriggerState();
   }
@@ -216,7 +220,6 @@ public class CommunityStatusModel extends BlackboardClientComponent {
           l.add(se.name);
         }
       }
-      l.addAll(prior);
       return (String[])l.toArray(new String[0]);
     }
   }
@@ -250,13 +253,18 @@ public class CommunityStatusModel extends BlackboardClientComponent {
   public int getCurrentState(String name) {
       return (name != null && statusMap.containsKey(name))
           ? ((StatusEntry)statusMap.get(name)).currentState
-          : -1;
+          : UNDEFINED;
   }
 
+  /**
+   * Returns expiration for current state.
+   * @param name
+   * @return Expiration period in milliseconds
+   */
   public long getStateExpiration(String name) {
       return (name != null && statusMap.containsKey(name))
-          ? ((StatusEntry)statusMap.get(name)).ttl
-          : -1;
+          ? ((StatusEntry)statusMap.get(name)).expiration
+          : UNDEFINED;
   }
 
   /**
@@ -266,7 +274,7 @@ public class CommunityStatusModel extends BlackboardClientComponent {
   public int getType(String name) {
       return (name != null && statusMap.containsKey(name))
           ? ((StatusEntry)statusMap.get(name)).type
-          : -1;
+          : UNDEFINED;
   }
 
   /**
@@ -283,71 +291,67 @@ public class CommunityStatusModel extends BlackboardClientComponent {
    * Returns timestamp for last status update.
    * @return Time of last update
    */
-  public Date getTimestamp(String name) {
+  public long getTimestamp(String name) {
     return ((StatusEntry)statusMap.get(name)).timestamp;
-  }
-
-  /**
-   * Set current state using prior or default expiration.
-   * @param name  Name of agent or node
-   * @param state New state
-   */
-  public void setCurrentState(String name, int state) {
-    StatusEntry se = (StatusEntry)statusMap.get(name);
-    if (se != null) {
-      setCurrentState(name, state, (se.ttl > 0 ? se.ttl : DEFAULT_TTL));
-    } else {
-      logger.error("No status entry found for " + name);
-    }
   }
 
   /**
    * Set current state with a specified expiration.
    * @param name  Name of agent or node
    * @param state New state
-   * @param ttl   How long the state is considered valid
+   * @param expiration  How long the state is considered valid
    */
-  public void setCurrentState(String name, int state, long ttl) {
+  public void setCurrentState(String name, int state, long expiration) {
     StatusEntry se = (StatusEntry)statusMap.get(name);
-    se.timestamp = new Date();
+    se.timestamp = now();
     if (se.currentState != state) {
-      int priorState = se.currentState;
+      se.priorState = se.currentState;
       se.currentState = state;
-      se.ttl = ttl;
+      se.expiration = expiration;
       logger.debug("setCurrentState" +
                   " agent=" + name +
                   " newState=" + se.currentState +
-                  " priorState=" + priorState +
-                  " ttl=" + ttl);
-     if (se.type == NODE) {
-       electLeader();
-     }
-     //updateLocation(name, 0);
-     queueChangeEvent(
-       new CommunityStatusChangeEvent(CommunityStatusChangeEvent.STATE_CHANGE,
-                                      se.name,
-                                      se.type,
-                                      se.currentState,
-                                      priorState,
-                                      null,
-                                      null,
-                                      null,
-                                      null));
-   }
+                  " priorState=" + se.priorState +
+                  " expiration=" + expiration);
+      if (se.type == NODE) {
+         electLeader();
+      }
+      queueChangeEvent(
+        new CommunityStatusChangeEvent(CommunityStatusChangeEvent.STATE_CHANGE, se));
+      }
+  }
+
+  /**
+   * Set current state with a specified expiration.
+   * @param name  Name of agent or node
+   * @param state New state
+   */
+  public void setCurrentState(String name, int state) {
+    StatusEntry se = (StatusEntry)statusMap.get(name);
+    if (se != null) setCurrentState(name, state, se.expiration);
   }
 
   /**
    * Set expiration for curent state.
    * @param name Name of node or agent
-   * @param ttl  How long a state update is considered valid
+   * @param expiration  How long a state update is considered valid
    */
-  public void setStateTTL(String name, long ttl) {
+  public void setStateExpiration(String name, long expiration) {
     StatusEntry se = (StatusEntry)statusMap.get(name);
-      se.ttl = ttl;
-      logger.debug("setStatusTTL" +
+      se.expiration = expiration;
+      logger.debug("setStatusExpiration" +
                   " agent=" + name +
                   " currentState=" + se.currentState +
-                  " ttl=" + ttl);
+                  " expiration=" + expiration);
+  }
+
+  /**
+   * Update status timestamp.
+   * @param name Name of node or agent
+   */
+  public void setTimestamp(String name) {
+    StatusEntry se = (StatusEntry)statusMap.get(name);
+      se.timestamp = now();
   }
 
   /**
@@ -379,13 +383,24 @@ public class CommunityStatusModel extends BlackboardClientComponent {
   }
 
   /**
-   * Returns name of node that a specified node recognizes as the robustness
+   * Returns name of agent that a specified node recognizes as the robustness
    * leader.
    * @param name Name of peer node
    */
   public String getLeaderVote(String name) {
     StatusEntry se = (StatusEntry)statusMap.get(name);
     return (se != null ? se.leaderVote : null);
+  }
+
+  /**
+   * Returns name of agent that a specified node recognizes as the robustness
+   * leader.
+   * @param name Name of peer node
+   */
+  public void setLeaderVote(String name, String vote) {
+    //logger.info("agent=" + name + " vote=" + vote);
+    StatusEntry se = (StatusEntry)statusMap.get(name);
+    se.leaderVote = vote;
   }
 
   /**
@@ -396,24 +411,14 @@ public class CommunityStatusModel extends BlackboardClientComponent {
   public void setLocation(String name, String loc) {
     logger.debug("setLocation: agent=" + name + " loc=" + loc);
     StatusEntry se = (StatusEntry)statusMap.get(name);
-    se.timestamp = new Date();
+    se.timestamp = now();
     if (se.currentLocation == null || !se.currentLocation.equals(loc)) {
       se.priorLocation = se.currentLocation;
       if (thisAgent.equals(se.priorLocation)) {
-        //logger.info("Adding " + name + " to Prior list, prior=" + priorLocation + " new=" + loc);
-        //prior.add(name);
       }
       se.currentLocation = loc;
       queueChangeEvent(
-        new CommunityStatusChangeEvent(CommunityStatusChangeEvent.LOCATION_CHANGE,
-                                       se.name,
-                                       se.type,
-                                       se.currentState,
-                                       -1,
-                                       se.currentLocation,
-                                       se.priorLocation,
-                                       null,
-                                       null));
+        new CommunityStatusChangeEvent(CommunityStatusChangeEvent.LOCATION_CHANGE, se));
     }
   }
 
@@ -438,9 +443,9 @@ public class CommunityStatusModel extends BlackboardClientComponent {
       queueChangeEvent(
         new CommunityStatusChangeEvent(CommunityStatusChangeEvent.LEADER_CHANGE,
                                        null,
-                                       -1,
-                                       -1,
-                                       -1,
+                                       UNDEFINED,
+                                       UNDEFINED,
+                                       UNDEFINED,
                                        null,
                                        null,
                                        newLeader,
@@ -465,45 +470,41 @@ public class CommunityStatusModel extends BlackboardClientComponent {
   /**
    * Update internal elements based on current membership and attributes in
    * monitored community.
-   * @param community Updated Community instance associated with monitored
+   * @param community Community instance associated with monitored
    * community
    */
   public void update(Community community) {
     synchronized (statusMap) {
       communityAttrs = community.getAttributes();
       try {
-        Attribute attr = communityAttrs.get("Manager");
+        Attribute attr = communityAttrs.get(MANAGER_ROLE);
         if (attr != null)
           setPreferredLeader((String)attr.get());
       } catch (NamingException ne) {}
       for (Iterator it = community.getEntities().iterator(); it.hasNext(); ) {
         Entity entity = (Entity) it.next();
-        if (entity instanceof Agent && !statusMap.containsKey(entity.getName())) {
-          int type = AGENT;
-          Attribute entityTypeAttr = entity.getAttributes().get("EntityType");
-          if (entityTypeAttr != null && entityTypeAttr.contains("Node")) {
-            type = NODE;
-            electLeader();
+        if (entity instanceof Agent) {
+          if (!statusMap.containsKey(entity.getName())) {
+            int type = AGENT;
+            Attribute entityTypeAttr = entity.getAttributes().get("EntityType");
+            if (entityTypeAttr != null && entityTypeAttr.contains("Node")) {
+              type = NODE;
+              electLeader();
+            }
+            StatusEntry se = new StatusEntry(entity.getName(), type,
+                                             entity.getAttributes());
+            statusMap.put(se.name, se);
+            setCurrentState(se.name, INITIAL);
+            queueChangeEvent(
+                new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
+                                               MEMBERS_ADDED, se));
+          } else {
+            StatusEntry se = (StatusEntry)statusMap.get(entity.getName());
+            Attributes entityAttrs = entity.getAttributes();
+            if (se.attrs == null) {
+              se.attrs = entity.getAttributes();
+            }
           }
-          StatusEntry se = new StatusEntry();
-          se.name = entity.getName();
-          se.type = type;
-          se.currentState = -1;
-          se.ttl = DEFAULT_TTL;
-          se.timestamp = new Date();
-          se.attrs = entity.getAttributes();
-          statusMap.put(se.name, se);
-          //updateLocations(new String[]{entity.getName()}, 0);
-          queueChangeEvent(
-            new CommunityStatusChangeEvent(CommunityStatusChangeEvent.MEMBERS_ADDED,
-                                           se.name,
-                                           se.type,
-                                           se.currentState,
-                                           -1,
-                                           se.currentLocation,
-                                           null,
-                                           null,
-                                           null));
         }
       }
     }
@@ -518,91 +519,31 @@ public class CommunityStatusModel extends BlackboardClientComponent {
    * @param as         Status of nodes child agents
    * @param leader     Name of health monitor leader recognized by reporting node
    */
-  public void applyUpdates(String nodeName, int nodeStatus, AgentStatus[] as, String leader) {
+  public void applyUpdates(String nodeName, int nodeStatus, AgentStatus[] as, String vote) {
     synchronized (statusMap) {
       logger.debug("ApplyUpdates:" +
                    " node=" + nodeName +
                    " nodeStatus=" + controller.stateName(nodeStatus) +
                    " numAgents=" + as.length);
-      //boolean leaderVoteChange = false;
-      StatusEntry se = (StatusEntry)statusMap.get(nodeName);
-      // Apply node status changes
-      if (se == null) {
-        se = new StatusEntry();
-        se.name = nodeName;
-        se.type = NODE;
-        se.timestamp = new Date();
-        se.ttl = DEFAULT_TTL;
-        se.currentLocation = nodeName;
-        se.priorLocation = null;
-        se.currentState = nodeStatus;
-        se.leaderVote = leader;
-        statusMap.put(se.name, se);
-        //leaderVoteChange = true;
-        queueChangeEvent(
-            new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
-                                           MEMBERS_ADDED,
-                                           se.name,
-                                           se.type,
-                                           se.currentState,
-                                           -1,
-                                           null,
-                                           null,
-                                           null,
-                                           null));
+      if (statusMap.containsKey(nodeName)) {
+        setCurrentState(nodeName, nodeStatus);
+        setLeaderVote(nodeName, vote);
       } else {
-        if (se.currentState != nodeStatus) {
-          int priorState = se.currentState;
-          se.currentState = nodeStatus;
-          se.timestamp = new Date();
-          queueChangeEvent(
-              new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
-                                             STATE_CHANGE,
-                                             se.name,
-                                             se.type,
-                                             se.currentState,
-                                             priorState,
-                                             null,
-                                             null,
-                                             null,
-                                             null));
-        }
-        if (se.leaderVote == null || !se.leaderVote.equals(leader)) {
-          se.leaderVote = leader;
-          //leaderVoteChange = true;
-        }
+        StatusEntry se = new StatusEntry(nodeName, NODE, null);
+        statusMap.put(se.name, se);
+        setCurrentState(se.name, INITIAL);
+        queueChangeEvent(
+          new CommunityStatusChangeEvent(CommunityStatusChangeEvent.MEMBERS_ADDED, se));
       }
-      se.timestamp = new Date();
       // Apply agent status changes
       for (int i = 0; i < as.length; i++) {
-        se = (StatusEntry)statusMap.get(as[i].getName());
-        if (prior.contains(as[i].getName())) {
-          logger.info("Removing " + as[i].getName() + " from Prior list, update received from " + nodeName);
-          prior.remove(as[i].getName());
-        }
-        if (se != null) {
-          setCurrentState(as[i].getName(), as[i].getStatus());
-          if (se.currentLocation == null || !se.currentLocation.equals(as[i].getLocation())) {
-            se.priorLocation = se.currentLocation;
-            //logger.info(priorLocation + "->" + as[i].getLocation());
-            se.currentLocation = as[i].getLocation();
-            queueChangeEvent(
-                new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
-                                               LOCATION_CHANGE,
-                                               se.name,
-                                               se.type,
-                                               se.currentState,
-                                               -1,
-                                               se.currentLocation,
-                                               se.priorLocation,
-                                               null,
-                                               null));
-          }
-          se.timestamp = new Date();
+        String agentName = as[i].getName();
+        if (statusMap.containsKey(agentName)) {
+          setCurrentState(agentName, as[i].getStatus());
+          setLocation(agentName, as[i].getLocation());
         }
       }
-      //if (leaderVoteChange)
-        electLeader();
+      electLeader();
     }
   }
 
@@ -652,37 +593,28 @@ public class CommunityStatusModel extends BlackboardClientComponent {
   }
 
   /**
-   * Compares 2 arrays of agent names for equality.
-   * @param agentArray1  Sorted array of agent names
-   * @param agentArray2  Sorted array of agent names
-   * @return true if arrays contain same names
-   */
-  private static boolean agentNamesEqual(String[] agentArray1, String[] agentArray2) {
-    return (agentArray1.length == agentArray2.length &&
-            Arrays.equals(agentArray1, agentArray2));
-  }
-
-  /**
    * Returns a long representing current time.
    * @return Current time
    */
   private long now() {
-    return (new Date()).getTime();
+    return System.currentTimeMillis();
   }
 
   /**
    * Determines if a StatusEntry has expired.
+   * @param se StatusEntry associated with agent/node
    * @return Return true if current time is greater than entries expiration
    * time.
    */
   public boolean isExpired(StatusEntry se) {
     return se.currentState >= 0 &&
-           se.ttl > 0 &&
-           se.timestamp.getTime() + se.ttl < now();
+           se.expiration > 0 &&
+           se.timestamp + se.expiration < now();
   }
 
   /**
    * Determines if an AgentStatus has expired.
+   * @param name  Agent or node name
    * @return Return true if current time is greater than entries expiration
    * time.
    */
@@ -711,76 +643,68 @@ public class CommunityStatusModel extends BlackboardClientComponent {
     }
   }
 
-  /** find an agent's address by looking in the white pages */
-  private void updateLocationUsingWPS(final String agentName,
-                                      final int newStateIfLocal) throws Exception {
-    //logger.info("updateLocation: name=" + agentName);
-    whitePagesService.get(agentName, "topology",
-                          new Callback() {
-      public void execute(Response resp) {
-        if (resp.isAvailable()) {
-          if (resp.isSuccess()) {
-            AddressEntry entry = ((Response.Get)resp).getAddressEntry();
-            try {
-              if (entry != null) {
-                URI uri = entry.getURI();
-                String host = uri.getHost();
-                String node = uri.getPath().substring(1);
-                logger.debug("updateLocation:" +
-                             " agent=" + agentName +
-                             " host=" + host +
-                             " node=" + node +
-                             " modelValue=" + getLocation(agentName) +
-                             " state=" + getCurrentState(agentName));
-                if (!node.equals(getLocation(agentName))) {
-                  setLocation(agentName, node);
-                  //setCurrentState(agentName, newStateIfLocal);
-                  if (node.equals(thisAgent) &&
-                      getCurrentState(agentName) != newStateIfLocal) {
-                    setCurrentState(agentName, newStateIfLocal);
-                    //logger.info("Setting state: agent=" + agentName + " state=" + newStateIfLocal);
-                  }
-                }
-              } else {
-                logger.info("AddressEntry is null: agent=" + agentName);
-              }
-            } catch (Exception ex) {
-              logger.error("Exception in updateLocation:", ex);
-            } finally {
-              resp.removeCallback(this);
-            }
-          } else {
-            //resp.addCallback(this);
-          }
-        } else {
-          logger.info("Response not available: agent=" + agentName);
-          //resp.addCallback(this);
-        }
-      }
-    });
-  }
-
+  /**
+   * Indicates whether an attribute is defined for specified agent/node.
+   * @param name  Agent or node name
+   * @param id    Attribute id
+   * @return      True if attribute is defined
+   */
   public boolean hasAttribute(String name, String id) {
     return hasAttribute(getAttributes(name), id);
   }
 
+  /**
+   * Indicates whether an attribute is defined for monitored community.
+   * @param id    Attribute id
+   * @return      True if attribute is defined
+   */
   public boolean hasAttribute(String id) {
     return hasAttribute(getCommunityAttributes(), id);
   }
 
-  private boolean hasAttribute(Attributes attrs, String id) {
+  /**
+   * Indicates whether an attribute is defined.
+   * @param attrs  Attribute set
+   * @param id    Attribute id
+   * @return      True if attribute is defined
+   */
+  public boolean hasAttribute(Attributes attrs, String id) {
     return attrs != null && attrs.get(id) != null;
   }
 
+  /**
+   * Indicates whether an attribute is defined and contains specified value.
+   * @param attrs  Attribute set
+   * @param id    Attribute id
+   * @param value Attribute value
+   * @return      True if attribute is defined and contains specified value
+   */
+  public boolean hasAttribute(Attributes attrs, String id, String value) {
+    if (attrs == null) return false;
+    Attribute attr = attrs.get(id);
+    return attr != null && attr.contains(value);
+  }
+
+  /**
+   * Get specified attribute for agent or node and return value as String.
+   * @param name  Name of agent or node
+   * @param id    Attribute id
+   * @return      Attribute value as String or null if attribute doesn't exist
+   */
   public String getStringAttribute(String name, String id) {
     return getStringAttribute(getAttributes(name), id);
   }
 
+  /**
+   * Get specified attribute for monitored community and return value as String.
+   * @param id    Attribute id
+   * @return      Attribute value as String or null if attribute doesn't exist
+   */
   public String getStringAttribute(String id) {
     return getStringAttribute(getCommunityAttributes(), id);
   }
 
-  private String getStringAttribute(Attributes attrs, String id) {
+  public String getStringAttribute(Attributes attrs, String id) {
     String value = null;
     try {
       if (attrs != null && id != null) {
@@ -800,7 +724,7 @@ public class CommunityStatusModel extends BlackboardClientComponent {
     return getLongAttribute(getCommunityAttributes(), id);
   }
 
-  private long getLongAttribute(Attributes attrs, String id) {
+  public long getLongAttribute(Attributes attrs, String id) {
     long value = Long.MIN_VALUE;
     try {
       if (attrs != null && id != null) {
@@ -822,7 +746,16 @@ public class CommunityStatusModel extends BlackboardClientComponent {
     synchronized (statusMap) {
       for (Iterator it = statusMap.values().iterator(); it.hasNext(); ) {
         StatusEntry se = (StatusEntry)it.next();
-        if (se != null && se.type == NODE && !isExpired(se) &&
+        /*logger.info("getCandidates" +
+                    " name=" + se.name +
+                    " hasAttr=" + hasAttribute(se.attrs, "Role", "HealthMonitor") +
+                    " isExpired=" + isExpired(se) +
+                    " currentState=" + se.currentState +
+                    " normalState=" + normalState);*/
+        if (se != null &&
+            se.attrs != null  &&
+            hasAttribute(se.attrs, "Role", "HealthMonitor") &&
+            !isExpired(se) &&
             se.currentState == normalState) {
           candidates.add(se.name);
         }
@@ -872,23 +805,21 @@ public class CommunityStatusModel extends BlackboardClientComponent {
   private void electLeader() {
     //logger.info("electLeader");
     try {
-      SortedSet candidates = getCandidates();
-      List currentVotes = getVotes();
-      String newLeader =
-          LeaderElection.getLeader(candidates, currentVotes);
-      StatusEntry se = (StatusEntry)statusMap.get(thisAgent);
-      if (se != null) {
-        if (newLeader == null || !newLeader.equals(preferredLeader)) {
-          se.leaderVote =
+      if (getLeader() == null ||
+          !getLeader().equals(preferredLeader) ||
+          getCurrentState(getLeader()) == triggerState) {
+        SortedSet candidates = getCandidates();
+        StatusEntry se = (StatusEntry)statusMap.get(thisAgent);
+        if (se != null) {
+          setLeaderVote(thisAgent,
               LeaderElection.chooseCandidate(preferredLeader,
                                              candidates,
-                                             currentVotes);
-          newLeader = LeaderElection.getLeader(candidates, getVotes());
-        } else {
-          se.leaderVote = newLeader;
+                                             getVotes()));
+          String newLeader =
+              LeaderElection.getLeader(candidates, getVotes(), getLeader());
+          setLeader(newLeader);
         }
       }
-      setLeader(newLeader);
     } catch (Exception ex) {
       logger.error(ex.getMessage() + " thisAgent=" + thisAgent, ex);
     }
@@ -905,13 +836,12 @@ public class CommunityStatusModel extends BlackboardClientComponent {
       for (Iterator it = statusMap.values().iterator(); it.hasNext();) {
         StatusEntry se = (StatusEntry)it.next();
         if (se != null && isExpired(se)) {
-          //logger.info("Expired: name=" + se.name + " state=" + se.currentState + " ttl=" + se.ttl);
           queueChangeEvent(
             new CommunityStatusChangeEvent(CommunityStatusChangeEvent.STATE_EXPIRATION,
                                            se.name,
                                            se.type,
                                            se.currentState,
-                                           -1,
+                                           UNDEFINED,
                                            null,
                                            null,
                                            null,
@@ -923,7 +853,7 @@ public class CommunityStatusModel extends BlackboardClientComponent {
     if (getLeader() == null ||
         getCurrentState(getLeader()) == triggerState) {
       String currentLeader = getLeader();
-      logger.debug("checkExpirations:" +
+      logger.debug("electLeader:" +
                   " leader=" + leader +
                   " leaderState=" + (currentLeader == null ? null : getCurrentState(currentLeader) +
                   " triggerState=" + triggerState));
@@ -932,19 +862,63 @@ public class CommunityStatusModel extends BlackboardClientComponent {
   }
 
   private void findLocalAgents() {
-    //updateLocations(listEntries(AGENT), 0);
     String allAgents[] = listAllEntries();
     for (int i = 0; i < allAgents.length; i++) {
       MessageAddress addr = MessageAddress.getMessageAddress(allAgents[i]);
       if (nodeControlService.getRootContainer().containsAgent(addr)) {
         if (!thisAgent.equals(getLocation(allAgents[i]))) {
           setLocation(allAgents[i], thisAgent);
-          setCurrentState(allAgents[i], INITIAL_STATE);
+          setCurrentState(allAgents[i], LOCATED);
           logger.debug("Found agent " + allAgents[i] + " at node " + thisAgent);
         }
       }
     }
   }
+
+  /** find an agent's address by looking in the white pages */
+  /*
+   private void updateLocationUsingWPS(final String agentName,
+                                      final int newStateIfLocal) throws Exception {
+    whitePagesService.get(agentName, "topology",
+                          new Callback() {
+      public void execute(Response resp) {
+        if (resp.isAvailable()) {
+          if (resp.isSuccess()) {
+            AddressEntry entry = ((Response.Get)resp).getAddressEntry();
+            try {
+              if (entry != null) {
+                URI uri = entry.getURI();
+                String host = uri.getHost();
+                String node = uri.getPath().substring(1);
+                logger.debug("updateLocation:" +
+                             " agent=" + agentName +
+                             " host=" + host +
+                             " node=" + node +
+                             " modelValue=" + getLocation(agentName) +
+                             " state=" + getCurrentState(agentName));
+                if (!node.equals(getLocation(agentName))) {
+                  setLocation(agentName, node);
+                  if (node.equals(thisAgent) &&
+                      getCurrentState(agentName) != newStateIfLocal) {
+                    setCurrentState(agentName, newStateIfLocal, NEVER);
+                  }
+                }
+              } else {
+                logger.info("AddressEntry is null: agent=" + agentName);
+              }
+            } catch (Exception ex) {
+              logger.error("Exception in updateLocation:", ex);
+            } finally {
+              resp.removeCallback(this);
+            }
+          } else {
+          }
+        } else {
+          logger.info("Response not available: agent=" + agentName);
+        }
+      }
+    });
+  }*/
 
   /**
    * Adds a StatusChangeListener to community.
@@ -983,7 +957,6 @@ public class CommunityStatusModel extends BlackboardClientComponent {
    * Distributes all events in queue to listeners.
    */
   protected void sendEvents() {
-    //if (!eventQueue.isEmpty() && getLeader() != null) {
     if (!eventQueue.isEmpty()) {
       CommunityStatusChangeEvent[] events = new CommunityStatusChangeEvent[0];
       synchronized (eventQueue) {

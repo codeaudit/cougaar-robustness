@@ -19,7 +19,6 @@ package org.cougaar.tools.robustness.ma.controllers;
 
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
 import org.cougaar.tools.robustness.ma.StatusChangeListener;
-import org.cougaar.tools.robustness.ma.CommunityStatusChangeEvent;
 
 import org.cougaar.tools.robustness.ma.util.MoveHelper;
 import org.cougaar.tools.robustness.ma.util.HeartbeatHelper;
@@ -27,50 +26,64 @@ import org.cougaar.tools.robustness.ma.util.PingHelper;
 import org.cougaar.tools.robustness.ma.util.RestartHelper;
 import org.cougaar.tools.robustness.ma.util.LoadBalancer;
 
-import org.cougaar.core.blackboard.BlackboardClientComponent;
-
 import org.cougaar.core.component.BindingSite;
-import org.cougaar.core.component.ServiceBroker;
 
-import org.cougaar.core.service.LoggingService;
-
-import java.util.*;
-
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-
-
+/**
+ * Interface defining operations supported by a controller that is
+ * responsible for monitoring the status of a Robustness Community and
+ * restarting agents that are determined to be dead.
+ */
 public interface RobustnessController extends StatusChangeListener {
 
+  /**
+   * Initialize controller.
+   * @param thisAgent  Name of host agent
+   * @param bs         Host agents BindingSite
+   * @param csm        Status model to use
+   */
+  public void initialize(String thisAgent,
+                         BindingSite bs,
+                         CommunityStatusModel csm);
+
+  /**
+   * Add a state controller.
+   * @param state      State code
+   * @param stateName  State name
+   * @param sc         State controller
+   */
   public void addController(int             state,
                             String          stateName,
                             StateController sc);
 
-
   /**
    * Get reference to controllers move helper.
    */
-  public MoveHelper getMover();
+  public MoveHelper getMoveHelper();
 
   /**
    * Get reference to controllers restart helper.
    */
-  public RestartHelper getRestarter();
+  public RestartHelper getRestartHelper();
 
   /**
    * Get reference to controllers ping helper.
    */
-  public PingHelper getPinger();
+  public PingHelper getPingHelper();
 
   /**
-   * Get reference to controllers load balancer interface.
+   * Get reference to controllers load balancer.
    */
   public LoadBalancer getLoadBalancer();
 
   /**
    * Get reference to controllers heartbeat helper.
    */
-  public HeartbeatHelper getHeartbeater();
+  public HeartbeatHelper getHeartbeatHelper();
+
+  /**
+   * Receives notification of leader changes.
+   */
+  public void leaderChange(String priorLeader, String newLeader);
 
   /**
    * Returns a String containing top-level health status of monitored community.
@@ -92,11 +105,6 @@ public interface RobustnessController extends StatusChangeListener {
    * State to trigger leader re-election.
    */
   public int getLeaderElectionTriggerState();
-
-  /**
-   * Gets default period for a state expiration.
-   */
-  public long getDefaultStateExpiration();
 
   /**
    * Returns name of specified state.

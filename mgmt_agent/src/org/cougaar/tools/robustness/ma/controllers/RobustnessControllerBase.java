@@ -34,10 +34,9 @@ import org.cougaar.tools.robustness.ma.util.LoadBalancer;
 import org.cougaar.core.blackboard.BlackboardClientComponent;
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.component.ServiceBroker;
+import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.LoggingService;
 import java.util.*;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
@@ -50,19 +49,22 @@ import javax.naming.NamingException;
  * CommunityStatysModel.  Also provides a number of utility methods and helper
  * classes for use by state controllers.
  */
-public abstract class RobustnessControllerBase implements
-    RobustnessController, StatusChangeListener {
+public abstract class RobustnessControllerBase
+    implements RobustnessController, StatusChangeListener {
 
   protected static final int NEVER = -1;
 
   // Default parameter values, may be overridden by community attributes
-  protected static long DEFAULT_EXPIRATION = 1 * 60 * 1000;
-  protected static final long PING_TIMEOUT = 10 * 1000;
-  protected static final long HEARTBEAT_REQUEST_TIMEOUT = 30 * 1000;
+  protected static long DEFAULT_EXPIRATION = 2 * 60 * 1000;
+  protected static final long PING_TIMEOUT = 2 * 60 * 1000;
+  protected static final long HEARTBEAT_REQUEST_TIMEOUT = 1 * 60 * 1000;
   protected static final long HEARTBEAT_FREQUENCY = 30 * 1000;
-  protected static final long HEARTBEAT_TIMEOUT = 60 * 1000;
+  protected static final long HEARTBEAT_TIMEOUT = 90 * 1000;
   protected static final long HEARTBEAT_PCT_OUT_OF_SPEC = 50;
 
+  /**
+   * Inner class used to maintain info about registered state controller.
+   */
   class ControllerEntry {
     private int state;
     private String stateName;
@@ -74,6 +76,7 @@ public abstract class RobustnessControllerBase implements
     }
   }
 
+  // Map of ControllerEntry instances
   private Map controllers = new HashMap();
 
   // Helper classes
@@ -83,23 +86,29 @@ public abstract class RobustnessControllerBase implements
   private RestartHelper restartHelper;
   private LoadBalancer loadBalancer;
 
-  protected static DateFormat df = new SimpleDateFormat("HH:mm:ss");
-
   protected String thisAgent;
   protected LoggingService logger;
+  protected EventService eventService;
   private BindingSite bindingSite;
 
+  // Status model containing current information about monitored community
   protected CommunityStatusModel model;
 
-  public RobustnessControllerBase(String thisAgent,
-                                  final  BindingSite bs,
-                                  final  CommunityStatusModel csm) {
+  /**
+   * @param thisAgent  Agent name
+   * @param bs         BindingSite
+   * @param csm        CommunityStatusModel for monitored community
+   */
+  public void initialize(String thisAgent,
+                         final  BindingSite bs,
+                         final  CommunityStatusModel csm) {
     this.thisAgent = thisAgent;
     this.model = csm;
     this.bindingSite = bs;
     logger =
       (LoggingService)bs.getServiceBroker().getService(this, LoggingService.class, null);
     logger = org.cougaar.core.logging.LoggingServiceWithPrefix.add(logger, thisAgent + ": ");
+    eventService = (EventService) bs.getServiceBroker().getService(this, EventService.class, null);
     heartbeatHelper = new HeartbeatHelper(bs);
     moveHelper = new MoveHelper(bs);
     pingHelper = new PingHelper(bs);
@@ -111,7 +120,7 @@ public abstract class RobustnessControllerBase implements
    * Add a new StateController.
    * @param state     State number
    * @param stateName
-   * @param controller
+   * @param sc        StateController
    */
   public void addController(int state, final String stateName, StateController sc) {
     logger.debug("Adding state controller: state=" + stateName);
@@ -137,28 +146,28 @@ public abstract class RobustnessControllerBase implements
   /**
    * Get reference to controllers move helper.
    */
-  public MoveHelper getMover() {
+  public MoveHelper getMoveHelper() {
     return moveHelper;
   }
 
   /**
    * Get reference to controllers heartbeat helper.
    */
-  public HeartbeatHelper getHeartbeater() {
+  public HeartbeatHelper getHeartbeatHelper() {
     return heartbeatHelper;
   }
 
   /**
    * Get reference to controllers restart helper.
    */
-  public RestartHelper getRestarter() {
+  public RestartHelper getRestartHelper() {
     return restartHelper;
   }
 
   /**
    * Get reference to controllers ping helper.
    */
-  public PingHelper getPinger() {
+  public PingHelper getPingHelper() {
     return pingHelper;
   }
 
@@ -171,6 +180,8 @@ public abstract class RobustnessControllerBase implements
 
   /**
    * Default handler for receiving and dissemminating model change events.
+   * @param csce  Change event
+   * @param csm   Status model associated with event
    */
   public void statusChanged(CommunityStatusChangeEvent[] csce,
                             CommunityStatusModel csm) {
@@ -199,29 +210,48 @@ public abstract class RobustnessControllerBase implements
         processStatusExpirations(csce[i], csm);
       }
     }
-    if(interestingChange && csm.isLeader(thisAgent) && logger.isInfoEnabled()) {
+    if(interestingChange && isLeader(thisAgent) && logger.isInfoEnabled()) {
       logger.info(statusSummary());
     }
   }
 
+  /**
+   * Default handler for membership changes in monitored community.
+   * @param csce  Change event
+   * @param csm   Status model associated with event
+   */
   protected void processMembershipChanges(CommunityStatusChangeEvent csce,
                                           CommunityStatusModel csm) {
   }
 
+  /**
+   * Default handler for changes in health monitor leader.
+   * @param csce  Change event
+   * @param csm   Status model associated with event
+   */
   protected void processLeaderChanges(CommunityStatusChangeEvent csce,
                                       CommunityStatusModel csm) {
-    if(logger.isInfoEnabled()) {
-      if(csce.getCurrentLeader() == null) {
-        logger.debug("Lost robustness manager:" + " priorLeader=" +
-                    csce.getPriorLeader());
-      } else {
-        logger.info("New robustness manager:" +
-                    " newLeader=" + csce.getCurrentLeader() +
-                    " priorLeader=" + csce.getPriorLeader());
-      }
-    }
+    leaderChange(csce.getPriorLeader(), csce.getCurrentLeader());
   }
 
+  /**
+   * Receives notification of leader changes.
+   */
+  public void leaderChange(String priorLeader, String newLeader) {
+  }
+
+  /**
+   * Processes state changes in a monitored agent/node.  When a state change
+   * occurs the following actions are performed:
+   * <pre>
+   *   1) The expiration value for the new state expiration is updated using
+   *      community attribute data.
+   *   2) The enter() method is called on the new state handler
+   *   3) The exit() method is called on the old state handler
+   * </pre>
+   * @param csce  Change event
+   * @param csm   Status model associated with event
+   */
   protected void processStatusChanges(CommunityStatusChangeEvent csce,
                                       CommunityStatusModel csm) {
     // Notify controllers of state transition
@@ -241,6 +271,11 @@ public abstract class RobustnessControllerBase implements
     }
   }
 
+  /**
+   * Default handler for changes in agent location.
+   * @param csce  Change event
+   * @param csm   Status model associated with event
+   */
   protected void processLocationChanges(CommunityStatusChangeEvent csce,
                                         CommunityStatusModel csm) {
   }
@@ -259,6 +294,11 @@ public abstract class RobustnessControllerBase implements
     }
   }
 
+  /**
+   * Returns name of state.
+   * @param state  State code
+   * @return       String representation of state code
+   */
   public String stateName(int state) {
     ControllerEntry ce = (ControllerEntry)controllers.get(new Integer(state));
     if (ce != null) {
@@ -268,55 +308,104 @@ public abstract class RobustnessControllerBase implements
     }
   }
 
-  protected boolean isLeader() {
-    return (model != null && model.isLeader(thisAgent));
+  /**
+   * Sends Cougaar event via EventService.
+   */
+  protected void event(String message) {
+    if (eventService != null && eventService.isEventEnabled())
+      eventService.event(message);
   }
 
+  /**
+   * Returns true if specified agent/node is currently manager of robustness
+   * community.
+   * @param name  Agent/node name
+   * @return      True if leader
+   */
   protected boolean isLeader(String name) {
     return (model != null && model.isLeader(name));
   }
 
+  /**
+   * Returns true if specified agent is running on local node.
+   * @param name  Agent name
+   * @return      True if running on local node
+   */
   protected boolean isLocal(String name) {
     return (model != null &&
             thisAgent.equals(model.getLocation(name)));
   }
 
+  /**
+   * Change state for specified agent/node.
+   * @param name  Agent/node name
+   * @param state New state
+   */
   protected void newState(String name, int state) {
-    model.setCurrentState(name, state);
+    model.setCurrentState(name, state, NEVER);
   }
 
+  /**
+   * Get current state for specified agent/node.
+   * @param name  Agent/node name
+   * @return Current state
+   */
   protected int getState(String name) {
     return model.getCurrentState(name);
   }
 
+  /**
+   * Set expiration for current state.
+   * @param name  Agent/node name
+   * @param expiration Expiration in milliseconds
+   */
   protected void setExpiration(String name, int expiration) {
-    model.setStateTTL(name, expiration);
+    model.setStateExpiration(name, expiration);
   }
 
+  /**
+   * Returns true if name is associated with an Agent.
+   * @param name  Agent/node name
+   * @return True if type is AGENT
+   */
   protected boolean isAgent(String name) {
     return (model.getType(name) == model.AGENT);
   }
 
+  /**
+   * Returns true if name is associated with a Node.
+   * @param name  Agent/node name
+   * @return True if type is NODE
+   */
   protected boolean isNode(String name) {
     return (model.getType(name) == model.NODE);
   }
 
+  /**
+   * Set agents location.
+   * @param name  Agent name
+   * @location    Node name
+   */
   protected void setLocation(String name, String location) {
     model.setLocation(name, location);
   }
 
+  /**
+   * Get agents current location.
+   * @param name  Name of agent
+   * @return Node name or null if unknown
+   */
   protected String getLocation(String name) {
     return model.getLocation(name);
   }
 
-  /*
-   protected void updateLocationAndSetState(String name, int newState) {
-    logger.info("updateLocationAndSetState: agent=" + name + " newState=" + stateName(newState));
-    model.updateLocations(new String[]{name}, newState);
-  }
-  */
-
-  protected long getLongProperty(String id, long defaultValue) {
+  /**
+   * Get community attribute from model.
+   * @param id  Attribute identifier
+   * @param defaultValue  Default value if attribute not found
+   * @return Attribute value as a long
+   */
+  protected long getLongAttribute(String id, long defaultValue) {
     if (model.hasAttribute(id)) {
       return model.getLongAttribute(id);
     } else {
@@ -324,7 +413,14 @@ public abstract class RobustnessControllerBase implements
     }
   }
 
-  protected long getLongProperty(String name, String id, long defaultValue) {
+  /**
+   * Get agent/node attribute from model.
+   * @param name Agent/node name
+   * @param id  Attribute identifier
+   * @param defaultValue  Default value if attribute not found
+   * @return Attribute value as a long
+   */
+  protected long getLongAttribute(String name, String id, long defaultValue) {
     if (model.hasAttribute(name, id)) {
       return model.getLongAttribute(name, id);
     } else if (model.hasAttribute(id)) {
@@ -334,6 +430,11 @@ public abstract class RobustnessControllerBase implements
     }
   }
 
+  /**
+   * Initiate an agent restart.
+   * @param name Agent to be restarted
+   * @param dest Name of destination node
+   */
   protected void restartAgent(String name, String dest) {
     String orig = model.getLocation(name);
     model.setLocation(name, "");
@@ -341,55 +442,79 @@ public abstract class RobustnessControllerBase implements
                                model.getCommunityName());
   }
 
+  /**
+   * Ping an agent and update current state based on result.
+   * @param name            Agent to ping
+   * @param stateOnSuccess  New state if ping succeeds
+   * @param stateOnFail     New state if ping fails
+   */
   protected void doPing(String name,
                         final int stateOnSuccess,
                         final int stateOnFail) {
-    long pingTimeout = getLongProperty(name, "PING_TIMEOUT", PING_TIMEOUT);
+    long pingTimeout = getLongAttribute(name, "PING_TIMEOUT", PING_TIMEOUT);
     pingHelper.ping(name, pingTimeout, new PingListener() {
       public void pingComplete(String name, int status) {
         logger.debug("Ping:" +
                      " agent=" + name +
                      " state=" + stateName(model.getCurrentState(name)) +
-                     " result=" + (status == PingHelper.SUCCESS ? "SUCCESS" : "FAIL"));
+                     " result=" + (status == PingHelper.SUCCESS ? "SUCCESS" : "FAIL") +
+                     (status == PingHelper.SUCCESS ? "" : " newState=" + stateName(stateOnFail)));
         if (status == PingHelper.SUCCESS) {
           newState(name, stateOnSuccess);
         } else {
           newState(name, stateOnFail);
-          logger.info("PingFailed:" +
-                       " agent=" + name +
-                       " newState=" + stateName(stateOnFail));
         }
       }
     });
   }
 
+  /**
+   * Start heartbeats on specified agent.
+   * @param name Agent name
+   */
   protected void startHeartbeats(String name) {
-    long hbReqTimeout = getLongProperty(name, "HEARTBEAT_REQUEST_TIMEOUT", HEARTBEAT_REQUEST_TIMEOUT);
-    long hbFreq = getLongProperty(name, "HEARTBEAT_FREQUENCY", HEARTBEAT_FREQUENCY);
-    long hbTimeout =getLongProperty(name, "HEARTBEAT_TIMEOUT", HEARTBEAT_TIMEOUT);
-    long hbPctOutofSpec = getLongProperty(name, "HEARTBEAT_PCT_OUT_OF_SPEC", HEARTBEAT_PCT_OUT_OF_SPEC);
-    getHeartbeater().startHeartbeats(name,
-                                     hbReqTimeout,
-                                     hbFreq,
-                                     hbTimeout,
-                                     hbPctOutofSpec);
+    long hbReqTimeout = getLongAttribute(name, "HEARTBEAT_REQUEST_TIMEOUT", HEARTBEAT_REQUEST_TIMEOUT);
+    long hbFreq = getLongAttribute(name, "HEARTBEAT_FREQUENCY", HEARTBEAT_FREQUENCY);
+    long hbTimeout =getLongAttribute(name, "HEARTBEAT_TIMEOUT", HEARTBEAT_TIMEOUT);
+    long hbPctOutofSpec = getLongAttribute(name, "HEARTBEAT_PCT_OUT_OF_SPEC", HEARTBEAT_PCT_OUT_OF_SPEC);
+    getHeartbeatHelper().startHeartbeats(name,
+                                         hbReqTimeout,
+                                         hbFreq,
+                                         hbTimeout,
+                                         hbPctOutofSpec);
   }
 
+  /**
+   * Stop heartbeats on specified agent.
+   * @param name Agent name
+   */
   protected void stopHeartbeats(String name) {
-    getHeartbeater().stopHeartbeats(name);
+    getHeartbeatHelper().stopHeartbeats(name);
   }
 
+  /**
+   * Add heartbeat listener to receive heartbeat events.
+   * @param hbl Listener
+   */
   protected void addHeartbeatListener(HeartbeatListener hbl) {
-    getHeartbeater().addListener(hbl);
+    getHeartbeatHelper().addListener(hbl);
   }
 
+  /**
+   * Add restart listener to receive restart events.
+   * @param rl Listener
+   */
   protected void addRestartListener(RestartListener rl) {
-   getRestarter().addListener(rl);
- }
+    getRestartHelper().addListener(rl);
+  }
 
- protected void addMoveListener(MoveListener ml) {
-  getMover().addListener(ml);
-}
+  /**
+   * Add move listener to receive move events.
+   * @param ml Listener
+   */
+  protected void addMoveListener(MoveListener ml) {
+    getMoveHelper().addListener(ml);
+  }
 
  /**
    * Returns a String containing top-level health status of monitored community.
@@ -397,12 +522,9 @@ public abstract class RobustnessControllerBase implements
   public String statusSummary() {
     String activeNodes[] = model.listEntries(CommunityStatusModel.NODE, getNormalState());
     String agents[] = model.listEntries(CommunityStatusModel.AGENT);
-    //String expiredNodes[] = model.getExpired(CommunityStatusModel.NODE);
-    //String expiredAgents[] = model.getExpired(CommunityStatusModel.AGENT);
     StringBuffer summary = new StringBuffer("community=" + model.getCommunityName());
     summary.append(" leader=" + model.getLeader());
     summary.append(" activeNodes=" + activeNodes.length + arrayToString(activeNodes));
-    //summary.append(" agents=" + agents.length + arrayToString(agents));
     summary.append(" agents=" + agents.length);
     for (Iterator it = controllers.values().iterator(); it.hasNext();) {
       int state = ( (ControllerEntry) it.next()).state;
@@ -414,12 +536,6 @@ public abstract class RobustnessControllerBase implements
           summary.append(arrayToString(agentsInState));
       }
     }
-    /*
-    summary.append(" expiredNodes=" + expiredNodes.length +
-                   (expiredNodes.length > 0 ? arrayToString(expiredNodes) : ""));
-    summary.append(" expiredAgents=" + expiredAgents.length +
-                   (expiredAgents.length > 0 ? arrayToString(expiredAgents) : ""));
-    */
     return summary.toString();
   }
 
@@ -445,6 +561,17 @@ public abstract class RobustnessControllerBase implements
     return sb.toString();
   }
 
+  /**
+   * Set state expiration using attribute information obtained from community
+   * descriptor.
+   * If the agent/node has the XXX_EXPIRATION attribute defined this value
+   * is used for the expiration.  If the attribute is not defined for the
+   * agent/node the community-level attribute is used if it exists.  If neither
+   * the community or agent/node defines the attribute, the value defined by
+   * DEFAULT_EXPIRATION is used.
+   * @param name       Agent/node name
+   * @param stateName  State name
+   */
   protected void setExpiration(String name, String stateName) {
     String propertyName = stateName + "_EXPIRATION";
     long expiration = DEFAULT_EXPIRATION;
@@ -453,7 +580,15 @@ public abstract class RobustnessControllerBase implements
     } else if (model.hasAttribute(propertyName)){
       expiration = model.getLongAttribute(propertyName);
     }
-    model.setStateTTL(name, expiration);
+    model.setStateExpiration(name, expiration);
+  }
+
+  /**
+   * Return current time in milliseconds.
+   * @return
+   */
+  private long now() {
+    return System.currentTimeMillis();
   }
 
   /**
@@ -464,9 +599,15 @@ public abstract class RobustnessControllerBase implements
     StringBuffer sb = new StringBuffer("<community" +
                                       " name=\"" + model.getCommunityName() + "\"" +
                                       " leader=\"" + model.getLeader() + "\"" +
-                                      //" statusTTL=\"" + TTL + "\"" +
                                       " >\n");
     String nodeNames[] = model.listEntries(CommunityStatusModel.NODE);
+    String leader = model.getLeader();
+    if (leader != null && isAgent(leader)) {
+      String nodesPlusLeader[] = new String[nodeNames.length + 1];
+      System.arraycopy(nodeNames, 0, nodesPlusLeader, 0, nodeNames.length);
+      nodesPlusLeader[nodesPlusLeader.length-1] = model.getLeader();
+      nodeNames = nodesPlusLeader;
+    }
     sb.append("  <nodes count=\"" + nodeNames.length + "\" >\n");
     for (int i = 0; i < nodeNames.length; i++) {
       sb.append(nodeStatusToXML("    ", nodeNames[i]) + "\n");
@@ -484,12 +625,17 @@ public abstract class RobustnessControllerBase implements
 
 
   public String agentStatusToXML(String indent, String agentName) {
+    long now = now();
+    long expiresAt = NEVER;
+    if (model.getStateExpiration(agentName) != NEVER) {
+      expiresAt = ((model.getTimestamp(agentName) + model.getStateExpiration(agentName)) - now);
+    }
     StringBuffer sb = new StringBuffer();
     sb.append(indent + "<agent name=\"" + agentName + "\" >\n");
     sb.append(indent + "  <status " +
         " state=\"" + stateName(model.getCurrentState(agentName)) + "\"" +
-        " last=\"" + df.format(model.getTimestamp(agentName)) + "\"" +
-        " expired=\"" + model.isExpired(agentName) + "\" />\n");
+        " last=\"" + (now - model.getTimestamp(agentName)) + "\"" +
+        " expires=\"" + (expiresAt == NEVER ? "NEVER" : Long.toString(expiresAt)) + "\" />\n");
     String priorLoc = model.getPriorLocation(agentName);
     sb.append(indent + "  <location " +
         " current=\"" + model.getLocation(agentName) + "\"" +
@@ -499,15 +645,20 @@ public abstract class RobustnessControllerBase implements
     return sb.toString();
   }
 
-  public String nodeStatusToXML(String indent, String nodeName) {
+  public String nodeStatusToXML(String indent, String name) {
+    long now = now();
+    long expiresAt = NEVER;
+    if (model.getStateExpiration(name) != NEVER) {
+      expiresAt = ((model.getTimestamp(name) + model.getStateExpiration(name)) - now);
+    }
     StringBuffer sb = new StringBuffer();
-    sb.append(indent + "<node name=\"" + nodeName + "\" >\n");
-    sb.append(indent + "<vote>" + model.getLeaderVote(nodeName) + "</vote>\n");
+    sb.append(indent + "<node name=\"" + name + "\" >\n");
+    sb.append(indent + "<vote>" + model.getLeaderVote(name) + "</vote>\n");
     sb.append(indent + "  <status " +
-        " state=\"" + stateName(model.getCurrentState(nodeName)) + "\"" +
-        " last=\"" + df.format(model.getTimestamp(nodeName)) + "\"" +
-        " expired=\"" + model.isExpired(nodeName) + "\" />\n");
-    sb.append(attrsToXML(model.getAttributes(nodeName), indent + "  "));
+        " state=\"" + stateName(model.getCurrentState(name)) + "\"" +
+        " last=\"" + (now - model.getTimestamp(name)) + "\"" +
+        " expires=\"" + (expiresAt == NEVER ? "NEVER" : Long.toString(expiresAt)) + "\" />\n");
+    sb.append(attrsToXML(model.getAttributes(name), indent + "  "));
     sb.append(indent + "</node>\n");
     return sb.toString();
   }

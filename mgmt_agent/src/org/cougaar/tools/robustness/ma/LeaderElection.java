@@ -36,13 +36,14 @@ public class LeaderElection {
   /**
    * Returns the name of the leader if the number of votes > 0, the vote
    * is unanimous, and the vote specifies a candidate which is contained in
-   * supplied set of candidates.  Otherwise the current leader is return or
+   * supplied set of candidates.  Otherwise the current leader is returned or
    * null if current leader is no longer in candidate list.
    * @param candidates  List of candidate names
    * @param votes       Votes
+   * @oaram currentLeader
    * @return Name of leader or null if no winner
    */
-  public static String getLeader(Set candidates, List votes) {
+  public static String getLeader(Set candidates, List votes, String currentLeader) {
     String leader = null;
     // Count the votes and see if there's a unanimous selection
     int numVotes = votes.size();
@@ -57,6 +58,9 @@ public class LeaderElection {
         }
       }
       leader = (first != null && candidates.contains(first)) ? first : null;
+    }
+    if (leader == null && currentLeader != null && candidates.contains(currentLeader)) {
+      leader = currentLeader;
     }
     logger.debug("getLeader:" +
                  " candidates=" + candidates +
