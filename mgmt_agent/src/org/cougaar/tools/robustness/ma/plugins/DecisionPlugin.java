@@ -152,15 +152,15 @@ public class DecisionPlugin extends SimplePlugin {
     if (agentControlStatus.hasChanged()) {
       for (Enumeration en = agentControlStatus.getAddedList(); en.hasMoreElements(); ) {
 	      AgentControl ac = (AgentControl) en.nextElement();
-        System.out.println("ADDED "+ac);
+        if (log.isDebugEnabled()) log.debug("ADDED " + ac);
       }
       for (Enumeration en = agentControlStatus.getChangedList(); en.hasMoreElements(); ) {
 	      AgentControl ac = (AgentControl) en.nextElement();
-        System.out.println("CHANGED "+ac);
+        if (log.isDebugEnabled()) log.debug("CHANGED " + ac);
       }
       for (Enumeration en = agentControlStatus.getRemovedList(); en.hasMoreElements(); ) {
 	      AgentControl ac = (AgentControl) en.nextElement();
-        System.out.println("REMOVED "+ac);
+        if (log.isDebugEnabled()) log.debug("REMOVED " + ac);
       }
     }
 
@@ -269,7 +269,7 @@ public class DecisionPlugin extends SimplePlugin {
     AgentControl ac =
       mobilityFactory.createAgentControl(null, destNodeAddr, addTicket);
 
-    System.out.println("CREATED "+ac);
+    if (log.isDebugEnabled()) log.debug("CREATED " + ac);
     bbs.publishAdd(ac);
   }
 

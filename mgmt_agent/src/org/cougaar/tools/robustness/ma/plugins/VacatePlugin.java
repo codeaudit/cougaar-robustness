@@ -30,7 +30,6 @@ import org.cougaar.core.service.TopologyReaderService;
 import org.cougaar.core.mts.MessageAddress;
 
 import org.cougaar.util.UnaryPredicate;
-import org.cougaar.robustness.restart.plugin.NodeMove;
 
 /**
  * This plugin moves all community members from a specified node or host to
@@ -96,8 +95,9 @@ public class VacatePlugin extends SimplePlugin {
       VacateRequest vr = (VacateRequest)it.next();
       //log.debug("Received VacateRequest: host=" + vr.getHost() +
         //" node=" + vr.getNode());
-      System.out.println("Received VacateRequest: host=" + vr.getHost() +
-        " node=" + vr.getNode());
+      if (log.isInfoEnabled())
+        log.info ("Received VacateRequest: host=" + vr.getHost() +
+          " node=" + vr.getNode());
       if(vr.getRequestType() == VacateRequest.VACATE_HOST)
       {
         RestartLocationRequest rlr = new RestartLocationRequest(RestartLocationRequest.LOCATE_HOST);

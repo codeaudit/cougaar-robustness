@@ -24,7 +24,6 @@ import javax.naming.*;
 import javax.naming.directory.*;
 import java.io.*;
 
-import org.cougaar.core.servlet.*;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.servlet.BaseServletComponent;
 import org.cougaar.core.servlet.ServletService;

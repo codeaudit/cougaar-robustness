@@ -22,13 +22,18 @@ import javax.swing.tree.*;
 import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.*;
+import java.util.Collections;
+import java.util.NoSuchElementException;
+import java.util.Hashtable;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Vector;
+import java.util.Enumeration;
 import java.util.List;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.HttpURLConnection;
-//import javax.naming.*;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.Attribute;
 import javax.naming.NamingEnumeration;
@@ -37,11 +42,14 @@ import javax.naming.NamingException;
 import org.cougaar.lib.web.arch.root.GlobalEntry;
 import org.cougaar.core.mts.MTImpl;
 
+import org.cougaar.util.log.*;
+
 /**
  * Utility for viewing the Robustness Communities and sending vacate commands.
  */
 public class RobustnessUI extends JPanel
 {
+  private Logger log = Logging.getLogger(org.cougaar.tools.robustness.ma.ui.RobustnessUI.class.getName());
   private JTree tree;
   private ArrayList path = new ArrayList();
   private DefaultTreeModel model;
@@ -568,8 +576,10 @@ public class RobustnessUI extends JPanel
       ObjectOutputStream oos = new ObjectOutputStream(os);
       oos.writeObject(hostName);
       oos.close();
-      InputStream is = conn.getInputStream();
-    }catch(Exception e){}
+      //InputStream is = conn.getInputStream();
+    }catch(Exception e){
+      log.error(e.getMessage());
+    }
   }
 
  /* private String getMoveTarget(String hostName)
