@@ -33,24 +33,16 @@ communityViewerServlet     = "org.cougaar.community.util.CommunityViewerServlet"
 # Create management agents
 #
 society.each_node do |node|
-  # For testing 1AD-SMALL
-  if node.name =~ /.*FWD-NODE.*/
-    node.add_agent("1AD-SMALL-ARManager")
-  end
-  # For 1AD-FULL
-  if node.name =~ /.*FWD-MGMT-NODE.*/
-    node.add_agent("1AD-FWD-ARManager")
-  end
-  if node.name =~ /.*REAR-MGMT-NODE.*/
-    node.add_agent("1AD-REAR-ARManager")
-  end
-  if node.name =~ /.*CONUS-MGMT-NODE.*/
-    node.add_agent("1AD-CONUS-ARManager")
-  end
-  if node.name =~ /.*TRANS-MGMT-NODE.*/
-    node.add_agent("1AD-TRANS-ARManager")
+  if node.has_facet?("role")
+    node.each_facet("role") do |facet|
+      if facet["role"] == "ARManager"
+        enclave = node.host.get_facet("enclave")
+	node.add_agent(enclave + "-ARManager")
+      end
+    end
   end
 end
+
 
 #
 # Add components for management agents
