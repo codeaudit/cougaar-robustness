@@ -37,7 +37,6 @@ import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.component.ServiceAvailableListener;
 import org.cougaar.core.component.ServiceAvailableEvent;
-import org.cougaar.core.mts.MessageAddress;
 
 import java.util.*;
 
@@ -357,7 +356,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     public void enter(String name) {
       if(getDeconflictHelper() != null) {
         if(!getDeconflictHelper().isDefenseApplicable(name)) {
-          //logger.info("change condition of " + name);
+          logger.info("change condition of " + name);
           getDeconflictHelper().changeApplicabilityCondition(name);
         }
         if(getDeconflictHelper().isOpEnabaled(name))
@@ -367,7 +366,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         newState(name, RESTART);
     }
     public void expired(String name) {
-      //logger.info("Expired Status:" + " agent=" + name + " state=DECONFLICT");
+      logger.info("Expired Status:" + " agent=" + name + " state=DECONFLICT");
         //getDeconflictHelper().test();
         newState(name, HEALTH_CHECK);
     }
@@ -384,16 +383,13 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
   }
 
-  private String thisAgent;
-
   /**
    * Initializes services and loads state controller classes.
    */
-  public void initialize(final MessageAddress       agentId,
-                         final BindingSite          bs,
+  public void initialize(final String thisAgent,
+                         final BindingSite bs,
                          final CommunityStatusModel csm) {
-    super.initialize(agentId, bs, csm);
-    thisAgent = agentId.toString();
+    super.initialize(thisAgent, bs, csm);
     addController(INITIAL,        "INITIAL", new InitialStateController());
     addController(LOCATED,        "LOCATED", new LocatedStateController());
     addController(DefaultRobustnessController.ACTIVE, "ACTIVE",  new ActiveStateController());
@@ -405,7 +401,26 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     addController(DECONFLICT,     "DECONFLICT", new DeconflictStateController());
     RestartDestinationLocator.setCommunityStatusModel(csm);
     RestartDestinationLocator.setLoggingService(logger);
-    new ThreatAlertHandler(getBindingSite(), agentId, this, csm);
+    ServiceBroker sb = bs.getServiceBroker();
+    if (sb.hasService(ThreatAlertService.class)) {
+      initThreatAlertListener();
+    } else {
+      sb.addServiceListener(new ServiceAvailableListener() {
+        public void serviceAvailable(ServiceAvailableEvent sae) {
+          if (sae.getService().equals(ThreatAlertService.class)) {
+            initThreatAlertListener();
+          }
+        }
+      });
+    }
+  }
+
+  private void initThreatAlertListener() {
+    logger.debug("Initializing ThreatAlertListener");
+    ServiceBroker sb = getBindingSite().getServiceBroker();
+    ThreatAlertService tas =
+      (ThreatAlertService) sb.getService(this, ThreatAlertService.class, null);
+    tas.addListener(new ThreatAlertHandler(thisAgent, this, model));
   }
 
   boolean communityReady = false;
