@@ -15,6 +15,7 @@ public class RestartDestinationLocator {
   static LoggingService logger;
   static Hashtable restartAgents = new Hashtable();
   static Hashtable selectedNodes = new Hashtable();
+  static Map preferredRestartLocations = Collections.synchronizedMap(new HashMap());
 
 
   public RestartDestinationLocator() {
@@ -26,6 +27,15 @@ public class RestartDestinationLocator {
 
   public static void setLoggingService(LoggingService ls) {
     logger = ls;
+  }
+
+  /**
+   * Defines the preferred location for a future agent restart.
+   * @param preferredLocations  Map of agent names (key) and node name of
+   *                            preferred restart destination
+   */
+  public static void setPreferredRestartLocations(Map preferredLocations) {
+    preferredRestartLocations.putAll(preferredLocations);
   }
 
   public static String getRestartLocation(String agent, Set excludedNodes) {
@@ -65,6 +75,10 @@ public class RestartDestinationLocator {
         numAgents = agentsOnNode;
       }
     }
+    if (preferredRestartLocations.containsKey(agent)) {
+      logger.info("Using preferredRestartLocation: agent=" + agent + " dest=" + selectedNode);
+      selectedNode = (String)preferredRestartLocations.remove(agent);
+    }
     temp.remove(selectedNode); //this one is already used this time, don't count it.
 
     LinkedList list = new LinkedList();
@@ -74,7 +88,7 @@ public class RestartDestinationLocator {
       temp.remove(next);
     }
     if(logger.isDebugEnabled())
-      logger.debug("other avaliable restart nodes: " + list);
+      logger.debug("other available restart nodes: " + list);
     selectedNodes.put(agent, list);
 
     return selectedNode;
