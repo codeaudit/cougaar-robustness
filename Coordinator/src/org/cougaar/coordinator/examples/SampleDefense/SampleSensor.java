@@ -59,7 +59,7 @@ public class SampleSensor extends ComponentPlugin
     {
         rawSensorDataSub = 
 	    (IncrementalSubscription)blackboard.subscribe(rawSensorDataPred);
-	Object initialValue = "No Threat";
+	Object initialValue = null;
 	try {
 	    diagnosis = new SampleDiagnosis(agentId.toString(), initialValue, sb);
 	    blackboard.publishAdd(diagnosis);
