@@ -58,7 +58,7 @@ Cougaar.new_experiment("ARUC1_Complete").run(1) {
 
   # After CommunityReady event is received wait for persistence
   wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
-  do_action "Sleep", 3.minutes
+  do_action "Sleep", 5.minutes
 
   # Kill node that does not contain robustness manager
   do_action "SaveHostOfNode", "1AD-SMALL-COMM", "TRANS-NODE"
