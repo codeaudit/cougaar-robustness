@@ -11,11 +11,11 @@
 #          16-30 to socB, and 31-45 to socC.  If more nodes are added, more users will
 #          have to be defined, and these ranges will have to change.
 #
-#          This is set up for use on socVA, assuming a maximum of 25 nodes per enclave. 
+#          This is set up for use on socVA, assuming a maximum of 22 nodes per enclave. 
 #          Change range for other societies.
 #
 
-mailusers = (1..25).to_a
+mailusers = (1..22).to_a
 
 mailhosts = []
 society.each_host do |host|
@@ -56,8 +56,9 @@ society.each_enclave do |enclave|
 
     # msglog tuning 
 
-      # conus enclave email server pop3 connection is timing out at 10000ms
-      node.override_parameter("-Dorg.cougaar.message.protocol.email.incoming.socketTimeout", "20000")
+      node.override_parameter("-Dorg.cougaar.message.protocol.email.cost", "30000")
+      node.override_parameter("-Dorg.cougaar.message.protocol.email.incoming.socketTimeout", "30000")
+      node.override_parameter("-Dorg.cougaar.message.protocol.email.outgoing.socketTimeout", "30000")
 
       j = j + 1
     end
