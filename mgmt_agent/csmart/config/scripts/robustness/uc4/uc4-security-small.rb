@@ -70,7 +70,7 @@ Cougaar.new_experiment("UC4_Small_1AD_Tests").run(1) {
             "1AD-SMALL-COMM",
             "HealthMonitor",
             "medium",
-            10.minutes,
+            1.minutes,
             assets
 
   wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
