@@ -29,30 +29,22 @@ import org.apache.xerces.dom.DocumentImpl;
 
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.servlet.BaseServletComponent;
-//import org.cougaar.core.servlet.ServletService;
 import org.cougaar.core.service.ServletService;
 import org.cougaar.core.service.NamingService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.BlackboardService;
-//import org.cougaar.core.service.TopologyReaderService;
-//import org.cougaar.core.service.TopologyEntry;
 import org.cougaar.core.service.UIDService;
 import org.cougaar.core.service.DomainService;
-//import org.cougaar.core.agent.ClusterIdentifier;
 import org.cougaar.core.util.PropertyNameValue;
 import org.cougaar.core.node.NodeIdentificationService;
 import org.cougaar.core.blackboard.BlackboardClient;
 import org.cougaar.core.blackboard.IncrementalSubscription;
-//import org.cougaar.core.domain.RootFactory;
 
 import org.cougaar.core.service.community.CommunityMember;
 import org.cougaar.community.CommunityChangeNotification;
 
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.mts.SimpleMessageAddress;
-import org.cougaar.lib.web.arch.root.GlobalEntry;
-import org.cougaar.core.mts.MTImpl;
-//import org.cougaar.core.node.NodeIdentifier;
 import org.cougaar.core.mobility.MoveTicket;
 import org.cougaar.core.mobility.RemoveTicket;
 import org.cougaar.core.mobility.ldm.AgentControl;

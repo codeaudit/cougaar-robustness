@@ -36,9 +36,6 @@ import org.w3c.dom.Document;
 import org.apache.xml.serialize.XMLSerializer;
 import org.apache.xml.serialize.OutputFormat;
 
-import org.cougaar.lib.web.arch.root.GlobalEntry;
-import org.cougaar.core.mts.MTImpl;
-
 import org.cougaar.util.log.*;
 
 /**
