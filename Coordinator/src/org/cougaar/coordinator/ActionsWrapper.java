@@ -51,7 +51,7 @@ public class ActionsWrapper implements NotPersistable, Serializable, Relay.Sourc
 {
     
     //Transients will 
-    private transient Set targets = Collections.EMPTY_SET;    
+    private transient Set targets = Collections.EMPTY_SET;     
     private transient boolean isLocal = false; 
     private Action action;
     private UID uid = null;

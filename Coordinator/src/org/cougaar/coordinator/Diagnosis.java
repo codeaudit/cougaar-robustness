@@ -76,7 +76,7 @@ public abstract class Diagnosis
     private Set possibleValues;
     
     /** Logger  */
-    Logger logger = null;
+    transient Logger logger = null;
     
     /** The possible values that getValue() can return -- cloned for dissemination to others */
     protected Set possibleValuesCloned;
@@ -85,10 +85,13 @@ public abstract class Diagnosis
     static private ServiceBroker serviceBroker = null;
         
     /** The vector of all local DiagnosisTechSpecs */
-    static private Vector diagnosisTechSpecs;
+    //static private Vector diagnosisTechSpecs;
 
-    /** The DiagnosisTechSpecInterface for this action class */
-    private DiagnosisTechSpecInterface diagnosisTechSpec;
+    /** The DiagnosisTechSpecInterface for this action class 
+     *
+     * It's transient for now... not sure we need access to this on the mgmt agent.
+     */
+    private transient DiagnosisTechSpecInterface diagnosisTechSpec;
     
     /** 
      *  The address of the node agent. May change if the diagnosis is moved. 
@@ -164,7 +167,7 @@ public abstract class Diagnosis
     private synchronized boolean init() throws TechSpecNotFoundException {
      
         //Set up a vector to hold all found tech specs, so we can look them up later.
-        diagnosisTechSpecs = new Vector();
+        //diagnosisTechSpecs = new Vector();
         
         //set up the relay mechanism to the node level coordinator
         initSourceAndTarget(); 

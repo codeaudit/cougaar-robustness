@@ -28,12 +28,12 @@ package org.cougaar.coordinator.techspec;
 import java.util.Vector;
 import java.util.Iterator;
 import org.cougaar.core.persist.NotPersistable;
-
+import java.io.Serializable;
 
 /**
  * @author Paul Pazandak, Ph.D. OBJS, Inc.
  */
-public class AssetType implements NotPersistable {
+public class AssetType implements NotPersistable, Serializable {
 
     public static final AssetType NETWORK = new AssetType("network", null);
     public static final AssetType ENCLAVE = new AssetType("enclave", null);
@@ -66,8 +66,8 @@ public class AssetType implements NotPersistable {
                 break;
             }
         }
-        System.out.println("*****************************name = "+ name);
-        System.out.println("*****************************Asset type = "+ found);
+        //System.out.println("*****************************name = "+ name);
+        //System.out.println("*****************************Asset type = "+ found);
         return found;
     }
     

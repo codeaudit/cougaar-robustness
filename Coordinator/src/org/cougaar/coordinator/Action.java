@@ -68,10 +68,10 @@ public abstract class Action
     static private boolean inited = false;
     
     /** The asset type of this object */
-    static private  AssetType assetType = null;
+    private  AssetType assetType = null;
 
     /** The possible values that getValue() can return */
-    static private Set possibleValues;
+    private Set possibleValues;
     
     /** The possible values that getValue() can return -- cloned for dissemination to others */
     //static protected Set possibleValuesCloned;
@@ -79,8 +79,11 @@ public abstract class Action
     /** TRUE if the class attributes have been initialized */
     static private ServiceBroker serviceBroker = null;
         
+    /** The vector of all local ActionTechSpecs */
+    //static private Vector actionTechSpecs;
+    
     /** The ActionTechSpec for this action class */
-    static private ActionTechSpecInterface actionTechSpec = null;
+    private transient ActionTechSpecInterface actionTechSpec = null;
 
     /** UID Service */
     static private UIDService uidService;
@@ -110,7 +113,7 @@ public abstract class Action
     /** The last action set */
     
     /** Logger */
-    Logger logger = null;
+    transient Logger logger = null;
     
     /** ActionHistory of this action. What actions took place when. Populated from start/stop methods. */
     //ActionHistory actionHistory = null;
@@ -124,9 +127,9 @@ public abstract class Action
     /** The values the action offers to perform */
     Set valuesOffered = null;
 
-    static {
-        possibleValues = new LinkedHashSet(); //initialize
-    }
+    //static {
+    //    possibleValues = new LinkedHashSet(); //initialize
+    //}
     
     /**
      * Creates an action instance for actions to be performed on the specified asset
@@ -141,14 +144,17 @@ public abstract class Action
 
         this.permittedValues = new LinkedHashSet(); //initialize
         this.valuesOffered = new LinkedHashSet(); //initialize
+        this.possibleValues = new LinkedHashSet(); //initialize
 
         //this.actionHistory = new ActionHistory(); //initialize
-        
         if (!inited) { //only called once!
             init(); //get the possibleValues from the techSpec.
         }
+        
+        // get the diagnosis tech spec & load the possibleValues
+        initPossibleValues();
 
-        this.expandedName = AssetName.generateExpandedAssetName(assetName, assetType); 
+        this.expandedName = AssetName.generateExpandedAssetName(assetName, assetType);
         this.setUID(uidService.nextUID());
         
     }
@@ -177,13 +183,15 @@ public abstract class Action
       */
     private synchronized boolean init() throws TechSpecNotFoundException {
      
+        //Set up a vector to hold all found tech specs, so we can look them up later.
+        //actionTechSpecs = new Vector();
+        
         //set up the relay mechanism to the node level coordinator
         initSourceAndTarget(); 
         
-        // get the action tech spec & load the possibleValues
-        initPossibleValues();
-     
         this.inited = true;
+
+        logger = Logging.getLogger(getClass());
         
         return inited;
     }
@@ -567,7 +575,6 @@ logger.debug("///////////////////////////////////Adding permitted value: "+o);
      * singleton set contain just one target.
      **/
     public Set getTargets() {
-        logger.debug("**** getTargets called.");
         return Collections.singleton(nodeId);
     }
     
@@ -584,7 +591,7 @@ logger.debug("///////////////////////////////////Adding permitted value: "+o);
      * @return a factory to convert the content to a Relay Target.
      **/
     public Relay.TargetFactory getTargetFactory() {
-        logger.debug("**** getTargetFactory called.");
+        //logger.debug("**** getTargetFactory called.");
         return null;
     }
     
