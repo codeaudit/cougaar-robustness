@@ -250,7 +250,7 @@ logger.debug("evaluateThreatAssetMembership -- asset types don't match: \n model
         boolean createdModel = false;
         DefaultThreatModel dtm = metaModel.getInstantiation();
         if (dtm == null) {
-            //logger.debug("========================================== 6 ==> Creating threat model!");
+            logger.debug("========================================== 6 ==> Creating threat model!");
             dtm = metaModel.instantiate(us.nextUID());
             
             this.blackboard.publishAdd(dtm);
