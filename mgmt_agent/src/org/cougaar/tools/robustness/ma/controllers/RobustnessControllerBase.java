@@ -58,8 +58,8 @@ public abstract class RobustnessControllerBase
   protected static long DEFAULT_EXPIRATION = 2 * 60 * 1000;
   protected static final long PING_TIMEOUT = 2 * 60 * 1000;
   protected static final long HEARTBEAT_REQUEST_TIMEOUT = 1 * 60 * 1000;
-  protected static final long HEARTBEAT_FREQUENCY = 30 * 1000;
-  protected static final long HEARTBEAT_TIMEOUT = 90 * 1000;
+  protected static final long HEARTBEAT_FREQUENCY = 60 * 1000;
+  protected static final long HEARTBEAT_TIMEOUT = 2 * 60 * 1000;
   protected static final long HEARTBEAT_PCT_OUT_OF_SPEC = 50;
 
   /**

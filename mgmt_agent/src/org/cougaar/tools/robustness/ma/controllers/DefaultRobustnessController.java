@@ -165,9 +165,12 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    *   Next state:        RESTART when OK'd by deconflictor
    * </pre>
    */
-  class DeadStateController
-      extends StateControllerBase {
+  class DeadStateController extends StateControllerBase {
     public void enter(String name) {
+      logger.info("New state (DEAD):" +
+                  " name=" + name +
+                  " preferredLeader=" + thisAgent.equals(preferredLeader()) +
+                  " isAgent=" + isAgent(name));
       communityReady = false; // For ACME Community Ready Events
       if (thisAgent.equals(preferredLeader()) && isAgent(name)) {
         // Interface point for Deconfliction
@@ -240,7 +243,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (status == RestartHelper.SUCCESS) {
         event("Restart complete: agent=" + name + " location=" + dest);
         RestartDestinationLocator.restartSuccess(name);
-        newState(name, DefaultRobustnessController.ACTIVE);
+        newState(name, DefaultRobustnessController.INITIAL);
       } else {
         event("Restart failed: agent=" + name + " location=" + dest);
         newState(name, FAILED_RESTART);
@@ -284,8 +287,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       communityReady = false;
     }
     public void expired(String name) {
-      logger.info("Expired Status:" + " agent=" + name + " state=INITIAL");
-      if (isLeader(thisAgent) && isAgent(name)) {
+      logger.info("Expired Status:" + " agent=" + name + " state=MOVE");
+      if (isLeader(thisAgent) || isLocal(name)) {
         newState(name, HEALTH_CHECK);
       }
     }
@@ -295,7 +298,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
             " agent=" + name +
             " orig=" + orig +
             " dest=" + dest);
-      //stopHeartbeats(name);
       newState(name, MOVE);
     }
 
@@ -307,6 +309,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
             " status=" + (status == MoveHelper.SUCCESS ? "SUCCESS" : "FAIL"));
       if (status == MoveHelper.FAIL) {
         newState(name, HEALTH_CHECK);
+      } else {
+        newState(name, INITIAL);
       }
     }
 
@@ -355,13 +359,15 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         model.listEntries(model.AGENT, DefaultRobustnessController.ACTIVE);
     if (agents.length < expectedAgents()) return false;
     List nodes = new ArrayList();
-    boolean result = true;
+    boolean inactiveNode = false;
     String location = null;
+    String agent = null;
     for (int i = 0; i < agents.length; i++) {
-      location = model.getLocation(agents[i]);
+      agent = agents[i];
+      location = model.getLocation(agent);
       if (!nodes.contains(location)) {
         if (model.getCurrentState(location) != DefaultRobustnessController.ACTIVE) {
-          result = false;
+          inactiveNode = true;
           break;
         }
         nodes.add(location);
@@ -370,8 +376,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     logger.info("checkCommunityReady:" +
                 " agents=" + expectedAgents() +
                 " active=" + agents.length +
-                " inactiveNode=" + !result + (!result ? " (" + location + ")" : ""));
-    return result;
+                (inactiveNode ? " inactiveNode=" + location + " agent=" + agent : ""));
+    return !inactiveNode;
   }
 
   /**
@@ -410,7 +416,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     return getLongAttribute("NumberOfAgents", -1);  }
 
   public String preferredLeader() {
-    return model.getStringAttribute(model.MANAGER_ROLE);
+    return model.getStringAttribute(model.MANAGER_ATTR);
   }
 
   /**
