@@ -136,12 +136,13 @@ public class PersistenceHelper extends BlackboardClientComponent {
     for (Iterator it = responses.iterator(); it.hasNext();) {
       RelayAdapter ra = (RelayAdapter)it.next();
       Set responders = ra.getResponders();
-      logger.debug("Received PersistenceControlRequest response:" +
-                  " responders=" + responders);
+      //logger.debug("Received PersistenceControlRequest response:" +
+      //            " responders=" + responders);
       // Remove request after all targets have responded
       if (responders.containsAll(ra.getTargets())) {
         logger.debug("PublishRemove PersistenceControlRequest:" + ra);
         myUIDs.remove(ra.getUID());
+        blackboard.publishRemove(ra);
       }
     }
   }
