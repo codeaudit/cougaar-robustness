@@ -432,7 +432,7 @@ public abstract class Action
             completionCode != Action.ABORTED ||
             completionCode != Action.FAILED ) {
                 
-            throw new IllegalValueException("Illegal completionCode.");
+            throw new IllegalValueException("Illegal completionCode: " + completionCode);
         }
                 
         if ( lastAction == null || lastAction.hasCompleted() ) {
