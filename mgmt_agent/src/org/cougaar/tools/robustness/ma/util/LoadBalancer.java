@@ -151,7 +151,7 @@ public class LoadBalancer extends BlackboardClientComponent {
    * Submit request to EN for new community laydown and perform required moves.
    */
   public CougaarSociety doLoadBalance() {
-    // TODO: submit request to EN plugin and send move requests to moveHelper
+    // submit request to EN plugin and send move requests to moveHelper
     //       upon receipt of EN response
     logger.info("doLoadBalance");
     String society = controller.getCompleteStatus();
@@ -194,23 +194,31 @@ public class LoadBalancer extends BlackboardClientComponent {
     StringBuffer sb = new StringBuffer();
     sb.append("<?xml version=\"1.0\"?>\n" +
         "<CougaarSociety identifier=\"baseline\">\n");
-    int index = society.indexOf("<nodes count=");
+    int index = society.indexOf("<healthMonitors count=");
     index = society.indexOf("\"", index);
     int nodesCount = Integer.parseInt(society.substring(index+1, society.indexOf("\"", index+1)));
     index = society.indexOf("<agents count=");
     index = society.indexOf("\"", index);
     int agentsCount = Integer.parseInt(society.substring(index+1, society.indexOf("\"", index+1)));
     for(int i=0; i<nodesCount; i++) {
-      index = society.indexOf("<node name=");
+      index = society.indexOf("<healthMonitor name=");
       index = society.indexOf("\"", index);
       society = society.substring(index);
       String nodeName = society.substring(1, society.indexOf("\"", 1));
+      index = society.indexOf("type=\"");
+      index = society.indexOf("\"", index);
+      society = society.substring(index);
+      String nodeType = society.substring(1, society.indexOf("\"", 1));
+      if(nodeType.equals("agent")) //agent is not a cougaar node.
+        continue;
+
       int stateIndex1 = society.indexOf("state=\"");
       int stateIndex2 = society.indexOf("\"", stateIndex1+8);
       String state = society.substring(stateIndex1+7, stateIndex2);
-      if(state.equals("DEAD")){
+      if(state.equals("DEAD")){ //dead node is not counted in
         continue;
       }
+
       sb.append("  <CougaarNode name=\"" + nodeName + "\">\n");
       sb.append("    <Attribute name=\"Memory\" value=\"nodeMemory\"/>\n");
       sb.append("    <Attribute name=\"ProbabilityOfFailure\" value=\"0.2\"/>\n");
@@ -238,9 +246,11 @@ public class LoadBalancer extends BlackboardClientComponent {
           childAgents ++;
         }
       }
+      //cpu of one node should be enough for all member agents
       int nodeCPU = childAgents * 50 + 200;
       index = sb.lastIndexOf("nodeCPU");
       sb.replace(index, index+7, Integer.toString(nodeCPU));
+      //memory of one node should be enough for all member agents
       int nodeMemory = childAgents * 30 + 200;
       index = sb.lastIndexOf("nodeMemory");
       sb.replace(index, index+10, Integer.toString(nodeMemory));

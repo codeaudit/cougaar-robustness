@@ -608,11 +608,11 @@ public abstract class RobustnessControllerBase
       nodesPlusLeader[nodesPlusLeader.length-1] = model.getLeader();
       nodeNames = nodesPlusLeader;
     }
-    sb.append("  <nodes count=\"" + nodeNames.length + "\" >\n");
+    sb.append("  <healthMonitors count=\"" + nodeNames.length + "\" >\n");
     for (int i = 0; i < nodeNames.length; i++) {
-      sb.append(nodeStatusToXML("    ", nodeNames[i]) + "\n");
+      sb.append(healthMonitorStatusToXML("    ", nodeNames[i]) + "\n");
     }
-    sb.append("  </nodes>\n");
+    sb.append("  </healthMonitors>\n");
     String agentNames[] = model.listEntries(CommunityStatusModel.AGENT);
     sb.append("  <agents count=\"" + agentNames.length + "\" >\n");
     for (int i = 0; i < agentNames.length; i++) {
@@ -645,21 +645,22 @@ public abstract class RobustnessControllerBase
     return sb.toString();
   }
 
-  public String nodeStatusToXML(String indent, String name) {
+  public String healthMonitorStatusToXML(String indent, String name) {
+    String type = model.getType(name) == model.AGENT ? "agent" : "node";
     long now = now();
     long expiresAt = NEVER;
     if (model.getStateExpiration(name) != NEVER) {
       expiresAt = ((model.getTimestamp(name) + model.getStateExpiration(name)) - now);
     }
     StringBuffer sb = new StringBuffer();
-    sb.append(indent + "<node name=\"" + name + "\" >\n");
+    sb.append(indent + "<healthMonitor name=\"" + name + "\" type=\"" + type + "\" >\n");
     sb.append(indent + "<vote>" + model.getLeaderVote(name) + "</vote>\n");
     sb.append(indent + "  <status " +
         " state=\"" + stateName(model.getCurrentState(name)) + "\"" +
         " last=\"" + (now - model.getTimestamp(name)) + "\"" +
         " expires=\"" + (expiresAt == NEVER ? "NEVER" : Long.toString(expiresAt)) + "\" />\n");
     sb.append(attrsToXML(model.getAttributes(name), indent + "  "));
-    sb.append(indent + "</node>\n");
+    sb.append(indent + "</healthMonitor>\n");
     return sb.toString();
   }
 
