@@ -1,0 +1,103 @@
+require 'cougaar/communities'
+require 'ultralog/enclaves'
+
+timeout = "30000"
+restart_timeout = "180000"
+move_timeout = "300000"
+heartbeat_frequency = "15000"
+heartbeat_out = "50"
+
+enclave_num = 0
+society.each_enclave do |enclave|
+  enclave_num += 1
+end
+
+#for testing 1AD-Small
+if enclave_num == 0
+  society.communities.add("1AD-SMALL-COMM") do |community|
+    community.add_attribute("CommunityType", "Robustness")
+    community.add_attribute("CommunityManager", "ARManager")
+    community.add_attribute("RobustnessManager", "ARManager")
+    community.add_attribute("UNDEFINED_EXPIRATION", timeout)
+    community.add_attribute("INITIAL_EXPIRATION", timeout)
+    community.add_attribute("ACTIVE_EXPIRATION", timeout)
+    community.add_attribute("HEALTH_CHECK_EXPIRATION", timeout)
+    community.add_attribute("DEAD_EXPIRATION", timeout)
+    community.add_attribute("RESTART_EXPIRATION", restart_timeout)
+    community.add_attribute("FAILED_RESTART_EXPIRATION", "-1")
+    community.add_attribute("MOVE_EXPIRATION", move_timeout)
+    community.add_attribute("PING_TIMEOUT", timeout)
+    community.add_attribute("HEARTBEAT_REQUEST_TIMEOUT", timeout)
+    community.add_attribute("HEARTBEAT_FREQUENCY", heartbeat_frequency)
+    community.add_attribute("HEARTBEAT_TIMEOUT", timeout)
+    community.add_attribute("HEARTBEAT_PCT_OUT_OF_SPEC", heartbeat_out)
+
+    community.add_agent("ARManager") do |entity|
+      entity.add_role("Member")
+      entity.add_role("HealthMonitor")
+      entity.add_role("RobustnessManager")
+    end
+    num_agents = 0
+    society.each_node do |node|
+      unless node.has_facet?(:role)
+        community.add_node(node.name) do |entity|
+          entity.add_role("Member")
+	  entity.add_role("HealthMonitor")
+        end
+        node.each_agent do |agent|
+          num_agents += 1
+          community.add_agent(agent.name) do |entity|
+            entity.add_role("Member")
+          end
+        end
+      end
+    end
+    community.add_attribute("NumberOfAgents", num_agents.to_s)
+  end
+end
+
+#for 1AD-Full
+if enclave_num != 0
+society.each_enclave do |enclave|
+  society.communities.add("1AD-#{enclave}-COMM") do |community|
+    community.add_attribute("CommunityType", "Robustness")
+    community.add_attribute("CommunityManager", "1AD-#{enclave}-ARManager")
+    community.add_attribute("RobustnessManager", "1AD-#{enclave}-ARManager")
+    community.add_attribute("UNDEFINED_EXPIRATION", timeout)
+    community.add_attribute("INITIAL_EXPIRATION", timeout)
+    community.add_attribute("ACTIVE_EXPIRATION", timeout)
+    community.add_attribute("HEALTH_CHECK_EXPIRATION", timeout)
+    community.add_attribute("DEAD_EXPIRATION", timeout)
+    community.add_attribute("RESTART_EXPIRATION", restart_timeout)
+    community.add_attribute("FAILED_RESTART_EXPIRATION", "-1")
+    community.add_attribute("MOVE_EXPIRATION", move_timeout)
+    community.add_attribute("PING_TIMEOUT", timeout)
+    community.add_attribute("HEARTBEAT_REQUEST_TIMEOUT", timeout)
+    community.add_attribute("HEARTBEAT_FREQUENCY", heartbeat_frequency)
+    community.add_attribute("HEARTBEAT_TIMEOUT", timeout)
+    community.add_attribute("HEARTBEAT_PCT_OUT_OF_SPEC", heartbeat_out)
+
+    community.add_agent("1AD-#{enclave}-ARManager") do |entity|
+      entity.add_role("Member")
+      entity.add_role("HealthMonitor")
+      entity.add_role("RobustnessManager")
+    end
+    num_agents = 0
+    society.each_enclave_node(enclave) do |node|
+      unless node.has_facet?(:role)
+        community.add_node(node.name) do |entity|
+          entity.add_role("Member")
+	  entity.add_role("HealthMonitor")
+        end
+        node.each_agent do |agent|
+          num_agents += 1
+          community.add_agent(agent.name) do |entity|
+            entity.add_role("Member")
+          end
+        end
+      end
+    end
+    community.add_attribute("NumberOfAgents", num_agents.to_s)
+  end
+end
+end
