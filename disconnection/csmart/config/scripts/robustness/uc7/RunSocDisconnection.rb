@@ -9,6 +9,7 @@ require 'cougaar/scripting'
 require 'ultralog/scripting'
 require 'ultralog/enclaves'
 require 'robustness/uc7/disconnection'
+require 'robustness/uc9/deconfliction'
 
 HOSTS_FILE = Ultralog::OperatorUtils::HostManager.new.get_hosts_file
 
@@ -23,12 +24,12 @@ Cougaar.new_experiment("Disconnection").run(1) {
   do_action "TransformSociety", false, 
     "#{RULES}/isat",
     "#{RULES}/logistics",
-    "#{RULES}/robustness/uc1/manager.rule",
+    "#{RULES}/robustness/manager.rule",
     "#{RULES}/robustness/uc7/disconnection.rule",
-    "#{RULES}/robustness/UC9/deconfliction.rule"
+    "#{RULES}/robustness/uc9/deconfliction.rule"
 
   do_action "TransformSociety", false, 
-    "#{RULES}/robustness/community.rule"
+    "#{RULES}/robustness/communities/community.rule"
 
   do_action "SaveCurrentSociety", "mySociety.xml"
   do_action "SaveCurrentCommunities", "myCommunities.xml" 
@@ -36,8 +37,6 @@ Cougaar.new_experiment("Disconnection").run(1) {
   do_action "DeployCommunitiesFile" 
   do_action "CleanupSociety"
   do_action "VerifyHosts"
-
-
   do_action "ConnectOperatorService"
   do_action "ClearPersistenceAndLogs"
   do_action "InstallCompletionMonitor"
@@ -51,23 +50,27 @@ Cougaar.new_experiment("Disconnection").run(1) {
   do_action "Sleep", 30.seconds
   do_action "PublishNextStage"
 
+# Unleash Suppressed Defenses
+  do_action "MonitorUnleashConfirmed"
+  do_action "UnleashDefenses"
+
 # Disconnection
   do_action "Sleep", 30.seconds
   do_action "MonitorPlannedDisconnectExpired"
   do_action "StartPlannedDisconnect", "FWD-D", 60
   wait_for  "PlannedDisconnectStarted", "FWD-D"
   do_action "DisableNetworkInterfaces", "FWD-D"
-  #do_action "Sleep", 50.seconds
+# do_action "Sleep", 50.seconds
   do_action "Sleep", 60.seconds
-  #do_action "Sleep", 70.seconds
+# do_action "Sleep", 70.seconds
   do_action "EnableNetworkInterfaces", "FWD-D"
   do_action "EndPlannedDisconnect", "FWD-D"
-  wait_for  "ReconnectConfirmed", "FWD-D"
 
   wait_for  "SocietyQuiesced"  do
     wait_for  "Command", "shutdown"
     #do_action "SaveSocietyCompletion", "completion_#{experiment.name}.xml"
     #include "inventory.inc", "RunSoc"
+    do_action "EnableNetworkInterfaces", "FWD-D"
     do_action "StopSociety"
     do_action "ArchiveLogs"
     do_action "CleanupSociety"
@@ -78,6 +81,7 @@ Cougaar.new_experiment("Disconnection").run(1) {
   #do_action "Sleep", 30.seconds
   #do_action "SaveSocietyCompletion", "completion_#{experiment.name}.xml"
   #include "inventory.inc", "RunSoc"
+  do_action "EnableNetworkInterfaces", "FWD-D"
   do_action "Sleep", 30.seconds
   do_action "StopSociety"
   do_action "ArchiveLogs"
