@@ -30,9 +30,12 @@ import org.cougaar.core.service.OperatingModeService;
 import org.cougaar.core.service.ConditionService;
 import org.cougaar.core.service.EventService;
 import org.cougaar.core.blackboard.BlackboardClientComponent;
-import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.adaptivity.Condition;
+
+import org.cougaar.core.component.ServiceRevokedListener;
+import org.cougaar.core.component.ServiceRevokedEvent;
+import org.cougaar.core.component.ServiceBroker;
 
 import org.cougaar.util.UnaryPredicate;
 
@@ -96,6 +99,8 @@ public class DeconflictHelper extends BlackboardClientComponent {
     start();
   }
 
+  //public void setConditionService (ConditionService cs) { this.conditionService = cs; }
+
   public void load() {
     setAgentIdentificationService(
       (AgentIdentificationService)getServiceBroker().getService(this, AgentIdentificationService.class, null));
@@ -114,6 +119,7 @@ public class DeconflictHelper extends BlackboardClientComponent {
     if(conditionService == null) {
       logger.warn("No ConditionService?");
     }
+    //conditionService = getConditionService();
     //operatingModeService = (OperatingModeService) getServiceBroker().getService(this, OperatingModeService.class, null);
     super.load();
   }
@@ -121,6 +127,20 @@ public class DeconflictHelper extends BlackboardClientComponent {
   public void start() {
     super.start();
   }
+
+ /* private ConditionService getConditionService() {
+    int counter = 0;
+    ConditionService cs = null;
+    while (!getServiceBroker().hasService(ConditionService.class)) {
+      // Print a message after waiting for 30 seconds
+      if (++counter == 60) logger.info("Waiting for ConditionService ... ");
+      try { Thread.sleep(500); } catch (Exception ex) {}
+    }
+    return (ConditionService)getServiceBroker().getService(this, ConditionService.class,
+      new ServiceRevokedListener() {
+        public void serviceRevoked(ServiceRevokedEvent re) {}
+    });
+  }*/
 
 
   public void setupSubscriptions() {
@@ -266,33 +286,32 @@ public class DeconflictHelper extends BlackboardClientComponent {
    * @param name the agent name
    * @param desiredValue The desired value.
    */
-  public void changeApplicabilityCondition(String name, boolean desiredValue) {
-    if(conditionService == null) {
-      logger.warn("Cannot change condition object " + defenseName + ":" + name + ", ConditionService is null.");
-      return;
-    }
-
+  public void changeApplicabilityCondition(String name) {
     String condition = defenseName + ":" + name;
-
-    String temp;
-    if(desiredValue) temp = "true";
-    else temp = "false";
 
     RestartDefenseCondition rdc = (RestartDefenseCondition)conditionService.getConditionByName(condition);
     if (rdc != null) {
-      if(!(rdc.getValue().toString().equalsIgnoreCase(temp))) {
-        if(desiredValue) {
-          rdc.setValue(DefenseConstants.BOOL_TRUE);
-        }
-        else
-          rdc.setValue(DefenseConstants.BOOL_FALSE);
-        if (logger.isDebugEnabled())
-            logger.debug("** setRestartCondition - " + rdc.getName() + "=" + rdc.getValue());
-        defenseConditionQueue.add(rdc);
-      }
+      if(rdc.getValue().toString().equalsIgnoreCase("true"))
+        rdc.setValue(DefenseConstants.BOOL_FALSE);
+      else
+        rdc.setValue(DefenseConstants.BOOL_TRUE);
+      if (logger.isDebugEnabled())
+        logger.debug("** setRestartCondition - " + rdc.getName() + "=" + rdc.getValue());
+      defenseConditionQueue.add(rdc);
     } else {
       if (logger.isDebugEnabled()) logger.debug("** Cannot find condition object!");
     }
+  }
+
+  public boolean isDefenseApplicable(String agentName) {
+    String condition = defenseName + ":" + agentName;
+
+    RestartDefenseCondition rdc = (RestartDefenseCondition)conditionService.getConditionByName(condition);
+    if(rdc != null) {
+      if(rdc.getValue().toString().equalsIgnoreCase("true"))
+        return true;
+    }
+    return false;
   }
 
   private void publishChangeCondition() {
