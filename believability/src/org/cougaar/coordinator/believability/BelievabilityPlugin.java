@@ -684,35 +684,44 @@ public class BelievabilityPlugin
 
     // Method to read in the sensor types. Used during setup.
     // Throws BelievabilityException if it has a problem finding the techspecs
-    private void readInTechSpecInformation() throws BelievabilityException {
-     // Get all of the sensor tech specs from the diagnosis tech spec
-     // service.
-     Iterator ts_enum = 
-         diagnosisTSService.getAllDiagnosisTechSpecs().iterator();
-     while ( ts_enum.hasNext() ) {
-         DiagnosisTechSpecInterface dtsi = 
-          (DiagnosisTechSpecInterface) ts_enum.next();
+    private void readInTechSpecInformation() throws BelievabilityException 
+    {
+        if ( logger.isInfoEnabled() )
+            logger.info("Starting tech spec processing.");
+ 
+        
+        // Get all of the sensor tech specs from the diagnosis tech spec
+        // service.
+        Iterator ts_enum = 
+                diagnosisTSService.getAllDiagnosisTechSpecs().iterator();
+        while ( ts_enum.hasNext() ) {
+            DiagnosisTechSpecInterface dtsi = 
+                    (DiagnosisTechSpecInterface) ts_enum.next();
 
-         if ( logger.isDetailEnabled() )
-          logger.detail("plugin adding sensor tech spec for sensor "
-                    + dtsi.getName()
-                    + " on asset type " + dtsi.getAssetType() );
-         _model_manager.addSensorType( dtsi );
-     }
+            if ( logger.isDetailEnabled() )
+                logger.detail("plugin adding sensor tech spec for sensor "
+                              + dtsi.getName()
+                              + " on asset type " + dtsi.getAssetType() );
+            _model_manager.addSensorType( dtsi );
+        }
 
-     // Get all of the actuator tech specs from the action tech spec 
-     // service.
-     ts_enum = actionTSService.getAllActionTechSpecs().iterator();
-     while ( ts_enum.hasNext() ) {
-         ActionTechSpecInterface atsi = 
-          (ActionTechSpecInterface) ts_enum.next();
+        // Get all of the actuator tech specs from the action tech spec 
+        // service.
+        ts_enum = actionTSService.getAllActionTechSpecs().iterator();
+        while ( ts_enum.hasNext() ) {
+            ActionTechSpecInterface atsi = 
+                    (ActionTechSpecInterface) ts_enum.next();
      
-         if ( logger.isDetailEnabled() ) 
-          logger.detail("plugin adding actuator tech spec for action type  "
-                    + atsi.getActionType()
-                    + " on asset type " + atsi.getAssetType() );
-         _model_manager.addActuatorType( atsi );
-     }
+            if ( logger.isDetailEnabled() ) 
+                logger.detail("plugin adding actuator tech spec for action type  "
+                              + atsi.getActionType()
+                              + " on asset type " + atsi.getAssetType() );
+            _model_manager.addActuatorType( atsi );
+        }
+        
+        if ( logger.isInfoEnabled() )
+            logger.info("Finished tech spec processing.");
+
     }
 
 
@@ -866,8 +875,8 @@ public class BelievabilityPlugin
     private void handleUnleashing( )
     {
 
-        if (logger.isDetailEnabled() ) 
-            logger.detail ("Handling Unleashing");
+        if (logger.isInfoEnabled() ) 
+            logger.info("Handling Unleashing");
 
         _leashing_state = LEASHING_STATE_UNLEASHING_IN_PROGRESS;
 

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefTriggerHistory.java,v $
- * $Revision: 1.11 $
- * $Date: 2004-08-05 17:14:19 $
+ * $Revision: 1.12 $
+ * $Date: 2004-08-05 17:56:09 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -99,7 +99,7 @@ import org.cougaar.core.agent.service.alarm.Alarm;
  * an instance of this class: one for each of these.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.11 $Date: 2004-08-05 17:14:19 $
+ * @version $Revision: 1.12 $Date: 2004-08-05 17:56:09 $
  * @see BeliefTriggerManager
  */
 class BeliefTriggerHistory 
@@ -361,6 +361,8 @@ class BeliefTriggerHistory
             return;
         }
 
+        logInfo( "Belief Update Starting for: " + _asset_id );
+
         // We should first sort this trigger collection, as
         // everything else here will require it to be sorted.
         //
@@ -440,6 +442,8 @@ class BeliefTriggerHistory
         // should be made by whatever routine is actually calling this
         // update method.
         //
+
+        logInfo( "Belief Update Ended for: " + _asset_id );
 
     } // method updateBeliefState
 
