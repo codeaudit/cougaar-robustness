@@ -17,7 +17,7 @@ parameters:
     - $CIP/csmart/config/rules/robustness/common
     - $CIP/csmart/config/rules/coordinator
 #    - $CIP/csmart/config/rules/coordinator/examples/sample_defense
-    - $CIP/csmart/config/rules/coordinator/test
+#    - $CIP/csmart/config/rules/coordinator/test
     - $CIP/csmart/config/rules/robustness/uc1
 #    - $CIP/csmart/config/rules/robustness/uc2
     - $CIP/csmart/config/rules/robustness/uc7
@@ -44,7 +44,6 @@ include_scripts:
   - script: $CIP/csmart/lib/robustness/objs/planned_disconnect.rb
     parameters:
       - location: during_stage_1
-      - start_delay: 60
       - wait_location: after_stage_1
       - nodes: ["FSB-CO-HQ-CIC-NODE", "FSB-DISTRO-FWD-EVAC-NODE"]
       - planned_disconnect: 12.minutes
@@ -52,6 +51,14 @@ include_scripts:
       - timeout: 30.minutes
       - verbose: 2
   - script: $CIP/csmart/lib/coordinator/unleash_defenses.rb 
+    parameters:
+      - location: during_stage_1
+      - verbose: 1
+  - script: $CIP/csmart/lib/coordinator/nodes_persisted_find_providers.rb 
+    parameters:
+      - location: during_stage_1
+      - start_delay: 60
+      - nodes: ["FSB-CO-HQ-CIC-NODE", "FSB-DISTRO-FWD-EVAC-NODE"]
 
 =end
 
