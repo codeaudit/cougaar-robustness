@@ -64,7 +64,7 @@ Cougaar.new_experiment("ARUC1_Kill_1_Agent").run(1) {
   do_action "Sleep", 5.minutes
 
   # Kill single agent
-  do_action "KillAgents", "1-35-ARBN"
+  do_action "RemoveAgents", "1-35-ARBN"
 
   # Wait for agent restart to complete
   wait_for "CommunitiesReady", ["SMALL-COMM"]

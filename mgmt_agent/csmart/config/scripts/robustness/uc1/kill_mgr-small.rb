@@ -73,7 +73,7 @@ Cougaar.new_experiment("ARUC1_Kill_Manager").run(1) {
   do_action "Sleep", 5.minutes
 
   # Kill robustness manager
-  do_action "KillAgents", "SMALL-ARManager"
+  do_action "RemoveAgents", "SMALL-ARManager"
 
   # Wait for restarts to complete
   wait_for "CommunitiesReady", ["SMALL-COMM"]

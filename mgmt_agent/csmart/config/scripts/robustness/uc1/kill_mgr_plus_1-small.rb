@@ -73,7 +73,7 @@ Cougaar.new_experiment("ARUC1_Kill_Manager_Plus_1_Node").run(1) {
   do_action "Sleep", 5.minutes
 
   # Kill robustness manager
-  do_action "KillAgents", "SMALL-ARManager"
+  do_action "RemoveAgents", "SMALL-ARManager"
   do_action "SaveHostOfNode", "SMALL-COMM", "TRANS-NODE"
   do_action "KillNodes", "TRANS-NODE"
 
