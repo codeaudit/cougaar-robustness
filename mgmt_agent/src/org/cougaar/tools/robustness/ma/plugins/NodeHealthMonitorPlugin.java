@@ -72,6 +72,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.ModificationItem;
@@ -341,7 +342,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
         initialAttributesLogged = true;
         logger.info("Robustness community attributes:" +
                     " community=" + community.getName() +
-                    " attributes=" + community.getAttributes());
+                    " attributes=" + attrsToString(community.getAttributes()));
       }
       long interval = model.getLongAttribute(CURRENT_STATUS_UPDATE_ATTRIBUTE);
       if (interval <= 0) { // Current status update interval not defined yet
@@ -646,6 +647,29 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
                             crl);
       }
     }
+  }
+
+  /**
+   * Creates a string representation of an Attribute set.
+   */
+  protected String attrsToString(Attributes attrs) {
+    StringBuffer sb = new StringBuffer("[");
+    try {
+      for (NamingEnumeration enum = attrs.getAll(); enum.hasMore();) {
+        Attribute attr = (Attribute)enum.next();
+        sb.append(attr.getID() + "=(");
+        for (NamingEnumeration enum1 = attr.getAll(); enum1.hasMore();) {
+          sb.append((String)enum1.next());
+          if (enum1.hasMore())
+            sb.append(",");
+          else
+            sb.append(")");
+        }
+        if (enum.hasMore()) sb.append(",");
+      }
+      sb.append("]");
+    } catch (NamingException ne) {}
+    return sb.toString();
   }
 
   private class WakeAlarm implements Alarm {
