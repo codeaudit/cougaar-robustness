@@ -64,6 +64,16 @@ public class TestActionTechSpec implements ActionTechSpecInterface {
         return null;
     }
     
+    /**
+     * @return an action description for the specified actionValue taken
+     * from the actionRecord.getValue(), which was generated initially from getValueFromXML(). 
+     * The tech spec does not know what this conversion is since it didn't have a handle to an Action
+     * at start up.
+     */
+    public ActionDescription getActionDescriptionForValue(Action a, Object actionValue) { 
+        return null;
+    }
+    
     /** @return the ActionDescriptions for this Actuator
      */
     public void addAction(ActionDescription ad) {
