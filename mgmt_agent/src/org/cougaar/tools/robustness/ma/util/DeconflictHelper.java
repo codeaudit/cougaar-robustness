@@ -66,11 +66,12 @@ public class DeconflictHelper extends BlackboardClientComponent {
   private LoggingService logger;
   private UIDService uidService;
   private ConditionService conditionService;
-  //private OperatingModeService operatingModeService;
+  private OperatingModeService operatingModeService;
   private EventService eventService;
 
   private IncrementalSubscription opModeSubscription;
-  private IncrementalSubscription monitorModeSubscription;
+  //private IncrementalSubscription monitorModeSubscription;
+  //private IncrementalSubscription conditionSubscription;
 
   private CommunityStatusModel model;
 
@@ -110,6 +111,10 @@ public class DeconflictHelper extends BlackboardClientComponent {
     logger = org.cougaar.core.logging.LoggingServiceWithPrefix.add(logger, agentId + ": ");
     uidService = (UIDService) getServiceBroker().getService(this, UIDService.class, null);
     conditionService = (ConditionService) getServiceBroker().getService(this, ConditionService.class, null);
+    if(conditionService == null) {
+      logger.warn("No ConditionService?");
+    }
+    //operatingModeService = (OperatingModeService) getServiceBroker().getService(this, OperatingModeService.class, null);
     super.load();
   }
 
@@ -138,7 +143,16 @@ public class DeconflictHelper extends BlackboardClientComponent {
             }
             return false ;
         }
-     }) ;*/
+     }) ;
+
+     conditionSubscription = (IncrementalSubscription) getBlackboardService().subscribe(new UnaryPredicate() {
+       public boolean execute(Object o) {
+         if(o instanceof RestartDefenseCondition) {
+           return true;
+         }
+         return false;
+       }
+     });*/
 
      // Start timer to periodically check all queues who needs to publish to the blackboard
     wakeAlarm = new WakeAlarm((new Date()).getTime() + TIMER_INTERVAL);
@@ -153,6 +167,19 @@ public class DeconflictHelper extends BlackboardClientComponent {
     if(!defenseConditionQueue.isEmpty()) {
       publishChangeCondition();
     }
+
+    /*Iterator iter = monitorModeSubscription.getAddedCollection().iterator();
+    while(iter.hasNext()) {
+      RestartMonitoringEnabler rme = (RestartMonitoringEnabler)iter.next();
+      logger.info("get monitor mode: " + rme.getName() + "=" + rme.getValue());
+    }
+    iter = conditionSubscription.getAddedCollection().iterator();
+    while(iter.hasNext()) {
+      RestartDefenseCondition rdc = (RestartDefenseCondition)iter.next();
+      logger.info("get condition: " + rdc.getName() + "=" + rdc.getValue());
+    }
+    Set set = operatingModeService.getAllOperatingModeNames();
+    logger.info("get all opmodes: " + set.size() + " -- " + set);*/
 
     //check for change in our modes
     Iterator it = opModeSubscription.getChangedCollection().iterator();
@@ -209,7 +236,7 @@ public class DeconflictHelper extends BlackboardClientComponent {
   public void opmodeDisabled(String name) {
     if(opModeEnabled.contains(name)) {
       opModeEnabled.remove(name);
-      logger.debug("remove " + name + " from opModeEnabled queue");
+      logger.info("remove " + name + " from opModeEnabled queue");
     }
   }
 
@@ -226,6 +253,9 @@ public class DeconflictHelper extends BlackboardClientComponent {
         fireLater(new RestartDefenseCondition(assetType, agents[i], defenseName, DefenseConstants.BOOL_FALSE));
         fireLater(new RestartDefenseEnabler(assetType, agents[i], defenseName));
         fireLater(new RestartMonitoringEnabler(assetType, agents[i], defenseName));
+        /*fireLater(new RestartDefenseCondition(defenseName + ":" + agents[i], DefenseConstants.BOOL_FALSE));
+        fireLater(new RestartDefenseEnabler(defenseName + ":" + agents[i]));
+        fireLater(new RestartMonitoringEnabler(defenseName + ":" + agents[i]));*/
       }
     }
   }
@@ -237,6 +267,11 @@ public class DeconflictHelper extends BlackboardClientComponent {
    * @param desiredValue The desired value.
    */
   public void changeApplicabilityCondition(String name, boolean desiredValue) {
+    if(conditionService == null) {
+      logger.warn("Cannot change condition object " + defenseName + ":" + name + ", ConditionService is null.");
+      return;
+    }
+
     String condition = defenseName + ":" + name;
 
     String temp;
@@ -347,12 +382,18 @@ public class DeconflictHelper extends BlackboardClientComponent {
     public RestartDefenseEnabler(String assetType, String asset, String defenseName) {
       super (assetType, asset, defenseName);
     }
+    /*public RestartDefenseEnabler(String str) {
+      super(str);
+    }*/
   }
 
   public class RestartMonitoringEnabler extends MonitoringEnablingOperatingMode {
     public RestartMonitoringEnabler (String assetType, String asset, String defenseName) {
       super (assetType, asset, defenseName);
     }
+    /*public RestartMonitoringEnabler(String str) {
+      super(str);
+    }*/
   }
 
   public class RestartDefenseCondition extends DefenseApplicabilityBinaryCondition {
@@ -362,6 +403,9 @@ public class DeconflictHelper extends BlackboardClientComponent {
     public RestartDefenseCondition(String assetType, String asset, String defenseName, DefenseConstants.OMCStrBoolPoint pt) {
       super(assetType, asset, defenseName, pt);
     }
+    /*public RestartDefenseCondition(String str, DefenseConstants.OMCStrBoolPoint pt) {
+      super(str, pt);
+    }*/
     protected void setValue(DefenseConstants.OMCStrBoolPoint newValue) {
       super.setValue(newValue);
     }
