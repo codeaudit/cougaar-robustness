@@ -98,7 +98,7 @@ public class SensorTypeLoader extends XMLLoader {
             
             //what to do when assetType is null? - create it, process it later?
             if (sensesAssetType == null) {
-                logger.warn("SensorType XML Error - sensesAssetType unknown: "+type);
+                logger.error("SensorType XML Error - sensesAssetType unknown: "+type);
                 return null;
             }
             
