@@ -64,7 +64,8 @@ Cougaar.new_experiment("UC4_Small_1AD_Tests").run(1) {
   #   alert level(select from: maximum, high, medium, low, minimum, undefined),
   #   alert duration, and
   #   assets
-  assets = Hash['node'=>'TRANS-NODE', 'node'=>'FWD-NODE']
+  #assets = Hash['node'=>'TRANS-NODE', 'node'=>'FWD-NODE']
+  assets = {"node"=>"TRANS-NODE, FWD-NODE"}
   do_action "PublishThreatAlert",
             "org.cougaar.tools.robustness.ma.HostLossThreatAlert",
             "1AD-SMALL-COMM",
