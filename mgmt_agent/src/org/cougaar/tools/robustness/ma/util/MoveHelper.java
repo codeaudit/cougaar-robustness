@@ -94,6 +94,7 @@ public class MoveHelper extends BlackboardClientComponent {
 
   private List moveQueue = new ArrayList();
   private Map movesInProcess = new HashMap();
+  private List remoteMoveRequestQueue = new ArrayList();
 
   private WakeAlarm wakeAlarm;
 
@@ -208,7 +209,7 @@ public class MoveHelper extends BlackboardClientComponent {
     if (agentId.toString().equals(origNode)) {
       moveAgent(agentName, destNode);
     } else {
-      UIDService uidService = (UIDService)getServiceBroker().getService(this,
+     /* UIDService uidService = (UIDService)getServiceBroker().getService(this,
           UIDService.class, null);
       HealthMonitorRequest hmr =
           new HealthMonitorRequestImpl(agentId,
@@ -232,7 +233,8 @@ public class MoveHelper extends BlackboardClientComponent {
                      " origNode=" + hmr.getOriginNode() +
                      " destNode=" + hmr.getDestinationNode());
       }
-      blackboard.publishAdd(hmrRa);
+      blackboard.publishAdd(hmrRa);*/
+      fireLater(new RemoteMoveRequest(agentName, origNode, destNode, communityName));
     }
   }
 
@@ -241,6 +243,60 @@ public class MoveHelper extends BlackboardClientComponent {
                                      agentId,
                                      SimpleMessageAddress.getSimpleMessageAddress(destNode)));
   }
+
+  protected void fireLater(RemoteMoveRequest rmr) {
+    synchronized (remoteMoveRequestQueue) {
+      remoteMoveRequestQueue.add(rmr);
+    }
+    if (blackboard != null) {
+      blackboard.signalClientActivity();
+    }
+  }
+
+  private void fireAll() {
+    int n;
+    List l;
+    synchronized (remoteMoveRequestQueue) {
+      n = remoteMoveRequestQueue.size();
+      if (n <= 0) {
+        return;
+      }
+      l = new ArrayList(remoteMoveRequestQueue);
+      remoteMoveRequestQueue.clear();
+    }
+    for (int i = 0; i < n; i++) {
+      sendRemoteRequest((RemoteMoveRequest) l.get(i));
+    }
+  }
+
+  private void sendRemoteRequest(RemoteMoveRequest rrr) {
+    UIDService uidService = (UIDService)getServiceBroker().getService(this,
+          UIDService.class, null);
+      HealthMonitorRequest hmr =
+          new HealthMonitorRequestImpl(agentId,
+                                       rrr.communityName,
+                                       HealthMonitorRequest.MOVE,
+                                       new String[] {rrr.agentName}
+                                       ,
+                                       rrr.origNode,
+                                       rrr.destNode,
+                                       uidService.nextUID());
+      RelayAdapter hmrRa =
+          new RelayAdapter(agentId, hmr, hmr.getUID());
+      hmrRa.addTarget(SimpleMessageAddress.
+                      getSimpleMessageAddress(rrr.origNode));
+      if (logger.isDebugEnabled()) {
+        logger.debug("Publishing HealthMonitorRequest:" +
+                     " request=" + hmr.getRequestTypeAsString() +
+                     " targets=" + targetsToString(hmrRa.getTargets()) +
+                     " community-" + hmr.getCommunityName() +
+                     " agents=" + arrayToString(hmr.getAgents()) +
+                     " origNode=" + hmr.getOriginNode() +
+                     " destNode=" + hmr.getDestinationNode());
+      }
+      blackboard.publishAdd(hmrRa);
+  }
+
 
   private long now() { return (new Date()).getTime(); }
 
@@ -507,4 +563,18 @@ public class MoveHelper extends BlackboardClientComponent {
       return was;
     }
   }
+
+  private class RemoteMoveRequest {
+    private String agentName;
+    private String origNode;
+    private String destNode;
+    private String communityName;
+    RemoteMoveRequest (String agent, String orig, String dest, String community) {
+      this.agentName = agent;
+      this.origNode = orig;
+      this.destNode = dest;
+      this.communityName = community;
+    }
+  }
+
 }
