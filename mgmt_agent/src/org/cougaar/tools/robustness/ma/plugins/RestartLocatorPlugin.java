@@ -124,6 +124,7 @@ public class RestartLocatorPlugin extends SimplePlugin
     myAgent = getMessageAddress();
 
     communityService = getCommunityService();
+    getCommunityToMonitor();
     communityService.addListener(this);
 
    //topologyService = getTopologyReaderService();
@@ -161,14 +162,14 @@ public class RestartLocatorPlugin extends SimplePlugin
       communityToMonitor = (String) communities.iterator().next();
       // Initialize configurable paramaeters from defaults and plugin arguments.
       try {
-        bbs.openTransaction();
+        //bbs.openTransaction();
         updateParams(restartLocatorProps);
         bbs.publishAdd(restartLocatorProps);
       } catch (Exception ex) {
-        log.error(ex.getMessage(), ex);
+        //log.error(ex.getMessage(), ex);
       }
       finally {
-        bbs.closeTransaction();
+        //bbs.closeTransaction();
       }
       // Print informational message defining current parameters
       log.info(paramsToString());
