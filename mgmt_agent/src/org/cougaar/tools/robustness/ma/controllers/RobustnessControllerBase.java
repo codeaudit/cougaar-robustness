@@ -869,7 +869,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
     } else if (model.hasAttribute(stateName + "_TIMEOUT")){
       expiration = model.getLongAttribute(stateName + "_TIMEOUT");
     }
-    model.setStateExpiration(name, expiration);
+    setExpiration(name, (int)expiration);
   }
 
   protected void setExpiration(String name) {
