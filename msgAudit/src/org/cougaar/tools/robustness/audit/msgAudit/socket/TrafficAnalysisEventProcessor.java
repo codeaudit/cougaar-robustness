@@ -22,8 +22,8 @@
  * Created on February 13, 2003, 7:59 PM
  */
 
-package LogPointAnalyzer.socket;
-import LogPointAnalyzer.*;
+package org.cougaar.tools.robustness.audit.msgAudit.socket;
+import org.cougaar.tools.robustness.audit.msgAudit.*;
 
 import org.cougaar.core.mts.logging.LogEvent;
 import java.util.Properties;
@@ -32,7 +32,7 @@ import java.util.Properties;
  *
  * @author  Administrator
  */
-public class TrafficAnalysisEventProcessor implements LogPointAnalyzer.socket.EventProcessor {
+public class TrafficAnalysisEventProcessor implements org.cougaar.tools.robustness.audit.msgAudit.socket.EventProcessor {
     
     protected String EVENT_TYPE = "TRAFFIC_EVENT";
     public String getProcessorType() { return EVENT_TYPE; }

@@ -22,9 +22,9 @@
  * Created on February 13, 2003, 7:52 PM
  */
 
-package LogPointAnalyzer.socket;
+package org.cougaar.tools.robustness.audit.msgAudit.socket;
 
-import LogPointAnalyzer.*;
+import org.cougaar.tools.robustness.audit.msgAudit.*;
 import org.cougaar.core.mts.logging.LogEvent;
 
 public interface EventProcessor {

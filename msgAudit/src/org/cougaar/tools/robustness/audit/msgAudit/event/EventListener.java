@@ -4,8 +4,8 @@
  * Created on February 21, 2003, 12:30 PM
  */
 
-package LogPointAnalyzer.event;
-import LogPointAnalyzer.*;
+package org.cougaar.tools.robustness.audit.msgAudit.event;
+import org.cougaar.tools.robustness.audit.msgAudit.*;
 
 /**
  *

@@ -22,8 +22,8 @@
  * Created on February 18, 2003, 1:35 PM
  */
 
-package LogPointAnalyzer;
-import LogPointAnalyzer.gui.*;
+package org.cougaar.tools.robustness.audit.msgAudit;
+import org.cougaar.tools.robustness.audit.msgAudit.gui.*;
 
 import java.util.Vector;
 import java.util.Iterator;

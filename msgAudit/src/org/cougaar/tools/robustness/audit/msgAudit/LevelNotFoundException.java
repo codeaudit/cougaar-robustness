@@ -21,7 +21,7 @@
  *
  * Created on December 18, 2002, 2:47 PM
  */
-package LogPointAnalyzer;
+package org.cougaar.tools.robustness.audit.msgAudit;
 /**
  *
  * @author  pazandak@objs.com

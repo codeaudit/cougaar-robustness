@@ -23,7 +23,7 @@
  * Created on December 17, 2002, 6:16 PM
  */
 
-package LogPointAnalyzer;
+package org.cougaar.tools.robustness.audit.msgAudit;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.PrintWriter;
@@ -38,8 +38,8 @@ import org.apache.log4j.*;
 import org.apache.log4j.net.SocketAppender;
 import org.apache.log4j.spi.*;
 
-import LogPointAnalyzer.socket.*;
-import LogPointAnalyzer.gui.*;
+import org.cougaar.tools.robustness.audit.msgAudit.socket.*;
+import org.cougaar.tools.robustness.audit.msgAudit.gui.*;
 
 /**
  *

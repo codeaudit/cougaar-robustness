@@ -4,9 +4,9 @@
  * Created on February 21, 2003, 12:32 PM
  */
 
-package LogPointAnalyzer.event;
+package org.cougaar.tools.robustness.audit.msgAudit.event;
 
-import LogPointAnalyzer.*;
+import org.cougaar.tools.robustness.audit.msgAudit.*;
 import java.util.Vector;
 /**
  *

@@ -22,7 +22,7 @@
  * Created on February 13, 2003, 12:37 PM
  */
 
-package LogPointAnalyzer.socket;
+package org.cougaar.tools.robustness.audit.msgAudit.socket;
 
 import java.util.Properties;
 import java.util.Hashtable;

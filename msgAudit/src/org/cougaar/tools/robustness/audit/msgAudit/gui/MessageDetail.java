@@ -4,9 +4,9 @@
  * Created on February 19, 2003, 10:32 AM
  */
  
-package LogPointAnalyzer.gui;
-import LogPointAnalyzer.*;
-import LogPointAnalyzer.event.*;
+package org.cougaar.tools.robustness.audit.msgAudit.gui;
+import org.cougaar.tools.robustness.audit.msgAudit.*;
+import org.cougaar.tools.robustness.audit.msgAudit.event.*;
 
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;

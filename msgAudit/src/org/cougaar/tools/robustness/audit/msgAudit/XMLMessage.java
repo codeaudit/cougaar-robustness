@@ -23,7 +23,7 @@
  * Created on December 17, 2002, 6:53 PM
  */
 
-package LogPointAnalyzer;
+package org.cougaar.tools.robustness.audit.msgAudit;
 
 import java.util.Properties;
 

@@ -4,7 +4,7 @@
  * Created on February 21, 2003, 5:03 PM
  */
 
-package LogPointAnalyzer.gui;
+package org.cougaar.tools.robustness.audit.msgAudit.gui;
 
 import java.util.Vector;
 import java.util.Iterator;

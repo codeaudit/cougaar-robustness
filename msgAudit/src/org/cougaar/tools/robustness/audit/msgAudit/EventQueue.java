@@ -5,7 +5,7 @@
  * Created on February 14, 2003, 4:32 PM
  */
 
-package LogPointAnalyzer;
+package org.cougaar.tools.robustness.audit.msgAudit;
 
 import org.cougaar.core.mts.logging.LogEvent;
 

@@ -4,10 +4,10 @@
  * Created on February 17, 2003, 10:32 AM
  */
 
-package LogPointAnalyzer.gui;
+package org.cougaar.tools.robustness.audit.msgAudit.gui;
 
-import LogPointAnalyzer.*;
-import LogPointAnalyzer.event.*;
+import org.cougaar.tools.robustness.audit.msgAudit.*;
+import org.cougaar.tools.robustness.audit.msgAudit.event.*;
 
 import javax.swing.UIManager;
 import java.awt.Component;

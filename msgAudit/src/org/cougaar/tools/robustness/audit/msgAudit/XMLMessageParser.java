@@ -22,7 +22,7 @@
  * Created on December 17, 2002, 6:53 PM
  */
 
-package LogPointAnalyzer;
+package org.cougaar.tools.robustness.audit.msgAudit;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import javax.xml.parsers.SAXParser;

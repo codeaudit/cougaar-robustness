@@ -22,8 +22,8 @@
  * Created on February 10, 2003, 4:58 PM
  */
 
-package LogPointAnalyzer.socket;
-import LogPointAnalyzer.*;
+package org.cougaar.tools.robustness.audit.msgAudit.socket;
+import org.cougaar.tools.robustness.audit.msgAudit.*;
 
 import java.net.Socket;
 import java.net.ServerSocket;

@@ -4,7 +4,7 @@
  * Created on February 17, 2003, 12:41 PM
  */
 
-package LogPointAnalyzer.gui;
+package org.cougaar.tools.robustness.audit.msgAudit.gui;
 
 /**
  *

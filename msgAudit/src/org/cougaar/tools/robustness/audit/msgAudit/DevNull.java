@@ -4,7 +4,7 @@
  * Created on December 31, 2002, 10:07 AM
  */
 
-package LogPointAnalyzer;
+package org.cougaar.tools.robustness.audit.msgAudit;
 import java.io.OutputStream;
 /**
  *

@@ -4,7 +4,7 @@
  * Created on February 10, 2003, 4:49 PM
  */
 
-package LogPointAnalyzer.socket;
+package org.cougaar.tools.robustness.audit.msgAudit.socket;
 
 /**
  *
