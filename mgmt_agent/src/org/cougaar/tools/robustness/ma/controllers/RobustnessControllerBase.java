@@ -314,6 +314,7 @@ public abstract class RobustnessControllerBase
    * @param csm   Status model associated with event
    */
   protected void processLocationChanges(CommunityStatusChangeEvent csce) {
+    locationChange(csce.getName(), csce.getPriorLocation(), csce.getCurrentLocation());
   }
 
   protected void processStatusExpirations(CommunityStatusChangeEvent csce) {
