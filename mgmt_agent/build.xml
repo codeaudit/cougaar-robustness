@@ -107,10 +107,25 @@
   <!-- Adds needed files to Cougaar install path -->
   <target name="deploy" depends="build" description="Copies needed files to $CIP">
     <copy file="${lib}/${jar}" toDir="${cougaar}/lib"/>
-    <mkdir dir="${cougaar}/robustness/configs"/>
-    <copy file="${configs}/communities.xml" toDir="${cougaar}/robustness/configs"/>
-    <copy file="${configs}/communities.xml" toDir="${cougaar}/configs/common"/>
-    <copy file="${configs}/loggingConfig.conf" toDir="${cougaar}/robustness/configs"/>
+    <copy file="configs/communities-full.xml" toDir="${cougaar}/robustness/configs/communities-full.xml"/>
+    <copy file="configs/communities-small.xml" toDir="${cougaar}/robustness/configs/communities-small.xml"/>
+    <copy file="confits/loggingConfig.conf" toDir="${cougaar}/robustness/configs"/>
+  </target>
+
+  <!-- Adds needed files to Cougaar install path -->
+  <target name="config-small" depends="build, deploy" description="Copies needed small-1ad files to $CIP">
+    <copy file="${cougaar}/robustness/configs/communities-small.xml" toDir="${cougaar}/configs/common/communities.xml"/>
+    <copy file="${cougaar}/robustness/configs/mic-local/uc1-small-1ad-layout.xml" toDir="${cougaar}/operator"/>
+    <copy file="${cougaar}/robustness/configs/mic-local/ron1-hosts.xml" toDir="${cougaar}/operator"/>
+    <copy file="${cougaar}/robustness/configs/mic-local/ron2-hosts.xml" toDir="${cougaar}/operator"/>
+    <copy file="${cougaar}/robustness/configs/mic-local/qing-hosts.xml" toDir="${cougaar}/operator"/>
+    <copy file="${cougaar}/robustness/configs/loggingConfig.conf" toDir="${cougaar}/configs/common"/>
+  </target>
+
+  <!-- Adds needed files to Cougaar install path -->
+  <target name="config-full" depends="build, deploy" description="Copies needed full-1ad files to $CIP">
+    <copy file="${cougaar}/robustness/configs/communities-full.xml" toDir="${cougaar}/configs/common/communities.xml"/>
+    <copy file="${cougaar}/robustness/configs/loggingConfig.conf" toDir="${cougaar}/configs/common"/>
   </target>
 
   <!-- Deletes generated files -->
@@ -393,7 +408,7 @@
     <mkdir dir="staging/csmart/config/lib/robustness/uc1"/>
     <mkdir dir="staging/csmart/config/rules/robustness/uc1"/>
     <mkdir dir="staging/csmart/config/scripts/robustness/uc1"/>
-    <mkdir dir="staging/robustness/configs"/>
+    <mkdir dir="staging/robustness/configs/mic-local"/>
 
     <antcall target="init"/>
     <antcall target="compile"/>
@@ -405,8 +420,17 @@
     <copy file="build.xml" toDir="staging/robustness"/>
     <copy toDir="staging/robustness/configs">
       <fileset dir="configs">
-         <include name="communities.xml"/>
+         <include name="communities-full.xml"/>
+         <include name="communities-small.xml"/>
          <include name="*loggingConfig.conf" />
+      </fileset>
+    </copy>
+    <copy toDir="staging/robustness/configs/mic-local">
+      <fileset dir="configs/mic-local">
+         <include name="ron1-hosts.xml" />
+         <include name="ron2-hosts.xml" />
+         <include name="qing-hosts.xml" />
+         <include name="uc1-small-1ad-layout.xml" />
       </fileset>
     </copy>
     <!-- <copy toDir="staging/csmart/config/doc/robustness/uc1">
@@ -424,12 +448,8 @@
     </copy>
     <copy toDir="staging/csmart/config/scripts/robustness/uc1">
       <fileset dir="csmart/config/scripts/robustness/uc1">
-         <include name="run.rb"/>
-         <include name="TINY-1AD-TRANS-AR.xml"/>
-         <include name="tiny_1ad_config.xml"/>
-         <include name="aruc1.xsl"/>
-         <include name="config.xml"/>
-         <include name="transform.sh"/>
+         <include name="uc1-small.rb"/>
+         <include name="uc1-full.rb"/>
       </fileset>
     </copy>
     <copy toDir="staging/robustness/doc">
