@@ -50,9 +50,9 @@ Cougaar.new_experiment("MyExperiment").run {
   do_action "StartSociety"
   #
 
-  wait_for  "CommunityReady"
+  wait_for  "Enclave1-Ready"
   do_action "KillNodes", "TINY-1AD-3"
-  wait_for  "CommunityReady"
+  wait_for  "Enclave1-Ready"
 
   wait_for  "OPlanReady"
   do_action "SendOPlan"
