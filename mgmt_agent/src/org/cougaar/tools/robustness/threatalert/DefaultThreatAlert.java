@@ -40,6 +40,13 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
   private List assets;
 
   /**
+   * Default constructor.
+   */
+  public DefaultThreatAlert() {
+    this.assets = new ArrayList();
+  }
+
+  /**
    * Create a new ThreatAlert.
    * @param source         ThreatAlert source
    * @param severityLevel  Severity level of alert
@@ -52,13 +59,13 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
                             Date              start,
                             Date              expiration,
                             UID               uid) {
+    this();
     this.source = source;
     this.severityLevel = severityLevel;
     this.creationTime = new Date();
     this.startTime = start.getTime();
     this.duration = expiration.getTime() - start.getTime();
     this.uid = uid;
-    this.assets = new ArrayList();
   }
 
   /**
@@ -74,12 +81,12 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
                             Date            start,
                             long            duration,
                             UID             uid) {
+    this();
     this.source = source;
     this.severityLevel = severityLevel;
     this.startTime = start.getTime();
     this.duration = duration;
     this.uid = uid;
-    this.assets = new ArrayList();
     this.creationTime = new Date();
   }
 
@@ -119,11 +126,15 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
   }
 
   public Asset[] getAffectedAssets() {
-    Asset[] as = new Asset[assets.size()];
-    for(int i=0; i<assets.size(); i++) {
-      as[i] = (Asset)assets.get(i);
+    if (assets == null) {
+      return new Asset[0];
+    } else {
+      Asset[] as = new Asset[assets.size()];
+      for (int i = 0; i < assets.size(); i++) {
+        as[i] = (Asset) assets.get(i);
+      }
+      return as;
     }
-    return as;
   }
 
   /**
@@ -172,6 +183,7 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
 
   public String toString() {
     return "ThreatAlert:" +
+        " class=" + this.getClass().getName() +
         " severityLevel=" + getSeverityLevelAsString() +
         " start=" + startTime +
         " expired=" + getExpirationTime() +
@@ -202,7 +214,7 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
   }
 
   public void setUID(UID uid) {
-    if (uid != null) {
+    if (this.uid != null) {
       RuntimeException rt = new RuntimeException("Attempt to call setUID() more than once.");
       throw rt;
     }
