@@ -6,6 +6,6 @@
    <fileobject name="ActionMonitoringPlugin.java">
       <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="ActionMonitoringPlugin"/>
       <attr name="class_dependency_org.cougaar.coordinator.DeconflictionPluginBase" stringvalue="ActionMonitoringPlugin"/>
-      <attr name="class_dependency_org.cougaar.core.agent.service.alarm.Alarm" stringvalue="ActionMonitoringPlugin.DefenseTimeoutAlarm;ActionMonitoringPlugin.ActionTimeoutAlarm"/>
+      <attr name="class_dependency_org.cougaar.core.agent.service.alarm.Alarm" stringvalue="ActionMonitoringPlugin.ActionTimeoutAlarm"/>
    </fileobject>
 </attributes>
