@@ -372,8 +372,8 @@ public class HealthStatus implements
    */
   protected void setState(String state) {
     currentState = state;
-    //Attributes attrs = new BasicAttributes("RunState", currentState);
-    //commSvc.setEntityAttributes(communityName, agentId.toString(), attrs);
+    Attributes attrs = new BasicAttributes("RunState", currentState);
+    commSvc.setEntityAttributes(communityName, agentId.toString(), attrs);
   }
 
   /**
@@ -381,16 +381,29 @@ public class HealthStatus implements
    * @return Current run state for agent.
    */
   protected String getState() {
-    return currentState;
-    /*
+    //return currentState;
+
     try {
       Attributes attrs =
         commSvc.getEntityAttributes(communityName, agentId.toString());
-      return (String)attrs.get("RunState").get();
+      Attribute stateAttr = attrs.get("RunState");
+      if (stateAttr != null) {
+        String state = (String)stateAttr.get();
+        if (state == null || state.trim().length() == 0) {
+          setState(currentState);
+          return currentState;
+        } else {
+          return state;
+        }
+      } else {
+        setState(currentState);
+        return currentState;
+      }
     } catch (Exception ex) {
+      ex.printStackTrace();
       return new String();
     }
-    */
+
   }
 
 

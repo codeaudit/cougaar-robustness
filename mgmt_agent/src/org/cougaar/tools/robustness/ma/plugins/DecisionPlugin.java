@@ -18,6 +18,7 @@
 package org.cougaar.tools.robustness.ma.plugins;
 
 import org.cougaar.robustness.restart.plugin.*;
+import org.cougaar.tools.robustness.ma.ldm.RestartLocationRequest;
 import java.util.*;
 
 import org.cougaar.core.blackboard.IncrementalSubscription;
@@ -144,7 +145,8 @@ public class DecisionPlugin extends SimplePlugin {
     switch (status) {
       case HealthStatus.NO_RESPONSE:
         // Agent is most likely dead.  Initiate a restart.
-        RestartLocationRequest req = new RestartLocationRequest();
+        RestartLocationRequest req =
+          new RestartLocationRequest(RestartLocationRequest.LOCATE_NODE);
         req.addAgent(hs.getAgentId());
         bbs.publishAdd(req);
         hs.setState(HealthStatus.RESTART);

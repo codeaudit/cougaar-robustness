@@ -340,10 +340,10 @@
     </java>
   </target>
 
-  <!-- Runs YellowPages viewer utility -->
-    <target name="ypviewer" description="Runs YellowPages viewer utility">
+  <!-- Runs Robustness UI application -->
+    <target name="ui" description="Runs Robustness UI application">
     <java dir="${basedir}" fork="yes"
-      classname="org.cougaar.tools.robustness.ma.test.YellowPagesViewer">
+      classname="org.cougaar.tools.robustness.ma.ui.RobustnessUI">
       <classpath>
         <pathelement location="${lib}/${jar}"/>
         <fileset dir="${cougaar}/lib">

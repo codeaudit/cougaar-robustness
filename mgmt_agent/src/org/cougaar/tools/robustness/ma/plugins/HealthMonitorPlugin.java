@@ -333,9 +333,11 @@ public class HealthMonitorPlugin extends SimplePlugin {
    */
   private void evaluateHealthStatus() {
     Date now = new Date();
+    //synchronized (membersHealthStatus) {
     for (Iterator it = membersHealthStatus.iterator(); it.hasNext();) {
       HealthStatus hs = (HealthStatus)it.next();
       String state = hs.getState();
+      //log.debug(hs.getAgentId() + " state=" + state);
       if (state.equals(HealthStatus.INITIAL)) {
         switch (hs.getHeartbeatRequestStatus()) {
           case HealthStatus.UNDEFINED:
@@ -368,7 +370,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
               log.warn("HeartbeatRequest for agent '" + hs.getAgentId() + "' FAILED");
 			        hs.setHeartbeatRequestRetries(0);
               doHealthCheck(hs, HealthStatus.NO_RESPONSE);
-			}
+			      }
             break;
           default:
         }
@@ -414,6 +416,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
         }
       } else if (state.equals(HealthStatus.RESTART)) {
         int pingStatus = hs.getPingStatus();
+        //log.debug("agent=" + hs.getAgentId() + " state=" + state + " pingStatus=" + pingStatus);
         switch (pingStatus) {
           case HealthStatus.UNDEFINED:
             hs.setPingTimestamp(new Date());
@@ -432,8 +435,11 @@ public class HealthMonitorPlugin extends SimplePlugin {
             hs.setPingStatus(HealthStatus.UNDEFINED);  // Initiates retry
           default:
         }
+      } else {
+        log.warn("Invalid run state: agent=" + hs.getAgentId() + ", state=" + state);
       }
     }
+    //}
   }
 
   /**
@@ -444,6 +450,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
   private void processRosterChanges(CommunityRoster roster) {
     Collection cmList = roster.getMembers();
     // If first time, copy members from roster to local list
+    //synchronized (membersHealthStatus) {
     if (membersHealthStatus.isEmpty()) {
       //log.debug(roster.toString());
       for (Iterator it = cmList.iterator(); it.hasNext();) {
@@ -498,6 +505,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
         }
       }
     }
+    //}
   }
 
 
@@ -591,10 +599,12 @@ public class HealthMonitorPlugin extends SimplePlugin {
    * @return  True if the agent is currently being monitored
    */
   private boolean hasHealthStatus(ClusterIdentifier agentId) {
+    //synchronized (membersHealthStatus) {
     for (Iterator it = membersHealthStatus.iterator(); it.hasNext();) {
       HealthStatus hs = (HealthStatus)it.next();
       if (hs.getAgentId().equals(agentId)) return true;
     }
+    //}
     return false;
   }
 
@@ -604,10 +614,12 @@ public class HealthMonitorPlugin extends SimplePlugin {
    * @return  HealthStatus object associated with specified agent ID
    */
   private HealthStatus getHealthStatus(MessageAddress agentId) {
+    //synchronized (membersHealthStatus) {
     for (Iterator it = membersHealthStatus.iterator(); it.hasNext();) {
       HealthStatus hs = (HealthStatus)it.next();
       if (hs.getAgentId().equals(agentId)) return hs;
     }
+    //}
     return null;
   }
 

@@ -1,8 +1,5 @@
 /*
  * <copyright>
- *  Copyright 1997-2001 Mobile Intelligence Corp
- *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
- *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
@@ -18,7 +15,7 @@
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
  */
-package org.cougaar.tools.robustness.ma.test;
+package org.cougaar.tools.robustness.ma.ui;
 
 import javax.servlet.*;
 import javax.servlet.http.*;
@@ -35,6 +32,7 @@ import org.cougaar.core.service.NamingService;
 import org.cougaar.core.util.PropertyNameValue;
 import org.cougaar.core.node.NodeIdentificationService;
 import org.cougaar.core.service.TopologyReaderService;
+import org.cougaar.core.service.TopologyEntry;
 
 import org.cougaar.core.service.community.CommunityMember;
 
@@ -44,10 +42,12 @@ import org.cougaar.core.mts.MTImpl;
 import org.cougaar.core.node.NodeIdentifier;
 
 /**
- * The servlet fetch naming service from blackboard and get all information of
- * yellow pages.
+ * This servlet provides an interface to the ManagementAgent for the
+ * RobustnessUI.  This servlet is used to retrieve community information
+ * from the name server and to publish vacate requests to ManagementAgents
+ * blackboard.
  */
-public class YellowPagesServlet extends BaseServletComponent
+public class RobustnessServlet extends BaseServletComponent
 {
   private NamingService ns;
   private TopologyReaderService trs;
@@ -57,7 +57,7 @@ public class YellowPagesServlet extends BaseServletComponent
    * Hard-coded servlet path.
    */
   protected String getPath() {
-    return "/yellowpages";
+    return "/robustness";
   }
 
   /**
@@ -110,7 +110,7 @@ public class YellowPagesServlet extends BaseServletComponent
           //out.print("<ul>\n");
           String ncpN = ncp.getName();
           String ncpC = ncp.getClassName();
-          if(ncpN.equalsIgnoreCase("Topology"))
+         /* if(ncpN.equalsIgnoreCase("Topology"))
           {
             Hashtable list = buildTopologyTable(idc);
             totalList.put("Topology", list);
@@ -137,10 +137,10 @@ public class YellowPagesServlet extends BaseServletComponent
           //out.print("</ul>\n");
 
           else
-          {
+          {*/
             Hashtable communities = buildCommunitiesTable(idc, indexName);
             totalList.put("Communities", communities);
-          }
+          //}
         }
         oout.writeObject(totalList);
         //out.print("</ul>\n");
@@ -169,6 +169,8 @@ public class YellowPagesServlet extends BaseServletComponent
              List contents = new ArrayList();
              contents.add(getAttributes(communitiesContext, ncPair.getName())); //attributes of this community
              Hashtable entities = new Hashtable(); //records all entities of this community
+             Hashtable hosts = new Hashtable(); //records all hosts of this community
+             Hashtable allnodes = new Hashtable(); //records all nodes of this community
              DirContext entityContext = (DirContext)communitiesContext.lookup(ncPair.getName());
              NamingEnumeration entityEnums = entityContext.list("");
              while(entityEnums.hasMore())
@@ -176,10 +178,52 @@ public class YellowPagesServlet extends BaseServletComponent
                NameClassPair ncp = (NameClassPair)entityEnums.next();
                String entityName = ncp.getName();
                if(ncp.getClassName().equals("org.cougaar.core.agent.ClusterIdentifier"))
-                   entityName += "  (" + trs.getParentForChild(trs.NODE, trs.AGENT, ncp.getName()) + ")";
+               {
+                   String nodeName = trs.getParentForChild(trs.NODE, trs.AGENT, ncp.getName());
+                   entityName += "  (" + nodeName + ")";
+                   String hostName = trs.getEntryForAgent(ncp.getName()).getHost();
+                   if(hosts.containsKey(hostName))
+                   {
+                     Hashtable nodes = (Hashtable)hosts.get(hostName);
+                     if(nodes.containsKey(nodeName))
+                     {
+                       List temp = (List)nodes.get(nodeName);
+                       temp.add(ncp.getName());
+                     }
+                     else
+                     {
+                       List agents = new ArrayList();
+                       agents.add(ncp.getName());
+                       nodes.put(nodeName, agents);
+                     }
+                   }
+                   else //build a new entry into the hashtable
+                   {
+                     Hashtable temp = new Hashtable();
+                     List agents = new ArrayList();
+                     agents.add(ncp.getName());
+                     temp.put(nodeName, agents);
+                     hosts.put(hostName, temp);
+                   }
+
+                   if(allnodes.containsKey(nodeName))
+                   {
+                     List agents = (List)allnodes.get(nodeName);
+                     if(!agents.contains(ncp.getName()))
+                       agents.add(ncp.getName());
+                   }
+                   else
+                   {
+                     List agents = new ArrayList();
+                     agents.add(ncp.getName());
+                     allnodes.put(nodeName, agents);
+                   }
+               }
                entities.put(entityName, getAttributes(entityContext, ncp.getName()));
              }
              contents.add(entities);
+             contents.add(hosts);
+             contents.add(allnodes);
              list.put(ncPair.getName(), contents);
         }
       }catch(NamingException e){e.printStackTrace();}

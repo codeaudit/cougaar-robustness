@@ -15,7 +15,7 @@
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
  */
-package org.cougaar.tools.robustness.ma.plugins;
+package org.cougaar.tools.robustness.ma.ldm;
 
 import java.util.*;
 
@@ -30,14 +30,26 @@ import org.cougaar.core.blackboard.Publishable;
  */
 public class RestartLocationRequest implements java.io.Serializable {
 
+  // Request codes
+  public static final int LOCATE_NODE = 0;
+  public static final int LOCATE_HOST = 1;
+
   // Request status codes
   public static final int NEW        = 0;
   public static final int IN_PROCESS = 1;
   public static final int SUCCESS    = 2;
   public static final int FAIL       = 3;
 
+  // Request type
+  private int requestType = LOCATE_NODE;
+
   // Agents to be restarted/relocated
   private Set agents = new HashSet();
+
+  // Collection of nodes/hosts that should not be
+  // considered for restart/move destionation
+  private Collection excludedNodes = new Vector();
+  private Collection excludedHosts = new Vector();
 
   // Current status
   private int status = NEW;
@@ -47,6 +59,18 @@ public class RestartLocationRequest implements java.io.Serializable {
 
   // Name of destination node
   private String nodeName = null;
+
+  public RestartLocationRequest(int requestType) {
+    this.requestType = requestType;
+  }
+
+  /**
+   * Returns request type.
+   * @return Request type
+   */
+  public int getRequestType() {
+    return this.requestType;
+  }
 
   /**
    * Adds an agent to set of agents to be relocated/restarted.
@@ -111,4 +135,39 @@ public class RestartLocationRequest implements java.io.Serializable {
   public String getNode() {
     return this.nodeName;
   }
+
+  /**
+   * Sets name of hosts that should not be considered as a possible destination.
+   * @param hostNames Collection of host names
+   */
+  public void setExcludedHosts(Collection hostNames) {
+    this.excludedHosts = hostNames;
+  }
+
+  /**
+   * Gets Collection of host names that sould be excluded from consideration
+   * as a restart/move destination.
+   * @return  Collection of host names
+   */
+  public Collection getExcludedHosts() {
+    return this.excludedHosts;
+  }
+
+  /**
+   * Sets name of nodes that should not be considered as a possible destination.
+   * @param nodeNames Collection of host names
+   */
+  public void setExcludedNodes(Collection nodeNames) {
+    this.excludedNodes = nodeNames;
+  }
+
+  /**
+   * Gets Collection of node names that sould be excluded from consideration
+   * as a restart/move destination.
+   * @return  Collection of node names
+   */
+  public Collection getExcludedNodes() {
+    return this.excludedNodes;
+  }
+
 }

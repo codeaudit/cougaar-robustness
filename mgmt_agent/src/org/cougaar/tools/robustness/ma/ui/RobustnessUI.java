@@ -1,8 +1,5 @@
 /*
  * <copyright>
- *  Copyright 1997-2001 Mobile Intelligence Corp
- *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
- *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
@@ -18,7 +15,7 @@
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
  */
-package org.cougaar.tools.robustness.ma.test;
+package org.cougaar.tools.robustness.ma.ui;
 
 import javax.swing.*;
 import javax.swing.tree.*;
@@ -41,9 +38,9 @@ import org.cougaar.lib.web.arch.root.GlobalEntry;
 import org.cougaar.core.mts.MTImpl;
 
 /**
- * Utility for viewing the yellow pages contents.
+ * Utility for viewing the Robustness Communities and sending vacate commands.
  */
-public class YellowPagesViewer extends JPanel
+public class RobustnessUI extends JPanel
 {
   private JTree tree;
   private ArrayList path = new ArrayList();
@@ -51,12 +48,13 @@ public class YellowPagesViewer extends JPanel
   private Hashtable nodeandpath = new Hashtable();
   private Point lastVisiblePoint;
   private JScrollPane pane;
+  private DefaultMutableTreeNode selectedNode;
 
   private static String host = "localhost";
   private static String port = "8800";
   private static String agent = "TestAgent";
 
-  public YellowPagesViewer()
+  public RobustnessUI()
   {
     pane = new JScrollPane();
     tree = getTreeFromCommunity(new ArrayList());
@@ -95,7 +93,7 @@ public class YellowPagesViewer extends JPanel
     for(Enumeration enums=table.keys(); enums.hasMoreElements();)
     {
       String name = (String)enums.nextElement();
-      if(name.equalsIgnoreCase("Topology"))
+     /* if(name.equalsIgnoreCase("Topology"))
       {
         Hashtable c = (Hashtable)table.get(name);
         DefaultMutableTreeNode toNode = buildTopologyTree(c, nodes);
@@ -124,12 +122,12 @@ public class YellowPagesViewer extends JPanel
         root.add(subroot);
       }
       else
-      {
+      {*/
         Hashtable c = (Hashtable)table.get("Communities");
         DefaultMutableTreeNode communities = buildCommunitySubTree(c, nodes);
         root.add(communities);
         nodes.add(communities);
-      }
+      //}
     }
 
 
@@ -154,6 +152,39 @@ public class YellowPagesViewer extends JPanel
       }
     });
     tree.setCellRenderer(new ElementTreeCellRenderer());
+    tree.expandRow(1);
+    final JPopupMenu popup = new JPopupMenu();
+    final JMenuItem command = new JMenuItem("command");
+      command.addActionListener(new ActionListener(){
+        public void actionPerformed(ActionEvent e)
+        {
+
+        }
+      });
+      popup.add(command);
+
+      tree.addMouseListener(new MouseAdapter(){
+        public void mousePressed(MouseEvent e) {
+          maybeShowPopup(e);
+        }
+        public void mouseReleased(MouseEvent e) {
+          maybeShowPopup(e);
+        }
+
+        private void maybeShowPopup(MouseEvent e) {
+          if (e.isPopupTrigger())
+          {
+            int row = tree.getRowForLocation(e.getX(), e.getY());
+            TreePath path = tree.getPathForRow(row);
+            if(path != null)
+            {
+              selectedNode = (DefaultMutableTreeNode)tree.getLastSelectedPathComponent();
+              if(((DefaultMutableTreeNode)selectedNode.getParent()).getUserObject().equals("hosts"))
+                popup.show(e.getComponent(), e.getX(), e.getY());
+            }
+          }
+        }
+      });
 
     for(Iterator it = nodes.iterator(); it.hasNext();)
     {
@@ -255,6 +286,61 @@ public class YellowPagesViewer extends JPanel
             entityNode.add(nameNode);
           }
           cnode.add(entityNode);
+        }
+
+        Hashtable hosts = (Hashtable)contents.get(2);
+        if(hosts.size() > 0)
+        {
+          DefaultMutableTreeNode hostNode = new DefaultMutableTreeNode("hosts");
+          for(Enumeration enum = hosts.keys(); enum.hasMoreElements();)
+          {
+            String hostName = (String)enum.nextElement();
+            DefaultMutableTreeNode hostNameNode = new DefaultMutableTreeNode(hostName);
+            hostNode.add(hostNameNode);
+            nodes.add(hostNameNode);
+            Hashtable nodetable = (Hashtable)hosts.get(hostName);
+            for(Enumeration node_enum = nodetable.keys(); node_enum.hasMoreElements();)
+            {
+              String nodeName = (String)node_enum.nextElement();
+              DefaultMutableTreeNode nodeNameNode = new DefaultMutableTreeNode(nodeName);
+              hostNameNode.add(nodeNameNode);
+              nodes.add(nodeNameNode);
+              List agents = (List)nodetable.get(nodeName);
+              for(int i=0; i<agents.size(); i++)
+              {
+                DefaultMutableTreeNode agentNode = new DefaultMutableTreeNode((String)agents.get(i));
+                nodeNameNode.add(agentNode);
+                nodes.add(nodeNameNode);
+              }
+            }
+          }
+          cnode.add(hostNode);
+          nodes.add(hostNode);
+        }
+
+        Hashtable allNodes = (Hashtable)contents.get(3);
+        if(allNodes.size() > 0)
+        {
+          DefaultMutableTreeNode nodesTitle = new DefaultMutableTreeNode("nodes");
+          for(Enumeration enum = allNodes.keys(); enum.hasMoreElements();)
+          {
+            String nodeName = (String)enum.nextElement();
+            DefaultMutableTreeNode nodeNameNode = new DefaultMutableTreeNode(nodeName);
+            nodesTitle.add(nodeNameNode);
+            nodes.add(nodeNameNode);
+            List agents = (List)allNodes.get(nodeName);
+            if(agents.size() > 0)
+            {
+              for(int i=0; i<agents.size(); i++)
+              {
+                DefaultMutableTreeNode agentNode = new DefaultMutableTreeNode((String)agents.get(i));
+                nodeNameNode.add(agentNode);
+                nodes.add(agentNode);
+              }
+            }
+          }
+          cnode.add(nodesTitle);
+          nodes.add(nodesTitle);
         }
       }catch(NamingException e){e.printStackTrace();}
 
@@ -407,7 +493,7 @@ public class YellowPagesViewer extends JPanel
     ObjectInputStream oin = null;
     try{
       // First, try using the servlet in the TestAgent
-      url1 = new URL("http://" + host + ":" + port + "/$" + agent + "/yellowpages");
+      url1 = new URL("http://" + host + ":" + port + "/$" + agent + "/robustness");
       URLConnection connection = url1.openConnection();
       connection.setDoInput(true);
       connection.setDoOutput(true);
@@ -424,7 +510,7 @@ public class YellowPagesViewer extends JPanel
      try {
         String agent = (String)agents.get(i);
         url1 = new URL("http://" + host + ":" + port + "/$" +
-          agent + "/yellowpages");
+          agent + "/robustness");
         URLConnection connection = url1.openConnection();
         connection.setDoInput(true);
         connection.setDoOutput(true);
@@ -478,16 +564,16 @@ public class YellowPagesViewer extends JPanel
       case 1:
         host = args[0];
     }
-    JFrame frame = new JFrame("Yellow Pages Viewer");
+    JFrame frame = new JFrame("Robustness UI");
     frame.addWindowListener(new WindowAdapter() {
       public void windowClosing(WindowEvent e) {
         System.exit(0); }
      });
     frame.setSize(600, 500);
     relocateFrame(frame);
-    JPanel viewer = new YellowPagesViewer();
+    JPanel ui = new RobustnessUI();
     frame.getContentPane().setLayout(new BorderLayout());
-    frame.getContentPane().add(viewer, BorderLayout.CENTER);
+    frame.getContentPane().add(ui, BorderLayout.CENTER);
     frame.setVisible(true);
 
   }
@@ -512,11 +598,16 @@ public class YellowPagesViewer extends JPanel
       Object obj = node.getUserObject();
       if(obj == null) return this;
       String str = ((String)obj).trim();
-      if(str.equals("Topology") || str.equals("Agents") || str.equals("Webservers")
-        || str.equals("Communities") || str.equals("MessageTransports"))
+      //if(str.equals("Topology") || str.equals("Agents") || str.equals("Webservers")
+        //|| str.equals("Communities") || str.equals("MessageTransports"))
+      if(str.startsWith("Community:"))
       {
         this.setFont(new Font("Dialog", Font.BOLD, 12));
         ((JLabel)result).setForeground(Color.blue);
+      }
+      if(str.equals("attributes") || str.equals("entities") || str.equals("hosts") || str.equals("nodes"))
+      {
+        ((JLabel)result).setForeground(Color.red);
       }
       if(str.equals(societyNode))
         ((JLabel)result).setForeground(Color.red);
