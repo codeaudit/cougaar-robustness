@@ -19,7 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 27 Sep 2002: Add reception exception and inband ack creator. (OBJS)
+ * 27 Sep 2002: Add inband acking support. (OBJS)
  * 23 Apr 2002: Split out from MessageAckingAspect. (OBJS)
  * 17 May 2001: Created. (OBJS)
  */
@@ -31,7 +31,8 @@ import org.cougaar.core.mts.*;
 
 public class PureAckMessage extends AttributedMessage
 {
-  private Exception receptionException;
+  private static final String RECEPTION_EXCEPTION = "MessageReceptionException";
+  private static final String INBAND_NODE_TIME =    "InbandNodeTime";
 
   public PureAckMessage () {}  // needed for incoming deserialization
 
@@ -57,8 +58,19 @@ public class PureAckMessage extends AttributedMessage
   public static PureAckMessage createInbandPureAckMessage (AttributedMessage msg)
   {
     PureAck pureAck = new PureAck();
-    String fromNode = MessageUtils.getFromAgentNode (msg);
-    pureAck.setLatestAcks (MessageAckingAspect.getAcksToSend (fromNode));
+
+    if (msg != null)
+    {
+      String fromNode = MessageUtils.getFromAgentNode (msg);
+      pureAck.setLatestAcks (MessageAckingAspect.getAcksToSend (fromNode));
+    }
+    else
+    {
+      MessageAddress originator = new MessageAddress ("Unknown");
+      MessageAddress target = new MessageAddress ("Unknown");
+      msg = new AttributedMessage (new NullMessage (originator, target));
+    }
+
     return new PureAckMessage (msg, pureAck);
   }
 
@@ -69,12 +81,28 @@ public class PureAckMessage extends AttributedMessage
 
   public void setReceptionException (Exception e)
   {
-    receptionException = e;
+    setAttribute (RECEPTION_EXCEPTION, e);
   }
 
   public Exception getReceptionException ()
   {
-    return receptionException;
+    return (Exception) getAttribute (RECEPTION_EXCEPTION);
+  }
+
+  public boolean hasReceptionException ()
+  {
+    return (getReceptionException() != null);
+  }
+
+  public void setInbandNodeTime (int time)
+  {
+    setAttribute (INBAND_NODE_TIME, new Integer(time));
+  }
+
+  public int getInbandNodeTime ()
+  {
+    Integer i = (Integer) getAttribute (INBAND_NODE_TIME);
+    return (i != null ? i.intValue() : -1);
   }
 
   public String toString ()

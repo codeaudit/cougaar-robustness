@@ -116,8 +116,9 @@ public class MessageOrderingAspect extends StandardAspect
 
         if (num < nextNum)
         {
-          //  Duplicate message!
-        
+          //  Duplicate message
+
+          if (log.isDebugEnabled()) log.debug ("Duplicate (dropped): " +MessageUtils.toString(msg));
           status = MessageAttributes.DELIVERY_STATUS_DROPPED_DUPLICATE;
         }
         else if (num == nextNum)
@@ -151,7 +152,7 @@ public class MessageOrderingAspect extends StandardAspect
                 setNextMessageNumber (msgs[i], nextNum+1);
                 queue.remove (msgs[i]);
               }
-              else 
+              else if (log.isWarnEnabled()) 
               {
                 //  Report any messages that have been waiting for a long time
                 
@@ -159,9 +160,7 @@ public class MessageOrderingAspect extends StandardAspect
 
                 if (addTime == null)
                 {
-                  if (log.isWarnEnabled()) 
-                    log.warn ("Unexpected null Q addTime! " +MessageUtils.toString(msgs[i]));
-
+                  log.warn ("Unexpected null Q addTime! " +MessageUtils.toString(msgs[i]));
                   addTime = new Long (now());
                   msgs[i].setLocalAttribute (QUEUE_ADD_TIME, addTime); 
                 }
@@ -180,16 +179,13 @@ public class MessageOrderingAspect extends StandardAspect
 
                   if (waitTime >= (count.value+1)*waitingMsgReportInterval*60*1000)
                   {
-                    if (log.isWarnEnabled()) 
-                      log.warn ("Msg has been on waiting queue for " +(waitTime/(60*1000))+
-                        " minutes: " +MessageUtils.toString(msgs[i]));
-
+                    log.warn ("Msg has been on waiting queue for " +(waitTime/(60*1000))+
+                              " minutes: " +MessageUtils.toString(msgs[i]));
                     count.value++;
                   }
                 }
               }
-
-              break;
+              else break;
             }
           }  
 

@@ -63,8 +63,7 @@ class MessageResender implements Runnable
   {
     //  Sanity checks
 
-    if (MessageUtils.isSomePureAckMessage (msg)) return;
-    if (MessageUtils.getMessageNumber(msg) == 0) return;
+    if (!MessageUtils.isAckableMessage (msg)) return;
 
     //  Possibly add (or remove) the message to (from) the agent state
 
@@ -131,10 +130,9 @@ class MessageResender implements Runnable
 
   public void remove (AttributedMessage msg) 
   {
-    //  Sanity checks
+    //  Sanity check
 
-    if (MessageUtils.isSomePureAckMessage (msg)) return;
-    if (MessageUtils.getMessageNumber(msg) == 0) return;
+    if (!MessageUtils.isAckableMessage (msg)) return;
 
     //  Possibly remove the message from the agent state
 
@@ -145,7 +143,12 @@ class MessageResender implements Runnable
 
       if (agentState != null)
       {
+/*
+   For right now only remove the message from the agent state if it has been acked
+
         if (MessageUtils.getAck(msg).getSendCount()==0 || MessageAckingAspect.wasSuccessfulSend(msg))
+*/
+        if (MessageAckingAspect.wasSuccessfulSend(msg))
         {
           synchronized (agentState)
           {

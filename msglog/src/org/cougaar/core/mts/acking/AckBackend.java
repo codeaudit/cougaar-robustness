@@ -247,7 +247,7 @@ Mobility issue: arriving agent is now local, msg was for it when it was on other
           if (log.isInfoEnabled()) log.info ("AckBackend: Duplicate msg dropped, " +
             "pure ack scheduled: " +msgString);
 
-          //  Disable any acks the message is carrying as a precaution for funny business
+          //  Disable any acks the dup is carrying as a precaution for funny business
 
           ack.setLatestAcks (null);
           ack.setSpecificAcks (null);

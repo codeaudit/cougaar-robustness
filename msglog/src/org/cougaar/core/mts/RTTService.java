@@ -37,4 +37,6 @@ public interface RTTService extends Service
   public float getCommRTTPercentFilled (DestinationLink sendLink, String node, DestinationLink recvLink);
   public int getBestCommRTTForLink (DestinationLink link, String node);
   public int getBestFullRTTForLink (DestinationLink link, String node);
+  public void updateInbandRTT (DestinationLink sendLink, String node, int rtt);
+  public void updateInbandRTT (String node, String recvLink, int rtt);
 }

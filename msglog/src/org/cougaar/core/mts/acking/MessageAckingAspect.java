@@ -204,8 +204,6 @@ public class MessageAckingAspect extends StandardAspect
 
     public synchronized void registerClient (MessageTransportClient client)
     {
-      if (log.isDebugEnabled()) log.debug ("AgentArrivals: entered register client");
-        
       super.registerClient (client);
 
       //  At this point we may now access the AgentState of the agent.

@@ -100,6 +100,7 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
 
   private static final int linkCost;
   private static final boolean doInbandAcking;
+  private static final boolean doInbandRTTUpdates;
   private static final boolean useMessageDigest;
   private static final String messageDigestType;
   private static final int socketTimeout;
@@ -107,6 +108,7 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
 
   private LoggingService log;
   private SocketClosingService socketCloser;
+  private RTTService rttService;
   private Hashtable specCache, addressCache;
   private HashMap links;
 
@@ -117,8 +119,11 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
     String s = "org.cougaar.message.protocol.socket.cost";  // one way
     linkCost = Integer.valueOf(System.getProperty(s,"5000")).intValue();  // was 1000
 
-    s = "org.cougaar.message.transport.socket.doInbandAcking";
+    s = "org.cougaar.message.protocol.socket.doInbandAcking";
     doInbandAcking = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
+
+    s = "org.cougaar.message.protocol.socket.doInbandRTTUpdates";
+    doInbandRTTUpdates = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
 
     s = "org.cougaar.message.protocol.socket.useMessageDigest";
     useMessageDigest = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
@@ -152,6 +157,11 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
       ServiceBroker sb = getServiceBroker();
       socketCloser = (SocketClosingService) sb.getService (this, SocketClosingService.class, null);
       if (socketCloser == null) log.error ("Cannot do socket timeouts - SocketClosingService not available!");
+    }
+
+    if (doInbandRTTUpdates)
+    {
+      rttService = (RTTService) getServiceBroker().getService (this, RTTService.class, null);
     }
 
     if (startup() == false)
@@ -378,6 +388,10 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
       //  It appears that the only way we can determine whether our socket
       //  connection is still valid is to try using it.  So we try it,
       //  and if it fails, we create a new connected socket and try again.
+
+      String sockString = null;
+      PureAckMessage pam = null;
+      long sendTime = 0, receiveTime = 0;
       
       for (int tryN=1; tryN<=2; tryN++)  // try at most twice
       {
@@ -391,7 +405,7 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
 
             if (log.isDebugEnabled()) log.debug ("Creating socket to " +destination+ " with " +spec);
             socket = getSocket (spec);
-            if (log.isDebugEnabled()) log.debug ("Created socket " +socket);
+            if (log.isDebugEnabled()) log.debug ("Created socket " + (sockString = socket.toString()));
 
             socketOut = new BufferedOutputStream (socket.getOutputStream());
             if (doInbandAcking) socketIn = new BufferedInputStream (socket.getInputStream());
@@ -399,9 +413,10 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
 
           //  Send the message
 
-          if (log.isDebugEnabled()) log.debug ("Sending " +msgBytes.length+ " byte msg over " +socket);
+          if (log.isDebugEnabled()) log.debug ("Sending " +msgBytes.length+ " byte msg over " +sockString);
+          sendTime = now();
           MessageSerializationUtils.writeByteArray (socketOut, msgBytes);
-          if (log.isDebugEnabled()) log.debug ("Sending " +msgBytes.length+ " byte msg done " +socket);
+          if (log.isDebugEnabled()) log.debug ("Sending " +msgBytes.length+ " byte msg done " +sockString);
 
           break;
         }
@@ -418,29 +433,46 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
 
       //  Optionally do inband acking
 
-      if (doInbandAcking && MessageUtils.isRegularMessage (msg))
+      if (doInbandAcking && MessageUtils.isAckableMessage (msg))
       {
         try
         {
           //  See if we get an ack
 
-          if (log.isDebugEnabled()) log.debug ("Waiting for ack over " +socket);
+          if (log.isDebugEnabled()) log.debug ("Waiting for ack over " +sockString);
           byte[] ackBytes = MessageSerializationUtils.readByteArray (socketIn);
-          if (log.isDebugEnabled()) log.debug ("Waiting for ack done " +socket);
-          PureAckMessage pam = processAck (ackBytes);
+          receiveTime = now();
+          if (log.isDebugEnabled()) log.debug ("Waiting for ack done " +sockString);
+          pam = processAck (ackBytes);
 
           //  Send an ack-ack
+          //
+          //  The inband acking protocol is that if the ack back reports a message
+          //  reception exception then no ack-ack is sent for the ack.
 
-          byte[] ackAckBytes = createAckAck (pam);
-          if (log.isDebugEnabled()) log.debug ("Sending ack-ack over " +socket);
-          MessageSerializationUtils.writeByteArray (socketOut, ackAckBytes);
-          if (log.isDebugEnabled()) log.debug ("Sending ack-ack done " +socket);
+          if (!pam.hasReceptionException())
+          {
+            byte[] ackAckBytes = createAckAck (pam, receiveTime);
+            if (log.isDebugEnabled()) log.debug ("Sending ack-ack over " +sockString);
+            MessageSerializationUtils.writeByteArray (socketOut, ackAckBytes);
+            if (log.isDebugEnabled()) log.debug ("Sending ack-ack done " +sockString);
+          }
+          else
+          {
+            Exception ex = pam.getReceptionException();
+
+            if (log.isWarnEnabled())
+            {
+              log.warn ("Message send over " +sockString+ " got reception exception " +
+                        "(ignored for now): " +ex);
+            }
+          }
         }
         catch (Exception e)
         {
-          //  Any acking that did not complete will be taken care of in regular acking
+          //  Any acking that did not complete will be taken care of in later acking
 
-          if (log.isDebugEnabled()) log.debug ("Inband acking stopped: " +e);
+          if (log.isDebugEnabled()) log.debug ("Inband acking stopped for " +sockString+ ": " +e);
           closeSocket();
         } 
       }
@@ -455,6 +487,16 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
       catch (Exception e)
       {
         closeSocket();
+      }
+
+      //  Update the inband RTT if possible
+
+      if (rttService != null && pam != null)
+      {
+        DestinationLink sendLink = this;
+        String node = MessageUtils.getToAgentNode (msg);
+        int rtt = ((int)(receiveTime - sendTime)) - pam.getInbandNodeTime();
+        rttService.updateInbandRTT (sendLink, node, rtt);
       }
 
       return true;  // msg send successful
@@ -499,6 +541,9 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
     {
       AttributedMessage msg = MessageSerializationUtils.readMessageFromByteArray (ackBytes);
       PureAckMessage pam = (PureAckMessage) msg;
+
+      if (pam.hasReceptionException()) return pam;  // no more ack to process
+
       PureAck pureAck = (PureAck) MessageUtils.getAck (pam);
       Vector latestAcks = pureAck.getLatestAcks();
 
@@ -522,9 +567,10 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
       return pam;
     }
 
-    private byte[] createAckAck (PureAckMessage pam) throws Exception
+    private byte[] createAckAck (PureAckMessage pam, long receiveTime) throws Exception
     {
       PureAckAckMessage paam = PureAckAckMessage.createInbandPureAckAckMessage (pam);
+      paam.setInbandNodeTime ((int)(now()-receiveTime));
       byte ackAckBytes[] = MessageSerializationUtils.writeMessageToByteArray (paam, getDigest());
       return ackAckBytes;
     }
@@ -533,6 +579,11 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
   private static MessageDigest getDigest () throws java.security.NoSuchAlgorithmException
   {
     return (useMessageDigest ? MessageDigest.getInstance(messageDigestType) : null);
+  }
+
+  private static long now ()
+  {
+    return System.currentTimeMillis();
   }
 
   private static String stackTraceToString (Exception e)

@@ -214,6 +214,15 @@ public final class MessageUtils
     return 0;  // have method hasMessageNumber() if needed
   }
 
+  public static boolean isAckableMessage (AttributedMessage msg)
+  {
+    if (msg == null) return false;
+    if (isSomePureAckMessage (msg)) return false;
+    if (!hasMessageNumber (msg)) return false;
+    if (getMessageNumber (msg) == 0) return false;
+    return true;
+  }
+
   public static MessageAddress getOriginatorAgent (AttributedMessage msg)
   {
     return msg.getOriginator();

@@ -194,6 +194,16 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
     {
       return getTheBestFullRTTForLink (link, node);
     }
+
+    public void updateInbandRTT (DestinationLink sendLink, String node, int rtt)
+    {
+      updateRTT (sendLink, node, rtt);
+    }
+
+    public void updateInbandRTT (String node, String recvLink, int rtt)
+    {
+      updateRTT (node, recvLink, rtt);
+    }
   }
 
   //  Implementation
@@ -466,7 +476,7 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
       if (v != null)
       {
         String destinationNode = sendNode;
-        String receiveLink = convertSplitLink (sendLink);
+        String receiveLink = convertOut2In (sendLink);
         long secondHalfSendTime = sendTime;
 
         for (Enumeration e=v.elements(); e.hasMoreElements(); )
@@ -497,6 +507,16 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
       this.nodeTime = nodeTime;
       this.lastNodeTime = lastNodeTime;
     }
+  }
+
+  private void updateRTT (DestinationLink sendLink, String node, int rtt)
+  {
+    updateRTT (getName(sendLink), node, convertOut2In(getName(sendLink)), rtt, 0, 0);    
+  }
+
+  private void updateRTT (String node, String recvLink, int rtt)
+  {
+    updateRTT (convertIn2Out(recvLink), node, recvLink, rtt, 0, 0);    
   }
 
   private void updateRTT (String sendLink, String node, String receiveLink, int rtt,
@@ -793,12 +813,21 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
     return link.getProtocolClass().getName();
   }
 
-  private static String convertSplitLink (String link)
+  private static String convertOut2In (String link)
   {
     //  Turn Outgoing link into Incoming one (depends on link naming convention)
 
     int i = link.indexOf (".Outgoing");
     if (i > 0) return link.substring(0,i)+ ".Incoming" +link.substring(i+9);
+    else return link;  // not a split link
+  }
+
+  private static String convertIn2Out (String link)
+  {
+    //  Turn Incoming link into Outgoing one (depends on link naming convention)
+
+    int i = link.indexOf (".Incoming");
+    if (i > 0) return link.substring(0,i)+ ".Outgoing" +link.substring(i+9);
     else return link;  // not a split link
   }
 

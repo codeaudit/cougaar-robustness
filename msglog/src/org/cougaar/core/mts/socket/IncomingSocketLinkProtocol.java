@@ -94,6 +94,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
   private static final String localhost;
   private static final boolean doInbandAcking;
+  private static final boolean doInbandRTTUpdates;
   private static final boolean useMessageDigest;
   private static final String messageDigestType;
   private static final int firstMsgSoTimeout;
@@ -104,6 +105,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
   private static LoggingService log;
   private SocketClosingService socketCloser;
+  private RTTService rttService;
   private boolean showTraffic;
   private SocketSpec socketSpecs[];
   private SocketSpec mySocket;
@@ -119,8 +121,11 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     String s = "org.cougaar.message.protocol.socket.localhost";
     localhost = System.getProperty (s, getLocalHost());
 
-    s = "org.cougaar.message.transport.socket.doInbandAcking";
+    s = "org.cougaar.message.protocol.socket.doInbandAcking";
     doInbandAcking = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
+
+    s = "org.cougaar.message.protocol.socket.doInbandRTTUpdates";
+    doInbandRTTUpdates = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
 
     s = "org.cougaar.message.protocol.socket.useMessageDigest";
     useMessageDigest = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
@@ -177,6 +182,11 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     if (serverSocketTimeout > 0)
     {
       log.error ("Server socket timeouts not yet supported");
+    }
+
+    if (doInbandRTTUpdates)
+    {
+      rttService = (RTTService) getServiceBroker().getService (this, RTTService.class, null);
     }
 
     String s = "org.cougaar.core.mts.ShowTrafficAspect";
@@ -376,7 +386,35 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
       }
     }
 
-    public void run() 
+    public void run () 
+    {
+      while (!quitNow)
+      {
+        String s = "Unexpected exception, restarting thread";
+
+        try
+        { 
+          try 
+          { 
+            doRun(); 
+          } 
+          catch (Exception e) 
+          {
+            if (!quitNow)
+            {
+              s += ": " + stackTraceToString (e);
+              log.error (s);
+            }
+          }
+        }
+        catch (Exception e)
+        {
+          try { e.printStackTrace(); } catch (Exception ex) { /* !! */ }
+        }
+      }
+    }
+
+    private void doRun () 
     {
       if (serverSock == null) return;
 
@@ -400,7 +438,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
         }
         catch (Exception e) 
         {
-          if (log.isWarnEnabled()) log.warn ("Processing new connection request: " +e);
+          if (log.isWarnEnabled()) log.warn ("Waiting for or processing new connection: " +e);
           quitNow = true;
           break;
         }
@@ -424,6 +462,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     private Socket socket;
     private BufferedInputStream socketIn;
     private BufferedOutputStream socketOut;
+    private String sockString;
     private boolean quitNow;
 
     public MessageInListener (Socket s) throws IOException
@@ -433,6 +472,8 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
       socket = s;
       socketIn = new BufferedInputStream (socket.getInputStream());
       if (doInbandAcking) socketOut = new BufferedOutputStream (socket.getOutputStream());
+
+      if (log.isDebugEnabled()) sockString = socket.toString();
     }
 
     public void quit ()
@@ -444,6 +485,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     {
       boolean firstMsg = true;
       byte[] msgBytes = null;
+      long receiveTime = 0, sendTime = 0;
  
       while (!quitNow)
       {
@@ -467,9 +509,10 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
           //  Read a message
 
           scheduleSocketClose (socket, socketTimeout);
-          if (log.isDebugEnabled()) log.debug ("Waiting for msg over " +socket);
+          if (log.isDebugEnabled()) log.debug ("Waiting for msg over " +sockString);
           msgBytes = MessageSerializationUtils.readByteArray (socketIn);
-          if (log.isDebugEnabled()) log.debug ("Waiting for msg done " +socket);
+          receiveTime = now();
+          if (log.isDebugEnabled()) log.debug ("Waiting for msg done " +sockString);
           unscheduleSocketClose (socket);
 
           if (showTraffic) System.err.print ("<S");
@@ -565,33 +608,58 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
         //  Optionally do inband acking
 
-        if (doInbandAcking && MessageUtils.isRegularMessage (msg))
+        if (doInbandAcking && (msg == null || MessageUtils.isAckableMessage (msg)))
         {
           try
           {
             //  Send an ack
 
-            byte[] ackBytes = createAck (msg, exception);
+            byte[] ackBytes = createAck (msg, receiveTime, exception);
             scheduleSocketClose (socket, socketTimeout);
-            if (log.isDebugEnabled()) log.debug ("Sending ack over " +socket);
+            if (log.isDebugEnabled()) log.debug ("Sending ack over " +sockString);
+            sendTime = now();
             MessageSerializationUtils.writeByteArray (socketOut, ackBytes);
-            if (log.isDebugEnabled()) log.debug ("Sending ack done " +socket);
+            if (log.isDebugEnabled()) log.debug ("Sending ack done " +sockString);
             unscheduleSocketClose (socket);
 
-            //  See if we get an ack-ack back
+            //  See if we get an ack-ack back  
+            //
+            //  Note:  If there was an reception exception with the original message, 
+            //  we don't wait for an ack-ack because there is not much point as well
+            //  as the fact that it may be a non-Cougaar entity that sent the original
+            //  message and waiting for an ack-ack from them is more than useless.
 
-            scheduleSocketClose (socket, socketTimeout);
-            if (log.isDebugEnabled()) log.debug ("Waiting for ack-ack over " +socket);
-            byte[] ackAckBytes = MessageSerializationUtils.readByteArray (socketIn);
-            if (log.isDebugEnabled()) log.debug ("Waiting for ack-ack done " +socket);
-            unscheduleSocketClose (socket);
-            processAckAck (ackAckBytes);
+            if (exception == null)
+            {
+              scheduleSocketClose (socket, socketTimeout);
+              if (log.isDebugEnabled()) log.debug ("Waiting for ack-ack over " +sockString);
+              byte[] ackAckBytes = MessageSerializationUtils.readByteArray (socketIn);
+              receiveTime = now();
+              if (log.isDebugEnabled()) log.debug ("Waiting for ack-ack done " +sockString);
+              unscheduleSocketClose (socket);
+              PureAckAckMessage paam = processAckAck (ackAckBytes);
+
+              //  Update inband RTT
+
+              if (rttService != null)
+              {
+                String node = MessageUtils.getFromAgentNode (msg);
+                String recvLink = IncomingSocketLinkProtocol.this.toString();
+                int rtt = ((int)(receiveTime - sendTime)) - paam.getInbandNodeTime();
+                rttService.updateInbandRTT (node, recvLink, rtt);
+              }
+            }
+            else
+            {
+              if (log.isDebugEnabled()) log.debug ("Not waiting for ack-ack due to " +
+                "message reception exception " +sockString);
+            }
           }
           catch (Exception e)
           {
-            //  Any acking that did not complete will be taken care of in regular acking
+            //  Any acking that did not complete will be taken care of in later acking
 
-            if (log.isDebugEnabled()) log.debug ("Inband acking stopped: " +e);
+            if (log.isDebugEnabled()) log.debug ("Inband acking stopped for " +sockString+ ": " +e);
             quitNow = true;
             break;
           }
@@ -600,20 +668,21 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
       //  Cleanup
 
-      if (log.isDebugEnabled()) log.debug ("Removing msg in listener for " +socket);
       closeSocket();
+      if (log.isDebugEnabled()) log.debug ("Removing msg in listener for " +sockString);
       messageInListeners.remove (this);
     }
 
-    private byte[] createAck (AttributedMessage msg, Exception exception) throws Exception
+    private byte[] createAck (AttributedMessage msg, long receiveTime, Exception exception) throws Exception
     {
       PureAckMessage pam = PureAckMessage.createInbandPureAckMessage (msg);
       if (exception != null) pam.setReceptionException (exception);
+      pam.setInbandNodeTime ((int)(now()-receiveTime));
       byte ackBytes[] = MessageSerializationUtils.writeMessageToByteArray (pam, getDigest());
       return ackBytes;
     }
 
-    private void processAckAck (byte[] ackAckBytes) throws Exception
+    private PureAckAckMessage processAckAck (byte[] ackAckBytes) throws Exception
     {
       AttributedMessage msg = MessageSerializationUtils.readMessageFromByteArray (ackAckBytes);
       PureAckAckMessage paam = (PureAckAckMessage) msg;
@@ -664,6 +733,8 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
         MessageAckingAspect.addReceivedAcks (fromNode, latestAcks);
       }
+
+      return paam;
     }
 
     private void closeSocket ()
@@ -713,6 +784,11 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
   private static MessageDigest getDigest () throws java.security.NoSuchAlgorithmException
   {
     return (useMessageDigest ? MessageDigest.getInstance(messageDigestType) : null);
+  }
+
+  private static long now ()
+  {
+    return System.currentTimeMillis();
   }
 
   private static String stackTraceToString (Exception e)
