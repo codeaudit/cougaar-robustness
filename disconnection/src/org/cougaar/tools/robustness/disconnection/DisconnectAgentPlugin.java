@@ -89,13 +89,15 @@ public class DisconnectAgentPlugin extends ServiceUserPluginBase {
   
   public void load() {
       super.load();
-      cancelTimer();
+      haveServices(); 
+        if (logger.isDebugEnabled()) logger.debug("setupSubscriptions called.");
+     
+      initObjects(); //create & publish condition and op mode objectscancelTimer();
   }
   
   
-    public void unload() {
+    public void suspend() {
         // Remove the AgentExistsCondition so that the DisconnectNodePlugin will know the Agent has left the Node
-        super.unload();
         UnaryPredicate pred = new UnaryPredicate() {
           public boolean execute(Object o) {
             return 
@@ -105,20 +107,21 @@ public class DisconnectAgentPlugin extends ServiceUserPluginBase {
 
         AgentExistsCondition cond = null;
 
-        Collection c = blackboard.query(pred);
+        getBlackboardService().openTransaction();
+        Collection c = getBlackboardService().query(pred);
         if (c.iterator().hasNext()) {
            cond = (AgentExistsCondition)c.iterator().next();
+           if (logger.isDebugEnabled()) logger.debug("UNLOADING "+cond.getAsset());
            getBlackboardService().publishRemove(cond); //lets the NodeAgent learn that the Agent has unloaded
-        }      
-        cancelTimer();
+        }    
+        getBlackboardService().closeTransaction();
+   
+        super.suspend();
     }
   
   public void setupSubscriptions() {
     
-     haveServices(); 
-     if (logger.isDebugEnabled()) logger.debug("setupSubscriptions called.");
-     
-     initObjects(); //create & publish condition and op mode objects
+
   }
 
   
@@ -136,7 +139,9 @@ public class DisconnectAgentPlugin extends ServiceUserPluginBase {
      aec.setSourceAndTarget(assetAddress, nodeAddress);
      if (logger.isDebugEnabled()) logger.debug("Source: "+assetAddress+", Target: "+nodeAddress);
 
+     getBlackboardService().openTransaction();
      getBlackboardService().publishAdd(aec);
+     getBlackboardService().closeTransaction();
 
      if (logger.isDebugEnabled()) logger.debug("Announced existence of "+assetID);
    
