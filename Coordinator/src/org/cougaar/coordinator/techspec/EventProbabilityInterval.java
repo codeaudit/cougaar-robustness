@@ -42,7 +42,7 @@ import java.util.TimeZone;
  */
 public class EventProbabilityInterval implements NotPersistable {
 
-    //This is the assume interval over which a probability of occurrence is specified in the tech specs.
+    //This is the assumed interval over which a probability of occurrence is specified in the tech specs.
     private static float G_PROB_LENGTH_IN_MINUTES = 60.0F;
     
     private static int G_OID = 0;
@@ -70,8 +70,15 @@ public class EventProbabilityInterval implements NotPersistable {
      * Creates a new instance of EventProbabilityInterval, with a specified applicability interval 
      * over some clock period. startTime should be in the range from 0001-2400 (24 hr clock). intervalLength
      * (in HOURS) should be less than 24 hours & the interval must not overlap itself.
+     *
+     *@param interval is the ProbIntervalInMins from the tech specs -- it describes the interval length in minutes over 
+     * which the assigned probability is applicable (e.g. there is a .7 chance that the event will occur in the next 1000 minutes.
+     *
+     *@param startHr is the starting hour of the interval during which the threat is possible
+     *@param startMin is the starting minute of the interval during which the threat is possible
+     *@param intervalLength is the length of the interval during which the threat is possible
      */
-    public EventProbabilityInterval(int startHr, int startMin, int intervalLength, float probability, int interval) {
+    public EventProbabilityInterval(int startHr, int startMin, int intervalLength, float probability, int probInterval) {
 
         this.startHr = startHr;
         this.startMin = startMin;
@@ -81,7 +88,7 @@ public class EventProbabilityInterval implements NotPersistable {
         //the probInterval(th) root of the probability = the prob. of occurring in one minute
         this.minuteProbOfNotOccuring = (float)java.lang.Math.pow((1.0-prob), (1d/((double)probInterval) ) );
 //        this.minuteProbOfNotOccuring = (float) java.lang.Math.pow((1.0-prob), 1d/60d );
-        this.probInterval = interval;
+        this.probInterval = probInterval;
         
         logger = Logging.getLogger(this.getClass().getName());
         
@@ -138,6 +145,12 @@ public class EventProbabilityInterval implements NotPersistable {
     
     /** @return the computed, weighted probability of NOT OCCURRING for the interval specified */
     public double computeIntervalProbability(int intervalMinutes) {         
+                
+        return java.lang.Math.pow(minuteProbOfNotOccuring, (double)intervalMinutes);        
+    }
+
+    /** @return the computed, weighted probability of NOT OCCURRING for the interval specified */
+    public double computeIntervalProbability(double intervalMinutes) {         
                 
         return java.lang.Math.pow(minuteProbOfNotOccuring, (double)intervalMinutes);        
     }

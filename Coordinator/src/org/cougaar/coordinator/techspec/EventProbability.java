@@ -107,14 +107,18 @@ public class EventProbability {
             return 0.0; //zero length interval
         }
 
-        //Convert millisecond interval to minutes, round up, & cast to int.
-        int durationInMins = (int) java.lang.Math.ceil( (interval / 60000) );
-                
+        //Convert millisecond interval to fractional minutes
+        double durationInMinFractions = ( (double)interval / 60000d);
+//        int durationInMins = (int) java.lang.Math.ceil( (interval / 60000) );
+
+        //Convert to minutes (and fractions of minutes)
+//        double durationInMins = (interval / 60000) );
+        
         //See if there is an infinite interval probability. If so, we don't need to break up
         //the entire interval into sub-intervals.
         if (infiniteIntervalProbability != null) {
-            if (logger.isDebugEnabled()) { logger.debug("computeIntervalProbability(). IntervalInMSECS="+interval+", durationInMins="+durationInMins); }            
-            double pr = infiniteIntervalProbability.computeIntervalProbability(durationInMins); //returns prob of NOT occurring during interval
+            if (logger.isDebugEnabled()) { logger.debug("computeIntervalProbability(). IntervalInMSECS="+interval+", durationInMinFractions="+durationInMinFractions); }            
+            double pr = infiniteIntervalProbability.computeIntervalProbability(durationInMinFractions); //returns prob of NOT occurring during interval
             if (logger.isDebugEnabled()) { logger.debug("Infinite interval, called infiniteIntervalProbability.computeIntervalProbability(). Prob of non-occurrence= "+pr+", prob of occurrence="+(1.0 - pr)); }            
             return (1.0 - pr);
         }
@@ -123,7 +127,8 @@ public class EventProbability {
         startTime.setTimeInMillis(start);
         
         GregorianCalendar endTime = (GregorianCalendar)startTime.clone();
-        endTime.add(Calendar.MINUTE, durationInMins); // find ending time
+//        endTime.add(Calendar.MINUTE, durationInMins); // find ending time
+        endTime.add(Calendar.SECOND, ((int)(end-start)/1000)); // find ending time
         
         //durHrs = the length of the interval in hour units. Any # of minutes > 0 will consume 1 interval, e.g.
         // 1.0 = 1 interval, 1.1 = 2 intervals, 5.3 hours = 6 intervals
@@ -131,12 +136,13 @@ public class EventProbability {
         int startHr = startTime.get(Calendar.HOUR_OF_DAY);
         int endHr   = endTime.get(Calendar.HOUR_OF_DAY);
         int endMin   = endTime.get(Calendar.MINUTE);
+        int endSec   = endTime.get(Calendar.SECOND);
         if (endHr < startHr) { endHr += 24; } // add 24 hours so we can subtract to get interval length
-        if (endMin > 0) { endHr++; } //it extends into the next hour so add one.
+        if ( (endMin > 0) || (endMin ==0 && endSec >0) ) { endHr++; } //it extends into the next hour so add one.
         
         int numHrIntervals = endHr - startHr;
         
-        if (logger.isDebugEnabled()) { logger.debug("computeIntervalProbability(). Interval="+interval+", durationInMins="+durationInMins + ", numHrIntervals="+numHrIntervals); }            
+        if (logger.isDebugEnabled()) { logger.debug("computeIntervalProbability(). Interval="+interval+", durationInMinFractions="+durationInMinFractions + ", numHrIntervals="+numHrIntervals); }            
         
         if (logger.isDebugEnabled()) { logger.debug("Calculating prob for startTime= "+startTime.get(Calendar.HOUR_OF_DAY)+":"+ startTime.get(Calendar.MINUTE)+ ">>End time= "+endTime.get(Calendar.HOUR_OF_DAY)+":"+endTime.get(Calendar.MINUTE) + ", and occupies "+ numHrIntervals + " intervals"); }                    
         
@@ -151,8 +157,8 @@ public class EventProbability {
         while (i.hasNext()) {
             
             epi = (EventProbabilityInterval) i.next();
-            int minutes = ClockInterval.computeOverlap(clockIntervals, epi.getClockIntervals(), numHrIntervals );
-            if (minutes == 0) continue; // no probability in this interval...
+            double minutes = ClockInterval.computeOverlap(clockIntervals, epi.getClockIntervals(), numHrIntervals );
+            if (minutes == 0d) continue; // no probability in this interval...
             double prob = epi.computeIntervalProbability(minutes);
             if (logger.isDebugEnabled()) { logger.debug("Minutes in interval="+minutes+", prob = "+prob); }            
             

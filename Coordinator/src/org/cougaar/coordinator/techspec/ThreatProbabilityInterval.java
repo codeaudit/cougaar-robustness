@@ -85,17 +85,20 @@ public class ThreatProbabilityInterval implements NotPersistable {
         logger.debug("poisson for intervalLength = " + intervalLength);
         logger.debug("poisson for interval = " + interval);
         
+        double result = 0.0;
+
         PoissonDistribution pd = null;
         try {
              pd = new PoissonDistribution(lambda);
         } catch (Exception e) { 
-            logger.error("Exception generating poisson probability. Returning probability = 0.", e);
+            logger.error("Exception creating poisson probability. Returning probability = 0.", e);
+            return result;
         }
         
-        double result = 0.0;
         
         try {
-            //Get probability of all occurences > 0
+            //Get probability of all occurences > 0 (pd.probability(0) is the prob of no occurrences, so
+            // 1-pd.probability(0) is the prob of any occurrence in the interval.
             result = 1 - pd.probability(0);
         } catch (Exception e) { 
             logger.error("Exception generating poisson probability. Returning probability = 0.", e);
