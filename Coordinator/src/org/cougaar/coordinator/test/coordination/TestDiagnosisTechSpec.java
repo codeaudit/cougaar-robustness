@@ -15,7 +15,8 @@ import java.util.HashSet;
 import java.util.Vector;
 
 /**
- *
+ * JUST a shell test class... don't use this!!!
+ * @deprecated
  * @author  Administrator
  */
 public class TestDiagnosisTechSpec implements DiagnosisTechSpecInterface  {
@@ -113,6 +114,17 @@ public class TestDiagnosisTechSpec implements DiagnosisTechSpecInterface  {
      *
      */
     public void addCrossDiagnosisProbability(CrossDiagnosis cd) {
+    }
+    
+    /** @return the latency -- the time it takes this sensor to diagnose/notice & report a problem, in milliseconds.
+     */
+    public int getLatency() { return 0;
+    }
+    
+    /** @return the State Dimension that the sensor is watching.
+     */
+    public String getStateDimension() {
+        return "TestState";
     }
     
 }
