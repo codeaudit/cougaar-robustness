@@ -33,7 +33,6 @@ import org.cougaar.core.service.LoggingService;
 public class TrafficAuditAspect extends StandardAspect
 {
   private static final String AUDIT_TAG = "TRAFFIC_AUDIT";
-  private static final String NODE_TAG  = AUDIT_TAG + " Nodename";
 
   private static final boolean includeLocalMsgs;
 
@@ -54,8 +53,6 @@ public class TrafficAuditAspect extends StandardAspect
   {
     super.load();
     log = loggingService;
-    String thisNode = getRegistry().getIdentifier();
-    if (log.isInfoEnabled()) log.info (NODE_TAG+ " " +thisNode);
   }
 
   public Object getDelegate (Object delegate, Class type) 
