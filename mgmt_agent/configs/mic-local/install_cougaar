@@ -1,11 +1,11 @@
 #!/bin/tcsh -f
 
-set COUGAAR_VERS="B10_4_5"
-set UL_VERS="HEAD_B10_4_5"
+set COUGAAR_VERS="B10_4"
+set UL_VERS="HEAD_B10_4"
 
-set cougaar_packages="cougaar.zip cougaar-support.zip"
+set cougaar_packages="cougaar.zip cougaar-support.zip cougaar-src.zip cougaar-api.zip"
 
-set ultralog_packages="AL_bbn_$UL_VERS.zip AR_common_$UL_VERS.zip AR_objs_common_$UL_VERS.zip AR_objs_deconfliction_$UL_VERS.zip AR_objs_sensors_$UL_VERS.zip AR_boeing_exnihilo_$UL_VERS.zip AR_mic_$UL_VERS.zip bbn_commons_$UL_VERS.zip BBN_ulconfigs_B10_4_5_B10_4_5.zip isat_plugins_$UL_VERS.zip isat_acme_$UL_VERS.zip isat_oplan_$UL_VERS.zip AS_csi_secserv_$UL_VERS.zip AS_csi_overlay_$UL_VERS.zip"
+set ultralog_packages="AL_bbn_$UL_VERS.zip AR_common_$UL_VERS.zip AR_objs_common_$UL_VERS.zip AR_objs_msglog_$UL_VERS.zip AR_objs_disconnection_$UL_VERS.zip AR_objs_deconfliction_$UL_VERS.zip AR_objs_sensors_$UL_VERS.zip AR_boeing_exnihilo_$UL_VERS.zip AR_mic_$UL_VERS.zip bbn_commons_$UL_VERS.zip BBN_ulconfigs_B10_4_5_B10_4_5.zip isat_plugins_$UL_VERS.zip isat_acme_$UL_VERS.zip isat_oplan_$UL_VERS.zip AS_csi_secserv_$UL_VERS.zip AS_csi_overlay_$UL_VERS.zip"
 
 if (!(-d $1)) then
   mkdir $1
@@ -28,8 +28,8 @@ foreach package ($ultralog_packages)
   unzip -o zips/$package > /dev/null
 end
 
-cd csmart/config/societies/ad
-unzip -o 1ad-configs.zip > /dev/null
+cd csmart/config/societies/ua
+unzip -o ua-configs.zip > /dev/null
 #../../../../csmart/config/bin/convert_society.rb -i FULL-1AD-TRANS-1359.xml
 #../../../../csmart/config/bin/convert_society.rb -i SMALL-1AD-TRANS-1359.xml
 cd ../../../..

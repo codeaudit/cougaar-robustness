@@ -101,6 +101,7 @@
             <file path="csmart/config/scripts/robustness/uc1/kill_mgr-small.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/kill_mgr_plus_1-small.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/msglog.rule"/>
+            <file path="csmart/config/scripts/robustness/uc1/uc1-disconnect-moas.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/uc1-full.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/uc1-lb.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/uc1-small-disconnect-agent.rb"/>
