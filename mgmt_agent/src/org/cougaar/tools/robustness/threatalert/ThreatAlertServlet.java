@@ -23,6 +23,8 @@ import javax.servlet.http.*;
 import java.util.*;
 import java.io.*;
 
+import org.cougaar.tools.robustness.ma.HostLossThreatAlert;
+
 import org.cougaar.core.servlet.BaseServletComponent;
 import org.cougaar.core.servlet.ServletUtil;
 import org.cougaar.core.service.LoggingService;
@@ -217,35 +219,34 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
   private void fireThreatAlert(HashMap conditions) {
 
     Date createTime = new Date();
-    int level = getSeverityLevel((String)conditions.get("level")); //alert level
+    int level = getSeverityLevel( (String) conditions.get("level")); //alert level
     Date start;
-    if(conditions.containsKey("startFromAction")) {
-      String t = (String)conditions.get("startFromAction");
+    if (conditions.containsKey("startFromAction")) {
+      String t = (String) conditions.get("startFromAction");
       start = getDateCondition(t);
       conditions.remove(t);
-    }
-    else
+    } else
       start = getDateCondition("start", conditions); //alert start time
     Date expire;
-    if(conditions.containsKey("expireFromAction")) {
-      String t = (String)conditions.get("expireFromAction");
+    if (conditions.containsKey("expireFromAction")) {
+      String t = (String) conditions.get("expireFromAction");
       expire = getDateCondition(t);
       conditions.remove(t);
-    }
-    else
+    } else {
       expire = getDateCondition("expire", conditions); //alert expire time
-    ThreatAlertImpl tai = new ThreatAlertImpl(agentId, level, start, expire, uidService.nextUID());
-    tai.setCreationTime(createTime); //alert create time
+    }
+    ThreatAlert ta = new HostLossThreatAlert(agentId, level, start, expire, uidService.nextUID());
     //add assets to this alert
-    for(int i=0; i<5; i++) {
-      if(conditions.containsKey("type" + i)) {
-        String type = (String)conditions.get("type" + i);
-        String id = (String)conditions.get("id" + i);
-        tai.addAsset(new AssetImpl(type, id));
+    for (int i = 0; i < 5; i++) {
+      if (conditions.containsKey("type" + i)) {
+        String type = (String) conditions.get("type" + i);
+        String id = (String) conditions.get("id" + i);
+        ta.addAsset(new AssetImpl(type, id));
       }
     }
 
-    threatAlertService.sendAlert(tai, (String)conditions.get("community"), (String)conditions.get("role"));
+    threatAlertService.sendAlert(ta, (String) conditions.get("community"),
+                                 (String) conditions.get("role"));
 
   }
 
