@@ -1,7 +1,7 @@
 /*
- * AssetSubtypeLoader.java
+ * SocietalUtilityLoader.java
  *
- * Created on March 18, 2004, 5:29 PM
+ * Created on March 23, 2004, 11:15 AM
  * <copyright>
  *  Copyright 2003 Object Services and Consulting, Inc.
  *  Copyright 2001-2003 Mobile Intelligence Corp
@@ -51,41 +51,47 @@ import java.util.ArrayList;
 import org.w3c.dom.*;
 
 /**
- * This class is used to import AssetSubType techspecs from xml files.
+ * This class is used to import SocietalUtility techspecs from xml files.
  * These are added to the AssetType class structure, and not published to the BB.
  *
  * @author  Administrator
  */
-public class AssetSubtypeLoader extends XMLLoader {
+public class SocietalUtilityLoader extends XMLLoader {
     
-    Vector assetTypes;
+    Vector utilities;
     
-    /** Creates a new instance of AssetSubtypeLoader */
-    public AssetSubtypeLoader() {
+    /** Creates a new instance of SocietalUtilityLoader */
+    public SocietalUtilityLoader() {
         
-        super("AssetSubtype", "AssetSubtypes");
-        assetTypes = new Vector();
+        super("SocietalUtility", null);
+        utilities = new Vector();
     }
   
 
-    /** Called with a DOM "AssetSubtype" element to process */
+    /** Called with a DOM "SocietalUtility" element to process */
     protected void processElement(Element element) {
      
-        //publish to BB during execute().
-        //1. Create a new AssetType instance & 
-        String newtype = element.getAttribute("newType");
-        String st = element.getAttribute("superType");
-        AssetType superType = AssetType.findAssetType(st);
+        for (Node child = element.getFirstChild(); child != null; child = child.getNextSibling()) { 
+            if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("RelativeValuation") ) {
+                Element e = (Element)child;
+        
+                String su = null;
+                try {
+                    String at = e.getAttribute("assetType");
+                    su = e.getAttribute("societalUtility");
+                    int utility = Integer.parseInt(su);
+                    AssetType assetType = AssetType.findAssetType(at);
 
-        
-        //what to do when assetType is null? - create it, process it later?
-        if (superType == null) {
-            logger.warn("AssetType XML Error - Asset SuperType unknown: "+st + ".  Not processing new type = " + newtype);
-            return;
+                    if (assetType != null) {
+                        assetType.setUtilityValue(utility);
+                    } else {
+                        logger.warn("SocietalUtility XML Error - Asset Type unknown: " + at );
+                    }
+                } catch (NumberFormatException nfe) {
+                    logger.warn("SocietalUtility XML Error - NumberFormatException: " + su );
+                }
+            }
         }
-        
-        AssetType at = new AssetType(superType, newtype);        
-        logger.debug("Created new AssetType = " + newtype);
     }
     
     
