@@ -26,6 +26,7 @@ package org.cougaar.core.mts;
 
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.component.ServiceBroker;
+import org.cougaar.core.component.ServiceProvider;
 
 import java.util.Hashtable;
 
@@ -51,6 +52,7 @@ public class MessageNumberingAspect extends StandardAspect implements MessageNum
 
   private LoggingService log;
   private static TrafficAuditService trafficAuditor;
+  private Impl impl;
 
   public MessageNumberingAspect () 
   {}
@@ -59,6 +61,11 @@ public class MessageNumberingAspect extends StandardAspect implements MessageNum
   {
     super.load();
     log = loggingService;
+
+    Provider provider = new Provider();
+    impl = new Impl();
+    getServiceBroker().addService(MessageNumberingService.class, 
+				  provider);
 
     if (log.isInfoEnabled())
     {
@@ -74,6 +81,35 @@ public class MessageNumberingAspect extends StandardAspect implements MessageNum
         }
       }
     }
+  }
+
+  private class Provider implements ServiceProvider {
+      public Object getService(ServiceBroker sb, 
+			       Object requestor, 
+			       Class serviceClass) 
+      {
+	  if (serviceClass == MessageNumberingService.class) {
+	      return impl;
+	  } else {
+	      return null;
+	  }
+      }
+      public void releaseService(ServiceBroker sb, 
+				 Object requestor, 
+				 Class serviceClass, 
+				 Object service)
+      {
+      }
+  } 
+
+  private class Impl implements MessageNumberingService {
+      Impl() {
+      }
+      public void renumberMessage(AttributedMessage message) 
+	  throws CommFailureException 
+      {
+	  MessageNumberingAspect.this.renumberMessage(message);
+      }
   }
 
   public Object getDelegate (Object delegate, Class type) 

@@ -26,7 +26,7 @@ import org.cougaar.core.component.Service;
 
 public interface MessageAckingService extends Service
 {
-  void handleMessagesToRestartedAgent(AgentID localAgent,
+  public void handleMessagesToRestartedAgent(AgentID localAgent,
                                       AgentID oldRestartedAgent,
                                       AgentID newRestartedAgent) 
       throws org.cougaar.core.mts.NameLookupException, org.cougaar.core.mts.CommFailureException;

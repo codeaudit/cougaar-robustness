@@ -213,6 +213,14 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       }
     }
 
+    numSvc = (MessageNumberingService)getServiceBroker().getService(this, MessageNumberingService.class, null);
+    if (numSvc == null)
+      if (log.isErrorEnabled()) log.error("MessageNumberingService not found.");
+
+    ackSvc = (MessageAckingService)getServiceBroker().getService(this, MessageAckingService.class, null);
+    if (ackSvc == null)
+      if (log.isErrorEnabled()) log.error("MessageAckingService not found.");
+ 
     String sta = "org.cougaar.core.mts.ShowTrafficAspect";
     showTraffic = (getAspectSupport().findAspect(sta) != null);
 
@@ -561,18 +569,12 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
               log.info("Destination agent moved to "+newToAgent+" - incarnations different - resequencing msg: "+MessageUtils.toString(msg));
             }
             // need to worry about synchronization here - message might be cached or in transit 
-            if (ackSvc == null)
-              ackSvc = (MessageAckingService)getServiceBroker().getService(this,MessageAckingService.class,null);
             ackSvc.handleMessagesToRestartedAgent(fromAgent, oldToAgent, newToAgent);
             // if this msg's toAgent & msgnum wasn't handled by handleMessagesToRestartedAgent, do it here
             if (!MessageUtils.getToAgent(msg).equals(newToAgent)) // && !aspect.hasMessageBeenAcked(msg)) 
             {
 	      // change AgentID and renumber messages
               MessageUtils.setToAgent(msg, newToAgent);
-              if (numSvc == null) {
-                ServiceBroker sb = getServiceBroker();
-                numSvc = (MessageNumberingService)sb.getService(this, MessageNumberingService.class, null);
-              }
               numSvc.renumberMessage(msg);
             }
             if (log.isDebugEnabled()) 

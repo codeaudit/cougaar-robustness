@@ -37,6 +37,7 @@ import org.cougaar.core.mts.email.OutgoingEmailLinkProtocol;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.ThreadService;
 import org.cougaar.core.component.ServiceBroker;
+import org.cougaar.core.component.ServiceProvider;
 import org.cougaar.util.log.Logger;
 import org.cougaar.util.log.Logging;
 
@@ -45,7 +46,6 @@ import org.cougaar.util.log.Logging;
  **  An aspect which implements a message acking scheme.
  **/
 public class MessageAckingAspect extends StandardAspect
-  implements MessageAckingService
 {
   public static final String SENT_BUT_NOT_ACKED_MSGS = "SentButNotAckedMessages";
 
@@ -79,6 +79,7 @@ public class MessageAckingAspect extends StandardAspect
  
   private static MessageAckingAspect instance;
   private static String thisNode;
+  private Impl impl;
 
   static
   {
@@ -120,6 +121,11 @@ public class MessageAckingAspect extends StandardAspect
     log = loggingService;
     thisNode = getRegistry().getIdentifier();
 
+    Provider provider = new Provider();
+    impl = new Impl();
+    getServiceBroker().addService(MessageAckingService.class, 
+				  provider);
+
     if (log.isInfoEnabled())
     {
       synchronized (this)
@@ -156,6 +162,39 @@ public class MessageAckingAspect extends StandardAspect
         instance = this;
       }
     }
+  }
+
+  private class Provider implements ServiceProvider {
+      public Object getService(ServiceBroker sb, 
+			       Object requestor, 
+			       Class serviceClass) 
+      {
+	  if (serviceClass == MessageAckingService.class) {
+	      return impl;
+	  } else {
+	      return null;
+	  }
+      }
+      public void releaseService(ServiceBroker sb, 
+				 Object requestor, 
+				 Class serviceClass, 
+				 Object service)
+      {
+      }
+  } 
+
+  private class Impl implements MessageAckingService {
+      Impl() {
+      }
+      public void handleMessagesToRestartedAgent(AgentID localAgent,
+						 AgentID oldRestartedAgent,
+						 AgentID newRestartedAgent) 
+	  throws org.cougaar.core.mts.NameLookupException, org.cougaar.core.mts.CommFailureException
+      {
+	  MessageAckingAspect.this.handleMessagesToRestartedAgent(localAgent,
+						                  oldRestartedAgent,
+						                  newRestartedAgent); 
+      }
   }
 
   public Object getDelegate (Object delegate, Class type) 
@@ -989,24 +1028,26 @@ public class MessageAckingAspect extends StandardAspect
   
   // copied from MTImpl
   public void decacheDestinationLink(MessageAddress sender) {
-        // Find the DestinationLinks for this address and force a decache.
-	ArrayList links = getRegistry().getDestinationLinks(sender);
-	if (links != null) {
-	    Iterator itr = links.iterator();
-	    while (itr.hasNext()) {
-		Object next = itr.next();
-		if (next instanceof OutgoingEmailLinkProtocol.EmailOutLink) {
-		    OutgoingEmailLinkProtocol.EmailOutLink link = (OutgoingEmailLinkProtocol.EmailOutLink) next;
-		    if (link.getDestination().equals(sender)) {
-			if (loggingService.isDebugEnabled())
-			    loggingService.debug("Decaching reference for " +
-						 sender);
-			link.incarnationChanged();
-			return;
-		    }
-		}
-	    }
-	}
-    }
-  
+      // Find the DestinationLinks for this address and force a decache.
+      ArrayList links = getRegistry().getDestinationLinks(sender);
+      if (links != null) {
+	  Iterator itr = links.iterator();
+	  while (itr.hasNext()) {
+	      Object next = itr.next();
+	      if (next instanceof OutgoingEmailLinkProtocol.EmailOutLink) {
+		  OutgoingEmailLinkProtocol.EmailOutLink link = (OutgoingEmailLinkProtocol.EmailOutLink) next;
+		  if (link.getDestination().equals(sender)) {
+		      if (loggingService.isDebugEnabled())
+			  loggingService.debug("Decaching reference for " +
+					       sender);
+		      link.incarnationChanged();
+		      return;
+		  }
+	      }
+	  }
+      }
+  }
+
+
+    
 }
