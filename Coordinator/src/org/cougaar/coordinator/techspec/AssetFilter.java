@@ -157,6 +157,24 @@ public class AssetFilter implements NotPersistable {
     }
     
     
+    public String toString() {
+     
+        String s = "    AssetFilter\n";
+        Iterator i = this.terms.iterator();
+        while (i.hasNext()) {
+             Term t = (Term)i.next();
+             s = s+ "     - " + t + "\n";
+        }        
+        i = this.specialTerms.iterator();
+        while (i.hasNext()) {
+             SpecialTerm st = (SpecialTerm)i.next();
+             s = s+ "     - " + st + "\n";
+        }        
+        return s;
+        
+    }
+    
+    
     class Term {
 
          String propertyName;
@@ -199,7 +217,7 @@ public class AssetFilter implements NotPersistable {
 
         public String toString() {
 
-            return "PropertyName="+propertyName+ "  value="+value+"   operator="+operator;
+            return "TERM: PropertyName="+propertyName+ "  value="+value+"   operator=\""+operator + "\" valueType="+ valueType;
         }
         
         private Object convertValue(String valType, String value) {
@@ -281,7 +299,7 @@ public class AssetFilter implements NotPersistable {
     interface SpecialTerm {
      
         public boolean qualifies(AssetTechSpecInterface asset);
-        
+        public String toString();
     }
 
     
@@ -290,8 +308,9 @@ public class AssetFilter implements NotPersistable {
      */
     class CorruptHostTerm implements SpecialTerm {
         
+        String value;
         CorruptHostTerm(String value) {
-            
+            this.value = value;
         }
 
         public boolean qualifies(AssetTechSpecInterface asset) {
@@ -300,6 +319,9 @@ public class AssetFilter implements NotPersistable {
             
         }
         
+        public String toString() {
+            return "CorruptHostTerm value="+this.value;
+        }
     }
     
     /**
@@ -307,14 +329,19 @@ public class AssetFilter implements NotPersistable {
      */
     class CorruptHostOnNetworkTerm implements SpecialTerm {
         
+        String value;
         CorruptHostOnNetworkTerm(String value) {
-            
+            this.value = value;            
         }
 
         public boolean qualifies(AssetTechSpecInterface asset) {
             
             return true; //IMPLEMENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             
+        }
+
+        public String toString() {
+            return "CorruptHostOnNetworkTerm value="+this.value;
         }
         
     }

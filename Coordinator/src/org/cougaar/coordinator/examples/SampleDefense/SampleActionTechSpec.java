@@ -23,6 +23,7 @@
 package org.cougaar.coordinator.examples.SampleDefense;
 
 import java.util.Set;
+import java.util.Vector;
 import java.util.HashSet;
 import org.cougaar.coordinator.*;  
 import org.cougaar.coordinator.techspec.*;  
@@ -79,5 +80,19 @@ public class SampleActionTechSpec implements ActionTechSpecInterface {
     public UID getUID() {
         return null;
     }
+
+    /** @return the ActionDescriptions for this Actuator
+     */
+    public void addAction(ActionDescription ad) {
+    }
+    
+    /** @return the state dimension that the actuator cares about.
+     */
+    public AssetStateDimension getStateDimension() {
+        return null;
+    }
+    
+    /** @return the actions for this actuator. This class returns NULL. */
+    public Vector getActions() { return null; }
     
 }

@@ -25,13 +25,15 @@
 
 package org.cougaar.coordinator.techspec;
 
+import org.cougaar.core.component.Service;
+
 /**
  *
  * @author  Administrator
  */
-public interface ActionTechSpecService {
+public interface ActionTechSpecService extends Service {
     
-    public ActionTechSpecInterface getActionTechSpec(Class cls);    
+    public ActionTechSpecInterface getActionTechSpec(String cls);    
     public void addActionTechSpec(String cls, ActionTechSpecInterface atsi);    
     
 }

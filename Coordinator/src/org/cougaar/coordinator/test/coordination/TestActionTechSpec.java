@@ -11,6 +11,7 @@ import org.cougaar.core.util.UID;
 
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Vector;
 
 /**
  *
@@ -62,5 +63,19 @@ public class TestActionTechSpec implements ActionTechSpecInterface {
     public UID getUID() {
         return null;
     }
+    
+    /** @return the ActionDescriptions for this Actuator
+     */
+    public void addAction(ActionDescription ad) {
+    }
+    
+    /** @return the state dimension that the actuator cares about.
+     */
+    public AssetStateDimension getStateDimension() {
+        return null;
+    }
+    
+    /** @return the actions for this actuator. This class returns NULL. */
+    public Vector getActions() { return null; }
     
 }

@@ -8,7 +8,7 @@
     name CDATA #REQUIRED
     affectsAssetType CDATA #REQUIRED
     causesEvent CDATA #REQUIRED
-    defaultEventLikelihoodProb CDATA ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH )
+    defaultEventLikelihoodProb ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH ) 'NONE'
 >
 
 <!ELEMENT VulnerableAssets ((AssetFilter|ContainmentFilter), (EventLikelihoodInterval|EventLikelihood)? >
@@ -19,19 +19,19 @@
 
 <!ELEMENT EventLikelihood  EMPTY>
 <!ATTLIST EventLikelihood
-    probability CDATA ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH )
+    probability ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH ) 'NONE'
 >
 
 <!ELEMENT ClockInterval  EMPTY>
 <!ATTLIST ClockInterval
     intervalStart CDATA #REQUIRED
     durationHrs CDATA #REQUIRED
-    probability CDATA ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH )
+    probability ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH ) 'NONE'
 >
 
 <!ELEMENT EventLikelihood  EMPTY>
 <!ATTLIST EventLikelihood
-    probability CDATA ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH )
+    probability ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH ) 'NONE'
 >
 
 <!ELEMENT ContainmentFilter  EMPTY>
@@ -43,8 +43,8 @@
 <!ATTLIST Term
     propName CDATA #REQUIRED
     propValue CDATA #REQUIRED
-    op CDATA ( '<' | '>' | '>=' | '<=' | '=' | '!=' )
-    propType CDATA ( S | L | D | I ) "S"
+    op ( '<' | '>' | '>=' | '<=' | '=' | '!=' ) '='
+    propType ( S | L | D | I ) "S"
 >
 <!-- propType = [S]tring [L]ong [D]ouble [I]nteger -->
 

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+
+<!ELEMENT ActuatorType (Action*) >
+<!ATTLIST ActuatorType 
+    name CDATA #REQUIRED
+    affectsAssetType CDATA #REQUIRED
+    affectsStateDimension CDATA #REQUIRED
+>
+
+<!ELEMENT Action (Description, Transition)  >
+<!ATTLIST Action 
+    name CDATA #REQUIRED
+>
+
+<!ELEMENT Description EMPTY  >
+<!ATTLIST Description 
+    value CDATA #REQUIRED
+>
+
+<!ELEMENT Transition (OneTimeCost? , ContinuingCost? )  >
+<!ATTLIST Transition
+    WhenActualStateIs CDATA #REQUIRED
+    EndStateWillBe CDATA #REQUIRED
+>
+
+<!ELEMENT OneTimeCost (Bandwidth?, CPU?, Memory?, Time? ) >
+<!ELEMENT ContinuingCost (Bandwidth?, CPU?, Memory?, Time? ) >
+
+<!ELEMENT CPU EMPTY> 
+<!ATTLIST CPU
+    intensity ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH ) 'NONE'
+    agentSizeFactor  (TRUE | FALSE) 'FALSE'
+    msgSizeFactor  (TRUE | FALSE) 'FALSE'
+>
+
+<!ELEMENT Bandwidth EMPTY> 
+<!ATTLIST Bandwidth
+    intensity ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH ) 'NONE'
+    agentSizeFactor  (TRUE | FALSE) 'FALSE'
+    msgSizeFactor  (TRUE | FALSE) 'FALSE'
+>
+
+<!ELEMENT Memory EMPTY> 
+<!ATTLIST Memory
+    intensity ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH ) 'NONE'
+    agentSizeFactor  (TRUE | FALSE) 'FALSE'
+    msgSizeFactor  (TRUE | FALSE) 'FALSE'
+>
+
+<!ELEMENT Time EMPTY> 
+<!ATTLIST Time
+    duration CDATA #REQUIRED
+>
+
+<!-- example
+<ActuatorType name="RestartAgent" affectsAssetType="Agent" affectsStateDimension="Liveness" >
+    <Action name="LocalRestart">
+        <Description value="Restarts agent in node on local host" />
+        <Transition WhenActualStateIs="*" EndStateWillBe="LIVE" >
+            <OneTimeCost>
+                <CPU intensity="HIGH" agentSizeFactor="TRUE" />
+            </OneTimeCost>
+            <ContinuingCost>
+                <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
+            </ContinuingCost>
+        </Transition>
+    </Action>
+    
+    <Action name="QuickRemoteRestart">
+        <Description value="Restarts agent in first available node" />
+        <Transition WhenActualStateIs="*" EndStateWillBe="LIVE" >
+            <OneTimeCost>
+                <Bandwidth intensity="MEDIUM" agentSizeFactor="TRUE" />
+                <CPU intensity="HIGH" agentSizeFactor="TRUE" />
+            </OneTimeCost>
+        </Transition>
+    </Action>
+
+    <Action name="BalancingRestart">
+        <Description value="Restarts multiple agents with a rebalancing plan" />
+        <Transition WhenActualStateIs="*" EndStateWillBe="LIVE" >
+            <OneTimeCost>
+                <Bandwidth intensity="MEDIUM" agentSizeFactor="TRUE" />
+                <CPU intensity="HIGH" agentSizeFactor="TRUE" />
+                <Time duration="120" />
+            </OneTimeCost>
+        </Transition>
+    </Action>
+</ActuatorType>
+-->

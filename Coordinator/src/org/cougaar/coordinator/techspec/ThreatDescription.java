@@ -90,4 +90,15 @@ public class ThreatDescription implements NotPersistable {
         return filters;
     }
     
+    public String toString() {
+     
+        String s = "Threat ["+this.getName()+"], affects asset type="+this.getAffectedAssetType()+", causes event="+this.getEventThreatCauses()+"\n";
+        s += "[Default Probability = "+this.getDefaultProbability()+"]\n";
+        Iterator i = this.getVulnerabilityFilters().iterator();
+        while (i.hasNext()) {
+             VulnerabilityFilter vf = (VulnerabilityFilter)i.next();
+             s = s+ vf + "\n";
+        }        
+        return s;
+    }
 }

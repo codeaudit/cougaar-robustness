@@ -72,11 +72,18 @@ public class ThreatLoader extends XMLLoader {
     
        
     /* Acquire needed services */
-    //private boolean haveServices() { //don't use logger here... until after super.load() is called
-    //}
+    private void getServices() { //don't use logger here... until after super.load() is called
+
+        this.logger = (LoggingService)  this.getServiceBroker().getService(this, LoggingService.class, null);
+        if (logger == null) {
+            throw new RuntimeException("Unable to obtain LoggingService");
+        }
+    }
     
     public void load() {
                
+        getServices();
+        
         //load probability map (maps form user string probabilities to Coordinator internal floats
         try {
             probabilityMap = MapLoader.loadMap(getConfigFinder(),probMapFile);
@@ -84,7 +91,9 @@ public class ThreatLoader extends XMLLoader {
                 logger.error("Error loading probability map file [" + probMapFile + "]. ");
             }
         } catch (Exception e) {
-            logger.error("Error parsing XML file [" + probMapFile + "]. Error was: "+ e.toString(), e);
+//            logger.error("Error parsing XML file [" + probMapFile + "]. Error was: "+ e.toString(), e);
+            logger.error("Error parsing XML file Error was: ", e);
+            return;
         }
         
         //haveServices(); //call have services first !!!

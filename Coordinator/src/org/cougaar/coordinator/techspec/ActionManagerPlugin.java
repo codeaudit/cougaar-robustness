@@ -216,11 +216,12 @@ public class ActionManagerPlugin extends ComponentPlugin implements NotPersistab
      *
      * @return NULL if the ActionTechSpec cannot be found.
      */
-    ActionTechSpecInterface getTechSpec(Class cls) {
+    ActionTechSpecInterface getTechSpec(String cls) {
     
-        ActionTechSpecInterface ats = (ActionTechSpecInterface)allActions.get( cls.getName() );
+        ActionTechSpecInterface ats = (ActionTechSpecInterface)allActions.get( cls);
         if (ats == null) {
-System.out.println("************* action tech spec NOT FOUND: "+cls.getName());        
+            
+            logger.warn("************* action tech spec NOT FOUND: "+cls);        
             
             //Tech Spec is not loaded...
             //... try finding it, parsing it, putting it in allActions, and returning it.
@@ -242,7 +243,7 @@ System.out.println("************* action tech spec NOT FOUND: "+cls.getName());
 
         allActions.put(cls, a); 
         newActions.add(a);
-System.out.println("************* add action tech spec: "+cls);        
+        logger.debug("************* add action tech spec: "+cls);        
     }
     
     

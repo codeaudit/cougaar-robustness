@@ -153,8 +153,6 @@ public abstract class XMLLoader extends ComponentPlugin implements NotPersistabl
             for (Node child = root.getFirstChild(); child != null; child = child.getNextSibling()) {
                 if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase(singleTag) ) {
                     processElement( (Element)child );
-                } else {
-                    logger.error("UNKNOWN XML TAG = "+ child.getNodeName() + ".  Cannot process.");
                 }
             }
             

@@ -75,7 +75,7 @@ public class ActionTechSpecServiceProvider implements ServiceProvider {
         /**
          * @return the ActionTechSpec for this class, and NULL if not found.
          */
-        public ActionTechSpecInterface getActionTechSpec(Class cls) {
+        public ActionTechSpecInterface getActionTechSpec(String cls) {
             
             return mgr.getTechSpec(cls);
             
@@ -84,9 +84,9 @@ public class ActionTechSpecServiceProvider implements ServiceProvider {
         /**
          * Add an ActionTechSpec for a class. Targeted to testing
          */
-        public void addActionTechSpec(String cls, ActionTechSpecInterface a) {
+        public void addActionTechSpec(String cls, ActionTechSpecInterface atsi) {
             
-            mgr.addTechSpec(cls, a);
+            mgr.addTechSpec(cls, atsi);
             
         }
         

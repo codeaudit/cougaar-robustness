@@ -44,4 +44,8 @@ public class ContainmentFilter {
      */
     public String getContainerName() { return eventAssetContainerName; }
     
+    
+    public String toString() {
+        return "CONTAINMENT FILTER. Filter on container = "+this.getContainerName();
+    }
 }

@@ -60,6 +60,8 @@ public class MapLoader {
     private static DOMifier dom = null;
     private static Logger logger;
     
+    private static String SYNCH = "";
+    
     static {        
         maps = new Hashtable();
         logger = Logging.getLogger(MapLoader.class.toString());
@@ -74,16 +76,16 @@ public class MapLoader {
         }
         
         //do once
-        synchronized(dom) {
+        synchronized(SYNCH) {
             if (dom == null) {
-                DOMifier dom = new DOMifier(configFinder);
+                dom = new DOMifier(configFinder);
             }
         }        
         
         Document doc;
         Element root = null;
         
-        try {
+        try {            
             doc = dom.parseFile(filename);
             //Call subclass to process the dom tree 
             root = doc.getDocumentElement();

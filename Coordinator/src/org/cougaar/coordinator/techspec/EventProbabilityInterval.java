@@ -115,5 +115,14 @@ public class EventProbabilityInterval implements NotPersistable {
         return result;
     }
     
+    public String toString() {
+     
+        if (this.startTime == -1) { // then this is an "all the time" interval"
+            return "Constant Probability = " + this.getProbability();
+        } else {
+            return "Interval Probability = " + this.getProbability() + "[startTime=" + this.startTime + 
+                                           ", durationHrs=" + this.intervalLength;
+        }
+    }
     
 }

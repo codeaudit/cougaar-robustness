@@ -270,7 +270,7 @@ public abstract class Action
         }
       
         //call tech spec service & get action tech spec        
-        actionTechSpec = (ActionTechSpecInterface) ActionTechSpecService.getActionTechSpec(this.getClass());
+        actionTechSpec = (ActionTechSpecInterface) ActionTechSpecService.getActionTechSpec(this.getClass().getName());
         if (actionTechSpec == null) {
             throw new TechSpecNotFoundException("Cannot find Action Tech Spec for "+ this.getClass().getName() );
         }        
