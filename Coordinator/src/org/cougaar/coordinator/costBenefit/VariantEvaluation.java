@@ -57,7 +57,7 @@ public class VariantEvaluation {
 
     
     public String toString() {
-        return "Variant: "+variantDescription.name().toString()+", Cost="+predictedCost+", Benefit="+predictedBenefit+", Time="+expectedTransitionTime+"\n";
+        return "            Variant: "+variantDescription.name().toString()+", Cost="+predictedCost+", Benefit="+predictedBenefit+", Time="+expectedTransitionTime+"\n";
     }
 
 }

@@ -14,6 +14,7 @@ package org.cougaar.coordinator.costBenefit;
 
 import java.util.Hashtable;
 import java.util.Collection;
+import java.util.Iterator;
 
 import org.cougaar.coordinator.Action;
 import org.cougaar.coordinator.techspec.ActionDescription;
@@ -51,6 +52,11 @@ public class ActionEvaluation {
 //    public double getSelectionScore() { return selectionScore; }
 
     public String toString() {
-        return action.toString() + "\n" + variantEvals.toString();
+        String result = "      " + action.toString() + ":\n";
+        Iterator iter = variantEvals.values().iterator();
+        while (iter.hasNext()) {
+            result = result + ((VariantEvaluation)iter.next()).toString();
+        }
+        return result;
     }
 }

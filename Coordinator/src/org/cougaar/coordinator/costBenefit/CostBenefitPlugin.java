@@ -109,6 +109,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
         while(iter.hasNext()) 
         {
             StateEstimation se = (StateEstimation)iter.next();
+            if (logger.isInfoEnabled()) logger.info(se.toString());
 
             // Clean up the old SE & CBE if they exist
             CostBenefitEvaluation old_cbe = findCostBenefitEvaluation(se.getAssetID());
@@ -120,7 +121,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
             // Produce and publish a CBE containing the benefits for each offered action on the Asset
             CostBenefitEvaluation cbe = createCostBenefitEvaluation(se, knob);
-            if (logger.isDebugEnabled()) logger.debug("CostBenefitEvaluation created: "+cbe.toString());
+            if (logger.isInfoEnabled()) logger.info("CostBenefitEvaluation created: "+cbe.toString());
             publishAdd(cbe);
   
         }           

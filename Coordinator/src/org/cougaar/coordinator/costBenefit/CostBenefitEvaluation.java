@@ -66,11 +66,11 @@ public class CostBenefitEvaluation implements NotPersistable {
     public ActionEvaluation getActionEvaluation(Action action) { return (ActionEvaluation)actionEvaluations.get(action); }
     
     public String toString() {
-        String result = assetID.toString()+"\n";
+        String result = "CBE for: " + assetID.toString()+"\n";
         Iterator iter = getActionEvaluations().values().iterator();
         while (iter.hasNext()) {
             ActionEvaluation thisAction = (ActionEvaluation)iter.next();
-            result = result+"    "+thisAction.toString()+"\n";
+            result = result + thisAction.toString()+"\n";
         }
         return result;
     }
