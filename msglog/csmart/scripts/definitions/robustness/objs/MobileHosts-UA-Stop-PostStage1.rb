@@ -13,6 +13,7 @@ parameters:
     - $CIP/csmart/config/rules/isat
     - $CIP/csmart/config/rules/yp
     - $CIP/csmart/config/rules/logistics
+    - $CIP/csmart/config/rules/robustness/common
     - $CIP/csmart/config/rules/robustness/uc8
 
 include_scripts:
