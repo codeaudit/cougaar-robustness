@@ -112,23 +112,25 @@ public class MsglogEnablingAspect extends StandardAspect
 
 	public int cost(AttributedMessage msg) 
 	{
-	    // Return Integer.MAX_VALUE if messaging is disabled to the target agent. 
-	    // This causes the LinkSelectionPolicy to not select a link.
-	    MessageAddress target = msg.getTarget().getPrimary();
-	    if (!getRegistry().isLocalClient(target)) {
-		synchronized (agents) {
-		    AgentEntry entry = (AgentEntry)agents.get(target);
-		    if (entry == null) {
-			entry = new AgentEntry(target,true);
-			agents.put(target, entry);
-			entry.observer = new AgentObserver(target);
-		    } else if (!entry.msglogEnabled) {
-			if (log.isDebugEnabled()) 
-			    log.debug("Messaging disabled to agent "+target
-				      +", cost() returning Integer.MAX_VALUE for msg "
-				      +MessageUtils.toString(msg));
-			return Integer.MAX_VALUE;
-		    } 
+	    if (msg != null) {
+		// Return Integer.MAX_VALUE if messaging is disabled to the target agent. 
+		// This causes the LinkSelectionPolicy to not select a link.
+		MessageAddress target = msg.getTarget().getPrimary();
+		if (!getRegistry().isLocalClient(target)) {
+		    synchronized (agents) {
+			AgentEntry entry = (AgentEntry)agents.get(target);
+			if (entry == null) {
+			    entry = new AgentEntry(target,true);
+			    agents.put(target, entry);
+			    entry.observer = new AgentObserver(target);
+			} else if (!entry.msglogEnabled) {
+			    if (log.isDebugEnabled()) 
+				log.debug("Messaging disabled to agent "+target
+					  +", cost() returning Integer.MAX_VALUE for msg "
+					  +MessageUtils.toString(msg));
+			    return Integer.MAX_VALUE;
+			} 
+		    }
 		}
 	    }
 	    return super.cost(msg);

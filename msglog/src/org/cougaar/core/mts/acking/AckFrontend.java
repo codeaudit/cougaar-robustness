@@ -117,7 +117,7 @@ class AckFrontend extends DestinationLinkDelegateImplBase
 
       if (MessageAckingAspect.hasMessageBeenAcked (msg))
       {
-        if (log.isDebugEnabled()) log.debug ("AckFrontend: Dropping acked resend " +msgString);
+        if (log.isInfoEnabled()) log.info("AckFrontend: Dropping acked resend " +msgString);
         return success;
       }
     }
@@ -168,19 +168,19 @@ class AckFrontend extends DestinationLinkDelegateImplBase
       
       if (pureAck.getLatestAcks().isEmpty()) 
       {
-        if (log.isDebugEnabled()) log.debug ("AckFrontend: Pure ack latest acks empty, dropping " +msgString);
+        if (log.isInfoEnabled()) log.info("AckFrontend: Pure ack latest acks empty, dropping " +msgString);
         return success;
       }
 
       if (!pureAck.stillAckingSrcMsg())
       {
-        if (log.isDebugEnabled()) log.debug ("AckFrontend: Pure ack src msg out of acks, dropping " +msgString);
+        if (log.isInfoEnabled()) log.info("AckFrontend: Pure ack src msg out of acks, dropping " +msgString);
         return success;
       }
 
       if (!MessageAckingAspect.findAckToSend ((PureAckMessage)msg))
       {
-        if (log.isDebugEnabled()) log.debug ("AckFrontend: Pure ack acked, dropping " +msgString);
+	  if (log.isInfoEnabled()) log.info("AckFrontend: Pure ack acked, dropping " +msgString);
         return success;
       }
 
@@ -208,13 +208,13 @@ class AckFrontend extends DestinationLinkDelegateImplBase
 
     if (MessageAckingAspect.hasMessageBeenAcked (msg)) 
     {
-      if (log.isDebugEnabled()) log.debug ("AckFrontend: Dropping acked resend " +msgString);
+      if (log.isInfoEnabled()) log.info("AckFrontend: Dropping acked resend " +msgString);
       return success;
     }
 
     if (MessageUtils.getSendDeadline (msg) < now())
     {
-      if (log.isDebugEnabled()) log.debug ("AckFrontend: Dropping msg past its send deadline " +msgString);
+      if (log.isInfoEnabled()) log.info("AckFrontend: Dropping msg past its send deadline " +msgString);
       return success;
     }
 
