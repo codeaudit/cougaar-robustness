@@ -558,13 +558,13 @@ logger.debug("///////////////////////////////////Adding permitted value: "+o);
     /**
      * @return a string representing an instance of this class of the form "<classname:assetType:assetName=value>"
      */
-    public String toString ( ) { return "<" + this.getClass().getName()+ ":" + 
+    public String toString ( ) { return "<" + getClass().getName()+'@'+Integer.toHexString(hashCode())+":" + //this.getClass().getName()+ ":" + 
                                               this.getAssetType() + ":" + 
                                               this.getAssetName() + "=" + 
                                               (this.getValue()!=null ? this.getValue().getAction():"NULL") + ">";
     }
 
-       
+    public String dump() { return toString(); }
     
    /** UniqueObject implementation */
     public org.cougaar.core.util.UID getUID() {
@@ -697,7 +697,7 @@ logger.debug("Getting target on agent="+agentId+", nodeId="+nodeId);
     /**
      * @return the ActionsWrapper that is wrapping this diagnosis
      **/
-    ActionsWrapper getWrapper() {
+    public ActionsWrapper getWrapper() {
         return wrapper;
     }
     

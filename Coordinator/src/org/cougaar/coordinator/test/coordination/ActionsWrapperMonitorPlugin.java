@@ -140,8 +140,8 @@ implements NotPersistable {
             //Collection c = a.getTargets();
             //if (c != null) it = a.getTargets().iterator();
             //if (it != null && it.hasNext()) target = ((MessageAddress) it.next()).toString();
-            
             logger.debug("[AgentId="+agentId+"]**** Saw new ActionsWrapper["+ActionUtils.getAssetID((Action)a.getContent())+"], with ActionRecord = " + ((Action)a.getContent()).getValue()+" src="+a.getSource()+",tgt="+a.getTargets());
+            logger.debug("ActionsWrapper="+a);
         }
         
         //********* Check for changes in our modes ************
@@ -151,6 +151,7 @@ implements NotPersistable {
             ActionsWrapper a = (ActionsWrapper)iter.next();
             if (servlet != null) { servlet.changedActionsWrapper(a); }
             logger.debug("**** Saw changed ActionsWrapper["+ActionUtils.getAssetID((Action)a.getContent())+"], with ActionRecord = " + ((Action)a.getContent()).getValue());
+            logger.debug("ActionsWrapper="+a);
         }
 
         //Emit # of action wrappers on BB

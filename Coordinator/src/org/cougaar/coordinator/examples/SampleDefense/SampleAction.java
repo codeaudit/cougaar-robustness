@@ -74,6 +74,8 @@ public class SampleAction extends Action
 	    "   targets = " + getTargets() + "\n" +
 	    "   uid = " + getUID() + "\n" +
 	    "   value = " + getValue() + "\n" +
-	    "   valuesOffered = " + getValuesOffered() + ">";
+	    "   valuesOffered = " + getValuesOffered() + "\n" +
+            "   wrapper = " + getWrapper() + ">";
+
     }
 }

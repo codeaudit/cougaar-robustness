@@ -164,6 +164,7 @@ public class ActionEnablingPlugin extends DeconflictionPluginBase implements Not
         }
       if (logger.isInfoEnabled()) logger.info("Setting: "+action);
       publishAdd(new ActionPatience(action, sa.getPatience()));
+      if(logger.isDebugEnabled())logger.debug("publishChange "+action.dump());
       publishChange(action);
     }
     

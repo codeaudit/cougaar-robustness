@@ -141,8 +141,11 @@ public class ActionsWrapper implements NotPersistable, Serializable, Relay.Sourc
         MessageAddress source, 
         Object content,
         Token token) {
-      return new ActionsWrapper(
-          (Action)content, source, null, uid);
+	Action a = (Action)content;
+	ActionsWrapper aw = 
+	    new ActionsWrapper((Action)content, source, null, uid);
+	a.setWrapper(aw);
+	return aw;
     }
 
     private Object readResolve() {
@@ -210,8 +213,9 @@ public class ActionsWrapper implements NotPersistable, Serializable, Relay.Sourc
       return Relay.CONTENT_CHANGE;
   }
 
-  
- 
+    public String toString() {
+	return "<"+getClass().getName()+'@'+Integer.toHexString(hashCode())+":"+((Object)action).toString()+":"+source+":"+targets+":"+uid+">";
+    }
   
 }
     
