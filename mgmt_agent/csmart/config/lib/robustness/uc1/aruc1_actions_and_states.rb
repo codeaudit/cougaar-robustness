@@ -393,6 +393,28 @@ module Cougaar
       end
     end
 
+    class EnableRestarts < Cougaar::Action
+      def initialize(run)
+        super(run)
+      end
+      def perform
+        run.society.each_node do |node|
+          result, uri = Cougaar::Communications::HTTP.get(node.uri+"/$"+node.name+"/ar?enableRestarts=true")
+        end
+      end
+    end
+
+    class DisableRestarts < Cougaar::Action
+      def initialize(run)
+        super(run)
+      end
+      def perform
+        run.society.each_node do |node|
+          result, uri = Cougaar::Communications::HTTP.get(node.uri+"/$"+node.name+"/ar?enableRestarts=false")
+        end
+      end
+    end
+
   end
 
 end

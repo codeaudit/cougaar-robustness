@@ -77,6 +77,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   // Determines how often the status summary is logged
   public static final long STATUS_INTERVAL = 2 * 60 * 1000;
 
+  public static boolean restartsEnabled = true;
+
   /**
    * State Controller: INITIAL
    * <pre>
@@ -271,6 +273,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (logger.isInfoEnabled()) {
         logger.info("Dead agent detected: agent=" + name);
       }
+      if (restartsEnabled) {
       if (isNode(name)) {
         setExpiration(name, NEVER);
       }
@@ -291,7 +294,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         } else { // a node
           deadNodes.add(name);
           if (!useGlobalSolver()) {
-            //newState(agentsOnNode(name, DefaultRobustnessController.ACTIVE), DEAD);
             newState(agentsOnNode(name), DEAD);
             removeFromCommunity(name);
           } else {
@@ -304,9 +306,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                       logger.info("layout from EN4J: " + layout);
                     }
                     getRestartLocator().setPreferredRestartLocations(layout);
-                    //newState(agentsOnNode(name, DefaultRobustnessController.ACTIVE), DEAD);
                     newState(agentsOnNode(name), DEAD);
-                    //removeFromCommunity(name);
                   } else { // Abort, node no longer classified as DEAD
                     deadNodes.remove(name);
                     if (logger.isInfoEnabled()) {
@@ -325,6 +325,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         if (isNode(name)) {
           newState(agentsOnNode(name, DefaultRobustnessController.ACTIVE), DEAD);
         }
+      }
+      } else { // restarts disabled
+        newState(name, HEALTH_CHECK);
       }
     }
 
@@ -652,13 +655,14 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
   private void restartAgent(final String name) {
 
-    long pingTimeout = getLongAttribute(preferredLeader(),
-                                        DEFAULT_TIMEOUT_ATTRIBUTE,
-                                        DEFAULT_TIMEOUT) * MS_PER_MIN;
-    serviceChecker.checkServices(model.getCommunityName(),
-                                 ESSENTIAL_RESTART_SERVICE_ATTRIBUTE,
-                                 pingTimeout,
-      new CheckServicesListener() {
+    if (restartsEnabled) {
+      long pingTimeout = getLongAttribute(preferredLeader(),
+                                          DEFAULT_TIMEOUT_ATTRIBUTE,
+                                          DEFAULT_TIMEOUT) * MS_PER_MIN;
+      serviceChecker.checkServices(model.getCommunityName(),
+                                   ESSENTIAL_RESTART_SERVICE_ATTRIBUTE,
+                                   pingTimeout,
+                                   new CheckServicesListener() {
         public void execute(String communityName,
                             String serviceCategory,
                             boolean isAvailable,
@@ -674,6 +678,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
           }
         }
       });
+    }
   }
 
   private void doRestart(String name) {
@@ -712,7 +717,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
   private Set getActiveHosts() {
     Set hosts = new HashSet();
-    String activeNodes[] = model.listEntries(CommunityStatusModel.NODE, DefaultRobustnessController.ACTIVE);
+    String activeNodes[] =
+        model.listEntries(CommunityStatusModel.NODE, DefaultRobustnessController.ACTIVE);
     for (int i = 0; i < activeNodes.length; i++) {
       hosts.add(model.getLocation(activeNodes[i]));
     }
@@ -1078,7 +1084,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
        samples =  se.samples;
        high = (long)se.high;
      }
-     int agentsOnNode = model.entitiesAtLocation(activeNodes[i], CommunityStatusModel.AGENT).length;
+     int agentsOnNode = model.entitiesAtLocation(activeNodes[i], model.AGENT).length;
      Date lastHeard = new Date(se.last);
      summary.append(activeNodes[i] + "(" + agentsOnNode + "," +
                     samples + "," + high + "," + df.format(lastHeard) + ")");
@@ -1104,9 +1110,13 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    return summary.toString();
  }
 
+ /**
+  * Return Set of node names corresponding to nodes with low confidence of being
+  * alive,
+  */
  private Set getAdditionalExcludedNodes(String deadNode) {
    Set excluded = new HashSet();
-   String[] nodes = model.listEntries(CommunityStatusModel.NODE);
+   String[] nodes = model.listEntries(model.NODE);
    StringBuffer detail = new StringBuffer();
    double now = System.currentTimeMillis();
    for (int i=0; i<nodes.length; i++) {
@@ -1125,7 +1135,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
      }
    }
    if (logger.isDebugEnabled()) {
-     logger.info("getAdditionalExcludedNodes: nodes=[" + detail +
+     logger.debug("getAdditionalExcludedNodes: nodes=[" + detail +
                  "] excluded=" + excluded);
    }
    return excluded;

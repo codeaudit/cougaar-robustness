@@ -42,7 +42,9 @@ import org.cougaar.tools.robustness.ma.ldm.HealthMonitorRequest;
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorRequestImpl;
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorResponse;
 import org.cougaar.tools.robustness.ma.ldm.RelayAdapter;
+import org.cougaar.tools.robustness.ma.controllers.DefaultRobustnessController;
 
+import org.cougaar.core.service.community.Community;
 import org.cougaar.core.service.community.CommunityResponse;
 import org.cougaar.core.service.community.CommunityResponseListener;
 
@@ -251,6 +253,17 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
           }
           if (name.equals("value")) {
             attrValue = value;
+          }
+          if (name.equalsIgnoreCase("enableRestarts")) {
+            if (value.equalsIgnoreCase("false")) {
+              if (log.isInfoEnabled())
+                log.info("Restarts disabled");
+              DefaultRobustnessController.restartsEnabled = false;
+            } else if (value.equalsIgnoreCase("true")) {
+              if (log.isInfoEnabled())
+                log.info("Restarts enabled");
+              DefaultRobustnessController.restartsEnabled = true;
+            }
           }
         }
       };
@@ -705,7 +718,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
         hmrResp = (HealthMonitorResponse)hmrRa.getResponse();
       }
 
-      if (hmrResp.getStatus() == HealthMonitorResponse.FAIL && log.isDebugEnabled()) {
+      if (hmrResp.getStatus() == hmrResp.FAIL && log.isDebugEnabled()) {
         log.error("try to get health monitor response: " +
                   hmrResp.getStatusAsString());
       }
