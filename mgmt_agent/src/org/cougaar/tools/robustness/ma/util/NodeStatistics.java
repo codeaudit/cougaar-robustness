@@ -35,20 +35,21 @@ import org.xml.sax.Attributes;
 /**
  */
 
-public class NodeLatencyStatistics {
+public class NodeStatistics {
 
   public static final String statsDir = "nodestats";
   public static final String fileExtension = ".nodestats";
 
   protected String path;
-  protected Map scMap = new HashMap();
+  protected Map current = new HashMap();
+  protected Map original = new HashMap();
 
-  public NodeLatencyStatistics(String communityName) {
+  public NodeStatistics(String communityName) {
     this.path = getPath(communityName);
   }
 
-  public NodeLatencyStatistics(String communityName,
-                               Collection values) {
+  public NodeStatistics(String     communityName,
+                        Collection values) {
     this(communityName);
     for (Iterator it = values.iterator(); it.hasNext();) {
       put((StatCalc)it.next());
@@ -56,28 +57,45 @@ public class NodeLatencyStatistics {
   }
 
   public synchronized void put(StatCalc sc) {
-    scMap.put(sc.getNodeName(), sc);
+    current.put(sc.getNodeName(), sc);
+  }
+
+  public synchronized void putOriginal(StatCalc sc) {
+    original.put(sc.getNodeName(), sc);
+    current.put(sc.getNodeName(), sc.clone());
   }
 
   public synchronized StatCalc get(String nodeName) {
-    return (StatCalc)scMap.get(nodeName);
+    return (StatCalc)current.get(nodeName);
+  }
+
+  public synchronized StatCalc getOriginal(String nodeName) {
+    return (StatCalc)original.get(nodeName);
   }
 
   public synchronized List list() {
-    return new ArrayList(scMap.keySet());
+    return new ArrayList(current.keySet());
+  }
+
+  public synchronized List listOriginal() {
+    return new ArrayList(original.keySet());
   }
 
   public synchronized Collection values() {
-    return new ArrayList(scMap.values());
+    return new ArrayList(current.values());
   }
 
   public boolean contains(String id) {
-    return scMap.containsKey(id);
+    return current.containsKey(id);
+  }
+
+  public boolean containsOriginal(String id) {
+    return original.containsKey(id);
   }
 
   public synchronized void remove(String id) {
-    if (scMap.containsKey(id)) {
-      scMap.remove(id);
+    if (current.containsKey(id)) {
+      current.remove(id);
     }
   }
 
@@ -100,7 +118,7 @@ public class NodeLatencyStatistics {
       bw.close();
       fw.close();
     } catch (Exception ex) {
-      System.out.println("Unable to write NodeLatencyStatistics to file " + path);
+      System.out.println("Unable to write NodeStatistics to file " + path);
     }
   }
 
@@ -128,12 +146,18 @@ public class NodeLatencyStatistics {
   }
 
   public String toXML() {
-    StringBuffer sb = new StringBuffer("<NodeLatencyStatistics>\n");
-    for (Iterator it = scMap.values().iterator(); it.hasNext();) {
+    StringBuffer sb = new StringBuffer("<NodeStatistics>\n");
+    for (Iterator it = original.values().iterator(); it.hasNext();) {
+      StatCalc sc = (StatCalc)it.next();
+      if (!current.containsKey(sc.getNodeName())) {
+        sb.append("  " + sc.toXML() + "\n");
+      }
+    }
+    for (Iterator it = current.values().iterator(); it.hasNext();) {
       StatCalc sc = (StatCalc)it.next();
       sb.append("  " + sc.toXML() + "\n");
     }
-    sb.append("</NodeLatencyStatistics>");
+    sb.append("</NodeStatistics>");
     return sb.toString();
   }
 
@@ -167,7 +191,9 @@ public class NodeLatencyStatistics {
               low = Double.parseDouble(p3.getValue(i));
             }
           }
-          put(new StatCalc(community, node, samples, sum, sumSquares, high, low));
+          StatCalc sc = new StatCalc(community, node, samples, sum, sumSquares, high, low);
+          original.put(node, sc);
+          current.put(node, sc.clone());
         }
       } catch (Exception ex) {
         System.out.println("Exception parsing statCalc data");
