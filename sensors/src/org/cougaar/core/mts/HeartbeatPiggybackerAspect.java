@@ -78,6 +78,15 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
 
     private static int TIME_DELAY = 10000; //default
     
+    /** 
+     * This system property enables one to set the message transit time to ensure that 
+     * hearbeats arrive at their destination by the time they are expected. E.g. if a heartbeat is
+     * due every 15 seconds, and it may take as long as 5 seconds to be transmitted then the
+     * HeartbeatPiggybacker will make sure to emit the heartbeat no later than 10 seconds after 
+     * the HeartbeatPiggybacker sees it.  The default is 10 seconds.
+     */
+    public static final String TIME_DELAY_PROP = "org.cougaar.message.transport.aspects.heartbeatPiggybacker.msgTransitTime";
+    
     static
     {
         
@@ -111,11 +120,14 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
         try {
             String td = "org.cougaar.message.transport.aspects.heartbeatPiggybacker.timeDelay";
             int tdi = Integer.valueOf(System.getProperty(td,"10000")).intValue();
-            if tdi >= 0) {
+            if (tdi >= 0) {
               TIME_DELAY = tdi;
+              if (log.isInfoEnabled()) 
+                  log.info("timeDelay set to " + tdi);
             }
         } catch (Exception e) {
-            log.WARN("Exception reading system property: org.cougaar.message.transport.aspects.heartbeatPiggybacker.timeDelay");
+            log.error("Exception reading system property: org.cougaar.message.transport.aspects.heartbeatPiggybacker.timeDelay. " +
+                        "Using default value of "+ TIME_DELAY);
         }
         
         metricsUpdateService = (MetricsUpdateService)
