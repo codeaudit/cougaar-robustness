@@ -74,10 +74,16 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
      **/
     public synchronized void expire () {
       if (!expired) {
-        bb.openTransaction();
-        processHeartbeats();
-        bb.closeTransaction();
-        expired = true;
+        try {
+          bb.openTransaction();
+          processHeartbeats();
+        } catch (Exception e) {
+          System.err.println("Caught " + e);
+          e.printStackTrace();
+        } finally {
+          expired = true;
+          bb.closeTransaction();
+        }
       }
     }
 
