@@ -24,28 +24,31 @@
 
 package org.cougaar.core.mts.acking;
 
+import org.cougaar.core.mts.*;
+import org.cougaar.core.service.LoggingService;
+
 import java.io.*;
 import java.util.*;
-
-import org.cougaar.core.mts.*;
 
 
 //  Note: Different kinds of messages come into the ack frontend: new messages,
 //  messages being resent (because they were not acked in time), pure ack messages 
-//  being sent for the first or more times, and pure ack-ack messages, being sent 
-//  for the first and only time.
+//  being sent for the first or more times, and pure ack-ack messages, sent only
+//  once.
 
 class AckFrontend extends DestinationLinkDelegateImplBase 
 {
   private DestinationLink link;
+  private MessageAckingAspect aspect;
+  private LoggingService log;
   private MessageAttributes success;
 
-public static long startTime;
-
-  public AckFrontend (DestinationLink link) 
+  public AckFrontend (DestinationLink link, MessageAckingAspect aspect)
   {
     super (link);
     this.link = link;
+    this.aspect = aspect;
+    log = aspect.getTheLoggingService();
 
     success = new SimpleMessageAttributes();
     String status = MessageAttributes.DELIVERY_STATUS_DELIVERED;
@@ -56,266 +59,230 @@ public static long startTime;
     throws UnregisteredNameException, NameLookupException, 
            CommFailureException, MisdeliveredMessageException
   {
-    //  Sanity checks
+    //  Sanity Check:  All messages must have a number
 
     if (!MessageUtils.hasMessageNumber (msg))
     {
-      //  This can happen if the order of the Acking aspect is wrong
+      //  NOTE:  This can happen if this aspect is called in the wrong order
 
-      throw new CommFailureException (new Exception ("Msg has no number! (Check aspect order)"));
+      String s = "Msg has no number! (Check the aspect order)";
+      log.error (s);  
+      throw new CommFailureException (new Exception (s));
     }
 
-    if (MessageUtils.isLocalMessage (msg))
-    {
-      return super.forwardMessage (msg);
-    }
+    //  Special Case:  Local messages are completely excluded from acking
 
-    //  Deal with the different kinds of acking messages we can get
+    if (MessageUtils.isLocalMessage (msg)) return super.forwardMessage (msg);
+
+    //  Deal with new & resending messages
 
     Ack ack = MessageUtils.getAck (msg);
     int msgNum = MessageUtils.getMessageNumber (msg);
 
     if (ack == null)
     {
-      //  A new message (to acking) - insert an ack in it
+      //  A new message (to acking) - insert an ack into it
 
       ack = new Ack (msg);
       MessageUtils.setAck (msg, ack);
-
       ack.addLinkSelection (link);  // the first selection (already made)
     }
     else
     {
-      if (ack.isRegularAck())
-      {
-        //  We have a message being resent.  If it has been acked in the
-        //  meantime we can send it to the ackWaiter for final processing.
+      //  We have a message being resent.  If it has been acked in the
+      //  meantime we can send it to the ackWaiter for final processing.
 
-        if (MessageAckingAspect.hasMessageBeenAcked (msg)) 
-        {
-          MessageAckingAspect.ackWaiter.add (msg);
-          return success;
-        }
+      if (MessageAckingAspect.hasMessageBeenAcked (msg)) 
+      {
+        MessageAckingAspect.ackWaiter.add (msg);
+        return success;
       }
+    }
+
+    //  Prep the message for sending
+
+    String msgString = MessageUtils.toString (msg);
+    String toNode = MessageUtils.getToAgentNode (msg);
+
+    ack.setSendLink (link.getProtocolClass().getName());
+    ack.setRTT (MessageAckingAspect.getBestFullRTTForLink (link, toNode, msg));
+    ack.setResendMultiplier (MessageAckingAspect.resendMultiplier);
+    
+    //  Set the specific acks based on the ack type
+
+    if (ack.isAck())
+    {
+      //  We set the specific acks here only once.  That is because we need to
+      //  know what acks have been acked when this message is acked, and if we
+      //  set (potentially) different acks with each resend of this message, we 
+      //  are not going to know which send or resend made it to the other 
+      //  side and thus what acks we can safely retire.
+
+      if (ack.getSendCount() == 0) 
+      {
+        ack.setSpecificAcks (MessageAckingAspect.getAcksToSend (toNode));
+      }
+    }
+    else if (ack.isPureAck())
+    {
+      //  For pure ack messages we only send the latest acks
+
+      ack.setSpecificAcks (null);
+    }
+    else if (ack.isPureAckAck())
+    {
+      //  The specific acks within a pure ack-ack message have already been
+      //  set and they do not change.
+    }
+
+    //  We always set the latest acks
+
+    ack.setLatestAcks (MessageAckingAspect.getAcksToSend (toNode));
+
+    //  Special handling for pure acks
+
+    if (ack.isPureAck())
+    {
+      //  Simple filters that retire pure ack messages
+
+      PureAck pureAck = (PureAck) ack;
+      
+      if (pureAck.getLatestAcks().isEmpty()) 
+      {
+        if (log.isDebugEnabled()) log.debug ("AckFrontend: Latest acks empty, dropping " +msgString);
+        return success;
+      }
+
+      if (!pureAck.stillAckingSrcMsg())
+      {
+        if (log.isDebugEnabled()) log.debug ("AckFrontend: Src msg out of acks, dropping " +msgString);
+        return success;
+      }
+
+      if (!MessageAckingAspect.findAckToSend ((PureAckMessage)msg))
+      {
+        if (log.isDebugEnabled()) log.debug ("AckFrontend: Pure ack acked, dropping " +msgString);
+        return success;
+      }
+
+      //  Check if some other message has beat the pure ack outta here, meaning we
+      //  don't need to send it as its information has been piggy-backed on the
+      //  other message via its regular (embedded) ack.
+
+      long lastSendTime = MessageAckingAspect.getLastSendTime (link, toNode);
+
+      if (lastSendTime > pureAck.getAckSendableTime())
+      {
+        //  No need to send the ack over this link, reschedule it to consider
+        //  another link.
+
+        float rtt = (float) ack.getRTT();
+        long deadline = lastSendTime + (long)(rtt * MessageAckingAspect.interAckSpacingFactor);
+        pureAck.setSendDeadline (deadline);
+        if (log.isDebugEnabled()) log.debug ("AckFrontend: Rescheduling " +msgString);
+        MessageAckingAspect.pureAckSender.add ((PureAckMessage)msg);
+        return success;
+      }
+    }
+
+    //  Last chance to bail before sending the message
+
+    if (MessageAckingAspect.hasMessageBeenAcked (msg)) 
+    {
+      MessageAckingAspect.ackWaiter.add (msg);
+      return success;
     }
 
     //  Try sending the message
 
-    String toNode = MessageUtils.getToAgentNode (msg);
-
     try
     {
-      ack.setSendLink (link.getProtocolClass());
-
-      if (MessageAckingAspect.ackingOn)
+      if (MessageAckingAspect.showTraffic)
       {
-        //  Set the specific and latest acks for the message
-
-        if (ack.isRegularAck())
+        if (log.isInfoEnabled())
         {
-          //  We set the specific acks only once.  That is because we need to know
-          //  what acks have been acked when this message is acked, and if we set 
-          //  (potentially) different acks with each resend of this message, we 
-          //  are not going to know which send or resend made it to the other 
-          //  side and thus what acks we can safely retire.
-
-          if (ack.getSendCount() == 0) 
-          {
-            ack.setSpecificAcks (MessageAckingAspect.getAcksToSend (toNode));
-          }
-        }
-        else if (ack.isPureAckAck())
-        {
-          //  The specific acks within a pure ack-ack message have already been
-          //  set and they do not change.
-        }
-        else // pure ack messages
-        {
-          //  For pure ack messages we only send the latest acks
-
-          ack.setSpecificAcks (null);
-        }
-
-        ack.setLatestAcks (MessageAckingAspect.getAcksToSend (toNode));
-
-        //  Stuff for computing roundtrip times and whatnot
-
-        Classname receiveLink = MessageAckingAspect.getLastReceiveLink (toNode);
-        if (receiveLink == null) receiveLink = ack.getSendLink();
-        ack.setLastReceiveLink (receiveLink);
-
-        Classname predictedLink = MessageAckingAspect.getReceiveLinkPrediction (toNode);
-        if (predictedLink == null) predictedLink = ack.getLastReceiveLink();
-        ack.setPredictedReceiveLink (predictedLink);
-
-        int senderRTT = MessageAckingAspect.getRoundtripTimeMeasurement 
-        (
-          toNode, ack.getSendLink(), ack.getPredictedReceiveLink()
-        );
-
-        int receiverRTT = MessageAckingAspect.getRoundtripTimeReport
-        (
-          toNode, ack.getLastReceiveLink(), ack.getSendLink()
-        );
-
-        ack.setSenderRoundtripTime (senderRTT);
-        ack.setReceiverRoundtripTime (receiverRTT);
-        ack.setResendMultiplier (MessageAckingAspect.resendMultiplier);
-
-        //  Last Chance To Bail: Regular messages that have since been acked or
-        //  pure acks that don't need to be sent any more are detected here.
-
-        if (ack.isRegularAck())
-        {
-          //  NOTE:  Some messages like heartbeats & traffic masking are not acked 
-          //  (but they can carry acks).
-
-          if (MessageUtils.isAckableMessage (msg))  
-          {
-            if (MessageAckingAspect.hasMessageBeenAcked (msg)) 
-            {
-              MessageAckingAspect.ackWaiter.add (msg);
-              return success;
-            }
-          }
-        }
-        else if (ack.isPureAck())
-        {
-          PureAck pureAck = (PureAck) ack;
-          
-          //  Simple filters that retire pure ack messages
-
-          if (pureAck.getLatestAcks().isEmpty()) 
-          {
-            if (MessageAckingAspect.debug)
-            {
-              String msgString = ((PureAckMessage)msg).toString();
-              System.err.println ("AckFrontend: Latest acks empty, dropping " +msgString);
-            }
-
-            return success;
-          }
-
-          if (!pureAck.stillAckingSrcMsg())
-          {
-            if (MessageAckingAspect.debug)
-            {
-              String msgString = ((PureAckMessage)msg).toString();
-              System.err.println ("AckFrontend: Src msg out of acks, dropping " +msgString);
-            }
-
-            return success;
-          }
-
-          if (!MessageAckingAspect.findAckToSend ((PureAckMessage)msg))
-          {
-            if (MessageAckingAspect.debug)
-            {
-              String msgString = ((PureAckMessage)msg).toString();
-              System.err.println ("AckFrontend: Pure ack acked, dropping " +msgString);
-            }
-
-            return success;
-          }
-
-          //  Check if some other message has beat the ack outta here
-
-          long lastSendTime = MessageAckingAspect.getLastSendTime (link, toNode);
-
-          if (lastSendTime > pureAck.getAckSendableTime())
-          {
-            //  No need to send the ack over this link, reschedule it to consider
-            //  another link.
-
-            int roundtrip = MessageAckingAspect.getRoundtripTimeForAck (link, pureAck);
-            long deadline = lastSendTime + (long)((float)roundtrip * MessageAckingAspect.interAckSpacingFactor);
-            pureAck.setSendDeadline (deadline);
-
-            if (MessageAckingAspect.debug)
-            {
-              String msgString = ((PureAckMessage)msg).toString();
-              System.err.println ("AckFrontend: Rescheduling " +msgString);
-            }
-
-            MessageAckingAspect.pureAckSender.add ((PureAckMessage)msg);
-            return success;
-          }
-        }
-
-        ack.incrementSendCount();
-      }
-      else ack.setResendMultiplier (0);  // no acking = no resends
-
-      if (MessageAckingAspect.showTraffic) 
-      {
-        String str = (ack.getSendCount()<=1 ? "Sending  " : "REsending ") + MessageUtils.toShortString (msg);
-        String lnk = MessageAckingAspect.getLinkType (ack.getSendLink());
-        String sequence = MessageUtils.getSequenceID (msg);
-
-        System.err.println ("\n" +str+ " via " +lnk+ " of " +sequence);
-
-        if (MessageAckingAspect.ackingOn && MessageAckingAspect.debug)
-        {
-          System.err.println (str+ " contains acks: ");
-          AckList.printAcks ("specific", ack.getSpecificAcks());
-          AckList.printAcks ("  latest", ack.getLatestAcks());
-//        System.err.println ("Outbound roundtrip time: " +ack.getSenderRoundtripTime());
+          StringBuffer buf = new StringBuffer();
+          buf.append ("\n\n");
+          String hdr = (ack.getSendCount()==0 ? "Sending  " : "REsending ") + MessageUtils.toShortString (msg);
+          buf.append (hdr);
+          buf.append (" via ");
+          buf.append (MessageAckingAspect.getLinkType (ack.getSendLink()));
+          buf.append (" of ");
+          buf.append (MessageUtils.getAckingSequenceID (msg));
+          buf.append ("\n");
+          buf.append (hdr);
+          buf.append (" contains acks: \n");
+          AckList.printAcks (buf, "specific", ack.getSpecificAcks());
+          AckList.printAcks (buf, "  latest", ack.getLatestAcks());
+          // System.err.println ("Outbound roundtrip time: " +ack.getSenderRoundtripTime());
+          log.info (buf.toString());         
         }
       }
 
-      //  Here we actually try sending the message
-
+      ack.incrementSendCount();
       ack.setSendTime (now());
-      success = link.forwardMessage (msg);
 
-      if (MessageAckingAspect.ackingOn)
-      {
-        MessageAckingAspect.setLastSendTime (ack.getSendLink(), toNode, ack.getSendTime());
-        MessageAckingAspect.setLastSuccessfulLinkUsed (toNode, link.getProtocolClass());
+      //  NOTE - will put msg on ack waiter queue HERE before send in the near future
 
-        //  We reschedule pure acks so they will be sent again if needed
-
-        if (ack.isPureAck())
-        {
-          PureAck pureAck = (PureAck) ack;
-          long lastSendTime = pureAck.getSendTime();
-          int roundtrip = MessageAckingAspect.getRoundtripTimeForAck (link, pureAck);
-          long deadline = lastSendTime + (long)((float)roundtrip * MessageAckingAspect.interAckSpacingFactor);
-          pureAck.setSendDeadline (deadline);
-          MessageAckingAspect.pureAckSender.add ((PureAckMessage)msg);
-          return success;
-        }
-      }
+      success = link.forwardMessage (msg);  // message send
     }
     catch (Exception e)
     {
       //  Ok, the send failed.  We throw an exception and a new link is selected
       //  by the policy and we come back to the ack frontend and try it all again.
 
-      if (MessageAckingAspect.ackingOn)
-      {
-        ack.decrementSendCount();  // didn't actually send
-        if (MessageAckingAspect.debug) System.err.println ("\nFailure sending Msg " +msgNum+ ": " +e);
-      }
-
+      ack.decrementSendCount();  // didn't actually send
+      if (log.isWarnEnabled()) log.warn ("Failure sending " +msgString+ ":\n" +stackTraceToString(e));
       throw new CommFailureException (e);
     }
 
-    //  At this point the first send leg has been successful (otherwise we
-    //  would have gotten an exception above).  If we are acking and the message
-    //  is ackable we put the it on our ack waiting list.
+    //  Ok, the first (and possibly only) leg of the message send has completed successfuly
 
-    if (ack.isRegularAck() && MessageAckingAspect.ackingOn) 
+    MessageAckingAspect.setLastSendTime (ack.getSendLink(), toNode, ack.getSendTime());
+    MessageAckingAspect.setLastSuccessfulLinkUsed (toNode, link.getProtocolClass());
+
+    if (ack.isAck() && MessageUtils.getMessageNumber(msg) != 0)
     {
-      if (MessageUtils.isAckableMessage (msg))
+      //  We put ackable messages on the ack waiter queue to wait for their acks and
+      //  possibly be resent.  If the protocol link used to send the message is being 
+      //  excluded from acking, we first declare that the ack has arrived. 
+
+      if (MessageAckingAspect.isExcludedLink (link))
       {
-        MessageAckingAspect.ackWaiter.add (msg);
+        //  Manufacture an ack for our message over an apparently separately acked link
+
+        AckList ackList = new AckList (MessageUtils.getFromAgent(msg), MessageUtils.getToAgent(msg));
+        ackList.add (MessageUtils.getMessageNumber (msg));
+        Vector v = new Vector();
+        v.add (ackList);
+        MessageAckingAspect.addReceivedAcks (toNode, v);
       }
+
+      MessageAckingAspect.ackWaiter.add (msg);
+    }
+    else if (ack.isPureAck())
+    {
+      //  We reschedule pure acks so they will be sent again if needed
+
+      PureAck pureAck = (PureAck) ack;
+      long lastSendTime = pureAck.getSendTime();
+      float rtt = (float) ack.getRTT();
+      long deadline = lastSendTime + (long)(rtt * MessageAckingAspect.interAckSpacingFactor);
+      pureAck.setSendDeadline (deadline);
+      MessageAckingAspect.pureAckSender.add ((PureAckMessage)msg);
     }
 
-    //  Return results of forwarding message
+    return success;  // msg successfully sent (so far)
+  }
 
-    return success;
+  //  Utility methods
+
+  private String stackTraceToString (Exception e)
+  {
+    StringWriter stringWriter = new StringWriter();
+    PrintWriter printWriter = new PrintWriter (stringWriter);
+    e.printStackTrace (printWriter);
+    return stringWriter.getBuffer().toString();
   }
 
   private static long now ()

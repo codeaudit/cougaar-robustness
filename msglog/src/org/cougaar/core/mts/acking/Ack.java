@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2002 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,7 +19,8 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 23 Apr  2001: Split out from MessageAckingAspect. (OBJS)
+ * 05 Aug 2002: Revamped in light of new RTT service. (OBJS)
+ * 23 Apr 2002: Split out from MessageAckingAspect. (OBJS)
  */
 
 package org.cougaar.core.mts.acking;
@@ -35,16 +36,13 @@ import org.cougaar.core.mts.*;
 
 public class Ack implements Serializable
 {
+  private long sendTime;
+  private String sendLink;
+  private int sendCount;
   private Vector specificAcks;
   private Vector latestAcks;
-  private Classname lastReceiveLink;
-  private Classname sendLink;
-  private Classname predictedReceiveLink;
-  private int senderRoundtripTime;
-  private int receiverRoundtripTime;
+  private int roundTripTime;
   private int resendMultiplier;
-  private long sendTime;
-  private int sendCount;
 
   private transient AttributedMessage msg;
   private transient Vector linksUsed;
@@ -57,14 +55,39 @@ public class Ack implements Serializable
     linksUsed = new Vector();
   }
 
-  void setMsg (AttributedMessage msg)
+  public void setSendTime (long time)
   {
-    this.msg = msg;
+    sendTime = time;
   }
 
-  public AttributedMessage getMsg ()
+  public long getSendTime ()
   {
-    return msg;
+    return sendTime;
+  }
+
+  public void setSendLink (String link)
+  {
+    sendLink = link;
+  }
+
+  public String getSendLink ()
+  {
+    return sendLink;
+  }
+
+  public int getSendCount ()
+  {
+    return sendCount;
+  }
+
+  public void incrementSendCount ()
+  {
+    sendCount++;
+  }
+
+  public void decrementSendCount ()
+  {
+    sendCount--;
   }
 
   void setSpecificAcks (Vector acks)
@@ -87,69 +110,24 @@ public class Ack implements Serializable
     return latestAcks;      
   }
 
-  public void setLastReceiveLink (Class link)
+  void setMsg (AttributedMessage msg)
   {
-    setLastReceiveLink (new Classname (link));
+    this.msg = msg;
   }
 
-  public void setLastReceiveLink (Classname link)
+  public AttributedMessage getMsg ()
   {
-    lastReceiveLink = link;
+    return msg;
   }
 
-  public Classname getLastReceiveLink ()
+  public void setRTT (int rtt)
   {
-    return lastReceiveLink;
+    roundTripTime = rtt;
   }
 
-  public void setSendLink (Class link)
+  public int getRTT ()
   {
-    setSendLink (new Classname (link));
-  }
-
-  public void setSendLink (Classname link)
-  {
-    sendLink = link;
-  }
-
-  public Classname getSendLink ()
-  {
-    return sendLink;
-  }
-
-  public void setPredictedReceiveLink (Class link)
-  {
-    setPredictedReceiveLink (new Classname (link));
-  }
-
-  public void setPredictedReceiveLink (Classname link)
-  {
-    predictedReceiveLink = link;
-  }
-
-  public Classname getPredictedReceiveLink ()
-  {
-    return predictedReceiveLink;
-  }
-
-  public void setSenderRoundtripTime (int time)
-  {
-    senderRoundtripTime = time;
-  }
-
-  public int getSenderRoundtripTime ()
-  {
-    return senderRoundtripTime;
-  }
-
-  public void setReceiverRoundtripTime (int time)
-  {
-    receiverRoundtripTime = time;
-  }
-
-  public int getReceiverRoundtripTime ()
-  {
-    return receiverRoundtripTime;
+    return roundTripTime;
   }
 
   public void setResendMultiplier (int x)
@@ -157,45 +135,19 @@ public class Ack implements Serializable
     resendMultiplier = x;
   }
 
-  public int getAckWindowUnitTimeSlot ()
-  {
-    // return (senderRoundtripTime + receiverRoundtripTime);
-    return Math.max (senderRoundtripTime, receiverRoundtripTime);
-  }
-
   public int getResendMultiplier ()
   {
     return resendMultiplier;
   }
 
-  public int getResendAckWindow ()
+  public int getAckWindow ()
   {
-    return getAckWindowUnitTimeSlot() * resendMultiplier;
+    return roundTripTime;
   }
 
-  public void setSendTime (long time)
+  public int getMsgResendDeadline ()
   {
-    sendTime = time;
-  }
-
-  public long getSendTime ()
-  {
-    return sendTime;
-  }
-
-  public int getSendCount ()
-  {
-    return sendCount;
-  }
-
-  public void incrementSendCount ()
-  {
-    sendCount++;
-  }
-
-  public void decrementSendCount ()
-  {
-    sendCount--;
+    return getAckWindow() * resendMultiplier;
   }
 
   public boolean haveLinkSelection (DestinationLink link)
@@ -255,7 +207,7 @@ public class Ack implements Serializable
     return receiveTime;
   }
 
-  public boolean isRegularAck ()
+  public boolean isAck ()
   {
     return (getClass() == org.cougaar.core.mts.acking.Ack.class);
   }
@@ -272,10 +224,10 @@ public class Ack implements Serializable
 
   public String getType ()
   {
-    if (isRegularAck()) return "RegularAck";
+    if (isAck())        return "Ack";
     if (isPureAck())    return "PureAck";
     if (isPureAckAck()) return "PureAckAck";
-    return                     "Unknown";
+    return                     "<unknown>Ack";
   }
     
   public String toString ()

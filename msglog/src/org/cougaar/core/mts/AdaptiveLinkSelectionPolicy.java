@@ -103,13 +103,17 @@ import org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol;
  * <p>
  */
 
+import org.cougaar.core.service.LoggingService;
+
+
 public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 {
 // HACK - where to house history?
   private static final MessageHistory messageHistory = MessageSendHistoryAspect.messageHistory;
   //public static final MessageHistory messageHistory = new MessageHistory();
 
-  private static boolean doDebug;
+  private static LoggingService log;
+  private static boolean debug;
   private static boolean showTraffic; 
 
   private static final boolean useRTTService; 
@@ -162,13 +166,10 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
   public void load () 
   {
     super.load();
+    log = loggingService;
+
     String sta = "org.cougaar.core.mts.ShowTrafficAspect";
     showTraffic = (getAspectSupport().findAspect(sta) != null);
-  }
-
-  private void debug (String s)
-  {
-    loggingService.debug (s);
   }
 
   private DestinationLink linkChoice (DestinationLink link, AttributedMessage msg)
@@ -176,14 +177,14 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     recordLinkSelection (link, msg);
     MessageUtils.setSendProtocolLink (msg, getName (link));
     if (showTraffic) showProgress (link);
-//debug ("Chose link = "+ getName (link));
+//log.debug ("Chose link = "+ getName (link));
     return link;
   }
 
   public synchronized DestinationLink selectLink (Iterator links, AttributedMessage msg, 
          AttributedMessage failedMsg, int retryCount, Exception last)
   {
-    doDebug = loggingService.isDebugEnabled();
+    debug = log.isDebugEnabled();
 
     if (links == null || msg == null) return null;
 
@@ -216,8 +217,8 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
         MessageUtils.setToAgent (msg, MessageUtils.getToAgent (failedMsg)); 
         MessageUtils.setAck (msg, MessageUtils.getAck (failedMsg)); 
         MessageUtils.setMessageSize (msg, MessageUtils.getMessageSize (failedMsg)); 
-        MessageUtils.setSendDeadline (msg, MessageUtils.getSendDeadline (failedMsg)); 
         MessageUtils.setSendTimeout (msg, MessageUtils.getSendTimeout (failedMsg)); 
+        MessageUtils.setSendDeadline (msg, MessageUtils.getSendDeadline (failedMsg)); 
       }
     }
 
@@ -254,24 +255,30 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
     String msgString = MessageUtils.toString (msg);
 
-    if (doDebug && !MessageUtils.isNewMessage(msg)) debug ("Processing " +msgString);
+    if (debug && !MessageUtils.isNewMessage(msg)) log.debug ("Processing " +msgString);
 
     /**
-     **  Special case:  Message has passed its send deadline so we just drop it
+     **  Special case:  Check on a possible message send deadline.  If the message has 
+     **  passed its send deadline we just drop it.
      **/
 
-    if (MessageUtils.getSendDeadline (msg) < now())
+    if (MessageUtils.haveSendTimeout(msg) && !MessageUtils.haveSendDeadline(msg)) 
     {
-      if (doDebug) debug ("Dropping msg past its send deadline: " +msgString); 
+      //  Need to set the deadline
 
+      int timeout = MessageUtils.getSendTimeout (msg);
+      if (timeout >= 0) MessageUtils.setSendDeadline (msg, now() + timeout);
+      else log.error ("Msg has bad send timeout (" +timeout+ ") (ignored): " +msgString);
+    }
+
+    if (MessageUtils.getSendDeadline (msg) < now())  // default deadline is no deadline
+    {
       //  [Semi-HACK] Declare message as successfully sent so that any incoming
-      //  acks for it are ignored.  Maybe put this in a dropped msg table?
+      //  acks for it are ignored.  Maybe put this in a dropped msg table instead?
 
+      if (debug) log.debug ("Dropping msg past its send deadline: " +msgString); 
       MessageAckingAspect.addSuccessfulSend (msg);
-
-      //  Drop message
-
-      return blackHoleLink;
+      return blackHoleLink;  // drop message
     }
 
     //  Normal operation.
@@ -341,8 +348,6 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       {
         //  Bypass topological caching to get latest target agent info
 
-// error: cannot just change destination - have to renumber for new sequence
-
 //  NOTE: now we do not renumber as numbers are node-independent.  Need new
 //  node info though
 
@@ -371,7 +376,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     }
     catch (Exception e)
     {
-      if (doDebug) debug ("Unable to get node for agent: " +targetAgent);
+      if (debug) log.debug ("Unable to get node for agent: " +targetAgent);
     }
 
     //  Cannot continue past this point without knowing the name 
@@ -386,7 +391,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     Arrays.sort (destLinks, linkRanker);
 
     DestinationLink topLink = destLinks[0];
-//debug ("\ntopLink = " +geName(topLink));
+//log.debug ("\ntopLink = " +geName(topLink));
 
     //  HACK!
 
@@ -399,7 +404,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       DestinationLink link = pickLinkByClass (destLinks, linkClass);
       if (link == null) link = topLink;  // linkClass may not be currently available
 
-      if (doDebug) debug ("Chose link for traffic masking msg: " +msgString);
+      if (debug) log.debug ("Chose link for traffic masking msg: " +msgString);
       return linkChoice (link, msg);
     }
 
@@ -415,12 +420,12 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       DestinationLink link = pickLinkByClass (destLinks, linkClass);
       if (link == null) link = topLink;  // linkClass may not be currently available
 
-      if (doDebug) debug ("Chose link for pure ack-ack msg: " +msgString);
+      if (debug) log.debug ("Chose link for pure ack-ack msg: " +msgString);
       return linkChoice (link, msg);
     }
 
     //  Special Case:  Sending pure acks.  For pure ack messages we try all possible 
-    //  links until we run out or we determine we no longer need to send the message.
+    //  links until we run out or we determine we no longer need to send the pure ack.
 
     if (MessageUtils.isPureAckMessage (msg))
     {
@@ -452,13 +457,11 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
             //  its already been done for us.  Update the latestDeadline for when we
             //  need to attempt to send this ack over another link.
 
-// TODO - new rtt with acking
-
-            int roundtrip = MessageAckingAspect.getRoundtripTimeForAck (link, pureAck);
-            if (roundtrip < 0) roundtrip = MessageAckingAspect.getBestRoundtripTimeForLink (link, targetNode);
+            int rtt = rttService.getBestFullRTTForLink (link, targetNode);
+            if (rtt <= 0) rtt = link.cost (msg);
 
             float spacingFactor = MessageAckingAspect.getInterAckSpacingFactor();
-            long deadline = lastSendTime + (long)((float)roundtrip * spacingFactor);
+            long deadline = lastSendTime + (long)((float)rtt * spacingFactor);
             if (deadline > latestDeadline) latestDeadline = deadline;
           }
         }
@@ -471,7 +474,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
         pureAck.setSendDeadline (latestDeadline);
         MessageAckingAspect.addToPureAckSender ((PureAckMessage)msg);
 
-        if (doDebug) debug ("Rescheduling pure ack msg: " +msgString);
+        if (debug) log.debug ("Rescheduling pure ack msg: " +msgString);
         return blackHoleLink;  // msgs go in, but never come out!
       }
 
@@ -486,14 +489,14 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
         {
           pureAck.addLinkSelection (link);
 
-          if (doDebug) debug ("Chose link for pure ack msg: " +msgString);
+          if (debug) log.debug ("Chose link for pure ack msg: " +msgString);
           return linkChoice (link, msg);
         }
       }
 
       //  Final case: No untried links left - we are done sending pure ack
 
-      if (doDebug) debug ("No need to send pure ack msg: " +msgString);
+      if (debug) log.debug ("No untried links left to send pure ack msg: " +msgString);
       return blackHoleLink;
     }
 
@@ -516,7 +519,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
         if (newLink)
         {
-          if (doDebug) debug ("Chose last successful link used for resending msg: " +msgString);
+          if (debug) log.debug ("Chose last successful link used for resending msg: " +msgString);
           return linkChoice (link, msg);
         }
 
@@ -538,7 +541,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
         if (link == null)
         {
-          if (doDebug) debug ("Starting over with first link choice for msg resend");
+          if (debug) log.debug ("Starting over with first link choice for msg resend");
           link = pickLinkByClass (destLinks, ack.getFirstLinkSelection());
           ack.clearLinkSelections();
         }
@@ -547,11 +550,11 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
         if (link == null)
         {
-          if (doDebug) debug ("First link choice not available, chosing top link");
+          if (debug) log.debug ("First link choice not available, chosing top link");
           link = topLink;
         }
 
-        if (doDebug) debug ("Made link choice for resend msg: " + msgString);
+        if (debug) log.debug ("Made link choice for resend msg: " + msgString);
         ack.addLinkSelection (link);
         return linkChoice (link, msg);
       }   
@@ -567,8 +570,8 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
     SelectionChoice lastChoice = (SelectionChoice) selectionHistory.get (targetNode);
 
-//debug ("last choice = " + lastChoice);
-//if (lastChoice != null) debug ("last choice was successful = " + lastChoice.wasSuccessful());
+//log.debug ("last choice = " + lastChoice);
+//if (lastChoice != null) log.debug ("last choice was successful = " + lastChoice.wasSuccessful());
 
     //  Special Case:  First time a message is sent to this destination
     //  or there is only one link to choose from.  In these cases we always 
@@ -602,20 +605,20 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       //  We've used this link so many times in a row now, it may be time
       //  to consider other links that may have improved, or never been tried.
 
-//debug ("\n** COUNT= "+count);
+//log.debug ("\n** COUNT= "+count);
 
       if (count == 0)
       {
-//debug ("\n** trying OTHER LINKS");
+//log.debug ("\n** trying OTHER LINKS");
 
         //  Look for the highest ranking link left that still has a RTT of 0 (which means
         //  there are not enough samples to establish a RTT for the link-node combo).
 
         for (int i=0; i<destLinks.length; i++)
         {
-          if (rttService.getBestRoundtripTimeForLink (destLinks[i], targetNode) == 0) 
+          if (rttService.getBestCommRTTForLink (destLinks[i], targetNode) == 0) 
           {
-//debug ("\n** chose link with RTT = 0");
+//log.debug ("\n** chose link with RTT = 0");
             return linkChoice (setReplacementChoice (lastChoice, destLinks[i], msg), msg);
           }
         }
@@ -640,7 +643,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
           }
         }
 
-//debug ("\n** chose (currenly valid) link last chosen longest ago");
+//log.debug ("\n** chose (currenly valid) link last chosen longest ago");
         return linkChoice (setReplacementChoice (lastChoice, oldestLink, msg), msg);
       }
 
@@ -706,7 +709,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
         upgrade = pickUpgradeChoice (lastChoice, destLinks, msg);
       }
 
-      if (doDebug) debug ("Upgrade choice failed: new upgrade= " +upgrade);
+      if (debug) log.debug ("Upgrade choice failed: new upgrade= " +upgrade);
 
       if (upgrade != null)
       {
@@ -874,7 +877,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       selectionHistory.put (targetNode, choice);
     }
 
-    if (doDebug) debug ("SteadyState selected: " +getName (link));
+    if (debug) log.debug ("SteadyState selected: " +getName (link));
     return link;
   }
 
@@ -885,7 +888,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     int msgNum = MessageUtils.getMessageNumber (msg);
     choice.makeUpgradeChoice (link, msgNum);
 
-    if (doDebug) debug ("Upgrade selected: " +getName (link));
+    if (debug) log.debug ("Upgrade selected: " +getName (link));
     return link;
   }
 
@@ -896,7 +899,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     int msgNum = MessageUtils.getMessageNumber (msg);
     choice.makeReplacementChoice (link, msgNum);
 
-    if (doDebug) debug ("Replacement selected: " +getName (link));
+    if (debug) log.debug ("Replacement selected: " +getName (link));
     return link;
   }
 
@@ -1118,8 +1121,8 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     if (useRTTService)
     {
       String targetNode = MessageUtils.getToAgentNode (msg);
-      int bestRTT = rttService.getBestRoundtripTimeForLink (link, targetNode);
-//debug ("bestRTT: " +bestRTT+ " for " +getName(link)+ " to " +targetNode);
+      int bestRTT = rttService.getBestCommRTTForLink (link, targetNode);
+//log.debug ("bestRTT: " +bestRTT+ " for " +getName(link)+ " to " +targetNode);
       if (bestRTT > 0) return bestRTT;
     }
 

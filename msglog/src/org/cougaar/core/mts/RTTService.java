@@ -28,5 +28,6 @@ import org.cougaar.core.component.Service;
 
 public interface RTTService extends Service
 {
-  public int getBestRoundtripTimeForLink (DestinationLink link, String node);
+  public int getBestCommRTTForLink (DestinationLink link, String node);
+  public int getBestFullRTTForLink (DestinationLink link, String node);
 }

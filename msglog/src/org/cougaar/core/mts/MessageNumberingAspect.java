@@ -116,6 +116,8 @@ public class MessageNumberingAspect extends StandardAspect
             
       if (isLocalMessage (msg))  // every msg needs a number, even local ones
       {
+// HACK note:  add positive numbers for local msgs - leave comment telling why
+
         n = 0;  
         MessageUtils.setMessageTypeToLocal (msg);
       }
@@ -143,9 +145,7 @@ public class MessageNumberingAspect extends StandardAspect
       {
         //  Unknown message type - should not occur, except during system development
 
-        String type = MessageUtils.getMessageType (msg);
-        loggingService.error ("Unknown msg type! : " +type);
-
+        loggingService.fatal ("Unknown msg type! : " +MessageUtils.getMessageType(msg));
         n = -1;  // will nearly always result as a duplicate msg on the remote side
       }
 

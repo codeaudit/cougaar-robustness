@@ -28,7 +28,9 @@ package org.cougaar.core.mts.acking;
 import java.util.*;
 
 import org.cougaar.core.mts.MessageUtils;
+import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.thread.CougaarThread;
+
 
 /**
  **  This is where we send pure ack messages - ack messages
@@ -43,13 +45,18 @@ import org.cougaar.core.thread.CougaarThread;
 
 class PureAckSender implements Runnable
 {
+  private MessageAckingAspect aspect;
+  private LoggingService log;
   private Vector queue;
   private PureAckMessage messages[];
   private boolean haveNewMessages;
   private long minSendDeadline;
 
-  public PureAckSender () 
+  public PureAckSender (MessageAckingAspect aspect) 
   {
+    this.aspect = aspect;
+    log = aspect.getTheLoggingService();
+
     queue = new Vector();
     messages = new PureAckMessage[32];
     haveNewMessages = false;
@@ -138,20 +145,11 @@ class PureAckSender implements Runnable
           long sendDeadline = pureAck.getSendDeadline();
           long timeLeft = sendDeadline - now();
 
-          if (MessageAckingAspect.debug)
-          {
-            String m = MessageUtils.toShortString (pam);
-//System.err.println ("PureAckSender: "+m+": timeLeft="+timeLeft);
-          }
-
           if (timeLeft <= 0)
           {
             //  Time to send/resend the ack
 
-            if (MessageAckingAspect.debug) 
-            {
-              System.err.println ("PureAckSender: Launching " +pam);
-            }
+// System.err.println ("PureAckSender: Launching " +pam);
 
             remove (pam);  // remove first to avoid race condition with send
             MessageSender.sendMsg (pam);

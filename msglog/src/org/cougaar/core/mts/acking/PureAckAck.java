@@ -43,7 +43,7 @@ public class PureAckAck extends PureAck
 //AckList.printAcks ("specific", pureAck.getLatestAcks());
 
     setReceiveTime (pureAck.getReceiveTime());
-    setSenderRoundtripTime (pureAck.getSenderRoundtripTime());
+// temp HACK    setSenderRoundtripTime (pureAck.getSenderRoundtripTime());
   }
 }
 

@@ -78,17 +78,11 @@ public final class MessageUtils
 
   public static int getMessageNumber (AttributedMessage msg)
   {
-    //  If the message does not have a message number attribute
-    //  we assume it is a local message and return 0.
+    //  If the message does not have a message number we return 0
 
     Integer num = (Integer) msg.getAttribute (MSG_NUM);
     if (num != null) return num.intValue();
-    return 0;  // could perhaps return -1, but have hasMessageNumber() if needed
-  }
-
-  public static boolean isAckableMessage (AttributedMessage msg)
-  {
-    return (getMessageNumber (msg) != 0);
+    return 0;  // have method hasMessageNumber() if needed
   }
 
   public static void setFromAgent (AttributedMessage msg, AgentID fromAgent)
@@ -219,12 +213,6 @@ public final class MessageUtils
     return (time != null ? time.longValue() : 0);
   }
 
-  public static boolean isRegularAckMessage (AttributedMessage msg)
-  {
-    Ack ack = getAck (msg);
-    return (ack != null ? ack.isRegularAck() : false);
-  }
-
   public static boolean isPureAckMessage (AttributedMessage msg)
   {
     return (msg.getClass() == PureAckMessage.class);
@@ -254,7 +242,12 @@ public final class MessageUtils
   {
     Integer millisecs = (Integer) msg.getAttribute (SEND_TIMEOUT);
     if (millisecs != null) return millisecs.intValue();
-    return 0;  // 0 = no timeout
+    return -1;  // no timeout
+  }
+
+  public static boolean haveSendTimeout (AttributedMessage msg)
+  {
+    return (msg.getAttribute (SEND_TIMEOUT) != null);
   }
 
   public static void setSendDeadline (AttributedMessage msg, long deadline)
@@ -266,7 +259,12 @@ public final class MessageUtils
   {
     Long deadline = (Long) msg.getAttribute (SEND_DEADLINE);     // note LOCAL attribute
     if (deadline != null) return deadline.longValue();
-    return Long.MAX_VALUE;
+    return Long.MAX_VALUE;  // no deadline
+  }
+
+  public static boolean haveSendDeadline (AttributedMessage msg)
+  {
+    return (msg.getAttribute (SEND_DEADLINE) != null);
   }
 
   public static void setSendProtocolLink (AttributedMessage msg, String protocolLink)
@@ -291,11 +289,11 @@ public final class MessageUtils
     return 0;
   }
 
-  public static String getSequenceID (AttributedMessage msg)
+  public static String getAckingSequenceID (AttributedMessage msg)
   {
     AgentID fromAgent = getFromAgent (msg);
     AgentID toAgent = getToAgent (msg);
-    return AgentID.makeSequenceID (fromAgent, toAgent);    
+    return AgentID.makeAckingSequenceID (fromAgent, toAgent);    
   }
 
   public static String toShortString (AttributedMessage msg)
@@ -342,7 +340,7 @@ public final class MessageUtils
 
     if (msg == null || isLocalMessage(msg)) return hdr;
 
-    String key = AgentID.makeSequenceID (getFromAgent(msg), getToAgent(msg));
+    String key = AgentID.makeAckingSequenceID (getFromAgent(msg), getToAgent(msg));
     return hdr + " of " + key;
   }
 }

@@ -28,6 +28,7 @@ package org.cougaar.core.mts.acking;
 import java.util.*;
 
 import org.cougaar.core.mts.*;
+import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.thread.CougaarThread;
 
 
@@ -38,13 +39,18 @@ import org.cougaar.core.thread.CougaarThread;
 
 class AckWaiter implements Runnable
 {
+  private MessageAckingAspect aspect;
+  private LoggingService log;
   private Vector queue;
   private AttributedMessage messages[];
   private boolean haveNewData;
   private long minResendDeadline;
 
-  public AckWaiter () 
+  public AckWaiter (MessageAckingAspect aspect) 
   {
+    this.aspect = aspect;
+    log = aspect.getTheLoggingService();
+
     queue = new Vector();
     messages = new AttributedMessage[32];
     haveNewData = false;
@@ -55,15 +61,19 @@ class AckWaiter implements Runnable
   {
     //  Sanity checks
 
-    if (!MessageUtils.isAckableMessage (msg)) return;
-    if (!MessageAckingAspect.hasRegularAck (msg)) return;
+    if (!MessageAckingAspect.hasNonPureAck (msg)) return;
+    if (MessageUtils.getMessageNumber(msg) == 0) return;
+
+// sync (agentState)
+//   if (acked) remove from agentState;
+//   else add to agentState;
 
     //  Add the message
 
     synchronized (queue) 
     {
       queue.add (msg);
-      ding();          // set minResendDeadline if nothing else
+      ding();  // set minResendDeadline if nothing else
     }
   }
 
@@ -85,6 +95,12 @@ class AckWaiter implements Runnable
     {
       queue.remove (msg);
     }
+  }
+
+  private boolean debug ()
+  {
+    if (log == null) log = aspect.getTheLoggingService();
+    return (log != null ? log.isDebugEnabled() : false);
   }
 
   public void run() 
@@ -149,11 +165,7 @@ AckList.printAcks (MessageUtils.getAck(msg).getAcks());
 */
         if (MessageAckingAspect.wasSuccessfulSend (msg))
         {
-          if (MessageAckingAspect.debug) 
-          {
-            System.err.println ("\nAckWaiter: Dropping already successful " +MessageUtils.toString(msg));
-          }
-
+          if (debug()) log.debug ("AckWaiter: Dropping already successful " +MessageUtils.toString(msg));
           remove (msg);
           messages[i] = null;
           continue;
@@ -170,17 +182,15 @@ AckList.printAcks (MessageUtils.getAck(msg).getAcks());
         if (ackList != null)
         {
           //  We have an ack!!
-        
-          if (MessageAckingAspect.debug) 
-          {
-            System.err.println ("\nAckWaiter: Got ack for " +MessageUtils.toString(msg));
-          }
+
+          if (debug()) log.debug ("AckWaiter: Got ack for " +MessageUtils.toString(msg));
 
           Ack ack = MessageUtils.getAck (msg);
           String toNode = MessageUtils.getToAgentNode (msg);
 
+// remove from agent state
+
           MessageAckingAspect.addSuccessfulSend (msg);                
-          MessageAckingAspect.updateRoundtripTimeMeasurement (ack, ackList);
           MessageAckingAspect.updateMessageHistory (ack, ackList);
           MessageAckingAspect.removeAcksToSend (toNode, ack.getSpecificAcks()); // acks now acked
 
@@ -201,14 +211,11 @@ AckList.printAcks (MessageUtils.getAck(msg).getAcks());
 
         //  See if time to resend message
 
-        long resendDeadline = ack.getSendTime() + ack.getResendAckWindow();
+        long resendDeadline = ack.getSendTime() + ack.getMsgResendDeadline();
         long timeLeft = resendDeadline - now();
 
-        if (MessageAckingAspect.debug)
-        {
-          // System.err.println ("AckWaiter: msg " +MessageUtils.getMessageNumber(msg)+
-          //  ": ackWindow="+ack.getResendAckWindow()+" timeLeft="+timeLeft);
-        }
+System.err.println ("AckWaiter: msg " +MessageUtils.getMessageNumber(msg)+
+ ": ackWindow="+ack.getMsgResendDeadline()+" timeLeft="+timeLeft);
 
         if (timeLeft <= 0)
         {
@@ -220,11 +227,7 @@ AckList.printAcks (MessageUtils.getAck(msg).getAcks());
           //  message through.  How this works may change when the message history 
           //  is better integrated with message acking. 
 
-          if (MessageAckingAspect.debug) 
-          {
-            // System.err.println ("AckWaiter: Resending " +MessageUtils.toString(msg));
-          }
-
+          if (debug()) log.debug ("AckWaiter: Resending " +MessageUtils.toString(msg));
           remove (msg);  // remove first to avoid race condition with send
           MessageSender.sendMsg (msg);
         }

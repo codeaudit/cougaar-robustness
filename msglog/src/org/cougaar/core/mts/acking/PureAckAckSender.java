@@ -28,6 +28,7 @@ package org.cougaar.core.mts.acking;
 import java.util.*;
 
 import org.cougaar.core.mts.MessageUtils;
+import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.thread.CougaarThread;
 
 /**
@@ -40,13 +41,18 @@ import org.cougaar.core.thread.CougaarThread;
 
 class PureAckAckSender implements Runnable
 {
+  private MessageAckingAspect aspect;
+  private LoggingService log;
   private Vector queue;
   private PureAckAckMessage messages[];
   private boolean haveNewMessages;
   private long minSendDeadline;
 
-  public PureAckAckSender () 
+  public PureAckAckSender (MessageAckingAspect aspect) 
   {
+    this.aspect = aspect;
+    log = aspect.getTheLoggingService();
+
     queue = new Vector();
     messages = new PureAckAckMessage[32];
     haveNewMessages = false;
@@ -137,20 +143,14 @@ class PureAckAckSender implements Runnable
           long sendDeadline = pureAckAck.getSendDeadline();
           long timeLeft = sendDeadline - now();
 
-          if (MessageAckingAspect.debug)
-          {
-            String m = MessageUtils.toShortString (paam);
-//          System.err.println ("PureAckAckSender: "+m+": timeLeft="+timeLeft);
-          }
+// String m = MessageUtils.toShortString (paam);
+// System.err.println ("PureAckAckSender: "+m+": timeLeft="+timeLeft);
 
           if (timeLeft <= 0)
           {
             //  Time to send the ack-ack
 
-            if (MessageAckingAspect.debug) 
-            {
-//            System.err.println ("PureAckAckSender: Launching " +paam);
-            }
+// System.err.println ("PureAckAckSender: Launching " +paam);
 
             remove (paam);  // remove first to avoid race condition with send
             MessageSender.sendMsg (paam);

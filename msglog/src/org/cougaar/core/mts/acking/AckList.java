@@ -35,10 +35,6 @@ public class AckList extends NumberList
   private AgentID fromAgent;
   private AgentID toAgent;
 
-  private transient String sendLinkType;
-  private transient String receiveLinkType;
-  private transient long receiveTime;
-
   public AckList (AgentID fromAgent, AgentID toAgent)
   {
     this.fromAgent = fromAgent;
@@ -50,9 +46,6 @@ public class AckList extends NumberList
     super (original);
     this.fromAgent = original.getFromAgent();
     this.toAgent = original.getToAgent();
-    this.sendLinkType = original.sendLinkType;
-    this.receiveLinkType = original.receiveLinkType;
-    this.receiveTime = original.receiveTime;
   }
 
   public AgentID getFromAgent ()
@@ -65,41 +58,11 @@ public class AckList extends NumberList
     return toAgent;
   }
 
-  public String getSequenceID ()
+  public String getAckingSequenceID ()
   {
-    return AgentID.makeSequenceID (fromAgent, toAgent);
+    return AgentID.makeAckingSequenceID (fromAgent, toAgent);
   }
 
-  public void setSendLinkType (String sendLinkType)
-  {
-    this.sendLinkType = receiveLinkType;
-  }
-
-  public String getSendLinkType ()
-  {
-    return receiveLinkType;
-  }
-
-  public void setReceiveLinkType (String receiveLinkType)
-  {
-    this.receiveLinkType = receiveLinkType;
-  }
-
-  public String getReceiveLinkType ()
-  {
-    return receiveLinkType;
-  }
-
-  public void setReceiveTime (long time)
-  {
-    receiveTime = time;
-  }
-
-  public long getReceiveTime ()
-  {
-    return receiveTime;
-  }
-    
   public String toString ()
   {
     return super.toString();
@@ -107,7 +70,7 @@ public class AckList extends NumberList
 
   public String toStringFull ()
   {
-    return "acks: " +super.toString()+ " sequence: " + getSequenceID();
+    return "acks: " +super.toString()+ " sequence: " + getAckingSequenceID();
   }
 
   //  Utility methods
@@ -143,6 +106,13 @@ public class AckList extends NumberList
 
   public static void printAcks (String tag, Vector acks)
   {
+    StringBuffer buf = new StringBuffer();
+    printAcks (buf, tag, acks);
+    System.err.print (buf.toString());
+  }
+
+  public static void printAcks (StringBuffer buf, String tag, Vector acks)
+  {
     if (acks == null) return;
 
     if (tag == null) tag = "";
@@ -152,7 +122,7 @@ public class AckList extends NumberList
     for (Enumeration a=acks.elements(); a.hasMoreElements(); )
     {
       String marker = (firstTime ? tag : blank);  firstTime = false;
-      System.err.println ("  " +marker+ " " +((AckList) a.nextElement()).toStringFull());
+      buf.append ("  " +marker+ " " +((AckList)a.nextElement()).toStringFull()+ "\n");
     }
   }
 

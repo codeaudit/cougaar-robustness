@@ -47,10 +47,10 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
 {
   public static final String RTT_ATTRIBUTE = "RTT_DATA";
 
-  private static final int samplePoolsize;
-  private static final int startDelay;
-  private static final float percentChangeLimit;
-  private static final int changeLimitDelay;
+  private static final int c_samplePoolsize, n_samplePoolsize;
+  private static final int c_startDelay, n_startDelay;
+  private static final float c_percentChangeLimit, n_percentChangeLimit;
+  private static final int c_changeLimitDelay, n_changeLimitDelay;
 
   private static final ServiceImpl serviceImpl = new ServiceImpl();
   private static final Hashtable latestReceptionsTable = new Hashtable();
@@ -61,17 +61,29 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
   {
     //  Read external properties
 
-    String s = "org.cougaar.message.transport.aspects.rtt.samplePoolsize";
-    samplePoolsize = Integer.valueOf(System.getProperty(s,"10")).intValue();
+    String s = "org.cougaar.message.transport.aspects.rtt.comm.samplePoolsize";
+    c_samplePoolsize = Integer.valueOf(System.getProperty(s,"10")).intValue();
 
-    s = "org.cougaar.message.transport.aspects.rtt.startDelay";
-    startDelay = Integer.valueOf(System.getProperty(s,"2")).intValue();
+    s = "org.cougaar.message.transport.aspects.rtt.comm.startDelay";
+    c_startDelay = Integer.valueOf(System.getProperty(s,"2")).intValue();
 
-    s = "org.cougaar.message.transport.aspects.rtt.percentChangeLimit";
-    percentChangeLimit = Float.valueOf(System.getProperty(s,"0.25")).floatValue();
+    s = "org.cougaar.message.transport.aspects.rtt.comm.percentChangeLimit";
+    c_percentChangeLimit = Float.valueOf(System.getProperty(s,"0.25")).floatValue();
 
-    s = "org.cougaar.message.transport.aspects.rtt.changeLimitDelay";
-    changeLimitDelay = Integer.valueOf(System.getProperty(s,"20")).intValue();
+    s = "org.cougaar.message.transport.aspects.rtt.comm.changeLimitDelay";
+    c_changeLimitDelay = Integer.valueOf(System.getProperty(s,"20")).intValue();
+
+    s = "org.cougaar.message.transport.aspects.rtt.node.samplePoolsize";
+    n_samplePoolsize = Integer.valueOf(System.getProperty(s,"10")).intValue();
+
+    s = "org.cougaar.message.transport.aspects.rtt.node.startDelay";
+    n_startDelay = Integer.valueOf(System.getProperty(s,"2")).intValue();
+
+    s = "org.cougaar.message.transport.aspects.rtt.node.percentChangeLimit";
+    n_percentChangeLimit = Float.valueOf(System.getProperty(s,"0.50")).floatValue();
+
+    s = "org.cougaar.message.transport.aspects.rtt.node.changeLimitDelay";
+    n_changeLimitDelay = Integer.valueOf(System.getProperty(s,"5")).intValue();
   }
 
   public RTTAspect () 
@@ -107,7 +119,7 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
     return null;
   }
 
-  //  External RTT service 
+  //  Provide external RTT service 
 
   public void load () 
   {
@@ -130,9 +142,14 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
 
   private static class ServiceImpl implements RTTService
   {
-    public int getBestRoundtripTimeForLink (DestinationLink link, String node)
+    public int getBestCommRTTForLink (DestinationLink link, String node)
     {
-      return getBestRTTForLink (link, node);
+      return getTheBestCommRTTForLink (link, node);
+    }
+
+    public int getBestFullRTTForLink (DestinationLink link, String node)
+    {
+      return getTheBestFullRTTForLink (link, node);
     }
   }
 
@@ -218,23 +235,31 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
 
       if (latest.length > 0)
       {
+        //  We return copies
+
         int i = 0;
+
         for (Enumeration e=table.elements(); e.hasMoreElements(); )
+        {
           latest[i++] = new MessageTimes ((MessageTimes)e.nextElement());
+        }
       }
 
       return latest;
     }
   }
 
-  private class RTTStart implements Serializable  // enclosing class must be serializable too
+  private class HalfRTT implements Serializable  // enclosing class must be serializable too
   {
-    private String sendLink;
-    private long adjustedSendTime;
+    private final String sendLink;
+    private final long sendTime;
+    private final long nodeTime;
 
-    public void setSendLink (String link)
+    public HalfRTT (String sendLink, long sendTime, long nodeTime)
     {
-      sendLink = link;
+      this.sendLink = sendLink;
+      this.sendTime = sendTime;
+      this.nodeTime = nodeTime;
     }
 
     public String getSendLink ()
@@ -242,19 +267,19 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
       return sendLink;
     }
 
-    public void setAdjustedSendTime (long time)
+    public long getSendTime ()
     {
-      adjustedSendTime = time;
+      return sendTime;
     }
 
-    public long getAdjustedSendTime ()
+    public long getNodeTime ()
     {
-      return adjustedSendTime;
+      return nodeTime;
     }
 
     public String toString ()
     {
-      return "sendLink=" +sendLink+ " adjSendTime=" +adjustedSendTime;
+      return "sendLink=" +sendLink+ " sendTime=" +sendTime+ " nodeTime=" +nodeTime;
     }
   }
 
@@ -295,7 +320,7 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
       //  in the outgoing message.  On the other node these results will be
       //  used to calculate RTTs for a set of protocol links.
       
-      int MAX_RTTS = 5;  // HACK: arbitrary for now
+      int MAX_RTTs = 5;  // HACK: arbitrary for now
       Vector v = null;
 
       if (times.length > 0)
@@ -303,13 +328,9 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
         v = new Vector();
         Arrays.sort (times, timeSort);  // latest receives first
 
-        for (int i=0; i<MAX_RTTS && i<times.length; i++) 
+        for (int i=0; i<MAX_RTTs && i<times.length; i++) // at most MAX_RTTs
         {
-          RTTStart start = new RTTStart();
-          start.setSendLink (times[i].sendLink);
-          long nodeTime = sendTime - times[i].receiveTime;  // time msg spent here
-          start.setAdjustedSendTime (times[i].sendTime + nodeTime);
-          v.add (start);
+          v.add (new HalfRTT (times[i].sendLink, times[i].sendTime, sendTime-times[i].receiveTime));
         }
       }
 
@@ -353,7 +374,7 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
 
       //  Now we turn around and view this received message as completing a
       //  round trip from us to the node we got it from (now the destination
-      //  node).  We take the "first half" roundtrip times in the message and
+      //  node).  We take the first half roundtrip times in the message and
       //  make real RTTs out of them and store them away.
 
       Vector v = (Vector) msg.getAttribute (RTT_ATTRIBUTE);
@@ -365,10 +386,12 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
 
         for (Enumeration e=v.elements(); e.hasMoreElements(); )
         {
-          RTTStart tripStart = (RTTStart) e.nextElement();
-          sendLink = tripStart.getSendLink();
-          int rtt = (int) (receiveTime - tripStart.getAdjustedSendTime());
-          updateRTT (sendLink, destinationNode, receiveLink, rtt);
+          HalfRTT firstHalf = (HalfRTT) e.nextElement();
+          sendLink = firstHalf.getSendLink();
+          sendTime = firstHalf.getSendTime();
+          long nodeTime = firstHalf.getNodeTime();
+          int rtt = (int) (receiveTime - (sendTime + nodeTime));
+          updateRTT (sendLink, destinationNode, receiveLink, rtt, sendTime, nodeTime);
         }
       }
 
@@ -378,7 +401,21 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
     }
   }
 
-  private void updateRTT (String sendLink, String node, String receiveLink, int rtt)
+  private class Averages
+  {
+    public RunningAverage commRTT;
+    public RunningAverage nodeTme;
+    public long lastNodeTime;
+
+    public Averages (RunningAverage comm, RunningAverage node)
+    {
+      commRTT = comm;
+      nodeTme = node;
+    }
+  }
+
+  private void updateRTT (String sendLink, String node, String receiveLink, int rtt,
+                          long sendTime, long nodeTime)
   {
     synchronized (roundtripTable)
     {
@@ -392,20 +429,34 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
       }
 
       key = receiveLink;
-      RunningAverage avgRTT = (RunningAverage) table.get (key);
+      Averages avgs = (Averages) table.get (key);
 
-      if (avgRTT == null)
+      if (avgs == null)
       {
         //      samplePoolsize:  number of latest samples avg is calc from
         //          startDelay:  throw away initial samples (which may be wildly off)
         //  percentChangeLimit:  limit the amount the latest sample can change avg
         //    changeLimitDelay:  how many samples before change limit kicks in
 
-        avgRTT = new RunningAverage (samplePoolsize, startDelay, percentChangeLimit, changeLimitDelay);
-        table.put (key, avgRTT);
+        RunningAverage commRTT = new RunningAverage (c_samplePoolsize, c_startDelay, c_percentChangeLimit, c_changeLimitDelay);
+        RunningAverage nodeTme = new RunningAverage (n_samplePoolsize, n_startDelay, n_percentChangeLimit, n_changeLimitDelay);
+
+        avgs = new Averages (commRTT, nodeTme);
+        table.put (key, avgs);
       }
 
-      if (rtt >= 0) avgRTT.add (rtt);
+      if (rtt >= 0) avgs.commRTT.add (rtt);  // 0 RTTs are possible (ie. RTTs < 1 millisecond)
+
+      if (sendTime > avgs.lastNodeTime)
+      {
+        //  Only first-response-to-lastest-send node times used; other
+        //  node times are "virtual" in a way, and only suitable for
+        //  calculating comm RTTs.
+
+        avgs.nodeTme.add (nodeTime);
+        avgs.lastNodeTime = sendTime;  
+      }
+else System.err.println ("#############################  sendTime not greater");
 
       if (loggingService.isDebugEnabled())
       {
@@ -414,13 +465,34 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
         buf.append ("\n  sendLink= " +sendLink);
         buf.append ("\n      node= " +node);
         buf.append ("\n  recvLink= " +receiveLink);
-        buf.append ("\n       RTT= " +rtt+ " avg= " +avgRTT.getAverage()+ "\n");
+
+        int commLast = (int) avgs.commRTT.getLastSample();
+        int commAvg = (int) Math.rint (avgs.commRTT.getAverage());
+        int nodeLast = (int) avgs.nodeTme.getLastSample();
+        int nodeAvg = (int) Math.rint (avgs.nodeTme.getAverage());
+
+        String b11 = blank1 (commLast, nodeLast);  String b12 = blank1 (commAvg, nodeAvg);
+        String b21 = blank2 (commLast, nodeLast);  String b22 = blank2 (commAvg, nodeAvg);
+
+        buf.append ("\n   commRTT= " +b11+commLast+ " avg= " +b12+commAvg);
+        buf.append ("\n  nodeTime= " +b21+nodeLast+ " avg= " +b22+nodeAvg);
+
         loggingService.debug (buf.toString());
       }
     }    
   }
 
-  private static int getBestRTTForLink (DestinationLink link, String node)
+  private static int getTheBestCommRTTForLink (DestinationLink link, String node)
+  {
+    return getBestRTTForLink (link, node, false);
+  }
+
+  private static int getTheBestFullRTTForLink (DestinationLink link, String node)
+  {
+    return getBestRTTForLink (link, node, true);
+  }
+
+  private static int getBestRTTForLink (DestinationLink link, String node, boolean includeNodeTime)
   {
     synchronized (roundtripTable)
     {
@@ -430,21 +502,21 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
 
       if (table != null)
       {
-        //  Go through the table and find the smallest non-zero roundtrip time
+        //  Go through the table and find the smallest non-zero average roundtrip time
 
-        int time, smallestTime = Integer.MAX_VALUE;
+        int rtt, smallestRTT = Integer.MAX_VALUE;
       
         for (Enumeration e=table.elements(); e.hasMoreElements(); )
         {
-          RunningAverage avgRTT = (RunningAverage) e.nextElement();
-          time = (int) avgRTT.getAverage();
-          if (time > 0 && time < smallestTime) smallestTime = time;
+          Averages avgs = (Averages) e.nextElement();
+          rtt = (int) (avgs.commRTT.getAverage() + (includeNodeTime ? avgs.nodeTme.getAverage() : 0.0));
+          if (rtt > 0 && rtt < smallestRTT) smallestRTT = rtt;
         }
 
-        if (smallestTime != Integer.MAX_VALUE) return smallestTime;
+        if (smallestRTT != Integer.MAX_VALUE) return smallestRTT;
       }
       
-      return 0;  // no rtt available
+      return 0;  // no non-zero rtt average available
     }
   }
 
@@ -488,5 +560,26 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
   private static long now ()
   {
     return System.currentTimeMillis();
+  }
+
+  private static String blank1 (int v1, int v2)
+  {
+    int l1 = (new String (""+v1)).length();
+    int l2 = (new String (""+v2)).length();
+    return (l1 >= l2 ? "" : blankString (l2-l1));
+  }
+
+  private static String blank2 (int v1, int v2)
+  {
+    int l1 = (new String (""+v1)).length();
+    int l2 = (new String (""+v2)).length();
+    return (l2 >= l1 ? "" : blankString (l1-l2));
+  }
+
+  private static String blankString (int len)
+  {
+    StringBuffer buf = new StringBuffer (len);
+    for (int i=0; i<len; i++) buf.append (" ");
+    return buf.toString();
   }
 }

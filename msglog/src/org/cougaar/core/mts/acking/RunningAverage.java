@@ -28,12 +28,13 @@ package org.cougaar.core.mts.acking;
 
 public class RunningAverage
 {
+  private double lastSample;
+  private long lastSampleTimestamp;
   private double data[];
   private int n, point;
   private int startDelay, changeLimitDelay, delayCount;
   private boolean hasChangeLimit;
   private double changeLimit;
-  private long lastSampleTimestamp;
 
   public RunningAverage (int poolsize)
   {
@@ -70,46 +71,6 @@ public class RunningAverage
     delayCount = 0;
   }
 
-  public synchronized double getAverage ()
-  {
-    if (n == 0) return 0.0;
-
-    double sum = 0.0;
-    for (int i=0; i<n; i++) sum += data[i];
-    return sum/((double)n);
-  }
-
-  public int getNumSamples ()
-  {
-    return n;  // only returning int - method does not need to be synchronized
-  }
-
-  public synchronized double boundEntry (int entry, double percentWithinAverage)
-  {
-    return boundEntry ((double)entry, percentWithinAverage);
-  }
-
-  public synchronized double boundEntry (double entry, double percentWithinAverage)
-  {
-    double avg = getAverage();
-
-    if (entry > avg)
-    {
-      double upperBound = avg + avg*percentWithinAverage;
-      return (entry > upperBound ? upperBound : entry);
-    }
-    else
-    {
-      double lowerBound = avg - avg*percentWithinAverage;
-      return (entry < lowerBound ? lowerBound : entry);
-    } 
-  }
-
-  public synchronized long getLastSampleTimestamp ()  // sync because of long
-  {
-    return lastSampleTimestamp;
-  }
-
   public synchronized void add (int entry)
   {
     add ((double) entry);
@@ -117,8 +78,9 @@ public class RunningAverage
 
   public synchronized void add (double entry)
   {
-    //  Timestamp sample
+    //  Save and timestamp last sample
 
+    lastSample = entry;
     lastSampleTimestamp = now();
 
     //  Throw away data until startDelay is satisfied
@@ -176,12 +138,49 @@ public class RunningAverage
     return;
   }
 
-  public synchronized void debugAdd (double entry)
+  public synchronized double boundEntry (int entry, double percentWithinAverage)
   {
-    System.out.println ("\nBfore add: avg=" +getAverage()+ " n=" +n+ " point=" +point);
-    System.out.println ("Adding: " +entry);
-    add (entry);
-    System.out.println ("After add: avg=" +getAverage()+ " n=" +n+ " point=" +point);
+    return boundEntry ((double)entry, percentWithinAverage);
+  }
+
+  public synchronized double boundEntry (double entry, double percentWithinAverage)
+  {
+    double avg = getAverage();
+
+    if (entry > avg)
+    {
+      double upperBound = avg + avg*percentWithinAverage;
+      return (entry > upperBound ? upperBound : entry);
+    }
+    else
+    {
+      double lowerBound = avg - avg*percentWithinAverage;
+      return (entry < lowerBound ? lowerBound : entry);
+    } 
+  }
+
+  public synchronized double getAverage ()
+  {
+    if (n == 0) return 0.0;
+
+    double sum = 0.0;
+    for (int i=0; i<n; i++) sum += data[i];
+    return sum/((double)n);
+  }
+
+  public int getNumSamples ()
+  {
+    return n;  // only returning int - method does not need to be synchronized
+  }
+
+  public synchronized double getLastSample ()  // sync because of double
+  {
+    return lastSample;
+  }
+
+  public synchronized long getLastSampleTimestamp ()  // sync because of long
+  {
+    return lastSampleTimestamp;
   }
 
   public synchronized String toString ()
@@ -199,6 +198,14 @@ public class RunningAverage
   private static long now ()
   {
     return System.currentTimeMillis();
+  }
+
+  public synchronized void debugAdd (double entry)
+  {
+    System.out.println ("\nBfore add: avg=" +getAverage()+ " n=" +n+ " point=" +point);
+    System.out.println ("Adding: " +entry);
+    add (entry);
+    System.out.println ("After add: avg=" +getAverage()+ " n=" +n+ " point=" +point);
   }
 
   public static void main (String args[])
