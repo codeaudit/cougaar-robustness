@@ -42,8 +42,8 @@ public class LogPointEntry {
         try {
             seqNum = Integer.parseInt(seqNumStr);
         } catch (NumberFormatException nfe) {
-            System.out.println("LogPointEvent seq # is faulty: " + seqNumStr + ". Assigned -1 value");
-            seqNum = -1;
+            System.out.println(">>>>>>>>>LogPointEvent seq # is faulty: " + seqNumStr + ". Assigned -1 value");
+            seqNum = 0;
         }
         
         //Identify if send or recv 
