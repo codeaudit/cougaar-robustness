@@ -86,6 +86,11 @@ public interface RobustnessController extends StatusChangeListener {
   public void leaderChange(String priorLeader, String newLeader);
 
   /**
+   * Receives notification of change in agent location.
+   */
+  public void locationChange(String name, String priorLocation, String newLocation);
+
+  /**
    * Returns a String containing top-level health status of monitored community.
    */
   public String statusSummary();

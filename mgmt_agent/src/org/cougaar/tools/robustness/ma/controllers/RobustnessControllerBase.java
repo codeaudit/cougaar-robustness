@@ -295,6 +295,12 @@ public abstract class RobustnessControllerBase
   }
 
   /**
+   * Receives notification of change in agent location.
+   */
+  public void locationChange(String name, String priorLocation, String newLocation) {
+  }
+
+  /**
    * Returns name of state.
    * @param state  State code
    * @return       String representation of state code
