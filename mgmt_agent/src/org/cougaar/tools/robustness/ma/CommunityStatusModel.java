@@ -584,6 +584,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
           if (attr != null)
             setPreferredLeader( (String) attr.get());
         } catch (NamingException ne) {}
+        // Add new members
         for (Iterator it = community.getEntities().iterator(); it.hasNext(); ) {
           Entity entity = (Entity) it.next();
           if (entity instanceof Agent) {
@@ -608,6 +609,16 @@ public class CommunityStatusModel extends BlackboardClientComponent
                 se.attrs = entity.getAttributes();
               }
             }
+          }
+        }
+        // Remove members
+        String entitiesInModel[] = listAllEntries();
+        for (int i = 0; i < entitiesInModel.length; i++) {
+          if (!community.hasEntity(entitiesInModel[i])) {
+            StatusEntry se = (StatusEntry)statusMap.remove(entitiesInModel[i]);
+            queueChangeEvent(
+                new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
+                                               MEMBERS_REMOVED, se));
           }
         }
       }
@@ -636,7 +647,8 @@ public class CommunityStatusModel extends BlackboardClientComponent
       } else {
         StatusEntry se = new StatusEntry(nodeName, NODE, null);
         statusMap.put(se.name, se);
-        setCurrentState(se.name, INITIAL);
+        setCurrentState(se.name, controller.getNormalState());
+        //setCurrentState(se.name, INITIAL);
         queueChangeEvent(
           new CommunityStatusChangeEvent(CommunityStatusChangeEvent.MEMBERS_ADDED, se));
       }

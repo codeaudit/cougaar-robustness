@@ -329,10 +329,9 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
     for (Iterator it1 = entities.iterator(); it1.hasNext(); ) {
       Entity entity = (Entity) it1.next();
       String name = entity.getName();
-      if (model.contains(name) && model.getCurrentState(name) == controller.getNormalState()) {
-        //targets.add(SimpleMessageAddress.getSimpleMessageAddress(entity.getName()));
+      //if (model.contains(name) && model.getCurrentState(name) == controller.getNormalState()) {
         targets.add(getMessageAddressWithTimeout(entity.getName(), updateInterval));
-      }
+      //}
     }
     return targets;
   }

@@ -73,13 +73,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   class InitialStateController extends StateControllerBase {
     public void enter(String name) {
-      /*if (!startupCompleted) {
+      if (!monitorStartup() && !startupCompleted) {
         setExpiration(name, NEVER);
-        logger.debug("New state: agent=" + name + " state=INITIAL" +
-                     " expiration=" + model.getStateExpiration(name));
-      }*/
-      if (doInitialPing() && (
-          isLeader(thisAgent) || isNode(name) || name.equals(preferredLeader()))) {
+      } else if (doInitialPing() &&
+        (isLeader(thisAgent) || isNode(name) || name.equals(preferredLeader()))) {
         doPing(name, DefaultRobustnessController.ACTIVE, DEAD);
       }
     }
@@ -90,6 +87,14 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         return (attrVal == null || attrVal.equalsIgnoreCase("True"));
       }
       return true;
+    }
+
+    private boolean monitorStartup() {
+      if (model != null) {
+        String attrVal = model.getAttribute("MONITOR_STARTUP");
+        return (attrVal == null || attrVal.equalsIgnoreCase("True"));
+      }
+      return false;
     }
 
     public void expired(String name) {
@@ -522,6 +527,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   }
 
   public void setupSubscriptions() {
+    startupCompleted = blackboard.didRehydrate();
     wakeAlarm = new WakeAlarm((new Date()).getTime() + STATUS_INTERVAL);
     alarmService.addRealTimeAlarm(wakeAlarm);
   }
@@ -550,17 +556,20 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       communityReady = true;
       startupCompleted = true;
       event("Community " + model.getCommunityName() + " Ready");
-      if (pingStats.getCount() > 10) {
-        long oldPingTimeout = getLongAttribute("PING_TIMEOUT", PING_TIMEOUT);
-        long newPingTimeout = (long)pingStats.getMean() + ((long)pingStats.getStandardDeviation() * 4);
-        long minPingTimeout = getLongAttribute("MINIMUM_PING_TIMEOUT", MINIMUM_PING_TIMEOUT);
-        if (newPingTimeout < minPingTimeout) newPingTimeout = minPingTimeout;
-        logger.info("Change PingTimeout: old=" + oldPingTimeout +
-                    " new=" + newPingTimeout + " PingStats=(" + pingStats + ")");
-        changeAttributes(model.getCommunityName(), null,
-                         new Attribute[]{new BasicAttribute("PING_TIMEOUT", Long.toString(newPingTimeout))});
-      }
       RestartDestinationLocator.clearRestarts();
+    }
+  }
+
+  private void setPingTimeout() {
+    if (pingStats.getCount() > 10) {
+      long oldPingTimeout = getLongAttribute("PING_TIMEOUT", PING_TIMEOUT);
+      long newPingTimeout = (long)pingStats.getMean() + ((long)pingStats.getStandardDeviation() * 4);
+      long minPingTimeout = getLongAttribute("MINIMUM_PING_TIMEOUT", MINIMUM_PING_TIMEOUT);
+      if (newPingTimeout < minPingTimeout) newPingTimeout = minPingTimeout;
+      logger.info("Change PingTimeout: old=" + oldPingTimeout +
+                  " new=" + newPingTimeout + " PingStats=(" + pingStats + ")");
+      changeAttributes(model.getCommunityName(), null,
+                       new Attribute[]{new BasicAttribute("PING_TIMEOUT", Long.toString(newPingTimeout))});
     }
   }
 
@@ -660,7 +669,12 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       public void pingComplete(String name, int status, long time) {
         if (status == PingHelper.SUCCESS) {
           newState(name, stateOnSuccess);
-          if (!isLocal(name)) pingStats.enter(time);
+          if (!isLocal(name)) {
+            pingStats.enter(time);
+            if (pingStats.getCount() == 10 || pingStats.getCount()%25 == 0) {
+              setPingTimeout();
+            }
+          }
         } else {
           logger.info("Ping:" +
                        " agent=" + name +
