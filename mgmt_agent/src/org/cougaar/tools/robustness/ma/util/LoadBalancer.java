@@ -71,9 +71,6 @@ public class LoadBalancer
   private List lbReqQueue = Collections.synchronizedList(new ArrayList());
   private Map myRequests = Collections.synchronizedMap(new HashMap());
 
-  private List newNodes = Collections.synchronizedList(new ArrayList()); //record all new nodes in the community model
-  private List killedNodes = Collections.synchronizedList(new ArrayList()); //record all killed nodes in the community model
-
   // Subscription to HealthMonitorRequests for load balancing
   private IncrementalSubscription healthMonitorRequests;
   private UnaryPredicate healthMonitorRequestPredicate = new UnaryPredicate() {
@@ -99,19 +96,6 @@ public class LoadBalancer
     this.controller = controller;
     this.moveHelper = controller.getMoveHelper();
     this.model = model;
-    model.addNodeChangeListener(new NodeChangeListener() {
-      public void addNode(String nodeName) {
-        if (!newNodes.contains(nodeName)) {
-          newNodes.add(nodeName);
-        }
-      }
-
-      public void removeNode(String nodeName) {
-        if (!killedNodes.contains(nodeName)) {
-          killedNodes.add(nodeName);
-        }
-      }
-    });
     initialize();
     load();
     start();
@@ -242,8 +226,8 @@ public class LoadBalancer
     doLoadBalance((int)solverMode,
                   (int)annealTime,
                   DEFAULT_HAMMING,
-                  getNewNodes(),
-                  getKilledNodes(),
+                  getVacantNodes(),
+                  getDeadNodes(),
                   getExcludedNodes());
   }
 
@@ -281,30 +265,28 @@ public class LoadBalancer
    * Get all killed nodes in the community model.
    * @return List
    */
-  protected List getKilledNodes() {
-    for (Iterator it = killedNodes.iterator(); it.hasNext(); ) {
-      String nodeName = (String) it.next();
-      if (model.contains(nodeName) &&
-          model.getCurrentState(nodeName) != DefaultRobustnessController.DEAD) {
-        it.remove();
-      }
+  protected List getDeadNodes() {
+    List deadNodes = new ArrayList();
+    String nodes[] = model.listEntries(model.NODE, DefaultRobustnessController.DEAD);
+    for (int i = 0; i < nodes.length; i++) {
+      deadNodes.add(nodes[i]);
     }
-    return killedNodes;
+    return deadNodes;
   }
 
   /**
    * Get all new nodes in the community model.
    * @return List
    */
-  protected List getNewNodes() {
-    for (Iterator it = newNodes.iterator(); it.hasNext(); ) {
-      String nodeName = (String) it.next();
-      if (model.entitiesAtLocation(nodeName).length > 0 ||
-          model.getCurrentState(nodeName) != DefaultRobustnessController.ACTIVE) {
-        it.remove();
+  protected List getVacantNodes() {
+    List vacantNodes = new ArrayList();
+    String nodes[] = model.listEntries(model.NODE, DefaultRobustnessController.ACTIVE);
+    for (int i = 0; i < nodes.length; i++) {
+      if (isVacantNode(nodes[i])) {
+        vacantNodes.add(nodes[i]);
       }
     }
-    return newNodes;
+    return vacantNodes;
   }
 
   protected void fireLater(LoadBalanceRequest lbr) {
