@@ -264,7 +264,7 @@ public abstract class RobustnessControllerBase implements
     if (ce != null) {
       return ce.stateName;
     } else {
-      return "ILLEGAL_VALUE";
+      return "UNKNOWN";
     }
   }
 
@@ -309,10 +309,12 @@ public abstract class RobustnessControllerBase implements
     return model.getLocation(name);
   }
 
-  protected void updateLocationAndSetState(String name, int newState) {
+  /*
+   protected void updateLocationAndSetState(String name, int newState) {
     logger.info("updateLocationAndSetState: agent=" + name + " newState=" + stateName(newState));
     model.updateLocations(new String[]{name}, newState);
   }
+  */
 
   protected long getLongProperty(String id, long defaultValue) {
     if (model.hasAttribute(id)) {
@@ -371,6 +373,10 @@ public abstract class RobustnessControllerBase implements
                                      hbFreq,
                                      hbTimeout,
                                      hbPctOutofSpec);
+  }
+
+  protected void stopHeartbeats(String name) {
+    getHeartbeater().stopHeartbeats(name);
   }
 
   protected void addHeartbeatListener(HeartbeatListener hbl) {
