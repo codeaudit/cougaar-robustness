@@ -54,7 +54,7 @@ include_scripts:
     parameters:
       - location: during_stage_1
       - verbose: 1
-  - script: $CIP/csmart/lib/robustness/objs/nodes_persisted_find_providers.rb 
+  - script: $CIP/csmart/lib/coordinator/nodes_persisted_find_providers.rb 
     parameters:
       - location: during_stage_1
       - start_delay: 60
