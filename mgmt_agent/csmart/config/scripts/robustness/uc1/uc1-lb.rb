@@ -18,16 +18,21 @@ Cougaar::ExperimentMonitor.enable_logging
 Cougaar.new_experiment("UC1_LB").run(1) {
 
   do_action "LoadSocietyFromScript", "#{CIP}/configs/ul/FULL-1AD-TRANS-1359.rb"
-  do_action "LayoutSociety", "#{CIP}/operator/1ad-layout-10_4_1.xml", HOSTS_FILE
+  do_action "LayoutSociety", "#{CIP}/operator/1ad-layout.xml", HOSTS_FILE
 
   do_action "TransformSociety", false,
     "#{RULES}/isat",
     "#{RULES}/logistics",
     "#{RULES}/robustness/uc1"
-  do_action "SaveCurrentSociety", "mySociety.xml"
-  do_action "SaveCurrentCommunities", "myCommunities.xml"
+
+  do_action "TransformSociety", false, "#{RULES}/robustness/communities"
+
+  #do_action "SaveCurrentSociety", "mySociety.xml"
+  #do_action "SaveCurrentCommunities", "myCommunities.xml"
+
   do_action "StartJabberCommunications"
   do_action "VerifyHosts"
+
   do_action "DeployCommunitiesFile"
 
   do_action "DisableDeconfliction"
