@@ -88,7 +88,7 @@ public class RestartLocatorPlugin extends SimplePlugin
   // Defines default values for configurable parameters.
   private static String defaultParams[][] = {
     {"restartNode",  ""},
-    {"pingTimeout",  "120000"}
+    {"pingTimeout",  "30000"}
   };
 
   ManagementAgentProperties restartLocatorProps =
@@ -99,6 +99,7 @@ public class RestartLocatorPlugin extends SimplePlugin
   private Map nodes;
 
   private List specifiedHosts;
+  private Collection deadNodes = new ArrayList();
   private long pingTimeout;
 
   /**
@@ -294,6 +295,7 @@ public class RestartLocatorPlugin extends SimplePlugin
               if (dest.node.equals(node) && dest.pingStatus == PingRequest.NEW) {
                 dest.pingStatus = PingRequest.FAILED;
                 log.debug("Ping failed, agent=" + node);
+                deadNodes.add(node);
                 if (it2.hasNext()) {
                   // If there are more candidate nodes, ping the next one in the list
                   dest = (Destination)it2.next();
@@ -556,6 +558,7 @@ public class RestartLocatorPlugin extends SimplePlugin
    */
    Collection candidateNodes = getSpecifiedNodes();
    candidateNodes.addAll(nodes.keySet());
+   excludedNodes.addAll(deadNodes);
    Collection selectedNodes = selectNodes(candidateNodes, excludedAgents, excludedNodes, excludedHosts);
     //log.debug("SelectedNodes=" + selectedNodes);
     for (Iterator it = selectedNodes.iterator(); it.hasNext();) {
