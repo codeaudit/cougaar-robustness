@@ -387,12 +387,12 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
         String proposedVariantName = proposedVariantDescription.name();
 
         Vector endStateCompensatedProbs = computeCompensatedStateProbs(actionName, proposedVariantName, baseStateDimension, compensatedStateDimension, baseStateEstimation);
-        Vector intermediateStateCompensatedProbs = computeCompensatedStateProbs(actionName, currentVariantName, baseStateDimension, compensatedStateDimension, baseStateEstimation); // assume the intermediate state is the current state (need TS model chnages to accomodate this)
+        // Vector intermediateStateCompensatedProbs = computeCompensatedStateProbs(actionName, currentVariantName, baseStateDimension, compensatedStateDimension, baseStateEstimation); // assume the intermediate state is the current state (need TS model chnages to accomodate this)
         
         if (logger.isDebugEnabled()) {
             logger.debug("BASE state: " + baseStateEstimation.toString());
             logger.debug("predicted Compensated END state: " + compensatedDimensionName + " " + endStateCompensatedProbs.toString());
-            logger.debug("predicted Compensated INTERMEDIATE state: " + compensatedDimensionName + " " + intermediateStateCompensatedProbs.toString());
+           // logger.debug("predicted Compensated INTERMEDIATE state: " + compensatedDimensionName + " " + intermediateStateCompensatedProbs.toString());
         }
 
         if (isVariantActive) {

@@ -125,6 +125,7 @@ public class MediatedTechSpecMap {
     }
 
     public Vector mapCompensation(String actionName, String baseStateName, String actionSettingName) {
+        if (logger.isInfoEnabled()) logger.info("Mapping " + actionName +":" + baseStateName + ":" + actionSettingName);
         if (actionName.equals("org.cougaar.mts.std.LinksEnablingAction")) {
             Vector v = new Vector(5);
             if (baseStateName.equals("DirectPathExists") && actionSettingName.equals("Normal")) {
