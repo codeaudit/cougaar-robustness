@@ -24,6 +24,7 @@ module Cougaar
         @run.do_action "StopCommunications"
       end
     end
+  end
 
   module Actions
 
