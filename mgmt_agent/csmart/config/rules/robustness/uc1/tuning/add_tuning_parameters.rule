@@ -20,10 +20,27 @@ society.communities.each do |community|
 
   #get the stats file of this community
   filename = "#{CIP}/workspace/nodestats/" + community.name + ".nodestats"
+  if !File.exists?(filename)
+    xml ||= []
+    xml << "<NodeLatencyStatistics>"
+    community.each do |entity|
+      if entity.entity_type == "Node"
+        xml << "  <Item community='#{community.name}' node='#{entity.name}' mean='300000' stdev='60000' />"
+      end
+    end
+    xml << "</NodeLatencyStatistics>"
+    xml.join("\n")
+    begin
+      File.open(filename, "w") { |myfile| myfile.puts xml }
+    rescue
+      puts "Could not write node stats to #{filename}"
+    end
+  end
+
   begin
     file = File.new(filename)
   rescue Exception #catch file not exist exception
-    puts "#{filename} does not exist"
+    puts "didn't find file #{filename}"
     break
   end
   doc = REXML::Document.new(file)
