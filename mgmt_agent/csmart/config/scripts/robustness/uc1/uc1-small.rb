@@ -56,7 +56,7 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
 
   # Add an empty node to community
   do_action "AddNode", "NewNode1", "1AD-SMALL-COMM"
-  do_action "Sleep", 3.minutes
+  do_action "Sleep", 5.minutes
 
   # Kill node that contains robustness manager
   do_action "SaveHostOfNode", "1AD-SMALL-COMM", "FWD-NODE"
@@ -67,7 +67,7 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
 
   # Add another empty node to community
   do_action "AddNode", "NewNode2", "1AD-SMALL-COMM"
-  do_action "Sleep", 3.minutes
+  do_action "Sleep", 5.minutes
 
   # Kill last of original nodes 
   do_action "SaveHostOfNode", "1AD-SMALL-COMM", "REAR-NODE"
@@ -78,7 +78,7 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
 
   # Add another empty node to community
   do_action "AddNode", "NewNode3", "1AD-SMALL-COMM"
-  do_action "Sleep", 3.minutes
+  do_action "Sleep", 5.minutes
 
   # Load balance community
   do_action "LoadBalancer", "1AD-SMALL-COMM"
