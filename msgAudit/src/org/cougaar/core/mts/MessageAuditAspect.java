@@ -98,7 +98,15 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
     
     if ( !log.isInfoEnabled() ) {
         log.warn("** INFO logging level not enabled, this aspect is not active **");        
+    } else {
+        if ( enableFilter ) {
+            log.info("** Filtering enabled: Filtering out pings and heartbeats **");        
+        }
+        if ( includeLocalMsgs ) {
+            log.info("** Configured to ignore local messages **");        
+        }
     }
+    
   }
 
   /*
