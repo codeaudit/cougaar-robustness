@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 02 Jul 2002: Change CougaarThread.sleep back to Thread.sleep. (OBJS)
  * 11 Jun 2002: Change Thread.sleep to CougaarThread.sleep. (OBJS)
  * 21 Oct 2001: Make msg cache be passed in instead of local. (OBJS)
  * 26 Sep 2001: Added InfoDebug and pollTime getter/setter. (OBJS)
@@ -32,8 +33,6 @@ import java.io.*;
 import java.util.*;
 import java.net.InetAddress;
 import javax.mail.Store;
-
-import org.cougaar.core.thread.CougaarThread;
 
 
 /**
@@ -250,7 +249,7 @@ public class EmailInputStream extends InputStream
         {
           if (msgs.length == 0 && pollTime > 0)
           {
-            try { CougaarThread.sleep (pollTime); } catch (Exception e) {}
+            try { Thread.sleep (pollTime); } catch (Exception e) {}
             if (streamClosed) return;
           }
 

@@ -106,7 +106,7 @@ class PureAckAckSender implements Runnable
           //  Wait until timeout, notify, or interrupt
 
           // System.err.println ("\nPureAckAckSender: WAIT waitTime= "+waitTime);
-          CougaarThread.wait (queue, waitTime);
+          try { queue.wait (waitTime); } catch (Exception e) {}
           // System.err.println ("\nPureAckAckSender: RUN");
         }
 

@@ -35,7 +35,6 @@ import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.component.ServiceProvider;
 import org.cougaar.core.service.ThreadService;
 import org.cougaar.core.thread.Schedulable;
-import org.cougaar.core.thread.CougaarThread;
 
 
 /**
@@ -85,12 +84,7 @@ public class TimedSocket
 
       if (socketConn.isError()) throw (socketConn.getException());
 
-      try 
-      { 
-        if (threadSvc != null) CougaarThread.sleep (POLL_TIME); 
-        else Thread.sleep (POLL_TIME); 
-      } 
-      catch (Exception e) {}
+      try { Thread.sleep (POLL_TIME); } catch (Exception e) {}
 
       sleepTime += POLL_TIME;
 

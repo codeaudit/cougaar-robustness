@@ -59,7 +59,6 @@ import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.component.ServiceProvider;
 import org.cougaar.core.service.ThreadService;
 import org.cougaar.core.thread.Schedulable;
-import org.cougaar.core.thread.CougaarThread;
 
 
 /**
@@ -575,7 +574,7 @@ hasStartedUp = false;
               catch (Exception e) {}
             }
 
-            try { CougaarThread.sleep (waitTime*1000); } catch (Exception e) {}
+            try { Thread.sleep (waitTime*1000); } catch (Exception e) {}
           }
           else
           {
@@ -604,7 +603,7 @@ hasStartedUp = false;
             if (n < 5) waitTime = 5;
             else break;
 
-            try { CougaarThread.sleep (waitTime*1000); } catch (Exception e) {}
+            try { Thread.sleep (waitTime*1000); } catch (Exception e) {}
           }
           else break;
         }

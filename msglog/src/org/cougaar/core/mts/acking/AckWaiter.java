@@ -125,7 +125,7 @@ class AckWaiter implements Runnable
           //  Wait for a specified time or until notify
 
           // System.err.println ("\nAckWaiter: WAIT waitTime= " +waitTime+ " start= "+now());
-          CougaarThread.wait (queue, waitTime);
+          try { queue.wait (waitTime); } catch (Exception e) {}
           // System.err.println ("\nAckWaiter: WAIT end= "+now());
         }
 
