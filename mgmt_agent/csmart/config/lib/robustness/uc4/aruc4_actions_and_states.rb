@@ -9,11 +9,11 @@ module Cougaar
           {:classname => "required, ThreatAlert classname."},
 	  {:targetType => "required, type of target, must be one of the following: community, agent"},
           {:targetName => "required, name of destination."},
-	  {:role => "required if target is a community, community member role to receive alerts."},
 	  {:alertLevel => "required, alert level, must be one of the following: maximum, high, medium, low, minimum, undefined"},
 	  {:duration => "required,alert duration."},
-	  {:assets => "required, affected assets. Example of assets: assets={'node'=>'TRANS-NODE, FWD-NODE', 'host'=>'net1'}"}        ]
-        @example = "do_action 'PublishThreatAlert', 'org.cougaar.tools.robustness.ma.HostLossThreatAlert', 'community', '1AD-SMALL-COMM', 'HealthMonitor', 'low', 10.minutes, assets"      }
+	  {:assets => "required, affected assets. Example of assets: assets={'node'=>'TRANS-NODE, FWD-NODE', 'host'=>'net1'}"},
+          {:role => "required if target is a community, community member role to receive alerts."}      ]
+        @example = "do_action 'PublishThreatAlert', 'org.cougaar.tools.robustness.ma.HostLossThreatAlert', 'community', '1AD-SMALL-COMM', 'low', 10.minutes, assets, 'HealthMonitor'"      }
       def initialize(run, classname, type, target, alertLevel, duration, assets, role=nil)
         super(run)
         @classname = classname
