@@ -155,7 +155,7 @@ public class EventLoader extends XMLLoader {
             blackboard.publishAdd(e);
             blackboard.publishAdd(e.getTransitiveEffect());
         }
-        if (logger.isDebugEnabled()) { logger.debug("Published " + events.size() + "event descriptions & transitive effects to the blackboard."); }
+        if (logger.isDebugEnabled()) { logger.debug("Published " + events.size() + " event descriptions & transitive effects to the blackboard."); }
     }
 
     protected void execute() {
@@ -171,12 +171,12 @@ public class EventLoader extends XMLLoader {
             if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("Transition") ) {
                 e = (Element)child;
 
-                String whenState = element.getAttribute("WhenActualStateIs");
-                String endState = element.getAttribute("EndStateWillBe");
+                String whenState = e.getAttribute("WhenActualStateIs");
+                String endState = e.getAttribute("EndStateWillBe");
 
                 //Add transition to Event
                 event.addDirectEffectTransition(whenState, endState);
-                
+                logger.debug("Saw direct transition: "+whenState+", "+endState);
             } //else, likely a text element - ignore
         }
                 
@@ -193,8 +193,8 @@ public class EventLoader extends XMLLoader {
             if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("CausesEvent") ) {
                 e = (Element)child;
 
-                String transName = element.getAttribute("name");
-                String transType = element.getAttribute("assetType");
+                String transName = e.getAttribute("name");
+                String transType = e.getAttribute("assetType");
                 AssetType assetType = AssetType.findAssetType(transType);
                 if (assetType == null) {
                     logger.error("No AssetType for transitive effect [event="+event.getName()+"] with type="+transType+". Ignoring.");
@@ -207,9 +207,10 @@ public class EventLoader extends XMLLoader {
             } else if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("VulnerableAssets") ) {
                 e = (Element)child;
 
-                vf = TransitiveEffectVulnerabilityLoader.parseElement(e, probabilityMap, event);
+logger.debug("Calling TransitiveEffectVulnerabilityFilter, element name = " + e.getNodeName());
+                vf = TransitiveEffectVulnerabilityLoader.parseElement(e,  probabilityMap, event);
                 if (vf == null) {
-                    logger.error("Error parsing XML file for event [" + event.getName() + "]. TransitiveEffectVulnerabilityFilter was null for element = "+element.getNodeName() );
+                    logger.error("Error parsing XML file for event [" + event.getName() + "]. TransitiveEffectVulnerabilityFilter was null for element = "+e.getNodeName() );
                 }                
             } //else, likely a text element - ignore
         }        

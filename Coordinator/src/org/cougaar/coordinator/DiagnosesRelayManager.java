@@ -41,11 +41,12 @@ import java.util.Vector;
 import java.util.Iterator;
 
 /**
- * This Plugin 
+ * This Plugin relays diagnoses between the node and the agent, and
+ * the node and the coordinator.
  *
  *
  */
-public class DiagnosesRelayManager extends DeconflictionPluginBase implements NotPersistable {
+public class DiagnosesRelayManager extends MinimalPluginBase implements NotPersistable {
     
     private IncrementalSubscription diagnosesSubscription;
     private IncrementalSubscription knobSubscription;

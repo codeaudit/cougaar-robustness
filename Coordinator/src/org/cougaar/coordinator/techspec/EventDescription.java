@@ -62,6 +62,33 @@ public class EventDescription implements NotPersistable {
         directEffectTransitions = new Vector();
     }
 
+    public String toString() {
+        String s = "   EventDescription name="+name+" [affects assets of type="+affectsAssetType+", state dimension="+affectsStateDimension+"\n";
+        Iterator i = directEffectTransitions.iterator();
+        s += "      Direct Transitions:\n";
+        if (i.hasNext()) {
+            while (i.hasNext()) {
+                AssetTransition at = (AssetTransition)i.next();
+                s+= "        WhenActualStateIs="+at.start+" EndStateWillBe="+at.end+"\n";
+            }
+        } else {
+            if (wildcardEnd != null) { 
+                s += "        Wildcard Start state, EndStateWillBe="+this.wildcardEnd+"\n";
+            } else {
+                s += "        NONE.\n";
+            }
+        }
+
+        s += "      Transitive Effect:";
+        if (transEffect != null) {
+            s += "Causes Event = "+transEffect.getTransitiveEventName() + " on asset type = "+ transEffect.getTransitiveAssetType()+"\n";
+            s += transEffect.getTransitiveVulnerabilityFilter().toString();
+        } else {
+            s += "        NONE.";
+        }
+        return s;
+    }
+    
     /**
      * @return the name of this event
      */

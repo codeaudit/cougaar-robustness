@@ -64,11 +64,15 @@ public class EventProbability {
     public String toString() {
      
         String s = "";
-        Iterator i = this.intervals.iterator();
-        while (i.hasNext()) {
-             EventProbabilityInterval ep = (EventProbabilityInterval)i.next();
-             s = s+ ep + "\n      ";
-        }        
+        if (infiniteIntervalProbability != null) {
+             s = s+ infiniteIntervalProbability + "\n      ";            
+        } else {
+            Iterator i = this.intervals.iterator();
+            while (i.hasNext()) {
+                 EventProbabilityInterval ep = (EventProbabilityInterval)i.next();
+                 s = s+ ep + "\n      ";
+            }        
+        }
         return s;
     }
     

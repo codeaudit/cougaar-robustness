@@ -70,4 +70,9 @@ public class AssetTransitionWithCost extends AssetTransition implements NotPersi
     /** @return get continuing cost */
     public ActionCost getContinuingCost() { return continuingCost; }
     
+    public String toString() {
+     
+        return "WhenStateIs="+this.start+" , EndStateWillBe="+this.end+"\n        OneTimeCost=\n"+this.oneTimeCost+"\n        ContinuingCost=\n"+this.continuingCost;
+    }
+    
 }

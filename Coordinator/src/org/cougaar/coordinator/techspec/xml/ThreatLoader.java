@@ -162,6 +162,7 @@ public class ThreatLoader extends XMLLoader {
         while (i.hasNext() ) {
             blackboard.publishAdd(i.next());
         }
+        logger.debug("Published "+threats.size()+" threats to the blackboard.");
     }
     
     protected void execute() {
@@ -176,6 +177,7 @@ public class ThreatLoader extends XMLLoader {
         if (vf != null) {
             ThreatDescription td = new ThreatDescription(threat, vf);
             threats.add(td);
+            logger.debug("Added new Threat: \n"+td.toString() );
         } else {
             logger.error("Error parsing XML file for threat [" + threat.getName() + "]. ThreatVulnerabilityFilter was null for element = "+element.getNodeName() );
         }

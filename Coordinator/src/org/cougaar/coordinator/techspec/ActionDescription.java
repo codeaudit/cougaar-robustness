@@ -167,6 +167,14 @@ public class ActionDescription {
         
         String s = "    Action ["+this.name()+"] -------------\n";
         s += "    Desc = "+ this.description() + "\n";
+        
+        AssetTransitionWithCost at;
+        s += "\n    Transitions:";
+        for (Iterator i=transitions.iterator(); i.hasNext(); ) {
+
+            at = (AssetTransitionWithCost)i.next();
+            s += "\n        "+at.toString();
+        }
 /*
         s += "    WhenStateIs="+this.getWhenStateIs()+"  EndStateWillBe="+this.getEndStateWillBe()+"\n";
         if (this.getOneTimeCost() != null) {

@@ -44,7 +44,7 @@ import java.util.Iterator;
  * This Plugin is used to control relaying Action objects to the Coordinator
  *
  */
-public class ActionRelayManager extends DeconflictionPluginBase implements NotPersistable {
+public class ActionRelayManager extends MinimalPluginBase implements NotPersistable {
     
     private IncrementalSubscription actionsSubscription;
     private IncrementalSubscription knobSubscription;

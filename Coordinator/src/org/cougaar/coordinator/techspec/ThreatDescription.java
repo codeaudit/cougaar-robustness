@@ -133,10 +133,14 @@ public class ThreatDescription implements NotPersistable {
     public String toString() {
      
         String s = "Threat ["+this.getName()+"], affects asset type="+this.getAffectedAssetType()+", causes event="+this.getEventThreatCauses()+"\n";
-        s += "[Probability = "+this.getEventProbability()+"]\n";
+        if (this.getEventProbability() == null) {
+            s += "[Probability = 0.0] -- this is a root threat with no direct impact. See embedded threats.\n";
+        } else {        
+            s += "[Probability = "+this.getEventProbability()+"]\n";
+        }
         if (filter != null) {
              s = s + filter + "\n";
-        }        
+        } 
         return s;
     }
     
