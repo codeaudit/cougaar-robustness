@@ -367,10 +367,8 @@ public class LoadBalancer
       }
     }
 
-//logger.info("oldnodes: " + oldnodes);
-//logger.info("newnodes: " + newnodes);
-//logger.info("temp: " + temp);
-
+    boolean needChange = true;
+    String lastChangeNode = "";
     /**
      * This loop does the following jobs to keep node balancing during agents moving:
      * 1. Find the node who has the most number of agents need to be moved out.
@@ -378,8 +376,10 @@ public class LoadBalancer
      * 3. Repeat step1 to step2 until all agents get destinations.
      */
     while (!temp.isEmpty()) {
-      String node = getBiggestDifference(oldnodes, newnodes);
+      String node = getBiggestDifference(oldnodes, newnodes, needChange, lastChangeNode);
       int count = 0;
+      lastChangeNode = node;
+      needChange = true;
       for (Iterator it = temp.keySet().iterator(); it.hasNext(); ) {
         if (count == 5) {
           break;
@@ -393,6 +393,7 @@ public class LoadBalancer
                        newNode + " in comm " + communityName);
           moveHelper.moveAgent(agent, currentNode, newNode, communityName);
           count++;
+          needChange = false;
           int num = ( (Integer) oldnodes.get(currentNode)).intValue();
           oldnodes.put(currentNode, new Integer(num - 1));
           if (oldnodes.containsKey(newNode)) {
@@ -405,7 +406,6 @@ public class LoadBalancer
           it.remove();
         }
       }
-//logger.info("after move: oldnodes=" + oldnodes + ", newnodes=" + newnodes);
     }
     logger.debug("LoadBalance finished.");
   }
@@ -413,15 +413,21 @@ public class LoadBalancer
   /**
    * Fetch the element who has the most number of difference between the two given maps.
    */
-  private String getBiggestDifference(Map a, Map b) {
+  private String getBiggestDifference(Map a, Map b, boolean needChange, String lastChangeNode) {
     int diff = 0;
     String result = "";
     for (Iterator it = a.keySet().iterator(); it.hasNext(); ) {
       String node = (String) it.next();
-      int oldnum = ( (Integer) a.get(node)).intValue(); //how many agents on current node?
-      int newnum = ( (Integer) b.get(node)).intValue(); //how many agents on this node after balancing?
+      if(needChange && node.equals(lastChangeNode))
+        continue;
+      int oldnum = 0;
+      if(a.containsKey(node))
+        oldnum = ( (Integer) a.get(node)).intValue(); //how many agents on current node?
+      int newnum = 0;
+      if(b.containsKey(node))
+        newnum = ( (Integer) b.get(node)).intValue(); //how many agents on this node after balancing?
       int x = oldnum - newnum; //get the difference.
-      if ( (diff == 0 && x != 0) || x > diff) {
+      if ( ((diff == 0 && x != 0) || x > diff)){
         diff = x;
         result = node;
       }
