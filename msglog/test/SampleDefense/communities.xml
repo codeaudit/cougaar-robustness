@@ -19,6 +19,8 @@
     <Attribute ID="RobustnessManager"         Value="ManagementAgent" />
     <Attribute ID="NumberOfAgents"            Value="7" />
 
+<!-- -->
+<!--
     <Attribute ID='PING_TIMEOUT' Value='60000' />
     <Attribute ID='MINIMUM_PING_TIMEOUT' Value='20000' />
     <Attribute ID='HEARTBEAT_REQUEST_TIMEOUT' Value='30000' />
@@ -29,6 +31,7 @@
     <Attribute ID='DEFAULT_STATUS_LATENCY_MEAN' Value='2000' />
     <Attribute ID='DEFAULT_STATUS_LATENCY_STDDEV' Value='2000' />
     <Attribute ID='RESTART_CONFIDENCE' Value='1' />
+-->
     <Attribute ID='SOLVER_MODE' Value='local' />
     <Attribute ID='AUTO_LOAD_BALANCE' Value='false' />
 
