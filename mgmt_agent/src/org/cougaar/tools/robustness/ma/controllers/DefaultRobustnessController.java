@@ -415,7 +415,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         }
         newState(name, RESTART);
       } else {
-        newState(name, HEALTH_CHECK);
+        //newState(name, HEALTH_CHECK);
+        newState(name, RESTART);
       }
     }
   }
@@ -606,32 +607,37 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     return excludedNodes;
   }
 
-  protected void checkLoadBalance() {
+  protected boolean isVacantNode(String name) {
+    return model.entitiesAtLocation(name).length == 0;
+  }
 
-    // Dont load balance if community is not ready or is busy
+  protected void checkLoadBalance() {
+    // Don't load balance if community is not ready or is busy
     if (autoLoadBalance() && communityReady && !isCommunityBusy()) {
-      // Remove occupied nodes from newNodes list
-      // invoke load balancer if there are new (vacant) nodes or dead nodes
       if (!deadNodes.isEmpty() || !newNodes.isEmpty()) {
-        LoadBalancerListener lbl = new LoadBalancerListener() {
-          public void layoutReady(Map layout) {
-            logger.info("layout from EN4J: " + layout);
-            getLoadBalancer().moveAgents(layout);
-          }
-        };
+        List excludedNodes = new ArrayList(getExcludedNodes());
+        // Remove occupied nodes from newNodes list
         if (!newNodes.isEmpty()) {
           for (Iterator it = newNodes.iterator(); it.hasNext(); ) {
-            if (model.entitiesAtLocation((String)it.next()).length > 0) {
+            String newNode = (String)it.next();
+            if (!isVacantNode(newNode) || excludedNodes.contains(newNode)) {
               it.remove();
             }
           }
         }
+        // invoke load balancer if there are new (vacant) nodes
         if (!newNodes.isEmpty()) {
+          LoadBalancerListener lbl = new LoadBalancerListener() {
+            public void layoutReady(Map layout) {
+              logger.info("layout from EN4J: " + layout);
+              getLoadBalancer().moveAgents(layout);
+            }
+          };
           getLoadBalancer().doLayout(LoadBalancer.DEFAULT_ANNEAL_TIME,
                                      true,
                                      new ArrayList(newNodes),
                                      new ArrayList(deadNodes),
-                                     new ArrayList(getExcludedNodes()),
+                                     excludedNodes,
                                      lbl);
         }
         newNodes.clear();
