@@ -72,7 +72,7 @@ public class RestartHelper extends BlackboardClientComponent {
   public static final int FAIL = 1;
 
   public static final long TIMER_INTERVAL = 10 * 1000;
-  public static final long RESTART_TIMEOUT = 10 * 60 * 1000;
+  public static final long RESTART_TIMEOUT = 30 * 60 * 1000;
   public static final long MAX_CONCURRENT_RESTARTS = 1;
 
   private List restartQueue = Collections.synchronizedList(new ArrayList());
