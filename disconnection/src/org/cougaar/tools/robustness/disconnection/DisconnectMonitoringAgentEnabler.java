@@ -38,7 +38,7 @@ import java.util.Iterator;
 public class DisconnectMonitoringAgentEnabler extends DefenseOperatingMode {
       
     // searches the BB for an object of this type with a given signature 
-    public static DisconnectMonitoringAgentEnabler findOnBlackboard(String assetType, String assetID, BlackboardService blackboard) {
+    public static DisconnectMonitoringAgentEnabler findOnBlackboard(String defenseName, String expandedName, BlackboardService blackboard) {
         UnaryPredicate pred = new UnaryPredicate() {
             public boolean execute(Object o) {  
                 return 
@@ -46,18 +46,18 @@ public class DisconnectMonitoringAgentEnabler extends DefenseOperatingMode {
             }
         };
 
-        DisconnectMonitoringAgentEnabler rtc = null;
+        DisconnectMonitoringAgentEnabler dc = null;
         Collection c = blackboard.query(pred);
         Iterator iter = c.iterator();
         //if (logger.isDebugEnabled()) logger.debug(new Integer(c.size()).toString());
         while (iter.hasNext()) {
-           rtc = (DisconnectMonitoringAgentEnabler)iter.next();
-           if (rtc.compareSignature(assetType, assetID, DisconnectConstants.DEFENSE_NAME)) {
-               return rtc;
+           dc = (DisconnectMonitoringAgentEnabler)iter.next();
+           if (dc.compareSignature(expandedName, defenseName)) {
+               return dc;
            }
         }
         return null;
-    }
+    }      
     
       /** Creates a new instance of DisconnectMonitoringEnabler. This mode 
      *  supports two values: ENABLED and DISABLED. The default is set to DISABLED.
@@ -75,5 +75,8 @@ public class DisconnectMonitoringAgentEnabler extends DefenseOperatingMode {
     public String getState() { 
         return getValue().toString();
     }
+    
+
+
 }
   

@@ -124,7 +124,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             while (iter.hasNext()) {
                 ReconnectTimeCondition rtc = (ReconnectTimeCondition)iter.next();
                 
-                DisconnectApplicabilityCondition item = DisconnectApplicabilityCondition.findOnBlackboard(rtc.getAssetType(), rtc.getAsset(), blackboard);
+                DefenseApplicabilityCondition item = DefenseApplicabilityCondition.findOnBlackboard(DisconnectConstants.DEFENSE_NAME, rtc.getExpandedName(), blackboard);
                 if (item != null) { // the DefenseApplicability condition already exists, so don't make anotherset of conditions & opmodes
                     if (logger.isDebugEnabled()) logger.debug("Not creating redundant modes & conditions for already known "+rtc.getAsset());
                 }
@@ -143,7 +143,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             while (iter.hasNext()) {
                 ReconnectTimeCondition rtc = (ReconnectTimeCondition)iter.next();
                 
-                DisconnectApplicabilityCondition item = DisconnectApplicabilityCondition.findOnBlackboard(rtc.getAssetType(), rtc.getAsset(), blackboard);
+                DefenseApplicabilityCondition item = DefenseApplicabilityCondition.findOnBlackboard(DisconnectConstants.DEFENSE_NAME, rtc.getExpandedName(), blackboard);
                 if (item != null) { // the DefenseApplicability condition already exists, so don't make anotherset of conditions & opmodes
                     if (logger.isDebugEnabled()) logger.debug("Not creating redundant modes & conditions for already known "+rtc.getAsset());
                 }
@@ -219,7 +219,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         
         double t = ((Double)rtc.getValue()).doubleValue();
         
-        DisconnectApplicabilityCondition item = DisconnectApplicabilityCondition.findOnBlackboard(rtc.getAssetType(), rtc.getAsset(), blackboard);
+        DisconnectApplicabilityCondition item = (DisconnectApplicabilityCondition)DefenseApplicabilityCondition.findOnBlackboard(DisconnectConstants.DEFENSE_NAME, rtc.getExpandedName(), blackboard);
         if (item != null) {
             if (t > 0.0) {
                 item.setValue(DefenseConstants.BOOL_TRUE); // disconnected
@@ -246,7 +246,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     
     private boolean propagateMonitoringEnablerChange(DisconnectMonitoringEnabler dme) {
         
-        DisconnectMonitoringAgentEnabler item = DisconnectMonitoringAgentEnabler.findOnBlackboard(dme.getAssetType(), dme.getAsset(), blackboard);
+        DisconnectMonitoringAgentEnabler item = DisconnectMonitoringAgentEnabler.findOnBlackboard(DisconnectConstants.DEFENSE_NAME, dme.getExpandedName(), blackboard);
         if (item != null) {
             item.setValue(dme.getValue());
             blackboard.publishChange(item);
