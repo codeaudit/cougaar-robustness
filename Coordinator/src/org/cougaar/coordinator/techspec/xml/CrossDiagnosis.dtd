@@ -1,0 +1,18 @@
+<?xml encoding="UTF-8" ?>
+
+<!-- Created by Administrator on May 11, 2004, 9:31 AM -->
+
+<!ELEMENT CrossDiagnosis (WhenActualStateIs+) >
+<!ELEMENT WhenActualStateIs (WillDiagnoseAs+) >
+<!ELEMENT WillDiagnoseAs EMPTY>
+<!ATTLIST CrossDiagnosis 
+	sensorType CDATA #REQUIRED
+	isAffectedByStateDimension CDATA #REQUIRED
+>
+<!ATTLIST WhenActualStateIs 
+	name CDATA #REQUIRED
+>
+<!ATTLIST WillDiagnoseAs 
+	name CDATA #REQUIRED
+	withProbability CDATA #REQUIRED
+>
