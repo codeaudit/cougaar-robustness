@@ -119,6 +119,12 @@ public class MessageSendHistoryAspect extends StandardAspect
         exception = e;
 
         if (loggingService.isDebugEnabled()) loggingService.debug (stackTraceToString(e));
+        if (loggingService.isDebugEnabled()) {
+	    loggingService.debug("msg="+MessageUtils.toString(message));
+	    Attributes msgattrs = message.cloneAttributes();
+	    if (msgattrs instanceof SimpleMessageAttributes)
+		((SimpleMessageAttributes)msgattrs).listAttributes();
+	}        
       }
 
       //  NOTE:  Should we include traffic masking messages or heartbeats and the
