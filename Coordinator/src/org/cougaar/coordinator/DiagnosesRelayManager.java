@@ -207,18 +207,18 @@ public class DiagnosesRelayManager extends MinimalPluginBase implements NotPersi
                     //registerUID(uid); //record all UIDs so we know what wrappers are out there.
                     d.setWrapper(dw);
                     this.publishAdd(dw);                
-                    newWrappers.add(dw);
+                    //newWrappers.add(dw);
                 }
             }
             
             //Now look at changed diagnoses
             Collection changed  = diagnosesSubscription.getChangedCollection();        
-            Collection wrappers = wrapperSubscription.getCollection();        
-            added.addAll(changed);
+            Collection wrappers = wrapperSubscription.getCollection();  //should include the wrappers we just added!
+            //added.addAll(changed);
 
-            wrappers.addAll(newWrappers); //add newly created wrappers (that aren't yet on the BB) to the ones from the BB
+            //wrappers.addAll(newWrappers); //add newly created wrappers (that aren't yet on the BB) to the ones from the BB
 
-            for ( iter = added.iterator(); iter.hasNext() ; ) 
+            for ( iter = changed.iterator(); iter.hasNext() ; ) 
             {
                 Diagnosis d = (Diagnosis)iter.next();
                 
@@ -230,7 +230,7 @@ public class DiagnosesRelayManager extends MinimalPluginBase implements NotPersi
                 }
                 
             }
-            newWrappers.clear(); // clear this as these wrappers will now be committed to the BB
+            //newWrappers.clear(); // clear this as these wrappers will now be committed to the BB
             
         }           
     }

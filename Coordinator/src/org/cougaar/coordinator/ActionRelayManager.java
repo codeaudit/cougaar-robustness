@@ -192,29 +192,33 @@ public class ActionRelayManager extends MinimalPluginBase implements NotPersista
             } else {           //Only need to get all added Actions & wrap them with a ActionsWrapper
                 added = actionsSubscription.getAddedCollection();
             }
-
+            
             for ( iter = added.iterator(); iter.hasNext() ; ) 
             {
                 Action a = (Action)iter.next();                
                 if (a.getWrapper() == null) { //Make sure it wasn't already wrapped... just a precaution
-                    logger.debug("============= Saw new Action (with UID="+a.getUID()+")-- Wrapping it.");
+                    logger.debug("============= On asset ["+this.agentId+"] Saw new Action (with UID="+a.getUID()+")-- Wrapping it & relaying to "+managerAddress);
                     UID uid = this.us.nextUID(); //gen UID for this wrapper
                     ActionsWrapper aw = new ActionsWrapper(a, this.agentId, managerAddress, uid); //wrap the Action
                     //registerUID(uid); //record all UIDs so we know what wrappers are out there.
                     a.setWrapper(aw);
                     this.publishAdd(aw);                
-                    newWrappers.add(aw);
+                    //newWrappers.add(aw);
                 }
             }
             
+            //Get current list of action wrappers - this SHOULD include the wrappers we just added!
+            Collection wrappers = wrapperSubscription.getCollection();        
+
+            //add newly created wrappers (that aren't yet on the BB) to the ones from the BB
+            //wrappers.addAll(newWrappers);  -- should already be there, since publishAdd was called.
+            
             //Now look at changed Actions
             Collection changed  = actionsSubscription.getChangedCollection();        
-            Collection wrappers = wrapperSubscription.getCollection();        
-            added.addAll(changed);
+            //added.addAll(changed);
 
-            wrappers.addAll(newWrappers); //add newly created wrappers (that aren't yet on the BB) to the ones from the BB
             
-            for ( iter = added.iterator(); iter.hasNext() ; ) 
+            for ( iter = changed.iterator(); iter.hasNext() ; ) 
             {
                 Action a = (Action)iter.next();
                 
@@ -226,7 +230,7 @@ public class ActionRelayManager extends MinimalPluginBase implements NotPersista
                 }
                 
             }
-            newWrappers.clear(); // clear this as these wrappers will now be committed to the BB
+            //newWrappers.clear(); // clear this as these wrappers will now have been committed to the BB
             
         }           
     }
