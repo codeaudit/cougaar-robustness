@@ -55,7 +55,7 @@ public class PersistenceControlPlugin extends ComponentPlugin {
 
   public void execute() {
     Collection requests = persistenceControlRequests.getAddedCollection();
-    requests.addAll(persistenceControlRequests.getAddedCollection());
+    requests.addAll(persistenceControlRequests.getChangedCollection());
     for (Iterator it = requests.iterator(); it.hasNext();) {
       PersistenceControlRequest pcr = (PersistenceControlRequest)it.next();
       logger.debug("Received PersistenceControlRequest: " + pcr);
