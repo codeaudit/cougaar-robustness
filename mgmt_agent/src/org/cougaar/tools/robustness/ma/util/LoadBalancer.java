@@ -165,7 +165,7 @@ public class LoadBalancer extends BlackboardClientComponent {
     logger.info("doLoadBalance");
     List newNodes = Collections.EMPTY_LIST;
     List killedNodes = Collections.EMPTY_LIST;
-    List leaveAsIsNodes = Collections.EMPTY_LIST;
+    List leaveAsIsNodes = model.search("(UseForRestarts=False)");
     doLoadBalance(DEFAULT_HAMMING, newNodes, killedNodes, leaveAsIsNodes);
     logger.debug("publishing LoadBalanceRequest");
   }

@@ -25,6 +25,9 @@ import org.cougaar.core.service.community.Agent;
 import org.cougaar.core.service.community.Community;
 import org.cougaar.core.service.community.Entity;
 
+import org.cougaar.community.Filter;
+import org.cougaar.community.SearchStringParser;
+
 import org.cougaar.tools.robustness.ma.controllers.RobustnessController;
 
 import org.cougaar.core.mts.MessageAddress;
@@ -486,6 +489,31 @@ public class CommunityStatusModel extends BlackboardClientComponent {
     } else {
       logger.warn("No StatusEntry found: name=" + name);
     }
+  }
+
+  /**
+   * Search for entries with attributes matching specified JNDI-style
+   * filter.
+   * @param filter    JNDI style search filter
+   * @return List of entity names satisfying search filter
+   */
+  public List search(String filter) {
+    List matches = new ArrayList();
+    SearchStringParser parser = new SearchStringParser();
+    try {
+      Filter f = parser.parse(filter);
+      synchronized (statusMap) {
+        for (Iterator it = statusMap.values().iterator(); it.hasNext(); ) {
+          StatusEntry se = (StatusEntry)it.next();
+          if (f.match(se.attrs)) {
+            matches.add(se.name);
+          }
+        }
+      }
+    } catch (Exception ex) {
+      logger.error("Exception in search, filter=" + filter);
+    }
+    return matches;
   }
 
   /**
