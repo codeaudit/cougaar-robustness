@@ -40,8 +40,12 @@ public class TestPlugin extends SimplePlugin implements ThreatAlertListener {
     log.info("new alert: " + ta.toString());
   }
 
-  public void expiredAlert(ThreatAlert ta) {
-    log.info("expired alert: " + ta.toString());
+  public void changedAlert(ThreatAlert ta) {
+    log.info("changed alert: " + ta.toString());
+  }
+
+  public void removedAlert(ThreatAlert ta) {
+    log.info("removed alert: " + ta.toString());
   }
 
   public void execute() {
