@@ -1,0 +1,43 @@
+####################################################
+# Rule to provide UC1 TechSpecs to Coordinator
+####################################################
+
+# OBJS Coordinator stuff
+ltsp = "org.cougaar.coordinator.techspec.xml.LoadTechSpecsPlugin"
+techspecs = ['Restart_LivenessSensor.xml',
+             'Restart_RestartActuator.xml',
+             'Restart_AgentAssetStateDimensions.xml',
+             'Restart_Events.xml',
+             'Restart_HostAssetStateDimensions.xml',
+             'Restart_NodeAssetStateDimensions.xml',
+             'Restart_RestartActuator.xml',
+             'Restart_Threats.xml']
+
+# Add TechSpecs to manager
+society.each_agent do |agent|
+  if agent.name =~ /.*ARManager.*/
+    found = false
+    agent.each_component do |c|
+      next unless c.classname = ltsp
+      techspecs.each do |ts|
+        c.add_argument(ts) unless c.has_argument?(ts)
+      end
+      c.name = c.comparison_name
+      found = true
+      break
+    end
+    unless found
+      agent.add_component do |c|
+        c.classname = ltsp
+        c.insertionpoint = 'Node.AgentManager.Agent.PluginManager.Plugin'
+        techspecs.each do |ts|
+          c.add_argument(ts)
+        end
+      end
+    end
+  end
+end
+
+society.each_node do |node|
+  node.append_value_on_parameter("-Dorg.cougaar.config.path", "$COUGAAR_INSTALL_PATH/configs/coordinator/Sledgehammer")
+end
