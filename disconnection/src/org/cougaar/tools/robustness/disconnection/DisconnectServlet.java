@@ -167,7 +167,7 @@ public class DisconnectServlet extends BaseServletComponent
               disconnect(request, out);
           } else if (recon != null) {
               sendData(out);
-              reconnect(request, out);
+              reconnect(out);
           } else {
             sendData(out);
           }
@@ -209,7 +209,7 @@ public class DisconnectServlet extends BaseServletComponent
 
  
       /** User is reconnecting the node */
-      private void reconnect(HttpServletRequest request, PrintWriter out) {
+      private void reconnect(PrintWriter out) {
           try {
               blackboard.openTransaction();
               LocalReconnectTimeCondition lrtc = LocalReconnectTimeCondition.findOnBlackboard(assetType, assetID, blackboard);

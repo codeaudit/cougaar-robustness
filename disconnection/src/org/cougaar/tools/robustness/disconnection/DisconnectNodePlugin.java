@@ -48,14 +48,11 @@ import org.cougaar.util.UnaryPredicate;
 public class DisconnectNodePlugin extends DisconnectPluginBase {
     
   private MessageAddress managerAddress;
-  private String managerID;
 
   //private IncrementalSubscription myOpModes;
   private IncrementalSubscription reconnectTimeSubscription;
-  private IncrementalSubscription applicabilityConditionSubscription;
   private IncrementalSubscription defenseModeSubscription;      
   private IncrementalSubscription monitoringModeSubscription;
-  private IncrementalSubscription conditionSubscription;
   private IncrementalSubscription localReconnectTimeSubscription;
   private IncrementalSubscription localAgentsSubscription;
   private IncrementalSubscription managerAddressSubscription;
@@ -167,7 +164,7 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
            if (logger.isDebugEnabled()) logger.debug("ManagerAddress: "+managerAddress.toString());
 
           // create conditions & opmodes for the NodeAgent
-          createLocalCondition("Node", getNodeID(), getNodeAddress(), managerAddress);
+          createLocalCondition(getNodeID(), getNodeAddress(), managerAddress);
           createConditionsAndOpModes("Node", getNodeID(), getNodeAddress(), managerAddress);
      
           //********** Check for new agents on the node **********
@@ -196,7 +193,6 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
       while (iter.hasNext()) {
           DisconnectDefenseAgentEnabler dmode = (DisconnectDefenseAgentEnabler)iter.next();
           if (dmode != null) {
-              String defenseMode = dmode.getValue().toString();
               if (logger.isDebugEnabled()) logger.debug("Saw: "+
                  dmode.getClass()+":"+
                  dmode.getName() + " set to " + dmode.getValue());
@@ -208,7 +204,6 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
       while (iter.hasNext()) {      
           DisconnectMonitoringAgentEnabler mmode = (DisconnectMonitoringAgentEnabler)iter.next();
           if (mmode != null) {
-              String monitoringMode = mmode.getValue().toString();
               if (logger.isDebugEnabled()) logger.debug("Saw: "+
                 mmode.getClass()+":"+
                 mmode.getName() + " set to " + mmode.getValue());
@@ -265,7 +260,7 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
 
   }
 
-    private void createLocalCondition(String assetType, String assetID, MessageAddress localAddress, MessageAddress remoteAddress) {
+    private void createLocalCondition(String assetID, MessageAddress localAddress, MessageAddress remoteAddress) {
         // Make the LocalReconnectTimeCondition used for signalling a Disconnect request
         
           LocalReconnectTimeCondition lrtc =
