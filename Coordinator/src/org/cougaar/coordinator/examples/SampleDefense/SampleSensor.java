@@ -38,7 +38,7 @@ public class SampleSensor extends ComponentPlugin
     private LoggingService log;
     private SampleDiagnosis diagnosis;
     private ServiceBroker sb;
-    private boolean start = false;
+    private boolean start = true;
 
     private IncrementalSubscription rawSensorDataSub;
 
@@ -92,24 +92,7 @@ public class SampleSensor extends ComponentPlugin
     {
         rawSensorDataSub = 
 	    (IncrementalSubscription)blackboard.subscribe(rawSensorDataPred);
-/*
-	try {
-	    diagnosis = new SampleDiagnosis(agentId.toString(), sb);
-	    blackboard.publishAdd(diagnosis);
-	    if (log.isDebugEnabled()) 
-		log.debug(diagnosis + " added.");
-	    if (log.isDebugEnabled()) log.debug(diagnosis.dump());
-	    SampleRawSensorData data = new SampleRawSensorData(diagnosis.getAssetName(),
-								 diagnosis.getPossibleValues(),
-								 diagnosis.getValue());
-	    blackboard.publishAdd(data);
-	    if (log.isDebugEnabled()) 
-		log.debug(data + " added.");
-	} catch (TechSpecNotFoundException e) {
-	    log.error("TechSpec not found for SampleDiagnosis", e);
-	}
-*/
-	alarmService.addRealTimeAlarm(new DelayedStartAlarm(0));
+//	alarmService.addRealTimeAlarm(new DelayedStartAlarm(120000));
     } 
 
     public synchronized void execute() {

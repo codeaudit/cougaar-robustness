@@ -53,7 +53,7 @@ public class SampleActuator extends ComponentPlugin
 
     private static final Hashtable codeTbl;
 
-    private boolean start = false;
+    private boolean start = true;
 
     static {
 	codeTbl = new Hashtable();
@@ -110,20 +110,7 @@ public class SampleActuator extends ComponentPlugin
 	    (IncrementalSubscription)blackboard.subscribe(actionPred);
         rawActuatorDataSub = 
 	    (IncrementalSubscription)blackboard.subscribe(rawActuatorDataPred);
-/*  move this section back here when believability no longer requires a 2 minute delay
-	try {
-	    action = new SampleAction(agentId.toString(), sb);
-	    blackboard.publishAdd(action);
-	    if (log.isDebugEnabled()) log.debug(action + " added.");
-	    if (log.isDetailEnabled()) log.detail(action.dump());
-	    data = new SampleRawActuatorData(agentId.toString(), action.getPossibleValues());
-	    blackboard.publishAdd(data);
-	    if (log.isDebugEnabled()) log.debug(data + " added.");	
-	} catch (TechSpecNotFoundException e) {
-	    log.error("TechSpec not found for SampleAction", e);
-	}
-*/
-	alarmService.addRealTimeAlarm(new DelayedStartAlarm(120000));
+//	alarmService.addRealTimeAlarm(new DelayedStartAlarm(120000));
     } 
     
     public synchronized void execute() {
