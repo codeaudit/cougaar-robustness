@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
-<!DOCTYPE Threats SYSTEM "ThreatDTD.dtd"  >
-
-<Threats>
-    <Threat name="WantsToUnleash" affectsAssetType="Enclave" causesEvent="WantsToUnleash" defaultEventLikelihoodProb="LOW" probIntervalInMins="10" />
-    <Threat name="WantsToLeash" affectsAssetType="Enclave" causesEvent="WantsToLeash" defaultEventLikelihoodProb="LOW" probIntervalInMins="10" />
-</Threats>
