@@ -51,11 +51,11 @@ public class TestAction extends Action {
         } catch (Exception e) {}
     }        
 
-    protected void start(Object o) throws IllegalValueException {
+    public void start(Object o) throws IllegalValueException {
         super.start(o);
     }
 
-    protected void stop(Action.CompletionCode cc) throws NoStartedActionException, IllegalValueException  {
+    public void stop(Action.CompletionCode cc) throws NoStartedActionException, IllegalValueException  {
         super.stop(cc);
     }
 }

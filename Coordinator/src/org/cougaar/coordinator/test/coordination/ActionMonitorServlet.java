@@ -1,9 +1,6 @@
 /*
- * ActionMonitorServlet.java
- *
- * Created on February 11, 2004, 2:12 PM
  * <copyright>
- *  Copyright 2003 Object Services & Consulting, Inc.
+ *  Copyright 2003,2004 Object Services and Consulting, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
  *  and the Defense Logistics Agency (DLA).
  *
@@ -62,33 +59,29 @@ import org.cougaar.planning.servlet.BlackboardServletComponent;
 
 import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.LoggingService;
+import org.cougaar.core.logging.LoggingServiceWithPrefix;
 
 import org.cougaar.core.adaptivity.Condition;
 
-import org.cougaar.util.log.Logger;
 import org.cougaar.core.persist.NotPersistable;
 
 
 /**
  *
- * Servlet allows monitoring action objects on the node & ActionsWrapper objects on the enclave coordinator.
+ * Servlet provides monitoring and updating of Actions in agents & ActionsWrappers in the Coordinator.
  *
  *
  */
 public class ActionMonitorServlet extends BaseServletComponent implements BlackboardClient, NotPersistable {
     
-    //private String LONG_NUM_FORMAT = "###0.####";
-    //private DecimalFormat nf = new DecimalFormat(LONG_NUM_FORMAT);
     private EventService eventService = null;
     private BlackboardService blackboard = null;
-    private Logger logger = null;
+    private LoggingService log;
     
     private MessageAddress agentId = null;
 
-    
     private static final String CHANGEDFONT = "<font color=\"#00ff00\">"; //green            
     private static final String ADDEDFONT = "<font color=\"#0000ff\">"; //blue            
-
     
     
     protected Servlet createServlet() {
@@ -99,13 +92,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
     /** aquire services */
     public void load() {
         
-        // get the log
-        logger = (LoggingService)
-        serviceBroker.getService(
-        this, LoggingService.class, null);
-        if (logger == null) {
-            logger = LoggingService.NULL;
-        }
+        super.load();
         
         // get the agentId
         AgentIdentificationService agentIdService =
@@ -125,6 +112,10 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             throw new RuntimeException(
             "Unable to obtain agent id");
         }
+
+        log = (LoggingService)
+	    serviceBroker.getService(this, LoggingService.class, null);
+	log = LoggingServiceWithPrefix.add(log, agentId + ": ");
         
         // get the blackboard
         this.blackboard = (BlackboardService)
@@ -149,8 +140,6 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             "Unable to obtain EventService");
         }
         
-        super.load();
-        
         //Publish this servlet to the BB so the object monitors can talk to it.
         blackboard.openTransaction();
         blackboard.publishAdd(this);
@@ -171,11 +160,9 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             this, EventService.class, eventService);
             eventService = null;
         }
-        if ((logger != null) && (logger != LoggingService.NULL)) {
-            serviceBroker.releaseService(
-            this, LoggingService.class, logger);
-            logger = LoggingService.NULL;
-        }
+        if (log != null) {
+            serviceBroker.releaseService(this, LoggingService.class, log);
+	}
     }
     
     /** odd BlackboardClient method */
@@ -217,11 +204,13 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             while (i.hasNext() ) {      
                 actionData = (ActionData) i.next();
                 if ( actionData.contains(a) ) { //found it
-//System.out.println("Changed Action Data Found. Asset ="+a.getAssetName());                    
+		    if (log.isDebugEnabled())
+			log.debug("Changed Action Data Found. Asset ="+a.getAssetName());
                     actionData.setAction(a, state, isWrapper);
                     return;
                 } else {
-//System.out.println("Added Action Data Found. Asset = "+a.getAssetName());                    
+		    if (log.isDebugEnabled())
+			log.debug("Added Action Data Found. Asset = "+a.getAssetName());                    
                 }                    
             }
             //Not found so create it
@@ -233,18 +222,28 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
     
     //These methods are called by the ActionMonitorPlugin
     public void addActionsWrapper(ActionsWrapper aw) {
-        handleAction((Action)aw.getContent(), ADDED, true);
+        if (log.isDebugEnabled())
+	    log.debug("Received added "+aw);
+	handleAction((Action)aw.getContent(), ADDED, true);
+	//handleAction(aw, ADDED, true);
     }
     
     public void changedActionsWrapper(ActionsWrapper aw) {
+        if (log.isDebugEnabled())
+	    log.debug("Received changed "+aw);
         handleAction((Action)aw.getContent(), CHANGED, true);
+        //handleAction(aw, CHANGED, true);
     }
-
+    
     public void addAction(Action a) {
+        if (log.isDebugEnabled())
+	    log.debug("Received added "+a);
         handleAction(a, ADDED, false);
     }
     
     public void changedAction(Action a) {
+        if (log.isDebugEnabled())
+	    log.debug("Received changed "+a);
         handleAction(a, CHANGED, false);
     }
 
@@ -281,6 +280,21 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             shortClsname = setShortName(clsname);
             pValues = t.getPossibleValues();
         }
+
+	public String toString() {
+            return
+		"<ActionData"+
+		" clsname="+clsname+
+		" shortClsname="+shortClsname+
+		" type="+type+
+		" asset="+asset+
+		" pValues="+pValues+
+		" a="+a+
+		" aw="+aw+
+		" aState="+aState+
+		" awState="+awState+
+		">";
+        }
         
         /**
          * @return asset name
@@ -314,6 +328,8 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             if (isWrapper) {
                 aw = t;
                 awState = state;
+		//a = ((ActionsWrapper)aw).getAction(); //sjf
+                //aState = state;     //sjf
             } else {
                 a = t;
                 aState = state;
@@ -322,8 +338,6 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
         
         int  getWrapperState() { return awState; }        
         int  getActionState() { return aState; }
-
-
         
         /**
          * @return the possible values for this action
@@ -339,7 +353,6 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                    ActionUtils.getAssetType(aa).equals(type) && 
                    aa.getAssetName().equals(asset) );
         }
-        
     }
     
     //////////////////////////////////////////////////////////////////////////////////
@@ -351,9 +364,9 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             String refresh = null;
             String error = null;
             boolean useShortName = true;
-            String actiondataFilter = "ACTIONS";
+            String actiondataFilter = "WRAPPERS";
             //Default refresh rate
-            int refreshRate = 50000;
+            int refreshRate = 30000;
             String ln="SHORTNAME";
     
             String assetFilter = "ALL";
@@ -372,7 +385,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
 
                 actiondataFilter = request.getParameter("FILTER");
                 if (actiondataFilter == null || actiondataFilter.length()==0) {
-                    actiondataFilter = "ACTIONS"; //set up value to enable default data output.
+                    actiondataFilter = "WRAPPERS"; //set up value to enable default data output.
                 }
                 
                 refresh = request.getParameter("REFRESH");
@@ -404,8 +417,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                     wasUpdated = true;
                 }
         
-                //See if the user hit "Start Action" or "Stop Action" -- these buttons will only appear if
-                //the action is a TestAction
+                //See if the user hit "Start Action" or "Stop Action"
                 String startaction = request.getParameter("STARTACTION");
                 
                 String af = request.getParameter("ASSETFILTER");
@@ -416,13 +428,13 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                 //Start an action
                 if (startaction != null ) {
                 
-                    String actionVal = request.getParameter("TESTACTIONCONTROL");
+                    String actionVal = request.getParameter("ACTIONCONTROL");
                     if (actionVal != null && actionVal.length() >0 ) { //the user wants to update the value of an action
 
                         String type = request.getParameter("TYPE");
                         String uid  = request.getParameter("UID");
 
-                        startAction(type, uid, actionVal);
+                        startAction(type, uid, actionVal, error);
                         wasUpdated = true;
                     }
                 } else { 
@@ -447,7 +459,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                             String type = request.getParameter("TYPE");
                             String uid  = request.getParameter("UID");
 
-                            stopAction(type, uid, cc);
+                            stopAction(type, uid, cc, error);
                             wasUpdated = true;
                         } 
                     }
@@ -459,14 +471,6 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             
             try {
                 PrintWriter out = response.getWriter();
-/*          if (assetName != null && assetType != null && state != null && (state.equalsIgnoreCase("TRUE") || state.equalsIgnoreCase("FALSE")) ) {
-              sendData(out);
-              boolean stateBool = Boolean.valueOf(state).booleanValue();
-              String i = emitDACs(assetName, assetType, stateBool, setMsgLog);
-              out.println("<center><h2>Emitted DefenseApplicabilityConditions for the specified asset.</h2></center><br>" );
-              out.println("<center><h2>"+i+"</h2></center><br>" );
-          } else {
- */
                 emitHeader(out, refreshRate, useShortName, actiondataFilter, updateResult, ln, updateResult, wasUpdated, assetFilter );
                 if (error != null) { // then emit the error
                     out.print("<font color=\"#0C15FE\">"+ error + "</h2></font>");
@@ -479,11 +483,6 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                     out.println("<p><p><p><h2><center>No Data is Available.</center></h2>");
                 }
                 emitFooter(out, refreshRate, useShortName, actiondataFilter, updateResult, ln, updateResult, wasUpdated, assetFilter );
-                //out.println("<center><h2>DefenseApplicabilityConditions not emitted - All three values required.</h2></center><br>" );
-                //if (eventService.isEventEnabled()) {
-                //   eventService.event("ERROR: Condition Name or Value not set properly: "+condName+"="+condValue);
-                //}
-                //          }
                 out.close();
             } catch (java.io.IOException ie) { ie.printStackTrace(); }
             
@@ -506,12 +505,18 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                     a = (Action)ad.getAction();
                     if (a.getUID().toString().equals(uid)) {
                         result = ActionUtils.setPermittedValues(a, newvalues);
+			blackboard.openTransaction();
+			blackboard.publishChange(a);
+			blackboard.closeTransaction();
                         break;
                     }
                 } else { //wrapper change
                     a = (Action)ad.getWrapper();
                     if (a.getUID().toString().equals(uid)) {
                         result = ActionUtils.setPermittedValues(a, newvalues);
+			blackboard.openTransaction();
+			blackboard.publishChange(a.getWrapper());
+			blackboard.closeTransaction();
                         break;
                     }
                 }
@@ -521,9 +526,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             return result;
         }
 
-
-        //set the value of a TestAction object
-        private void startAction(String type, String uid, String newvalue) {
+        private void startAction(String type, String uid, String newvalue, String error) {
 
             ActionData ad;
             Action a;
@@ -536,36 +539,33 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                 if (type.equals("ACTIONS")) {
                     a = (Action)ad.getAction();
                     if (a.getUID().toString().equals(uid)) {
-                        if (a instanceof TestAction) {                            
-                            TestAction ta = (TestAction)a;
-                            try {
-                               ta.start(newvalue);
-                            } catch (IllegalValueException ive) {
-                            }
-                        }                        
-                        break;
-                    }
+			try {
+			    a.start(newvalue);
+			    blackboard.openTransaction();
+			    blackboard.publishChange(a);
+			    blackboard.closeTransaction();
+			} catch (IllegalValueException ive) {
+			    error = "Illegal Value "+newvalue+" passed to "+a+".start()";
+			}
+		    }
                 } else { //wrapper change
                     a = (Action)ad.getWrapper();
                     if (a.getUID().toString().equals(uid)) {
-                        if (a instanceof TestAction) {                            
-                            TestAction ta = (TestAction)a;
-                            try {
-                               ta.start(newvalue);
-                            } catch (IllegalValueException ive) {
-                            }
-                        }
-                        break;
-                    }
+			try {
+			    a.start(newvalue);
+			    blackboard.openTransaction();
+			    blackboard.publishChange(a.getWrapper());
+			    blackboard.closeTransaction();
+			} catch (IllegalValueException ive) {
+			    error = "Illegal Value "+newvalue+" passed to "+a+".start()";
+			}
+		    }
                 }
             }
         }
-        
 
-        
-
-        //set the value of a TestAction object
-        private void stopAction(String type, String uid, Action.CompletionCode cc) {
+        //set the value of an Action
+        private void stopAction(String type, String uid, Action.CompletionCode cc, String error) {
 
             ActionData ad;
             Action a;
@@ -578,28 +578,30 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                 if (type.equals("ACTIONS")) {
                     a = (Action)ad.getAction();
                     if (a.getUID().toString().equals(uid)) {
-                        if (a instanceof TestAction) {                            
-                            TestAction ta = (TestAction)a;
-                            try {
-                               ta.stop(cc);
-                            } catch (NoStartedActionException nsae) {
-                            } catch (IllegalValueException ive) {
-                            }
-                        }                        
-                        break;
-                    }
+			try {
+			    a.stop(cc);
+			    blackboard.openTransaction();
+			    blackboard.publishChange(a);
+			    blackboard.closeTransaction();
+			} catch (NoStartedActionException nsae) {
+			    error = "No Started Action for "+a;
+			} catch (IllegalValueException ive) {
+			    error = "Illegal Completion Code "+cc+" passed to "+a+".stop()";
+			}
+		    }                        
                 } else { //wrapper change
                     a = (Action)ad.getWrapper();
                     if (a.getUID().toString().equals(uid)) {
-                        if (a instanceof TestAction) {                            
-                            TestAction ta = (TestAction)a;
-                            try {
-                               ta.stop(cc);
-                            } catch (NoStartedActionException nsae) {
-                            } catch (IllegalValueException ive) {
-                            }
-                        }
-                        break;
+			try {
+			    a.stop(cc);
+			    blackboard.openTransaction();
+			    blackboard.publishChange(a.getWrapper());
+			    blackboard.closeTransaction();
+			} catch (NoStartedActionException nsae) {
+			    error = "No Started Action for "+a;
+			} catch (IllegalValueException ive) {
+			    error = "Illegal Completion Code "+cc+" passed to "+a+".stop()";
+			}
                     }
                 }
             }
@@ -698,22 +700,23 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                         continue; //skip printing this one out.
                     }
                 }
-                
                 out.print("<TR>\n");
-                
+
                 //Output the asset name
-                out.print("   <TD " + (twoRows ? "ROWSPAN=2":"") + ">"+ ad.getAction().getAssetName() +"</TD>\n");
+                out.print("   <TD " + (twoRows ? "ROWSPAN=2":"") + ">"
+			  +( (ad.getAction() == null) 
+			     ? ad.getWrapper().getAssetName()
+			     : ad.getAction().getAssetName()
+			     )
+			  +"</TD>\n");
                 
                 //Output the action class name
                 out.print("   <TD " + (twoRows ? "ROWSPAN=2":"") + ">"+ ad.getName(useShortName) +"</TD>\n");
-
-                
                 emitActionData(out, ad, actiondataFilter, refresh, nameformat, assetFilter);
                 
                 //End of row
-                if (!twoRows) {
-                    out.print("</TR>");
-                }
+                if (!twoRows)
+		    out.print("</TR>");
             }
             
             tableFooter(out);
@@ -745,7 +748,8 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
                 emitActionDataItem(out, ad, false, twoRows, what, refresh, nameformat, assetFilter);
                 
             }
-            out.print("</TD>");    
+            //sjf out.print("</TD>");    
+            out.print("</TR>");    
         }
         
         private void emitActionDataItem(PrintWriter out, ActionData ad, boolean isActionObject, boolean twoRows, 
@@ -776,13 +780,7 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             emitSelect(out, action.getPossibleValues());
             emitModifiableSelect(out, action.getValuesOffered(), ad, isActionObject, actiondataFilter, refresh, nameformat, "SETPERMITTEDVALUES", "Set Permitted", true, assetFilter);
 
-            //If it's our TestAction object then we can set its value!
-            if (action instanceof TestAction) {
-                emitTestActionControl(out, action.getPermittedValues(), ad, isActionObject, actiondataFilter, refresh, nameformat, assetFilter);
-            } else { //we can't set the value so use this just to present them.
-               emitSelect(out, action.getPermittedValues());
-            }        
-            
+	    emitActionControl(out, action.getPermittedValues(), ad, isActionObject, actiondataFilter, refresh, nameformat, assetFilter);
             
             if ( isActionObject ) { //emit value indicating if data has changed or was just added.
                 out.print("   <TD><TABLE>");
@@ -846,14 +844,14 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             }
         }         
 
-        private void emitTestActionControl(PrintWriter out, Set s, ActionData ad, boolean isActionObject, 
+        private void emitActionControl(PrintWriter out, Set s, ActionData ad, boolean isActionObject, 
                                           String actiondataFilter, int refresh, String nameformat, String assetFilter) {
                        
             String str;
             if (s != null && s.size() >0 ) {
                 Iterator iter = s.iterator();
                 out.print("    <TD><form clsname=\"UPDATEVALUE\" method=\"get\" ><br><br>" );
-                out.print("    <SELECT  NAME=\"TESTACTIONCONTROL\" size=\"3\" ");
+                out.print("    <SELECT  NAME=\"ACTIONCONTROL\" size=\"3\" ");
                 out.print("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: red; font-size: 8pt;\">\n");            
                 while (iter.hasNext()) {
                     str = iter.next().toString();
@@ -950,7 +948,6 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
          * assets to display.
          */
         private void generateAssetSelect(PrintWriter out, int refresh, String nameformat, String actiondataFilter, String assetFilter) {
-
             out.print("    <form clsname=\"ASSETFILTER\" method=\"get\" >" );
             out.println("    <input type=submit name=\"Submit\" value=\"Show Asset:\" size=15 ");
             out.println("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: blue; font-size: 6pt;\">");
@@ -964,12 +961,10 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             }
             out.print("        <OPTION value=\"ALL\" "+(assetFilter.equals("ALL")?"":"UN")+"SELECTED />ALL\n");
             out.print("   </SELECT>\n");            
-                out.println("   <input type=hidden name=\"REFRESH\" value=\""+refresh+"\" >");
-                out.println("   <input type=hidden name=\"NAMEFORMAT\" value=\""+nameformat+"\" >");
-                out.println("   <input type=hidden name=\"FILTER\" value=\""+actiondataFilter+"\" >");
-                //out.println("   <input type=hidden name=\"ASSETFILTER\" value=\""+assetFilter+"\" >");
+	    out.println("   <input type=hidden name=\"REFRESH\" value=\""+refresh+"\" >");
+	    out.println("   <input type=hidden name=\"NAMEFORMAT\" value=\""+nameformat+"\" >");
+	    out.println("   <input type=hidden name=\"FILTER\" value=\""+actiondataFilter+"\" >");
             out.println("   \n</form>");
-            
         }
         
         
@@ -993,8 +988,5 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             
         }
     }
-    //**End of servlet class
-
-
     
 }

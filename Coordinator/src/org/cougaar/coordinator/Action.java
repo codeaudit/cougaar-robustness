@@ -406,7 +406,7 @@ public abstract class Action
      * (e.g. 0 gal, 1 gal, 2 gal, 5 gal).  
      *     Not for public viewing / access - should only be called by the action/actuator.
      */
-    protected void setValuesOffered( Set values) throws IllegalValueException {
+    public void setValuesOffered( Set values) throws IllegalValueException {
 
         if (values == null) {
             throw new IllegalValueException("setValuesOffered must not be called with a null value. An empty set IS permitted.");
@@ -456,7 +456,7 @@ public abstract class Action
      * @exception IllegalValueException if the actionValue is not in the set of permittedValues
      * 
      */
-    protected void start(Object actionValue) throws IllegalValueException {
+    public void start(Object actionValue) throws IllegalValueException {
         
         if (actionValue == null) {
             throw new IllegalValueException ("Action to be started is NULL!");
@@ -485,7 +485,7 @@ public abstract class Action
      * @see Action#FAILED
      * @see Action#ABORTED
      */
-    protected void stop() throws NoStartedActionException {
+    public void stop() throws NoStartedActionException {
         
         try {
             stop(Action.COMPLETED );
@@ -502,7 +502,7 @@ public abstract class Action
      * @see Action#FAILED
      * @see Action#ABORTED
      */
-    protected void stop(CompletionCode completionCode) throws IllegalValueException, NoStartedActionException  {
+    public void stop(CompletionCode completionCode) throws IllegalValueException, NoStartedActionException  {
         
         if (completionCode != Action.COMPLETED && 
             completionCode != Action.ABORTED &&
@@ -820,7 +820,7 @@ public abstract class Action
     public static class CompletionCode implements Serializable {
     
         private int val;
-        protected CompletionCode(int i) { this.val = i; }
+        public CompletionCode(int i) { this.val = i; }
         private int getVal() { return val; }
 
         public String toString() {
