@@ -37,6 +37,7 @@ public class AssetID  implements NotPersistable, Serializable {
     
     AssetType type;
     String name;
+    String id;
     
     /**
      * Create an asset name object 
@@ -44,6 +45,7 @@ public class AssetID  implements NotPersistable, Serializable {
     public AssetID(String assetName, AssetType assetType) {
         type = assetType;
         name = assetName;
+        id = name + ":" + type.toString(); 
     }
     
     /** Return asset type */
@@ -57,8 +59,9 @@ public class AssetID  implements NotPersistable, Serializable {
         return  ( (o instanceof AssetID) && ((AssetID)o).getName().equals(this.name) && ( (AssetID)o).getType().equals(this.type) );
     }
 
-    public int hashCode() { return name.hashCode(); }
+    public int hashCode() { return id.hashCode(); }
 
-    public String toString() { return name + ":" + type.toString(); }
+    public String toString() { return id; }
+
 
 }
