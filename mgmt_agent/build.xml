@@ -253,8 +253,7 @@
     <copy todir="../${ant.project.name}" >
       <fileset dir="${basedir}"
         includes="build.xml,**/*.java,**/*.properties,**/*.dat,**/*.ini,**/*.xml,**/*.csv,**/*.jar,**/*.rc"
-        excludes="lib/**,
-                  test/configs/common/host.xml,
+        excludes="test/configs/common/host.xml,
                   test/src/org/cougaar/tools/robustness/ma/test/simulator/**" />
     </copy>
   </target>
