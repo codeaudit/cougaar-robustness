@@ -44,4 +44,28 @@
     </Diagnoses>
 </SensorType>
 
+<SensorType name="org.cougaar.coordinator.sensors.load.EffectiveBandwidthDiagnosis" sensesAssetType="Enclave"
+            sensesStateDimension="Effective_Bandwidth_Status" sensorLatency="1000">
+    <PotentialDiagnoses>
+        <Diagnosis name="Normal" />
+        <Diagnosis name="Degraded-1" />
+        <Diagnosis name="Degraded-2" />
+        <Diagnosis name="Degraded-3" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="Normal" >
+            <WillDiagnoseAs name="Normal" withProbability="1.0" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Degraded-1" >
+            <WillDiagnoseAs name="Degraded-1" withProbability="1.0" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Degraded-2" >
+            <WillDiagnoseAs name="Degraded-2" withProbability="1.0" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Degraded-3" >
+            <WillDiagnoseAs name="Degraded-3" withProbability="1.0" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>
+
 </SensorTypes>

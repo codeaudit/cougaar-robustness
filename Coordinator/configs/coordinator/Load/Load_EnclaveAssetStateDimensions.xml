@@ -16,6 +16,13 @@
 	<State name="High" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
   </StateDimension>
 
+  <StateDimension name="Effective_Bandwidth_Status" >
+ 	<State name="Normal" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" defaultStartState="TRUE" />
+	<State name="Degraded-1" relativeMauCompleteness="0.9" relativeMauSecurity="0.9" />
+	<State name="Degraded-2" relativeMauCompleteness="0.5" relativeMauSecurity="0.8" />
+	<State name="Degraded-3" relativeMauCompleteness="0.1" relativeMauSecurity="0.8" />
+  </StateDimension>
+
 </AssetStateDimensions>
 
 
