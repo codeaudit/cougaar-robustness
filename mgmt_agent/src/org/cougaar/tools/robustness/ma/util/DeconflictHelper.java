@@ -259,7 +259,7 @@ public class DeconflictHelper extends BlackboardClientComponent {
   public void opmodeDisabled(String name) {
     if(opModeEnabled.contains(name)) {
       opModeEnabled.remove(name);
-      logger.info("remove " + name + " from opModeEnabled queue");
+      //logger.info("remove " + name + " from opModeEnabled queue");
     }
   }
 
