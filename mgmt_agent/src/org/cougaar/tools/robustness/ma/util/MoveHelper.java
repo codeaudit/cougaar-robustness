@@ -55,6 +55,7 @@ import org.cougaar.util.UnaryPredicate;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Collections;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -88,13 +89,13 @@ public class MoveHelper extends BlackboardClientComponent {
     }
   }
 
-  public static final long TIMER_INTERVAL = 10000;
-  public static final long MOVE_TIMEOUT = 60000;
+  public static final long TIMER_INTERVAL = 10 * 1000;
+  public static final long MOVE_TIMEOUT = 10 * 60 * 1000;
   public static final long MAX_CONCURRENT_MOVES = 1;
 
-  private List moveQueue = new ArrayList();
-  private Map movesInProcess = new HashMap();
-  private List remoteMoveRequestQueue = new ArrayList();
+  private List moveQueue = Collections.synchronizedList(new ArrayList());
+  private Map movesInProcess = Collections.synchronizedMap(new HashMap());
+  private List remoteMoveRequestQueue = Collections.synchronizedList(new ArrayList());
 
   private WakeAlarm wakeAlarm;
 
@@ -338,13 +339,15 @@ public class MoveHelper extends BlackboardClientComponent {
    */
   private void removeExpiredMoves() {
       long now = now();
-      for (Iterator it = movesInProcess.entrySet().iterator(); it.hasNext();) {
-        Map.Entry me = (Map.Entry)it.next();
-        MessageAddress agent = (MessageAddress)me.getKey();
-        MoveQueueEntry mqe = (MoveQueueEntry)me.getValue();
+      List l;
+      synchronized(movesInProcess) {
+        l = new ArrayList(movesInProcess.values());
+      }
+      for (Iterator it = l.iterator(); it.hasNext();) {
+        MoveQueueEntry mqe = (MoveQueueEntry)it.next();
         if (mqe.expiration < now) {
-          it.remove();
-          logger.debug("Move timeout: agent=" + agent);
+          movesInProcess.remove(mqe.agent);
+          logger.warn("Move timeout: agent=" + mqe.agent);
           moveComplete(mqe.agent, mqe.origNode, mqe.destNode, FAIL);
         }
       }
