@@ -28,10 +28,15 @@ import org.cougaar.tools.robustness.sensors.PingRequest;
 import org.cougaar.core.agent.ClusterIdentifier;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.plugin.SimplePlugin;
+import org.cougaar.core.mts.MessageAddress;
+
+import org.cougaar.core.component.ServiceBroker;
+import org.cougaar.core.component.ServiceRevokedListener;
+import org.cougaar.core.component.ServiceRevokedEvent;
+
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.BlackboardService;
-import org.cougaar.core.mts.MessageAddress;
 
 import org.cougaar.core.service.community.*;
 import org.cougaar.community.*;
@@ -149,6 +154,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
   // HealthStatus objects for agents in monitored community
   private Collection membersHealthStatus = new Vector();
 
+  private CommunityService communityService = null;
 
   /**
    * This method obtains a roster for the community to be monitored and sends
@@ -176,6 +182,15 @@ public class HealthMonitorPlugin extends SimplePlugin {
     }
 
     myAgent = getClusterIdentifier();
+
+    communityService = getCommunityService();
+
+    // Find name of community to monitor
+    Collection communities = communityService.search("(CommunityManager=" +
+      myAgent.toString() + ")");
+    if (!communities.isEmpty())
+      healthMonitorProps.setProperty("community",
+                                      (String)communities.iterator().next());
 
     // Initialize configurable paramaeters from defaults and plugin arguments.
     updateParams(healthMonitorProps);
@@ -482,7 +497,9 @@ public class HealthMonitorPlugin extends SimplePlugin {
    * Get ping results.
    */
   private void getPings() {
+    bbs.openTransaction();
     Collection pings = bbs.query(pingRequestPredicate);
+    bbs.closeTransaction();
     for (Iterator it = pings.iterator(); it.hasNext();) {
       PingRequest req = (PingRequest)it.next();
       if (req.getSource().equals(myAgent)) {
@@ -703,6 +720,22 @@ public class HealthMonitorPlugin extends SimplePlugin {
       return (o instanceof PingRequest);
   }};
 
+
+  /**
+   * Gets reference to CommunityService.
+   */
+  private CommunityService getCommunityService() {
+    ServiceBroker sb = getBindingSite().getServiceBroker();
+    if (sb.hasService(CommunityService.class)) {
+      return (CommunityService)sb.getService(this, CommunityService.class,
+        new ServiceRevokedListener() {
+          public void serviceRevoked(ServiceRevokedEvent re) {}
+      });
+    } else {
+      log.error("CommunityService not available");
+      return null;
+    }
+  }
 
   /**
    * Predicate for Management Agent properties

@@ -1,402 +1,579 @@
-COMMUNITY_ID,ENTITY_ID,ATTRIBUTE_ID,ATTRIBUTE_VALUE,BLANK
-"1-AD-Enclave-COMM", "DISCOM-1-AD", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "DISCOM-1-AD", "Role", "Member"
-"1-AD-Enclave-COMM", "501-FSB", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "501-FSB", "Role", "Member"
-"1-AD-Enclave-COMM", "AVNBDE-1-AD", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "AVNBDE-1-AD", "Role", "Member"
-"1-AD-Enclave-COMM", "69-CHEMCO", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "69-CHEMCO", "Role", "Member"
-"1-AD-Enclave-COMM", "2-BDE-1-AD", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "2-BDE-1-AD", "Role", "Member"
-"1-AD-Enclave-COMM", "70-ENGBN", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "70-ENGBN", "Role", "Member"
-"1-AD-Enclave-COMM", "2-70-ARBN", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "2-70-ARBN", "Role", "Member"
-"1-AD-Enclave-COMM", "1-36-INFBN", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "1-36-INFBN", "Role", "Member"
-"1-AD-Enclave-COMM", "DIVARTY-1-AD", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "DIVARTY-1-AD", "Role", "Member"
-"1-AD-Enclave-COMM", "1-41-INFBN", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "1-41-INFBN", "Role", "Member"
-"1-AD-Enclave-COMM", "1-6-INFBN", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "1-6-INFBN", "Role", "Member"
-"1-AD-Enclave-COMM", "1-13-ARBN", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "1-13-ARBN", "Role", "Member"
-"1-AD-Enclave-COMM", "47-FSB", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "47-FSB", "Role", "Member"
-"1-AD-Enclave-COMM", "3-BDE-1-AD", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "3-BDE-1-AD", "Role", "Member"
-"1-AD-Enclave-COMM", "1-35-ARBN", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "1-35-ARBN", "Role", "Member"
-"1-AD-Enclave-COMM", "1-37-ARBN", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "1-37-ARBN", "Role", "Member"
-"1-AD-Enclave-COMM", "1-501-AVNBN", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "1-501-AVNBN", "Role", "Member"
-"1-AD-Enclave-COMM", "127-DASB", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "127-DASB", "Role", "Member"
-"1-AD-Enclave-COMM", "123-MSB", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "123-MSB", "Role", "Member"
-"1-AD-Enclave-COMM", "4-27-FABN", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "4-27-FABN", "Role", "Member"
-"1-AD-Enclave-COMM", "501-MIBN-CEWI", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "501-MIBN-CEWI", "Role", "Member"
-"1-AD-Enclave-COMM", "16-ENGBN", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "16-ENGBN", "Role", "Member"
-"1-AD-Enclave-COMM", "2-6-INFBN", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "2-6-INFBN", "Role", "Member"
-"1-AD-Enclave-COMM", "1-AD-DIV", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "1-AD-DIV", "Role", "Member"
-"1-AD-Enclave-COMM", "25-FABTRY-TGTACQ", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "25-FABTRY-TGTACQ", "Role", "Member"
-"1-AD-Enclave-COMM", "2-37-ARBN", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "2-37-ARBN", "Role", "Member"
-"1-AD-Enclave-COMM", "2-3-FABN", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "2-3-FABN", "Role", "Member"
-"1-AD-Enclave-COMM", "501-MPCO", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "501-MPCO", "Role", "Member"
-"1-AD-Enclave-COMM", "1-94-FABN", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "1-94-FABN", "Role", "Member"
-"1-AD-Enclave-COMM", "1-AD-Manager", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "1-AD-Manager", "Role", "ManagementAgent"
-"1-AD-Enclave-COMM", "1-AD-Manager", "Role", "HealthReportConsumer"
-"1-AD-Enclave-COMM", "141-SIGBN", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "141-SIGBN", "Role", "Member"
-"1-AD-Enclave-COMM", "40-ENGBN", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "40-ENGBN", "Role", "Member"
-"1-AD-Enclave-COMM", "1-BDE-1-AD", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "1-BDE-1-AD", "Role", "Member"
-"1-AD-Enclave-COMM", "1-AD", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "1-AD", "Role", "Member"
-"1-AD-Enclave-COMM", "1-4-ADABN", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "1-4-ADABN", "Role", "Member"
-"1-AD-Enclave-COMM", "1-1-CAVSQDN", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "1-1-CAVSQDN", "Role", "Member"
-"1-AD-Enclave-COMM", "2-501-AVNBN", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "2-501-AVNBN", "Role", "Member"
-"1-AD-Enclave-COMM", "125-FSB", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "125-FSB", "Role", "Member"
-"1-AD-Enclave-COMM", "4-1-FABN", "EntityType", "Agent"
-"1-AD-Enclave-COMM", "4-1-FABN", "Role", "Member"
-"NCA-Enclave-COMM", "DLAHQ", "EntityType", "Agent"
-"NCA-Enclave-COMM", "DLAHQ", "Role", "Member"
-"NCA-Enclave-COMM", "ShipPacker", "EntityType", "Agent"
-"NCA-Enclave-COMM", "ShipPacker", "Role", "Member"
-"NCA-Enclave-COMM", "21-TSC-HQ", "EntityType", "Agent"
-"NCA-Enclave-COMM", "21-TSC-HQ", "Role", "Member"
-"NCA-Enclave-COMM", "5-CORPS", "EntityType", "Agent"
-"NCA-Enclave-COMM", "5-CORPS", "Role", "Member"
-"NCA-Enclave-COMM", "NATO", "EntityType", "Agent"
-"NCA-Enclave-COMM", "NATO", "Role", "Member"
-"NCA-Enclave-COMM", "GlobalSea", "EntityType", "Agent"
-"NCA-Enclave-COMM", "GlobalSea", "Role", "Member"
-"NCA-Enclave-COMM", "OSC", "EntityType", "Agent"
-"NCA-Enclave-COMM", "OSC", "Role", "Member"
-"NCA-Enclave-COMM", "NCA-Manager", "EntityType", "Agent"
-"NCA-Enclave-COMM", "NCA-Manager", "Role", "ManagementAgent"
-"NCA-Enclave-COMM", "NCA-Manager", "Role", "HealthReportConsumer"
-"NCA-Enclave-COMM", "USAEUR", "EntityType", "Agent"
-"NCA-Enclave-COMM", "USAEUR", "Role", "Member"
-"NCA-Enclave-COMM", "NCA", "EntityType", "Agent"
-"NCA-Enclave-COMM", "NCA", "Role", "Member"
-"NCA-Enclave-COMM", "GlobalAir", "EntityType", "Agent"
-"NCA-Enclave-COMM", "GlobalAir", "Role", "Member"
-"NCA-Enclave-COMM", "HNS", "EntityType", "Agent"
-"NCA-Enclave-COMM", "HNS", "Role", "Member"
-"NCA-Enclave-COMM", "CONUSGround", "EntityType", "Agent"
-"NCA-Enclave-COMM", "CONUSGround", "Role", "Member"
-"NCA-Enclave-COMM", "USEUCOM", "EntityType", "Agent"
-"NCA-Enclave-COMM", "USEUCOM", "Role", "Member"
-"NCA-Enclave-COMM", "JSRCMDSE", "EntityType", "Agent"
-"NCA-Enclave-COMM", "JSRCMDSE", "Role", "Member"
-"NCA-Enclave-COMM", "TRANSCOM", "EntityType", "Agent"
-"NCA-Enclave-COMM", "TRANSCOM", "Role", "Member"
-"NCA-Enclave-COMM", "TheaterGround", "EntityType", "Agent"
-"NCA-Enclave-COMM", "TheaterGround", "Role", "Member"
-"NCA-Enclave-COMM", "FORSCOM", "EntityType", "Agent"
-"NCA-Enclave-COMM", "FORSCOM", "Role", "Member"
-"NCA-Enclave-COMM", "PlanePacker", "EntityType", "Agent"
-"NCA-Enclave-COMM", "PlanePacker", "Role", "Member"
-"NCA-Enclave-COMM", "5-CORPS-ARTY", "EntityType", "Agent"
-"NCA-Enclave-COMM", "5-CORPS-ARTY", "Role", "Member"
-"NCA-Enclave-COMM", "3-SUPCOM-HQ", "EntityType", "Agent"
-"NCA-Enclave-COMM", "3-SUPCOM-HQ", "Role", "Member"
-"NCA-Enclave-COMM", "5-CORPS-REAR", "EntityType", "Agent"
-"NCA-Enclave-COMM", "5-CORPS-REAR", "Role", "Member"
-"NCA-Enclave-COMM", "1-AD", "EntityType", "Agent"
-"NCA-Enclave-COMM", "1-AD", "Role", "Member"
-"5-CORPS-REAR-Enclave-COMM", "69-ADABDE", "EntityType", "Agent"
-"5-CORPS-REAR-Enclave-COMM", "69-ADABDE", "Role", "Member"
-"5-CORPS-REAR-Enclave-COMM", "52-ENGBN-CBTHVY", "EntityType", "Agent"
-"5-CORPS-REAR-Enclave-COMM", "52-ENGBN-CBTHVY", "Role", "Member"
-"5-CORPS-REAR-Enclave-COMM", "12-AVNBDE", "EntityType", "Agent"
-"5-CORPS-REAR-Enclave-COMM", "12-AVNBDE", "Role", "Member"
-"5-CORPS-REAR-Enclave-COMM", "30-MEDBDE", "EntityType", "Agent"
-"5-CORPS-REAR-Enclave-COMM", "30-MEDBDE", "Role", "Member"
-"5-CORPS-REAR-Enclave-COMM", "22-SIGBDE", "EntityType", "Agent"
-"5-CORPS-REAR-Enclave-COMM", "22-SIGBDE", "Role", "Member"
-"5-CORPS-REAR-Enclave-COMM", "18-MPBDE", "EntityType", "Agent"
-"5-CORPS-REAR-Enclave-COMM", "18-MPBDE", "Role", "Member"
-"5-CORPS-REAR-Enclave-COMM", "5-CORPS-REAR", "EntityType", "Agent"
-"5-CORPS-REAR-Enclave-COMM", "5-CORPS-REAR", "Role", "Member"
-"5-CORPS-REAR-Enclave-COMM", "205-MIBDE", "EntityType", "Agent"
-"5-CORPS-REAR-Enclave-COMM", "205-MIBDE", "Role", "Member"
-"5-CORPS-REAR-Enclave-COMM", "130-ENGBDE", "EntityType", "Agent"
-"5-CORPS-REAR-Enclave-COMM", "130-ENGBDE", "Role", "Member"
-"5-CORPS-REAR-Enclave-COMM", "286-ADA-SCCO", "EntityType", "Agent"
-"5-CORPS-REAR-Enclave-COMM", "286-ADA-SCCO", "Role", "Member"
-"5-CORPS-REAR-Enclave-COMM", "11-AVN-RGT", "EntityType", "Agent"
-"5-CORPS-REAR-Enclave-COMM", "11-AVN-RGT", "Role", "Member"
-"5-CORPS-REAR-Enclave-COMM", "5-CORPS-REAR-Manager", "EntityType", "Agent"
-"5-CORPS-REAR-Enclave-COMM", "5-CORPS-REAR-Manager", "Role", "ManagementAgent"
-"5-CORPS-REAR-Enclave-COMM", "5-CORPS-REAR-Manager", "Role", "HealthReportConsumer"
-"5-CORPS-REAR-Enclave-COMM", "244-ENGBN-CBTHVY", "EntityType", "Agent"
-"5-CORPS-REAR-Enclave-COMM", "244-ENGBN-CBTHVY", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "27-TCBN-MVTCTRL", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "27-TCBN-MVTCTRL", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "515-POL-TRKCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "515-POL-TRKCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "316-POL-SUPPLYBN", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "316-POL-SUPPLYBN", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "226-MAINTCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "226-MAINTCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "71-ORDCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "71-ORDCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "51-MDM-TRKCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "51-MDM-TRKCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "452-ORDCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "452-ORDCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "208-SCCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "208-SCCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "18-MAINTBN", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "18-MAINTBN", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "240-SSCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "240-SSCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "372-CGO-TRANSCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "372-CGO-TRANSCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "597-MAINTCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "597-MAINTCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "238-POL-TRKCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "238-POL-TRKCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "102-POL-SUPPLYCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "102-POL-SUPPLYCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "181-TCBN", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "181-TCBN", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "529-ORDCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "529-ORDCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "561-SSBN", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "561-SSBN", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "16-CSG", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "16-CSG", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "19-MMC", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "19-MMC", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "26-SSCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "26-SSCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "485-CSB", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "485-CSB", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "71-MAINTBN", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "71-MAINTBN", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "588-MAINTCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "588-MAINTCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "900-POL-SUPPLYCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "900-POL-SUPPLYCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "263-FLDSVC-CO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "263-FLDSVC-CO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "3-SUPCOM-Manager", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "3-SUPCOM-Manager", "Role", "ManagementAgent"
-"3-SUPCOM-Enclave-COMM", "3-SUPCOM-Manager", "Role", "HealthReportConsumer"
-"3-SUPCOM-Enclave-COMM", "15-PLS-TRKCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "15-PLS-TRKCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "227-SUPPLYCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "227-SUPPLYCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "77-MAINTCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "77-MAINTCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "41-POL-TRKCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "41-POL-TRKCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "317-MAINTCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "317-MAINTCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "594-MDM-TRKCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "594-MDM-TRKCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "584-MAINTCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "584-MAINTCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "7-CSG", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "7-CSG", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "3-SUPCOM-HQ", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "3-SUPCOM-HQ", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "592-ORDCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "592-ORDCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "596-MAINTCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "596-MAINTCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "106-TCBN", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "106-TCBN", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "377-HVY-TRKCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "377-HVY-TRKCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "541-POL-TRKCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "541-POL-TRKCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "565-RPRPTCO", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "565-RPRPTCO", "Role", "Member"
-"3-SUPCOM-Enclave-COMM", "125-ORDBN", "EntityType", "Agent"
-"3-SUPCOM-Enclave-COMM", "125-ORDBN", "Role", "Member"
-"MiniTestConfig-Enclave-COMM", "MCCGlobalMode", "EntityType", "Agent"
-"MiniTestConfig-Enclave-COMM", "MCCGlobalMode", "Role", "Member"
-"MiniTestConfig-Enclave-COMM", "Manager", "EntityType", "Agent"
-"MiniTestConfig-Enclave-COMM", "Manager", "Role", "ManagementAgent"
-"MiniTestConfig-Enclave-COMM", "Manager", "Role", "HealthReportConsumer"
-"MiniTestConfig-Enclave-COMM", "3ID", "EntityType", "Agent"
-"MiniTestConfig-Enclave-COMM", "3ID", "Role", "Member"
-"MiniTestConfig-Enclave-COMM", "1BDE", "EntityType", "Agent"
-"MiniTestConfig-Enclave-COMM", "1BDE", "Role", "Member"
-"MiniTestConfig-Enclave-COMM", "1BDE", "Role", "TestRole"
-"MiniTestConfig-Enclave-COMM", "3-69-ARBN", "EntityType", "Agent"
-"MiniTestConfig-Enclave-COMM", "3-69-ARBN", "Role", "Member"
-"MiniTestConfig-COMM", "MCCGlobalMode", "EntityType", "Agent"
-"MiniTestConfig-COMM", "MCCGlobalMode", "Role", "Member"
-"MiniTestConfig-COMM", "3ID", "EntityType", "Agent"
-"MiniTestConfig-COMM", "3ID", "Role", "Member"
-"MiniTestConfig-COMM", "1BDE", "EntityType", "Agent"
-"MiniTestConfig-COMM", "1BDE", "Role", "Member"
-"MiniTestConfig-COMM", "3-69-ARBN", "EntityType", "Agent"
-"MiniTestConfig-COMM", "3-69-ARBN", "Role", "Member"
-"21-TSC-Enclave-COMM", "6-TCBN", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "6-TCBN", "Role", "Member"
-"21-TSC-Enclave-COMM", "68-MDM-TRKCO", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "68-MDM-TRKCO", "Role", "Member"
-"21-TSC-Enclave-COMM", "24-ORDCO", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "24-ORDCO", "Role", "Member"
-"21-TSC-Enclave-COMM", "200-MMC", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "200-MMC", "Role", "Member"
-"21-TSC-Enclave-COMM", "720-EODDET", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "720-EODDET", "Role", "Member"
-"21-TSC-Enclave-COMM", "416-POL-TRKCO", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "416-POL-TRKCO", "Role", "Member"
-"21-TSC-Enclave-COMM", "29-SPTGP", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "29-SPTGP", "Role", "Member"
-"21-TSC-Enclave-COMM", "23-ORDCO", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "23-ORDCO", "Role", "Member"
-"21-TSC-Enclave-COMM", "21-TSC-HQ", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "21-TSC-HQ", "Role", "Member"
-"21-TSC-Enclave-COMM", "574-SSCO", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "574-SSCO", "Role", "Member"
-"21-TSC-Enclave-COMM", "RSA", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "RSA", "Role", "Member"
-"21-TSC-Enclave-COMM", "66-MDM-TRKCO", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "66-MDM-TRKCO", "Role", "Member"
-"21-TSC-Enclave-COMM", "37-TRANSGP", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "37-TRANSGP", "Role", "Member"
-"21-TSC-Enclave-COMM", "109-MDM-TRKCO", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "109-MDM-TRKCO", "Role", "Member"
-"21-TSC-Enclave-COMM", "51-MAINTBN", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "51-MAINTBN", "Role", "Member"
-"21-TSC-Enclave-COMM", "21-TSC-Manager", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "21-TSC-Manager", "Role", "ManagementAgent"
-"21-TSC-Enclave-COMM", "21-TSC-Manager", "Role", "HealthReportConsumer"
-"21-TSC-Enclave-COMM", "7-TCGP-TPTDD", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "7-TCGP-TPTDD", "Role", "Member"
-"21-TSC-Enclave-COMM", "191-ORDBN", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "191-ORDBN", "Role", "Member"
-"21-TSC-Enclave-COMM", "5-MAINTCO", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "5-MAINTCO", "Role", "Member"
-"21-TSC-Enclave-COMM", "28-TCBN", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "28-TCBN", "Role", "Member"
-"21-TSC-Enclave-COMM", "702-EODDET", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "702-EODDET", "Role", "Member"
-"21-TSC-Enclave-COMM", "AWR-2", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "AWR-2", "Role", "Member"
-"21-TSC-Enclave-COMM", "343-SUPPLYCO", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "343-SUPPLYCO", "Role", "Member"
-"21-TSC-Enclave-COMM", "18-PERISH-SUBPLT", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "18-PERISH-SUBPLT", "Role", "Member"
-"21-TSC-Enclave-COMM", "632-MAINTCO", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "632-MAINTCO", "Role", "Member"
-"21-TSC-Enclave-COMM", "512-MAINTCO", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "512-MAINTCO", "Role", "Member"
-"21-TSC-Enclave-COMM", "110-POL-SUPPLYCO", "EntityType", "Agent"
-"21-TSC-Enclave-COMM", "110-POL-SUPPLYCO", "Role", "Member"
-"5-CORPS-ARTY-Enclave-COMM", "2-4-FABN-MLRS", "EntityType", "Agent"
-"5-CORPS-ARTY-Enclave-COMM", "2-4-FABN-MLRS", "Role", "Member"
-"5-CORPS-ARTY-Enclave-COMM", "5-CORPS-ARTY-Manager", "EntityType", "Agent"
-"5-CORPS-ARTY-Enclave-COMM", "5-CORPS-ARTY-Manager", "Role", "ManagementAgent"
-"5-CORPS-ARTY-Enclave-COMM", "5-CORPS-ARTY-Manager", "Role", "HealthReportConsumer"
-"5-CORPS-ARTY-Enclave-COMM", "41-FABDE", "EntityType", "Agent"
-"5-CORPS-ARTY-Enclave-COMM", "41-FABDE", "Role", "Member"
-"5-CORPS-ARTY-Enclave-COMM", "3-13-FABN-155", "EntityType", "Agent"
-"5-CORPS-ARTY-Enclave-COMM", "3-13-FABN-155", "Role", "Member"
-"5-CORPS-ARTY-Enclave-COMM", "1-27-FABN", "EntityType", "Agent"
-"5-CORPS-ARTY-Enclave-COMM", "1-27-FABN", "Role", "Member"
-"5-CORPS-ARTY-Enclave-COMM", "5-CORPS-ARTY", "EntityType", "Agent"
-"5-CORPS-ARTY-Enclave-COMM", "5-CORPS-ARTY", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "DISCOM-1-AD", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "DISCOM-1-AD", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "OSC", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "OSC", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "28-TCBN", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "28-TCBN", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "51-MAINTBN", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "51-MAINTBN", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "TINY-1AD-Manager", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "TINY-1AD-Manager", "Role", "ManagementAgent"
-"TINY-1AD-Enclave-COMM", "TINY-1AD-Manager", "Role", "HealthReportConsumer"
-"TINY-1AD-Enclave-COMM", "2-BDE-1-AD", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "2-BDE-1-AD", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "AWR-2", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "AWR-2", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "343-SUPPLYCO", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "343-SUPPLYCO", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "18-MAINTBN", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "18-MAINTBN", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "USAEUR", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "USAEUR", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "102-POL-SUPPLYCO", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "102-POL-SUPPLYCO", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "HNS", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "HNS", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "1-6-INFBN", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "1-6-INFBN", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "47-FSB", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "47-FSB", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "16-CSG", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "16-CSG", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "1-35-ARBN", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "1-35-ARBN", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "NCA", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "NCA", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "110-POL-SUPPLYCO", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "110-POL-SUPPLYCO", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "485-CSB", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "485-CSB", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "191-ORDBN", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "191-ORDBN", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "71-MAINTBN", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "71-MAINTBN", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "227-SUPPLYCO", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "227-SUPPLYCO", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "29-SPTGP", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "29-SPTGP", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "TRANSCOM", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "TRANSCOM", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "37-TRANSGP", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "37-TRANSGP", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "USEUCOM", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "USEUCOM", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "DLAHQ", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "DLAHQ", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "123-MSB", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "123-MSB", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "7-CSG", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "7-CSG", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "21-TSC-HQ", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "21-TSC-HQ", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "3-SUPCOM-HQ", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "3-SUPCOM-HQ", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "592-ORDCO", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "592-ORDCO", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "106-TCBN", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "106-TCBN", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "6-TCBN", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "6-TCBN", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "565-RPRTCO", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "565-RPRTCO", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "5-CORPS", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "5-CORPS", "Role", "Member"
-"TINY-1AD-Enclave-COMM", "1-AD", "EntityType", "Agent"
-"TINY-1AD-Enclave-COMM", "1-AD", "Role", "Member"
+ASSEMBLY_ID,COMMUNITY_ID,ENTITY_ID,ATTRIBUTE_ID,ATTRIBUTE_VALUE
+COMM-DEFAULT_CONFIG,1-AD-DIV-COMM,1-4-ADABN,EntityType,Agent
+COMM-DEFAULT_CONFIG,1-AD-DIV-COMM,1-4-ADABN,Role,Member
+COMM-DEFAULT_CONFIG,1-AD-DIV-COMM,1-AD-DIV,EntityType,Agent
+COMM-DEFAULT_CONFIG,1-AD-DIV-COMM,1-AD-DIV,Role,Member
+COMM-DEFAULT_CONFIG,1-AD-DIV-COMM,141-SIGBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,1-AD-DIV-COMM,141-SIGBN,Role,Member
+COMM-DEFAULT_CONFIG,1-AD-DIV-COMM,501-MIBN-CEWI,EntityType,Agent
+COMM-DEFAULT_CONFIG,1-AD-DIV-COMM,501-MIBN-CEWI,Role,Member
+COMM-DEFAULT_CONFIG,1-AD-DIV-COMM,501-MPCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,1-AD-DIV-COMM,501-MPCO,Role,Member
+COMM-DEFAULT_CONFIG,1-AD-DIV-COMM,69-CHEMCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,1-AD-DIV-COMM,69-CHEMCO,Role,Member
+COMM-DEFAULT_CONFIG,1-AD-COMM,1-AD,EntityType,Agent
+COMM-DEFAULT_CONFIG,1-AD-COMM,1-AD,Role,Member
+COMM-DEFAULT_CONFIG,1-AD-COMM,1-AD-DIV-COMM,EntityType,Community
+COMM-DEFAULT_CONFIG,1-AD-COMM,1-AD-DIV-COMM,Role,Member
+COMM-DEFAULT_CONFIG,1-AD-COMM,1-BDE-1-AD-COMM,EntityType,Community
+COMM-DEFAULT_CONFIG,1-AD-COMM,1-BDE-1-AD-COMM,Role,Member
+COMM-DEFAULT_CONFIG,1-AD-COMM,2-BDE-1-AD-COMM,EntityType,Community
+COMM-DEFAULT_CONFIG,1-AD-COMM,2-BDE-1-AD-COMM,Role,Member
+COMM-DEFAULT_CONFIG,1-AD-COMM,3-BDE-1-AD-COMM,EntityType,Community
+COMM-DEFAULT_CONFIG,1-AD-COMM,3-BDE-1-AD-COMM,Role,Member
+COMM-DEFAULT_CONFIG,1-AD-COMM,AVNBDE-1-AD-COMM,EntityType,Community
+COMM-DEFAULT_CONFIG,1-AD-COMM,AVNBDE-1-AD-COMM,Role,Member
+COMM-DEFAULT_CONFIG,1-AD-COMM,DISCOM-1-AD-COMM,EntityType,Community
+COMM-DEFAULT_CONFIG,1-AD-COMM,DISCOM-1-AD-COMM,Role,Member
+COMM-DEFAULT_CONFIG,1-AD-COMM,DIVARTY-1-AD-COMM,EntityType,Community
+COMM-DEFAULT_CONFIG,1-AD-COMM,DIVARTY-1-AD-COMM,Role,Member
+COMM-DEFAULT_CONFIG,1-BDE-1-AD-COMM,1-36-INFBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,1-BDE-1-AD-COMM,1-36-INFBN,Role,Member
+COMM-DEFAULT_CONFIG,1-BDE-1-AD-COMM,1-37-ARBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,1-BDE-1-AD-COMM,1-37-ARBN,Role,Member
+COMM-DEFAULT_CONFIG,1-BDE-1-AD-COMM,1-BDE-1-AD,EntityType,Agent
+COMM-DEFAULT_CONFIG,1-BDE-1-AD-COMM,1-BDE-1-AD,Role,Member
+COMM-DEFAULT_CONFIG,1-BDE-1-AD-COMM,16-ENGBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,1-BDE-1-AD-COMM,16-ENGBN,Role,Member
+COMM-DEFAULT_CONFIG,1-BDE-1-AD-COMM,2-3-FABN,EntityType,Agent
+COMM-DEFAULT_CONFIG,1-BDE-1-AD-COMM,2-3-FABN,Role,Member
+COMM-DEFAULT_CONFIG,1-BDE-1-AD-COMM,2-37-ARBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,1-BDE-1-AD-COMM,2-37-ARBN,Role,Member
+COMM-DEFAULT_CONFIG,1-BDE-1-AD-COMM,501-FSB,EntityType,Agent
+COMM-DEFAULT_CONFIG,1-BDE-1-AD-COMM,501-FSB,Role,Member
+COMM-DEFAULT_CONFIG,16-CSG-COMM,102-POL-SUPPLYCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,16-CSG-COMM,102-POL-SUPPLYCO,Role,Member
+COMM-DEFAULT_CONFIG,16-CSG-COMM,106-TCBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,16-CSG-COMM,106-TCBN,Role,Member
+COMM-DEFAULT_CONFIG,16-CSG-COMM,15-PLS-TRKCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,16-CSG-COMM,15-PLS-TRKCO,Role,Member
+COMM-DEFAULT_CONFIG,16-CSG-COMM,16-CSG,EntityType,Agent
+COMM-DEFAULT_CONFIG,16-CSG-COMM,16-CSG,Role,Member
+COMM-DEFAULT_CONFIG,16-CSG-COMM,18-MAINTBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,16-CSG-COMM,18-MAINTBN,Role,Member
+COMM-DEFAULT_CONFIG,16-CSG-COMM,226-MAINTCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,16-CSG-COMM,226-MAINTCO,Role,Member
+COMM-DEFAULT_CONFIG,16-CSG-COMM,227-SUPPLYCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,16-CSG-COMM,227-SUPPLYCO,Role,Member
+COMM-DEFAULT_CONFIG,16-CSG-COMM,238-POL-TRKCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,16-CSG-COMM,238-POL-TRKCO,Role,Member
+COMM-DEFAULT_CONFIG,16-CSG-COMM,26-SSCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,16-CSG-COMM,26-SSCO,Role,Member
+COMM-DEFAULT_CONFIG,16-CSG-COMM,263-FLDSVC-CO,EntityType,Agent
+COMM-DEFAULT_CONFIG,16-CSG-COMM,263-FLDSVC-CO,Role,Member
+COMM-DEFAULT_CONFIG,16-CSG-COMM,372-CGO-TRANSCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,16-CSG-COMM,372-CGO-TRANSCO,Role,Member
+COMM-DEFAULT_CONFIG,16-CSG-COMM,485-CSB,EntityType,Agent
+COMM-DEFAULT_CONFIG,16-CSG-COMM,485-CSB,Role,Member
+COMM-DEFAULT_CONFIG,16-CSG-COMM,588-MAINTCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,16-CSG-COMM,588-MAINTCO,Role,Member
+COMM-DEFAULT_CONFIG,16-CSG-COMM,592-ORDCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,16-CSG-COMM,592-ORDCO,Role,Member
+COMM-DEFAULT_CONFIG,16-CSG-COMM,594-MDM-TRKCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,16-CSG-COMM,594-MDM-TRKCO,Role,Member
+COMM-DEFAULT_CONFIG,16-CSG-COMM,596-MAINTCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,16-CSG-COMM,596-MAINTCO,Role,Member
+COMM-DEFAULT_CONFIG,16-CSG-COMM,77-MAINTCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,16-CSG-COMM,77-MAINTCO,Role,Member
+COMM-DEFAULT_CONFIG,2-BDE-1-AD-COMM,1-35-ARBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,2-BDE-1-AD-COMM,1-35-ARBN,Role,Member
+COMM-DEFAULT_CONFIG,2-BDE-1-AD-COMM,1-6-INFBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,2-BDE-1-AD-COMM,1-6-INFBN,Role,Member
+COMM-DEFAULT_CONFIG,2-BDE-1-AD-COMM,2-6-INFBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,2-BDE-1-AD-COMM,2-6-INFBN,Role,Member
+COMM-DEFAULT_CONFIG,2-BDE-1-AD-COMM,2-BDE-1-AD,EntityType,Agent
+COMM-DEFAULT_CONFIG,2-BDE-1-AD-COMM,2-BDE-1-AD,Role,Member
+COMM-DEFAULT_CONFIG,2-BDE-1-AD-COMM,4-27-FABN,EntityType,Agent
+COMM-DEFAULT_CONFIG,2-BDE-1-AD-COMM,4-27-FABN,Role,Member
+COMM-DEFAULT_CONFIG,2-BDE-1-AD-COMM,40-ENGBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,2-BDE-1-AD-COMM,40-ENGBN,Role,Member
+COMM-DEFAULT_CONFIG,2-BDE-1-AD-COMM,47-FSB,EntityType,Agent
+COMM-DEFAULT_CONFIG,2-BDE-1-AD-COMM,47-FSB,Role,Member
+COMM-DEFAULT_CONFIG,21-TSC-COMM,200-MMC,EntityType,Agent
+COMM-DEFAULT_CONFIG,21-TSC-COMM,200-MMC,Role,Member
+COMM-DEFAULT_CONFIG,21-TSC-COMM,21-TSC-HQ,EntityType,Agent
+COMM-DEFAULT_CONFIG,21-TSC-COMM,21-TSC-HQ,Role,Member
+COMM-DEFAULT_CONFIG,21-TSC-COMM,29-SPTGP-COMM,EntityType,Community
+COMM-DEFAULT_CONFIG,21-TSC-COMM,29-SPTGP-COMM,Role,Member
+COMM-DEFAULT_CONFIG,21-TSC-COMM,37-TRANSGP-COMM,EntityType,Community
+COMM-DEFAULT_CONFIG,21-TSC-COMM,37-TRANSGP-COMM,Role,Member
+COMM-DEFAULT_CONFIG,21-TSC-COMM,7-TCGP-TPTDD,EntityType,Agent
+COMM-DEFAULT_CONFIG,21-TSC-COMM,7-TCGP-TPTDD,Role,Member
+COMM-DEFAULT_CONFIG,21-TSC-COMM,AWR-2,EntityType,Agent
+COMM-DEFAULT_CONFIG,21-TSC-COMM,AWR-2,Role,Member
+COMM-DEFAULT_CONFIG,21-TSC-COMM,RSA,EntityType,Agent
+COMM-DEFAULT_CONFIG,21-TSC-COMM,RSA,Role,Member
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,18-PERISH-SUBPLT,EntityType,Agent
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,18-PERISH-SUBPLT,Role,Member
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,191-ORDBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,191-ORDBN,Role,Member
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,23-ORDCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,23-ORDCO,Role,Member
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,24-ORDCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,24-ORDCO,Role,Member
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,29-SPTGP,EntityType,Agent
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,29-SPTGP,Role,Member
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,343-SUPPLYCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,343-SUPPLYCO,Role,Member
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,5-MAINTCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,5-MAINTCO,Role,Member
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,51-MAINTBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,51-MAINTBN,Role,Member
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,512-MAINTCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,512-MAINTCO,Role,Member
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,574-SSCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,574-SSCO,Role,Member
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,702-EODDET,EntityType,Agent
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,702-EODDET,Role,Member
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,720-EODDET,EntityType,Agent
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,720-EODDET,Role,Member
+COMM-DEFAULT_CONFIG,3-BDE-1-AD-COMM,1-13-ARBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,3-BDE-1-AD-COMM,1-13-ARBN,Role,Member
+COMM-DEFAULT_CONFIG,3-BDE-1-AD-COMM,1-41-INFBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,3-BDE-1-AD-COMM,1-41-INFBN,Role,Member
+COMM-DEFAULT_CONFIG,3-BDE-1-AD-COMM,125-FSB,EntityType,Agent
+COMM-DEFAULT_CONFIG,3-BDE-1-AD-COMM,125-FSB,Role,Member
+COMM-DEFAULT_CONFIG,3-BDE-1-AD-COMM,2-70-ARBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,3-BDE-1-AD-COMM,2-70-ARBN,Role,Member
+COMM-DEFAULT_CONFIG,3-BDE-1-AD-COMM,3-BDE-1-AD,EntityType,Agent
+COMM-DEFAULT_CONFIG,3-BDE-1-AD-COMM,3-BDE-1-AD,Role,Member
+COMM-DEFAULT_CONFIG,3-BDE-1-AD-COMM,4-1-FABN,EntityType,Agent
+COMM-DEFAULT_CONFIG,3-BDE-1-AD-COMM,4-1-FABN,Role,Member
+COMM-DEFAULT_CONFIG,3-BDE-1-AD-COMM,70-ENGBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,3-BDE-1-AD-COMM,70-ENGBN,Role,Member
+COMM-DEFAULT_CONFIG,3-SUPCOM-COMM,16-CSG-COMM,EntityType,Community
+COMM-DEFAULT_CONFIG,3-SUPCOM-COMM,16-CSG-COMM,Role,Member
+COMM-DEFAULT_CONFIG,3-SUPCOM-COMM,19-MMC,EntityType,Agent
+COMM-DEFAULT_CONFIG,3-SUPCOM-COMM,19-MMC,Role,Member
+COMM-DEFAULT_CONFIG,3-SUPCOM-COMM,208-SCCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,3-SUPCOM-COMM,208-SCCO,Role,Member
+COMM-DEFAULT_CONFIG,3-SUPCOM-COMM,27-TCBN-MVTCTRL,EntityType,Agent
+COMM-DEFAULT_CONFIG,3-SUPCOM-COMM,27-TCBN-MVTCTRL,Role,Member
+COMM-DEFAULT_CONFIG,3-SUPCOM-COMM,3-SUPCOM-HQ,EntityType,Agent
+COMM-DEFAULT_CONFIG,3-SUPCOM-COMM,3-SUPCOM-HQ,Role,Member
+COMM-DEFAULT_CONFIG,3-SUPCOM-COMM,7-CSG-COMM,EntityType,Community
+COMM-DEFAULT_CONFIG,3-SUPCOM-COMM,7-CSG-COMM,Role,Member
+COMM-DEFAULT_CONFIG,37-TRANSGP-COMM,109-MDM-TRKCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,37-TRANSGP-COMM,109-MDM-TRKCO,Role,Member
+COMM-DEFAULT_CONFIG,37-TRANSGP-COMM,110-POL-SUPPLYCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,37-TRANSGP-COMM,110-POL-SUPPLYCO,Role,Member
+COMM-DEFAULT_CONFIG,37-TRANSGP-COMM,28-TCBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,37-TRANSGP-COMM,28-TCBN,Role,Member
+COMM-DEFAULT_CONFIG,37-TRANSGP-COMM,37-TRANSGP,EntityType,Agent
+COMM-DEFAULT_CONFIG,37-TRANSGP-COMM,37-TRANSGP,Role,Member
+COMM-DEFAULT_CONFIG,37-TRANSGP-COMM,416-POL-TRKCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,37-TRANSGP-COMM,416-POL-TRKCO,Role,Member
+COMM-DEFAULT_CONFIG,37-TRANSGP-COMM,6-TCBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,37-TRANSGP-COMM,6-TCBN,Role,Member
+COMM-DEFAULT_CONFIG,37-TRANSGP-COMM,632-MAINTCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,37-TRANSGP-COMM,632-MAINTCO,Role,Member
+COMM-DEFAULT_CONFIG,37-TRANSGP-COMM,66-MDM-TRKCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,37-TRANSGP-COMM,66-MDM-TRKCO,Role,Member
+COMM-DEFAULT_CONFIG,37-TRANSGP-COMM,68-MDM-TRKCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,37-TRANSGP-COMM,68-MDM-TRKCO,Role,Member
+COMM-DEFAULT_CONFIG,5-CORPS-ARTY-COMM,1-27-FABN,EntityType,Agent
+COMM-DEFAULT_CONFIG,5-CORPS-ARTY-COMM,1-27-FABN,Role,Member
+COMM-DEFAULT_CONFIG,5-CORPS-ARTY-COMM,2-4-FABN-MLRS,EntityType,Agent
+COMM-DEFAULT_CONFIG,5-CORPS-ARTY-COMM,2-4-FABN-MLRS,Role,Member
+COMM-DEFAULT_CONFIG,5-CORPS-ARTY-COMM,3-13-FABN-155,EntityType,Agent
+COMM-DEFAULT_CONFIG,5-CORPS-ARTY-COMM,3-13-FABN-155,Role,Member
+COMM-DEFAULT_CONFIG,5-CORPS-ARTY-COMM,41-FABDE,EntityType,Agent
+COMM-DEFAULT_CONFIG,5-CORPS-ARTY-COMM,41-FABDE,Role,Member
+COMM-DEFAULT_CONFIG,5-CORPS-ARTY-COMM,5-CORPS-ARTY,EntityType,Agent
+COMM-DEFAULT_CONFIG,5-CORPS-ARTY-COMM,5-CORPS-ARTY,Role,Member
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,11-AVN-RGT,EntityType,Agent
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,11-AVN-RGT,Role,Member
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,12-AVNBDE,EntityType,Agent
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,12-AVNBDE,Role,Member
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,130-ENGBDE,EntityType,Agent
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,130-ENGBDE,Role,Member
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,18-MPBDE,EntityType,Agent
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,18-MPBDE,Role,Member
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,205-MIBDE,EntityType,Agent
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,205-MIBDE,Role,Member
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,22-SIGBDE,EntityType,Agent
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,22-SIGBDE,Role,Member
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,244-ENGBN-CBTHVY,EntityType,Agent
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,244-ENGBN-CBTHVY,Role,Member
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,286-ADA-SCCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,286-ADA-SCCO,Role,Member
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,30-MEDBDE,EntityType,Agent
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,30-MEDBDE,Role,Member
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,5-CORPS-REAR,EntityType,Agent
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,5-CORPS-REAR,Role,Member
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,52-ENGBN-CBTHVY,EntityType,Agent
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,52-ENGBN-CBTHVY,Role,Member
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,69-ADABDE,EntityType,Agent
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,69-ADABDE,Role,Member
+COMM-DEFAULT_CONFIG,5-CORPS-COMM,1-AD-COMM,EntityType,Community
+COMM-DEFAULT_CONFIG,5-CORPS-COMM,1-AD-COMM,Role,Member
+COMM-DEFAULT_CONFIG,5-CORPS-COMM,3-SUPCOM-COMM,EntityType,Community
+COMM-DEFAULT_CONFIG,5-CORPS-COMM,3-SUPCOM-COMM,Role,Member
+COMM-DEFAULT_CONFIG,5-CORPS-COMM,5-CORPS,EntityType,Agent
+COMM-DEFAULT_CONFIG,5-CORPS-COMM,5-CORPS,Role,Member
+COMM-DEFAULT_CONFIG,5-CORPS-COMM,5-CORPS-ARTY-COMM,EntityType,Community
+COMM-DEFAULT_CONFIG,5-CORPS-COMM,5-CORPS-ARTY-COMM,Role,Member
+COMM-DEFAULT_CONFIG,5-CORPS-COMM,5-CORPS-REAR-COMM,EntityType,Community
+COMM-DEFAULT_CONFIG,5-CORPS-COMM,5-CORPS-REAR-COMM,Role,Member
+COMM-DEFAULT_CONFIG,7-CSG-COMM,125-ORDBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,7-CSG-COMM,125-ORDBN,Role,Member
+COMM-DEFAULT_CONFIG,7-CSG-COMM,181-TCBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,7-CSG-COMM,181-TCBN,Role,Member
+COMM-DEFAULT_CONFIG,7-CSG-COMM,240-SSCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,7-CSG-COMM,240-SSCO,Role,Member
+COMM-DEFAULT_CONFIG,7-CSG-COMM,316-POL-SUPPLYBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,7-CSG-COMM,316-POL-SUPPLYBN,Role,Member
+COMM-DEFAULT_CONFIG,7-CSG-COMM,317-MAINTCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,7-CSG-COMM,317-MAINTCO,Role,Member
+COMM-DEFAULT_CONFIG,7-CSG-COMM,377-HVY-TRKCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,7-CSG-COMM,377-HVY-TRKCO,Role,Member
+COMM-DEFAULT_CONFIG,7-CSG-COMM,41-POL-TRKCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,7-CSG-COMM,41-POL-TRKCO,Role,Member
+COMM-DEFAULT_CONFIG,7-CSG-COMM,452-ORDCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,7-CSG-COMM,452-ORDCO,Role,Member
+COMM-DEFAULT_CONFIG,7-CSG-COMM,51-MDM-TRKCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,7-CSG-COMM,51-MDM-TRKCO,Role,Member
+COMM-DEFAULT_CONFIG,7-CSG-COMM,515-POL-TRKCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,7-CSG-COMM,515-POL-TRKCO,Role,Member
+COMM-DEFAULT_CONFIG,7-CSG-COMM,529-ORDCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,7-CSG-COMM,529-ORDCO,Role,Member
+COMM-DEFAULT_CONFIG,7-CSG-COMM,541-POL-TRKCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,7-CSG-COMM,541-POL-TRKCO,Role,Member
+COMM-DEFAULT_CONFIG,7-CSG-COMM,561-SSBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,7-CSG-COMM,561-SSBN,Role,Member
+COMM-DEFAULT_CONFIG,7-CSG-COMM,565-RPRPTCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,7-CSG-COMM,565-RPRPTCO,Role,Member
+COMM-DEFAULT_CONFIG,7-CSG-COMM,584-MAINTCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,7-CSG-COMM,584-MAINTCO,Role,Member
+COMM-DEFAULT_CONFIG,7-CSG-COMM,597-MAINTCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,7-CSG-COMM,597-MAINTCO,Role,Member
+COMM-DEFAULT_CONFIG,7-CSG-COMM,7-CSG,EntityType,Agent
+COMM-DEFAULT_CONFIG,7-CSG-COMM,7-CSG,Role,Member
+COMM-DEFAULT_CONFIG,7-CSG-COMM,71-MAINTBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,7-CSG-COMM,71-MAINTBN,Role,Member
+COMM-DEFAULT_CONFIG,7-CSG-COMM,71-ORDCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,7-CSG-COMM,71-ORDCO,Role,Member
+COMM-DEFAULT_CONFIG,7-CSG-COMM,900-POL-SUPPLYCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,7-CSG-COMM,900-POL-SUPPLYCO,Role,Member
+COMM-DEFAULT_CONFIG,AVNBDE-1-AD-COMM,1-1-CAVSQDN,EntityType,Agent
+COMM-DEFAULT_CONFIG,AVNBDE-1-AD-COMM,1-1-CAVSQDN,Role,Member
+COMM-DEFAULT_CONFIG,AVNBDE-1-AD-COMM,1-501-AVNBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,AVNBDE-1-AD-COMM,1-501-AVNBN,Role,Member
+COMM-DEFAULT_CONFIG,AVNBDE-1-AD-COMM,127-DASB,EntityType,Agent
+COMM-DEFAULT_CONFIG,AVNBDE-1-AD-COMM,127-DASB,Role,Member
+COMM-DEFAULT_CONFIG,AVNBDE-1-AD-COMM,2-501-AVNBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,AVNBDE-1-AD-COMM,2-501-AVNBN,Role,Member
+COMM-DEFAULT_CONFIG,AVNBDE-1-AD-COMM,AVNBDE-1-AD,EntityType,Agent
+COMM-DEFAULT_CONFIG,AVNBDE-1-AD-COMM,AVNBDE-1-AD,Role,Member
+COMM-DEFAULT_CONFIG,DISCOM-1-AD-COMM,123-MSB,EntityType,Agent
+COMM-DEFAULT_CONFIG,DISCOM-1-AD-COMM,123-MSB,Role,Member
+COMM-DEFAULT_CONFIG,DISCOM-1-AD-COMM,DISCOM-1-AD,EntityType,Agent
+COMM-DEFAULT_CONFIG,DISCOM-1-AD-COMM,DISCOM-1-AD,Role,Member
+COMM-DEFAULT_CONFIG,DIVARTY-1-AD-COMM,1-94-FABN,EntityType,Agent
+COMM-DEFAULT_CONFIG,DIVARTY-1-AD-COMM,1-94-FABN,Role,Member
+COMM-DEFAULT_CONFIG,DIVARTY-1-AD-COMM,25-FABTRY-TGTACQ,EntityType,Agent
+COMM-DEFAULT_CONFIG,DIVARTY-1-AD-COMM,25-FABTRY-TGTACQ,Role,Member
+COMM-DEFAULT_CONFIG,DIVARTY-1-AD-COMM,DIVARTY-1-AD,EntityType,Agent
+COMM-DEFAULT_CONFIG,DIVARTY-1-AD-COMM,DIVARTY-1-AD,Role,Member
+COMM-DEFAULT_CONFIG,NCA-COMM,1-AD,EntityType,Agent
+COMM-DEFAULT_CONFIG,NCA-COMM,DLAHQ,EntityType,Agent
+COMM-DEFAULT_CONFIG,NCA-COMM,DLAHQ,Role,Member
+COMM-DEFAULT_CONFIG,NCA-COMM,FORSCOM,EntityType,Agent
+COMM-DEFAULT_CONFIG,NCA-COMM,FORSCOM,Role,Member
+COMM-DEFAULT_CONFIG,NCA-COMM,HNS,EntityType,Agent
+COMM-DEFAULT_CONFIG,NCA-COMM,HNS,Role,Member
+COMM-DEFAULT_CONFIG,NCA-COMM,JSRCMDSE,EntityType,Agent
+COMM-DEFAULT_CONFIG,NCA-COMM,JSRCMDSE,Role,Member
+COMM-DEFAULT_CONFIG,NCA-COMM,NATO,EntityType,Agent
+COMM-DEFAULT_CONFIG,NCA-COMM,NATO,Role,Member
+COMM-DEFAULT_CONFIG,NCA-COMM,NCA,EntityType,Agent
+COMM-DEFAULT_CONFIG,NCA-COMM,NCA,Role,Member
+COMM-DEFAULT_CONFIG,NCA-COMM,OSC,EntityType,Agent
+COMM-DEFAULT_CONFIG,NCA-COMM,OSC,Role,Member
+COMM-DEFAULT_CONFIG,NCA-COMM,USAEUR,EntityType,Agent
+COMM-DEFAULT_CONFIG,NCA-COMM,USAEUR,Role,Member
+COMM-DEFAULT_CONFIG,NCA-COMM,USEUCOM,EntityType,Agent
+COMM-DEFAULT_CONFIG,NCA-COMM,USEUCOM,Role,Member
+COMM-DEFAULT_CONFIG,TRANSCOM-COMM,CONUSGround,EntityType,Agent
+COMM-DEFAULT_CONFIG,TRANSCOM-COMM,CONUSGround,Role,Member
+COMM-DEFAULT_CONFIG,TRANSCOM-COMM,GlobalAir,EntityType,Agent
+COMM-DEFAULT_CONFIG,TRANSCOM-COMM,GlobalAir,Role,Member
+COMM-DEFAULT_CONFIG,TRANSCOM-COMM,GlobalSea,EntityType,Agent
+COMM-DEFAULT_CONFIG,TRANSCOM-COMM,GlobalSea,Role,Member
+COMM-DEFAULT_CONFIG,TRANSCOM-COMM,PlanePacker,EntityType,Agent
+COMM-DEFAULT_CONFIG,TRANSCOM-COMM,PlanePacker,Role,Member
+COMM-DEFAULT_CONFIG,TRANSCOM-COMM,ShipPacker,EntityType,Agent
+COMM-DEFAULT_CONFIG,TRANSCOM-COMM,ShipPacker,Role,Member
+COMM-DEFAULT_CONFIG,TRANSCOM-COMM,TRANSCOM,EntityType,Agent
+COMM-DEFAULT_CONFIG,TRANSCOM-COMM,TRANSCOM,Role,Member
+COMM-DEFAULT_CONFIG,TRANSCOM-COMM,TheaterGround,EntityType,Agent
+COMM-DEFAULT_CONFIG,TRANSCOM-COMM,TheaterGround,Role,Member
+COMM-DEFAULT_CONFIG,Security-Mgmt-COMM,SOCIETY-SECURITY,Role,Member
+COMM-DEFAULT_CONFIG,Security-Mgmt-COMM,SOCIETY-SECURITY,EntityType,Agent
+COMM-DEFAULT_CONFIG,Security-Mgmt-COMM,SocietySecurityManager,Role,Member
+COMM-DEFAULT_CONFIG,Security-Mgmt-COMM,SocietySecurityManager,EntityType,Agent
+COMM-DEFAULT_CONFIG,Security-Mgmt-COMM,SocietySecurityManager,Role,SecurityMnRManager
+COMM-DEFAULT_CONFIG,Security-Mgmt-COMM,Enclave1SecurityMnRManager,Role,Member
+COMM-DEFAULT_CONFIG,Security-Mgmt-COMM,Enclave1SecurityMnRManager,EntityType,Agent
+COMM-DEFAULT_CONFIG,Security-Mgmt-COMM,Enclave2SecurityMnRManager,Role,Member
+COMM-DEFAULT_CONFIG,Security-Mgmt-COMM,Enclave2SecurityMnRManager,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,ENCLAVE1-SECURITY,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,ENCLAVE1-SECURITY,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,Enclave1SecurityMnRManager,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,Enclave1SecurityMnRManager,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,Enclave1SecurityMnRManager,Role,SecurityMnRManager
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,ENCLAVE2-SECURITY,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,ENCLAVE2-SECURITY,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,Enclave2SecurityMnRManager,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,Enclave2SecurityMnRManager,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,Enclave2SecurityMnRManager,Role,SecurityMnRManager
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,REAR-S,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,REAR-S,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,USEUCOM,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,USEUCOM,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,USAEUR,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,USAEUR,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,OSC,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,OSC,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,NCA,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,NCA,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,HNS,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,HNS,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,FORSCOM,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,FORSCOM,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,DLAHQ,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,DLAHQ,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,AWR-2,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,AWR-2,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,900-POL-SUPPLYCO,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,900-POL-SUPPLYCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,71-MAINTBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,71-MAINTBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,7-CSG,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,7-CSG,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,6-TCBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,6-TCBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,597-MAINTCO,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,597-MAINTCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,592-ORDCO,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,592-ORDCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,574-SSCO,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,574-SSCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,565-RPRPTCO,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,565-RPRPTCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,52-ENGBN-CBTHVY,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,52-ENGBN-CBTHVY,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,51-MAINTBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,51-MAINTBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,5-CORPS-REAR,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,5-CORPS-REAR,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,5-CORPS-ARTY,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,5-CORPS-ARTY,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,5-CORPS,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,5-CORPS,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,41-FABDE,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,41-FABDE,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,37-TRANSGP,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,37-TRANSGP,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,343-SUPPLYCO,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,343-SUPPLYCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,316-POL-SUPPLYBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,316-POL-SUPPLYBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,3-SUPCOM-HQ,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,3-SUPCOM-HQ,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,29-SPTGP,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,29-SPTGP,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,28-TCBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,28-TCBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,240-SSCO,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,240-SSCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,21-TSC-HQ,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,21-TSC-HQ,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,191-ORDBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,191-ORDBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,181-TCBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,181-TCBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,18-PERISH-SUBPLT,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,18-PERISH-SUBPLT,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,130-ENGBDE,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,130-ENGBDE,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,125-ORDBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,125-ORDBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,110-POL-SUPPLYCO,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,110-POL-SUPPLYCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,1-27-FABN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,1-27-FABN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,FWD-S,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,FWD-S,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,TRANS-S,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,TRANS-S,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,DISCOM-1AD,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,DISCOM-1AD,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,485-CSB,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,485-CSB,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,47-FSB,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,47-FSB,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,26-SSCO,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,26-SSCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,227-SUPPLYCO,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,227-SUPPLYCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,2-BDE-1AD,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,2-BDE-1AD,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,18-MAINTBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,18-MAINTBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,16-CSG,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,16-CSG,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,123-MSB,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,123-MSB,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,106-TCBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,106-TCBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,102-POL-SUPPLYCO,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,102-POL-SUPPLYCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,1-AD,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,1-AD,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,1-6-INFBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,1-6-INFBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,1-35-ARBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,1-35-ARBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,TRANSCOM,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,TRANSCOM,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,GlobalAir,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,GlobalAir,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,GlobalSea,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,GlobalSea,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,PlanePacker,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,PlanePacker,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,ShipPacker,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,ShipPacker,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,TheaterGround,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,TheaterGround,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,CONUSGround,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,CONUSGround,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,Enclave1RobustnessManager,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,Enclave1RobustnessManager,Role,ManagementAgent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,Enclave1RobustnessManager,Role,HealthReportConsumer
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,Enclave2RobustnessManager,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,Enclave2RobustnessManager,Role,ManagementAgent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,Enclave2RobustnessManager,Role,HealthReportConsumer
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,REAR-S,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,REAR-S,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,USEUCOM,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,USEUCOM,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,USAEUR,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,USAEUR,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,OSC,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,OSC,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,NCA,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,NCA,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,HNS,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,HNS,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,FORSCOM,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,FORSCOM,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,DLAHQ,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,DLAHQ,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,AWR-2,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,AWR-2,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,900-POL-SUPPLYCO,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,900-POL-SUPPLYCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,71-MAINTBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,71-MAINTBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,7-CSG,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,7-CSG,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,6-TCBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,6-TCBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,597-MAINTCO,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,597-MAINTCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,592-ORDCO,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,592-ORDCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,574-SSCO,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,574-SSCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,565-RPRPTCO,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,565-RPRPTCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,52-ENGBN-CBTHVY,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,52-ENGBN-CBTHVY,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,51-MAINTBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,51-MAINTBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,5-CORPS-REAR,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,5-CORPS-REAR,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,5-CORPS-ARTY,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,5-CORPS-ARTY,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,5-CORPS,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,5-CORPS,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,41-FABDE,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,41-FABDE,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,37-TRANSGP,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,37-TRANSGP,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,343-SUPPLYCO,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,343-SUPPLYCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,316-POL-SUPPLYBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,316-POL-SUPPLYBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,3-SUPCOM-HQ,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,3-SUPCOM-HQ,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,29-SPTGP,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,29-SPTGP,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,28-TCBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,28-TCBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,240-SSCO,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,240-SSCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,21-TSC-HQ,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,21-TSC-HQ,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,191-ORDBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,191-ORDBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,181-TCBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,181-TCBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,18-PERISH-SUBPLT,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,18-PERISH-SUBPLT,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,130-ENGBDE,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,130-ENGBDE,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,125-ORDBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,125-ORDBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,110-POL-SUPPLYCO,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,110-POL-SUPPLYCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,1-27-FABN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,1-27-FABN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,FWD-S,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,FWD-S,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,TRANS-S,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,TRANS-S,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,DISCOM-1AD,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,DISCOM-1AD,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,485-CSB,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,485-CSB,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,47-FSB,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,47-FSB,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,26-SSCO,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,26-SSCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,227-SUPPLYCO,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,227-SUPPLYCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,2-BDE-1AD,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,2-BDE-1AD,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,18-MAINTBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,18-MAINTBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,16-CSG,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,16-CSG,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,123-MSB,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,123-MSB,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,106-TCBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,106-TCBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,102-POL-SUPPLYCO,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,102-POL-SUPPLYCO,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,1-AD,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,1-AD,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,1-6-INFBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,1-6-INFBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,1-35-ARBN,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,1-35-ARBN,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,TRANSCOM,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,TRANSCOM,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,GlobalAir,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,GlobalAir,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,GlobalSea,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,GlobalSea,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,PlanePacker,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,PlanePacker,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,ShipPacker,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,ShipPacker,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,TheaterGround,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,TheaterGround,EntityType,Agent
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,CONUSGround,Role,Member
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,CONUSGround,EntityType,Agent

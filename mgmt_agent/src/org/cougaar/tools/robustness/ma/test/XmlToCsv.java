@@ -100,6 +100,11 @@ public class XmlToCsv extends DefaultHandler
   {
     if(qname.equalsIgnoreCase("community"))
     {
+      if(!calist.containsKey(comName)) //the community doesn't have entities
+      {
+        calist.put(comName, attributeList);
+        return;
+      }
       celist.put(comName, entityList);
     }
     if(qname.equalsIgnoreCase("entity"))
@@ -120,7 +125,7 @@ public class XmlToCsv extends DefaultHandler
   {
     try{
       RandomAccessFile file  = new RandomAccessFile(filename, "rw");
-      file.write("COMMUNITY_ID,ATTRIBUTE_ID,ATTRIBUTE_VALUE,BLANK\n".getBytes());
+      file.write("ASSEMBLY_ID,COMMUNITY_ID,ATTRIBUTE_ID,ATTRIBUTE_VALUE,BLANK\n".getBytes());
       for(Enumeration enums = attributes.keys(); enums.hasMoreElements();)
       {
         String communityName = (String)enums.nextElement();
@@ -128,7 +133,7 @@ public class XmlToCsv extends DefaultHandler
         for(int i=0; i<attrs.size(); i++)
         {
           NVPair pair = (NVPair)attrs.get(i);
-          file.write(("\"" + communityName + "\", \"" + pair.getName() + "\", \"" + pair.getValue() + "\"\n").getBytes());
+          file.write(("\"COMM-DEFAULT_CONFIG\", \"" + communityName + "\", \"" + pair.getName() + "\", \"" + pair.getValue() + "\"\n").getBytes());
         }
       }
     }catch(IOException e){e.printStackTrace();}
@@ -138,7 +143,7 @@ public class XmlToCsv extends DefaultHandler
   {
     try{
       RandomAccessFile file = new RandomAccessFile(filename, "rw");
-      file.write("COMMUNITY_ID,ENTITY_ID,ATTRIBUTE_ID,ATTRIBUTE_VALUE,BLANK\n".getBytes());
+      file.write("ASSEMBLY_ID,COMMUNITY_ID,ENTITY_ID,ATTRIBUTE_ID,ATTRIBUTE_VALUE,BLANK\n".getBytes());
       for(Enumeration enums = entitys.keys(); enums.hasMoreElements();)
       {
         String communityName = (String)enums.nextElement();
@@ -150,7 +155,7 @@ public class XmlToCsv extends DefaultHandler
           for(int i=0; i<attrs.size(); i++)
           {
             NVPair pair = (NVPair)attrs.get(i);
-            file.write(("\"" + communityName + "\", \"" + entName + "\", \"" + pair.getName()
+            file.write(("\"COMM-DEFAULT_CONFIG\", \"" + communityName + "\", \"" + entName + "\", \"" + pair.getName()
                + "\", \"" + pair.getValue() + "\"\n").getBytes());
           }
         }
@@ -179,7 +184,5 @@ public class XmlToCsv extends DefaultHandler
       converter.convert(args[0]);
     else
       converter.convert(defaultXmlFilename);
-
-
   }
 }

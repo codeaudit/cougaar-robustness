@@ -33,6 +33,8 @@ import org.cougaar.core.servlet.BaseServletComponent;
 import org.cougaar.core.servlet.ServletService;
 import org.cougaar.core.service.NamingService;
 import org.cougaar.core.util.PropertyNameValue;
+import org.cougaar.core.node.NodeIdentificationService;
+import org.cougaar.core.service.TopologyReaderService;
 
 import org.cougaar.core.service.community.CommunityMember;
 
@@ -48,6 +50,7 @@ import org.cougaar.core.node.NodeIdentifier;
 public class YellowPagesServlet extends BaseServletComponent
 {
   private NamingService ns;
+  private TopologyReaderService trs;
   private String indexName = "Communities";
 
   /**
@@ -62,14 +65,12 @@ public class YellowPagesServlet extends BaseServletComponent
    */
   protected Servlet createServlet() {
     // get the logging service
-    ns = (NamingService)
-      serviceBroker.getService(
-          this,
-          NamingService.class,
-          null);
+    ns = (NamingService)serviceBroker.getService(this, NamingService.class, null);
     if (ns == null) {
       throw new RuntimeException("no naming service?!");
     }
+    trs = (TopologyReaderService)serviceBroker.getService(this, TopologyReaderService.class, null);
+    if(trs == null) throw new RuntimeException("no topology reader service.");
 
     return new MyServlet();
   }
@@ -109,7 +110,6 @@ public class YellowPagesServlet extends BaseServletComponent
           //out.print("<ul>\n");
           String ncpN = ncp.getName();
           String ncpC = ncp.getClassName();
-
           if(ncpN.equalsIgnoreCase("Topology"))
           {
             Hashtable list = buildTopologyTable(idc);
@@ -174,56 +174,14 @@ public class YellowPagesServlet extends BaseServletComponent
              while(entityEnums.hasMore())
              {
                NameClassPair ncp = (NameClassPair)entityEnums.next();
-               entities.put(ncp.getName(), getAttributes(entityContext, ncp.getName()));
+               String entityName = ncp.getName();
+               if(ncp.getClassName().equals("org.cougaar.core.agent.ClusterIdentifier"))
+                   entityName += "  (" + trs.getParentForChild(trs.NODE, trs.AGENT, ncp.getName()) + ")";
+               entities.put(entityName, getAttributes(entityContext, ncp.getName()));
              }
              contents.add(entities);
              list.put(ncPair.getName(), contents);
-             /*Community o = (Community)communitiesContext.lookup(ncPair.getName());
-             String cname = o.getName();
-             Hashtable cContent = new Hashtable();
-             PropertyNameValue[] atts = o.getAttributes();
-             String[][] attributes = new String[atts.length][2];
-             for(int i=0; i<atts.length; i++)
-             {
-               attributes[i][0] = atts[i].name;
-               attributes[i][1] = (String)atts[i].value;
-             }
-             cContent.put("attribute", attributes);
-
-             cContent.put("role", o.getRoles());
-
-             cContent.put("listener", o.getListeners());
-
-             Collection cms = o.getMembers();
-             List communities = new ArrayList();
-             Hashtable agents = new Hashtable();
-             for(Iterator it = cms.iterator(); it.hasNext();)
-             {
-                CommunityMember member = (CommunityMember)it.next();
-                String memberName = member.getName();
-                if(member.isAgent())
-                {
-                   Collection agentRoles = member.getRoles();
-                   agents.put(memberName, agentRoles);
-                }
-                else
-                  communities.add(memberName);
-             }
-             cContent.put("member--agent", agents);
-             cContent.put("member--community", communities);
-
-             Hashtable sas = new Hashtable();
-             CommunitySpokesagent[] css = o.getSpokesagents();
-             for(int i=0; i<css.length; i++)
-             {
-               CommunitySpokesagent cs = css[i];
-               String agent = cs.getIdentifier();
-               Collection roles = cs.getRoleNames();
-               sas.put(agent, roles);
-             }
-             cContent.put("spokesagent", sas);
-             list.put(cname, cContent);*/
-            }
+        }
       }catch(NamingException e){e.printStackTrace();}
       return list;
     }

@@ -153,10 +153,6 @@ public class YellowPagesViewer extends JPanel
          }
       }
     });
-    /*DefaultTreeCellRenderer renderer = (DefaultTreeCellRenderer)tree.getCellRenderer();
-    renderer.setClosedIcon(null);
-    renderer.setOpenIcon(null);
-    renderer.setLeafIcon(null);*/
     tree.setCellRenderer(new ElementTreeCellRenderer());
 
     for(Iterator it = nodes.iterator(); it.hasNext();)
@@ -192,9 +188,23 @@ public class YellowPagesViewer extends JPanel
           for(NamingEnumeration nes = attributes.getAll(); nes.hasMore();)
           {
             try{
+              String str;
               Attribute attr = (Attribute)nes.next();
-              String str = attr.getID() + " " + (String)attr.get();
+              if(attr.size() == 1)
+                str = attr.getID() + " " + (String)attr.get();
+              else
+                str = attr.getID();
               DefaultMutableTreeNode nvnode = new DefaultMutableTreeNode(str);
+              if(attr.size() > 1)
+              {
+                for(NamingEnumeration subattrs = attr.getAll(); subattrs.hasMore();)
+                {
+                  String subattr = (String)subattrs.next();
+                  DefaultMutableTreeNode subattrNode = new DefaultMutableTreeNode(subattr);
+                  nvnode.add(subattrNode);
+                  nodes.add(subattrNode);
+                }
+              }
               attrs.add(nvnode);
               nodes.add(nvnode);
             }catch(NoSuchElementException e){} //in case the attribute doesn't have a value
@@ -206,9 +216,15 @@ public class YellowPagesViewer extends JPanel
         {
           DefaultMutableTreeNode entityNode = new DefaultMutableTreeNode("entities");
           nodes.add(entityNode);
+          List tempEntity = new ArrayList(); //for sorting the entity names
           for(Enumeration enEnums = entities.keys(); enEnums.hasMoreElements();)
           {
-            String entityName = (String)enEnums.nextElement();
+            tempEntity.add((String)enEnums.nextElement());
+          }
+          Collections.sort(tempEntity);
+          for(int i=0; i<tempEntity.size(); i++)
+          {
+            String entityName = (String)tempEntity.get(i);
             DefaultMutableTreeNode nameNode = new DefaultMutableTreeNode(entityName);
             Attributes entityAttributes = (Attributes)entities.get(entityName);
             for(NamingEnumeration nes = entityAttributes.getAll(); nes.hasMore();)
@@ -241,102 +257,6 @@ public class YellowPagesViewer extends JPanel
           cnode.add(entityNode);
         }
       }catch(NamingException e){e.printStackTrace();}
-
-
-     /* Collection croles = (Collection)contents.get("role");
-      if(croles.size() > 0)
-      {
-        DefaultMutableTreeNode crnode = new DefaultMutableTreeNode("roles");
-        nodes.add(crnode);
-        for(Iterator it = croles.iterator(); it.hasNext();)
-        {
-          DefaultMutableTreeNode crn = new DefaultMutableTreeNode((String)it.next());
-          crnode.add(crn);
-          nodes.add(crn);
-        }
-        cnode.add(crnode);
-      }
-
-      List listeners = (List)contents.get("listener");
-      if(listeners.size() > 0)
-      {
-        DefaultMutableTreeNode crnode = new DefaultMutableTreeNode("listener");
-        nodes.add(crnode);
-        for(Iterator it = listeners.iterator(); it.hasNext();)
-        {
-          DefaultMutableTreeNode crn = new DefaultMutableTreeNode((String)it.next());
-          crnode.add(crn);
-          nodes.add(crn);
-        }
-        cnode.add(crnode);
-      }
-
-      DefaultMutableTreeNode memsnode = null;
-      Hashtable agents = (Hashtable)contents.get("member--agent");
-      if(agents.size() > 0)
-      {
-         memsnode = new DefaultMutableTreeNode("members");
-         nodes.add(memsnode);
-         for(Enumeration agentenum = agents.keys(); agentenum.hasMoreElements();)
-         {
-            String agentName = (String)agentenum.nextElement();
-            DefaultMutableTreeNode nvnode = new DefaultMutableTreeNode("agent " + agentName);
-            Collection agentRoles = (Collection)(agents.get(agentName));
-            if(agentRoles.size() > 0)
-            {
-               DefaultMutableTreeNode agentnode = new DefaultMutableTreeNode("roles");
-               for(Iterator role_it = agentRoles.iterator(); role_it.hasNext();)
-               {
-                  DefaultMutableTreeNode rolenode = new DefaultMutableTreeNode((String)role_it.next());
-                  agentnode.add(rolenode);
-                  nodes.add(rolenode);
-               }
-               nvnode.add(agentnode);
-               nodes.add(agentnode);
-            }
-            memsnode.add(nvnode);
-            nodes.add(nvnode);
-         }
-      }
-      List communities = (List)contents.get("member--community");
-      if(communities.size() > 0)
-      {
-         if(memsnode == null)
-         {
-           memsnode = new DefaultMutableTreeNode("members");
-           nodes.add(memsnode);
-         }
-         for(Iterator c_it = communities.iterator(); c_it.hasNext();)
-         {
-            DefaultMutableTreeNode nvnode = new DefaultMutableTreeNode("community " + (String)c_it.next());
-            memsnode.add(nvnode);
-            nodes.add(nvnode);
-         }
-      }
-      if(memsnode != null)
-        cnode.add(memsnode);
-
-      Hashtable sas = (Hashtable)contents.get("spokesagent");
-      if(sas.size()>0)
-      {
-        DefaultMutableTreeNode sanode = new DefaultMutableTreeNode("spokesagent");
-        nodes.add(sanode);
-        for(Enumeration keys = sas.keys(); keys.hasMoreElements();)
-        {
-          String sname = (String)keys.nextElement();
-          DefaultMutableTreeNode snameNode = new DefaultMutableTreeNode(sname);
-          nodes.add(snameNode);
-          Collection roles = (Collection)sas.get(sname);
-          for(Iterator it=roles.iterator(); it.hasNext();)
-          {
-            DefaultMutableTreeNode roleNode = new DefaultMutableTreeNode((String)it.next());
-            snameNode.add(roleNode);
-            nodes.add(roleNode);
-          }
-          sanode.add(snameNode);
-        }
-        cnode.add(sanode);
-      }*/
 
       root.add(cnode);
     }
@@ -444,47 +364,37 @@ public class YellowPagesViewer extends JPanel
     }
   }
 
-  /**
-   * Get one agent randomly from the servlet.
-   */
-  private String getAgentFromServlet()
-  {
-    String clusterName = "";
+  protected static Vector getAgentFromServlet()
+   {
+    Vector clusterNames = new Vector();
     try{
      //generate a plain text, one agent name each line.
-     URL url1 = new URL("http://" + host + ":" + port + "/agents?all&text");
+     URL url1 = new URL("http://" + host + ":" + port + "/agents?scope=all");
      URLConnection connection = url1.openConnection();
      ((HttpURLConnection)connection).setRequestMethod("PUT");
      connection.setDoInput(true);
-     connection.setDoOutput(true);
+     //connection.setDoOutput(true);
      InputStream is = connection.getInputStream();
      BufferedReader in = new BufferedReader(new InputStreamReader(is));
-     /*String str = in.readLine().trim();
-     while(str != null)
-       clusterName = in.readLine().trim();*/
-       clusterName = transferHTML(in);
-    }catch(Exception o){o.printStackTrace();}
-    return clusterName;
-  }
-
-  private String transferHTML(BufferedReader in)
-  {
-    String cluster = "";
-    try{
-      String str = in.readLine().trim();
-      while(str != null)
-      {
-        if(str.indexOf("<ol>") != -1)
-        {
-          str = in.readLine().trim();
-          str = str.substring(0, str.indexOf("</a>"));
-          cluster = str.substring(str.lastIndexOf(">")+1, str.length());
+     String name = in.readLine();
+     boolean flag = false;
+     while(name != null)
+     {
+        if(name.indexOf("</ol>") != -1)
           break;
+        if(flag)
+        {
+          name = name.substring(0, name.indexOf("</a>"));
+          String cluster = name.substring(name.lastIndexOf(">")+1, name.length());
+          if(!cluster.endsWith("Node"))
+            clusterNames.add(cluster);
         }
-        str = in.readLine().trim();
-      }
-    }catch(IOException e){e.printStackTrace();}
-    return cluster;
+        if(name.indexOf("<ol>") != -1)
+          flag = true;
+       name = in.readLine();
+     }
+    }catch(Exception o){o.printStackTrace();}
+    return clusterNames;
   }
 
   /**
@@ -506,19 +416,24 @@ public class YellowPagesViewer extends JPanel
     } catch(Exception e){
       url1 = null;
     }
-    try {
-      // If the TestAgent wasn't found use the servlet from the first agent
-      if (oin == null) {
+
+    Vector agents = getAgentFromServlet();
+    int i=0;
+    // If the TestAgent wasn't found, try all agents one by one until find the agent with the servlet
+    while (oin == null) {
+     try {
+        String agent = (String)agents.get(i);
         url1 = new URL("http://" + host + ":" + port + "/$" +
-          getAgentFromServlet() + "/yellowpages");
+          agent + "/yellowpages");
         URLConnection connection = url1.openConnection();
         connection.setDoInput(true);
         connection.setDoOutput(true);
         InputStream ins = connection.getInputStream();
         oin = new ObjectInputStream(ins);
-      }
-    } catch(Exception e){
-      url1 = null;
+     } catch(Exception e){
+        oin = null;
+        i++;
+     }
     }
     if (oin != null) {
       try {

@@ -1,19 +1,27 @@
-COMMUNITY_ID,ATTRIBUTE_ID,ATTRIBUTE_VALUE,BLANK
-"1-AD-Enclave-COMM", "CommunityType", "Robustness"
-"1-AD-Enclave-COMM", "CommunityManager", ""
-"NCA-Enclave-COMM", "CommunityType", "Robustness"
-"NCA-Enclave-COMM", "CommunityManager", ""
-"5-CORPS-REAR-Enclave-COMM", "CommunityType", "Robustness"
-"5-CORPS-REAR-Enclave-COMM", "CommunityManager", ""
-"3-SUPCOM-Enclave-COMM", "CommunityType", "Robustness"
-"3-SUPCOM-Enclave-COMM", "CommunityManager", ""
-"MiniTestConfig-Enclave-COMM", "CommunityType", "Robustness"
-"MiniTestConfig-Enclave-COMM", "CommunityManager", ""
-"MiniTestConfig-COMM", "CommunityType", "Domain"
-"MiniTestConfig-COMM", "CommunityManager", ""
-"21-TSC-Enclave-COMM", "CommunityType", "Robustness"
-"21-TSC-Enclave-COMM", "CommunityManager", ""
-"5-CORPS-ARTY-Enclave-COMM", "CommunityType", "Robustness"
-"5-CORPS-ARTY-Enclave-COMM", "CommunityManager", ""
-"TINY-1AD-Enclave-COMM", "CommunityType", "Robustness"
-"TINY-1AD-Enclave-COMM", "CommunityManager", ""
+ASSEMBLY_ID,COMMUNITY_ID,ATTRIBUTE_ID,ATTRIBUTE_VALUE
+COMM-DEFAULT_CONFIG,1-AD-DIV-COMM,CommunityType,Domain
+COMM-DEFAULT_CONFIG,1-AD-COMM,CommunityType,Domain
+COMM-DEFAULT_CONFIG,1-BDE-1-AD-COMM,CommunityType,Domain
+COMM-DEFAULT_CONFIG,16-CSG-COMM,CommunityType,Domain
+COMM-DEFAULT_CONFIG,2-BDE-1-AD-COMM,CommunityType,Domain
+COMM-DEFAULT_CONFIG,21-TSC-COMM,CommunityType,Domain
+COMM-DEFAULT_CONFIG,29-SPTGP-COMM,CommunityType,Domain
+COMM-DEFAULT_CONFIG,3-BDE-1-AD-COMM,CommunityType,Domain
+COMM-DEFAULT_CONFIG,3-SUPCOM-COMM,CommunityType,Domain
+COMM-DEFAULT_CONFIG,37-TRANSGP-COMM,CommunityType,Domain
+COMM-DEFAULT_CONFIG,5-CORPS-ARTY-COMM,CommunityType,Domain
+COMM-DEFAULT_CONFIG,5-CORPS-REAR-COMM,CommunityType,Domain
+COMM-DEFAULT_CONFIG,5-CORPS-COMM,CommunityType,Domain
+COMM-DEFAULT_CONFIG,7-CSG-COMM,CommunityType,Domain
+COMM-DEFAULT_CONFIG,AVNBDE-1-AD-COMM,CommunityType,Domain
+COMM-DEFAULT_CONFIG,DISCOM-1-AD-COMM,CommunityType,Domain
+COMM-DEFAULT_CONFIG,DIVARTY-1-AD-COMM,CommunityType,Domain
+COMM-DEFAULT_CONFIG,NCA-COMM,CommunityType,Domain
+COMM-DEFAULT_CONFIG,TRANSCOM-COMM,CommunityType,Domain
+COMM-DEFAULT_CONFIG,Security-Mgmt-COMM,CommunityType,Security
+COMM-DEFAULT_CONFIG,Enclave1Security-COMM,CommunityType,Security
+COMM-DEFAULT_CONFIG,Enclave2Security-COMM,CommunityType,Security
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,CommunityType,Robustness
+COMM-DEFAULT_CONFIG,Enclave1Robustness-COMM,CommunityManager,Enclave1RobustnessManager
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,CommunityType,Robustness
+COMM-DEFAULT_CONFIG,Enclave2Robustness-COMM,CommunityManager,Enclave2RobustnessManager
