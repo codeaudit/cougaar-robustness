@@ -563,7 +563,7 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
   }};*/
 
   //private static final String[] roles = new String[]{"Member", "HealthMonitor", "ThreatAlertListener"};
-  private static final String[] levels = new String[]{"Max", "High", "Medium", "Low", "Min", "Undefined"};
+  private static final String[] levels = new String[]{"Maximum", "High", "Medium", "Low", "Minimum", "Undefined"};
   private static final String[] months = new String[]{"January", "Feburary", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"};
 
