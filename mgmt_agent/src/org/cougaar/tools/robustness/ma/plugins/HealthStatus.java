@@ -50,19 +50,25 @@ public class HealthStatus implements
   public static final String FAILED_RESTART   = "FAILED_RESTART";
   public static final String MOVE             = "MOVE";
   public static final String FAILED_MOVE      = "FAILED_MOVE";
+  public static final String ROBUSTNESS_INIT_FAIL  = "ROBUSTNESS_INIT_FAIL";
 
   // Heartbeat status codes
-  public static final int HB_NORMAL  = 0;
-  public static final int HB_TIMEOUT = 1;
+  public static final int HB_NORMAL     = 0;
+  public static final int HB_TIMEOUT    = 1;
+  public static final int HB_INACTIVE   = 2;
 
   // Health Status codes
-  public static final int OK          = 0;
-  public static final int DEGRADED    = 1;
-  public static final int NO_RESPONSE = 2;
-  public static final int DEAD        = 3;
-  public static final int RESTARTED   = 4;
-  public static final int MOVED       = 5;
+  public static final int OK            = 3;
+  public static final int DEGRADED      = 4;
+  public static final int NO_RESPONSE   = 5;
+  public static final int DEAD          = 6;
+  public static final int RESTARTED     = 7;
+  public static final int MOVED         = 8;
 
+  // Ping status codes
+  public static final int PING_REQUIRED = 1008;  // Make sure its out of the
+                                                 // range used by the PingRequest
+                                                 // class
 
   private String currentState = INITIAL;
   private String priorState   = INITIAL;
@@ -78,6 +84,7 @@ public class HealthStatus implements
   private Date pingTimestamp;
 
   private Date lastRestartAttempt;
+  private Date healthCheckTime;
 
   private long hbReqTimeout;  // Defines the timeout period (in milliseconds)
                               // for a Heartbeat Request,
@@ -115,6 +122,9 @@ public class HealthStatus implements
   private MessageAddress agentId;
   private String communityName;
 
+  // Agents node
+  private String node;
+
   private HeartbeatRequest hbr;
   private int hbReqRetryCtr = 0;
 
@@ -128,6 +138,7 @@ public class HealthStatus implements
    * HealthStatus constructor.
    * @param agentId        MessageAddress of monitored agent.
    * @param communityName  Name of agents Robustness community.
+   * @param node           Name of agents node.
    * @param sb             Reference to ManagementAgents ServiceBroker
    * @param hbReqTimeout   Timeout period for Heartbeat Requests
    * @param hbReqRetries   Number of times to retry a Heartbeat request
@@ -141,6 +152,7 @@ public class HealthStatus implements
    */
   protected HealthStatus(MessageAddress agentId,
                          String communityName,
+                         String node,
                          ServiceBroker sb,
                          long hbReqTimeout,
                          long hbReqRetries,
@@ -153,6 +165,7 @@ public class HealthStatus implements
                          long pingRetries) {
     this.agentId = agentId;
     this.communityName = communityName;
+    this.node = node;
     this.commSvc =
       (CommunityService)sb.getService(this, CommunityService.class, null);
     this.hbReqTimeout = hbReqTimeout;
@@ -167,6 +180,23 @@ public class HealthStatus implements
     setState(currentState);
   }
 
+  /**
+   * Returns agents location.
+   * @return Node name
+   */
+  protected String getNode() {
+    return this.node;
+  }
+
+  /**
+   * Sets agents location.
+   * @param node Node name
+   */
+  protected void setNode(String node) {
+    this.node = node;
+  }
+
+  /**
   /**
    * Returns current Heartbeat frequency.
    * @return Heartbeat frequency
@@ -383,6 +413,22 @@ public class HealthStatus implements
    */
   protected Date getHeartbeatRequestTime() {
     return heartbeatRequestTime;
+  }
+
+  /**
+   * Records the time that the agent was put into HEALTH_CHECK state.
+   * @param time Time that the agents state was changed to HEALTH_CHECK
+   */
+  protected void setHealthCheckTime(Date time) {
+    this.healthCheckTime = time;
+  }
+
+  /**
+   * Returns the time that the agent was put into HEALTH_CHECK state.
+   * @return Time that the HEALTH_CHECK state was entered
+   */
+  protected Date getHealthCheckTime() {
+    return healthCheckTime;
   }
 
   /**
@@ -657,9 +703,7 @@ public class HealthStatus implements
       return new String();
     }
 
-
   }
-
 
   /**
    * Records time that a ping was requested.

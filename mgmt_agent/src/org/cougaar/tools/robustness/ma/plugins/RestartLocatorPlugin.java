@@ -159,6 +159,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
     for (Iterator it = restartRequests.getAddedCollection().iterator();
          it.hasNext();) {
       RestartLocationRequest req = (RestartLocationRequest)it.next();
+      //log.info("Got RestartLocationRequest: agent(s)=" + req.getAgents());
       getCommunityTopology();
       Collection destinations = null;
       if (req.getRequestType() == RestartLocationRequest.LOCATE_NODE) {
@@ -576,7 +577,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
   private void doPing(ClusterIdentifier addr) {
     PingRequest pr = sensorFactory.newPingRequest(myAgent,
                                    addr,
-                                   30000);
+                                   60000);
     pingUIDs.add(pr.getUID());
     if (log.isDebugEnabled()) {
       log.debug("Performing ping: source=" + pr.getSource() + "(" +

@@ -4,22 +4,25 @@ import java.io.*;
 import java.awt.datatransfer.*;
 import java.util.*;
 
+/**
+ * Transferable object represents one element in society. This object is used
+ * in DNDtree for RobustnessUI.
+ */
 public class EntityInfo implements Transferable, Serializable {
 
   final public static DataFlavor INFO_FLAVOR =
     new DataFlavor(EntityInfo.class, "Entity Information");
 
-  static DataFlavor flavors[] = {INFO_FLAVOR };
+  static DataFlavor flavors[] = {INFO_FLAVOR};
 
   public static final int HOST = 0;
   public static final int NODE = 1;
   public static final int AGENT = 2;
 
-  private String name = null;
-  private int type;
-  private EntityInfo Parent = null;
-  private Vector Children = null;
-
+  private String name = null; //element name
+  private int type; //element type
+  private EntityInfo Parent = null; //parent of the element
+  private Vector Children = null; //children of the element
 
   public EntityInfo(String name, String type) {
     Children = new Vector();
@@ -97,6 +100,12 @@ public class EntityInfo implements Transferable, Serializable {
     return name;
   }
 
+  public boolean equals(EntityInfo newei)
+  {
+    return this.name.equals(newei.getName()) && this.type == newei.getType();
+  }
+
+
   // --------- Transferable --------------
 
   public boolean isDataFlavorSupported(DataFlavor df) {
@@ -108,6 +117,7 @@ public class EntityInfo implements Transferable, Serializable {
       throws UnsupportedFlavorException, IOException {
     if (df.equals(INFO_FLAVOR)) {
       return this;
+      //return infos;
     }
     else throw new UnsupportedFlavorException(df);
   }

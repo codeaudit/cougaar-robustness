@@ -31,6 +31,7 @@ import org.cougaar.core.agent.ClusterIdentifier;
 import org.cougaar.core.mobility.ldm.*;
 import org.cougaar.core.mobility.AbstractTicket;
 import org.cougaar.core.mobility.AddTicket;
+import org.cougaar.core.mobility.RemoveTicket;
 
 import org.cougaar.core.util.UID;
 
@@ -127,8 +128,8 @@ public class DecisionPlugin extends SimplePlugin {
     }
 
      // Get HealthStatus objects
-    //for (Iterator it = healthStatus.getChangedCollection().iterator();
-    for (Iterator it = healthStatus.getCollection().iterator();
+    for (Iterator it = healthStatus.getChangedCollection().iterator();
+    //for (Iterator it = healthStatus.getCollection().iterator();
          it.hasNext();) {
       HealthStatus hs = (HealthStatus)it.next();
       if (hs.getState().equals(HealthStatus.HEALTH_CHECK)) {
@@ -146,23 +147,54 @@ public class DecisionPlugin extends SimplePlugin {
           AddTicket addTicket = (AddTicket)ticket;
           HealthStatus hs = getHealthStatus(addTicket.getMobileAgent());
           if (hs != null) {
-            hs.setLastRestartAttempt(new Date());
+            hs.setHeartbeatRequestStatus(HealthStatus.UNDEFINED);
+            log.debug("Changed mobility status: agent-" + hs.getAgentId() +
+              " statusCode=" + ac.getStatusCodeAsString());
             if (ac.getStatusCode() == ac.CREATED) {
               hs.setState(HealthStatus.RESTART_COMPLETE);
               hs.setStatus(HealthStatus.RESTARTED);
+              publishChange(hs);
+              //bbs.publishRemove(ac);
+            } else if (ac.getStatusCode() == ac.ALREADY_EXISTS) {
+              // Agent is alive but not responding to HeartbeatRequests or Pings
+              hs.setState(HealthStatus.ROBUSTNESS_INIT_FAIL);
+              hs.setStatus(HealthStatus.DEGRADED);
               publishChange(hs);
               //bbs.publishRemove(ac);
             } else {
               hs.setState(HealthStatus.FAILED_RESTART);
               publishChange(hs);
               //bbs.publishRemove(ac);
-              log.error("Unexpected status code from mobility, status=" +
+              log.error("Unexpected status code from mobility, action=ADD status=" +
                 ac.getStatusCodeAsString() + " agent=" + addTicket.getMobileAgent() +
                 " destNode=" + addTicket.getDestinationNode());
+              /*
+              if (ac.getStatusCode() == ac.ALREADY_EXISTS) {
+                log.info("Killing agent: agent=" + addTicket.getMobileAgent() +
+                  " node=" + addTicket.getDestinationNode());
+                killAgent(addTicket.getMobileAgent(), addTicket.getDestinationNode());
+              */
+              }
             }
           }
-          if (log.isDebugEnabled()) log.debug("CHANGED " + ac);
+        /*
+        } else if (ticket instanceof RemoveTicket) {
+          RemoveTicket removeTicket = (RemoveTicket)ticket;
+          if (ac.getStatusCode() == ac.REMOVED) {
+            Set agents = new HashSet();
+            agents.add(removeTicket.getMobileAgent());
+            //restartAgents(agents, removeTicket.getDestinationNode().toString());
+          } else {
+            HealthStatus hs = getHealthStatus(removeTicket.getMobileAgent());
+            hs.setState(HealthStatus.FAILED_RESTART);
+            publishChange(hs);
+              //bbs.publishRemove(ac);
+            log.error("Unexpected status code from mobility, action=REMOVE status=" +
+              ac.getStatusCodeAsString() + " agent=" + removeTicket.getMobileAgent() +
+              " destNode=" + removeTicket.getDestinationNode());
+          }
         }
+        */
       }
     }
 
@@ -177,6 +209,7 @@ public class DecisionPlugin extends SimplePlugin {
           bbs.publishRemove(req);
           break;
         case RestartLocationRequest.FAIL:
+
           for (Iterator it1 = req.getAgents().iterator(); it1.hasNext();) {
             HealthStatus hs = getHealthStatus((MessageAddress)it1.next());
             if (hs != null) {
@@ -185,9 +218,19 @@ public class DecisionPlugin extends SimplePlugin {
               publishChange(hs);
             }
           }
+          /*
           log.error("Unable to restart agent(s), no destination node available:" +
             " agents=" + req.getAgents());
           bbs.publishRemove(req);
+          */
+
+          // RestartLocator did not return a destination, try to restart agent at
+          // its prior location
+          HealthStatus hs =
+            getHealthStatus((MessageAddress)req.getAgents().iterator().next());
+          restartAgents(req.getAgents(), hs.getNode());
+          bbs.publishRemove(req);
+
           break;
         default:
       }
@@ -217,16 +260,15 @@ public class DecisionPlugin extends SimplePlugin {
    */
   private void evaluate(HealthStatus hs) {
     int status = hs.getStatus();
+    //log.info("Evaluate: agent=" + hs.getAgentId() + " status=" + hs.getStatus());
     switch (status) {
+      case HealthStatus.DEAD:
       case HealthStatus.NO_RESPONSE:
         // Agent is most likely dead.  Initiate a restart.
         RestartLocationRequest req =
           new RestartLocationRequest(RestartLocationRequest.LOCATE_NODE, myUID);
         req.addAgent(hs.getAgentId());
         bbs.publishAdd(req);
-        hs.setStatus(HealthStatus.DEAD);
-        hs.setState(HealthStatus.RESTART);
-        bbs.publishChange(hs);
         break;
       case HealthStatus.DEGRADED:
         // Agent is alive but operating under stress.  For now just increase
@@ -272,11 +314,36 @@ public class DecisionPlugin extends SimplePlugin {
           agentSetToString(agents) + "], nodeName=" + nodeName);
       }
       for (Iterator it = agents.iterator(); it.hasNext();) {
-        String agentName = ((MessageAddress)it.next()).toString();
+        MessageAddress agentAddr = (MessageAddress)it.next();
+
+        // Update agents status object
+        HealthStatus hs = getHealthStatus(agentAddr);
+        hs.setLastRestartAttempt(new Date());
+        hs.setState(HealthStatus.RESTART);
+        hs.setStatus(HealthStatus.DEAD);
+        bbs.publishChange(hs);
+
         // add the AgentControl request
-        addAgent(agentName, nodeName);
+        addAgent(agentAddr.toString(), nodeName);
       }
     }
+  }
+
+  /**
+   * Kills an agent.
+   * @param agent  MessageAddress of agent to be killed
+   */
+  private void killAgent(MessageAddress agent, MessageAddress node) {
+    Object ticketId = mobilityFactory.createTicketIdentifier();
+    RemoveTicket removeTicket =
+      new RemoveTicket(ticketId, agent, node);
+
+    AgentControl ac =
+      mobilityFactory.createAgentControl(myUID, node, removeTicket);
+
+    if (log.isDebugEnabled())
+      log.debug("Publishing AgentControl(RemoveTicket) for mobility: " + ac);
+    bbs.publishAdd(ac);
   }
 
   protected void addAgent(String newAgent, String destNode) {

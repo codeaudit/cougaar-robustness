@@ -2,6 +2,10 @@ package org.cougaar.tools.robustness.ma.ui;
 
 import javax.swing.tree.*;
 
+/**
+ * A tree node who contains a transferable object as a user object. This node
+ * is used in DNDtree for RobustnessUI.
+ */
 public class EntityNode extends DefaultMutableTreeNode  {
 
   public EntityNode(EntityInfo info) {

@@ -152,7 +152,7 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
       }catch(ClassNotFoundException e){log.error("RobustnessServlet:: class Vector not found");}
       String command = (String)vs.get(0);
       String result = "unchanged";
-      if(command.equals("checkChange"))
+      if(command.equals("checkChange")) //check if the community got ang changes since last checking
       {
         try{
           bb.openTransaction();
@@ -163,7 +163,7 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
         }finally
         { bb.closeTransaction(); }
       }
-      else if(command.equals("vacateHost"))
+      else if(command.equals("vacateHost")) //send vacate request of given host to management agent
       {
         String host = (String)vs.get(1);
         String mgmtAgent = (String)vs.get(2);
@@ -179,7 +179,7 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
         { bb.closeTransaction(); }
         result = "succeed";
       }
-      else if(command.equals("moveAgent"))
+      else if(command.equals("moveAgent")) //relocate given agent
       {
         String agentName = (String)vs.get(1);
         String sourceNode = (String)vs.get(2);
@@ -308,76 +308,15 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
       return list;
     }
 
-    private Hashtable buildTopologyTable(InitialDirContext idc)
-    {
-      Hashtable table = new Hashtable();
-      try{
-        DirContext dc = (DirContext)idc.lookup("Topology");
-        NamingEnumeration enum = dc.list("");
-        while(enum.hasMore())
-        {
-          NameClassPair ncPair = (NameClassPair)enum.next();
-          String name = ncPair.getName();
-          /*MessageAddress o = (MessageAddress)dc.lookup(name);
-          table.put(name, o.getAddress());*/
-          if(ncPair.getClassName().equals("org.cougaar.core.node.NodeIdentifier"))
-          {
-            //NodeIdentifier o = (NodeIdentifier)dc.lookup(name);
-            table.put(name + " Node", ncPair.getClassName());
-          }
-          else
-            table.put(name, ncPair.getClassName());
-        }
-      }catch(NamingException e){log.error(e.getMessage());}
-      return table;
-    }
-
-    private Hashtable buildWebserverTable(InitialDirContext idc)
-    {
-      Hashtable table = new Hashtable();
-      try{
-        DirContext dc = (DirContext)idc.lookup("WEBSERVERS");
-        NamingEnumeration enum = dc.list("");
-        while(enum.hasMore())
-        {
-          NameClassPair ncPair = (NameClassPair)enum.next();
-          String name = ncPair.getName();
-          GlobalEntry o = (GlobalEntry)dc.lookup(name);
-          table.put(name, o);
-        }
-      }catch(NamingException e){log.error(e.getMessage());}
-      return table;
-    }
-
-    private Hashtable buildAgentsTable(InitialDirContext idc)
-    {
-      Hashtable table = new Hashtable();
-      try{
-        DirContext dc = (DirContext)idc.lookup("Agents");
-        NamingEnumeration enum = dc.list("");
-        while(enum.hasMore())
-        {
-          NameClassPair ncPair = (NameClassPair)enum.next();
-          String name = ncPair.getName();
-          MTImpl o = (MTImpl)dc.lookup(name);
-          try{
-          table.put(name, o.getClientHost());
-          }catch(java.rmi.server.ServerNotActiveException e){log.error(e.getMessage());}
-        }
-      }catch(NamingException e){log.error(e.getMessage());}
-      return table;
-    }
-
   /**
-   *
-   * @param agentName
-   * @param sourceNode
-   * @param destNode
+   * Publish a move ticket of given agent.
+   * @param agentName name of mobility agent
+   * @param sourceNode name of the original node of this agent
+   * @param destNode name of target node of this agent
    */
   private void moveAgent(String agentName, String sourceNode, String destNode)
   {
     Object ticketId = mobilityFactory.createTicketIdentifier();
-    //NodeIdentifier targetAddr = new NodeIdentifier(target);
     MoveTicket ticket = new MoveTicket(
           ticketId,
           new MessageAddress(agentName),
