@@ -644,24 +644,60 @@ $CIP/csmart/config/rules/robustness/communities</span><br>
 <ol start="6">
   <li style="font-weight: bold;">Running the SampleDefense</li>
 </ol>
+<div style="margin-left: 40px;">To start the SampleDefense using the
+ini file config, just run one of the bat files in <span
+ style="font-family: monospace;">$CIP/coordinator/examples/SampleDefens</span>e.<br>
+<br>
+To start under ACME, run a script with the rules above included.&nbsp;
+The following sample script is provided for Small 1-AD:<br>
 <div style="margin-left: 40px;"><br>
+<span style="font-family: monospace;">$CIP/csmart/scripts/definitions/robustness/objsSmall-Stop-PostStage1-Coordinator.rb</span><br>
+</div>
+</div>
+<div style="margin-left: 40px;"><br>
+Once the agents are up, bring up the SampleServlet in your browser as
+follows:<br>
+<br>
+<div style="margin-left: 40px;"><a
+ href="http://localhost:8800/$TestAgent/SampleDefense">http://localhost:8800/$TestAgent/SampleDefense</a><br>
 </div>
 <br>
+The servlet should look like::<br>
 <br>
+<img
+ src="file:///K:/CVS/coordinator-20040604/Coordinator/csmart/config/doc/coordinator/SampleServlet.jpg"
+ title="" alt="" style="width: 766px; height: 1010px;"><br>
+<br>
+To exercise it try the following in sequnce:<br>
+<br>
+<ol>
+  <li>Select both of the items in the Sample Action's (bottom 1/2 of
+servlet) PossibleValues menu and press the "Set Values Offered"
+button.&nbsp; The two values should be displayed in the ValuesOffered
+menu, and the Coordinator will be notified that the SampleAction in
+this agent is able and willing to execute those actions.&nbsp; <br>
+  </li>
+  <li>The current value of the SampleDiagnosis is "Secure".&nbsp; Given
+that and the current TechSpecs, the Coordinator will not decide any
+action by the SampleActuator is appropriate, so no PermittedValues will
+be set.</li>
+  <li>Now select "Compromised" from the Sample Diagnosis's (top half of
+servlet) PossibleValues menu and press the "Set Sensor Value" button.<br>
+  </li>
+</ol>
+<a href="http://localhost:8800/$TestAgent/SampleDefense"><br>
+</a>
+<div style="margin-left: 40px;"><br>
+<br>
+<br>
+<br>
+</div>
+</div>
 <ol start="6">
   <li><span style="font-family: arial,helvetica;"><span
  style="font-weight: bold;">dddd</span></span></li>
   <li><span style="font-family: arial,helvetica;"><span
  style="font-weight: bold;">dddd</span></span></li>
-  <li><span style="font-family: arial,helvetica;"><span
- style="font-weight: bold;">dddd</span></span></li>
-  <li><span style="font-family: arial,helvetica;"><span
- style="font-weight: bold;">dddd</span></span></li>
-  <li><span style="font-family: arial,helvetica;"><span
- style="font-weight: bold;">ddd</span></span></li>
-  <li><span style="font-family: arial,helvetica;"><span
- style="font-weight: bold;"><br>
-    </span></span></li>
 </ol>
 <br>
 <br>
