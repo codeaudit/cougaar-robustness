@@ -193,10 +193,16 @@
 
     <!-- ACME and CSMART -->
     <!-- <mkdir dir="staging/csmart/config/doc/robustness/uc1"/> -->
+    <mkdir dir="staging/csmart/config/rules/robustness/communities"/>
+    <mkdir dir="staging/robustness/configs/mic-local"/>
+    <!-- UC1 -->
     <mkdir dir="staging/csmart/config/lib/robustness/uc1"/>
     <mkdir dir="staging/csmart/config/rules/robustness/uc1"/>
     <mkdir dir="staging/csmart/config/scripts/robustness/uc1"/>
-    <mkdir dir="staging/robustness/configs/mic-local"/>
+    <!-- UC4 -->
+    <mkdir dir="staging/csmart/config/lib/robustness/uc4"/>
+    <mkdir dir="staging/csmart/config/rules/robustness/uc4"/>
+    <mkdir dir="staging/csmart/config/scripts/robustness/uc4"/>
     <mkdir dir="staging/operator"/>
 
     <antcall target="init"/>
@@ -247,6 +253,22 @@
       <fileset dir="csmart/config/scripts/robustness/uc1">
          <include name="uc1-small.rb"/>
          <include name="uc1-full.rb"/>
+      </fileset>
+    </copy>
+    <copy toDir="staging/csmart/config/lib/robustness/uc4">
+      <fileset dir="csmart/config/lib/robustness/uc4">
+         <include name="aruc4_actions_and_states.rb" />
+      </fileset>
+    </copy>
+    <copy toDir="staging/csmart/config/rules/robustness/uc4">
+      <fileset dir="csmart/config/rules/robustness/uc4">
+         <include name="aruc4.rule" />
+      </fileset>
+    </copy>
+    <copy toDir="staging/csmart/config/scripts/robustness/uc4">
+      <fileset dir="csmart/config/scripts/robustness/uc4">
+         <include name="uc4-small.rb"/>
+         <include name="uc4-full.rb"/>
       </fileset>
     </copy>
     <copy toDir="staging/robustness/doc">
