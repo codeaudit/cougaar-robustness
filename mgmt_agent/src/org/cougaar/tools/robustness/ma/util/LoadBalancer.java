@@ -183,10 +183,11 @@ public class LoadBalancer extends BlackboardClientComponent {
    * @param leaveAsIsNodes
    * @param listener
    */
-  public void doLayout(boolean useHamming, List newNodes, List killedNodes, List leaveAsIsNodes, LoadBalancerListener listener) {
+  public void doLayout(int annealTime, boolean useHamming, List newNodes, List killedNodes, List leaveAsIsNodes, LoadBalancerListener listener) {
     UID uid = uidService.nextUID();
     int solverMode = DEFAULT_SOLVER_MODE;
     logger.info("getLayout:" +
+                " annealTime=" + annealTime +
                 " solverMode=" + solverMode +
                 " useHamming=" + useHamming +
                 " newNodes=" + newNodes +
@@ -194,7 +195,7 @@ public class LoadBalancer extends BlackboardClientComponent {
                 " leaveAsIsNodes=" + leaveAsIsNodes +
                 " uid=" + uid);
     LoadBalanceRequest loadBalReq =
-        new UniqueLoadBalanceRequest(DEFAULT_ANNEAL_TIME,
+        new UniqueLoadBalanceRequest(annealTime,
                                      DEFAULT_SOLVER_MODE,
                                      useHamming,
                                      newNodes,
@@ -220,7 +221,7 @@ public class LoadBalancer extends BlackboardClientComponent {
     // submit request to EN plugin and send move requests to moveHelper
     //       upon receipt of EN response
     logger.info("doLoadBalance");
-    doLayout(useHamming, newNodes, killedNodes, leaveAsIsNodes, new LoadBalancerListener() {
+    doLayout(DEFAULT_ANNEAL_TIME, useHamming, newNodes, killedNodes, leaveAsIsNodes, new LoadBalancerListener() {
       public void layoutReady(Map layout) {
         moveAgents(layout);
       }});
