@@ -233,17 +233,18 @@ function getParent(el, pTagName) {
          <xsl:value-of select="$community" />
        </xsl:element>
       </h1><br />
-      <h2><xsl:text>NODES</xsl:text></h2>
+      <h2><xsl:text>HEALTH MONITORS</xsl:text></h2>
       <table border="1" cellpadding="8" cellspacing="0">
         <thead><tr>
-          <th style="width: 60px;" align="center" valign="middle"><xsl:text>NodeName</xsl:text></th>
+          <th style="width: 60px;" align="center" valign="middle"><xsl:text>Name</xsl:text></th>
+          <th style="width: 60px;" align="center" valign="middle"><xsl:text>Type</xsl:text></th>
           <th style="width: 60px;" align="center" valign="middle"><xsl:text>Status</xsl:text></th>
           <th style="width: 60px;" align="center" valign="middle"><xsl:text>Vote</xsl:text></th>
           <th style="width: 60px;" align="center" valign="middle"><xsl:text>Last</xsl:text></th>
           <th style="width: 60px;" align="center" valign="middle"><xsl:text>Expires</xsl:text></th>
         </tr></thead>
         <tbody>
-        <xsl:apply-templates select=".//node">
+        <xsl:apply-templates select=".//healthMonitor">
            <xsl:with-param name="remoteNode"><xsl:value-of select=".//remoteNode" /></xsl:with-param>
         </xsl:apply-templates>
         </tbody>
@@ -308,7 +309,7 @@ function getParent(el, pTagName) {
   </tr>
 </xsl:template>
 
-<xsl:template match="node">
+<xsl:template match="healthMonitor">
   <xsl:param name="remoteNode" />
   <xsl:variable name="name"><xsl:value-of select="@name" /></xsl:variable>
   <xsl:element name="tr">
@@ -328,6 +329,7 @@ function getParent(el, pTagName) {
           <xsl:value-of select="@name" />
       </xsl:element>
     </td>
+    <td><xsl:value-of select="@type" /></td>
     <td><xsl:value-of select="./status/@state" /></td>
     <td><xsl:value-of select="./vote" /></td>
     <td><xsl:value-of select="./status/@last" /></td>
