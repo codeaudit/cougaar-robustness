@@ -522,7 +522,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * @param defaultValue  Default value if attribute not found
    * @return Attribute value as a double
    */
-  protected double getDoubleAttribute(String id, long defaultValue) {
+  protected double getDoubleAttribute(String id, double defaultValue) {
     if (model.hasAttribute(id)) {
       return model.getDoubleAttribute(id);
     } else {
@@ -537,7 +537,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * @param defaultValue  Default value if attribute not found
    * @return Attribute value as a double
    */
-  protected double getDoubleAttribute(String name, String id, long defaultValue) {
+  protected double getDoubleAttribute(String name, String id, double defaultValue) {
     if (model.hasAttribute(name, id)) {
       return model.getDoubleAttribute(name, id);
     } else if (model.hasAttribute(id)) {

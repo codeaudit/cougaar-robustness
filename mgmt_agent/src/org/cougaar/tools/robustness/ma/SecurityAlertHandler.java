@@ -100,14 +100,26 @@ public class SecurityAlertHandler extends RobustnessThreatAlertHandlerBase
     persistenceHelper.controlPersistence(model.listEntries(model.AGENT), true, controls);
 
     long statusUpdateInterval = model.getLongAttribute(STATUS_UPDATE_ATTRIBUTE);
+    double pingThreatconCoefficient = 1.0;
     double statusUpdateAdjustmentCoefficient = 1.0;
     if (!resetToDefault && sa.getSeverityLevel() > sa.MEDIUM_SEVERITY) {
-      statusUpdateAdjustmentCoefficient = model.getDoubleAttribute(STATUS_UPDATE_INTERVAL_THREATCON_HIGH_COEFFICIENT);
+      statusUpdateAdjustmentCoefficient = getDoubleAttribute(STATUS_UPDATE_INTERVAL_THREATCON_HIGH_COEFFICIENT, statusUpdateAdjustmentCoefficient);
+      pingThreatconCoefficient = getDoubleAttribute(PING_TIMEOUT_THREATCON_HIGH_COEFFICIENT, pingThreatconCoefficient);
     }
     statusUpdateInterval = (long)((double)statusUpdateInterval * statusUpdateAdjustmentCoefficient);
     Attribute mods[] =
-        new Attribute[] {new BasicAttribute(STATUS_UPDATE_ATTRIBUTE, Long.toString(statusUpdateInterval))};
+        new Attribute[] {new BasicAttribute(STATUS_UPDATE_ATTRIBUTE, Long.toString(statusUpdateInterval)),
+                         new BasicAttribute(PING_ADJUSTMENT, Double.toString(pingThreatconCoefficient))};
     changeAttributes(model.getCommunityName(), null, mods);
   }
 
+  protected double getLongAttribute(String id, long defaultValue) {
+    long value = model.getLongAttribute(id);
+    return value != Long.MIN_VALUE ? value : defaultValue;
+  }
+
+  protected double getDoubleAttribute(String id, double defaultValue) {
+    double value = model.getDoubleAttribute(id);
+    return value != Double.NaN ? value : defaultValue;
+  }
 }

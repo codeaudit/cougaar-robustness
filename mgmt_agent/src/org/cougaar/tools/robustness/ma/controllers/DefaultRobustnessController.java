@@ -81,7 +81,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
     private boolean doInitialPing() {
       if (model != null) {
-        String attrVal = model.getAttribute("DO_INITIAL_PINGS");
+        String attrVal = model.getAttribute("DO_INITIAL_PING");
         return (attrVal == null || attrVal.equalsIgnoreCase("True"));
       }
       return true;
@@ -630,17 +630,17 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     //logger.debug("doPing: agent=" + name + " timeout=" + pingTimeout);
     getPingHelper().ping(name, pingTimeout, new PingListener() {
       public void pingComplete(String name, int status, long time) {
-        logger.info("Ping:" +
-                     " agent=" + name +
-                     " state=" + stateName(model.getCurrentState(name)) +
-                     " timeout=" + pingTimeout +
-                     " actual=" + time +
-                     " result=" + (status == PingHelper.SUCCESS ? "SUCCESS" : "FAIL") +
-                     (status == PingHelper.SUCCESS ? "" : " newState=" + stateName(stateOnFail)));
         if (status == PingHelper.SUCCESS) {
           newState(name, stateOnSuccess);
           if (!isLocal(name)) pingStats.enter(time);
         } else {
+          logger.info("Ping:" +
+                       " agent=" + name +
+                       " state=" + stateName(model.getCurrentState(name)) +
+                       " timeout=" + pingTimeout +
+                       " actual=" + time +
+                       " result=" + (status == PingHelper.SUCCESS ? "SUCCESS" : "FAIL") +
+                       (status == PingHelper.SUCCESS ? "" : " newState=" + stateName(stateOnFail)));
           newState(name, stateOnFail);
         }
       }
@@ -651,8 +651,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     String node = model.getLocation(name);
     double nodeLoad = getNodeLoadAverage(node);
     nodeLoad = (nodeLoad > 0) ? 1.0 + nodeLoad/2 : 1.0;
+    double pingAdjustment = getDoubleAttribute(name, PING_ADJUSTMENT, 1.0);
     long pingTimeout = getLongAttribute(name, "PING_TIMEOUT", PING_TIMEOUT);
-    return (long)(pingTimeout * nodeLoad);
+    return (long)(pingTimeout * nodeLoad * pingAdjustment);
   }
 
   protected Set getExcludedNodes() {
