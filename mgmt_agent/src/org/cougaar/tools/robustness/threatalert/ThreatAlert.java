@@ -30,7 +30,7 @@ import java.util.Date;
 public interface ThreatAlert extends UniqueObject, Relay.Target {
 
   // ThreatAlert severity levels
-  public static final int MAXIMUM_SERVERITY  = 4;
+  public static final int MAXIMUM_SEVERITY   = 4;
   public static final int HIGH_SEVERITY      = 3;
   public static final int MEDIUM_SEVERITY    = 2;
   public static final int LOW_SEVERITY       = 1;

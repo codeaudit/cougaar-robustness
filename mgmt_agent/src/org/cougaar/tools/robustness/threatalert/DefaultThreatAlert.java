@@ -95,6 +95,20 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
     this.startTime = creationTime.getTime();
   }
 
+  /**
+   * Create a new ThreatAlert using the current time as the threat start time
+   * and a duration of FOREVER.
+   * @param severityLevel  Severity level of alert
+   */
+  public DefaultThreatAlert(int  severityLevel) {
+    this();
+    this.source = source;
+    this.severityLevel = severityLevel;
+    this.duration = FOREVER;
+    this.creationTime = new Date();
+    this.startTime = creationTime.getTime();
+  }
+
   public void setSource(MessageAddress source) {
     this.source = source;
   }
@@ -174,7 +188,7 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
     switch (severityLevel) {
       case ThreatAlert.HIGH_SEVERITY: return "HIGH";
       case ThreatAlert.LOW_SEVERITY: return "LOW";
-      case ThreatAlert.MAXIMUM_SERVERITY: return "MAXIMUM";
+      case ThreatAlert.MAXIMUM_SEVERITY: return "MAXIMUM";
       case ThreatAlert.MEDIUM_SEVERITY: return "MEDIUM";
       case ThreatAlert.MINIMUM_SEVERITY: return "MINIMUM";
       case ThreatAlert.UNDEFINED_SEVERITY: return "UNDEFINED";

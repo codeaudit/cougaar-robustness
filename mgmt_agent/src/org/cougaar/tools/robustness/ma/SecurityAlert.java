@@ -60,4 +60,23 @@ public class SecurityAlert extends DefaultThreatAlert {
                        Date expiration) {
    super(severityLevel, start, expiration);
   }
+
+  /**
+   * Create a new SecurityAlert using the current time as the threat start time.
+   * @param severityLevel  Severity level of alert
+   * @param duration       Duration of threat period (FOREVER == never expires)
+   */
+  public SecurityAlert(int  severityLevel,
+                       long duration) {
+    super(severityLevel, duration);
+  }
+
+  /**
+   * Create a new SecurityAlert using the current time as the threat start time
+   * and a duration of FOREVER.
+   * @param severityLevel  Severity level of alert
+   */
+  public SecurityAlert(int  severityLevel) {
+    super(severityLevel);
+  }
 }
