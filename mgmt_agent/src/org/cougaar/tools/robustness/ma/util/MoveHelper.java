@@ -182,7 +182,8 @@ public class MoveHelper extends BlackboardClientComponent {
   public void execute() {
     if ((wakeAlarm != null) &&
         ((wakeAlarm.hasExpired()))) {
-      moveNext();
+      moveNext();            // do next local move
+      sendRemoteRequests();  // Send queued move requests to remote agent
       wakeAlarm = new WakeAlarm((new Date()).getTime() + TIMER_INTERVAL);
       alarmService.addRealTimeAlarm(wakeAlarm);
     }
@@ -211,36 +212,12 @@ public class MoveHelper extends BlackboardClientComponent {
     if (agentId.toString().equals(origNode)) {
       moveAgent(agentName, destNode);
     } else {
-     /* UIDService uidService = (UIDService)getServiceBroker().getService(this,
-          UIDService.class, null);
-      HealthMonitorRequest hmr =
-          new HealthMonitorRequestImpl(agentId,
-                                       communityName,
-                                       HealthMonitorRequest.MOVE,
-                                       new String[] {agentName}
-                                       ,
-                                       origNode,
-                                       destNode,
-                                       uidService.nextUID());
-      RelayAdapter hmrRa =
-          new RelayAdapter(agentId, hmr, hmr.getUID());
-      hmrRa.addTarget(SimpleMessageAddress.
-                      getSimpleMessageAddress(origNode));
-      if (logger.isDebugEnabled()) {
-        logger.debug("Publishing HealthMonitorRequest:" +
-                     " request=" + hmr.getRequestTypeAsString() +
-                     " targets=" + targetsToString(hmrRa.getTargets()) +
-                     " community-" + hmr.getCommunityName() +
-                     " agents=" + arrayToString(hmr.getAgents()) +
-                     " origNode=" + hmr.getOriginNode() +
-                     " destNode=" + hmr.getDestinationNode());
-      }
-      blackboard.publishAdd(hmrRa);*/
       fireLater(new RemoteMoveRequest(agentName, origNode, destNode, communityName));
     }
   }
 
   protected void moveAgent(String agentName, String destNode) {
+    logger.debug("moveAgent: agent=" + agentName + " dest=" + destNode);
     moveQueue.add(new MoveQueueEntry(SimpleMessageAddress.getSimpleMessageAddress(agentName),
                                      agentId,
                                      SimpleMessageAddress.getSimpleMessageAddress(destNode)));
@@ -255,7 +232,7 @@ public class MoveHelper extends BlackboardClientComponent {
     }
   }
 
-  private void fireAll() {
+  private void sendRemoteRequests() {
     int n;
     List l;
     synchronized (remoteMoveRequestQueue) {
@@ -272,6 +249,10 @@ public class MoveHelper extends BlackboardClientComponent {
   }
 
   private void sendRemoteRequest(RemoteMoveRequest rrr) {
+    logger.debug("sendRemoteRequest:" +
+                 " agent=" + rrr.agentName +
+                 " orig=" + rrr.origNode +
+                 " dest=" + rrr.destNode);
     UIDService uidService = (UIDService)getServiceBroker().getService(this,
           UIDService.class, null);
       HealthMonitorRequest hmr =
