@@ -345,7 +345,11 @@ public class CommunityStatusModel extends BlackboardClientComponent
    * @return Time of last update
    */
   public long getTimestamp(String name) {
-    return ((StatusEntry)statusMap.get(name)).timestamp;
+    if (name != null && statusMap.containsKey(name)) {
+      return ( (StatusEntry) statusMap.get(name)).timestamp;
+    } else {
+      return -1;
+    }
   }
 
   /**
