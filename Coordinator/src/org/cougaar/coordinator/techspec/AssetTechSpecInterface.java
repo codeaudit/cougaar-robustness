@@ -105,7 +105,7 @@ public interface AssetTechSpecInterface extends TechSpecRootInterface {
     /**
      * @return the AssetTechSpecInterface of the asset which are the subordinates of this asset
      */
-    public Vector getSubordinates(AssetRole role);
+//sjf    public Vector getSubordinates(AssetRole role);
     
     /**
      * @return the AssetRoles of the superior

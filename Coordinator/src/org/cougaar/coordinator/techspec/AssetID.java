@@ -25,7 +25,6 @@
 
 package org.cougaar.coordinator.techspec;
 
-import org.cougaar.core.persist.NotPersistable;
 import java.io.Serializable;
 
 /**
@@ -33,7 +32,7 @@ import java.io.Serializable;
  *
  * @author Paul Pazandak, OBJS
  */
-public class AssetID  implements NotPersistable, Serializable {
+public class AssetID implements Serializable {
     
     AssetType type;
     String name;

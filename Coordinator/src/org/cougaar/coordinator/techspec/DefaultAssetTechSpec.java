@@ -1,9 +1,6 @@
 /*
- * DefaultAssetTechSpec.java
- *
- * Created on August 28, 2003, 2:48 PM
  * <copyright>
- *  Copyright 2003 Object Services and Consulting, Inc.
+ *  Copyright 2003,2004 Object Services and Consulting, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
  *  and the Defense Logistics Agency (DLA).
  *
@@ -25,27 +22,26 @@
 
 package org.cougaar.coordinator.techspec;
 
+import java.io.Serializable;
 import java.util.Vector;
 import java.util.Iterator;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import org.cougaar.core.util.UID;
 import org.cougaar.util.log.Logging;
 import org.cougaar.util.log.Logger;
-
-import org.cougaar.core.util.UID;
-import org.cougaar.core.persist.NotPersistable;
 
 /**
  * A default implementation of this interface
  *
  * @author Paul Pazandak, OBJS
  */
-public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersistable {
+public class DefaultAssetTechSpec implements AssetTechSpecInterface, Serializable {
     
-    private static Vector allAssets;
-    static { allAssets = new Vector(200,100); }
+//    private static Vector allAssets;
+//    static { allAssets = new Vector(200,100); }
     
     private String name;
     private String rev;
@@ -56,14 +52,12 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
     private Hashtable superiors;
     private AssetTechSpecInterface host;
     private AssetTechSpecInterface node;
-    private static AssetTechSpecInterface network = null; //always null at this pt
-    private static AssetTechSpecInterface enclave = null;
+    private AssetTechSpecInterface network = null;
+    private AssetTechSpecInterface enclave = null;
 
     
     /** Creates a new instance of DefaultAssetTechSpec */
     public DefaultAssetTechSpec(AssetTechSpecInterface host, AssetTechSpecInterface node, String assetName, AssetType type, UID uid)  {
-      synchronized(allAssets) {
-        allAssets.add(this);
         this.host = host;
         this.node = node;
         this.assetType = type;
@@ -73,7 +67,6 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
         this.assetID = new AssetID(assetName, type);
         properties = new Vector();
         superiors = new Hashtable();
-      }  
     }
     
     
@@ -92,10 +85,10 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
      */
     public String getName() { return name;  }
     
-    
     /** 
      * @return the DefaultAssetTechSpec for the asset having the given assetID
      */
+/*
     public static DefaultAssetTechSpec findAssetByID(AssetID assetID) {
       synchronized(allAssets) {
         DefaultAssetTechSpec asset = null;
@@ -113,8 +106,8 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
         return null; //not found
       }
     }
+*/
             
-    
     /**
      *
      * @return the properties of the asset
@@ -228,11 +221,9 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
     public AssetTechSpecInterface getEnclave() { return enclave; }
 
     /**
-     * Sets the enclave using the supplied AssetTechSpecInterface. As there is only one of these for all
-     * agents in an enclave, this is a static method.
+     * Sets the enclave using the supplied AssetTechSpecInterface.
      */
-    public static void setEnclave(AssetTechSpecInterface e) { enclave = e; }
-    
+    public void setEnclave(AssetTechSpecInterface e) { enclave = e; }
     
     /**
      * @return Set the new host & node for this agent
@@ -241,11 +232,11 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
         this.host = host;
         this.node = node;
     }
-
     
     /**
      * @return the AssetTechSpecInterfaces of the assets which are the <b>direct</b> subordinates of this asset
      */
+/*
     public Vector getSubordinates(AssetRole role) {
       synchronized(allAssets) {
         Vector found = new Vector();        
@@ -260,6 +251,7 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
         return found;
       }
     }
+*/
     
     /**
      * @return a vector of AssetRoles of the superior
@@ -277,10 +269,10 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
         return roles;
     }        
 
-    
     /**
      * @return the AssetTechSpecInterfaces of the assets which are the <b>direct</b> subordinates of this asset
      */
+/*
     public Vector getAgentsInHost(AssetTechSpecInterface host) {
       synchronized(allAssets) {
         Vector found = new Vector();        
@@ -295,10 +287,12 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
         return found;
       }
     }
+*/
 
     /**
      * @return the AssetTechSpecInterfaces of the ALL agent assets which have one of the specified hosts
      */
+/*
     public static Vector getAgentsInHosts(Vector hostsV) {
       synchronized(allAssets) {
         Vector found = new Vector();        
@@ -321,11 +315,12 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
         return found;
       }
     }
+*/
     
     /**
      * @return the AssetTechSpecInterfaces of the ALL agent assets which have one of the specified nodes
      */
-    public static Vector getAgentsInNodes(Vector nodesV) {
+/*  public static Vector getAgentsInNodes(Vector nodesV) {
       synchronized(allAssets) {
         Vector found = new Vector();        
         AssetTechSpecInterface asset;
@@ -347,10 +342,12 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
         return found;
       }
     }
+*/
 
     /**
      * @return the AssetTechSpecInterfaces of the ALL node assets which have one of the specified hosts
      */
+/*
     public static Vector getNodesInHosts(Vector hostsV) {
       synchronized(allAssets) {
         Vector found = new Vector();        
@@ -373,5 +370,6 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
         return found;
       }
     }
+*/
     
 }
