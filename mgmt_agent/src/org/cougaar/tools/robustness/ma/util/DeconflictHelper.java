@@ -74,7 +74,7 @@ public class DeconflictHelper extends BlackboardClientComponent {
 
   private IncrementalSubscription opModeSubscription;
   //private IncrementalSubscription monitorModeSubscription;
-  private IncrementalSubscription conditionSubscription;
+  //private IncrementalSubscription conditionSubscription;
 
   private CommunityStatusModel model;
 
@@ -163,7 +163,7 @@ public class DeconflictHelper extends BlackboardClientComponent {
             }
             return false ;
         }
-     }) ;*/
+     }) ;
 
      conditionSubscription = (IncrementalSubscription) getBlackboardService().subscribe(new UnaryPredicate() {
        public boolean execute(Object o) {
@@ -172,7 +172,7 @@ public class DeconflictHelper extends BlackboardClientComponent {
          }
          return false;
        }
-     });
+     });*/
 
      // Start timer to periodically check all queues who needs to publish to the blackboard
     wakeAlarm = new WakeAlarm((new Date()).getTime() + TIMER_INTERVAL);
@@ -206,8 +206,10 @@ public class DeconflictHelper extends BlackboardClientComponent {
     while(it.hasNext()) {
       RestartDefenseEnabler rde = (RestartDefenseEnabler)it.next();
       if(rde.getValue().equals("ENABLED")) {
-        if(rde.getAssetType().equals(assetType)) {
-          String agent = rde.getAsset();
+        String name = rde.getName();
+        //get agent name of the enabled opmode
+        if(name.indexOf(defenseName) != -1) {
+          String agent = name.substring(name.indexOf(":")+1);
           opmodeEnabled(agent);
           logger.debug("get " + agent + ": " + rde.getName() + "=" + rde.getValue());
         }
@@ -284,26 +286,10 @@ public class DeconflictHelper extends BlackboardClientComponent {
    * @param name the agent name
    * @param desiredValue The desired value.
    */
-  public boolean changeApplicabilityCondition(String name) {
+  public void changeApplicabilityCondition(String name) {
     String condition = defenseName + ":" + name;
 
-    Iterator it = conditionSubscription.getCollection().iterator();
-    while(it.hasNext()) {
-      RestartDefenseCondition rdc = (RestartDefenseCondition)it.next();
-      if(rdc != null && rdc.getAssetType().equals(assetType) && rdc.getAsset().equals(name)) {
-        if(rdc.getValue().toString().equalsIgnoreCase("true"))
-          rdc.setValue(DefenseConstants.BOOL_FALSE);
-        else
-          rdc.setValue(DefenseConstants.BOOL_TRUE);
-        if (logger.isDebugEnabled())
-          logger.debug("** setRestartCondition - " + rdc.getName() + "=" + rdc.getValue());
-        defenseConditionQueue.add(rdc);
-        return true;
-      }
-    }
-    return false;
-
-    /*RestartDefenseCondition rdc = (RestartDefenseCondition)conditionService.getConditionByName(condition);
+    RestartDefenseCondition rdc = (RestartDefenseCondition)conditionService.getConditionByName(condition);
     if (rdc != null) {
       if(rdc.getValue().toString().equalsIgnoreCase("true"))
         rdc.setValue(DefenseConstants.BOOL_FALSE);
@@ -314,7 +300,7 @@ public class DeconflictHelper extends BlackboardClientComponent {
       defenseConditionQueue.add(rdc);
     } else {
       if (logger.isDebugEnabled()) logger.debug("** Cannot find condition object!");
-    }*/
+    }
   }
 
   public boolean isDefenseApplicable(String agentName) {

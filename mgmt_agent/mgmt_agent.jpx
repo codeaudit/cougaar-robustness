@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--JBuilder XML Project-->
 <project>
+  <property category="javaFormatting" name="packageThreshold" value="0"/>
   <property category="javadoc" name="custom.tags.1" value="todo;a;To Do:"/>
   <property category="runtime" name="DefaultConfiguration" value="-1"/>
   <property category="runtime" name="ExcludeDefaultForZero" value="1"/>
@@ -26,12 +27,59 @@
   <property category="team" name="ignorePath.1" value="classes"/>
   <property category="team" name="ignorePath.2" value="lib"/>
   <property category="team" name="ignorePath.3" value="test"/>
-  <node name="mgmt_agent" type="NavigationDirectory">
-    <property category="directorynode" name="showSubdirectories" value="1"/>
-    <property category="directorynode" name="url" value="."/>
+  <node name="configs" type="Folder">
+    <node name="mic-local" type="Folder">
+      <file path="configs/mic-local/mgmt_agent.jpx"/>
+      <file path="configs/mic-local/qing-hosts.xml"/>
+      <file path="configs/mic-local/ron1-hosts.xml"/>
+      <file path="configs/mic-local/ron2-hosts.xml"/>
+      <file path="configs/mic-local/uc1-small-1ad-layout.xml"/>
+    </node>
+    <file path="configs/loggingConfig.conf"/>
   </node>
-  <file path="csmart/config/rules/robustness/uc4/aruc4.rule"/>
-  <file path="csmart/config/lib/robustness/uc4/aruc4_actions_and_states.rb"/>
+  <node name="csmart" type="Folder">
+    <node name="config" type="Folder">
+      <node name="lib" type="Folder">
+        <node name="robustness" type="Folder">
+          <node name="uc1" type="Folder">
+            <file path="csmart/config/lib/robustness/uc1/aruc1_actions_and_states.rb"/>
+            <file path="csmart/config/lib/robustness/uc1/deconfliction.rb"/>
+            <file path="csmart/config/lib/robustness/uc1/ping.rb"/>
+          </node>
+          <node name="uc4" type="Folder">
+            <file path="csmart/config/lib/robustness/uc4/aruc4_actions_and_states.rb"/>
+          </node>
+        </node>
+      </node>
+      <node name="rules" type="Folder">
+        <node name="robustness" type="Folder">
+          <node name="communities" type="Folder">
+            <file path="csmart/config/rules/robustness/communities/uc1_community.rule"/>
+          </node>
+          <node name="uc1" type="Folder">
+            <file path="csmart/config/rules/robustness/uc1/aruc1.rule"/>
+            <file path="csmart/config/rules/robustness/uc1/deconfliction.rule"/>
+            <file path="csmart/config/rules/robustness/uc1/manager.rule"/>
+            <file path="csmart/config/rules/robustness/uc1/mic.rule"/>
+          </node>
+          <node name="uc4" type="Folder">
+            <file path="csmart/config/rules/robustness/uc4/aruc4.rule"/>
+          </node>
+        </node>
+      </node>
+      <node name="scripts" type="Folder">
+        <node name="robustness" type="Folder">
+          <node name="uc1" type="Folder">
+            <file path="csmart/config/scripts/robustness/uc1/uc1-full.rb"/>
+            <file path="csmart/config/scripts/robustness/uc1/uc1-lb.rb"/>
+            <file path="csmart/config/scripts/robustness/uc1/uc1-small.rb"/>
+          </node>
+          <node name="uc4" type="Folder">
+            <file path="csmart/config/scripts/robustness/uc4/uc4-small.rb"/>
+          </node>
+        </node>
+      </node>
+    </node>
+  </node>
   <file path="build.xml"/>
-  <file path="csmart/config/scripts/robustness/uc4/uc4-small.rb"/>
 </project>
