@@ -12,7 +12,7 @@
   <property name="workspace" value="${env.COUGAAR_INSTALL_PATH}/workspace"/>
   <property name="host" value="${env.HOST}"/>
   <property name="port" value="8800"/>
-  <property name="node" value="RestartNode"/>
+  <property name="node" value=""/>
   <property name="experiment" value=""/>
   <property name="agent" value="Enclave1RobustnessManager"/>
   <property name="persistenceEnabled" value="false"/>
