@@ -83,13 +83,13 @@ class MessageIntegrity
 
     if (ack.isPureAck() && msgNum >= 0)
     {
-      log.error ("MessageIntegrity: Invalid msg number for type: " +msgString);
+      log.error ("MessageIntegrity: Invalid pure ack msg number: " +msgString);
       return false;
     }
 
     if (ack.isPureAckAck() && msgNum >= 0)
     {
-      log.error ("MessageIntegrity: Invalid msg number for type: " +msgString);
+      log.error ("MessageIntegrity: Invalid pure ack-ack msg number: " +msgString);
       return false;
     }
 

@@ -39,6 +39,13 @@ public class PureAck extends Ack
     super (null);  // msg gets set by PureAckMessage
   }
 
+  public PureAck (PureAck pureAck, PureAckMessage msg)
+  {
+    super ((Ack)pureAck, (AttributedMessage)msg);
+    ackSendableTime = pureAck.ackSendableTime;
+    sendDeadline = pureAck.sendDeadline;
+  }
+
   public synchronized void setAckSendableTime (long time)
   {
     ackSendableTime = time;

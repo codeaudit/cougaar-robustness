@@ -40,6 +40,13 @@ public class PureAckAck extends PureAck
     setSpecificAcks (pureAck.getLatestAcks());
     setReceiveTime (pureAck.getReceiveTime());
   }
+
+  public PureAckAck (PureAckAck pureAckAck, PureAckAckMessage msg)
+  {
+    super ((PureAck)pureAckAck, (PureAckMessage)msg);
+    setSpecificAcks (pureAckAck.getSpecificAcks());
+    setReceiveTime (pureAckAck.getReceiveTime());
+  }
 }
 
 

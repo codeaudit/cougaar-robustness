@@ -54,58 +54,63 @@ public class Ack implements Serializable
   private transient Vector linksUsed;
   private transient long receiveTime;
 
-  public Ack ()  // for deserialization
+  public Ack ()  // for deserialization only
   {
     maxResendDelay = DEFAULT_MAX_RESEND_DELAY;
   }
 
-  public Ack (AttributedMessage msg)
+  public Ack (AttributedMessage m)
   {
-    setMsg (msg);
-    sendTry = 0;
-    sendCount = 0;
-    resendDelay = 0;
     maxResendDelay = DEFAULT_MAX_RESEND_DELAY;
+    msg = m;
     linksUsed = new Vector();
   }
 
-  public Ack (Ack ack, AttributedMessage msg)
+  protected Ack (Ack ack, AttributedMessage m)
   {
-    this.sendTime = sendTime;
-    this.sendLink = sendLink;
-    this.sendCount = sendCount;
-    this.specificAcks = cloneAcks (specificAcks);
-    this.latestAcks = cloneAcks (latestAcks);
-    this.roundTripTime = roundTripTime;
-    this.resendMultiplier = resendMultiplier;
+    sendTime = ack.sendTime;
+    sendLink = ack.sendLink;
+    sendCount = ack.sendCount;
+    specificAcks = cloneAcks (ack.specificAcks);
+    latestAcks = cloneAcks (ack.latestAcks);
+    roundTripTime = ack.roundTripTime;
+    resendMultiplier = ack.resendMultiplier;
 
-    this.sendTry = sendTry;
-    this.numLinkChoices = numLinkChoices;
-    this.resendDelay = resendDelay;
-    this.maxResendDelay = maxResendDelay;
-    this.msg = msg;
-    this.linksUsed = cloneLinks (linksUsed);
-    this.receiveTime = receiveTime;
+    sendTry = ack.sendTry;
+    numLinkChoices = ack.numLinkChoices;
+    resendDelay = ack.resendDelay;
+    maxResendDelay = ack.maxResendDelay;
+    msg = m;
+    linksUsed = cloneLinksUsed (ack.linksUsed);
+    receiveTime = ack.receiveTime;
+  }
+
+  public Ack clone (Ack ack, AttributedMessage msg)
+  {
+         if (ack.isAck())        return new Ack (ack, msg);
+    else if (ack.isPureAck())    return new PureAck ((PureAck)ack, (PureAckMessage)msg);
+    else if (ack.isPureAckAck()) return new PureAckAck ((PureAckAck)ack, (PureAckAckMessage)msg);
+    else                         return null;
   }
 
   private Vector cloneAcks (Vector acks)
   {
+    if (acks == null) return null;
     Vector v = new Vector();
-
-    for (Enumeration e=acks.elements(); e.hasMoreElements(); )
-      v.add (new AckList ((AckList) e.nextElement()));
-
+    v.addAll (acks);
     return v;
   }
 
-  private Vector cloneLinks (Vector links)
+  private Vector cloneLinksUsed (Vector linksUsed)
   {
-    Vector v = new Vector();
+    if (linksUsed == null) return new Vector();
 
-    for (Enumeration e=links.elements(); e.hasMoreElements(); )
-      v.add ((DestinationLink) e.nextElement());
-
-    return v;
+    synchronized (linksUsed)
+    {
+      Vector v = new Vector();
+      v.addAll (linksUsed);
+      return v;
+    }
   }
 
   public synchronized void setSendTime (long time)
