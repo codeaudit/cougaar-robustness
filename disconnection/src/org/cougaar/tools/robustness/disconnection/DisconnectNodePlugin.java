@@ -240,13 +240,13 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
               String defenseMode = dmode.getValue().toString();
               if (eventService.isEventEnabled()) {
                   if ((defenseMode.equals("ENABLED")) && (reconnectInterval > 0L)) {
-                      eventService.event(getNodeID()+" plans to Disconnect for "+reconnectInterval/1000L+" sec");
+                      eventService.event(getNodeID()+" has received permission to Disconnect for "+reconnectInterval/1000L+" sec");
                   }
                   else if ((defenseMode.equals("DISABLED")) && (reconnectInterval == 0L)) {
-                      eventService.event(getNodeID()+" has Reconnected");
+                      eventService.event(getNodeID()+" has received permission to Reconnect");
                   }
                   else {
-                      eventService.event(getNodeID()+" permission Denied");
+                      eventService.event(getNodeID()+" is denied permission to " + (reconnectInterval > 0L ? "Disconnect" : "Reconnect") );
                   }
               }
           }

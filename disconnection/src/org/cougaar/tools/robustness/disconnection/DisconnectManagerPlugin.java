@@ -748,7 +748,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                 return;
             }
             else {
-                if (eventService.isEventEnabled()) eventService.event(diag.getAssetID()+" is no longer legitimately Disconnected");
+                if (eventService.isEventEnabled()) eventService.event(diag.getAssetID()+" is Tardy and is no longer legitimately Disconnected");
                 try {
                     diag.setValue(TARDY);
                 } catch (IllegalValueException e) {
@@ -840,7 +840,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
 
         public void handleExpiration() {
             if (logger.isDebugEnabled()) logger.debug("RequestAlarm expired for: " + rr.toString() + ". Request denied");
-            if (eventService.isEventEnabled()) eventService.event(rr.getNodeID()+" permission Denied");
+            if (eventService.isEventEnabled()) eventService.event(rr.getNodeID()+" is denied permission to " + rr.getRequest()==ALLOW_DISCONNECT?DISCONNECT_REQUEST:CONNECT_REQUEST);
             denyPermissions(rr);
             cancel();
         }

@@ -124,9 +124,6 @@ public class DisconnectServlet extends BaseServletComponent
           throw new RuntimeException("Unable to obtain EventService");
       }
     }
-    
-    if (eventService.isEventEnabled()) eventService.event("Loaded DisconnectServlet");
-
     super.load();
   }
 
@@ -217,10 +214,10 @@ public class DisconnectServlet extends BaseServletComponent
                            if (logger.isDebugEnabled()) logger.debug("Disconnect Requested: "+lrtc.getAsset()+" = "+lrtc.getValue().toString());
                         }
                         else {
-                            out.println("<center><h2>Failed to Disconnect - Defense not initialized: can't find ManagementAgent address</h2></center><br>");
-                            if (logger.isErrorEnabled()) logger.error("Failed to Disconnect - Defense not initialized: can't find ManagementAgent address");
+                            out.println("<center><h2>Failed to Disconnect - Manager not Ready</h2></center><br>");
+                            if (logger.isErrorEnabled()) logger.error("Failed to Disconnect - Manager not Ready");
                             if (eventService.isEventEnabled()) {
-                                eventService.event("Defense not initialized");
+                                eventService.event("Failed to Disconnect - Manager not Ready");
                             }
                         }
                         blackboard.closeTransaction();
@@ -229,7 +226,7 @@ public class DisconnectServlet extends BaseServletComponent
                     }
               } catch (NumberFormatException nfe) {
                   out.println("<center><h2>Failed to Disconnect - NumberFormatException!</h2></center><br>" );            
-                  if (logger.isErrorEnabled()) logger.error("Failed to Disconnect - NumberFormatException!");
+                  if (logger.isErrorEnabled()) logger.error("Failed to Disconnect - Invalid Disconnect Interval = " + expire);
               }
           } 
         }
