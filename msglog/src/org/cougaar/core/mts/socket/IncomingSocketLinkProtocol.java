@@ -272,6 +272,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
   {
     try 
     {
+log.debug ("registerClient: Agent " +client.getMessageAddress()+ " registering as client with " +mySocket);
       if (mySocket == null) return;  // no socket spec to register
       MessageAddress clientAddress = client.getMessageAddress();
       getNameSupport().registerAgentInNameServer (mySocket, clientAddress, PROTOCOL_TYPE);
@@ -286,6 +287,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
   { 
     try 
     {
+log.debug ("registerClient: Agent " +client.getMessageAddress()+ " UNregistering as client with " +mySocket);
       if (mySocket == null) return;  // no socket spec to unregister
       MessageAddress clientAddress = client.getMessageAddress();
       getNameSupport().unregisterAgentInNameServer (mySocket, clientAddress, PROTOCOL_TYPE);
