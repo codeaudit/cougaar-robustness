@@ -205,7 +205,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         } else {
           newState(name, RESTART);
         }
-        setLocation(name, null);
+        //setLocation(name, null);
       } else if (isNode(name)) {
         setExpiration(name, NEVER);
         deadNodes.add(name);

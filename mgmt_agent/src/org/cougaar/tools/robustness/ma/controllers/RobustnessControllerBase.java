@@ -538,7 +538,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    */
   protected void restartAgent(String name, String dest) {
     String orig = model.getLocation(name);
-    model.setLocation(name, "");
+    //model.setLocation(name, null);
     restartHelper.restartAgent(name, orig, dest,
                                model.getCommunityName());
   }
