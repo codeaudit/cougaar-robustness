@@ -96,6 +96,7 @@
             <file path="csmart/config/scripts/robustness/uc1/kill_1_agent-full.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/kill_1_agent-small.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/kill_1_node-full.rb"/>
+            <file path="csmart/config/scripts/robustness/uc1/kill_1_node-moas.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/kill_1_node-small.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/kill_mgr-small.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/kill_mgr_plus_1-small.rb"/>
@@ -109,10 +110,13 @@
           </node>
           <node name="uc4" type="Folder">
             <file path="csmart/config/scripts/robustness/uc4/threatcon-full.rb"/>
+            <file path="csmart/config/scripts/robustness/uc4/threatcon-moas.rb"/>
             <file path="csmart/config/scripts/robustness/uc4/threatcon-small.rb"/>
             <file path="csmart/config/scripts/robustness/uc4/uc4-full.rb"/>
+            <file path="csmart/config/scripts/robustness/uc4/uc4-moas.rb"/>
             <file path="csmart/config/scripts/robustness/uc4/uc4-security-full.rb"/>
             <file path="csmart/config/scripts/robustness/uc4/uc4-security-small.rb"/>
+            <file path="csmart/config/scripts/robustness/uc4/uc4-small-iaom.rb"/>
             <file path="csmart/config/scripts/robustness/uc4/uc4-small.rb"/>
           </node>
         </node>
