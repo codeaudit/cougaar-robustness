@@ -29,7 +29,10 @@ import org.cougaar.core.component.Service;
 
 public interface TrafficAuditService extends Service
 {
-  public void recordMessageReceive (AttributedMessage msg);
+  public void recordMessageNumbering (AttributedMessage msg);
+  public void recordMessageDrop (AttributedMessage msg);
   public void recordMessageSend (AttributedMessage msg);
+  public void recordMessageReceive (AttributedMessage msg);
+  public void recordMessageDelivery (AttributedMessage msg);
 }
 

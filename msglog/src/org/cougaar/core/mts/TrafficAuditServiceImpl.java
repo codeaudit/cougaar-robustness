@@ -38,6 +38,13 @@ import org.cougaar.core.service.LoggingService;
 public class TrafficAuditServiceImpl implements TrafficAuditService, ServiceProvider
 {
   private static final String AUDIT_TAG = "TRAFFIC_AUDIT";
+
+  private static final String MSG_NUMBER =  "Numb";
+  private static final String MSG_DROP =    "Drop";
+  private static final String MSG_SEND =    "Send";
+  private static final String MSG_RECEIVE = "Recv";
+  private static final String MSG_DELIVER = "Delv";
+
   private static final boolean includeLocalMsgs;
   private LoggingService log;
   private MessageTransportRegistryService registry;
@@ -76,38 +83,58 @@ public class TrafficAuditServiceImpl implements TrafficAuditService, ServiceProv
 
   //  TrafficAuditService interface fullfillment
 
-  public void recordMessageReceive (AttributedMessage msg)
+  public void recordMessageNumbering (AttributedMessage msg)
   {
-    if (log.isInfoEnabled())
-    {
-      if (includeLocalMsgs || !isLocalMessage(msg)) 
-      {
-        String linkType = AdaptiveLinkSelectionPolicy.getLinkType (MessageUtils.getSendProtocolLink (msg));
-        log.info (createAuditData (linkType, "recv", msg));
-      }
-    }
+    //  We record numbering for now because recording a message entering the
+    //  send queue - the logical and desirable point - is problematic in the
+    //  current UL msg arch as we can't do msg numbering there very well, and 
+    //  without a msg number for the message we can't id it consistently as
+    //  we can once we do number it. 
+
+    recordMessageTraffic (MSG_NUMBER, msg);
+  }
+
+  public void recordMessageDrop (AttributedMessage msg)
+  {
+    recordMessageTraffic (MSG_DROP, msg);
   }
 
   public void recordMessageSend (AttributedMessage msg)
   {
+    recordMessageTraffic (MSG_SEND, msg);
+  }
+
+  public void recordMessageReceive (AttributedMessage msg)
+  {
+    recordMessageTraffic (MSG_RECEIVE, msg);
+  }
+
+  public void recordMessageDelivery (AttributedMessage msg)
+  {
+    recordMessageTraffic (MSG_DELIVER, msg);
+  }
+
+  private void recordMessageTraffic (String activity, AttributedMessage msg)
+  {
     if (log.isInfoEnabled())
     {
       if (includeLocalMsgs || !isLocalMessage(msg)) 
       {
         String linkType = AdaptiveLinkSelectionPolicy.getLinkType (MessageUtils.getSendProtocolLink (msg));
-        log.info (createAuditData (linkType, "send", msg));
+        log.info (createAuditData (linkType, activity, msg));
       }
     }
   }
 
-  private String createAuditData (String linkType, String msgDirection, AttributedMessage msg)
+  private String createAuditData (String linkType, String activity, AttributedMessage msg)
   {
     StringBuffer buf = new StringBuffer();
     buf.append (AUDIT_TAG);
     buf.append (" ");
     buf.append (now());
     buf.append (" ");
-    buf.append (msgDirection.equals("send") ? "Send " : "Recv ");
+    buf.append (activity);
+    buf.append (" ");
     buf.append (MessageUtils.getSendCount (msg));
     buf.append (" ");
     buf.append (linkType);

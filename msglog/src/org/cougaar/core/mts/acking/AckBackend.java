@@ -57,6 +57,14 @@ class AckBackend extends MessageDelivererDelegateImplBase
 
     MessageAckingAspect.recordMessageReceive (msg);  // for msg auditing
 
+    //  Special Case:  Acking is turned off
+
+    if (!MessageAckingAspect.isAckingOn())
+    {
+      if (log.isDebugEnabled()) log.debug ("AckBackend: acking turned off, delivering: " +msgString);
+      return super.deliverMessage (msg, dest);
+    }
+
     //  Special Case:  Local messages are completely excluded from acking
 
     if (MessageUtils.isLocalMessage (msg)) 

@@ -45,6 +45,7 @@ public class MessageAckingAspect extends StandardAspect
 {
   public static final String SENT_BUT_NOT_ACKED_MSGS = "SentButNotAckedMessages";
 
+  static final boolean isAckingOn;
   static final String  excludedLinks;
   static final int     resendMultiplier;
   static final float   firstAckPlacingFactor;
@@ -78,7 +79,10 @@ public class MessageAckingAspect extends StandardAspect
   {
     //  Read external properties
 
-    String s = "org.cougaar.message.transport.aspects.acking.excludedLinks";
+    String s = "org.cougaar.message.transport.aspects.acking.isAckingOn";
+    isAckingOn = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
+
+    s = "org.cougaar.message.transport.aspects.acking.excludedLinks";
     String defaultList = "org.cougaar.core.mts.RMILinkProtocol";  // comma separated list
     excludedLinks = System.getProperty (s, defaultList);
 
@@ -118,7 +122,8 @@ public class MessageAckingAspect extends StandardAspect
         if (trafficAuditer == null)
         {
           ServiceBroker sb = getServiceBroker();
-          new TrafficAuditServiceImpl (sb);
+          trafficAuditer = (TrafficAuditService) sb.getService (this, TrafficAuditService.class, null);
+          if (trafficAuditer == null) new TrafficAuditServiceImpl (sb);
           trafficAuditer = (TrafficAuditService) sb.getService (this, TrafficAuditService.class, null);
           if (trafficAuditer == null) log.warn ("Cannot do traffic auditing - TrafficAuditService not available!");
         }
@@ -127,7 +132,7 @@ public class MessageAckingAspect extends StandardAspect
 
     synchronized (MessageAckingAspect.class)
     {
-      if (instance == null)
+      if (isAckingOn && instance == null)
       {
         //  Kick off worker threads
 
@@ -754,6 +759,11 @@ public class MessageAckingAspect extends StandardAspect
   }
 
   //  Utility methods and classes
+
+  static boolean isAckingOn ()
+  {
+    return isAckingOn;
+  }
 
   LoggingService getTheLoggingService ()
   {

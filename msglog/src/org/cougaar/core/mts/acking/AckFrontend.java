@@ -76,6 +76,16 @@ class AckFrontend extends DestinationLinkDelegateImplBase
       throw new CommFailureException (new Exception (s));
     }
 
+    //  Special Case:  Acking is turned off
+
+    if (!MessageAckingAspect.isAckingOn())
+    {
+      if (log.isDebugEnabled()) log.debug ("AckFrontend: acking turned off, forwarding " +msgString);
+      MessageAttributes attr = super.forwardMessage (msg);
+      MessageAckingAspect.recordMessageSend (msg);  // for msg auditing
+      return attr;
+    }
+
     //  Special Case:  Local messages are completely excluded from acking
 
     if (MessageUtils.isLocalMessage (msg)) 

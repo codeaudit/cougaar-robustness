@@ -24,6 +24,9 @@
 
 package org.cougaar.core.mts;
 
+import org.cougaar.core.service.LoggingService;
+import org.cougaar.core.component.ServiceBroker;
+
 import java.util.Hashtable;
 
 
@@ -45,8 +48,32 @@ public class MessageNumberingAspect extends StandardAspect
   private static final int POSITIVE = 1;
   private static final int NEGATIVE = -1;
 
+  private LoggingService log;
+  private static TrafficAuditService trafficAuditer;
+
   public MessageNumberingAspect () 
   {}
+
+  public void load ()
+  {
+    super.load();
+    log = loggingService;
+
+    if (log.isInfoEnabled())
+    {
+      synchronized (this)
+      {
+        if (trafficAuditer == null)
+        {
+          ServiceBroker sb = getServiceBroker();
+          trafficAuditer = (TrafficAuditService) sb.getService (this, TrafficAuditService.class, null);
+          if (trafficAuditer == null) new TrafficAuditServiceImpl (sb);
+          trafficAuditer = (TrafficAuditService) sb.getService (this, TrafficAuditService.class, null);
+          if (trafficAuditer == null) log.warn ("Cannot do traffic auditing - TrafficAuditService not available!");
+        }
+      }
+    }
+  }
 
   public Object getDelegate (Object delegate, Class type) 
   {
@@ -94,7 +121,7 @@ public class MessageNumberingAspect extends StandardAspect
         if (fromAgent == null)
         {
           String s = "Null fromAgent for " +agentAddr;
-          if (loggingService.isWarnEnabled()) loggingService.warn (s);
+          if (log.isWarnEnabled()) log.warn (s);
           throw new NameLookupException (new Exception (s));
         }
         else MessageUtils.setFromAgent (msg, fromAgent);
@@ -110,7 +137,7 @@ public class MessageNumberingAspect extends StandardAspect
         if (toAgent == null)
         {
           String s = "Null toAgent for " +agentAddr;
-          if (loggingService.isWarnEnabled()) loggingService.warn (s);
+          if (log.isWarnEnabled()) log.warn (s);
           throw new NameLookupException (new Exception (s));
         }
         else MessageUtils.setToAgent (msg, toAgent);
@@ -158,7 +185,7 @@ public class MessageNumberingAspect extends StandardAspect
       {
         //  Has an unknown message type - should not occur, except during system development
 
-        loggingService.fatal ("Unknown msg type! : " +MessageUtils.getMessageType(msg));
+        log.fatal ("Unknown msg type! : " +MessageUtils.getMessageType(msg));
         n = -1;  // will nearly always result in a duplicate msg on the remote side
       }
 
