@@ -54,6 +54,8 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
     private Hashtable superiors;
     private AssetTechSpecInterface host;
     private AssetTechSpecInterface node;
+    private static AssetTechSpecInterface network = null; //always null at this pt
+    private static AssetTechSpecInterface enclave = null;
 
     
     /** Creates a new instance of DefaultAssetTechSpec */
@@ -210,11 +212,28 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
      */
     public AssetTechSpecInterface getNode() { return node; }
     
+
+    /**
+     * @return the AssetTechSpecInterface of the asset which is the network of this asset. ALWAYS NULL at this point.
+     */
+    public AssetTechSpecInterface getNetwork() { return network; }
+
+    /**
+     * @return the AssetTechSpecInterface of the asset which is the enclave of this asset
+     */
+    public AssetTechSpecInterface getEnclave() { return enclave; }
+
+    /**
+     * Sets the enclave using the supplied AssetTechSpecInterface. As there is only one of these for all
+     * agents in an enclave, this is a static method.
+     */
+    public static void setEnclave(AssetTechSpecInterface e) { enclave = e; }
+    
     
     /**
      * @return Set the new host & node for this agent
      */
-    public void setNewLocation(AssetTechSpecInterface hsot, AssetTechSpecInterface node) {
+    public void setNewLocation(AssetTechSpecInterface host, AssetTechSpecInterface node) {
         
         this.host = host;
         this.node = node;

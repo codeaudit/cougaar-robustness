@@ -53,9 +53,8 @@ public class AssetFilter implements NotPersistable {
     public AssetFilter() {
         
         logger = Logging.getLogger(this.getClass().getName());
-        terms = new Vector();
-        specialTerms = new Vector();
-        
+        terms = new Vector(2,2); //not expected to be large
+        specialTerms = new Vector(2,2); //not expected to be large        
     }
     
     /**
@@ -114,18 +113,16 @@ public class AssetFilter implements NotPersistable {
             
         }
 
-        if (qualifies) {
-            
-            ///
-                //compare against any special filters that exist
-            ///
-            
-            ///
-            
-            ///
-            
-        }
-        
+        //compare against any special filters that exist
+        //Specifically, CorruptHostExistsOnNetwork and CorruptHostExists filters
+        if (qualifies && specialTerms.size()>0) {
+            Iterator i = this.specialTerms.iterator();
+            while (i.hasNext()) {
+                SpecialTerm st = (SpecialTerm) i.next();
+                qualifies = st.qualifies(asset);
+                if (!qualifies) { break; } // no need to continue
+            }
+        }   
         
         return qualifies;
         
@@ -147,6 +144,7 @@ public class AssetFilter implements NotPersistable {
         
             if (p.getName().equalsIgnoreCase(term.propertyName)) { //found!
                 if (p.getValue().getClass() == term.objectValue.getClass()) { //types match, so we can compare!
+                    if (logger.isDebugEnabled()) logger.debug("AssetFilter.qualifyTerm: comparing asset property "+p.getName()+"["+p.getValue()+"] with filter value = ["+term.getValue()+"]. ");
                     return term.compare(p.getValue());
                 } else {
                     logger.warn("AssetFilter: type of asset property ["+p.getValue().getClass()+"] does not match the supplied filter's type ["+term.objectValue.getClass()+"]. Ignoring.");
@@ -315,6 +313,14 @@ public class AssetFilter implements NotPersistable {
 
         public boolean qualifies(AssetTechSpecInterface asset) {
             
+            if (logger.isDebugEnabled()) logger.debug("AssetFilter.SpecialTerm - Looking for CorruptHost for this asset");
+            //Need to get the host for this asset, then narrow to all hosts that are on the same network as this asset
+            //If this asset IS a host, then do nothing.
+            if (asset.getAssetType() == AssetType.HOST) { return false; } //or maybe return true if it is corrupt...
+            AssetTechSpecInterface atsi = asset.getHost();
+            
+            
+            
             return true; //IMPLEMENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             
         }
@@ -335,6 +341,13 @@ public class AssetFilter implements NotPersistable {
         }
 
         public boolean qualifies(AssetTechSpecInterface asset) {
+            
+            if (logger.isDebugEnabled()) logger.debug("AssetFilter.SpecialTerm - Looking for CorruptHostOnNetwork");
+            //Need to get a list of ALL hosts, then narrow to all hosts that are on the same network as this asset
+////////            sdf;
+            
+////////            AssetType.
+            
             
             return true; //IMPLEMENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             

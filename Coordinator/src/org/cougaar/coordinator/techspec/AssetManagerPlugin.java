@@ -84,6 +84,9 @@ public class AssetManagerPlugin extends ComponentPlugin implements NotPersistabl
     private int assetCount = 0;
     private boolean emittedAssetCountCondition = false;
     
+    /** True if the enclave (community name) was found */
+    private boolean enclaveNameFound = false;
+    
     //Subscribe to new assets / changes announced by the CommunityStatusModel
     private StatusChangeListener myChangeListener = new StatusChangeListener() {
         
@@ -403,6 +406,10 @@ logger.warn("!!!! **********************************************************");
      */
     private void getCurrentAssetsInCSM() {
         
+        if (!enclaveNameFound) { //try getting the name of the community
+            addEnclave();
+        }
+        
         //Get all node agents
         String nodes[] = csm.listEntries(CommunityStatusModel.NODE);
         if (nodes != null && nodes.length > 0) {
@@ -420,6 +427,20 @@ logger.warn("!!!! **********************************************************");
         }
     }
 
+
+    /** 
+     * Look up community name & instantiate new asset with AssetType = ENCLAVE
+     * This is called until the community name is found.
+     */
+    private void addEnclave() {
+        String cName = csm.getCommunityName();
+        if (cName != null) {
+            DefaultAssetTechSpec enclave = new DefaultAssetTechSpec( null, null, cName, AssetType.ENCLAVE, us.nextUID());
+            queueChangeEvent(new AssetChangeEvent( enclave, AssetChangeEvent.NEW_ASSET));
+            enclaveNameFound = true;
+        }
+    }
+    
     /**
      * Create an asset
      *

@@ -87,7 +87,7 @@ public class AssetStateDimension implements NotPersistable, Serializable {
     }
     
     /**
-     *@return the name of this asset state
+     *@return the name of this asset state dimension
      */
     public String getStateName() { return name; }
     

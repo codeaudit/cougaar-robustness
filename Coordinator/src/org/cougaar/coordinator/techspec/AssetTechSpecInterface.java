@@ -91,6 +91,16 @@ public interface AssetTechSpecInterface extends TechSpecRootInterface {
      * @return the AssetTechSpecInterface of the asset which is the node of this asset
      */
     public AssetTechSpecInterface getNode();
+
+    /**
+     * @return the AssetTechSpecInterface of the asset which is the network of this asset
+     */
+    public AssetTechSpecInterface getNetwork();
+
+    /**
+     * @return the AssetTechSpecInterface of the asset which is the enclave of this asset
+     */
+    public AssetTechSpecInterface getEnclave();        
     
     /**
      * @return the AssetTechSpecInterface of the asset which are the subordinates of this asset
