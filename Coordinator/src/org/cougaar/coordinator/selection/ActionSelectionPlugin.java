@@ -330,13 +330,15 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
   private Set findActiveIrrevocableActions(CostBenefitEvaluation cbe) {
     Set activeActions = new HashSet();
     Collection allActions = findActionCollection(cbe.getAssetID());
-    Iterator iter = allActions.iterator();
-    while (iter.hasNext()) {
-        ActionsWrapper thisWrapper = (ActionsWrapper) iter.next();
-        Action thisAction = thisWrapper.getAction();
-        if ((thisAction.getValue() != null && thisAction.getValue().isActive()) && ((thisAction.getValuesOffered() == null) || thisAction.getValuesOffered().isEmpty())) {
-            activeActions.add(thisAction);
-        }
+    if (allActions != null) {
+	Iterator iter = allActions.iterator();
+	while (iter.hasNext()) {
+	    ActionsWrapper thisWrapper = (ActionsWrapper) iter.next();
+	    Action thisAction = thisWrapper.getAction();
+	    if ((thisAction.getValue() != null && thisAction.getValue().isActive()) && ((thisAction.getValuesOffered() == null) || thisAction.getValuesOffered().isEmpty())) {
+		activeActions.add(thisAction);
+	    }
+	}
     }
     if (logger.isInfoEnabled()) logger.info("Irrevocable Actions: " + activeActions.toString());
     return activeActions;
