@@ -178,6 +178,7 @@
       <node name="definitions" type="Folder">
         <node name="robustness" type="Folder">
           <node name="mic" type="Folder">
+            <file path="csmart/scripts/definitions/robustness/mic/ALAR-MOAS-II-Kills-PreStage2.rb"/>
             <file path="csmart/scripts/definitions/robustness/mic/ALAR-unit-reassignment.rb"/>
             <file path="csmart/scripts/definitions/robustness/mic/ALARAS-MOAS-II-Kills-PreStage2.rb"/>
             <file path="csmart/scripts/definitions/robustness/mic/ALARAS-MOAS-II-SAVE-PreStage2.rb"/>
@@ -186,11 +187,16 @@
             <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-dup-agents.rb"/>
             <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-dup-mgr.rb"/>
             <file path="../mgmt_agent/csmart/scripts/definitions/robustness/mic/aruc1-small-fr.rb"/>
+            <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-fr.rb"/>
+            <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-fr.rb~1~"/>
+            <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-fr.rb~2~"/>
             <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-kill-agents.rb"/>
             <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-kill-mgr.rb"/>
             <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-kill-node.rb"/>
             <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-kill.rb"/>
+            <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-reaffiliation.rb"/>
             <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-w-mgr.rb"/>
+            <file path="csmart/scripts/definitions/robustness/mic/aruc1-small.rb"/>
           </node>
         </node>
       </node>

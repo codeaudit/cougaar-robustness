@@ -25,7 +25,7 @@ parameters:
 
 include_scripts:
   - script: $CIP/csmart/lib/isat/clearPnLogs.rb
-  -script: $CIP/csmart/lib/isat/initialize_network.rb
+  - script: $CIP/csmart/lib/isat/initialize_network.rb
 
   # Robustness scripts
   - script: $CIP/csmart/lib/robustness/mic/aruc1-unit-reassignment.rb

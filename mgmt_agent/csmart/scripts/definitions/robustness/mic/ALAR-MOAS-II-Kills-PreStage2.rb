@@ -33,6 +33,7 @@ parameters:
 
 include_scripts:
   - script: $CIP/csmart/lib/isat/clearPnLogs.rb
+  - script: $CIP/csmart/lib/isat/initialize_network.rb
 
   # Robustness scripts
   - script: $CIP/csmart/lib/robustness/mic/ua_big_kill_s.rb
