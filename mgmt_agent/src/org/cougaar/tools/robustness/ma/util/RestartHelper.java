@@ -56,6 +56,7 @@ import org.cougaar.util.UnaryPredicate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,7 +78,7 @@ public class RestartHelper extends BlackboardClientComponent {
   public static final long RESTART_TIMEOUT = 60000;
   public static final long MAX_CONCURRENT_RESTARTS = 1;
 
-  private List restartQueue = new ArrayList();
+  private List restartQueue = Collections.synchronizedList(new ArrayList());
   private Map restartsInProcess = new HashMap();
 
   private Set myUIDs = new HashSet();
@@ -165,7 +166,6 @@ public class RestartHelper extends BlackboardClientComponent {
     }
   }
 
-
   public void restartAgent(String agentName, String origNode, String destNode, String communityName) {
     logger.debug("RestartAgent:" +
                 " destNode=" + destNode +
@@ -210,8 +210,8 @@ public class RestartHelper extends BlackboardClientComponent {
   private long now() { return (new Date()).getTime(); }
 
   private void restartNext() {
-    removeExpiredRestarts();
     synchronized (restartsInProcess) {
+      removeExpiredRestarts();
       if ( (!restartQueue.isEmpty()) &&
           (restartsInProcess.size() <= MAX_CONCURRENT_RESTARTS)) {
         logger.debug("RestartNext: " +
@@ -374,7 +374,9 @@ public class RestartHelper extends BlackboardClientComponent {
         rl.restartComplete(agent.toString(), dest.toString(), status);
       }
     }
-    restartsInProcess.remove(agent);
+    synchronized (restartsInProcess) {
+      restartsInProcess.remove(agent);
+    }
     restartNext();
   }
 
