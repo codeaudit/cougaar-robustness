@@ -1,0 +1,598 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>Adaptive Control Use Case #2a</title>
+  <meta http-equiv="content-type"
+ content="text/html; charset=ISO-8859-1">
+  <meta name="author" content="Steve Ford">
+</head>
+<body>
+<div style="text-align: center;"><u><big><span
+ style="font-weight: bold;">ACME Automation for Adaptive Control Use
+Case #2a<br>
+Agent Data Compromise<br>
+</span></big></u><br>
+</div>
+<br>
+Adaptive Control Use Case #2a (ACUC2a) adds Security to the defenses
+controlled by the Coordinator.&nbsp; The Coordinator uses Security's
+diagnosis of a compromised agent and MAU Policy for Security and
+Completeness to determine whether or not to enable Security to restart
+that agent.&nbsp; The main idea is that if Completeness is valued
+higher than Security, then MAU objectives may best be met by not
+restarting a compromised agent, if restarting it might negatively
+impact completeness too much.&nbsp; If the same compromise occurs, but
+with different MAU Policy valuing Security over Completeness, the
+Coordinator does enable the restart.<br>
+<br>
+In these experiments, the data compromise is
+initially inserted by an AL (Adaptive Logistics) script.&nbsp; AL then
+detects it and publishes an alert to the blackboard.&nbsp; Security
+subscribes to that alert and publishes an AgentCompromiseDiagnosis of
+"moderate" for one compromise, and "severe" for multiples.&nbsp; The
+Coordinator takes as imput that AgentCompromiseDiagnosis, the MAU
+Policy setting, the various AgentCompromise TechSpecs, and the
+AgentCompromiseAction offered by Security to restart the agent, and
+decides whether or not to permit the restart.&nbsp; Given the current
+TechSpecs, the expected result is that the Coordinator will enable the
+restart when MAU Policy is set to HighSecurity and won't enable the
+restart when MAU Policy is set to HighCompleteness.<br>
+<br>
+These instructions describe the ACME automation
+for
+the ACUC2a experiments:<br>
+<br>
+<u><b>Overlays:</b></u>
+<blockquote><span style="font-weight: bold;">ACUC2a</span> runs <span
+ style="font-weight: bold;">after_stage_5</span> on a<span
+ style="font-weight: bold;"> MOAS </span>Restore.&nbsp; <br>
+</blockquote>
+<div style="margin-left: 40px;">It requires <span
+ style="font-weight: bold;">AL, AR &amp; AS</span> overlays
+be
+loaded, as they are in:<br>
+<br>
+<div style="margin-left: 40px;"><span style="font-weight: bold;">$CIP/csmart/scripts/definitions/MOAS-SAVE-preStage4.rb</span><br>
+</div>
+</div>
+<blockquote>including the following <span style="font-weight: bold;">AR</span>
+ones:<br>
+  <b><br>
+  </b>
+  <table style="width: 417px; height: 258px;">
+    <tbody>
+      <tr>
+        <td>Robustness </td>
+        <td> <a
+ href="https://cvs.ultralog.net/dist/AR_telcordia_coordinator_HEAD_B11_2.zip">Telcordia
+believability/coordinator</a> </td>
+        <td>HEAD </td>
+        <td>B11_2 </td>
+      </tr>
+      <tr>
+        <td>Robustness </td>
+        <td> <a
+ href="https://cvs.ultralog.net/dist/AR_objs_Coordinator_HEAD_B11_2.zip">Objs
+Coordinator</a> </td>
+        <td>HEAD </td>
+        <td>B11_2 </td>
+      </tr>
+      <tr>
+        <td>Robustness </td>
+        <td> <a
+ href="https://cvs.ultralog.net/dist/AR_objs_sensors_HEAD_B11_2.zip">Objs
+sensors</a> </td>
+        <td>HEAD </td>
+        <td>B11_2 </td>
+      </tr>
+      <tr>
+        <td>Robustness </td>
+        <td> <a
+ href="https://cvs.ultralog.net/dist/AR_objs_common_HEAD_B11_2.zip">Objs
+Common</a> </td>
+        <td>HEAD </td>
+        <td>B11_2 </td>
+      </tr>
+      <tr>
+        <td>Robustness </td>
+        <td> <a
+ href="https://cvs.ultralog.net/dist/AR_boeing_exnihilo_HEAD_B11_2.zip">Boeing
+ExNihilo</a> </td>
+        <td>HEAD </td>
+        <td>B11_2 </td>
+      </tr>
+      <tr>
+        <td>Robustness </td>
+        <td> <a
+ href="https://cvs.ultralog.net/dist/AR_mic_HEAD_B11_2.zip">MIC
+Mgmt Agent</a> </td>
+        <td>HEAD </td>
+        <td>B11_2 </td>
+      </tr>
+      <tr>
+        <td>Robustness </td>
+        <td> <a
+ href="https://cvs.ultralog.net/dist/AR_common_HEAD_B11_2.zip">Robustness
+common</a> </td>
+        <td>HEAD </td>
+        <td>B11_2 </td>
+      </tr>
+    </tbody>
+  </table>
+  <br style="font-weight: bold;">
+  <span style="font-weight: bold;">and the normal Security ones plus
+the following:</span><br>
+  <br>
+  <table cellpadding="2" cellspacing="2" border="1"
+ style="text-align: left; width: 413px; height: 37px;">
+    <tbody>
+      <tr>
+        <td style="vertical-align: top;">Security<br>
+        </td>
+        <td style="vertical-align: top;"><a
+ href="https://ultraforge.ultralog.net/dist/AS_csi_coordinator_B11_2_B11_2.zip">CSI
+Coordinator</a><br>
+        </td>
+        <td style="vertical-align: top;">B11_2<br>
+        </td>
+        <td style="vertical-align: top;">B11_2<br>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <br>
+</blockquote>
+<u><b>
+Transformation Rules:</b></u><br>
+<blockquote>To run ACUC2a, apply the following AR rules to
+the
+society:<br>
+  <br style="font-family: monospace;">
+  <span style="font-family: monospace;">-
+$CIP/csmart/config/rules/robustness</span><br
+ style="font-family: monospace;">
+  <span style="font-family: monospace;">-
+$CIP/csmart/config/rules/robustness/common</span><br
+ style="font-family: monospace;">
+  <span style="font-family: monospace;">-
+$CIP/csmart/config/rules/coordinator</span><br
+ style="font-family: monospace;">
+  <span style="font-family: monospace;">-
+$CIP/csmart/config/rules/coordinator/test</span><br
+ style="font-family: monospace;">
+  <span style="font-family: monospace;">-
+$CIP/csmart/config/rules/robustness/uc1</span><br
+ style="font-family: monospace;">
+  <span style="font-family: monospace;">-
+$CIP/csmart/config/rules/metrics/basic</span><br
+ style="font-family: monospace;">
+  <span style="font-family: monospace;">-
+$CIP/csmart/config/rules/metrics/sensors</span><br
+ style="font-family: monospace;">
+  <span style="font-family: monospace;">-
+$CIP/csmart/config/rules/metrics/serialization/metrics-only-serialization.rule</span><br
+ style="font-family: monospace;">
+  <span style="font-family: monospace;">-
+$CIP/csmart/config/rules/metrics/rss/tic</span><br>
+  <br>
+And, at most, the following Security ones:<br>
+  <br>
+  <span style="font-family: monospace;">-
+$CIP/csmart/config/rules/security</span><br
+ style="font-family: monospace;">
+  <span style="font-family: monospace;"><span
+ style="font-family: monospace;">-
+$CIP/csmart/config/rules/security/coordinator</span><br
+ style="font-family: monospace;">
+  <span style="font-family: monospace;">- $CIP/csmart/lib/security/rules</span><br
+ style="font-family: monospace;">
+  <span style="font-family: monospace;">-
+$CIP/csmart/config/rules/security/robustness</span><br>
+  </span><big style="color: rgb(204, 0, 0);"><b> </b></big><b> <br>
+  </b></blockquote>
+<blockquote>
+  <blockquote>
+    <ul>
+      <ul>
+      </ul>
+    </ul>
+    <ul>
+    </ul>
+  </blockquote>
+  <ul>
+    <ul>
+    </ul>
+  </ul>
+  <blockquote>
+    <ul>
+    </ul>
+  </blockquote>
+</blockquote>
+<u><b>ACME Actions and States</b></u>
+<blockquote> </blockquote>
+<blockquote>ACUC2a requires Acme actions and
+states defined in the following files:<br>
+  <b><br>
+  </b><b>$CIP/</b><b>csmart/acme_scripting/src/lib/ultralog/glm_stimulator.rb<br>
+  </b><b>$CIP/csmart/config/lib/coordinator/</b><b>mauPolicy.rb</b><br>
+  <b>$CIP/csmart/config/lib/coordinator/leashing.rb</b><b><br>
+  </b> <b> </b><br>
+They are documented at the end of this file.<br>
+  <br>
+</blockquote>
+<span style="text-decoration: underline; font-weight: bold;">Parameterized
+Include Scripts</span><br>
+<br>
+<div style="margin-left: 40px;">The following scripts are used in
+ACUC2a
+experiments:<br>
+<span style="font-weight: bold;"><br>
+$CIP/csmart/lib/logistics/al_data_compromise.rb - </span>insert the
+data compromise<br style="font-weight: bold;">
+<span style="font-weight: bold;">$CIP/csmart/lib/coordinator/mauHighCompleteness.rb
+- </span>set MAU Policy to value Completeness High<span
+ style="font-weight: bold;"><br>
+$CIP/csmart/lib/coordinator/mauHighSecurity.rb - </span>set MAU Policy
+to value Security High<br>
+<span style="font-weight: bold;">$CIP/csmart/lib/coordinator/unleash_defenses.rb
+- </span>activate defenses, normally inserted after completion of
+startup and&nbsp; restore.<span style="font-weight: bold;"><br>
+</span><span style="font-weight: bold;">$CIP/csmart/lib/coordinator/</span><span
+ style="font-weight: bold;">leash_on_restart.rb - </span>deactive all
+defenses, normally inserted before a full society restore and then
+followed by an <span style="font-weight: bold;">unleash_defenses</span>
+once the restore is complete.<br>
+<br>
+See the <span style="font-weight: bold; text-decoration: underline;">Sample
+Run Script</span> for examples of the usage of each script.<br>
+<br>
+</div>
+<span style="font-weight: bold;">
+<span style="text-decoration: underline;">Sample Run Script<br>
+<br>
+</span></span>
+<div style="margin-left: 40px;">The following sample run scripts for
+the two ACUC2a experiments are provided:<br>
+<br style="font-family: monospace;">
+<span style="font-family: monospace; font-weight: bold;">
+$CIP/csmart/scripts/definitions/robustness/objs/ACUC2A-HighSecurityMau.rb
+- </span><span style="font-family: monospace;">Security is valued high</span><br>
+<span style="font-family: monospace; font-weight: bold;">$CIP/csmart/scripts/definitions/robustness/objs/ACUC2A-HighCompletenessMau.rb
+- </span><span style="font-family: monospace;">Completeness is values
+high</span><br>
+<span style="font-weight: bold;"><br>
+</span>The <span style="font-family: monospace; font-weight: bold;">HighSecurityMau</span>
+script
+is
+annotated below:<br>
+</div>
+<div style="margin-left: 40px;"><br style="font-weight: bold;">
+</div>
+<hr style="width: 100%; height: 2px; margin-left: 40px;">
+<div
+ style="margin-left: 40px; font-family: courier new,courier,monospace;"><small>=begin
+experiment<br>
+<br>
+name: ACUC2A-HighSecurityMau<br>
+group: Stress<br>
+description: ACUC2A<br>
+script: $CIP/csmart/scripts/definitions/UR-RestoreTemplate.rb<br>
+parameters:<br>
+&nbsp; - run_count: 1<br>
+&nbsp; - snapshot_name: $CIP/SAVE-PreStage4.tgz<br>
+&nbsp; - archive_dir: /mnt/archive<br>
+&nbsp; - stages:<br>
+&nbsp;&nbsp;&nbsp; - 4<br>
+&nbsp; <br>
+include_scripts:<br>
+&nbsp; - script: $CIP/csmart/lib/isat/clearLogs.rb<br>
+&nbsp; - script: $CIP/csmart/lib/isat/sms_notify.rb<br>
+&nbsp; - script: $CIP/csmart/assessment/assess/setup_scripting.rb<br>
+&nbsp; - script: $CIP/csmart/assessment/assess/asmt_init_network.rb<br>
+&nbsp; - script: $CIP/csmart/lib/isat/initialize_network.rb<br>
+&nbsp; - script: $CIP/csmart/lib/isat/network_shaping.rb<br>
+#&nbsp; - script: $CIP/csmart/lib/isat/klink_reporting.rb<br>
+&nbsp; - script: $CIP/csmart/lib/isat/datagrabber_include.rb<br>
+&nbsp; - script:
+$CIP/csmart/assessment/assess/inbound_aggagent_parallel_include.rb<br>
+&nbsp; - script:
+$CIP/csmart/assessment/assess/outofbound_aggagent_include.rb<br>
+&nbsp; - script: $CIP/csmart/lib/coordinator/leash_on_restart.rb<br>
+&nbsp; - script: $CIP/csmart/lib/robustness/mic/freeze.rb<br>
+<br>
+# ############################################################<br>
+# Security scripts<br>
+&nbsp; - script: $CIP/csmart/lib/security/scripts/setup_scripting.rb<br>
+&nbsp; - script:
+$CIP/csmart/lib/security/scripts/build_config_jarfiles.rb<br>
+&nbsp; - script: $CIP/csmart/lib/security/scripts/build_policies.rb<br>
+#&nbsp; - script:
+$CIP/csmart/lib/security/scripts/setup_userManagement.rb<br>
+&nbsp; - script: $CIP/csmart/lib/security/scripts/security_archives.rb<br>
+&nbsp; - script: $CIP/csmart/lib/security/scripts/saveAcmeEvents.rb<br>
+&nbsp; - script:
+$CIP/csmart/lib/security/scripts/log_node_process_info.rb<br>
+#&nbsp; - script:
+$CIP/csmart/lib/security/scripts/setup_society_1000_ua.rb<br>
+&nbsp; - script: $CIP/csmart/lib/security/scripts/check_wp.rb<br>
+&nbsp; - script:
+$CIP/csmart/lib/security/scripts/check_report_chain_ready.rb<br>
+&nbsp; - script: $CIP/csmart/lib/security/scripts/cleanup_society.rb<br>
+<br>
+<span style="font-weight: bold;">&nbsp;&nbsp; # Agent Data Compromise</span><br>
+<br>
+&nbsp;&nbsp;&nbsp; # This AL script introduces the data compromise in
+agent </small><small><br>
+&nbsp;&nbsp;&nbsp; # FCS-C2V-0.MCG1.1-UA.ARMY.MIL (in the 1-UA enclave
+on M).</small><br>
+<small>&nbsp;<span style="font-weight: bold;"> - script:
+$CIP/csmart/lib/logistics/al_data_compromise.rb<br>
+</span><br style="text-decoration: underline;">
+<span style="font-style: italic;">&nbsp;&nbsp;&nbsp; # This script sets
+MAU Policy to value Security higher than Completeness.</span><span
+ style="font-weight: bold;"><br>
+</span><span style="font-weight: bold;">&nbsp; - script:
+$CIP/csmart/lib/coordinator/mauHighSecurity.rb</span><br
+ style="font-weight: bold;">
+<span style="font-weight: bold;">&nbsp;&nbsp;&nbsp; parameters:<br>
+</span></small>
+<div style="margin-left: 80px;"><small style="font-style: italic;"><font
+ size="-1"># the location in the
+template to set MAU Policy to High Security.&nbsp; <br>
+# It mus</font></small><small style="font-style: italic;"><font
+ size="-1"><span style="font-family: courier new,courier,monospace;">t
+be executed </span></font></small><small style="font-style: italic;"><font
+ size="-1"><span style="font-family: courier new,courier,monospace;">sometime
+before
+al_data_compromise.rb.</span></font></small><br
+ style="font-weight: bold;">
+</div>
+<small><span style="font-weight: bold;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+- location: during_stage_5<br>
+</span></small>
+<div style="color: rgb(0, 0, 0); font-style: italic; margin-left: 80px;"><font
+ size="-1" style="color: rgb(0, 0, 0);"># </font><font size="-1"
+ style="color: rgb(255, 0, 0);"><span style="color: rgb(0, 0, 0);">the
+verbosity level </span></font><font size="-1"
+ style="color: rgb(255, 0, 0);"><span style="color: rgb(0, 0, 0);">of
+ACME messaging to the console. <br>
+# (0=silent, 1=errors, 2=info, 3=debug)</span></font></div>
+<small><span style="font-weight: bold;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+- verbose: 2<br>
+</span><br>
+</small>
+<div style="margin-left: 40px;"><small style="font-style: italic;"><font
+ size="-1"><span style="font-family: courier new,courier,monospace;">#
+This script inserts the Unleash action</span></font></small><small
+ style="font-style: italic;"><font size="-1"><span
+ style="font-family: courier new,courier,monospace;"> to activate all
+defenses</span></font></small><small style="font-style: italic;"><font
+ size="-1"><span style="font-family: courier new,courier,monospace;">.</span></font></small></div>
+<small><span style="font-weight: bold;">&nbsp; - script:
+$CIP/csmart/lib/coordinator/unleash_defenses.rb <br>
+&nbsp;&nbsp;&nbsp; parameters:<br>
+</span></small>
+<div style="margin-left: 80px;"><small style="font-style: italic;"><font
+ size="-1"># the location in the
+template to unleash defenses.&nbsp; <br>
+# It mus</font></small><small style="font-style: italic;"><font
+ size="-1"><span style="font-family: courier new,courier,monospace;">t
+be executed </span></font></small><small style="font-style: italic;"><font
+ size="-1"><span style="font-family: courier new,courier,monospace;">after
+restart is
+complete</span></font></small><small style="font-style: italic;"><font
+ size="-1"><span style="font-family: courier new,courier,monospace;">
+and before the experiment starts.</span></font></small><br>
+</div>
+<small><span style="font-weight: bold;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+- location: </span></small><small><span style="font-weight: bold;">starting_stage</span></small>
+<div style="color: rgb(0, 0, 0); font-style: italic; margin-left: 80px;"><font
+ size="-1" style="color: rgb(0, 0, 0);"># </font><font size="-1"
+ style="color: rgb(255, 0, 0);"><span style="color: rgb(0, 0, 0);">the
+verbosity level </span></font><font size="-1"
+ style="color: rgb(255, 0, 0);"><span style="color: rgb(0, 0, 0);">of
+ACME messaging to the console. <br>
+# (0=silent, 1=errors, 2=info, 3=debug)</span></font></div>
+<small><span style="font-weight: bold;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+- verbose: 1</span></small><br>
+<small><br>
+=end</small><small><br>
+<br>
+require 'cougaar/scripting'<br>
+Cougaar::ExperimentDefinition.register(__FILE__)<br>
+<br>
+</small><small><span
+ style="text-decoration: underline; font-weight: bold;">The
+HighSecurity experiment</span> is the same, except that:<br>
+<br>
+</small>
+<div style="margin-left: 40px;"><small><span style="font-weight: bold;">-
+script: $CIP/csmart/lib/coordinator/mauHighCompleteness.rb<br>
+<br>
+</span></small></div>
+<small>replaces: <br>
+<br>
+</small>
+<div style="margin-left: 40px;"><small><span style="font-weight: bold;">-
+script: $CIP/csmart/lib/coordinator/mauHighSecurity.rb</span></small><small><br>
+</small></div>
+</div>
+<div style="margin-left: 40px;"><br>
+<hr style="width: 100%; height: 2px;"><span style="font-weight: bold;"><br>
+</span></div>
+<u><b>ACME Actions and States Detail<br>
+<br>
+</b></u>
+<blockquote>
+  <blockquote> </blockquote>
+</blockquote>
+<b>$CIP/csmart/config/lib/coordinator/</b><b>mauPolicy.rb</b>
+defines Actions that invoke Servlets to set MAU Policy.<br>
+<blockquote> <br>
+Note: All action &amp; states take an optional parameter (0, 1, 2, 3)
+to
+allow the verbosity of messaging to the acme console to be set.&nbsp;
+Default is 0 which
+prints no messages, 1 adds error messages, 2 adds info messages, and 3
+adds debug messages.&nbsp; We suggest a setting of 2 during testing and
+1 otherwise.<br>
+  <br>
+# This action sets MAU weights to Normal.<br>
+  <span style="font-weight: bold;">do_action "Set_MAU_Normal", 2<br>
+  <br>
+  </span># This action sets MAU weights to HighSecurity.<br>
+  <span style="font-weight: bold;">do_action "Set_MAU_HighSecurity<span
+ style="font-weight: bold;">", 2</span><br>
+  <br>
+  </span># This action sets MAU weights to HighCompleteness.<br>
+  <span style="font-weight: bold;">do_action "Set_MAU_HighCompleteness",
+2</span><br>
+  <tt><b> <br>
+  </b></tt><tt><b></b></tt><tt>The following messages will be emitted
+in a successful run of </tt><span
+ style="font-family: monospace; font-weight: bold;">ACUC2A-HighSecurityMau.rb</span><tt>:<br>
+  <br>
+  <span style="font-family: monospace;">When </span></tt><span
+ style="font-weight: bold;">Set_MAU_HighSecurity</span><span
+ style="font-weight: bold;"><span style="font-family: monospace;"> </span></span><span
+ style="font-family: monospace;">is invoked (MAU Policy is set the
+HighSecurity):<br>
+  <br>
+  </span>
+  <div style="margin-left: 40px;"><tt>Starting:
+AtLocation('during_stage_5')</tt><br>
+  <tt>Finished: AtLocation('during_stage_5') in 0 seconds</tt><br>
+  <tt>Starting: Set_MAU_HighSecurity</tt><br>
+  <tt>&nbsp; INFO: MAUPolicy found CONUS-ARManager</tt><br>
+  <tt>&nbsp; INFO: Requested that CONUS-ARManager set MAU Policy to </tt><tt>HighSecurity</tt><tt>.</tt><br>
+  <tt>&nbsp; INFO: MAUPolicy found REAR-ARManager</tt><br>
+  <tt>&nbsp; INFO: Requested that REAR-ARManager set MAU Policy to </tt><tt>HighSecurity</tt><tt>.</tt><br>
+  <tt>&nbsp; INFO: MAUPolicy found 1-AD-DIVSUP-ARManager</tt><br>
+  <tt>&nbsp; INFO: Requested that 1-AD-DIVSUP-ARManager set MAU Policy
+to </tt><tt>HighSecurity</tt><tt>.</tt><br>
+  <tt>&nbsp; INFO: MAUPolicy found 1-AD-DIV-ARManager</tt><br>
+  <tt>&nbsp; INFO: Requested that 1-AD-DIV-ARManager set MAU Policy to </tt><tt>HighSecurity</tt><tt>.</tt><br>
+  <tt>&nbsp; INFO: MAUPolicy found 1-AD-BDE-ARManager</tt><br>
+  <tt>&nbsp; INFO: Requested that 1-AD-BDE-ARManager set MAU Policy to </tt><tt>HighSecurity</tt><tt>.</tt><br>
+  <tt>&nbsp; INFO: MAUPolicy found 1-UA-ARManager</tt><br>
+  <tt>&nbsp; INFO: Requested that 1-UA-ARManager set MAU Policy to </tt><tt>HighSecurity</tt><tt>.</tt><br>
+  <tt>&nbsp; INFO: MAUPolicy found 1-CA-ARManager</tt><br>
+  <tt>&nbsp; INFO: Requested that 1-CA-ARManager set MAU Policy to </tt><tt>HighSecurity</tt><tt>.</tt><br>
+  <tt>&nbsp; INFO: MAUPolicy found 2-CA-ARManager</tt><br>
+  <tt>&nbsp; INFO: Requested that 2-CA-ARManager set MAU Policy to </tt><tt>HighSecurity</tt><tt>.</tt><br>
+  <tt>&nbsp; INFO: MAUPolicy found 3-CA-ARManager</tt><br>
+  <tt>&nbsp; INFO: Requested that 3-CA-ARManager set MAU Policy to </tt><tt>HighSecurity</tt><tt>.</tt><br>
+  <tt>Finished: Set_MAU_HighCompleteness in 0 seconds<br>
+  </tt></div>
+</blockquote>
+<div style="margin-left: 40px;"><tt>When </tt><tt><span
+ style="font-weight: bold;">GLMStimulator</span> is invoked (the data
+compromise is introduced):</tt><br>
+</div>
+<blockquote>
+  <div style="margin-left: 40px;"><tt>Starting:
+AtLocation('after_stage_5')</tt><br>
+  <tt>Finished: AtLocation('after_stage_5') in 0 seconds</tt><br>
+  <tt>Starting: GLMStimulator</tt><br>
+  <tt>Finished: GLMStimulator in 5 seconds<br>
+  </tt></div>
+</blockquote>
+<div style="margin-left: 40px;">When the agent is moved (as a result of
+the Coordinator enabling Security's AgentCompromiseAction, which
+invalidates the agent's post-compromise persistent states, and kills
+the agent.&nbsp; MIC's Sledgehammer defense then detects the dead agent
+and restarts it using its normal mechanism, incl. publishing a Dead
+Diagnosis and restarting the agent when the Coordinator permits it.<br>
+</div>
+<blockquote><tt></tt>
+  <div style="margin-left: 40px;"><tt>Starting:
+AtLocation('during_stage_6')</tt><br>
+  <tt>Finished: AtLocation('during_stage_6') in 0 seconds</tt><br>
+  <tt>Waiting for: SocietyQuiesced</tt><br>
+  <tt>&nbsp; INFO: **** SOCIETY STATUS IS NOW: INCOMPLETE ****</tt><br>
+  <tt style="font-weight: bold;">&nbsp; INFO: Moving agent:
+FCS-C2V-0.MCG1.1-UA.ARMY.MIL to node: 1-UA-XNODE-6</tt><br>
+  <tt>&nbsp; INFO: **** SOCIETY STATUS IS NOW: COMPLETE ****</tt><br>
+  <tt>Done: SocietyQuiesced in 439 seconds</tt><br>
+  </div>
+  <tt> </tt><tt style="font-weight: bold; text-decoration: underline;"><br>
+  </tt><tt>A successful run of </tt><span
+ style="font-family: monospace; font-weight: bold;">ACUC2A-HighCompletenessMau.rb</span><span
+ style="font-family: monospace;"> should look the same, except the
+agent should not be restarted.</span><br>
+</blockquote>
+<blockquote><tt><b> </b></tt></blockquote>
+<b>$CIP/csmart/config/lib/coordinator/leashing</b><b>.rb</b>
+defines the Coordinator's ACME Actions and States for Unleashing
+Defenses.<br>
+<blockquote><tt><br>
+  </tt><span style="font-style: italic; font-family: monospace;">#
+Unleash Suppressed Defenses<br>
+# If this is not done once startup or restore is complete, the Defenses
+will not be enabled when stresses occur.<br>
+  </span><span style="font-style: italic; font-family: monospace;"><span
+ style="font-weight: bold;">do_action "Unleash", 1</span></span><tt><br>
+Starting: Unleash<br>
+&nbsp;INFO: Requested that CONUS-ARManager on CONUS-ROB-MGMT-NODE
+Unleash Defenses.<br>
+&nbsp;INFO: Defenses Unleashed on CONUS-ROB-MGMT-NODE<br>
+&nbsp;INFO: Requested that REAR-ARManager on REAR-ROB-MGMT-NODE Unleash
+Defenses.<br>
+&nbsp;INFO: Defenses Unleashed on REAR-ROB-MGMT-NODE<br>
+&nbsp;INFO: Requested that 1-AD-DIV-ARManager on 1-AD-DIV-ROB-MGMT-NODE
+Unleash Defenses.<br>
+&nbsp;INFO: Defenses Unleashed on 1-AD-DIV-ROB-MGMT-NODE<br>
+&nbsp;INFO: Requested that UA-ARManager on UA-ROB-MGMT-NODE Unleash
+Defenses.<br>
+&nbsp;INFO: Defenses Unleashed on 1-AD-BDE-ROB-MGMT-NODE<br>
+  </tt><tt>&nbsp;INFO: All Robustness Managers have Unleashed
+Defenses.</tt><br>
+  <tt>Finished: Unleash in 31 seconds</tt><br>
+  <tt> <br>
+  </tt><tt># This action causes defenses to be leashed at restart even
+if they were unleashed when persisted, if executed right after
+snapshot_restored.&nbsp; This is used to avoid defenses reacting to
+startup stresses associated with full-society restore.<br>
+  </tt><tt><span style="font-weight: bold;">do_action "LeashOnRestart"<br>
+  </span></tt><tt>Starting: LeashOnRestart<br>
+Finished: </tt><tt>LeashOnRestart</tt><tt> in 83 seconds</tt><br>
+  <tt><br>
+# This action caused defenses to be unleashed persistently, so that
+when the Coordinator is killed and rehydrated, it will not be leashed.<br>
+  <span style="font-weight: bold;">do_action
+"UnleashOnSubsequentRestarts", 1<br>
+  </span>Starting: UnleashOnSubsequentRestarts<br>
+Finished: UnleashOnSubsequentRestarts in 83 seconds<br>
+  <br>
+  </tt><tt># This action leashes defenses. No defenses will be enabled
+after
+the completion of this action.&nbsp; This was used before a freeze to
+disable restarts, but could not disable ARManager restarts, so is no
+longer used.<br>
+  </tt><tt><span style="font-weight: bold;">do_action "Leash", 1<br>
+  </span></tt><tt>Starting: Leash<br>
+  </tt><tt>&nbsp;
+INFO: Requested that CONUS-ARManager Leash Defenses.<br>
+&nbsp; INFO: Requested that REAR-ARManager Leash Defenses.<br>
+&nbsp; INFO: Requested that 1-AD-DIV-ARManager Leash Defenses.<br>
+&nbsp; INFO: Requested that UA-ARManager Leash Defenses.</tt><br>
+  <tt>Finished: Leash in 0 seconds</tt><br>
+  <br>
+</blockquote>
+For further information configuring these defenses, see <a
+ href="https://cvs.ultralog.net/ultralog/UltraLogCoordinator">https://cvs.ultralog.net/ultralog/UltraLogCoordinator</a><br>
+<br>
+Send questions or comments to:<br>
+<br>
+<tt>Steve Ford</tt><br>
+<tt> OBJS</tt><br>
+<tt> </tt><tt><a href="mailto:ford@objs.com">ford@objs.com</a></tt><br>
+<tt>610 345 0290</tt>
+<blockquote>
+  <blockquote> </blockquote>
+</blockquote>
+<br>
+<br>
+<br>
+</body>
+</html>
