@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefTriggerHistory.java,v $
- * $Revision: 1.8 $
- * $Date: 2004-08-04 15:17:35 $
+ * $Revision: 1.9 $
+ * $Date: 2004-08-04 23:45:19 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -99,7 +99,7 @@ import org.cougaar.core.agent.service.alarm.Alarm;
  * an instance of this class: one for each of these.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.8 $Date: 2004-08-04 15:17:35 $
+ * @version $Revision: 1.9 $Date: 2004-08-04 23:45:19 $
  * @see BeliefTriggerManager
  */
 class BeliefTriggerHistory 
@@ -1011,8 +1011,15 @@ class BeliefTriggerHistory
     public void handleAlarmExpired( Alarm alarm )
             throws BelievabilityException
     {
-        // FIXME: Does this method need to be synchronized?  Is is
-        // possible that two alarms will expire simultaneously?
+        // FIXME: Because multiple alarms can expire at the same time,
+        // you can run into synchronization problems.  Any instance of
+        // this object should only have one active alarm, so this
+        // really shouldn't be a problem. Alas, we have seen some
+        // problems.  Thus, a better way to do this would be to have
+        // the alarm expire() (or this method) simply queue itself up,
+        // and then call the plugin's signalClientActivity() method to
+        // force its execute() method to be invoked. executes() do not
+        // happen in parallel.
         //
 
         if ( alarm == _delay_alarm )

@@ -742,6 +742,8 @@ public class BelievabilityPlugin
         //
         _model_manager.setRehydrationHappening( true );
 
+//        zzz Handle reading leashing state from believability knob on blackboard;
+
         // Loop through all the diagnosis and action objects on the
         // blackboard and process them to create the initial
         // belief/state estimations.

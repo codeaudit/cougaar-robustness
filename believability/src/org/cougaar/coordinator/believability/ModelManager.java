@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManager.java,v $
- * $Revision: 1.20 $
- * $Date: 2004-08-04 15:17:35 $
+ * $Revision: 1.21 $
+ * $Date: 2004-08-04 23:45:19 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -47,7 +47,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * and provides information via the ModelManagerInterface. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.20 $Date: 2004-08-04 15:17:35 $
+ * @version $Revision: 1.21 $Date: 2004-08-04 23:45:19 $
  *
  */
 public class ModelManager extends Loggable
@@ -298,27 +298,6 @@ public class ModelManager extends Loggable
 
     //************************************************************
     /**
-     * Returns the minimal amount of time we should wait before
-     * generating an implicit diagnosis for those sensors that only
-     * report a diagnosis if it changes from the last one given.
-     */
-    public long getImplicitDiagnosisInterval( AssetType asset_type,
-                                              String sensor_name )
-            throws BelievabilityException
-    {
-        if ( USE_FAKE_IMPLICT_INTERVAL )
-        {
-            logWarning( "USING FAKE IMPLICIT INTERVAL FOR TESTING ! (FIXME)" );
-            return FAKE_IMPLICIT_INTERVAL_MS;
-
-        }
-
-
-        return BelievabilityKnob.getImplicitDiagnosisInterval();
-    }
-
-    //************************************************************
-    /**
      * Returns the maximal amount of time we should allow between
      * consecutive belief state (state estimation) publications.
      */
@@ -333,7 +312,7 @@ public class ModelManager extends Loggable
 
         }
 
-        return BelievabilityKnob.getMaxPublishInterval();
+        return _believability_knob.getMaxPublishInterval();
     }
 
     //************************************************************
@@ -353,7 +332,7 @@ public class ModelManager extends Loggable
 
         }
 
-        return BelievabilityKnob.getPublishDelayInterval();
+        return _believability_knob.getPublishDelayInterval();
     }
 
     //************************************************************
@@ -365,7 +344,7 @@ public class ModelManager extends Loggable
      */
     public double getBeliefUtilityChangeThreshold( )
     {
-        return BelievabilityKnob.getBeliefReleaseUtilityThreshold();
+        return _believability_knob.getBeliefReleaseUtilityThreshold();
     }
 
     //----------------------------------------
@@ -840,6 +819,11 @@ public class ModelManager extends Loggable
     // Whether or not we are running in a rehydrated state or not.
     //
     private boolean _has_been_rehydrated = false;
+
+    // This is the place to put externally controllable policy-derived
+    // parameters/settings. 
+    //
+    private BelievabilityKnob _believability_knob = new BelievabilityKnob();
 
     //------------------------------------------------------------
     // POMDP model section

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManagerInterface.java,v $
- * $Revision: 1.20 $
- * $Date: 2004-08-04 15:17:35 $
+ * $Revision: 1.21 $
+ * $Date: 2004-08-04 23:45:19 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -39,7 +39,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * tech spec information. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.20 $Date: 2004-08-04 15:17:35 $
+ * @version $Revision: 1.21 $Date: 2004-08-04 23:45:19 $
  *
  */
 public interface ModelManagerInterface
@@ -80,10 +80,6 @@ public interface ModelManagerInterface
 
     public boolean usesImplicitDiagnoses( AssetType asset_type,
                                           String sensor_name )
-            throws BelievabilityException;
-
-    public long getImplicitDiagnosisInterval( AssetType asset_type,
-                                              String sensor_name )
             throws BelievabilityException;
 
     public long getMaxPublishInterval( AssetType asset_type )
