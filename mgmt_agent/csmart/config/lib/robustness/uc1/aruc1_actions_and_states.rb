@@ -1,5 +1,15 @@
 module Cougaar
 
+  ORIGAGENTS_CONST = Hash.new(0) #records all nodes and child agents number before node restarting
+  CURRENTAGENTS_CONST = Hash.new(0) #records all nodes and child agents number after node restarting
+  PORTS_CONST = Hash.new(0) #record each node and it's port address
+  ALLNODES_CONST = [] #record names of all current running nodes
+  KILLNODE_CONST = "" #which one is being killed right now?
+  ShiftFlag_CONST = "false" #do we need remove the first node in all node list?
+  Times_CONST = [] # record time before and after restarting a node
+  KillHost_CONST = "" #the host of the most currently killed node
+  LoadBalancer_CONST = "false"
+
   module States
 
     class CommunitiesReady < Cougaar::State
@@ -13,7 +23,7 @@ module Cougaar
         loop = true
         while loop
           event = @run.get_next_event
-          @community_names.delete_if { |name| event.data=="Community #{name} Ready" }
+          @community_names.delete_if { |name| event.data.include?("Community #{name} Ready") }
           if @community_names.size==0
             loop = false
           end
