@@ -29,6 +29,7 @@ package org.cougaar.mts.std;
 import java.net.URI;
 import java.util.Iterator;
 import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.mts.MulticastMessageAddress;
 import org.cougaar.mts.base.NameSupport;
 import org.cougaar.mts.base.NameSupportDelegateImplBase;
 import org.cougaar.mts.base.StandardAspect;
