@@ -229,37 +229,37 @@ public class MediatedTechSpecMap {
 //sjf        if (actionName.equals("org.cougaar.core.security.coordinator.Security_Defense_Setting")) {
         if (actionName.equals("org.cougaar.core.security.coordinator.ThreatConAction")) {             //sjf
             Vector v = new Vector(3);
-            if (baseStateName.equals("None") && actionSettingName.equals("Low")) {
+            if (baseStateName.equals("None") && actionSettingName.equals("LowSecurity")) {
                 v.add(new StateProb("Low", 0.0));
                 v.add(new StateProb("Medium", 0.0));
                 v.add(new StateProb("High", 1.0));
                 return v;
             }
-            else if (baseStateName.equals("None") && actionSettingName.equals("High")) {
+            else if (baseStateName.equals("None") && actionSettingName.equals("HighSecurity")) {
                 v.add(new StateProb("Low", 0.0));
                 v.add(new StateProb("Medium", 0.0));
                 v.add(new StateProb("High", 1.0));
                 return v;
             }
-            else if (baseStateName.equals("Low") && actionSettingName.equals("Low")) {
+            else if (baseStateName.equals("Low") && actionSettingName.equals("LowSecurity")) {
                 v.add(new StateProb("Low", 0.1));
                 v.add(new StateProb("Medium", 0.8));
                 v.add(new StateProb("High", 0.1));
                 return v;
             }
-            else if (baseStateName.equals("Low") && actionSettingName.equals("High")) {
+            else if (baseStateName.equals("Low") && actionSettingName.equals("HighSecurity")) {
                 v.add(new StateProb("Low", 0.0));
                 v.add(new StateProb("Medium", 0.1));
                 v.add(new StateProb("High", 0.9));
                 return v;
 		}
-            else if (baseStateName.equals("Severe") && actionSettingName.equals("Low")) {
+            else if (baseStateName.equals("Severe") && actionSettingName.equals("LowSecurity")) {
                 v.add(new StateProb("Low", 0.9));
                 v.add(new StateProb("Medium", 0.1));
                 v.add(new StateProb("High", 0.0));
                 return v;
             }
-            else if (baseStateName.equals("Severe") && actionSettingName.equals("High")) {
+            else if (baseStateName.equals("Severe") && actionSettingName.equals("HighSecurity")) {
                 v.add(new StateProb("Low", 0.0));
                 v.add(new StateProb("Medium", 0.2));
                 v.add(new StateProb("High", 0.8));
