@@ -9,7 +9,7 @@ Activation
 ----------
 To activate the HeartbeatPiggybacker one must include the following aspect:
 
-	org.cougaar.core.mts.HeartbeatPiggybackerAspect 
+	org.cougaar.mts.std.HeartbeatPiggybackerAspect 
 
 In addition, the Heartbeat Sensor is assumed to also be in operation.
 
@@ -22,12 +22,12 @@ To test efficacy,
 
 1. Add in the StatisticsAspect after the HeartbeatPiggybackerAspect.
 
-	org.cougaar.core.mts.StatisticsAspect 
+	org.cougaar.mts.std.StatisticsAspect 
 
 2. Add the following plugin to the MonitoredNodeAgent so that message count & 
    bytes generated can be collected. 
 
-        plugin = org.cougaar.core.mts.StatisticsPlugin
+        plugin = org.cougaar.mts.std.StatisticsPlugin
 
    This will provide feedback with respect to the bandwidth used for messaging.
    When the HeartbeatPiggybacker is in use, the bandwidth should be noticeably 
@@ -39,7 +39,7 @@ Test
 To test whether the HeartbeatPiggybacker is functioning one must turn
 on debugging in the logging configuration, e.g.
 
-	log4j.category.org.cougaar.core.mts.HeartbeatPiggybackerAspect=DEBUG
+	log4j.category.org.cougaar.mts.std.HeartbeatPiggybackerAspect=DEBUG
 
 One should first run the heartbeat test and use the output to compare to. 
 Then, to test the HeartbeatPiggybacker, activate the aspect.
