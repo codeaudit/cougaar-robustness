@@ -68,8 +68,7 @@ public class CoordinatorHelperImpl
 
 /**
  * Constructor requires BindingSite to initialize needed services.
- * @param bs The binding site
- * @param csm The community status model
+ * @param bs The agents binding site
  */
   public CoordinatorHelperImpl(BindingSite bs) {
     this.setBindingSite(bs);
@@ -147,7 +146,8 @@ public class CoordinatorHelperImpl
   }
 
   /**
-   * Is the defense opmode of given agent is enabled?
+   * Returns true if defense is currently being applied to specified agent
+   * (i.e., agent is currently being restarted).
    * @param name Agent name
    * @return A boolean value
    */
@@ -161,8 +161,9 @@ public class CoordinatorHelperImpl
   }
 
   /**
-   * This method is invoked when we got one defense opmode enabled.
-   * @param name the agent to be enabled
+   * This method should be invoked when the defense is activated (i.e., restart is
+   * initiated).
+   * @param name the agent to be restarted
    */
   public void opmodeEnabled(String agentName) {
     if (logger.isDetailEnabled()) {
@@ -186,9 +187,9 @@ public class CoordinatorHelperImpl
   }
 
   /**
-   * Set the defense opmode of given agent to disabled. Normally this method is
-   * called when the agent is prove to be active.
-   * @param name the agent name
+   * This method should be invoked when the defense action has completed (i.e.,
+   * agent has been restarted).
+   * @param name the agent restarted
    */
   public void opmodeDisabled(String agentName) {
     if (logger.isDetailEnabled()) {
@@ -247,7 +248,7 @@ public class CoordinatorHelperImpl
   }
 
   /**
-   * Publish Coordinators objects for  agent.
+   * Remove Coordinators objects for  agent.
    */
   public void removeAgent(String agentName) {
     if (logger.isDebugEnabled()) {
@@ -283,6 +284,12 @@ public class CoordinatorHelperImpl
     }
   }
 
+  /**
+   * Determines whether the defense is applicable (i.e., is the agent currently
+   * diagnosed as DEAD).
+   * @param agentName String
+   * @return boolean  True if agent diagnosis is DEAD
+   */
   public boolean isDefenseApplicable(String agentName) {
     Coordination coordObj = (Coordination)agents.get(agentName);
     boolean applicable = coordObj != null &&
