@@ -385,27 +385,19 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     //  msg table instead of the successful sends table?  
 
 // TODO Could we get into trouble if the agent returns and still it needs to send this message?
+// It will be seen as successfully sent here.  Need for dropped msg bucket?  Seems so.  There
+// is only a small window for this error to take place, so will punt for the moment.
 
     if (!getRegistry().isLocalClient(MessageUtils.getOriginatorAgent(msg)))
     {
+      if (debug) log.debug ("Msg from no-longer-local agent: " +msgString); 
+
       if (!MessageUtils.isSomePureAckMessage (msg))
       {
-        if (debug) log.debug ("Dropping msg from no longer local agent: " +msgString); 
+        if (debug) log.debug ("Dropping non-ack msg from no-longer-local agent: " +msgString); 
         MessageAckingAspect.addSuccessfulSend (msg);  // HACK: needs work - see above
         return blackHoleLink;
       }
-    }
-
-    //  Check the from node in the message.  If is not us, something is wrong.
-    //  Messages being resent from a newly arrived agent already have this change
-    //  made.  Drop the message and log an error.
-
-    String fromNode = MessageUtils.getFromAgentNode (msg);
-
-    if (fromNode != null && (!(fromNode.equals(thisNode))))
-    {
-      log.error ("Dropping msg with wrong from node: " +msgString); 
-      return blackHoleLink;
     }
 
     //  Get the target node for the message.  If this message is a retry/resend, we try to

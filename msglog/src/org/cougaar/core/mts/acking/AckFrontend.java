@@ -367,7 +367,7 @@ class AckFrontend extends DestinationLinkDelegateImplBase
     return rtt;
   }
 
-  private String stackTraceToString (Exception e)
+  private static String stackTraceToString (Exception e)
   {
     StringWriter stringWriter = new StringWriter();
     PrintWriter printWriter = new PrintWriter (stringWriter);
@@ -378,18 +378,5 @@ class AckFrontend extends DestinationLinkDelegateImplBase
   private static long now ()
   {
     return System.currentTimeMillis();
-  }
-
-  private static String toDate (long time)
-  {
-    if (time == 0) return "0";
-
-    //  Return date string with milliseconds
-
-    String date = (new Date(time)).toString();
-    String d1 = date.substring (0, 19);
-    String d2 = date.substring (19);
-    long ms = time % 1000;
-    return d1 + "." + ms + d2;
   }
 }

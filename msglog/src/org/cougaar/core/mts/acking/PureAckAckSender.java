@@ -153,11 +153,8 @@ class PureAckAckSender implements Runnable
           long sendDeadline = pureAckAck.getSendDeadline();
           long timeLeft = sendDeadline - now();
 
-          if (debug())
-          { 
-            String m = MessageUtils.toShortString (paam);
-            log.debug ("PureAckAckSender: " +m+ " timeLeft="+timeLeft);
-          }
+          if (debug()) log.debug ("PureAckAckSender: " +MessageUtils.toShortString(paam)+ 
+            " timeLeft=" +timeLeft+ "  " +MessageUtils.toShortSequenceID(paam));
 
           if (timeLeft <= 0)
           {

@@ -92,14 +92,14 @@ public class MessageNumberingAspect extends StandardAspect
         fromAgent = AgentID.getAgentID (this, getServiceBroker(), agentAddr);
         MessageUtils.setFromAgent (msg, fromAgent);
       }
-
+/*
       if (!isLocalAgent (MessageUtils.getOriginatorAgent(msg)))
       {
         String s = "Sending agent " +fromAgent+ " not in local node!";
         loggingService.error (s);
         throw new CommFailureException (new Exception (s));
       }
-
+*/
       AgentID toAgent = MessageUtils.getToAgent (msg);
 
       if (toAgent == null)

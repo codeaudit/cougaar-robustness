@@ -134,7 +134,7 @@ public class MessageAckingAspect extends StandardAspect
     }
     else if (type == SendLink.class) 
     {
-//return new AgentArrivals ((SendLink) delegate);
+      return new AgentArrivals ((SendLink) delegate);
     }
     else if (type == DestinationLink.class) 
     {
@@ -172,6 +172,8 @@ public class MessageAckingAspect extends StandardAspect
 
     public synchronized void registerClient (MessageTransportClient client)
     {
+      if (log.isDebugEnabled()) log.debug ("AgentArrivals: entered register client");
+        
       super.registerClient (client);
 
       //  At this point we may now access the AgentState of the agent.
@@ -181,15 +183,20 @@ public class MessageAckingAspect extends StandardAspect
       AgentState myState = getRegistry().getAgentState (myAddress);
       Vector v = null;
 
-log.debug ("in AgentArrivals: register client");
-        
       synchronized (myState) 
       {
         v = (Vector) myState.getAttribute (SENT_BUT_NOT_ACKED_MSGS);
         if (v != null) myState.setAttribute (SENT_BUT_NOT_ACKED_MSGS, null);
       }
 
-      if (v == null) return;  // no messages
+      if (v == null) 
+      {
+        if (log.isDebugEnabled()) log.debug ("AgentArrivals: agentState is null for " +myAddress);
+        return;  // no messages
+      }
+
+      if (log.isDebugEnabled()) log.debug ("AgentArrivals: agentState has " +v.size()+
+        " message" +(v.size()==1? "" : "s")+ " for " +myAddress);
 
       //  Process and send each message in the agent state
 
@@ -213,9 +220,9 @@ log.debug ("in AgentArrivals: register client");
           MessageUtils.setAck (msg, null);
           MessageUtils.setSendProtocolLink (msg, null);
 
-          //  Reclassify messages as local as needed
+          //  Reclassify message as local if needed
 
-//TODO          if (isLocalAgent (MessageUt
+          if (isLocalAgent (MessageUtils.getTargetAgent(msg))) MessageUtils.setMessageTypeToLocal (msg);
 
           //  Send the message
 
@@ -487,22 +494,13 @@ log.debug ("in AgentArrivals: register client");
 
     synchronized (successfulReceivesTable)
     {
-      String node = fromAgent.getNodeName();
-      Hashtable table = (Hashtable) successfulReceivesTable.get (node);
-
-      if (table == null)
-      {
-        table = new Hashtable();
-        successfulReceivesTable.put (node, table);
-      }
-
-      String key = AgentID.makeAckingSequenceID (fromAgent, toAgent);
-      NumberList receives = (NumberList) table.get (key);
+      String key = AgentID.makeAgentPairID (fromAgent, toAgent);  // not acking seq id
+      NumberList receives = (NumberList) successfulReceivesTable.get (key);
 
       if (receives == null) 
       { 
         receives = new NumberList(); 
-        table.put (key, receives); 
+        successfulReceivesTable.put (key, receives); 
       }
 
       return receives.add (msgNum);  // not added if already in list
@@ -523,14 +521,9 @@ log.debug ("in AgentArrivals: register client");
 
     synchronized (successfulReceivesTable)
     {
-      String node = fromAgent.getNodeName();
-      Hashtable table = (Hashtable) successfulReceivesTable.get (node);
-      if (table == null) return false;
-
-      String key = AgentID.makeAckingSequenceID (fromAgent, toAgent);
-      NumberList receives = (NumberList) table.get (key);
+      String key = AgentID.makeAgentPairID (fromAgent, toAgent);  // not acking seq id
+      NumberList receives = (NumberList) successfulReceivesTable.get (key);
       if (receives == null) return false;
-
       return receives.find (msgNum);
     }
   }

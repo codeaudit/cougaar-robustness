@@ -104,6 +104,11 @@ public class AgentID implements java.io.Serializable
     return agentName+ "/" +agentIncarnation;
   }
 
+  public static String makeAgentPairID (AgentID fromAgent, AgentID toAgent)
+  {
+    return fromAgent.getNumberSequenceKey() +"::"+ toAgent.getNumberSequenceKey();
+  }
+
   public String getID ()
   {
     return nodeName+ "/" +agentName+ "/" +agentIncarnation;
@@ -172,9 +177,9 @@ public class AgentID implements java.io.Serializable
     //  Make the topology lookup call in another thread
 
     TopologyReaderService svc = getTopologyReaderService (requestor, sb);
-    TopologyLookup topologyLookup = new TopologyLookup (svc, agent, refreshCache);
+    TopologyLookup topoLookup = new TopologyLookup (svc, agent, refreshCache);
     String name = "TopologyLookup_" +agent;
-    Schedulable thread = getThreadService(requestor,sb).getThread (requestor, topologyLookup, name);
+    Schedulable thread = getThreadService(requestor,sb).getThread (requestor, topoLookup, name);
     thread.start();
 
     //  Wait till we get the topology lookup or we time out
@@ -182,13 +187,15 @@ public class AgentID implements java.io.Serializable
     final int POLL_TIME = 100;
     long callDeadline = now() + callTimeout;
     TopologyEntry entry = null;
+    boolean hadException = false;
     boolean timedOut = false;
 
     while (true)
     {
-      if (topologyLookup.isFinished()) 
+      if (topoLookup.isFinished()) 
       {
-        entry = topologyLookup.getLookup();
+        hadException = topoLookup.hadException();
+        entry = topoLookup.getLookup();
         break;
       }
 
@@ -201,12 +208,13 @@ public class AgentID implements java.io.Serializable
       }
     }
 
-    //  If the call timed out, try a value from our cache, else set the cache
+    //  If the call failed or timed out, try a value from our cache, else set the cache
 
-    if (timedOut) 
+    if (hadException || timedOut) 
     {
       entry = (TopologyEntry) getCachedTopologyLookup (agent);
-      //System.err.println ("timed topology lookup timed out, using value from cache: " +entry);
+      //String s = (hadException ? "had exception" : "timed out");
+      //System.err.println ("timed topology lookup "+s+", using value from cache: " +entry);
     }
     else 
     {
@@ -216,7 +224,7 @@ public class AgentID implements java.io.Serializable
 
     if (entry == null)
     {
-      Exception e = new Exception ("Topology service blank on agent! : " +agent);
+      Exception e = new Exception ("Topology service blank on agent: " +agent);
       throw new NameLookupException (e);
     }
 
@@ -258,7 +266,7 @@ public class AgentID implements java.io.Serializable
       }
       catch (Exception e)
       {
-        //System.err.println ("timed topology lookup exception: " +stackTraceToString(e));
+System.err.println ("timed topology lookup exception: " +stackTraceToString(e));
         exception = e;
       }
     }
@@ -266,6 +274,11 @@ public class AgentID implements java.io.Serializable
     public boolean isFinished ()
     {
       return (entry != null || exception != null);
+    }
+
+    public boolean hadException ()
+    {
+      return exception != null;
     }
 
     public Exception getException ()

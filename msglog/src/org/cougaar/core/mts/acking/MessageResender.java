@@ -76,30 +76,42 @@ class MessageResender implements Runnable
       if (agentState != null)
       {
         boolean acked = MessageAckingAspect.wasSuccessfulSend (msg);
+        boolean zeroCount = (MessageUtils.getAck(msg).getSendCount() == 0);
+        boolean removed = false;
+        boolean added = false;
 
-        synchronized (agentState)
+        if (acked || zeroCount)
         {
-          Vector v = (Vector) agentState.getAttribute (MessageAckingAspect.SENT_BUT_NOT_ACKED_MSGS);
+          synchronized (agentState)
+          {
+            Vector v = (Vector) agentState.getAttribute (MessageAckingAspect.SENT_BUT_NOT_ACKED_MSGS);
          
-          if (acked)
-          {
-            if (v != null) 
+            if (acked)
             {
-              if (debug()) log.debug ("MessageResender: removing from agentState: " +MessageUtils.toString(msg));
-              v.remove (msg);
+              if (v != null) 
+              {
+                v.remove (msg);
+                removed = true;
+              }
             }
-          }
-          else
-          {
-            if (v == null) 
+            else if (zeroCount)
             {
-              v = new Vector();
-              agentState.setAttribute (MessageAckingAspect.SENT_BUT_NOT_ACKED_MSGS, v);
-            }
+              if (v == null) 
+              {
+                v = new Vector();
+                agentState.setAttribute (MessageAckingAspect.SENT_BUT_NOT_ACKED_MSGS, v);
+              }
 
-            if (debug()) log.debug ("MessageResender: adding to agentState: " +MessageUtils.toString(msg));
-            v.add (msg);
+              v.add (msg);
+              added = true;
+            }
           }
+        }
+
+        if (debug() && (removed || added)) 
+        {
+          String s = (removed? "removed" : "added");
+          log.debug ("MessageResender: "+s+" to agentState: " +MessageUtils.toString(msg));
         }
       } 
     }
@@ -127,26 +139,26 @@ class MessageResender implements Runnable
     if (MessageUtils.isRegularMessage (msg))
     {
       AgentState agentState = aspect.getAgentState (MessageUtils.getOriginatorAgent(msg));
+      boolean removed = false;
 
       if (agentState != null)
       {
-        boolean acked = MessageAckingAspect.wasSuccessfulSend (msg);
-        Ack ack = MessageUtils.getAck (msg);
-
-        synchronized (agentState)
+        if (MessageUtils.getAck(msg).getSendCount()==0 || MessageAckingAspect.wasSuccessfulSend(msg))
         {
-          Vector v = (Vector) agentState.getAttribute (MessageAckingAspect.SENT_BUT_NOT_ACKED_MSGS);
-         
-          if (acked || ack.getSendCount() == 0)
+          synchronized (agentState)
           {
+            Vector v = (Vector) agentState.getAttribute (MessageAckingAspect.SENT_BUT_NOT_ACKED_MSGS);
+         
             if (v != null) 
             {
-              if (debug()) log.debug ("MessageResender: removing from agentState: " +MessageUtils.toString(msg));
               v.remove (msg);
+              removed = true;
             }
           }
         }
       }
+
+      if (removed && debug()) log.debug ("MessageResender: removed from agentState: " +MessageUtils.toString(msg));
     }
 
     //  Remove the message from the waiting queue.  This can raise the minResendDeadline, 
@@ -192,7 +204,6 @@ class MessageResender implements Runnable
     {
       haveNewData = true;  // new msgs or acks
       queue.notify();
-      Thread.yield();      // give queue a chance to run
     }
   }
 
@@ -313,14 +324,16 @@ class MessageResender implements Runnable
         {
           //  Time to resend the message.  SendMessage re-inserts the message at the
           //  front of the whole send pipeline: it'll come through the AckFrontend
-          //  again on its way out to an outgoing link.  The link selection policy has 
-          //  been modified to try a different link with each message resend, as it
-          //  wants to try every possbile transport link in its efforts to get a 
-          //  message through.
+          //  again on its way out to an outgoing link.
 
           if (debug()) log.debug ("MessageResender: Resending " +MessageUtils.toString(msg));
           remove (msg);  // remove first to avoid race condition with send
           SendMessage.sendMsg (msg);
+
+          //  Start adding delay to resending this message if it keeps coming back around
+
+          int highSendCount = ack.getNumberOfLinkChoices() + 1;
+          if (ack.getSendCount() > highSendCount) ack.addResendDelay (500);
         }
         else
         {

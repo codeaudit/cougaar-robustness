@@ -140,6 +140,8 @@ class AckBackend extends MessageDelivererDelegateImplBase
       log.error ("AckBackend: Message attributes fail integrity test (msg ignored): " +msgString);
       return success;
     }
+/*
+Mobility issue: arriving agent is now local, msg was for it when it was on other node
 
     //  Is this message for us?  We only check the node.  We don't check that the target
     //  agent exists in this node here because we want the acks out of the message.
@@ -149,7 +151,7 @@ class AckBackend extends MessageDelivererDelegateImplBase
       log.error ("AckBackend: Message not for this node (msg ignored): " +msgString);
       return success;
     }
-
+*/
     //  Can't do this integrity check yet - msg system architecture wrong for it
 /*
     if (getLinkType (ack.getSendLink()) != actual receive link type)
@@ -234,17 +236,28 @@ class AckBackend extends MessageDelivererDelegateImplBase
       }
       else
       {
-        //  A duplicate message - right now we just drop them cold
+        //  A duplicate message - right now we drop them, although we do schedule a pure 
+        //  ack for ackable messages.
 
-        if (log.isInfoEnabled()) log.info ("AckBackend: Duplicate msg ignored: " +msgString);
+        if (ack.isAck() && msgNum != 0)
+        {
+          if (log.isInfoEnabled()) log.info ("AckBackend: Duplicate msg dropped, " +
+            "pure ack scheduled: " +msgString);
 
-// TODO: sched pure acks for dups (only reg. message dups)
+          //  Disable any acks the message is carrying as a precaution for funny business
 
-        return success;
+          ack.setLatestAcks (null);
+          ack.setSpecificAcks (null);
+        }
+        else
+        {
+          if (log.isInfoEnabled()) log.info ("AckBackend: Duplicate msg ignored: " +msgString);
+          return success;
+        }
       }
     }
 
-    //  Disburse the acks contained in the message
+    //  Disburse any acks contained in the message
 
     String fromNode = MessageUtils.getFromAgentNode (msg);
     MessageAckingAspect.addReceivedAcks (fromNode, ack.getLatestAcks());  // all have latest acks
@@ -288,7 +301,19 @@ class AckBackend extends MessageDelivererDelegateImplBase
     //  the received message came in on is excluded from acking, then we won't
     //  send back any kind of pure ack messages.
 
-    if (!MessageAckingAspect.isExcludedLink (ack.getSendLink()))
+    //  Mobility Note:  If a pure ack message came to us addressed to another node 
+    //  (assumed to be the old node) we skip sending back an ack-ack.
+
+    boolean skip = false;
+  
+    if (ack.isPureAck() && !MessageUtils.getToAgentNode(msg).equals(aspect.getThisNode()))
+    {
+      if (log.isDebugEnabled()) log.debug ("AckBackend: Skipping ack-ack scheduling for ack not " +
+        "addressed to us: " +msgString);
+      skip = true;
+    }
+
+    if (!skip && !MessageAckingAspect.isExcludedLink (ack.getSendLink()))
     {
       if (ack.isAck() && msgNum != 0)
       {
@@ -362,30 +387,28 @@ class AckBackend extends MessageDelivererDelegateImplBase
     { 
       topoAgent = AgentID.getAgentID (aspect, aspect.getServiceBroker(), agentAddr); 
     }
-    catch (NameLookupException nle)
-    {}
+    catch (NameLookupException e)
+    {
+      //  Thrown by AgentID.getAgentID when can't get and don't have any topo data for agent
+    } 
     catch (Exception e) 
     { 
-      e.printStackTrace(); 
+      if (log.isDebugEnabled()) log.debug ("AgentID.getAgentID for " +agentAddr+
+        ": " +stackTraceToString(e));
     }
 
     if (topoAgent == null) 
     {
       if (log.isInfoEnabled()) log.info ("AckBackend: No topology info for agent " +agent.getAgentName());
-      return false;  // correct ans is don't know
+      return false;  // we have to assume
     }
 
     //  Compare data
 
-    if (!topoAgent.getNodeName().equals(agent.getNodeName())) return false;
+//if (!topoAgent.getNodeName().equals(agent.getNodeName())) return false;
     if (topoAgent.getAgentIncarnationAsLong() > agent.getAgentIncarnationAsLong()) return false;
 
     return true;
-  }
-
-  private static long now ()
-  {
-    return System.currentTimeMillis();
   }
 
   private static String toDateString (long time)
@@ -394,5 +417,18 @@ class AckBackend extends MessageDelivererDelegateImplBase
     Calendar cal = Calendar.getInstance (tz);
     Date date = new Date (time);
     return DateFormat.getDateTimeInstance().format (date);        
+  }
+
+  private static long now ()
+  {
+    return System.currentTimeMillis();
+  }
+
+  private static String stackTraceToString (Exception e)
+  {
+    StringWriter stringWriter = new StringWriter();
+    PrintWriter printWriter = new PrintWriter (stringWriter);
+    e.printStackTrace (printWriter);
+    return stringWriter.getBuffer().toString();
   }
 }
