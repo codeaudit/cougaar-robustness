@@ -38,7 +38,7 @@ import org.cougaar.core.util.UID;
 
 public class DefenseTimeCondition extends DefenseCondition
 {
-    public static final Double MINTIME  = new Double(0.0);
+    public static final Double MINTIME  = new Double(-1.0);
     public static final Double MAXTIME = new Double(9223372036854775807.0);
 
     protected static OMCRangeList allowedValues = new OMCRangeList(new OMCThruRange (MINTIME, MAXTIME));

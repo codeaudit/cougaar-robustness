@@ -210,13 +210,17 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
               LocalReconnectTimeCondition lrtc = (LocalReconnectTimeCondition)iter.next();
               if (logger.isDebugEnabled()) logger.debug("Found lrtc "+lrtc.getAsset());
               if (lrtc != null) {
-                    reconnectInterval = (long) Double.parseDouble(lrtc.getValue().toString()) * 1000L;
+                    reconnectInterval = (long) Double.parseDouble(lrtc.getValue().toString());
               }
               // set the ReconnectTimeCondition for each agent on the node
-              if (eventService.isEventEnabled())
-                  eventService.event("Requesting to Disconnect Node: "+getNodeID());
+              if (eventService.isEventEnabled()) {
+                  if (reconnectInterval >= 0L)
+                    eventService.event("Requesting to Disconnect Node: "+getNodeID());
+                  else
+                    eventService.event("Requesting to Connect Node: "+getNodeID());   
+              }
               Iterator iter2 = reconnectTimeSubscription.iterator();
-              while (iter2.hasNext()) { // should only be one
+              if (iter2.hasNext()) { // should only be one
                   ReconnectTimeCondition rtc = (ReconnectTimeCondition)iter2.next();
                   rtc.setTime(new Double(Double.parseDouble(lrtc.getValue().toString())));
                   rtc.setAgents(localAgents);
@@ -244,6 +248,15 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
                   }
               }
           }
+          // ACK that the Node has seen the action value
+          Iterator iter2 = reconnectTimeSubscription.iterator();
+          if (iter2.hasNext()) { // should only be one
+              ReconnectTimeCondition rtc = (ReconnectTimeCondition)iter2.next();
+              rtc.setTime(new Double(-1.0));
+              rtc.setAgents(localAgents);
+              getBlackboardService().publishChange(rtc);
+              if (logger.isDebugEnabled()) logger.debug("Set the (ACK) Condition for "+rtc.toString());   
+          }          
       };
 
   }
@@ -288,6 +301,7 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
 
     private void addAgent(String agentName) {
         localAgents.add(agentName);
+        if (logger.isDebugEnabled()) logger.debug("Added arriving agent "+agentName); 
     }
     
 }

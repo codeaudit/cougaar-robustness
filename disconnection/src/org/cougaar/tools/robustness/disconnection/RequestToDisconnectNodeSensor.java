@@ -18,11 +18,6 @@ import org.cougaar.core.component.ServiceBroker;
 
 public class RequestToDisconnectNodeSensor extends org.cougaar.coordinator.Diagnosis {
 
-    // Legal Diagnosis Values
-    public final static String DISCONNECT_REQUEST = "Disconnect_Request";
-    public final static String CONNECT_REQUEST = "Connect_Request";
-    public final static String TARDY = "Tardy";
-
     /** Creates new DisconnectDiagnosis */
     public RequestToDisconnectNodeSensor(String assetName, Object initialValue, ServiceBroker serviceBroker) throws IllegalValueException, TechSpecNotFoundException {
 	super(assetName, initialValue, serviceBroker);

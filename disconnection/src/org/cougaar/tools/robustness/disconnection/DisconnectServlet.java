@@ -195,7 +195,9 @@ public class DisconnectServlet extends BaseServletComponent
           Double d;
           if (expire != null) {
               try {
-                  d = new Double(Double.parseDouble(expire)*1000.0);
+                  double t = Double.parseDouble(expire);
+                  t = t>60L ? t : 60.0;
+                  d = new Double(t*1000.0);                  
                   try {
                         blackboard.openTransaction();
                         LocalReconnectTimeCondition lrtc = LocalReconnectTimeCondition.findOnBlackboard(assetType, assetID, blackboard);

@@ -37,4 +37,13 @@ public class DisconnectConstants {
     
     public static final String DEFENSE_NAME = "Disconnect";
 
+    // Possible Diagnosis Values
+    public final static String DISCONNECT_REQUEST = "Disconnect_Request";
+    public final static String CONNECT_REQUEST = "Connect_Request";
+    public final static String TARDY = "Tardy";
+
+    // The Possible Actions
+    public final static String ALLOW_DISCONNECT = "Allow_Disconnect";
+    public final static String ALLOW_CONNECT = "Allow_Connect";
+
 }

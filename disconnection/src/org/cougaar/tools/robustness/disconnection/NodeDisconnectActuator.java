@@ -20,11 +20,6 @@ import org.cougaar.core.component.ServiceBroker;
 public class NodeDisconnectActuator extends Action
 {
 
-    // The Possible Actions
-    public final static String ALLOW_DISCONNECT = "Allow_Disconnect";
-    public final static String ALLOW_CONNECT = "Allow_Connect";
-
-
     public NodeDisconnectActuator(String assetName, ServiceBroker serviceBroker)
 	throws TechSpecNotFoundException {
         super(assetName, serviceBroker);
