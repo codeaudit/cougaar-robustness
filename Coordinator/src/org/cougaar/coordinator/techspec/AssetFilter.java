@@ -278,12 +278,12 @@ public class AssetFilter implements NotPersistable {
         /** @return a comparison code representing the string value */
         private int genOpCode(String op) {
 
-            if (op.equals("=")) return EQ;
-            if (op.equals("!=")) return NEQ;
-            if (op.equals(">")) return GT;
-            if (op.equals("<")) return LT;
-            if (op.equals(">=")) return GEQ;
-            if (op.equals("<=")) return LEQ;
+            if (op.equals("EQ")) return EQ;
+            if (op.equals("NE")) return NEQ;
+            if (op.equals("GT")) return GT;
+            if (op.equals("LT")) return LT;
+            if (op.equals("GE")) return GEQ;
+            if (op.equals("LE")) return LEQ;
             return NOP;
         }
         

@@ -7,7 +7,7 @@
     assetType CDATA #REQUIRED
 >
 
-<!ELEMENT StateDimension (States+) >
+<!ELEMENT StateDimension (SimpleState+) >
 <!ATTLIST StateDimension
     name CDATA #REQUIRED
 >
@@ -15,7 +15,7 @@
 <!ELEMENT SimpleState EMPTY>
 <!ATTLIST SimpleState
     name CDATA #REQUIRED
-    defaultStartState CDATA 
+    defaultStartState CDATA #IMPLIED
     relativeMauCompleteness CDATA #REQUIRED
     relativeMauSecurity CDATA #REQUIRED
 >

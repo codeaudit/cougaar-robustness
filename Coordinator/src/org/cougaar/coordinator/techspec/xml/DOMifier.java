@@ -34,8 +34,9 @@ import org.w3c.dom.*;
 import java.io.File;
 
 import org.apache.crimson.jaxp.*;
-
-
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.SAXException;
 import org.cougaar.util.log.Logging;
 import org.cougaar.util.log.Logger;
 
@@ -44,7 +45,7 @@ import org.cougaar.util.log.Logger;
  * This class converts an XML file into a DOM Document
  * @author  Administrator
  */
-public class DOMifier {
+public class DOMifier implements ErrorHandler {
     
     private DocumentBuilder domBuilder = null;
     private ConfigFinder configFinder;
@@ -60,10 +61,11 @@ public class DOMifier {
 
         DocumentBuilderFactory factory = DocumentBuilderFactoryImpl.newInstance();
         //Can customize factory before getting domBuilder.
-        //factory.setValidating(true);
+        factory.setValidating(true);
         
         try {
             domBuilder = factory.newDocumentBuilder();
+            domBuilder.setErrorHandler(this);
         } catch (ParserConfigurationException pce) {
             logger.error("Could not create domBuilder: " + pce.toString() );
         }
@@ -83,8 +85,8 @@ public class DOMifier {
             File f = configFinder.locateFile(fileParam); //steve
             if (f==null || !f.exists()) { //look 
                 if (f != null) {
-                    logger.debug("*** Did not find XML file: " + fileParam);
-                    logger.debug("*** Path checked was = " + f.getAbsolutePath()+". Checking CIP...");
+                    if (logger.isDebugEnabled()) logger.debug("*** Did not find XML file: " + fileParam);
+                    if (logger.isDebugEnabled()) logger.debug("*** Path checked was = " + f.getAbsolutePath()+". Checking CIP...");
                 }
                 String installpath = System.getProperty("org.cougaar.install.path");
                 String defaultPath = installpath + File.separatorChar + "csmart" + File.separatorChar + "config" +
@@ -96,16 +98,31 @@ public class DOMifier {
                     return null;
                 }
             }                
-            logger.debug("path for XML file = " + f.getAbsolutePath());
+            if (logger.isDebugEnabled()) logger.debug("path for XML file = " + f.getAbsolutePath());
             //(new InputSource(new FileInputStream(f)));
 
-            
-            return domBuilder.parse(f);
-            
+            try {
+                return domBuilder.parse(f);
+            } catch (Exception e) {
+                logger.error("SOME TECH SPECS WILL NOT BE LOADED!! Exception finding/parsing file tech spec ["+f.getName()+"]: "+ e);
+                return null;
+            }
         } catch (Exception e) {         
-            logger.warn("DOMifier Exception: "+e, e);
+            logger.error("DOMifier Exception: "+e, e);
             throw new Exception(e.toString());
         }
+    }
+
+    public void warning(SAXParseException exception) throws SAXException {
+        if (logger.isDebugEnabled()) logger.debug("SAXException - Warning at line/col["+exception.getLineNumber()+":"+exception.getColumnNumber()+"]: "+ exception);
+    }
+    
+    public void error(SAXParseException exception) throws SAXException {
+        logger.error("SAXException - Error at line/col["+exception.getLineNumber()+":"+exception.getColumnNumber()+"]: "+ exception);
+    }
+    
+    public void fatalError(SAXParseException exception) throws SAXException {
+        logger.error("SAXException - FatalError at line/col["+exception.getLineNumber()+":"+exception.getColumnNumber()+"]: "+ exception);
     }
     
 }

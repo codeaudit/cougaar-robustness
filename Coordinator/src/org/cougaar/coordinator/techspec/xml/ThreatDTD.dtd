@@ -2,6 +2,7 @@
 
 <!-- Created by Administrator on March 24, 2004, 11:32 AM -->
 
+<!ELEMENT Threats (Threat+)>
 <!ELEMENT Threat (VulnerableAssets*)>
 
 <!ATTLIST Threat
@@ -9,9 +10,10 @@
     affectsAssetType CDATA #REQUIRED
     causesEvent CDATA #REQUIRED
     defaultEventLikelihoodProb ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH | ALWAYS ) 'NONE'
+    probIntervalInMins CDATA #REQUIRED
 >
 
-<!ELEMENT VulnerableAssets AssetFilter, (EventLikelihoodInterval|EventLikelihood)? >
+<!ELEMENT VulnerableAssets (AssetFilter, (EventLikelihoodInterval|EventLikelihood)?) >
 
 <!ELEMENT AssetFilter (Term | CorruptHostExistsOnNetwork | CorruptHostExists)+ >
 <!ELEMENT EventLikelihoodInterval (ClockInterval)+ >
@@ -30,14 +32,14 @@
     probIntervalInMins CDATA #REQUIRED
 >
 
-<!ELEMENT Term >
+<!ELEMENT Term EMPTY>
 <!ATTLIST Term
     propName CDATA #REQUIRED
     propValue CDATA #REQUIRED
-    op ( '<' | '>' | '>=' | '<=' | '=' | '!=' ) '='
+    op ( GT | GE | LT | LE | EQ | NE) 'EQ' 
     propType ( S | L | D | I ) "S"
 >
-<!-- propType = [S]tring [L]ong [D]ouble [I]nteger -->
+<!-- propType = [S]tring [L]ong [D]ouble [I]nteger       op ( &lt; | &gt; | &gt;= | &lt;= | = | != ) '=' -->
 
 <!ELEMENT CorruptHostExistsOnNetwork EMPTY >
 <!ATTLIST CorruptHostExistsOnNetwork

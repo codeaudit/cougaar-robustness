@@ -2,6 +2,7 @@
 
 <!-- Created by Administrator on March 24, 2004, 11:34 AM -->
 
+<!ELEMENT SensorTypes (SensorType+) >
 <!ELEMENT SensorType (PotentialDiagnoses, Diagnoses) >
 <!ATTLIST SensorType 
     name CDATA #REQUIRED
@@ -12,7 +13,7 @@
 
 <!ELEMENT PotentialDiagnoses (Diagnosis+) >
 
-<!ELEMENT Diagnosis >
+<!ELEMENT Diagnosis EMPTY >
 <!ATTLIST Diagnosis 
     name CDATA #REQUIRED
     defaultValue CDATA #IMPLIED
@@ -25,7 +26,7 @@
     name CDATA #REQUIRED
 >
 
-<!ELEMENT WillDiagnoseAs >
+<!ELEMENT WillDiagnoseAs EMPTY >
 <!ATTLIST WillDiagnoseAs 
     name CDATA #REQUIRED
     withProbability CDATA #REQUIRED
