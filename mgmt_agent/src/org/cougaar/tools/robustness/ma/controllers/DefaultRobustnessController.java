@@ -218,8 +218,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
 
     public void actionEnabled(String agentName) {
-      if (logger.isDetailEnabled()) {
-        logger.detail("coordinatorCallback: agent=" + agentName);
+      if (logger.isDebugEnabled()) {
+        logger.debug("coordinatorCallback: agent=" + agentName);
       }
       if (getState(agentName) == DECONFLICT) {
         newState(agentName, RESTART);
@@ -660,28 +660,33 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   private void restartAgent(final String name) {
 
     if (restartsEnabled) {
-      long pingTimeout = getLongAttribute(preferredLeader(),
-                                          DEFAULT_TIMEOUT_ATTRIBUTE,
-                                          DEFAULT_TIMEOUT) * MS_PER_MIN;
-      serviceChecker.checkServices(model.getCommunityName(),
-                                   ESSENTIAL_RESTART_SERVICE_ATTRIBUTE,
-                                   pingTimeout,
-                                   new CheckServicesListener() {
-        public void execute(String communityName,
-                            String serviceCategory,
-                            boolean isAvailable,
-                            String message) {
-          if (isAvailable) {
-            doRestart(name);
-          } else {
-            if (logger.isWarnEnabled()) {
-              logger.warn("Unable to restart " + name +
-                          ", " + message);
+      if (name.equals(preferredLeader())) {
+        long pingTimeout = getLongAttribute(preferredLeader(),
+                                            DEFAULT_TIMEOUT_ATTRIBUTE,
+                                            DEFAULT_TIMEOUT) * MS_PER_MIN;
+        serviceChecker.checkServices(model.getCommunityName(),
+                                     ESSENTIAL_RESTART_SERVICE_ATTRIBUTE,
+                                     pingTimeout,
+                                     new CheckServicesListener() {
+          public void execute(String communityName,
+                              String serviceCategory,
+                              boolean isAvailable,
+                              String message) {
+            logger.debug("CheckServicesListener.execute: agent=" + name);
+            if (isAvailable) {
+              doRestart(name);
+            } else {
+              if (logger.isWarnEnabled()) {
+                logger.warn("Unable to restart " + name +
+                            ", " + message);
+              }
+              newState(name, FAILED_RESTART);
             }
-            newState(name, FAILED_RESTART);
           }
-        }
-      });
+        });
+      } else {
+        doRestart(name);
+      }
     }
   }
 
