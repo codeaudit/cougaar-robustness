@@ -26,11 +26,7 @@ import org.cougaar.tools.robustness.ma.util.CoordinatorHelper;
 import org.cougaar.tools.robustness.ma.util.CoordinatorHelperFactory;
 import org.cougaar.tools.robustness.ma.util.CoordinatorListener;
 import org.cougaar.tools.robustness.ma.util.HeartbeatListener;
-import org.cougaar.tools.robustness.ma.util.HeartbeatHelper;
-import org.cougaar.tools.robustness.ma.util.LoadBalancer;
 import org.cougaar.tools.robustness.ma.util.LoadBalancerListener;
-import org.cougaar.tools.robustness.ma.util.MoveHelper;
-import org.cougaar.tools.robustness.ma.util.MoveListener;
 import org.cougaar.tools.robustness.ma.util.PingHelper;
 import org.cougaar.tools.robustness.ma.util.RestartHelper;
 import org.cougaar.tools.robustness.ma.util.RestartListener;
@@ -73,7 +69,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   public static final int DEAD           = 4;
   public static final int RESTART        = 5;
   public static final int FAILED_RESTART = 6;
-  public static final int MOVE           = 7;
+  //public static final int MOVE           = 7;
   public static final int DECONFLICT     = 8;
   public static final int FORCED_RESTART = 9;
 
@@ -321,9 +317,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                     }
                   }
                 }
-              }
-
-              , name);
+              }, name);
             } else {
               removeFromCommunity(name);
             }
@@ -443,50 +437,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   }
 
   /**
-   * State Controller: MOVE
-   * <pre>
-   *   Entry:             Agent move initiated/detected
-   *   Actions performed: None
-   *   Next state:        HEALTH_CHECK
-   * </pre>
-   */
-  class MoveStateController extends StateControllerBase implements MoveListener {
-    { addMoveListener(this); }
-    public void enter(String name) {
-      communityReady = false;
-    }
-    public void expired(String name) {
-      if (logger.isDebugEnabled()) {
-        logger.debug("Expired Status:" + " agent=" + name + " state=MOVE");
-      }
-      if (isLeader(thisAgent) || isLocal(name)) {
-        newState(name, HEALTH_CHECK);
-      }
-    }
-
-    public void moveInitiated(String name, String orig, String dest) {
-      event("Move initiated:" +
-            " agent=" + name +
-            " orig=" + orig +
-            " dest=" + dest);
-      newState(name, MOVE);
-    }
-
-    public void moveComplete(String name, String orig, String dest, int status) {
-      event("Move complete:" +
-            " agent=" + name +
-            " orig=" + orig +
-            " dest=" + dest +
-            " status=" + (status == MoveHelper.SUCCESS ? "SUCCESS" : "FAIL"));
-      if (status == MoveHelper.FAIL) {
-        newState(name, HEALTH_CHECK);
-      } else {
-        newState(name, INITIAL);
-      }
-    }
-  }
-
-  /**
    * State Controller: FORCED_RESTART
    * <pre>
    *   Entry:             External request received
@@ -567,7 +517,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     addController(DEAD,           "DEAD",  new DeadStateController());
     addController(RESTART,        "RESTART", new RestartStateController());
     addController(FAILED_RESTART, "FAILED_RESTART", new FailedRestartStateController());
-    addController(MOVE,           "MOVE", new MoveStateController());
     addController(DECONFLICT,     "DECONFLICT", new DeconflictStateController());
     addController(FORCED_RESTART, "FORCED_RESTART", new ForcedRestartStateController());
     serviceChecker = new ServiceChecker(bs.getServiceBroker(), getPingHelper());
@@ -1007,7 +956,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
             loadBalanceInProcess = false;
             lbl.layoutReady(layout);
             if (!pendingLBRequests.isEmpty()) {
-              getLayout( (LoadBalancerListener) pendingLBRequests.remove(0), null);
+              getLayout((LoadBalancerListener) pendingLBRequests.remove(0), null);
             }
           }
         };
