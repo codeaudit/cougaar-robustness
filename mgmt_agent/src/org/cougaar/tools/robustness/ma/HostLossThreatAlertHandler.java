@@ -99,8 +99,8 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
               controller.getLoadBalancer().moveAgents(layout);
             }
           };
-          controller.getLoadBalancer().doLayout(LoadBalancer.DEFAULT_SOLVER_MODE,
-                                                LoadBalancer.DEFAULT_ANNEAL_TIME,
+          controller.getLoadBalancer().doLayout(RestartManagerConstants.DEFAULT_LOAD_BALANCER_MODE,
+                                                RestartManagerConstants.ANNEAL_TIME,
                                                 LoadBalancer.DEFAULT_HAMMING,
                                                 new ArrayList(affectedNodes),
                                                 Collections.EMPTY_LIST,
@@ -145,8 +145,8 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
         controller.getLoadBalancer().moveAgents(layout);
       }
     };
-    controller.getLoadBalancer().doLayout(LoadBalancer.DEFAULT_SOLVER_MODE,
-                                          LoadBalancer.DEFAULT_ANNEAL_TIME,
+    controller.getLoadBalancer().doLayout(RestartManagerConstants.DEFAULT_LOAD_BALANCER_MODE,
+                                          RestartManagerConstants.ANNEAL_TIME,
                                           LoadBalancer.DEFAULT_HAMMING,
                                           Collections.EMPTY_LIST,
                                           new ArrayList(nodesToVacate),
