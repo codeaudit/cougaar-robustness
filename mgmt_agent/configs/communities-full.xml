@@ -49,6 +49,7 @@
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="Member" />
       <Attribute ID="Role" Value="HealthMonitor" />
+      <Attribute ID="Role" Value="RobustnessManager" />
     </Entity>
     <!-- Nodes -->
     <Entity Name="REAR-A" >
@@ -406,6 +407,7 @@
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="Member" />
       <Attribute ID="Role" Value="HealthMonitor" />
+      <Attribute ID="Role" Value="RobustnessManager" />
     </Entity>
     <!-- Nodes -->
     <Entity Name="FWD-A" >
@@ -693,6 +695,7 @@
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="Member" />
       <Attribute ID="Role" Value="HealthMonitor" />
+      <Attribute ID="Role" Value="RobustnessManager" />
     </Entity>
     <!-- Nodes -->
     <Entity Name="NCA-NODE" >
@@ -776,6 +779,7 @@
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="Member" />
       <Attribute ID="Role" Value="HealthMonitor" />
+      <Attribute ID="Role" Value="RobustnessManager" />
     </Entity>
     <!-- Nodes -->
     <Entity Name="TRANSCOM-NODE" >

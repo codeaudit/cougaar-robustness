@@ -60,6 +60,7 @@
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="Member" />
       <Attribute ID="Role" Value="HealthMonitor" />
+      <Attribute ID="Role" Value="RobustnessManager" />
     </Entity>
     <!-- FWD -->
     <Entity Name="1-35-ARBN" >
