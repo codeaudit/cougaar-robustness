@@ -281,6 +281,36 @@ module Cougaar
 		  end
 		end
 	 end
+	 
+    class KillAgent < Cougaar::Action
+      PRIOR_STATES = ["SocietyLoaded"]
+      DOCUMENTATION = Cougaar.document {
+        @description = "Remove agents from the society"
+        @parameters = [
+          {:agents => "required, The agents that be removed."}
+        ]
+        @example = "do_action 'KillAgent', '1-35-ARBN, GlobalAir'" 
+	}
+
+      def initialize(run, *agents)
+        super(run)
+	@agentNames = agents
+      end
+      def perform
+        @agentNames.each do |myAgent|
+          @run.society.each_agent do |agent|
+	    if agent.name == myAgent
+	    puts "#{myAgent}"
+	      node = agent.node
+	    puts "#{node.uri}/$#{node.name}/ar?operation=Remove&mobileagent=#{myAgent}&orignode=#{node.name}"
+	      result, uri = Cougaar::Communications::HTTP.get(node.uri+"/$"+node.name+"/ar?operation=Remove&mobileagent=#{myAgent}&orignode=#{node.name}")
+	    #node.remove_agent(agent)
+	      break
+	    end
+	  end
+        end
+      end
+    end
 
   end
 
