@@ -381,7 +381,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
                             }
                         }
                         else {
-                            if (logger.isInfoEnabled("RMIAction not found");
+                            if (logger.isInfoEnabled("RMIAction not found"));
                         }
                     }
                     
