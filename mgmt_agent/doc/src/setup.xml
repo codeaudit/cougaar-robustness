@@ -1,4 +1,32 @@
 <sect1 id="required_overlays">
   <title>Required Overlays</title>
-  <para>A paragraph.</para>
+  <para>
+    The table below defines the minimal configuration required for the Agent
+    Liveness defense.  These overlays are provided in .zip archive files that are
+    installed by simply unzipping the files the top level directory of the Cougaar install path.
+    The overlays augment the capabilities provided by the Cougaar core components
+    and provide the essential jar files and configuration data for the
+    detection and restart of dead agents.
+  </para>
+    <table id="overlay_table_1">
+      <title>Required Overlays</title>
+      <tgroup cols="2" pgwide="0">
+      <colspec colnum="1" colwidth="1.5in" />
+      <thead valign="middle">
+        <row>
+          <entry align="center">Name</entry><entry align="center">Purpose</entry>
+        </row>
+      </thead>
+      <tfoot>
+      </tfoot>
+      <tbody valign="middle">
+        <row>
+          <entry>MIC Mgmt Agent</entry><entry>Provides manager agent components for agent liveness</entry>
+        </row>
+        <row>
+          <entry>Objs Sensors</entry><entry>Provides Heartbeat and Ping sensors</entry>
+        </row>
+      </tbody>
+      </tgroup>
+    </table>
 </sect1>

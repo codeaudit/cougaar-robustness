@@ -1,4 +1,11 @@
 <sect1 id="overview">
   <title>Overview</title>
-  <para>A paragraph.</para>
+  <para>
+    This document describes the setup and use of the <emphasis>Adaptive Robustness Agent
+    Liveness Defense</emphasis> (a.k.a. AR-UC1 or simply "the sledgehammer
+    defense").  This defense provides components for detecting and
+    restarting dead agents.  The components may be deployed as a stand-alone
+    defense or configured as part of an integrated suite of robustness defenses.  In the
+    latter case a "Defense Coordinator" is used to mediate defense actions.
+  </para>
 </sect1>
