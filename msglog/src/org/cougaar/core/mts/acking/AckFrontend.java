@@ -42,6 +42,7 @@ class AckFrontend extends DestinationLinkDelegateImplBase
   private MessageAckingAspect aspect;
   private LoggingService log;
   private MessageAttributes success;
+private int cnt=0;
 
   public AckFrontend (DestinationLink link, MessageAckingAspect aspect)
   {
@@ -59,25 +60,31 @@ class AckFrontend extends DestinationLinkDelegateImplBase
     throws UnregisteredNameException, NameLookupException, 
            CommFailureException, MisdeliveredMessageException
   {
+    String msgString = MessageUtils.toString (msg);
+    if (log.isDebugEnabled()) log.debug ("AckFrontend: entered with " +msgString);
+
     //  Sanity Check:  All messages must have a number
 
     if (!MessageUtils.hasMessageNumber (msg))
     {
       //  NOTE:  This can happen if this aspect is called in the wrong order
 
-      String s = "Msg has no number! (Check the aspect order)";
+      String s = "Msg has no number! (Check the aspect order): " +msgString;
       log.error (s);  
       throw new CommFailureException (new Exception (s));
     }
 
     //  Special Case:  Local messages are completely excluded from acking
 
-    if (MessageUtils.isLocalMessage (msg)) return super.forwardMessage (msg);
+    if (MessageUtils.isLocalMessage (msg)) 
+    {
+      if (log.isDebugEnabled()) log.debug ("AckFrontend: forwarding local msg: " +msgString);
+      return super.forwardMessage (msg);
+    }
 
     //  Deal with new & retry/resend messages
 
     Ack ack = MessageUtils.getAck (msg);
-    String msgString = MessageUtils.toString (msg);
     String toNode = MessageUtils.getToAgentNode (msg);
 
     if (ack == null)
@@ -112,7 +119,11 @@ class AckFrontend extends DestinationLinkDelegateImplBase
         return success;
       }
     }
-
+/*
+// test code
+String n = MessageUtils.getFromAgentNode(msg);
+if (n.equals("PerformanceNodeB") && cnt++ > 5) return success;
+*/
     //  Set the specific acks in the message based on the ack type it contains
 
     if (ack.isAck())
@@ -148,8 +159,6 @@ class AckFrontend extends DestinationLinkDelegateImplBase
 
     if (ack.isPureAck())
     {
-log.debug ("AckFrontend: processing pure ack msg " +msgString);
-
       //  Simple filters that retire pure ack messages
 
       PureAck pureAck = (PureAck) ack;
@@ -287,7 +296,7 @@ log.debug ("AckFrontend: processing pure ack msg " +msgString);
       {
         //  Cougaar is in control of retries
 
-        MessageAckingAspect.messageResender.remove (msg);
+        if (ack.isAck()) MessageAckingAspect.messageResender.remove (msg);
         throw new CommFailureException (e);  
       }
       else 
@@ -320,6 +329,7 @@ log.debug ("AckFrontend: processing pure ack msg " +msgString);
       {
         //  Manufacture an ack for the message
 
+        if (log.isDebugEnabled()) log.debug ("AckFrontend: Making ack for excluded link msg: " +msgString);
         AckList ackList = new AckList (MessageUtils.getFromAgent(msg), MessageUtils.getToAgent(msg));
         ackList.add (MessageUtils.getMessageNumber (msg));
         Vector v = new Vector();
@@ -331,6 +341,7 @@ log.debug ("AckFrontend: processing pure ack msg " +msgString);
     {
       //  We reschedule pure acks so they will be sent again if needed
 
+      if (log.isDebugEnabled()) log.debug ("AckFrontend: Resched next pure ack msg: " +msgString);
       PureAck pureAck = (PureAck) ack;
       long lastSendTime = pureAck.getSendTime();
       float rtt = (float) ack.getRTT();

@@ -45,6 +45,7 @@ class MessageResender implements Runnable
   private Vector queue;
   private AttributedMessage messages[];
   private boolean haveNewData;
+  private Comparator deadlineSort;
   private long minResendDeadline;
 
   public MessageResender (MessageAckingAspect aspect) 
@@ -53,6 +54,7 @@ class MessageResender implements Runnable
     queue = new Vector();
     messages = new AttributedMessage[32];
     haveNewData = false;
+    deadlineSort = new DeadlineSort();
     minResendDeadline = Long.MAX_VALUE;
   }
 
@@ -60,7 +62,7 @@ class MessageResender implements Runnable
   {
     //  Sanity checks
 
-    if (!MessageAckingAspect.hasNonPureAck (msg)) return;
+    if (MessageUtils.isSomePureAckMessage (msg)) return;
     if (MessageUtils.getMessageNumber(msg) == 0) return;
 
     if (debug()) log.debug ("MessageResender: adding " +MessageUtils.toString(msg));
@@ -82,6 +84,11 @@ class MessageResender implements Runnable
 
   public void remove (AttributedMessage msg) 
   {
+    //  Sanity checks
+
+    if (MessageUtils.isSomePureAckMessage (msg)) return;
+    if (MessageUtils.getMessageNumber(msg) == 0) return;
+
     if (debug()) log.debug ("MessageResender: removing " +MessageUtils.toString(msg));
 
     //  Remove the message from the agent state
@@ -183,10 +190,16 @@ class MessageResender implements Runnable
 
         messages = (AttributedMessage[]) queue.toArray (messages);  // try array reuse
         len = queue.size();
+        if (len > 1) Arrays.sort (messages, 0, len, deadlineSort);
       }
 
       //  Next we try to match the messages with the acks we've collected so far.
       //  Possible many-to-many relationship between the messages and the acks.
+
+      if (len > 0 && debug()) 
+      {
+        log.debug ("MessageResender: reviewing queue (" +len+ " msg" +(len==1? ")" : "s)"));
+      }
 
       for (int i=0; i<len; i++)
       {
@@ -276,6 +289,35 @@ class MessageResender implements Runnable
       }
 
       Arrays.fill (messages, null);  // release references
+    }
+  }
+
+  private static class DeadlineSort implements Comparator
+  {
+    public int compare (Object m1, Object m2)
+    {
+      if (m1 == null)  // drive nulls to bottom (top is index 0)
+      {
+        if (m2 == null) return 0;
+        else return 1;
+      }
+      else if (m2 == null) return -1;
+
+      //  Sort on resend deadline (sooner deadlines come first)
+
+      Ack a1 = MessageUtils.getAck ((AttributedMessage) m1);
+      Ack a2 = MessageUtils.getAck ((AttributedMessage) m2);
+
+      long d1 = a1.getSendTime() + a1.getResendTimeout() + a1.getResendDelay();
+      long d2 = a2.getSendTime() + a2.getResendTimeout() + a2.getResendDelay();
+
+      if (d1 == d2) return 0;
+      return (d1 > d2 ? 1 : -1);
+    }
+
+    public boolean equals (Object obj)
+    {
+      return (this == obj);
     }
   }
 

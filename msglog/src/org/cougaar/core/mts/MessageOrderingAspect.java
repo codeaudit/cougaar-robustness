@@ -34,7 +34,6 @@ import java.util.*;
 
 public class MessageOrderingAspect extends StandardAspect
 {
-  private static final Hashtable numberSequenceTables = new Hashtable();
   private static final String AGENT_INCOMING_SEQ_TABLE = "AgentIncomingMsgNumSequenceTable";
 
   public MessageOrderingAspect () 

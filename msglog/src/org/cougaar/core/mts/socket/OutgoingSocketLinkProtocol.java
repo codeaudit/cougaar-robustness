@@ -96,7 +96,7 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
 {
   public static final String PROTOCOL_TYPE = "-socket";
 
-  private static final boolean debug;
+  private static final boolean debug = false;
 
   private static final int protocolCost;
   private static final int connectTimeout;
@@ -111,11 +111,8 @@ private int cnt=0;  // temp
   {
     //  Read external properties
 
-    String s = "org.cougaar.message.protocol.socket.debug";
-    debug = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
-
-    s = "org.cougaar.message.protocol.socket.cost";
-    protocolCost = Integer.valueOf(System.getProperty(s,"500")).intValue();
+    String s = "org.cougaar.message.protocol.socket.cost";
+    protocolCost = Integer.valueOf(System.getProperty(s,"3000")).intValue();
 
     s = "org.cougaar.message.protocol.socket.connectTimeoutSecs";
     connectTimeout = Integer.valueOf(System.getProperty(s,"5")).intValue();

@@ -112,38 +112,32 @@ import org.cougaar.core.mts.*;
 public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
 {
   public static final String PROTOCOL_TYPE = "-email";
-  public static final int DEFAULT_PROTOCOL_COST = 1500;
 
-  public static final Date transportBirthday = new Date();
+//  public static final Date transportBirthday = new Date();
 
   private static final Object sendLock = new Object();
 
   private static boolean debug;
   private static boolean debugMail = false;
 
-  private int protocolCost;
+  private static final int protocolCost;
+
   private HashMap links;
   private MailBox outboxes[];
   private EmailMessageOutputStream messageOut;
 
+  static
+  {
+    //  Read external properties
+
+    String s = "org.cougaar.message.protocol.email.cost";
+    protocolCost = Integer.valueOf(System.getProperty(s,"10000")).intValue();
+  }
 
   public OutgoingEmailLinkProtocol ()
   {
     System.err.println ("Creating " + this);
-
     links = new HashMap();
-
-    //  Read external properties
-
-    debug = false;
-    String s = "org.cougaar.message.protocol.email.debug";
-    String debugProp = System.getProperty (s);
-    if (debugProp != null && debugProp.equals("true")) debug = true;
-
-    s = "org.cougaar.message.protocol.email.cost";
-    String costProp = System.getProperty (s);
-    try  { protocolCost = Integer.valueOf(costProp).intValue(); } 
-    catch (Exception e) { protocolCost = DEFAULT_PROTOCOL_COST; }
   }
 
   public String toString ()

@@ -46,6 +46,7 @@ class PureAckAckSender implements Runnable
   private Vector queue;
   private PureAckAckMessage messages[];
   private boolean haveNewMessages;
+  private Comparator deadlineSort;
   private long minSendDeadline;
 
   public PureAckAckSender (MessageAckingAspect aspect) 
@@ -54,6 +55,7 @@ class PureAckAckSender implements Runnable
     queue = new Vector();
     messages = new PureAckAckMessage[32];
     haveNewMessages = false;
+    deadlineSort = new DeadlineSort();
     minSendDeadline = Long.MAX_VALUE;
   }
 
@@ -122,9 +124,15 @@ class PureAckAckSender implements Runnable
 
         messages = (PureAckAckMessage[]) queue.toArray (messages);  // try array reuse
         len = queue.size();
+        if (len > 1) Arrays.sort (messages, 0, len, deadlineSort);
       }
 
       //  Check if it is time to send a pure ack-ack message
+
+      if (len > 0 && debug()) 
+      {
+        log.debug ("PureAckAckSender: reviewing queue (" +len+ " msg" +(len==1? ")" : "s)"));
+      }
 
       minSendDeadline = Long.MAX_VALUE;
 
@@ -172,6 +180,35 @@ class PureAckAckSender implements Runnable
       }
 
       Arrays.fill (messages, null);  // release references
+    }
+  }
+
+  private static class DeadlineSort implements Comparator
+  {
+    public int compare (Object paam1, Object paam2)
+    {
+      if (paam1 == null)  // drive nulls to bottom (top is index 0)
+      {
+        if (paam2 == null) return 0;
+        else return 1;
+      }
+      else if (paam2 == null) return -1;
+
+      //  Sort on send deadline (sooner deadlines come first)
+
+      PureAckAck paa1 = (PureAckAck) MessageUtils.getAck ((PureAckAckMessage) paam1);
+      PureAckAck paa2 = (PureAckAck) MessageUtils.getAck ((PureAckAckMessage) paam2);
+
+      long d1 = paa1.getSendDeadline();
+      long d2 = paa2.getSendDeadline();
+
+      if (d1 == d2) return 0;
+      return (d1 > d2 ? 1 : -1);
+    }
+
+    public boolean equals (Object obj)
+    {
+      return (this == obj);
     }
   }
 

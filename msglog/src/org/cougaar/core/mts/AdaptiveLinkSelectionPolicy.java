@@ -465,12 +465,10 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       {
         //  Reschedule the ack and don't send it now
 
-        if (debug) log.debug ("Rescheduling pure ack msg (new deadline=" +
-                              latestDeadline+ "): " +msgString);
-
+        if (debug) log.debug ("Rescheduling pure ack msg: " +msgString);
         pureAck.setSendDeadline (latestDeadline);
         MessageAckingAspect.addToPureAckSender ((PureAckMessage)msg);
-        return blackHoleLink;  // msgs go in, but never come out!
+        return blackHoleLink;
       }
 
       //  If we get here, it is time to try to send the ack over the highest ranking

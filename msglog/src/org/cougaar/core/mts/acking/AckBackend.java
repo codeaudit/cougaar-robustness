@@ -50,9 +50,16 @@ class AckBackend extends MessageDelivererDelegateImplBase
 
   public MessageAttributes deliverMessage (AttributedMessage msg, MessageAddress dest) throws MisdeliveredMessageException
   {
+    String msgString = MessageUtils.toString (msg);
+    if (log.isDebugEnabled()) log.debug ("AckBackend: entered with " +msgString);
+
     //  Special Case:  Local messages are completely excluded from acking
 
-    if (MessageUtils.isLocalMessage (msg)) return super.deliverMessage (msg, dest);
+    if (MessageUtils.isLocalMessage (msg)) 
+    {
+      if (log.isDebugEnabled()) log.debug ("AckBackend: delivering local msg: " +msgString);
+      return super.deliverMessage (msg, dest);
+    }
 
     //  Sanity Check:  The dest argument appears vestigial and is not supported
 
@@ -65,7 +72,6 @@ class AckBackend extends MessageDelivererDelegateImplBase
     //  Sanity Check: Message must have some kind of ack in it!
 
     Ack ack = MessageUtils.getAck (msg);
-    String msgString = MessageUtils.toString (msg);
 
     if (ack == null)
     {
@@ -274,7 +280,7 @@ class AckBackend extends MessageDelivererDelegateImplBase
 
         if (log.isInfoEnabled()) log.info ("AckBackend: Duplicate msg ignored: " +msgString);
 
-// should schedule pure acks even for duplicates
+// TODO: sched pure acks for dups (only reg. message dups)
 
         return success;
       }
@@ -335,11 +341,10 @@ class AckBackend extends MessageDelivererDelegateImplBase
         pureAck.setAckSendableTime (ackSendableTime);
         float myTimeout = (float)(ack.getResendTimeout() - ack.getRTT());
         int firstAck = (int)(myTimeout * MessageAckingAspect.firstAckPlacingFactor);
-//System.err.println ("recTime="+ack.getReceiveTime()+" rsndTimeout="+ack.getResendTimeout()+" rtt="+ack.getRTT());
         pureAck.setSendDeadline (ack.getReceiveTime() + firstAck);
 //pureAck.setSendDeadline (ack.getReceiveTime() + 15);  // testing
         PureAckMessage pureAckMsg = new PureAckMessage (msg, pureAck);
-        if (log.isDebugEnabled()) log.debug ("AckBackend: Launching new pure ack msg: " +pureAckMsg);
+        if (log.isDebugEnabled()) log.debug ("AckBackend: Starting new pure ack msg: " +pureAckMsg);
         MessageAckingAspect.pureAckSender.add (pureAckMsg);
       }
       else if (ack.isPureAck())
@@ -356,7 +361,7 @@ class AckBackend extends MessageDelivererDelegateImplBase
         pureAckAck.setSendDeadline (ack.getReceiveTime() + onlyAckAck);
 //pureAckAck.setSendDeadline (ack.getReceiveTime() + 5);  // testing
         PureAckAckMessage pureAckAckMsg = new PureAckAckMessage ((PureAckMessage)msg, pureAckAck);
-        if (log.isDebugEnabled()) log.debug ("AckBackend: Launching new pure ack-ack msg: " +pureAckAckMsg);
+        if (log.isDebugEnabled()) log.debug ("AckBackend: Starting new pure ack-ack msg: " +pureAckAckMsg);
         MessageAckingAspect.pureAckAckSender.add (pureAckAckMsg);
 
         //  We can set a final send deadline for ack-acks, in case it gets bounced

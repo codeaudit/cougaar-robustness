@@ -43,15 +43,11 @@ import org.cougaar.core.service.ThreadService;
 public class MessageAckingAspect extends StandardAspect
 {
   static final String  excludedLinks;
-  static final int     messageAgeWindowInMinutes;
-  static final int     initialEmailRoundtripTime;
-  static final int     initialNNTPRoundtripTime;
-  static final int     initialOtherRoundtripTime;
   static final int     resendMultiplier;
   static final float   firstAckPlacingFactor;
   static final float   interAckSpacingFactor;
   static final float   ackAckPlacingFactor;
-  static final int     runningAveragePoolSize;
+  static final int     messageAgeWindowInMinutes;
 
   static MessageResender messageResender;
   static PureAckSender pureAckSender;
@@ -63,11 +59,9 @@ public class MessageAckingAspect extends StandardAspect
   private static final Hashtable acksToSendTable = new Hashtable();
   private static final Hashtable successfulReceivesTable = new Hashtable();
   private static final Hashtable successfulSendsTable = new Hashtable();
-
   private static final Hashtable lastReceiveLinkTable = new Hashtable();
   private static final Hashtable lastSuccessfulLinkTable = new Hashtable();
   private static final Hashtable lastSendTimeTable = new Hashtable();
-  private static final Hashtable roundtripTable = new Hashtable();
 
   private static MessageAckingAspect instance;
 
@@ -84,17 +78,8 @@ public class MessageAckingAspect extends StandardAspect
 //String defaultList = "org.cougaar.core.mts.OutgoingSocketLinkProtocol";  // comma separated list
     excludedLinks = System.getProperty (s, defaultList);
 
-    s = "org.cougaar.message.transport.aspects.acking.initEmailRndTrip";
-    initialEmailRoundtripTime = Integer.valueOf(System.getProperty(s,"5000")).intValue();
-
-    s = "org.cougaar.message.transport.aspects.acking.initNNTPRndTrip";
-    initialNNTPRoundtripTime = Integer.valueOf(System.getProperty(s,"10000")).intValue();
-
-    s = "org.cougaar.message.transport.aspects.acking.initOtherRndTrip";
-    initialOtherRoundtripTime = Integer.valueOf(System.getProperty(s,"2000")).intValue();
-
     s = "org.cougaar.message.transport.aspects.acking.resendMultiplier";
-    resendMultiplier = Integer.valueOf(System.getProperty(s,"7")).intValue();
+    resendMultiplier = Integer.valueOf(System.getProperty(s,"4")).intValue();
 
     s = "org.cougaar.message.transport.aspects.acking.firstAckPlacingFactor";
     float def = ((float)resendMultiplier)/2.0f;
@@ -108,9 +93,6 @@ public class MessageAckingAspect extends StandardAspect
 
     s = "org.cougaar.message.transport.aspects.acking.msgAgeWindowInMinutes";
     messageAgeWindowInMinutes = Integer.valueOf(System.getProperty(s,"30")).intValue();
-
-    s = "org.cougaar.message.transport.aspects.acking.runningAvgPoolSize";
-    runningAveragePoolSize = Integer.valueOf(System.getProperty(s,"5")).intValue();
   }
 
   public MessageAckingAspect () 

@@ -40,7 +40,6 @@ import java.util.Hashtable;
 
 public class MessageNumberingAspect extends StandardAspect
 {
-  private static final Hashtable numberSequenceTables = new Hashtable();
   private static final String AGENT_OUTGOING_SEQ_TABLE = "AgentOutgoingMsgNumSequenceTable";
   private static final Integer ZERO = new Integer (0);
   private static final int POSITIVE = 1;

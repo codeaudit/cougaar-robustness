@@ -54,7 +54,7 @@ private int cnt = 0;
     //  Read external properties
 
     String s = "org.cougaar.message.protocol.udp.cost";
-    protocolCost = Integer.valueOf(System.getProperty(s,"166")).intValue();
+    protocolCost = Integer.valueOf(System.getProperty(s,"2000")).intValue();
   }
  
   public OutgoingUDPLinkProtocol ()
