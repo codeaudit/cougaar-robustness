@@ -64,7 +64,7 @@ import java.io.ByteArrayInputStream;
  */
 public class LoadBalancer extends BlackboardClientComponent {
 
-  public static final int DEFAULT_SOLVER_MODE = LoadBalanceRequest.SOLVER_MODE_LOAD_BALANCE;
+  public static final int DEFAULT_SOLVER_MODE = LoadBalanceRequest.SOLVER_MODE_BLEND_PFAIL_LOAD_BALANCE;
   public static final int DEFAULT_ANNEAL_TIME = -1;
   public static final boolean DEFAULT_HAMMING = true;
 
