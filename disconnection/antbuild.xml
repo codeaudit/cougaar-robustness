@@ -6,74 +6,77 @@
 <property environment="env"/>
 <!--<property name="COUGAAR_INSTALL_PATH" value="j:/cougaar/install"/>-->
     
-	<path id="cougaar.libs">
+<path id="cougaar.libs">
+    <pathelement location="/var/www/html/jars/Robustness_objs_common_HEAD_B11_2.jar"/>
+    <pathelement location="/var/www/html/jars/Robustness_objs_Deconfliction_HEAD_B11_2.jar"/>
+    <pathelement location="/var/www/html/jars/Robustness_objs_Coordinator_HEAD_B11_2.jar"/>
+    <fileset dir="${env.COUGAAR_INSTALL_PATH}/lib">
+        <include name="**/*.jar"/>
+    </fileset>
+    <fileset dir="${env.COUGAAR_INSTALL_PATH}/sys">
+        <include name="**/*.jar"/>
+    </fileset>
+</path>
 
-		<pathelement location="/var/www/html/jars/Robustness_objs_common_HEAD_B11_2.jar"/>
-		<pathelement location="/var/www/html/jars/Robustness_objs_Deconfliction_HEAD_B11_2.jar"/>
-		<pathelement location="/var/www/html/jars/Robustness_objs_Coordinator_HEAD_B11_2.jar"/>
+<target name="delete">
+    <delete dir="${build}"/>
+    <mkdir dir="${build}"/>
+</target>
 
-		<fileset dir="${env.COUGAAR_INSTALL_PATH}/lib">
-			<include name="**/*.jar"/>
-		</fileset>
-		<fileset dir="${env.COUGAAR_INSTALL_PATH}/sys">
-			<include name="**/*.jar"/>
-		</fileset>
-        </path>
+<target name="compile">
+    <javac deprecation="true" 
+           debug="true" 
+           optimize="false" 
+           srcdir="${src}" 
+           destdir="${build}">
+           <classpath refid="cougaar.libs"/>
+    </javac>
+</target>
 
-	<target name="delete">
-          <delete dir="${build}"/>
-          <mkdir dir="${build}"/>
-        </target>
+<target name="jar" > <!--depends="compile"-->
+	<jar jarfile="${jar}" baseDir="${build}"/>
+</target>
 
-      <target name="compile">
-        <javac  deprecation="true" 
-                debug="true" 
-                optimize="false" 
-                srcdir="${src}" 
-                destdir="${build}">
-                <classpath refid="cougaar.libs"/>
-        </javac>
-     </target>
-
-	<target name="jar" > <!--depends="compile"-->
-		<jar jarfile="${jar}" baseDir="${build}"/>
-	</target>
-
-  <target name="create-overlay-manifest">
+<target name="create-overlay-manifest">
     <tstamp>
-      <format property="build.time" pattern="MM/dd/yyyy hh:mm aa"/>
+        <format property="build.time" pattern="MM/dd/yyyy hh:mm aa"/>
     </tstamp>
     <mkdir dir="Manifest"/>
-    <echo file="Manifest/${ant.project.name}.txt" append="no">NAME=${ant.project.name}
-ARCHIVE_TIME=${build.time}
-</echo>
-    </target>
+    <echo file="Manifest/${ant.project.name}.txt" 
+          append="no">NAME=${ant.project.name}
+          ARCHIVE_TIME=${build.time}
+    </echo>
+</target>
 
 
-	<target name="create_cougaar_overlay" depends="create-overlay-manifest">
-		<mkdir dir="staging/lib"/>
-		<mkdir dir="staging/sys"/>
-	  <move todir="staging/Manifest">
-	    <fileset dir="Manifest"/>
-	  </move>
-		<antcall target="delete"/>
-		<antcall target="compile"/>
-		<antcall target="jar"/>
-		<signjar jar="${jar}" keystore="/var/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
-   	<move file="${jar}" todir="staging/lib"/>
+<target name="create_cougaar_overlay" depends="create-overlay-manifest">
+    <mkdir dir="staging/configs"/>		
+    <mkdir dir="staging/csmart"/>
+    <mkdir dir="staging/lib"/>
+    <move todir="staging/Manifest">
+        <fileset dir="Manifest"/>
+    </move>
+    <antcall target="delete"/>
+    <antcall target="compile"/>
+    <antcall target="jar"/>
+    <signjar jar="${jar}" keystore="/var/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
+    <move file="${jar}" todir="staging/lib"/>
     <copy todir="staging/csmart">
-      <fileset dir="csmart/"/>
+        <fileset dir="csmart/"/>
+    </copy>
+    <copy todir="staging/configs">
+        <fileset dir="configs/"/>
     </copy>
     <zip zipfile="AR_objs_disconnection.zip" basedir="staging"/>
-	</target>
+</target>
 
-	<target name="clean" depends="delete,compile,jar"/>
+<target name="clean" depends="delete,compile,jar"/>
     
-	<target name="jarNMove">
-		<antcall target="jar"/>
-		<signjar jar="${jar}" keystore="signingCA.keystore" alias="privileged" storepass="keystore"/>
- 		<move file="${jar}" todir="${cougaar}/lib"/>
-   </target>
+<target name="jarNMove">
+    <antcall target="jar"/>
+    <signjar jar="${jar}" keystore="signingCA.keystore" alias="privileged" storepass="keystore"/>
+    <move file="${jar}" todir="${cougaar}/lib"/>
+</target>
         
 </project>
 

@@ -4,12 +4,12 @@
 
 ltsp = "org.cougaar.coordinator.techspec.xml.LoadTechSpecsPlugin"
 
-techspecs = [PlannedDisconnect_AgentAssetStateDimensions.xml', 
-             PlannedDisconnect_NodeAssetStateDimensions.xml', 
-             PlannedDisconnect_Threats.xml', 
-             PlannedDisconnect_Events.xml', 
-             PlannedDisconnect_ConnectedSensors.xml', 
-             PlannedDisconnect_PlannedDisconnectActuator.xml']
+techspecs = ['PlannedDisconnect_AgentAssetStateDimensions.xml', 
+             'PlannedDisconnect_NodeAssetStateDimensions.xml', 
+             'PlannedDisconnect_Threats.xml', 
+             'PlannedDisconnect_Events.xml', 
+             'PlannedDisconnect_ConnectedSensors.xml', 
+             'PlannedDisconnect_PlannedDisconnectActuator.xml']
 
 society.each_agent(true) do |agent|
     if agent.name =~ /.*ARManager.*/
