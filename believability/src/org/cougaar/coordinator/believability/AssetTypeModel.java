@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/AssetTypeModel.java,v $
- * $Revision: 1.5 $
- * $Date: 2004-06-18 00:16:38 $
+ * $Revision: 1.8 $
+ * $Date: 2004-06-22 04:02:12 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -47,7 +47,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * be notified is there is a change.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.5 $Date: 2004-06-18 00:16:38 $
+ * @version $Revision: 1.8 $Date: 2004-06-22 04:02:12 $
  *
  */
 class AssetTypeModel extends Model

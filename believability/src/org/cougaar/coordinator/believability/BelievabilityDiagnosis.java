@@ -49,18 +49,28 @@ public class BelievabilityDiagnosis extends BeliefUpdateTrigger
 
         super( DiagnosisUtils.getAssetID( diag ) );
 
-	_blackboard_diagnosis = diag;
-	
-	// Copy relevant information from the diagnosis, as it may change
-	_diagnosis_value = (String) _blackboard_diagnosis.getValue();
-	_diagnosis_name = _blackboard_diagnosis.getClass().getName();
-	_diagnosis_state_dimension = 
-	    _blackboard_diagnosis.getTechSpec().getStateDimension().getStateName();
+     _blackboard_diagnosis = diag;
+     
+     // Copy relevant information from the diagnosis, as it may change
+     _diagnosis_value = (String) _blackboard_diagnosis.getValue();
+     _diagnosis_name = _blackboard_diagnosis.getClass().getName();
 
-	_last_asserted_timestamp = 
-	    _blackboard_diagnosis.getLastAssertedTimestamp();
-	_last_changed_timestamp =
-	    _blackboard_diagnosis.getLastChangedTimestamp();
+     if ( _blackboard_diagnosis.getTechSpec() == null )
+         logError( "NULL tech spec from diagnosis: "
+                   + _diagnosis_name + " = " + _diagnosis_value );
+     else if ( _blackboard_diagnosis.getTechSpec().getStateDimension() 
+               == null )
+         logError( "NULL state dimension from diagnosis: "
+                   + _diagnosis_name + " = " + _diagnosis_value );
+     else
+         _diagnosis_state_dimension = 
+                 _blackboard_diagnosis.getTechSpec
+                 ().getStateDimension().getStateName();
+
+     _last_asserted_timestamp = 
+         _blackboard_diagnosis.getLastAssertedTimestamp();
+     _last_changed_timestamp =
+         _blackboard_diagnosis.getLastChangedTimestamp();
     }
 
 
@@ -76,7 +86,7 @@ public class BelievabilityDiagnosis extends BeliefUpdateTrigger
      * @return the timestamp
      **/
     long getLastAssertedTimestamp() { 
-	return _last_asserted_timestamp; 
+     return _last_asserted_timestamp; 
     }
 
 
@@ -86,7 +96,7 @@ public class BelievabilityDiagnosis extends BeliefUpdateTrigger
      * @return the timestamp
      **/
     long getTriggerTimestamp() { 
-	return _last_changed_timestamp; 
+     return _last_changed_timestamp; 
     }
 
 
@@ -105,7 +115,7 @@ public class BelievabilityDiagnosis extends BeliefUpdateTrigger
      * @return 
      **/
     public String getSensorName() { 
-	return _diagnosis_name;
+     return _diagnosis_name;
     }
 
 

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ActuatorTypeModel.java,v $
- * $Revision: 1.2 $
- * $Date: 2004-06-18 00:16:38 $
+ * $Revision: 1.14 $
+ * $Date: 2004-07-15 20:19:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -42,7 +42,7 @@ import org.cougaar.core.util.UID;
  * specs).
  *
  * @author Tony Cassandra
- * @version $Revision: 1.2 $Date: 2004-06-18 00:16:38 $
+ * @version $Revision: 1.14 $Date: 2004-07-15 20:19:41 $
  *
  */
 class ActuatorTypeModel extends Model

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/SubsetIterator.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-06-18 00:16:39 $
+ * $Revision: 1.13 $
+ * $Date: 2004-07-15 20:19:42 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -29,7 +29,7 @@ import java.util.Iterator;
  * the integers 0 through (n-1)
  *
  * @author Tony Cassandra
- * @version $Revision: 1.1 $Date: 2004-06-18 00:16:39 $
+ * @version $Revision: 1.13 $Date: 2004-07-15 20:19:42 $
  * @see Subset
  *
  */

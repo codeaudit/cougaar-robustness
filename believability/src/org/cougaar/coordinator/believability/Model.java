@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/Model.java,v $
- * $Revision: 1.4 $
- * $Date: 2004-06-18 00:16:38 $
+ * $Revision: 1.10 $
+ * $Date: 2004-06-29 22:43:18 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -34,7 +34,7 @@ import org.cougaar.util.log.Logger;
  * facilities. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.4 $Date: 2004-06-18 00:16:38 $
+ * @version $Revision: 1.10 $Date: 2004-06-29 22:43:18 $
  * 
  *
  */

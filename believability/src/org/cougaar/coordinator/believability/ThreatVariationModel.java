@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/Attic/ThreatVariationModel.java,v $
- * $Revision: 1.2 $
- * $Date: 2004-06-18 00:16:39 $
+ * $Revision: 1.4 $
+ * $Date: 2004-06-21 22:36:17 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -21,6 +21,7 @@
 
 package org.cougaar.coordinator.believability;
 
+import java.util.Enumeration;
 import java.util.Vector;
 
 import org.cougaar.coordinator.techspec.AssetID;
@@ -36,7 +37,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * with tech spec package.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.2 $Date: 2004-06-18 00:16:39 $
+ * @version $Revision: 1.4 $Date: 2004-06-21 22:36:17 $
  *
  */
 class ThreatVariationModel extends Model
@@ -141,10 +142,15 @@ class ThreatVariationModel extends Model
     {
         try
         {
-            
-            return getThreatDescription().getEventProbability
+            double prob =  getThreatDescription().getEventProbability
                     ().computeIntervalProbability( start_time, end_time );
 
+            logDebug( "Threat " + getName() + " causes event "
+                      + getEventName() + " from " + start_time
+                      + " to " + end_time
+                      + " with prob. = " + prob );
+                      
+            return prob;
         }
         catch (NegativeIntervalException nie)
         {
@@ -171,6 +177,39 @@ class ThreatVariationModel extends Model
                 ( DefaultAssetTechSpec.findAssetByID( asset_id ));
 
     } // method isApplicable
+
+    //************************************************************
+    /**
+     * Convert this model to a string.
+     *
+     */
+    public String toString( )
+    {
+        StringBuffer buff = new StringBuffer();
+
+        buff.append( "ThreatVariation for: " + getName() + "\n" );
+
+        buff.append( "\tState dimension: " + getStateDimName()  + "\n" );
+
+        buff.append( "\tEvent name: " + getEventName() + "\n" );
+
+        buff.append( "\tAssetIDs: [" );
+
+        Enumeration asset_enum = getAssetList().elements();
+        while( asset_enum.hasMoreElements() )
+        {
+            AssetTechSpecInterface asset_ts
+                    = (AssetTechSpecInterface) asset_enum.nextElement();
+            
+            buff.append( " " + asset_ts.getAssetID() );
+            
+        } // while asset_enum
+
+        buff.append( " ]\n" );
+
+        return buff.toString();
+
+    } // method toString
 
     //------------------------------------------------------------
     // private interface

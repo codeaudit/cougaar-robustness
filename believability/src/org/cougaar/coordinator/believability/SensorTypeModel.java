@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/SensorTypeModel.java,v $
- * $Revision: 1.6 $
- * $Date: 2004-06-18 00:16:39 $
+ * $Revision: 1.12 $
+ * $Date: 2004-06-29 22:43:18 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -37,7 +37,7 @@ import org.cougaar.core.util.UID;
  * needs concerning a SensorType (from the tech specs). 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.6 $Date: 2004-06-18 00:16:39 $
+ * @version $Revision: 1.12 $Date: 2004-06-29 22:43:18 $
  *
  */
 class SensorTypeModel extends Model

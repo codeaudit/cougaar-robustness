@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/Attic/ThreatVariationCollection.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-06-18 00:16:39 $
+ * $Revision: 1.6 $
+ * $Date: 2004-06-24 16:36:56 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -32,7 +32,7 @@ import java.util.HashSet;
  * artifact of the nature of the threat and event objects) 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.1 $Date: 2004-06-18 00:16:39 $
+ * @version $Revision: 1.6 $Date: 2004-06-24 16:36:56 $
  *
  */
 class ThreatVariationCollection

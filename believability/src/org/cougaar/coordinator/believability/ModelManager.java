@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManager.java,v $
- * $Revision: 1.4 $
- * $Date: 2004-06-18 00:16:38 $
+ * $Revision: 1.6 $
+ * $Date: 2004-06-21 22:36:16 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -50,7 +50,7 @@ import org.cougaar.util.log.Logger;
  * and provides information via the ModelManagerInterface. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.4 $Date: 2004-06-18 00:16:38 $
+ * @version $Revision: 1.6 $Date: 2004-06-21 22:36:16 $
  *
  */
 public class ModelManager extends Loggable

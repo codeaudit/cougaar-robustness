@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetModel.java,v $
- * $Revision: 1.4 $
- * $Date: 2004-06-18 00:16:38 $
+ * $Revision: 1.6 $
+ * $Date: 2004-06-21 22:36:16 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.4 $Date: 2004-06-18 00:16:38 $
+ * @version $Revision: 1.6 $Date: 2004-06-21 22:36:16 $
  *
  */
 class POMDPAssetModel extends Model
@@ -122,7 +122,7 @@ class POMDPAssetModel extends Model
         if ( dim_idx < 0 )
             throw new BelievabilityException
                     ( "POMDPAssetModel.getPOMDPAssetDimensionModel()",
-                      "State dimension invalid" );
+                      "State dimension invalid: " + state_dim_name );
 
         return _dimension_pomdp_model[dim_idx];
 
@@ -225,6 +225,8 @@ class POMDPAssetModel extends Model
 
         } // for dim_idx
 
+        logDebug( "Belief after threats: " + next_belief.toString() );
+
         return next_belief;
 
     } // method updateBeliefState
@@ -265,8 +267,6 @@ class POMDPAssetModel extends Model
         BeliefState next_belief 
                 = updateBeliefState( start_belief,
                                      trigger.getTriggerTimestamp() );
-
-        logDebug( "Belief after threats: " + next_belief.toString() );
 
         // Now we go and do the single state dimension update to
         // factor in the observation/diagnosis.

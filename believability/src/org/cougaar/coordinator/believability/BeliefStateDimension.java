@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefStateDimension.java,v $
- * $Revision: 1.4 $
- * $Date: 2004-06-18 00:16:38 $
+ * $Revision: 1.17 $
+ * $Date: 2004-07-15 20:19:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -33,7 +33,7 @@ import org.cougaar.coordinator.techspec.AssetStateDimension;
  * dimensions. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.4 $Date: 2004-06-18 00:16:38 $
+ * @version $Revision: 1.17 $Date: 2004-07-15 20:19:41 $
  */
 public class BeliefStateDimension
         implements Cloneable

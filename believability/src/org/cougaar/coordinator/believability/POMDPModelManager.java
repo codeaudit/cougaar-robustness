@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/Attic/POMDPModelManager.java,v $
- * $Revision: 1.4 $
- * $Date: 2004-06-18 00:16:39 $
+ * $Revision: 1.9 $
+ * $Date: 2004-06-24 16:36:56 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -32,7 +32,7 @@ import org.cougaar.coordinator.techspec.AssetType;
  * manage and access them all. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.4 $Date: 2004-06-18 00:16:39 $
+ * @version $Revision: 1.9 $Date: 2004-06-24 16:36:56 $
  */
 public class POMDPModelManager 
         extends Loggable implements POMDPModelInterface

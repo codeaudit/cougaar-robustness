@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/Attic/StateEstimationConsumerInterface.java,v $
- * $Revision: 1.5 $
- * $Date: 2004-06-18 00:16:39 $
+ * $Revision: 1.14 $
+ * $Date: 2004-07-12 19:30:46 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -25,7 +25,7 @@ package org.cougaar.coordinator.believability;
  * Used to accept new state estimates and take the appropriate action.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.5 $Date: 2004-06-18 00:16:39 $
+ * @version $Revision: 1.14 $Date: 2004-07-12 19:30:46 $
  *
  */
 public interface StateEstimationConsumerInterface

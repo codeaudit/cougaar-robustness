@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/Subset.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-06-18 00:16:39 $
+ * $Revision: 1.13 $
+ * $Date: 2004-07-15 20:19:42 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -25,7 +25,7 @@ package org.cougaar.coordinator.believability;
  * Represents subset of a set of the integers 0 through (n-1).
  *
  * @author Tony Cassandra
- * @version $Revision: 1.1 $Date: 2004-06-18 00:16:39 $
+ * @version $Revision: 1.13 $Date: 2004-07-15 20:19:42 $
  *
  */
 public class Subset extends Object

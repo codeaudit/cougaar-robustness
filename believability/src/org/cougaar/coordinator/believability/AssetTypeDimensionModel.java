@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/AssetTypeDimensionModel.java,v $
- * $Revision: 1.2 $
- * $Date: 2004-06-18 00:16:38 $
+ * $Revision: 1.3 $
+ * $Date: 2004-06-19 01:02:22 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -43,7 +43,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * corresponds to the tech-spec AssetSatteDimension objects.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.2 $Date: 2004-06-18 00:16:38 $
+ * @version $Revision: 1.3 $Date: 2004-06-19 01:02:22 $
  * @see AssetTypeModel
  * @see AssetStateDimension
  */
@@ -51,6 +51,14 @@ class AssetTypeDimensionModel extends Model
 {
 
     // Class implmentation comments go here ...
+
+    // This is for testing to ignore any event probability that comes
+    // from the tech-specs.  If 'true' this will force it to have a
+    // small non-zero probility to help debug the belief update
+    // calculations.  The tech spec derived probabilities are
+    // time-dependent making testing difficult.
+    //
+    private static final boolean OVERRIDE_EVENT_PROBABILITIES = false;
     
     //------------------------------------------------------------
     // public interface
@@ -313,9 +321,6 @@ class AssetTypeDimensionModel extends Model
         
         if ( threat_root_model == null )
         {
-            logDebug( "Creating new ThreatRootModel: " 
-                      + threat_mi.getName());
-
             threat_root_model = new ThreatRootModel
                     ( threat_mi.getThreatDescription(), 
                       this );
@@ -323,13 +328,18 @@ class AssetTypeDimensionModel extends Model
             _threat_model_set.put( threat_mi.getName(),
                                    threat_root_model );
 
+            logDebug( "Created new ThreatRootModel: " 
+                      + threat_root_model.toString() );
+
         } // if didn't have threat root model
 
         // Now we can add this variation safely to the root.
         //
         ThreatVariationModel threat_var
-                = new ThreatVariationModel( threat_root_model,
-                                            threat_mi );
+                =  threat_root_model.addThreatVariation( threat_mi );
+
+        logDebug( "Created new ThreatVariationModel: " 
+                  + threat_var.toString() );
 
         // Finally, if this Threat involves assets we already have
         // built up a set of threat variations for, then we will need
@@ -349,14 +359,14 @@ class AssetTypeDimensionModel extends Model
         Enumeration asset_enum = asset_list.elements();
         while( asset_enum.hasMoreElements() )
         {
-            AssetTechSpecInterface aset_ts
+            AssetTechSpecInterface asset_ts
                     = (AssetTechSpecInterface) asset_enum.nextElement();
 
             // Because we build the threat variation set on the fly, it is
             // very possible that we may try to remove things that were
             // never created. In this case, we will do nothing silently.
             //
-            _asset_threat_var_table.remove( aset_ts.getAssetID() );
+            _asset_threat_var_table.remove( asset_ts.getAssetID() );
 
         } // while enum */
 
@@ -740,11 +750,13 @@ class AssetTypeDimensionModel extends Model
         
             prob[idx] = threat_var.getEventProbability( start_time, end_time );
 
+            logDebug( "Event prob. due to threat "
+                      + threat_var.getName() + " is "
+                      + prob[idx] );
+
+            
         } // for idx
 
-        // This may result in an approximation if there are more than
-        // 3 threats that can cause an event.
-        //
         return ProbabilityUtils.computeEventUnionProbability( prob );
 
     } // method getEventProbability
@@ -866,6 +878,19 @@ class AssetTypeDimensionModel extends Model
             event_probs[idx] = getEventProbability( threat_var_set,
                                                     start_time,
                                                     end_time );
+            logDebug( "Event prob for  " + event_name 
+                      + " is " + event_probs[idx] );
+            
+            if ( OVERRIDE_EVENT_PROBABILITIES )
+            {
+                logError( "OVERRIDE EVENT PROBS.  THIS IS FOR TESTING ONLY!");
+                
+                event_probs[idx] = ProbabilityUtils.getRandomDouble() / 10.0; 
+
+                logDebug( "New event prob for  " + event_name 
+                          + " is " + event_probs[idx] );
+            }
+
         } // for idx
 
         logDebug( "Event probs: " 

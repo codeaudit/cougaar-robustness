@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/Attic/ThreatRootModel.java,v $
- * $Revision: 1.2 $
- * $Date: 2004-06-18 00:16:39 $
+ * $Revision: 1.7 $
+ * $Date: 2004-06-24 16:36:56 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -39,7 +39,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * asset instance by asset instance basis.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.2 $Date: 2004-06-18 00:16:39 $
+ * @version $Revision: 1.7 $Date: 2004-06-24 16:36:56 $
  * @see ThreatVariationModel
  *
  */
