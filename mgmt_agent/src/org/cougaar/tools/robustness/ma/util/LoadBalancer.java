@@ -89,7 +89,7 @@ public class LoadBalancer extends BlackboardClientComponent {
   public LoadBalancer(BindingSite bs, RobustnessController controller) {
     this.setBindingSite(bs);
     this.controller = controller;
-    this.moveHelper = controller.getMover();
+    this.moveHelper = controller.getMoveHelper();
     initialize();
     load();
     start();
@@ -137,10 +137,10 @@ public class LoadBalancer extends BlackboardClientComponent {
     }
 
     for (Iterator it = loadBalanceRequests.getChangedCollection().iterator(); it.hasNext(); ){
-      logger.debug("orig society: \n" + origSociety.toXML());
       LoadBalanceRequest lbr = (LoadBalanceRequest)it.next();
       if(lbr.isResult()) {
         CougaarSociety society = lbr.getCougaarSociety();
+        if(society == null) continue;
         logger.debug("result society: \n" + society.toXML());
         moveAgents(origSociety, society);
       }
@@ -156,6 +156,8 @@ public class LoadBalancer extends BlackboardClientComponent {
     logger.info("doLoadBalance");
     String society = controller.getCompleteStatus();
     String enSociety = getXmlForEN(society);
+    if(enSociety == null) return null;
+    logger.debug("get society xml before load balance: \n" + enSociety);
     CougaarSociety cs = loadSocietyFromXML(enSociety);
     LoadBalanceRequest loadBalReq = new LoadBalanceRequest(cs);
     logger.debug("publishing LoadBalanceRequest");
@@ -203,12 +205,19 @@ public class LoadBalancer extends BlackboardClientComponent {
       index = society.indexOf("\"", index);
       society = society.substring(index);
       String nodeName = society.substring(1, society.indexOf("\"", 1));
+      int stateIndex1 = society.indexOf("state=\"");
+      int stateIndex2 = society.indexOf("\"", stateIndex1+8);
+      String state = society.substring(stateIndex1+7, stateIndex2);
+      if(state.equals("DEAD")){
+        continue;
+      }
       sb.append("  <CougaarNode name=\"" + nodeName + "\">\n");
-      sb.append("    <Attribute name=\"Memory\" value=\"1024\"/>\n");
+      sb.append("    <Attribute name=\"Memory\" value=\"nodeMemory\"/>\n");
       sb.append("    <Attribute name=\"ProbabilityOfFailure\" value=\"0.2\"/>\n");
-      sb.append("    <Attribute name=\"CPU\" value=\"900\"/>\n");
+      sb.append("    <Attribute name=\"CPU\" value=\"nodeCPU\"/>\n");
       sb.append("    <Attribute name=\"OperatingSystem\" value=\"LINUX\"/>\n");
       String tmp = society;
+      int childAgents = 0;
       for(int j=0; j<agentsCount; j++) {
         index = tmp.indexOf("<agent name=");
         index = tmp.indexOf("\"", index);
@@ -226,8 +235,15 @@ public class LoadBalancer extends BlackboardClientComponent {
           sb.append("      <Requirement name=\"BandwidthReceived_" + agentName + "\" value=\"3\"/>\n");
           sb.append("      <Requirement name=\"BandwidthSent_" + agentName + "\" value=\"3\"/>\n");
           sb.append("    </CougaarAgent>\n");
+          childAgents ++;
         }
       }
+      int nodeCPU = childAgents * 50 + 200;
+      index = sb.lastIndexOf("nodeCPU");
+      sb.replace(index, index+7, Integer.toString(nodeCPU));
+      int nodeMemory = childAgents * 30 + 200;
+      index = sb.lastIndexOf("nodeMemory");
+      sb.replace(index, index+10, Integer.toString(nodeMemory));
       sb.append("  </CougaarNode>\n");
     }
     sb.append("</CougaarSociety>");
