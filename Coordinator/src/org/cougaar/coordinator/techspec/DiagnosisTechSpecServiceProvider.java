@@ -97,7 +97,7 @@ public class DiagnosisTechSpecServiceProvider implements ServiceProvider {
         /**
          * Add a DiagnosisTechSpec for a class, meant for testing 
          */
-        public void addCrossDiagnosis(CrossDiagnosis cp) {
+        public void addCrossDiagnosis(CrossDiagnosis dp) {
             
             crossProbs.add(dp);
             

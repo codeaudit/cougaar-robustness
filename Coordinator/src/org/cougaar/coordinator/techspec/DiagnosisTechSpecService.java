@@ -35,6 +35,6 @@ public interface DiagnosisTechSpecService extends Service {
     
     public DiagnosisTechSpecInterface getDiagnosisTechSpec(Class cls);    
     public void addDiagnosisTechSpec(String cls, DiagnosisTechSpecInterface dtsi);    
-    public void addCrossDiagnosis(DiagnosisProbability dp);
+    public void addCrossDiagnosis(CrossDiagnosis dp);
    
 }

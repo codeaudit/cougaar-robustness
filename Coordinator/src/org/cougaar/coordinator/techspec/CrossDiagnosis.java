@@ -43,7 +43,7 @@ public class CrossDiagnosis {
     /** Creates a new instance of CrossDiagnosis */
     public CrossDiagnosis(String name, String affectedState) {
         
-        sensorType = nmae;
+        sensorType = name;
         isAffectedByStateDimension = affectedState;
         probs = new Vector();
     }

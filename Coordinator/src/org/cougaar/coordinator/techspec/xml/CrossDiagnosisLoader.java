@@ -94,14 +94,14 @@ public class CrossDiagnosisLoader extends XMLLoader {
     }
     
     
-    
+/*    
 <CrossDiagnosis sensorType=”AgentCommunication” isAffectedByStateDimension=”Liveness” >
 	<WhenActualStateIs name=”DEAD” >
 <WillDiagnoseAs name=”DEGRADED” withProbability=”0.01” />
 <WillDiagnoseAs name=”NOT_COMMUNICATING” withProbability=”0.99” />
 </WhenActualStateIs>
 </CrossDiagnosis>
-    
+*/    
     
     /** Called with a DOM "CrossDiagnosis" element to process */
     protected void processElement(Element element) {
@@ -112,7 +112,7 @@ public class CrossDiagnosisLoader extends XMLLoader {
         String sensorType = element.getAttribute("sensorType");
         String affectedBy = element.getAttribute("isAffectedByStateDimension");
                    
-        CrossDiagnosis crossD = new CrossDiagnosis( sensorName, affectedBy);
+        CrossDiagnosis crossD = new CrossDiagnosis( sensorType, affectedBy);
 
         //Create a SensorType
         Element e;
@@ -126,10 +126,10 @@ public class CrossDiagnosisLoader extends XMLLoader {
             } //else, likely a text element - ignore            
         }
 
-        diagnosisTechSpecService.a
+//        diagnosisTechSpecService.a
 
         
-        logger.debug("Added new Sensor: \n"+sensor.toString() );
+        logger.debug("Added new Cross Diagnosis for sensor: \n"+sensorType.toString() );
             
     }
     
