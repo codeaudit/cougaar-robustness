@@ -137,17 +137,17 @@ public class HeartbeatTesterMICPlugin extends ComponentPlugin {
           case HeartbeatRequest.REFUSED:
             if (log.isInfoEnabled()) 
               log.info("execute: status = REFUSED, removed.");
-            bb.publishRemove(req); 
+	    bb.publishRemove(req); 
             break;
           case HeartbeatRequest.FAILED:
             if (log.isInfoEnabled()) 
               log.info("execute: status = FAILED, removed.");
-            bb.publishRemove(req); 
+	    bb.publishRemove(req); 
             break;
           default:
             if (log.isInfoEnabled()) 
               log.info("execute: illegal status = " + req.getStatus() + ", removed.");
-            bb.publishRemove(req); 
+	    bb.publishRemove(req); 
         }
       }
     }

@@ -167,8 +167,9 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
     // process Heartbeats
     if ((nextAlarm != null) && (nextAlarm.expired == true)) 
 	processHeartbeats();
+    Iterator iter;
     long minFreq = Long.MAX_VALUE;  // milliseconds until next heartbeat should be sent
-    Iterator iter = sub.getAddedCollection().iterator();
+    iter = sub.getAddedCollection().iterator();
     while (iter.hasNext()) {
       HbReq req = (HbReq)iter.next();
       if (!req.getSource().getPrimary().equals(getAgentIdentifier().getPrimary())) {  //100 added getPrimary
