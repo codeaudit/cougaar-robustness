@@ -46,7 +46,7 @@ include_scripts:
     parameters:
       - location: during_stage_1
       - wait_location: after_stage_1
-      - nodes: ["FSB-CO-HQ-CIC-NODE", "FSB-DISTO-FWD-EVAC-NODE"]
+      - nodes: ["FSB-CO-HQ-CIC-NODE", "FSB-DISTRO-FWD-EVAC-NODE"]
       - nodes_to_kill: ["1-UA-ROB-MGMT-NODE"]
       - planned_disconnect: 25.minutes
       - actual_disconnect: 20.minutes

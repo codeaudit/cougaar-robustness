@@ -24,6 +24,7 @@ public class RequestRecord extends java.util.Hashtable {
     private AgentVector agentVector;
     private String request;
     private DisconnectManagerPlugin.RequestedAlarm alarm;
+    private long reconnectTime;
 
     /** Creates new RequestRecord */
     public RequestRecord() {
@@ -50,7 +51,8 @@ public class RequestRecord extends java.util.Hashtable {
     public void setAlarm(DisconnectManagerPlugin.RequestedAlarm alarm) { this.alarm = alarm; }
     public DisconnectManagerPlugin.RequestedAlarm getAlarm() { return alarm; }
 
-    public long getReconnectTime() { return alarm.getExpirationTime(); }
+    public void setReconnectTime(long time) { this.reconnectTime = time; }
+    public long getReconnectTime() { return this.reconnectTime; }
 
     public String dump() {
         return "Request: " + request + ":" +nodeID.toString() + "\n"

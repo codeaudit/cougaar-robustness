@@ -388,6 +388,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
 				logger.error(e.toString());
 			}
 		}
+            action.setValuesOffered(NULL_SET); // remove offers - this has the added effect that the action will be considered by the Coord to be irrecocable
 			/*
             	HashSet offers = new HashSet();
             	action.setValuesOffered(offers); // everything is allowed
@@ -451,6 +452,8 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
 				logger.error(e.toString());
 			}
 		}
+            action.setValuesOffered(NULL_SET); // remove offers - this has the added effect that the action will be considered by the Coord to be irrecocable
+
 			/*
             	HashSet offers = new HashSet();
             	action.setValuesOffered(offers); // everything is allowed
@@ -551,7 +554,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         rr.setOriginalDiagnoses(originalDiagnoses);
         rr.setAgentVector(agentVector);
         rr.setRequest(response); 
-       
+        rr.setReconnectTime((long)time + System.currentTimeMillis());
         if (logger.isInfoEnabled()) { logger.info(rr.dump()); }
         return true;
     }
@@ -677,8 +680,8 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         OverdueAlarm overdueAlarm = new OverdueAlarm(diag, agents, time > 60000.0 ? (time + lateReportingForgiveness) : (60000.0 + lateReportingForgiveness));  // Don't monitor for less than 10 sec
         activeOverdueAlarms.put(diag.getAssetID(), overdueAlarm);
         getAlarmService().addRealTimeAlarm(overdueAlarm);     
-        nodeStatus.put(diag.getAssetID(), new NodeStatusRecord(diag.getAssetID(), agents, time, DISCONNECT_REQUEST));
-        blackboard.publishChange(nodeStatus);
+        // nodeStatus.put(diag.getAssetID(), new NodeStatusRecord(diag.getAssetID(), agents, time, DISCONNECT_REQUEST));
+        // blackboard.publishChange(nodeStatus);
         if (logger.isDebugEnabled()) logger.debug("Added alarm from handleNodeRequest()");
     }
 
