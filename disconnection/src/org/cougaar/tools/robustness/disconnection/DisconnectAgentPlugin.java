@@ -35,10 +35,20 @@ import java.util.Collection;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.util.UnaryPredicate;
-
+import org.cougaar.core.component.ServiceBroker;
+import org.cougaar.core.service.community.Community;
+import org.cougaar.core.service.community.CommunityChangeEvent;
+import org.cougaar.core.service.community.CommunityChangeListener;
+import org.cougaar.core.service.community.CommunityResponse;
+import org.cougaar.core.service.community.CommunityResponseListener;
+import org.cougaar.core.service.community.CommunityService;
+import org.cougaar.core.service.community.Entity;
 
 public class DisconnectAgentPlugin extends DisconnectPluginBase {
-
+ 
+  private CommunityService commSvc;
+  private String community = null;
+  private AgentExistsCondition aec = null;
 
   public DisconnectAgentPlugin() {
     super();
@@ -47,55 +57,107 @@ public class DisconnectAgentPlugin extends DisconnectPluginBase {
   
   public void load() {
       super.load();
-      initObjects(); 
+      ServiceBroker sb = getServiceBroker();
+      commSvc = (CommunityService)
+	  sb.getService(this, CommunityService.class, null);
+//      initObjects(); 
   }
   
   
     public void suspend() {
-        // Remove the AgentExistsCondition so that the DisconnectNodePlugin will know the Agent has left the Node
-        UnaryPredicate pred = new UnaryPredicate() {
-          public boolean execute(Object o) {
-            return 
-              (o instanceof AgentExistsCondition);
-          }
-        };
-
-        AgentExistsCondition cond = null;
-
-        getBlackboardService().openTransaction();
-        Collection c = getBlackboardService().query(pred);
-        if (c.iterator().hasNext()) {
-           cond = (AgentExistsCondition)c.iterator().next();
-           if (logger.isDebugEnabled()) logger.debug("UNLOADING "+cond.getAsset());
-           getBlackboardService().publishRemove(cond); //lets the NodeAgent learn that the Agent has unloaded
-        }    
-        getBlackboardService().closeTransaction();
-   
-        super.suspend();
+	if (aec != null) {
+	    // Remove the AgentExistsCondition so that the DisconnectNodePlugin will know the Agent has left the Node
+	    UnaryPredicate pred = new UnaryPredicate() {
+		    public boolean execute(Object o) {
+			return 
+			    (o instanceof AgentExistsCondition);
+		    }
+		};
+	    
+	    AgentExistsCondition cond = null;
+	    
+	    getBlackboardService().openTransaction();
+	    Collection c = getBlackboardService().query(pred);
+	    if (c.iterator().hasNext()) {
+		cond = (AgentExistsCondition)c.iterator().next();
+		if (logger.isDebugEnabled()) logger.debug("UNLOADING "+cond.getAsset());
+		getBlackboardService().publishRemove(cond); //lets the NodeAgent learn that the Agent has unloaded
+	    }    
+	    getBlackboardService().closeTransaction();
+	    
+	    super.suspend();
+	}
     }
-  
-  public void setupSubscriptions() {
-  }
-
-  
-  private void initObjects() {
-     // create an AgentExistsCondition object to inform the NodeAgent that the agent is here
-     AgentExistsCondition aec =
-        new AgentExistsCondition("Agent", getAgentID());
-     aec.setUID(getUIDService().nextUID());
-     aec.setSourceAndTarget(getAgentAddress(), getNodeAddress());
-     if (logger.isDebugEnabled()) logger.debug("Source: "+getAgentAddress()+", Target: "+getNodeAddress());
-
-     getBlackboardService().openTransaction();
-     //getBlackboardService().publishAdd(new Dummy(assetID));  // weird hack so the agent doesnt get lost on rehydration - not entirely clear this is the problem
-     getBlackboardService().publishAdd(aec);
-     getBlackboardService().closeTransaction();
-
-     if (logger.isDebugEnabled()) logger.debug("Announced existence of "+getAgentID());   
-  }      
-
-
-  public void execute() {
-  }
-  
+    
+    public void setupSubscriptions() {
+	
+	// Add a listener for changes in robustness community
+	commSvc.addListener(new CommunityChangeListener() {
+		public void communityChanged(CommunityChangeEvent cce) {
+		    if (logger.isDebugEnabled()) 
+			logger.debug("CommunityChangeListener.communityChanged("+cce+")");
+		    communitySearch(); }
+		public String getCommunityName() { 
+		    return community; }} );
+    }
+    
+    private void initObjects() {
+	// create an AgentExistsCondition object to inform the NodeAgent that the agent is here
+	aec = new AgentExistsCondition("Agent", getAgentID());
+	aec.setUID(getUIDService().nextUID());
+	aec.setSourceAndTarget(getAgentAddress(), getNodeAddress());
+	if (logger.isDebugEnabled()) logger.debug("Source: "+getAgentAddress()+", Target: "+getNodeAddress());
+	
+	//getBlackboardService().openTransaction();
+	getBlackboardService().publishAdd(aec);
+	//getBlackboardService().closeTransaction();
+	
+	if (logger.isDebugEnabled()) logger.debug("Announced existence of "+getAgentID());   
+    }      
+    
+    
+    public void execute() {
+	if (community != null && aec == null)
+	    initObjects();
+    }
+    
+    private void communitySearch() {
+	Collection communities = 
+	    commSvc.listParentCommunities(getAgentID(),
+					  "(CommunityType=Robustness)",
+					  new CommunityResponseListener() {
+					      public void getResponse(CommunityResponse response) {
+						  if (response.getStatus()==CommunityResponse.SUCCESS) {
+						      Collection communities = 
+							  (Collection)response.getContent();
+						      if (communities != null) 
+							  gotCommunity(communities);}}});
+	if (communities != null) gotCommunity(communities);
+    }
+    
+    private void gotCommunity(Collection comms) {
+	if (comms == null) {
+	    return;
+	} else if (comms.size() == 0) {
+	    return;
+	} 
+        Iterator it = comms.iterator();
+	while (it.hasNext()) {
+	    String commName = (String)it.next();
+	    Community comm = commSvc.getCommunity(commName, null);
+	    if (comm != null) {
+		javax.naming.directory.Attributes attrs = comm.getAttributes();
+		if (attrs != null) {
+		    javax.naming.directory.Attribute attr = attrs.get("CommunityType");
+		    if (attr != null && attr.contains("Robustness") && community == null) {
+			community = commName;
+			if (logger.isInfoEnabled()) 
+			    logger.info("Found Robustness Community "+comm);
+			getBlackboardService().signalClientActivity();
+		    }
+		}
+	    }
+	}
+    }
 }
+
