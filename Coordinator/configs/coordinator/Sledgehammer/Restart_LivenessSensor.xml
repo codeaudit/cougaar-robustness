@@ -7,7 +7,7 @@
             sensesStateDimension="Liveness" 
 		sensorLatency="120000">
     <PotentialDiagnoses>
-        <Diagnosis name="Live" />
+        <Diagnosis name="Live" defaultValue="TRUE" />
         <Diagnosis name="Dead" />
     </PotentialDiagnoses>
     <Diagnoses>
