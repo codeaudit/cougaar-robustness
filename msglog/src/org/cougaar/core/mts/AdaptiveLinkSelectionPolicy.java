@@ -345,6 +345,9 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
 // error: cannot just change destination - have to renumber for new sequence
 
+//  NOTE: now we do not renumber as numbers are node-independent.  Need new
+//  node info though
+
 // log INFO that msg num/seq is changing from/to
 
         AgentID toAgent = getAgentID (targetAgent, true);

@@ -189,9 +189,6 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
       if (latest != null && latest.receiveTime > receiveTime) return;  // not latest for link
       if (latest == null) nodeTable.put (sendLink, new MessageTimes (sendLink, sendTime, receiveTime));
       else latest.setTimes (sendTime, receiveTime);
-
-//latest = (MessageTimes) nodeTable.get (sendLink);
-//System.err.println ("recordLatest: " +latest);
     }
   }
 
@@ -249,8 +246,6 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
   private class RTTOutbound extends DestinationLinkDelegateImplBase 
   {
     private DestinationLink link;
-
-private RunningAverage rmiAvg = new RunningAverage (samplePoolsize, startDelay, percentChangeLimit, changeLimitDelay);
  
     public RTTOutbound (DestinationLink link) 
     {
@@ -293,7 +288,6 @@ private RunningAverage rmiAvg = new RunningAverage (samplePoolsize, startDelay, 
           start.setSendLink (times[i].sendLink);
           long nodeTime = sendTime - times[i].receiveTime;  // time msg spent here
           start.setAdjustedSendTime (times[i].sendTime + nodeTime);
-//System.err.println ("forwardMsg: adding RTTStart: "+start);
           v.add (start);
         }
       }
@@ -306,16 +300,6 @@ private RunningAverage rmiAvg = new RunningAverage (samplePoolsize, startDelay, 
 
       //  Send the message on its way
 
-if (link.getProtocolClass().getName().equals("org.cougaar.core.mts.RMILinkProtocol"))
-{
-  MessageAttributes ma = link.forwardMessage (msg);
-  long finish = now();
-  int rtt = (int)(finish - sendTime);
-  rmiAvg.add (rtt);
-  System.err.println ("\n   RMI RTT= " +rtt+ " avg= "+rmiAvg.getAverage());
-  return ma;
-}
-else
       return link.forwardMessage (msg);
     }
   }
@@ -404,15 +388,13 @@ else
       }
 
       if (rtt > 0) avgRTT.add (rtt);
-
-//  TEMP HACK - comment this back up when you are tired of seeing it
-
+/*
       System.err.println ("\nupdateRTT:"+
                           "\n  sendLink= "+sendLink+
                           "\n      node= "+node+
                           "\n  recvLink= "+receiveLink+
                           "\n       RTT= " +rtt+ " avg= " +avgRTT.getAverage()); 
-
+*/
     }    
   }
 
@@ -498,21 +480,13 @@ else
     }
   }
 
-  private static final String UDPSend =       "org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol";
-  private static final String UDPReceive =    "org.cougaar.core.mts.udp.IncomingUDPLinkProtocol";
-  private static final String SocketSend =    "org.cougaar.core.mts.socket.OutgoingSocketLinkProtocol";
-  private static final String SocketReceive = "org.cougaar.core.mts.socket.IncomingSocketLinkProtocol";
-  private static final String EmailSend =     "org.cougaar.core.mts.email.OutgoingEmailLinkProtocol";
-  private static final String EmailReceive =  "org.cougaar.core.mts.email.IncomingEmailLinkProtocol";
-
   private String convertSplitLinks (String link)
   {
-//  HACK - replace with string replace of .Incoming with .Outgoing
+    //  Turn Outgoing links into Incoming ones (depends on link naming convention)
 
-    if (link.equals (UDPSend))    return UDPReceive;
-    if (link.equals (SocketSend)) return SocketReceive;
-    if (link.equals (EmailSend))  return EmailReceive;
-    return link;
+    int i = link.indexOf (".Outgoing");
+    if (i > 0) return link.substring(0,i)+ ".Incoming" +link.substring(i+9);
+    else return link;
   }
 
   private static long now ()
