@@ -325,7 +325,12 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                         allPermittedSoFar = false;
                     }                            
                 }
-                if (allPermittedSoFar) propagatePermissions(rr);
+                if (allPermittedSoFar) {
+                    propagatePermissions(rr);
+                    iter.remove();
+                    rr.getAlarm().cancel();
+                    if (logger.isDebugEnabled()) logger.debug("Removing RequestedAlarm for: " + rr.getNodeID());
+                }
             }                    
         }        
     }
@@ -552,7 +557,6 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     private boolean propagatePermissions(RequestRecord rr) {
 
         if (logger.isDebugEnabled()) logger.debug("Starting propagateChange() for: " + rr.getNodeID().toString());
-        cancelRequestedAlarm(rr);
         
         DisconnectDefenseAgentEnabler enabler = DisconnectDefenseAgentEnabler.findOnBlackboard(rr.getNodeID().getType().toString(), rr.getNodeID().getName().toString(), blackboard);
         if (enabler == null) {
@@ -627,7 +631,10 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     }
 
     private boolean denyPermissions(RequestRecord rr) {
-        cancelRequestedAlarm(rr);
+        pendingRequests.remove(rr.getNodeID());
+        rr.getAlarm().cancel();
+        if (logger.isDebugEnabled()) logger.debug("Removing RequestedAlarm for: " + rr.getNodeID());
+
         DisconnectDefenseAgentEnabler enabler = DisconnectDefenseAgentEnabler.findOnBlackboard(rr.getNodeID().getType().toString(), rr.getNodeID().getName().toString(), blackboard);
         String request = rr.getRequest();
         AssetID nodeID = rr.getNodeID();
@@ -789,12 +796,6 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         pendingRequests.put(rr.getNodeID(), rr);
         if (logger.isDebugEnabled()) logger.debug("Adding RequestedAlarm for: " + rr.getNodeID());
         return requestedAlarm;
-    }
-
-    private void cancelRequestedAlarm(RequestRecord rr) {
-        pendingRequests.remove(rr.getNodeID());
-        rr.getAlarm().cancel();
-        if (logger.isDebugEnabled()) logger.debug("Removing RequestedAlarm for: " + rr.getNodeID());
     }
 
     

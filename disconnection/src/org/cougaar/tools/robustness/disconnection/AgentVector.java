@@ -14,7 +14,7 @@ package org.cougaar.tools.robustness.disconnection;
 
 import org.cougaar.coordinator.techspec.AssetID;
 
-public class AgentVector extends java.util.Vector implements java.io.Serializable {
+public class AgentVector extends java.util.HashSet implements java.io.Serializable {
 
     /** Creates new AgentVector */
     public AgentVector() {
@@ -22,5 +22,9 @@ public class AgentVector extends java.util.Vector implements java.io.Serializabl
 
     public void addAgent(AssetID agentID) { super.add(agentID); }
     public void removeAgent(AssetID agentID) { super.remove(agentID); }
+
+    public boolean equals(AgentVector v) {
+        return super.equals(v);
+    }
 
 }
