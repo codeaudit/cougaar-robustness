@@ -14,6 +14,14 @@ plugins = [awmp,dwmp,amp,ams,dmp,dms,ps]
 
 ltsp = "org.cougaar.coordinator.techspec.xml.LoadTechSpecsPlugin"
 
+# TechSpecs
+aasd = 'AgentAssetStateDimensions.xml'
+nasd = 'NodeAssetStateDimensions.xml'
+hasd = 'HostAssetStateDimensions.xml'
+easd = 'EnclaveAssetStateDimensions.xml'
+t    = 'Threats.xml'
+e    = 'Events.xml'
+
 # Sensors TechSpecs
 acs  = 'AgentCommSensors.xml'
 tss  = 'ThrashingSuppressionSensor.xml'
@@ -25,8 +33,8 @@ fca  = 'FakeCommActuator.xml'
 # Cross Diagnosis TechSpecs
 cd   = 'CrossDiagnosis.xml'
 
-mgr_techspecs   = [acs,tss,ra,fca,cd]
-node_techspecs = [acs,tss,ra,fca]
+mgr_techspecs   = [aasd,nasd,hasd,easd,t,e,acs,tss,ra,fca,cd]
+node_techspecs = [aasd,nasd,hasd,easd,t,e,acs,tss,ra,fca]
 
 society.each_agent(true) do |agent|
     agent.add_components(plugins)

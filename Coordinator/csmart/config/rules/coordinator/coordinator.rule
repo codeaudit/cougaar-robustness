@@ -6,6 +6,7 @@
 arm  = "org.cougaar.coordinator.ActionRelayManager"
 drm  = "org.cougaar.coordinator.DiagnosesRelayManager"
 rmfp = "org.cougaar.coordinator.RobustnessManagerFinderPlugin"
+aep  = "org.cougaar.coordinator.activation.ActionEnablingPlugin"
 bp   = "org.cougaar.coordinator.believability.BelievabilityPlugin"
 cbp  = "org.cougaar.coordinator.costBenefit.CostBenefitPlugin"
 cmp  = "org.cougaar.coordinator.housekeeping.CoordinatorManagerPlugin"
@@ -16,18 +17,20 @@ tmmp = "org.cougaar.coordinator.techspec.ThreatModelManagerPlugin"
 ltsp = "org.cougaar.coordinator.techspec.xml.LoadTechSpecsPlugin"
 
 # TechSpecs
-aasd = 'AgentAssetStateDimensions.xml'
-nasd = 'NodeAssetStateDimensions.xml'
-hasd = 'HostAssetStateDimensions.xml'
-easd = 'EnclaveAssetStateDimensions.xml'
-t    = 'Threats.xml'
-e    = 'Events.xml'
+#aasd = 'AgentAssetStateDimensions.xml'
+#nasd = 'NodeAssetStateDimensions.xml'
+#hasd = 'HostAssetStateDimensions.xml'
+#easd = 'EnclaveAssetStateDimensions.xml'
+#t    = 'Threats.xml'
+#e    = 'Events.xml'
 
-mgr_techspecs = [aasd,nasd,hasd,easd,t,e]
-node_techspecs = [aasd,nasd,hasd,easd,    t,e]
+#mgr_techspecs = [aasd,nasd,hasd,easd,t,e]
+#node_techspecs = [aasd,nasd,hasd,easd,    t,e]
+mgr_techspecs = []
+node_techspecs = []
 
 nodePlugins = [arm,drm,rmfp]
-mgrPlugins = [bp,cbp,cmp,amon,asp,amp,tmmp]
+mgrPlugins = [arm,drm,rmfp,bp,cbp,cmp,amon,asp,amp,tmmp]
 
 society.each_agent do |agent|
     if agent.name =~ /.*ARManager.*/
