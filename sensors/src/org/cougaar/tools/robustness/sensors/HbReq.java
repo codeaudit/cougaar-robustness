@@ -244,7 +244,12 @@ public class HbReq implements Relay.Source, Relay.Target, NotPersistable //100 ,
         attrs = new SimpleMessageAttributes();
         addr = MessageAddress.getMessageAddress(addr,attrs);
         if (content instanceof HbReqContent) {
-          long timeout = ((HbReqContent)content).getHbTimeout();
+          long timeout;
+          if (heartbeat == true) {
+            timeout = ((HbReqContent)content).getHbTimeout();
+	  } else {
+            timeout = ((HbReqContent)content).getReqTimeout();
+	  }
           if (timeout > 0)
             attrs.setAttribute(Constants.SEND_TIMEOUT, new Integer((int)timeout));
         }
