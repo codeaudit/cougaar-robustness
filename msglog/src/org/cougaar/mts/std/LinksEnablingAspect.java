@@ -254,11 +254,8 @@ public class LinksEnablingAspect extends StandardAspect
 	public void enable(MessageAddress agent) {
 	    synchronized (agents) {
 		AgentEntry entry = assureRegistered(agent);
-		if (!NONE.equals(entry.advice)) {
-		    if (log.isWarnEnabled())
-			log.warn("LinksEnablingServiceImpl.enable: Ignored.  Agent="+agent+" already enabled.");
-		} else {
-		    setAdvice(entry, NONE);
+		if (NONE.equals(entry.advice)) {
+		    setAdvice(entry, entry.previous);
 		}
 	    }
 	}
