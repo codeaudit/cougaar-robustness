@@ -39,6 +39,7 @@ public class RelayAdapter implements Relay.Source {
   MessageAddress source;
   Object content;
   UID myUID;
+  Set responders = new HashSet();
   Object resp;
 
   public RelayAdapter(MessageAddress source,
@@ -62,10 +63,15 @@ public class RelayAdapter implements Relay.Source {
     return resp;
   }
 
+  public Set getResponders() {
+    return responders;
+  }
+
   /**
    * Set the response that was sent from a target.
    **/
   public int updateResponse(MessageAddress target, Object response) {
+    responders.add(target);
     this.resp = response;
     return Relay.RESPONSE_CHANGE;
   }
