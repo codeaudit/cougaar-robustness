@@ -365,15 +365,17 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
   }
 
   private void cancelThreatAlert(ThreatAlert alert) {
-    fireListenersForRemovedAlert(alert);
+    if (currentThreatAlerts.containsKey(alert.getUID())) {
+      // Remove from current alert list
+      currentThreatAlerts.remove(alert.getUID());
+      fireListenersForRemovedAlert(alert);
+    }
     // Remove Relay.Source if Alert originated from this agent
     if (myRelays.containsKey(alert.getUID())) {
       RelayAdapter ra = (RelayAdapter)myRelays.remove(alert.getUID());
       blackboard.publishRemove(ra);
       log.debug("publishRemove ThreatAlert: " + ra);
     }
-    // Remove from current alert list
-    currentThreatAlerts.remove(alert.getUID());
   }
 
   /**
