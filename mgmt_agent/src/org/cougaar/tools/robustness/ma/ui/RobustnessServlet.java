@@ -41,7 +41,7 @@ import org.cougaar.core.blackboard.BlackboardClient;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 
 import org.cougaar.core.service.community.CommunityMember;
-import org.cougaar.community.CommunityChangeNotification;
+//import org.cougaar.community.CommunityChangeNotification;
 
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.mts.SimpleMessageAddress;
@@ -182,10 +182,10 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
         try{
           bb.openTransaction();
           //Collection col = (Collection)bb.query(getCommunityChangeNotificationPred());
-          IncrementalSubscription sub = (IncrementalSubscription)bb.subscribe(getCommunityChangeNotificationPred());
-          if(sub.getAddedCollection().size() > 0) {
-            result = "succeed";
-          }
+          //IncrementalSubscription sub = (IncrementalSubscription)bb.subscribe(getCommunityChangeNotificationPred());
+          //if(sub.getAddedCollection().size() > 0) {
+          //  result = "succeed";
+          //}
         }finally
         { bb.closeTransaction(); }
       }
@@ -475,7 +475,8 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
         "a \"trigger\" event: "+event);
   }
 
-  protected static UnaryPredicate getCommunityChangeNotificationPred()
+  /*
+      protected static UnaryPredicate getCommunityChangeNotificationPred()
   {
      return new UnaryPredicate() {
        public boolean execute(Object o) {
@@ -483,6 +484,7 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
        }
      };
   }
+  */
 
   protected static UnaryPredicate getHealthStatusPred(final String agentName)
   {

@@ -134,7 +134,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
     Collection communities = communityService.search("(CommunityManager=" +
       myAgent.toString() + ")");
     if (!communities.isEmpty()) {
-      communityToMonitor = (String)communities.iterator().next();
+      communityToMonitor = ((Community)communities.iterator().next()).getName();
 
       // Initialize configurable paramaeters from defaults and plugin arguments.
       getPropertiesFromCommunityAttributes();
