@@ -42,6 +42,7 @@
 		<mkdir dir="staging/sys"/>
 		<mkdir dir="staging/csmart"/>
 		<mkdir dir="staging/operator"/>
+		<mkdir dir="staging/configs"/>
 		<antcall target="delete"/>
 		<antcall target="jar"/>
 		<signjar jar="${jar}" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
