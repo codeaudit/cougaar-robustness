@@ -76,17 +76,14 @@ public class SampleActuator extends ComponentPlugin
 	    (IncrementalSubscription)blackboard.subscribe(actionPred);
         rawActuatorDataSub = 
 	    (IncrementalSubscription)blackboard.subscribe(rawActuatorDataPred);
-	Set initialValuesOffered = new HashSet();
 	try {
-	    action = new SampleAction(agentId.toString(), initialValuesOffered, sb);
+	    action = new SampleAction(agentId.toString(), sb);
 	    blackboard.publishAdd(action);
 	    if (log.isDebugEnabled()) log.debug(action + " added.");
 	    if (log.isDebugEnabled()) log.debug(action.dump());
 	    data = new SampleRawActuatorData(agentId.toString(), action.getPossibleValues());
 	    blackboard.publishAdd(data);
 	    if (log.isDebugEnabled()) log.debug(data + " added.");	
-	} catch (IllegalValueException e) {
-	    log.error("Illegal initialValuesOffered = "+initialValuesOffered, e);
 	} catch (TechSpecNotFoundException e) {
 	    log.error("TechSpec not found for SampleAction", e);
 	}

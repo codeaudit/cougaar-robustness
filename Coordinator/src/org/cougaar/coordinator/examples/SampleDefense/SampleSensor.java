@@ -59,9 +59,8 @@ public class SampleSensor extends ComponentPlugin
     {
         rawSensorDataSub = 
 	    (IncrementalSubscription)blackboard.subscribe(rawSensorDataPred);
-	Object initialValue = null;
 	try {
-	    diagnosis = new SampleDiagnosis(agentId.toString(), initialValue, sb);
+	    diagnosis = new SampleDiagnosis(agentId.toString(), sb);
 	    blackboard.publishAdd(diagnosis);
 	    if (log.isDebugEnabled()) 
 		log.debug(diagnosis + " added.");
@@ -72,8 +71,6 @@ public class SampleSensor extends ComponentPlugin
 	    blackboard.publishAdd(data);
 	    if (log.isDebugEnabled()) 
 		log.debug(data + " added.");
-	} catch (IllegalValueException e) {
-	    log.error("Illegal initialValue = "+initialValue, e);
 	} catch (TechSpecNotFoundException e) {
 	    log.error("TechSpec not found for SampleDiagnosis", e);
 	}
