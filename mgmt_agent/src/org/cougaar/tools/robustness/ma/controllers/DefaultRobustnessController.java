@@ -679,12 +679,37 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
          (getActiveHosts().size() >= minimumHostsForManagerRestart));
   }
 
-  private void restartAgent(String name) {
+  private void restartAgent(final String name) {
+
+    long pingTimeout = getLongAttribute(preferredLeader(),
+                                        DEFAULT_TIMEOUT_ATTRIBUTE,
+                                        DEFAULT_TIMEOUT) * MS_PER_MIN;
+    serviceChecker.checkServices(model.getCommunityName(),
+                                 ESSENTIAL_RESTART_SERVICE_ATTRIBUTE,
+                                 pingTimeout,
+      new CheckServicesListener() {
+        public void execute(String communityName,
+                            String serviceCategory,
+                            boolean isAvailable,
+                            String message) {
+          if (isAvailable) {
+            doRestart(name);
+          } else {
+            if (logger.isWarnEnabled()) {
+              logger.warn("Unable to restart " + name +
+                          ", " + message);
+            }
+            newState(name, FAILED_RESTART);
+          }
+        }
+      });
+  }
+
+  private void doRestart(String name) {
     RestartDestinationLocator locator = getRestartLocator();
-Set excluded = getExcludedNodes();
-excluded.addAll(getAdditionalExcludedNodes(model.getLocation(name)));
-    String dest =
-        locator.getRestartLocation(name, excluded);
+    Set excluded = getExcludedNodes();
+    excluded.addAll(getAdditionalExcludedNodes(model.getLocation(name)));
+    String dest = locator.getRestartLocation(name, excluded);
     if (logger.isInfoEnabled()) {
       logger.info("Restarting agent:" +
                   " agent=" + name +
@@ -861,28 +886,7 @@ excluded.addAll(getAdditionalExcludedNodes(model.getLocation(name)));
       logger.info("LeaderChange: prior=" + priorLeader + " new=" + newLeader);
     }
     if (isLeader(thisAgent) && model.getCurrentState(preferredLeader()) == DEAD) {
-      long pingTimeout = getLongAttribute(preferredLeader(),
-                                          DEFAULT_TIMEOUT_ATTRIBUTE,
-                                          DEFAULT_TIMEOUT) * MS_PER_MIN;
-      serviceChecker.checkServices(model.getCommunityName(),
-                                   ESSENTIAL_RESTART_SERVICE_ATTRIBUTE,
-                                   pingTimeout,
-        new CheckServicesListener() {
-          public void execute(String communityName,
-                              String serviceCategory,
-                              boolean isAvailable,
-                              String message) {
-            if (isAvailable) {
-              newState(preferredLeader(), RESTART);
-            } else {
-              if (logger.isWarnEnabled()) {
-                logger.warn("Unable to restart " + preferredLeader() +
-                            ", " + message);
-              }
-            }
-          }
-        });
-      //newState(preferredLeader(), RESTART);
+      newState(preferredLeader(), RESTART);
     }
     checkCommunityReady();
     if (didRestart && !suppressPingsOnRestart) {
@@ -897,17 +901,6 @@ excluded.addAll(getAdditionalExcludedNodes(model.getLocation(name)));
             getBindingSite());
         coordinatorHelper.addListener((DeconflictStateController)
                                       getController(DECONFLICT));
-        /*String enable = System.getProperty(DECONFLICTION, PROPERTY_ENABLED);
-        if (enable.equalsIgnoreCase(PROPERTY_ENABLED)) {
-          if (logger.isDebugEnabled()) {
-            logger.debug("CoordinationHelper enabled: community=" +
-                        model.getCommunityName());
-          }
-          String allAgents[] = model.listEntries(CommunityStatusModel.AGENT);
-          for (int i = 0; i < allAgents.length; i++) {
-            coordinatorHelper.addAgent(allAgents[i]);
-          }
-        }*/
       }
     }
   }
@@ -968,8 +961,9 @@ excluded.addAll(getAdditionalExcludedNodes(model.getLocation(name)));
       } else {
         loadBalanceInProcess = true;
         List excludedNodes = new ArrayList(getExcludedNodes());
-if(deadNodeForRestart != null)
-excludedNodes.addAll(getAdditionalExcludedNodes(deadNodeForRestart));
+        if (deadNodeForRestart != null) {
+          excludedNodes.addAll(getAdditionalExcludedNodes(deadNodeForRestart));
+        }
         List vacantNodes = getVacantNodes();
         // Update list of NEW nodes
         if (!vacantNodes.isEmpty()) {
@@ -1004,7 +998,7 @@ excludedNodes.addAll(getAdditionalExcludedNodes(deadNodeForRestart));
                        " excludedNodes=" + excludedNodes);
         }
         getLoadBalancer().doLayout((int)solverMode,
-                                   (int) annealTime,
+                                   (int)annealTime,
                                    true,
                                    vacantNodes,
                                    new ArrayList(deadNodes),
@@ -1149,8 +1143,8 @@ excludedNodes.addAll(getAdditionalExcludedNodes(deadNodeForRestart));
  private Set getAdditionalExcludedNodes(String deadNode) {
    Set excluded = new HashSet();
    long deadtime = model.getTimestamp(deadNode);
-   long defaultTimeout = getLongAttribute(DEFAULT_TIMEOUT_ATTRIBUTE,
-                                              DEFAULT_TIMEOUT);
+   long defaultTimeout =
+       getLongAttribute(DEFAULT_TIMEOUT_ATTRIBUTE, DEFAULT_TIMEOUT);
    long activetime = deadtime - defaultTimeout * MS_PER_MIN;
    String[] nodes = model.listEntries(model.NODE);
    for(int i=0; i<nodes.length; i++) {
