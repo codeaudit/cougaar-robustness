@@ -111,12 +111,12 @@ public class IAOMServlet extends BaseServletComponent implements BlackboardClien
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException
     {
       out = res.getWriter();
-      /* List comms = getCommunities();
+       List comms = getCommunities();
        for(Iterator it = comms.iterator(); it.hasNext();) {
          String name = (String)it.next();
          mgmts.add(getMgmtOfCommunity(name));
-       }*/
-      mgmts.add(agentId.getAddress());
+       }
+      //mgmts.add(agentId.getAddress());
       parseParams(req);
     }
 
@@ -198,7 +198,7 @@ public class IAOMServlet extends BaseServletComponent implements BlackboardClien
     StringBuffer sb = new StringBuffer();
     sb.append("<html>\n<head><title>Publish Threat Alert</head></title>\n<body>\n");
     sb.append("<br><form name=\"myForm\">\n");
-    sb.append("<table border=\"0\" cellpadding=\"10\" cellspacing=\"0\">\n<tr><td>Relay Targer</td>\n");
+    sb.append("<table border=\"0\" cellpadding=\"10\" cellspacing=\"0\">\n<tr><td>Relay Target</td>\n");
     sb.append("<td><select name=\"target\">\n");
     for(Iterator it = mgmts.iterator(); it.hasNext();) {
       sb.append("<option>" + (String)it.next() + "</option>\n");

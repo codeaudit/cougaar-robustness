@@ -24,6 +24,7 @@ import org.cougaar.tools.robustness.ma.util.CommunityFinder;
 import org.cougaar.core.adaptivity.OperatingMode;
 import org.cougaar.core.adaptivity.InterAgentCondition;
 import org.cougaar.core.adaptivity.InterAgentOperatingMode;
+import org.cougaar.core.adaptivity.InterAgentCondition;
 import org.cougaar.core.adaptivity.OMCRangeList;
 
 import org.cougaar.core.security.constants.AdaptiveMnROperatingModes;
@@ -95,9 +96,17 @@ public class SecurityAlertPlugin extends ComponentPlugin {
     Collection requests = opModes.getAddedCollection();
     requests.addAll(opModes.getChangedCollection());
     for (Iterator it = requests.iterator(); it.hasNext();) {
-      //generateSecurityAlert((InterAgentOperatingMode)it.next());
-      InterAgentOperatingMode iaom = (InterAgentOperatingMode)it.next();
-      generateSecurityAlert(iaom);
+      Object o = it.next();
+      if(o instanceof InterAgentOperatingMode) {
+        InterAgentOperatingMode iaom = (InterAgentOperatingMode) o;
+        generateSecurityAlert(iaom);
+      }
+      if(o instanceof InterAgentCondition) {
+        InterAgentCondition iac = (InterAgentCondition) o;
+        InterAgentOperatingMode iaom = new InterAgentOperatingMode(iac.getName(), iac.getAllowedValues(), iac.getValue());
+        iaom.setUID(iac.getUID());
+        generateSecurityAlert(iaom);
+      }
     }
   }
 
@@ -123,17 +132,6 @@ public class SecurityAlertPlugin extends ComponentPlugin {
   }
 
   private IncrementalSubscription opModes;
-  /*
-  UnaryPredicate threatConOM = new UnaryPredicate() {
-    public boolean execute(Object o) {
-      if(o == null || !(o instanceof InterAgentOperatingMode)) {
-        return false;
-      }
-      InterAgentOperatingMode mode = (InterAgentOperatingMode)o;
-      return mode.getName().equals("org.cougaar.core.security.monitoring.THREATCON_LEVEL");
-    }
-  };
-  */
   private final UnaryPredicate threatConOM = new UnaryPredicate() {
     public boolean execute(Object o) {
       if (o instanceof OperatingMode) {
