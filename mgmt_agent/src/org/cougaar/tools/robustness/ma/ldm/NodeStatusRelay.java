@@ -45,4 +45,6 @@ public interface NodeStatusRelay
 
   public String getLeaderVote();
 
+  public String getLocation();
+
 }

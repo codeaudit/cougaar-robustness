@@ -36,7 +36,7 @@ public class NodeStatusRelayImpl implements NodeStatusRelay, java.io.Serializabl
   private String communityName;
   private String leaderVote;
   private int nodeStatus;
-  //private Date timestamp;
+  private String location;
   private AgentStatus[] agentStatus;
   private UID uid;
 
@@ -48,12 +48,14 @@ public class NodeStatusRelayImpl implements NodeStatusRelay, java.io.Serializabl
                              int            nodeStatus,
                              AgentStatus[]  agentStatus,
                              String         leader,
+                             String         location,
                              UID            uid) {
     this.source = source;
     this.communityName = communityName;
     this.nodeStatus = nodeStatus;
     this.agentStatus = agentStatus;
     this.leaderVote = leader;
+    this.location = location;
     this.uid = uid;
   }
 
@@ -77,6 +79,14 @@ public class NodeStatusRelayImpl implements NodeStatusRelay, java.io.Serializabl
 
   public String getCommunityName() {
     return communityName;
+  }
+
+  public String getLocation() {
+    return this.location;
+  }
+
+  public void setLocation(String loc) {
+    this.location = loc;
   }
 
   //

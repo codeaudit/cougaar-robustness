@@ -209,15 +209,15 @@ public class CommunityStatusModel extends BlackboardClientComponent {
   }
 
   /**
-   * Returns list of all monitored agents on specified node.
-   * @return Agent names
+   * Returns list of all monitored entities at specified location.
+   * @return Entity names
    */
-  public String[] agentsOnNode(String nodeName) {
+  public String[] entitiesAtLocation(String location) {
     synchronized (statusMap) {
       List l = new ArrayList();
       for (Iterator it = statusMap.values().iterator(); it.hasNext();) {
         StatusEntry se = (StatusEntry)it.next();
-        if (se != null && nodeName.equals(se.currentLocation) && se.type == AGENT) {
+        if (se != null && location.equals(se.currentLocation) && se.type == AGENT) {
           l.add(se.name);
         }
       }
@@ -578,7 +578,7 @@ public class CommunityStatusModel extends BlackboardClientComponent {
    * @param as         Status of nodes child agents
    * @param leader     Name of health monitor leader recognized by reporting node
    */
-  public void applyUpdates(String nodeName, int nodeStatus, AgentStatus[] as, String vote) {
+  public void applyUpdates(String nodeName, int nodeStatus, AgentStatus[] as, String vote, String host) {
     synchronized (statusMap) {
       logger.debug("ApplyUpdates:" +
                    " node=" + nodeName +
@@ -587,6 +587,7 @@ public class CommunityStatusModel extends BlackboardClientComponent {
       if (statusMap.containsKey(nodeName)) {
         setCurrentState(nodeName, nodeStatus);
         setLeaderVote(nodeName, vote);
+        setLocation(nodeName, host);
       } else {
         StatusEntry se = new StatusEntry(nodeName, NODE, null);
         statusMap.put(se.name, se);

@@ -209,20 +209,6 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
     updateInterval = Long.parseLong(updateIntervalStr);
     wakeAlarm = new WakeAlarm(now() + updateInterval);
     alarmService.addRealTimeAlarm(wakeAlarm);
-
-    /*commSvc.addListener(new CommunityChangeListener() {
-      public void communityChanged(CommunityChangeEvent cce) {
-        if (cce.getType() == cce.ADD_COMMUNITY) {
-          Collection communityNames =
-              commSvc.listParentCommunities(agentId.toString(),
-                                            "(CommunityType=Robustness)");
-          if (communityNames != null) {
-            logger.info("ParentCommunities=" + communityNames);
-          }
-        }
-      }
-      public String getCommunityName() { return null; }
-    });*/
   }
 
   /**
@@ -246,7 +232,12 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
         joinStartupCommunity();
       }
       updateAndSendNodeStatus();
-      wakeAlarm = new WakeAlarm(now() + updateInterval);
+      long tmp = getLongAttribute("UPDATE_INTERVAL", updateInterval);
+      if (tmp != updateInterval) {
+        logger.info("Changing update interval: old=" + updateInterval + " new=" + tmp);
+        updateInterval = tmp;
+      }
+      wakeAlarm = new WakeAlarm(now() + getLongAttribute("UPDATE_INTERVAL", updateInterval));
       alarmService.addRealTimeAlarm(wakeAlarm);
     }
     // Get updates in monitored community
@@ -277,7 +268,8 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
                             nsr.getSource().toString(),
                             nsr.getNodeStatus(),
                             nsr.getAgentStatus(),
-                            nsr.getLeaderVote());
+                            nsr.getLeaderVote(),
+                            nsr.getLocation());
     }
     nsCollection = nodeStatusRelaySub.getChangedCollection();
     for (Iterator it = nsCollection.iterator(); it.hasNext(); ) {
@@ -292,7 +284,8 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
                             nsr.getSource().toString(),
                             nsr.getNodeStatus(),
                             nsr.getAgentStatus(),
-                            nsr.getLeaderVote());
+                            nsr.getLeaderVote(),
+                            nsr.getLocation());
     }
 
     // Get HealthMonitorRequests
@@ -361,6 +354,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
                                     controller.getNormalState(),
                                     agentStatus,
                                     null,
+                                    myHost,
                                     uidService.nextUID());
         nodeStatusRelay = new RelayAdapter(agentId, nsr, nsr.getUID());
 
@@ -409,12 +403,26 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
   }
 
   private AgentStatus[] getLocalAgentStatus(String communityName) {
-    String agents[] = model.agentsOnNode(myName);
+    String agents[] = model.entitiesAtLocation(myName);
     AgentStatus as[] = new AgentStatus[agents.length];
     for (int i = 0; i < as.length; i++) {
       as[i] = new AgentStatus(agents[i], myName, model.getCurrentState(agents[i]));
     }
     return as;
+  }
+
+  /**
+   * Get community attribute from model.
+   * @param id  Attribute identifier
+   * @param defaultValue  Default value if attribute not found
+   * @return Attribute value as a long
+   */
+  protected long getLongAttribute(String id, long defaultValue) {
+    if (model != null && model.hasAttribute(id)) {
+      return model.getLongAttribute(id);
+    } else {
+      return defaultValue;
+    }
   }
 
   public static String targetsToString(Collection targets) {
@@ -431,7 +439,8 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
                                      String nodeName,
                                      int nodeStatus,
                                      AgentStatus[] agentStatus,
-                                     String leader) {
+                                     String leader,
+                                     String host) {
     if (model == null) {
       initializeModel(communityName);
     }
@@ -439,7 +448,8 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
     model.applyUpdates(nodeName,
                        nodeStatus,
                        agentStatus,
-                       leader);
+                       leader,
+                       host);
   }
 
   private String listServices() {
@@ -516,7 +526,8 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
                      " targets=" + targetsToString(nodeStatusRelay.getTargets()) +
                      " community=" + nsr.getCommunityName() +
                      " agents=" + nsr.getAgentStatus().length +
-                     " leaderVote=" + nsr.getLeaderVote());
+                     " leaderVote=" + nsr.getLeaderVote() +
+                     " location=" + nsr.getLocation());
         blackboard.publishChange(nodeStatusRelay);
       }
     }
