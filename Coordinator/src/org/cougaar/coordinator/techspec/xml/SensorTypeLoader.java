@@ -144,9 +144,13 @@ public class SensorTypeLoader extends XMLLoader {
             if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("Diagnosis") ) {
                 Element e = (Element) child;
                 String diagnosis = e.getAttribute("name");
+                String defaultValue = e.getAttribute("defaultValue");
                 
                 if (diagnosis != null) {
                     sensor.addPossibleValue(diagnosis);
+                    if (defaultValue != null && defaultValue.equalsIgnoreCase("TRUE")) {
+                        sensor.setDefaultValue(diagnosis);
+                    }
                 }
                 
             } //else, likely a text element - ignore

@@ -165,7 +165,8 @@ public abstract class Action
 
     /**
      * Creates an action instance for actions to be performed on the specified asset. Includes initialiValuesOffered to
-     * override the defaultValuesOffered specified in the techSpecs.
+     * override the defaultValuesOffered specified in the techSpecs. initialValuesOffered CANNOT be null or an
+     * IllegalValueException will be thrown.
      */
     public Action(String assetName, Set initialValuesOffered, ServiceBroker serviceBroker) 
     throws IllegalValueException, TechSpecNotFoundException 
@@ -173,9 +174,7 @@ public abstract class Action
         
         this(assetName, serviceBroker);
         
-        if (initialValuesOffered != null) {
-            this.setValuesOffered(initialValuesOffered);
-        }
+        this.setValuesOffered(initialValuesOffered);
 
     }        
 
@@ -289,6 +288,25 @@ public abstract class Action
         this.assetType = actionTechSpec.getAssetType();
         this.assetStateDimensionName = actionTechSpec.getStateDimension().getStateName();
         
+        
+        LinkedHashSet defaults = new LinkedHashSet(); 
+        //get the initial values offered set
+        Vector a = actionTechSpec.getActions();
+        if (a != null) {
+            Iterator i = a.iterator();
+            while (i.hasNext()) {
+                ActionDescription ad = (ActionDescription)i.next();
+                if (ad.isDefaultAction()) {
+                    defaults.add(this.getValueFromXML(ad.name()) );
+                }
+            }
+        }
+        try {
+            this.setValuesOffered(defaults);
+        } catch (Exception e) {
+            logger.warn("Tried to set default actions offered, but an exception occurred: "+e, e);
+        }
+        
         serviceBroker.releaseService(this, ActionTechSpecService.class, ActionTechSpecService);
         
     }
@@ -298,6 +316,7 @@ public abstract class Action
     //*************************************************** PossibleValues
     /**
      *     Not for public viewing / access. For use only at init time. Sets the values retrieved by tech spec.
+     *      The set is expected to be a set of strings.
      */
     private void setPossibleValues ( Set values) 
     {
@@ -358,6 +377,10 @@ public abstract class Action
      */
     protected void setValuesOffered ( Set values) throws  IllegalValueException 
     {        
+        if (values == null) {
+            throw new IllegalValueException ("setValuesOffered must not be called with a null value. An empty set IS permitted.");
+        }
+
         Object o;
         Iterator i = values.iterator();
         while (i.hasNext()) {

@@ -61,14 +61,17 @@ public class ActionDescription {
     AssetType affectsAssetType;
     AssetStateDimension affectsStateDimension;
     Vector transitions;
+    boolean isADefaultActionOffered = false;
     
     AssetTransitionWithCost wildcardTransition = null;
     
     /** Creates a new instance of ActionDescription */
-    public ActionDescription(String name, AssetType affectsAssetType, AssetStateDimension affectsStateDimension) {
+    public ActionDescription(String name, AssetType affectsAssetType, AssetStateDimension affectsStateDimension, boolean isDefault) {
         this.name = name;
         this.affectsAssetType = affectsAssetType;
         this.affectsStateDimension = affectsStateDimension;
+        
+        this.isADefaultActionOffered = isDefault;
         
         transitions = new Vector(5,5);
     }
@@ -84,6 +87,11 @@ public class ActionDescription {
         this.desc = d;
     }
 
+    /**
+     * @return TRUE if the Action is a default action offered by the Actuator at system initialization time
+     */
+    public boolean isDefaultAction() { return this.isADefaultActionOffered; }
+    
     /**
      * @return the asset type that this event will affect
      */
@@ -172,7 +180,9 @@ public class ActionDescription {
     
     public String toString() {
         
-        String s = "    Action ["+this.name()+"] -------------\n";
+        String defaultStr = "";
+        if (this.isADefaultActionOffered) { defaultStr = "This is a Default Action Offered"; }
+        String s = "    Action ["+this.name()+"] -------------"+ defaultStr +"\n";
         s += "    Desc = "+ this.description() + "\n";
         
         AssetTransitionWithCost at;

@@ -15,6 +15,7 @@
 <!ELEMENT Diagnosis >
 <!ATTLIST Diagnosis 
     name CDATA #REQUIRED
+    defaultValue CDATA #IMPLIED
 >
 
 <!ELEMENT Diagnoses (WhenActualStateIs+) >

@@ -159,7 +159,7 @@ public abstract class Diagnosis
     throws IllegalValueException, TechSpecNotFoundException 
     {
         this(assetName, serviceBroker);
-        this.setValue(initialValue);
+        this.setValue(initialValue); // overrides the default value set by the previous line's indirect call to initPossibleValues().
     }        
 
     /**
@@ -274,8 +274,14 @@ public abstract class Diagnosis
         this.setPossibleValues(diagnosisTechSpec.getPossibleValues());
         this.assetType = diagnosisTechSpec.getAssetType();
         this.assetStateDimensionName = diagnosisTechSpec.getStateDimension().getStateName();
-        
-        
+        //Set the default value for this diagnosis
+        try {
+            if (diagnosisTechSpec.getDefaultValue() != null) {
+                this.setValue( getValueFromXML(diagnosisTechSpec.getDefaultValue()) );
+            }
+        } catch (Exception e) {
+            logger.warn("Tried to set default value to "+getValueFromXML(diagnosisTechSpec.getDefaultValue())+", but an exception occurred: "+e, e);
+        }
         serviceBroker.releaseService(this, DiagnosisTechSpecService.class, DiagnosisTechSpecService);
         
     }

@@ -12,6 +12,7 @@
 <!ELEMENT Action (Description, Transition+)  >
 <!ATTLIST Action 
     name CDATA #REQUIRED
+    aDefaultActionOffered CDATA #IMPLIED
 >
 
 <!ELEMENT Description EMPTY  >
@@ -57,7 +58,7 @@
 
 <!-- example
 <ActuatorType name="RestartAgent" affectsAssetType="Agent" affectsStateDimension="Liveness" >
-    <Action name="LocalRestart">
+    <Action name="LocalRestart" aDefaultActionOffered="TRUE" >
         <Description value="Restarts agent in node on local host" />
         <Transition WhenActualStateIs="*" EndStateWillBe="LIVE" IntermediateStateWillBe="DEAD" >
             <OneTimeCost>

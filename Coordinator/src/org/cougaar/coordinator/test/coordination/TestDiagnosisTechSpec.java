@@ -33,6 +33,8 @@ public class TestDiagnosisTechSpec implements DiagnosisTechSpecInterface  {
         pvs.add("No Threat");
     }
     
+    public String getDefaultValue() { return "Low Threat"; }
+    
     /** @return the asset type that the threat cares about.
      */
     public AssetType getAssetType() {

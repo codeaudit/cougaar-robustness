@@ -172,9 +172,15 @@ public class ActuatorTypeLoader extends XMLLoader {
     private void parseAction(Element element, ActionTechSpecImpl actuator, AssetType assetType, AssetStateDimension asd) {
 
         String actionName = element.getAttribute("name");
+        String defaultAction = element.getAttribute("aDefaultActionOffered");
+        boolean isDefault = false;
+        if (defaultAction != null && defaultAction.equalsIgnoreCase("TRUE")) {
+            isDefault = true;
+        }
+            
         String description = null; 
         
-        ActionDescription ad = new ActionDescription(actionName, assetType, asd);
+        ActionDescription ad = new ActionDescription(actionName, assetType, asd, isDefault);
         
         //Create an ActionDescription
         Element e;

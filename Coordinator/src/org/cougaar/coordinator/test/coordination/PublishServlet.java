@@ -249,7 +249,7 @@ public class PublishServlet extends BaseServletComponent implements BlackboardCl
 
     
     private void createDiagnoses(String s) throws IllegalValueException, TechSpecNotFoundException {
-        AgentCommunicationDiagnosis1 d1 = new AgentCommunicationDiagnosis1(s, "OK", serviceBroker);
+        AgentCommunicationDiagnosis1 d1 = new AgentCommunicationDiagnosis1(s, serviceBroker);
         //DiagnosesWrapper dw1 = new DiagnosesWrapper(d1, null, null, new UID());
         //d1.setWrapper(dw1);
         blackboard.publishAdd(d1);
@@ -266,19 +266,13 @@ public class PublishServlet extends BaseServletComponent implements BlackboardCl
     }
     
     private void createActions(String s) throws IllegalValueException, TechSpecNotFoundException {
-        Set initValues = new HashSet();
-        initValues.add("LocalRestart");
-        initValues.add("QuickRemoteRestart" );
-        RestartAgentDefense ra = new RestartAgentDefense(s, initValues, serviceBroker);
+        RestartAgentDefense ra = new RestartAgentDefense(s, serviceBroker);
         //ActionsWrapper raw = new ActionsWrapper(ra, null, null, new UID());
         //ra.setWrapper(raw);
         blackboard.publishAdd(ra);
         //blackboard.publishAdd(raw);
 
-        initValues = new HashSet();
-        initValues.add("TryHard");
-        initValues.add("Normal" );
-        FakeCommDefense fcd = new FakeCommDefense(s, initValues, serviceBroker);
+        FakeCommDefense fcd = new FakeCommDefense(s, serviceBroker);
         //ActionsWrapper fcdw = new ActionsWrapper(fcd, null, null, new UID());
         //ra.setWrapper(fcdw);
         blackboard.publishAdd(fcd);
