@@ -187,7 +187,7 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
                                 }
 
                                 if (qualifies) {
- //                                   logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] Qualifies! Adding to the "+metaModel.getName()+" threatModel ["+metaModel.getAffectedAssetType().getName()+"]");
+                                    logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] Qualifies! Adding to the "+metaModel.getName()+" threatModel ["+metaModel.getAffectedAssetType().getName()+"]");
                                     threatModel = addAssetAsMember(asset, metaModel);
                                 } else { //remove the asset from the threat model's membership, if it's there                         
 //logger.debug("evaluateThreatAssetMembership - doesn't qualify.");
