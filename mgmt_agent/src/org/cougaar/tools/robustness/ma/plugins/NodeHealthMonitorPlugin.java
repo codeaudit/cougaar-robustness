@@ -431,11 +431,13 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
 
   private AgentStatus[] getLocalAgentStatus(String communityName) {
     String agents[] = model.entitiesAtLocation(myName);
-    AgentStatus as[] = new AgentStatus[agents.length];
-    for (int i = 0; i < as.length; i++) {
-      as[i] = new AgentStatus(agents[i], myName, model.getCurrentState(agents[i]));
+    List l = new ArrayList();
+    for (int i = 0; i < agents.length; i++) {
+      if (model.getCurrentState(agents[i]) == controller.getNormalState()) {
+        l.add(new AgentStatus(agents[i], myName, controller.getNormalState()));
+      }
     }
-    return as;
+    return (AgentStatus[])l.toArray(new AgentStatus[0]);
   }
 
   /**

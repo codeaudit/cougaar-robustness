@@ -231,7 +231,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
       List l = new ArrayList();
       for (Iterator it = statusMap.values().iterator(); it.hasNext();) {
         StatusEntry se = (StatusEntry)it.next();
-        if (se != null && location.equals(se.currentLocation) && se.type == AGENT) {
+        if (se != null && se.name != null && location.equals(se.currentLocation) && se.type == AGENT) {
           l.add(se.name);
         }
       }

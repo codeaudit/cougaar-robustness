@@ -304,7 +304,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
         deconflictHelper = new DeconflictHelper(getBindingSite(), model);
         if (dl != null)
           deconflictHelper.addListener(dl);
-        logger.debug("==========deconflictHelper applies to " + agentId);
+        logger.info("Deconfliction enabled: community=" + model.getCommunityName());
         deconflictHelper.initObjs();
       }
     }

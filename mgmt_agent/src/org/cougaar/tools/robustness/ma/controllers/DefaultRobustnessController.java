@@ -126,7 +126,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (getState(name) == DefaultRobustnessController.ACTIVE &&
           isLocal(name)) {
         logger.info("Heartbeat timeout: agent=" + name);
-        newState(name, HEALTH_CHECK);
+        //newState(name, HEALTH_CHECK);
+        doPing(name, DefaultRobustnessController.ACTIVE, DEAD);
       }
     }
   }
@@ -159,8 +160,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
     public void expired(String name) {
       //logger.info("Expired Status:" + " agent=" + name + " state=ACTIVE");
-      if ((isLocal(name) || isNode(name)) ||
-          (thisAgent.equals(preferredLeader()) && getState(getLocation(name)) == DEAD) ||
+      if (isNode(name) ||
+          thisAgent.equals(preferredLeader()) ||
           isLeader(name)) {
         newState(name, HEALTH_CHECK);
       }
@@ -178,23 +179,13 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   class HealthCheckStateController extends StateControllerBase {
     public void enter(String name) {
-      if (isLocal(name)) {
-        doPing(name, DefaultRobustnessController.ACTIVE, isLeader(name) ? DEAD : HEALTH_CHECK);
-      } else if (isNode(name) ||
-                 thisAgent.equals(preferredLeader()) ||
-                 isLeader(name)) {
+      logger.debug("New state: agent=" + name + " state=HEALTH_CHECK");
+      if (isNode(name) ||
+          thisAgent.equals(preferredLeader()) ||
+          isLeader(name)) {
         doPing(name, DefaultRobustnessController.ACTIVE, DEAD);
       }
     }
-    /*public void expired(String name) {
-      if (isLocal(name)) {
-        newState(name, isLeader(name) ? DEAD : HEALTH_CHECK);
-      } else if (isNode(name) ||
-                 thisAgent.equals(preferredLeader()) ||
-                 isLeader(name)) {
-        newState(name, DEAD);
-      }
-    }*/
   }
 
   /**
@@ -207,6 +198,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   class DeadStateController extends StateControllerBase {
     public void enter(String name) {
+      //int priorState = model.getpriorState(name);
+      //if (priorState == DECONFLICT || priorState == RESTART) {
+      //  newState(name, priorState);
+      //} else {
       logger.info("New state (DEAD):" +
                   " name=" + name +
                   " preferredLeader=" + thisAgent.equals(preferredLeader()) +
@@ -215,10 +210,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (isAgent(name) && thisAgent.equals(preferredLeader())) {
         // Interface point for Deconfliction
         // If Ok'd by Deconflictor set state to RESTART
-        if(getDeconflictHelper() != null) {
+        if(isDeconflictionEnabled()) {
           newState(name, DECONFLICT);
         } else {
-            newState(name, RESTART);
+          newState(name, RESTART);
         }
       } else if (isNode(name) && thisAgent.equals(preferredLeader())) {
         removeFromCommunity(name);
@@ -263,7 +258,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
           newNodes.clear();
           //deadNodes.clear();
         }
-      } else if (isLocal(name)) {
+      } else if (isLeader(thisAgent) && name.equals(preferredLeader())) {
+        newState(name, RESTART);
+      }
+      if (isLocal(name)) {
         stopHeartbeats(name);
       }
     }
@@ -424,31 +422,31 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                                implements DeconflictListener {
     { addDeconflictListener(this); }
     public void enter(String name) {
-      if(getDeconflictHelper() != null) {
+      if (isDeconflictionEnabled()) {
         if (!getDeconflictHelper().isDefenseApplicable(name)) {
           logger.debug("change condition of " + name);
           getDeconflictHelper().changeApplicabilityCondition(name);
         }
-        if (getDeconflictHelper().isOpEnabaled(name)) {
+        if (getDeconflictHelper().isOpEnabled(name)) {
           newState(name, RESTART);
         }
       } else {
-          newState(name, RESTART);
+        newState(name, RESTART);
       }
     }
     public void expired(String name) {
       logger.info("Expired Status:" + " agent=" + name + " state=DECONFLICT");
-        //getDeconflictHelper().test();
-        newState(name, HEALTH_CHECK);
+      //newState(name, HEALTH_CHECK);
+      doPing(name, DefaultRobustnessController.ACTIVE, RESTART);
     }
+
     public void defenseOpModeEnabled(String name) {
-      //if (getState(name) == DEAD) {
-        if (getDeconflictHelper() != null &&
-            !getDeconflictHelper().isDefenseApplicable(name)) {
-          getDeconflictHelper().changeApplicabilityCondition(name);
-        }
-        //newState(name, RESTART);
-        newState(name, HEALTH_CHECK);
+      if (isDeconflictionEnabled() &&
+          !getDeconflictHelper().isDefenseApplicable(name)) {
+        getDeconflictHelper().changeApplicabilityCondition(name);
+      }
+      //newState(name, HEALTH_CHECK);
+      doPing(name, DefaultRobustnessController.ACTIVE, RESTART);
     }
   }
 
@@ -458,6 +456,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   private WakeAlarm wakeAlarm;
   boolean communityReady = false;
   boolean startupCompleted = false;
+  boolean wasRestarted = false;
 
   /**
    * Initializes services and loads state controller classes.
@@ -497,6 +496,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     return hosts;
   }
 
+  private boolean isDeconflictionEnabled() {
+   return getDeconflictHelper() != null;
+  }
 
   private boolean useGlobalSolver() {
     String solverModeAttr = model.getStringAttribute(SOLVER_MODE_ATTRIBUTE);
@@ -513,7 +515,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   }
 
   public void setupSubscriptions() {
-    startupCompleted = blackboard.didRehydrate();
+    logger.info("didRehydrate=" + blackboard.didRehydrate());
+    if (blackboard.didRehydrate()) {
+      wasRestarted = true;
+      startupCompleted = true;
+    }
     wakeAlarm = new WakeAlarm((new Date()).getTime() + STATUS_INTERVAL);
     alarmService.addRealTimeAlarm(wakeAlarm);
   }
@@ -521,7 +527,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   public void execute() {
     if ((wakeAlarm != null) &&
         ((wakeAlarm.hasExpired()))) {
-      if (thisAgent.equals(preferredLeader())) {
+      if (isLeader(thisAgent)) {
         logger.info(statusSummary());
         checkCommunityReady();
         checkLoadBalance();
@@ -613,6 +619,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   public void leaderChange(String priorLeader, String newLeader) {
     logger.info("LeaderChange: prior=" + priorLeader + " new=" + newLeader);
     if (isLeader(thisAgent) && model.getCurrentState(preferredLeader()) == DEAD) {
+      newState(preferredLeader(), RESTART);
+    }
+    if (thisAgent.equals(preferredLeader()) && startupCompleted && wasRestarted) {
+      pingAll();
     }
     checkCommunityReady();
   }
@@ -660,7 +670,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   }
 
   protected void pingAll() {
-    String agents[] = model.listEntries(model.AGENT, DefaultRobustnessController.ACTIVE);
+    String agents[] = model.listAllEntries();
     for (int i = 0; i < agents.length; i++) {
       doPing(agents[i], DefaultRobustnessController.ACTIVE, DEAD);
     }

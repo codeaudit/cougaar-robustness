@@ -247,7 +247,7 @@ public class DeconflictHelper extends BlackboardClientComponent {
    * @param name Agent name
    * @return
    */
-  public boolean isOpEnabaled(String name) {
+  public boolean isOpEnabled(String name) {
     return opModeEnabled.contains(name);
   }
 
