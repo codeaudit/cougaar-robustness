@@ -10,13 +10,6 @@
         <Transition WhenActualStateIs="MediumVulnerability" EndStateWillBe="HighVulnerability" />
         <Transition WhenActualStateIs="HighVulnerability" EndStateWillBe="HighVulnerability" />
     </DirectEffect>
-    <TransitiveEffect>
-        <CausesEvent name="NodeDeath" assetType="Node"/>
-        <VulnerableAssets>
-            <ContainmentFilter eventAssetContainerName="Node" />
-            <EventLikelihood probability="ALWAYS" />
-        </VulnerableAssets>
-    </TransitiveEffect> 
 </Event>
 <Event name="HostDeath" affectsAssetType="Host" affectsStateDimension="LIVENESS">
     <DirectEffect>
