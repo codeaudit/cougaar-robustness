@@ -77,7 +77,8 @@ public class RestartLocatorPlugin extends SimplePlugin {
 
   // Defines default values for configurable parameters.
   private static String defaultParams[][] = {
-    {"restartNode",  ""}
+    {"restartNode",  ""},
+    {"pingTimeout",  "120000"}
   };
 
   ManagementAgentProperties restartLocatorProps =
@@ -88,6 +89,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
   private Map nodes;
 
   private List specifiedHosts;
+  private long pingTimeout;
 
   protected void setupSubscriptions() {
 
@@ -114,9 +116,19 @@ public class RestartLocatorPlugin extends SimplePlugin {
     // Find name of community to monitor
     Collection communities = communityService.search("(CommunityManager=" +
       myAgent.toString() + ")");
-    if (!communities.isEmpty())
-      restartLocatorProps.setProperty("community",
-                                      (String)communities.iterator().next());
+    if (!communities.isEmpty()) {
+      communityToMonitor = (String)communities.iterator().next();
+
+      // Initialize configurable paramaeters from defaults and plugin arguments.
+      getPropertiesFromCommunityAttributes();
+    } else {
+      log.error("Agent \"" + myAgent.toString() +
+        "\" not identified as a \"CommunityManager\" in any active community!.");
+      log.error("Check that the community to monitor has this agent identified\n");
+      log.error("in its \"CommunityManager\" attribute and that this agent is\n");
+      log.error("also identified as an Entity within the monitored community with\n");
+      log.error("the attribute \"Role=ManagementAgent\".");
+    }
 
     // Initialize configurable paramaeters from defaults and plugin arguments.
     updateParams(restartLocatorProps);
@@ -284,7 +296,6 @@ public class RestartLocatorPlugin extends SimplePlugin {
    * @param props Properties object defining paramater names and values.
    */
   private void updateParams(Properties props) {
-    communityToMonitor = props.getProperty("community");
     String specifiedRestartNodes = restartLocatorProps.getProperty("restartNode");
     if (specifiedRestartNodes != null && specifiedRestartNodes.trim().length() > 0) {
       Attribute restartNodesAttr = new BasicAttribute("RestartNode");
@@ -307,6 +318,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
     }
     sb.append("]");
     props.setProperty("restartNode",sb.toString());
+    pingTimeout = Long.parseLong(props.getProperty("pingTimeout"));
   }
 
   /**
@@ -538,6 +550,26 @@ public class RestartLocatorPlugin extends SimplePlugin {
   }
 
   /**
+   * Gets externally configurable parameters defined in community attributes.
+   */
+  private void getPropertiesFromCommunityAttributes() {
+    Attributes attrs =
+      communityService.getCommunityAttributes(communityToMonitor);
+    try {
+      NamingEnumeration enum = attrs.getAll();
+      while (enum.hasMore()) {
+        Attribute attr = (Attribute)enum.nextElement();
+        String id = attr.getID();
+        if (restartLocatorProps.containsKey(id)) {
+          restartLocatorProps.setProperty(id, (String)attr.get());
+        }
+      }
+    } catch (NamingException ne) {
+      log.error("Exception getting attributes from CommunityService, " + ne);
+    }
+  }
+
+  /**
    * Gets reference to TopologyReaderService.
    * @return Reference to TopologyReaderService
    */
@@ -561,7 +593,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
   private void doPing(ClusterIdentifier addr) {
     PingRequest pr = sensorFactory.newPingRequest(myAgent,
                                    addr,
-                                   60000);
+                                   pingTimeout);
     pingUIDs.add(pr.getUID());
     /*
     if (log.isDebugEnabled()) {

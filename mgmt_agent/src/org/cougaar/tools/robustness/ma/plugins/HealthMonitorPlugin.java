@@ -120,13 +120,13 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     {"hbReqTimeout",     "120000"},
     {"hbReqRetries",          "0"},
     {"hbReqRetryFreq",   "120000"},
-    {"hbFreq",            "30000"},
-    {"hbTimeout",         "60000"},
-    {"hbPctLate",          "80.0"},
+    {"hbFreq",           "180000"},
+    {"hbTimeout",        "120000"},
+    {"hbPctLate",          "95.0"},
     {"hbWindow",         "600000"},
     {"hbFailRate",         "50.0"},
     {"activePingFreq",        "0"},
-    {"pingTimeout",      "120000"},
+    {"pingTimeout",      "180000"},
     {"pingRetries",           "0"},
     {"evalFreq",          "10000"},
     {"restartTimeout",   "300000"},
@@ -432,7 +432,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
                                                 this.getClass().getName(),
                                                 "Restart succeeded:" +
                                                 " agent=" + hs.getAgentId() +
-                                                " node=" + getLocation(hs.getAgentId().toString()));
+                                                " node=" + hs.getNode());
               } else if (hs.getStatus() == HealthStatus.MOVED) {
                 //log.info("Move complete: agent=" + hs.getAgentId());
                 CougaarEvent.postComponentEvent(CougaarEventType.END,
@@ -440,7 +440,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
                                                 this.getClass().getName(),
                                                 "Move succeeded:" +
                                                 " agent=" + hs.getAgentId() +
-                                                " node=" + getLocation(hs.getAgentId().toString()));
+                                                " node=" + hs.getNode());
               }
               hs.setState(HealthStatus.NORMAL);
               hs.setStatus(HealthStatus.OK);
@@ -482,7 +482,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
                                                 this.getClass().getName(),
                                                 "Restart succeeded:" +
                                                 " agent=" + hs.getAgentId() +
-                                                " node=" + getLocation(hs.getAgentId().toString()));
+                                                " node=" + hs.getNode());
                   } else if (hs.getStatus() == HealthStatus.MOVED) {
                     //log.info("Move complete: agent=" + hs.getAgentId());
                     CougaarEvent.postComponentEvent(CougaarEventType.END,
@@ -490,7 +490,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
                                                 this.getClass().getName(),
                                                 "Move succeeded:" +
                                                 " agent=" + hs.getAgentId() +
-                                                " node=" + getLocation(hs.getAgentId().toString()));
+                                                " node=" + hs.getNode());
                   }
                   hs.setState(HealthStatus.NORMAL);
                   hs.setStatus(HealthStatus.OK);
@@ -637,7 +637,8 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       } else if (state.equals(HealthStatus.RESTART)) {
         if (!state.equals(hs.getPriorState()))
           log.debug("Agent restart in process: agent=" + hs.getAgentId());
-        if (elapsedTime(hs.getLastRestartAttempt(), now()) > restartTimeout) {
+        if (restartTimeout >= 0 &&
+            elapsedTime(hs.getLastRestartAttempt(), now()) > restartTimeout) {
           log.warn("Agent restart timed out: agent=" + hs.getAgentId());
           hs.setState(HealthStatus.FAILED_RESTART);
         }
@@ -649,7 +650,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
         log.debug("Restart complete: agent=" + hs.getAgentId());
         hs.setState(HealthStatus.INITIAL);
         hs.setStatus(HealthStatus.RESTARTED);
-        hs.setNode(getLocation(hs.getAgentId().toString()));
+        //hs.setNode(getLocation(hs.getAgentId().toString()));
         //hs.setHeartbeatRequestStatus(HealthStatus.UNDEFINED);
       //************************************************************************
       // State: FAILED_RESTART  - Agents in this state were previously

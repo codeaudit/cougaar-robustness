@@ -160,17 +160,31 @@ public class DecisionPlugin extends SimplePlugin {
             if (ac.getStatusCode() == ac.CREATED) {
               hs.setState(HealthStatus.RESTART_COMPLETE);
               hs.setStatus(HealthStatus.RESTARTED);
+              hs.setNode(addTicket.getDestinationNode().toString());
               publishChange(hs);
               bbs.publishRemove(ac);
             } else if (ac.getStatusCode() == ac.ALREADY_EXISTS) {
               // Mobility thinks the agent is alive
               // We think its dead because its not responding to HeartbeatRequests or Pings
-              log.warn("Restart of active agent, action=ADD status=" +
+
+              log.warn("Restart of (possibly) active agent attempted, action=ADD status=" +
                 ac.getStatusCodeAsString() + " agent=" + addTicket.getMobileAgent() +
                 " destNode=" + addTicket.getDestinationNode());
-              // Try an in-place restart
-              hs.setLastRestartAttempt(new Date());
-              moveAgent(addTicket.getMobileAgent(), addTicket.getDestinationNode());
+              // Try a forced restart
+                hs.setLastRestartAttempt(new Date());
+                moveAgent(addTicket.getMobileAgent(), addTicket.getDestinationNode());
+              /*
+              log.warn("Restart of active agent attempted, " +
+                " setting agent state to NORMAL:  action=ADD status=" +
+                ac.getStatusCodeAsString() + " agent=" + addTicket.getMobileAgent() +
+                " destNode=" + addTicket.getDestinationNode());
+              hs.setState(HealthStatus.NORMAL);
+              hs.setStatus(HealthStatus.OK);
+              hs.setHeartbeatStatus(HealthStatus.HB_NORMAL);
+              hs.setHbReqRetryCtr(0);
+              publishChange(hs);
+              bbs.publishRemove(ac);
+              */
             } else {
               hs.setState(HealthStatus.FAILED_RESTART);
               publishChange(hs);
@@ -321,7 +335,7 @@ public class DecisionPlugin extends SimplePlugin {
   }
 
   /**
-   * Initiates a restart at agents current node.
+   * Initiates a forced restart at agents current node.
    * @param agentAddr  MessageAddresses of agent to be restarted
    * @param nodeAddr   MessageAddresses of destination node
    */
@@ -444,6 +458,8 @@ public class DecisionPlugin extends SimplePlugin {
             AddTicket at = (AddTicket)ac.getAbstractTicket();
             sb.append(" agent=" + at.getMobileAgent() +
             " destNode=" + at.getDestinationNode());
+          } else {
+            sb.append(" ticket=" + ac.getAbstractTicket().getClass().getName());
           }
           log.debug(sb.toString());
         }
