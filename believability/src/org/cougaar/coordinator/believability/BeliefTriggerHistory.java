@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefTriggerHistory.java,v $
- * $Revision: 1.3 $
- * $Date: 2004-07-15 20:19:41 $
+ * $Revision: 1.4 $
+ * $Date: 2004-07-30 01:10:08 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -94,7 +94,7 @@ import org.cougaar.core.agent.service.alarm.Alarm;
  * an instance of this class: one for each of these.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.3 $Date: 2004-07-15 20:19:41 $
+ * @version $Revision: 1.4 $Date: 2004-07-30 01:10:08 $
  * @see BeliefTriggerManager
  */
 class BeliefTriggerHistory 
@@ -265,7 +265,7 @@ class BeliefTriggerHistory
 
         if (( _last_computed_belief != null )
             && ( trigger.getTriggerTimestamp() 
-                 <= _last_computed_belief.getTimestamp() ))
+                 < _last_computed_belief.getTimestamp() ))
         {
             return false;
         }
