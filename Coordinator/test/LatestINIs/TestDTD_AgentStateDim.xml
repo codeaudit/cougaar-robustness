@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE AssetStateDimensions SYSTEM "AssetStateDimensionsDTD.dtd" >
+
+<AssetStateDimensions assetType="Agent">
+
+  <StateDimension name="Communication" >
+ 	<SimpleState name="Communicating" relativeMauCompleteness="0.9" 
+                                    relativeMauSecurity="0.5"
+			            defaultStartState="TRUE" />
+
+ 	<SimpleState name="Degraded" relativeMauCompleteness="0.5" 
+                               relativeMauSecurity="0.5" />
+
+ 	<SimpleState name="Planned_Disconnect" relativeMauCompleteness="0.9" 
+	                                 relativeMauSecurity="1.0" />
+
+ 	<SimpleState name="Not_Communicating" relativeMauCompleteness="0.0" 
+                                        relativeMauSecurity="0.5" />
+
+  </StateDimension>
+
+  <StateDimension name="Liveness" >
+ 	<SimpleState name="Live" relativeMauCompleteness="1.0" 
+                         relativeMauSecurity="0.5"
+ 		         defaultStartState="TRUE" />
+ 	<SimpleState name="Dead" relativeMauCompleteness="0.0" 
+                           relativeMauSecurity="0.5" />
+
+  </StateDimension>
+
+  <StateDimension name="Encryption" >
+ 	<SimpleState name="256_bit" relativeMauCompleteness="0.5" 
+                           relativeMauSecurity="1.0"
+			   defaultStartState="TRUE" />
+ 	<SimpleState name="128_bit" relativeMauCompleteness="0.7"
+	                     relativeMauSecurity="0.7" />
+ 	<SimpleState name="64_bit" relativeMauCompleteness="0.5"
+	                     relativeMauSecurity="0.5" />
+ 	<SimpleState name="None" relativeMauCompleteness="0.5"
+	                   relativeMauSecurity="0.1" />
+
+  </StateDimension>
+
+  <StateDimension name="Eavesdropping" >
+ 	<SimpleState name="None" relativeMauCompleteness="0.5" 
+                           relativeMauSecurity="1.0"
+			   defaultStartState="TRUE" />
+ 	<SimpleState name="Low" relativeMauCompleteness="0.7"
+	                     relativeMauSecurity="0.7" />
+ 	<SimpleState name="Medium" relativeMauCompleteness="0.5"
+	                     relativeMauSecurity="0.5" />
+ 	<SimpleState name="High" relativeMauCompleteness="0.5"
+	                   relativeMauSecurity="0.1" />
+
+  </StateDimension>
+
+</AssetStateDimensions>

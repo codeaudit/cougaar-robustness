@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE Event >
+
+<Events>
+<Event name="MailRead" affectsAssetType="Agent" affectsStateDimension="Eavesdropping">
+    <DirectEffect>
+        <Transition WhenActualStateIs="NoVulnerability" EndStateWillBe="LowVulnerability" />
+        <Transition WhenActualStateIs="LowVulnerability" EndStateWillBe="MediumVulnerability" />
+        <Transition WhenActualStateIs="MediumVulnerability" EndStateWillBe="HighVulnerability" />
+        <Transition WhenActualStateIs="HighVulnerability" EndStateWillBe="HighVulnerability" />
+    </DirectEffect>
+    <TransitiveEffect>
+        <CausesEvent name="NodeDeath" assetType="Node"/>
+        <VulnerableAssets>
+            <ContainmentFilter eventAssetContainerName="Node" />
+            <EventLikelihood probability="ALWAYS" />
+        </VulnerableAssets>
+    </TransitiveEffect> 
+</Event>
+<Event name="HostDeath" affectsAssetType="Host" affectsStateDimension="LIVENESS">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="DEAD" />
+    </DirectEffect>
+    <TransitiveEffect>
+        <CausesEvent name="NodeDeath" assetType="Node"/>
+        <VulnerableAssets>
+            <ContainmentFilter eventAssetContainerName="Node" />
+            <EventLikelihood probability="ALWAYS" />
+        </VulnerableAssets>
+    </TransitiveEffect> 
+</Event>
+<Event name="NodeDeath" affectsAssetType="Node" affectsStateDimension="LIVENESS">
+    <DirectEffect>
+        <Transition WhenActualStateIs="LIVE" EndStateWillBe="DEAD" />
+        <Transition WhenActualStateIs="DEAD" EndStateWillBe="DEAD" />
+    </DirectEffect>
+    <TransitiveEffect>
+        <CausesEvent name="AgentDeath" assetType="Agent"/>
+        <VulnerableAssets>
+            <ContainmentFilter eventAssetContainerName="Agent" />
+            <EventLikelihood probability="ALWAYS" />
+        </VulnerableAssets>
+    </TransitiveEffect> 
+</Event>
+<Event name="AgentDeath" affectsAssetType="Agent" affectsStateDimension="LIVENESS">
+    <DirectEffect>
+        <Transition WhenActualStateIs="LIVE" EndStateWillBe="DEAD" />
+        <Transition WhenActualStateIs="DEAD" EndStateWillBe="DEAD" />
+    </DirectEffect>
+</Event>
+
+</Events>

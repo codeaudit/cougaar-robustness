@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE Threat >
+<Threats>
+<Threat name="Bomb" affectsAssetType="Enclave" causesEvent="HostDeath" defaultEventLikelihoodProb="NONE" >
+
+    <VulnerableAssets>
+        <AssetFilter>
+            <Term propName="location" propValue="HiWay" op="=" />
+        </AssetFilter>
+        <EventLikelihoodInterval>
+            <ClockInterval intervalStart="1800" durationHrs="12" probability="VERY_LOW" />
+        </EventLikelihoodInterval>
+    </VulnerableAssets>
+
+    <VulnerableAssets>
+        <AssetFilter>
+            <Term propName="location" propValue="OffRoad" op="=" />
+        </AssetFilter>
+        <EventLikelihoodInterval>
+            <ClockInterval intervalStart="1800" durationHrs="12" probability="MEDIUM" />
+            <ClockInterval intervalStart="0600" durationHrs="12" probability="LOW" />
+        </EventLikelihoodInterval>
+    </VulnerableAssets>
+
+    <VulnerableAssets>
+	  <AssetFilter>
+           <CorruptHostExistsOnNetwork value="TRUE" />    
+	  </AssetFilter>
+        <EventLikelihood probability="LOW" />
+    </VulnerableAssets>
+
+    <VulnerableAssets>
+	  <AssetFilter>
+           <CorruptHostExists value="TRUE" />    
+	  </AssetFilter>
+        <EventLikelihood probability="HIGH" />
+    </VulnerableAssets>
+
+</Threat>
+<Threat name="AgentVirus" affectsAssetType="Agent" causesEvent="AgentDeath" defaultEventLikelihoodProb="VERY_LOW" >
+</Threat>
+<Threat name="NodeVirus" affectsAssetType="Node" causesEvent="AgentDeath" defaultEventLikelihoodProb="VERY_LOW" >
+</Threat>
+
+
+
+</Threats>

@@ -50,21 +50,28 @@
       <Attribute ID="Role" Value="HealthMonitor" /> 
     </Entity>
 
-    <Entity Name="SomeNode" >
+    <Entity Name="T1" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" /> 
+    </Entity>
+
+
+    <Entity Name="ManagementAgentNode" >
       <Attribute ID="EntityType" Value="Node" />
       <Attribute ID="Role" Value="Member" />
       <Attribute ID="Role" Value="HealthMonitor" /> 
     </Entity>
 
     <Entity Name="ManagementAgent" >
-      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="Member" />
       <Attribute ID="Role" Value="RobustnessManager" />
       <Attribute ID="Role" Value="HealthMonitor" /> 
     </Entity>
 
 
-    <Entity Name="TestAgent" >
+    <Entity Name="TestAgent1" >
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="Member" />
     </Entity>

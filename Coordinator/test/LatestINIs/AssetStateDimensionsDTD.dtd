@@ -1,0 +1,37 @@
+﻿<?xml encoding="UTF-8" ?>
+
+<!-- Created by Administrator on March 22, 2004, 8:54 AM -->
+
+<!ELEMENT AssetStateDimensions (StateDimension+) > 
+<!ATTLIST AssetStateDimensions
+    assetType CDATA #REQUIRED
+>
+
+<!ELEMENT StateDimension (SimpleState+) >
+<!ATTLIST StateDimension
+    name CDATA #REQUIRED
+>
+  
+<!ELEMENT SimpleState EMPTY>
+<!ATTLIST SimpleState
+    name CDATA #REQUIRED
+    defaultStartState CDATA #IMPLIED
+    relativeMauCompleteness CDATA #REQUIRED
+    relativeMauSecurity CDATA #REQUIRED
+>
+  
+
+<!-- Example
+<AssetStateDimensions assetType=“Agent”>
+    <StateDimension name=“LIVENESS” >
+        <SimpleState name=”LIVE" defaultStartState=”TRUE” relativeMauCompleteness=”1.0” relativeMauSecurity=”1.0” />
+        <SimpleState name=”DEAD" relativeMauCompleteness=”0.0” relativeMauSecurity=”1.0” />
+    </StateDimension>
+
+    <StateDimension name=“COMMUNICATION” >
+        <SimpleState name=“GOOD” defaultStartState=”TRUE” relativeMauCompleteness=”1.0” relativeMauSecurity=”1.0” />
+        <SimpleState name=”DEGRADED” relativeMauCompleteness=”0.5” relativeMauSecurity=”0.9” />
+        <SimpleState name=”PLANNED_DISCONNECT” relativeMauCompleteness=”0.3” relativeMauSecurity=”1.0” />
+    </StateDimension>
+</AssetStateDimensions>
+-->

@@ -25,7 +25,7 @@
 
 package org.cougaar.coordinator.monitoring;
 
-import org.cougaar.coordinator.DeconflictionPluginBase;
+import org.cougaar.coordinator.MonitoringPluginBase;
 
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.Action;
@@ -51,7 +51,7 @@ import org.cougaar.core.util.UID;
  * It emits DefenseCondition objects.
  *
  */
-public class ActionMonitoringPlugin extends DeconflictionPluginBase implements NotPersistable {
+public class ActionMonitoringPlugin extends MonitoringPluginBase implements NotPersistable {
     
     
     private IncrementalSubscription monitoredActionsSubscription;

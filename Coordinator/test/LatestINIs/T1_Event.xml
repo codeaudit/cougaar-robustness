@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE Event >
+
+<Events>
+
+<Event name="AgentDeath" affectsAssetType="Agent" affectsStateDimension="Liveness">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="Dead" />
+    </DirectEffect>
+</Event>
+
+<Event name="AgentNotCommunicating" affectsAssetType="Agent" affectsStateDimension="Communication">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="Not_Communicating" />
+    </DirectEffect>
+</Event>
+
+<Event name="AgentDisconnected" affectsAssetType="Agent" affectsStateDimension="Communication">
+    <DirectEffect>
+        <Transition WhenActualStateIs="*" EndStateWillBe="Planned_Disconnect" />
+    </DirectEffect>
+</Event>
+
+<Event name="EncryptionUpgrade" affectsAssetType="Agent" affectsStateDimension="Encryption">
+    <DirectEffect>
+        <Transition WhenActualStateIs="None" EndStateWillBe="64_Bit" />
+        <Transition WhenActualStateIs="64_Bit" EndStateWillBe="256_Bit" />
+        <Transition WhenActualStateIs="256_Bit" EndStateWillBe="256_Bit" />
+    </DirectEffect>
+</Event>
+
+</Events>

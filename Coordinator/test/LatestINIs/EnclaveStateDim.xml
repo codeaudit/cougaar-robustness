@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE AssetStateDimensions >
+
+<AssetStateDimensions assetType="ENCLAVE">
+
+  <StateDimension name="STABILITY" >
+ 	<State name="STABLE" relativeMauCompleteness="1.0" 
+                             relativeMauSecurity="1.0"  />
+
+ 	<State name="THRASHING" relativeMauCompleteness="0.0" 
+                                relativeMauSecurity="0.0"
+			       	defaultStartState="TRUE" />
+
+  </StateDimension>
+
+</AssetStateDimensions>
+
+
+

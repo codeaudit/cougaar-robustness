@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE Events SYSTEM "EventDTD.dtd"  > 
+
+<Events>
+    <Event name="Compromise" affectsAssetType="Agent" affectsStateDimension="Compromised">
+        <DirectEffect>
+            <Transition WhenActualStateIs="*" EndStateWillBe="Yes" />
+        </DirectEffect>
+    </Event>
+</Events>

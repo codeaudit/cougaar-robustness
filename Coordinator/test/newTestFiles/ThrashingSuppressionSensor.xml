@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE SensorType >
+
+<SensorTypes>
+
+<SensorType name="org.cougaar.coordinator.thrashingSuppression" sensesAssetType="ENCLAVE"
+            sensesStateDimension="STABILITY" sensorLatency="1000">
+    <PotentialDiagnoses>
+        <Diagnosis name="THRASHING" />
+        <Diagnosis name="STABLE" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="THRASHING" >
+            <WillDiagnoseAs name="THRASHING" withProbability="1.0" />
+            <WillDiagnoseAs name="STABLE" withProbability="0.0" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="STABLE" >
+            <WillDiagnoseAs name="THRASHING" withProbability="0.0" />
+            <WillDiagnoseAs name="STABLE" withProbability="1.0" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>
+
+</SensorTypes>

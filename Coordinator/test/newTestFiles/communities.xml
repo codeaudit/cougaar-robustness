@@ -24,6 +24,7 @@
 
         <Attribute ID='PING_TIMEOUT' Value='30000' />
         <Attribute ID='MIMIMUM_PING_TIMEOUT' Value='12000' />
+        <Attribute ID='HEARTBEAT_REQUEST_TIMEOUT' Value='60000' />
 
 
     <Entity Name="NodeZ" >
@@ -57,10 +58,11 @@
     </Entity>
 
     <Entity Name="ManagementAgent" >
-      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="Member" />
       <Attribute ID="Role" Value="RobustnessManager" />
       <Attribute ID="Role" Value="HealthMonitor" /> 
+      <Attribute ID="Role" Value="DosManager" />
     </Entity>
 
 
