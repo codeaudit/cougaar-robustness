@@ -336,20 +336,20 @@ public class MoveHelper extends BlackboardClientComponent {
                      " actionsInProcess=" + actionsInProcess.size());
       }
       request.expiration = now() + ACTION_TIMEOUT;
-      actionsInProcess.put(request.agentName.toString(), request);
+      actionsInProcess.put(request.agent, request);
       try {
         UID acUID = uidService.nextUID();
         myUIDs.add(acUID);
         Object ticketId = mobilityFactory.createTicketIdentifier();
         AbstractTicket ticket = new MoveTicket(ticketId,
-                                    request.agentName, // agent to move
+                                    request.agent, // agent to move
                                     request.origNode, //current node
                                     request.destNode, //destination node
                                     false); // forced restart
         AgentControl ac =
             mobilityFactory.createAgentControl(acUID, agentId, ticket);
-        moveInitiated(request.agentName, request.origNode, request.destNode);
-        event("Moving agent: agent=" + request.agentName + " orig=" + request.origNode +
+        moveInitiated(request.agent, request.origNode, request.destNode);
+        event("Moving agent: agent=" + request.agent + " orig=" + request.origNode +
               " dest=" + request.destNode);
         blackboard.publishAdd(ac);
         if (logger.isDebugEnabled()) {
@@ -384,9 +384,9 @@ public class MoveHelper extends BlackboardClientComponent {
     for (int i = 0; i < currentActions.length; i++) {
       if (currentActions[i].expiration < now) {
         if (logger.isInfoEnabled()) {
-          logger.info("Move timeout: agent=" + currentActions[i].agentName);
+          logger.info("Move timeout: agent=" + currentActions[i].agent);
         }
-        moveComplete(currentActions[i].agentName, currentActions[i].origNode,
+        moveComplete(currentActions[i].agent, currentActions[i].origNode,
                        currentActions[i].destNode, FAIL);
       }
     }
@@ -625,17 +625,17 @@ public class MoveHelper extends BlackboardClientComponent {
   }
 
   private class LocalRequest {
-    private MessageAddress agentName;
+    private MessageAddress agent;
     private MessageAddress origNode;
     private MessageAddress destNode;
     private long expiration;
     LocalRequest (MessageAddress agent, MessageAddress orig, MessageAddress dest) {
-      this.agentName = agent;
+      this.agent = agent;
       this.origNode = orig;
       this.destNode = dest;
     }
     public String toString() {
-      return "agent=" + agentName + " orig=" + origNode + " dest=" + destNode;
+      return "agent=" + agent + " orig=" + origNode + " dest=" + destNode;
     }
   }
 
