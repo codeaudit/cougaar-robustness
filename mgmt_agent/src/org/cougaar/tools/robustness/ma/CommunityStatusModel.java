@@ -609,7 +609,11 @@ public class CommunityStatusModel extends BlackboardClientComponent {
       for (int i = 0; i < as.length; i++) {
         String agentName = as[i].getName();
         if (statusMap.containsKey(agentName)) {
-          setLocation(agentName, as[i].getLocation());
+          if (isLocalAgent(agentName)) {
+            setLocation(agentName, thisAgent);
+          } else {
+            setLocation(agentName, as[i].getLocation());
+          }
           setCurrentState(agentName, as[i].getStatus());
         }
       }
@@ -944,50 +948,12 @@ public class CommunityStatusModel extends BlackboardClientComponent {
     }
   }
 
-  /** find an agent's address by looking in the white pages */
-  /*
-   private void updateLocationUsingWPS(final String agentName,
-                                      final int newStateIfLocal) throws Exception {
-    whitePagesService.get(agentName, "topology",
-                          new Callback() {
-      public void execute(Response resp) {
-        if (resp.isAvailable()) {
-          if (resp.isSuccess()) {
-            AddressEntry entry = ((Response.Get)resp).getAddressEntry();
-            try {
-              if (entry != null) {
-                URI uri = entry.getURI();
-                String host = uri.getHost();
-                String node = uri.getPath().substring(1);
-                logger.debug("updateLocation:" +
-                             " agent=" + agentName +
-                             " host=" + host +
-                             " node=" + node +
-                             " modelValue=" + getLocation(agentName) +
-                             " state=" + getCurrentState(agentName));
-                if (!node.equals(getLocation(agentName))) {
-                  setLocation(agentName, node);
-                  if (node.equals(thisAgent) &&
-                      getCurrentState(agentName) != newStateIfLocal) {
-                    setCurrentState(agentName, newStateIfLocal, NEVER);
-                  }
-                }
-              } else {
-                logger.info("AddressEntry is null: agent=" + agentName);
-              }
-            } catch (Exception ex) {
-              logger.error("Exception in updateLocation:", ex);
-            } finally {
-              resp.removeCallback(this);
-            }
-          } else {
-          }
-        } else {
-          logger.info("Response not available: agent=" + agentName);
-        }
-      }
-    });
-  }*/
+  private boolean isLocalAgent(String name) {
+    return (nodeControlService != null &&
+            nodeControlService.getRootContainer().containsAgent(MessageAddress.getMessageAddress(name)) &&
+            thisAgent.equals(getLocation(name)));
+
+  }
 
   /**
    * Adds a StatusChangeListener to community.
