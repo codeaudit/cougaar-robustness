@@ -87,9 +87,11 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
         } 
     }
 
+    /* Empy constructor */
     public HeartbeatPiggybackerAspect() 
     {}
 
+    /* Initialize this aspect */
     public void load ()
     {
         if (!piggybackingIsOn) return;
@@ -101,8 +103,7 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
         metricsUpdateService = (MetricsUpdateService)
             getServiceBroker().getService(this, MetricsUpdateService.class, null);
 
-        whitePages = (WhitePagesService)getServiceBroker().getService(this, WhitePagesService.class, null);
-
+        //whitePages = (WhitePagesService)getServiceBroker().getService(this, WhitePagesService.class, null);
         
         synchronized (HeartbeatPiggybackerAspect.class)
         {
@@ -117,29 +118,13 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
         }
     }
 
+    /* is this a heartbeat message? */
     public static boolean isHeartbeatMessage (AttributedMessage msg)
     {
         String type = (String) msg.getAttribute (org.cougaar.core.mts.Constants.MSG_TYPE);
         return (type != null && type.equals (org.cougaar.core.mts.Constants.MSG_TYPE_HEARTBEAT));
     }
   
-    public String getNode(String agentName) {
-        
-        try {
-          AddressEntry ae =
-            whitePages.get(
-              agentName,
-              Application.getApplication("topology"),
-              "node");
-          URI uri = ae.getAddress();
-          //String host = uri.getHost();
-          return uri.getPath().substring(1);
-        } catch(Exception e) {
-            log.warn("Exception calling white pages: "+e);
-            return null;
-        }
-    }        
-    
 
     /* Create delegate */
     public Object getDelegate (Object delegate, Class type) 
@@ -180,6 +165,7 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
           (new Thread (hbqt, "HeartbeatQueueThread")).start();
         }
 
+        /* Our routeMessage() method */
         public void routeMessage(AttributedMessage message) {
             
             if (isHeartbeatMessage(message))
@@ -192,17 +178,28 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
             }
         }
 
+        /* Route a msg immediately */
         public void routeMessageNow(AttributedMessage message) {
        	    super.routeMessage(message);
         }
 
+        /* See if there are HBs to piggyback onto a msg */
         public void applyPiggybacking(AttributedMessage message) {
          
 
             //See if this message is going where some HBs need to go
-    	    String toNode = getNode(message.getTarget().getAddress());
-            if (log.isDebugEnabled()) 
-                log.debug("PB========= Checking to piggyback HBs --> have msg going to "+toNode);
+    	    MessageAddress toNodeAddr = message.getTarget();
+            
+            String toNode = null;
+            try {
+                AgentID agentID = AgentID.getAgentID(HeartbeatPiggybackerAspect.this, 
+                                                 HeartbeatPiggybackerAspect.this.getServiceBroker(), 
+                                                 toNodeAddr);
+                toNode = agentID.getNodeName();
+            } catch (NameLookupException nle) {
+                log.debug("PB== *** WP Cannot find agent -- NameLookupException encountered with:"+toNodeAddr);
+                return;
+            }
 
             if (toNode == null) { //white pages service could not find node / had exception
                 if (log.isDebugEnabled()) {
@@ -223,18 +220,31 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
                 HeartbeatData hbd = (HeartbeatData)o;
                 message.setAttribute(HEARTBEAT_PIGGYBACK_VECTOR, hbd.getHeartbeats() );
                 if (log.isDebugEnabled()) 
-                    log.debug("PB========= Removed queue & applied piggybacking going to "+toNode);
+                    log.debug("PB==>>>>>> Removed queue & applied piggybacking going to "+toNode);
             }
         }
         
+        /* Store this heartbeat msg in a queue, to send/piggyback later */
         public void handleHeartbeat(AttributedMessage message) {
             if (log.isDebugEnabled()) 
                 log.debug("PB========= handleHeartbeat() Saw HB from "+message.getOriginator().getAddress());
-            //String dest = message.getTarget().getAddress();
-    	    String toNode = getNode(message.getTarget().getAddress());
+            //See if this message is going where some HBs need to go
+    	    MessageAddress toNodeAddr = message.getTarget();
+            
+            String toNode = null;
+            try {
+                AgentID agentID = AgentID.getAgentID(HeartbeatPiggybackerAspect.this, 
+                                                 HeartbeatPiggybackerAspect.this.getServiceBroker(), 
+                                                 toNodeAddr);
+                toNode = agentID.getNodeName();
+            } catch (NameLookupException nle) {
+                log.debug("PB== *** WP Cannot find agent -- NameLookupException encountered with:"+toNodeAddr);
+                return;
+            }
             if (toNode == null) {
                 if (log.isDebugEnabled()) 
-                    log.debug("PB========= handleHeartbeat() ERROR - WhitePagesService returned null node name "); 
+                    log.debug("PB== ***** handleHeartbeat() ERROR - WhitePagesService returned null node name: " 
+                        + message.getTarget().getAddress()); 
                 return;
             }
             synchronized(waitingHeartbeats) {
@@ -282,6 +292,7 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
           
         }
         
+        /* Our deliverMessage() method */
         public MessageAttributes deliverMessage(AttributedMessage message, 
                                                 MessageAddress dest)
             throws MisdeliveredMessageException
@@ -325,8 +336,8 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
         
     }
     /*************************************************************************/
-    
-    
+
+    /* This class waits for HBs at the receiver side & sends them to the Metrics Service */
     class ProcessDeliveryQueueThread implements Runnable {
         
         public ProcessDeliveryQueueThread() {}
@@ -371,6 +382,7 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
     } // end class
     
     
+    /* This class watches the time & send HBs if their time is up. */
     class HeartbeatQueueThread implements Runnable {
         
         HeartbeatPiggybacking_Send_Delegate delegate;
@@ -404,7 +416,7 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
                             long dltime = hbdata.getQueueDeliverBy();
                             if (dltime <= currentTime) { //deliver now!
                                 if (log.isDebugEnabled()) 
-                                    log.debug("PB========= HB sending queue forwarded HBs to "+hbdata.getDestAgent()); 
+                                    log.debug("PB==>>>>>>>> Time's up, HB sending queue forwarded HBs to "+hbdata.getDestAgent()); 
 
                                 delegate.routeMessageNow(hbdata.getMessageToDeliver());   
                                 waitingHeartbeats.remove(hbdata.getDestAgent());
@@ -433,7 +445,8 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
         }
     }
     
-    
+
+    /* Contains data about the HBs */
     class HeartbeatData {
         
         long deliverBy; //The earliest time at which one of these heartbeats needs to be sent
@@ -455,7 +468,10 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
             deliverBy = getDeliverBy(message);
         }
         
+        /* Return the deliveryBy time */
         long getQueueDeliverBy() { return deliverBy; }
+        
+        /* Get the destination agent*/
         String getDestAgent() { return destAgent; }
         
         /* Return the list of Strings of source HB addresses */
@@ -470,6 +486,7 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
             if (deliverBy > db) deliverBy = db; //found early deadline
         }
         
+        /* Add a HB to a msg */
         void insertNewHeartbeat(AttributedMessage message) {            
             //Add sending agent to list
             fromAgent_List.add(message.getOriginator().getAddress());            
@@ -480,7 +497,7 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
             long db;
             Integer i = (Integer)message.getAttribute(org.cougaar.core.mts.Constants.SEND_TIMEOUT);
             //set deliverby to 60 secs if null, or to now+timeout-(10 seconds)
-            db = (i == null) ? 60000 : (i.longValue()+now())-10000;
+            db = (i == null) ? 60000 : (i.longValue())-10000;
             if (log.isDebugEnabled()) 
                 log.debug("PB========= calculating deliverby = now() + "+db/1000 + "secs"); 
             return now()+db;
@@ -493,6 +510,7 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
         }        
     }
     
+    /* Return the Metric for the long value */
     private Metric longMetric(long value) {
 	return new MetricImpl(new Long(value),
 			      SEND_CREDIBILITY,
@@ -500,12 +518,13 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
 			      "HeartbeatPiggybackerAspect");
     }
 
-    
+    /* Return the current time */
     private static long now ()
     {
         return System.currentTimeMillis();
     }
 
+    /* Return the current time as a String date */
     private static String toDate (long time)
     {
         if (time == 0) return "0";
