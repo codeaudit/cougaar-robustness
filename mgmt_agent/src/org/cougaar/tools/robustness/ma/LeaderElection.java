@@ -139,6 +139,9 @@ public class LeaderElection {
       if (preferredCandidate != null && allCandidates.contains(preferredCandidate)) {
         selected = preferredCandidate;
       } else {
+        selected = (String)allCandidates.first();
+      }
+     /* } else {
         if (votes.size() == 0) {
           String candArray[] = (String[])allCandidates.toArray(new String[0]);
           int rand = (int)(java.lang.Math.random() * candArray.length);
@@ -157,7 +160,7 @@ public class LeaderElection {
             selected = candArray[rand];
           }
         }
-      }
+      }*/
     }
     logger.debug("chooseCandidate:" +
                  " preferred=" + preferredCandidate +
