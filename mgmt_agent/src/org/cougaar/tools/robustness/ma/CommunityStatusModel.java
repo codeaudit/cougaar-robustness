@@ -530,35 +530,38 @@ public class CommunityStatusModel extends BlackboardClientComponent {
    * community
    */
   public void update(Community community) {
-    synchronized (statusMap) {
-      communityAttrs = community.getAttributes();
-      try {
-        Attribute attr = communityAttrs.get(MANAGER_ATTR);
-        if (attr != null)
-          setPreferredLeader((String)attr.get());
-      } catch (NamingException ne) {}
-      for (Iterator it = community.getEntities().iterator(); it.hasNext(); ) {
-        Entity entity = (Entity) it.next();
-        if (entity instanceof Agent) {
-          if (!statusMap.containsKey(entity.getName())) {
-            int type = AGENT;
-            Attribute entityTypeAttr = entity.getAttributes().get("EntityType");
-            if (entityTypeAttr != null && entityTypeAttr.contains("Node")) {
-              type = NODE;
-              electLeader();
-            }
-            StatusEntry se = new StatusEntry(entity.getName(), type,
-                                             entity.getAttributes());
-            statusMap.put(se.name, se);
-            setCurrentState(se.name, INITIAL);
-            queueChangeEvent(
-                new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
-                                               MEMBERS_ADDED, se));
-          } else {
-            StatusEntry se = (StatusEntry)statusMap.get(entity.getName());
-            Attributes entityAttrs = entity.getAttributes();
-            if (se.attrs == null) {
-              se.attrs = entity.getAttributes();
+    if (communityName.equals(community.getName())) {
+      synchronized (statusMap) {
+        communityAttrs = community.getAttributes();
+        try {
+          Attribute attr = communityAttrs.get(MANAGER_ATTR);
+          if (attr != null)
+            setPreferredLeader( (String) attr.get());
+        } catch (NamingException ne) {}
+        for (Iterator it = community.getEntities().iterator(); it.hasNext(); ) {
+          Entity entity = (Entity) it.next();
+          if (entity instanceof Agent) {
+            if (!statusMap.containsKey(entity.getName())) {
+              int type = AGENT;
+              Attribute entityTypeAttr = entity.getAttributes().get(
+                  "EntityType");
+              if (entityTypeAttr != null && entityTypeAttr.contains("Node")) {
+                type = NODE;
+                electLeader();
+              }
+              StatusEntry se = new StatusEntry(entity.getName(), type,
+                                               entity.getAttributes());
+              statusMap.put(se.name, se);
+              setCurrentState(se.name, INITIAL);
+              queueChangeEvent(
+                  new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
+                                                 MEMBERS_ADDED, se));
+            } else {
+              StatusEntry se = (StatusEntry) statusMap.get(entity.getName());
+              Attributes entityAttrs = entity.getAttributes();
+              if (se.attrs == null) {
+                se.attrs = entity.getAttributes();
+              }
             }
           }
         }
