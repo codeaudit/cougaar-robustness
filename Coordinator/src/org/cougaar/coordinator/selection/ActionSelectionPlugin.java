@@ -309,6 +309,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
                     alreadySelectedVariants.add(proposedVariant);
                     proposedVariant.setChosen();
                     if (logger.isInfoEnabled()) logger.info("Selected: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString());
+                    if (logger.isEventEnabled()) logger.event(agentId + " selected " + thisAction.getClass().getName() + ":" + proposedVariant + " for " + thisAction.getAssetID());
                     if ((!thisAction.getPermittedValues().contains(proposedVariant.getVariantName()))
                             && (thisAction.getValue() == null  
                                 || !thisAction.getValue().getAction().equals(proposedVariant.getVariantName())
@@ -317,6 +318,47 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
                         publishAdd(new SelectedAction(thisAction, permittedVariants, Math.round(knob.getPatienceFactor()*proposedVariant.getExpectedTransitionTime()), cbe));
                         if (logger.isInfoEnabled()) logger.info("Enabling: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString());
                     }
+
+
+                    // special code to activate/deactivate RMIAction in tandem with SecurityDefenseAction - a special case for ACUC #2B
+                    if (thisAction.getClass().getName().equals("org.cougaar.core.security.coordinator.Security_Defense_Setting") {
+                        Action rmiAction = findAction(thisAction.getAssetID(), "org.cougaar.robustness.dos.coordinator.RMIAction");
+                        if (proposedVariant.getVariantName().equals(cbe, "High")) {
+                            String rmiVariantName = "Disabled";
+                            VariantEvaluation rmiVariant = getRmiVariantEvaluation(cbe, rmiVariantName);
+                            if (rmiVariant != null && rmiAction != null && rmiAction.getValuesOffered().contains(rmiVariantName) {
+                                if (logger.isInfoEnabled()) logger.info("Selected: " + rmiVariant.toString() + "for: " + rmiAction.getAssetID().toString());
+                                if (logger.isEventEnabled()) logger.event(agentId + " selected " + rmiAction.getClass().getName() + ":" + rmiVariant.getVariantName() + " for " + rmiAction.getAssetID());
+                                Set rmiPermittedVariants = new HashSet();  
+                                if ((!rmiAction.getPermittedValues().contains(rmiVariant.getVariantName()))
+                                        && (thisAction.getValue() == null  
+                                            || !thisAction.getValue().getAction().equals(proposedVariant.getVariantName())
+                                            || !thisAction.getValue().isActive())) {
+                                    permittedVariants.add(proposedVariant);
+                                    publishAdd(new SelectedAction(thisAction, permittedVariants, Math.round(knob.getPatienceFactor()*proposedVariant.getExpectedTransitionTime()), cbe));
+                                    if (logger.isInfoEnabled()) logger.info("Enabling: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString());
+                                }
+                             else (if logger.isEventEnabled()) logger.event(rmiVariantName + " was not offered");
+                        }
+                        if(proposedVariant.getVariantName().equals("Low")) {
+                            VariantEvaluation rmiVariant = getRmiVariantEvaluation(cbe, "Enabled");
+                            VariantEvaluation rmiVariant = getRmiVariantEvaluation(cbe, rmiVariantName);
+                            if (rmiVariant != null && rmiAction != null && rmiAction.getValuesOffered().contains(rmiVariantName) {
+                                if (logger.isInfoEnabled()) logger.info("Selected: " + rmiVariant.toString() + "for: " + rmiAction.getAssetID().toString());
+                                if (logger.isEventEnabled()) logger.event(agentId + " selected " + rmiAction.getClass().getName() + ":" + rmiVariant.getVariantName() + " for " + rmiAction.getAssetID());
+                                Set rmiPermittedVariants = new HashSet();  
+                                if ((!rmiAction.getPermittedValues().contains(rmiVariant.getVariantName()))
+                                        && (thisAction.getValue() == null  
+                                            || !thisAction.getValue().getAction().equals(proposedVariant.getVariantName())
+                                            || !thisAction.getValue().isActive())) {
+                                    permittedVariants.add(proposedVariant);
+                                    publishAdd(new SelectedAction(thisAction, permittedVariants, Math.round(knob.getPatienceFactor()*proposedVariant.getExpectedTransitionTime()), cbe));
+                                    if (logger.isInfoEnabled()) logger.info("Enabling: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString());
+                                }
+                             else (if logger.isEventEnabled()) logger.event(rmiVariantName + " was not offered");
+                        }
+                    }
+                    
                 }
             }
         }
@@ -348,6 +390,18 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
         // tracks resources allocated to Actions so we can tell whether we can choose more actions
         return false;
     }
+
+
+    // a special method in support of controlling RMIAction in tandem with Security_Defense_Setting - for ACUC 2B
+    // returns the VariantEValuation or null if not found
+    private VariantEvaluation getRmiVariantEvaluation(CostBenefitEvaluation cbe, String rmiVariantName) {
+        ActionEvaluation ae = cbe.getActionEvaluation("org.cougaar.robustness.dos.coordinator.RMIAction");
+        if (ae != null) return ae.getVariantEvaluation(rmiVariantName);
+        else return null;
+    }
+
+
+
 
 
   protected static final String MAX_ACTIONS_PREFIX = "maxActions=";
