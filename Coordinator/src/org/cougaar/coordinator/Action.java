@@ -114,7 +114,8 @@ public abstract class Action
     
     /** a single string identifier of this object, e.g. might be assetType:assetName */
     private AssetID assetID = null;
-    
+
+    //TRUE if the ActionRelayManager is on this agent (if so, this is the mgmt agent)
     boolean isActionRelayManagerLoadedInThisAgent = false;
 
     /** The last action set */
@@ -658,7 +659,7 @@ public abstract class Action
         if (!isActionRelayManagerLoadedInThisAgent)
             return Collections.singleton(nodeId);
         else 
-            return Collections.singleton(agentId);
+            return Collections.singleton(agentId); //i.e., don't relay anywhere
     }
     
     /**
