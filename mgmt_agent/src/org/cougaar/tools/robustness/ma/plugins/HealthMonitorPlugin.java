@@ -315,10 +315,12 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     for (Iterator it = mgmtAgentProps.getChangedCollection().iterator();
          it.hasNext();) {
       ManagementAgentProperties props = (ManagementAgentProperties)it.next();
+      /*
       if (!props.getProperty("community").equals(communityToMonitor)) {
         communityToMonitor = props.getProperty("community");
         sendRosterRequest(communityToMonitor);
       }
+      */
       updateParams(props);
       log.info("Parameters modified: " + paramsToString());
     }
