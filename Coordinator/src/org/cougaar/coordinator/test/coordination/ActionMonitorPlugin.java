@@ -144,11 +144,16 @@ implements NotPersistable {
             if (servlet != null) { servlet.addAction(a); }
             
             //At least temp for testing -- next 7 lines
-            String target = "null";
+            String target = "noTargets";
             Iterator it = null;
             Collection c = a.getTargets();
-            if (c != null) it = a.getTargets().iterator();
-            if (it != null && it.hasNext()) target = ((MessageAddress) it.next()).toString();
+            if (c != null) {
+                it = a.getTargets().iterator(); 
+                if (it != null && it.hasNext()) { 
+                    MessageAddress ma = (MessageAddress) it.next(); 
+                    if (ma != null) target = ma.toString(); else target = "null msgAddr";
+                } else target = "noTarget";
+            }
             logger.debug("[AgentId="+agentId+"]**** Saw new Action["+ActionUtils.getAssetID(a)+"], with ActionRecord = " + a.getValue() + " UID=" + a.getUID()+" src="+a.getSource()+",tgt="+target);
 
         }
