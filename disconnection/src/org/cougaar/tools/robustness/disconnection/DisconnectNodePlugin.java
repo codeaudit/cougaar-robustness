@@ -230,7 +230,12 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
               }
               // set the ReconnectTimeCondition for each agent on the node
               if (eventService.isEventEnabled())
-                  eventService.event("Requesting to Disconnect Node: "+getNodeID());
+                  if (reconnectInterval == 0) {
+                    eventService.event("Requesting to Disconnect Node: "+getNodeID());
+                  }
+                  else if (reconnectInterval > 0) {
+                      eventService.event("Requesting to Reconnect Node: "+getNodeID());
+                  }
               Iterator iter2 = reconnectTimeSubscription.iterator();
               while (iter2.hasNext()) {
                   ReconnectTimeCondition rtc = (ReconnectTimeCondition)iter2.next();
