@@ -86,6 +86,12 @@ public class DecisionPlugin extends SimplePlugin {
     switch (status) {
       case HealthStatus.NO_RESPONSE:
         // Agent is most likely dead.  Initiate a restart.
+        hs.setState(HealthStatus.INITIAL);
+        hs.setStatus(HealthStatus.UNDEFINED);
+        hs.setHeartbeatRequestStatus(HealthStatus.UNDEFINED);
+        System.out.println("Changing run state of agent '" +
+          hs.getAgentId() + "' to INITIAL");
+        bbs.publishChange(hs);
         break;
       case HealthStatus.DEGRADED:
         // Agent is alive but operating under stress.  For now just increase
@@ -94,6 +100,8 @@ public class DecisionPlugin extends SimplePlugin {
         // is a hardware problem or external attack.
         adjustHbSensitivity(hs, 0.1f);  // Increase threshold by 10%
         hs.setState(HealthStatus.NORMAL);
+        System.out.println("Changing run state of agent '" +
+          hs.getAgentId() + "' to NORMAL");
         bbs.publishChange(hs);
         break;
       default:

@@ -22,14 +22,15 @@
   <property name="doc" value="doc"/>
   <property name="src" value="src"/>
   <property name="test" value="test"/>
+  <property name="release" value="../mic-tic"/>
 
   <!-- Initialization target -->
   <target name="init" >
     <mkdir dir="${classes}"/>
   </target>
 
-  <target name="build" depends="init, compile, jar">
-    <mkdir dir="${classes}"/>
+  <target name="build" description="Compiles all source and build JAR file"
+          depends="init, compile, jar">
   </target>
 
   <target name="compile">
@@ -69,7 +70,7 @@
   <!-- Builds jar file -->
   <target name="jar" description="Creates jar file">
     <!-- Put everything in ${classes} into a jar file -->
-    <delete file="${ant.project.name}.jar" />
+    <delete file="lib/${ant.project.name}.jar" />
     <jar jarfile="lib/${ant.project.name}.jar">
       <fileset dir="${classes}"
         includes="${packageDir}/**"
@@ -124,28 +125,6 @@
     />
   </target>
 
-
-  <!-- Runs automated unit/integration -->
-    <target name="test" description="Runs automated unit tests">
-    <java dir="${basedir}" fork="yes"
-      maxmemory="350m"
-      classname="org.cougaar.bootstrap.Bootstrapper">
-      <jvmarg value="-Xms100m" />
-      <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
-      <classpath>
-        <pathelement location="${basedir}/${classes}"/>
-        <fileset dir="${cougaar}/lib">
-          <include name="**/*.jar"/>
-        </fileset>
-      </classpath>
-      <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
-      <sysproperty key="org.cougaar.system.path" value="lib"/>
-      <!-- <sysproperty key="org.cougaar.class.path" value="classes:lib/mic_mgmt_agent.jar:lib/objs_sensors.jar:lib/bbn_bbnrobust.jar"/> -->
-      <sysproperty key="org.cougaar.config.path" value="$$CWD/${test}/data;$$CWD/${test}/configs/demo;$$CWD/${test}/configs/minitestconfig;$$CWD/${test}/configs/common;$$INSTALL/configs/minitestconfig;$$INSTALL/configs/common"/>
-      <arg line="org.cougaar.core.node.Node TestNode"/>
-    </java>
-  </target>
-
   <!-- Runs ManagementAgent -->
     <target name="manager" description="Runs ManagementAgent">
     <java dir="${basedir}" fork="yes"
@@ -162,9 +141,10 @@
           <include name="**/*.jar"/>
         </fileset>
       </classpath>
+      <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
       <sysproperty key="org.cougaar.system.path" value="lib"/>
-      <!-- <sysproperty key="org.cougaar.class.path" value="classes:lib/mic_mgmt_agent.jar:lib/objs_sensors.jar:lib/bbn_bbnrobust.jar"/> -->
+      <sysproperty key="org.cougaar.class.path" value="classes"/>
       <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;$$CWD/test/configs/ma;$$CWD/test/configs/common;$$INSTALL/configs/common"/>
       <arg line="org.cougaar.core.node.Node ManagerNode"/>
     </java>
@@ -186,10 +166,11 @@
           <include name="**/*.jar"/>
         </fileset>
       </classpath>
+      <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
       <sysproperty key="org.cougaar.system.path" value="lib"/>
       <!-- <sysproperty key="org.cougaar.class.path" value="classes:lib/mic_mgmt_agent.jar:lib/objs_sensors.jar:lib/bbn_bbnrobust.jar"/> -->
-      <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;$$CWD/test/configs/ma;$$CWD/test/configs/common;$$INSTALL/configs/common"/>
+      <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig;$$INSTALL/configs/common"/>
       <arg line="org.cougaar.core.node.Node MiniTestConfigNode"/>
     </java>
   </target>
@@ -210,10 +191,11 @@
           <include name="**/*.jar"/>
         </fileset>
       </classpath>
+      <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
       <sysproperty key="org.cougaar.system.path" value="lib"/>
       <!-- <sysproperty key="org.cougaar.class.path" value="classes:lib/mic_mgmt_agent.jar:lib/objs_sensors.jar:lib/bbn_bbnrobust.jar"/> -->
-      <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;$$CWD/test/configs/ma;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig;$$INSTALL/configs/common"/>
+      <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig;$$INSTALL/configs/common"/>
       <arg line="org.cougaar.core.node.Node MiniNode1"/>
     </java>
   </target>
@@ -234,10 +216,11 @@
           <include name="**/*.jar"/>
         </fileset>
       </classpath>
+      <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
       <sysproperty key="org.cougaar.system.path" value="lib"/>
       <!-- <sysproperty key="org.cougaar.class.path" value="classes:lib/mic_mgmt_agent.jar:lib/objs_sensors.jar:lib/bbn_bbnrobust.jar"/> -->
-      <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;$$CWD/test/configs/ma;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig;$$INSTALL/configs/common"/>
+      <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig;$$INSTALL/configs/common"/>
       <arg line="org.cougaar.core.node.Node MiniNode2"/>
     </java>
   </target>
@@ -255,12 +238,60 @@
           <include name="**/*.jar"/>
         </fileset>
       </classpath>
+      <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
       <sysproperty key="org.cougaar.system.path" value="lib"/>
-      <!-- <sysproperty key="org.cougaar.class.path" value="classes:lib/mic_mgmt_agent.jar:lib/objs_sensors.jar:lib/bbn_bbnrobust.jar"/> -->
+      <sysproperty key="org.cougaar.class.path" value="classes"/>
       <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;$$CWD/test/configs/ma;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig;$$INSTALL/configs/common"/>
       <arg line="org.cougaar.core.node.Node CombinedNode"/>
     </java>
   </target>
 
-  </project>
+  <!-- Copies latest working files to release directory -->
+  <target name="movetorelease" description="Moves modified files to release directory">
+    <copy todir="${release}" >
+      <fileset dir="${basedir}"
+        includes="build.xml,**/*.java,**/*.properties,**/*.dat,**/*.ini,**/*.xml,**/*.csv,**/*.jar,**/*.rc"
+        excludes="lib/**,
+                  test/configs/common/host.xml,
+                  test/src/org/cougaar/tools/robustness/ma/test/simulator/**" />
+    </copy>
+  </target>
+
+  <!-- CVS update - TIC -->
+  <target name="update-tic" description="CVS Update - TIC">
+    <cvs cvsRoot=":ext:rsnyder@cvs.ultralog.net:/cvs/robustness/mic"
+         package="mgmt_agent"
+         dest=".."
+         command="update"
+    />
+  </target>
+
+  <!-- CVS Commit - TIC -->
+  <target name="commit-tic" description="CVS Commit - TIC">
+    <cvs cvsRoot=":ext:rsnyder@cvs.ultralog.net:/cvs/robustness/mic"
+         package="mgmt_agent"
+         dest=".."
+         command="commit"
+    />
+  </target>
+
+  <!-- CVS Update - Local -->
+  <target name="update-local" description="CVS Update - Local">
+    <cvs cvsRoot=":pserver:ron@oak:/cvsroot"
+         package="robustness"
+         dest=".."
+         command="update"
+    />
+  </target>
+
+  <!-- CVS Commit - Local -->
+  <target name="commit-local" description="CVS Commit - Local">
+    <cvs cvsRoot=":pserver:ron@oak:/cvsroot"
+         package="robustness"
+         dest=".."
+         command="-evi commit"
+    />
+  </target>
+
+</project>

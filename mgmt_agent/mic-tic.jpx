@@ -43,17 +43,12 @@
         <file path="test/configs/common/debug.properties"/>
       </node>
       <node name="ma" type="Folder">
-        <file path="test/configs/ma/1BDE.ini"/>
-        <file path="test/configs/ma/3-69-ARBN.ini"/>
-        <file path="test/configs/ma/3ID.ini"/>
         <file path="test/configs/ma/CombinedNode.ini"/>
         <file path="test/configs/ma/Manager-prototype-ini.dat"/>
         <file path="test/configs/ma/Manager.ini"/>
         <file path="test/configs/ma/ManagerNode.ini"/>
-        <file path="test/configs/ma/MCCGlobalMode.ini"/>
         <file path="test/configs/ma/MiniNode1.ini"/>
         <file path="test/configs/ma/MiniNode2.ini"/>
-        <file path="test/configs/ma/MiniTestConfigNode.ini"/>
       </node>
       <node name="minitestconfig" type="Folder">
         <file path="test/configs/minitestconfig/1BDE.ini"/>

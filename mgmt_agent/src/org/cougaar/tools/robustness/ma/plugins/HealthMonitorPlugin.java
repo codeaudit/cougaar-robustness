@@ -218,7 +218,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
       startMsg.append(" " + propName + "=" +
         healthMonitorProps.getProperty(propName));
     }
-    log.warn(startMsg.toString());
+    log.info(startMsg.toString());
   }
 
   /**
@@ -243,7 +243,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
       for (Iterator targetIt = targets.iterator(); targetIt.hasNext();) {
         MessageAddress target = (MessageAddress)targetIt.next();
         HealthStatus hs = getHealthStatus(target);
-        hs.setHeartbeatRequestStatus(status);
+        if (hs != null) hs.setHeartbeatRequestStatus(status);
       }
       if (status == HeartbeatRequest.REFUSED ||
           status == HeartbeatRequest.FAILED) {
@@ -255,7 +255,6 @@ public class HealthMonitorPlugin extends SimplePlugin {
     for (Iterator it = heartbeatHealthReports.getAddedCollection().iterator();
          it.hasNext();) {
       HeartbeatHealthReport hbhr = (HeartbeatHealthReport)it.next();
-      System.out.println("Got New HeartbeatHealthReport");
       HeartbeatEntry hbe[] = hbhr.getHeartbeats();
       for (int i = 0; i < hbe.length; i++) {
         HealthStatus hs = getHealthStatus(hbe[i].getSource());
@@ -263,13 +262,6 @@ public class HealthMonitorPlugin extends SimplePlugin {
         hs.addHeartbeatTimeout(new Date());
       }
       bbs.publishRemove(hbhr);
-    }
-
-    // Get HeartbeatHealthReports
-    for (Iterator it = heartbeatHealthReports.getChangedCollection().iterator();
-         it.hasNext();) {
-      System.out.println("Got Changed HeartbeatHealthReport");
-      //bbs.publishRemove(hbhr);
     }
 
     // Get CommunityRoster (and updates)
@@ -362,7 +354,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
     Collection cmList = roster.getMembers();
     // If first time, copy members from roster to local list
     if (membersHealthStatus == null) {
-      log.info(roster.toString());
+      //log.debug(roster.toString());
       membersHealthStatus = new Vector();
       for (Iterator it = cmList.iterator(); it.hasNext();) {
         CommunityMember cm = (CommunityMember)it.next();
@@ -377,7 +369,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
               heartbeatFailureRateThreshold);
           hs.setState(HealthStatus.INITIAL);
           membersHealthStatus.add(hs);
-          log.warn("Adding " + cm.getName());
+          log.debug("Adding " + cm.getName());
         }
       }
     } else {
@@ -396,7 +388,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
           hs.setState(HealthStatus.INITIAL);
           membersHealthStatus.add(hs);
           newMembers.add(hs);
-          log.warn("Adding " + cm.getName());
+          log.debug("Adding " + cm.getName());
         }
       }
       // Look for deletions
@@ -411,7 +403,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
           }
         }
         if (!found) {
-          log.warn("Removed " + hs.getAgentId());
+          log.debug("Removed " + hs.getAgentId());
           it.remove();
         }
       }
@@ -463,7 +455,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
   private void doHealthCheck(HealthStatus hs, int status) {
     hs.setState(HealthStatus.HEALTH_CHECK);
     hs.setStatus(status);
-    log.error("Passing agent to DecisionPlugin: agent=" + hs.getAgentId());
+    log.info("Passing agent to DecisionPlugin: agent=" + hs.getAgentId());
     bbs.openTransaction();
     bbs.publishChange(hs);
     bbs.closeTransaction();
