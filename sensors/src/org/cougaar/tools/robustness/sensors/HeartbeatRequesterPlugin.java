@@ -227,6 +227,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
   protected void setupSubscriptions() {
     log = (LoggingService) getServiceBroker().getService(this, LoggingService.class, null);
     reqTable = new UniqueObjectSet();
+    reqTable.makeSynchronized();
     hbTable = new Hashtable();
     reportTable = new Hashtable();
     bb = getBlackboardService();
