@@ -152,7 +152,7 @@ logger.debug("evaluateThreatAssetMembership has " + threatDescriptions.size() + 
                 while (i.hasNext()) {
 
                     metaModel = (ThreatDescription)i.next();
-logger.debug("evaluateThreatAssetMembership looking at threat " + metaModel.getName() );
+//logger.debug("evaluateThreatAssetMembership looking at threat " + metaModel.getName() );
 
                         Iterator ctp = changesToProcess.iterator();
                         while (ctp.hasNext()) {
@@ -167,7 +167,7 @@ logger.debug("evaluateThreatAssetMembership looking at threat " + metaModel.getN
 
                                 //** First check type of asset against type of threatModel. Ignore if they don't match
                                 if (!(metaModel.getAffectedAssetType().equals(asset.getAssetType()))) {
-logger.debug("evaluateThreatAssetMembership -- asset types don't match: \n modelAssetType="+metaModel.getAffectedAssetType()+"\nasset's type = "+asset.getAssetType());
+logger.debug("evaluateThreatAssetMembership -- asset types don't match: \n modelAssetType="+metaModel.getAffectedAssetType()+"\nasset's type["+asset.getName()+"] = "+asset.getAssetType());
                                     continue;
                                 }
 
