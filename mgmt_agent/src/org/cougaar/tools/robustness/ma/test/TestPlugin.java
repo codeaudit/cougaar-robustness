@@ -20,11 +20,10 @@ package org.cougaar.tools.robustness.ma.test;
 import java.util.*;
 
 import org.cougaar.core.blackboard.IncrementalSubscription;
-import org.cougaar.core.plugin.SimplePlugin;
+import org.cougaar.planning.plugin.legacy.SimplePlugin;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.mts.MessageAddress;
-import org.cougaar.core.agent.ClusterIdentifier;
 
 import org.cougaar.util.UnaryPredicate;
 
@@ -35,7 +34,7 @@ public class TestPlugin extends SimplePlugin {
 
   private LoggingService log;
   private BlackboardService bbs = null;
-  private ClusterIdentifier myAgent = null;
+  private MessageAddress myAgent = null;
 
   protected void setupSubscriptions() {
 
@@ -44,7 +43,7 @@ public class TestPlugin extends SimplePlugin {
 
     bbs = getBlackboardService();
 
-    myAgent = getClusterIdentifier();
+    myAgent = getMessageAddress();
 
     log.debug("Agent " + myAgent + " didRehydrate=" + didRehydrate());
 
