@@ -89,10 +89,16 @@ module Cougaar
       end
       def perform
         @run.comms.on_cougaar_event do |event|
-          for i in 0 ... @nodes.length
-            node = @nodes[i]
-            if (event.component=="DisconnectManagerPlugin") && (node==nil || event.data.include?(node+" no longer legitimately Disconnected"))
+          if event.component=="DisconnectManagerPlugin" && event.data.include?("is Tardy")
+	    if nodes==nil
               @run.info_message event.data if @messaging >= 1
+            else 
+              for i in 0 ... @nodes.length
+                node = @nodes[i]
+                if event.data.include?(node)
+                  @run.info_message event.data if @messaging >= 1
+                end
+              end
             end
           end
         end
@@ -116,10 +122,16 @@ module Cougaar
       end
       def perform
         @run.comms.on_cougaar_event do |event|
-	  for i in 0 ... @nodes.length
-            node = @nodes[i]
-            if (event.component=="DisconnectNodePlugin") && (node==nil || event.data.include?("Planned Disconnect DISABLED for "+node))
+          if event.component=="DisconnectNodePlugin" && event.data.include?(" has received permission to Reconnect")
+            if nodes==nil
               @run.info_message event.data if @messaging >= 1
+            else
+              for i in 0 ... @nodes.length
+                node = @nodes[i]
+                if event.data.include?(node)
+                  @run.info_message event.data if @messaging >= 1
+                end
+              end
             end
           end
         end
@@ -141,7 +153,7 @@ module Cougaar
       end
       def perform
         @run.comms.on_cougaar_event do |event|
-          if (event.component=="DisconnectNodePlugin") || (event.component=="DisconnectManagerPlugin")
+          if (event.component=="DisconnectNodePlugin") || (event.component=="DisconnectManagerPlugin") || (event.component=="DisconnectServlet")
             @run.info_message event.data if @messaging >= 1
           end
         end
@@ -187,22 +199,22 @@ module Cougaar
             requestsSeen[node] = true
             @run.info_message event.data if @messaging >= 1
           elsif requestsSeen[node] == true
-            if event.component=="DisconnectServlet" && event.data.include?("Defense not initialized")
+            if event.component=="DisconnectServlet" && event.data.include?("Failed to Disconnect")
 	      results[node] = 'failed'
-              @run.error_message "Node "+node+" not allowed to Disconnect - Manager Not Ready" if @messaging >= 0
-            elsif event.component=="DisconnectNodePlugin" && event.data.include?("Planned Disconnect ENABLED for ")
+              @run.error_message "Node "+node+" "+event.data if @messaging >= 0
+            elsif event.component=="DisconnectNodePlugin" && event.data.include?("has received permission to Disconnect")
 	      results[node] = 'enabled'
               @run.info_message event.data if @messaging >= 1
-            elsif event.component=="DisconnectNodePlugin" && event.data.include?("Planned Disconnect DISABLED for ")
+            elsif event.component=="DisconnectNodePlugin" && event.data.include?("is denied permission to Disconnect")
               results[node] = 'disabled'
-              @run.info_message "Not allowed to Disconnect - Permission Denied" if @messaging >= 1
+              @run.info_message event.data if @messaging >= 1
             end
           end
         end
 	@result = true
         results.each_value do |value|
 	  if value != 'enabled'
-            @run.info_message "Planned Disconnect was NOT ENABLED for some requesting Nodes." if @messaging >= 1
+            @run.info_message "Permission to Disconnect was denied for some requesting Nodes. Experiment aborted. No disconnects will occur." if @messaging >= 1
             return
           end
         end
@@ -259,7 +271,7 @@ module Cougaar
         while loop
           event = @run.get_next_event
           #@run.info_message event.data id @messaging >= 2
-          if event.component=="DisconnectManagerPlugin" && event.data.include?(@node+" no longer legitimately Disconnected")
+          if event.component=="DisconnectManagerPlugin" && event.data.include?(@node+" is Tardy and is no longer legitimately Disconnected")
             loop = false
             @run.info_message event.data
           end
