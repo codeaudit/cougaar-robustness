@@ -25,8 +25,6 @@ import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.util.UID;
 import org.cougaar.core.relay.Relay;
 
-import java.util.*;
-
 /**
  * Implementation of HealthMonitorRequest interface.
  **/
@@ -146,6 +144,8 @@ public class HealthMonitorRequestImpl
     switch (requestType) {
       case HealthMonitorRequest.UNDEFINED: return "UNDEFINED";
       case HealthMonitorRequest.RESTART: return "RESTART";
+      case HealthMonitorRequest.KILL: return "KILL";
+      case HealthMonitorRequest.FORCED_RESTART: return "FORCED_RESTART";
       case HealthMonitorRequest.MOVE: return "MOVE";
       case HealthMonitorRequest.GET_STATUS: return "GET_STATUS";
       case HealthMonitorRequest.LOAD_BALANCE: return "LOAD_BALANCE";

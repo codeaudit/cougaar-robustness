@@ -16,14 +16,11 @@ import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.UIDService;
 import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.service.DomainService;
-import org.cougaar.core.node.NodeIdentificationService;
 import org.cougaar.core.blackboard.BlackboardClient;
-import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.mts.SimpleMessageAddress;
 import org.cougaar.core.mobility.ldm.MobilityFactory;
 import org.cougaar.core.mobility.AbstractTicket;
-import org.cougaar.core.mobility.MoveTicket;
 import org.cougaar.core.mobility.RemoveTicket;
 import org.cougaar.core.mobility.ldm.AgentControl;
 import org.cougaar.core.util.UID;
@@ -45,9 +42,6 @@ import javax.naming.directory.Attribute;
 import javax.naming.directory.BasicAttribute;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.ModificationItem;
-
-import javax.xml.transform.*;
-import javax.xml.transform.stream.*;
 
 /**
  * This servlet provides robustness community information.
@@ -234,6 +228,14 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
             action = "removeTicket";
             dest = name;
           }
+          if (value.equals("kill")) { //kill agent
+            action = "kill";
+            dest = name;
+          }
+          if (value.equals("restart")) { //Forced restart
+            action = "restart";
+            dest = name;
+          }
           if (name.equals("loadBalance")) {
             action = "loadBalance";
           }
@@ -328,6 +330,10 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
         log.debug("current community status xml: \n" + currentCommunityXML);
         loadBalance(robustnessCommunity);
         writeSuccess(format);
+      } else if(command.equals("kill")) {
+        publishHealthMonitorKill(robustnessCommunity);
+      } else if(command.equals("restart")) {
+        publishHealthMonitorRestart(robustnessCommunity);
       } else if(command.equals("showAgent")) {
         showAgentAttributes(format, value);
       } else if (command.equalsIgnoreCase("modCommAttr")) {
@@ -718,7 +724,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
       if (target.equals(agentId)) {
         if (log.isInfoEnabled()) {
           log.info("Publishing HealthMonitorRequest:" +
-                   " community-" + hmr.getCommunityName());
+                   " community=" + hmr.getCommunityName());
         }
         try {
           bb.openTransaction();
@@ -838,6 +844,54 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
           bb.closeTransactionDontReset();
         }
 
+  }
+
+  /**
+   * Publish a health monitor kill request.
+   * @param communityName
+   */
+  private void publishHealthMonitorKill(String communityName) {
+    publishRequest(new HealthMonitorRequestImpl(agentId,
+                                     communityName,
+                                     HealthMonitorRequest.KILL,
+                                     new String[] {mobileAgent},
+                                     null,
+                                     null,
+                                     uidService.nextUID()));
+  }
+
+  /**
+   * Publish forced restart request.
+   * @param communityName
+   */
+  private void publishHealthMonitorRestart(String communityName) {
+    publishRequest(new HealthMonitorRequestImpl(agentId,
+                                     communityName,
+                                     HealthMonitorRequest.FORCED_RESTART,
+                                     new String[] {mobileAgent},
+                                     null,
+                                     null,
+                                     uidService.nextUID()));
+  }
+
+  protected void publishRequest(HealthMonitorRequest hmr) {
+    log.info("publishRequest: " + hmr);
+    AttributeBasedAddress target =
+        AttributeBasedAddress.getAttributeBasedAddress(hmr.getCommunityName(),
+                                                       "Role",
+                                                       "RobustnessManager");
+    Object request = hmr;
+    if (!target.equals(agentId)) {
+      // send to remote agent using Relay
+      request = new RelayAdapter(agentId, hmr, hmr.getUID());
+      ((RelayAdapter)request).addTarget(target);
+    }
+    try {
+      bb.openTransaction();
+      bb.publishAdd(request);
+    } finally {
+      bb.closeTransactionDontReset();
+    }
   }
 
   /**

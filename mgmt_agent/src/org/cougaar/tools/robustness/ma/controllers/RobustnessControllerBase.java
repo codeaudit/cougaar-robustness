@@ -592,9 +592,18 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    */
   protected void restartAgent(String name, String dest) {
     String orig = model.getLocation(name);
-    //model.setLocation(name, null);
     restartHelper.restartAgent(name, orig, dest,
                                model.getCommunityName());
+  }
+
+  /**
+   * Kill an agent.
+   * @param name Agent to be killed
+   */
+  protected void killAgent(String name) {
+    restartHelper.killAgent(name,
+                            model.getLocation(name),
+                            model.getCommunityName());
   }
 
   /**
@@ -612,13 +621,22 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
     pingHelper.ping(agents, pingTimeout, new PingListener() {
       public void pingComplete(PingResult[] pr) {
         for (int i = 0; i < pr.length; i++) {
-          logger.debug("Ping:" +
-                       " agent=" + pr[i].getName() +
-                       " state=" + stateName(model.getCurrentState(pr[i].getName())) +
-                       " result=" +
-                       (pr[i].getStatus() == PingResult.SUCCESS ? "SUCCESS" : "FAIL") +
-                       (pr[i].getStatus() == PingResult.SUCCESS ? "" :
-                        " newState=" + stateName(stateOnFail)));
+          if (pr[i].getStatus() == PingResult.FAIL) {
+            logger.info("Ping:" +
+                         " agent=" + pr[i].getName() +
+                         " state=" + stateName(model.getCurrentState(pr[i].getName())) +
+                         " result=FAIL" +
+                          " newState=" + stateName(stateOnFail));
+          } else {
+            logger.debug("Ping:" +
+                         " agent=" + pr[i].getName() +
+                         " state=" + stateName(model.getCurrentState(pr[i].getName())) +
+                         " result=" + (pr[i].getStatus() == PingResult.SUCCESS
+                                       ? "SUCCESS"
+                                       : "FAIL") +
+                         (pr[i].getStatus() == PingResult.SUCCESS ? "" :
+                         " newState=" + stateName(stateOnFail)));
+          }
           if (pr[i].getStatus() == PingResult.SUCCESS) {
             newState(pr[i].getName(), stateOnSuccess);
             pingStats.enter(pr[i].getRoundTripTime());

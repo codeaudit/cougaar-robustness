@@ -23,7 +23,6 @@ package org.cougaar.tools.robustness.ma.ldm;
 
 import org.cougaar.core.util.UID;
 import org.cougaar.core.relay.*;
-import org.cougaar.core.domain.Factory;
 import org.cougaar.core.mts.MessageAddress;
 
 import java.util.Collections;

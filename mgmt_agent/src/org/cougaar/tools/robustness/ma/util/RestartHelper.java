@@ -33,13 +33,13 @@ import org.cougaar.core.service.SchedulerService;
 import org.cougaar.core.service.UIDService;
 
 import org.cougaar.core.component.BindingSite;
-import org.cougaar.core.component.ServiceBroker;
 
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.mts.SimpleMessageAddress;
 
 import org.cougaar.core.mobility.AbstractTicket;
 import org.cougaar.core.mobility.AddTicket;
+import org.cougaar.core.mobility.RemoveTicket;
 import org.cougaar.core.mobility.ldm.AgentControl;
 import org.cougaar.core.mobility.ldm.MobilityFactory;
 
@@ -54,9 +54,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -72,12 +70,12 @@ public class RestartHelper extends BlackboardClientComponent {
   public static final int FAIL = 1;
 
   public static final long TIMER_INTERVAL = 10 * 1000;
-  public static final long RESTART_TIMEOUT = 30 * 60 * 1000;
-  public static final long MAX_CONCURRENT_RESTARTS = 1;
+  public static final long ACTION_TIMEOUT = 30 * 60 * 1000;
+  public static final long MAX_CONCURRENT_ACTIONS = 1;
 
-  private List restartQueue = Collections.synchronizedList(new ArrayList());
-  private List remoteRestartRequestQueue = new ArrayList();
-  private Map restartsInProcess = Collections.synchronizedMap(new HashMap());
+  private List localActionQueue = Collections.synchronizedList(new ArrayList());
+  private List remoteRequestQueue = new ArrayList();
+  private List actionsInProcess = Collections.synchronizedList(new ArrayList());
 
   private WakeAlarm wakeAlarm;
 
@@ -107,7 +105,8 @@ public class RestartHelper extends BlackboardClientComponent {
     public boolean execute (Object o) {
       if (o instanceof HealthMonitorRequest) {
         HealthMonitorRequest hmr = (HealthMonitorRequest)o;
-        return (hmr.getRequestType() == hmr.RESTART);
+        return (hmr.getRequestType() == hmr.RESTART ||
+                hmr.getRequestType() == hmr.KILL);
       }
       return false;
   }};
@@ -157,14 +156,14 @@ public class RestartHelper extends BlackboardClientComponent {
 
   public void execute() {
 
-    // Remove failed restarts
-    if (!restartsInProcess.isEmpty()) {
-      removeExpiredRestarts();
+    // Remove failed actions
+    if (!actionsInProcess.isEmpty()) {
+      removeExpiredActions();
     }
 
     // Perform local restarts
-    if (!restartQueue.isEmpty()) {
-      restartNext();
+    if (!localActionQueue.isEmpty()) {
+      doNextAction();
     }
 
     // Forward non-local restarts to remote agent
@@ -178,12 +177,7 @@ public class RestartHelper extends BlackboardClientComponent {
     for (Iterator it = healthMonitorRequests.getAddedCollection().iterator(); it.hasNext(); ) {
       HealthMonitorRequest hsm = (HealthMonitorRequest) it.next();
       logger.debug("Received HealthMonitorRequest:" + hsm);
-      if (hsm.getRequestType() == HealthMonitorRequest.RESTART) {
-        String agentNames[] = hsm.getAgents();
-        for (int i = 0; i < agentNames.length; i++) {
-          restartAgent(agentNames[i]);
-        }
-      }
+      doAction(hsm);
     }
   }
 
@@ -206,19 +200,44 @@ public class RestartHelper extends BlackboardClientComponent {
                 " agent=" + agentName);
     if (agentId.toString().equals(destNode)) {
       // Restart locally
-      restartAgent(agentName);
+      doLocalAction(agentName, HealthMonitorRequest.RESTART);
     } else {
       // Queue request to remote agent
-      fireLater(new RemoteRestartRequest(agentName,
-                                         origNode,
-                                         destNode,
-                                         communityName));
+      fireLater(new RemoteRequest(new String[]{agentName},
+                                  HealthMonitorRequest.RESTART,
+                                  origNode,
+                                  destNode,
+                                  communityName));
     }
   }
 
-  protected void fireLater(RemoteRestartRequest rrr) {
-    synchronized (remoteRestartRequestQueue) {
-      remoteRestartRequestQueue.add(rrr);
+  /**
+   * Method used by clients to kill an agent.
+   * @param agentName      Name of agent to be killed
+   * @param currentNode    Current node
+   */
+  public void killAgent(String agentName,
+                        String currentNode,
+                        String communityName) {
+    logger.debug("KillAgent:" +
+                " agent=" + agentName +
+                " currentNode=" + currentNode);
+    if (agentId.toString().equals(currentNode)) {
+      // Kill local agent
+      doLocalAction(agentName, HealthMonitorRequest.KILL);
+    } else {
+      // Queue request to remote agent
+      fireLater(new RemoteRequest(new String[]{agentName},
+                                  HealthMonitorRequest.KILL,
+                                  null,
+                                  currentNode,
+                                  communityName));
+    }
+  }
+
+  protected void fireLater(RemoteRequest rr) {
+    synchronized (remoteRequestQueue) {
+      remoteRequestQueue.add(rr);
     }
     if (blackboard != null) {
       blackboard.signalClientActivity();
@@ -228,41 +247,38 @@ public class RestartHelper extends BlackboardClientComponent {
   private void fireAll() {
     int n;
     List l;
-    synchronized (remoteRestartRequestQueue) {
-      n = remoteRestartRequestQueue.size();
+    synchronized (remoteRequestQueue) {
+      n = remoteRequestQueue.size();
       if (n <= 0) {
         return;
       }
-      l = new ArrayList(remoteRestartRequestQueue);
-      remoteRestartRequestQueue.clear();
+      l = new ArrayList(remoteRequestQueue);
+      remoteRequestQueue.clear();
     }
     for (int i = 0; i < n; i++) {
-      sendRemoteRequest((RemoteRestartRequest) l.get(i));
+      sendRemoteRequest((RemoteRequest) l.get(i));
     }
   }
 
-  private void sendRemoteRequest(RemoteRestartRequest rrr) {
+  private void sendRemoteRequest(RemoteRequest rr) {
     UIDService uidService = (UIDService)getServiceBroker().getService(this,
         UIDService.class, null);
     HealthMonitorRequest hmr =
         new HealthMonitorRequestImpl(agentId,
-                                     rrr.communityName,
-                                     HealthMonitorRequest.RESTART,
-                                     new String[] {rrr.agentName}
-                                     ,
-                                     rrr.origNode,
-                                     rrr.destNode,
+                                     rr.communityName,
+                                     rr.action,
+                                     rr.agentNames,
+                                     rr.origNode,
+                                     rr.destNode,
                                      uidService.nextUID());
     RelayAdapter hmrRa = new RelayAdapter(agentId, hmr, hmr.getUID());
-    hmrRa.addTarget(SimpleMessageAddress.getSimpleMessageAddress(rrr.
-        destNode));
+    hmrRa.addTarget(SimpleMessageAddress.getSimpleMessageAddress(rr.destNode));
     if(logger.isDebugEnabled()) {
       logger.debug("Publishing HealthMonitorRequest:" +
                    " request=" + hmr.getRequestTypeAsString() +
                    " targets=" + targetsToString(hmrRa.getTargets()) +
                    " community-" + hmr.getCommunityName() +
-                   " agents=" +
-                   arrayToString(hmr.getAgents()) +
+                   " agents=" + arrayToString(hmr.getAgents()) +
                    " destNode=" + hmr.getDestinationNode());
     }
     blackboard.publishAdd(hmrRa);
@@ -270,14 +286,63 @@ public class RestartHelper extends BlackboardClientComponent {
   }
 
   /**
+   * @param agentName
+   */
+  protected void doAction(HealthMonitorRequest hmr) {
+    String origNode = hmr.getOriginNode();
+    String destNode = hmr.getDestinationNode();
+    switch (hmr.getRequestType()) {
+      case HealthMonitorRequest.RESTART:
+        if (origNode != null && destNode != null) {
+          if (!agentId.toString().equals(destNode)) {
+            // Forward request to destination node
+            logger.debug("doAction, forwarding request: " + hmr);
+            sendRemoteRequest(new RemoteRequest(hmr.getAgents(),
+                                                hmr.getRequestType(),
+                                                destNode,
+                                                origNode,
+                                                hmr.getCommunityName()));
+
+          } else { // local request
+            String agentNames[] = hmr.getAgents();
+            for (int i = 0; i < agentNames.length; i++) {
+              doLocalAction(agentNames[i], hmr.getRequestType());
+            }
+          }
+        }
+        break;
+      case HealthMonitorRequest.KILL:
+        if (origNode != null) {
+          if (!agentId.toString().equals(origNode)) {
+            // Forward request to destination node
+            logger.debug("doAction, forwarding request: " + hmr);
+            sendRemoteRequest(new RemoteRequest(hmr.getAgents(),
+                                                hmr.getRequestType(),
+                                                origNode,
+                                                destNode,
+                                                hmr.getCommunityName()));
+
+          } else { // local request
+            String agentNames[] = hmr.getAgents();
+            for (int i = 0; i < agentNames.length; i++) {
+              doLocalAction(agentNames[i], hmr.getRequestType());
+            }
+          }
+        }
+        break;
+    }
+  }
+
+  /**
    * Queue request for local action and trigger execute() method.
    * @param agentName
    */
-  protected void restartAgent(String agentName) {
-    logger.debug("RestartAgent:" +
-                " agent=" + agentName);
-    if (!restartQueue.contains(agentName)) {
-      restartQueue.add(agentName);
+  protected void doLocalAction(String agentName, int action) {
+    logger.debug("doLocalAction:" +
+                " agent=" + agentName +
+                " action=" + action);
+    if (!localActionQueue.contains(agentName)) {
+      localActionQueue.add(new LocalRequest(agentName, action));
       blackboard.signalClientActivity();
     }
   }
@@ -286,40 +351,46 @@ public class RestartHelper extends BlackboardClientComponent {
    * Returns current time as long.
    * @return Current time.
    */
-  private long now() { return (new Date()).getTime(); }
+  private long now() { return System.currentTimeMillis(); }
 
   /**
-   * Publish requests to Mobility to initiate restart and perform necessary
-   * bookkeeping to keep track of restarts that are in process.
+   * Publish requests to Mobility to initiate requested action and perform necessary
+   * bookkeeping to keep track of actions that are in process.
    */
-  private void restartNext() {
-    if ((!restartQueue.isEmpty()) &&
-        (restartsInProcess.size() <= MAX_CONCURRENT_RESTARTS)) {
-      logger.debug("RestartNext: " +
-                   " RestartQueue=" + restartQueue.size() +
-                   " restartsInProcess=" + restartsInProcess.size());
-      MessageAddress agentToRestart =
-          SimpleMessageAddress.getSimpleMessageAddress((String)
-          restartQueue.remove(0));
-      Long restartExpiration = new Long(now() + RESTART_TIMEOUT);
-      restartsInProcess.put(agentToRestart, restartExpiration);
+  private void doNextAction() {
+    if ((!localActionQueue.isEmpty()) &&
+        (actionsInProcess.size() <= MAX_CONCURRENT_ACTIONS)) {
+      logger.debug("doNextAction: " +
+                   " localActionQueue=" + localActionQueue.size() +
+                   " actionsInProcess=" + actionsInProcess.size());
+      LocalRequest request = (LocalRequest)localActionQueue.remove(0);
+      MessageAddress agent = MessageAddress.getMessageAddress(request.agentName);
+      request.expiration = now() + ACTION_TIMEOUT;
+      actionsInProcess.add(request);
       try {
-        Object ticketId = mobilityFactory.createTicketIdentifier();
-        AddTicket addTicket = new AddTicket(ticketId, agentToRestart, agentId);
         UID acUID = uidService.nextUID();
         myUIDs.add(acUID);
+        Object ticketId = mobilityFactory.createTicketIdentifier();
+        AbstractTicket ticket = null;
+        switch (request.action) {
+          case HealthMonitorRequest.RESTART:
+            ticket = new AddTicket(ticketId, agent, agentId);
+            break;
+          case HealthMonitorRequest.KILL:
+            ticket = new RemoveTicket(ticketId, agent, agentId);
+            break;
+        }
         AgentControl ac =
-            mobilityFactory.createAgentControl(acUID, agentId, addTicket);
-        restartInitiated(agentToRestart, agentId);
-        //event("Restarting agent: agent=" + agentToRestart + " dest=" + agentId);
+            mobilityFactory.createAgentControl(acUID, agentId, ticket);
+        actionInitiated(agent, request.action, agentId);
         blackboard.publishAdd(ac);
         if (logger.isInfoEnabled()) {
           StringBuffer sb =
               new StringBuffer("Publishing AgentControl:" +
                                " myUid=" + myUIDs.contains(ac.getOwnerUID()) +
                                " status=" + ac.getStatusCodeAsString());
-          if (ac.getAbstractTicket()instanceof AddTicket) {
-            AddTicket at = (AddTicket)ac.getAbstractTicket();
+          if (ac.getAbstractTicket() instanceof AddTicket) {
+            AddTicket at = (AddTicket) ac.getAbstractTicket();
             sb.append(" agent=" + at.getMobileAgent() +
                       " destNode=" + at.getDestinationNode());
           }
@@ -332,18 +403,16 @@ public class RestartHelper extends BlackboardClientComponent {
   }
 
   /**
-   * Check restarts that are in process and remove any that haven't been
+   * Check actions that are in process and remove any that haven't been
    * completed within the expiration time.
    */
-  private void removeExpiredRestarts() {
+  private void removeExpiredActions() {
     long now = now();
-    MessageAddress currentRestarts[] = getRestartsInProcess();
-    for (int i = 0; i < currentRestarts.length; i++) {
-      long expiration = ((Long)restartsInProcess.get(currentRestarts[i])).
-          longValue();
-      if (expiration < now) {
-        logger.info("Restart timeout: agent=" + currentRestarts[i]);
-        restartComplete(currentRestarts[i], agentId, FAIL);
+    LocalRequest currentActions[] = getActionsInProcess();
+    for (int i = 0; i < currentActions.length; i++) {
+      if (currentActions[i].expiration < now) {
+        logger.info("Action timeout: agent=" + currentActions[i].agentName);
+        actionComplete(currentActions[i].agentName, currentActions[i].action, agentId, FAIL);
       }
     }
   }
@@ -361,43 +430,28 @@ public class RestartHelper extends BlackboardClientComponent {
           AddTicket addTicket = (AddTicket) ticket;
           switch (ac.getStatusCode()) {
             case AgentControl.CREATED:
-              /*
-              event("Restart successful:" +
-                    " agent=" + addTicket.getMobileAgent() +
-                    " dest=" + addTicket.getDestinationNode() +
-                    " status=" + ac.getStatusCodeAsString());
-              */
               blackboard.publishRemove(ac);
               myUIDs.remove(ac.getOwnerUID());
-              restartComplete(addTicket.getMobileAgent(),
-                              addTicket.getDestinationNode(),
-                              SUCCESS);
+              actionComplete(addTicket.getMobileAgent().toString(),
+                             HealthMonitorRequest.RESTART,
+                             addTicket.getDestinationNode(),
+                            SUCCESS);
               break;
             case AgentControl.ALREADY_EXISTS:
-              /*
-              event("Restart successful:" +
-                    " agent=" + addTicket.getMobileAgent() +
-                    " dest=" + addTicket.getDestinationNode() +
-                    " status=" + ac.getStatusCodeAsString());
-              */
               blackboard.publishRemove(ac);
               myUIDs.remove(ac.getOwnerUID());
-              restartComplete(addTicket.getMobileAgent(),
-                              addTicket.getDestinationNode(),
-                              SUCCESS);
+              actionComplete(addTicket.getMobileAgent().toString(),
+                             HealthMonitorRequest.RESTART,
+                             addTicket.getDestinationNode(),
+                             SUCCESS);
               break;
             case AgentControl.FAILURE:
-              /*
-              event("Restart failed:" +
-                    " agent=" + addTicket.getMobileAgent() +
-                    " dest=" + addTicket.getDestinationNode() +
-                    " status=" + ac.getStatusCodeAsString());
-              */
               blackboard.publishRemove(ac);
               myUIDs.remove(ac.getOwnerUID());
-              restartComplete(addTicket.getMobileAgent(),
-                              addTicket.getDestinationNode(),
-                              FAIL);
+              actionComplete(addTicket.getMobileAgent().toString(),
+                             HealthMonitorRequest.RESTART,
+                             addTicket.getDestinationNode(),
+                             FAIL);
               break;
             case AgentControl.NONE:
               break;
@@ -436,39 +490,39 @@ public class RestartHelper extends BlackboardClientComponent {
   /**
     * Notify restart listeners.
     */
-   private void restartInitiated(MessageAddress agent, MessageAddress dest) {
-     logger.debug("RestartInitiated: agent=" + agent + " dest=" + dest);
+   private void actionInitiated(MessageAddress agent, int action, MessageAddress dest) {
+     logger.debug("ActionInitiated: agent=" + agent + " action=" + action + " dest=" + dest);
      synchronized (listeners) {
        for (Iterator it = listeners.iterator(); it.hasNext(); ) {
          RestartListener rl = (RestartListener) it.next();
-         rl.restartInitiated(agent.toString(), dest.toString());
+         rl.actionInitiated(agent.toString(), action, dest.toString());
        }
      }
    }
 
    /**
-    * Returns addresses of agents that are currently being restarted.
+    * Returns array of pending requests
     * @return
     */
-  private MessageAddress[] getRestartsInProcess() {
-    synchronized (restartsInProcess) {
-      return (MessageAddress[])restartsInProcess.keySet().toArray(new MessageAddress[0]);
+  private LocalRequest[] getActionsInProcess() {
+    synchronized (actionsInProcess) {
+      return (LocalRequest[])actionsInProcess.toArray(new LocalRequest[0]);
     }
   }
 
   /**
    * Notify restart listeners.
    */
-  private void restartComplete(MessageAddress agent, MessageAddress dest, int status) {
-    logger.debug("RestartComplete: agent=" + agent + " dest=" + dest + " status=" + status);
+  private void actionComplete(String agent, int action, MessageAddress dest, int status) {
+    logger.debug("ActionComplete: agent=" + agent + " action=" + action + " dest=" + dest + " status=" + status);
     synchronized (listeners) {
       for (Iterator it = listeners.iterator(); it.hasNext(); ) {
         RestartListener rl = (RestartListener) it.next();
-        rl.restartComplete(agent.toString(), dest.toString(), status);
+        rl.actionComplete(agent.toString(), action, dest.toString(), status);
       }
     }
-    restartsInProcess.remove(agent);
-    restartNext();
+    actionsInProcess.remove(agent);
+    doNextAction();
   }
 
 
@@ -535,16 +589,28 @@ public class RestartHelper extends BlackboardClientComponent {
     }
   }
 
-  private class RemoteRestartRequest {
-    private String agentName;
+  private class RemoteRequest {
+    private String[] agentNames;
+    private int action;
     private String origNode;
     private String destNode;
     private String communityName;
-    RemoteRestartRequest (String agent, String orig, String dest, String community) {
-      this.agentName = agent;
+    RemoteRequest (String[] agents, int action, String orig, String dest, String community) {
+      this.agentNames = agents;
+      this.action = action;
       this.origNode = orig;
       this.destNode = dest;
       this.communityName = community;
+    }
+  }
+
+  private class LocalRequest {
+    private String agentName;
+    private int action;
+    private long expiration;
+    LocalRequest (String agent, int action) {
+      this.agentName = agent;
+      this.action = action;
     }
   }
 

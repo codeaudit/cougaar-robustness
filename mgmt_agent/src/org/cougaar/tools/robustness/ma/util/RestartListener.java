@@ -22,8 +22,8 @@ package org.cougaar.tools.robustness.ma.util;
 
 public interface RestartListener {
 
-  public void restartInitiated(String agentName, String destNode);
+  public void actionInitiated(String agentName, int action, String destNode);
 
-  public void restartComplete(String agentName, String destNode, int status);
+  public void actionComplete(String agentName, int action, String destNode, int status);
 
 }

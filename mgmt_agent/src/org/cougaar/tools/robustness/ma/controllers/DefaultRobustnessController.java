@@ -21,6 +21,7 @@ import org.cougaar.tools.robustness.ma.CommunityStatusModel;
 import org.cougaar.tools.robustness.ma.controllers.*;
 import org.cougaar.tools.robustness.ma.HostLossThreatAlertHandler;
 import org.cougaar.tools.robustness.ma.SecurityAlertHandler;
+import org.cougaar.tools.robustness.ma.ldm.HealthMonitorRequest;
 import org.cougaar.tools.robustness.ma.util.DeconflictListener;
 import org.cougaar.tools.robustness.ma.util.HeartbeatListener;
 import org.cougaar.tools.robustness.ma.util.LoadBalancer;
@@ -40,11 +41,12 @@ import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.service.community.CommunityResponseListener;
 import org.cougaar.core.service.community.CommunityResponse;
 
+import org.cougaar.core.blackboard.IncrementalSubscription;
+import org.cougaar.util.UnaryPredicate;
+
 import org.cougaar.core.mts.MessageAddress;
 
 import java.util.*;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.BasicAttribute;
 
 public class DefaultRobustnessController extends RobustnessControllerBase {
 
@@ -57,6 +59,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   public static final int FAILED_RESTART = 6;
   public static final int MOVE           = 7;
   public static final int DECONFLICT     = 8;
+  public static final int FORCED_RESTART = 9;
 
   // Determines how often the status summary is logged
   public static final long STATUS_INTERVAL = 2 * 60 * 1000;
@@ -265,25 +268,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     { addRestartListener(this); }
     public void enter(String name) {
         if (isAgent(name) && canRestartAgent(name)) {
-          String dest = RestartDestinationLocator.getRestartLocation(name, getExcludedNodes());
-          logger.info("Restarting agent:" +
-                      " agent=" + name +
-                      " origin=" + getLocation(name) +
-                      " dest=" + dest);
-          if (name != null && dest != null) {
-            restartAgent(name, dest);
-            RestartDestinationLocator.restartOneAgent(dest);
-          } else {
-            logger.error("Invalid restart parameter: " +
-                         " agent=" + name +
-                         " dest=" + dest);
-            // If no valid location is returned, restart on this node
-            if (name != null) {
-              dest = getLocation(thisAgent);
-              restartAgent(name, dest);
-              RestartDestinationLocator.restartOneAgent(dest);
-            }
-          }
+          restartAgent(name);
         }
     }
 
@@ -293,23 +278,27 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       }
     }
 
-    public void restartInitiated(String name, String dest) {
-      event("Restarting agent=" + name + " dest=" + dest);
+    public void actionInitiated(String name, int action, String dest) {
+      if (action == HealthMonitorRequest.RESTART) {
+        event("Restarting agent=" + name + " dest=" + dest);
+      }
     }
 
-    public void restartComplete(String name, String dest, int status) {
+    public void actionComplete(String name, int action, String dest, int status) {
       String community = model.getCommunityName();
-      if (status == RestartHelper.SUCCESS) {
-        event("Restart complete: agent=" + name + " location=" + dest +
-              " community=" + community);
-        RestartDestinationLocator.restartSuccess(name);
-        logger.debug("Next Status:" + " agent=" + name + " state=INITIAL");
-        //newState(name, DefaultRobustnessController.INITIAL);
-        model.setLocationAndState(name, thisAgent, INITIAL);
-      } else {
-        event("Restart failed: agent=" + name + " location=" + dest +
-              " community=" + community);
-        newState(name, FAILED_RESTART);
+      if (action == HealthMonitorRequest.RESTART) {
+        if (status == RestartHelper.SUCCESS) {
+          event("Restart complete: agent=" + name + " location=" + dest +
+                " community=" + community);
+          RestartDestinationLocator.restartSuccess(name);
+          logger.debug("Next Status:" + " agent=" + name + " state=INITIAL");
+          //newState(name, DefaultRobustnessController.INITIAL);
+          model.setLocationAndState(name, thisAgent, INITIAL);
+        } else {
+          event("Restart failed: agent=" + name + " location=" + dest +
+                " community=" + community);
+          newState(name, FAILED_RESTART);
+        }
       }
     }
   }
@@ -380,6 +369,37 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
   }
 
+  /**
+   * State Controller: FORCED_RESTART
+   * <pre>
+   *   Entry:             External request received
+   *   Actions performed: Kill and restart specified agent
+   *   Next state:        ACTIVE
+   * </pre>
+   */
+  class ForcedRestartStateController extends StateControllerBase {
+    private IncrementalSubscription forcedRestartRequests;
+    public void setupSubscriptions() {
+      forcedRestartRequests = (IncrementalSubscription)blackboard.subscribe(new UnaryPredicate() {
+        public boolean execute (Object o) {
+          return (o instanceof HealthMonitorRequest &&
+          ((HealthMonitorRequest)o).getRequestType() == HealthMonitorRequest.FORCED_RESTART);
+        }
+      });
+    }
+    public void execute() {
+      for (Iterator it = forcedRestartRequests.getAddedCollection().iterator(); it.hasNext(); ) {
+        HealthMonitorRequest hmr = (HealthMonitorRequest) it.next();
+        logger.info("Received FORCED_RESTART request:" + hmr);
+        String agentsToRestart[] = hmr.getAgents();
+        for (int i = 0; i < agentsToRestart.length; i++) {
+          killAgent(agentsToRestart[i]);
+          restartAgent(agentsToRestart[i]);
+        }
+      }
+    }
+  }
+
   private Set deadNodes = Collections.synchronizedSet(new HashSet());
   private String thisAgent;
   private WakeAlarm wakeAlarm;
@@ -410,6 +430,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     addController(FAILED_RESTART, "FAILED_RESTART", new FailedRestartStateController());
     addController(MOVE,           "MOVE", new MoveStateController());
     addController(DECONFLICT,     "DECONFLICT", new DeconflictStateController());
+    addController(FORCED_RESTART, "FORCED_RESTART", new ForcedRestartStateController());
     RestartDestinationLocator.setCommunityStatusModel(csm);
     RestartDestinationLocator.setLoggingService(logger);
     new HostLossThreatAlertHandler(getBindingSite(), agentId, this, csm);
@@ -439,10 +460,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         if (latency > se.high) {
           se.high = latency;
         }
+        ++se.samples;
+        collectNodeStats(source);
       }
       se.last = now;
-      ++se.samples;
-      collectNodeStats(source);
     }
   }
 
@@ -452,25 +473,25 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (thisAgent.equals(preferredLeader()) &&
           !source.equals(getLocation(thisAgent))) {
         StatsEntry se = (StatsEntry) runStats.get(source);
-        if (se.samples >= MIN_SAMPLES) {
+        if (se.samples >= MIN_SAMPLES && se.high >= MIN_SAMPLE_VALUE) {
           StatCalc newSc = (StatCalc) nodeLatencyStats.get(source);
-          if ((se.samples == MIN_SAMPLES && se.high >= MIN_SAMPLE_VALUE) ||        // Take snapshot at MIN_SAMPLES
-              (newSc == null || se.high > newSc.getHigh())) {  // Record highs thereafter
-            if (originalStats.contains(source)) {
-              newSc = (StatCalc)originalStats.get(source).clone();
-              if (se.high > newSc.getMean()/2 &&  // Perform a basic sanity check
-                  se.high < newSc.getMean()*2) {  //   on sample
+            if (se.samples == MIN_SAMPLES ||                    // Take snapshot at MIN_SAMPLES
+               newSc == null ||
+               se.high > newSc.getHigh()) {                     // Record highs thereafter
+              if (originalStats.contains(source)) {
+                newSc = (StatCalc) originalStats.get(source).clone();
+                if (se.high > newSc.getMean() / 2) { //   sanity check
+                  newSc.enter(se.high);
+                  nodeLatencyStats.put(newSc);
+                  saveNodeStats();
+                }
+              } else {
+                newSc = new StatCalc(model.getCommunityName(), source);
                 newSc.enter(se.high);
                 nodeLatencyStats.put(newSc);
                 saveNodeStats();
               }
-            } else {
-              newSc = new StatCalc(model.getCommunityName(), source);
-              newSc.enter(se.high);
-              nodeLatencyStats.put(newSc);
-              saveNodeStats();
             }
-          }
         }
       }
     }
@@ -531,6 +552,29 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   private boolean canRestartAgent(String name) {
     return thisAgent.equals(preferredLeader()) ||
         (isLeader(thisAgent) && name.equals(preferredLeader()) && (getActiveHosts().size() > 1));
+  }
+
+  protected void restartAgent(String name) {
+    String dest =
+        RestartDestinationLocator.getRestartLocation(name, getExcludedNodes());
+    logger.info("Restarting agent:" +
+                " agent=" + name +
+                " origin=" + getLocation(name) +
+                " dest=" + dest);
+    if (name != null && dest != null) {
+      restartAgent(name, dest);
+      RestartDestinationLocator.restartOneAgent(dest);
+    } else {
+      logger.error("Invalid restart parameter: " +
+                   " agent=" + name +
+                   " dest=" + dest);
+      // If no valid location is returned, restart on this node
+      if (name != null) {
+        dest = getLocation(thisAgent);
+        restartAgent(name, dest);
+        RestartDestinationLocator.restartOneAgent(dest);
+      }
+    }
   }
 
   private Set getActiveHosts() {
@@ -868,6 +912,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
        if (!stateName(state).equals("ACTIVE") && agentsInState.length > 0)
          summary.append(arrayToString(agentsInState));
      }
+   }
+   // Find agents without valid state
+   String agentsInUnknownState[] = model.listEntries(CommunityStatusModel.AGENT, -1);
+   if (agentsInUnknownState.length > 0) {
+     summary.append(" UNKNOWN=" + agentsInUnknownState.length + arrayToString(agentsInUnknownState));
    }
    return summary.toString();
  }

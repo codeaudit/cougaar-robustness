@@ -32,9 +32,11 @@ public interface HealthMonitorRequest
 
   public static final int UNDEFINED                = -1;
   public static final int RESTART                  = 0;
-  public static final int MOVE                     = 1;
-  public static final int GET_STATUS               = 2;
-  public static final int LOAD_BALANCE             = 3;
+  public static final int FORCED_RESTART           = 2;
+  public static final int KILL                     = 3;
+  public static final int MOVE                     = 4;
+  public static final int GET_STATUS               = 5;
+  public static final int LOAD_BALANCE             = 6;
 
   public String getCommunityName();
   public String[] getAgents();
