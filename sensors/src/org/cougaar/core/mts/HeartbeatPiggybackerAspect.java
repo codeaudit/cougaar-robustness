@@ -52,9 +52,17 @@ import java.net.URI;
 
 public class HeartbeatPiggybackerAspect extends StandardAspect
 {
+    //Router attr
+    private Router routerDelegate;
+
+
+    
     //In an AttributedMsg this labels the vector of HB msgs.
     private static final String HEARTBEAT_PIGGYBACK_VECTOR = "HeartbeatPiggybackVector";
 
+    //For Debugging purposes
+    private static final String MSG_ID = "MsgID";
+    
     private static HeartbeatPiggybackerAspect instance = null;
     private static HeartbeatPiggybacking_Send_Delegate send_Delegate = null;
     private static boolean piggybackingIsOn;
@@ -97,8 +105,6 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
         if (!piggybackingIsOn) return;
         
         super.load();
-        if (log.isDebugEnabled()) 
-            log.debug("PB========= HeartbeatPiggybackerAspect load() called");
 
         metricsUpdateService = (MetricsUpdateService)
             getServiceBroker().getService(this, MetricsUpdateService.class, null);
@@ -116,6 +122,9 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
             instance = this;
           }
         }
+
+        if (log.isDebugEnabled()) 
+            log.debug("PB========= HeartbeatPiggybackerAspect loaded");
     }
 
     /* is this a heartbeat message? */
@@ -134,6 +143,7 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
         {
           Router router = (Router) delegate;
           send_Delegate = new HeartbeatPiggybacking_Send_Delegate(router);
+          
           return send_Delegate;
         }
 
@@ -146,7 +156,12 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
         if (!piggybackingIsOn) return null;       
         if (type == MessageDeliverer.class) 
         {
-          return new HeartbeatPiggybacking_Recv_Delegate((MessageDeliverer)delegate);
+            return new HeartbeatPiggybacking_Recv_Delegate((MessageDeliverer)delegate);
+/*        } else if (type == Router.class) {
+            //Test
+            routerDelegate = new RouterDelegate (delegate);                    
+            return routerDelegate;
+*/
         }
 
         return null;
@@ -159,8 +174,9 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
         public HeartbeatPiggybacking_Send_Delegate (Router router)
         {
           super (router);
-          if (log.isDebugEnabled()) 
-              log.debug("PB========= HeartbeatPiggybacking_Send_Delegate initialized");
+                    
+          //if (log.isDebugEnabled()) 
+          //    log.debug("PB========= HeartbeatPiggybacking_Send_Delegate initialized");
           HeartbeatQueueThread hbqt = new HeartbeatQueueThread(this);
           (new Thread (hbqt, "HeartbeatQueueThread")).start();
         }
@@ -174,13 +190,28 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
                 applyPiggybacking(message); 
                     //this should add a HEARTBEAT_PIGGYBACK_VECTOR attribute 
                     //if piggybacking is being done
+                //if (log.isDebugEnabled()) {
+                //    Object msgID = message.getAttribute(MSG_ID); //[id="+msgID+"]"
+                //    log.debug("PB *** routing message [id="+msgID+"]"); 
+                //}
         	super.routeMessage(message);
             }
         }
 
         /* Route a msg immediately */
         public void routeMessageNow(AttributedMessage message) {
-       	    super.routeMessage(message);
+            try {
+                //if (log.isDebugEnabled()) {
+                //    Object msgID = message.getAttribute(MSG_ID); //[id="+msgID+"]"
+                //    log.debug("PB *** routing message now [id="+msgID+"]"); 
+                //}
+                
+                super.routeMessage(message);
+//                routerDelegate.routeMessage(message);
+
+            } catch (Exception e) {
+                log.warn("Exception! Heartbeats Not forwarded on. exception = " + e); 
+            }
         }
 
         /* See if there are HBs to piggyback onto a msg */
@@ -197,13 +228,16 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
                                                  toNodeAddr);
                 toNode = agentID.getNodeName();
             } catch (NameLookupException nle) {
-                log.debug("PB== *** WP Cannot find agent -- NameLookupException encountered with:"+toNodeAddr);
+                log.debug("PB== *** WP Cannot find agent -- NameLookupException encountered with:"+toNodeAddr+" -- fwding msg.");
+                return;
+            } catch (Exception e) {
+                log.debug("PB== *** Null Ptr Exception encountered trying to get AgentID. -- fwding msg.");
                 return;
             }
 
             if (toNode == null) { //white pages service could not find node / had exception
                 if (log.isDebugEnabled()) {
-                    log.debug("PB========= Checking to piggyback HBs --> have msg going to "+toNode);
+                    log.debug("PB== *** WP returned null to_node name. Fwding msg.");
                 }
                 return;
             }
@@ -214,6 +248,9 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
                     o = waitingHeartbeats.remove(toNode);
             }
             if (o == null) { //no heartbeats to attach
+                //if (log.isDebugEnabled()) {
+                //    log.debug("PB========= No HBs to piggyback.");
+                //}
                 return;
             } 
             else {
@@ -285,8 +322,8 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
         public HeartbeatPiggybacking_Recv_Delegate (MessageDeliverer link)
         {
           super (link);
-          if (log.isDebugEnabled()) 
-             log.debug("PB========= HeartbeatPiggybacking_Recv_Delegate initialized");
+          //if (log.isDebugEnabled()) 
+          //   log.debug("PB========= HeartbeatPiggybacking_Recv_Delegate initialized");
           ProcessDeliveryQueueThread pdqt = new ProcessDeliveryQueueThread();
           (new Thread (pdqt, "HeartbeatPiggybacker_ProcessDelivery")).start();
           
@@ -307,15 +344,21 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
             //If heartbeat or piggybacking then process.
             if (pbMsg || hbMsg) {
 
-                if (log.isDebugEnabled()) 
-                    log.debug("PB========= deliverMessage() found msg with heartbeats"); 
-                
+                if (log.isDebugEnabled()) {
+                    Object msgID = message.getAttribute(MSG_ID); //[id="+msgID+"]"
+                    log.debug("PB========= deliverMessage() found msg with heartbeats [id="+msgID+"]"); 
+                }
                 //grab HBs and sent to metric service
                 deliverHeartbeats((Vector)hbVector);
 
                 if (hbMsg) { // Mark HB as delivered
-                    message.setAttribute(MessageAttributes.DELIVERY_ATTRIBUTE, MessageAttributes.DELIVERY_STATUS_DELIVERED);
-                    return message; //don't deliver heartbeat msg (already sent to metric service)
+                    MessageAttributes successfulSend = new SimpleMessageAttributes();
+                    String status = MessageAttributes.DELIVERY_STATUS_DELIVERED;
+                    successfulSend.setAttribute (MessageAttributes.DELIVERY_ATTRIBUTE, status);
+                    return successfulSend;
+                    
+                    //message.setAttribute(MessageAttributes.DELIVERY_ATTRIBUTE, MessageAttributes.DELIVERY_STATUS_DELIVERED);
+                    //return message; //don't deliver heartbeat msg (already sent to metric service)
                 }
             }
             //deliver message
