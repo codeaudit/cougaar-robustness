@@ -192,6 +192,9 @@ public class ActionEvaluation implements Comparable {
                 if (conflictWith("org.cougaar.tools.robustness.disconnection.AgentDisconnectAction", "Allow_Disconnect", activeActions, selectedVariants)) return false;
             }
         }
+        if (this.getAction().getClass().getName().equals("org.cougaar.tools.robustness.disconnection.AgentDisconnectAction")) {
+                if (conflictWith("org.cougaar.tools.robustness.ma.util.AgentRestartAction", "Yes", activeActions, selectedVariants)) return false;
+        }
         return true;
     }
 
