@@ -56,12 +56,13 @@ public interface RestartManagerConstants {
   public static final int NEVER = -1;
 
   // Default parameter values, may be overridden by community attributes
-  public static long DEFAULT_EXPIRATION = 2 * 60 * 1000;
-  public static final long PING_TIMEOUT = 2 * 60 * 1000;
-  public static final long HEARTBEAT_REQUEST_TIMEOUT = 1 * 60 * 1000;
+  public static long DEFAULT_EXPIRATION = 5 * 60 * 1000;
+  public static final long PING_TIMEOUT = 5 * 60 * 1000;
+  public static final long MINIMUM_PING_TIMEOUT = 1 * 60 * 1000;
+  public static final long HEARTBEAT_REQUEST_TIMEOUT = 2 * 60 * 1000;
   public static final long HEARTBEAT_FREQUENCY = 60 * 1000;
   public static final long HEARTBEAT_TIMEOUT = 2 * 60 * 1000;
-  public static final long HEARTBEAT_PCT_OUT_OF_SPEC = 50;
+  public static final long HEARTBEAT_PCT_OUT_OF_SPEC = 80;
 
   // Metrics used
   public static final String LOAD_AVERAGE_METRIC = "LoadAverage";
