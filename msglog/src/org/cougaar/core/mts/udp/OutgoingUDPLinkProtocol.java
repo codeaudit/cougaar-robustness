@@ -29,6 +29,7 @@ import java.util.*;
 import java.net.*;
 
 import org.cougaar.core.mts.*;
+import org.cougaar.core.service.LoggingService;
 
 /**
  *  Outgoing UDP Link Protocol
@@ -42,6 +43,7 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
   private static final int protocolCost;
   private static final Object sendLock = new Object();
 
+  private LoggingService log;
   private DatagramSocket datagramSocket;
   private HashMap links;
 
@@ -57,21 +59,20 @@ private int cnt = 0;
  
   public OutgoingUDPLinkProtocol ()
   {
-    // System.err.println ("Creating " + this);
-
     links = new HashMap();
+  }
 
-    //  Transport initialization
+  public void load ()
+  {
+    super_load();
+
+    log = loggingService;
+    if (log.isInfoEnabled()) log.info ("Creating " + this);
 
     if (startup() == false)
     {
       throw new RuntimeException ("Failure starting up " +this);
     }
-  }
-
-  public String toString ()
-  {
-    return this.getClass().getName();
   }
 
   public synchronized boolean startup ()
@@ -81,8 +82,11 @@ private int cnt = 0;
   }
 
   public synchronized void shutdown ()
+  {}
+
+  public String toString ()
   {
-    // TBD
+    return this.getClass().getName();
   }
 
   private DatagramSocketSpec lookupDatagramSocketSpec (MessageAddress address) throws NameLookupException
@@ -125,11 +129,8 @@ private int cnt = 0;
     } 
     catch (Exception e) 
     {
-      // System.err.println ("Failed in addressKnown: " +e);
-      // e.printStackTrace();
+      return false;
     }
-
-    return false;
   }
 
   public DestinationLink getDestinationLink (MessageAddress address) 
@@ -155,7 +156,6 @@ private int cnt = 0;
   {
     private MessageAddress destination;
     private DatagramSocket datagramSocket;
-    private boolean connected;
 
     Link (MessageAddress dest) 
     {
@@ -200,9 +200,7 @@ private int cnt = 0;
     }
 
     public void addMessageAttributes (MessageAttributes attrs) 
-    {
-      // TBD
-    }
+    {}
 
     public boolean retryFailedMessage (AttributedMessage message, int retryCount)
     {
@@ -244,8 +242,6 @@ else
         if (success == false)
         {
           datagramSocket = null;  // force new socket creation
-          connected = false;      // force new connection
-
           Exception e = (save==null ? new Exception ("UDP sendMessage unsuccessful") : save);
           throw new CommFailureException (e);
         }
@@ -259,49 +255,65 @@ else
    
     private boolean sendMessage (AttributedMessage msg, DatagramSocketSpec spec) throws Exception
     {
-      if (loggingService.isDebugEnabled()) 
-        loggingService.debug ("Sending " +MessageUtils.toString(msg));
+      if (log.isDebugEnabled()) log.debug ("Sending " +MessageUtils.toString(msg));
 
-      //  Since UDP datagram sockets are unconnected (unlike TCP sockets), we
-      //  just send the message on its way and maybe it gets there (UDP is 
-      //  unreliable by design, we only know by acking).
-      //  UPDATE: Now in Java 1.4 datagram sockets can be connected.
+      //  Since UDP datagram sockets are unreliable we just send the message on its way 
+      //  and maybe it gets there.  Acking will tell us if it does or not.
 
       byte msgBytes[] = toBytes (msg);
       if (msgBytes == null) return false;
 
-      //  HACK!!!  Need better way to handle the UDP 64kb packet length limitation
-      //  The problem with this is that it pollutes the send history of UDP
-      //  with false errors - it is not a UDP error that a message is larger
-      //  than it can handle.
+      //  Make sure message will fit into 64 KB datagram packet limitation
 
       if (msgBytes.length >= MAX_UDP_MSG_SIZE)
       {
-        MessageUtils.setMessageSize (msg, msgBytes.length);  // avoid udp selection again for this msg
+        //  HACK!!!  Need better way to handle the UDP 64kb packet length limitation
+        //  The problem with this is that it pollutes the send history of UDP with false 
+        //  errors - size limitation it is not a UDP send error.
 
-        if (loggingService.isWarnEnabled()) 
-        {
-          loggingService.warn ("Msg exceeds 64kb datagram limit! (" +msgBytes.length+ "): " +MessageUtils.toString(msg));
-          return false;
-        }
+        if (log.isWarnEnabled()) 
+          log.warn ("Msg exceeds 64kb datagram limit! (" +msgBytes.length+ "): " +MessageUtils.toString(msg));
+
+        MessageUtils.setMessageSize (msg, msgBytes.length);  // avoid udp selection again for this msg
+        return false;
       }
+
+      //  Build the datagram
 
       InetAddress addr = spec.getInetAddress();
       int port = spec.getPortAsInt();
       DatagramPacket dp = new DatagramPacket (msgBytes, msgBytes.length, addr, port); 
 
-      if (datagramSocket == null) datagramSocket = new DatagramSocket();
-/*
-      //  With Java 1.4 UDP can now have connected datagram sockets
+      //  Make and connect new socket as needed
 
-      if (!connected)
+      if (datagramSocket == null) 
       {
-        datagramSocket.connect (addr, port);
-        connected = true;
+        datagramSocket = new DatagramSocket();
+        datagramSocket.connect (addr, port);  // new in Java 1.4
       }
-*/
-      datagramSocket.send (dp);
 
+      //  Send the message.  If the target agent has moved to another node,
+      //  we may get an IllegalArgumentException because the socket is connected
+      //  to an out of date addr & port in relation to the datagram.  If we
+      //  detect this situation we re-connect the socket and try the send again.
+
+      for (int tryN=1; tryN<=2; tryN++) // try at most twice
+      {
+        try
+        {
+          datagramSocket.send (dp);
+          break; // success
+        }
+        catch (Exception e)
+        {
+          if (tryN == 1 && e instanceof IllegalArgumentException)
+          {
+            datagramSocket.connect (addr, port);
+          }
+          else throw (e);
+        }
+      }
+ 
       return true;  // send successful
     }
 

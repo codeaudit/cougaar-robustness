@@ -29,9 +29,7 @@ import java.net.*;
 import java.util.*;
 
 import org.cougaar.core.mts.*;
-import org.cougaar.core.component.Service;
-import org.cougaar.core.component.ServiceBroker;
-import org.cougaar.core.component.ServiceProvider;
+import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.ThreadService;
 import org.cougaar.core.thread.Schedulable;
 
@@ -45,10 +43,10 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 {
   public static final String PROTOCOL_TYPE = "-UDP";
 
-  private static boolean debug;
-  private static final String localhost;
-
+  private static LoggingService log;
   private static boolean showTraffic;
+
+  private static final String localhost;
 
   private DatagramSocketSpec datagramSocketSpecs[];
   private DatagramSocketSpec myDatagramSocketSpec;
@@ -65,8 +63,6 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
  
   public IncomingUDPLinkProtocol ()
   {
-// System.err.println ("Creating " + this);
-
     datagramSocketListeners = new Vector();
 
     //  Get incoming socket portnumber(s) from a property?
@@ -82,30 +78,16 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
   public void load () 
   {
     super_load();
+
+    log = loggingService;
+    if (log.isInfoEnabled()) log.info ("Creating " + this);
+
     String sta = "org.cougaar.core.mts.ShowTrafficAspect";
     showTraffic = (getAspectSupport().findAspect(sta) != null);
-  }
-
-  public String toString ()
-  {
-    return this.getClass().getName();
-  }
-
-  public void setNameSupport (NameSupport nameSupport) 
-  {
-    //  HACK - shortcoming of transport construction - name support not avail till
-    //  after transport constructor called - (name support should be universal 
-    //  service) - a problem with an incoming transport as the only method called
-    //  is the constructor basically.
-
-    if (getNameSupport() == null)
-    {
-      throw new RuntimeException ("nameSupport is null!");
-    }
 
     if (startup() == false)
     {
-      throw new RuntimeException ("Problem starting " +this);
+      throw new RuntimeException ("Failure starting " +this);
     }
   }
 
@@ -143,6 +125,11 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
     }
   }
 
+  public String toString ()
+  {
+    return this.getClass().getName();
+  }
+
   private void registerDatagramSocketSpec (String host, int port)
   {
     //  Update the name server
@@ -156,10 +143,6 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
   private void unregisterDatagramSocketSpec ()
   {
     if (myDatagramSocketSpec == null) return;  // no socket spec to unregister
-
-    //  Name support not available till after transport construction  -- still in 9.0.0?
-
-    if (getNameSupport() == null) return;  
 
     //  Update the name server
 
@@ -178,8 +161,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
     } 
     catch (Exception e) 
     {
-      loggingService.error ("registerClient: " +e);
-      e.printStackTrace();
+      log.error ("registerClient: " +stackTraceToString(e));
     }
   }
 
@@ -194,8 +176,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
     } 
     catch (Exception e) 
     {
-      loggingService.error ("unregisterClient: " +e);
-      e.printStackTrace();
+      log.error ("unregisterClient: " +stackTraceToString(e));
     }
   }
 
@@ -209,8 +190,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
     } 
     catch (Exception e) 
     {
-      loggingService.error ("registerMTS: " +e);
-      e.printStackTrace();
+      log.error ("registerMTS: " +stackTraceToString(e));
     }
   }
 
@@ -228,29 +208,14 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 
       registerDatagramSocketSpec (localhost, port);
       datagramSocketListeners.add (listener);
-/*
 
-loggingService is null here
-
-      if (loggingService.isInfoEnabled()) 
-        loggingService.info ("Datagram socket created on port " +port);
-*/
-      System.err.println ("Datagram socket created on port " +port);
+      if (log.isInfoEnabled()) log.info ("Incoming datagram socket created on port " +port);
     }
     catch (Exception e)
     {
-/*
-
-loggingService is null here
-
-      loggingService.error ("Error creating datagram socket on port " +port+ ": " +e);
-*/
-      System.err.println ("Error creating datagram socket on port " +port+ ": ");
-      e.printStackTrace();
-
+      log.error ("Error creating datagram socket on port " +port+ ":\n" +stackTraceToString(e));
       if (listener != null) listener.quit();
       listener = null;
-
       return -1;
     }
 
@@ -266,26 +231,20 @@ loggingService is null here
     try
     {
       listener.quit();
-
 //    unregisterSocketSpec();   // synchronization problem?
-
       datagramSocketListeners.remove (listener);
-
-      if (loggingService.isInfoEnabled()) 
-        loggingService.info ("Datagram socket destroyed on port " +port);
+      if (log.isInfoEnabled()) log.info ("Datagram socket destroyed on port " +port);
     }
     catch (Exception e)
     {
-      loggingService.error ("Error destroying datagram socket on port " +listener.getPort()+ ": " +e);
-      e.printStackTrace();
+      log.error ("Error destroying datagram socket on port " +listener.getPort()+ ": " +e);
     }
   }
 
   private ThreadService threadService () 
   {
 	if (threadService != null) return threadService;
-	ServiceBroker sb = getServiceBroker();
-	threadService = (ThreadService) sb.getService (this, ThreadService.class, null);
+	threadService = (ThreadService) getServiceBroker().getService (this, ThreadService.class, null);
 	return threadService;
   }
 
@@ -343,16 +302,16 @@ loggingService is null here
           }
           catch (Exception e)
           {
-            loggingService.error ("Got non AttributedMessage! (msg ignored)");
+            log.error ("Got non (or broken) AttributedMessage! (msg ignored)");
             continue;
           }
 
           if (showTraffic) System.err.print ("<U");
 
-          if (loggingService.isDebugEnabled()) 
+          if (log.isDebugEnabled()) 
           {
-            loggingService.debug ("Datagram packet is from " +showAddress(datagramPacket));
-            loggingService.debug ("Read " +MessageUtils.toString(msg));
+            log.debug ("Datagram packet is from " +showAddress(datagramPacket)+
+                     "\nRead " +MessageUtils.toString(msg));
           }
         }
         catch (Exception e)
@@ -361,10 +320,10 @@ loggingService is null here
           //  other end closes their socket connection, but this is not
           //  the case here with datagram sockets.
 
-          if (loggingService.isInfoEnabled()) 
-            loggingService.info ("Terminating datagram socket exception: " + e);
-
-//System.err.println ("\nIncomingUDP: Terminating socket exception: ");  e.printStackTrace();
+          if (log.isInfoEnabled()) 
+          {
+            log.info ("Terminating datagram socket exception:\n" +stackTraceToString(e));
+          }
 
           quitNow = true;
           break;
@@ -378,11 +337,11 @@ loggingService is null here
         }
         catch (MisdeliveredMessageException e)
         { 
-          loggingService.error ("Got MisdeliveredMessageException: " + e);
+          log.error ("Got MisdeliveredMessageException: " + e);
         }
         catch (Exception e)
         { 
-          loggingService.error ("Got exception while delivering msg: " + e);
+          log.error ("Got exception while delivering msg: " + e);
         }
       }
 
@@ -420,6 +379,14 @@ loggingService is null here
     }
   }
 
+  private String stackTraceToString (Exception e)
+  {
+    StringWriter stringWriter = new StringWriter();
+    PrintWriter printWriter = new PrintWriter (stringWriter);
+    e.printStackTrace (printWriter);
+    return stringWriter.getBuffer().toString();
+  }
+
   private Object fromBytes (byte[] data) 
   {
 	ObjectInputStream ois = null;
@@ -433,12 +400,12 @@ loggingService is null here
 	} 
     catch (ClassNotFoundException cnfe) 
     {
-      loggingService.error ("fromBytes cnfe exception: " +cnfe);
+      log.error ("fromBytes cnfe exception: " +cnfe);
       return null;
 	}
     catch (Exception e) 
     {
-      loggingService.error ("fromBytes exception: " +e);
+      log.error ("fromBytes exception: " +e);
       return null;
 	}
 	
