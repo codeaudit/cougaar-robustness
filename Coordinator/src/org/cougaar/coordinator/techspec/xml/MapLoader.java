@@ -94,7 +94,7 @@ public class MapLoader {
                 return null;
             }
         } catch (Exception e) {
-            logger.error("Error parsing XML map file [" + filename + "]. Error was: "+ e.toString(), e);
+            logger.error("Error parsing XML map file [" + filename + "]. Error was: "+ e.toString());
             return null;
         }        
         

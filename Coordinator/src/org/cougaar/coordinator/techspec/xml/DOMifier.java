@@ -98,6 +98,7 @@ public class DOMifier implements ErrorHandler, EntityResolver  {
         } catch (Exception e) {         
             logger.error("DOMifier Exception: "+e);
             //throw new Exception(e.toString());
+            return null;
         }
     }
     
