@@ -25,6 +25,9 @@
 
 package org.cougaar.coordinator.techspec;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+
 import java.util.Vector;
 import java.util.Iterator;
 import java.util.Calendar;
@@ -42,11 +45,13 @@ public class EventProbability {
     
     Vector intervals;
     EventProbabilityInterval infiniteIntervalProbability = null;
+    protected Logger logger;
     
     
     /** Creates a new instance of EventProbability */
     public EventProbability() {
         intervals = new Vector();
+        logger = Logging.getLogger(getClass()); 
     }
     
     /**
@@ -88,13 +93,17 @@ public class EventProbability {
      */
     public double computeIntervalProbability(long start, long end) throws NegativeIntervalException { 
         
-        if (intervals.size() == 0) { return 0.0; } // no probability
+        if (intervals.size() == 0 && infiniteIntervalProbability == null) { 
+            if (logger.isDebugEnabled()) { logger.debug("No intervals, returning 0.0"); }
+            return 0.0; 
+        } // no probability
         
         //break interval up into minutes
         long interval = end - start;
         if (interval < 0) {
             throw new NegativeIntervalException();
         } else if (interval == 0) {
+            if (logger.isDebugEnabled()) { logger.debug("Interval length is 0, returning 0.0"); }
             return 0.0; //zero length interval
         }
 
@@ -104,16 +113,23 @@ public class EventProbability {
         //See if there is an infinite interval probability. If so, we don't need to break up
         //the entire interval into sub-intervals.
         if (infiniteIntervalProbability != null) {
-            return infiniteIntervalProbability.computeIntervalProbability(durationInMins);
+            double pr = infiniteIntervalProbability.computeIntervalProbability(durationInMins);
+            if (logger.isDebugEnabled()) { logger.debug("Infinite interval, called infiniteIntervalProbability.computeIntervalProbability(). Prob = "+pr); }            
+            return pr;
         }
         
         GregorianCalendar startTime = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
         startTime.setTimeInMillis(start);
-
+        
         GregorianCalendar endTime = (GregorianCalendar)startTime.clone();
         endTime.add(Calendar.MINUTE, durationInMins); // find ending time
         int durHrs = durationInMins / 60;
+        
+        if (logger.isDebugEnabled()) { logger.debug("start time = "+startTime.toString() + ", endTime = "+endTime.toString()); }                    
+        
         ClockInterval[] clockIntervals = ClockInterval.generateIntervals(startTime, endTime, durHrs);
+        
+        if (logger.isDebugEnabled()) { logger.debug("Number of clock intervals = "+ clockIntervals.length ); }            
         
         //Otherwise figure out how many interval probabilities will be used.
         EventProbabilityInterval epi;
@@ -123,8 +139,12 @@ public class EventProbability {
             
             epi = (EventProbabilityInterval) i.next();
             int minutes = ClockInterval.computeOverlap(clockIntervals, epi.getClockIntervals() );
-            cumulativeProb = cumulativeProb * epi.computeIntervalProbability(minutes);
+            double prob = epi.computeIntervalProbability(minutes);
+            if (logger.isDebugEnabled()) { logger.debug("Minutes in interval="+minutes+", prob = "+prob); }            
+            
+            cumulativeProb = cumulativeProb * prob;
         }
+        if (logger.isDebugEnabled()) { logger.debug("Returning prob of ="+(1.0-cumulativeProb)); }            
         
         return 1.0 - cumulativeProb;
     }

@@ -130,17 +130,26 @@ public class ThreatLoader extends XMLLoader {
 
         //Create default threat
         ThreatDescription threat = new ThreatDescription( threatName, affectsAssetType, causesEvent, fProb );
+        
+        try {
+            double prob = threat.getEventProbability().computeIntervalProbability(System.currentTimeMillis(), System.currentTimeMillis()+600000);
+            if (logger.isDebugEnabled()) { logger.debug("Testing event likelihood. Prob = "+prob); }            
+        } catch (Exception e1) {
+            if (logger.isDebugEnabled()) { logger.debug("Testing event likelihood interval. EXCEPTION!"); }            
+        }
+        
         threats.add(threat);
 
         Element e;
         for (Node child = element.getFirstChild(); child != null; child = child.getNextSibling()) {
             if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("VulnerableAssets") ) {
                 e = (Element)child;
+                logger.warn("calling parseVulnerableAssets...");
                 parseVulnerableAssets(e, threat);
             } //else, likely a text element - ignore
         }
 
-        logger.debug("Added new Threat: \n"+threat.toString() );
+        logger.debug("Added new Threat (default) with no filter: \n"+threat.toString() );
             
         return threats;
     }
@@ -192,11 +201,13 @@ public class ThreatLoader extends XMLLoader {
     /** Parse sub kinds of threats & create new ThreatDescriptions for each entry */
     private void parseVulnerableAssets(Element element, ThreatDescription threat) {
 
+        logger.debug("Calling ThreatVulnerabilityLoader.parseElement...");
+        
         ThreatVulnerabilityFilter vf = ThreatVulnerabilityLoader.parseElement(element, probabilityMap);
         if (vf != null) {
             ThreatDescription td = new ThreatDescription(threat, vf);
             threats.add(td);
-            logger.debug("Added new Threat: \n"+td.toString() );
+            logger.debug("Added new Threat (with filter): \n"+td.toString() );
         } else {
             logger.error("Error parsing XML file for threat [" + threat.getName() + "]. ThreatVulnerabilityFilter was null for element = "+element.getNodeName() );
         }
