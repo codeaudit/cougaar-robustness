@@ -103,7 +103,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
   private DeconflictHelper deconflictHelper = null;
   private DeconflictListener dl = null;
 
-  private CommunityService commSvc;
+  protected CommunityService communityService;
 
   protected MessageAddress agentId;
   protected LoggingService logger;
@@ -136,13 +136,13 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
     loadBalancer = new LoadBalancer(bs, this, model);
     final ServiceBroker sb = getBindingSite().getServiceBroker();
     if (sb.hasService(CommunityService.class)) {
-      commSvc =
+      communityService =
           (CommunityService) sb.getService(this, CommunityService.class, null);
     } else {
       sb.addServiceListener(new ServiceAvailableListener() {
         public void serviceAvailable(ServiceAvailableEvent sae) {
           if (sae.getService().equals(CommunityService.class)) {
-            commSvc =
+            communityService =
                 (CommunityService) sb.getService(this, CommunityService.class, null);
           }
         }
@@ -894,7 +894,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    */
   protected void changeAttributes(String communityName, final String entityName, final Attribute[] newAttrs) {
     Community community =
-      commSvc.getCommunity(communityName, new CommunityResponseListener() {
+      communityService.getCommunity(communityName, new CommunityResponseListener() {
         public void getResponse(CommunityResponse resp) {
           changeAttributes((Community) resp.getContent(), entityName, newAttrs);
         }
@@ -940,7 +940,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
             }
           }
       };
-        commSvc.modifyAttributes(community.getName(),
+        communityService.modifyAttributes(community.getName(),
                             entityName,
                             (ModificationItem[])mods.toArray(new ModificationItem[0]),
                             crl);

@@ -226,6 +226,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
           newState(name, RESTART);
         }
       } else if (isNode(name) && thisAgent.equals(preferredLeader())) {
+        removeFromCommunity(name);
         setExpiration(name, NEVER);
         deadNodes.add(name);
         String agentsOnDeadNode[] = model.entitiesAtLocation(name);
@@ -496,6 +497,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   private boolean autoLoadBalance() {
     String autoLoadBalanceAttr = model.getStringAttribute(AUTO_LOAD_BALANCE_ATTRIBUTE);
     return (autoLoadBalanceAttr != null && autoLoadBalanceAttr.equalsIgnoreCase("true"));
+  }
+
+  private void removeFromCommunity(String name) {
+    communityService.leaveCommunity(model.getCommunityName(), name, null);
   }
 
   public void setupSubscriptions() {
