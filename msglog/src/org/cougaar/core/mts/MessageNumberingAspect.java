@@ -230,9 +230,9 @@ public class MessageNumberingAspect extends StandardAspect
           {
             agentTable = new Hashtable();
             agentState.setAttribute (AGENT_OUTGOING_SEQ_TABLE, agentTable);
-System.err.println ("creating new outgoing seq num table for agent " +agentMsgAddr);
+System.err.println ("creating new outgoing msg num seq table for local agent " +agentMsgAddr);
           }        
-else System.err.println ("using outgoing seq num table from AgentState for agent " +agentMsgAddr);
+else System.err.println ("using stored outgoing msg num seq table from AgentState for new local agent " +agentMsgAddr);
         }
 
         numberSequenceTables.put (key, agentTable);

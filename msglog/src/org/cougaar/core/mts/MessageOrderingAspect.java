@@ -201,9 +201,9 @@ public class MessageOrderingAspect extends StandardAspect
     //  and there is no -0.  Messages with numbers 0 or less are unordered,
     //  so we don't maintain anything on them here.
 
-    AgentID fromAgent = MessageUtils.getFromAgent (msg);
-    MessageAddress agentAddr = MessageUtils.getOriginatorAgent (msg);
-    Hashtable agentTable = getAgentNumberSequenceTable (fromAgent, agentAddr);
+    AgentID toAgent = MessageUtils.getToAgent (msg);
+    MessageAddress agentAddr = MessageUtils.getTargetAgent (msg);
+    Hashtable agentTable = getAgentNumberSequenceTable (toAgent, agentAddr);
 
     if (agentTable == null) 
     {
@@ -214,8 +214,8 @@ public class MessageOrderingAspect extends StandardAspect
 
     synchronized (agentTable)
     {
-      AgentID toAgent = MessageUtils.getToAgent (msg);
-      String key = toAgent.getNumberSequenceKey();
+      AgentID fromAgent = MessageUtils.getFromAgent (msg);
+      String key = fromAgent.getNumberSequenceKey();
       Int n = (Int) agentTable.get (key);
       if (n != null) return n.value;
 
@@ -228,9 +228,9 @@ public class MessageOrderingAspect extends StandardAspect
 
   private void setNextMessageNumber (AttributedMessage msg, int msgNum)
   {
-    AgentID fromAgent = MessageUtils.getFromAgent (msg);
-    MessageAddress agentAddr = MessageUtils.getOriginatorAgent (msg);
-    Hashtable agentTable = getAgentNumberSequenceTable (fromAgent, agentAddr);
+    AgentID toAgent = MessageUtils.getToAgent (msg);
+    MessageAddress agentAddr = MessageUtils.getTargetAgent (msg);
+    Hashtable agentTable = getAgentNumberSequenceTable (toAgent, agentAddr);
 
     if (agentTable == null) 
     {
@@ -241,8 +241,8 @@ public class MessageOrderingAspect extends StandardAspect
   
     synchronized (agentTable)
     {
-      AgentID toAgent = MessageUtils.getToAgent (msg);
-      String key = toAgent.getNumberSequenceKey();
+      AgentID fromAgent = MessageUtils.getFromAgent (msg);
+      String key = fromAgent.getNumberSequenceKey();
       Int n = (Int) agentTable.get (key);
       if (n == null) agentTable.put (key, new Int (msgNum));
       else n.value = msgNum;
@@ -279,9 +279,9 @@ public class MessageOrderingAspect extends StandardAspect
           {
             agentTable = new Hashtable();
             agentState.setAttribute (AGENT_INCOMING_SEQ_TABLE, agentTable);
-System.err.println ("creating new incoming seq num table for agent " +agentMsgAddr);
+System.err.println ("creating new incoming msg num seq table for local agent " +agentMsgAddr);
           }        
-else System.err.println ("using incoming seq num table from AgentState for agent " +agentMsgAddr);
+else System.err.println ("using stored incoming msg num seq table from AgentState for new local agent " +agentMsgAddr);
         }
 
         numberSequenceTables.put (key, agentTable);
@@ -291,7 +291,7 @@ else System.err.println ("using incoming seq num table from AgentState for agent
     }
   }
 
-  private static class Int  // for mutable int objects
+  private static class Int implements java.io.Serializable  // for mutable int objects
   {
     public int value;
     public Int (int v) { value = v; }
