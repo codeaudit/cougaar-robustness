@@ -51,7 +51,6 @@ import org.cougaar.core.persist.NotPersistable;
 public class HeartbeatRequesterPlugin extends ComponentPlugin {
   private IncrementalSubscription heartbeatRequestSub;
   private IncrementalSubscription hbReqSub;
-  private IncrementalSubscription prepareHealthReportsSub; 
   private BlackboardService bb;
   private LoggingService log;
   private UniqueObjectSet reqTable;
@@ -59,10 +58,8 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
   private Hashtable reportTable;
   private SendHealthReportsAlarm nextAlarm = null;
   private MetricsService metricsService;
+  protected Vector heartbeatRequestTimeouts = new Vector();
 
-  private class PrepareHealthReports implements NotPersistable
-  {}
-  
   private class SendHealthReportsAlarm implements Alarm {
     private long detonate = -1;
     private boolean expired = false;
@@ -75,10 +72,8 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     }
     public synchronized void expire () {
       if (!expired) {
-        bb.openTransaction();
-        bb.publishAdd(new PrepareHealthReports());
-        bb.closeTransaction();
         expired = true;
+        bb.signalClientActivity();
       }
     }
     public boolean hasExpired () {
@@ -101,13 +96,14 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     public HeartbeatRequestTimeout (long timeout, UID reqUID) {
       detonate = timeout + System.currentTimeMillis();
       this.reqUID = reqUID;
+      heartbeatRequestTimeouts.add(this);
     }
     public long getExpirationTime () {return detonate;
     }
     public synchronized void expire () {
       if (!expired) {
-        fail(reqUID);
         expired = true;
+        bb.signalClientActivity();
       }
     }
     public boolean hasExpired () {return expired;
@@ -119,13 +115,13 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
         return false;
       }
     }
+    protected UID getReqUID () { return reqUID; }
   }
 
   private void fail(UID reqUID) {
     HeartbeatRequest req = (HeartbeatRequest)reqTable.findUniqueObject(reqUID);
     if (req != null) {  
       if (req.getStatus() == HeartbeatRequest.SENT) { 
-        bb.openTransaction();
         req.setStatus(HeartbeatRequest.FAILED);
         reqTable.remove(req);
         UID hbReqUID = req.getHbReqUID();
@@ -141,7 +137,6 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
         if (log.isDebugEnabled()) 
           log.debug("fail: publishChange HeartbeatRequest = " + req);
         bb.publishChange(req);
-        bb.closeTransaction();
       }
     }
   }
@@ -158,24 +153,20 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     }
   };
 
-  private UnaryPredicate prepareHealthReportsPred = new UnaryPredicate() {
-    public boolean execute(Object o) {
-      return (o instanceof PrepareHealthReports);
-    }
-  };
-
   private void updateHeartbeatRequest (HbReq hbReq) {
     HbReqContent content = (HbReqContent)hbReq.getContent();
     UID reqUID = content.getHeartbeatRequestUID();
     HeartbeatRequest req = (HeartbeatRequest)reqTable.findUniqueObject(reqUID);
-    Date timeReceived = new Date();
-    req.setTimeReceived(timeReceived);
-    HbReqResponse response = (HbReqResponse)hbReq.getResponse();
-    req.setStatus(response.getStatus());
-    req.setRoundTripTime(timeReceived.getTime() - req.getTimeSent().getTime());
-    if (log.isDebugEnabled())  
-      log.debug("updateHeartbeatRequest: publishChange HeartbeatRequest = " + req);
-    bb.publishChange(req);
+    if (req != null) { //might already be removed
+      Date timeReceived = new Date();
+      req.setTimeReceived(timeReceived);
+      HbReqResponse response = (HbReqResponse)hbReq.getResponse();
+      req.setStatus(response.getStatus());
+      req.setRoundTripTime(timeReceived.getTime() - req.getTimeSent().getTime());
+      if (log.isDebugEnabled())  
+        log.debug("updateHeartbeatRequest: publishChange HeartbeatRequest = " + req);
+      bb.publishChange(req);
+    }
   }
 
   // produce HeartbeatHealthReports from ACCEPTED HeartbeatRequests
@@ -270,27 +261,11 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     bb = getBlackboardService();
     heartbeatRequestSub = (IncrementalSubscription)bb.subscribe(HeartbeatRequestPred);
     hbReqSub = (IncrementalSubscription)bb.subscribe(hbReqPred);
-    prepareHealthReportsSub = (IncrementalSubscription)bb.subscribe(prepareHealthReportsPred);
   }
 
   protected void execute() {
-    // prepare HeartbeatHealthReports
-    Iterator iter = prepareHealthReportsSub.getCollection().iterator();
-    boolean didOnce = false;
-    while (iter.hasNext()) {
-      PrepareHealthReports obj = (PrepareHealthReports)iter.next();
-      if (log.isDebugEnabled()) 
-        log.debug("execute: received added PrepareHealthReports = " + obj);
-      if (!didOnce) {
-        prepareHealthReports();
-        didOnce = true;
-      }
-      if (log.isDebugEnabled())
-        log.debug("execute: publishRemove PrepareHealthReports =" + obj);
-      bb.publishRemove(obj);
-    }
     // process REMOVED HeartbeatRequests
-    iter = heartbeatRequestSub.getRemovedCollection().iterator();
+    Iterator iter = heartbeatRequestSub.getRemovedCollection().iterator();
     while (iter.hasNext()) {
       HeartbeatRequest req = (HeartbeatRequest)iter.next();
       if (log.isDebugEnabled()) 
@@ -330,20 +305,22 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
             reportTable.put(reqUID, now);
             // figure out when the alarm should be set
             HeartbeatRequest req = (HeartbeatRequest)reqTable.findUniqueObject(reqUID);
-            long freq = req.getHbFrequency();
-            float percentOutOfSpec = req.getPercentOutOfSpec();
-            long fromNow = freq + (long)(freq * (percentOutOfSpec / 100));
-            if (nextAlarm == null){    // if no alarm set yet, this is the first
-                                       // ACCEPTED request, so set one to 
-                                       // (freq + (freq * percentOutOfSpec)) from now
-              nextAlarm = new SendHealthReportsAlarm(fromNow);
-              alarmService.addRealTimeAlarm(nextAlarm);
-            } else { // an alarm is already set - figure out if its soon enough
-              long fromNowTime = now.getTime() + fromNow;
-              if (nextAlarm.getExpirationTime() > fromNowTime) {
-                nextAlarm.cancel(); 
+            if (req != null) {  // might already be removed
+              long freq = req.getHbFrequency();
+              float percentOutOfSpec = req.getPercentOutOfSpec();
+              long fromNow = freq + (long)(freq * (percentOutOfSpec / 100));
+              if (nextAlarm == null){    // if no alarm set yet, this is the first
+                                         // ACCEPTED request, so set one to 
+                                         // (freq + (freq * percentOutOfSpec)) from now
                 nextAlarm = new SendHealthReportsAlarm(fromNow);
                 alarmService.addRealTimeAlarm(nextAlarm);
+              } else { // an alarm is already set - figure out if its soon enough
+                long fromNowTime = now.getTime() + fromNow;
+                if (nextAlarm.getExpirationTime() > fromNowTime) {
+                  nextAlarm.cancel(); 
+                  nextAlarm = new SendHealthReportsAlarm(fromNow);
+                  alarmService.addRealTimeAlarm(nextAlarm);
+                }
               }
             } // falls through
           case HeartbeatRequest.REFUSED:
@@ -400,6 +377,25 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
             log.debug("execute: publishChange HeartbeatRequest = " + req);
           bb.publishChange(req);
         } 
+      }
+    }
+    // prepare HeartbeatHealthReports
+    if (nextAlarm != null && nextAlarm.hasExpired()) {
+      nextAlarm = null;
+      if (log.isDebugEnabled()) 
+        log.debug("execute: SendHealthReportsAlarm expired");
+      prepareHealthReports();
+    }
+    // fail timed out HeartbeatRequests
+    iter = heartbeatRequestTimeouts.iterator();
+    while (iter.hasNext()) {
+      HeartbeatRequestTimeout alarm = (HeartbeatRequestTimeout)iter.next();
+      if (alarm.hasExpired()) {
+	UID uid = alarm.getReqUID();
+        if (log.isDebugEnabled()) 
+          log.debug("execute: failing HeartbeatRequest with UID = " + uid);
+        fail(uid);
+        iter.remove();
       }
     }
   }
