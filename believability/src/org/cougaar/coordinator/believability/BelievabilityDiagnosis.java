@@ -54,7 +54,7 @@ class BelievabilityDiagnosis extends DiagnosisTrigger
 
         _sensor_state_dimension = diag.getAssetStateDimensionName();
 
-        _last_asserted_timestamp = diag.getLastAssertedTimestamp();
+        setTriggerTimestamp( diag.getLastAssertedTimestamp() );
     }
 
 } // class BelievabilityDiagnosis

@@ -59,7 +59,9 @@ class BelievabilityAction extends BeliefUpdateTrigger {
         // _blackboard_action = action;
      _actuator_info = tech;
      _asset_id = action.getAssetID();
-     _action_ts = action.getValue().getEndTime();
+
+     setTriggerTimestamp( action.getValue().getEndTime() );
+
      _action_state_dim = action.getAssetStateDimensionName();
 
      if ( _action_state_dim == null )
@@ -89,7 +91,7 @@ class BelievabilityAction extends BeliefUpdateTrigger {
      buff.append( "\t Actuator Name:" + _actuator_name + "\n");
      buff.append( "\tAction Description:" + _action_description + "\n");
      buff.append( "\tAction State Dimension Name" + _action_state_dim + "\n");
-     buff.append( "\tAction Completion Time:" + _action_ts + "\n");
+     buff.append( "\tAction Completion Time:" + getTriggerTimestamp() + "\n");
      buff.append( "\tAction Status:" + _action_status + "\n");
      
      /*for (int dim_count = 0; dim_count < _action_state_dim.length; dim_count++){
@@ -98,27 +100,6 @@ class BelievabilityAction extends BeliefUpdateTrigger {
      
         return buff.toString();
     } // method toString
-
-    /**
-    /**
-     * Return the time that this trigger was asserted.  This should be
-     * the time for which the belief update calculation should take
-     * place.  The exact semantics and source for this time will be
-     * dependent on the particular trigger.
-     * @return timestamp
-     **/
-    public long getTriggerTimestamp() 
-    {
-        try {
-         logDetail( "Getting TriggerTimeStamp for action record :" 
-                    + _action_record_string );
-         return _action_ts; 
-     } catch (Exception e){
-         logWarning( "Error getting Trigger Timestamp for the action record :" + _action_record_string );
-         return 0;
-     }
-    } // method getTriggerTimestamp
-
 
     /**
      * This routine should return the asset state dimension name that
@@ -186,7 +167,7 @@ class BelievabilityAction extends BeliefUpdateTrigger {
     // This may change so we want to copy information out.
     // private Action _blackboard_action;
     //private ActionTechSpecInterface _action_tech;
-    private long _action_ts;
+
     private ActionTechSpecInterface _actuator_info;
     private String _action_status;
     private boolean _action_has_completed;

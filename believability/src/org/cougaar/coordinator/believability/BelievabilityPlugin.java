@@ -597,6 +597,21 @@ public class BelievabilityPlugin
          try 
          {
              but = constructUpdateTrigger( trigger_obj );
+
+             // While unleashing, set all diagnoses to the current
+             // unleashing time.
+             //
+             if ( _leashing_state == LEASHING_STATE_UNLEASHING_IN_PROGRESS )
+             {
+                 if (logger.isDetailEnabled() ) 
+                     logger.detail ("Unleashing override of time from "
+                                    + but.getTriggerTimestamp()
+                                    + " to "
+                                    + _unleash_time );
+                 
+                 but.setTriggerTimestamp( _unleash_time );
+             } // if unleashing
+
           
              _trigger_consumer.consumeUpdateTrigger( but );
 
@@ -961,6 +976,15 @@ public class BelievabilityPlugin
 
         _leashing_state = LEASHING_STATE_UNLEASHING_IN_PROGRESS;
 
+        // We will treat all diagnoses found at unleashing to have all
+        // happened simultaneous at exactly the unleashing time.
+        //
+        _unleash_time = System.currentTimeMillis();
+        
+        if (logger.isDetailEnabled() ) 
+            logger.detail ("Unleashing time used for diagnoses: "
+                           + _unleash_time );
+ 
         // We set this in the model manager, because when we unleash
         // we will *always* use the default (techspec) initial
         // probability distribution: even if we had a different belief
@@ -1185,6 +1209,15 @@ public class BelievabilityPlugin
     // finally to the 'unleashed' state.
     //
     private int _leashing_state = LEASHING_STATE_LEASHED;
+
+    // While leashed, we will accumulate diagnoses with varying
+    // timestamps.  During unleashing, we do not want to process the
+    // diagnoses with those original timestamps, but rather with the
+    // current unleashing time.  This is set to the time at which
+    // unleashing begins and is used to override timestamps in
+    // diagnoses during the unleashing process.
+    //
+    private long _unleash_time;
 
     // We canot do any real work, or publish in the expire()
     // method of an alarm.  Thus, we use this class to manage

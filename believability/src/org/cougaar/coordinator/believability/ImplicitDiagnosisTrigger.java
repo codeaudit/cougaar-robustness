@@ -60,7 +60,7 @@ class ImplicitDiagnosisTrigger extends DiagnosisTrigger
         _sensor_value = sensor_value;
         _sensor_state_dimension = state_dim_name;
         
-        _last_asserted_timestamp = time;
+        setTriggerTimestamp( time );
 
     } // constructor
 

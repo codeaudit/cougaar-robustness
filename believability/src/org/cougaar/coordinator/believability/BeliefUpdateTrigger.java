@@ -37,7 +37,7 @@ import org.cougaar.coordinator.techspec.AssetType;
  * dimension.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.25 $Date: 2004-08-07 17:08:34 $
+ * @version $Revision: 1.26 $Date: 2004-08-09 20:46:41 $
  * @see BelievabilityDiagnosis
  * @see BelievabilityAction
  *
@@ -56,7 +56,17 @@ abstract class BeliefUpdateTrigger extends Loggable implements Comparable
      * triggering event happened. More specifically, the time at which
      * we want to determine the new belief update.
      */
-    abstract long getTriggerTimestamp();
+    long getTriggerTimestamp() { return _trigger_timestamp; }
+
+    /**
+     * This routine should return the time (in ms) at which this
+     * triggering event happened. More specifically, the time at which
+     * we want to determine the new belief update.
+     */
+    void setTriggerTimestamp( long value ) 
+    { 
+        _trigger_timestamp = value;
+    }
 
 
     /**
@@ -127,6 +137,8 @@ abstract class BeliefUpdateTrigger extends Loggable implements Comparable
     //------------------------------------------------------------
 
     private AssetID _asset_id;
+
+    private long _trigger_timestamp;
 
 } // class BeliefUpdateTrigger
 

@@ -56,13 +56,6 @@ abstract class DiagnosisTrigger extends BeliefUpdateTrigger
 
     //************************************************************
     /**
-     * Return the last time the sensor asserted a value
-     * @return the timestamp
-     **/
-    long getTriggerTimestamp() { return _last_asserted_timestamp; }
-
-    //************************************************************
-    /**
      * This routine should return the asset statew dimension name that
      * this trigger pertains to.
      */
@@ -87,7 +80,7 @@ abstract class DiagnosisTrigger extends BeliefUpdateTrigger
         buff.append( " - asset " + getAssetID().toString() );
         buff.append( " with sensor " + _sensor_name );
         buff.append( " asserted diagnosis " + _sensor_value );
-        buff.append( " at time " + _last_asserted_timestamp );
+        buff.append( " at time " + getTriggerTimestamp() );
         
         return buff.toString();
 
@@ -105,9 +98,6 @@ abstract class DiagnosisTrigger extends BeliefUpdateTrigger
 
     // The state dimension that the diagnosis concerns
     protected String _sensor_state_dimension;
-
-    // The last time the sensor asserted a value
-    protected long _last_asserted_timestamp;
 
 } // class DiagnosisTrigger
 
