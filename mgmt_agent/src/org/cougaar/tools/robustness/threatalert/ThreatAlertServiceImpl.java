@@ -181,36 +181,23 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
         }
       }
     }
-    /*if(target.equals(agentId)) {
-      if(log.isInfoEnabled()) {
-        log.info("publish ThreatAlert " + ta.toString());
-      }
-      try {
-        blackboard.openTransaction();
-        blackboard.publishAdd(ta);
-      }finally {
-        blackboard.closeTransactionDontReset();
-      }
-    } else {*/
-
-      // Send to remote listeners
-      RelayAdapter taiRelay = new RelayAdapter(agentId, ta, ta.getUID());
-      AttributeBasedAddress target =
-          AttributeBasedAddress.getAttributeBasedAddress(community, "Role", role);
-      taiRelay.addTarget(target);
-      if (log.isDebugEnabled()) {
-        log.debug("publish ThreatAlert, remote agent is " + target.toString() +
-                 " " + ta.toString());
-      }
-      try {
-        blackboard.openTransaction();
-        blackboard.publishAdd(taiRelay);
-      } catch (Exception ex) {
-        log.error(ex.getMessage(), ex);
-      } finally {
-        blackboard.closeTransactionDontReset();
-      }
-    //}
+    // Send to remote listeners
+    RelayAdapter taiRelay = new RelayAdapter(agentId, ta, ta.getUID());
+    AttributeBasedAddress target =
+        AttributeBasedAddress.getAttributeBasedAddress(community, "Role", role);
+    taiRelay.addTarget(target);
+    if (log.isDebugEnabled()) {
+      log.debug("publish ThreatAlert, remote agent is " + target.toString() +
+                " " + ta.toString());
+    }
+    try {
+      blackboard.openTransaction();
+      blackboard.publishAdd(taiRelay);
+    } catch (Exception ex) {
+      log.error(ex.getMessage(), ex);
+    } finally {
+      blackboard.closeTransactionDontReset();
+    }
   }
 
   public ThreatAlert[] getCurrentThreats() {
