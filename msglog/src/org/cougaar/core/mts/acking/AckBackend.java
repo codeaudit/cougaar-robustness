@@ -302,6 +302,8 @@ try {
         log.info("AckBackend: Received msg from new incarnation of agent "+
                  originatorFromMsg+"; old="+fromIncFromTbl+", new="+newFromInc);
       aspect.setCurrentIncarnation(originatorFromMsg, newFromAgent);
+      AgentID.decache(fromAgentFromMsg);
+      aspect.decacheDestinationLink(originatorFromMsg); 
       try {
 	  aspect.handleMessagesToRestartedAgent(toAgentFromMsg, fromAgentFromTbl, newFromAgent);
       } catch (Exception e){

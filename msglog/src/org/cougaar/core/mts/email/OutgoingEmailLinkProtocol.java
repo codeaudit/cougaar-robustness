@@ -373,8 +373,10 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     }
   }
 
-  //104B
-  private synchronized void clearCache (MessageAddress addr)
+  /*
+   * Decache destination URI.
+   */
+  public synchronized void decache (MessageAddress addr)
   {
     CbTblEntry cbte = (CbTblEntry)uriCache.get(addr.getAddress());
     if (cbte != null)
@@ -418,7 +420,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     return SID++;
   }
 
-  class EmailOutLink implements DestinationLink 
+  public class EmailOutLink implements DestinationLink 
   {
     private MessageAddress destination;
     private String sid;
@@ -460,9 +462,9 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     }
     
     //104B
-    private synchronized void dumpCachedData (MessageAddress addr) 
+    private synchronized void decache () 
     {
-      clearCache(addr);
+      OutgoingEmailLinkProtocol.this.decache(destination);
     }
 
     public synchronized MessageAttributes forwardMessage (AttributedMessage msg) 
@@ -474,7 +476,7 @@ if (log.isDebugEnabled()) log.debug("Enter forwardMessage("+MessageUtils.toStrin
 
 
       //  Dump our cached data on message send retries
-      if (MessageUtils.getSendTry (msg) > 3) dumpCachedData(destination);  //104B changed to 3 because of wp callback
+      if (MessageUtils.getSendTry (msg) > 3) decache();  //104B changed to 3 because of wp callback
 
       //  Get emailing info for destination
     
@@ -508,7 +510,7 @@ if (log.isDebugEnabled()) log.debug("Exit forwardMessage("+MessageUtils.toString
 
       if (success == false)
       {
-        dumpCachedData(destination); //104B
+        decache(); //104B
         Exception e = (save==null ? new Exception ("email sendMessage unsuccessful") : save);
 if (log.isDebugEnabled()) log.debug("Exit forwardMessage("+MessageUtils.toString(msg)+")");
 //if (log.isDebugEnabled()) log.debug("raw msg = "+msg.getRawMessage());
@@ -622,6 +624,10 @@ if (log.isDebugEnabled()) log.debug("Exit forwardMessage("+MessageUtils.toString
                      Boolean.FALSE);
       attrs.addValue(MessageAttributes.ENCRYPTED_SOCKET_ATTRIBUTE,
                      Boolean.FALSE);
+    }
+
+    public void incarnationChanged() {
+      decache();
     }
 
   }

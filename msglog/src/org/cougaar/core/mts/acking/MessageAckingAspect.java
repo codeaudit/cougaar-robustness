@@ -33,6 +33,7 @@ import java.io.*;
 import java.util.*;
 
 import org.cougaar.core.mts.*;
+import org.cougaar.core.mts.email.OutgoingEmailLinkProtocol;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.ThreadService;
 import org.cougaar.core.component.ServiceBroker;
@@ -985,5 +986,27 @@ public class MessageAckingAspect extends StandardAspect
                                                        oldRestartedAgent+","+
                                                        newRestartedAgent+")");
   }
+  
+  // copied from MTImpl
+  public void decacheDestinationLink(MessageAddress sender) {
+        // Find the DestinationLinks for this address and force a decache.
+	ArrayList links = getRegistry().getDestinationLinks(sender);
+	if (links != null) {
+	    Iterator itr = links.iterator();
+	    while (itr.hasNext()) {
+		Object next = itr.next();
+		if (next instanceof OutgoingEmailLinkProtocol.EmailOutLink) {
+		    OutgoingEmailLinkProtocol.EmailOutLink link = (OutgoingEmailLinkProtocol.EmailOutLink) next;
+		    if (link.getDestination().equals(sender)) {
+			if (loggingService.isDebugEnabled())
+			    loggingService.debug("Decaching reference for " +
+						 sender);
+			link.incarnationChanged();
+			return;
+		    }
+		}
+	    }
+	}
+    }
   
 }
