@@ -75,7 +75,8 @@ public class CommunityStatusModel extends BlackboardClientComponent {
   public static final int NEVER = -1;
 
   // Community attribute designating the communities manager agent
-  public static final String MANAGER_ROLE = "RobustnessManager";
+  public static final String MANAGER_ATTR = "RobustnessManager";
+  public static final String HEALTH_MONITOR = "HealthMonitor";
 
   // Defines how often expirations are checked and events are dissemminated
   public static final long TIMER_INTERVAL = 10 * 1000;
@@ -303,22 +304,27 @@ public class CommunityStatusModel extends BlackboardClientComponent {
    */
   public void setCurrentState(String name, int state, long expiration) {
     StatusEntry se = (StatusEntry)statusMap.get(name);
-    se.timestamp = now();
-    if (se.currentState != state) {
-      se.priorState = se.currentState;
-      se.currentState = state;
-      se.expiration = expiration;
-      logger.debug("setCurrentState" +
-                  " agent=" + name +
-                  " newState=" + se.currentState +
-                  " priorState=" + se.priorState +
-                  " expiration=" + expiration);
-      if (se.type == NODE) {
-         electLeader();
+    if (se != null) {
+      se.timestamp = now();
+      if (se.currentState != state) {
+        se.priorState = se.currentState;
+        se.currentState = state;
+        se.expiration = expiration;
+        logger.debug("setCurrentState" +
+                     " agent=" + name +
+                     " newState=" + se.currentState +
+                     " priorState=" + se.priorState +
+                     " expiration=" + expiration);
+        if (hasAttribute(se.attrs, "Role", HEALTH_MONITOR)) {
+          electLeader();
+        }
+        queueChangeEvent(
+            new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
+                                           STATE_CHANGE, se));
       }
-      queueChangeEvent(
-        new CommunityStatusChangeEvent(CommunityStatusChangeEvent.STATE_CHANGE, se));
-      }
+    } else {
+      logger.warn("setCurrentState: status entry not found, agent=" + name);
+    }
   }
 
   /**
@@ -411,14 +417,64 @@ public class CommunityStatusModel extends BlackboardClientComponent {
   public void setLocation(String name, String loc) {
     logger.debug("setLocation: agent=" + name + " loc=" + loc);
     StatusEntry se = (StatusEntry)statusMap.get(name);
-    se.timestamp = now();
-    if (se.currentLocation == null || !se.currentLocation.equals(loc)) {
-      se.priorLocation = se.currentLocation;
-      if (thisAgent.equals(se.priorLocation)) {
+    if (se != null) {
+      se.timestamp = now();
+      if (se.currentLocation == null || !se.currentLocation.equals(loc)) {
+        se.priorLocation = se.currentLocation;
+        se.currentLocation = loc;
+        queueChangeEvent(
+            new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
+                                           LOCATION_CHANGE, se));
       }
-      se.currentLocation = loc;
-      queueChangeEvent(
-        new CommunityStatusChangeEvent(CommunityStatusChangeEvent.LOCATION_CHANGE, se));
+    } else {
+      logger.warn("No StatusEntry found: name=" + name);
+    }
+  }
+
+  /**
+   * Sets location and state as a single atomic operation before generating
+   * update events.
+   * @param name
+   * @param loc
+   * @param state
+   */
+  private void setLocationAndState(String name, String loc, int state) {
+    boolean locChange = false;
+    boolean stateChange = false;
+    StatusEntry se = (StatusEntry)statusMap.get(name);
+    se.timestamp = now();
+    if (se != null) {
+      if (se.currentLocation == null || !se.currentLocation.equals(loc)) {
+        locChange = true;
+        se.priorLocation = se.currentLocation;
+        se.currentLocation = loc;
+        logger.debug("setLocation: agent=" + name + " loc=" + loc);
+      }
+      if (se.currentState != state) {
+        stateChange = true;
+        se.priorState = se.currentState;
+        se.currentState = state;
+        logger.debug("setCurrentState" +
+                     " agent=" + name +
+                     " newState=" + se.currentState +
+                     " priorState=" + se.priorState +
+                     " expiration=" + se.expiration);
+        if (hasAttribute(se.attrs, "Role", HEALTH_MONITOR)) {
+          electLeader();
+        }
+      }
+      if (stateChange) {
+        queueChangeEvent(
+            new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
+                                           STATE_CHANGE, se));
+      }
+      if (locChange) {
+        queueChangeEvent(
+            new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
+                                           LOCATION_CHANGE, se));
+      }
+    } else {
+      logger.warn("No StatusEntry found: name=" + name);
     }
   }
 
@@ -477,7 +533,7 @@ public class CommunityStatusModel extends BlackboardClientComponent {
     synchronized (statusMap) {
       communityAttrs = community.getAttributes();
       try {
-        Attribute attr = communityAttrs.get(MANAGER_ROLE);
+        Attribute attr = communityAttrs.get(MANAGER_ATTR);
         if (attr != null)
           setPreferredLeader((String)attr.get());
       } catch (NamingException ne) {}
@@ -539,8 +595,8 @@ public class CommunityStatusModel extends BlackboardClientComponent {
       for (int i = 0; i < as.length; i++) {
         String agentName = as[i].getName();
         if (statusMap.containsKey(agentName)) {
-          setCurrentState(agentName, as[i].getStatus());
           setLocation(agentName, as[i].getLocation());
+          setCurrentState(agentName, as[i].getStatus());
         }
       }
       electLeader();
@@ -754,7 +810,7 @@ public class CommunityStatusModel extends BlackboardClientComponent {
                     " normalState=" + normalState);*/
         if (se != null &&
             se.attrs != null  &&
-            hasAttribute(se.attrs, "Role", "HealthMonitor") &&
+            hasAttribute(se.attrs, "Role", HEALTH_MONITOR) &&
             !isExpired(se) &&
             se.currentState == normalState) {
           candidates.add(se.name);
@@ -867,8 +923,7 @@ public class CommunityStatusModel extends BlackboardClientComponent {
       MessageAddress addr = MessageAddress.getMessageAddress(allAgents[i]);
       if (nodeControlService.getRootContainer().containsAgent(addr)) {
         if (!thisAgent.equals(getLocation(allAgents[i]))) {
-          setLocation(allAgents[i], thisAgent);
-          setCurrentState(allAgents[i], LOCATED);
+          setLocationAndState(allAgents[i], thisAgent, LOCATED);
           logger.debug("Found agent " + allAgents[i] + " at node " + thisAgent);
         }
       }
