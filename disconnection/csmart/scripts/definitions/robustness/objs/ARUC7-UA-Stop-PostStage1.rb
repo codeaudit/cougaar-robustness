@@ -29,7 +29,6 @@ parameters:
 
 include_scripts:
   - script: $CIP/csmart/lib/isat/clearPnLogs.rb
-  - script: $CIP/csmart/lib/coordinator/unleash_defenses.rb 
   - script: $CIP/csmart/lib/robustness/objs/disconnect.rb
     parameters:
       - location: during_stage_1
@@ -37,6 +36,7 @@ include_scripts:
       - planned_disconnect: 12.minutes
       - actual_disconnect: 8.minutes
       - verbose: 1
+  - script: $CIP/csmart/lib/coordinator/unleash_defenses.rb 
 #  - script: $CIP/csmart/lib/isat/save_snapshot.rb
 #    parameters:
 #      - snapshot_name: $CIP/SAVE-Small-PreStage2-AR.tgz
