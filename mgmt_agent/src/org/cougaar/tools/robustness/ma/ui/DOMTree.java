@@ -25,13 +25,14 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import java.util.Hashtable;
+import java.util.*;
 
 /**
  * Displays a DOM document in a tree control.
@@ -63,7 +64,7 @@ public class DOMTree
     /** Sets the document. */
     public void setDocument(Document document) {
         ((Model)getModel()).setDocument(document);
-        expandRow(0);
+        //expandRow(0);
         }
 
     /** Returns the document. */
@@ -74,6 +75,19 @@ public class DOMTree
     /** get the org.w3c.Node for a MutableTreeNode. */
     public Node getNode(Object treeNode) {
         return ((Model)getModel()).getNode(treeNode);
+    }
+
+    /** get all tree nodes and relative tree paths. */
+    public Hashtable getNodesAndPaths() {
+      Hashtable nodes = ((Model)getModel()).nodeMap;
+      Hashtable nodesAndPaths = new Hashtable();
+      for(Iterator it = nodes.keySet().iterator(); it.hasNext();)
+      {
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode)it.next();
+        TreePath path = new TreePath(node.getPath());
+        nodesAndPaths.put(path.toString(), node);
+      }
+      return nodesAndPaths;
     }
 
     //
@@ -98,7 +112,7 @@ public class DOMTree
         /** Document. */
         private Document document;
         /** Node Map. */
-        private Hashtable nodeMap = new Hashtable();
+        public Hashtable nodeMap = new Hashtable();
 
 
         //

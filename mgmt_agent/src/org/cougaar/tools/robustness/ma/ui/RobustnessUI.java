@@ -93,6 +93,12 @@ public class RobustnessUI extends JPanel
   /** Records all expanded paths of exist xml windows. */
   private Hashtable expandedXmlPaths = new Hashtable();
 
+  /** Records all mgmt communities and their mgmt agents. */
+  private Hashtable mgmtAgents = new Hashtable();
+
+  /** xml document of current right clicked element. */
+  private Document tmpXML = null;
+
   public RobustnessUI()
   {
     mainPane = this;
@@ -197,26 +203,6 @@ public class RobustnessUI extends JPanel
     //TreeExpansionListener: save the path into list if expanded, remove the path
     //from the list if collapsed.
     tree.addTreeExpansionListener(new MyTreeExpansionListener(path, null));
-     /* public void treeExpanded(TreeExpansionEvent e) {
-         path.add(e.getPath().toString());
-      }
-      public void treeCollapsed(TreeExpansionEvent e) {
-         String str = e.getPath().toString();
-         int unremove = 0;
-         int size = path.size();
-         for(int i=0; i<size; i++)
-         {
-           if(((String)path.get(unremove)).startsWith(str.substring(0, str.indexOf("]"))))
-           {
-             path.remove(unremove);
-           }
-           else
-           {
-             unremove ++;
-           }
-         }
-      }
-    });*/
     tree.setCellRenderer(new ElementTreeCellRenderer());
     tree.expandRow(1); //expand the root
     final JPopupMenu popup1 = new JPopupMenu();
@@ -231,7 +217,7 @@ public class RobustnessUI extends JPanel
           String parentCommunityOfSelectedHost = (String)((DefaultMutableTreeNode)selectedNode.getParent().getParent()).getUserObject();
           parentCommunityOfSelectedHost = parentCommunityOfSelectedHost.substring(
             parentCommunityOfSelectedHost.indexOf(" "), parentCommunityOfSelectedHost.length()).trim();
-          String mgmtAgent = getMgmtAgentOfCommunity(parentCommunityOfSelectedHost, c);
+          String mgmtAgent = (String)mgmtAgents.get(parentCommunityOfSelectedHost);
           //String selectedHost = (String)selectedNode.getUserObject();
           String selectedHost = ((EntityInfo)selectedNode.getUserObject()).getName();
           publishRequest("vacateHost", selectedHost, mgmtAgent, null);
@@ -260,8 +246,8 @@ public class RobustnessUI extends JPanel
         final String agentName = ei.getName();
         //if(agentName.endsWith(")")) //this agent is under "entities" and contains it's node name
           //agentName = agentName.substring(0, agentName.indexOf("(")).trim();
-        Document doc = (Document)publishRequest("viewXml", agentName, null, null);
-        if(doc != null)
+        //tmpXML = (Document)publishRequest("viewXml", agentName, null, null);
+        if(tmpXML != null)
         {
           JFrame viewer = new JFrame("XML viewer of " + agentName);
           viewer.setSize(500, 400);
@@ -273,7 +259,7 @@ public class RobustnessUI extends JPanel
           mytree.addTreeExpansionListener(new MyTreeExpansionListener(expandedXmlPaths, agentName));
           mytree.setRowHeight(18);
           mytree.setFont(new Font("dialog", Font.PLAIN, 12));
-          mytree.setDocument(doc);
+          mytree.setDocument(tmpXML);
           mytree.expandRow(0);
           JScrollPane tree_sp = new JScrollPane(mytree);
           tree_sp.setBackground(Color.white);
@@ -319,14 +305,18 @@ public class RobustnessUI extends JPanel
                 {
                   popup2.add(viewXML);
                   popup2.add(kill);
-                  try{
+                  //try{
                     String name = ei.getName();
                     //if(name.endsWith(")")) //this agent is under "entities" and contains it's node name
                       //name = name.substring(0, name.indexOf("(")).trim();
-                    Document doc = (Document)publishRequest("viewXml", name, null, null);
-                    doc.getNodeName();
-                    viewXML.setEnabled(true);
-                  }catch(NullPointerException o){viewXML.setEnabled(false);} //health status object is not ready
+                    //Document doc = (Document)publishRequest("viewXml", name, null, null);
+                    tmpXML = fetchXmlFromServlet(name);
+                    //tmpXML.getNodeName();
+                    if(tmpXML != null)
+                      viewXML.setEnabled(true);
+                    else
+                      viewXML.setEnabled(false);
+                  //}catch(NullPointerException o){viewXML.setEnabled(false);} //health status object is not ready
                 }
                 else
                 {
@@ -366,8 +356,12 @@ public class RobustnessUI extends JPanel
       if(dndList.containsKey(name))
         needDNDList = (List)dndList.get(name);
       boolean isMgmtCommunity = false;
-      if(getMgmtAgentOfCommunity(name, table) != null)
+      String mgmtAgent = getMgmtAgentOfCommunity(name, table);
+      if(mgmtAgent != null)
+      {
         isMgmtCommunity = true;
+        mgmtAgents.put(name, mgmtAgent);
+      }
 
       DefaultMutableTreeNode cnode = new DefaultMutableTreeNode("Community: " + name);
       nodes.add(cnode);
@@ -438,34 +432,6 @@ public class RobustnessUI extends JPanel
             ei.setTitle(entityName + "  (" + parentName + ")");
             EntityNode nameNode = new EntityNode(ei);
             nodes.addAll(nameNode.addAttributes(entityAttributes));
-            /*for(NamingEnumeration nes = entityAttributes.getAll(); nes.hasMore();)
-            {
-              try{
-                Attribute attr = (Attribute)nes.next();
-                String str;
-                if(attr.size() == 1)
-                {
-                  str = attr.getID() + " " + (String)attr.get();
-                }
-                else
-                {
-                  str = attr.getID();
-                }
-                DefaultMutableTreeNode nvnode = new DefaultMutableTreeNode(str);
-                if(attr.size() > 1)
-                {
-                  for(NamingEnumeration subattrs = attr.getAll(); subattrs.hasMore();)
-                  {
-                    String subattr = (String)subattrs.next();
-                    DefaultMutableTreeNode subattrNode = new DefaultMutableTreeNode(subattr);
-                    nvnode.add(subattrNode);
-                    nodes.add(subattrNode);
-                  }
-                }
-                nameNode.add(nvnode);
-                nodes.add(nvnode);
-              }catch(NoSuchElementException e){continue;} //in case the attribute doesn't have a value
-            }*/
             nodes.add(nameNode);
             entityNode.add(nameNode);
           }
@@ -509,78 +475,58 @@ public class RobustnessUI extends JPanel
                 nodeNameNode.add(agentNode);
                 nodes.add(nodeNameNode);
               }
-
+              pendingDND(nodeNameNode, agents, needDNDList, needRemoveList, namesAndNodes, nodes);
+            }
+            if(isMgmtCommunity)
+            {
               if(restartHosts.containsKey(hostName)) //add the restart node of restart hosts
               {
-                String restartName = (String)restartHosts.get(hostName);
-                if(!nodeNames.contains(restartName))
-                {
-                  EntityInfo ei = new EntityInfo(restartName, "node", null, isMgmtCommunity);
-                  EntityNode en = new EntityNode(ei);
-                  hostNameNode.add(en);
-                  nodes.add(en);
-                  nodeNames.add(restartName);
-                }
-              }
-
-
-              //for every node, check if this node contains some agents who are already
-              //relocated by user, if yes, remove the agent from the tree. also check if the node
-              //is a target parent of some relocated agents, if yes, add the agent.
-              for(int i=0; i<needDNDList.size(); i++)
-              {
-                String order = Integer.toString(i);
-                EntityNode[] ens = (EntityNode[])needDNDList.get(i);
-                EntityNode sourceNode = ens[0];
-                EntityNode newParentNode = ens[1];
-                EntityInfo sourceInfo = (EntityInfo)sourceNode.getUserObject();
-                String sourceName = sourceInfo.getName();
-                if(sourceInfo.getParent().getName().equals(nodeName) && sourceInfo.getParent().getType()==EntityInfo.NODE)
-                {
-                  //check if the node still contains the agent, if yes, remove it from the tree.
-                  //if no, remove it from the list(which means the agent is relocated by the society).
-                  if(agents.contains(sourceName))
-                  {//System.out.println("Delete agent " + sourceName + " from node " + nodeName);
-                    EntityNode removeNode = (EntityNode)namesAndNodes.get(sourceName);
-                    nodeNameNode.remove(removeNode);
-                    namesAndNodes.remove(sourceName);
-                    nodes.remove(removeNode);
-                  }
-                  else
+                  String restartName = (String)restartHosts.get(hostName);
+                  if(!nodeNames.contains(restartName))
                   {
-                    if(!needRemoveList.contains(order))
-                      needRemoveList.add(order);
+                    EntityInfo ei = new EntityInfo(restartName, "node", null, isMgmtCommunity);
+                    EntityNode en = new EntityNode(ei);
+                    hostNameNode.add(en);
+                    nodes.add(en);
+                    nodeNames.add(restartName);
+                    pendingDND(en, new ArrayList(), needDNDList, needRemoveList, namesAndNodes, nodes);
                   }
-                }
-                EntityInfo targetInfo = (EntityInfo)newParentNode.getUserObject();
-                if(targetInfo.getName().equals(nodeName) && targetInfo.getType() == EntityInfo.NODE)
-                {
-                  if(agents.contains(sourceName))
-                  {
-                    if(!needRemoveList.contains(order))
-                      needRemoveList.add(order);
-                  }
-                  else
-                  {//System.out.println("Add agent " + sourceName + " to node " + nodeName);
-                    EntityNode newen = new EntityNode(sourceInfo);
-                    nodeNameNode.add(newen);
-                    namesAndNodes.put(sourceName, newen);
-                    nodes.add(newen);
-                  }
-                }
               }
             }
 
           }
+
+          //add hosts who have restart nodes but not in this community
+          if(isMgmtCommunity)
+          {
+            for(Enumeration rn_enums = restartHosts.keys(); rn_enums.hasMoreElements();)
+            {
+              String rhost = (String)rn_enums.nextElement();
+              if(!hosts.containsKey(rhost))
+              {
+                EntityInfo rei = new EntityInfo(rhost, "host", null, isMgmtCommunity);
+                EntityNode ren = new EntityNode(rei);
+                EntityInfo rnei = new EntityInfo((String)restartHosts.get(rhost), "node", null, isMgmtCommunity);
+                EntityNode rnen = new EntityNode(rnei);
+                ren.add(rnen);
+                ren.add(rnen);
+                hostNode.add(ren);
+                nodes.add(ren);
+                pendingDND(rnen, new ArrayList(), needDNDList, needRemoveList, namesAndNodes, nodes);
+              }
+            }
+          }
           cnode.add(hostNode);
           nodes.add(hostNode);
         }
+
         Collections.sort(needRemoveList);
         for(int i=needRemoveList.size()-1; i>=0; i--)
         {
           int j = Integer.parseInt((String)needRemoveList.get(i));
           needDNDList.remove(j);//System.out.println("remove from needDNDList: " + j);
         }
+
 
         Hashtable allNodes = (Hashtable)contents.get(3); //all nodes and agents of this community
         if(allNodes.size() > 0)
@@ -611,6 +557,60 @@ public class RobustnessUI extends JPanel
       root.add(cnode);
     }
     return root;
+  }
+
+  /**
+   * Check the given node, if this node contains some agents who are alread
+   * relocated by user, if yes, remove the agent from the tree. also check if the node
+   * is a target parent of some relocated agents, if yes, add the agent.
+   */
+  private void pendingDND(DefaultMutableTreeNode node, List agents, List needDNDList, List needRemoveList,
+    Hashtable namesAndNodes, List nodes)
+  {
+    String nodeName = ((EntityInfo)node.getUserObject()).getName();
+    try{
+      for(int i=0; i<needDNDList.size(); i++)
+      {
+        EntityNode[] ens = (EntityNode[])needDNDList.get(i);
+        EntityNode sourceNode = ens[0];
+        EntityNode newParentNode = ens[1];
+        EntityInfo sourceInfo = (EntityInfo)sourceNode.getUserObject();
+        String sourceName = sourceInfo.getName();
+        if(sourceInfo.getParent().getName().equals(nodeName) && sourceInfo.getParent().getType()==EntityInfo.NODE)
+        {
+          //check if the node still contains the agent, if yes, remove it from the tree.
+          //if no, remove it from the list(which means the agent is relocated by the society).
+          if(agents.contains(sourceName))
+          {//System.out.println("Delete agent " + sourceName + " from node " + nodeName);
+             EntityNode removeNode = (EntityNode)namesAndNodes.get(sourceName);
+             node.remove(removeNode);
+             namesAndNodes.remove(sourceName);
+             nodes.remove(removeNode);
+          }
+          else
+          {
+            if(!needRemoveList.contains(Integer.toString(i)))
+              needRemoveList.add(Integer.toString(i));
+          }
+        }
+        EntityInfo targetInfo = (EntityInfo)newParentNode.getUserObject();
+        if(targetInfo.getName().equals(nodeName) && targetInfo.getType() == EntityInfo.NODE)
+        {
+          if(agents.contains(sourceName))
+          {
+            if(!needRemoveList.contains(Integer.toString(i)))
+              needRemoveList.add(Integer.toString(i));
+          }
+          else
+          {//System.out.println("Add agent " + sourceName + " to node " + nodeName);
+            EntityNode newen = new EntityNode(sourceInfo);
+            node.add(newen);
+            namesAndNodes.put(sourceName, newen);
+            nodes.add(newen);
+          }
+        }
+      }
+    }catch(Exception e){;}
   }
 
   /**
@@ -708,6 +708,12 @@ public class RobustnessUI extends JPanel
       int i=0;
       // If the TestAgent wasn't found, try all agents one by one until find the agent with the servlet
       while (oin == null) {
+       //already checked all agents and no match servlet found.
+       if(i == agents.size())
+       {
+         System.err.println("Can't find robustness servlet.");
+         System.exit(0);
+       }
        try {
         String agent = (String)agents.get(i);
         url1 = new URL("http://" + host + ":" + port + "/$" +
@@ -750,11 +756,12 @@ public class RobustnessUI extends JPanel
       pane.getViewport().setViewPosition(point);
 
     //also refresh all open xml windows
-   /* for(Enumeration enums = agentsWithXml.keys(); enums.hasMoreElements();)
+    for(Enumeration enums = agentsWithXml.keys(); enums.hasMoreElements();)
     {
       String agentName = (String)enums.nextElement();
       JScrollPane xml_sp = (JScrollPane)agentsWithXml.get(agentName);
-      Document doc = (Document)publishRequest("viewXml", agentName, null, null);
+      //Document doc = (Document)publishRequest("viewXml", agentName, null, null);
+      Document doc = fetchXmlFromServlet(agentName);
       if(doc != null)
       {
         ArrayList expandedPaths = (ArrayList)expandedXmlPaths.get(agentName);
@@ -769,14 +776,18 @@ public class RobustnessUI extends JPanel
         mytree.setFont(new Font("dialog", Font.PLAIN, 12));
         mytree.setDocument(doc);
         //mytree.expandRow(1);
+        Hashtable domtreePaths = mytree.getNodesAndPaths();
         for(int i=0; i<temp.size(); i++)
         {
-          mytree.expandPath((TreePath)temp.get(i));
+          String dompath = (String)temp.get(i);
+          DefaultMutableTreeNode node = (DefaultMutableTreeNode)domtreePaths.get(dompath);
+          mytree.scrollPathToVisible(new TreePath(((DefaultMutableTreeNode)node.getFirstChild()).getPath()));
+          ((DefaultTreeModel)mytree.getModel()).reload(node);
         }
-        ((DefaultTreeModel)mytree.getModel()).reload();
+        //((DefaultTreeModel)mytree.getModel()).reload();
         xml_sp.getViewport().add(mytree);
       }
-    }*/
+    }
   }
 
   /**
@@ -839,6 +850,38 @@ public class RobustnessUI extends JPanel
       log.error(e.getMessage());
     }
     return result;
+  }
+
+  private Document fetchXmlFromServlet(String agentName)
+  {
+    Document doc = null;
+    for(Iterator it = mgmtAgents.values().iterator(); it.hasNext();)
+    {
+      String mgmtAgent = (String)it.next();
+      try{
+        URL url = new URL("http://" + host + ":" + port + "/$" + mgmtAgent + "/robustness");
+        HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+        conn.setRequestMethod("PUT");
+        conn.setDoInput(true);
+        conn.setDoOutput(true);
+        OutputStream os = conn.getOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(os);
+        Vector vs = new Vector();
+        vs.add("viewXml");
+        vs.add(agentName);
+        oos.writeObject(vs);
+        oos.close();
+        InputStream is = conn.getInputStream();
+        ObjectInputStream iis = new ObjectInputStream(is);
+        doc = (Document)iis.readObject();
+        if(doc != null)
+          return doc;
+      }catch(Exception e){
+        log.error(e.getMessage());
+      }
+    }
+    log.debug("no health status xml found for: " + agentName);
+    return doc;
   }
 
   /**
@@ -1132,17 +1175,17 @@ public class RobustnessUI extends JPanel
        else
        {
          if(xmlPaths.containsKey(xmlName))
-           ((List)xmlPaths.get(xmlName)).add(e.getPath());
+           ((List)xmlPaths.get(xmlName)).add(e.getPath().toString());
          else
          {
            List temp = new ArrayList();
-           temp.add(e.getPath());
+           temp.add(e.getPath().toString());
            xmlPaths.put(xmlName, temp);
          }
        }
      }
      public void treeCollapsed(TreeExpansionEvent e) {
-       if(xmlName == null)
+      /* if(xmlName == null)
        {
          String str = e.getPath().toString();
          int unremove = 0;
@@ -1162,7 +1205,37 @@ public class RobustnessUI extends JPanel
        else
        {
          List temp = (List)xmlPaths.get(xmlName);
-         temp.remove(e.getPath());
+         temp.remove(e.getPath().toString());
+         if(temp.size() == 0)
+           xmlPaths.remove(xmlName);
+       }*/
+       String str = e.getPath().toString();
+       int size = 0;
+       int unremove = 0;
+       List temp;
+       if(xmlName == null)
+       {
+         size = path.size();
+         temp = path;
+       }
+       else
+       {
+         temp = (List)xmlPaths.get(xmlName);
+         size = temp.size();
+       }
+       for(int i=0; i<size; i++)
+       {
+         if(((String)temp.get(unremove)).startsWith(str.substring(0, str.indexOf("]"))))
+         {
+             temp.remove(unremove);
+         }
+         else
+         {
+             unremove ++;
+         }
+       }
+       if(xmlName != null)
+       {
          if(temp.size() == 0)
            xmlPaths.remove(xmlName);
        }
