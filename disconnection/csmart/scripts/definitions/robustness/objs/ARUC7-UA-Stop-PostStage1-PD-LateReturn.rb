@@ -1,6 +1,6 @@
 =begin experiment
 
-name: ARUC7 
+name: ARUC7-LateReturn 
 description: Adaptive Robustness Use Case #7 (Planned Disconnect) (UA) Stop After Stage1
 script: $CIP/csmart/scripts/definitions/UR-BaselineTemplate-ExtOplan.rb
 parameters:

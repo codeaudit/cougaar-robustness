@@ -1,6 +1,6 @@
 =begin experiment
 
-name: UR-Stage-2-Restore-ARUC7
+name: ACUC7-TimelyReturn-Restore-Stage2
 group: Base
 description: UR-Stage-2 Restore + ARUC7
 script: $CIP/csmart/scripts/definitions/UR-RestoreTemplate.rb

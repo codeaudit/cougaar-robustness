@@ -1,6 +1,6 @@
 =begin experiment
 
-name: UR-Stage-2-Save-ARUC7
+name: ACUC7-Save-preStage2
 group: Save
 description: UR save Stage2 + ARUC7
 script: $CIP/csmart/scripts/definitions/UR-BaselineTemplate-ExtOplan.rb
