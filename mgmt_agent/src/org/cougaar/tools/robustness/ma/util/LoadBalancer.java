@@ -21,6 +21,7 @@ import org.cougaar.tools.robustness.ma.CommunityStatusModel;
 
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorRequest;
 import org.cougaar.tools.robustness.ma.controllers.RobustnessController;
+import org.cougaar.tools.robustness.ma.controllers.DefaultRobustnessController;
 
 import org.cougaar.core.blackboard.BlackboardClientComponent;
 import org.cougaar.core.blackboard.IncrementalSubscription;
@@ -59,13 +60,16 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.util.ConcurrentModificationException;
 
 /**
  * Provides interface for initiating load balancing across community nodes.
  */
-public class LoadBalancer extends BlackboardClientComponent {
+public class LoadBalancer
+    extends BlackboardClientComponent {
 
-  public static final int DEFAULT_SOLVER_MODE = LoadBalanceRequest.SOLVER_MODE_BLEND_PFAIL_LOAD_BALANCE;
+  public static final int DEFAULT_SOLVER_MODE = LoadBalanceRequest.
+      SOLVER_MODE_BLEND_PFAIL_LOAD_BALANCE;
   public static final int DEFAULT_ANNEAL_TIME = -1;
   public static final boolean DEFAULT_HAMMING = true;
 
@@ -77,29 +81,47 @@ public class LoadBalancer extends BlackboardClientComponent {
   private List lbReqQueue = Collections.synchronizedList(new ArrayList());
   private Map myRequests = Collections.synchronizedMap(new HashMap());
 
+  private List newNodes = Collections.synchronizedList(new ArrayList()); //record all new nodes in the community model
+  private List killedNodes = Collections.synchronizedList(new ArrayList()); //record all killed nodes in the community model
+
   // Subscription to HealthMonitorRequests for load balancing
   private IncrementalSubscription healthMonitorRequests;
   private UnaryPredicate healthMonitorRequestPredicate = new UnaryPredicate() {
-    public boolean execute (Object o) {
+    public boolean execute(Object o) {
       if (o instanceof HealthMonitorRequest) {
-        HealthMonitorRequest hmr = (HealthMonitorRequest)o;
+        HealthMonitorRequest hmr = (HealthMonitorRequest) o;
         return (hmr.getRequestType() == hmr.LOAD_BALANCE);
       }
       return false;
-  }};
+    }
+  };
 
   //Subscription to LoadBalanceRequests for load balancing results
   private IncrementalSubscription loadBalanceRequests;
 
-/**
- * Constructor requires BindingSite to initialize needed services.
- * @param bs
- */
-  public LoadBalancer(BindingSite bs, RobustnessController controller, CommunityStatusModel model) {
+  /**
+   * Constructor requires BindingSite to initialize needed services.
+   * @param bs
+   */
+  public LoadBalancer(BindingSite bs, RobustnessController controller,
+                      CommunityStatusModel model) {
     this.setBindingSite(bs);
     this.controller = controller;
     this.moveHelper = controller.getMoveHelper();
     this.model = model;
+    model.addNodeChangeListener(new NodeChangeListener() {
+      public void addNode(String nodeName) {
+        if (!newNodes.contains(nodeName)) {
+          newNodes.add(nodeName);
+        }
+      }
+
+      public void removeNode(String nodeName) {
+        if (!killedNodes.contains(nodeName)) {
+          killedNodes.add(nodeName);
+        }
+      }
+    });
     initialize();
     load();
     start();
@@ -111,16 +133,18 @@ public class LoadBalancer extends BlackboardClientComponent {
   public void load() {
     ServiceBroker sb = getBindingSite().getServiceBroker();
     setAgentIdentificationService(
-      (AgentIdentificationService)sb.getService(this, AgentIdentificationService.class, null));
+        (AgentIdentificationService) sb.getService(this,
+        AgentIdentificationService.class, null));
     setAlarmService(
-      (AlarmService)sb.getService(this, AlarmService.class, null));
+        (AlarmService) sb.getService(this, AlarmService.class, null));
     setSchedulerService(
-      (SchedulerService)sb.getService(this, SchedulerService.class, null));
+        (SchedulerService) sb.getService(this, SchedulerService.class, null));
     setBlackboardService(
-      (BlackboardService)sb.getService(this, BlackboardService.class, null));
-    logger = (LoggingService)sb.getService(this, LoggingService.class, null);
-    logger = org.cougaar.core.logging.LoggingServiceWithPrefix.add(logger, agentId + ": ");
-    uidService = (UIDService)sb.getService(this, UIDService.class, null);
+        (BlackboardService) sb.getService(this, BlackboardService.class, null));
+    logger = (LoggingService) sb.getService(this, LoggingService.class, null);
+    logger = org.cougaar.core.logging.LoggingServiceWithPrefix.add(logger,
+        agentId + ": ");
+    uidService = (UIDService) sb.getService(this, UIDService.class, null);
     super.load();
   }
 
@@ -133,27 +157,33 @@ public class LoadBalancer extends BlackboardClientComponent {
    */
   public void setupSubscriptions() {
     healthMonitorRequests =
-        (IncrementalSubscription)blackboard.subscribe(healthMonitorRequestPredicate);
+        (IncrementalSubscription) blackboard.subscribe(
+        healthMonitorRequestPredicate);
     loadBalanceRequests =
-     (IncrementalSubscription) blackboard.subscribe(new LoadBalanceRequestPredicate(true));
+        (IncrementalSubscription) blackboard.subscribe(new
+        LoadBalanceRequestPredicate(true));
   }
 
   public void execute() {
     // Publish queued LB requests
     pubishLoadBalancerRequests();
 
-    for (Iterator it = healthMonitorRequests.getAddedCollection().iterator(); it.hasNext(); ) {
+    for (Iterator it = healthMonitorRequests.getAddedCollection().iterator();
+         it.hasNext(); ) {
       HealthMonitorRequest hsm = (HealthMonitorRequest) it.next();
       if (hsm.getRequestType() == HealthMonitorRequest.LOAD_BALANCE) {
         doLoadBalance(true,
-                      Collections.EMPTY_LIST,
-                      Collections.EMPTY_LIST,
+                      //Collections.EMPTY_LIST,
+                      getNewNodes(),
+                      //Collections.EMPTY_LIST,
+                      getKilledNodes(),
                       getExcludedNodes());
       }
     }
 
-    for (Iterator it = loadBalanceRequests.getChangedCollection().iterator(); it.hasNext(); ){
-      LoadBalanceRequest lbr = (LoadBalanceRequest)it.next();
+    for (Iterator it = loadBalanceRequests.getChangedCollection().iterator();
+         it.hasNext(); ) {
+      LoadBalanceRequest lbr = (LoadBalanceRequest) it.next();
       if (lbr.isResult()) {
         CougaarSociety society = lbr.getCougaarSociety();
         if (society != null) {
@@ -183,7 +213,9 @@ public class LoadBalancer extends BlackboardClientComponent {
    * @param leaveAsIsNodes
    * @param listener
    */
-  public void doLayout(int annealTime, boolean useHamming, List newNodes, List killedNodes, List leaveAsIsNodes, LoadBalancerListener listener) {
+  public void doLayout(int annealTime, boolean useHamming, List newNodes,
+                       List killedNodes, List leaveAsIsNodes,
+                       LoadBalancerListener listener) {
     UID uid = uidService.nextUID();
     int solverMode = DEFAULT_SOLVER_MODE;
     logger.info("getLayout:" +
@@ -217,18 +249,51 @@ public class LoadBalancer extends BlackboardClientComponent {
     doLoadBalance(DEFAULT_HAMMING, newNodes, killedNodes, leaveAsIsNodes);
   }
 
-  public void doLoadBalance(boolean useHamming, List newNodes, List killedNodes, List leaveAsIsNodes) {
+  public void doLoadBalance(boolean useHamming, List newNodes, List killedNodes,
+                            List leaveAsIsNodes) {
     // submit request to EN plugin and send move requests to moveHelper
     //       upon receipt of EN response
     logger.info("doLoadBalance");
-    doLayout(DEFAULT_ANNEAL_TIME, useHamming, newNodes, killedNodes, leaveAsIsNodes, new LoadBalancerListener() {
+    doLayout(DEFAULT_ANNEAL_TIME, useHamming, newNodes, killedNodes,
+             leaveAsIsNodes, new LoadBalancerListener() {
       public void layoutReady(Map layout) {
         moveAgents(layout);
-      }});
+      }
+    });
   }
 
   protected List getExcludedNodes() {
     return model.search("(UseForRestarts=False)");
+  }
+
+  /**
+   * Get all killed nodes in the community model.
+   * @return List
+   */
+  protected List getKilledNodes() {
+    for (Iterator it = killedNodes.iterator(); it.hasNext(); ) {
+      String nodeName = (String) it.next();
+      if (model.contains(nodeName) &&
+          model.getCurrentState(nodeName) != DefaultRobustnessController.DEAD) {
+        it.remove();
+      }
+    }
+    return killedNodes;
+  }
+
+  /**
+   * Get all new nodes in the community model.
+   * @return List
+   */
+  protected List getNewNodes() {
+    for (Iterator it = newNodes.iterator(); it.hasNext(); ) {
+      String nodeName = (String) it.next();
+      if (model.entitiesAtLocation(nodeName).length > 0 ||
+          model.getCurrentState(nodeName) != DefaultRobustnessController.ACTIVE) {
+        it.remove();
+      }
+    }
+    return newNodes;
   }
 
   protected void fireLater(LoadBalanceRequest lbr) {
@@ -252,7 +317,7 @@ public class LoadBalancer extends BlackboardClientComponent {
       lbReqQueue.clear();
     }
     for (int i = 0; i < n; i++) {
-      blackboard.publishAdd((LoadBalanceRequest) l.get(i));
+      blackboard.publishAdd( (LoadBalanceRequest) l.get(i));
     }
   }
 
@@ -261,28 +326,117 @@ public class LoadBalancer extends BlackboardClientComponent {
     String society = controller.getCompleteStatus();
     int index = society.indexOf("<community name=");
     index = society.indexOf("\"", index);
-    String comm = society.substring(index + 1, society.indexOf("\"", index+1));
-    for(Iterator it = newSociety.getNodes(); it.hasNext(); ) {
-      CougaarNode node = (CougaarNode)it.next();
-      for(Iterator ait = node.getAgents(); ait.hasNext();) {
-        CougaarAgent agent = (CougaarAgent)ait.next();
+    String comm = society.substring(index + 1, society.indexOf("\"", index + 1));
+    for (Iterator it = newSociety.getNodes(); it.hasNext(); ) {
+      CougaarNode node = (CougaarNode) it.next();
+      for (Iterator ait = node.getAgents(); ait.hasNext(); ) {
+        CougaarAgent agent = (CougaarAgent) ait.next();
         layout.put(agent.getName(), node.getName());
       }
     }
     return layout;
   }
 
-  public void moveAgents(Map layout){
+  public void moveAgents(Map layout) {
+
     String communityName = model.getCommunityName();
-    for (Iterator it = layout.entrySet().iterator(); it.hasNext();) {
-      Map.Entry me = (Map.Entry)it.next();
-      String agent = (String)me.getKey();
-      String newNode = (String)me.getValue();
+
+    Map oldnodes = new HashMap(); //save all nodes and the number of agents in each current node
+    Map newnodes = new HashMap(); //save all nodes and the number of agents in each node after balancing
+
+    Map temp = new HashMap();
+    synchronized (layout) {
+      temp.putAll(layout);
+    }
+
+    //remove all agents who don't need move.
+    for (Iterator it = temp.entrySet().iterator(); it.hasNext(); ) {
+      Map.Entry me = (Map.Entry) it.next();
+      String agent = (String) me.getKey();
+      String newNode = (String) me.getValue();
+      increaseCounts(newnodes, newNode);
       String currentNode = model.getLocation(agent);
-      if(!(newNode.equals(currentNode))) {
-        logger.debug("move agent " + agent + " from " + currentNode + " to " + newNode + " in comm " + communityName);
-        moveHelper.moveAgent(agent, currentNode, newNode, communityName);
+      if (currentNode != null) {
+        increaseCounts(oldnodes, currentNode);
+        if (newNode.equals(currentNode)) {
+          it.remove();
+        }
       }
+      else {
+        it.remove();
+      }
+    }
+
+logger.info("oldnodes: " + oldnodes);
+logger.info("newnodes: " + newnodes);
+logger.info("temp: " + temp);
+
+    /**
+     * This loop does the following jobs to keep node balancing during agents moving:
+     * 1. Find the node who has the most number of agents need to be moved out.
+     * 2. Move five agents from the node to destinations.
+     * 3. Repeat step1 to step2 until all agents get destinations.
+     */
+    while (!temp.isEmpty()) {
+      String node = getBiggestDifference(oldnodes, newnodes);
+      int count = 0;
+      for (Iterator it = temp.keySet().iterator(); it.hasNext(); ) {
+        if (count == 5) {
+          break;
+        }
+        String agent = (String) it.next();
+        String newNode = (String) temp.get(agent);
+        String currentNode = model.getLocation(agent);
+        if ( (currentNode.equals(node) && ! (newNode.equals(currentNode))) ||
+            node.equals("")) {
+          logger.debug("move agent " + agent + " from " + currentNode + " to " +
+                       newNode + " in comm " + communityName);
+          moveHelper.moveAgent(agent, currentNode, newNode, communityName);
+          count++;
+          int num = ( (Integer) oldnodes.get(currentNode)).intValue();
+          oldnodes.put(currentNode, new Integer(num - 1));
+          if (oldnodes.containsKey(newNode)) {
+            num = ( (Integer) oldnodes.get(newNode)).intValue();
+            oldnodes.put(newNode, new Integer(num + 1));
+          }
+          else {
+            oldnodes.put(newNode, new Integer(1));
+          }
+          it.remove();
+        }
+      }
+logger.info("after move: oldnodes=" + oldnodes + ", newnodes=" + newnodes);
+    }
+    logger.debug("LoadBalance finished.");
+  }
+
+  /**
+   * Fetch the element who has the most number of difference between the two given maps.
+   */
+  private String getBiggestDifference(Map a, Map b) {
+    int diff = 0;
+    String result = "";
+    for (Iterator it = a.keySet().iterator(); it.hasNext(); ) {
+      String node = (String) it.next();
+      int oldnum = ( (Integer) a.get(node)).intValue(); //how many agents on current node?
+      int newnum = ( (Integer) b.get(node)).intValue(); //how many agents on this node after balancing?
+      int x = oldnum - newnum; //get the difference.
+      if ( (diff == 0 && x != 0) || x > diff) {
+        diff = x;
+        result = node;
+      }
+    }
+logger.info("get current biggest difference: node=" + result + ", difference=" + diff);
+    return result;
+  }
+
+  private void increaseCounts(Map map, String name) {
+    if (map.containsKey(name)) {
+      int num = ( (Integer) map.get(name)).intValue();
+      map.put(name, new Integer(num + 1));
+    }
+    else {
+      map.put(name, new Integer(1));
     }
   }
 

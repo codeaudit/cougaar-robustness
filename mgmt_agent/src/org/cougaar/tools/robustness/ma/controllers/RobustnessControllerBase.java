@@ -703,6 +703,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * Returns a String containing top-level health status of monitored community.
    */
   public String statusSummary() {
+
     String activeNodes[] = model.listEntries(CommunityStatusModel.NODE, getNormalState());
     String agents[] = model.listEntries(CommunityStatusModel.AGENT);
     StringBuffer summary = new StringBuffer("community=" + model.getCommunityName());
@@ -840,7 +841,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
     StringBuffer sb = new StringBuffer();
     sb.append(indent + "<agent name=\"" + agentName + "\" >\n");
     sb.append(indent + "  <status " +
-        " state=\"" + stateName(model.getCurrentState(agentName)) + "\"" +
+        " state=\"" + stateName(getState(agentName)) + "\"" +
         " last=\"" + (now - model.getTimestamp(agentName)) + "\"" +
         " expires=\"" + (expiresAt == NEVER ? "NEVER" : Long.toString(expiresAt)) + "\" />\n");
     String priorLoc = model.getPriorLocation(agentName);
