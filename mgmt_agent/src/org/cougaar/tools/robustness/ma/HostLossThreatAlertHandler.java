@@ -28,7 +28,12 @@ import org.cougaar.tools.robustness.threatalert.*;
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.mts.MessageAddress;
 
+import org.cougaar.core.service.community.CommunityService;
+
 import java.util.*;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.BasicAttribute;
 
 /**
  * ThreatAlert handler to respond to threats of imminent loss of a host
@@ -57,33 +62,89 @@ public class HostLossThreatAlertHandler extends ThreatAlertHandlerBase {
     if (ta instanceof HostLossThreatAlert) {
       logger.info("Received HostLossThreatAlert: " + ta);
       if (agentId.toString().equals(preferredLeader())) {
-        Set nodes = new HashSet();
-        if (ta.getSeverityLevel() >= ThreatAlert.MEDIUM_SEVERITY) {
-          Asset affectedAssets[] = ta.getAffectedAssets();
-          for (int i = 0; i < affectedAssets.length; i++) {
-            String type = affectedAssets[i].getAssetType();
-            String id = affectedAssets[i].getAssetIdentifier();
-            if (type != null && type.equalsIgnoreCase("Node") &&
-                model.contains(id)) {
-              nodes.add(id);
-            } else if (type != null && type.equalsIgnoreCase("Host")) {
-              // find nodes on host
-            }
+        Set affectedNodes = new HashSet();
+        Set affectedAgents = new HashSet();
+        Set nodesAndHosts = new HashSet();
+        Asset affectedAssets[] = ta.getAffectedAssets();
+        for (int i = 0; i < affectedAssets.length; i++) {
+          String type = affectedAssets[i].getAssetType();
+          String id = affectedAssets[i].getAssetIdentifier();
+          if (type != null &&
+              (type.equalsIgnoreCase("Node") || type.equalsIgnoreCase("Node"))) {
+            nodesAndHosts.add(id);
           }
-          if (!nodes.isEmpty()) {
-            vacateNodes(nodes);
+         if (!nodesAndHosts.isEmpty()) {
+            affectedNodes.addAll(resolveNodes(nodesAndHosts));
+            affectedAgents.addAll(affectedAgents(affectedNodes));
           }
         }
+        if (ta.getSeverityLevel() >= ThreatAlert.MEDIUM_SEVERITY) {
+          vacate(affectedAgents, affectedNodes);
+        }
+        adjustParameters(ta, affectedAgents);
       }
     }
   }
 
-  private void vacateNodes(final Set nodesToVacate) {
-    final Set agentsToMove = Collections.synchronizedSet(new HashSet());
+  /**
+   * Returns a Set of agent names residing on specified nodes.
+   * @param locations  Node names
+   * @return           Set of agent names
+   */
+  protected Set affectedAgents(Set nodes) {
+    Set affectedAgents = new HashSet();
+    for (Iterator it = nodes.iterator(); it.hasNext();) {
+      String node = (String)it.next();
+      affectedAgents.addAll(agentsOnNode(node));
+    }
+    return affectedAgents;
+  }
+
+  /**
+   * Returns a Set of node names from a set of node and/or host names.
+   * @param locations  Set of host and/or node names
+   * @return           Node names
+   */
+  private Set resolveNodes(Set locations) {
+    Set nodes = new HashSet();
+    for (Iterator it = locations.iterator(); it.hasNext();) {
+      String location = (String)it.next();
+      if (model.getType(location) == model.NODE) {
+        nodes.add(location);
+      } else {  // Host
+        String nodeNames[] = model.entitiesAtLocation(location);
+        for (int i = 0; i < nodeNames.length; i++) {
+          nodes.add(nodeNames[i]);
+        }
+      }
+    }
+    return nodes;
+  }
+
+  /**
+   * Returns a Set of all agents on specified node.
+   * @param nodeName
+   * @return   Set of agent names
+   */
+  private Set agentsOnNode(String nodeName) {
+    Set agents = new HashSet();
+    String[] agentsOnNode = model.entitiesAtLocation(nodeName);
+    for (int i = 0; i < agentsOnNode.length; i++) {
+      agents.add(agentsOnNode[i]);
+    }
+    return agents;
+  }
+
+  /**
+   * Move specified agents to new locations.
+   * @param agentsToMove
+   * @param nodesToVacate
+   */
+  private void vacate(final Set agentsToMove, final Set nodesToVacate) {
     logger.info("Vacating nodes: " + nodesToVacate);
     for (Iterator it = nodesToVacate.iterator(); it.hasNext(); ) {
       String nodeName = (String) it.next();
-      String agentsOnNode[] = model.agentsOnNode(nodeName);
+      String agentsOnNode[] = model.entitiesAtLocation(nodeName);
       for (int i = 0; i < agentsOnNode.length; i++) {
         agentsToMove.add(agentsOnNode[i]);
       }
@@ -117,7 +178,24 @@ public class HostLossThreatAlertHandler extends ThreatAlertHandlerBase {
     }
   }
 
-  public String preferredLeader() {
+  /**
+   * Adjust key robustness parameters based on new threat level.
+   * @param ta
+   */
+  protected void adjustParameters(ThreatAlert ta, Set affectedAgents) {
+    logger.info("Adjusting robustness parameters: threatLevel=" + ta.getSeverityLevelAsString());
+    CommunityService cs =
+        (CommunityService) bindingSite.getServiceBroker().getService(this, CommunityService.class, null);
+    Attributes attrs = cs.getCommunityAttributes(model.getCommunityName());
+    Attribute intervalAttr = attrs.get("UPDATE_INTERVAL");
+    if (intervalAttr == null) {
+      attrs.remove("UPDATE_INTERVAL");
+    }
+    attrs.put(new BasicAttribute("UPDATE_INTERVAL", "15000"));
+    cs.setCommunityAttributes(model.getCommunityName(), attrs);
+  }
+
+  protected String preferredLeader() {
     return model.getStringAttribute(model.MANAGER_ATTR);
   }
 
