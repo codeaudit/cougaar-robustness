@@ -264,6 +264,9 @@ public class LoadBalancer
     doLayout(solverMode, annealTime, useHamming, newNodes, killedNodes,
              leaveAsIsNodes, new LoadBalancerListener() {
       public void layoutReady(Map layout) {
+        if (logger.isInfoEnabled()) {
+          logger.info("layout from EN4J: " + layout);
+        }
         moveAgents(layout);
       }
     });
@@ -363,7 +366,7 @@ public class LoadBalancer
       String newNode = (String) me.getValue();
       increaseCounts(newnodes, newNode);
       String currentNode = model.getLocation(agent);
-      if (currentNode != null) {
+      if (model.getType(agent) == model.AGENT && currentNode != null) {
         increaseCounts(oldnodes, currentNode);
         if (newNode.equals(currentNode)) {
           it.remove();
@@ -400,12 +403,12 @@ public class LoadBalancer
         String agent = (String) it.next();
         String newNode = (String) temp.get(agent);
         String currentNode = model.getLocation(agent);
-        if ( (currentNode.equals(node) && ! (newNode.equals(currentNode))) ||
+        if ((currentNode.equals(node) && ! (newNode.equals(currentNode))) ||
             node.equals("") || checkDiffCount >= nodeSize) {
-          if (logger.isDebugEnabled()) {
-            logger.debug("move agent " + agent + " from " + currentNode +
+          if (logger.isInfoEnabled()) {
+            logger.info("move agent " + agent + " from " + currentNode +
                          " to " +
-                         newNode + " in comm " + communityName);
+                         newNode + " in community " + communityName);
           }
           moveHelper.moveAgent(agent, currentNode, newNode, communityName);
           count++;
@@ -415,16 +418,15 @@ public class LoadBalancer
           if (oldnodes.containsKey(newNode)) {
             num = ( (Integer) oldnodes.get(newNode)).intValue();
             oldnodes.put(newNode, new Integer(num + 1));
-          }
-          else {
+          } else {
             oldnodes.put(newNode, new Integer(1));
           }
           it.remove();
         }
       }
     }
-    if (logger.isDebugEnabled()) {
-      logger.debug("LoadBalance finished.");
+    if (logger.isInfoEnabled()) {
+      logger.info("LoadBalance finished.");
     }
   }
 
