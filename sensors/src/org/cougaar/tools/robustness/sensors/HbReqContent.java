@@ -108,6 +108,9 @@ public final class HbReqContent implements java.io.Serializable {
     this.hbTimeout = hbTimeout; 
   }
 
+  /**
+  * Returns a String represention for this object.
+  */
   public String toString() {
     return "(HbReqContent:\n" +
            "    heartbeatRequestUID = " + heartbeatRequestUID + "\n" +

@@ -35,6 +35,9 @@ import org.cougaar.core.mts.MessageAddress;
 public class SensorFactory implements org.cougaar.core.domain.Factory {
   UIDServer myUIDServer;
 
+  /**
+   * Constructor
+   **/
   public SensorFactory(LDMServesPlugin ldm) {
     //RootFactory rf = ldm.getFactory();
     myUIDServer = ldm.getUIDServer();
@@ -72,14 +75,18 @@ public class SensorFactory implements org.cougaar.core.domain.Factory {
                                               MessageAddress target, 
                                               long reqTimeout,
                                               long hbFrequency,
-                                              long hbTimeout) {
+                                              long hbTimeout,
+                                              boolean onlyOutOfSpec,
+                                              float percentOutOfSpec) {
     UID uid = myUIDServer.nextUID();
     HeartbeatRequest req = new HeartbeatRequest(uid, 
                                                 source,
                                                 target,
                                                 reqTimeout,
                                                 hbFrequency,
-                                                hbTimeout);
+                                                hbTimeout,
+                                                onlyOutOfSpec,
+                                                percentOutOfSpec);
     return req;
   }
 

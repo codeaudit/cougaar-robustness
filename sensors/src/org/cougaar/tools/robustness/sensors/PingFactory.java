@@ -37,6 +37,9 @@ import org.cougaar.core.mts.MessageAddress;
 public class PingFactory implements org.cougaar.core.domain.Factory {
   UIDServer myUIDServer;
 
+  /**
+   * Constructor
+   **/
   public PingFactory(LDMServesPlugin ldm) {
     //RootFactory rf = ldm.getFactory();
     myUIDServer = ldm.getUIDServer();

@@ -45,6 +45,8 @@ public class HeartbeatRequest implements UniqueObject
   private long reqTimeout;  // milliseconds
   private long hbFrequency;  // milliseconds
   private long hbTimeout;  // milliseconds
+  private boolean onlyOutOfSpec; 
+  private float percentOutOfSpec; 
   private int status;
   private Date timeSent;
   private Date timeReceived;
@@ -105,19 +107,27 @@ public class HeartbeatRequest implements UniqueObject
    * @param reqTimeout Request timeout in milliseconds
    * @param hbFrequency Heartbeat frequency in milliseconds
    * @param hbTimeout Heartbeat timeout in milliseconds
+   * @param onlyOutOfSpec only report if heartbeat is late,
+   * as specified by hbFrequency
+   * @param percentOutOfSpec only report when heartbeat is 
+   * this much later than specified by hbFrequency
    */
   public HeartbeatRequest(UID uid, 
                           MessageAddress source, 
                           MessageAddress target, 
                           long reqTimeout, 
                           long hbFrequency, 
-                          long hbTimeout) {
+                          long hbTimeout,
+                          boolean onlyOutOfSpec,
+                          float percentOutOfSpec) {
     this.uid = uid;
     this.source = source;
     this.target = target;
     this.reqTimeout = reqTimeout;
     this.hbFrequency = hbFrequency;
     this.hbTimeout = hbTimeout;
+    this.onlyOutOfSpec = onlyOutOfSpec;
+    this.percentOutOfSpec = percentOutOfSpec;
     this.status = NEW; 
   }
 
@@ -198,6 +208,35 @@ public class HeartbeatRequest implements UniqueObject
   }
 
   /**
+  * Returns true when only late heartbeats, as 
+  * specified by hbFrequency, should be reported.
+  */
+  public boolean getOnlyOutOfSpec() { return onlyOutOfSpec; }
+
+  /**
+  * Set to true if only late heartbeats, as 
+  * specified by hbFrequency, should be reported.
+  * Else, all heartbeats will be reported.
+  */
+  public void setOnlyOutOfSpec(boolean onlyOutOfSpec) {
+    this.onlyOutOfSpec = onlyOutOfSpec; 
+  }
+
+  /**
+  * Get percentage late, as specified by hbFrequency, 
+  * heartbeats can be before they are reported.
+  */
+  public float getPercentOutOfSpec() { return percentOutOfSpec; }
+
+  /**
+  * Set percentage late, as specified by hbFrequency, 
+  * heartbeats can be before they are reported.
+  */
+  public void setPercentOutOfSpec(float percentOutOfSpec) {
+    this.percentOutOfSpec = percentOutOfSpec; 
+  }
+
+  /**
   * Get the status of the request 
   */
   public int getStatus() { return status; }
@@ -267,6 +306,8 @@ public class HeartbeatRequest implements UniqueObject
            "    reqTimeout = " + reqTimeout + "\n" +
            "    hbFrequency = " + hbFrequency + "\n" +
            "    hbTimeout = " + hbTimeout + "\n" +
+           "    onlyOutOfSpec = " + onlyOutOfSpec + "\n" +
+           "    percentOutOfSpec = " + percentOutOfSpec + "\n" +
            "    status = " + statusToString(status) + "\n" +
            "    timeSent = " + timeSent + "\n" +
            "    timeReceived = " + timeReceived + "\n" +

@@ -30,6 +30,9 @@ import org.cougaar.tools.manager.ldm.report.HealthReportAdapter;
 public class HeartbeatHealthReport extends HealthReportAdapter {
   private HeartbeatEntry [] heartbeats;
 
+  /**
+   * Default constructor.
+   **/
   public HeartbeatHealthReport() {
   }
 
