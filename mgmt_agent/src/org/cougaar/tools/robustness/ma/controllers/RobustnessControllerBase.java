@@ -48,9 +48,6 @@ import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.SchedulerService;
 
-import org.cougaar.core.service.wp.WhitePagesService;
-import org.cougaar.core.service.wp.AddressEntry;
-
 import org.cougaar.core.service.community.Community;
 import org.cougaar.core.service.community.CommunityService;
 import org.cougaar.core.service.community.CommunityResponse;
@@ -112,8 +109,6 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
   protected LoggingService logger;
   protected EventService eventService;
   protected StatCalc pingStats = new StatCalc();
-  //private BindingSite bindingSite;
-  private WhitePagesService wps;
 
   // Status model containing current information about monitored community
   protected CommunityStatusModel model;
@@ -133,7 +128,6 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
       (LoggingService)getServiceBroker().getService(this, LoggingService.class, null);
     logger = org.cougaar.core.logging.LoggingServiceWithPrefix.add(logger, agentId + ": ");
     eventService = (EventService) bs.getServiceBroker().getService(this, EventService.class, null);
-    wps = (WhitePagesService)bs.getServiceBroker().getService(this, WhitePagesService.class, null);
     heartbeatHelper = new HeartbeatHelper(bs);
     moveHelper = new MoveHelper(bs);
     pingHelper = new PingHelper(bs);
@@ -951,23 +945,6 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
                             crl);
       }
     }
-  }
-
-  protected boolean isSingleNode(String name) {
-    try{
-      //get my host
-      AddressEntry ae = wps.get(name, "topology", 5);
-      String myhost = ae.getURI().getHost();
-
-      String activeNodes[] = model.listEntries(CommunityStatusModel.NODE, getNormalState());
-      if(activeNodes.length == 1) return true;
-      for(int i=0; i<activeNodes.length; i++) {
-        ae = wps.get(activeNodes[i], "topology", 5);
-        if(!(ae.getURI().getHost().equals(myhost)))
-          return false;
-      }
-    }catch(Exception e){logger.error(e.getMessage());}
-    return true;
   }
 
   /**

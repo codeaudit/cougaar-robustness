@@ -65,6 +65,14 @@ public interface RestartManagerConstants {
   public static final long HEARTBEAT_TIMEOUT = 2 * 60 * 1000;
   public static final long HEARTBEAT_PCT_OUT_OF_SPEC = 80;
 
+  // Defines constants used to increase ping timeout based on cpu load
+  // of destination.  The MAX_CPU_LOAD_FOR_ADJUSTMENT constant defines
+  // the upper range of cpu loads used to calculate the scaling
+  // coefficient.  The MAX_CPU_LOAD_SCALING defines the maximum
+  // value of the coefficient.
+  public static final double MAX_CPU_LOAD_FOR_ADJUSTMENT = 8.0;
+  public static final double MAX_CPU_LOAD_SCALING = 3.0;
+
   // Metrics used
   public static final String LOAD_AVERAGE_METRIC = "LoadAverage";
 

@@ -81,22 +81,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       }
     }
 
-    private boolean doInitialPing() {
-      if (model != null) {
-        String attrVal = model.getAttribute("DO_INITIAL_PING");
-        return (attrVal == null || attrVal.equalsIgnoreCase("True"));
-      }
-      return true;
-    }
-
-    private boolean monitorStartup() {
-      if (model != null) {
-        String attrVal = model.getAttribute("MONITOR_STARTUP");
-        return (attrVal != null && attrVal.equalsIgnoreCase("True"));
-      }
-      return false;
-    }
-
     public void expired(String name) {
       logger.info("Expired Status:" + " agent=" + name + " state=INITIAL" +
                   " expiration=" + model.getStateExpiration(name));
@@ -312,7 +296,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     public void enter(String name) {
       if (isAgent(name) && canRestartAgent(name)) {
         String dest = RestartDestinationLocator.getRestartLocation(name, getExcludedNodes());
-        logger.info("Restart agent:" +
+        logger.info("Restarting agent:" +
                     " agent=" + name +
                     " origin=" + getLocation(name) +
                     " dest=" + dest);
@@ -457,7 +441,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         //getDeconflictHelper().test();
         newState(name, HEALTH_CHECK);
     }
-    public void defenseOpModeEnabled(String name){
+    public void defenseOpModeEnabled(String name) {
       //if (getState(name) == DEAD) {
         if (getDeconflictHelper() != null &&
             !getDeconflictHelper().isDefenseApplicable(name)) {
@@ -556,7 +540,12 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         communityReady == false &&
         agentsAndLocationsActive()) {
       communityReady = true;
-      startupCompleted = true;
+      if (!startupCompleted) {
+        startupCompleted = true;
+        if (doInitialPing()) {
+          pingAll();
+        }
+      }
       event("Community " + model.getCommunityName() + " Ready");
       RestartDestinationLocator.clearRestarts();
     }
@@ -624,12 +613,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   public void leaderChange(String priorLeader, String newLeader) {
     logger.info("LeaderChange: prior=" + priorLeader + " new=" + newLeader);
     if (isLeader(thisAgent) && model.getCurrentState(preferredLeader()) == DEAD) {
-      if(!isSingleNode(thisAgent)) {
-        logger.info("Restarting preferred leader");
-        newState(preferredLeader(), RESTART);
-      }else {
-        logger.debug("This node is the only active node, don't restart the leader");
-      }
     }
     checkCommunityReady();
   }
@@ -658,6 +641,29 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
   public String preferredLeader() {
     return model.getStringAttribute(model.MANAGER_ATTR);
+  }
+
+  private boolean doInitialPing() {
+    if (model != null) {
+      String attrVal = model.getAttribute("DO_INITIAL_PING");
+      return (attrVal == null || attrVal.equalsIgnoreCase("True"));
+    }
+    return true;
+  }
+
+  private boolean monitorStartup() {
+    if (model != null) {
+      String attrVal = model.getAttribute("MONITOR_STARTUP");
+      return (attrVal != null && attrVal.equalsIgnoreCase("True"));
+    }
+    return false;
+  }
+
+  protected void pingAll() {
+    String agents[] = model.listEntries(model.AGENT, DefaultRobustnessController.ACTIVE);
+    for (int i = 0; i < agents.length; i++) {
+      doPing(agents[i], DefaultRobustnessController.ACTIVE, DEAD);
+    }
   }
 
   /**
@@ -696,12 +702,27 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   }
 
   protected long calcPingTimeout(String name) {
+    double nodeLoadCoefficient = 1.0;
     String node = model.getLocation(name);
     double nodeLoad = getNodeLoadAverage(node);
-    nodeLoad = (nodeLoad > 0) ? 1.0 + nodeLoad/2 : 1.0;
+    if (nodeLoad > 0) {
+      nodeLoad = (nodeLoad > MAX_CPU_LOAD_FOR_ADJUSTMENT)
+                 ? MAX_CPU_LOAD_FOR_ADJUSTMENT
+                 : nodeLoad;
+      nodeLoadCoefficient = 1.0 +
+          (nodeLoad/MAX_CPU_LOAD_FOR_ADJUSTMENT * (MAX_CPU_LOAD_SCALING - 1.0));
+    }
     double pingAdjustment = getDoubleAttribute(name, PING_ADJUSTMENT, 1.0);
     long pingTimeout = getLongAttribute(name, "PING_TIMEOUT", PING_TIMEOUT);
-    return (long)(pingTimeout * nodeLoad * pingAdjustment);
+    long result = (long)(pingTimeout * nodeLoadCoefficient * pingAdjustment);
+    logger.debug("calcPingTimeout:" +
+                " agent=" + name +
+                " baseTimeout=" + pingTimeout +
+                " nodeLoadCoefficient=" + nodeLoadCoefficient +
+                " pingAdjust=" + pingAdjustment +
+                " result=" + result);
+
+    return result;
   }
 
   protected Set getExcludedNodes() {
