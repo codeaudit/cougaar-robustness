@@ -108,6 +108,7 @@ public class MoveHelper extends BlackboardClientComponent {
   private MessageAddress nodeId;
 
   private CommunityStatusModel model;
+  protected RestartDestinationLocator restartLocator;
 
   // Subscription to AgentControl objects used by MobilityService
   private IncrementalSubscription agentControlSub;
@@ -137,9 +138,10 @@ public class MoveHelper extends BlackboardClientComponent {
  * Constructor requires BindingSite to initialize needed services.
  * @param bs
  */
-  public MoveHelper(BindingSite bs, CommunityStatusModel model) {
+  public MoveHelper(BindingSite bs, CommunityStatusModel model, RestartDestinationLocator rdl) {
     this.setBindingSite(bs);
     this.model = model;
+    this.restartLocator = rdl;
     initialize();
     load();
     start();
@@ -219,7 +221,7 @@ public class MoveHelper extends BlackboardClientComponent {
           if (dest.equals("") || dest == null) {
             HashSet set = new HashSet();
             set.add(hsm.getOriginNode());
-            dest = RestartDestinationLocator.getRestartLocation(agentNames[i], set);
+            dest = restartLocator.getRestartLocation(agentNames[i], set);
           }
           if (orig.equals(nodeId.getAddress()))
             moveAgent(agentNames[i], dest);
