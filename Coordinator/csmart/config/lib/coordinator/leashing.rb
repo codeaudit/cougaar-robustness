@@ -2,14 +2,14 @@
 module Cougaar
 
   module Actions
-    class UnleashDefenses < Cougaar::Action
+    class Unleash < Cougaar::Action
       PRIOR_STATES = []
       DOCUMENTATION = Cougaar.document {
         @description = "Allow Defenses to run normally."
         @parameters = [
 	    {:messaging => "0 is no messages (the default), 1 is normal messages, 2 is verbose."}
         ]
-        @example = "do_action 'UnleashDefenses'" 
+        @example = "do_action 'Unleash'" 
 	}
     
       def initialize(run, messaging=0)
@@ -21,25 +21,25 @@ module Cougaar
         @run.society.each_agent do |agent|
           #@run.info_message "Agent found #{agent.name}"
           if agent.name =~ /.*ARManager.*/
-	    @run.info_message "UnleashDefenses found #{agent.name}" if @messaging >= 2
+	    @run.info_message "Unleash found #{agent.name}" if @messaging >= 2
             url = "#{agent.uri}/LeashDefenses?UnleashDefenses=UnleashDefenses"
 	    response, uri = Cougaar::Communications::HTTP.get(url)
             raise "Could not connect to #{url}" unless response
-            Cougaar.logger.info "UnleashedDefenses by calling #{agent.name}"
+            Cougaar.logger.info "Unleashed Defenses by calling #{agent.name}"
 	  end
         end
       end
 
     end
 
-    class MonitorUnleashConfirmed < Cougaar::Action
+    class MonitorUnleash < Cougaar::Action
       PRIOR_STATES = ["SocietyLoaded"]
       DOCUMENTATION = Cougaar.document {
         @description = "Print event when Defenses have been Unleashed by Robustness Manager."
         @parameters = [
 	    {:messaging => "0 is no messages (the default), 1 is normal messages, 2 is verbose."}
         ]
-        @example = "do_action 'MonitorUnleashConfirmed'"
+        @example = "do_action 'MonitorUnleash'"
 	}
       def initialize(run, messaging=0)
         super(run)
@@ -56,12 +56,12 @@ module Cougaar
       end
     end
 
-    class NotifyRestart <  Cougaar::Action
+    class LeashOnRestart <  Cougaar::Action
       DOCUMENTATION = Cougaar.document {
         @description = "Leash defenses when restarting, intended to be used when restarting a full society from persistence."
         @parameters = [
         ]
-        @example = "do_action 'NotifyRestart'"
+        @example = "do_action 'LeashOnRestart'"
       }
 
       def initialize(run)
@@ -73,8 +73,8 @@ module Cougaar
           if node.has_facet?("role")
             node.each_facet("role") do |facet|
               if facet["role"] == "AR-Management"
-                node.replace_parameter(/Dorg.cougaar.tools.robustness.deconfliction.leashOnRestart/, 
-                                       "-Dorg.cougaar.tools.robustness.deconfliction.leashOnRestart=true")
+                node.replace_parameter(/Dorg.cougaar.coordinator.leashOnRestart/, 
+                                       "-Dorg.cougaar.coordinator.leashOnRestart=true")
               end
             end
           end

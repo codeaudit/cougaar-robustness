@@ -11,5 +11,5 @@ $:.unshift File.join(CIP, 'csmart', 'config', 'lib')
 require 'coordinator/leashing'
 
 insert_after :society_running do
-  do_action "UnleashDefenses"
+  do_action "Unleash"
 end
