@@ -71,6 +71,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
     public static final String CALC_METHOD = "SIMPLE";
     public CostBenefitKnob knob;
+    public Hashtable activeCBEs = new Hashtable();
 
     /**
       * Creates a new instance of CostBenefitPlugin
@@ -102,6 +103,16 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
             knob = (CostBenefitKnob) iter.next();
         }
 
+
+        // Handle the removal (by completion) of old CBEs
+        iter = cbeSubscription.getRemovedCollection().iterator;
+        while (iter.hasNext()) {
+            // no longer processing, so remove from hashtable so we will process new SEs on this asset
+            CostBenefitEvaluation cbe = (CostBenefitEvaluation) iter.next();
+            AssetID assetID = cbe.getAssetID();
+            activeCBEs.remove(assetID);
+        }
+
         //Handle the addition of new StateEstimations
         iter = stateEstimationSubscription.getAddedCollection().iterator();
         while(iter.hasNext())
@@ -110,13 +121,14 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
             if (logger.isInfoEnabled()) logger.info(se.toString());
 
             // If there is an existing CBE, ignore this SE, because otherwise we might oveerrun the selection process
-            CostBenefitEvaluation old_cbe = findCostBenefitEvaluation(se.getAssetID());
+            CostBenefitEvaluation old_cbe = activeCBEs(se.getAssetID());
             if (old_cbe == null) {
             	CostBenefitEvaluation cbe = createCostBenefitEvaluation(se, knob);
             	if (logger.isInfoEnabled()) logger.info("CostBenefitEvaluation created: "+cbe.toString());
             	publishAdd(cbe);
-			}
-			else if (logger.isInfoEnabled()) logger.info("Discarding SE for: " + se.getAssetID() + " still processng last one.");
+                activeCBEs.put(cbe.getAssetID(), cbe);
+                }
+		else if (logger.isInfoEnabled()) logger.info("Discarding SE for: " + se.getAssetID() + " still processng last one.");
         }
     }
 
@@ -127,6 +139,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
         super.setupSubscriptions();
         stateEstimationSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(StateEstimation.pred);
         knobSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(CostBenefitKnob.pred);
+        cbeSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(CostBenefitEvaluation.pred);
         publishAdd(knob);
     }
 
