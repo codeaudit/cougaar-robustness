@@ -19,6 +19,8 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 08 Jul 2003: Switched to getReverseDelegate for compatibility with 
+ *              Security's MessageProtectionAspectImpl. (B10_4_1)
  * 10 May 2002: Created. (OBJS)
  */
 
@@ -31,7 +33,8 @@ import java.util.*;
 
 /**
  **  Enforce message ordering on incoming messages based on the message 
- **  number contained in the message number attribute.
+ **  number contained in the message number attribute. (Must be placed
+ **  in aspect list before MessageProtectionAspectImpl.)
  **/
 
 public class MessageOrderingAspect extends StandardAspect
@@ -60,8 +63,8 @@ public class MessageOrderingAspect extends StandardAspect
     super.load();
     log = loggingService;
   }
-
-  public Object getDelegate (Object delegate, Class type) 
+  
+  public Object getReverseDelegate (Object delegate, Class type)   //B10_4_1 
   {
     if (type == ReceiveLink.class) return (new Link ((ReceiveLink) delegate));
     return null;
@@ -263,12 +266,15 @@ public class MessageOrderingAspect extends StandardAspect
       AgentID fromAgent = MessageUtils.getFromAgent (msg);
       String key = fromAgent.getNumberSequenceKey();
       Int n = (Int) agentTable.get (key);
-      if (n != null) return n.value;
-
-      //  Positive message numbers start at 1
-
-      setNextMessageNumber (msg, 1);
-      return 1;
+      if (n != null) {
+	  //if (log.isDebugEnabled()) log.debug("getNextMessageNumber("+MessageUtils.toString(msg)+") = "+n.value);
+	  return n.value;
+      } else {
+	  //  Positive message numbers start at 1
+	  setNextMessageNumber(msg, 1);
+          //if (log.isDebugEnabled()) log.debug("getNextMessageNumber("+MessageUtils.toString(msg)+") = 1");
+	  return 1;
+      }
     }
   }
 
@@ -283,6 +289,7 @@ public class MessageOrderingAspect extends StandardAspect
       AgentID fromAgent = MessageUtils.getFromAgent (msg);
       String key = fromAgent.getNumberSequenceKey();
       Int n = (Int) agentTable.get (key);
+      //if (log.isDebugEnabled()) log.debug("setNextMessageNumber("+MessageUtils.toString(msg)+","+msgNum+")");
       if (n == null) agentTable.put (key, new Int (msgNum));
       else n.value = msgNum;
     }

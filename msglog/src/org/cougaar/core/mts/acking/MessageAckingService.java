@@ -26,9 +26,22 @@ import org.cougaar.core.component.Service;
 
 public interface MessageAckingService extends Service
 {
-  public void handleMessagesToRestartedAgent(AgentID localAgent,
-                                      AgentID oldRestartedAgent,
-                                      AgentID newRestartedAgent) 
-      throws org.cougaar.core.mts.NameLookupException, org.cougaar.core.mts.CommFailureException;
+    /*
+     * Retarget messages queued for an agent that has since restarted.
+     */
+    public void handleMessagesToRestartedAgent(AgentID localAgent,
+					       AgentID oldRestartedAgent,
+					       AgentID newRestartedAgent) 
+	throws org.cougaar.core.mts.NameLookupException, org.cougaar.core.mts.CommFailureException;
+    
+    /*
+     * Hold (don't resend) any messages to this address until released.
+     */
+    public void hold (MessageAddress addr);
+    
+    /*
+     * Release (for possible resend) any messages to this address that are on hold.
+     */
+    public void release (MessageAddress addr);
 }
 

@@ -89,7 +89,7 @@ public class MessageAckingAspect extends StandardAspect
     isAckingOn = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
 
     s = "org.cougaar.message.transport.aspects.acking.excludedLinks";
-    String defaultList = "org.cougaar.core.mts.RMILinkProtocol";  // comma separated list
+    String defaultList = "org.cougaar.core.mts.RMILinkProtocol,org.cougaar.core.mts.SSLRMILinkProtocol";  // comma separated list
     excludedLinks = System.getProperty (s, defaultList);
 
     s = "org.cougaar.message.transport.aspects.acking.resendMultiplier";
@@ -183,9 +183,13 @@ public class MessageAckingAspect extends StandardAspect
       }
   } 
 
-  private class Impl implements MessageAckingService {
-      Impl() {
-      }
+  private class Impl implements MessageAckingService 
+  {
+      Impl() {}
+
+      /*
+       * Retarget messages queued for an agent that has since restarted.
+       */
       public void handleMessagesToRestartedAgent(AgentID localAgent,
 						 AgentID oldRestartedAgent,
 						 AgentID newRestartedAgent) 
@@ -194,6 +198,22 @@ public class MessageAckingAspect extends StandardAspect
 	  MessageAckingAspect.this.handleMessagesToRestartedAgent(localAgent,
 						                  oldRestartedAgent,
 						                  newRestartedAgent); 
+      }
+
+      /*
+       * Hold (don't resend) any messages to this address until released.
+       */
+      public void hold (MessageAddress addr) 
+      {
+	  messageResender.hold(addr);
+      }
+
+      /*
+       * Release (for possible resend) any messages to this address that are on hold.
+       */
+      public void release (MessageAddress addr) 
+      {
+	  messageResender.release(addr);
       }
   }
 

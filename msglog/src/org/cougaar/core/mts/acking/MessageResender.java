@@ -54,6 +54,9 @@ class MessageResender implements Runnable
   private Comparator deadlineSort;
   private long minResendDeadline;
   private MessageNumberingService messageNumberingService = null;
+  private String FILTERS_ATTRIBUTE = "Filters";
+
+  public static final String MSGLOG_HOLD = "MsglogHold";
 
   public MessageResender (MessageAckingAspect aspect) 
   {
@@ -367,6 +370,14 @@ class MessageResender implements Runnable
       for (int i=0; i<len; i++) if (messages[i] != null)
       {
         AttributedMessage msg = messages[i];
+
+	// don't send held messages
+	if (msg.getAttribute(MSGLOG_HOLD) == Boolean.TRUE) {
+	    if (debug()) 
+		log.debug("MessageResender: skipping resend of held msg "+MessageUtils.toString(msg));
+	    continue;
+	}
+
         Ack ack = MessageUtils.getAck (msg);
 
         //  See if time to resend message
@@ -387,6 +398,31 @@ class MessageResender implements Runnable
           if (debug()) log.debug ("MessageResender: Resending " +MessageUtils.toString(msg));
           remove (msg);  // remove first to avoid race condition with send
           MessageSendHistoryAspect.registerSendFailure (msg);  // since no ack
+
+          //if (debug()) {
+          //    Attributes attrs = msg.cloneAttributes();
+	  //    if (attrs instanceof SimpleMessageAttributes) {
+	  //        log.debug("MessageResender: Attributes are: ");
+	  //        ((SimpleMessageAttributes)attrs).listAttributes();
+	  //    } else {
+	  //	    log.debug("MessageResender: Attributes are instances of class " + attrs.getClass());
+	  //    }
+	  //}
+          
+	  msg.removeAttribute(MessageAttributes.IS_STREAMING_ATTRIBUTE); //B1041
+	  msg.removeAttribute(MessageAttributes.ENCRYPTED_SOCKET_ATTRIBUTE); //B1041
+	  msg.removeAttribute(FILTERS_ATTRIBUTE); //B1041
+
+          //if (debug()) {
+          //    Attributes attrs = msg.cloneAttributes();
+	  //    if (attrs instanceof SimpleMessageAttributes) {
+	  //        log.debug("MessageResender: Attributes are: ");
+	  //	    ((SimpleMessageAttributes)attrs).listAttributes();
+	  //    } else {
+	  //        log.debug("MessageResender: Attributes are instances of class " + attrs.getClass());
+	  //    }
+	  //}
+          
           aspect.sendMessage (msg);
 
           //  Start adding delay to resending this message if it keeps coming back around
@@ -559,23 +595,70 @@ class MessageResender implements Runnable
 	    log.debug("MessageResender: exit dequeueMessages("+fromAgent+","+oldToAgent+","+newToAgent+")");
     }
   
-  //102B
-  private static class MsgNumSort implements Comparator {
-    private static final MsgNumSort instance = new MsgNumSort();   
-    private MsgNumSort () {}
-    public static MsgNumSort getInstance () { return instance; }
-    public int compare (Object m1, Object m2) {
-      if (m1 == null) { // drive nulls to bottom (top is index 0)
-        if (m2 == null) return 0;
-        else return 1;
-      } else if (m2 == null) return -1;
-      //  Sort on message number (lower numbers come first)
-      int n1 = MessageUtils.getMessageNumber ((AttributedMessage) m1);
-      int n2 = MessageUtils.getMessageNumber ((AttributedMessage) m2);
-      if (n1 == n2) return 0;
-      return (n1 > n2 ? 1 : -1); }
-    public boolean equals (Object obj) {
-      return (this == obj); }
-  }
-          
-}
+    //102B
+    private static class MsgNumSort implements Comparator {
+	private static final MsgNumSort instance = new MsgNumSort();   
+	private MsgNumSort () {}
+	public static MsgNumSort getInstance () { return instance; }
+	public int compare (Object m1, Object m2) {
+	    if (m1 == null) { // drive nulls to bottom (top is index 0)
+		if (m2 == null) return 0;
+		else return 1;
+	    } else if (m2 == null) return -1;
+	    //  Sort on message number (lower numbers come first)
+	    int n1 = MessageUtils.getMessageNumber ((AttributedMessage) m1);
+	    int n2 = MessageUtils.getMessageNumber ((AttributedMessage) m2);
+	    if (n1 == n2) return 0;
+	    return (n1 > n2 ? 1 : -1); }
+	public boolean equals (Object obj) {
+	    return (this == obj); }
+    }
+
+    /*
+     * Hold (don't resend) any messages to this address until released.
+     */
+    public void hold (MessageAddress addr) 
+    {
+	if (debug()) 
+	    log.debug("MessageResender: holding messages to "+addr);
+	synchronized (queue) {
+	    Iterator iter = queue.iterator();
+	    while (iter.hasNext()) {
+		AttributedMessage msg = (AttributedMessage)iter.next();
+		if (msg != null) {
+		    MessageAddress target = msg.getTarget();
+		    if (target.equals(addr)) {
+			if (debug()) 
+			    log.debug("MessageResender: holding msg "+MessageUtils.toString(msg));
+			msg.setAttribute(MSGLOG_HOLD,Boolean.TRUE);
+		    }
+		}
+	    }
+	}
+    }
+
+    /*
+     * Release (for possible resend) any messages to this address that are on hold.
+     */
+    public void release (MessageAddress addr) 
+    {
+	if (debug()) 
+	    log.debug("MessageResender: releasing messages to "+addr);
+	synchronized (queue) {
+	    Iterator iter = queue.iterator();
+	    while (iter.hasNext()) {
+		AttributedMessage msg = (AttributedMessage)iter.next();
+		if (msg != null) {
+		    MessageAddress target = msg.getTarget();
+		    if (target.equals(addr)) {
+			if (debug()) 
+			    log.debug("MessageResender: releasing msg "+MessageUtils.toString(msg));
+			msg.removeAttribute(MSGLOG_HOLD);
+		    }
+		}
+	    }
+	    offerNewResendDeadline(0);
+	}
+    }
+    
+ }

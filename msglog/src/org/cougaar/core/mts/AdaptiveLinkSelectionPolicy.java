@@ -436,6 +436,12 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       }
     }
 
+    // copy the links iterator so I can use it more than once
+    Vector linksV = new Vector();
+    while (links.hasNext()) {
+      linksV.add(links.next());
+    }
+
     //  Handle the special case of local messages  
 
     MessageAddress targetAgent = MessageUtils.getTargetAgent (msg);
@@ -444,9 +450,10 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     {
       if (loopbackLink == null)
       {
-        while (links.hasNext()) 
+        Iterator linksI = linksV.iterator();
+        while (linksI.hasNext()) 
         {
-          DestinationLink link = (DestinationLink) links.next(); 
+          DestinationLink link = (DestinationLink) linksI.next(); 
 
           if (isLoopbackLink (link))
           {
@@ -455,13 +462,15 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
           }
         }
       }
-
-      if (loopbackLink == null)
+      if (loopbackLink != null) 
       {
-        loggingService.fatal ("Missing needed loopback transport!!");
+	  return linkChoice (loopbackLink, msg);      
+      } 
+      else 
+      {
+          // if loopback not loaded, use a regular protocol for local messages 
+	  loggingService.warn("Missing LoopbackLinkProtocol!");
       }
-
-      return linkChoice (loopbackLink, msg);      
     }
 
     //  Get started
@@ -647,13 +656,17 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
           MessageUtils.setToAgent (msg, toAgent);
           targetNode = toAgent.getNodeName();
 
-log.info ("toAgent for new msg " +msgString+ ": " +toAgent);
+          log.info ("toAgent for new msg " +msgString+ ": " +toAgent);
         }
       }
     }
     catch (Exception e) 
     {
-log.info ("exception getting toAgent for " +msgString+ ": ", e);
+      if (log.isDebugEnabled()) {
+        log.debug("exception getting toAgent for " +msgString+ ": ", e);
+      } else if (log.isInfoEnabled()) {
+        log.info("exception getting toAgent for " +msgString);
+      }
     }
 
     //  Cannot continue without knowing the name of the target node for the message
@@ -673,15 +686,15 @@ log.info ("exception getting toAgent for " +msgString+ ": ", e);
     //  of these filtered links, as they are the only valid links for this iteration.
 
     Vector v = new Vector();
-
-    while (links.hasNext()) 
+    Iterator linksI = linksV.iterator();
+    while (linksI.hasNext()) 
     {
       DestinationLink link = null;
       int cost;
 
       try
       {
-        link = (DestinationLink) links.next(); 
+        link = (DestinationLink) linksI.next(); 
 if (debug) log.debug("link =" + link.getProtocolClass());
 
         //  Obvious filters
