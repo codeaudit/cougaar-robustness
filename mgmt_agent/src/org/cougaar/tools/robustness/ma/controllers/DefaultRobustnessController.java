@@ -19,6 +19,7 @@ package org.cougaar.tools.robustness.ma.controllers;
 
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
 import org.cougaar.tools.robustness.ma.CommunityStatusChangeEvent;
+import org.cougaar.tools.robustness.ma.StatusChangeListener;
 import org.cougaar.tools.robustness.ma.controllers.*;
 import org.cougaar.tools.robustness.ma.HostLossThreatAlertHandler;
 import org.cougaar.tools.robustness.ma.SecurityAlertHandler;
@@ -35,7 +36,7 @@ import org.cougaar.tools.robustness.ma.util.RestartDestinationLocator;
 
 import org.cougaar.tools.robustness.threatalert.*;
 
-import org.cougaar.tools.robustness.deconfliction.techspec.AgentAssetPropertyChange;
+//import org.cougaar.tools.robustness.deconfliction.techspec.AgentAssetPropertyChange;
 
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.component.ServiceBroker;
@@ -353,14 +354,16 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         if (csce[i].locationChanged()) {
           String priorLocation = csce[i].getPriorLocation();
           // Publish location changes for deconflictor use
-          if (priorLocation != null) {
+          /*
+           if (priorLocation != null) {
             AgentAssetPropertyChange aapc =
-                new AgentAssetPropertyChange(name);
+                new AgentAssetPropertyChange(csce[i].getName());
             String nodeName = csce[i].getCurrentLocation();
             String hostName = model.getLocation(nodeName);
             aapc.moveChange(hostName, nodeName);
             blackboard.publishAdd(aapc);
           }
+          */
         }
       }
     }
