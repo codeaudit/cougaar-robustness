@@ -73,13 +73,14 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   class InitialStateController extends StateControllerBase {
     public void enter(String name) {
-      logger.debug("New State (INITIAL):" + " agent=" + name + " state=INITIAL");
-      newState(name, HEALTH_CHECK);
+      doPing(name, DefaultRobustnessController.ACTIVE, DEAD);
     }
-    public void expired(String name) {
+    /*
+     public void expired(String name) {
       logger.info("Expired Status:" + " agent=" + name + " state=INITIAL");
       newState(name, HEALTH_CHECK);
     }
+    */
   }
 
   /**
@@ -179,7 +180,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         doPing(name, DefaultRobustnessController.ACTIVE, DEAD);
       }
     }
-    public void expired(String name) {
+    /*public void expired(String name) {
       if (isLocal(name)) {
         newState(name, isLeader(name) ? DEAD : HEALTH_CHECK);
       } else if (isNode(name) ||
@@ -187,7 +188,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                  isLeader(name)) {
         newState(name, DEAD);
       }
-    }
+    }*/
   }
 
   /**
@@ -205,7 +206,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                   " preferredLeader=" + thisAgent.equals(preferredLeader()) +
                   " isAgent=" + isAgent(name));
       communityReady = false; // For ACME Community Ready Events
-      //if (isAgent(name) && canRestartAgent(name)) {
       if (isAgent(name) && thisAgent.equals(preferredLeader())) {
         // Interface point for Deconfliction
         // If Ok'd by Deconflictor set state to RESTART
@@ -214,7 +214,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         } else {
           newState(name, RESTART);
         }
-        //setLocation(name, null);
       } else if (isNode(name)) {
         setExpiration(name, NEVER);
         deadNodes.add(name);
@@ -260,7 +259,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
     public void expired(String name) {
       logger.debug("Expired Status:" + " agent=" + name + " state=DEAD");
-      //if (isAgent(name) && canRestartAgent(name)) {
       if (thisAgent.equals(preferredLeader())) {
         if(getDeconflictHelper() != null) {
           newState(name, DECONFLICT);
@@ -473,8 +471,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     String preferredLeader = preferredLeader();
     return thisAgent.equals(preferredLeader()) ||
         (isLeader(thisAgent) && name.equals(preferredLeader));
-    //return thisAgent.equals(preferredLeader()) ||
-    // isLeader(thisAgent) && name.equals(preferredLeader());
   }
 
   private boolean useGlobalSolver() {
@@ -517,7 +513,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       event("Community " + model.getCommunityName() + " Ready");
       if (pingStats.getCount() > 10) {
         long oldPingTimeout = getLongAttribute("PING_TIMEOUT", PING_TIMEOUT);
-        long newPingTimeout = (long)pingStats.getMean() + ((long)pingStats.getStandardDeviation() * 5);
+        long newPingTimeout = (long)pingStats.getMean() + ((long)pingStats.getStandardDeviation() * 4);
+        long minPingTimeout = getLongAttribute("MINIMUM_PING_TIMEOUT", MINIMUM_PING_TIMEOUT);
+        if (newPingTimeout < minPingTimeout) newPingTimeout = minPingTimeout;
         logger.info("Change PingTimeout: old=" + oldPingTimeout +
                     " new=" + newPingTimeout + " PingStats=(" + pingStats + ")");
         changeAttributes(model.getCommunityName(), null,
@@ -641,8 +639,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   protected long calcPingTimeout(String name) {
     String node = model.getLocation(name);
     double nodeLoad = getNodeLoadAverage(node);
+    nodeLoad = (nodeLoad > 0) ? 1.0 + nodeLoad/2 : 1.0;
     long pingTimeout = getLongAttribute(name, "PING_TIMEOUT", PING_TIMEOUT);
-    return (long)(pingTimeout * (1.0 + nodeLoad));
+    return (long)(pingTimeout * nodeLoad);
   }
 
   protected Set getExcludedNodes() {
