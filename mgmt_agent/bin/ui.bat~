@@ -1,0 +1,1 @@
+java -cp %COUGAAR_INSTALL_PATH%\lib\Robustness_mic_mgmt_agent.jar;%COUGAAR_INSTALL_PATH%\lib\util.jar;%COUGAAR_INSTALL_PATH%\lib\bootstrap.jar;%COUGAAR_INSTALL_PATH%\sys\log4j.jar;%COUGAAR_INSTALL_PATH%\lib\csmart.jar org.cougaar.tools.robustness.ma.ui.RobustnessUI %1 %3 %2
