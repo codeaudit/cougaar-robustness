@@ -44,6 +44,14 @@
                 <Bandwidth intensity="LOW" agentSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
+        <Transition WhenActualStateIs="Planned_Disconnect" EndStateWillBe="Planned_Disconnect" IntermediateStateWillBe="Planned_Disconnect" >
+            <OneTimeCost>
+                <Time duration="100" />
+            </OneTimeCost>
+            <ContinuingCost>
+                <Bandwidth intensity="LOW" agentSizeFactor="TRUE" />
+            </ContinuingCost>
+        </Transition>
     </Action>
 
     <Action name="Disable">
