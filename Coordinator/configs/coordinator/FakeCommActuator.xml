@@ -2,7 +2,10 @@
 
 <!DOCTYPE ActuatorType >
 
-<ActuatorType name="org.cougaar.coordinator.test.defense.FakeCommDefense" affectsAssetType="Agent" affectsStateDimension="Communication" >
+<ActuatorType name="org.cougaar.coordinator.test.defense.FakeCommDefense" 
+              affectsAssetType="Agent" 
+              affectsStateDimension="Communication" 
+              actionType="CORRECTIVE">
     <Action name="TryHard">
         <Description value="Tries Real Hard" />
         <Transition WhenActualStateIs="*" EndStateWillBe="GOOD" IntermediateStateWillBe="GOOD" >

@@ -4,7 +4,8 @@
 
 <ActuatorType name="org.cougaar.coordinator.examples.SampleDefense.SampleAction" 
               affectsAssetType="Agent" 
-              affectsStateDimension="Encryption" >
+              affectsStateDimension="Encryption" 
+              actionType="PREVENTIVE">
 
     <Action name="NoEncryption">
         <Description value="NoEncryption" />

@@ -2,7 +2,10 @@
 
 <!DOCTYPE ActuatorType >
 
-<ActuatorType name="org.cougaar.coordinator.test.defense.RestartAgentDefense" affectsAssetType="Agent" affectsStateDimension="Liveness" >
+<ActuatorType name="org.cougaar.coordinator.test.defense.RestartAgentDefense" 
+              affectsAssetType="Agent" 
+              affectsStateDimension="Liveness" 
+              actionType="CORRECTIVE">
     <Action name="LocalRestart">
         <Description value="Restarts agent in node on local host" />
         <Transition WhenActualStateIs="*" EndStateWillBe="LIVE" IntermediateStateWillBe="DEAD" >
