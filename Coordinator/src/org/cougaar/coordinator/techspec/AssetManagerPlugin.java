@@ -212,6 +212,9 @@ logger.warn("!!!! **********************************************************");
                         " newLocation=" + csce[i].getCurrentLocation());
                         
                         agentAsset = DefaultAssetTechSpec.findAssetByID(new AssetID(agentName, AssetType.AGENT));
+                        if (agentAsset == null) { // then this is an agent we've never seen before!
+                            agentAsset = new DefaultAssetTechSpec( hostAsset, nodeAsset,  agentName, AssetType.AGENT, us.nextUID());                            
+                        }
                         agentAsset.setNewLocation(hostAsset, nodeAsset);
                         queueChangeEvent(new AssetChangeEvent( agentAsset, AssetChangeEvent.MOVED_ASSET));
 
@@ -232,14 +235,20 @@ logger.warn("!!!! **********************************************************");
                         if (csce[i].getType() == CommunityStatusModel.AGENT) {
                             logger.info("Agent REMOVED: agent=" + agentName);                        
                             agentAsset = DefaultAssetTechSpec.findAssetByID(new AssetID(agentName, AssetType.AGENT));
-                            queueChangeEvent(new AssetChangeEvent( agentAsset, AssetChangeEvent.REMOVED_ASSET));                                                
+                            if (agentAsset != null) {
+                                queueChangeEvent(new AssetChangeEvent( agentAsset, AssetChangeEvent.REMOVED_ASSET));                                                
+                            }
                         } else if (csce[i].getType() == CommunityStatusModel.NODE) {
                             //then we must remove both the node asset and the node-agent asset
                             logger.info("NODE AND NODE-AGENT REMOVED: node=" + agentName);                        
                             nodeAsset = DefaultAssetTechSpec.findAssetByID(new AssetID(agentName, AssetType.NODE));
-                            queueChangeEvent(new AssetChangeEvent( nodeAsset, AssetChangeEvent.REMOVED_ASSET));                                                
+                            if (nodeAsset != null) {
+                                queueChangeEvent(new AssetChangeEvent( nodeAsset, AssetChangeEvent.REMOVED_ASSET));                                                
+                            }
                             agentAsset = DefaultAssetTechSpec.findAssetByID(new AssetID(agentName, AssetType.AGENT));
-                            queueChangeEvent(new AssetChangeEvent( agentAsset, AssetChangeEvent.REMOVED_ASSET));                                                
+                            if (agentAsset != null) {
+                                queueChangeEvent(new AssetChangeEvent( agentAsset, AssetChangeEvent.REMOVED_ASSET));                                                
+                            }
                         }
                         
                         
