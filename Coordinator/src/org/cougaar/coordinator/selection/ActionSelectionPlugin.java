@@ -272,7 +272,8 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
         }
         if (bestBenefit > 0) { 
             HashSet permittedVariants = new HashSet();
-            permittedVariants.add(bestVariantEvaluation);
+            bestVariantEvaluation.setTried(); //sjf
+            permittedVariants.add(bestVariantEvaluation); 
             sa = new SelectedAction(bestActionEvaluation, permittedVariants, Math.round(knob.getPatienceFactor()*bestVariantEvaluation.getExpectedTransitionTime()));
         }
         
