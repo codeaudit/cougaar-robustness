@@ -43,7 +43,7 @@
   <property name="src" value="src"/>
   <property name="test" value="test"/>
   <property name="lib" value="lib"/>
-  <property name="jar" value="Robustness_mic_${ant.project.name}.jar"/>
+  <property name="jar" value="ar_mic.jar"/>
   <property name="release" value="../mic-tic"/>
 
   <!-- Initialization target -->
@@ -494,30 +494,61 @@
   <!-- Create Cougaar overlay zip file -->
   <target name="create_cougaar_overlay">
     <delete dir="staging"/>
+
+    <!-- Required JARs -->
     <mkdir dir="staging/lib"/>
     <mkdir dir="staging/sys"/>
+
+    <mkdir dir="staging/configs"/>
+    <mkdir dir="staging/configs/common"/>
+
+    <!-- ACME and CSMART -->
+    <mkdir dir="staging/csmart"/>
+    <mkdir dir="staging/csmart/config"/>
+    <mkdir dir="staging/csmart/config/doc"/>
+    <mkdir dir="staging/csmart/config/doc/robustness"/>
+    <mkdir dir="staging/csmart/config/doc/robustness/uc1"/>
+    <mkdir dir="staging/csmart/config/lib"/>
+    <mkdir dir="staging/csmart/config/lib/robustness"/>
+    <mkdir dir="staging/csmart/config/lib/robustness/uc1"/>
+    <mkdir dir="staging/csmart/config/rules"/>
+    <mkdir dir="staging/csmart/config/rules/robustness"/>
+    <mkdir dir="staging/csmart/config/rules/robustness/uc1"/>
+    <mkdir dir="staging/csmart/config/scripts"/>
+    <mkdir dir="staging/csmart/config/scripts/robustness"/>
+    <mkdir dir="staging/csmart/config/scripts/robustness/uc1"/>
     <mkdir dir="staging/configs/common"/>
     <mkdir dir="staging/robustness"/>
-    <mkdir dir="staging/robustness/bin"/>
-    <mkdir dir="staging/robustness/doc"/>
-    <mkdir dir="staging/robustness/configs"/>
-    <mkdir dir="staging/robustness/csmart"/>
-    <mkdir dir="staging/robustness/csmart/recipes"/>
-    <mkdir dir="staging/robustness/csmart/experiments"/>
+
     <antcall target="init"/>
     <antcall target="compile"/>
     <antcall target="jar"/>
     <signjar jar="${lib}/${jar}" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
     <move file="${lib}/${jar}" toDir="staging/lib"/>
-    <!--<signjar jar="sys/ant.jar" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
-    <move file="sys/ant.jar" toDir="staging/sys"/>-->
     <copy file="build.xml" toDir="staging/robustness"/>
-    <!-- <copy file="configs/recipeQueries.q" toDir="staging/configs/common"/> -->
-    <copy toDir="staging/robustness/bin">
-      <fileset dir="bin"/>
+    <copy toDir="staging/configs/common">
+      <fileset dir="configs/common">
+         <include name="communities.xml"/>
+         <include name="*.xsl" />
+      </fileset>
     </copy>
-    <copy toDir="staging/robustness/configs">
-      <fileset dir="configs"/>
+    <copy toDir="staging/csmart/config/doc/robustness/uc1">
+      <fileset dir="csmart/config/doc/robustness/uc1"/>
+    </copy>
+    <copy toDir="staging/csmart/config/lib/robustness/uc1">
+      <fileset dir="csmart/config/lib/robustness/uc1">
+         <include name="aruc1_actions_and_states.rb" />
+      </fileset>
+    </copy>
+    <copy toDir="staging/csmart/config/scripts/robustness/uc1">
+      <fileset dir="csmart/config/scripts/robustness/uc1">
+         <include name="runTiny.rb"/>
+         <include name="TINY-1AD-TRANS-AR.xml"/>
+         <include name="5_node_config.xml"/>
+         <include name="aruc1.xsl"/>
+         <include name="config.xml"/>
+         <include name="transform.sh"/>
+      </fileset>
     </copy>
     <copy toDir="staging/robustness/doc">
       <fileset dir="doc"/>
