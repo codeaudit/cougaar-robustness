@@ -79,8 +79,10 @@
             <file path="csmart/config/rules/robustness/uc1/aruc1.rule"/>
             <file path="csmart/config/rules/robustness/uc1/deconfliction.rule"/>
             <file path="csmart/config/rules/robustness/uc1/disable_mgmt_node_restarts.rule"/>
+            <file path="csmart/config/rules/robustness/uc1/disconnection.rule"/>
             <file path="csmart/config/rules/robustness/uc1/manager.rule"/>
             <file path="csmart/config/rules/robustness/uc1/mic.rule"/>
+            <file path="csmart/config/rules/robustness/uc1/msglog.rule"/>
           </node>
           <node name="uc4" type="Folder">
             <file path="csmart/config/rules/robustness/uc4/aruc4.rule"/>
@@ -92,7 +94,6 @@
           <node name="uc1" type="Folder">
             <file path="csmart/config/scripts/robustness/uc1/auto_lb-full.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/auto_lb-small.rb"/>
-            <file path="csmart/config/scripts/robustness/uc1/disconnection.rule"/>
             <file path="csmart/config/scripts/robustness/uc1/kill_1_agent-full.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/kill_1_agent-small.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/kill_1_node-full.rb"/>
@@ -100,7 +101,6 @@
             <file path="csmart/config/scripts/robustness/uc1/kill_1_node-small.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/kill_mgr-small.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/kill_mgr_plus_1-small.rb"/>
-            <file path="csmart/config/scripts/robustness/uc1/msglog.rule"/>
             <file path="csmart/config/scripts/robustness/uc1/uc1-disconnect-moas.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/uc1-full.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/uc1-lb.rb"/>

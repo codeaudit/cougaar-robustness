@@ -11,14 +11,14 @@
   <host name='net3'>
     <facet service="acme"/>
   </host>
-  <host name='wayne'>
+  <host name='doug'>
     <facet service="acme"/>
   </host>
   <host name='net5'>
     <facet service="jabber"/>
     <facet service="acme"/>
   </host>
-  <host name='willow'>
+  <host name='karen'>
     <facet service="acme"/>
   </host>
 </society>
