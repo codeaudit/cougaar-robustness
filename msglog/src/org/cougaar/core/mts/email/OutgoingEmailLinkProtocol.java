@@ -300,15 +300,16 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
   {
     synchronized (uriCache) {
 
-      URI uri = null;                
+      URI uri = null;   
+      String agentName = address.getAddress();             
 
-      // get the callback table entry for this MessageAddress
-      CbTblEntry cbte = (CbTblEntry)uriCache.get(address);
+      // get the callback table entry for this agent
+      CbTblEntry cbte = (CbTblEntry)uriCache.get(agentName);
 
       // if none, create one (first lookup)
       if (cbte == null) {
         cbte = new CbTblEntry();
-        uriCache.put(address,cbte);
+        uriCache.put(agentName,cbte);
       }
 
       if (log.isDebugEnabled())
@@ -336,9 +337,12 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     }
   }
 
-  private synchronized void clearCaches ()
+  //104B
+  private synchronized void clearCache (MessageAddress addr)
   {
-    uriCache.clear();
+    CbTblEntry cbte = (CbTblEntry)uriCache.get(addr.getAddress());
+    if (cbte != null)
+      cbte.result = null;
   }
 
   public boolean addressKnown (MessageAddress address) 
@@ -418,10 +422,11 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     {
       return true;
     }
-
-    private synchronized void dumpCachedData ()
+    
+    //104B
+    private synchronized void dumpCachedData (MessageAddress addr) 
     {
-      clearCaches();
+      clearCache(addr);
     }
 
     public synchronized MessageAttributes forwardMessage (AttributedMessage msg) 
@@ -429,8 +434,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
              CommFailureException, MisdeliveredMessageException
     {
       //  Dump our cached data on message send retries
-
-      if (MessageUtils.getSendTry (msg) > 1) dumpCachedData();
+      if (MessageUtils.getSendTry (msg) > 2) dumpCachedData(destination);  //104B changed to 2 because of wp callback
 
       //  Get emailing info for destination
     
@@ -462,7 +466,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
 
       if (success == false)
       {
-        dumpCachedData();
+        dumpCachedData(destination); //104B
         Exception e = (save==null ? new Exception ("email sendMessage unsuccessful") : save);
         throw new CommFailureException (e);
       }
