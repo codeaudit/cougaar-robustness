@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
+<!ELEMENT ActuatorTypes (ActuatorType+) >
 
 <!ELEMENT ActuatorType (Action*) >
 <!ATTLIST ActuatorType 
     name CDATA #REQUIRED
     affectsAssetType CDATA #REQUIRED
     affectsStateDimension CDATA #REQUIRED
-    actionType (CORRECTIVE | PREVENTIVE | APPLICATION) 'CORRECTIVE'
+    actionType (CORRECTIVE | PREVENTIVE | APPLICATION | COMPENSATORY ) 'CORRECTIVE'
 >
 
 <!ELEMENT Action (Description, Transition+)  >
 <!ATTLIST Action 
     name CDATA #REQUIRED
+    aDefaultActionOffered CDATA #IMPLIED
 >
 
 <!ELEMENT Description EMPTY  >
@@ -57,7 +59,7 @@
 
 <!-- example
 <ActuatorType name="RestartAgent" affectsAssetType="Agent" affectsStateDimension="Liveness" >
-    <Action name="LocalRestart">
+    <Action name="LocalRestart" aDefaultActionOffered="TRUE" >
         <Description value="Restarts agent in node on local host" />
         <Transition WhenActualStateIs="*" EndStateWillBe="LIVE" IntermediateStateWillBe="DEAD" >
             <OneTimeCost>

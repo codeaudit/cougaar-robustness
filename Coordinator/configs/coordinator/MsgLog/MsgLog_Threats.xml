@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!DOCTYPE Threat >
+<!DOCTYPE Threats SYSTEM "ThreatDTD.dtd"  >
 <Threats>
 
 <Threat name="Stationary_Partition" affectsAssetType="Host" causesEvent="Stationary_Partition" defaultEventLikelihoodProb="LOW" probIntervalInMins="1000" />

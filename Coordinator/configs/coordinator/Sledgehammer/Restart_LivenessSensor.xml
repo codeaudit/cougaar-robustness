@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!DOCTYPE SensorType >
+<!DOCTYPE SensorType  SYSTEM "SensorTypeDTD.dtd" >
 
 <SensorType name="org.cougaar.coordinator.test.defense.LivenessDiagnosis" 
             sensesAssetType="Agent"

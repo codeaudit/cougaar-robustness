@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!DOCTYPE Threat >
+<!DOCTYPE Threats SYSTEM "ThreatDTD.dtd"  >
 <Threats>
 
 <Threat name="Bug_Out" affectsAssetType="Node" causesEvent="Disconnect_Request" defaultEventLikelihoodProb="LOW" probIntervalInMins="1000" />

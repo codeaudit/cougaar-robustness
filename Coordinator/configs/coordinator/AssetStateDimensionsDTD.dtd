@@ -1,4 +1,4 @@
-<?xml encoding="UTF-8" ?>
+﻿<?xml encoding="UTF-8" ?>
 
 <!-- Created by Administrator on March 22, 2004, 8:54 AM -->
 
@@ -7,15 +7,15 @@
     assetType CDATA #REQUIRED
 >
 
-<!ELEMENT StateDimension (States+) >
+<!ELEMENT StateDimension (State+) >
 <!ATTLIST StateDimension
     name CDATA #REQUIRED
 >
   
-<!ELEMENT SimpleState EMPTY>
-<!ATTLIST SimpleState
+<!ELEMENT State EMPTY>
+<!ATTLIST State
     name CDATA #REQUIRED
-    defaultStartState CDATA 
+    defaultStartState CDATA #IMPLIED
     relativeMauCompleteness CDATA #REQUIRED
     relativeMauSecurity CDATA #REQUIRED
 >

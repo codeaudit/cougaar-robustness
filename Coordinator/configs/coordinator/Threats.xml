@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!DOCTYPE Threat >
+<!DOCTYPE Threats SYSTEM "ThreatDTD.dtd" >
 <Threats>
-<Threat name="Bomb" affectsAssetType="Host" causesEvent="HostDeath" defaultEventLikelihoodProb="NONE" >
+<Threat name="Bomb" affectsAssetType="Host" causesEvent="HostDeath" defaultEventLikelihoodProb="NONE" probIntervalInMins="0" >
 
     <VulnerableAssets>
         <AssetFilter>
-            <Term propName="location" propValue="HiWay" op="=" />
+            <Term propName="location" propValue="HiWay" op="EQ" />
         </AssetFilter>
         <EventLikelihoodInterval>
             <ClockInterval intervalStart="1800" durationHrs="12" probability="VERY_LOW" probIntervalInMins="1000"/>
@@ -15,7 +15,7 @@
 
     <VulnerableAssets>
         <AssetFilter>
-            <Term propName="location" propValue="OffRoad" op="=" />
+            <Term propName="location" propValue="OffRoad" op="EQ" />
         </AssetFilter>
         <EventLikelihoodInterval>
             <ClockInterval intervalStart="1800" durationHrs="12" probability="MEDIUM" probIntervalInMins="1000"/>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!DOCTYPE ActuatorType >
+<!DOCTYPE ActuatorType SYSTEM "ActuatorTypeDTD.dtd">
 
 <ActuatorType name="org.cougaar.coordinator.examples.SampleDefense.SampleAction" 
               affectsAssetType="Agent" 
@@ -16,8 +16,8 @@
                 <Time duration="0" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
                 <Bandwidth intensity="VERY_LOW" msgSizeFactor="TRUE" />
+                <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
         <Transition WhenActualStateIs="MediumVulnerability" EndStateWillBe="MediumVulnerability" IntermediateStateWillBe="MediumVulnerability" >
@@ -27,8 +27,8 @@
                 <Time duration="0" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
                 <Bandwidth intensity="VERY_LOW" msgSizeFactor="TRUE" />
+                <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
         <Transition WhenActualStateIs="LowVulnerability" EndStateWillBe="LowVulnerability" IntermediateStateWillBe="LowVulnerability" >
@@ -38,8 +38,8 @@
                 <Time duration="0" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
                 <Bandwidth intensity="VERY_LOW" msgSizeFactor="TRUE" />
+                <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
         <Transition WhenActualStateIs="NoVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="NoVulnerability" >
@@ -49,8 +49,8 @@
                 <Time duration="0" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
                 <Bandwidth intensity="VERY_LOW" msgSizeFactor="TRUE" />
+                <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
     </Action>
@@ -64,8 +64,8 @@
                 <Time duration="10000" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="LOW" msgSizeFactor="TRUE" />
                 <Bandwidth intensity="LOW" msgSizeFactor="TRUE" />
+                <CPU intensity="LOW" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
         <Transition WhenActualStateIs="MediumVulnerability" EndStateWillBe="LowVulnerability" IntermediateStateWillBe="MediumVulnerability" >
@@ -75,8 +75,8 @@
                 <Time duration="10000" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="LOW" msgSizeFactor="TRUE" />
                 <Bandwidth intensity="LOW" msgSizeFactor="TRUE" />
+                <CPU intensity="LOW" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
         <Transition WhenActualStateIs="LowVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="LowVulnerability" >
@@ -86,8 +86,8 @@
                 <Time duration="10000" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="LOW" msgSizeFactor="TRUE" />
                 <Bandwidth intensity="LOW" msgSizeFactor="TRUE" />
+                <CPU intensity="LOW" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
         <Transition WhenActualStateIs="NoVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="NoVulnerability" >
@@ -97,8 +97,8 @@
                 <Time duration="0" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="LOW" msgSizeFactor="TRUE" />
                 <Bandwidth intensity="LOW" msgSizeFactor="TRUE" />
+                <CPU intensity="LOW" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
     </Action>
@@ -112,8 +112,8 @@
                 <Time duration="10000" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
                 <Bandwidth intensity="VERY_LOW" msgSizeFactor="TRUE" />
+                <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
         <Transition WhenActualStateIs="MediumVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="MediumVulnerability" >
@@ -123,8 +123,8 @@
                 <Time duration="10000" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
                 <Bandwidth intensity="MEDIUM" msgSizeFactor="TRUE" />
+                <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
         <Transition WhenActualStateIs="LowVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="LowVulnerability" >
@@ -134,8 +134,8 @@
                 <Time duration="10000" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
                 <Bandwidth intensity="MEDIUM" msgSizeFactor="TRUE" />
+                <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
         <Transition WhenActualStateIs="NoVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="NoVulnerability" >
@@ -145,8 +145,8 @@
                 <Time duration="0" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
                 <Bandwidth intensity="MEDIUM" msgSizeFactor="TRUE" />
+                <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
     </Action>
@@ -160,8 +160,8 @@
                 <Time duration="10000" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="HIGH" msgSizeFactor="TRUE" />
                 <Bandwidth intensity="HIGH" msgSizeFactor="TRUE" />
+                <CPU intensity="HIGH" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
         <Transition WhenActualStateIs="MediumVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="MediumVulnerability" >
@@ -171,8 +171,8 @@
                 <Time duration="10000" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="HIGH" msgSizeFactor="TRUE" />
                 <Bandwidth intensity="HIGH" msgSizeFactor="TRUE" />
+                <CPU intensity="HIGH" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
         <Transition WhenActualStateIs="LowVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="LowVulnerability" >
@@ -182,8 +182,8 @@
                 <Time duration="10000" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="HIGH" msgSizeFactor="TRUE" />
                 <Bandwidth intensity="HIGH" msgSizeFactor="TRUE" />
+                <CPU intensity="HIGH" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
         <Transition WhenActualStateIs="NoVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="NoVulnerability" >
@@ -193,8 +193,8 @@
                 <Time duration="0" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="HIGH" msgSizeFactor="TRUE" />
                 <Bandwidth intensity="HIGH" msgSizeFactor="TRUE" />
+                <CPU intensity="HIGH" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
     </Action>

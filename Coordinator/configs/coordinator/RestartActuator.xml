@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!DOCTYPE ActuatorType >
+<!DOCTYPE ActuatorType SYSTEM "ActuatorTypeDTD.dtd">
 
 <ActuatorType name="org.cougaar.coordinator.test.defense.RestartAgentDefense" 
               affectsAssetType="Agent" 
@@ -24,8 +24,8 @@
         <Transition WhenActualStateIs="*" EndStateWillBe="LIVE" IntermediateStateWillBe="DEAD" >
             <OneTimeCost>
                 <Bandwidth intensity="MEDIUM" agentSizeFactor="TRUE" />
-                <Time duration="120000" />
                 <CPU intensity="HIGH" agentSizeFactor="TRUE" />
+                <Time duration="120000" />
             </OneTimeCost>
         </Transition>
     </Action>

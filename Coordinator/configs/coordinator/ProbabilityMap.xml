@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!DOCTYPE Map >
+<!DOCTYPE Map SYSTEM "MappingDTD.dtd">
 
 <Map>
    <Mapping name="VERY_LOW"  value=".1" />

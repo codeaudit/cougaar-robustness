@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!DOCTYPE ActuatorType >
+<!DOCTYPE ActuatorType SYSTEM "ActuatorTypeDTD.dtd">
 
 <ActuatorType name="org.cougaar.coordinator.examples.SampleDefense.SampleAction" 
               affectsAssetType="Agent" 
@@ -16,8 +16,8 @@
                 <Time duration="60000" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
                 <Bandwidth intensity="MEDIUM" msgSizeFactor="TRUE" />
+                <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
         <Transition WhenActualStateIs="No" EndStateWillBe="Isolated" IntermediateStateWillBe="No" >
@@ -27,8 +27,8 @@
                 <Time duration="60000" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
                 <Bandwidth intensity="MEDIUM" msgSizeFactor="TRUE" />
+                <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
         <Transition WhenActualStateIs="Isolated" EndStateWillBe="Isolated" IntermediateStateWillBe="Isolated" >
@@ -38,8 +38,8 @@
                 <Time duration="60000" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
                 <Bandwidth intensity="MEDIUM" msgSizeFactor="TRUE" />
+                <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
     </Action>

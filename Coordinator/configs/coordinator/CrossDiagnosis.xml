@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<!DOCTYPE CrossDiagnosis >
+<!DOCTYPE CrossDiagnosis SYSTEM "CrossDiagnosis.dtd" >
 
 <CrossDiagnosis sensorType="org.cougaar.coordinator.test.defense.AgentCommunicationDiagnosis2" 
                 isAffectedByStateDimension="Liveness" >

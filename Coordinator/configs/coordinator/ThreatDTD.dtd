@@ -2,6 +2,7 @@
 
 <!-- Created by Administrator on March 24, 2004, 11:32 AM -->
 
+<!ELEMENT Threats (Threat+)>
 <!ELEMENT Threat (VulnerableAssets*)>
 
 <!ATTLIST Threat
@@ -9,9 +10,10 @@
     affectsAssetType CDATA #REQUIRED
     causesEvent CDATA #REQUIRED
     defaultEventLikelihoodProb ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH | ALWAYS ) 'NONE'
+    probIntervalInMins CDATA #REQUIRED
 >
 
-<!ELEMENT VulnerableAssets AssetFilter, (EventLikelihoodInterval|EventLikelihood)? >
+<!ELEMENT VulnerableAssets (AssetFilter, (EventLikelihoodInterval|EventLikelihood)?) >
 
 <!ELEMENT AssetFilter (Term | CorruptHostExistsOnNetwork | CorruptHostExists)+ >
 <!ELEMENT EventLikelihoodInterval (ClockInterval)+ >
@@ -19,6 +21,7 @@
 <!ELEMENT EventLikelihood  EMPTY>
 <!ATTLIST EventLikelihood
     probability ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH | ALWAYS ) 'NONE'
+    probIntervalInMins CDATA #REQUIRED
 >
 
 <!ELEMENT ClockInterval  EMPTY>
@@ -26,16 +29,17 @@
     intervalStart CDATA #REQUIRED
     durationHrs CDATA #REQUIRED
     probability ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH | ALWAYS ) 'NONE'
+    probIntervalInMins CDATA #REQUIRED
 >
 
-<!ELEMENT Term >
+<!ELEMENT Term EMPTY>
 <!ATTLIST Term
     propName CDATA #REQUIRED
     propValue CDATA #REQUIRED
-    op ( '<' | '>' | '>=' | '<=' | '=' | '!=' ) '='
+    op ( GT | GE | LT | LE | EQ | NE) 'EQ' 
     propType ( S | L | D | I ) "S"
 >
-<!-- propType = [S]tring [L]ong [D]ouble [I]nteger -->
+<!-- propType = [S]tring [L]ong [D]ouble [I]nteger       -->
 
 <!ELEMENT CorruptHostExistsOnNetwork EMPTY >
 <!ATTLIST CorruptHostExistsOnNetwork
@@ -47,14 +51,14 @@
 >
 
 <!-- Example
-<Threat name="Bomb" affectsAssetType="Host" causesEvent="HostDeath" defaultEventLikelihoodProb="NONE" />
+<Threat name="Bomb" affectsAssetType="Host" causesEvent="HostDeath" defaultEventLikelihoodProb="NONE" probIntervalInMins=1000 />
 
     <VulnerableAssets>
         <AssetFilter>
             <Term propName="location" propValue="HiWay" op="=" />
         </AssetFilter >
         <EventLikelihoodInterval>
-            <ClockInterval intervalStart="1800" durationHrs="12" probability="VERY_LOW" />
+            <ClockInterval intervalStart="1800" durationHrs="12" probability="VERY_LOW" probIntervalInMins=1000 />
         </EventLikelihoodInterval>
     </VulnerableAssets>
 
@@ -63,8 +67,8 @@
             <Term propName="location" propValue="OffRoad" op="=" />
         </AssetFilter>
         <EventLikelihoodInterval>
-            <ClockInterval intervalStart="1800" durationHrs="12" probability="MEDIUM" />
-            <ClockInterval intervalStart="1800" durationHrs="12" probability="LOW" />
+            <ClockInterval intervalStart="1800" durationHrs="12" probability="MEDIUM" probIntervalInMins=1000 />
+            <ClockInterval intervalStart="1800" durationHrs="12" probability="LOW" probIntervalInMins=1000 />
         </EventLikelihoodInterval>
     </VulnerableAssets>
 

@@ -2,6 +2,7 @@
 
 <!-- Created by Administrator on May 11, 2004, 9:31 AM -->
 
+<!ELEMENT CrossDiagnoses (CrossDiagnosis+) >
 <!ELEMENT CrossDiagnosis (WhenActualStateIs+) >
 <!ELEMENT WhenActualStateIs (WillDiagnoseAs+) >
 <!ELEMENT WillDiagnoseAs EMPTY>

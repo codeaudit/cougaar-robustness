@@ -1,8 +1,15 @@
-<?xml encoding="UTF-8" ?>
+﻿<?xml encoding="UTF-8" ?>
 
 <!-- Created by Administrator on May 3, 2004, 2:55 PM -->
 
+<!ELEMENT Events (Event+) >
+
 <!ELEMENT Event (DirectEffect, TransitiveEffect?) >
+<!ATTLIST Event
+    name CDATA #REQUIRED
+    affectsAssetType CDATA #REQUIRED
+    affectsStateDimension CDATA #REQUIRED
+>
 
 <!ELEMENT DirectEffect (Transition+) >
 
@@ -20,7 +27,7 @@
     assetType  CDATA #REQUIRED
 >
 
-<!ELEMENT VulnerableAssets ContainmentFilter, EventLikelihood >
+<!ELEMENT VulnerableAssets (ContainmentFilter, EventLikelihood) >
 
 <!ELEMENT EventLikelihood  EMPTY>
 <!ATTLIST EventLikelihood
