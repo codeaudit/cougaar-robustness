@@ -1,7 +1,7 @@
 =begin experiment
 
 name: ARUC8
-description: Mobile Hosts Test (Steve)
+description: Mobile Hosts (ARUC8) Test
 script: $CIP/csmart/scripts/definitions/UR-BaselineTemplate-ExtOplan.rb
 parameters:
   - run_count: 1
@@ -19,6 +19,7 @@ include_scripts:
   - script: $CIP/csmart/lib/isat/clearPnLogs.rb
 #  - script: $CIP/csmart/lib/isat/datagrabber_include.rb
   - script: $CIP/csmart/lib/isat/initialize_network.rb
+  - script: $CIP/csmart/lib/robustness/objs/monitor_mobile_hosts.rb
   - script: $CIP/csmart/lib/isat/migrate.rb
     parameters:
     - migrate_location: during_stage_1
