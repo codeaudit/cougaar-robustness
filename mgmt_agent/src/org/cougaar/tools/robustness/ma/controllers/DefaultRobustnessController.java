@@ -97,15 +97,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (isLocal(name)) newState(name, HEALTH_CHECK);
     }
     public void heartbeatStarted(String name) {
-      if (isLocal(name)) {
-        logger.debug("Heartbeats started: agent=" + name);
-        newState(name, DefaultRobustnessController.ACTIVE);
-      }
+      logger.debug("Heartbeats started: agent=" + name);
+      newState(name, DefaultRobustnessController.ACTIVE);
     }
     public void heartbeatStopped(String name) {
-      if (isLocal(name)) {
-        logger.debug("Heartbeats stopped: agent=" + name);
-      }
+      logger.debug("Heartbeats stopped: agent=" + name);
     }
     public void heartbeatFailure(String name) {
       if (getState(name) == DefaultRobustnessController.ACTIVE &&
