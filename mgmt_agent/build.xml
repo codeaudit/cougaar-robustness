@@ -12,8 +12,10 @@
   <property name="workspace" value="${env.COUGAAR_INSTALL_PATH}/workspace"/>
   <property name="host" value="${env.HOST}"/>
   <property name="port" value="8800"/>
-  <property name="node" value=""/>
+  <property name="node" value="EmptyNode"/>
   <property name="experiment" value=""/>
+  <property name="nameserver" value="dell8200:8889:5555" />
+  <property name="controlport" value="8484" />
   <property name="agent" value="Enclave1RobustnessManager"/>
   <property name="persistenceEnabled" value="false"/>
   <property name="persistenceInterval" value="30000"/>
@@ -258,12 +260,17 @@
     <echo message="Starting node: ${host}-${node}" />
     <antcall target="pnode-ini" >
       <param name="node" value="${host}-${node}" />
-      <param name="persistenceEnabled" value="true" />
     </antcall>
   </target>
 
   <!-- Runs an empty node -->
-  <target name="emptynode" depends="newrestartnode">
+  <target name="emptynode" >
+    <mkdir dir="${workspace}/configs" />
+    <copy file="test/configs/ma/EmptyNode.ini" tofile="${workspace}/configs/${node}.ini" />
+    <echo message="Starting node: ${node}" />
+    <antcall target="pnode-ini" >
+      <param name="node" value="${node}" />
+    </antcall>
   </target>
 
   <!-- Starts a node -->
@@ -280,18 +287,21 @@
         <fileset dir="${cougaar}/sys">
           <include name="**/*.jar" />
         </fileset>
-        <fileset dir="${lib}">
+        <!-- <fileset dir="${lib}">
           <include name="**/*.jar" />
-        </fileset>
+        </fileset> -->
       </classpath>
-      <sysproperty key="org.cougaar.community.caching" value="off"/>
+      <sysproperty key="java.Djava.security.manager" value=""/>
+      <sysproperty key="java.Djava.security.policy" value="${cougaar}/configs/common/Cougaar_Java.poliy"/>
+      <sysproperty key="java.Dorg.cougaar.core.security.bootstrap.keystore" value="${cougaar}/configs/common/bootstrap_keystore"/>
+      <sysproperty key="org.cougaar.community.caching" value="on"/>
       <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
       <sysproperty key="org.cougaar.node.name" value="${node}"/>
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
       <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
       <sysproperty key="org.cougaar.core.persistence.enable" value="${persistenceEnabled}"/>
       <sysproperty key="org.cougaar.core.persistence.lazyInterval" value="${persistenceInterval}"/>
-      <sysproperty key="org.cougaar.name.server" value="ron:8888:5555"/>
+      <sysproperty key="org.cougaar.name.server" value="${nameserver}"/>
       <sysproperty key="org.cougaar.system.path" value="${cougaar}/sys"/>
       <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;${workspace}/configs;$$INSTALL/configs/common;$$CWD/test/configs/ma;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig"/>
       <arg line="org.cougaar.core.node.Node"/>
@@ -326,7 +336,7 @@
       <sysproperty key="org.cougaar.configuration.user" value="ul_user"/>
       <sysproperty key="org.cougaar.configuration.password" value=""/>
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
-      <sysproperty key="org.cougaar.control.port" value="8484"/>
+      <sysproperty key="org.cougaar.control.port" value="${controlport}"/>
       <sysproperty key="org.cougaar.node.name" value="${node}"/>
       <sysproperty key="org.cougaar.planning.ldm.lpw.ComplainingLP.level" value="0"/>
       <sysproperty key="org.cougaar.config.path" value="$$INSTALL/configs/common;$$INSTALL/glmtrans/configs/demo-config/config"/>
