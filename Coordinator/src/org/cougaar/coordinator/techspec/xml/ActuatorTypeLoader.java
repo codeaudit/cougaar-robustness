@@ -191,6 +191,8 @@ public class ActuatorTypeLoader extends XMLLoader {
                 parseTransition(e, ad);
             } //else, likely a text element - ignore
         }
+        actuator.addAction(ad);
+        
     }
 
 

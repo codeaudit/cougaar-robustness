@@ -56,9 +56,9 @@ public class ActionTechSpecImpl implements ActionTechSpecInterface   {
 
         this.name = name;
         this.uid = uid;
-        this.assetType = assetType;
+        this.assetType = type;
         this.assetDim = assetDim;
-        
+
         actions = new Vector();
         possibleValues = new HashSet();
     }
@@ -87,7 +87,7 @@ public class ActionTechSpecImpl implements ActionTechSpecInterface   {
      * @return the state dimension that the actuator affects if an action is taken.
      */
     public AssetStateDimension getStateDimension() { 
-        
+                
         //Evaluate lazily as the state dim. may not be defined when this action is loaded from xml
         return assetType.findStateDimension(assetDim);
     }
@@ -118,5 +118,20 @@ public class ActionTechSpecImpl implements ActionTechSpecInterface   {
     public String getRevision() {
         return revision;
     }
+    
+    /** @return a String that details info about this actuator, its actions and transition costs */
+    public String toString() {
+     
+        String s = "Actuator ["+this.getName()+"], uid="+this.getUID()+"\n";
+        s += "    Affects AssetType["+this.getAssetType()+"] and AssetStateDimension["+this.assetDim+"]\n";
+        
+        Iterator i = this.getActions().iterator();
+        while (i.hasNext()) {
+             ActionDescription ad = (ActionDescription)i.next();
+             s = s+ "\n" + ad.toString() + "\n";
+        }        
+        return s;
+    }
+    
     
 }

@@ -112,4 +112,18 @@ public class ActionDescription {
     /** @return get continuing cost */
     public ActionCost getContinuingCost() { return continuingCost; }
     
+    public String toString() {
+        
+        String s = "    Action ["+this.name()+"] -------------\n";
+        s += "    Desc = "+ this.description() + "\n";
+        s += "    WhenStateIs="+this.getWhenStateIs()+"  EndStateWillBe="+this.getEndStateWillBe()+"\n";
+        if (this.getOneTimeCost() != null) {
+            s += "    One Time Transition Costs:\n"+ this.getOneTimeCost();
+        }
+        if (this.getContinuingCost() != null) {
+            s += "    Continuing Transition Costs:\n"+ this.getContinuingCost();
+        }
+        return s;
+    }
+    
 }

@@ -34,7 +34,7 @@ package org.cougaar.coordinator.techspec;
 public class ActionCost {
     
     Cost bandwidth=null, cpu=null, memory=null;
-    int time=0;
+    int time=-1;
     
     
     /** Creates a new instance of ActionCost */
@@ -53,6 +53,16 @@ public class ActionCost {
     /** Set the time duration the action will take to execute */
     public void setTimeCost(int duration) { time = duration; }
     
+    
+    public String toString() {
+     
+        String s = "      Bandwidth: "+ ((bandwidth != null) ? bandwidth.toString() : "N/A") + "\n";
+              s += "      CPU:       "+ ((cpu != null) ? cpu.toString() : "N/A") + "\n";
+              s += "      Memory:    "+ ((memory != null) ? memory.toString() : "N/A") + "\n";
+              s += "      Time:      "+ ((time >=0) ? "duration = " + time : "N/A") + "\n";
+        return s;
+    }
+    
         
     /** Holds the cost info for a given dimension */
     class Cost {
@@ -64,6 +74,11 @@ public class ActionCost {
             this.fIntensity = fIntensity;
             this.asf = asf;
             this.msf = msf;
+        }
+        
+        public String toString() {
+            return "Intensity="+fIntensity+ "  " + (asf ? "Agent Size Factor; " : "") + 
+                                                   (msf ? "Message Size Factor " : "") ;
         }
     }
 }
