@@ -216,14 +216,14 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
                   if (logger.isInfoEnabled()) logger.info("For: " + action.getAssetID().toString() + ", " + variantAttempted.toString() + " succeeded - Nothing more to do.  Completed action no longer permitted w/o re-authorization.");
                   publishAdd(new RetractedActions(action, cbe));
                   if (logger.isInfoEnabled()) logger.info("Sucess in processing: " + cbe.dumpAvailableVariants());
-                  publishAdd new SelectionCompleted(cbe.getAssetID(), true);
+                  publishAdd(new SelectionCompleted(cbe.getAssetID(), true);
                   publishRemove(cbe);
               }
               else if (ap.getResult().equals(Action.ACTIVE)) {
                   if (logger.isInfoEnabled()) logger.info("For: " + action.getAssetID().toString() + ", " + variantAttempted.toString() + " is active - Other actions may be pending.");
                   //publishAdd(new RetractedActions(action));
                   if (logger.isInfoEnabled()) logger.info("Success in processing: " + cbe.dumpAvailableVariants());
-                  publishAdd new SelectionCompleted(cbe.getAssetID(), true);
+                  publishAdd(new SelectionCompleted(cbe.getAssetID(), true);
                   publishRemove(cbe);
               }
               else logger.error("Unhandled Action result: " + ap.getResult().toString());
@@ -325,7 +325,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
     }
     if (alreadySelectedVariants.isEmpty()) { // could not find anything useful to do
         if (logger.isInfoEnabled()) logger.info("Done processing: " + cbe.dumpAvailableVariants());
-        publishAdd new SelectionCompleted(cbe.getAssetID(), false);
+        publishAdd(new SelectionCompleted(cbe.getAssetID(), false);
         publishRemove(cbe);
     }
   }
