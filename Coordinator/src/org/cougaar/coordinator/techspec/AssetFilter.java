@@ -346,7 +346,7 @@ public class AssetFilter implements NotPersistable {
             //Need to get a list of ALL hosts, then narrow to all hosts that are on the same network as this asset
 ////////            sdf;
             
-////////            AssetType.
+///            AssetType.
             
             
             return true; //IMPLEMENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

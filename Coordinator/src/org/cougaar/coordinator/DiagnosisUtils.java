@@ -44,10 +44,10 @@ public  class DiagnosisUtils
     }
     
     /**
-     * @return expanded name - "type:name"
+     * @return the assetID
      */
-    public static String getExpandedName(Diagnosis d ) { 
-        if (d != null) { return d.getExpandedName(); }
+    public static AssetID getAssetID(Diagnosis d ) { 
+        if (d != null) { return d.getAssetID(); }
         else { return null; }        
     }
     

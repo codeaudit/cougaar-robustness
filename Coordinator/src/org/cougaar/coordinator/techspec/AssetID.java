@@ -38,9 +38,9 @@ public class AssetID {
     /**
      * Create an asset name object 
      */
-    public AssetID(String AssetID, AssetType assetType) {
+    public AssetID(String assetName, AssetType assetType) {
         type = assetType;
-        name = AssetID;
+        name = assetName;
     }
     
     /** Return asset type */

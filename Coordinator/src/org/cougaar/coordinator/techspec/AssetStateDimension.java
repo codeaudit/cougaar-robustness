@@ -34,7 +34,8 @@ import org.cougaar.core.persist.NotPersistable;
 
 /**
  * This class defines one of many possible states that an asset TYPE may have.
- * A state can have one of several possible states.
+ * A state dimension can have one of several possible states, E.g. 
+ * AssetStateDimension = Communicating, states = OK, NotCommunicating
  *
  * @author Paul Pazandak, Ph.D. OBJS, Inc.
  */
@@ -101,7 +102,7 @@ public class AssetStateDimension implements NotPersistable, Serializable {
      */
     public boolean equals(AssetStateDimension as) {
         
-        return (as.assetType.getName().equalsIgnoreCase(this.assetType.getName()) && as.name.equalsIgnoreCase(this.name) );
+        return ( (as != null) && as.assetType.getName().equalsIgnoreCase(this.assetType.getName()) && as.name.equalsIgnoreCase(this.name) );
     }
     
     /**
@@ -124,8 +125,46 @@ public class AssetStateDimension implements NotPersistable, Serializable {
      * Remove a possible AssetState
      * @param a AssetState to remove
      */
-    public void removeState(AssetState state) {  possibleStates.removeElement(state); }
+    //public void removeState(AssetState state) {  possibleStates.removeElement(state); }
 
+    /**
+      * Converts the name of the state into an index number
+      * @param state_name the name of the state
+      * @return the index for the state, -1 if not found
+      **/
+    public int StateNameToStateIndex ( String state_name ) {
+        
+        AssetState as;
+        for (int i = 0; i < possibleStates.size(); i++ ) {
+            as = (AssetState) possibleStates.get(i);
+            if ( (as != null) && as.getName().equals(state_name)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+      * Converts the index number of the state into a name
+      * @param the index for the state
+      * @return state_name the name of the state, or NULL if state_index is out of bounds.
+      **/
+    public String StateIndexToStateName( int state_index ) {
+
+        if (state_index >= possibleStates.size() ) return null;
+        return possibleStates.get(state_index);
+
+    }
+
+    /**
+      * Converts the index number of the state into a name
+      * @param the index for the state
+      * @return state_name the name of the state
+      **/
+    public int getNumStates( ) {
+        return possibleStates.size();
+    }
+    
     /**
      * Set default AssetState
      * @param a default AssetState 

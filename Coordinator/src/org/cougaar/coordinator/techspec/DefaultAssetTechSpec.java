@@ -49,7 +49,7 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
     private String rev;
     private UID uid;
     private AssetType assetType;
-    private String expandedName;
+    private AssetID assetID;
     private Vector properties;
     private Hashtable superiors;
     private AssetTechSpecInterface host;
@@ -69,7 +69,7 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
         this.name = assetName;
         this.rev = "1.0";
         this.uid = uid;
-        this.expandedName = AssetName.generateExpandedAssetName(assetName, type);
+        this.assetID = new AssetID(assetName, type);
         
         
         properties = new Vector();
@@ -95,15 +95,15 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
     
     
     /** 
-     * @return the DefaultAssetTechSpec for the asset having the given expandedName
+     * @return the DefaultAssetTechSpec for the asset having the given assetID
      */
-    public static DefaultAssetTechSpec findAssetByExpandedName(String expandedName) {
+    public static DefaultAssetTechSpec findAssetByID(AssetID assetID) {
         
         DefaultAssetTechSpec asset = null;
         Iterator iter = allAssets.iterator();
         while (iter.hasNext()) {
             asset = (DefaultAssetTechSpec)iter.next();
-            if (asset.getExpandedName().equals(expandedName)) {
+            if (asset.getAssetID().equals(assetID)) {
                 return asset;
             }
         }
@@ -171,13 +171,13 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
      */
     public boolean equals(Object o) {
         return (o != null) && (o instanceof AssetTechSpecInterface) &&
-        ((AssetTechSpecInterface)o).getExpandedName().equals(this.getExpandedName());
+        ((AssetTechSpecInterface)o).getAssetID().equals(this.getAssetID());
     }
     
     /**
-     * @return expanded name - "type:name"
+     * @return the assetID
      */
-    public String getExpandedName() { return expandedName; }
+    public AssetID getAssetID() { return assetID; }
 
     
     /**

@@ -201,7 +201,7 @@ logger.warn("!!!! **********************************************************");
                         " priorLocation=" + csce[i].getPriorLocation() +
                         " newLocation=" + csce[i].getCurrentLocation());
                         
-                        agentAsset = DefaultAssetTechSpec.findAssetByExpandedName(AssetName.generateExpandedAssetName(agentName, AssetType.AGENT));
+                        agentAsset = DefaultAssetTechSpec.findAssetByID(new AssetID(agentName, AssetType.AGENT));
                         agentAsset.setNewLocation(hostAsset, nodeAsset);
                         queueChangeEvent(new AssetChangeEvent( agentAsset, AssetChangeEvent.MOVED_ASSET));
 
@@ -221,11 +221,11 @@ logger.warn("!!!! **********************************************************");
 
                         if (csce[i].getType() == CommunityStatusModel.AGENT) {
                             logger.info("Agent REMOVED: agent=" + agentName);                        
-                            agentAsset = DefaultAssetTechSpec.findAssetByExpandedName(AssetName.generateExpandedAssetName(agentName, AssetType.AGENT));
+                            agentAsset = DefaultAssetTechSpec.findAssetByID(new AssetID(agentName, AssetType.AGENT));
                             queueChangeEvent(new AssetChangeEvent( agentAsset, AssetChangeEvent.REMOVED_ASSET));                                                
                         } else if (csce[i].getType() == CommunityStatusModel.NODE) {
                             logger.info("NODE REMOVED: node=" + agentName);                        
-                            nodeAsset = DefaultAssetTechSpec.findAssetByExpandedName(AssetName.generateExpandedAssetName(agentName, AssetType.NODE));
+                            nodeAsset = DefaultAssetTechSpec.findAssetByID(new AssetID(agentName, AssetType.NODE));
                             queueChangeEvent(new AssetChangeEvent( nodeAsset, AssetChangeEvent.REMOVED_ASSET));                                                
                         }
                         
@@ -483,7 +483,7 @@ logger.warn("!!!! **********************************************************");
         
         if (hostName == null || hostName.length() == 0) { return null; }
         
-        DefaultAssetTechSpec hostAsset = DefaultAssetTechSpec.findAssetByExpandedName(AssetName.generateExpandedAssetName(hostName, AssetType.HOST));
+        DefaultAssetTechSpec hostAsset = DefaultAssetTechSpec.findAssetByID(new AssetID(hostName, AssetType.HOST));
         if (hostAsset == null) {
             hostAsset = new DefaultAssetTechSpec( null, null,  hostName, AssetType.HOST, us.nextUID() );
             queueChangeEvent(new AssetChangeEvent( hostAsset, AssetChangeEvent.NEW_ASSET));
@@ -497,7 +497,7 @@ logger.warn("!!!! **********************************************************");
         
         if (nodeName == null || nodeName.length() == 0) { return null; }
         
-        DefaultAssetTechSpec nodeAsset = DefaultAssetTechSpec.findAssetByExpandedName(AssetName.generateExpandedAssetName(nodeName, AssetType.NODE));
+        DefaultAssetTechSpec nodeAsset = DefaultAssetTechSpec.findAssetByID(new AssetID(nodeName, AssetType.NODE));
         if (nodeAsset == null) {
             nodeAsset = new DefaultAssetTechSpec( hostAsset, null,  nodeName, AssetType.NODE, us.nextUID() );
             queueChangeEvent(new AssetChangeEvent( nodeAsset, AssetChangeEvent.NEW_ASSET));

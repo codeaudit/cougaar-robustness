@@ -49,8 +49,8 @@ public  class ActionUtils
     /**
      * @return expanded name - "type:name"
      */
-    public static String getExpandedName(Action a) { 
-        if (a != null) { return a.getExpandedName(); }
+    public static AssetID getAssetID(Action a) { 
+        if (a != null) { return a.getAssetID(); }
         else { return null; }
     }
 

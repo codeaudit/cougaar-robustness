@@ -37,28 +37,20 @@ package org.cougaar.coordinator.techspec;
  */
 public abstract class AssetPropertyChange  {
     
-    /** the (simple, not 'expanded') name of the asset */
-    private String assetName;
-    
-    /** the asset type */
-    private AssetType type;
-    
     /** the changes that are being declared */
     private AssetProperty[] changes;
     
-    /** the expanded name (type:name) of the asset */
-    private String expandedName;
+    /** the assetID of the asset */
+    private AssetID  assetID;
     
     /** 
      * Creates a new instance of AssetPropertyChange 
      */
     public AssetPropertyChange(String assetName, AssetType type) {
         
-        this.assetName = assetName;
-        this.type = type;
         changes = new AssetProperty[0];
 
-        expandedName = AssetName.generateExpandedAssetName(assetName, type);
+        assetID = new AssetID(assetName, type);
     }
 
     /** 
@@ -66,29 +58,25 @@ public abstract class AssetPropertyChange  {
      */
     public AssetPropertyChange(String assetName, AssetType type, AssetProperty property ) {
         
-        this.assetName = assetName;
-        this.type = type;
         changes = new AssetProperty[1];
         changes[0] = property;
 
-        expandedName = AssetName.generateExpandedAssetName(assetName, type);
+        assetID = new AssetID(assetName, type);
     }
     
     /** 
      * Creates a new instance of AssetPropertyChange, with an array of changes
      */
     public AssetPropertyChange(String assetName, AssetType type, AssetProperty[] properties ) {
-        this.assetName = assetName;
-        this.type = type;
         changes = properties;
 
-        expandedName = AssetName.generateExpandedAssetName(assetName, type);
+        assetID = new AssetID(assetName, type);
     }        
 
     /**
-     * @return expanded name - "type:name" for the asset that this change affects
+     * @return the assetID for the asset that this change affects
      */
-    public String getExpandedName() { return expandedName; }
+    public AssetID getAssetID() { return assetID; }
     
     /** 
      * @return the property changes

@@ -327,7 +327,7 @@ public class DefaultThreatModel implements ThreatModelInterface, NotPersistable 
         Iterator iter = assets.iterator();
         while (iter.hasNext()) {
             atsi = (AssetTechSpecInterface)iter.next();
-            if (atsi.getExpandedName().equals(asset.getExpandedName())) {
+            if (atsi.getAssetID().equals(asset.getAssetID())) {
                 return true;
             }
         }
