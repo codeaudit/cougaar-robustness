@@ -36,7 +36,8 @@ import javax.naming.directory.BasicAttribute;
 /**
  * ThreatAlert handler to respond to changes in Security posture.
  */
-public class SecurityAlertHandler extends RobustnessThreatAlertHandlerBase {
+public class SecurityAlertHandler extends RobustnessThreatAlertHandlerBase
+   implements RestartManagerConstants {
 
   private PersistenceHelper persistenceHelper;
 
@@ -53,23 +54,7 @@ public class SecurityAlertHandler extends RobustnessThreatAlertHandlerBase {
       SecurityAlert sa = (SecurityAlert)ta;
       logger.info("Received new SecurityThreatAlert: " + sa);
       if (agentId.toString().equals(preferredLeader())) {
-        Set affectedNodes = new HashSet();
-        Set affectedAgents = new HashSet();
-        Set nodesAndHosts = new HashSet();
-        Asset affectedAssets[] = ta.getAffectedAssets();
-        for (int i = 0; i < affectedAssets.length; i++) {
-          String type = affectedAssets[i].getAssetType();
-          String id = affectedAssets[i].getAssetIdentifier();
-          if (type != null &&
-              (type.equalsIgnoreCase("Node") || type.equalsIgnoreCase("Node"))) {
-            nodesAndHosts.add(id);
-          }
-         if (!nodesAndHosts.isEmpty()) {
-            affectedNodes.addAll(resolveNodes(nodesAndHosts));
-            affectedAgents.addAll(affectedAgents(affectedNodes));
-          }
-        }
-        adjustRobustnessParameters(sa, affectedAgents);
+        adjustRobustnessParameters(sa);
       }
     }
   }
@@ -78,6 +63,9 @@ public class SecurityAlertHandler extends RobustnessThreatAlertHandlerBase {
     if (ta instanceof SecurityAlert) {
       SecurityAlert sa = (SecurityAlert) ta;
       logger.info("SecurityThreatAlert changed: " + sa);
+      if (agentId.toString().equals(preferredLeader())) {
+        adjustRobustnessParameters(sa);
+      }
     }
   }
 
@@ -85,6 +73,9 @@ public class SecurityAlertHandler extends RobustnessThreatAlertHandlerBase {
     if (ta instanceof SecurityAlert) {
       SecurityAlert sa = (SecurityAlert) ta;
       logger.info("SecurityThreatAlert removed: " + sa);
+      if (agentId.toString().equals(preferredLeader())) {
+        adjustRobustnessParameters(sa, true);  // Reset to default
+      }
     }
   }
 
@@ -92,17 +83,31 @@ public class SecurityAlertHandler extends RobustnessThreatAlertHandlerBase {
    * Adjust key robustness parameters based on new security level.
    * @param ta
    */
-  protected void adjustRobustnessParameters(SecurityAlert sa, Set affectedAgents) {
-    logger.info("Adjusting robustness parameters: securityLevel=" + sa.getSeverityLevelAsString());
+  protected void adjustRobustnessParameters(SecurityAlert sa) {
+    adjustRobustnessParameters(sa, false);
+  }
 
-    // TODO:  Remove hard-coded values.  Retrieve new values or modification coefficients from
-    // community attributes.
-    Attribute mods[] =
-        new Attribute[] {new BasicAttribute("UPDATE_INTERVAL", "60000")};
-    changeAttributes(model.getCommunityName(), null, mods);
+  protected void adjustRobustnessParameters(SecurityAlert sa, boolean resetToDefault) {
+    logger.info("Adjusting robustness parameters: securityLevel=" + sa.getSeverityLevelAsString());
+    long persistenceInterval = model.getLongAttribute(PERSISTENCE_INTERVAL_ATTRIBUTE);
+    double persistenceAdjustmentCoefficient = 1.0;
+    if (!resetToDefault && sa.getSeverityLevel() > sa.MEDIUM_SEVERITY) {
+      persistenceAdjustmentCoefficient = model.getDoubleAttribute(PERSISTENCE_INTERVAL_THREATCON_HIGH_COEFFICIENT);
+    }
+    persistenceInterval = (long)((double)persistenceInterval * persistenceAdjustmentCoefficient);
     Properties controls = new Properties();
-    controls.setProperty("lazyInterval", "600000");
+    controls.setProperty("lazyInterval", Long.toString(persistenceInterval));
     persistenceHelper.controlPersistence(model.listEntries(model.AGENT), true, controls);
+
+    long statusUpdateInterval = model.getLongAttribute(STATUS_UPDATE_ATTRIBUTE);
+    double statusUpdateAdjustmentCoefficient = 1.0;
+    if (!resetToDefault && sa.getSeverityLevel() > sa.MEDIUM_SEVERITY) {
+      statusUpdateAdjustmentCoefficient = model.getDoubleAttribute(STATUS_UPDATE_INTERVAL_THREATCON_HIGH_COEFFICIENT);
+    }
+    statusUpdateInterval = (long)((double)statusUpdateInterval * statusUpdateAdjustmentCoefficient);
+    Attribute mods[] =
+        new Attribute[] {new BasicAttribute(STATUS_UPDATE_ATTRIBUTE, Long.toString(statusUpdateInterval))};
+    changeAttributes(model.getCommunityName(), null, mods);
   }
 
 }
