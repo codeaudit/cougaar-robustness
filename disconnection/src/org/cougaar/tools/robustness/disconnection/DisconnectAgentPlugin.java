@@ -66,7 +66,7 @@ public class DisconnectAgentPlugin extends DisconnectPluginBase {
         Collection c = getBlackboardService().query(pred);
         if (c.iterator().hasNext()) {
            cond = (AgentExistsCondition)c.iterator().next();
-           if (logger.isDebugEnabled()) logger.debug("UNLOADING "+cond.getAsset());
+           if (logger.isDebugEnabled()) logger.debug("UNLOADING "+cond.getExpandedName());
            getBlackboardService().publishRemove(cond); //lets the NodeAgent learn that the Agent has unloaded
         }    
         getBlackboardService().closeTransaction();

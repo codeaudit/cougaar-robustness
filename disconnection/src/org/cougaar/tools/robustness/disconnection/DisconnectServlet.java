@@ -185,7 +185,7 @@ public class DisconnectServlet extends BaseServletComponent
                   d = new Double(Double.parseDouble(expire)*1000.0);
                   try {
                         blackboard.openTransaction();
-                        LocalReconnectTimeCondition lrtc = LocalReconnectTimeCondition.findOnBlackboard(assetType, assetID, blackboard);
+                        LocalReconnectTimeCondition lrtc = LocalReconnectTimeCondition.find(assetType, assetID, blackboard);
                         if (lrtc != null) {
                            lrtc.setTime(d);
                            out.println("<center><h2>Status Changed - Disconnect Requested</h2></center><br>" );
@@ -212,7 +212,7 @@ public class DisconnectServlet extends BaseServletComponent
       private void reconnect(PrintWriter out) {
           try {
               blackboard.openTransaction();
-              LocalReconnectTimeCondition lrtc = LocalReconnectTimeCondition.findOnBlackboard(assetType, assetID, blackboard);
+              LocalReconnectTimeCondition lrtc = LocalReconnectTimeCondition.find(assetType, assetID, blackboard);
               if (lrtc != null) {
                   lrtc.setTime(new Double(0.0));
                   out.println("<center><h2>Status Changed - Reconnect Requested</h2></center><br>" );

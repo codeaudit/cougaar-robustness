@@ -37,14 +37,16 @@ import java.util.Iterator;
 
 public class DisconnectMonitoringAgentEnabler extends DefenseOperatingMode {
       
-    // searches the BB for an object of this type with a given signature 
-    public static DisconnectMonitoringAgentEnabler findOnBlackboard(String defenseName, String expandedName, BlackboardService blackboard) {
-        UnaryPredicate pred = new UnaryPredicate() {
-            public boolean execute(Object o) {  
-                return 
-                    (o instanceof DisconnectMonitoringAgentEnabler);
-            }
-        };
+    public static final UnaryPredicate pred = new UnaryPredicate() {
+        public boolean execute(Object o) {  
+            return 
+                (o instanceof DisconnectMonitoringAgentEnabler);
+        }
+    };
+
+        
+        // searches the BB for an object of this type with a given signature 
+    public static DisconnectMonitoringAgentEnabler find(String defenseName, String expandedName, BlackboardService blackboard) {
 
         DisconnectMonitoringAgentEnabler dc = null;
         Collection c = blackboard.query(pred);

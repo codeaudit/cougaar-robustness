@@ -37,14 +37,15 @@ import java.util.Iterator;
 
 public class LocalReconnectTimeCondition extends DefenseTimeCondition {
     
+    public static final UnaryPredicate pred = new UnaryPredicate() {
+        public boolean execute(Object o) {  
+            return 
+                (o instanceof LocalReconnectTimeCondition);
+        }
+    };
+        
     // searches the BB for an object of this type with a given signature 
-    public static LocalReconnectTimeCondition findOnBlackboard(String assetType, String assetID, BlackboardService blackboard) {
-        UnaryPredicate pred = new UnaryPredicate() {
-            public boolean execute(Object o) {  
-                return 
-                    (o instanceof LocalReconnectTimeCondition);
-            }
-        };
+    public static LocalReconnectTimeCondition find(String assetType, String assetID, BlackboardService blackboard) {
 
         LocalReconnectTimeCondition rtc = null;
         Collection c = blackboard.query(pred);
