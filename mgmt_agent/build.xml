@@ -241,6 +241,7 @@
          <include name="ron2-hosts.xml" />
          <include name="qing-hosts.xml" />
          <include name="uc1-small-1ad-layout.xml" />
+         <include name="uc1-small-1ad-layout-ra.xml" />
       </fileset>
     </copy>
 

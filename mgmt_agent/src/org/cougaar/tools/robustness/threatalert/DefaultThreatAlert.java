@@ -34,10 +34,10 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
   public static final long FOREVER = -1;
 
   private MessageAddress source;
-  private int severityLevel;
+  private int severityLevel = MEDIUM_SEVERITY;
   private Date creationTime;
   private long startTime;
-  private long duration;
+  private long duration = FOREVER;
   private UID uid;
   private List assets;
   private Object content;
@@ -47,6 +47,8 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
    */
   public DefaultThreatAlert() {
     this.assets = new ArrayList();
+    this.creationTime = new Date();
+    this.startTime = now();
   }
 
   /**

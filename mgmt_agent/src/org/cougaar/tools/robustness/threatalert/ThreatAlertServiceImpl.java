@@ -101,6 +101,9 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
     uidSvc = (UIDService)getServiceBroker().getService(this, UIDService.class, null);
     log = (LoggingService)sb.getService(this, LoggingService.class, null);
     log = org.cougaar.core.logging.LoggingServiceWithPrefix.add(log, agentId + ": ");
+    if (log.isDebugEnabled()) {
+      log.debug("init:");
+    }
     if (sb.hasService(org.cougaar.core.service.BlackboardService.class)) {
       init();
     } else {

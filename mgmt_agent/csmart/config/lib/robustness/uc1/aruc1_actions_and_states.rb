@@ -374,6 +374,23 @@ module Cougaar
       end
     end
 
+    class ReaffiliationNotification < Cougaar::Action
+      def initialize(run, target, community)
+        super(run)
+        @target = target
+        @community = community
+      end
+      def perform
+        @run.society.each_node do |node|
+          if node.name = @target
+            puts "#{node.uri}/$#{node.name}/reaffiliation?community=#{@community}&target=#{@target}"
+            result, uri = Cougaar::Communications::HTTP.get(node.uri+"/$"+node.name+"/reaffiliation?community=#{@community}&target=#{@target}")
+            return
+          end
+        end
+      end
+    end
+
   end
 
 end

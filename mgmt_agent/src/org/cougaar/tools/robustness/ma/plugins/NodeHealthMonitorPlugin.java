@@ -251,7 +251,12 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
       }
       if (communityChanged && commSvc != null) {
         communityChanged = false;
-        Community community = commSvc.getCommunity(myCommunity, null);
+        Community community = commSvc.getCommunity(myCommunity,
+          new CommunityResponseListener() {
+            public void getResponse(CommunityResponse resp) {
+              processCommunityChanges(Collections.singleton(resp.getContent()));
+            }
+          });
         if (community != null) {
           processCommunityChanges(Collections.singleton(community));
         }
@@ -365,7 +370,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
   private void processCommunityChanges(Collection communities) {
     for(Iterator it = communities.iterator(); it.hasNext(); ) {
       Community community = (Community)it.next();
-      if (model == null) {
+      if (model == null || !community.getName().equals(model.getCommunityName())) {
         //blackboard.openTransaction();
         initializeModel(community.getName());
         //blackboard.closeTransaction();
@@ -432,29 +437,35 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
   }
 
   private synchronized void initializeModel(String communityName) {
-    if (model == null) {
-      if (logger.isDebugEnabled()) {
-        logger.debug("Initialize CommunityStatusModel");
-      }
-      model = new CommunityStatusModel(myName,
-                                       communityName,
-                                       getBindingSite());
-      blackboard.publishAdd(model);
-      String controllerClassname =
-          System.getProperty(CONTROLLER_CLASS_PROPERTY,
-                             DEFAULT_ROBUSTNESS_CONTROLLER_CLASSNAME);
-      try {
-        controller =
-            (RobustnessController)Class.forName(controllerClassname).newInstance();
-        controller.initialize(agentId, getBindingSite(), model);
-      } catch (Exception ex) {
-        if (logger.isErrorEnabled()) {
-          logger.error("Exception creating RobustnessController", ex);
-        }
-      }
-      model.setController(controller);
-      model.addChangeListener(controller);
+    if (logger.isDebugEnabled()) {
+      logger.debug("Initialize CommunityStatusModel");
     }
+    if (model != null) {
+      blackboard.publishRemove(model);
+      model = null;
+      controller = null;
+      blackboard.publishRemove(nodeStatusRelay);
+      nodeStatusRelay = null;
+    }
+    model = new CommunityStatusModel(myName,
+                                     communityName,
+                                     getBindingSite());
+    blackboard.publishAdd(model);
+    String controllerClassname =
+        System.getProperty(CONTROLLER_CLASS_PROPERTY,
+                           DEFAULT_ROBUSTNESS_CONTROLLER_CLASSNAME);
+    try {
+      controller =
+          (RobustnessController) Class.forName(controllerClassname).newInstance();
+      controller.initialize(agentId, getBindingSite(), model);
+    } catch (Exception ex) {
+      if (logger.isErrorEnabled()) {
+        logger.error("Exception creating RobustnessController", ex);
+      }
+    }
+    model.setController(controller);
+    model.addChangeListener(controller);
+
     if (logger.isInfoEnabled()) {
       logger.info("Monitoring community:" +
                   " community=" + communityName +
@@ -484,17 +495,6 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
                                 state));
         }
       }
-      // Agents found in model showing this node as current location
-      /*String agentsFromModel[] = model.entitiesAtLocation(myName);
-      for (int i = 0; i < agentsFromModel.length; i++) {
-        if (!agents.contains(agentsFromModel[i])) {
-          int state = model.getCurrentState(agentsFromModel[i]);
-          state = state < model.INITIAL ? model.INITIAL : state;
-          l.add(new AgentStatus(agentsFromModel[i],
-                                ((Long)agentVersions.get(agentsFromModel[i])).longValue(),
-                                state));
-        }
-      }*/
     }
     return (AgentStatus[])l.toArray(new AgentStatus[0]);
   }

@@ -29,14 +29,17 @@ techspecs = ['Restart_LivenessSensor.xml',
 
 # MIC UC1 components
 ar_servlet          = "org.cougaar.tools.robustness.ma.ui.ARServlet"
+threatalert_service = "org.cougaar.tools.robustness.threatalert.ThreatAlertServiceComponent"
+reaffiliation_servlet = "org.cougaar.tools.robustness.threatalert.ReaffiliationServlet"
+reaffiliation_plugin = "org.cougaar.tools.robustness.ma.plugins.ReaffiliationPlugin"
 node_health_monitor = "org.cougaar.tools.robustness.ma.plugins.NodeHealthMonitorPlugin"
 
 # Boeing components
 load_balancer  	    ="org.cougaar.robustness.exnihilo.plugin.EN4JPlugin"
 
 managerPluginsToAdd = [hb_requester, ping_requester, node_health_monitor, ar_servlet, load_balancer, omsp, ompm, csp, co]
-agentPluginsToAdd   = [hb_server, ping_server]
-nodePluginsToAdd    = [hb_requester, ping_requester, ping_server, node_health_monitor, ar_servlet]
+agentPluginsToAdd   = [hb_server, ping_server, threatalert_service, reaffiliation_plugin]
+nodePluginsToAdd    = [hb_requester, ping_requester, ping_server, node_health_monitor, ar_servlet, threatalert_service, reaffiliation_servlet]
 
 # Add components to all Agents
 society.each_agent do |agent|

@@ -139,23 +139,23 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
           this, BlackboardService.class, bb);
       bb = null;
     }
-    if(log != null) {
+    if (log != null) {
       serviceBroker.releaseService(this, LoggingService.class, log);
       log = null;
     }
-    if(wps != null) {
+    if (wps != null) {
       serviceBroker.releaseService(this, WhitePagesService.class, wps);
       wps = null;
     }
-    if(cs != null) {
+    if (cs != null) {
       serviceBroker.releaseService(this, CommunityService.class, cs);
       cs = null;
     }
-    if(threatAlertService != null) {
+    if (threatAlertService != null) {
       serviceBroker.releaseService(this, ThreatAlertService.class, threatAlertService);
       threatAlertService = null;
     }
-    if(uidService != null) {
+    if (uidService != null) {
       serviceBroker.releaseService(this, UIDService.class, uidService);
       uidService = null;
     }
@@ -168,12 +168,13 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
     private String command, target;
     private HashMap conditions = new HashMap();
 
-    public void doPut(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException
-    {
+    public void doPut(HttpServletRequest req, HttpServletResponse res)
+        throws IOException, ServletException {
       doGet(req, res);
     }
 
-    public void doGet(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException {
+    public void doGet(HttpServletRequest req, HttpServletResponse res) throws
+        IOException, ServletException {
       if (log.isDebugEnabled()) {
         log.debug("doGet: " + req.getQueryString());
       }
@@ -189,14 +190,14 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
       conditions.clear();
       // create a URL parameter visitor
       ServletUtil.ParamVisitor vis =
-        new ServletUtil.ParamVisitor() {
-          public void setParam(String name, String value) {
-            if(value.equals("submit")) { //submit a threat alert
-              command = "submit";
-            } else if(!value.equals("")){
-              conditions.put(name, value); //these are conditions of the threat alert
-            }
+          new ServletUtil.ParamVisitor() {
+        public void setParam(String name, String value) {
+          if (value.equals("submit")) { //submit a threat alert
+            command = "submit";
+          } else if (!value.equals("")) {
+            conditions.put(name, value); //these are conditions of the threat alert
           }
+        }
       };
       // visit the URL parameters
       ServletUtil.parseParams(vis, request);
@@ -204,10 +205,9 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
     }
 
     private void displayParams(String name, String value) throws IOException {
-      if(name.equals("")) {
+      if (name.equals("")) {
         out.print(getPage(communities, null));
-      }
-      else if(name.equals("submit")) {
+      } else if (name.equals("submit")) {
         fireThreatAlert(conditions);
         out.print(getPage(communities, conditions));
       }

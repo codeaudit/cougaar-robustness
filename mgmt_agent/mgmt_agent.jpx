@@ -65,6 +65,7 @@
       <file path="configs/mic-local/qing-hosts.xml"/>
       <file path="configs/mic-local/ron1-hosts.xml"/>
       <file path="configs/mic-local/ron2-hosts.xml"/>
+      <file path="configs/mic-local/uc1-small-1ad-layout-ra.xml"/>
       <file path="configs/mic-local/uc1-small-1ad-layout.xml"/>
     </node>
     <file path="configs/loggingConfig.conf"/>
@@ -183,6 +184,7 @@
             <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-kill-mgr.rb"/>
             <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-kill-node.rb"/>
             <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-kill.rb"/>
+            <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-reaffiliation.rb"/>
             <file path="csmart/scripts/definitions/robustness/mic/aruc1-small-w-mgr.rb"/>
             <file path="csmart/scripts/definitions/robustness/mic/aruc1-small.rb"/>
           </node>

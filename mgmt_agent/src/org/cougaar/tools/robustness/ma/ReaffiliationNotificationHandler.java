@@ -17,6 +17,8 @@
  */
 package org.cougaar.tools.robustness.ma;
 
+import org.cougaar.core.node.NodeControlService;
+
 import org.cougaar.core.service.community.Community;
 import org.cougaar.core.service.community.CommunityResponseListener;
 import org.cougaar.core.service.community.CommunityResponse;
@@ -31,11 +33,11 @@ import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.mts.MessageAddress;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.BasicAttributes;
 
@@ -47,6 +49,7 @@ public class ReaffiliationNotificationHandler extends RobustnessThreatAlertHandl
   implements RestartManagerConstants {
 
   private ThreatAlertService threatAlertService;
+  private NodeControlService nodeControlService;
 
   public ReaffiliationNotificationHandler(BindingSite          bs,
                                           MessageAddress       agentId,
@@ -61,50 +64,73 @@ public class ReaffiliationNotificationHandler extends RobustnessThreatAlertHandl
     this.threatAlertService = tas;
   }
 
+  public NodeControlService getNodeControlService() {
+    if (nodeControlService == null) {
+      nodeControlService =
+          (NodeControlService) bindingSite.getServiceBroker().getService(this,
+          NodeControlService.class, null);
+    }
+    return nodeControlService;
+  }
+
   public void newAlert(ThreatAlert ta) {
     if (ta instanceof ReaffiliationNotification) {
-      ReaffiliationNotification rn = (ReaffiliationNotification)ta;
-      if (logger.isInfoEnabled()) {
-        logger.info("Received new ReaffiliationNotification: " + ta);
+      ReaffiliationNotification rn = (ReaffiliationNotification) ta;
+      if (logger.isDebugEnabled()) {
+        logger.debug("Received new ReaffiliationNotification: " + ta);
       }
-      if (model != null && agentId.toString().equals(preferredLeader()) && ta.isActive()) {
-        sendToMembers(rn, getAffectedNodes(ta.getAffectedAssets()));
-      } else {
-        // Leave current robustness community
-        Collection communities =
-            commSvc.searchCommunity(null,
-                                    "(CommunityType=Robustness)",
-                                    false,
-                                    Community.COMMUNITIES_ONLY,
-                                    null);
-        if (communities != null && !communities.isEmpty()) {
-          String communityName = ((Community)communities.iterator().next()).getName();
-          commSvc.leaveCommunity(communityName,
-                                 agentId.toString(),
-                                 new CommunityResponseListener(){
-                                   public void getResponse(CommunityResponse resp) {}
+      // Leave current robustness community
+      Collection communities =
+          commSvc.searchCommunity(null,
+                                  "(CommunityType=Robustness)",
+                                  false,
+                                  Community.COMMUNITIES_ONLY,
+                                  null);
+      if (communities != null && !communities.isEmpty()) {
+        final String communityName =
+            ((Community) communities.iterator().next()).getName();
+        Community comm = commSvc.getCommunity(communityName, null);
+        if (comm != null && comm.hasEntity(agentId.toString())) {
+          final Attributes attrs =
+              comm.getEntity(agentId.toString()).getAttributes();
+          commSvc.leaveCommunity(communityName, agentId.toString(),
+                                 new CommunityResponseListener() {
+            public void getResponse(CommunityResponse resp) {
+              if (logger.isDebugEnabled()) {
+                logger.debug("Leaving community: community=" +
+                             communityName + " resp=" + resp);
+              }
+            }
           });
-          if (logger.isInfoEnabled()) {
-            logger.info("Leaving community: " + communityName);
+          if (logger.isDebugEnabled()) {
+            logger.debug("Requesting to leave community: " + communityName);
           }
-        }
-        // Join new robustness community
-        String newCommunity = (String)rn.getContent();
-        Attributes attrs = new BasicAttributes();
-        attrs.put("EntityType", "Agent");
-        attrs.put("Role", "Agent");
-        if (newCommunity != null && newCommunity.length() > 0) {
-          commSvc.joinCommunity(newCommunity,
-          agentId.toString(),
-          commSvc.AGENT,
-          attrs,
-          true,
-          null,
-          new CommunityResponseListener(){
-            public void getResponse(CommunityResponse resp) {}
-          });
-          if (logger.isInfoEnabled()) {
-            logger.info("Joining community: " + newCommunity);
+          // Join new robustness community
+          final String newCommunity = (String) rn.getContent();
+          if (newCommunity != null && newCommunity.length() > 0) {
+            commSvc.joinCommunity(newCommunity,
+                                  agentId.toString(),
+                                  commSvc.AGENT,
+                                  attrs,
+                                  true,
+                                  null,
+                                  new CommunityResponseListener() {
+              public void getResponse(CommunityResponse resp) {
+                if (logger.isDebugEnabled()) {
+                  logger.debug("Joining community: community=" +
+                              newCommunity + " resp=" + resp);
+                }
+              }
+            });
+            if (logger.isDebugEnabled()) {
+              logger.debug("Requesting to join community: " + newCommunity);
+            }
+          }
+          // Send Notification to members
+          Attribute entityType = attrs.get("EntityType");
+          if (entityType != null && entityType.contains("Node")) {
+            Set members = findLocalAgentsInCommunity(communityName);
+            sendToMembers(rn, members);
           }
         }
       }
@@ -113,16 +139,16 @@ public class ReaffiliationNotificationHandler extends RobustnessThreatAlertHandl
 
   public void changedAlert(ThreatAlert ta) {
     if (ta instanceof ReaffiliationNotification) {
-      if (logger.isInfoEnabled()) {
-        logger.info("Received changed ReaffiliationNotification: " + ta);
+      if (logger.isDebugEnabled()) {
+        logger.debug("Received changed ReaffiliationNotification: " + ta);
       }
     }
   }
 
   public void removedAlert(ThreatAlert ta) {
     if (ta instanceof ReaffiliationNotification) {
-      if (logger.isInfoEnabled()) {
-        logger.info("Received removed ReaffiliationNotification: " + ta);
+      if (logger.isDebugEnabled()) {
+        logger.debug("Received removed ReaffiliationNotification: " + ta);
       }
     }
   }
@@ -131,82 +157,82 @@ public class ReaffiliationNotificationHandler extends RobustnessThreatAlertHandl
    * Propagate notification to members
    * @param nodesToRemove
    */
-  private void sendToMembers (ReaffiliationNotification rn, final Set nodesToRemove) {
-    final Set membersToRemove = affectedAgents(nodesToRemove);
-    membersToRemove.addAll(nodesToRemove);
-    Set toRemove = new HashSet(membersToRemove);
-    if (logger.isInfoEnabled()) {
-      logger.info("Removing members from community: " + membersToRemove);
+  private void sendToMembers (ReaffiliationNotification rn, final Set agentsToRemove) {
+    if (logger.isDebugEnabled()) {
+      logger.debug("Removing members from community: " + agentsToRemove);
     }
-    model.addChangeListener(new StatusChangeListener() {
-      public void statusChanged(CommunityStatusChangeEvent[] csce) {
-        for (int i = 0; i < csce.length; i++) {
-          if (csce[i].membersRemoved() &&
-              membersToRemove.contains(csce[i].getName())) {
-            membersToRemove.remove(csce[i].getName());
-            if (membersToRemove.isEmpty()) {
-              if (logger.isInfoEnabled()) {
-                logger.info("Remove members from community complete: nodes=" + membersToRemove);
+    final Set toRemove = new HashSet(agentsToRemove);
+    if (model != null) {
+      model.addChangeListener(new StatusChangeListener() {
+        public void statusChanged(CommunityStatusChangeEvent[] csce) {
+          for (int i = 0; i < csce.length; i++) {
+            if (csce[i].membersRemoved() &&
+                toRemove.contains(csce[i].getName())) {
+              toRemove.remove(csce[i].getName());
+              if (toRemove.isEmpty()) {
+                if (logger.isInfoEnabled()) {
+                  logger.info("Remove members from community complete: node=" +
+                              agentId.toString());
+                }
+                model.removeChangeListener(this);
               }
-              model.removeChangeListener(this);
             }
           }
         }
-      }
-    });
+      });
+    }
     if (threatAlertService == null) {
       setThreatAlertService(
           (ThreatAlertService) bindingSite.getServiceBroker().getService(this,
           ThreatAlertService.class, null));
     }
     if (threatAlertService != null) {
-      for (Iterator it = toRemove.iterator(); it.hasNext(); ) {
+      String thisAgent = agentId.toString();
+      for (Iterator it = agentsToRemove.iterator(); it.hasNext();) {
         String memberName = (String) it.next();
-        //commSvc.leaveCommunity(model.getCommunityName(), memberName, null);
-        if (logger.isInfoEnabled()) {
-          logger.info("SendAlert: agent=" + memberName);
+        if (!memberName.equals(thisAgent)) {
+          if (logger.isDebugEnabled()) {
+            logger.debug("SendAlert: agent=" + memberName);
+          }
+          ReaffiliationNotification copyForMember =
+              new ReaffiliationNotification(agentId, rn.getCommunity());
+          copyForMember.setContent(rn.getContent());
+          threatAlertService.sendAlert(copyForMember, memberName);
         }
-        ReaffiliationNotification copyForMember =
-            new ReaffiliationNotification(rn.getSeverityLevel(),
-                                          rn.getStartTime(),
-                                          rn.getExpirationTime(),
-                                          rn.getCommunity());
-        copyForMember.setContent(rn.getContent());
-        threatAlertService.sendAlert(copyForMember, memberName);
       }
     } else {
-      if (logger.isInfoEnabled()) {
-        logger.info("ThreatAlertService is null");
+      if (logger.isWarnEnabled()) {
+        logger.warn("ThreatAlertService is null");
       }
     }
   }
 
-  protected Set getAffectedNodes(Asset[] affectedAssets) {
-    Set nodesAndHosts = new HashSet();
-    for (int i = 0; i < affectedAssets.length; i++) {
-      String type = affectedAssets[i].getAssetType();
-      String id = affectedAssets[i].getAssetIdentifier();
-      if (type != null &&
-          (type.equalsIgnoreCase("Node") || type.equalsIgnoreCase("Host"))) {
-        nodesAndHosts.add(id);
+  private Set findLocalAgentsInCommunity(String communityName) {
+    Set localAgentsInCommunity = new HashSet();
+    Community community = commSvc.getCommunity(communityName, null);
+    if (community != null) {
+      // Agents found using NodeControlService
+      Set agents = listLocalAgents();
+      for (Iterator it = agents.iterator(); it.hasNext();) {
+        String agentName = (String)it.next();
+        if (community.hasEntity(agentName)) {
+          localAgentsInCommunity.add(agentName);
+        }
       }
     }
-    if (!nodesAndHosts.isEmpty()) {
-      return resolveNodes(nodesAndHosts);
-    } else {
-      return Collections.EMPTY_SET;
-    }
+    return localAgentsInCommunity;
   }
 
-  protected Set getExcludedNodes() {
-    Set excludedNodes = new HashSet();
-    String allNodes[] = model.listEntries(model.NODE);
-    for (int i = 0; i < allNodes.length; i++) {
-      if (model.hasAttribute(model.getAttributes(allNodes[i]), "UseForRestarts", "False")) {
-        excludedNodes.add(allNodes[i]);
+  private Set listLocalAgents() {
+    Set names = new HashSet();
+    NodeControlService ncs = getNodeControlService();
+    if (ncs != null) {
+      Set agentAddresses = ncs.getRootContainer().getAgentAddresses();
+      for (Iterator it = agentAddresses.iterator(); it.hasNext(); ) {
+        names.add(it.next().toString());
       }
     }
-    return excludedNodes;
+    return names;
   }
 
 }

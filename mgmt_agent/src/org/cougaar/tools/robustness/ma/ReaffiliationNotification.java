@@ -18,8 +18,7 @@
 package org.cougaar.tools.robustness.ma;
 
 import org.cougaar.tools.robustness.threatalert.DefaultThreatAlert;
-
-import java.util.Date;
+import org.cougaar.core.mts.MessageAddress;
 
 /**
  * ReaffiliationNotification signifying that one or more enclave members is
@@ -27,45 +26,18 @@ import java.util.Date;
  */
 public class ReaffiliationNotification extends DefaultThreatAlert {
 
-  protected String community;
-
   /**
    * Default constructor.
    */
-  public ReaffiliationNotification() {
+  public ReaffiliationNotification(MessageAddress source,
+                                   String         newCommunity) {
     super();
-  }
-
-  /**
-   * Create a new ReaffiliationNotification.
-   * @param severityLevel  Severity level of alert
-   * @param start          Time at which alert becomes active
-   * @param duration       Duration of threat period (ThreatAlert.FOREVER == never expires)
-   */
-  public ReaffiliationNotification(int    severityLevel,
-                                   Date   start,
-                                   long   duration,
-                                   String newCommunity) {
-    super(severityLevel, start, duration);
-    community = newCommunity;
-  }
-
-  /**
-   * Create a new ReaffiliationNotification.
-   * @param severityLevel  Severity level of alert
-   * @param start          Time at which alert becomes active
-   * @param expiration     Time at which alert expires
-   */
-  public ReaffiliationNotification(int    severityLevel,
-                                   Date   start,
-                                   Date   expiration,
-                                   String newCommunity) {
-    super(severityLevel, start, expiration);
-    community = newCommunity;
+    setSource(source);
+    setContent(newCommunity);
   }
 
   public String getCommunity() {
-    return community;
+    return (String)getContent();
   }
 
 }

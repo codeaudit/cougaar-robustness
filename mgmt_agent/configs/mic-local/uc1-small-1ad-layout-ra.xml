@@ -1,0 +1,112 @@
+<society name='1ad-small-layout-ra'
+  xmlns:xsi='http:/www.w3.org/2001/XMLSchema-instance'
+  xsi:noNamespaceSchemaLocation='http:/www.cougaar.org/2003/society.xsd'>
+  <host name='HOST1'>
+    <facet enclave='SMALL1'/>
+    <node name='SMALL1-MGMT-NODE'>
+      <facet role='AR-Management'/>
+    </node>
+  </host>
+  <host name='HOST2'>
+    <facet enclave='SMALL1'/>
+    <node name='FWD-NODE'>
+      <facet role="NameServer"/>
+      <agent name='1-35-ARBN.2-BDE.1-AD.ARMY.MIL'/>
+      <agent name='1-6-INFBN.2-BDE.1-AD.ARMY.MIL'/>
+      <agent name='1-AD.ARMY.MIL'/>
+      <agent name='102-POL-SUPPLYCO.16-CSG.5-CORPS.ARMY.MIL'/>
+      <agent name='47-FSB.DISCOM.1-AD.ARMY.MIL'/>
+      <agent name='123-MSB-HQ.DISCOM.1-AD.ARMY.MIL'/>
+      <agent name='123-MSB-POL.DISCOM.1-AD.ARMY.MIL'/>
+      <agent name='123-MSB-ORD.DISCOM.1-AD.ARMY.MIL'/>
+      <agent name='123-MSB-PARTS.DISCOM.1-AD.ARMY.MIL'/>
+      <agent name='123-MSB-FOOD.DISCOM.1-AD.ARMY.MIL'/>
+      <agent name='16-CSG.5-CORPS.ARMY.MIL'/>
+      <agent name='18-MAINTBN.16-CSG.5-CORPS.ARMY.MIL'/>
+      <agent name='2-BDE.1-AD.ARMY.MIL'/>
+      <agent name='227-SUPPLYCO.16-CSG.5-CORPS.ARMY.MIL'/>
+      <agent name='26-SSCO.16-CSG.5-CORPS.ARMY.MIL'/>
+      <agent name='485-CSB.16-CSG.5-CORPS.ARMY.MIL'/>
+      <agent name='DISCOM.1-AD.ARMY.MIL'/>
+    </node>
+  </host>
+  <host name='HOST3'>
+    <facet enclave='SMALL1'/>
+    <node name='REAR-NODE'>
+      <agent name='1-27-FABN.5-CORPS.ARMY.MIL'/>
+      <agent name='110-POL-SUPPLYCO.37-TRANSGP.21-TSC.ARMY.MIL'/>
+      <agent name='125-ORDBN.7-CSG.5-CORPS.ARMY.MIL'/>
+      <agent name='130-ENGBDE.5-CORPS.ARMY.MIL'/>
+      <agent name='191-ORDBN.29-SPTGP.21-TSC.ARMY.MIL'/>
+      <agent name='21-TSC-HQ.ARMY.MIL'/>
+      <agent name='240-SSCO.7-CSG.5-CORPS.ARMY.MIL'/>
+      <agent name='29-SPTGP.21-TSC.ARMY.MIL'/>
+      <agent name='3-SUPCOM-HQ.5-CORPS.ARMY.MIL'/>
+      <agent name='316-POL-SUPPLYBN.7-CSG.5-CORPS.ARMY.MIL'/>
+      <agent name='343-SUPPLYCO.29-SPTGP.21-TSC.ARMY.MIL'/>
+      <agent name='37-TRANSGP.21-TSC.ARMY.MIL'/>
+      <agent name='41-FABDE.5-CORPS.ARMY.MIL'/>
+      <agent name='5-CORPS.ARMY.MIL'/>
+      <agent name='CORPS-ARTY.5-CORPS.ARMY.MIL'/>
+      <agent name='CORPS-REAR.5-CORPS.ARMY.MIL'/>
+      <agent name='51-MAINTBN.29-SPTGP.21-TSC.ARMY.MIL'/>
+      <agent name='52-ENGBN-CBTHVY.5-CORPS.ARMY.MIL'/>
+      <agent name='565-RPRPTCO.7-CSG.5-CORPS.ARMY.MIL'/>
+      <agent name='574-SSCO.29-SPTGP.21-TSC.ARMY.MIL'/>
+      <agent name='592-ORDCO.16-CSG.5-CORPS.ARMY.MIL'/>
+      <agent name='597-MAINTCO.7-CSG.5-CORPS.ARMY.MIL'/>
+      <agent name='6-TCBN.37-TRANSGP.21-TSC.ARMY.MIL'/>
+      <agent name='7-CSG.5-CORPS.ARMY.MIL'/>
+      <agent name='561-SSBN.7-CSG.5-CORPS.ARMY.MIL'/>
+      <agent name='200-MMC.21-TSC.ARMY.MIL'/>
+      <agent name='226-MAINTCO.16-CSG.5-CORPS.ARMY.MIL'/>
+      <agent name='632-MAINTCO.37-TRANSGP.21-TSC.ARMY.MIL'/>
+      <agent name='406-SUPPLYCO.7-CSG.5-CORPS.ARMY.MIL'/>
+      <agent name='71-MAINTBN.7-CSG.5-CORPS.ARMY.MIL'/>
+      <agent name='900-POL-SUPPLYCO.7-CSG.5-CORPS.ARMY.MIL'/>
+      <agent name='AWR-2.21-TSC.ARMY.MIL'/>
+      <agent name='DLAHQ.MIL'/>
+      <agent name='FORSCOM.MIL'/>
+      <agent name='HNS.MIL'/>
+      <agent name='OSD.GOV'/>
+      <agent name='OSC.MIL'/>
+      <agent name='USAEUR.MIL'/>
+      <agent name='USEUCOM.MIL'/>
+    </node>
+  </host>
+  <host name='HOST4'>
+    <facet enclave='SMALL2'/>
+    <node name='EuroTRANSCOM-NODE'>
+      <agent name='EuroTRANSCOM.TRANSCOM.MIL'/>
+      <agent name='EuroSea.TRANSCOM.MIL'/>
+      <agent name='EuroShipPacker.TRANSCOM.MIL'/>
+      <agent name='EuroGround.TRANSCOM.MIL'/>
+      <agent name='EuroAir.TRANSCOM.MIL'/>
+    </node>
+    <node name='AmmoTRANSCOM-NODE'>
+      <agent name='AmmoTRANSCOM.TRANSCOM.MIL'/>
+      <agent name='AmmoSea.TRANSCOM.MIL'/>
+      <agent name='AmmoShipPacker.TRANSCOM.MIL'/>
+      <agent name='AmmoConusGround.TRANSCOM.MIL'/>
+      <agent name='AmmoTheaterGround.TRANSCOM.MIL'/>
+    </node>
+  </host>
+  <host name='HOST5'>
+    <facet enclave='SMALL2'/>
+    <node name='SMALL2-MGMT-NODE'>
+      <facet role='AR-Management'/>
+    </node>
+    <node name='ConusTRANSCOM-NODE'>
+      <agent name='TRANSCOM-20.TRANSCOM.MIL'/>
+      <agent name='ConusTRANSCOM.TRANSCOM.MIL'/>
+      <agent name='ConusAir.TRANSCOM.MIL'/>
+      <agent name='PlanePackerA.TRANSCOM.MIL'/>
+      <agent name='PlanePackerB.TRANSCOM.MIL'/>
+      <agent name='ConusSea.TRANSCOM.MIL'/>
+      <agent name='ConusShipPacker.TRANSCOM.MIL'/>
+      <agent name='ConusGroundA.TRANSCOM.MIL'/>
+      <agent name='TheaterGroundA.TRANSCOM.MIL'/>
+      <agent name='TheaterGroundB.TRANSCOM.MIL'/>
+    </node>
+  </host>
+</society>
