@@ -5,7 +5,7 @@
 <SensorTypes>
 
 <SensorType name="org.cougaar.mts.std.RMILinksStatusDiagnosis" sensesAssetType="agent"
-            sensesStateDimension="UnmediatedConnectionStatus" sensorLatency="5000">
+            sensesStateDimension="UnmediatedConnectionStatus" sensorLatency="5000" 	      reportingPolicy="ALWAYS_CURRENT">
     <PotentialDiagnoses>
         <Diagnosis name="Excellent" />
         <Diagnosis name="Good" />
@@ -34,7 +34,7 @@
 </SensorType>
 
 <SensorType name="org.cougaar.mts.std.AlternateDirectLinksStatusDiagnosis" sensesAssetType="agent"
-            sensesStateDimension="UnmediatedConnectionStatus" sensorLatency="10000">
+            sensesStateDimension="UnmediatedConnectionStatus" sensorLatency="10000" 	      reportingPolicy="ALWAYS_CURRENT">
     <PotentialDiagnoses>
         <Diagnosis name="Excellent" />
         <Diagnosis name="Good" />
@@ -63,7 +63,7 @@
 </SensorType>
 
 <SensorType name="org.cougaar.mts.std.StoreAndForwardLinksStatusDiagnosis" sensesAssetType="agent"
-            sensesStateDimension="UnmediatedConnectionStatus" sensorLatency="30000">
+            sensesStateDimension="UnmediatedConnectionStatus" sensorLatency="30000"                 	      reportingPolicy="ALWAYS_CURRENT">
     <PotentialDiagnoses>
         <Diagnosis name="Excellent" />
         <Diagnosis name="Good" />
@@ -93,7 +93,7 @@
 </SensorType>
 
 <SensorType name="org.cougaar.mts.std.AllLinksStatusDiagnosis" sensesAssetType="agent"
-            sensesStateDimension="MediatedConnectionStatus" sensorLatency="60000">
+            sensesStateDimension="MediatedConnectionStatus" sensorLatency="60000" 				      reportingPolicy="ALWAYS_CURRENT">
     <PotentialDiagnoses>
         <Diagnosis name="Excellent" />
         <Diagnosis name="Good" />
@@ -128,7 +128,7 @@
         </WhenActualStateIs >
         <WhenActualStateIs name="None" >
             <WillDiagnoseAs name="Poor" withProbability="0.01" />
-            <WillDiagnoseAs name="None" withProbability="0.97" />
+            <WillDiagnoseAs name="None" withProbability="0.98" />
             <WillDiagnoseAs name="NoData" withProbability="0.01" />
         </WhenActualStateIs >
         <WhenActualStateIs name="NoData" >
