@@ -43,4 +43,8 @@ public class StateEstimationIndex extends Hashtable implements NotPersistable {
         return (StateEstimation) super.get(assetID);
     }
 
+    protected StateEstimation removeStateEstimation(StateEstimation se, IndexKey key) {
+        return (StateEstimation) super.remove(se.getAssetID());
+    }
+
 }

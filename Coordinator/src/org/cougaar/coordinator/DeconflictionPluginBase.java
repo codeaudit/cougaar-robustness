@@ -39,6 +39,7 @@ import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.node.NodeIdentificationService;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.coordinator.techspec.ActionTechSpecService;
+import org.cougaar.coordinator.techspec.DiagnosisTechSpecService;
 import org.cougaar.coordinator.techspec.TechSpecNotFoundException;
 
 import org.cougaar.core.blackboard.IncrementalSubscription;
@@ -68,6 +69,7 @@ public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
   protected AgentIdentificationService agentIdentificationService;
   protected EventService eventService;
   protected ActionTechSpecService actionTechSpecService;
+  protected DiagnosisTechSpecService diagnosisTechSpecService;
 
   private IncrementalSubscription actionIndexSubscription;
   private IncrementalSubscription diagnosisIndexSubscription;
@@ -120,6 +122,11 @@ public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
           throw new RuntimeException("TechSpec Service not available.");            
         }
         
+      diagnosisTechSpecService = (DiagnosisTechSpecService) 
+        sb.getService(this, DiagnosisTechSpecService.class, null);
+      if (diagnosisTechSpecService == null) {
+          throw new RuntimeException("TechSpec Service not available.");            
+        }
         
         return true;
     }
@@ -130,7 +137,6 @@ public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
   protected void setupSubscriptions() {
     actionIndexSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( ActionIndex.pred);
     diagnosisIndexSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( DiagnosisIndex.pred);;
-    stateEstimationIndexSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( StateEstimationIndex.pred);
     costBenefitEvaluationIndexSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( CostBenefitEvaluationIndex.pred);
     actionPatienceIndexSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( ActionPatienceIndex.pred);
     //if (logger.isDebugEnabled()) logger.debug("Subscribed to Indices");
@@ -285,9 +291,17 @@ public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
     protected CostBenefitEvaluation findCostBenefitEvaluation(AssetID assetID) {
         CostBenefitEvaluationIndex index = getCostBenefitEvaluationIndex();
         if (index == null) return null;
-        else return index.findCostBenefitEvaluation(assetID);
+        else {
+            return index.findCostBenefitEvaluation(assetID);
+        }
     }
     
+    protected CostBenefitEvaluation removeCostBenefitEvaluation(CostBenefitEvaluation cbe, IndexKey key) {
+        CostBenefitEvaluationIndex index = getCostBenefitEvaluationIndex();
+        if (index == null) return null;
+        else return index.removeCostBenefitEvaluation(cbe, key);
+    }
+
     private CostBenefitEvaluationIndex getCostBenefitEvaluationIndex() {
         Collection c = costBenefitEvaluationIndexSubscription.getCollection(); // blackboard.query(CostBenefitEvaluationIndex.pred);
         Iterator iter = c.iterator();
@@ -301,36 +315,14 @@ public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
            }
     }    
 
-    // Indexing for Statestimation objects
-           
-    protected StateEstimation indexStateEstimation(StateEstimation se, IndexKey key) {
-        StateEstimationIndex index = getStateEstimationIndex();
-        if (index == null) return null;
-        else return index.indexStateEstimation(se, key);
-    }
-              
-    protected StateEstimation findStateEstimation(AssetID assetID) {
-        StateEstimationIndex index = getStateEstimationIndex();
-        if (index == null) return null;
-        else return index.findStateEstimation(assetID);
-    }
-    
-    private StateEstimationIndex getStateEstimationIndex() {
-        Collection c = stateEstimationIndexSubscription.getCollection(); // blackboard.query(StateEstimationIndex.pred);
-        Iterator iter = c.iterator();
-        if (iter.hasNext())
-           return (StateEstimationIndex)iter.next();
-        else
-           return null;
-    }    
 
 
     // Indexing for ActionPatience objects
            
-    protected ActionPatience indexActionPatience(ActionPatience ap, IndexKey key) {
+    protected ActionPatience indexActionPatience(ActionPatience ap) {
         ActionPatienceIndex index = getActionPatienceIndex();
         if (index == null) return null;
-        else return index.indexActionPatience(ap, key);
+        else return index.indexActionPatience(ap);
     }
               
     protected ActionPatience findActionPatience(Action a) {

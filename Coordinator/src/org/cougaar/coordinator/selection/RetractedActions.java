@@ -16,6 +16,7 @@ import org.cougaar.core.persist.NotPersistable;
 import java.util.Set;
 import org.cougaar.coordinator.Action;
 import org.cougaar.coordinator.costBenefit.VariantEvaluation;
+import org.cougaar.coordinator.costBenefit.CostBenefitEvaluation;
 import org.cougaar.util.UnaryPredicate;
 
 public class RetractedActions extends EnablingControl implements NotPersistable {
@@ -23,13 +24,13 @@ public class RetractedActions extends EnablingControl implements NotPersistable 
     private Object retractedVariant;
 
     /** Creates new RetractedActions */
-    public RetractedActions(Action action, Object retractedVariant) {
-        super(action);
+    public RetractedActions(Action action, Object retractedVariant, CostBenefitEvaluation cbe) {
+        super(action, cbe);
         this.retractedVariant = retractedVariant;
     }
 
-    public RetractedActions(Action action) {
-        super(action);
+    public RetractedActions(Action action, CostBenefitEvaluation cbe) {
+        super(action, cbe);
         this.retractedVariant = null;
     }
     

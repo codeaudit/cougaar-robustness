@@ -22,7 +22,6 @@ import java.util.Collection;
 import org.cougaar.coordinator.Action;
 import org.cougaar.coordinator.activation.ActionPatience;
 import org.cougaar.util.UnaryPredicate;
-import org.cougaar.coordinator.housekeeping.IndexKey;
 import org.cougaar.core.persist.NotPersistable;
 
 public class ActionPatienceIndex implements NotPersistable {
@@ -40,7 +39,7 @@ public class ActionPatienceIndex implements NotPersistable {
             }
         };
 
-    protected ActionPatience indexActionPatience(ActionPatience ap, IndexKey key) {
+    protected ActionPatience indexActionPatience(ActionPatience ap) {
         return (ActionPatience) entries.put(ap.getAction(), ap);
     }
     

@@ -30,6 +30,7 @@ import org.cougaar.util.UnaryPredicate;
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.Action;
 import org.cougaar.coordinator.costBenefit.VariantEvaluation;
+import org.cougaar.coordinator.costBenefit.CostBenefitEvaluation;
 
 import java.util.Set;
 import java.util.HashSet;
@@ -46,8 +47,8 @@ public class SelectedAction extends EnablingControl implements NotPersistable {
     private long patience;
     private Precondition precondition;
     
-    public SelectedAction(Action action, Set actionVariants, long patience) {
-        super(action);
+    public SelectedAction(Action action, Set actionVariants, long patience, CostBenefitEvaluation cbe) {
+        super(action, cbe);
         this.actionVariants = actionVariants;
         this.patience = patience;
         this.precondition = null;

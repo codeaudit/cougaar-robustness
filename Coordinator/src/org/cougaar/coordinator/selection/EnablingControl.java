@@ -15,16 +15,21 @@ package org.cougaar.coordinator.selection;
 import org.cougaar.core.persist.NotPersistable;
 import java.util.Set;
 import org.cougaar.coordinator.Action;
+import org.cougaar.coordinator.costBenefit.CostBenefitEvaluation;
 
 
 public class EnablingControl {
 
     private Action action;
+    private CostBenefitEvaluation cbe;
 
     /** Creates new EnablingControl */
-    public EnablingControl(Action action) {
+    public EnablingControl(Action action, CostBenefitEvaluation cbe) {
         this.action = action;
+        this.cbe = cbe;
     }
 
     public Action getAction() { return action; };
+
+    public CostBenefitEvaluation getCBE() { return cbe; }
 }

@@ -44,4 +44,8 @@ public class CostBenefitEvaluationIndex implements NotPersistable {
         return (CostBenefitEvaluation) entries.get(assetID);
     }  
 
+    protected CostBenefitEvaluation removeCostBenefitEvaluation(CostBenefitEvaluation cbe, IndexKey key) {
+        return (CostBenefitEvaluation) entries.remove(cbe.getAssetID());
+    }
+
 }

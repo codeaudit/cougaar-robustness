@@ -28,6 +28,8 @@ package org.cougaar.coordinator.costBenefit;
 import java.util.Hashtable;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.util.UnaryPredicate;
@@ -48,6 +50,7 @@ public class CostBenefitEvaluation implements NotPersistable {
     private long horizon;
     private StateEstimation se;
     private Hashtable actionEvaluations;
+    private SortedSet orderedEvaluations = null;
     private int openActions = 0;
         
     /** Creates a new instance of CostBenefitDiagnosis */
@@ -67,18 +70,43 @@ public class CostBenefitEvaluation implements NotPersistable {
     public ActionEvaluation getActionEvaluation(Action action) { return (ActionEvaluation)actionEvaluations.get(action); }
     public int numOpenActions() { return openActions; }
     public void setNumOpenActions(int n) { openActions = n; }
+
+    public void setOrderedEvaluations(SortedSet orderedEvaluations) { this.orderedEvaluations = orderedEvaluations; }
+    public SortedSet getOrderedEvaluations() { return orderedEvaluations; }
     
     public String toString() {
         String result = "CBE for: " + assetID.toString()+"\n";
         result = result + "Horizon: " + horizon + "\n";
         Iterator iter = getActionEvaluations().values().iterator();
+        result = result + "    All Actions & Variants: \n:";
         while (iter.hasNext()) {
             ActionEvaluation thisAction = (ActionEvaluation)iter.next();
             result = result + thisAction.toString()+"\n";
         }
-        return result;
+        if (orderedEvaluations != null) {
+            iter = orderedEvaluations.iterator();
+            result = result + "    Available Actions: \n";
+            while (iter.hasNext()) {
+                result = result + ((ActionEvaluation)iter.next()).toString();
+            }
+        }
+        else
+            result = result + "    Ordering of Variants not Computed Yet \n";        return result;
     }
 
+    public String dumpAvailableVariants() {
+        String result = "CBE for: " + assetID.toString()+"\n";
+        Iterator iter = getActionEvaluations().values().iterator();
+        if (orderedEvaluations != null) {
+            iter = orderedEvaluations.iterator();
+            result = result + "    Available Actions: \n";
+            while (iter.hasNext()) {
+                result = result + ((ActionEvaluation)iter.next()).dumpAvailableVariants();
+            }
+        }
+        else
+            result = result + "    Ordering of Variants not Computed Yet \n";        return result;
+    }
 
     public final static UnaryPredicate pred = new UnaryPredicate() {
             public boolean execute(Object o) {  

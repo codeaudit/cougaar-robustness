@@ -123,6 +123,7 @@ public class ActionMonitoringPlugin extends MonitoringPluginBase implements NotP
                 if (logger.isDebugEnabled()) logger.debug(action.toString());
                 if (logger.isDebugEnabled()) if (ap != null) logger.debug(ap.toString()); else logger.debug("No ActionPatience Found");
                 if (latestResult != null &&                      // null when action is not started
+                    ap.getAllowedVariants().contains(latestResult.getAction()) && // the last thing that completed is something we permitted (avoids old values)
                     latestResult.getCompletionCode() != null) {  // null when action is not stopped
                     if (((latestResult.getCompletionCode().equals(Action.COMPLETED)) || 
                          (latestResult.getCompletionCode().equals(Action.ACTIVE))) // make sure it completed correctly
@@ -131,10 +132,10 @@ public class ActionMonitoringPlugin extends MonitoringPluginBase implements NotP
                             if (logger.isDebugEnabled()) logger.debug("Latest Result: " + latestResult.toString());
                             if (logger.isDebugEnabled()) logger.debug(monitoredActions.toString());
                             monitoredActions.remove(action);
-                            ap.setResult(Action.COMPLETED);
+                            ap.setResult(latestResult.getCompletionCode());
                             SuccessfulAction sa = new SuccessfulAction(action);
                             publishChange(sa);
-                            if (logger.isDebugEnabled()) logger.debug("Published a SuccessfulAction object: " + sa.toString());
+                            if (logger.isInfoEnabled()) logger.info("Published a SuccessfulAction object: " + sa.toString());
                             publishChange(ap);
                             alarm.cancel();
                         }

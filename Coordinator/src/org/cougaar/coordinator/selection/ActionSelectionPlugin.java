@@ -50,6 +50,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Hashtable;
 import java.util.Collection;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import org.cougaar.core.agent.service.alarm.Alarm;
 import org.cougaar.core.blackboard.IncrementalSubscription;
@@ -161,6 +163,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
         }
 
 
+/*
      // Check any changed Actions to see if the change is a change to offeredActions
      //    and there is a currently open CBE for the asset
      //    and there are currently fewer then maxActions actions permitted on he asset
@@ -175,8 +178,59 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
             }
         }        
      }
+*/
 
+      //********* Process Actions that have Responded ***********
+      if (logger.isDetailEnabled()) logger.detail("Ready to Process Action Responses");
+      iter = actionPatienceSubscription.getChangedCollection().iterator();
+      // Mark the resolution of all the Actions that just reported back (for now it will just be one Action)
+      while (iter.hasNext()) {
+          ActionPatience ap = (ActionPatience)iter.next();
+          publishRemove(ap);    // we have the info we want, so get rid of it 
+          removeActionPatience(ap);
+          Action action = ap.getAction();
+          if (logger.isDebugEnabled()) logger.debug("Removed this AP: " + ap.toString());
+          // get the CBE associated with the Action
+          CostBenefitEvaluation cbe = ap.getCBE();   ///findCostBenefitEvaluation(action.getAssetID());
+          ActionEvaluation ae = cbe.getActionEvaluation(action);
+          if (logger.isDebugEnabled()) logger.debug(action.dump() + " has " + ap.getResult());
+          if (action.getValue() == null) {
+              Iterator iter2 = action.getPermittedValues().iterator();
+              while (iter2.hasNext()) {
+                  Object variantNotTried = iter2.next();
+                  if (logger.isInfoEnabled()) logger.info("For: " + action.getAssetID().toString() + ", " + variantNotTried.toString() + " timed out w/o being tried - Try something else.  Timed out action no longer permitted w/o re-authorization.");
+                  VariantEvaluation ve = ae.getVariantEvaluation(variantNotTried);
+                  ve.setFailed();
+              }
+              selectActions(cbe, knob);  // try to find a new action
+          }
+          else {
+              Object variantAttempted = action.getValue().getAction();
+              VariantEvaluation ve = ae.getVariantEvaluation(variantAttempted);
+              if (ap.getResult().equals(Action.FAILED)) {
+                  if (logger.isInfoEnabled()) logger.info("For: " + action.getAssetID().toString() + ", " + variantAttempted.toString() + " failed - Try something else.  Failed action no longer permitted w/o re-authorization.");
+                  ve.setFailed();
+                  selectActions(cbe, knob);  // try to find a new action
+                  publishAdd(new RetractedActions(action, cbe));
+              }
+              else if (ap.getResult().equals(Action.COMPLETED)) {
+                  if (logger.isInfoEnabled()) logger.info("For: " + action.getAssetID().toString() + ", " + variantAttempted.toString() + " succeeded - Nothing more to do.  Completed action no longer permitted w/o re-authorization.");
+                  publishAdd(new RetractedActions(action, cbe));
+                  if (logger.isInfoEnabled()) logger.info("Sucess in processing: " + cbe.dumpAvailableVariants());
+                  publishRemove(cbe);
+              }
+              else if (ap.getResult().equals(Action.ACTIVE)) {
+                  if (logger.isInfoEnabled()) logger.info("For: " + action.getAssetID().toString() + ", " + variantAttempted.toString() + " is active - Other actions may be pending.");
+                  //publishAdd(new RetractedActions(action));
+                  if (logger.isInfoEnabled()) logger.info("Success in processing: " + cbe.dumpAvailableVariants());
+                  publishRemove(cbe);
+              }
+              else logger.error("Unhandled Action result: " + ap.getResult().toString());
+          }
+      }
 
+      if (logger.isDetailEnabled()) logger.detail("Done processing Action Responses");
+      
       //********* Process new CostBenefit objects ************    
 
       iter = costBenefitSubscription.getAddedCollection().iterator();
@@ -187,126 +241,99 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
           selectActions(cbe, knob);
 
       }
-
-      //********* Process Actions that have Responded ***********
-      if (logger.isDetailEnabled()) logger.detail("Ready to Process Action Responses");
-      iter = actionPatienceSubscription.getChangedCollection().iterator();
-      // Mark the resolution of all the Actions that just reported back (for now it will just be one Action)
-      while (iter.hasNext()) {
-          ActionPatience ap = (ActionPatience)iter.next();
-          publishRemove(ap);    // we have the info we want, so get rid of it 
-          Action action = ap.getAction();
-
-          // get the CBE associated with the Action
-          CostBenefitEvaluation cbe = findCostBenefitEvaluation(action.getAssetID());
-          ActionEvaluation ae = cbe.getActionEvaluation(action);
-          if (logger.isDebugEnabled()) logger.debug(action.dump() + " has " + ap.getResult());
-          Object variantAttempted = action.getValue().getAction();
-          VariantEvaluation ve = ae.getVariantEvaluation(variantAttempted);
-          ve.setTried();
-          if ((ap.getResult().equals(Action.COMPLETED)) || (ap.getResult().equals(Action.ACTIVE))) {
-              if (logger.isDebugEnabled()) logger.debug(variantAttempted.toString() + " succeeded - Nothing more to do.  Completed action no longer permitted w/o re-authorization.");
-              publishAdd(new RetractedActions(action));
-          }
-          else {
-              if (action.getValue() != null) { // some action was tried & it did not help - mark it as "tried" & remove it from the permittedValues
-                  if (logger.isDebugEnabled()) logger.debug(variantAttempted.toString() + " failed - Try something else.  Failed action no longer permitted w/o re-authorization.");
-                  publishAdd(new RetractedActions(action, variantAttempted));
-              }      
-              else { // the actuator took no action - what should we do here? 
-              }
-              selectActions(cbe, knob);  // try to find a new action
-           }
-      }
-
-      if (logger.isDetailEnabled()) logger.detail("Done processing TimeOuts");
-
   }
 
+
+  private void rankAvailableActions(CostBenefitEvaluation cbe, ActionSelectionKnob knob) {
+    
+    Iterator iter = cbe.getActionEvaluations().values().iterator();
+    SortedSet orderedActions = new TreeSet();
+    while (iter.hasNext()) {
+        ActionEvaluation ae = (ActionEvaluation)iter.next();
+        Action action = ae.getAction();
+        SortedSet availableActions = new TreeSet();
+        Iterator iter2 = action.getValuesOffered().iterator();
+        while (iter2.hasNext()) {
+            String variantName = (String) iter2.next();
+            availableActions.add(ae.getVariantEvaluation(variantName));
+        }
+        ae.setOrderedAvailableVariants(availableActions);
+        if (!availableActions.isEmpty()) orderedActions.add(cbe.getActionEvaluation(action));
+    }
+    cbe.setOrderedEvaluations(orderedActions);
+    if (logger.isDebugEnabled()) logger.debug(cbe.toString());
+  }
   
   private void selectActions(CostBenefitEvaluation cbe, ActionSelectionKnob knob) {
 
+    rankAvailableActions(cbe, knob);
+
     boolean done = false;
-    int index = 0;
-    Set selectedActions = new HashSet();
-    while (!done) {
-        SelectedAction thisAction = selectBest(cbe, knob); 
-        if (thisAction != null) {
-	    if (logger.isDebugEnabled()) 
-		logger.debug("SelectAction: thisAction="+thisAction.toString());
-            if ((thisAction.getAction().getValue() != null) 
-                    && (thisAction.getActionVariants().contains(thisAction.getAction().getValue())) // the last action variant performed is one that was selected  
-                    && (thisAction.getAction().getValue().isActive()))  { // the Action is still ACTIVE
-                if (logger.isDebugEnabled()) logger.debug("Selected " + thisAction.getAction().toString() + " already ACTIVE - not re-permitted");
-            }
-            else {
-                publishAdd(thisAction);
-                if (logger.isDebugEnabled()) logger.debug("Selected " + thisAction.getAction().toString() + " permitting");
-            }
-            index++;
-            Action a = thisAction.getAction();
-	    ActionTechSpecInterface ats = actionTechSpecService.getActionTechSpec(a.getClass().getName());
-	    if (ats == null) {
-		if (logger.isErrorEnabled()) 
-		    logger.error("Cannot find ActionTechSpec for "+a.getClass().getName());
-	    }
-	    if (outOfResources() || (index >= knob.getMaxActions())) {
-		done = true;
-	    } else if (ats != null && 
-                      // Because we try only one corrective action at a time
-		      ats.getActionType() == ActionTechSpecInterface.CORRECTIVE_ACTIONTYPE) {
-		done = true;
-	    } else {
-		done = false;
-	    }
-	} else {
-	    // exit on first null result from SelectBest
-	    done = true; // done because can't find anything useful to do
-	}
-    }
-    cbe.setNumOpenActions(index);
-  }
+    Set alreadyActiveActions = findActiveIrrevocableActions(cbe);
+    Set alreadySelectedVariants = new HashSet();
+    if (logger.isInfoEnabled()) logger.info("Irrevocable Actions: " + alreadyActiveActions.toString());
 
-
-  private SelectedAction selectBest(CostBenefitEvaluation cbe, ActionSelectionKnob knob) {
-        ActionEvaluation bestActionEvaluation = null;
-        VariantEvaluation bestVariantEvaluation = null;
-        double bestBenefit = -1000000.0;
-        SelectedAction sa =  null;
-        // iterate thru all Actions & Variants
-        Collection actionEvaluations = cbe.getActionEvaluations().values();
-        Iterator actionIter = actionEvaluations.iterator();
-        while (actionIter.hasNext()) {
-            ActionEvaluation thisActionEvaluation = (ActionEvaluation) actionIter.next();
-            Action thisAction = thisActionEvaluation.getAction();
-            Collection variantEvaluations = thisActionEvaluation.getVariantEvaluations().values();
-            Iterator variantIter = variantEvaluations.iterator();
-            while (variantIter.hasNext()) {
-                VariantEvaluation thisVariantEvaluation = (VariantEvaluation) variantIter.next();
-                if ((thisVariantEvaluation.getPredictedBenefit() > bestBenefit)
-                  && (!thisVariantEvaluation.triedP())
-                  && (thisAction.getValuesOffered().contains(thisVariantEvaluation.getVariantName()))) {
-                    bestBenefit = thisVariantEvaluation.getPredictedBenefit();
-                    bestActionEvaluation = thisActionEvaluation;    
-                    bestVariantEvaluation = thisVariantEvaluation;
+    Iterator iter = cbe.getOrderedEvaluations().iterator();
+    if (logger.isInfoEnabled()) logger.info(cbe.dumpAvailableVariants());
+    while (iter.hasNext() && !done) {
+        ActionEvaluation thisEvaluation = (ActionEvaluation) iter.next();
+        Action thisAction = thisEvaluation.getAction();
+        Set permittedVariants = new HashSet();  
+//        Set currentVariants = thisAction.getPermittedValues();
+        Iterator iter3 = thisEvaluation.getOrderedAvaliableVariants().iterator();
+        boolean pickedSomeVariant = false;
+        while (iter3.hasNext() && !pickedSomeVariant) {
+            VariantEvaluation proposedVariant = (VariantEvaluation)iter3.next();
+            if (logger.isDebugEnabled()) logger.debug(proposedVariant + " doesNotConflict: " + thisEvaluation.doesNotConflict(proposedVariant, alreadyActiveActions, alreadySelectedVariants));
+            if (thisEvaluation.doesNotConflict(proposedVariant, alreadyActiveActions, alreadySelectedVariants)) {
+                if ((proposedVariant.getPredictedBenefit() > 0.0) || (thisEvaluation.mustSelectOne())) {
+                    pickedSomeVariant = true;
+                    alreadySelectedVariants.add(proposedVariant);
+                    proposedVariant.setChosen();
+                    if (logger.isInfoEnabled()) logger.info("Selected: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString());
+                    if ((!thisAction.getPermittedValues().contains(proposedVariant.getVariantName()))
+                            && (thisAction.getValue() == null  
+                                || !thisAction.getValue().getAction().equals(proposedVariant.getVariantName())
+                                || !thisAction.getValue().isActive())) {
+                        permittedVariants.add(proposedVariant);
+                        publishAdd(new SelectedAction(thisAction, permittedVariants, Math.round(knob.getPatienceFactor()*proposedVariant.getExpectedTransitionTime()), cbe));
+                        done = true;
+                        if (logger.isInfoEnabled()) logger.info("Enabling: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString());
+                    }
                 }
             }
         }
-        if (bestBenefit > 0) { 
-            HashSet permittedVariants = new HashSet();
-            bestVariantEvaluation.setTried(); //sjf
-            permittedVariants.add(bestVariantEvaluation); 
-            sa = new SelectedAction(bestActionEvaluation.getAction(), permittedVariants, Math.round(knob.getPatienceFactor()*bestVariantEvaluation.getExpectedTransitionTime()));
-        }
-        
-        return sa;
+        //if (!pickedSomeVariant) {                                // no variants were selected, so
+        //    if (!thisAction.getPermittedValues().isEmpty()) {  // if there are any previous permissions
+        //       publishAdd(new RetractedActions(thisAction));  // retract them      
+        //    }                
+        //}
     }
+    if (alreadySelectedVariants.isEmpty()) { // could not find anything useful to do
+        if (logger.isInfoEnabled()) logger.info("Done processing: " + cbe.dumpAvailableVariants());
+        publishRemove(cbe);
+    }
+  }
 
+  private Set findActiveIrrevocableActions(CostBenefitEvaluation cbe) {
+    Set activeActions = new HashSet();
+    Collection allActions = findActionCollection(cbe.getAssetID());
+    Iterator iter = allActions.iterator();
+    while (iter.hasNext()) {
+        ActionsWrapper thisWrapper = (ActionsWrapper) iter.next();
+        Action thisAction = thisWrapper.getAction();
+        if ((thisAction.getValue() != null && thisAction.getValue().isActive()) && ((thisAction.getValuesOffered() == null) || thisAction.getValuesOffered().isEmpty())) {
+            activeActions.add(thisAction);
+        }
+    }
+    return activeActions;
+  }
 
     private boolean outOfResources() {
         // tracks resources allocated to Actions so we can tell whether we can choose more actions
         return false;
     }
+
 
   protected static final String MAX_ACTIONS_PREFIX = "maxActions=";
 

@@ -325,10 +325,10 @@ public abstract class MonitoringPluginBase extends ServiceUserPluginBase {
 */
     // Indexing for ActionPatience objects
            
-    protected ActionPatience indexActionPatience(ActionPatience ap, IndexKey key) {
+    protected ActionPatience indexActionPatience(ActionPatience ap) {
         ActionPatienceIndex index = getActionPatienceIndex();
         if (index == null) return null;
-        else return index.indexActionPatience(ap, key);
+        else return index.indexActionPatience(ap);
     }
               
     protected ActionPatience findActionPatience(Action a) {

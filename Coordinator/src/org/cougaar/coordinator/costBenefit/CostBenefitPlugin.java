@@ -1,3 +1,5 @@
+package org.cougaar.coordinator.costBenefit;
+
 /*  
  * CostBenefitPlugin.java
  *
@@ -22,8 +24,6 @@
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
  */
-
-package org.cougaar.coordinator.costBenefit;
 
 import org.cougaar.coordinator.*;  //FIX
 
@@ -62,11 +62,12 @@ import java.util.Set;
  */
 public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPersistable {
 
-    private ActionTechSpecService ActionTechSpecService;    
+//    private ActionTechSpecService ActionTechSpecService;    
     private IncrementalSubscription stateEstimationSubscription;    
 //    private IncrementalSubscription threatModelSubscription;
     private IncrementalSubscription knobSubscription;
     private IncrementalSubscription diagnosesWrapperSubscription;
+
     
     private Hashtable actions;
     
@@ -111,6 +112,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
             StateEstimation se = (StateEstimation)iter.next();
             if (logger.isInfoEnabled()) logger.info(se.toString());
 
+            //  this was the old way of doing thngs - it caused Selction to see changes that were part of processing an old situation rather than new information
             // Clean up the old SE & CBE if they exist
             CostBenefitEvaluation old_cbe = findCostBenefitEvaluation(se.getAssetID());
             if (old_cbe != null) {
@@ -118,11 +120,26 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                 publishRemove(old_se);
                 publishRemove(old_cbe);
                 }
-
-            // Produce and publish a CBE containing the benefits for each offered action on the Asset
             CostBenefitEvaluation cbe = createCostBenefitEvaluation(se, knob);
             if (logger.isInfoEnabled()) logger.info("CostBenefitEvaluation created: "+cbe.toString());
             publishAdd(cbe);
+            
+
+/*
+            // ignore new SE's if still processing an old one
+            CostBenefitEvaluation old_cbe = findCostBenefitEvaluation(se.getAssetID());
+            if (old_cbe == null) {
+                // Produce and publish a CBE containing the benefits for each offered action on the Asset
+                CostBenefitEvaluation cbe = createCostBenefitEvaluation(se, knob);
+                if (logger.isInfoEnabled()) logger.info("CostBenefitEvaluation created: "+cbe.toString());
+                publishAdd(cbe);
+                }
+            else {
+                // this SE represents a transititional state - ignore this SE but keep it on the BB so it is visible to the monitor servletst
+                if (logger.isInfoEnabled()) logger.info("Ignoring Transitional SE");
+             //   publishRemove(se);
+            }
+*/
   
         }           
     }
@@ -176,38 +193,96 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                 if (atsi == null) {
                     throw (new TechSpecNotFoundException( "Cannot find Action Tech Spec for "+ thisAction.getClass().getName() ));
                 }
-                // Which StateDimension does this Action apply to?
-                AssetStateDimension asd = atsi.getStateDimension();
-                if (logger.isDebugEnabled()) logger.debug("This Action: "+thisAction+":"+atsi+":"+asd);
-                
-                try { 
-                    // Get the StateDimensionEstimation for the dimension the Action applies to - Throws an exception if SDE not found
-                    StateDimensionEstimation currentEstimatedStateDimension = se.getStateDimensionEstimation(asd);
-                    //if (logger.isDebugEnabled()) logger.debug("Current ESD: "+((currentEstimatedStateDimension==null)?"null":"cesd="+currentEstimatedStateDimension.toString()));
-                    // create the Action container that will hold the evaluations of all offered Variants
-                    ActionEvaluation thisActionEvaluation = new ActionEvaluation(thisAction);
-                    cbe.addActionEvaluation(thisActionEvaluation);
+               if (atsi.getActionType() == ActionTechSpecInterface.CORRECTIVE_ACTIONTYPE) {
+                    // Which StateDimension does this Action apply to?
+                    AssetStateDimension asd = atsi.getStateDimension();
+                    if (logger.isDebugEnabled()) logger.debug("This CORRECTIVE Action: "+thisAction+":"+atsi+":"+asd);
 
-                    /* Evaluate ALL variants of this Action, not just the ones currently offered
-                     * Selection will down-select to only the offered variants
-                     * We compute for all variants because the set of offered variants may change during the process of addressing a problem
-                     */
+                    try { 
+                        // Get the StateDimensionEstimation for the dimension the Action applies to - Throws an exception if SDE not found
+                        StateDimensionEstimation currentEstimatedStateDimension = se.getStateDimensionEstimation(asd);
+                        //if (logger.isDebugEnabled()) logger.debug("Current ESD: "+((currentEstimatedStateDimension==null)?"null":"cesd="+currentEstimatedStateDimension.toString()));
+                        // create the Action container that will hold the evaluations of all offered Variants
+                        ActionEvaluation thisActionEvaluation = new ActionEvaluation(thisAction);
+                        cbe.addActionEvaluation(thisActionEvaluation);
 
-                    // Get the TechSpec data for all the Variants
-                    Collection variantDescriptions = atsi.getActions();
-                    // iterate thru all offered Variants of this Action
-                    Iterator variantIter = variantDescriptions.iterator();                    
-                    while (variantIter.hasNext()) {
-                        // Get TechSpec for this Variant
-                        ActionDescription thisVariantDescription = (ActionDescription) variantIter.next();
-                        // Add an entry to the current Action containing the information about this Variant
-                        thisActionEvaluation.addVariantEvaluation(createVariantEvaluation(assetID, asd, currentEstimatedStateDimension, thisVariantDescription, knob)); 
+                        /* Evaluate ALL variants of this Action, not just the ones currently offered
+                         * Selection will down-select to only the offered variants
+                         * We compute for all variants because the set of offered variants may change during the process of addressing a problem
+                         */
+
+                        // Get the TechSpec data for all the Variants
+                        Collection variantDescriptions = atsi.getActions();
+                        // iterate thru all offered Variants of this Action
+                        Iterator variantIter = variantDescriptions.iterator();                    
+                        while (variantIter.hasNext()) {
+                            // Get TechSpec for this Variant
+                            ActionDescription thisVariantDescription = (ActionDescription) variantIter.next();
+                            // Add an entry to the current Action containing the information about this Variant
+                            thisActionEvaluation.addVariantEvaluation(createCorrectiveVariantEvaluation(assetID, asd, currentEstimatedStateDimension, thisVariantDescription, knob)); 
+                        }
+                    }
+                    catch (BelievabilityException e) {
+                        logger.error("Cannot find StateDimensionEstimate for "+asd.toString());
                     }
                 }
-                catch (BelievabilityException e) {
-                    logger.error("Cannot find StateDimensionEstimate for "+asd.toString());
-                } 
+                else if (atsi.getActionType() == ActionTechSpecInterface.COMPENSATORY_ACTIONTYPE) {
+                    // Which StateDimension does this Action apply to?
+                    AssetStateDimension actionStateDimension = atsi.getStateDimension();
+                    AssetStateDimension baseStateDimension = diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.mts.std.RMILinksStatusDiagnosis").getStateDimension();
+                    AssetStateDimension compensatedStateDimension = diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.mts.std.AllLinksStatusDiagnosis").getStateDimension();
+                    if (logger.isDebugEnabled()) logger.debug("This COMPENSATORY Action: "+thisAction+":"+atsi+":"+actionStateDimension+":"+baseStateDimension+":"+compensatedStateDimension);
 
+                    try { 
+                        // Get the StateDimensionEstimation for the base dimension the Action applies to - Throws an exception if SDE not found
+                        StateDimensionEstimation currentEstimatedBaseStateDimension = se.getStateDimensionEstimation(baseStateDimension);
+                        // create the Action container that will hold the evaluations of all offered Variants
+                        ActionEvaluation thisActionEvaluation = new ActionEvaluation(thisAction);
+                        cbe.addActionEvaluation(thisActionEvaluation);
+
+                        /* Evaluate ALL variants of this Action, not just the ones currently offered
+                         * Selection will down-select to only the offered variants
+                         * We compute for all variants because the set of offered variants may change during the process of addressing a problem
+                         */
+                         
+                        double benefitOfStayingTheSame;
+                        if (thisAction.getValue() != null) { // Compute the benefit of what we are doing NOW, so we an compute the differential benefit of doing soemthing different
+                            ActionDescription currentVariant = atsi.getActionDescriptionForValue(thisAction, thisAction.getValue().getAction());
+                            if (logger.isDebugEnabled()) logger.debug("currentVariant: " + currentVariant.toString());
+                            benefitOfStayingTheSame = createCompensatoryVariantEvaluation
+                                                                   (currentVariant, 
+                                                                    baseStateDimension, 
+                                                                    currentEstimatedBaseStateDimension,  
+                                                                    compensatedStateDimension,
+                                                                    0.0,
+                                                                    knob).getPredictedBenefit(); 
+                        }
+                        else { // nothing has been started yet (initialization)
+                            benefitOfStayingTheSame = 0.0;
+                        }
+
+                        // Get the TechSpec data for all the Variants
+                        Collection variantDescriptions = atsi.getActions();
+                        // iterate thru all offered Variants of this Action
+                        Iterator variantIter = variantDescriptions.iterator();                    
+                        while (variantIter.hasNext()) {
+                            // Get TechSpec for this Variant
+                            ActionDescription thisVariantDescription = (ActionDescription) variantIter.next();
+                            // Add an entry to the current Action containing the information about this Variant
+                            thisActionEvaluation.addVariantEvaluation(createCompensatoryVariantEvaluation
+                                       (thisVariantDescription, 
+                                        baseStateDimension, 
+                                        currentEstimatedBaseStateDimension,  
+                                        compensatedStateDimension,
+                                        benefitOfStayingTheSame,
+                                        knob)
+                            ); 
+                        }
+                    }
+                    catch (BelievabilityException e) {
+                        logger.error("Cannot find StateDimensionEstimate"+e.toString());
+                    }
+                }
             }
             catch (TechSpecNotFoundException e) {
                 if (logger.isErrorEnabled()) logger.error( e.toString() );
@@ -247,12 +322,11 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                 knob.getCompletenessWeight()*state.getRelativeMauCompleteness() 
               + knob.getSecurityWeight()*state.getRelativeMauSecurity() 
               + knob.getTimelinessWeight()*1.0;  // FIX - need a way to determine MauTimeliness (the 1.0 factor in the preceeding)
-        if (logger.isDebugEnabled()) logger.debug("Benefit of state: " + state.toString() + " is " + stateBenefit);
+        if (logger.isDetailEnabled()) logger.detail("Benefit of state: " + state.toString() + " is " + stateBenefit);
         return stateBenefit;
     }
 
-   private VariantEvaluation createVariantEvaluation
-            (AssetID assetID, AssetStateDimension asd, StateDimensionEstimation currentStateDimensionEstimation, ActionDescription thisVariantDescription, CostBenefitKnob knob) {
+   private VariantEvaluation createCorrectiveVariantEvaluation(AssetID assetID, AssetStateDimension asd, StateDimensionEstimation currentStateDimensionEstimation, ActionDescription thisVariantDescription, CostBenefitKnob knob) {
         double memorySize = 1000.0; // FIX _ needs to be dynamic
         double bandwidthSize = 1000.0; // FIX -needs to be dynamic
         double predictedCost = 0.0;
@@ -313,5 +387,189 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
         }
 
         return new VariantEvaluation(thisVariantDescription, predictedCost, predictedBenefit, maxTransitionTime);
-    }}
+    }
+
+    private VariantEvaluation createCompensatoryVariantEvaluation(ActionDescription thisVariantDescription,
+                                                                  AssetStateDimension baseStateDimension, 
+                                                                  StateDimensionEstimation currentEstimatedBaseStateDimension, 
+                                                                  AssetStateDimension compensatedStateDimension,
+                                                                  double benefitOfStayingTheSame,
+                                                                  CostBenefitKnob knob) {
+      
+        double predictedCost = 0.0;
+        double predictedBenefit = 0.0;
+
+        long maxTransitionTime = thisVariantDescription.getTransitionForState("*").getOneTimeCost().getTimeCost();
+
+        Iterator baseStateIterator = baseStateDimension.getPossibleStates().iterator();
+        Vector cumulativeProbVector = new Vector();
+            cumulativeProbVector.add(new StateProb("Excellent", 0.0));
+            cumulativeProbVector.add(new StateProb("Good", 0.0));
+            cumulativeProbVector.add(new StateProb("Fair", 0.0));
+            cumulativeProbVector.add(new StateProb("Poor", 0.0));
+            cumulativeProbVector.add(new StateProb("None", 0.0));
+        while (baseStateIterator.hasNext()) {
+            String startStateName = ((AssetState)baseStateIterator.next()).getName();
+            double startStateProb = 0.0;
+            try {
+               startStateProb = currentEstimatedBaseStateDimension.getProbability(startStateName);
+            } 
+            catch (BelievabilityException e) { 
+                logger.error(e.toString());
+            }
+            
+            Vector v = mapCompensation(startStateName, thisVariantDescription.name());
+            if (logger.isDebugEnabled()) logger.debug(thisVariantDescription.name() +" for " + startStateName + "----"+v.toString());
+            accumulateProbs(cumulativeProbVector, v, startStateProb);            
+        }
+        if (logger.isDebugEnabled()) logger.debug("Cumulative Compensated Prob Vector: " + cumulativeProbVector.toString());
+
+        predictedBenefit = knob.horizon * computeBenefit(cumulativeProbVector, compensatedStateDimension, knob) - benefitOfStayingTheSame;
+
+        return new VariantEvaluation(thisVariantDescription, predictedCost, predictedBenefit, maxTransitionTime);
+    }
+
+    private Vector mapCompensation(String baseStateName, String actionSettingName) {
+        Vector v = new Vector(5);
+        if (baseStateName.equals("DirectPathExists") && actionSettingName.equals("Normal")) {
+            v.add(new StateProb("Excellent", 0.8));
+            v.add(new StateProb("Good", 0.1));
+            v.add(new StateProb("Fair", 0.1));
+            v.add(new StateProb("Poor", 0.0));
+            v.add(new StateProb("None", 0.0));
+            return v;
+        }
+        else if (baseStateName.equals("DirectPathExists") && actionSettingName.equals("AlternateDirect")) {
+            v.add(new StateProb("Excellent", 0.7));
+            v.add(new StateProb("Good", 0.1));
+            v.add(new StateProb("Fair", 0.1));
+            v.add(new StateProb("Poor", 0.1));
+            v.add(new StateProb("None", 0.0));
+            return v;
+        }
+        else if (baseStateName.equals("DirectPathExists") && actionSettingName.equals("StoreAndForward")) {
+            v.add(new StateProb("Excellent", 0.1));
+            v.add(new StateProb("Good", 0.6));
+            v.add(new StateProb("Fair", 0.2));
+            v.add(new StateProb("Poor", 0.1));
+            v.add(new StateProb("None", 0.0));
+            return v;
+        }
+        else if (baseStateName.equals("DirectPathExists") && actionSettingName.equals("Disable")) {
+            v.add(new StateProb("Excellent", 0.0));
+            v.add(new StateProb("Good", 0.0));
+            v.add(new StateProb("Fair", 0.0));
+            v.add(new StateProb("Poor", 0.0));
+            v.add(new StateProb("None", 1.0));
+            return v;
+        }
+        else if (baseStateName.equals("OnlyIndirectPathExists") && actionSettingName.equals("Normal")) {
+            v.add(new StateProb("Excellent", 0.0));
+            v.add(new StateProb("Good", 0.0));
+            v.add(new StateProb("Fair", 0.0));
+            v.add(new StateProb("Poor", 0.0));
+            v.add(new StateProb("None", 1.0));
+            return v;
+        }
+        else if (baseStateName.equals("OnlyIndirectPathExists") && actionSettingName.equals("AlternateDirect")) {
+            v.add(new StateProb("Excellent", 0.0));
+            v.add(new StateProb("Good", 0.0));
+            v.add(new StateProb("Fair", 0.2));
+            v.add(new StateProb("Poor", 0.3));
+            v.add(new StateProb("None", 0.5));
+            return v;
+        }
+        else if (baseStateName.equals("OnlyIndirectPathExists") && actionSettingName.equals("StoreAndForward")) {
+            v.add(new StateProb("Excellent", 0.1));
+            v.add(new StateProb("Good", 0.7));
+            v.add(new StateProb("Fair", 0.1));
+            v.add(new StateProb("Poor", 0.1));
+            v.add(new StateProb("None", 0.0));
+            return v;
+        }
+        else if (baseStateName.equals("OnlyIndirectPathExists") && actionSettingName.equals("Disable")) {
+            v.add(new StateProb("Excellent", 0.0));
+            v.add(new StateProb("Good", 0.0));
+            v.add(new StateProb("Fair", 0.0));
+            v.add(new StateProb("Poor", 0.0));
+            v.add(new StateProb("None", 1.0));
+            return v;
+        }
+        else if (baseStateName.equals("NoPathExists") && actionSettingName.equals("Normal")) {
+            v.add(new StateProb("Excellent", 0.0));
+            v.add(new StateProb("Good", 0.0));
+            v.add(new StateProb("Fair", 0.0));
+            v.add(new StateProb("Poor", 0.0));
+            v.add(new StateProb("None", 1.0));
+            return v;
+        }
+        else if (baseStateName.equals("NoPathExists") && actionSettingName.equals("AlternateDirect")) {
+            v.add(new StateProb("Excellent", 0.0));
+            v.add(new StateProb("Good", 0.0));
+            v.add(new StateProb("Fair", 0.0));
+            v.add(new StateProb("Poor", 0.0));
+            v.add(new StateProb("None", 1.0));
+            return v;
+        }
+        else if (baseStateName.equals("NoPathExists") && actionSettingName.equals("StoreAndForward")) {
+            v.add(new StateProb("Excellent", 0.0));
+            v.add(new StateProb("Good", 0.0));
+            v.add(new StateProb("Fair", 0.0));
+            v.add(new StateProb("Poor", 0.0));
+            v.add(new StateProb("None", 1.0));
+            return v;
+        }
+        else if (baseStateName.equals("NoPathExists") && actionSettingName.equals("Disable")) {
+            v.add(new StateProb("Excellent", 0.0));
+            v.add(new StateProb("Good", 0.0));
+            v.add(new StateProb("Fair", 0.0));
+            v.add(new StateProb("Poor", 0.0));
+            v.add(new StateProb("None", 1.0));
+            return v;
+        }
+        return null;
+    }
+
+    protected void accumulateProbs(Vector cumulative, Vector startStateVector, double startStateProb) {
+        Iterator iterA = cumulative.iterator();
+        Iterator iterB = startStateVector.iterator();
+        while (iterA.hasNext()) {
+            StateProb cumulativeState = (StateProb)iterA.next();
+            StateProb incrementalState = (StateProb)iterB.next();
+            cumulativeState.setProb(cumulativeState.getProb() + startStateProb*incrementalState.getProb());
+        }
+    }
+
+    protected double computeBenefit(Vector cumulative, AssetStateDimension compensatedStateDimension, CostBenefitKnob knob) {
+        double benefit = 0.0;
+        Iterator iter = cumulative.iterator();
+        while (iter.hasNext()) {
+            StateProb thisState = (StateProb)iter.next();
+            benefit = benefit + thisState.getProb() * computeStateBenefit(compensatedStateDimension.findAssetState(thisState.getStateName()), knob);            
+        }
+        return benefit;
+    }
+
+    private class StateProb {
+
+        private String stateName;
+        private double prob;
+
+        public StateProb(String stateName, double prob) {
+            this.stateName = stateName;
+            this.prob = prob;    
+        }
+
+        public String getStateName() { return stateName; }
+        public double getProb() { return prob; }
+        protected void setProb(double prob) { this.prob=prob; }
+
+        public String toString() { return stateName + ":" + prob; }
+
+    }
+
+    
+
+
+}
 

@@ -69,7 +69,6 @@ public class CoordinatorManagerPlugin extends DeconflictionPluginBase implements
     private IncrementalSubscription diagnosesWrapperSubscription;    
     private IncrementalSubscription actionsWrapperSubscription;
     private IncrementalSubscription costBenefitEvaluationSubscription;   
-    private IncrementalSubscription stateEstimationSubscription;   
     private IncrementalSubscription actionPatienceSubscription;   
     private IndexKey key;
     private boolean indicesCreated = false;
@@ -88,7 +87,6 @@ public class CoordinatorManagerPlugin extends DeconflictionPluginBase implements
         if (!indicesCreated) {
             publishAdd(new DiagnosisIndex());
             publishAdd(new ActionIndex());
-            publishAdd(new StateEstimationIndex());
             publishAdd(new CostBenefitEvaluationIndex());
             publishAdd(new ActionPatienceIndex());
             if (logger.isDebugEnabled()) logger.debug("Created ALL BB Indices");
@@ -102,7 +100,6 @@ public class CoordinatorManagerPlugin extends DeconflictionPluginBase implements
             DiagnosesWrapper dw = (DiagnosesWrapper)iter.next();
             Diagnosis d = (Diagnosis) dw.getContent();
             indexDiagnosis(dw, key);
-            findCostBenefitEvaluation(d.getAssetID());
         }   
         
         //Handle the addition of new ActionsWrapper(s)
@@ -114,31 +111,6 @@ public class CoordinatorManagerPlugin extends DeconflictionPluginBase implements
             indexAction(aw, key);
             if (logger.isDebugEnabled()) logger.debug("Indexed: "+a+" AssetID="+a.getAssetID());
         }
-
-        //Handle the addition of new StateEstimation(s)
-        for ( Iterator iter = stateEstimationSubscription.getAddedCollection().iterator();  
-          iter.hasNext() ; ) 
-        {
-            StateEstimation se = (StateEstimation)iter.next();
-            indexStateEstimation(se, key);
-        }
-
-        //Handle the addition of new CostBenefitEvaluation(s)
-        for ( Iterator iter = costBenefitEvaluationSubscription.getAddedCollection().iterator();  
-          iter.hasNext() ; ) 
-        {
-            CostBenefitEvaluation cbe = (CostBenefitEvaluation)iter.next();
-            indexCostBenefitEvaluation(cbe, key);
-        }
-
-        //Handle the addition of new ActionPatience(s)
-        for ( Iterator iter = actionPatienceSubscription.getAddedCollection().iterator();  
-          iter.hasNext() ; ) 
-        {
-            ActionPatience ap = (ActionPatience)iter.next();
-            indexActionPatience(ap, key);
-        }
-
 }
 
     /** 
@@ -173,8 +145,6 @@ public class CoordinatorManagerPlugin extends DeconflictionPluginBase implements
         costBenefitEvaluationSubscription = 
         ( IncrementalSubscription ) getBlackboardService().subscribe( CostBenefitEvaluation.pred );
 
-        stateEstimationSubscription = 
-        ( IncrementalSubscription ) getBlackboardService().subscribe( StateEstimation.pred );
 
         actionPatienceSubscription = 
         ( IncrementalSubscription ) getBlackboardService().subscribe( ActionPatience.pred );

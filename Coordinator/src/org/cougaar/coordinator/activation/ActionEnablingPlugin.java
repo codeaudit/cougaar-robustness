@@ -37,6 +37,7 @@ import org.cougaar.coordinator.policy.DefensePolicy;
 import org.cougaar.coordinator.selection.SelectedAction;
 import org.cougaar.coordinator.selection.RetractedActions;
 import org.cougaar.coordinator.selection.EnablingControl;
+import org.cougaar.coordinator.costBenefit.CostBenefitEvaluation;
 
 import java.util.Iterator;
 import java.util.Collection;
@@ -203,7 +204,9 @@ public class ActionEnablingPlugin extends DeconflictionPluginBase implements Not
                 permittedVariants.add(ve.getVariantName());
             } 
             action.setPermittedValues(permittedVariants);
-            publishAdd(new ActionPatience(action, sa.getPatience()));
+            ActionPatience ap = new ActionPatience(action, permittedVariants, sa.getPatience(), sa.getCBE());
+            publishAdd(ap);
+            indexActionPatience(ap);
             }
       }
       catch (IllegalValueException e) {
