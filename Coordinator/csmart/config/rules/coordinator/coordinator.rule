@@ -50,6 +50,7 @@ society.each_agent do |agent|
 end
 
 society.each_node do |node|
+    node.override_parameter("-Dorg.cougaar.coordinator.believability.MAX_PUBLISH_INTERVAL", "60000")
     node.append_value_on_parameter("-Dorg.cougaar.config.path", "$COUGAAR_INSTALL_PATH/configs/coordinator")
     node.add_components(nodePlugins)
     found = false
