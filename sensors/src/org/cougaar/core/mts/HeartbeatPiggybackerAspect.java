@@ -55,8 +55,6 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
     //Router attr
     private Router routerDelegate;
 
-
-    
     //In an AttributedMsg this labels the vector of HB msgs.
     private static final String HEARTBEAT_PIGGYBACK_VECTOR = "HeartbeatPiggybackVector";
 
@@ -78,6 +76,8 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
     private MetricsUpdateService metricsUpdateService;
     private WhitePagesService whitePages = null;
 
+    private static int TIME_DELAY = 10000; //default
+    
     static
     {
         
@@ -106,6 +106,18 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
         
         super.load();
 
+        //This is an optional property to increase/decrease buffer time to ensure
+        //HBs arrive within their time limit.
+        try {
+            String td = "org.cougaar.message.transport.aspects.heartbeatPiggybacker.timeDelay";
+            int tdi = Integer.valueOf(System.getProperty(td,"10000")).intValue();
+            if tdi >= 0) {
+              TIME_DELAY = tdi;
+            }
+        } catch (Exception e) {
+            log.WARN("Exception reading system property: org.cougaar.message.transport.aspects.heartbeatPiggybacker.timeDelay");
+        }
+        
         metricsUpdateService = (MetricsUpdateService)
             getServiceBroker().getService(this, MetricsUpdateService.class, null);
 
@@ -540,7 +552,7 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
             long db;
             Integer i = (Integer)message.getAttribute(org.cougaar.core.mts.Constants.SEND_TIMEOUT);
             //set deliverby to 60 secs if null, or to now+timeout-(10 seconds)
-            db = (i == null) ? 60000 : (i.longValue())-10000;
+            db = (i == null) ? 60000 : (i.longValue())-TIME_DELAY;
             if (log.isDebugEnabled()) 
                 log.debug("PB========= calculating deliverby = now() + "+db/1000 + "secs"); 
             return now()+db;
