@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BelievabilityKnob.java,v $
- * $Revision: 1.14 $
- * $Date: 2004-09-10 17:25:31 $
+ * $Revision: 1.15 $
+ * $Date: 2004-10-04 22:22:36 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -23,6 +23,8 @@ package org.cougaar.coordinator.believability;
 
 import java.io.Serializable;
 
+import org.cougaar.core.persist.NotPersistable;
+
 import org.cougaar.util.UnaryPredicate;
 
 /**
@@ -30,10 +32,10 @@ import org.cougaar.util.UnaryPredicate;
  * want to have external, dynamic control over.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.14 $Date: 2004-09-10 17:25:31 $
+ * @version $Revision: 1.15 $Date: 2004-10-04 22:22:36 $
  *
  */
-public class BelievabilityKnob implements Serializable 
+public class BelievabilityKnob implements Serializable, NotPersistable
 {
 
     // Mostly just a collection of variables with simple accessors and
