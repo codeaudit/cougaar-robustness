@@ -227,7 +227,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
             }
           }
           long pingTimeout = getLongAttribute(name, "PING_TIMEOUT", PING_TIMEOUT);
-          long annealTime = pingTimeout > 0 ? pingTimeout/2/1000/2 : LoadBalancer.DEFAULT_ANNEAL_TIME;
+          long annealTime = pingTimeout > 0 ? pingTimeout/2/1000 : LoadBalancer.DEFAULT_ANNEAL_TIME;
+          //long annealTime = LoadBalancer.DEFAULT_ANNEAL_TIME;
           getLoadBalancer().doLayout((int)annealTime,
                                      true,
                                      new ArrayList(newNodes),
@@ -610,19 +611,27 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     // Dont load balance if community is not ready or is busy
     if (autoLoadBalance() && communityReady && !isCommunityBusy()) {
       // Remove occupied nodes from newNodes list
-      if (!newNodes.isEmpty()) {
-        for (Iterator it = newNodes.iterator(); it.hasNext(); ) {
-          if (model.entitiesAtLocation((String)it.next()).length > 0) {
-            it.remove();
-          }
-        }
-      }
       // invoke load balancer if there are new (vacant) nodes or dead nodes
       if (!deadNodes.isEmpty() || !newNodes.isEmpty()) {
-        getLoadBalancer().doLoadBalance(true,
-                                        new ArrayList(newNodes),
-                                        new ArrayList(deadNodes),
-                                        new ArrayList(getExcludedNodes()));
+        LoadBalancerListener lbl = new LoadBalancerListener() {
+          public void layoutReady(Map layout) {
+            logger.info("layout from EN4J: " + layout);
+            getLoadBalancer().moveAgents(layout);
+          }
+        };
+        if (!newNodes.isEmpty()) {
+          for (Iterator it = newNodes.iterator(); it.hasNext(); ) {
+            if (model.entitiesAtLocation((String)it.next()).length > 0) {
+              it.remove();
+            }
+          }
+        }
+        getLoadBalancer().doLayout(LoadBalancer.DEFAULT_ANNEAL_TIME,
+                                   true,
+                                   new ArrayList(newNodes),
+                                   new ArrayList(deadNodes),
+                                   new ArrayList(getExcludedNodes()),
+                                   lbl);
         newNodes.clear();
         deadNodes.clear();
       }
