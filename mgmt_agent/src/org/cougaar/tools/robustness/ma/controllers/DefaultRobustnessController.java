@@ -19,7 +19,6 @@ package org.cougaar.tools.robustness.ma.controllers;
 
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
 import org.cougaar.tools.robustness.ma.DuplicateAgentDetector;
-import org.cougaar.tools.robustness.ma.ReaffiliationNotificationHandler;
 import org.cougaar.tools.robustness.ma.HostLossThreatAlertHandler;
 import org.cougaar.tools.robustness.ma.SecurityAlertHandler;
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorRequest;
@@ -582,7 +581,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     RestartDestinationLocator.setLoggingService(logger);
     new HostLossThreatAlertHandler(getBindingSite(), agentId, this, csm);
     new SecurityAlertHandler(getBindingSite(), agentId, this, csm);
-    new ReaffiliationNotificationHandler(getBindingSite(), agentId, csm);
   }
 
 /**

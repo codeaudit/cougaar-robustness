@@ -61,6 +61,8 @@ import org.cougaar.tools.robustness.ma.ldm.NodeStatusRelayImpl;
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorRequest;
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorResponse;
 
+import org.cougaar.tools.robustness.ma.ReaffiliationNotificationHandler;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -228,6 +230,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
     updateInterval = Long.parseLong(updateIntervalStr);
     wakeAlarm = new WakeAlarm(now() + updateInterval);
     alarmService.addRealTimeAlarm(wakeAlarm);
+    new ReaffiliationNotificationHandler(getBindingSite(), agentId, null);
   }
 
   /**

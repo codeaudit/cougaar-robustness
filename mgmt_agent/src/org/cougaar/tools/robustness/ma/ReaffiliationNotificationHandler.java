@@ -39,7 +39,11 @@ import java.util.Set;
 
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
+import javax.naming.directory.BasicAttribute;
 import javax.naming.directory.BasicAttributes;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+
 
 /**
  * Handler to respond to requests to add/remove members to/from robustness
@@ -79,6 +83,7 @@ public class ReaffiliationNotificationHandler extends RobustnessThreatAlertHandl
       if (logger.isDebugEnabled()) {
         logger.debug("Received new ReaffiliationNotification: " + ta);
       }
+      String communityName = null;
       // Leave current robustness community
       Collection communities =
           commSvc.searchCommunity(null,
@@ -86,55 +91,75 @@ public class ReaffiliationNotificationHandler extends RobustnessThreatAlertHandl
                                   false,
                                   Community.COMMUNITIES_ONLY,
                                   null);
+      final Attributes attrs = new BasicAttributes();
+      // Leave current Robustness community
       if (communities != null && !communities.isEmpty()) {
-        final String communityName =
+        communityName =
             ((Community) communities.iterator().next()).getName();
         Community comm = commSvc.getCommunity(communityName, null);
         if (comm != null && comm.hasEntity(agentId.toString())) {
-          final Attributes attrs =
+          Attributes entityAttrs =
               comm.getEntity(agentId.toString()).getAttributes();
+          NamingEnumeration enum = entityAttrs.getAll();
+          try {
+            while (enum.hasMore()) {
+              attrs.put((Attribute)enum.next());
+            }
+          } catch (NamingException ne) {}
           commSvc.leaveCommunity(communityName, agentId.toString(),
                                  new CommunityResponseListener() {
             public void getResponse(CommunityResponse resp) {
               if (logger.isDebugEnabled()) {
                 logger.debug("Leaving community: community=" +
-                             communityName + " resp=" + resp);
+                             resp.getContent() + " resp=" + resp);
               }
             }
           });
           if (logger.isDebugEnabled()) {
             logger.debug("Requesting to leave community: " + communityName);
           }
-          // Join new robustness community
-          final String newCommunity = (String) rn.getContent();
-          if (newCommunity != null && newCommunity.length() > 0) {
-            commSvc.joinCommunity(newCommunity,
-                                  agentId.toString(),
-                                  commSvc.AGENT,
-                                  attrs,
-                                  true,
-                                  null,
-                                  new CommunityResponseListener() {
-              public void getResponse(CommunityResponse resp) {
-                if (logger.isDebugEnabled()) {
-                  logger.debug("Joining community: community=" +
-                              newCommunity + " resp=" + resp);
-                }
-              }
-            });
-            if (logger.isDebugEnabled()) {
-              logger.debug("Requesting to join community: " + newCommunity);
-            }
-          }
-          // Send Notification to members
-          Attribute entityType = attrs.get("EntityType");
-          if (entityType != null && entityType.contains("Node")) {
-            Set members = findLocalAgentsInCommunity(communityName);
-            sendToMembers(rn, members);
-          }
         }
       }
-    }
+        // Join new Robustness community
+        final String newCommunity = (String) rn.getContent();
+        if (newCommunity != null && newCommunity.length() > 0) {
+          if (attrs.size() == 0) { // No attributes extracted from prior comm
+            attrs.put("EntityType", rn.getEntityType());
+            Attribute roleAttr = new BasicAttribute("Role");
+            roleAttr.add("Member");
+            if (rn.getEntityType().equals("Node")) {
+              roleAttr.add("HealthMonitor"); // For Agent liveness defense
+              roleAttr.add("DosNode"); // For DOS defense
+            }
+            attrs.put(roleAttr);
+          }
+          commSvc.joinCommunity(newCommunity,
+                                agentId.toString(),
+                                commSvc.AGENT,
+                                attrs,
+                                true,
+                                null,
+                                new CommunityResponseListener() {
+            public void getResponse(CommunityResponse resp) {
+              if (logger.isDebugEnabled()) {
+                logger.debug("Joining community: community=" +
+                             newCommunity + " resp=" + resp);
+              }
+            }
+          });
+          if (logger.isDebugEnabled()) {
+            logger.debug("Requesting to join community: " + newCommunity);
+          }
+        }
+        // Send Notification to members
+        Attribute entityType = attrs.get("EntityType");
+        if (entityType != null && entityType.contains("Node")) {
+          Set agents = communityName != null
+                        ? findLocalAgentsInCommunity(communityName)
+                        : findLocalAgents();
+          sendToMembers(rn, agents);
+        }
+      }
   }
 
   public void changedAlert(ThreatAlert ta) {
@@ -195,7 +220,7 @@ public class ReaffiliationNotificationHandler extends RobustnessThreatAlertHandl
             logger.debug("SendAlert: agent=" + memberName);
           }
           ReaffiliationNotification copyForMember =
-              new ReaffiliationNotification(agentId, rn.getCommunity());
+              new ReaffiliationNotification(agentId, rn.getCommunity(), "Agent");
           copyForMember.setContent(rn.getContent());
           threatAlertService.sendAlert(copyForMember, memberName);
         }
@@ -212,7 +237,7 @@ public class ReaffiliationNotificationHandler extends RobustnessThreatAlertHandl
     Community community = commSvc.getCommunity(communityName, null);
     if (community != null) {
       // Agents found using NodeControlService
-      Set agents = listLocalAgents();
+      Set agents = findLocalAgents();
       for (Iterator it = agents.iterator(); it.hasNext();) {
         String agentName = (String)it.next();
         if (community.hasEntity(agentName)) {
@@ -223,7 +248,7 @@ public class ReaffiliationNotificationHandler extends RobustnessThreatAlertHandl
     return localAgentsInCommunity;
   }
 
-  private Set listLocalAgents() {
+  private Set findLocalAgents() {
     Set names = new HashSet();
     NodeControlService ncs = getNodeControlService();
     if (ncs != null) {
