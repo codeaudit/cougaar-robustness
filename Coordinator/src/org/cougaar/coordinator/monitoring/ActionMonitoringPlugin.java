@@ -82,14 +82,15 @@ public class ActionMonitoringPlugin extends MonitoringPluginBase implements NotP
     protected void execute() {
 
         if (somethingExpired) {
-            Iterator iter = expiredAlarms.values().iterator();
-            while (iter.hasNext()) {
-                ActionTimeoutAlarm thisAlarm = (ActionTimeoutAlarm)iter.next();
-                if (thisAlarm.hasExpired()) thisAlarm.handleExpiration();
+            synchronized(expiredAlarms) {
+                Iterator iter = expiredAlarms.values().iterator();
+                while (iter.hasNext()) {
+                    ActionTimeoutAlarm thisAlarm = (ActionTimeoutAlarm)iter.next();
+                    if (thisAlarm.hasExpired()) thisAlarm.handleExpiration();
+                }
             }
-        }
-        somethingExpired = false;
-            
+            somethingExpired = false;
+       }
 
         //***************************************************SelectedActions
         //Handle the addition of new ActionPatience for SelectedActions
@@ -99,6 +100,14 @@ public class ActionMonitoringPlugin extends MonitoringPluginBase implements NotP
             ActionPatience ap = (ActionPatience)iter.next();
             //findDesiredOutcomes(ap);
             startTimerIfNone(ap); 
+        }
+
+        for ( Iterator iter = monitoredActionsSubscription.getRemovedCollection().iterator();  
+          iter.hasNext() ; ) 
+        {
+            ActionPatience ap = (ActionPatience)iter.next();
+            //findDesiredOutcomes(ap);
+            cancelTimerIfExists(ap); 
         }
 
         // Watches for desirable outcomes for Actions
@@ -177,6 +186,14 @@ public class ActionMonitoringPlugin extends MonitoringPluginBase implements NotP
         }
 
     
+    private void cancelTimerIfExists(ActionPatience ap) {
+        ActionTimeoutAlarm alarm = (ActionTimeoutAlarm) monitoredActions.get(ap.getAction());
+        if (alarm != null) {
+            alarm.cancel(); //changed our minds - no longer want this timeout
+        }        
+    }
+
+    
     private class ActionTimeoutAlarm implements Alarm {
         private ActionPatience ap;
         private long detonate;
@@ -198,8 +215,10 @@ public class ActionMonitoringPlugin extends MonitoringPluginBase implements NotP
 
         public void expire () {
             expired = true;
-            somethingExpired = true;
-            expiredAlarms.put(action, this);
+            synchronized(expiredAlarms) {
+                somethingExpired = true;
+                expiredAlarms.put(action, this);
+            }
             signalClientActivity();
         }
 

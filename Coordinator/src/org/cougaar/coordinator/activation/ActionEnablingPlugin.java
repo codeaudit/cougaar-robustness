@@ -170,7 +170,7 @@ public class ActionEnablingPlugin extends DeconflictionPluginBase implements Not
 	}
         if ((ats != null ) &&
 	    ats.getStateDimension().equals("Comunications") && 
-	    ra.getActionVariants().contains("Disabled"))
+	    ra.getRetractedVariant().equals("Disabled"))
             return msglogDelay;
         else
             return 0L;
@@ -187,8 +187,10 @@ public class ActionEnablingPlugin extends DeconflictionPluginBase implements Not
       try {
         if (ec instanceof RetractedActions) {
             RetractedActions ra = (RetractedActions) ec;
-            if (ra.getActionVariants() == null) { // retract ALL actions
+            if (ra.getRetractedVariant() == null) { // retract ALL actions
                 action.setPermittedValues(emptySet);
+                ActionPatience ap = findActionPatience(ra.getAction());
+                publishRemove(ap);
             } 
             else { // not supported yet
             }

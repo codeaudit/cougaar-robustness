@@ -20,26 +20,26 @@ import org.cougaar.util.UnaryPredicate;
 
 public class RetractedActions extends EnablingControl implements NotPersistable {
 
-    private Set actionVariants;
+    private Object retractedVariant;
 
     /** Creates new RetractedActions */
-    public RetractedActions(Action action, Set retractedVariants) {
+    public RetractedActions(Action action, Object retractedVariant) {
         super(action);
-        this.actionVariants = retractedVariants;
+        this.retractedVariant = retractedVariant;
     }
 
     public RetractedActions(Action action) {
         super(action);
-        this.actionVariants = null;
+        this.retractedVariant = null;
     }
     
-    public Set getActionVariants() { return actionVariants; }
+    public Object getRetractedVariant() { return retractedVariant; }
 
     public String toString() {
         String buff = "RetractedActions: ";
         buff = buff + super.getAction().toString() + "\n";
         buff = buff + "retracting: ";
-        buff = buff + actionVariants == null?"ALL":actionVariants.toString() + "\n";
+        buff = buff + retractedVariant == null?"ALL":retractedVariant.toString() + "\n";
         return buff;
     }
 

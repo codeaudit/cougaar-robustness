@@ -511,11 +511,11 @@ public abstract class Action
                 
             throw new IllegalValueException("Illegal completionCode: " + completionCode);
         }
-                
-        if ( lastAction == null || lastAction.hasCompleted() ) {
+        
+            if ( lastAction == null || ( lastAction.hasCompleted() && !lastAction.isActive() )) { // dlw - not a problem if the Action has completed setup and is still working
 
-            throw new NoStartedActionException("Last action was: " + lastAction);            
-        }
+                throw new NoStartedActionException("Last action was: " + lastAction);            
+            }
         
         //Update action record since this action is being stopped.
         lastAction.setCompletionCode(completionCode, System.currentTimeMillis() );

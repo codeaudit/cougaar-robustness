@@ -199,17 +199,19 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 
           // get the CBE associated with the Action
           CostBenefitEvaluation cbe = findCostBenefitEvaluation(action.getAssetID());
-          if (logger.isDebugEnabled()) logger.debug(action + " has " + ap.getResult());
+          ActionEvaluation ae = cbe.getActionEvaluation(action);
+          if (logger.isDebugEnabled()) logger.debug(action.dump() + " has " + ap.getResult());
+          Object variantAttempted = action.getValue().getAction();
+          VariantEvaluation ve = ae.getVariantEvaluation(variantAttempted);
+          ve.setTried();
           if ((ap.getResult().equals(Action.COMPLETED)) || (ap.getResult().equals(Action.ACTIVE))) {
-              Object variantAttempted = action.getValue().getAction();
               if (logger.isDebugEnabled()) logger.debug(variantAttempted.toString() + " succeeded - Nothing more to do.  Completed action no longer permitted w/o re-authorization.");
               publishAdd(new RetractedActions(action));
           }
           else {
               if (action.getValue() != null) { // some action was tried & it did not help - mark it as "tried" & remove it from the permittedValues
-                  Object variantAttempted = action.getValue().getAction();
                   if (logger.isDebugEnabled()) logger.debug(variantAttempted.toString() + " failed - Try something else.  Failed action no longer permitted w/o re-authorization.");
-                  publishAdd(new RetractedActions(action));
+                  publishAdd(new RetractedActions(action, variantAttempted));
               }      
               else { // the actuator took no action - what should we do here? 
               }
@@ -226,12 +228,21 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 
     boolean done = false;
     int index = 0;
+    Set selectedActions = new HashSet();
     while (!done) {
         SelectedAction thisAction = selectBest(cbe, knob); 
         if (thisAction != null) {
 	    if (logger.isDebugEnabled()) 
 		logger.debug("SelectAction: thisAction="+thisAction.toString());
-            publishAdd(thisAction);
+            if ((thisAction.getAction().getValue() != null) 
+                    && (thisAction.getActionVariants().contains(thisAction.getAction().getValue())) // the last action variant performed is one that was selected  
+                    && (thisAction.getAction().getValue().isActive()))  { // the Action is still ACTIVE
+                if (logger.isDebugEnabled()) logger.debug("Selected " + thisAction.getAction().toString() + " already ACTIVE - not re-permitted");
+            }
+            else {
+                publishAdd(thisAction);
+                if (logger.isDebugEnabled()) logger.debug("Selected " + thisAction.getAction().toString() + " permitting");
+            }
             index++;
             Action a = thisAction.getAction();
 	    ActionTechSpecInterface ats = actionTechSpecService.getActionTechSpec(a.getClass().getName());
