@@ -233,6 +233,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
           };
           getLayout(lbl);
         }
+      } else if (name.equals(preferredLeader()) && isLeader(thisAgent)) {
+        newState(name, RESTART);
       }
       if (isLocal(name)) {
         stopHeartbeats(name);
@@ -586,6 +588,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   public void leaderChange(String priorLeader, String newLeader) {
     logger.info("LeaderChange: prior=" + priorLeader + " new=" + newLeader);
     if (isLeader(thisAgent) && model.getCurrentState(preferredLeader()) == DEAD) {
+      newState(preferredLeader(), RESTART);
     }
     checkCommunityReady();
   }
