@@ -31,6 +31,7 @@ import org.cougaar.core.node.NodeIdentificationService;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.persist.NotPersistable;
+import org.cougaar.core.service.UIDService;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Set;
@@ -80,7 +81,10 @@ public abstract class Action
         
     /** The ActionTechSpec for this action class */
     static private ActionTechSpecInterface actionTechSpec = null;
-    
+
+    /** UID Service */
+    static private UIDService uidService;
+
     /** 
      *  The address of the node agent. May change if the action is moved. 
      *  Making this transient will cause the target to go to null when this object moves.
@@ -145,6 +149,8 @@ public abstract class Action
         }
 
         this.expandedName = AssetName.generateExpandedAssetName(assetName, assetType); 
+        this.setUID(uidService.nextUID());
+        
     }
 
 
@@ -227,6 +233,14 @@ public abstract class Action
             throw new RuntimeException(
             "Unable to obtain agent id");
         }
+        
+        this.uidService = (UIDService) 
+            serviceBroker.getService( this, UIDService.class, null);
+        if (uidService == null) {
+            throw new RuntimeException(
+            "Unable to obtain UIDService");
+        }
+        
 
     }
 

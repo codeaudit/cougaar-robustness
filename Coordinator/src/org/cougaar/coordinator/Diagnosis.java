@@ -41,6 +41,7 @@ import org.cougaar.core.node.NodeIdentificationService;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.persist.NotPersistable;
+import org.cougaar.core.service.UIDService;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Set;
@@ -93,6 +94,8 @@ public abstract class Diagnosis
     /** The address of this agent */
     static private MessageAddress agentId = null;
     
+    /** UID Service */
+    static private UIDService uidService;
 
     /** UID for this relayable object */
     private UID uid = null;
@@ -127,6 +130,8 @@ public abstract class Diagnosis
         }
 
         this.expandedName = AssetName.generateExpandedAssetName(assetName, assetType);
+        this.setUID(uidService.nextUID());
+        
     }
 
    
@@ -139,7 +144,6 @@ public abstract class Diagnosis
     {
         this(assetName, serviceBroker);
         this.setValue(initialValue);
-        
     }        
 
     /**
@@ -233,6 +237,13 @@ public abstract class Diagnosis
             throw new TechSpecNotFoundException(
             "Unable to obtain tech spec service");
         }
+        
+        this.uidService = (UIDService) 
+            serviceBroker.getService( this, UIDService.class, null);
+        if (uidService == null) {
+            throw new RuntimeException(
+            "Unable to obtain UIDService");
+        }        
       
         //call tech spec service & get action tech spec        
         diagnosisTechSpec = (DiagnosisTechSpecInterface) DiagnosisTechSpecService.getDiagnosisTechSpec(this.getClass());
