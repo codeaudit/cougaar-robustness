@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<!--
+    Typical usage:
+
+    <?xml version="1.0"?>
+
+    <!DOCTYPE LogAnalysis SYSTEM "LogAnalysis.dtd">
+
+    <LogAnalysis>
+    ...
+    </LogAnalysis>
+-->
+
+<!ELEMENT Compare EMPTY>
+<!ATTLIST Compare
+    RECV_SEQ CDATA #IMPLIED
+    SEND_SEQ CDATA #IMPLIED
+  >
+
+<!ELEMENT Format (Tags|Strings)*>
+<!ATTLIST Format
+    STRING_DELIMITED CDATA #IMPLIED
+    DELIMITER CDATA #IMPLIED
+  >
+
+<!ELEMENT LogAnalysis (Compare|LogPoint)*>
+<!ATTLIST LogAnalysis
+    DESC CDATA #IMPLIED
+    NAME CDATA #IMPLIED
+  >
+
+<!ELEMENT LogPoint (Format)*>
+<!ATTLIST LogPoint
+    SEND_STACK CDATA #IMPLIED
+    USER_VISIBLE_NAME CDATA #IMPLIED
+    ID CDATA #IMPLIED
+    SEQ_NUM CDATA #IMPLIED
+  >
+
+<!ELEMENT StringMapping EMPTY>
+<!ATTLIST StringMapping
+    ATTR_NAME CDATA #IMPLIED
+    ORDER_NUM CDATA #IMPLIED
+  >
+
+<!ELEMENT Strings (StringMapping)*>
+
+<!ELEMENT TagMapping EMPTY>
+<!ATTLIST TagMapping
+    ATTR_NAME CDATA #IMPLIED
+    TAG_STRING CDATA #IMPLIED
+  >
+
+<!ELEMENT Tags (TagMapping)*>
