@@ -2,20 +2,17 @@
 # Adds Disconnection components to society definition
 # 
 
-comm = "org.cougaar.community.CommunityPlugin"
 omsp = "org.cougaar.core.adaptivity.OperatingModeServiceProvider"
 ompm = "org.cougaar.core.adaptivity.OperatingModePolicyManager"
 csp  = "org.cougaar.core.adaptivity.ConditionServiceProvider"
-cp   = "org.cougaar.tools.robustness.deconfliction.CoordinatorPlugin"
 dap  = "org.cougaar.tools.robustness.disconnection.DisconnectAgentPlugin"
 dnp  = "org.cougaar.tools.robustness.disconnection.DisconnectNodePlugin"
 dmp  = "org.cougaar.tools.robustness.disconnection.DisconnectManagerPlugin"
 ds   = "org.cougaar.tools.robustness.disconnection.DisconnectServlet"
-rmfp = "org.cougaar.tools.robustness.disconnection.RobustnessManagerFinderPlugin"
 
-agentPlugins = [comm, omsp, ompm, csp, dap, rmfp]
-nodePlugins = [comm, omsp, ompm, csp, dnp, ds, rmfp]
-mgrPlugins = [comm, omsp, ompm, csp, dmp, rmfp]
+agentPlugins = [dap]
+nodePlugins = [omsp, ompm, csp, dap, dnp, ds]
+mgrPlugins = [omsp, ompm, csp, dap, dmp]
 
 society.each_agent do |agent|
     if agent.name =~ /.*ARManager.*/
