@@ -59,7 +59,7 @@ public class HealthStatus implements
   public static final String FAILED_RESTART   = "FAILED_RESTART";
   public static final String MOVE             = "MOVE";
   public static final String FAILED_MOVE      = "FAILED_MOVE";
-  public static final String ROBUSTNESS_INIT_FAIL  = "ROBUSTNESS_INIT_FAIL";
+  public static final String INIT_FAIL        = "INIT_FAIL";
 
   // Heartbeat status codes
   public static final int HB_NORMAL     = 0;
@@ -125,6 +125,7 @@ public class HealthStatus implements
   private long pingTimeout;   // Defines the ping timeout period
                               // (in milliseconds).
   private long pingRetries;   // Defines the number of times to retry a ping
+  private long activePingFreq; // Defines frequency of active pings
 
 
   private List heartbeatTimeouts = new Vector();
@@ -160,6 +161,7 @@ public class HealthStatus implements
    * @param hbFailRate     Threshold for heartbeat failures
    * @param pingTimeout    Timeout period for pings
    * @param pingRetries    Number of times to retry a ping
+   * @param activePingFreq Active ping frequence
    */
   protected HealthStatus(UID uid,
                          MessageAddress agentId,
@@ -174,7 +176,8 @@ public class HealthStatus implements
                          long hbWindow,
                          float hbFailRate,
                          long pingTimeout,
-                         long pingRetries) {
+                         long pingRetries,
+                         long activePingFreq) {
     this.myUID = uid;
     this.agentId = agentId;
     this.communityName = communityName;
@@ -190,6 +193,7 @@ public class HealthStatus implements
     this.hbFailRate = hbFailRate;
     this.pingTimeout = pingTimeout;
     this.pingRetries = pingRetries;
+    this.activePingFreq = activePingFreq;
     setState(currentState);
   }
 
@@ -354,6 +358,22 @@ public class HealthStatus implements
    */
   public void setPingRetries(long retries) {
     this.pingRetries = retries;
+  }
+
+  /**
+   * Returns Active ping frequency.
+   * @return Rate active pings are performed (ms)
+   */
+  public long getActivePingFrequency() {
+    return activePingFreq;
+  }
+
+  /**
+   * Sets Active ping frequency.
+   * @param Rate to perform active pings
+   */
+  public void setActivePingFrequency(long freq) {
+    this.activePingFreq = freq;
   }
 
   /**

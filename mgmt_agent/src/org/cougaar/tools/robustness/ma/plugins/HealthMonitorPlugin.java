@@ -112,19 +112,19 @@ public class HealthMonitorPlugin extends SimplePlugin implements
   // Defines default values for configurable parameters.
   private static String defaultParams[][] = {
     {"community",    ""},
-    {"hbReqTimeout", "60000"},
+    {"hbReqTimeout",     "60000"},
     //{"hbReqRetries", "-1"},
-    {"hbReqRetries", "1"},
-    {"hbReqRetryFreq", "60000"},
-    {"hbFreq",       "30000"},
-    {"hbTimeout",    "30000"},
-    {"hbPctLate",    "100.0"},
-    {"hbWindow",     "360000"},  // Default to 6 minute window
-    {"hbFailRate",   "0.5"},
-    {"activePingFreq", "180000"},
-    {"pingTimeout",  "60000"},
-    {"pingRetries",  "1"},
-    {"evalFreq",     "10000"},
+    {"hbReqRetries",          "1"},
+    {"hbReqRetryFreq",    "60000"},
+    {"hbFreq",            "30000"},
+    {"hbTimeout",         "30000"},
+    {"hbPctLate",           "80.0"},
+    {"hbWindow",         "360000"},  // Default to 6 minute window
+    {"hbFailRate",            "0.5"},
+    {"activePingFreq",        "0"},
+    {"pingTimeout",       "60000"},
+    {"pingRetries",           "1"},
+    {"evalFreq",          "10000"},
     {"restartRetryFreq", "120000"}
   };
   ManagementAgentProperties healthMonitorProps =
@@ -559,14 +559,15 @@ public class HealthMonitorPlugin extends SimplePlugin implements
             }
           }
 
-        /*
-        } else if (hs.getHeartbeatStatus() == HealthStatus.HB_NORMAL ||
-                   hs.getHeartbeatStatus() == HealthStatus.HB_INACTIVE) {
+
+        } else if ((hs.getHeartbeatStatus() == HealthStatus.HB_NORMAL ||
+                   hs.getHeartbeatStatus() == HealthStatus.HB_INACTIVE) &&
+                   hs.getActivePingFrequency() > 0) {
           // Ping agents periodically even if we haven't received a
           // HealthReport
           if (activePingFrequency != -1 &&
               (hs.getPingTimestamp() == null ||
-              elapsedTime(hs.getPingTimestamp(), now()) > activePingFrequency)) {
+              elapsedTime(hs.getPingTimestamp(), now()) > hs.getActivePingFrequency())) {
             hs.setPingStatus(HealthStatus.PING_REQUIRED);
           }
           int pingStatus = hs.getPingStatus();
@@ -600,7 +601,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
               doHealthCheck(hs, HealthStatus.NO_RESPONSE);
             }
           }
-          */
+
         }
       //************************************************************************
       // State: RESTART         - Agents in this state are being restarted
@@ -702,7 +703,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       //                        are not responding to HeartbeatRequests or
       //                        Pings.
       //************************************************************************
-      } else if (state.equals(HealthStatus.ROBUSTNESS_INIT_FAIL)) {
+      } else if (state.equals(HealthStatus.INIT_FAIL)) {
         if (!state.equals(hs.getPriorState()))
           log.error("Robustness init fail: agent=" + hs.getAgentId());
       } else {
@@ -728,7 +729,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
         if (cm.isAgent() && !isNodeAgent(cm.getName())) {
           HealthStatus hs = newHealthStatus(new ClusterIdentifier(cm.getName()));
           addHealthStatus(hs);
-          log.info("Adding " + cm.getName());
+          //log.info("Adding " + cm.getName());
           bbs.publishAdd(hs);
         }
       }
@@ -742,7 +743,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
           HealthStatus hs = newHealthStatus(agent);
           addHealthStatus(hs);
           newMembers.add(hs);
-          log.info("Adding " + cm.getName());
+          //log.info("Adding " + cm.getName());
           bbs.publishAdd(hs);
         }
       }
@@ -791,42 +792,55 @@ public class HealthMonitorPlugin extends SimplePlugin implements
                          heartbeatFailureRateWindow,
                          heartbeatFailureRateThreshold,
                          pingTimeout,
-                         pingRetries);
+                         pingRetries,
+                         activePingFrequency);
     // Get agent attributes from community service and set any agent-specific
     // parameters
     Attributes attrs =
       communityService.getEntityAttributes(communityToMonitor, agentId.toString());
     NamingEnumeration enum = attrs.getAll();
+    StringBuffer sb = new StringBuffer();
     try {
       while (enum.hasMoreElements()) {
-        boolean found = true;
         Attribute attr = (Attribute)enum.nextElement();
         if (attr.getID().equalsIgnoreCase("hbReqTimeout")) {
           hs.setHbReqTimeout(Long.parseLong((String)attr.get()));
+          sb.append(" hbReqTimeout=" + hs.getHbReqTimeout());
         } else if (attr.getID().equalsIgnoreCase("hbReqRetries")) {
           hs.setHbReqRetries(Long.parseLong((String)attr.get()));
+          sb.append(" hbReqRetries=" + hs.getHbReqRetries());
         } else if (attr.getID().equalsIgnoreCase("hbFreq")) {
           hs.setHbFrequency(Long.parseLong((String)attr.get()));
+          sb.append(" hbFreq=" + hs.getHbFrequency());
         } else if (attr.getID().equalsIgnoreCase("hbTimeout")) {
           hs.setHbTimeout(Long.parseLong((String)attr.get()));
+          sb.append(" hbTimeout=" + hs.getHbTimeout());
         } else if (attr.getID().equalsIgnoreCase("hbPctLate")) {
           hs.setHbPctLate(Float.parseFloat((String)attr.get()));
+          sb.append(" hbPctLate=" + hs.getHbPctLate());
         } else if (attr.getID().equalsIgnoreCase("hbWindow")) {
           hs.setHbWindow(Long.parseLong((String)attr.get()));
+          sb.append(" hbWindow=" + hs.getHbWindow());
         } else if (attr.getID().equalsIgnoreCase("hbFailRate")) {
           hs.setHbFailRateThreshold(Float.parseFloat((String)attr.get()));
+          sb.append(" hbFailRate=" + hs.getFailureRate());
         } else if (attr.getID().equalsIgnoreCase("pingTimeout")) {
           hs.setPingTimeout(Long.parseLong((String)attr.get()));
-        } else {
-          found = false;
+          sb.append(" pingTimeout=" + hs.getPingTimeout());
+        } else if (attr.getID().equalsIgnoreCase("pingRetries")) {
+          hs.setPingRetries(Long.parseLong((String)attr.get()));
+          sb.append(" pingRetries=" + hs.getPingRetries());
+        } else if (attr.getID().equalsIgnoreCase("activePingFreq")) {
+          hs.setActivePingFrequency(Long.parseLong((String)attr.get()));
+          sb.append(" activePingFreq=" + hs.getActivePingFrequency());
         }
-        if (log.isDebugEnabled() && found)
-          log.debug("Setting agent health parameter: agent=" + agentId +
-                    " parameter=" + attr.getID() +
-                    " value=" + (String)attr.get());
       }
     } catch (Exception ex) {
       log.error("Exception parsing agent health monitor parameters, " + ex);
+    }
+    if (log.isInfoEnabled()) {
+      log.info("Adding " + hs.getAgentId() +
+        (sb.length() > 0 ? " (" + sb.toString().trim() + ")" : ""));
     }
     return hs;
   }
