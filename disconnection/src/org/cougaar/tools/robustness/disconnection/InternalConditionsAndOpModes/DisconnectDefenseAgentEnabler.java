@@ -90,7 +90,7 @@ public class DisconnectDefenseAgentEnabler extends DefenseOperatingMode implemen
      */
     public DisconnectDefenseAgentEnabler(String assetType, String asset) {
         
-        super(assetType, asset, DisconnectConstants.DEFENSE_NAME, DefenseConstants.DEF_RANGELIST, DefenseConstants.DEF_DISABLED.toString());
+        super(assetType, asset, DisconnectConstants.DEFENSE_NAME, DefenseConstants.DEF_RANGELIST, DefenseConstants.DISCONNECT_DENIED.toString());
 
     }
 

@@ -51,7 +51,7 @@ public class DefenseEnablingOperatingMode extends DefenseOperatingMode {
      */
     public DefenseEnablingOperatingMode(String assetType, String asset, String defenseName) {
         
-        super(assetType, asset, defenseName, DefenseConstants.DEF_RANGELIST, DefenseConstants.DEF_DISABLED.toString());
+        super(assetType, asset, defenseName, DefenseConstants.DEF_RANGELIST, DefenseConstants.DISCONNECT_DENIED.toString());
 
     }
     

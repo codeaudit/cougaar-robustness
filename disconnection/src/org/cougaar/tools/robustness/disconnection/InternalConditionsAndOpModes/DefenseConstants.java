@@ -28,12 +28,14 @@ public class DefenseConstants {
     public static final OMCPoint[] BOOL_VALUE_LIST = {BOOL_TRUE, BOOL_FALSE};    
     public static OMCRangeList BOOL_RANGELIST = new OMCRangeList (BOOL_VALUE_LIST);
     
-    public static final OMCPoint DEF_ENABLED = new OMCStrDefPoint("ENABLED");
-    public static final OMCPoint DEF_DISABLED = new OMCStrDefPoint("DISABLED");
+    public static final OMCPoint DISCONNECT_ALLOWED = new OMCStrDefPoint("DISCONNECT_ALLOWED");
+    public static final OMCPoint DISCONNECT_DENIED = new OMCStrDefPoint("DISCONNECT_DENIED");
+    public static final OMCPoint CONNECT_ALLOWED = new OMCStrDefPoint("CONNECT_ALLOWED");
+    public static final OMCPoint CONNECT_DENIED = new OMCStrDefPoint("CONNECT_DENIED");
     public static final OMCPoint DEF_PEND = new OMCStrDefPoint("PEND");
     public static final OMCPoint DEF_PENDTIME = new OMCStrDefPoint("PENDTIME");
     public static final OMCPoint DEF_PREPARE = new OMCStrDefPoint("PREPARE");
-    public static final OMCPoint[] DEF_VALUE_LIST = {DEF_PEND, DEF_PENDTIME, DEF_PREPARE, DEF_ENABLED, DEF_DISABLED};
+    public static final OMCPoint[] DEF_VALUE_LIST = {DEF_PEND, DEF_PENDTIME, DEF_PREPARE, DISCONNECT_ALLOWED, DISCONNECT_DENIED, CONNECT_ALLOWED, CONNECT_DENIED};
     public static final OMCRangeList DEF_RANGELIST = new OMCRangeList (DEF_VALUE_LIST);
     
     

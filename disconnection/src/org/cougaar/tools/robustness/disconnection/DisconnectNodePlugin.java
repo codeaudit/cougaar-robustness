@@ -66,6 +66,11 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
 
   private AgentVector localAgents = new AgentVector();
   
+    // Legal OpMode values (back from Manager)
+    private final static String DISCONNECT_ALLOWED = DefenseConstants.DISCONNECT_ALLOWED.toString();
+    private final static String DISCONNECT_DENIED = DefenseConstants.DISCONNECT_DENIED.toString();
+    private final static String CONNECT_ALLOWED = DefenseConstants.CONNECT_ALLOWED.toString();
+    private final static String CONNECT_DENIED = DefenseConstants.CONNECT_DENIED.toString();
 
   public DisconnectNodePlugin() {
     super();
@@ -261,20 +266,22 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
               }
               */
 
-              if ((defenseMode.equals("ENABLED")) && (reconnectInterval > 0L)) {
+              if ((defenseMode.equals(DISCONNECT_ALLOWED)) && (reconnectInterval > 0L)) {
                     currentlyDisconnected = true;
                     if (eventService.isEventEnabled()) eventService.event(getNodeID()+" has received permission to Disconnect for "+reconnectInterval/1000L+" sec");
               }
-              else if ((defenseMode.equals("DISABLED")) && (reconnectInterval == 0L) && (currentlyDisconnected)) {
+              else if ((defenseMode.equals(CONNECT_ALLOWED)) && (reconnectInterval == 0L) && (currentlyDisconnected)) {
                     currentlyDisconnected = false;
                     if (eventService.isEventEnabled()) eventService.event(getNodeID()+" has received permission to Reconnect");
               }
-              else if (reconnectInterval > 0L) {
+              else if ((defenseMode.equals(DISCONNECT_DENIED)) && (reconnectInterval > 0L)) {
                     if (eventService.isEventEnabled()) eventService.event(getNodeID()+" is denied permission to Disconnect");
-                  }
-              else if ((reconnectInterval == 0L) && (currentlyDisconnected)) {
+              }
+
+              else if ((defenseMode.equals(CONNECT_DENIED)) && (reconnectInterval == 0L)) {
                     if (eventService.isEventEnabled()) eventService.event(getNodeID()+" is denied permission to Reconnect");
               }
+              else if (logger.isDebugEnabled()) logger.debug("Saw an invalid response due to relay re-establishment - IGNORING");
           }
       };
 

@@ -67,6 +67,12 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     private RequestToDisconnectAgentDiagnosisIndex requestToDisconnectAgentDiagnosisIndex;
     private DisconnectActionIndex disconnectActionIndex;
 
+    // Legal OpMode values (back to Node)
+    private final static String DISCONNECT_ALLOWED = DefenseConstants.DISCONNECT_ALLOWED.toString();
+    private final static String DISCONNECT_DENIED = DefenseConstants.DISCONNECT_DENIED.toString();
+    private final static String CONNECT_ALLOWED = DefenseConstants.CONNECT_ALLOWED.toString();
+    private final static String CONNECT_DENIED = DefenseConstants.CONNECT_DENIED.toString();
+
     // Legal Diagnosis Values
     private final static String DISCONNECT_REQUEST = DisconnectConstants.DISCONNECT_REQUEST;
     private final static String CONNECT_REQUEST = DisconnectConstants.CONNECT_REQUEST;
@@ -91,6 +97,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     private Hashtable activeOverdueAlarms = new Hashtable();
 
     private boolean rehydrating = false;
+    private long rehydrateTime = 0;
 
     // A Record of info that needs to survive moves and rehydrations
     private NodeStatus nodeStatus;
@@ -240,6 +247,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                    // create an OverdueAlarm if the Node is Disconnected
                 }
                 rehydrating = false;
+                rehydrateTime = System.currentTimeMillis();
             }
         }
 
@@ -593,7 +601,12 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                 return false;
             }
         }
-        rr.setAlarm(createRequestedAlarm(rr, 120000.0));
+        double alarmTime;
+        if (rehydrateTime == 0) alarmTime = 120000.0;
+        else if (System.currentTimeMillis() - rehydrateTime > 300000) alarmTime = 120000.0;
+        else alarmTime = rehydrateTime + 300000 - System.currentTimeMillis()  + 120000.0;// allow extra time if the MA is restarting to allow Unleash to happen
+
+        rr.setAlarm(createRequestedAlarm(rr, alarmTime));
         rr.setOriginalActions(originalActions);
         rr.setOriginalDiagnoses(originalDiagnoses);
         rr.setAgentVector(agentVector);
@@ -622,12 +635,12 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             String finalState;
             if (request.equals(ALLOW_DISCONNECT)) {
                 completionCode = Action.ACTIVE;
-                enablerValue = "ENABLED";
+                enablerValue = DISCONNECT_ALLOWED;
                 finalState = DISCONNECTED;
             }
             else {
                 completionCode = Action.COMPLETED;
-                enablerValue = "DISABLED";
+                enablerValue = CONNECT_ALLOWED;
                 finalState = CONNECTED;
                 cancelOverdueAlarm_Returned(nodeID);
             }
@@ -692,7 +705,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         AssetID nodeID = rr.getNodeID();
 
         if (enabler != null) {
-            enabler.setValue(request.equals(ALLOW_DISCONNECT) ? "DISABLED" : "ENABLED");  // Tell the node it can NOT do what it requested
+            enabler.setValue(request.equals(ALLOW_DISCONNECT) ? DISCONNECT_DENIED : CONNECT_DENIED);  // Tell the node it can NOT do what it requested
             blackboard.publishChange(enabler);
             // change the Diagnosis back to its value before the denied request
             Iterator iter = rr.getOriginalDiagnoses().iterator();
