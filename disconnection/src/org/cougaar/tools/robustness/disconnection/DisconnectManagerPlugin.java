@@ -132,28 +132,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                 return false ;
             }
         });
-
-        /*
-        //Listen for changes to NodeActuators
-        nodeActuatorSubscription = (IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
-            public boolean execute(Object o) {
-                if ( o instanceof NodeDisconnectActuator ) {
-                    return true ;
-                }
-                return false ;
-            }
-        });
-        
-        //Listen for changes to AgentActuators
-        agentActuatorSubscription = (IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
-            public boolean execute(Object o) {
-                if ( o instanceof AgentDisconnectActuator ) {
-                    return true ;
-                }
-                return false ;
-            }
-        });
-*/        
+ 
         //Listen for changes to ANY Actuators
         actuatorSubscription = (IncrementalSubscription ) getBlackboardService().subscribe(DisconnectActuator.pred);
     }
@@ -271,6 +250,33 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             }
         }
   */  
+
+        iter = actuatorSubscription.getChangedCollection().iterator();
+        while (iter.hasNext()) {
+            DisconnectActuator actuator = (DisconnectActuator)iter.next();
+            Set newPV = actuator.getNewPermittedValues();
+            if (newPV != null) {
+                if (logger.isDebugEnabled()) logger.debug("Permitted change to: " + actuator.dump());
+                try {
+                    actuator.setPermittedValues(newPV);
+                    actuator.clearNewPermittedValues();
+                    RequestRecord rr = (RequestRecord)pendingRequests.get(actuator);
+                    if (logger.isDebugEnabled()) logger.debug("Requested Action is: " + rr.getRequest().toString() + ":" + ((Object)rr.getRequest()).toString());
+                    if (actuator.getPermittedValues().contains(rr.getRequest())) {
+                        boolean deleted = rr.getRemainingActions().remove(actuator);
+                        if (logger.isDebugEnabled()) logger.debug("Removal of Action: " + actuator.dump() + " is " + deleted);
+                        pendingRequests.remove(actuator);
+                        if (rr.getRemainingActions().isEmpty()) {   
+                            propagateChange(rr);
+                        }
+                    }
+                if (logger.isDebugEnabled()) logger.debug("RequestRecord after getting permission for: " + actuator.dump() + " is " + rr.dump());
+                } catch (IllegalValueException e)  {
+                    logger.error("Attempt to set: "+actuator.dump()+" with illegal value "+e.toString());
+                    return;
+                } 
+            }
+        }
     }
     
 
@@ -402,6 +408,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                     +" for the Coordinator");
             blackboard.publishChange(diag);
             DisconnectActuator actuator = disconnectActuatorIndex.getAction(new AssetID(rtc.getAsset(), AssetType.findAssetType("Node")));
+            rr.setAssetID(actuator.getAssetID());
             originalActions.add(actuator);
             remainingActions.add(actuator);
             pendingRequests.put(actuator, rr);
@@ -490,17 +497,30 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     }
 
 
-    private boolean propagateChange(NodeDisconnectActuator nda, String action) {
+    private boolean propagateChange(RequestRecord rr) {
         
-        DisconnectDefenseAgentEnabler item = DisconnectDefenseAgentEnabler.findOnBlackboard("Node", nda.getAssetID().getName().toString(), blackboard);
+        DisconnectDefenseAgentEnabler item = DisconnectDefenseAgentEnabler.findOnBlackboard(rr.getAssetID().getType().toString(), rr.getAssetID().getName().toString(), blackboard);
         if (item != null) {
-            item.setValue(action==ALLOW_DISCONNECT?"ENABLED":"DISABLED");
+            item.setValue(rr.getRequest());
             blackboard.publishChange(item);
             if (logger.isDebugEnabled()) logger.debug("Sent back to Node: " + item.toString());
+
+            // tell the Coord that all the Actions are now started
+            Iterator iter = rr.getOriginalActions().iterator();
+            while (iter.hasNext()) {
+                DisconnectActuator actuator = (DisconnectActuator)iter.next();
+                try {
+                    actuator.start(rr.getRequest());
+                    blackboard.publishChange(actuator);
+                } catch (IllegalValueException e) {
+                    logger.error("Attempt to start: "+actuator.dump()+" with illegal value "+e.toString());
+                    return false;
+                }
+            }
             return true;
         }
         else {
-            if (logger.isDebugEnabled()) logger.debug("could not find Enabler for" + nda.dump());
+            if (logger.isDebugEnabled()) logger.debug("could not find Enabler for" + rr.dump());
             return false;
         }
     }

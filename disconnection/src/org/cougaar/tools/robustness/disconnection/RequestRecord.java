@@ -13,10 +13,12 @@ package org.cougaar.tools.robustness.disconnection;
  */
 
 import java.util.Set;
+import org.cougaar.coordinator.techspec.AssetID;
 
 
 public class RequestRecord extends java.util.Hashtable {
 
+    private AssetID assetID;;
     private Set originalActions;
     private Set remainingActions;
     private String request;
@@ -25,7 +27,10 @@ public class RequestRecord extends java.util.Hashtable {
     public RequestRecord() {
     }
 
-    public Set getOriginalAction() { return originalActions; }
+    public AssetID getAssetID() { return assetID; }
+    public void setAssetID(AssetID assetID) { this.assetID = assetID; }
+
+    public Set getOriginalActions() { return originalActions; }
     public void setOriginalActions(Set originalActions) {this.originalActions = originalActions; }
 
     public Set getRemainingActions() { return remainingActions; }
@@ -35,7 +40,7 @@ public class RequestRecord extends java.util.Hashtable {
     public void setRequest(String request) { this.request = request; }
 
     public String dump() {
-        return "Request: " + request + "\n"
+        return "Request: " + request + ":" +((Object)request).toString() + "\n"
             + "Original Actions: " + originalActions + "\n"
             + "RemainingActions: " + remainingActions + "\n";
     }
