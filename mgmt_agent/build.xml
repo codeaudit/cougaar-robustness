@@ -504,7 +504,7 @@
 		<signjar jar="sys/ant.jar" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
     <move file="sys/ant.jar" toDir="staging/sys"/>
     <copy file="build.xml" toDir="staging/robustness"/>
-    <copy file="configs/recipeQueries.q" toDir="staging/configs/common"/>
+    <!-- <copy file="configs/recipeQueries.q" toDir="staging/configs/common"/> -->
     <copy toDir="staging/robustness/bin">
       <fileset dir="bin"/>
     </copy>
