@@ -74,7 +74,7 @@ public class VariantEvaluation implements Comparable {
 
     
     public String toString() {
-        return "      "+variantDescription.name().toString()+", Cost="+predictedCost+", Benefit="+predictedBenefit+", Time="+expectedTransitionTime+", Cost/Benefit="+getCostBenefitRatio()+", Chosen?: " + chosenP() +", Active?: " + activeP() +", Failed?: " + failedP() +" \n";
+        return "      "+variantDescription.name().toString()+", Cost="+predictedCost+", Benefit="+predictedBenefit+", Time="+expectedTransitionTime+", Benefit/Cost="+getBenefitToCostRatio()+", Chosen?: " + chosenP() +", Active?: " + activeP() +", Failed?: " + failedP() +" \n";
     }
 
     public int compareTo(java.lang.Object obj) {
