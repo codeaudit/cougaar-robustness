@@ -38,6 +38,10 @@ include_scripts:
     parameters:
       - snapshot_name: $CIP/SAVE-PreStage2-ARUC7.tgz
       - snapshot_location: before_stage_2
+  - script: $CIP/csmart/lib/coordinator/leash_defenses.rb
+    parameters:
+      - location: before_stage_2
+      - verbose: 1
   - script: $CIP/csmart/lib/coordinator/unleash_defenses.rb 
 =end
 

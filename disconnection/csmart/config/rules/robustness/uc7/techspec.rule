@@ -9,7 +9,8 @@ techspecs = ['PlannedDisconnect_AgentAssetStateDimensions.xml',
              'PlannedDisconnect_Threats.xml', 
              'PlannedDisconnect_Events.xml', 
              'PlannedDisconnect_ConnectedSensors.xml', 
-             'PlannedDisconnect_PlannedDisconnectActuator.xml']
+             'PlannedDisconnect_PlannedDisconnectActuator.xml',
+             'CrossDiagnosis_PD_Restart.xml']
 
 society.each_agent(true) do |agent|
     if agent.name =~ /.*ARManager.*/
