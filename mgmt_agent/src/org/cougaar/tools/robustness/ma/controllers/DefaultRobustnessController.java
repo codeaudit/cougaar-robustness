@@ -184,7 +184,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (thisAgent.equals(preferredLeader()) && isAgent(name)) {
         // Interface point for Deconfliction
         // If Ok'd by Deconflictor set state to RESTART
-        newState(name, DECONFLICT);
+        if(getDeconflictHelper() != null)
+          newState(name, DECONFLICT);
+        else
+          newState(name, RESTART);
         setLocation(name, null);
       } else if (isNode(name)) {
         setExpiration(name, NEVER);
@@ -195,7 +198,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
     public void expired(String name) {
       if (isLeader(thisAgent) && isAgent(name)) {
-        newState(name, DECONFLICT);
+        if(getDeconflictHelper() != null)
+          newState(name, DECONFLICT);
+        else
+          newState(name, RESTART);
+
       }
     }
   }
@@ -340,17 +347,20 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                                implements DeconflictListener {
     { addDeconflictListener(this); }
     public void enter(String name) {
-      if(getDeconflictHelper().isOpEnabaled(name)) {
+      if(getDeconflictHelper() != null && getDeconflictHelper().isOpEnabaled(name)) {
         getDeconflictHelper().changeApplicabilityCondition(name, true);
         newState(name, RESTART);
       }
+      if(getDeconflictHelper() == null)
+        newState(name, RESTART);
     }
     public void expired(String name) {
         newState(name, HEALTH_CHECK);
     }
     public void defenseOpModeEnabled(String name){
       if(getState(name) == DEAD) {
-        getDeconflictHelper().changeApplicabilityCondition(name, true);
+        if(getDeconflictHelper() != null)
+          getDeconflictHelper().changeApplicabilityCondition(name, true);
         newState(name, RESTART);
       }
       else {
