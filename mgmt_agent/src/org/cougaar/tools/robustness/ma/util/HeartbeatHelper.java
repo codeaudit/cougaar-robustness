@@ -34,27 +34,19 @@ import org.cougaar.core.service.SchedulerService;
 import org.cougaar.core.service.UIDService;
 
 import org.cougaar.core.component.BindingSite;
-import org.cougaar.core.component.ServiceBroker;
 
 import org.cougaar.core.mts.MessageAddress;
-import org.cougaar.core.mts.SimpleMessageAddress;
 
 import org.cougaar.core.service.AlarmService;
-import org.cougaar.core.agent.service.alarm.Alarm;
-
-import org.cougaar.core.util.UID;
 
 import org.cougaar.util.UnaryPredicate;
 
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashSet;
 import java.util.Iterator;
 
 /**
@@ -160,6 +152,7 @@ public class HeartbeatHelper extends BlackboardClientComponent {
       } else if (status == HeartbeatRequest.FAILED || status == HeartbeatRequest.REFUSED) {
         logger.debug("Heartbeat request failed: agent=" + target +
                     " status=" + hbr.statusToString(hbr.getStatus()));
+        blackboard.publishRemove(hbr);
         heartbeatFailure(target);
       }
     }
@@ -191,6 +184,14 @@ public class HeartbeatHelper extends BlackboardClientComponent {
                               final long hbFrequency,
                               final long hbTimeout,
                               final long pctOutOfSpec) {
+    if (logger.isDebugEnabled()) {
+      logger.debug("startHeartbeats:" +
+                   " agent=" + agentName +
+                   " requestTimeout=" + hbrTimeout +
+                   " frequency=" + hbFrequency +
+                   " timeout=" + hbTimeout +
+                   " pctOutOfSpec=" + pctOutOfSpec);
+    }
     fireLater(new QueueEntry(START,
                              MessageAddress.getMessageAddress(agentName),
                              hbrTimeout,
