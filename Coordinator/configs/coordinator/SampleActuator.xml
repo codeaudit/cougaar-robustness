@@ -57,55 +57,55 @@
 
     <Action name="64Encryption">
         <Description value="64-bit Encryption" />
-        <Transition WhenActualStateIs="HighVulnerability" EndStateWillBe="MediumVulnerability" IntermediateStateWillBe="?" >
+        <Transition WhenActualStateIs="HighVulnerability" EndStateWillBe="MediumVulnerability" IntermediateStateWillBe="HighVulnerability" >
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="LOW" />
                 <Time intensity="MEDIUM" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
-                <Bandwidth intensity="VERY_LOW" msgSizeFactor="TRUE" />
+                <CPU intensity="LOW" msgSizeFactor="TRUE" />
+                <Bandwidth intensity="LOW" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
-        <Transition WhenActualStateIs="MediumVulnerability" EndStateWillBe="LowVulnerability" IntermediateStateWillBe="?" >
+        <Transition WhenActualStateIs="MediumVulnerability" EndStateWillBe="LowVulnerability" IntermediateStateWillBe="MediumVulnerability" >
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="LOW" />
                 <Time intensity="MEDIUM" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
-                <Bandwidth intensity="VERY_LOW" msgSizeFactor="TRUE" />
+                <CPU intensity="LOW" msgSizeFactor="TRUE" />
+                <Bandwidth intensity="LOW" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
-        <Transition WhenActualStateIs="LowVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="?" >
+        <Transition WhenActualStateIs="LowVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="LowVulnerability" >
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="LOW" />
                 <Time intensity="MEDIUM" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
-                <Bandwidth intensity="VERY_LOW" msgSizeFactor="TRUE" />
+                <CPU intensity="LOW" msgSizeFactor="TRUE" />
+                <Bandwidth intensity="LOW" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
-        <Transition WhenActualStateIs="NoVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="?" >
+        <Transition WhenActualStateIs="NoVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="NoVulnerability" >
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="LOW" />
                 <Time intensity="MEDIUM" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
-                <Bandwidth intensity="VERY_LOW" msgSizeFactor="TRUE" />
+                <CPU intensity="LOW" msgSizeFactor="TRUE" />
+                <Bandwidth intensity="LOW" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
     </Action>
 
     <Action name="128Encryption">
         <Description value="128-bit Encryption" />
-        <Transition WhenActualStateIs="HighVulnerability" EndStateWillBe="LowVulnerability" IntermediateStateWillBe="?" >
+        <Transition WhenActualStateIs="HighVulnerability" EndStateWillBe="LowVulnerability" IntermediateStateWillBe="HighVulnerability" >
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="LOW" />
@@ -116,85 +116,85 @@
                 <Bandwidth intensity="VERY_LOW" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
-        <Transition WhenActualStateIs="MediumVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="?" >
+        <Transition WhenActualStateIs="MediumVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="MediumVulnerability" >
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="LOW" />
                 <Time intensity="MEDIUM" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
-                <Bandwidth intensity="VERY_LOW" msgSizeFactor="TRUE" />
+                <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
+                <Bandwidth intensity="MEDIUM" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
-        <Transition WhenActualStateIs="LowVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="?" >
+        <Transition WhenActualStateIs="LowVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="LowVulnerability" >
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="LOW" />
                 <Time intensity="MEDIUM" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
-                <Bandwidth intensity="VERY_LOW" msgSizeFactor="TRUE" />
+                <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
+                <Bandwidth intensity="MEDIUM" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
-        <Transition WhenActualStateIs="NoVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="?" >
+        <Transition WhenActualStateIs="NoVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="NoVulnerability" >
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="LOW" />
                 <Time intensity="MEDIUM" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
-                <Bandwidth intensity="VERY_LOW" msgSizeFactor="TRUE" />
+                <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
+                <Bandwidth intensity="MEDIUM" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
     </Action>
 
     <Action name="256Encryption">
         <Description value="256-bit Encryption" />
-        <Transition WhenActualStateIs="HighVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="?" >
+        <Transition WhenActualStateIs="HighVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="HighVulnerability" >
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="LOW" />
                 <Time intensity="MEDIUM" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
-                <Bandwidth intensity="VERY_LOW" msgSizeFactor="TRUE" />
+                <CPU intensity="HIGH" msgSizeFactor="TRUE" />
+                <Bandwidth intensity="HIGH" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
-        <Transition WhenActualStateIs="MediumVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="?" >
+        <Transition WhenActualStateIs="MediumVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="MediumVulnerability" >
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="LOW" />
                 <Time intensity="MEDIUM" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
-                <Bandwidth intensity="VERY_LOW" msgSizeFactor="TRUE" />
+                <CPU intensity="HIGH" msgSizeFactor="TRUE" />
+                <Bandwidth intensity="HIGH" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
-        <Transition WhenActualStateIs="LowVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="?" >
+        <Transition WhenActualStateIs="LowVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="LowVulnerability" >
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="LOW" />
                 <Time intensity="MEDIUM" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
-                <Bandwidth intensity="VERY_LOW" msgSizeFactor="TRUE" />
+                <CPU intensity="HIGH" msgSizeFactor="TRUE" />
+                <Bandwidth intensity="HIGH" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
-        <Transition WhenActualStateIs="NoVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="?" >
+        <Transition WhenActualStateIs="NoVulnerability" EndStateWillBe="NoVulnerability" IntermediateStateWillBe="NoVulnerability" >
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="LOW" />
                 <Time intensity="MEDIUM" />
             </OneTimeCost>
             <ContinuingCost>
-                <CPU intensity="VERY_LOW" msgSizeFactor="TRUE" />
-                <Bandwidth intensity="VERY_LOW" msgSizeFactor="TRUE" />
+                <CPU intensity="HIGH" msgSizeFactor="TRUE" />
+                <Bandwidth intensity="HIGH" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
     </Action>

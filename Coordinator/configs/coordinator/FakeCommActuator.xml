@@ -8,7 +8,7 @@
               actionType="CORRECTIVE">
     <Action name="TryHard">
         <Description value="Tries Real Hard" />
-        <Transition WhenActualStateIs="*" EndStateWillBe="GOOD" IntermediateStateWillBe="GOOD" >
+        <Transition WhenActualStateIs="*" EndStateWillBe="Communicating" IntermediateStateWillBe="Communicating" >
             <OneTimeCost>
                 <Time duration="100" />
             </OneTimeCost>
@@ -36,7 +36,7 @@
                 <Bandwidth intensity="LOW" agentSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
-        <Transition WhenActualStateIs="GOOD" EndStateWillBe="GOOD" IntermediateStateWillBe="GOOD" >
+        <Transition WhenActualStateIs="Communicating" EndStateWillBe="Communicating" IntermediateStateWillBe="Communicating" >
             <OneTimeCost>
                 <Time duration="100" />
             </OneTimeCost>
