@@ -183,6 +183,7 @@
     <zip zipfile="${ant.project.name}-${DSTAMP}.zip"
       basedir="${basedir}"
       includes="src/**,
+        csmart/**,
         data/**,
         doc/**,
         example/**,
@@ -373,124 +374,6 @@
     </java>
   </target>
 
-  <!-- Runs YellowPagesViewer UI application -->
-    <target name="ypviewer" description="Runs YellowPagesViewer application">
-    <java dir="${basedir}" fork="yes"
-      classname="org.cougaar.community.test.YellowPagesViewer">
-      <classpath>
-        <pathelement location="${lib}/${jar}"/>
-        <fileset dir="${cougaar}/lib">
-          <include name="**/*.jar"/>
-        </fileset>
-        <fileset dir="${cougaar}/sys">
-          <include name="**/*.jar"/>
-        </fileset>
-      </classpath>
-      <arg line="${host} ${port} ${agent}"/>
-    </java>
-  </target>
-
-  <!-- Runs Robustness UI application -->
-    <target name="ui" description="Runs Robustness UI application">
-    <java dir="${basedir}" fork="yes"
-      classname="org.cougaar.tools.robustness.ma.ui.RobustnessUI">
-      <classpath>
-        <pathelement location="${lib}/${jar}"/>
-        <fileset dir="${cougaar}/lib">
-          <include name="**/*.jar"/>
-        </fileset>
-        <fileset dir="${cougaar}/sys">
-          <include name="**/*.jar"/>
-        </fileset>
-      </classpath>
-      <arg line="${host} ${port} ${agent}"/>
-    </java>
-  </target>
-
-  <!-- Runs LogFactor5 logger ui -->
-    <target name="lf5" description="Runs LogFactor5 UI">
-    <java dir="${basedir}" fork="yes"
-      classname="org.apache.log4j.lf5.StartLogFactor5">
-      <classpath>
-        <fileset dir="${lib}">
-          <include name="**/*.jar"/>
-        </fileset>
-        <fileset dir="${cougaar}/sys">
-          <include name="**/*.jar"/>
-        </fileset>
-      </classpath>
-    </java>
-  </target>
-
-  <!-- Synchronize development and release directory trees -->
-  <target name="sync" description="Synchronize development and release directory trees">
-      <!-- copy modified files in release directories to development directories -->
-    <copy todir="../${ant.project.name}-dev" >
-      <fileset dir="${basedir}"
-        includes="build.xml,**/*.txt,**/*.java,**/*.properties,**/*.dat,**/*.ini,**/*.xml,**/*.csv,**/*.jar,**/*.rc"
-        excludes="*.jpx,
-                  tmp/**,
-                  lib/**,
-                  test/configs/common/host.xml,
-                  test/src/org/cougaar/tools/robustness/ma/test/simulator/**" />
-    </copy>
-      <!-- copy modified files in development directories to release directories -->
-    <copy todir="${basedir}" >
-      <fileset dir="../${ant.project.name}-dev"
-        includes="build.xml,**/*.txt,**/*.java,**/*.properties,**/*.dat,**/*.ini,**/*.xml,**/*.csv,**/*.jar,**/*.rc"
-        excludes="*.jpx,
-                  tmp/**,
-                  lib/**,
-                  test/configs/common/host.xml,
-                  test/src/org/cougaar/tools/robustness/ma/test/simulator/**" />
-    </copy>
-  </target>
-
-  <!-- CVS checkout - TIC -->
-  <target name="checkout-tic">
-    <cvs cvsRoot=":ext:rsnyder@cvs.ultralog.net:/cvs/robustness/mic"
-         package="${ant.project.name}"
-         dest=".."
-         command="update"
-    />
-  </target>
-
-  <!-- CVS update - TIC -->
-  <target name="update-tic">
-    <cvs cvsRoot=":ext:rsnyder@cvs.ultralog.net:/cvs/robustness/mic"
-         package="${ant.project.name}"
-         dest=".."
-         command="update"
-    />
-  </target>
-
-  <!-- CVS Commit - TIC -->
-  <target name="commit-tic">
-    <cvs cvsRoot=":ext:rsnyder@cvs.ultralog.net:/cvs/robustness/mic"
-         package="${ant.project.name}"
-         dest=".."
-         command="commit"
-    />
-  </target>
-
-  <!-- CVS Update - Local -->
-  <target name="update-local">
-    <cvs cvsRoot=":pserver:ron@oak:/cvsroot"
-         package="robustness"
-         dest=".."
-         command="update"
-    />
-  </target>
-
-  <!-- CVS Commit - Local -->
-  <target name="commit-local">
-    <cvs cvsRoot=":pserver:ron@oak:/cvsroot"
-         package="robustness"
-         dest=".."
-         command="-evi commit"
-    />
-  </target>
-
   <!-- Create Cougaar overlay zip file -->
   <target name="create_cougaar_overlay">
     <delete dir="staging"/>
@@ -503,19 +386,9 @@
     <mkdir dir="staging/configs/common"/>
 
     <!-- ACME and CSMART -->
-    <mkdir dir="staging/csmart"/>
-    <mkdir dir="staging/csmart/config"/>
-    <mkdir dir="staging/csmart/config/doc"/>
-    <mkdir dir="staging/csmart/config/doc/robustness"/>
-    <mkdir dir="staging/csmart/config/doc/robustness/uc1"/>
-    <mkdir dir="staging/csmart/config/lib"/>
-    <mkdir dir="staging/csmart/config/lib/robustness"/>
+    <!-- <mkdir dir="staging/csmart/config/doc/robustness/uc1"/> -->
     <mkdir dir="staging/csmart/config/lib/robustness/uc1"/>
-    <mkdir dir="staging/csmart/config/rules"/>
-    <mkdir dir="staging/csmart/config/rules/robustness"/>
     <mkdir dir="staging/csmart/config/rules/robustness/uc1"/>
-    <mkdir dir="staging/csmart/config/scripts"/>
-    <mkdir dir="staging/csmart/config/scripts/robustness"/>
     <mkdir dir="staging/csmart/config/scripts/robustness/uc1"/>
     <mkdir dir="staging/configs/common"/>
     <mkdir dir="staging/robustness"/>
@@ -532,9 +405,9 @@
          <include name="*.xsl" />
       </fileset>
     </copy>
-    <copy toDir="staging/csmart/config/doc/robustness/uc1">
+    <!-- <copy toDir="staging/csmart/config/doc/robustness/uc1">
       <fileset dir="csmart/config/doc/robustness/uc1"/>
-    </copy>
+    </copy> -->
     <copy toDir="staging/csmart/config/lib/robustness/uc1">
       <fileset dir="csmart/config/lib/robustness/uc1">
          <include name="aruc1_actions_and_states.rb" />
