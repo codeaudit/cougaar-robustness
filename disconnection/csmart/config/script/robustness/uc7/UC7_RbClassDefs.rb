@@ -30,17 +30,20 @@ module Cougaar
        # ]
        # @example = "do_action 'EffectUCState', 'u115', 'MANAGEMENT_NODE', 1200, 'Deconfliction' " 
 	#}
-    
-      def initialize(run, hostName, agentName, newValue, ucName)
+
+	@@node = nil
+
+      def initialize(run, agentHost, agentName, newValue, ucName)
         super(run) 
-	@hostName = hostName
+	@agentHost = agentHost
 	@agentName = agentName
 	@newValue = newValue
 	@ucName = ucName			
-	
+
       end
       def perform 
-		result, uri = SupportClasses::EmitHTTP.now(@hostName, @agentName, @newValue, @ucName)
+     
+		result, uri = SupportClasses::EmitHTTP.now(@agentHost, @agentName, @newValue, @ucName)
 		#puts result if result
 		#Cougaar.logger.info "#{result}" if result
 		return result, uri
@@ -54,6 +57,22 @@ require 'xmlrpc/client'
 
 module SupportClasses
     
+    def SupportClasses.findSomeAgentAndHost(run)
+	    puts "findSomeAgentAndHost called ******************"
+	        nodeAgent = nil
+		nodeHost = nil
+		run.society.each_node_agent do |agent|
+			if agent.name =~ /.*MANAGEMENT_NODE.*/        
+			else # grab last node_agent & use that to disconnect (could use any but Mgmt_Node)
+				nodeAgent = agent.name
+				nodeHost = agent.host.name
+				break
+			end
+		end				
+		puts "findSomeAgentAndHost found: " + nodeAgent + ":"+ nodeHost
+		return nodeAgent, nodeHost
+    end
+  
     class EmitHTTP
     
 	    def self.now(hostName, agentName, newValue, ucName)
@@ -71,9 +90,10 @@ module SupportClasses
     
 end
 
-   module States
 
-	class OpModeChanged < Cougaar::State
+  module States
+
+	class OpModeChange1 < Cougaar::State
 	      DEFAULT_TIMEOUT = 10.minutes
 	      #PRIOR_STATES = ["SocietyPlanning"]
 	      #DOCUMENTATION = Cougaar.document {
@@ -86,8 +106,26 @@ end
 		#@example = "wait_for 'OpModeChanged', 3.minutes do puts 'Did not see the Op Modes change!!!' do_action 'StopSociety' do_action 'StopCommunications' end "
 	      #}
 	      
-	      def initialize(run, watchStrings, timeout=nil, &block)
-	        @watchStrings = watchStrings
+	      def initialize(run, node, timeout=nil, &block)
+	        $node = node
+		#-------------------------------------------------------------------Set up substring constants
+		  $disconnectStr = "DefenseOperatingMode: PlannedDisconnect.UnscheduledDisconnect.Node." + $node 
+		  $reconnectTimeStr = "DefenseOperatingMode: PlannedDisconnect.UnscheduledReconnectTime.Node." + $node  
+		  $nodeDefenseStr = "DefenseOperatingMode: PlannedDisconnect.NodeDefense.Node." + $node
+		
+		  $applicableStr = "DefenseOperatingMode: PlannedDisconnect.Applicable.Node." + $node
+		  $defenseStr = "DefenseOperatingMode: PlannedDisconnect.Defense.Node." + $node
+		  $monitoringStr = "DefenseOperatingMode: PlannedDisconnect.Monitoring.Node." + $node
+		  $mgrMonitoringStr = "DefenseOperatingMode: PlannedDisconnect.ManagerMonitoring.Node." + $node
+		#-------------------------------------------------------------------Set up expected cougaar event values
+		  $watchStr1 = $disconnectStr + "=TRUE"
+		  $watchStr2 = $reconnectTimeStr + '=' + $reconnectTime.to_s
+		  $watchStr3 = $nodeDefenseStr + '=' + "ENABLED"			
+		  $watchStr4 = $applicableStr + '=' +"TRUE"
+		  $watchStr5 = $defenseStr + '=' +"ENABLED"
+		  $watchStr6 = $monitoringStr + '=' +"ENABLED"
+		  $watchStr7 = $mgrMonitoringStr + '=' +"ENABLED"
+	        @watchStrings = [ $watchStr1, $watchStr2, $watchStr3, $watchStr4, $watchStr5, $watchStr6, $watchStr7 ]
 		super(run, timeout, &block)
 	      end
 	      
@@ -97,6 +135,82 @@ end
 		puts "******** Watch Strings **********"
 	        @watchStrings.each do |watch|
 			puts i.to_s + ". " +watch
+			i=i+1
+		end
+		puts "*********************************"
+
+		loop = true
+		while loop
+			event = @run.get_next_event
+			puts "****New Event: "+event.data
+			index = 0
+			# watch for the specifid strings
+			@watchStrings.each do |watch|
+				if watch
+					if event.data.include?(watch) 
+					    puts "*** Found Match At index = "+index.to_s
+					    @watchStrings[index] = nil #set found string to nil
+					end
+				end
+				index += 1
+			end
+			#now check & see if all watch strings are nil
+			done = true
+			@watchStrings.each do |watch|
+			    done = false if watch
+			end
+			loop = false if done
+		end
+	      end
+	      
+	      def unhandled_timeout
+		@run.do_action "StopSociety"
+		@run.do_action "StopCommunications"
+	      end
+	end	
+	class OpModeChange2 < Cougaar::State
+	      DEFAULT_TIMEOUT = 10.minutes
+	      #PRIOR_STATES = ["SocietyPlanning"]
+	      #DOCUMENTATION = Cougaar.document {
+		#@description = "Waits for the Op Modes to change after EffectUCState is called."
+		#@parameters = [
+		 # {:watchStrings => "array of watch strings that need to be seen."},
+		 # {:timeout => "default=nil, Amount of time to wait in seconds."},
+		 # {:block => "The timeout handler (unhandled: StopSociety, StopCommunications)"}
+		#]
+		#@example = "wait_for 'OpModeChanged', 3.minutes do puts 'Did not see the Op Modes change!!!' do_action 'StopSociety' do_action 'StopCommunications' end "
+	      #}
+	      
+	      def initialize(run, node, timeout=nil, &block)
+	        $node = node
+		#-------------------------------------------------------------------Set up substring constants
+		  $disconnectStr = "DefenseOperatingMode: PlannedDisconnect.UnscheduledDisconnect.Node." + $node 
+		  $reconnectTimeStr = "DefenseOperatingMode: PlannedDisconnect.UnscheduledReconnectTime.Node." + $node  
+		  $nodeDefenseStr = "DefenseOperatingMode: PlannedDisconnect.NodeDefense.Node." + $node
+		
+		  $applicableStr = "DefenseOperatingMode: PlannedDisconnect.Applicable.Node." + $node
+		  $defenseStr = "DefenseOperatingMode: PlannedDisconnect.Defense.Node." + $node
+		  $monitoringStr = "DefenseOperatingMode: PlannedDisconnect.Monitoring.Node." + $node
+		  $mgrMonitoringStr = "DefenseOperatingMode: PlannedDisconnect.ManagerMonitoring.Node." + $node
+		#-------------------------------------------------------------------Set up expected cougaar event values
+		  $watchStr11 = $disconnectStr + "=FALSE"
+		  $watchStr12 = $reconnectTimeStr + '=' + $reconnectTime2.to_s
+		  $watchStr13 = $nodeDefenseStr + '=' +"DISABLED"		  
+		  $watchStr14 = $applicableStr + '=' +"FALSE"
+		  $watchStr15 = $defenseStr + '=' +"DISABLED"
+		  $watchStr16 = $monitoringStr + '=' +"DISABLED"
+		  $watchStr17 = $mgrMonitoringStr + '=' +"DISABLED"
+	        @watchStrings = [ $watchStr11, $watchStr12, $watchStr13, $watchStr14, $watchStr15, $watchStr16, $watchStr17 ]
+		super(run, timeout, &block)
+	      end
+	      
+	      def process
+	      
+	        i=0
+		puts "******** Watch Strings **********"
+	        @watchStrings.each do |watch|
+			puts i.to_s + ". " +watch
+			i=i+1
 		end
 		puts "*********************************"
 

@@ -34,6 +34,7 @@ Cougaar::ExperimentMonitor.enable_stdout
 
 Cougaar.new_experiment("Paul_SmallUC7").run(1) {
 
+
 #for multi runs add parens and a number see below
 #Cougaar.new_experiment("scARTExperiment").run(30) {
 
@@ -69,90 +70,51 @@ Cougaar.new_experiment("Paul_SmallUC7").run(1) {
 
   do_action "PublishGLSRoot"
   
-
-$nodeAgent=""
+#******************************************* UC7 Specific code ********************************
 #-------------------------------------------------------------------Define variables
-#Find a node to disconnection
+#Find a node to disconnect
+# do_action "GenericAction" do |run|
+#	run.society.each_node_agent do |agent|#
+#		if agent.name =~ /.*MANAGEMENT_NODE.*/        
+#		else # grab last node_agent & use that to disconnect (could use any but Mgmt_Node)
+#			$nodeAgent = agent.name
+#			$nodeHost = agent.host.name
+#		end
+#	end
+#Find a node to disconnect
  do_action "GenericAction" do |run|
-	run.society.each_node_agent do |agent|
-		if agent.name =~ /.*MANAGEMENT_NODE.*/        
-		else # grab last node_agent & use that to disconnect (could use any but Mgmt_Node)
-			$nodeAgent = agent.name
-			$nodeHost = agent.host.name
-		end
-	end
+  $nodeAgent, $nodeHost = Cougaar::SupportClasses.findSomeAgentAndHost(run) 
+ 
 
-  $node = $nodeAgent
   $reconnectTime = 200.0
   puts "*** Going to disconnect #{$nodeAgent} at host #{$nodeHost}***"
-  
-
-  $reconnectTime2 = 0.0
-
-#-------------------------------------------------------------------Set up substring constants
-  $disconnectStr = "DefenseOperatingMode: PlannedDisconnect.UnscheduledDisconnect.Node." + $node 
-  $reconnectTimeStr = "DefenseOperatingMode: PlannedDisconnect.UnscheduledReconnectTime.Node." + $node  
-  $nodeDefenseStr = "DefenseOperatingMode: PlannedDisconnect.NodeDefense.Node." + $node
-#  $nodeMonitoringStr = "DefenseOperatingMode: PlannedDisconnect.NodeMonitoring.Node." + $node
-
-  $applicableStr = "DefenseOperatingMode: PlannedDisconnect.Applicable.Node." + $node
-  $defenseStr = "DefenseOperatingMode: PlannedDisconnect.Defense.Node." + $node
-  $monitoringStr = "DefenseOperatingMode: PlannedDisconnect.Monitoring.Node." + $node
-#  $mgrDefenseStr = "DefenseOperatingMode: PlannedDisconnect.ManagerDefense.Node." + $node
-  $mgrMonitoringStr = "DefenseOperatingMode: PlannedDisconnect.ManagerMonitoring.Node." + $node
-#-------------------------------------------------------------------Set up expected cougaar event values
-  $watchStr1 = $disconnectStr + "=TRUE"
-  $watchStr2 = $reconnectTimeStr + '=' + $reconnectTime.to_s
-  $watchStr3 = $nodeDefenseStr + '=' + "ENABLED"
-#  $watchStr8 = $nodeMonitoringStr + '=' +"DISABLED"
-		
-  $watchStr4 = $applicableStr + '=' +"TRUE"
-  $watchStr5 = $defenseStr + '=' +"ENABLED"
-  $watchStr6 = $monitoringStr + '=' +"ENABLED"
-#  $watchStr7 = $mgrDefenseStr + '=' +"DISABLED"
-  $watchStr9 = $mgrMonitoringStr + '=' +"ENABLED"
-
-  $watchStr11 = $disconnectStr + "=FALSE"
-  $watchStr12 = $reconnectTimeStr + '=' + $reconnectTime2.to_s
-  $watchStr13 = $nodeDefenseStr + '=' +"DISABLED"
-#  $watchStr18 = $nodeMonitoringStr + '=' +"ENABLED"
-  
-  $watchStr14 = $applicableStr + '=' +"FALSE"
-  $watchStr15 = $defenseStr + '=' +"DISABLED"
-  $watchStr16 = $monitoringStr + '=' +"DISABLED"
-#  $watchStr17 = $mgrDefenseStr + '=' +"ENABLED"
-  $watchStr19 = $mgrMonitoringStr + '=' +"DISABLED"
-
-  
-
-#---------------------------------------------------------------------Submit disconnect action
+ 
+ 
+#STEP 1.-----------------------------------------------------------Submit disconnect action
   puts "*** disconnecting #{$nodeAgent} at host #{$nodeHost}***"
   puts "*** reconnectTime = #{$reconnectTime}***"
-  do_action "EffectUCState", $nodeHost, $node, $reconnectTime.to_s, "Disconnection" 
+  do_action "EffectUCState", $nodeHost, $nodeAgent, $reconnectTime.to_s, "Disconnection" 
   #-------------------------------------------------------------------Wait for expected cougaar events
-#  watchList = [ $watchStr1, $watchStr2, $watchStr3, $watchStr4, $watchStr5, $watchStr6, $watchStr7, $watchStr8 ]
-  watchList = [ $watchStr1, $watchStr2, $watchStr3, $watchStr4, $watchStr5, $watchStr6, $watchStr9 ]
-  wait_for "OpModeChanged", watchList do
+  wait_for "OpModeChange1", $nodeAgent do
     do_action "StopSociety"
     do_action "ArchiveLogs"
     do_action "StopCommunications"
   end
 
-# -------------------------------------------------------------------Now reconnect
-#-------------------------------------------------------------------Set up expected cougaar event values
-puts "*** disconnecting #{$nodeAgent} at host #{$nodeHost}***"
-puts "*** reconnectTime = #{$reconnectTime2}***"
+# STEP 2. ---------------------------------------------------------Now reconnect
+    $reconnectTime2 = 0.0
+    puts "*** disconnecting #{$nodeAgent} at host #{$nodeHost}***"
+    puts "*** reconnectTime = #{$reconnectTime2}***"
 #---------------------------------------------------------------------Submit disconnect action
-    do_action "EffectUCState", $nodeHost, $node, $reconnectTime2.to_s, "Disconnection"
-#  watchList = [ $watchStr11, $watchStr12, $watchStr13, $watchStr14, $watchStr15, $watchStr16, $watchStr17, $watchStr18 ]
-  watchList = [ $watchStr11, $watchStr12, $watchStr13, $watchStr14, $watchStr15, $watchStr16, $watchStr19 ]
-  wait_for "OpModeChanged", watchList do
+    do_action "EffectUCState", $nodeHost, $nodeAgent, $reconnectTime2.to_s, "Disconnection"
+  wait_for "OpModeChange2", $nodeAgent do
     do_action "StopSociety"
     do_action "ArchiveLogs"
     do_action "StopCommunications"
   end
 
-
+end #of generic action
+#**********************************************************************************************
 
   
   wait_for  "PlanningComplete" do
@@ -162,7 +124,7 @@ puts "*** reconnectTime = #{$reconnectTime2}***"
     do_action "StopCommunications"
   end
   #
-end
+
 
 #wait_for  "Command", "shutdown"
   
