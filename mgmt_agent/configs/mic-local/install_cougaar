@@ -3,9 +3,10 @@
 set COUGAAR_VERS="B10_4"
 set UL_VERS="HEAD_B10_4"
 
-set cougaar_packages="cougaar.zip cougaar-support.zip cougaar-src.zip cougaar-api.zip"
+#set cougaar_packages="cougaar.zip cougaar-support.zip cougaar-src.zip cougaar-api.zip"
+set cougaar_packages="cougaar.zip cougaar-support.zip"
 
-set ultralog_packages="AL_bbn_$UL_VERS.zip AR_bbn_$UL_VERS AR_common_$UL_VERS.zip AR_objs_common_$UL_VERS.zip AR_objs_msglog_$UL_VERS.zip AR_objs_disconnection_$UL_VERS.zip AR_objs_deconfliction_$UL_VERS.zip AR_objs_sensors_$UL_VERS.zip AR_boeing_exnihilo_$UL_VERS.zip AR_mic_$UL_VERS.zip bbn_commons_$UL_VERS.zip BBN_ulconfigs_$UL_VERS isat_plugins_$UL_VERS.zip isat_acme_$UL_VERS.zip isat_oplan_$UL_VERS.zip AS_csi_secserv_$UL_VERS.zip AS_csi_overlay_$UL_VERS.zip"
+set ultralog_packages="AL_bbn_$UL_VERS.zip AR_bbn_$UL_VERS AR_common_$UL_VERS.zip AR_objs_common_$UL_VERS.zip AR_objs_msglog_$UL_VERS.zip AR_objs_disconnection_$UL_VERS.zip AR_objs_deconfliction_$UL_VERS.zip AR_objs_sensors_$UL_VERS.zip AR_boeing_exnihilo_$UL_VERS.zip AR_mic_$UL_VERS.zip bbn_commons_$UL_VERS.zip BBN_ulconfigs_$UL_VERS isat_plugins_$UL_VERS.zip isat_acme_$UL_VERS.zip isat_oplan_$UL_VERS.zip AS_csi_secserv_$UL_VERS.zip AS_csi_overlay_$UL_VERS.zip SRI_cnc_$UL_VERS SRI_auto_$UL_VERS"
 
 if (!(-d $1)) then
   mkdir $1
