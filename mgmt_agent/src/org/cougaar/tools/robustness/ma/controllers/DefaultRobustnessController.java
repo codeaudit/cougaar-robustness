@@ -73,7 +73,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   class InitialStateController extends StateControllerBase {
     public void enter(String name) {
-      doPing(name, DefaultRobustnessController.ACTIVE, DEAD);
+      if (isLeader(thisAgent) || isNode(name) || name.equals(preferredLeader())) {
+        doPing(name, DefaultRobustnessController.ACTIVE, DEAD);
+      }
     }
     /*
      public void expired(String name) {
