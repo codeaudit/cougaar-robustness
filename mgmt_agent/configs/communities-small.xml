@@ -17,26 +17,29 @@
       ********************************************************-->
   <Community Name="1AD-SMALL-COMM" >
     <Attribute ID="CommunityType"             Value="Robustness" />
+    <Attribute ID="CommunityManager"          Value="ARManager" />
     <!-- Defines name of Robustness Manager node agent -->
-    <Attribute ID="Manager"                   Value="FWD-NODE" />
+    <Attribute ID="RobustnessManager"         Value="ARManager" />
     <!-- Number of agents expected to join community.  Robustness manager
          will generate a "Community Ready" CougaarEvent when the
          number of active agents in the community hits this level.  -->
-    <Attribute ID="NumberOfAgents"            Value="59" />
+    <Attribute ID="NumberOfAgents"            Value="60" />
     <!-- Parameter values used by Robustness Manager.  Parameters set for
          Entities override these values -->
+    <Attribute ID="UNDEFINED_EXPIRATION"      Value="60000" />
     <Attribute ID="INITIAL_EXPIRATION"        Value="180000" />
-    <Attribute ID="ACTIVE_EXPIRATION"         Value="30000" />
-    <Attribute ID="HEALTH_CHECK_EXPIRATION"   Value="30000" />
-    <Attribute ID="DEAD_EXPIRATION"           Value="-1" />
-    <Attribute ID="RESTART_EXPIRATION"        Value="180000" />
+    <Attribute ID="LOCATED_EXPIRATION"        Value="120000" />
+    <Attribute ID="ACTIVE_EXPIRATION"         Value="120000" />
+    <Attribute ID="HEALTH_CHECK_EXPIRATION"   Value="-1" />
+    <Attribute ID="DEAD_EXPIRATION"           Value="30000" />
+    <Attribute ID="RESTART_EXPIRATION"        Value="300000" />
     <Attribute ID="FAILED_RESTART_EXPIRATION" Value="-1" />
     <Attribute ID="MOVE_EXPIRATION"           Value="300000" />
-    <Attribute ID="PING_TIMEOUT"              Value="30000" />
-    <Attribute ID="HEARTBEAT_REQUEST_TIMEOUT" Value="30000" />
-    <Attribute ID="HEARTBEAT_FREQUENCY"       Value="15000" />
-    <Attribute ID="HEARTBEAT_TIMEOUT"         Value="30000" />
-    <Attribute ID="HEARTBEAT_PCT_OUT_OF_SPEC" Value="50" />
+    <Attribute ID="PING_TIMEOUT"              Value="120000" />
+    <Attribute ID="HEARTBEAT_REQUEST_TIMEOUT" Value="60000" />
+    <Attribute ID="HEARTBEAT_FREQUENCY"       Value="60000" />
+    <Attribute ID="HEARTBEAT_TIMEOUT"         Value="90000" />
+    <Attribute ID="HEARTBEAT_PCT_OUT_OF_SPEC" Value="80" />
     <!-- Nodes -->
     <Entity Name="FWD-NODE" >
       <Attribute ID="EntityType" Value="Node" />
@@ -50,6 +53,12 @@
     </Entity>
     <Entity Name="TRANS-NODE" >
       <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
+    <!-- AR Manager -->
+    <Entity Name="ARManager" >
+      <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="Member" />
       <Attribute ID="Role" Value="HealthMonitor" />
     </Entity>
