@@ -71,12 +71,12 @@ public class RestartHelper extends BlackboardClientComponent {
   public static final int SUCCESS = 0;
   public static final int FAIL = 1;
 
-  public static final long TIMER_INTERVAL = 10 * 000;
+  public static final long TIMER_INTERVAL = 10 * 1000;
   public static final long RESTART_TIMEOUT = 2 * 60 * 1000;
   public static final long MAX_CONCURRENT_RESTARTS = 1;
 
   private List restartQueue = Collections.synchronizedList(new ArrayList());
-  private List remoteRestartRequestQueue = Collections.synchronizedList(new ArrayList());
+  private List remoteRestartRequestQueue = new ArrayList();
   private Map restartsInProcess = Collections.synchronizedMap(new HashMap());
 
   private WakeAlarm wakeAlarm;
@@ -156,19 +156,25 @@ public class RestartHelper extends BlackboardClientComponent {
   }
 
   public void execute() {
+
+    // Remove failed restarts
     if (!restartsInProcess.isEmpty()) {
       removeExpiredRestarts();
     }
+
+    // Perform local restarts
     if (!restartQueue.isEmpty()) {
       restartNext();
     }
-    if (!remoteRestartRequestQueue.isEmpty()) {
-      sendRemoteRequests();
-    }
+
+    // Forward non-local restarts to remote agent
+    fireAll();
+
     // Get AgentControl objects
     for (Iterator it = agentControlSub.iterator(); it.hasNext();) {
       update(it.next());
     }
+
     for (Iterator it = healthMonitorRequests.getAddedCollection().iterator(); it.hasNext(); ) {
       HealthMonitorRequest hsm = (HealthMonitorRequest) it.next();
       logger.debug("Received HealthMonitorRequest:" + hsm);
@@ -203,45 +209,64 @@ public class RestartHelper extends BlackboardClientComponent {
       restartAgent(agentName);
     } else {
       // Queue request to remote agent
-      remoteRestartRequestQueue.add(new RemoteRestartRequest(agentName,
-                                                             origNode,
-                                                             destNode,
-                                                             communityName));
+      fireLater(new RemoteRestartRequest(agentName,
+                                         origNode,
+                                         destNode,
+                                         communityName));
     }
   }
 
-  private void sendRemoteRequests() {
+  protected void fireLater(RemoteRestartRequest rrr) {
     synchronized (remoteRestartRequestQueue) {
-      remoteRestartRequestQueue = Collections.synchronizedList(new ArrayList());
-      for (Iterator it = remoteRestartRequestQueue.iterator(); it.hasNext();) {
-        RemoteRestartRequest rrr = (RemoteRestartRequest)it.next();
-        it.remove();
-        UIDService uidService = (UIDService)getServiceBroker().getService(this,
-            UIDService.class, null);
-        HealthMonitorRequest hmr =
-            new HealthMonitorRequestImpl(agentId,
-                                         rrr.communityName,
-                                         HealthMonitorRequest.RESTART,
-                                         new String[] {rrr.agentName}
-                                         ,
-                                         rrr.origNode,
-                                         rrr.destNode,
-                                         uidService.nextUID());
-        RelayAdapter hmrRa = new RelayAdapter(agentId, hmr, hmr.getUID());
-        hmrRa.addTarget(SimpleMessageAddress.getSimpleMessageAddress(rrr.
-            destNode));
-        if (logger.isDebugEnabled()) {
-          logger.debug("Publishing HealthMonitorRequest:" +
-                       " request=" + hmr.getRequestTypeAsString() +
-                       " targets=" + targetsToString(hmrRa.getTargets()) +
-                       " community-" + hmr.getCommunityName() +
-                       " agents=" +
-                       arrayToString(hmr.getAgents()) +
-                       " destNode=" + hmr.getDestinationNode());
-        }
-        blackboard.publishAdd(hmrRa);
-      }
+      remoteRestartRequestQueue.add(rrr);
     }
+    if (blackboard != null) {
+      blackboard.signalClientActivity();
+    }
+  }
+
+  private void fireAll() {
+    int n;
+    List l;
+    synchronized (remoteRestartRequestQueue) {
+      n = remoteRestartRequestQueue.size();
+      if (n <= 0) {
+        return;
+      }
+      l = new ArrayList(remoteRestartRequestQueue);
+      remoteRestartRequestQueue.clear();
+    }
+    for (int i = 0; i < n; i++) {
+      sendRemoteRequest((RemoteRestartRequest) l.get(i));
+    }
+  }
+
+  private void sendRemoteRequest(RemoteRestartRequest rrr) {
+    UIDService uidService = (UIDService)getServiceBroker().getService(this,
+        UIDService.class, null);
+    HealthMonitorRequest hmr =
+        new HealthMonitorRequestImpl(agentId,
+                                     rrr.communityName,
+                                     HealthMonitorRequest.RESTART,
+                                     new String[] {rrr.agentName}
+                                     ,
+                                     rrr.origNode,
+                                     rrr.destNode,
+                                     uidService.nextUID());
+    RelayAdapter hmrRa = new RelayAdapter(agentId, hmr, hmr.getUID());
+    hmrRa.addTarget(SimpleMessageAddress.getSimpleMessageAddress(rrr.
+        destNode));
+    if(logger.isDebugEnabled()) {
+      logger.debug("Publishing HealthMonitorRequest:" +
+                   " request=" + hmr.getRequestTypeAsString() +
+                   " targets=" + targetsToString(hmrRa.getTargets()) +
+                   " community-" + hmr.getCommunityName() +
+                   " agents=" +
+                   arrayToString(hmr.getAgents()) +
+                   " destNode=" + hmr.getDestinationNode());
+    }
+    blackboard.publishAdd(hmrRa);
+
   }
 
   /**
