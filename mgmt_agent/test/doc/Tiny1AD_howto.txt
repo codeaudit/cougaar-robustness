@@ -1,0 +1,85 @@
+Setting Up Tiny-1AD Robustness Experiment -
+
+1.Check out bbn module from cvs.ultralog.net
+
+2.Load Tiny-1AD experiment into mysql
+
+	cd bbn/csmart/TICExperiments/robustness
+
+	mysql -f -u <user> -p<password> <db> < tiny-1ad-trans-export.sql 
+	
+3.Update recipeQueries.q
+
+	cd bbn/configs/common
+
+	cp recipesQueries.q $CIP/configs/common
+
+4.CSMART
+
+	cd $CIP/csmart/bin
+
+	csmart
+
+	Default Workspace:
+
+	  new experiment
+	    from database
+	      select tiny-1ad-trans
+
+	  new experiment
+	    from database 
+              select RestartLocatorPluginInsertion
+
+	  configure RestartLocatorPluginInsertion
+	    change 1st param to the name of the restart host
+	    save to database
+	    exit
+
+	experiment builder -
+	  configurations tab
+
+	    right click on Hosts
+	      select Global Command Line Options
+		change org.cougaar.persistence.enable to true
+		add a property
+		  org.cougaar.persistence.clear = false
+		if(running bfs everywhere==true) add a property 
+		  org.cougaar.workspace = <bfs client directory>
+
+	    create an new node called <restart host>-RestartNode
+
+	    assign tiny-1ad, glmtrans, 123-msb, tiny-1ad-enclavemanager, <restart host>-RestartNode to hosts
+              (Make sure that 123-MSB is not on the name server host.)
+
+            select host global configuration
+	    save the experiment
+
+	    exit experiment builder
+
+	run experiment
+	    
+	    from a command prompt: rm $CIP/workspace/P
+
+	    press run button in csmart
+
+	    use GLS box to send the Oplan when all agents are started
+
+	    123-MSB node console window
+	      control
+		kill
+	
+	    watch management agent and <restart host>-RestartNode for messages about moving 123-MSB
+
+	    once 123-MSB is moved to <restart host>, use GLS box to sent GLS
+
+4. Inventory Charts
+	
+	When processing has quiesced in <restart host>-RestartNode, start inventory gui
+	  $CIP/bin/Inventory
+	
+	     select 123-MSB
+	     pull up a couple of charts and check that they look reasonable 	
+	    
+	
+	    	    
+			
