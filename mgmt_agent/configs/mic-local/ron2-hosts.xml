@@ -1,16 +1,18 @@
 <?xml version="1.0"?>
-<society name='ARsmall-hosts' 
+<society name='ARsmall-hosts'
   xmlns:xsi='http:/www.w3.org/2001/XMLSchema-instance'
   xsi:noNamespaceSchemaLocation='http:/www.cougaar.org/2003/society.xsd'>
-  <host name='dell8200'>
-    <facet service="cougaar-db"/>
-    <facet service="jabber"/>
-    <facet service="operator"/>
-  </host>
   <host name='dell'>
     <facet service="acme"/>
   </host>
+  <host name='DELL8200'>
+    <facet service="cougaar-db"/>
+    <facet service="jabber"/>
+    <facet service="operator"/>
+    <facet service="acme"/>
+  </host>
   <host name='hp'>
+    <facet service="nameserver"/>
     <facet service="acme"/>
   </host>
 </society>
