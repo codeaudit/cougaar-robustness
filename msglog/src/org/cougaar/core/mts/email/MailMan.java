@@ -56,7 +56,13 @@ public class MailMan
   private static int pop3SocketTimeout, smtpSocketTimeout;
   private static boolean debugPop3, debugSmtp;
   private static final Message[] zeroMsgs = new Message[0];
+  private static boolean withCougaar = true;
 
+  /* Set to false if using this class outside of Cougaar. */
+  public static void setWithCougaar (boolean withCougaar)
+  {
+      MailMan.withCougaar = withCougaar;
+  }
 
   public static void setServiceBroker (ServiceBroker sb)
   {
@@ -88,25 +94,25 @@ public class MailMan
 
   private static Session getPop3Session () throws Exception
   {
-    //  POP3 socket factory initialization
+      Properties props = new Properties();
 
-    String pop3SocFac = "org.cougaar.core.mts.email.Pop3TimeoutSocketFactory";
-
-    if (Pop3TimeoutSocketFactory.getServiceBroker() == null)
-    {
-      Pop3TimeoutSocketFactory.setServiceBroker (serviceBroker);
-      Pop3TimeoutSocketFactory.setSocketTimeout (pop3SocketTimeout);
-    }
-
-    //  Set the properties for the session and get a Session object
-
-    Properties props = new Properties();
-    props.put ("mail.pop3.socketFactory.class", pop3SocFac);
-    props.put ("mail.pop3.socketFactory.fallback", "false");
-    props.put ("mail.debug", (debugPop3 ? "true" : "false"));
-
-    Session session = Session.getDefaultInstance (props, null);
-    return session;
+      if (withCougaar) {
+	  //  POP3 socket factory initialization
+	  String pop3SocFac = "org.cougaar.core.mts.email.Pop3TimeoutSocketFactory";
+	  if (Pop3TimeoutSocketFactory.getServiceBroker() == null)
+	      {
+		  Pop3TimeoutSocketFactory.setServiceBroker (serviceBroker);
+		  Pop3TimeoutSocketFactory.setSocketTimeout (pop3SocketTimeout);
+	      }
+	  
+	  //  Set the properties for the session and get a Session object
+	  props.put ("mail.pop3.socketFactory.class", pop3SocFac);
+	  props.put ("mail.pop3.socketFactory.fallback", "false");
+      }
+      props.put ("mail.debug", (debugPop3 ? "true" : "false"));
+      
+      Session session = Session.getDefaultInstance (props, null);
+      return session;
   }
 
   private static Store openStore (MailBox mbox) throws Exception

@@ -41,6 +41,7 @@
 		<mkdir dir="staging/lib"/>
 		<mkdir dir="staging/sys"/>
 		<mkdir dir="staging/csmart"/>
+		<mkdir dir="staging/operator"/>
 		<antcall target="delete"/>
 		<antcall target="jar"/>
 		<signjar jar="${jar}" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
@@ -54,6 +55,9 @@
 		</copy>
 		<copy todir="staging/csmart/">
 			<fileset dir="csmart/"/>
+		</copy>
+		<copy todir="staging/operator">
+			<fileset dir="operator/"/>
 		</copy>
 		<zip zipfile="AR_objs_msglog.zip" basedir="staging"/>
 		<delete dir="staging"/>
