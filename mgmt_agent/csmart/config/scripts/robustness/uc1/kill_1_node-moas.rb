@@ -8,7 +8,6 @@ $:.unshift File.join(CIP, 'csmart', 'config', 'lib')
 require 'cougaar/scripting'
 require 'ultralog/scripting'
 require 'robustness/uc1/aruc1_actions_and_states'
-require 'robustness/uc4/aruc4_actions_and_states'
 require 'robustness/uc1/deconfliction'
 
 HOSTS_FILE = Ultralog::OperatorUtils::HostManager.new.get_hosts_file
@@ -16,7 +15,7 @@ HOSTS_FILE = Ultralog::OperatorUtils::HostManager.new.get_hosts_file
 Cougaar::ExperimentMonitor.enable_stdout
 Cougaar::ExperimentMonitor.enable_logging
 
-Cougaar.new_experiment("ARUC4_SecurityAlert").run(1) {
+Cougaar.new_experiment("ARUC1_Kill_1_Node").run(1) {
 
   do_action "LoadSocietyFromScript", "#{CIP}/csmart/config/societies/ua/full-160a237v.plugins.rb"
   do_action "LayoutSociety", "#{CIP}/operator/Full-UA-21H51N537A-NoG-layout.xml", HOSTS_FILE
@@ -26,27 +25,26 @@ Cougaar.new_experiment("ARUC4_SecurityAlert").run(1) {
     "#{RULES}/logistics",
     "#{RULES}/robustness",
     "#{RULES}/robustness/uc1",
-    "#{RULES}/robustness/uc4",
     "#{RULES}/metrics/basic",
     "#{RULES}/metrics/sensors"
 
   do_action "TransformSociety", false, "#{RULES}/robustness/communities"
 
-  # for debugging
-  #do_action "SaveCurrentSociety", "mySociety.xml"
-  #do_action "SaveCurrentCommunities", "myCommunities.xml"
+  do_action "SaveCurrentSociety", "mySociety.xml"
+  do_action "SaveCurrentCommunities", "myCommunities.xml"
 
   do_action "StartJabberCommunications"
+  do_action "CleanupSociety"
   do_action "VerifyHosts"
 
   do_action "DeployCommunitiesFile"
 
   do_action "DisableDeconfliction"
 
-  do_action "CleanupSociety"
-
   do_action "ConnectOperatorService"
   do_action "ClearPersistenceAndLogs"
+  do_action "InstallCompletionMonitor"
+
   do_action "StartSociety"
 
   ## Print events from Robustness Controller
@@ -58,13 +56,16 @@ Cougaar.new_experiment("ARUC4_SecurityAlert").run(1) {
     end
   end
 
-  wait_for "CommunitiesReady", ["1AD-REAR-COMM"]
-
-  do_action "PublishInterAgentOperatingMode",
-            "REAR-ARManager",
-            "HIGH"
-
+  # After CommunityReady event is received wait for persistence
+  wait_for "CommunitiesReady", ["CONUS-REAR-COMM"]
   do_action "Sleep", 5.minutes
+
+  # Kill single agent
+  do_action "KillNodes", "REAR-A-NODE"
+
+  # Wait for agent restart to complete
+  wait_for "CommunitiesReady", ["CONUS-REAR-COMM"]
+  do_action "Sleep", 10.minutes
 
   #wait_for "Command", "ok"
 

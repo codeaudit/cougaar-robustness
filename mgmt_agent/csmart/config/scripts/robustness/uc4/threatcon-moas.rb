@@ -16,7 +16,7 @@ HOSTS_FILE = Ultralog::OperatorUtils::HostManager.new.get_hosts_file
 Cougaar::ExperimentMonitor.enable_stdout
 Cougaar::ExperimentMonitor.enable_logging
 
-Cougaar.new_experiment("ARUC4_SecurityAlert").run(1) {
+Cougaar.new_experiment("ARUC4_ThreatCon").run(1) {
 
   do_action "LoadSocietyFromScript", "#{CIP}/csmart/config/societies/ua/full-160a237v.plugins.rb"
   do_action "LayoutSociety", "#{CIP}/operator/Full-UA-21H51N537A-NoG-layout.xml", HOSTS_FILE
@@ -58,15 +58,17 @@ Cougaar.new_experiment("ARUC4_SecurityAlert").run(1) {
     end
   end
 
-  wait_for "CommunitiesReady", ["1AD-REAR-COMM"]
+  wait_for "CommunitiesReady", ["CONUS-REAR-COMM"]
 
   do_action "PublishInterAgentOperatingMode",
-            "REAR-ARManager",
+            "CONUS-REAR-ARManager",
             "HIGH"
 
-  do_action "Sleep", 5.minutes
+  do_action "Sleep", 1.minutes
 
-  #wait_for "Command", "ok"
+  do_action "PublishInterAgentOperatingMode",
+            "CONUS-REAR-ARManager",
+            "LOW"
 
   wait_for  "GLSConnection", true
   wait_for  "NextOPlanStage"
