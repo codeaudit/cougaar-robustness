@@ -31,7 +31,8 @@ package org.cougaar.coordinator.thrashingSuppression;
  */
 
 
-import org.cougaar.coordinator.*;
+import org.cougaar.coordinator.Diagnosis;
+import org.cougaar.coordinator.IllegalValueException;
 
 import java.lang.reflect.Constructor;
 
@@ -72,8 +73,8 @@ public class ThrashingSuppressionServlet extends BaseServletComponent
                                implements BlackboardClient
  {
 
-  public static final String SUPPRESS = "SuppressDefenses";
-  public static final String ALLOW = "AllowDefenses";
+  public static final String THRASHING = "THRASHING";
+  public static final String STABLE = "STABLE";
   public static final String CHANGE = "change";
   public static final String EXPIRE = "expire";
   
@@ -143,8 +144,8 @@ public class ThrashingSuppressionServlet extends BaseServletComponent
   private class MyServlet extends HttpServlet {
       
       public void doGet(HttpServletRequest request, HttpServletResponse response) {
-        String suppress = request.getParameter(SUPPRESS);
-        String allow = request.getParameter(ALLOW);
+        String suppress = request.getParameter(THRASHING);
+        String allow = request.getParameter(STABLE);
         response.setContentType("text/html");
 
         try {
@@ -160,31 +161,25 @@ public class ThrashingSuppressionServlet extends BaseServletComponent
             sendData(out);
           }
           out.close();
-        } catch (java.io.IOException ie) { ie.printStackTrace(); }
+        } 
+        catch (IllegalValueException e) { logger.error("Attempt to set the ThrashingDiagnosis to illegal vale: "+ e); }
+        catch (java.io.IOException e) { e.printStackTrace(); }
       }
 
       /** Asking to Suppress Defenses */
-      private void suppress(HttpServletRequest request, PrintWriter out) {
-
-          //get the Condition object
-          UnaryPredicate pred = new UnaryPredicate() {
-             public boolean execute(Object o) {  
-                return 
-                    (o instanceof ThrashingSuppressionApplicabilityCondition);
-             }
-          };
+      private void suppress(HttpServletRequest request, PrintWriter out) throws IllegalValueException {
 
           blackboard.openTransaction();
-          ThrashingSuppressionApplicabilityCondition tsac = null;
-          Collection c = blackboard.query(pred);
+          ThrashingDiagnosis td = null;
+          Collection c = blackboard.query(ThrashingDiagnosis.pred);
           Iterator iter = c.iterator();
           if (iter.hasNext()) {
-             tsac = (ThrashingSuppressionApplicabilityCondition)iter.next();
+             td = (ThrashingDiagnosis)iter.next();
           }        
-          if (tsac != null) {
-              tsac.setValue(DefenseConstants.BOOL_TRUE);
+          if (td != null) {
+              td.setValue(THRASHING);
               out.println("<center><h2>Status Changed - Defense Suppression Requested</h2></center><br>" );
-              blackboard.publishChange(tsac); 
+              blackboard.publishChange(td); 
               if (logger.isDebugEnabled()) logger.debug("Status Changed - Defense Suppression Requested");
           }
           blackboard.closeTransaction();
@@ -193,29 +188,21 @@ public class ThrashingSuppressionServlet extends BaseServletComponent
 
     
       /** Asking to Allow Defenses */
-      private void allow(PrintWriter out) {
-
-          //get the Condition object
-          UnaryPredicate pred = new UnaryPredicate() {
-             public boolean execute(Object o) {  
-                return 
-                    (o instanceof ThrashingSuppressionApplicabilityCondition);
-             }
-          };
+      private void allow(PrintWriter out) throws IllegalValueException {
 
           try {
               blackboard.openTransaction();
-              ThrashingSuppressionApplicabilityCondition tsac = null;
-              Collection c = blackboard.query(pred);
+              ThrashingDiagnosis td = null;
+              Collection c = blackboard.query(ThrashingDiagnosis.pred);
               Iterator iter = c.iterator();
               if (iter.hasNext()) {
-                 tsac = (ThrashingSuppressionApplicabilityCondition)iter.next();
+                 td = (ThrashingDiagnosis)iter.next();
               }
 
-              if (tsac != null) {
-                  tsac.setValue(DefenseConstants.BOOL_FALSE);
+              if (td != null) {
+                  td.setValue(STABLE);
                   out.println("<center><h2>Status Changed - Defenses Allowed Requested</h2></center><br>" );
-                  blackboard.publishChange(tsac); 
+                  blackboard.publishChange(td); 
                   if (logger.isDebugEnabled()) logger.debug("Status Changed - Defenses Allowed Requested");
               blackboard.closeTransaction();
               }

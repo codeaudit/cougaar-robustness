@@ -1,22 +1,21 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE attributes PUBLIC "-//NetBeans//DTD DefaultAttributes 1.0//EN" "http://www.netbeans.org/dtds/attributes-1_0.dtd">
+<?xml version="1.0" encoding="UTF-8" ?>
 <attributes version="1.0">
-    <fileobject name="AgentCommunicationDiagnosis1.java">
-        <attr name="class_dependency_org.cougaar.coordinator.Diagnosis" stringvalue="AgentCommunicationDiagnosis1;AgentCommunicationDiagnosis"/>
-    </fileobject>
-    <fileobject name="TestObservationServlet.java">
-        <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="TestObservationServlet"/>
-        <attr name="class_dependency_org.cougaar.core.servlet.BaseServletComponent" stringvalue="TestObservationServlet"/>
-        <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="TestObservationServlet.MyServlet"/>
-        <attr name="class_dependency_org.cougaar.core.blackboard.BlackboardClient" stringvalue="TestObservationServlet"/>
-    </fileobject>
-    <fileobject name="RestartAgentDefense.java">
-        <attr name="class_dependency_org.cougaar.coordinator.Action" stringvalue="RestartAgent"/>
-    </fileobject>
-    <fileobject name="FakeCommDefense.java">
-        <attr name="class_dependency_org.cougaar.coordinator.Action" stringvalue="FakeCommDefense"/>
-    </fileobject>
-    <fileobject name="AgentCommunicationDiagnosis2.java">
-        <attr name="class_dependency_org.cougaar.coordinator.Diagnosis" stringvalue="AgentCommunicationDiagnosis;AgentCommunicationDiagnosis1;AgentCommunicationDiagnosis2"/>
-    </fileobject>
+   <fileobject name="AgentCommunicationDiagnosis1.java">
+      <attr name="class_dependency_org.cougaar.coordinator.Diagnosis" stringvalue="AgentCommunicationDiagnosis1;AgentCommunicationDiagnosis"/>
+   </fileobject>
+   <fileobject name="TestObservationServlet.java">
+      <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="TestObservationServlet"/>
+      <attr name="class_dependency_org.cougaar.core.servlet.BaseServletComponent" stringvalue="TestObservationServlet"/>
+      <attr name="class_dependency_org.cougaar.core.blackboard.BlackboardClient" stringvalue="TestObservationServlet"/>
+      <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="TestObservationServlet.MyServlet"/>
+   </fileobject>
+   <fileobject name="RestartAgentDefense.java">
+      <attr name="class_dependency_org.cougaar.coordinator.Action" stringvalue="RestartAgentDefense;RestartAgent"/>
+   </fileobject>
+   <fileobject name="FakeCommDefense.java">
+      <attr name="class_dependency_org.cougaar.coordinator.Action" stringvalue="FakeCommDefense"/>
+   </fileobject>
+   <fileobject name="AgentCommunicationDiagnosis2.java">
+      <attr name="class_dependency_org.cougaar.coordinator.Diagnosis" stringvalue="AgentCommunicationDiagnosis;AgentCommunicationDiagnosis1;AgentCommunicationDiagnosis2"/>
+   </fileobject>
 </attributes>

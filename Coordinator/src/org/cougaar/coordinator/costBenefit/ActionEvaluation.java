@@ -51,6 +51,6 @@ public class ActionEvaluation {
 //    public double getSelectionScore() { return selectionScore; }
 
     public String toString() {
-        return variantEvals.toString();
+        return action.toString() + "\n" + variantEvals.toString();
     }
 }

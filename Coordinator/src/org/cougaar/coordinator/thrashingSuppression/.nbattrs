@@ -3,6 +3,9 @@
    <fileobject name="Class.java">
       <attr name="class_dependency_org.cougaar.core.adaptivity.ServiceUserPluginBase" stringvalue="DisconnectPluginBase;ThrashingSuppressionPluginBase"/>
    </fileobject>
+   <fileobject name="ThrashingDiagnosis.java">
+      <attr name="class_dependency_org.cougaar.coordinator.Diagnosis" stringvalue="ThrashingDiagnosis"/>
+   </fileobject>
    <fileobject name="ThrashingSuppressionServlet.java">
       <attr name="class_dependency_org.cougaar.core.servlet.BaseServletComponent" stringvalue="ThrashingSuppressionServlet"/>
       <attr name="class_dependency_org.cougaar.core.blackboard.BlackboardClient" stringvalue="ThrashingSuppressionServlet"/>

@@ -67,11 +67,11 @@ public class SelectedAction implements NotPersistable {
     }
 
     public String toString() {
-        String buff = "";
+        String buff = "From Action: ";
         buff = buff + actionEval.toString() + "\n";
         Iterator iter = actionVariants.iterator();
         while (iter.hasNext()) {
-            buff = buff + ((VariantEvaluation)iter.next()).toString() + "\n";
+            buff = buff + "Selected: " + ((VariantEvaluation)iter.next()).toString() + "\n";
             }
         buff = buff + patience + "\n";
         return buff;
