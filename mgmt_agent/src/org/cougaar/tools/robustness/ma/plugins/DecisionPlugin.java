@@ -17,7 +17,6 @@
  */
 package org.cougaar.tools.robustness.ma.plugins;
 
-import org.cougaar.robustness.restart.plugin.*;
 import org.cougaar.tools.robustness.ma.ldm.RestartLocationRequest;
 import java.util.*;
 
@@ -30,7 +29,10 @@ import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.agent.ClusterIdentifier;
 
 import org.cougaar.core.mobility.ldm.*;
+import org.cougaar.core.mobility.AbstractTicket;
 import org.cougaar.core.mobility.AddTicket;
+
+import org.cougaar.core.util.UID;
 
 import org.cougaar.util.UnaryPredicate;
 
@@ -44,6 +46,9 @@ public class DecisionPlugin extends SimplePlugin {
 
   private LoggingService log;
   private BlackboardService bbs = null;
+
+  // Unique ID assiciated with this plugin
+  private UID myUID;
 
   // Defines default values for configurable parameters.
   private static String defaultParams[][] = new String[0][0];
@@ -64,6 +69,9 @@ public class DecisionPlugin extends SimplePlugin {
   */
 
   protected void setupSubscriptions() {
+
+    myUID = this.getUIDService().nextUID();
+
     log =  (LoggingService) getBindingSite().getServiceBroker().
       getService(this, LoggingService.class, null);
 
@@ -97,10 +105,6 @@ public class DecisionPlugin extends SimplePlugin {
     restartRequests =
       (IncrementalSubscription)bbs.subscribe(restartRequestPredicate);
 
-    // Subscribe to AgentStart objects
-    agentStartStatus =
-      (IncrementalSubscription)bbs.subscribe(agentStartStatusPredicate);
-
     // Subscribe to AgentControl objects
     agentControlStatus =
       (IncrementalSubscription) bbs.subscribe(AGENT_CONTROL_PRED);
@@ -109,7 +113,7 @@ public class DecisionPlugin extends SimplePlugin {
     StringBuffer startMsg = new StringBuffer();
     startMsg.append("DecisionPlugin started: ");
     startMsg.append(" " + paramsToString());
-    log.info(startMsg.toString());
+    log.debug(startMsg.toString());
   }
 
   public void execute() {
@@ -123,44 +127,42 @@ public class DecisionPlugin extends SimplePlugin {
     }
 
      // Get HealthStatus objects
-    for (Iterator it = healthStatus.getChangedCollection().iterator();
+    //for (Iterator it = healthStatus.getChangedCollection().iterator();
+    for (Iterator it = healthStatus.getCollection().iterator();
          it.hasNext();) {
       HealthStatus hs = (HealthStatus)it.next();
-      log.debug("Received HEALTH_CHECK for agent " + hs.getAgentId());
-      evaluate(hs);
-    }
-
-    // Get AgentStart objects
-    for (Iterator it = agentStartStatus.getChangedCollection().iterator();
-         it.hasNext();) {
-      AgentStart action = (AgentStart)it.next();
-      String statusStr = null;
-      switch (action.getStatus()) {
-        case AgentAction.FAIL:
-          statusStr = "FAIL";
-          break;
-        case AgentAction.SUCCESS:
-          statusStr = "SUCCESS";
-          break;
-        default:
+      if (hs.getState().equals(HealthStatus.HEALTH_CHECK)) {
+        log.debug("Received HEALTH_CHECK for agent " + hs.getAgentId());
+        evaluate(hs);
       }
-      log.debug("Received AgentStart response, restart result= " + statusStr);
-      bbs.publishRemove(action);
     }
 
     // Get AgentControl objects
     if (agentControlStatus.hasChanged()) {
-      for (Enumeration en = agentControlStatus.getAddedList(); en.hasMoreElements(); ) {
-	      AgentControl ac = (AgentControl) en.nextElement();
-        if (log.isDebugEnabled()) log.debug("ADDED " + ac);
-      }
       for (Enumeration en = agentControlStatus.getChangedList(); en.hasMoreElements(); ) {
 	      AgentControl ac = (AgentControl) en.nextElement();
-        if (log.isDebugEnabled()) log.debug("CHANGED " + ac);
-      }
-      for (Enumeration en = agentControlStatus.getRemovedList(); en.hasMoreElements(); ) {
-	      AgentControl ac = (AgentControl) en.nextElement();
-        if (log.isDebugEnabled()) log.debug("REMOVED " + ac);
+        AbstractTicket ticket = ac.getAbstractTicket();
+        if (ticket instanceof AddTicket) {
+          AddTicket addTicket = (AddTicket)ticket;
+          HealthStatus hs = getHealthStatus(addTicket.getMobileAgent());
+          if (hs != null) {
+            hs.setLastRestartAttempt(new Date());
+            if (ac.getStatusCode() == ac.CREATED) {
+              hs.setState(HealthStatus.RESTART_COMPLETE);
+              hs.setStatus(HealthStatus.RESTARTED);
+              publishChange(hs);
+              //bbs.publishRemove(ac);
+            } else {
+              hs.setState(HealthStatus.FAILED_RESTART);
+              publishChange(hs);
+              //bbs.publishRemove(ac);
+              log.error("Unexpected status code from mobility, status=" +
+                ac.getStatusCodeAsString() + " agent=" + addTicket.getMobileAgent() +
+                " destNode=" + addTicket.getDestinationNode());
+            }
+          }
+          if (log.isDebugEnabled()) log.debug("CHANGED " + ac);
+        }
       }
     }
 
@@ -175,12 +177,38 @@ public class DecisionPlugin extends SimplePlugin {
           bbs.publishRemove(req);
           break;
         case RestartLocationRequest.FAIL:
-          log.error("RestartLocationRequest failed");
+          for (Iterator it1 = req.getAgents().iterator(); it1.hasNext();) {
+            HealthStatus hs = getHealthStatus((MessageAddress)it1.next());
+            if (hs != null) {
+              hs.setLastRestartAttempt(new Date());
+              hs.setState(HealthStatus.FAILED_RESTART);
+              publishChange(hs);
+            }
+          }
+          log.error("Unable to restart agent, no destination node available:" +
+            " agents=" + req.getAgents());
           bbs.publishRemove(req);
           break;
         default:
       }
     }
+  }
+
+  /**
+   * Gets HealthStatus object associated with named agent.
+   * @param agentId  MessageAddress of agent
+   * @return         Agents HealthStatus object
+   */
+  private HealthStatus getHealthStatus(MessageAddress agentId) {
+    Collection c = bbs.query(healthStatusPredicate);
+    for (Iterator it = c.iterator(); it.hasNext();) {
+      HealthStatus hs = (HealthStatus)it.next();
+      if (hs.getAgentId().equals(agentId)) {
+        return hs;
+      }
+    }
+    log.warn("No HealthStatus object found for agent " + agentId);
+    return null;
   }
 
   /**
@@ -193,9 +221,10 @@ public class DecisionPlugin extends SimplePlugin {
       case HealthStatus.NO_RESPONSE:
         // Agent is most likely dead.  Initiate a restart.
         RestartLocationRequest req =
-          new RestartLocationRequest(RestartLocationRequest.LOCATE_NODE);
+          new RestartLocationRequest(RestartLocationRequest.LOCATE_NODE, myUID);
         req.addAgent(hs.getAgentId());
         bbs.publishAdd(req);
+        hs.setStatus(HealthStatus.DEAD);
         hs.setState(HealthStatus.RESTART);
         bbs.publishChange(hs);
         break;
@@ -239,14 +268,11 @@ public class DecisionPlugin extends SimplePlugin {
         agentSetToString(agents) + "]");
     } else {
       if (log.isInfoEnabled()) {
-        log.info("Initiating agent restart: agent(s)=[" +
+        log.info("Restarting agent: agent(s)=[" +
           agentSetToString(agents) + "], nodeName=" + nodeName);
       }
       for (Iterator it = agents.iterator(); it.hasNext();) {
         String agentName = ((MessageAddress)it.next()).toString();
-        //AgentStart as = new AgentStart(nodeName, agentName);
-        //bbs.publishAdd(as);
-
         // add the AgentControl request
         addAgent(agentName, nodeName);
       }
@@ -267,9 +293,10 @@ public class DecisionPlugin extends SimplePlugin {
     AddTicket addTicket = new AddTicket(ticketId, newAgentAddr, destNodeAddr);
 
     AgentControl ac =
-      mobilityFactory.createAgentControl(null, destNodeAddr, addTicket);
+      mobilityFactory.createAgentControl(myUID, destNodeAddr, addTicket);
 
-    if (log.isDebugEnabled()) log.debug("CREATED " + ac);
+    if (log.isDebugEnabled())
+      log.debug("Publishing AgentControl(AddTicket) for mobility: " + ac);
     bbs.publishAdd(ac);
   }
 
@@ -333,17 +360,13 @@ public class DecisionPlugin extends SimplePlugin {
   private IncrementalSubscription agentControlStatus;
   protected UnaryPredicate AGENT_CONTROL_PRED = new UnaryPredicate() {
 	  public boolean execute(Object o) {
-	    return (o instanceof AgentControl);
+	    if (o instanceof AgentControl) {
+        AgentControl ac = (AgentControl)o;
+        return (myUID.equals(ac.getOwnerUID()));
+      }
+      return false;
   }};
 
- /**
-  * Predicate for AgentStart objects
-  */
-  private IncrementalSubscription agentStartStatus;
-  private UnaryPredicate agentStartStatusPredicate = new UnaryPredicate() {
-    public boolean execute(Object o) {
-      return (o instanceof AgentStart);
-  }};
 
  /**
   * Predicate for HealthStatus objects
@@ -351,11 +374,7 @@ public class DecisionPlugin extends SimplePlugin {
   private IncrementalSubscription healthStatus;
   private UnaryPredicate healthStatusPredicate = new UnaryPredicate() {
     public boolean execute(Object o) {
-      if (o instanceof HealthStatus) {
-        HealthStatus hs = (HealthStatus)o;
-        return hs.getState().equals(HealthStatus.HEALTH_CHECK);
-      }
-      return false;
+      return (o instanceof HealthStatus);
   }};
 
   /**
@@ -364,8 +383,12 @@ public class DecisionPlugin extends SimplePlugin {
   private IncrementalSubscription restartRequests;
   private UnaryPredicate restartRequestPredicate = new UnaryPredicate() {
     public boolean execute(Object o) {
-      return (o instanceof RestartLocationRequest);
-  }};
+      if (o instanceof RestartLocationRequest) {
+        RestartLocationRequest rlr = (RestartLocationRequest)o;
+        return (myUID.equals(rlr.getOwnerUID()));
+      }
+      return false;
+    }};
 
   /**
    * Predicate for Management Agent properties

@@ -1,22 +1,21 @@
 [Prototype]     SupportOrganization
-        
+
 [UniqueId]      "UTC/SupportOrg"
 
-[UIC]           "UIC/Manager"
+[UIC]           "UIC/ManagementAgent"
 
 [Relationship]
-Supporting      "3ID"        "Manager"
 
-[TypeIdentificationPG]                      
+[TypeIdentificationPG]
 TypeIdentification              String               "UTC/RTOrg"
-Nomenclature                    String               "Manager Agent"
+Nomenclature                    String               "Robustness Management Agent"
 AlternateTypeIdentification     String               "SRC/87004L100100"
 
 [ClusterPG]
-ClusterIdentifier	ClusterIdentifier "Manager"
+ClusterIdentifier	ClusterIdentifier "ManagementAgent"
 
 [OrganizationPG]
-Roles                    Collection<Role>       "Manager"
+Roles                    Collection<Role>       "ManagementAgent"
 
 [MilitaryOrgPG]
 UIC                   String   "WAQJA1"

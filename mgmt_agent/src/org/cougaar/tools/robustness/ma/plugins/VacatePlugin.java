@@ -18,7 +18,7 @@
 package org.cougaar.tools.robustness.ma.plugins;
 
 import org.cougaar.tools.robustness.ma.ldm.VacateRequest;
-import org.cougaar.robustness.restart.plugin.*;
+import org.cougaar.tools.robustness.ma.ldm.VacateRequestRelay;
 import org.cougaar.tools.robustness.ma.ldm.RestartLocationRequest;
 import java.util.*;
 
@@ -27,9 +27,22 @@ import org.cougaar.core.plugin.SimplePlugin;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.TopologyReaderService;
+import org.cougaar.core.service.TopologyEntry;
+import org.cougaar.core.service.DomainService;
+import org.cougaar.core.service.NamingService;
+import org.cougaar.core.service.community.*;
 import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.agent.ClusterIdentifier;
+
+import org.cougaar.core.mobility.AbstractTicket;
+import org.cougaar.core.mobility.MoveTicket;
+import org.cougaar.core.mobility.ldm.MobilityFactory;
+import org.cougaar.core.mobility.ldm.AgentControl;
 
 import org.cougaar.util.UnaryPredicate;
+
+import org.cougaar.core.util.UID;
+
 
 /**
  * This plugin moves all community members from a specified node or host to
@@ -40,6 +53,11 @@ public class VacatePlugin extends SimplePlugin {
   private LoggingService log;
   private TopologyReaderService trs;
   private BlackboardService bbs = null;
+  private CommunityService cs;
+  private MobilityFactory mobilityFactory;
+
+  // My unique ID
+  UID myUID;
 
   // Defines default values for configurable parameters.
   private static String defaultParams[][] = new String[0][0];
@@ -48,12 +66,25 @@ public class VacatePlugin extends SimplePlugin {
     ManagementAgentProperties.makeProps(this.getClass().getName(), defaultParams);
 
   protected void setupSubscriptions() {
+    myUID = this.getUIDService().nextUID();
 
     log =  (LoggingService) getBindingSite().getServiceBroker().
       getService(this, LoggingService.class, null);
 
     trs = (TopologyReaderService)getBindingSite().getServiceBroker().
       getService(this, TopologyReaderService.class, null);
+
+    cs = (CommunityService)getBindingSite().getServiceBroker().
+      getService(this, CommunityService.class, null);
+
+    DomainService domainService =
+      (DomainService) getBindingSite().getServiceBroker().
+      getService(this, DomainService.class, null);
+    mobilityFactory =
+      (MobilityFactory) domainService.getFactory("mobility");
+    if (mobilityFactory == null) {
+      log.error("Unable to get 'mobility' domain");
+    }
 
     bbs = getBlackboardService();
 
@@ -72,11 +103,15 @@ public class VacatePlugin extends SimplePlugin {
     restartLocationRequests =
       (IncrementalSubscription)bbs.subscribe(restartLocationRequestPredicate);
 
+    // Subscribe to AgentControl objects
+    agentControlStatus =
+      (IncrementalSubscription) bbs.subscribe(AGENT_CONTROL_PRED);
+
     // Print informational message defining current parameters
     StringBuffer startMsg = new StringBuffer();
     startMsg.append("VacatePlugin started: ");
     startMsg.append(" " + paramsToString());
-    log.info(startMsg.toString());
+    log.debug(startMsg.toString());
   }
 
   public void execute() {
@@ -92,57 +127,129 @@ public class VacatePlugin extends SimplePlugin {
      // Get VacateRequest objects
     for (Iterator it = vacateRequests.getAddedCollection().iterator();
          it.hasNext();) {
-      VacateRequest vr = (VacateRequest)it.next();
-      //log.debug("Received VacateRequest: host=" + vr.getHost() +
-        //" node=" + vr.getNode());
+      VacateRequestRelay relay = (VacateRequestRelay)it.next();
+      VacateRequest vr = (VacateRequest)relay.getContent();
       if (log.isInfoEnabled())
-        log.info ("Received VacateRequest: host=" + vr.getHost() +
+        log.info("Received VacateRequest: host=" + vr.getHost() +
           " node=" + vr.getNode());
-      if(vr.getRequestType() == VacateRequest.VACATE_HOST)
-      {
-        RestartLocationRequest rlr = new RestartLocationRequest(RestartLocationRequest.LOCATE_HOST);
-        Set memberNodes = trs.getChildrenOnParent(TopologyReaderService.NODE,
-            TopologyReaderService.HOST, vr.getHost());
-        rlr.setExcludedNodes(memberNodes);
-        for(Iterator iter = memberNodes.iterator(); iter.hasNext();)
-        {
-          Set memberAgents = trs.getChildrenOnParent(TopologyReaderService.AGENT,
-            TopologyReaderService.NODE, (String)iter.next());
-          for(Iterator ait = memberAgents.iterator(); ait.hasNext();)
-            rlr.addAgent(new MessageAddress((String)ait.next()));
-        }
-        Collection hosts = new ArrayList();
-        hosts.add(vr.getHost());
-        rlr.setExcludedHosts(hosts);
+      if(vr.getRequestType() == VacateRequest.VACATE_HOST) {
+        RestartLocationRequest rlr =
+          new RestartLocationRequest(RestartLocationRequest.LOCATE_HOST, myUID);
+        Collection excludedHosts = new Vector();
+        excludedHosts.add(vr.getHost());
+        rlr.setExcludedHosts(excludedHosts);
         rlr.setStatus(RestartLocationRequest.NEW);
         bbs.publishAdd(rlr);
+        log.info("Publishing RestartLocationRequest: type is " + rlr.getRequestType());
+        bbs.publishRemove(vr);
       }
     }
 
-    //get updated RestartLocationRequest objects, publish a NodeMove object to the
-    //blackboard for each node in the vacate host.
-    for(Iterator it = restartLocationRequests.getChangedCollection().iterator(); it.hasNext();)
-    {
+    // Get updated RestartLocationRequest objects
+    // Create a new node on destination for each node on existing host and
+    // move agents to new host/node.
+    for(Iterator it = restartLocationRequests.getChangedCollection().iterator(); it.hasNext();) {
       RestartLocationRequest rlr = (RestartLocationRequest)it.next();
-      if(rlr.getStatus() == RestartLocationRequest.SUCCESS)
-      {
+      if(rlr.getStatus() == RestartLocationRequest.SUCCESS) {
         String destHost = rlr.getHost();
-        for(Iterator iter = rlr.getExcludedHosts().iterator(); iter.hasNext();)
-        {
+        for(Iterator iter = rlr.getExcludedHosts().iterator(); iter.hasNext();) {
           String hostName = (String)iter.next();
-          Set memberNodes = trs.getChildrenOnParent(TopologyReaderService.NODE,
-            TopologyReaderService.HOST, hostName);
-          for(Iterator nit = memberNodes.iterator(); nit.hasNext();)
-          {
-            String sourceNode = (String)nit.next();
-            NodeMove nm = new NodeMove(hostName, destHost, sourceNode);
-            bbs.publishAdd(nm);
+          // Get a map that contains all nodes/agents from my community on
+          // the specified host
+          Map nodeMap = getNodeMap(hostName);
+          Set nodes = nodeMap.keySet();
+          for(Iterator nit = nodes.iterator(); nit.hasNext();) {
+            String currentNodeName = (String)nit.next();
+            String newNodeName = newNodeName(destHost, currentNodeName);
+            List agents = (List)nodeMap.get(currentNodeName);
+            for(Iterator ait = agents.iterator(); ait.hasNext();) {
+              String agent = (String)ait.next();
+              MoveTicket ticket = new MoveTicket(
+                mobilityFactory.createTicketIdentifier(),
+                new MessageAddress(agent),
+                new MessageAddress(currentNodeName),
+                new MessageAddress(newNodeName),
+                false);
+              MessageAddress AgentAddr = new MessageAddress(agent);
+              AgentControl ac =
+                mobilityFactory.createAgentControl(myUID,
+                                                   AgentAddr,
+                                                   ticket);
+              // Changes agents HealthStatus state to indicate that a
+              // move is in process
+              HealthStatus hs = getHealthStatus(AgentAddr);
+              if (hs != null) hs.setState(HealthStatus.MOVE);
+              publishChange(hs);
+              bbs.publishAdd(ac);
+              log.info("Moving agent: agent=" + agent + " destHost=" + destHost +
+                " destNode=" + newNodeName);
+              log.debug("Published AgentControl: " + ac);
+            }
+          }
+        }
+      }
+      bbs.publishRemove(rlr);
+    }
+
+    // Get AgentControl objects
+    // Update agents HealthStatus object to reflect move results
+    if (agentControlStatus.hasChanged()) {
+      for (Enumeration en = agentControlStatus.getChangedList(); en.hasMoreElements(); ) {
+	      AgentControl ac = (AgentControl) en.nextElement();
+        AbstractTicket ticket = ac.getAbstractTicket();
+        if (ticket instanceof MoveTicket) {
+          MoveTicket moveTicket = (MoveTicket)ticket;
+          HealthStatus hs = getHealthStatus(moveTicket.getMobileAgent());
+          if (hs != null) {
+            hs.setLastRestartAttempt(new Date());
+            if (ac.getStatusCode() == ac.MOVED) {
+              hs.setState(HealthStatus.INITIAL);
+              hs.setStatus(HealthStatus.MOVED);
+              publishChange(hs);
+              bbs.publishRemove(ac);
+            } else {
+              hs.setState(HealthStatus.FAILED_MOVE);
+              publishChange(hs);
+              bbs.publishRemove(ac);
+              //log.error("Unexpected status code from mobility, status=" +
+              //  ac.getStatusCodeAsString() + " agent=" + moveTicket.getMobileAgent() +
+              //  " destNode=" + moveTicket.getDestinationNode());
+              log.error("Unexpected status code from mobility, status=" +
+                ac.getStatusCodeAsString() + " agent=" + moveTicket.getMobileAgent() +
+                " destNode=" + moveTicket.getDestinationNode() + " " + ac);
+            }
           }
         }
       }
     }
   }
 
+
+  /**
+   * Defines a name for a new node.  The new node name will consist of the
+   * old node name with a number appended.
+   * @param destHost    Name of destination host
+   * @param oldNodeName Name of existing node
+   * @return New node name
+   */
+  private String newNodeName(String destHost, String oldNodeName) {
+    // Current cougaar configuration does not support the capability
+    // to create nodes on demand.  For now this method simply returns the
+    // destination host name concatenated with the phrase "-RestartNode".
+    return destHost + "-RestartNode";
+  }
+
+  /**
+   * Creates an emtpy node on the destination host
+   * @param destHost Destination Host
+   * @parma nodeName Name of node to create
+   * @return         True if success
+   */
+  private boolean createNode(String destHost, String nodeName) {
+    // Current cougaar configuration does not support the capability
+    // to create nodes on demand.  For now this method simply returns true.
+    return true;
+  }
 
   /**
    * Obtains plugin parameters
@@ -180,13 +287,62 @@ public class VacatePlugin extends SimplePlugin {
      // None for now
   }
 
+  /**
+   * Get a Map that contains all nodes and agents on a specified host that are
+   * members of the community monitored by this ManagementAgent.
+   * @param hostName  Name of host to be vacated
+   * @return          Map of community nodes/agents on host
+   */
+  private Map getNodeMap(String hostName) {
+    Map nodes = new HashMap();
+    String community = null;
+    Collection communities =
+      cs.search("(CommunityManager=" + getClusterIdentifier().getAddress() + ")");
+    if (!communities.isEmpty()) {
+      community = (String)communities.iterator().next();
+      CommunityRoster roster = cs.getRoster(community);
+      Collection agentIds = roster.getMemberAgents();
+      for (Iterator it = agentIds.iterator(); it.hasNext();) {
+        MessageAddress aid = (MessageAddress)it.next();
+        TopologyEntry te = trs.getEntryForAgent(aid.toString());
+        if (te.getHost().equals(hostName)) {
+          String node = te.getNode();
+          String agent = te.getAgent();
+          if (!nodes.containsKey(node)) nodes.put(node, new Vector());
+          List agentList = (List)nodes.get(node);
+          if(!agentList.contains(agent)) agentList.add(agent);
+        }
+      }
+    }
+    return nodes;
+  }
+
+
+  /**
+   * Gets HealthStatus object associated with named agent.
+   * @param agentId  MessageAddress of agent
+   * @return         Agents HealthStatus object
+   */
+  private HealthStatus getHealthStatus(MessageAddress agentId) {
+    Collection c = bbs.query(healthStatusPredicate);
+    for (Iterator it = c.iterator(); it.hasNext();) {
+      HealthStatus hs = (HealthStatus)it.next();
+      if (hs.getAgentId().equals(agentId)) {
+        return hs;
+      }
+    }
+    log.warn("No HealthStatus object found for agent " + agentId);
+    return null;
+  }
+
+
  /**
   * Predicate for VacateRequest objects
   */
   private IncrementalSubscription vacateRequests;
   private UnaryPredicate vacateRequestPredicate = new UnaryPredicate() {
     public boolean execute(Object o) {
-      return (o instanceof VacateRequest);
+      return (o instanceof VacateRequestRelay);
   }};
 
   /**
@@ -195,9 +351,36 @@ public class VacatePlugin extends SimplePlugin {
   private IncrementalSubscription restartLocationRequests;
   private UnaryPredicate restartLocationRequestPredicate = new UnaryPredicate() {
     public boolean execute(Object o) {
-      return (o instanceof RestartLocationRequest);
+      if (o instanceof RestartLocationRequest) {
+        RestartLocationRequest rlr = (RestartLocationRequest)o;
+        return (myUID.equals(rlr.getOwnerUID()));
+      }
+      return false;
+    }
+  };
+
+
+ /**
+  * Predicate for AgentControl objects
+  */
+  private IncrementalSubscription agentControlStatus;
+  protected UnaryPredicate AGENT_CONTROL_PRED = new UnaryPredicate() {
+	  public boolean execute(Object o) {
+	    if (o instanceof AgentControl) {
+        AgentControl ac = (AgentControl)o;
+        return (myUID.equals(ac.getOwnerUID()));
+      }
+      return false;
   }};
 
+
+ /**
+  * Predicate for HealthStatus objects
+  */
+  private UnaryPredicate healthStatusPredicate = new UnaryPredicate() {
+    public boolean execute(Object o) {
+      return (o instanceof HealthStatus);
+  }};
 
   /**
    * Predicate for Management Agent properties

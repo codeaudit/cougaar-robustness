@@ -23,6 +23,7 @@ import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.service.community.CommunityService;
 import org.cougaar.core.blackboard.Publishable;
+import org.cougaar.core.util.UID;
 
 /**
  * This class is used in the Management Agent to request the hostname of
@@ -43,6 +44,9 @@ public class RestartLocationRequest implements java.io.Serializable {
   // Request type
   private int requestType = LOCATE_NODE;
 
+  // Owners Unique ID
+  UID ownerUID;
+
   // Agents to be restarted/relocated
   private Set agents = new HashSet();
 
@@ -60,8 +64,9 @@ public class RestartLocationRequest implements java.io.Serializable {
   // Name of destination node
   private String nodeName = null;
 
-  public RestartLocationRequest(int requestType) {
+  public RestartLocationRequest(int requestType, UID ownerUID) {
     this.requestType = requestType;
+    this.ownerUID = ownerUID;
   }
 
   /**
@@ -70,6 +75,14 @@ public class RestartLocationRequest implements java.io.Serializable {
    */
   public int getRequestType() {
     return this.requestType;
+  }
+
+  /**
+   * Returns UID associated with this request.
+   * @return UID
+   */
+  public UID getOwnerUID() {
+    return this.ownerUID;
   }
 
   /**

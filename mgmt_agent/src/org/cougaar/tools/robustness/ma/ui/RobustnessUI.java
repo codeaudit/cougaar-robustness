@@ -22,13 +22,7 @@ import javax.swing.tree.*;
 import javax.swing.event.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.Collections;
-import java.util.NoSuchElementException;
-import java.util.Hashtable;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Vector;
-import java.util.Enumeration;
+import java.util.*;
 import java.util.List;
 import java.io.*;
 import java.net.URL;
@@ -49,19 +43,25 @@ import org.cougaar.util.log.*;
  */
 public class RobustnessUI extends JPanel
 {
-  private Logger log = Logging.getLogger(org.cougaar.tools.robustness.ma.ui.RobustnessUI.class.getName());
+  private static Logger log = Logging.getLogger(org.cougaar.tools.robustness.ma.ui.RobustnessUI.class.getName());
   private JTree tree;
   private ArrayList path = new ArrayList();
   private DefaultTreeModel model;
   private Hashtable nodeandpath = new Hashtable();
   private Point lastVisiblePoint;
   private JScrollPane pane;
-  private DefaultMutableTreeNode selectedNode;
-  private URL url1 = null;
+  private DefaultMutableTreeNode selectedNode = null;
+  private static URL url1 = null;
 
   private static String host = "localhost";
   private static String port = "8800";
   private static String agent = "TestAgent";
+
+  //parameters for vacate host
+  private String parentCommunityOfSelectedHost;
+  private String selectedHost;
+
+  private static Hashtable topology;
 
   public RobustnessUI()
   {
@@ -89,15 +89,23 @@ public class RobustnessUI extends JPanel
     this.setBackground(Color.white);
     this.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
     this.add(refresh, BorderLayout.SOUTH);
+
+    refreshAfterVacate();
   }
 
   private Hashtable table;
+  /**
+   * Get structure tree of the society.
+   * @param expands the paths need be expanded.
+   * @return the tree
+   */
   private JTree getTreeFromCommunity(List expands)
   {
     List nodes = new ArrayList();
     path.clear();
     nodeandpath.clear();
     table = getInfoFromServlet();
+    topology = (Hashtable)table.get("Topology");
     DefaultMutableTreeNode root = new DefaultMutableTreeNode();
     /*for(Enumeration enums=table.keys(); enums.hasMoreElements();)
     {
@@ -132,7 +140,7 @@ public class RobustnessUI extends JPanel
       }
       else
       {*/
-        Hashtable c = (Hashtable)table.get("Communities");
+        final Hashtable c = (Hashtable)table.get("Communities");
         DefaultMutableTreeNode communities = buildCommunitySubTree(c, nodes);
         root.add(communities);
         nodes.add(communities);
@@ -141,7 +149,8 @@ public class RobustnessUI extends JPanel
 
 
     model = new DefaultTreeModel(root);
-    tree = new JTree(model);
+    //tree = new JTree(model);
+    tree = new DNDJTree(model, this);
     tree.setRowHeight(17);
     tree.addTreeExpansionListener(new TreeExpansionListener(){
       public void treeExpanded(TreeExpansionEvent e) {
@@ -172,7 +181,19 @@ public class RobustnessUI extends JPanel
       command.addActionListener(new ActionListener(){
         public void actionPerformed(ActionEvent e)
         {
-          publishRequest((String)selectedNode.getUserObject());
+          parentCommunityOfSelectedHost = (String)((DefaultMutableTreeNode)selectedNode.getParent().getParent()).getUserObject();
+          parentCommunityOfSelectedHost = parentCommunityOfSelectedHost.substring(
+            parentCommunityOfSelectedHost.indexOf(" "), parentCommunityOfSelectedHost.length()).trim();
+          String mgmtAgent = getMgmtAgentOfCommunity(parentCommunityOfSelectedHost, c);
+          /*List memberNodes = new ArrayList();
+          for(Enumeration enums = selectedNode.children(); enums.hasMoreElements();)
+          {
+            DefaultMutableTreeNode agentNode = (DefaultMutableTreeNode)enums.nextElement();
+            memberNodes.add((String)agentNode.getUserObject());
+          }*/
+          selectedHost = (String)selectedNode.getUserObject();
+          publishRequest("vacateHost", selectedHost, mgmtAgent, null);
+          //refreshAfterVacate();
         }
       });
       popup.add(command);
@@ -193,8 +214,19 @@ public class RobustnessUI extends JPanel
             if(path != null)
             {
               selectedNode = (DefaultMutableTreeNode)tree.getLastSelectedPathComponent();
-              if(((DefaultMutableTreeNode)selectedNode.getParent()).getUserObject().equals("hosts"))
-                popup.show(e.getComponent(), e.getX(), e.getY());
+              if(selectedNode == null)
+                return;
+              if(!(selectedNode instanceof EntityNode))
+                return;
+              //if(((DefaultMutableTreeNode)selectedNode.getParent()).getUserObject().equals("hosts"))
+              if(((EntityInfo)((EntityNode)selectedNode).getUserObject()).getType() == EntityInfo.HOST)
+              {
+                String communityName = (String)((DefaultMutableTreeNode)selectedNode.getParent().getParent()).getUserObject();
+                communityName = communityName.substring(communityName.indexOf(" "), communityName.length()).trim();
+                String mgmt = getMgmtAgentOfCommunity(communityName, c);
+                if(mgmt != null)
+                  popup.show(e.getComponent(), e.getX(), e.getY());
+              }
             }
           }
         }
@@ -210,7 +242,10 @@ public class RobustnessUI extends JPanel
   }
 
   /**
-   *
+   * Sub tree to show all communities.
+   * @param table the hashtable who contains all information of communities
+   * @param nodes the list to record all nodes in the tree
+   * @return root of the sub tree.
    */
   private DefaultMutableTreeNode buildCommunitySubTree(Hashtable table, List nodes)
   {
@@ -317,20 +352,26 @@ public class RobustnessUI extends JPanel
           for(Enumeration enum = hosts.keys(); enum.hasMoreElements();)
           {
             String hostName = (String)enum.nextElement();
-            DefaultMutableTreeNode hostNameNode = new DefaultMutableTreeNode(hostName);
+            //DefaultMutableTreeNode hostNameNode = new DefaultMutableTreeNode(hostName);
+            EntityInfo hostEI = new EntityInfo(hostName, "host");
+            EntityNode hostNameNode = new EntityNode(hostEI);
             hostNode.add(hostNameNode);
             nodes.add(hostNameNode);
             Hashtable nodetable = (Hashtable)hosts.get(hostName);
             for(Enumeration node_enum = nodetable.keys(); node_enum.hasMoreElements();)
             {
               String nodeName = (String)node_enum.nextElement();
-              DefaultMutableTreeNode nodeNameNode = new DefaultMutableTreeNode(nodeName);
+              //DefaultMutableTreeNode nodeNameNode = new DefaultMutableTreeNode(nodeName);
+              EntityInfo nodeEI = new EntityInfo(nodeName, "node");
+              EntityNode nodeNameNode = new EntityNode(nodeEI);
               hostNameNode.add(nodeNameNode);
               nodes.add(nodeNameNode);
               List agents = (List)nodetable.get(nodeName);
               for(int i=0; i<agents.size(); i++)
               {
-                DefaultMutableTreeNode agentNode = new DefaultMutableTreeNode((String)agents.get(i));
+                //DefaultMutableTreeNode agentNode = new DefaultMutableTreeNode((String)agents.get(i));
+                EntityInfo agentEI = new EntityInfo((String)agents.get(i), "agent");
+                EntityNode agentNode = new EntityNode(agentEI);
                 nodeNameNode.add(agentNode);
                 nodes.add(nodeNameNode);
               }
@@ -371,9 +412,6 @@ public class RobustnessUI extends JPanel
     return root;
   }
 
-  /**
-   *
-   */
   private String societyNode = " ";
   private DefaultMutableTreeNode buildTopologyTree(Hashtable table, List nodes)
   {
@@ -455,7 +493,9 @@ public class RobustnessUI extends JPanel
   }
 
   /**
-   *
+   * Expand some nodes in the tree.
+   * @param atree the tree
+   * @param expandPath the paths need to be expanded
    */
   private void expandTreeNode(JTree atree, List expandPath)
   {
@@ -472,6 +512,10 @@ public class RobustnessUI extends JPanel
     }
   }
 
+  /**
+   * Get all agents in current society.
+   * @return a vector contains names of all agents.
+   */
   protected static Vector getAgentFromServlet()
    {
     Vector clusterNames = new Vector();
@@ -511,25 +555,36 @@ public class RobustnessUI extends JPanel
   private Hashtable getInfoFromServlet()
   {
     Hashtable idc = null;
-    url1 = null;
     ObjectInputStream oin = null;
-    try{
-      // First, try using the servlet in the TestAgent
-      url1 = new URL("http://" + host + ":" + port + "/$" + agent + "/robustness");
-      URLConnection connection = url1.openConnection();
-      connection.setDoInput(true);
-      connection.setDoOutput(true);
-      InputStream ins = connection.getInputStream();
-      oin = new ObjectInputStream(ins);
-    } catch(Exception e){
-      url1 = null;
+    if(url1 != null)
+    {
+      try{
+       URLConnection connection = url1.openConnection();
+       connection.setDoInput(true);
+       connection.setDoOutput(true);
+       InputStream ins = connection.getInputStream();
+       oin = new ObjectInputStream(ins);
+      }catch(IOException e){log.error(e.getMessage());}
     }
+    else
+    {
+      try{
+        // First, try using the servlet in the TestAgent
+        url1 = new URL("http://" + host + ":" + port + "/$" + agent + "/robustness");
+        URLConnection connection = url1.openConnection();
+        connection.setDoInput(true);
+        connection.setDoOutput(true);
+        InputStream ins = connection.getInputStream();
+        oin = new ObjectInputStream(ins);
+      } catch(Exception e){
+        url1 = null;
+      }
 
-    Vector agents = getAgentFromServlet();
-    int i=0;
-    // If the TestAgent wasn't found, try all agents one by one until find the agent with the servlet
-    while (oin == null) {
-     try {
+      Vector agents = getAgentFromServlet();
+      int i=0;
+      // If the TestAgent wasn't found, try all agents one by one until find the agent with the servlet
+      while (oin == null) {
+       try {
         String agent = (String)agents.get(i);
         url1 = new URL("http://" + host + ":" + port + "/$" +
           agent + "/robustness");
@@ -538,10 +593,11 @@ public class RobustnessUI extends JPanel
         connection.setDoOutput(true);
         InputStream ins = connection.getInputStream();
         oin = new ObjectInputStream(ins);
-     } catch(Exception e){
+       } catch(Exception e){
         oin = null;
         i++;
-     }
+       }
+      }
     }
     if (oin != null) {
       try {
@@ -552,6 +608,9 @@ public class RobustnessUI extends JPanel
     return idc;
   }
 
+  /**
+   * Refresh the tree.
+   */
   protected void refresh()
   {
     List expandPath = (ArrayList)path.clone();
@@ -565,52 +624,60 @@ public class RobustnessUI extends JPanel
         pane.getViewport().setViewPosition(point);
   }
 
-  private void publishRequest(String hostName)
+  /**
+   * Send the information of current selected node to the servlet, so the servlet
+   * can publish relative vacate request.
+   * @param hostName current selected host
+   * @param communityName community of selected host
+   * @param nodes a list of nodes under selected host
+   * @param mgmtAgent management agent of the community which the selected host exists in
+   */
+  public static String publishRequest(String command, String param1, String param2, String param3)
   {
+    String result = null;
     try{
-      URLConnection conn = url1.openConnection();
-      ((HttpURLConnection)conn).setRequestMethod("PUT");
+      HttpURLConnection conn = (HttpURLConnection)url1.openConnection();
+      conn.setRequestMethod("PUT");
       conn.setDoInput(true);
       conn.setDoOutput(true);
       OutputStream os = conn.getOutputStream();
       ObjectOutputStream oos = new ObjectOutputStream(os);
-      oos.writeObject(hostName);
+      Vector vs = new Vector();
+      vs.add(command);
+      if(command.equals("vacateHost"))
+      {
+         vs.add(param1); //host name
+         vs.add(param2); //management agent name
+      }
+      else if(command.equals("moveAgent"))
+      {
+        vs.add(param1); //agent name
+        vs.add(param2); //source node name
+        vs.add(param3); //destination node name
+      }
+      oos.writeObject(vs);
       oos.close();
-      //InputStream is = conn.getInputStream();
+      //need to fix: if conn.setDoInput(false) and don't request the InputStream,
+      //the servlet doesn't work.
+      InputStream is = conn.getInputStream();
+      ObjectInputStream iis = new ObjectInputStream(is);
+      result = (String)iis.readObject();
     }catch(Exception e){
       log.error(e.getMessage());
     }
+    return result;
   }
 
- /* private String getMoveTarget(String hostName)
+  private String getMgmtAgentOfCommunity(String communityName, Hashtable communities)
   {
-    final String target = null;
-    final JFrame mFrame = new JFrame("Move members");
-    mFrame.setSize(250, 100);
-    JLabel label = new JLabel("Move members of " + hostName + " to:");
-    final JTextField field = new JTextField();
-    field.addActionListener(new ActionListener(){
-      public void actionPerformed(ActionEvent e)
-      {
-        if(field.getText().equals("hostName") || !hostNames.contains(field.getText()))
-          JOptionPane.showMessageDialog(mFrame, "Invalid host name.", "Error", JOptionPane.ERROR_MESSAGE);
-        mFrame.setVisible(false);
-        target =  field.getText();
-      }
-    });
-    JPanel panel = new JPanel(new GridLayout(2, 1));
-    panel.setBorder(BorderFactory.createEmptyBorder(1, 10, 5, 10));
-    panel.add(label);
-    panel.add(field);
-    mFrame.getContentPane().add(panel, BorderLayout.CENTER);
-    relocateFrame(mFrame);
-    mFrame.addWindowListener(new WindowAdapter() {
-      public void windowClosing(WindowEvent e) {
-        target = null; }
-     });
-    mFrame.show();
-    return target;
-  }*/
+    List contents = (List)communities.get(communityName);
+    Attributes attrs = (Attributes)contents.get(0);
+    try{
+     if(attrs.get("CommunityManager") != null)
+      return (String)attrs.get("CommunityManager").get(0);
+    }catch(NamingException e){e.printStackTrace();}
+    return null;
+  }
 
   /**
    * Position the frame in the middle of screen.
@@ -622,6 +689,63 @@ public class RobustnessUI extends JPanel
     f.setLocation(screenSize.width / 2 - f.getSize().width / 2,
 		screenSize.height / 2 - f.getSize().height / 2);
   }
+
+  private boolean isVacateSucceed = false;
+  /**
+   * Create a thread to listen the community changing. If the community changes,
+   * refresh the tree and stop the thread. This method is used after user clicks
+   * 'vacate' button.
+   */
+  private void refreshAfterVacate()
+  {
+    Thread timer = new Thread() {
+        public void run() {
+          try{
+           while (true) {
+             /*  Hashtable currentTable = getInfoFromServlet();
+               Hashtable ctable = (Hashtable)currentTable.get("Communities");
+               List contents = (List)ctable.get(parentCommunityOfSelectedHost);
+               Hashtable htable = (Hashtable)contents.get(2);
+               if(!htable.containsKey(selectedHost))
+               {
+                 refresh();
+                 isVacateSucceed = true;
+               }*/
+               String result = publishRequest("checkChange", null, null, null);
+               if(result.equals("succeed"))
+               {
+                 refresh();
+                 //isVacateSucceed = true;
+               }
+               sleep(10000);
+           }
+          }catch(InterruptedException e)
+          { return; }
+        }
+      };
+      timer.setPriority(Thread.MIN_PRIORITY);
+      timer.start();
+   }
+
+   public static boolean isNodeInHost(String hostName, String nodeName)
+   {
+     Hashtable nodes = (Hashtable)topology.get(hostName);
+     return nodes.containsKey(nodeName);
+   }
+
+   public static boolean isAgentInNode(String nodeName, String agentName)
+   {
+     for(Iterator it = topology.values().iterator(); it.hasNext();)
+     {
+       Hashtable nodes = (Hashtable)it.next();
+       if(nodes.containsKey(nodeName))
+       {
+         Set agents = (Set)nodes.get(nodeName);
+         return agents.contains(agentName);
+       }
+     }
+     return false;
+   }
 
   public static void main(String[] args)
   {
@@ -644,7 +768,6 @@ public class RobustnessUI extends JPanel
     frame.getContentPane().setLayout(new BorderLayout());
     frame.getContentPane().add(ui, BorderLayout.CENTER);
     frame.setVisible(true);
-
   }
 
   //enable setting distinct font for each node.
@@ -666,7 +789,11 @@ public class RobustnessUI extends JPanel
       }
       Object obj = node.getUserObject();
       if(obj == null) return this;
-      String str = ((String)obj).trim();
+      String str;
+      if(obj instanceof EntityInfo)
+        str = ((EntityInfo)obj).toString();
+      else
+        str = ((String)obj).trim();
       //if(str.equals("Topology") || str.equals("Agents") || str.equals("Webservers")
         //|| str.equals("Communities") || str.equals("MessageTransports"))
       if(str.startsWith("Community:"))

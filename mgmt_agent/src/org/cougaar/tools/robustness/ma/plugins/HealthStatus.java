@@ -24,6 +24,8 @@ import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.service.community.CommunityService;
 import org.cougaar.core.blackboard.Publishable;
 import org.cougaar.tools.robustness.sensors.HeartbeatRequest;
+import org.cougaar.tools.robustness.sensors.HeartbeatEntry;
+import org.cougaar.tools.robustness.sensors.PingRequest;
 import org.cougaar.util.log.*;
 
 import javax.naming.directory.*;
@@ -44,6 +46,10 @@ public class HealthStatus implements
   public static final String NORMAL           = "NORMAL";
   public static final String HEALTH_CHECK     = "HEALTH_CHECK";
   public static final String RESTART          = "RESTART";
+  public static final String RESTART_COMPLETE = "RESTART_COMPLETE";
+  public static final String FAILED_RESTART   = "FAILED_RESTART";
+  public static final String MOVE             = "MOVE";
+  public static final String FAILED_MOVE      = "FAILED_MOVE";
 
   // Heartbeat status codes
   public static final int HB_NORMAL  = 0;
@@ -54,18 +60,24 @@ public class HealthStatus implements
   public static final int DEGRADED    = 1;
   public static final int NO_RESPONSE = 2;
   public static final int DEAD        = 3;
+  public static final int RESTARTED   = 4;
+  public static final int MOVED       = 5;
 
 
   private String currentState = INITIAL;
+  private String priorState   = INITIAL;
   private int currentStatus   = UNDEFINED;
 
   private int heartbeatRequestStatus = UNDEFINED;
-  private int heartbeatStatus = UNDEFINED;
   private Date heartbeatRequestTime = null;
+  private int heartbeatStatus = UNDEFINED;
+  private HeartbeatEntry heartbeatEntry = null;
 
   private boolean pingRequested = false;
   private int pingStatus = UNDEFINED;
   private Date pingTimestamp;
+
+  private Date lastRestartAttempt;
 
   private long hbReqTimeout;  // Defines the timeout period (in milliseconds)
                               // for a Heartbeat Request,
@@ -105,6 +117,8 @@ public class HealthStatus implements
 
   private HeartbeatRequest hbr;
   private int hbReqRetryCtr = 0;
+
+  private PingRequest pr;
   private int pingRetryCtr = 0;
 
   private CommunityService commSvc = null;
@@ -310,12 +324,31 @@ public class HealthStatus implements
   }
 
   /**
-   * Returns monitored agents last known status.
+   * Returns monitored agents current status.
    * @return  Status code
    */
   protected int getStatus() {
     return currentStatus;
   }
+
+
+  /**
+   * Returns monitored agents prior state.
+   * @return  State string
+   */
+  protected String getPriorState() {
+    return priorState;
+  }
+
+
+  /**
+   * Sets monitored agents prior state.
+   * @param  status State string
+   */
+  protected void setPriorState(String state) {
+    this.priorState = state;
+  }
+
 
   /**
    * Sets monitored agents status.
@@ -380,6 +413,23 @@ public class HealthStatus implements
 
 
   /**
+   * Returns the HeartbeatEntry object associated with this Agent.
+   * @return HeartbeatEntry for this agent.
+   */
+  protected HeartbeatEntry getHeartbeatEntry() {
+    return heartbeatEntry;
+  }
+
+  /**
+   * Sets HeartbeatEntry.
+   * @param hbe HeartbeatEntry object associated with this agent.
+   */
+  protected void setHeartbeatEntry(HeartbeatEntry hbe) {
+    this.heartbeatEntry = hbe;
+  }
+
+
+  /**
    * Returns HeartbeatRequest associated with this agent.
    * @return HeartbeatRequest
    */
@@ -397,6 +447,23 @@ public class HealthStatus implements
 
 
   /**
+   * Returns PingRequest associated with this agent.
+   * @return PingRequest
+   */
+  protected PingRequest getPingRequest() {
+    return this.pr;
+  }
+
+  /**
+   * Sets PingRequest
+   * @param pr PingRequest associated with this agent
+   */
+  protected void setPingRequest(PingRequest pr) {
+    this.pr = pr;
+  }
+
+
+  /**
    * Returns the ID (MessageAddress) associated with this monitored agent.
    * @return Agents MessageAddress
    */
@@ -410,6 +477,22 @@ public class HealthStatus implements
    */
   private List getHeartbeatTimeouts() {
     return heartbeatTimeouts;
+  }
+
+  /**
+   * Returns time of last restart attempt.
+   * @return Date Time of last attempted restart
+   */
+  protected Date getLastRestartAttempt() {
+    return lastRestartAttempt;
+  }
+
+  /**
+   * Sets time of last restart attempt.
+   * @param restartAttempted Time of last attempted restart
+   */
+  protected Date setLastRestartAttempt(Date restartAttempted) {
+    return lastRestartAttempt = restartAttempted;
   }
 
   /**
@@ -545,9 +628,9 @@ public class HealthStatus implements
    * @return Current run state for agent.
    */
   protected String getState() {
-    return currentState;
+    //return currentState;
 
-    /*
+
     try {
       Attributes attrs =
         commSvc.getEntityAttributes(communityName, agentId.toString());
@@ -573,7 +656,7 @@ public class HealthStatus implements
       ex.printStackTrace();
       return new String();
     }
-    */
+
 
   }
 

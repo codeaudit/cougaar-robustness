@@ -628,6 +628,10 @@
       <Attribute ID="Role" Value="HealthReportConsumer" />
       <Attribute ID="Role" Value="ManagementAgent" />
     </Entity>
+    <Entity Name="3ID" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
     <Entity Name="1-27-FABN" >
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="Member" />
