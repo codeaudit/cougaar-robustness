@@ -41,8 +41,7 @@ import org.cougaar.core.agent.service.alarm.Alarm;
 
 import org.cougaar.core.util.UID;
 
-//import org.cougaar.util.CougaarEvent;
-//import org.cougaar.util.CougaarEventType;
+import org.cougaar.core.service.EventService;
 
 import org.cougaar.util.UnaryPredicate;
 
@@ -71,6 +70,7 @@ public class DecisionPlugin extends SimplePlugin {
   // List of agents waiting to be restarted
   private List restartQueue = new Vector();
 
+  private EventService eventService;
 
   private List restartsInProcess = new Vector();
 
@@ -97,6 +97,10 @@ public class DecisionPlugin extends SimplePlugin {
     DomainService domainService =
       (DomainService) getBindingSite().getServiceBroker().
       getService(this, DomainService.class, null);
+
+    eventService =
+      (EventService) getBindingSite().getServiceBroker().
+      getService(this, EventService.class, null);
 
     mobilityFactory = (MobilityFactory) domainService.getFactory("mobility");
     if (mobilityFactory == null) {
@@ -291,6 +295,13 @@ public class DecisionPlugin extends SimplePlugin {
     }
   }
 
+  /**
+   * Sends Cougaar event via EventService.
+   */
+  private void event(String type, String message) {
+    if (eventService != null && eventService.isEventEnabled())
+      eventService.event("[" + type + "] " + message);
+  }
 
   /**
    * Initiates a forced restart at agents current node.
@@ -332,10 +343,7 @@ public class DecisionPlugin extends SimplePlugin {
     AgentControl ac =
       mobilityFactory.createAgentControl(acUID, destNodeAddr, addTicket);
 
-    /*CougaarEvent.postComponentEvent(CougaarEventType.START,
-                                    getAgentIdentifier().toString(),
-                                    this.getClass().getName(),
-                                    "Restarting agent: agent=" + agent);*/
+    event("STATUS", "Restarting agent: agent=" + agent);
     if (log.isDebugEnabled()) {
       StringBuffer sb = new StringBuffer("AgentControl publication:" +
         " myUid=" + agentControlUIDs.contains(ac.getOwnerUID()) +

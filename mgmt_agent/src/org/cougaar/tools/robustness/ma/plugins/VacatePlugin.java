@@ -43,8 +43,7 @@ import org.cougaar.core.mobility.ldm.AgentControl;
 
 import org.cougaar.util.UnaryPredicate;
 
-//import org.cougaar.util.CougaarEvent;
-//import org.cougaar.util.CougaarEventType;
+import org.cougaar.core.service.EventService;
 
 import org.cougaar.core.util.UID;
 
@@ -68,6 +67,8 @@ public class VacatePlugin extends SimplePlugin {
 
   // My unique ID
   UID myUID;
+
+  EventService eventService;
 
   // Defines default values for configurable parameters.
   private static String defaultParams[][] = new String[0][0];
@@ -98,6 +99,10 @@ public class VacatePlugin extends SimplePlugin {
     if (mobilityFactory == null) {
       log.error("Unable to get 'mobility' domain");
     }
+
+    eventService =
+      (EventService) getBindingSite().getServiceBroker().
+      getService(this, EventService.class, null);
 
     bbs = getBlackboardService();
 
@@ -195,12 +200,9 @@ public class VacatePlugin extends SimplePlugin {
               if (hs != null) hs.setState(HealthStatus.MOVE);
               publishChange(hs);
               bbs.publishAdd(ac);
-              /*CougaarEvent.postComponentEvent(CougaarEventType.START,
-                                              getAgentIdentifier().toString(),
-                                              this.getClass().getName(),
-                                              "Moving agent:" +
-                                              " agent=" + hs.getAgentId() +
-                                              " destNode=" + newNodeName);*/
+              event("STATUS", "Moving agent:" +
+                              " agent=" + hs.getAgentId() +
+                              " destNode=" + newNodeName);
               log.info("Moving agent: agent=" + agent + " destHost=" + destHost +
                 " destNode=" + newNodeName);
               log.debug("Published AgentControl: " + ac);
@@ -243,6 +245,13 @@ public class VacatePlugin extends SimplePlugin {
     }
   }
 
+  /**
+   * Sends Cougaar event via EventService.
+   */
+  private void event(String type, String message) {
+    if (eventService != null && eventService.isEventEnabled())
+      eventService.event("[" + type + "] " + message);
+  }
 
   /**
    * Defines a name for a new node.  The new node name will consist of the

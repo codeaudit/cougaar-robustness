@@ -53,8 +53,8 @@ import org.cougaar.core.thread.Schedulable;
 import org.cougaar.core.service.community.*;
 import org.cougaar.community.*;
 
-//import org.cougaar.util.CougaarEvent;
-//import org.cougaar.util.CougaarEventType;
+import org.cougaar.core.service.EventService;
+
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.util.UID;
 
@@ -195,6 +195,8 @@ public class HealthMonitorPlugin extends SimplePlugin implements
   private BlackboardService bbs;
   private WhitePagesService wps;
 
+  private EventService eventService;
+
   // UIDs associated with pending pings
   private Collection pingUIDs = new Vector();
 
@@ -226,6 +228,10 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     DomainService domainService =
       (DomainService) getBindingSite().getServiceBroker().
       getService(this, DomainService.class, null);
+
+    eventService =
+      (EventService) getBindingSite().getServiceBroker().
+      getService(this, EventService.class, null);
 
     sensorFactory =
       ((SensorFactory) domainService.getFactory("sensors"));
@@ -436,21 +442,13 @@ public class HealthMonitorPlugin extends SimplePlugin implements
             case HeartbeatRequest.ACCEPTED:
               log.debug("HeartbeatRequest ACCEPTED: agent=" + hs.getAgentId());
               if (hs.getStatus() == HealthStatus.RESTARTED) {
-                //log.info("Reacquired agent: agent=" + hs.getAgentId());
-                /*CougaarEvent.postComponentEvent(CougaarEventType.END,
-                                                getAgentIdentifier().toString(),
-                                                this.getClass().getName(),
-                                                "Restart succeeded:" +
-                                                " agent=" + hs.getAgentId() +
-                                                " node=" + hs.getNode());*/
+                event("STATUS", "Restart succeeded:" +
+                                " agent=" + hs.getAgentId() +
+                                " node=" + hs.getNode());
               } else if (hs.getStatus() == HealthStatus.MOVED) {
-                //log.info("Move complete: agent=" + hs.getAgentId());
-                /*CougaarEvent.postComponentEvent(CougaarEventType.END,
-                                                getAgentIdentifier().toString(),
-                                                this.getClass().getName(),
-                                                "Move succeeded:" +
-                                                " agent=" + hs.getAgentId() +
-                                                " node=" + hs.getNode());*/
+                event("STATUS", "Move succeeded:" +
+                                " agent=" + hs.getAgentId() +
+                                " node=" + hs.getNode());
               }
               hs.setState(HealthStatus.NORMAL);
               hs.setStatus(HealthStatus.OK);
@@ -486,21 +484,13 @@ public class HealthMonitorPlugin extends SimplePlugin implements
                   log.info("HeartbeatRequest timeout, ping successful:" +
                     " agent=" + hs.getAgentId());
                   if (hs.getStatus() == HealthStatus.RESTARTED) {
-                    //log.info("Reacquired agent: agent=" + hs.getAgentId());
-                    /*CougaarEvent.postComponentEvent(CougaarEventType.END,
-                                                getAgentIdentifier().toString(),
-                                                this.getClass().getName(),
-                                                "Restart succeeded:" +
-                                                " agent=" + hs.getAgentId() +
-                                                " node=" + hs.getNode());*/
+                    event("STATUS", "Restart succeeded:" +
+                                    " agent=" + hs.getAgentId() +
+                                    " node=" + hs.getNode());
                   } else if (hs.getStatus() == HealthStatus.MOVED) {
-                    //log.info("Move complete: agent=" + hs.getAgentId());
-                    /*CougaarEvent.postComponentEvent(CougaarEventType.END,
-                                                getAgentIdentifier().toString(),
-                                                this.getClass().getName(),
-                                                "Move succeeded:" +
-                                                " agent=" + hs.getAgentId() +
-                                                " node=" + hs.getNode());*/
+                    event("STATUS", "Move succeeded:" +
+                                    " agent=" + hs.getAgentId() +
+                                    " node=" + hs.getNode());
                   }
                   hs.setState(HealthStatus.NORMAL);
                   hs.setStatus(HealthStatus.OK);
@@ -671,10 +661,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       } else if (state.equals(HealthStatus.FAILED_RESTART)) {
         if (!state.equals(hs.getPriorState())) {
           log.error("Agent restart failed: agent=" + hs.getAgentId());
-          /*CougaarEvent.postComponentEvent(CougaarEventType.END,
-                                          getAgentIdentifier().toString(),
-                                          this.getClass().getName(),
-                                          "Restart failed: agent=" + hs.getAgentId());*/
+          event("STATUS", "Restart failed: agent=" + hs.getAgentId());
         }
         // While in this state periodically ping agent to see if it responds.
         //   If a response is received put agent back into NORMAL state.  Otherwise,
@@ -714,10 +701,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       } else if (state.equals(HealthStatus.FAILED_MOVE)) {
         // Move failed resume normal monitoring
         log.warn("Agent move failed: agent=" + hs.getAgentId());
-        /*CougaarEvent.postComponentEvent(CougaarEventType.END,
-                                        getAgentIdentifier().toString(),
-                                        this.getClass().getName(),
-                                        "Move failed: agent=" + hs.getAgentId());*/
+        event("STATUS", "Move failed: agent=" + hs.getAgentId());
         hs.setState(HealthStatus.NORMAL);
         hs.setHeartbeatStatus(HealthStatus.HB_NORMAL);
       //************************************************************************
@@ -1335,6 +1319,13 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     return (CommunityService)sb.getService(this, CommunityService.class, null);
   }
 
+  /**
+   * Sends Cougaar event via EventService.
+   */
+  private void event(String type, String message) {
+    if (eventService != null && eventService.isEventEnabled())
+      eventService.event("[" + type + "] " + message);
+  }
   /**
    * Gets reference to TopologyReaderService.
    * @return Reference to TopolotyReaderService
