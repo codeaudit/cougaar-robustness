@@ -80,10 +80,22 @@ public class MediatedTechSpecMap {
     public AssetStateDimension getBaseDimension(String actionName, DiagnosisTechSpecService diagnosisTechSpecService) {
         if (actionName.equals("org.cougaar.mts.std.LinksEnablingAction")) 
             return diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.mts.std.RMILinksStatusDiagnosis").getStateDimension();
-        if (actionName.equals("org.cougaar.core.security.coordinator.ThreatConAction")) 
+        if (actionName.equals("org.cougaar.core.security.coordinator.Security_Defense_Setting")) 
             return diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.core.security.coordinator.ThreatConDiagnosis").getStateDimension();
         if (actionName.equals("org.cougaar.robustness.dos.coordinator.CompressionAction")) 
             return diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.coordinator.sensors.load.AvailableBandwidthDiagnosis").getStateDimension();
+        if (actionName.equals("org.cougaar.robustness.dos.coordinator.AttackResetAction") {
+              if (logger.isInfoEnabled()) logger.info("Ignoring: " + actionName);
+              return null;
+        }
+        if (actionName.equals("org.cougaar.robustness.dos.coordinator.FuseResetAction") {
+              if (logger.isInfoEnabled()) logger.info("Ignoring: " + actionName);
+              return null;
+        }
+        if (actionName.equals("org.cougaar.robustness.dos.coordinator.RMIAction") {
+              if (logger.isInfoEnabled()) logger.info("Ignoring: " + actionName);
+              return null;
+        }
         if (logger.isErrorEnabled()) logger.error("Could not map Action: " + actionName);
         return null;
     }
@@ -91,10 +103,22 @@ public class MediatedTechSpecMap {
     public AssetStateDimension getCompensatedDimension(String actionName, DiagnosisTechSpecService diagnosisTechSpecService) {
         if (actionName.equals("org.cougaar.mts.std.LinksEnablingAction")) 
             return diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.mts.std.AllLinksStatusDiagnosis").getStateDimension();
-        if (actionName.equals("org.cougaar.core.security.coordinator.ThreatConAction")) 
+        if (actionName.equals("org.cougaar.core.security.coordinator.Security_Defense_Setting")) 
             return diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.core.security.coordinator.EffectiveSecurityDiagnosis").getStateDimension();
-        if (actionName.equals("org.cougaar.robustness.dos.coordinator.CompressionAction")) //Note - This name does not comply with naming conventiosn - DLW
+        if (actionName.equals("org.cougaar.robustness.dos.coordinator.CompressionAction")) 
             return diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.robustness.dos.coordinator.Effective_Bandwidth_Status").getStateDimension();
+        if (actionName.equals("org.cougaar.robustness.dos.coordinator.AttackResetAction") {
+              if (logger.isInfoEnabled()) logger.info("Ignoring: " + actionName);
+              return null;
+        }
+        if (actionName.equals("org.cougaar.robustness.dos.coordinator.FuseResetAction") {
+              if (logger.isInfoEnabled()) logger.info("Ignoring: " + actionName);
+              return null;
+        }
+        if (actionName.equals("org.cougaar.robustness.dos.coordinator.RMIAction") {
+              if (logger.isInfoEnabled()) logger.info("Ignoring: " + actionName);
+              return null;
+        }
         if (logger.isErrorEnabled()) logger.error("Could not map Action: " + actionName);
         return null;
     }
@@ -200,7 +224,7 @@ public class MediatedTechSpecMap {
             }
             else return null;
         }
-        if (actionName.equals("org.cougaar.core.security.coordinator.SecurityLevelAction")) {
+        if (actionName.equals("org.cougaar.core.security.coordinator.Security_Defense_Setting")) {
             Vector v = new Vector(3);
             if (baseStateName.equals("None") && actionSettingName.equals("Low")) {
                 v.add(new StateProb("Low", 0.0));

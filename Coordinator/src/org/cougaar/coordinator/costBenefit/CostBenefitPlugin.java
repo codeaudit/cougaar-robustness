@@ -207,7 +207,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                 else if (atsi.getActionType() == ActionTechSpecInterface.COMPENSATORY_ACTIONTYPE) {
                     // Which StateDimension does this Action apply to?
                     AssetStateDimension actionStateDimension = atsi.getStateDimension();
-                    AssetStateDimension baseStateDimension = mediatedTechSpecMap.getBaseDimension(actionStateDimension.getStateName(), diagnosisTechSpecService);
+                    AssetStateDimension baseStateDimension = mediatedTechSpecMap.getBaseDimension(thisAction.class(), diagnosisTechSpecService);
                     AssetStateDimension compensatedStateDimension = mediatedTechSpecMap.getCompensatedDimension(actionStateDimension.getStateName(), diagnosisTechSpecService);
                     if (logger.isDebugEnabled()) logger.debug("This COMPENSATORY Action: "+thisAction+":"+atsi+":"+actionStateDimension+":"+baseStateDimension+":"+compensatedStateDimension);
 
