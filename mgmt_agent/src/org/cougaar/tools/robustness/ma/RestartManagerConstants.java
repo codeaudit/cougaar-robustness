@@ -65,6 +65,9 @@ public interface RestartManagerConstants {
   public static final long HEARTBEAT_TIMEOUT = 2 * 60 * 1000;
   public static final long HEARTBEAT_PCT_OUT_OF_SPEC = 80;
 
+  // Minimum value for EN4J annealTime parameter
+  public static final int MINIMUM_ANNEAL_TIME = 10;
+
   // Defines constants used to increase ping timeout based on cpu load
   // of destination.  The MAX_CPU_LOAD_FOR_ADJUSTMENT constant defines
   // the upper range of cpu loads used to calculate the scaling
