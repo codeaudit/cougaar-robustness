@@ -144,8 +144,19 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
         if (actions == null) return cbe; // No actions exist that even possibly apply - usually an initialization situation
 
-        Iterator actionsIter = actions.iterator();
+        Iterator actionsIter;
 
+	if (logger.isDebugEnabled()) {
+	    actionsIter = actions.iterator();
+   	    logger.debug("CB knows following Actions for: " + assetID);
+	    while (actionsIter.hasNext()) {
+                ActionsWrapper thisActionWrapper = (ActionsWrapper) actionsIter.next();
+                Action thisAction = thisActionWrapper.getAction();
+		logger.debug(thisAction.toString());
+	    }
+	}
+
+	actionsIter = actions.iterator();
         // iterate over all applicable Actions for this asset
         // compute the expected c-b for each based on StateEstimation
         while (actionsIter.hasNext()) {
@@ -225,6 +236,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                         logger.error("Cannot find StateDimensionEstimate"+e.toString());
                     }
                 }
+
             }
             catch (TechSpecNotFoundException e) {
                 if (logger.isErrorEnabled()) logger.error( e.toString() );

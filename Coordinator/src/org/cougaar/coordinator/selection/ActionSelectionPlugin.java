@@ -279,7 +279,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 
     boolean done = false;
     double resourcePercentageRemaining = getCurrentEnclaveResources();
-    Set alreadyActiveActions = findActiveIrrevocableActions(cbe);
+    Set alreadyActiveActions = findActiveActions(cbe);
 
     // deduct the cost of actions that we can't terminate
     iter = alreadyActiveActions.iterator();
@@ -327,7 +327,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
     }
   }
 
-  private Set findActiveIrrevocableActions(CostBenefitEvaluation cbe) {
+  private Set findActiveActions(CostBenefitEvaluation cbe) {
     Set activeActions = new HashSet();
     Collection allActions = findActionCollection(cbe.getAssetID());
     if (allActions != null) {
@@ -335,12 +335,12 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 	while (iter.hasNext()) {
 	    ActionsWrapper thisWrapper = (ActionsWrapper) iter.next();
 	    Action thisAction = thisWrapper.getAction();
-	    if ((thisAction.getValue() != null && thisAction.getValue().isActive()) && ((thisAction.getValuesOffered() == null) || thisAction.getValuesOffered().isEmpty())) {
+	    if ((thisAction.getValue() != null && thisAction.getValue().isActive())) {
 		activeActions.add(thisAction);
 	    }
 	}
     }
-    if (logger.isInfoEnabled()) logger.info("Irrevocable Actions: " + activeActions.toString());
+    if (logger.isInfoEnabled()) logger.info("Active Actions: " + activeActions.toString());
     return activeActions;
   }
 
