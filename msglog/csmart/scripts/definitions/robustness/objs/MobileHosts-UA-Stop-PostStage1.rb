@@ -22,9 +22,6 @@ include_scripts:
   - script: $CIP/csmart/lib/isat/migrate.rb
     parameters:
     - migrate_location: during_stage_1
-# on S4    
-#   - host_name: sv175
-# on S3
     - host_name: sv125
     - target_network: 1-UA
   - script: $CIP/csmart/lib/isat/stop_society.rb
