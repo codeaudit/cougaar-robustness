@@ -9,6 +9,7 @@
   <!-- set global properties for this build -->
   <property environment="env"/>
   <property name="cougaar" value="${env.COUGAAR_INSTALL_PATH}"/>
+  <property name="robustness" value="${cougaar}/robustness"/>
   <property name="workspace" value="${env.COUGAAR_INSTALL_PATH}/workspace"/>
   <property name="host" value="${env.HOST}"/>
   <!-- <property name="host" value="localhost"/> -->
@@ -196,11 +197,11 @@
     <delete file="${workspace}/configs/${agent_ini}" />
     <delete file="${workspace}/configs/${node_ini}" />
     <delete file="${workspace}/configs/${prototype}" />
-    <copy file="configs/ManagementAgentNode.ini"
+    <copy file="${robustness}/configs/ManagementAgentNode.ini"
           tofile="${workspace}/configs/${node_ini}" />
-    <copy file="configs/ManagementAgent.ini"
+    <copy file="${robustness}/configs/ManagementAgent.ini"
           tofile="${workspace}/configs/${agent_ini}" />
-    <copy file="configs/ManagementAgent-prototype-ini.dat"
+    <copy file="${robustness}/configs/ManagementAgent-prototype-ini.dat"
           tofile="${workspace}/configs/${prototype}" />
     <replace file="${workspace}/configs/${node_ini}" token="cluster=ManagementAgent" value="cluster=${agent}"/>
     <replace file="${workspace}/configs/${prototype}" token="ManagementAgent" value="${agent}"/>
@@ -290,9 +291,6 @@
       <jvmarg value="-Xms100m"/>
       <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
       <classpath>
-        <fileset dir="${lib}">
-          <include name="**/*.jar" />
-        </fileset>
         <fileset dir="${cougaar}/lib">
           <include name="**/*.jar" />
         </fileset>
@@ -318,7 +316,7 @@
       <sysproperty key="org.cougaar.core.agent.startTime" value="8/10/2005"/>
       <sysproperty key="org.cougaar.name.server" value="${nameserver}"/>
       <sysproperty key="org.cougaar.system.path" value="${cougaar}/sys"/>
-      <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;${workspace}/configs;$$INSTALL/configs/common;$$CWD/test/configs/ma;$$CWD/test/configs/minitestconfig;$$CWD/test/configs/common;$$INSTALL/configs/minitestconfig"/>
+      <sysproperty key="org.cougaar.config.path" value="${workspace}/configs;${robustness}/configs;$$INSTALL/configs/common;$$INSTALL/configs/glmtrans;$$INSTALL/configs/minitestconfig"/>
       <arg line="org.cougaar.core.node.Node"/>
     </java>
   </target>
@@ -356,7 +354,7 @@
       <sysproperty key="org.cougaar.control.port" value="${controlport}"/>
       <sysproperty key="org.cougaar.node.name" value="${node}"/>
       <sysproperty key="org.cougaar.planning.ldm.lpw.ComplainingLP.level" value="0"/>
-      <sysproperty key="org.cougaar.config.path" value="$$INSTALL/configs/common;$$INSTALL/glmtrans/configs/demo-config/config"/>
+      <sysproperty key="org.cougaar.config.path" value="${workspace}/configs;${robustness}/configs;$$INSTALL/configs/common;$$INSTALL/configs/glmtrans;$$INSTALL/configs/minitestconfig"/>
       <!-- <sysproperty key="org.cougaar.message.transport.aspects" value="org.cougaar.core.mts.StatisticsAspect"/> -->
       <sysproperty key="org.cougaar.experiment.id" value="${experiment}"/>
       <sysproperty key="org.cougaar.agent.startTime" value="8/10/2005"/>
@@ -489,6 +487,7 @@
   <target name="create_cougaar_overlay">
     <delete dir="staging"/>
     <mkdir dir="staging/lib"/>
+    <mkdir dir="staging/sys"/>
     <mkdir dir="staging/robustness"/>
     <mkdir dir="staging/robustness/bin"/>
     <mkdir dir="staging/robustness/doc"/>
@@ -500,6 +499,7 @@
     <antcall target="compile"/>
     <antcall target="jar"/>
     <move file="${lib}/${jar}" toDir="staging/lib"/>
+    <move file="sys/ant.jar" toDir="staging/sys"/>
     <copy file="build.xml" toDir="staging/robustness"/>
     <copy toDir="staging/robustness/bin">
       <fileset dir="bin"/>

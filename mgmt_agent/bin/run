@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# convert the existing path to unix
+if [ "$OSTYPE" = "cygwin32" ] || [ "$OSTYPE" = "cygwin" ] ; then
+   CLASSPATH=`cygpath --path --unix "$CLASSPATH"`
+fi
+
+CLASSPATH=${CLASSPATH}:${COUGAAR_INSTALL_PATH}/sys/ant.jar
+
+# convert the unix path to windows
+if [ "$OSTYPE" = "cygwin32" ] || [ "$OSTYPE" = "cygwin" ] ; then
+   CLASSPATH=`cygpath --path --windows "$CLASSPATH"`
+fi
+
+BUILDFILE=${COUGAAR_INSTALL_PATH}/robustness/build.xml
+
+${JAVA_HOME}/bin/java -classpath ${CLASSPATH} org.apache.tools.ant.Main \
+                      -emacs -buildfile ${BUILDFILE} "$@"
