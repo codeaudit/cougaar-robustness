@@ -113,6 +113,7 @@ public class SampleActuator extends ComponentPlugin
 //	alarmService.addRealTimeAlarm(new DelayedStartAlarm(120000));
     } 
     
+    int tsLookupCnt = 0;
     public synchronized void execute() {
 
 	if (start == true) {
@@ -121,6 +122,7 @@ public class SampleActuator extends ComponentPlugin
 		blackboard.publishAdd(action);
 		if (log.isDebugEnabled()) log.debug(action + " added.");
                 if (log.isDetailEnabled()) log.detail(action.dump());
+                if (log.isDetailEnabled()) log.detail("TechSpec="+action.getTechSpec());
 		data = new SampleRawActuatorData(agentId.toString(), 
 						 action.getPossibleValues(),
 						 action.getValuesOffered(),
@@ -128,10 +130,14 @@ public class SampleActuator extends ComponentPlugin
 						 action.getValue());
 		blackboard.publishAdd(data);
 		if (log.isDebugEnabled()) log.debug(data+" added.");	
+		start = false;
 	    } catch (TechSpecNotFoundException e) {
-		log.error("TechSpec not found for SampleAction", e);
+		if (tsLookupCnt > 10) {
+		    log.warn("TechSpec not found for SampleAction.  Will retry.", e);
+		    tsLookupCnt = 0;
+		}
+		blackboard.signalClientActivity();
 	    }
-	    start = false;
 	}
 	
 	Iterator iter = rawActuatorDataSub.getChangedCollection().iterator();

@@ -95,6 +95,7 @@ public class SampleSensor extends ComponentPlugin
 //	alarmService.addRealTimeAlarm(new DelayedStartAlarm(120000));
     } 
 
+    int tsLookupCnt = 0;
     public synchronized void execute() {
 	
 	if (start == true) {
@@ -110,10 +111,14 @@ public class SampleSensor extends ComponentPlugin
 		blackboard.publishAdd(data);
 		if (log.isDebugEnabled()) 
 		    log.debug(data + " added.");
+		start = false;
 	    } catch (TechSpecNotFoundException e) {
-		log.error("TechSpec not found for SampleDiagnosis", e);
+		if (tsLookupCnt > 10) {
+		    log.warn("TechSpec not found for SampleDiagnosis.  Will retry.", e);
+		    tsLookupCnt = 0;
+		}
+		blackboard.signalClientActivity();
 	    }
-	    start = false;
 	}
 
         Iterator iter = rawSensorDataSub.getChangedCollection().iterator();
