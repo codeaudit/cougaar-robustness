@@ -62,6 +62,7 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
     
   private long reconnectInterval;
   private boolean noChangesYet = true;
+  private boolean currentlyDisconnected = false;
 
   private AgentVector localAgents = new AgentVector();
   
@@ -177,6 +178,13 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
           while (iter2.hasNext()) {
              AgentExistsCondition aec = (AgentExistsCondition) iter2.next();
              addAgent(aec.getAsset());
+             /* dlw - 9/30/04 - this should now be redundant
+             AgentExistsCondition remote_aec = new AgentExistsCondition("Agent", getAgentID());
+             remote_aec.setUID(getUIDService().nextUID());
+             if (logger.isDebugEnabled()) logger.debug("Source: "+remote_aec.getSource()+", Target: "+managerAddress);
+             remote_aec.setSourceAndTarget(aec.getSource(), managerAddress);
+             getBlackboardService().publishAdd(remote_aec);
+             */
           }
       }
       
@@ -238,6 +246,8 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
              dmode.getName() + " changed to " + dmode.getValue());          
           if (dmode.getExpandedName().equals("Node:"+getNodeID())) {
               String defenseMode = dmode.getValue().toString();
+
+              /* dlw - 9/27/04 changed this to the immediately following to eliminate spurious "permission" veents from being generated
               if (eventService.isEventEnabled()) {
                   if ((defenseMode.equals("ENABLED")) && (reconnectInterval > 0L)) {
                       eventService.event(getNodeID()+" has received permission to Disconnect for "+reconnectInterval/1000L+" sec");
@@ -248,6 +258,22 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
                   else {
                       eventService.event(getNodeID()+" is denied permission to " + (reconnectInterval > 0L ? "Disconnect" : "Reconnect") );
                   }
+              }
+              */
+
+              if ((defenseMode.equals("ENABLED")) && (reconnectInterval > 0L)) {
+                    currentlyDisconnected = true;
+                    if (eventService.isEventEnabled()) eventService.event(getNodeID()+" has received permission to Disconnect for "+reconnectInterval/1000L+" sec");
+              }
+              else if ((defenseMode.equals("DISABLED")) && (reconnectInterval == 0L) && (currentlyDisconnected)) {
+                    currentlyDisconnected = false;
+                    if (eventService.isEventEnabled()) eventService.event(getNodeID()+" has received permission to Reconnect");
+              }
+              else if (reconnectInterval > 0L) {
+                    if (eventService.isEventEnabled()) eventService.event(getNodeID()+" is denied permission to Disconnect");
+                  }
+              else if ((reconnectInterval == 0L) && (currentlyDisconnected)) {
+                    if (eventService.isEventEnabled()) eventService.event(getNodeID()+" is denied permission to Reconnect");
               }
           }
       };

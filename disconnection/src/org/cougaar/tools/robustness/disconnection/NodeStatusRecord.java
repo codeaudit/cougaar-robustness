@@ -37,4 +37,12 @@ public class NodeStatusRecord implements Serializable {
     public String getDiagnosis() { return diagnosis; }
     public void setDiagnosis(String diagnosis) { this.diagnosis = diagnosis; }
 
+    public String toString() {
+        String buff = "NodeID: " + getNodeID() + "\n";
+        buff = buff + "Agents: " + getAgents().toString() + "\n";
+        buff = buff + "Diagnosis: " + getDiagnosis() + "\n";
+        buff = buff + "ReconnectTime: " + getReconnectTime();
+        return buff;
+    }
+
 }
