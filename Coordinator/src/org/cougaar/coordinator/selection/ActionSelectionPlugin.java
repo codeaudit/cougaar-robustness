@@ -40,6 +40,7 @@ import org.cougaar.coordinator.costBenefit.VariantEvaluation;
 
 import org.cougaar.coordinator.monitoring.ActionTimeoutCondition;
 import org.cougaar.coordinator.techspec.AssetID;
+import org.cougaar.coordinator.techspec.ActionTechSpecInterface;
 
 
 //import org.cougaar.coordinator.test.defense.TestObservationServlet;
@@ -82,13 +83,15 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
   
   public void load() {
       super.load();
+      getPluginParams();
+      initObjects(); 
       cancelTimer();
   }
   
   private void getPluginParams() {
       if (logger.isInfoEnabled() && getParameters().isEmpty()) logger.info("Coordinator not provided a MsgLog delay parameter - defaulting to 10 seconds.");
 
-      // These really should be NAMED parameters to avoid confusion
+      // FIX - These really should come from TEchSpecs
       Iterator iter = getParameters().iterator (); 
       if (iter.hasNext()) {
           msglogPatience = Long.parseLong((String)iter.next()) * 1000L;
@@ -103,41 +106,17 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
  
   public void setupSubscriptions() {
 
-         super.setupSubscriptions();
+     super.setupSubscriptions();
 
-         diagnosesWrapperSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
-            public boolean execute(Object o) {
-                if ( o instanceof DiagnosesWrapper) {
-                    return true ;
-                }
-                return false ;
-            }
-        }) ;
-        
+     //Access to the SelectionKnob
+     knobSubscription = (IncrementalSubscription) getBlackboardService().subscribe(ActionSelectionKnob.pred);
 
-         if (logger.isDebugEnabled()) logger.debug("Loading DefenseSelectionPlugin");
-         getPluginParams();
-         initObjects(); 
-      
      //Listen for new CostBenefitEvaluations
      costBenefitSubscription = (IncrementalSubscription ) getBlackboardService().subscribe(CostBenefitEvaluation.pred);
 
      //Listen for Failed Actions
      failedActionSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(FailedActionWrapper.pred);
 
-     //Access to the SelectionKnob
-     knobSubscription = (IncrementalSubscription) getBlackboardService().subscribe(ActionSelectionKnob.pred);
-
-/*     // Does this really belong here?  Shouldn't the Servlet subscribe to the BB and pick up whatever it needs itself?
-     testServletSubscription = (IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
-        public boolean execute(Object o) {
-            if ( o instanceof TestObservationServlet ) {
-                return true ;
-            }
-            return false ;
-        }
-     });
-*/     
      //Unsure of use...
      if (blackboard.didRehydrate()) { //reset to null so it gets established again after rehydration -- IS THIS RIGHT??
          //this.testServlet = null;
@@ -150,24 +129,14 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
   private void initObjects() {
       // Create the ActionSelectionKnob with default values
       knob = new ActionSelectionKnob();
+      openTransaction();
       publishAdd(knob);
+      closeTransaction();
   }
  
 
   public void execute() {
 
-        for ( Iterator iter = diagnosesWrapperSubscription.getAddedCollection().iterator();  
-          iter.hasNext() ; ) 
-        {
-            DiagnosesWrapper dw = (DiagnosesWrapper)iter.next();
-            Diagnosis d = (Diagnosis) dw.getContent();
-            //indexDiagnosis(dw, key);
-            findDiagnosisCollection(d.getAssetID());
-            findActionCollection(d.getAssetID());
-            findCostBenefitEvaluation(d.getAssetID());
-        } 
-
-      
         Iterator iter;    
   
       // Get the ActionSelectionKnob for current settings
@@ -192,18 +161,9 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
       while (iter.hasNext()) {
           CostBenefitEvaluation cbe = (CostBenefitEvaluation)iter.next(); 
           if (logger.isDebugEnabled()) logger.debug("Saw new CBD: \n"+cbe.toString());
-/*          if (testServlet != null) { 
-              if (logger.isDebugEnabled()) logger.debug("Adding CBD to observation servlet");
-              testServlet.addCostBenefitDiagnosis(cbd); 
-              testServlet.updateCostBenefitStatus(cbd,"RUNNING");
-          }
-*/
+
           selectActions(cbe, knob);
 
-/*          if (testServlet != null) { 
-              if (!running) testServlet.updateCostBenefitStatus(cbd,"NOTHING TO DO");
-          }
-*/
       }
 
       //********* Process Actions that have Timed Out ***********
@@ -224,83 +184,27 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
           selectActions(cbe, knob);  // try to find a new action
       }
 
-/*          
-          //mark what the defense did & DISABLE it
-          CostBenefitDiagnosis.ActionBenefit[] dbArray = cbe.getActions();
-          CostBenefitDiagnosis.ActionBenefit actionBenefit;       
-          for (int i=0; i<dbArray.length; i++) {
-             actionBenefit = dbArray[i];
-             if (actionBenefit.getAction() != null && actionBenefit.getAction().getName().equalsIgnoreCase(actionName)) {
-                 actionBenefit.setOutcome(outcome);
-                 DefenseApplicabilityConditionSnapshot dacs = def.getCondition();
-                 dacs.setCompletionTime(dc.getCompletionTime());
-                 setAction(dacs, DEF_DISABLED, MON_DISABLED, 0L, null);            
-                 if (testServlet != null) { testServlet.updateDefenseStatus(cbd,def.getDefense().getName(),"DISABLED"); }
-             } // re-enable MsgLog so messages about the next Defense (if any) can be delivered
-             if (def.getDefense() != null && def.getDefense().getName().equalsIgnoreCase("MsgLog")) {
-                 DefenseApplicabilityConditionSnapshot dacs = def.getCondition();
-                 if (dacs != null) {
-                     setAction(dacs, DEF_ENABLED, MON_ENABLED, 0L, null); // check that MsgLog actually exists    
-                    if (testServlet != null) { testServlet.updateDefenseStatus(cbd,def.getDefense().getName(),"ENABLED"); }
-                 }
-             }          
-          }
-/*
-          // fixed the problem, so announce the result, clean up & exit
-          if (logger.isDebugEnabled()) logger.debug("***** "+outcome+" *****");
-          if (outcome.equals("SUCCEEDED")) {   // whatever we just tried worked (at least its own defense thinks it did)
-              if (logger.isDebugEnabled()) logger.debug("Processing Success");
-              String resolution = "COMPLETED - PROBLEM SOLVED";
-              TimedDefenseDiagnosis tdd = TimedDefenseDiagnosis.find(cbd.getAssetName(), blackboard);
-              if (tdd != null) {
-                  tdd.setDisposition(resolution, System.currentTimeMillis());
-                  publishChange(tdd); // let the TDD Plugin remove it
-              }
-              publishRemove(cbd);  // no longer need this since the problem is solved
-              if (testServlet != null) testServlet.updateCostBenefitStatus(cbd, resolution); 
-          }
-          else { // the last thing we tried failed
-              // see if there is another defense to try & if so, try it
-              boolean stillTrying = handleAsset(cbd);
-
-              // no more defenses
-              if (!stillTrying) {
-                  String resolution = "COMPLETED - NO MORE DEFENSES TO TRY";
-                  TimedDefenseDiagnosis tdd = TimedDefenseDiagnosis.find(cbd.getAssetName(), blackboard);
-                  if (tdd != null) {
-                      tdd.setDisposition(resolution, System.currentTimeMillis());
-                      publishChange(tdd); // let the TDD Plugin remove it
-                  }
-                  publishRemove(cbd);  // no longer need this since the problem can't be solved
-                  if (testServlet != null) testServlet.updateCostBenefitStatus(cbd, resolution); 
-             }
-          }
-*/
       if (logger.isDebugEnabled()) logger.debug("Done processing TimeOuts");
-
 
   }
 
 
   
   private void selectActions(CostBenefitEvaluation cbe, ActionSelectionKnob knob) {
-    // compute the score for each Action/Variant given that it may force some other action to be changed
-    // for now, this just copies the original CB values
-       //scoreActionsInCombination(cbe, knob);
-    // at this point, we may want to make a choice between several selection policies based on the Knob
-    // for now, we just select the best score
+
     boolean done = false;
     int index = 0;
     while (!done) {
         SelectedAction thisAction = selectBest(cbe, knob); 
+        if (logger.isDebugEnabled()) logger.debug(thisAction.toString());
         if (thisAction != null) {
             publishAdd(thisAction);
             index++;
             done = true; // done because can't find anything useful to do
-            if ((thisAction.getActionEvaluation().actionType().equals("Corrective"))
+            if ((thisAction.getActionEvaluation().getAction().getTechSpec().getActionType() == ActionTechSpecInterface.CORRECTIVE_ACTIONTYPE) // Because we try only one corrective action at a time
                     || (outOfResources())
                     || (index == knob.getMaxActions()))
-               done = true; // Because we try only one corrective action at a time
+               done = true; 
         }
     }
   }
@@ -329,10 +233,10 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
                 }
             }
         }
-        if (bestBenefit > 0) {
+        if (bestBenefit > 0) { 
             HashSet permittedVariants = new HashSet();
             permittedVariants.add(bestVariantEvaluation);
-            sa = new SelectedAction(cbe.getAssetID(), bestActionEvaluation, permittedVariants);
+            sa = new SelectedAction(bestActionEvaluation, permittedVariants, Math.round(knob.getPatienceFactor()*bestVariantEvaluation.getExpectedTransitionTime()));
         }
         
         return sa;
@@ -344,46 +248,4 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
         return false;
     }
 
-
-/*  private void scoreActionsInCombination(CostBenefitEvaluation cbe, ActionSelectionKnob knob) {
-        // For now, we only consider the direct effect of an action when choosing
-        // eventually, we need to also consider what it precludes   \
-        // we still enforce deconfliction, just don't consider it when choosing
-        Collection actionEvaluations = cbe.getActionEvaluations().values();
-        Iterator iter = actionEvaluations.iterator();
-        return;
-  }*/
-
-
-/*  NOT CURRENTLY BEING USED - MAYBE NEVER WILL BE
-  private VariantEvaluation scoreVariants(ActionEvaluation actionEval) {
-    Collection variantEvals = actionEval.getVariantEvaluations().values();
-    Iterator iter = variantEvals.iterator();
-    Collection offeredVariants = actionEval.getAction().getValuesOffered();
-    double bestScore = -100000000.0;
-    VariantEvaluation bestVariant = null;
-    while (iter.hasNext()) {
-        VariantEvaluation thisVariantEval = (VariantEvaluation) iter.next();
-        double score = 1.0; //FIX
-        // double score = thisVariantEval.getPredictedBenefit()/thisVariantEval.getPredictedCost().getAggregateCost();
-        thisVariantEval.setSelectionScore(score);
-        if ((offeredVariants.contains(thisVariantEval)) && (thisVariantEval.triedP() == false)) { // the variant is avialbe & has not yet been tried
-            if (score > bestScore) {
-                bestScore = score;
-                bestVariant = thisVariantEval;
-            }
-        }
-    }    
-    return bestVariant;
-  }
-
-  private void scoreActions(CostBenefitEvaluation cbe) {
-    Collection actionEvals = cbe.getActionEvaluations().values();
-    Iterator iter = actionEvals.iterator();
-    while (iter.hasNext()) {
-        ActionEvaluation thisActionEval = (ActionEvaluation) iter.next();
-        thisActionEval.setBestAvailableVariant(scoreVariants(thisActionEval));
-    }
-  }
- */ 
 }

@@ -20,11 +20,11 @@
 
   </StateDimension>
 
-  <StateDimension name="UP_DOWN" >
- 	<State name="UP" relativeMauCompleteness="1.0" 
+  <StateDimension name="LIVENESS" >
+ 	<State name="LIVE" relativeMauCompleteness="1.0" 
                          relativeMauSecurity="0.5"
  		         defaultStartState="TRUE" />
- 	<State name="DOWN" relativeMauCompleteness="0.0" 
+ 	<State name="DEAD" relativeMauCompleteness="0.0" 
                            relativeMauSecurity="0.5" />
 
   </StateDimension>

@@ -116,31 +116,31 @@ public class ActionDescription {
      * Locates a transition from the supplied starting AssetState. If one is found the ending state is
      * returned, otherwise null.  
      */
+   /**
+     * Locates a transition from the supplied starting AssetState. If one is found the ending state is
+     * returned, otherwise null.  
+     */
     public AssetTransitionWithCost getTransitionForState(AssetState as) {
     
         if (this.wildcardTransition != null) { //this will apply to all requests
-
+ 
             return this.wildcardTransition;
-
+ 
         } else { //see if we have a transition with the specified starting state in the transitions
             
             AssetTransitionWithCost at;
             for (Iterator i=transitions.iterator(); i.hasNext(); ) {
                 
-                at = (AssetTransitionWithCost)i.next();
-                if ( at == null) {
-                    System.out.println(">>>>>>>>>>>>>>>>>>>>>ActionDescription.getTransitionForState inspecting AssetTransitionWithCost -- it's NULL!!");
-                } else {
-                    System.out.println("ActionDescription.getTransitionForState inspecting AssetTransitionWithCost: "+ at.toString() );
-                }
-                if ( at.getStartValue().equals(as)) {
+               at = (AssetTransitionWithCost)i.next();
+               if ( at.getStartValue().equals(as)) {
                     return at; // return the AssetTransitionWithCost with the state we'd transition to if this event occurs given the (as) starting state.
                 }
             }
             return null; // didn't find one
         }
     }
-    
+
+
 
    /**
      * Locates a transition from the supplied starting AssetState. If one is found the ending state is

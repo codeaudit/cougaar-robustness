@@ -52,7 +52,6 @@ import java.util.Iterator;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Vector;
-import java.util.Enumeration;
 import java.util.Set;
 
 
@@ -121,6 +120,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
             // Produce and publish a CBE containing the benefits for each offered action on the Asset
             CostBenefitEvaluation cbe = createCostBenefitEvaluation(se, knob);
+            if (logger.isDebugEnabled()) logger.debug("CostBenefitEvaluation created: "+cbe.toString());
             publishAdd(cbe);
   
         }           
@@ -180,11 +180,12 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                 if (logger.isDebugEnabled()) logger.debug("StateEstimation: "+se.toString());
                 
                 try { 
-                    // Get the StateDimensionEstimation for that dimension - Throws an exception if SDE not found
+                    // Get the StateDimensionEstimation for the dimension the Action applies to - Throws an exception if SDE not found
                     StateDimensionEstimation currentEstimatedStateDimension = se.getStateDimensionEstimation(asd);
                     if (logger.isDebugEnabled()) logger.debug("Current ESD: "+((currentEstimatedStateDimension==null)?"null":"cesd="+currentEstimatedStateDimension.toString()));
                     // create the Action container that will hold the evaluations of all offered Variants
                     ActionEvaluation thisActionEvaluation = new ActionEvaluation(thisAction);
+                    cbe.addActionEvaluation(thisActionEvaluation);
 
                     /* Evaluate ALL variants of this Action, not just the ones currently offered
                      * Selection will down-select to only the offered variants
@@ -208,7 +209,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
             }
             catch (TechSpecNotFoundException e) {
-                if (logger.isDebugEnabled()) logger.debug("Cannot find Action Tech Spec for "+ this.getClass().getName() );
+                if (logger.isErrorEnabled()) logger.error("Cannot find Action Tech Spec for "+ this.getClass().getName() );
             }
 
         }
@@ -219,6 +220,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
 
     private double aggregateCost(ActionCost actionCost, double memSize, double bandwidthSize) {
+        if (actionCost == null) return 0.0; // there is no cost component (often true of continuing costs)
         double memoryComponent = computeCostComponent(actionCost.getMemoryCost(), memSize, bandwidthSize);
         double bandwidthComponent = computeCostComponent(actionCost.getBandwidthCost(), memSize, bandwidthSize);
         double cpuComponent = computeCostComponent(actionCost.getCPUCost(), memSize, bandwidthSize);
@@ -227,17 +229,24 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
 
     private double computeCostComponent(ActionCost.Cost thisCost, double memSize, double bandwidthSize) {
+        if (logger.isDebugEnabled()) logger.debug("In computeCostComponent: "+((thisCost!=null)?thisCost.toString():"NULL")+":"+memSize+":"+bandwidthSize);
+        if (thisCost == null) return 0.0;  // no cost in this dimension
         double c = thisCost.getIntensity();
-        if (!(thisCost.isAgentSizeAFactor()) || thisCost.isMessageSizeAFactor()) return c;
+        if (!(thisCost.isAgentSizeAFactor()) || thisCost.isMessageSizeAFactor()) {
+            if (logger.isDebugEnabled()) logger.debug(thisCost+" yields: "+c);
+            return c;
+            }
         double outCost = 0.0;
         if (thisCost.isAgentSizeAFactor()) outCost = outCost + c * memSize;
         if (thisCost.isMessageSizeAFactor()) outCost = outCost + c * bandwidthSize;
+        if (logger.isDebugEnabled()) logger.debug(thisCost+" yields: "+outCost);
         return outCost;
     }
 
     private double computeStateBenefit(AssetState state, CostBenefitKnob knob) {
         if(logger.isDebugEnabled()) logger.debug(state+":"+knob);
-        return (knob.getCompletenessWeight()*state.getRelativeMauCompleteness() 
+        if (state == null) return 0.0; // no such state - should only be for Intermediate state
+        else return (knob.getCompletenessWeight()*state.getRelativeMauCompleteness() 
               + knob.getSecurityWeight()*state.getRelativeMauSecurity() 
               + knob.getTimelinessWeight()*1.0);  // FIX - need a way to determine MauTimeliness (the 1.0 factor in the preceeding)
     }
@@ -253,7 +262,8 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
         Vector startStateVector = asd.getPossibleStates();
         Iterator startStateIterator = startStateVector.iterator();
         while (startStateIterator.hasNext()) {
-            String startStateName = ((AssetState) startStateIterator.next()).getName();
+            AssetState startState = (AssetState) startStateIterator.next();
+            String startStateName = startState.getName();
             double startStateProb;
             double startStateBenefit;
             double intermediateStateBenefit;
@@ -263,29 +273,35 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
             ActionCost continuingCost;
             try {
                 startStateProb = currentStateDimensionEstimation.getProbability(startStateName);
-                AssetTransitionWithCost atwc = thisVariantDescription.getTransitionForState(startStateName);
-                startStateBenefit = computeStateBenefit(atwc.getStartValue(), knob);
-                intermediateStateBenefit = computeStateBenefit(atwc.getIntermediateValue(), knob);
-                endStateBenefit = computeStateBenefit(atwc.getEndValue(), knob);
-                transitionTime = atwc.getOneTimeCost().getTimeCost(); // assume for now that 1-time costs are all expressed in terms of time (and maybe other factors also)
-                oneTimeCost = atwc.getOneTimeCost();
-                continuingCost = atwc.getContinuingCost();
-                }
+                AssetTransitionWithCost atwc = thisVariantDescription.getTransitionForState(startState);
+                if (atwc != null) { // the TechSpecs define a transition by this Variant for this state
+                    if (logger.isDebugEnabled()) logger.debug("Found a transition for: "+startStateName+", "+atwc.toString());
+                    startStateBenefit = computeStateBenefit(startState, knob);
+                    intermediateStateBenefit = computeStateBenefit(atwc.getIntermediateValue(), knob);
+                    endStateBenefit = computeStateBenefit(atwc.getEndValue(), knob);
+                    transitionTime = (atwc.getOneTimeCost()!=null)?atwc.getOneTimeCost().getTimeCost():0L; // assume for now that 1-time costs are all expressed in terms of time (and maybe other factors also)
+                    oneTimeCost = atwc.getOneTimeCost();
+                    continuingCost = atwc.getContinuingCost();
+
+                    if (horizon >= transitionTime)  { // the normal case
+                        predictedBenefit = predictedBenefit + startStateProb*(transitionTime*intermediateStateBenefit + (horizon-transitionTime)*endStateBenefit - horizon*startStateBenefit);
+                        predictedCost = predictedCost + startStateProb*(transitionTime
+                                * aggregateCost(oneTimeCost, memorySize, bandwidthSize) + (horizon-transitionTime)*aggregateCost(continuingCost, memorySize, bandwidthSize));
+                        }
+                    else  { // transition takes longer than the planning horizon, so action transition will not complete
+                        predictedBenefit = predictedBenefit + startStateProb*(horizon*intermediateStateBenefit - horizon*startStateBenefit);
+                        predictedCost = predictedCost + startStateProb*(horizon*aggregateCost(oneTimeCost, memorySize, bandwidthSize));
+                        }
+                    if (logger.isDebugEnabled()) logger.debug("**** "+startStateName+":"+startStateProb+":"+horizon+":"+transitionTime+":"+predictedCost);
+                    maxTransitionTime = Math.max(maxTransitionTime, transitionTime);
+                    
+                    }
+               }
             catch (BelievabilityException e) {
                 // Should be impossible to get here if the ActionDescription is correctly populated
                 throw new RuntimeException("Could not find an AssetState that the ActionDescription said it had");
                 }
 
-            if (horizon >= transitionTime)  { // the normal case
-                predictedBenefit = predictedBenefit + startStateProb*(transitionTime*intermediateStateBenefit + (horizon-transitionTime)*endStateBenefit - horizon*startStateBenefit);
-                predictedCost = predictedCost + startStateProb*(transitionTime
-                        * aggregateCost(oneTimeCost, memorySize, bandwidthSize) + (horizon-transitionTime)*aggregateCost(continuingCost, memorySize, bandwidthSize));
-            }
-            else  { // transition takes longer than the planning horizon, so action transition will not complete
-                predictedBenefit = predictedBenefit + startStateProb*(horizon*intermediateStateBenefit - horizon*startStateBenefit);
-                predictedCost = predictedCost + startStateProb*(horizon*aggregateCost(oneTimeCost, memorySize, bandwidthSize));
-            }
-            maxTransitionTime = Math.max(maxTransitionTime, transitionTime);
         }
 
         return new VariantEvaluation(thisVariantDescription, predictedCost, predictedBenefit, maxTransitionTime);

@@ -74,7 +74,6 @@ public class CostBenefitEvaluation implements NotPersistable {
         }
         return result;
     }
-    
 
 
     public final static UnaryPredicate pred = new UnaryPredicate() {

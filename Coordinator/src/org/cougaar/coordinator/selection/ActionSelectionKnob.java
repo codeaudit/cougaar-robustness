@@ -35,6 +35,7 @@ import org.cougaar.util.UnaryPredicate;
 public class ActionSelectionKnob {
 
     private int maxActions = 10;
+    private double patienceFactor = 1.5; // how much extra time to give an Action to complete before giving up
 
 
     /** Creates a new instance of DefenseSelectionKnob */
@@ -44,6 +45,9 @@ public class ActionSelectionKnob {
 
     public void setMaxActions(int n) { maxActions = n; }
     public int getMaxActions() { return maxActions; }
+
+    public void setPatienceFactor(double pf) { patienceFactor = pf; }
+    public double getPatienceFactor() { return patienceFactor; }
 
 
     public static UnaryPredicate pred = new UnaryPredicate() {

@@ -8,6 +8,7 @@
         <Transition WhenActualStateIs="*" EndStateWillBe="LIVE" IntermediateStateWillBe="DEAD" >
             <OneTimeCost>
                 <CPU intensity="HIGH" agentSizeFactor="TRUE" />
+                <Time duration="60000" />
             </OneTimeCost>
             <ContinuingCost>
                 <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
@@ -20,6 +21,7 @@
         <Transition WhenActualStateIs="*" EndStateWillBe="LIVE" IntermediateStateWillBe="DEAD" >
             <OneTimeCost>
                 <Bandwidth intensity="MEDIUM" agentSizeFactor="TRUE" />
+                <Time duration="120000" />
                 <CPU intensity="HIGH" agentSizeFactor="TRUE" />
             </OneTimeCost>
         </Transition>
@@ -31,7 +33,7 @@
             <OneTimeCost>
                 <Bandwidth intensity="MEDIUM" agentSizeFactor="TRUE" />
                 <CPU intensity="HIGH" agentSizeFactor="TRUE" />
-                <Time duration="120" />
+                <Time duration="6000000" />
             </OneTimeCost>
         </Transition>
     </Action>

@@ -29,9 +29,11 @@ import org.cougaar.core.persist.NotPersistable;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.costBenefit.ActionEvaluation;
+import org.cougaar.coordinator.costBenefit.VariantEvaluation;
 
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Iterator;
 
 /**
  *
@@ -40,20 +42,16 @@ import java.util.HashSet;
 public class SelectedAction implements NotPersistable {
     /** Base class for SelectedAction(s) with varius kinds of preconditions */
     
-    private AssetID assetID;
     private ActionEvaluation actionEval;
     private Set actionVariants;
+    private long patience;
     private Precondition precondition;
     
-    public SelectedAction(AssetID assetID, ActionEvaluation actionEval, Set actionVariants) {
-        this.assetID = assetID;
+    public SelectedAction(ActionEvaluation actionEval, Set actionVariants, long patience) {
         this.actionEval = actionEval;
         this.actionVariants = actionVariants;
+        this.patience = patience;
         this.precondition = null;
-    }
-
-    public AssetID getAssetID() {
-        return assetID;
     }
 
     public ActionEvaluation getActionEvaluation() {
@@ -63,6 +61,22 @@ public class SelectedAction implements NotPersistable {
     public Set getActionVariants() {
         return actionVariants;
     }
+
+    public long getPatience () {
+        return patience;
+    }
+
+    public String toString() {
+        String buff = "";
+        buff = buff + actionEval.toString() + "\n";
+        Iterator iter = actionVariants.iterator();
+        while (iter.hasNext()) {
+            buff = buff + ((VariantEvaluation)iter.next()).toString() + "\n";
+            }
+        buff = buff + patience + "\n";
+        return buff;
+    }
+
     
     public static UnaryPredicate pred = new UnaryPredicate() {
         public boolean execute(Object o) {

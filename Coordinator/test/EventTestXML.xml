@@ -4,7 +4,7 @@
 
 <!DOCTYPE Event [
 
-<!ELEMENT Event (DirectEffect, TransitiveEffect?) >
+<!ELEMENT Event (DirectEffect, TransitiveEffect) >
 
 <!ELEMENT DirectEffect (Transition+) >
 
@@ -37,7 +37,7 @@
 ]>
 
 <Events>
-<Event name="HostDeath" affectsAssetType="Host" affectsStateDimension="Liveness">
+<Event name="HostDeath" affectsAssetType="Host" affectsStateDimension="LIVENESS">
     <DirectEffect>
         <Transition WhenActualStateIs="*" EndStateWillBe="DEAD" />
     </DirectEffect>
@@ -49,23 +49,24 @@
         </VulnerableAssets>
     </TransitiveEffect> 
 </Event>
-<Event name="HostDeath2" affectsAssetType="Host" affectsStateDimension="Liveness">
+<Event name="NodeDeath" affectsAssetType="Node" affectsStateDimension="LIVENESS">
     <DirectEffect>
-        <Transition WhenActualStateIs="Eating" EndStateWillBe="DEAD" />
-        <Transition WhenActualStateIs="Sleeping" EndStateWillBe="DEAD" />
+        <Transition WhenActualStateIs="LIVE" EndStateWillBe="DEAD" />
+        <Transition WhenActualStateIs="DEAD" EndStateWillBe="DEAD" />
     </DirectEffect>
     <TransitiveEffect>
-        <CausesEvent name="NodeDeath" assetType="Node"/>
+        <CausesEvent name="AgentDeath" assetType="Agent"/>
         <VulnerableAssets>
-            <ContainmentFilter eventAssetContainerName="Node" />
+            <ContainmentFilter eventAssetContainerName="Agent" />
             <EventLikelihood probability="ALWAYS" />
         </VulnerableAssets>
     </TransitiveEffect> 
 </Event>
-<Event name="HostDeath3-noTransEffects" affectsAssetType="Host" affectsStateDimension="Liveness">
+<Event name="AgentDeath" affectsAssetType="Agent" affectsStateDimension="LIVENESS">
     <DirectEffect>
-        <Transition WhenActualStateIs="Eating" EndStateWillBe="DEAD" />
-        <Transition WhenActualStateIs="Sleeping" EndStateWillBe="DEAD" />
+        <Transition WhenActualStateIs="LIVE" EndStateWillBe="DEAD" />
+        <Transition WhenActualStateIs="DEAD" EndStateWillBe="DEAD" />
     </DirectEffect>
 </Event>
+
 </Events>

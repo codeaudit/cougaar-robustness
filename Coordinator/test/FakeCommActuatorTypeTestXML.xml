@@ -5,7 +5,10 @@
 <ActuatorType name="org.cougaar.coordinator.test.defense.FakeCommDefense" affectsAssetType="Agent" affectsStateDimension="Communication" >
     <Action name="TryHard">
         <Description value="Tries Real Hard" />
-        <Transition WhenActualStateIs="*" EndStateWillBe="Communicating" IntermediateStateWillBe="Communicating" >
+        <Transition WhenActualStateIs="*" EndStateWillBe="GOOD" IntermediateStateWillBe="GOOD" >
+            <OneTimeCost>
+                <Time duration="100" />
+            </OneTimeCost>
             <ContinuingCost>
                 <Bandwidth intensity="MEDIUM" msgSizeFactor="TRUE" />
             </ContinuingCost>
@@ -14,15 +17,38 @@
     
     <Action name="Normal">
         <Description value="Tries Normal Communications" />
-        <Transition WhenActualStateIs="Degraded" EndStateWillBe="NotCommunicating" IntermediateStateWillBe="Degraded" >
+        <Transition WhenActualStateIs="NOT_COMMUNICATING" EndStateWillBe="NOT_COMMUNICATING" IntermediateStateWillBe="NOT_COMMUNICATING" >
+            <OneTimeCost>
+                <Time duration="100" />
+            </OneTimeCost>
             <ContinuingCost>
                 <Bandwidth intensity="LOW" agentSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
-        <Transition WhenActualStateIs="Communicating" EndStateWillBe="Communicating" IntermediateStateWillBe="Communicating" >
+        <Transition WhenActualStateIs="DEGRADED" EndStateWillBe="DEGRADED" IntermediateStateWillBe="DEGRADED" >
+            <OneTimeCost>
+                <Time duration="100" />
+            </OneTimeCost>
             <ContinuingCost>
                 <Bandwidth intensity="LOW" agentSizeFactor="TRUE" />
             </ContinuingCost>
+        </Transition>
+        <Transition WhenActualStateIs="GOOD" EndStateWillBe="GOOD" IntermediateStateWillBe="GOOD" >
+            <OneTimeCost>
+                <Time duration="100" />
+            </OneTimeCost>
+            <ContinuingCost>
+                <Bandwidth intensity="LOW" agentSizeFactor="TRUE" />
+            </ContinuingCost>
+        </Transition>
+    </Action>
+
+    <Action name="Disable">
+        <Description value="Suspsneds all communications attempts" />
+        <Transition WhenActualStateIs="*" EndStateWillBe="NOT_COMMUNICATING" IntermediateStateWillBe="NOT_COMMUNICATING" >
+            <OneTimeCost>
+                <Time duration="100" />
+            </OneTimeCost>
         </Transition>
     </Action>
 

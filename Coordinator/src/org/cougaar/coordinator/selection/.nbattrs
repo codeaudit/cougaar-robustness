@@ -3,9 +3,6 @@
    <fileobject name="SelectedAction.java">
       <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="SelectedAction"/>
    </fileobject>
-   <fileobject name="ActionPatience.java">
-      <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="ActionPatience"/>
-   </fileobject>
    <fileobject name="ActionSelectionPlugin.java">
       <attr name="class_dependency_org.cougaar.coordinator.DeconflictionPluginBase" stringvalue="ActionSelectionPlugin"/>
    </fileobject>

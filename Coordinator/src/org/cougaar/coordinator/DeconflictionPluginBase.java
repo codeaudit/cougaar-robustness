@@ -126,13 +126,11 @@ public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
   }
 
   protected void setupSubscriptions() {
-    //openTransaction();
     actionIndexSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( ActionIndex.pred);
     diagnosisIndexSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( DiagnosisIndex.pred);;
     stateEstimationIndexSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( StateEstimationIndex.pred);
     costBenefitEvaluationIndexSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( CostBenefitEvaluationIndex.pred);
-    if (logger.isDebugEnabled()) logger.debug("Subscribed to Indices");
-    //closeTransaction();
+    //if (logger.isDebugEnabled()) logger.debug("Subscribed to Indices");
   }
 
 
@@ -201,7 +199,7 @@ public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
     protected DiagnosesWrapper indexDiagnosis(DiagnosesWrapper dw, IndexKey key) {
         DiagnosisIndex index = getDiagnosisIndex();
         if (index == null) return null;
-        if (logger.isDebugEnabled()) logger.debug("Indexed: " + dw);
+        //if (logger.isDebugEnabled()) logger.debug("Indexed: " + dw);
         return index.indexDiagnosis(dw, key);
     }
     
@@ -221,11 +219,11 @@ public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
         Collection c = diagnosisIndexSubscription.getCollection(); // blackboard.query(DiagnosisIndex.pred);
         Iterator iter = c.iterator();
         if (iter.hasNext()) {
-           if (logger.isDebugEnabled()) logger.debug("Found Diagnosis Index");
+           //if (logger.isDebugEnabled()) logger.debug("Found Diagnosis Index");
            return (DiagnosisIndex)iter.next();
            }
         else {
-           if (logger.isDebugEnabled()) logger.debug("No Diagnosis Index");
+           //if (logger.isDebugEnabled()) logger.debug("No Diagnosis Index");
            return null;
            }
     }    
@@ -236,7 +234,7 @@ public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
     protected ActionsWrapper indexAction(ActionsWrapper aw, IndexKey key) {
         ActionIndex index = getActionIndex();
         if (index == null) return null;
-        if (logger.isDebugEnabled()) logger.debug("Indexed: " + aw);
+        //if (logger.isDebugEnabled()) logger.debug("Indexed: " + aw);
         return index.indexAction(aw, key);
     }
 
@@ -249,22 +247,21 @@ public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
     protected Collection findActionCollection(AssetID assetID) {
         ActionIndex index = getActionIndex();
         if (index == null) return null;
-        if (logger.isDebugEnabled()) logger.debug("Found the ActionIndex while searching"+index.toString());
+        //if (logger.isDebugEnabled()) logger.debug("Found the ActionIndex while searching"+index.toString());
         Collection c = index.findActionCollection(assetID);
-        if (logger.isDebugEnabled()) logger.debug((c==null)?"null":new Integer(c.size()).toString());
+        //if (logger.isDebugEnabled()) logger.debug((c==null)?"null":new Integer(c.size()).toString());
         return c;
     }
 
     private ActionIndex getActionIndex() {
         Collection c = actionIndexSubscription.getCollection(); // blackboard.query(ActionIndex.pred);
-        //System.out.println(c.size());
         Iterator iter = c.iterator();
         if (iter.hasNext()) {
-           if (logger.isDebugEnabled()) logger.debug("Found Action Index");
+           //if (logger.isDebugEnabled()) logger.debug("Found Action Index");
            return (ActionIndex)iter.next();
            }
         else {
-           if (logger.isDebugEnabled()) logger.debug("No Action Index");
+           //if (logger.isDebugEnabled()) logger.debug("No Action Index");
            return null;
            }
     } 
@@ -288,7 +285,7 @@ public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
         Collection c = costBenefitEvaluationIndexSubscription.getCollection(); // blackboard.query(CostBenefitEvaluationIndex.pred);
         Iterator iter = c.iterator();
         if (iter.hasNext()) {
-           if (logger.isDebugEnabled()) logger.debug("Found CBE Index");
+           //if (logger.isDebugEnabled()) logger.debug("Found CBE Index");
            return (CostBenefitEvaluationIndex)iter.next();
            }
         else {

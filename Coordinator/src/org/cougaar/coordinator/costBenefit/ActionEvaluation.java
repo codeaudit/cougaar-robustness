@@ -23,7 +23,7 @@ public class ActionEvaluation {
 
     private Action action;
     private Hashtable variantEvals;
-    private double selectionScore = -100000000.0;
+//    private double selectionScore = -100000000.0;
     private VariantEvaluation bestAvailableVariant = null;
 
     /** Creates new ActionEvaluation */
@@ -47,11 +47,10 @@ public class ActionEvaluation {
         return variantEvals;
     }
 
-    public void setSelectionScore(double score) { selectionScore = score; }
-    public double getSelectionScore() { return selectionScore; }
-/*
-    public void setBestAvailableVariant(VariantEvaluation ve) { bestAvailableVariant = ve; }
-    public VariantEvaluation getBestAvailableVariant() { return bestAvailableVariant; }
-*/
-    public String actionType() { return "Corrective"; }  // FIX - needs a new slot in the ATSI
+//    public void setSelectionScore(double score) { selectionScore = score; }
+//    public double getSelectionScore() { return selectionScore; }
+
+    public String toString() {
+        return variantEvals.toString();
+    }
 }

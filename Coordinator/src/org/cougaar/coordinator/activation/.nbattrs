@@ -10,4 +10,7 @@
       <attr name="class_dependency_org.cougaar.coordinator.DeconflictionPluginBase" stringvalue="ActionEnablingPlugin"/>
       <attr name="class_dependency_org.cougaar.core.agent.service.alarm.Alarm" stringvalue="ActionEnablingPlugin.DelayedActionAlarm"/>
    </fileobject>
+   <fileobject name="ActionPatience.java">
+      <attr name="class_dependency_org.cougaar.core.persist.NotPersistable" stringvalue="ActionPatience"/>
+   </fileobject>
 </attributes>

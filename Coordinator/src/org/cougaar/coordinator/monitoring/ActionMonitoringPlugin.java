@@ -28,12 +28,15 @@ package org.cougaar.coordinator.monitoring;
 import org.cougaar.coordinator.DeconflictionPluginBase;
 
 import org.cougaar.coordinator.techspec.AssetID;
-import org.cougaar.coordinator.selection.ActionPatience;
 import org.cougaar.coordinator.Action;
+import org.cougaar.coordinator.Diagnosis;
+import org.cougaar.coordinator.DiagnosesWrapper;
+import org.cougaar.coordinator.activation.ActionPatience;
 
 import java.util.Iterator;
 import java.util.Collection;
 import java.util.Hashtable;
+import java.util.HashSet;
 
 
 import org.cougaar.core.persist.NotPersistable;
@@ -52,7 +55,7 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
     
     
     private IncrementalSubscription monitoredActionSubscription;
-    private IncrementalSubscription diagnosisSubscription;
+    private IncrementalSubscription diagnosesWrapperSubscription;
     private IncrementalSubscription pluginControlSubscription;
     
     private Hashtable monitoredActions;
@@ -81,6 +84,7 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
           iter.hasNext() ; ) 
         {
             ActionPatience ap = (ActionPatience)iter.next();
+            findDesiredOutcomes(ap);
             startTimerIfNone(ap); 
         }
 
@@ -106,44 +110,44 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
         }
 */
     }
+
+    /* 
+     *  publishes DesiredOutcome objects to the BB for each indicator that the Action worked
+     */
+    private void findDesiredOutcomes(ActionPatience ap) {
+        // find the AssetStateDimension this Action works in
+        // find the desired end state for this Action (in the future there may be more than one)
+        // emit a DesiredOutcome object for this end state
+        return;
+    }
+        
     
 
     protected void setupSubscriptions() {
 
         monitoredActionSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( ActionPatience.pred);
 
-/*        diagnosisSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
+        diagnosesWrapperSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
             public boolean execute(Object o) {
-                if ( o instanceof DefenseApplicabilityCondition) {
+                if ( o instanceof DiagnosesWrapper) {
                     return true ;
                 }
                 return false ;
             }
         }) ;
-*/
 
-        /*
-        //Not used at this time - Will be used to provide out-of-band control of this plugin
-        pluginControlSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
-            public boolean execute(Object o) {
-                if ( o instanceof DefenseMonitoringKnob) {
-                    return true ;
-                }
-                return false ;
-            }
-        }) ;
-        */
+
         super.setupSubscriptions();
         
     }
 
     private void startTimerIfNone(ActionPatience ap) {
-        ActionTimeoutAlarm alarm = (ActionTimeoutAlarm) monitoredActions.get(ap.getAssetID());
+        ActionTimeoutAlarm alarm = (ActionTimeoutAlarm) monitoredActions.get(ap.getAction());
         if (alarm != null) {
             alarm.cancel(); //changed our minds - no longer want this timeout, may want a different one
         }
         alarm = new ActionTimeoutAlarm(ap);
-        monitoredActions.put(ap.getAssetID(), alarm);
+        monitoredActions.put(ap.getAction(), alarm);
         getAlarmService().addRealTimeAlarm(alarm);            
         }
 
@@ -157,10 +161,9 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
         
         public ActionTimeoutAlarm (ActionPatience ap) {
             detonate = ap.getDuration() + System.currentTimeMillis();
-            this.assetID = ap.getAssetID();
             this.action = ap.getAction();
             //this.uid = ap.getUID();
-            if (logger.isDebugEnabled()) logger.debug("ActionTimeoutAlarm created : " + detonate + " " + assetID);
+            if (logger.isDebugEnabled()) logger.debug("ActionTimeoutAlarm created : " + detonate + " " + action);
         }
         
         public long getExpirationTime () {
