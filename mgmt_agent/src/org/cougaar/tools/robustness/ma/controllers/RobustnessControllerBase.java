@@ -64,6 +64,10 @@ public abstract class RobustnessControllerBase
   protected static final long HEARTBEAT_TIMEOUT = 2 * 60 * 1000;
   protected static final long HEARTBEAT_PCT_OUT_OF_SPEC = 50;
 
+  public static final String deconflictionProperty = "org.cougaar.tools.robustness.restart.deconfliction";
+  public static final String defaultEnabled = "ENABLED";
+
+
   /**
    * Inner class used to maintain info about registered state controller.
    */
@@ -239,6 +243,8 @@ public abstract class RobustnessControllerBase
     }
   }
 
+  private static final String ROBUSTNESS_MANAGER = "RobustnessManager";
+
   /**
    * Default handler for changes in health monitor leader.
    * @param csce  Change event
@@ -246,18 +252,17 @@ public abstract class RobustnessControllerBase
    */
   protected void processLeaderChanges(CommunityStatusChangeEvent csce,
                                       CommunityStatusModel csm) {
-    String manager = null; //the robustness manager
-    try{
-      manager = (String) (csm.getCommunityAttributes().get("RobustnessManager").
-                      get());
-    }catch(NamingException e){manager = null;}
+    String manager = csm.getStringAttribute(ROBUSTNESS_MANAGER); //the robustness manager
     //the robustness manager invokes DeconflictHelper object and add necessary deconflict
     //listener.
-    if(manager.equals(thisAgent) && deconflictHelper == null) {
-      deconflictHelper = new DeconflictHelper(bindingSite, model);
-      if(dl != null)
-        deconflictHelper.addListener(dl);
-      logger.info("==========deconflictHelper applies to " + thisAgent);
+    if(thisAgent.equals(manager) && deconflictHelper == null) {
+      String enable = System.getProperty(deconflictionProperty, defaultEnabled);
+      if(enable.equals(defaultEnabled)) {
+        deconflictHelper = new DeconflictHelper(bindingSite, model);
+        if (dl != null)
+          deconflictHelper.addListener(dl);
+        logger.info("==========deconflictHelper applies to " + thisAgent);
+      }
     }
 
     leaderChange(csce.getPriorLeader(), csce.getCurrentLeader());
