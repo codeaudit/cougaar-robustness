@@ -17,7 +17,7 @@ Cougaar::ExperimentMonitor.enable_logging
 
 Cougaar.new_experiment("ARUC1_Complete").run(1) {
 
-  do_action "LoadSocietyFromScript", "#{CIP}/csmart/config/societies/ad/SMALL-1AD-TRANS-1359.rb"
+  do_action "LoadSocietyFromScript", "#{CIP}/csmart/config/societies/ad/SMALL-1AD-TC20.rb"
   do_action "LayoutSociety", "#{CIP}/operator/uc1-small-1ad-layout.xml", HOSTS_FILE
 
   do_action "TransformSociety", false,

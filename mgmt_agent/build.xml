@@ -9,26 +9,8 @@
   <!-- set global properties for this build -->
   <property environment="env"/>
   <property name="cougaar" value="${env.COUGAAR_INSTALL_PATH}"/>
-  <property name="robustness" value="${cougaar}/robustness"/>
   <property name="workspace" value="${env.COUGAAR_INSTALL_PATH}/workspace"/>
-  <property name="host" value="${env.HOST}"/>
-  <!-- <property name="host" value="localhost"/> -->
-  <property name="port" value="8800"/>
-  <property name="node" value="EmptyNode"/>
-  <property name="experiment" value=""/>
-  <property name="nshost" value="${host}" />
-  <property name="nsport" value="8888:5555" />
-  <property name="nameserver" value="${nshost}:${nsport}" />
-  <property name="controlport" value="8484" />
-  <property name="agent" value="Manager"/>
-  <property name="persistenceEnabled" value="false"/>
-  <property name="persistenceInterval" value="30000"/>
   <property name="packageDir" value="org/cougaar/tools/robustness"/>
-  <property name="file" value="communities.xml" />
-  <property name="assembly" value="COMM-DEFAULT_CONFIG" />
-  <property name="cache" value="on" />
-  <property name="cachemode" value="LAZY" />
-  <property name="dbserver" value="${host}"/>
 
   <!-- for JavaDoc -->
   <property name="packageNames" value="org.cougaar.tools.robustness.ma,
@@ -49,7 +31,7 @@
     <mkdir dir="${classes}"/>
   </target>
 
-  <target name="build" description="Compiles all source and build JAR file"
+  <target name="build" description="Compile all source and build jar file"
           depends="init, compile, jar">
   </target>
 
@@ -124,7 +106,7 @@
     <copy todir="${cougaar}/csmart/config/scripts/robustness/uc4">
       <fileset dir="csmart/config/scripts/robustness/uc4" />
     </copy>
-    <copy file="configs/mic-local/uc1-small-1ad-layout.xml" toDir="${cougaar}/operator"/>
+    <copy file="configs/mic-local/uc1-small-1ad-layout.xml" toDir="${cougaar}/operator/"/>
     <copy file="configs/mic-local/ron1-hosts.xml" toDir="${cougaar}/operator"/>
     <copy file="configs/mic-local/ron2-hosts.xml" toDir="${cougaar}/operator"/>
     <copy file="configs/mic-local/qing-hosts.xml" toDir="${cougaar}/operator"/>

@@ -1,33 +1,55 @@
-#!/bin/tcsh -f
+#!/bin/sh
 
-set COUGAAR_VERS="B10_4"
-set UL_VERS="HEAD_B10_4"
+COUGAAR_VERS="HEAD"
 
-#set cougaar_packages="cougaar.zip cougaar-support.zip cougaar-src.zip cougaar-api.zip"
-set cougaar_packages="cougaar.zip cougaar-support.zip"
+COUGAAR_PACKAGES="cougaar.zip cougaar-support.zip cougaar-src.zip cougaar-api.zip"
+#COUGAAR_PACKAGES="cougaar.zip cougaar-support.zip"
 
-set ultralog_packages="AL_bbn_$UL_VERS.zip AR_bbn_$UL_VERS AR_common_$UL_VERS.zip AR_objs_common_$UL_VERS.zip AR_objs_msglog_$UL_VERS.zip AR_objs_disconnection_$UL_VERS.zip AR_objs_deconfliction_$UL_VERS.zip AR_objs_sensors_$UL_VERS.zip AR_boeing_exnihilo_$UL_VERS.zip AR_mic_$UL_VERS.zip bbn_commons_$UL_VERS.zip BBN_ulconfigs_$UL_VERS.zip isat_plugins_$UL_VERS.zip isat_acme_$UL_VERS.zip isat_oplan_$UL_VERS.zip AS_csi_secserv_$UL_VERS.zip AS_csi_overlay_$UL_VERS.zip SRI_cnc_$UL_VERS.zip SRI_auto_$UL_VERS.zip"
+UL_PACKAGES="AL_bbn_HEAD_HEAD.zip \
+AR_bbn_HEAD_HEAD.zip \
+AR_common_HEAD_HEAD.zip \
+AR_objs_common_HEAD_HEAD.zip \
+AR_objs_msglog_HEAD_HEAD.zip \
+AR_objs_disconnection_HEAD_HEAD.zip \
+AR_objs_deconfliction_B11_0_B11_0.zip \
+AR_objs_sensors_HEAD_HEAD.zip \
+AR_boeing_exnihilo_HEAD_HEAD.zip \
+AR_mic_HEAD_HEAD.zip \
+bbn_commons_HEAD_B11_0.zip \
+BBN_ulconfigs_HEAD_B11_0.zip \
+isat_plugins_HEAD_B11_0.zip \
+isat_acme_HEAD_B11_0.zip \
+isat_oplan_HEAD_B11_0.zip \
+AS_csi_secserv_HEAD_HEAD.zip \
+AS_csi_overlay_HEAD_HEAD.zip \
+SRI_cnc_HEAD_B11_0.zip \
+SRI_auto_HEAD_B11_0.zip"
 
-if (!(-d $1)) then
-  mkdir $1
-endif
+FCSUA_PACKAGES="fcsua_HEAD.zip"
+
+mkdir -p $1
+mkdir -p $1/zips
 chgrp asmt $1
 chmod +s $1
 cd $1
 
-if (!(-d zips)) then
-  mkdir zips
-endif
+#for package in $COUGAAR_PACKAGES
+#do
+  #wget http://www.alpine.bbn.com/~mthome/autobuild/$COUGAAR_VERS/latest_success/$package --output-document=zips/$package
+  #unzip -o zips/$package > /dev/null
+#done
 
-foreach package ($cougaar_packages)
-  wget http://www.alpine.bbn.com/~mthome/autobuild/$COUGAAR_VERS/latest_success/$package --output-document=zips/$package
-  unzip -o zips/$package > /dev/null
-end
+#for package in $UL_PACKAGES
+#do
+  #wget https://cvs.ultralog.net/dist/$package --http-user=TICCVS --http-passwd=T1CCVS --output-document=zips/$package
+  #unzip -o zips/$package > /dev/null
+#done
 
-foreach package ($ultralog_packages)
-  wget https://cvs.ultralog.net/dist/$package --http-user=TICCVS --http-passwd=T1CCVS --output-document=zips/$package
+for package in $FCSUA_PACKAGES
+do
+  wget http://www.alpine.bbn.com/~ahelsing/autobuild/HEAD/latest_success/$package --output-document=zips/$package
   unzip -o zips/$package > /dev/null
-end
+done
 
 cd csmart/config/societies/ad
 unzip -o 1ad-configs.zip > /dev/null
