@@ -68,8 +68,8 @@ public class AgentIDCallback implements Callback {
 		CbTblEntry cbte = (CbTblEntry)ht.get(name);
 		cbte.pending = false;
 		cbte.result = entry.getURI();
-	      if (log.isDebugEnabled())
-	        log.debug(""+cbte);
+	        if (log.isDebugEnabled())
+	          log.debug(""+cbte);
 	    } 
 	}
     }

@@ -316,113 +316,126 @@ public class AgentID implements java.io.Serializable
 */
       //104B all new code until end synchronized
       //104B converted WP access to callbacks 
-      synchronized (cbLock) {
+//    synchronized (cbLock) {
 
-        CbTblEntry node_cbte = null;
-        CbTblEntry inc_cbte = null;
+      CbTblEntry node_cbte = null;
+      CbTblEntry inc_cbte = null;
 
-        // get node
+      // get node
 
-        // if local agent, get node from registry instead of WP
-        if (registry.isLocalClient(agent)) {
+      // if local agent, get node from registry instead of WP
+      if (registry.isLocalClient(agent)) {
           node = registry.getIdentifier();
 
-        } else {
+      } else {
 
-          // get the callback table entry for this agent's node
-          node_cbte = (CbTblEntry)nodeCbTbl.get(agentName);
+	  synchronized (cbLock) {
 
-          // if none, create one (first lookup)
-          if (node_cbte == null) {
-            node_cbte = new CbTblEntry();
-            nodeCbTbl.put(agentName,node_cbte);
-          }
+	      // get the callback table entry for this agent's node
+	      node_cbte = (CbTblEntry)nodeCbTbl.get(agentName);
 
-          if (log.isDebugEnabled())
-            log.debug("node_cbte="+node_cbte+",nodeCbTbl="+nodeCbTbl);
+	      // if none, create one (first lookup)
+	      if (node_cbte == null) {
+		  node_cbte = new CbTblEntry();
+		  nodeCbTbl.put(agentName,node_cbte);
+	      }
+
+	      if (log.isDebugEnabled())
+		  log.debug("node_cbte="+node_cbte+",nodeCbTbl="+nodeCbTbl);
+	  }
  
           // check the cache first
           if (log.isDebugEnabled())
-            log.debug("Calling wp.get("+agentName+","+TOPOLOGY+",-1)");
+	      log.debug("Calling wp.get("+agentName+","+TOPOLOGY+",-1)");
           AddressEntry ae = wp.get(agentName, TOPOLOGY, -1); 
           if (log.isDebugEnabled())
-            log.debug("ae="+ae);
+	      log.debug("ae="+ae);
           if ((ae != null) && (ae.getURI() != null)) { //cache hit
-            node = ae.getURI().getPath().substring(1);
-            if (log.isDebugEnabled())
-              log.debug("found node="+node);
-
-          // else, check the callback
-          } else if (node_cbte.result != null) {
-            node = node_cbte.result.getPath().substring(1);
-            if (log.isDebugEnabled())
-              log.debug("found node="+node);
-
-          // else, start a callback
-          } else if (!node_cbte.pending) {
-            node_cbte.pending = true;
-            if (log.isDebugEnabled())
-              log.debug("cbLock="+cbLock+",nodeCbTbl="+nodeCbTbl);
-            AgentIDCallback nodeCb = AgentIDCallback.getAgentIDCallback(cbLock, nodeCbTbl);
-            if (log.isDebugEnabled())
-              log.debug("Calling wp.get("+agentName+","+TOPOLOGY+","+nodeCb+")");
-            wp.get(agentName, TOPOLOGY, nodeCb);
-       
-          // else, callback is pending, so do nothing
-          } 
-        }
+	      node = ae.getURI().getPath().substring(1);
+	      if (log.isDebugEnabled())
+		  log.debug("found node="+node);
+	      
+	      // else, check the callback
+          } else {
+	      synchronized (cbLock) {
+		  if (node_cbte.result != null) {
+		      node = node_cbte.result.getPath().substring(1);
+		      if (log.isDebugEnabled())
+			  log.debug("found node="+node);
+		      
+		      // else, start a callback
+		  } else if (!node_cbte.pending) {
+		      node_cbte.pending = true;
+		      if (log.isDebugEnabled())
+			  log.debug("cbLock="+cbLock+",nodeCbTbl="+nodeCbTbl);
+		      AgentIDCallback nodeCb = AgentIDCallback.getAgentIDCallback(cbLock, nodeCbTbl);
+		      if (log.isDebugEnabled())
+			  log.debug("Calling wp.get("+agentName+","+TOPOLOGY+","+nodeCb+")");
+		      wp.get(agentName, TOPOLOGY, nodeCb);
+	         
+		      // else, callback is pending, so do nothing
+		  }
+	      }
+	  }
+      }
       
-        // get incarnation
+      // get incarnation
 
-        // get the callback table entry for this agent's incarnation
-        inc_cbte = (CbTblEntry)incCbTbl.get(agentName);
+      synchronized (cbLock) {
+	  // get the callback table entry for this agent's incarnation
+	  inc_cbte = (CbTblEntry)incCbTbl.get(agentName);
+	  
+	  // if none, create one (first lookup)
+	  if (inc_cbte == null) {
+	      inc_cbte = new CbTblEntry();
+	      incCbTbl.put(agentName,inc_cbte);
+	  }
+	  
+	  if (log.isDebugEnabled())
+	      log.debug("inc_cbte="+inc_cbte+",incCbTbl="+incCbTbl);
+      }
 
-        // if none, create one (first lookup)
-        if (inc_cbte == null) {
-          inc_cbte = new CbTblEntry();
-          incCbTbl.put(agentName,inc_cbte);
-        }
-
-        if (log.isDebugEnabled())
-          log.debug("inc_cbte="+inc_cbte+",incCbTbl="+incCbTbl);
-
-        // check the cache first
-        if (log.isDebugEnabled())
+      // check the cache first
+      if (log.isDebugEnabled())
           log.debug("Calling wp.get("+agentName+","+VERSION+",-1)");
-        AddressEntry ae = wp.get(agentName, VERSION, -1); 
-        if (log.isDebugEnabled())
+      AddressEntry ae = wp.get(agentName, VERSION, -1); 
+      if (log.isDebugEnabled())
           log.debug("ae="+ae);
-        if ((ae != null) && (ae.getURI() != null)) {
+      if ((ae != null) && (ae.getURI() != null)) {
           String path = ae.getURI().getPath();
           int i = path.indexOf('/', 1);
           incarnation = path.substring(1,i);
           if (log.isDebugEnabled())
-            log.debug("found incarnation="+incarnation);
+	      log.debug("found incarnation="+incarnation);
 
-        // else, check the callback
-        } else if (inc_cbte.result != null) {
-          String path = inc_cbte.result.getPath();
-          int i = path.indexOf('/', 1);
-          incarnation = path.substring(1,i);
-          if (log.isDebugEnabled())
-            log.debug("found incarnation="+incarnation);
+	  // else, check the callback
+      } else {
+	  synchronized (cbLock) {
+	      if (inc_cbte.result != null) {
+		  String path = inc_cbte.result.getPath();
+		  int i = path.indexOf('/', 1);
+		  incarnation = path.substring(1,i);
+		  if (log.isDebugEnabled())
+		      log.debug("found incarnation="+incarnation);
 
-        // else, start a callback
-        } else if (!inc_cbte.pending) {
-          inc_cbte.pending = true;
-          if (log.isDebugEnabled())
-            log.debug("cbLock="+cbLock+",incCbTbl="+incCbTbl);
-          AgentIDCallback incCb = AgentIDCallback.getAgentIDCallback(cbLock, incCbTbl);
-          if (log.isDebugEnabled())
-            log.debug("Calling wp.get("+agentName+","+VERSION+","+incCb+")");
-          wp.get(agentName, VERSION, incCb);
-       
-        // else, callback is pending, so do nothing
-        } 
+		  // else, start a callback
+	      } else if (!inc_cbte.pending) {
+		  inc_cbte.pending = true;
+		  if (log.isDebugEnabled())
+		      log.debug("cbLock="+cbLock+",incCbTbl="+incCbTbl);
+		  AgentIDCallback incCb = AgentIDCallback.getAgentIDCallback(cbLock, incCbTbl);
+		  if (log.isDebugEnabled())
+		      log.debug("Calling wp.get("+agentName+","+VERSION+","+incCb+")");
+		  wp.get(agentName, VERSION, incCb);
+		  
+		  // else, callback is pending, so do nothing
+	      } 
+	  }
+      }
 
-        // if we got both node & inc, then clear both results 
-        // from callback tables, so that next time through
-        // it will force a new lookup
+      // if we got both node & inc, then clear both results 
+      // from callback tables, so that next time through
+      // it will force a new lookup
 /* *********************************************************** BEWARE: Commenting this out might cause problems later ********
         if ((node != null) && (incarnation != null)) {
 	  if (node_cbte != null) {
@@ -436,7 +449,7 @@ public class AgentID implements java.io.Serializable
         }
 */
 
-      } //104B end synchronized 
+//      } //104B end synchronized 
 
     } catch (WhitePagesService.TimeoutException te) { //102
       // timeout with no stale value available!
