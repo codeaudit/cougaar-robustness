@@ -26,7 +26,7 @@ import org.cougaar.core.servlet.*;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.blackboard.BlackboardClient;
 import org.cougaar.core.service.*;
-import org.cougaar.core.domain.RootFactory;
+//import org.cougaar.core.domain.RootFactory;
 
 import org.cougaar.tools.robustness.ma.plugins.ManagementAgentProperties;
 
@@ -37,7 +37,7 @@ import org.cougaar.tools.robustness.ma.plugins.ManagementAgentProperties;
 public class ParameterModifierServlet extends BaseServletComponent implements BlackboardClient {
   private BlackboardService blackboard;
   private DomainService ds;
-  private RootFactory rootFactory;
+  //private RootFactory rootFactory;
 
   private static final String monitorPlugin = "HealthMonitorPlugin";
   private static final String decisionPlugin = "DecisionPlugin";
@@ -60,7 +60,7 @@ public class ParameterModifierServlet extends BaseServletComponent implements Bl
 
   public void setDomainService(DomainService ds) {
     this.ds = ds;
-    this.rootFactory = ds.getFactory();
+    //this.rootFactory = ds.getFactory();
   }
 
   protected Servlet createServlet() {

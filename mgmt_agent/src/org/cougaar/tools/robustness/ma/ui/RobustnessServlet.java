@@ -29,7 +29,8 @@ import org.apache.xerces.dom.DocumentImpl;
 
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.servlet.BaseServletComponent;
-import org.cougaar.core.servlet.ServletService;
+//import org.cougaar.core.servlet.ServletService;
+import org.cougaar.core.service.ServletService;
 import org.cougaar.core.service.NamingService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.BlackboardService;
@@ -37,25 +38,27 @@ import org.cougaar.core.service.TopologyReaderService;
 import org.cougaar.core.service.TopologyEntry;
 import org.cougaar.core.service.UIDService;
 import org.cougaar.core.service.DomainService;
-import org.cougaar.core.agent.ClusterIdentifier;
+//import org.cougaar.core.agent.ClusterIdentifier;
 import org.cougaar.core.util.PropertyNameValue;
 import org.cougaar.core.node.NodeIdentificationService;
 import org.cougaar.core.blackboard.BlackboardClient;
 import org.cougaar.core.blackboard.IncrementalSubscription;
-import org.cougaar.core.domain.RootFactory;
+//import org.cougaar.core.domain.RootFactory;
 
 import org.cougaar.core.service.community.CommunityMember;
 import org.cougaar.community.CommunityChangeNotification;
 
 import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.mts.SimpleMessageAddress;
 import org.cougaar.lib.web.arch.root.GlobalEntry;
 import org.cougaar.core.mts.MTImpl;
-import org.cougaar.core.node.NodeIdentifier;
+//import org.cougaar.core.node.NodeIdentifier;
 import org.cougaar.core.mobility.MoveTicket;
 import org.cougaar.core.mobility.RemoveTicket;
 import org.cougaar.core.mobility.ldm.AgentControl;
 import org.cougaar.core.mobility.ldm.MobilityFactory;
 import org.cougaar.tools.robustness.ma.plugins.HealthStatus;
+import org.cougaar.core.service.AgentIdentificationService;
 
 import org.cougaar.tools.robustness.ma.ldm.VacateRequest;
 import org.cougaar.tools.robustness.ma.ldm.RestartLocationRequest;
@@ -75,9 +78,12 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
   private LoggingService log;
   private TopologyReaderService trs;
   private UIDService uids;
-  private ClusterIdentifier agentId;
   private MobilityFactory mobilityFactory;
-  private RootFactory rootFactory;
+  protected AgentIdentificationService agentIdService;
+  protected NodeIdentificationService nodeIdService;
+  protected MessageAddress agentId;
+  protected MessageAddress localNode;
+  //private RootFactory rootFactory;
   private String indexName = "Communities";
 
   /**
@@ -90,9 +96,9 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
   public void load() {
     // get the logging service
     log =  (LoggingService) serviceBroker.getService(this, LoggingService.class, null);
-    org.cougaar.core.plugin.PluginBindingSite pbs =
-      (org.cougaar.core.plugin.PluginBindingSite) bindingSite;
-    this.agentId = pbs.getAgentIdentifier();
+    /*org.cougaar.planning.plugin.legacy.PluginBindingSite pbs =
+      (org.cougaar.planning.plugin.legacy.PluginBindingSite) bindingSite;
+    this.agentId = pbs.getAgentIdentifier();*/
     uids = (UIDService)serviceBroker.getService(this, UIDService.class, null);
     mobilityFactory = (MobilityFactory) ds.getFactory("mobility");
     if (mobilityFactory == null) {
@@ -101,6 +107,19 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
     super.load();
   }
 
+  public void setAgentIdentificationService(
+      AgentIdentificationService agentIdService) {
+    this.agentIdService = agentIdService;
+    this.agentId = agentIdService.getMessageAddress();
+  }
+
+  public void setNodeIdentificationService(
+      NodeIdentificationService nodeIdService) {
+    this.nodeIdService = nodeIdService;
+    this.localNode = nodeIdService.getMessageAddress();
+  }
+
+
   public void setBlackboardService(BlackboardService blackboard) {
     this.bb = blackboard;
     //blackboard.setShouldBePersisted(true);
@@ -108,7 +127,7 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
 
   public void setDomainService(DomainService ds) {
     this.ds = ds;
-    this.rootFactory = ds.getFactory();
+    //this.rootFactory = ds.getFactory();
   }
 
   /**
@@ -178,7 +197,7 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
         VacateRequest request = new VacateRequest(VacateRequest.VACATE_HOST);
         request.setHost(host);
         Set targets = new HashSet();
-        targets.add(new ClusterIdentifier(mgmtAgent));
+        targets.add(SimpleMessageAddress.getSimpleMessageAddress(mgmtAgent));
         VacateRequestRelay relay = new VacateRequestRelay(uids.nextUID(), agentId, targets, (Object)request, null);
         try{
           bb.openTransaction();
@@ -285,7 +304,7 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
              {
                NameClassPair ncp = (NameClassPair)entityEnums.next();
                String entityName = ncp.getName();
-               if(ncp.getClassName().equals("org.cougaar.core.agent.ClusterIdentifier"))
+               if(ncp.getClassName().equals("org.cougaar.core.mts.SimpleMessageAddress"))
                {
                    String nodeName = trs.getParentForChild(trs.NODE, trs.AGENT, ncp.getName());
                    entityName += "  (" + nodeName + ")";
@@ -350,11 +369,11 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
     Object ticketId = mobilityFactory.createTicketIdentifier();
     MoveTicket ticket = new MoveTicket(
           ticketId,
-          new MessageAddress(agentName),
-          new MessageAddress(sourceNode),
-          new MessageAddress(destNode),
+          SimpleMessageAddress.getSimpleMessageAddress(agentName),
+          SimpleMessageAddress.getSimpleMessageAddress(sourceNode),
+          SimpleMessageAddress.getSimpleMessageAddress(destNode),
           true);
-    AgentControl ma = mobilityFactory.createAgentControl(null, new MessageAddress(agentName), ticket);
+    AgentControl ma = mobilityFactory.createAgentControl(null, SimpleMessageAddress.getSimpleMessageAddress(agentName), ticket);
     try{
       bb.openTransaction();
       bb.publishAdd(ma);
@@ -368,9 +387,9 @@ public class RobustnessServlet extends BaseServletComponent implements Blackboar
     Object ticketId = mobilityFactory.createTicketIdentifier();
     RemoveTicket ticket = new RemoveTicket(
           ticketId,
-          new MessageAddress(agentName),
-          new MessageAddress(sourceNode));
-    AgentControl ma = mobilityFactory.createAgentControl(null, new MessageAddress(sourceNode), ticket);
+          SimpleMessageAddress.getSimpleMessageAddress(agentName),
+          SimpleMessageAddress.getSimpleMessageAddress(sourceNode));
+    AgentControl ma = mobilityFactory.createAgentControl(null, SimpleMessageAddress.getSimpleMessageAddress(sourceNode), ticket);
     try{
       bb.openTransaction();
       bb.publishAdd(ma);
