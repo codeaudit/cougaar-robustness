@@ -49,7 +49,7 @@
 		<copy todir="staging/doc/Robustness/objs/msglog/">
 			<fileset dir="doc"/>
 		</copy>
-		<zip zipfile="Robustness_objs_msglog_cougaar_overlay.zip" basedir="staging"/>
+		<zip zipfile="Robustness_objs_msglog_overlay.zip" basedir="staging"/>
 		<delete dir="staging"/>
 	</target>
 
