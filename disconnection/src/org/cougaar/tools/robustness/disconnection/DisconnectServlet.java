@@ -282,7 +282,7 @@ public class DisconnectServlet extends BaseServletComponent
             }
             
             if (cond == null) { //then create one
-                cond = new DisconnectionApplicabilityCondition(condName);
+                cond = new DisconnectionApplicabilityCondition(condName, "myAsset", "myDefense");
                 System.out.print("Created and ");
             }
 
@@ -321,7 +321,7 @@ public class DisconnectServlet extends BaseServletComponent
             blackboard.closeTransaction();
 
             if (cond == null) { //then create one
-                cond = new ReconnectTimeCondition(condName);
+                cond = new ReconnectTimeCondition(condName  , "myAsset", "myDefense");
                 System.out.print("Created and ");
             }
 
@@ -396,12 +396,12 @@ public class DisconnectServlet extends BaseServletComponent
    * class which has no setter method.
    **/
    private static class DisconnectDefCon extends DefenseCondition { //implements NotPersistable {
-    public DisconnectDefCon(String name) {
-      super(name, DefenseConstants.BOOL_RANGELIST);
+    public DisconnectDefCon(String a, String b, String c) {
+      super(a,b,c, DefenseConstants.BOOL_RANGELIST);
     }
 
-    public DisconnectDefCon(String name, DefenseConstants.OMCStrBoolPoint pt) {
-      super(name, DefenseConstants.BOOL_RANGELIST, pt.toString());
+    public DisconnectDefCon(String a, String b, String c, DefenseConstants.OMCStrBoolPoint pt) {
+      super(a,b,c, DefenseConstants.BOOL_RANGELIST, pt.toString());
     }
 
     /* Called by Defense to set current condition. Limited to statically defined values

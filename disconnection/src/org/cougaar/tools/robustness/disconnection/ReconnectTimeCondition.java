@@ -28,8 +28,8 @@ import java.util.Date;
 
 public class ReconnectTimeCondition extends DefenseTimeCondition
 {
-    public ReconnectTimeCondition(String name) {
-        super(name);
+    public ReconnectTimeCondition(String a, String b, String c) {
+        super(a,b,c);
     }
     
     protected void setValue(Double newValue) {

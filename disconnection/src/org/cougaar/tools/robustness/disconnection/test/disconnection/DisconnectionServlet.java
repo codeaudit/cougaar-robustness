@@ -399,12 +399,12 @@ out.println("***********************************************");
    * class which has no setter method.
    **/
    private static class DisconnectDefCon extends DefenseCondition { //implements NotPersistable {
-    public DisconnectDefCon(String name) {
-      super(name, DefenseConstants.BOOL_RANGELIST);
+    public DisconnectDefCon(String a, String b, String c) {
+      super(a,b,c, DefenseConstants.BOOL_RANGELIST);
     }
 
-    public DisconnectDefCon(String name, DefenseConstants.OMCStrBoolPoint pt) {
-      super(name, DefenseConstants.BOOL_RANGELIST, pt.toString());
+    public DisconnectDefCon(String a, String b, String c, DefenseConstants.OMCStrBoolPoint pt) {
+      super(a,b,c, DefenseConstants.BOOL_RANGELIST, pt.toString());
     }
 
     /* Called by Defense to set current condition. Limited to statically defined values

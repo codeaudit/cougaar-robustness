@@ -219,42 +219,42 @@ public class PlannedDisconnectManagerPlugin extends ServiceUserPluginBase
      // Creating the conditions and modes for the Defense of a Node
     
         MyDefenseApplicabilityCondition dac = 
-            new MyDefenseApplicabilityCondition(MY_APPLICABILITY_CONDITION_NAME + nodeID);
+            new MyDefenseApplicabilityCondition(MY_APPLICABILITY_CONDITION_NAME + nodeID, "myAsset", "myDefense");
         MyDefenseApplicabilityOpMode daom = 
-            new MyDefenseApplicabilityOpMode(MY_APPLICABILITY_CONDITION_NAME + nodeID);
+            new MyDefenseApplicabilityOpMode(MY_APPLICABILITY_CONDITION_NAME + nodeID, "myAsset", "myDefense");
         daom.setUID(us.nextUID());
 
         MyDefenseEnabler deom = 
-            new MyDefenseEnabler(MY_DEFENSE_OPMODE_NAME + nodeID);
+            new MyDefenseEnabler(MY_DEFENSE_OPMODE_NAME + nodeID, "myAsset", "myDefense");
         deom.setUID(us.nextUID());
         MyDefenseEnablerCondition deomc = 
-            new MyDefenseEnablerCondition(MY_DEFENSE_OPMODE_NAME + nodeID);
+            new MyDefenseEnablerCondition(MY_DEFENSE_OPMODE_NAME + nodeID, "myAsset", "myDefense");
 
         MyMonitoringEnabler meom = 
-            new MyMonitoringEnabler(MY_MONITORING_OPMODE_NAME + nodeID);
+            new MyMonitoringEnabler(MY_MONITORING_OPMODE_NAME + nodeID, "myAsset", "myDefense");
         meom.setUID(us.nextUID());
         MyMonitoringEnablerCondition meomc = 
-            new MyMonitoringEnablerCondition(MY_MONITORING_OPMODE_NAME + nodeID);
+            new MyMonitoringEnablerCondition(MY_MONITORING_OPMODE_NAME + nodeID, "myAsset", "myDefense");
 
         // conditions & modes for the Manager Defense instance
          
         MyDefenseApplicabilityCondition ndac = 
-            new MyDefenseApplicabilityCondition(MY_NODE_APPLICABILITY_CONDITION_NAME + nodeID);
+            new MyDefenseApplicabilityCondition(MY_NODE_APPLICABILITY_CONDITION_NAME + nodeID, "myAsset", "myDefense");
 
         MyDefenseEnabler ndeom = 
-            new MyDefenseEnabler(MY_NODE_DEFENSE_OPMODE_NAME + nodeID);
+            new MyDefenseEnabler(MY_NODE_DEFENSE_OPMODE_NAME + nodeID, "myAsset", "myDefense");
         ndeom.setUID(us.nextUID());
         MyDefenseEnablerCondition ndeomc = 
-            new MyDefenseEnablerCondition(MY_NODE_DEFENSE_OPMODE_NAME + nodeID);
+            new MyDefenseEnablerCondition(MY_NODE_DEFENSE_OPMODE_NAME + nodeID, "myAsset", "myDefense");
 
         MyMonitoringEnabler nmeom = 
-            new MyMonitoringEnabler(MY_NODE_MONITORING_OPMODE_NAME + nodeID);
+            new MyMonitoringEnabler(MY_NODE_MONITORING_OPMODE_NAME + nodeID, "myAsset", "myDefense");
         nmeom.setUID(us.nextUID());
         MyMonitoringEnablerCondition nmeomc = 
-            new MyMonitoringEnablerCondition(MY_NODE_MONITORING_OPMODE_NAME + nodeID);
+            new MyMonitoringEnablerCondition(MY_NODE_MONITORING_OPMODE_NAME + nodeID, "myAsset", "myDefense");
             
         ReconnectTimeCondition rtc =
-            new MyReconnectTimeCondition(MY_RECONNECT_TIME_NAME + nodeID);
+            new MyReconnectTimeCondition(MY_RECONNECT_TIME_NAME + nodeID, "myAsset", "myDefense");
             
             
         if (logger.isDebugEnabled()) {
@@ -410,8 +410,8 @@ public class PlannedDisconnectManagerPlugin extends ServiceUserPluginBase
 
   public class MyDefenseApplicabilityCondition extends DisconnectionApplicabilityCondition {
      private String name;
-     public MyDefenseApplicabilityCondition(String name) {
-      super(name);
+     public MyDefenseApplicabilityCondition(String a, String b, String c) {
+      super(a,b,c);
       } 
       
     public void setValue(Comparable value) {
@@ -420,8 +420,8 @@ public class PlannedDisconnectManagerPlugin extends ServiceUserPluginBase
   }
   
   public class MyDefenseApplicabilityOpMode extends DefenseOperatingMode {
-    public MyDefenseApplicabilityOpMode(String name) {
-        super(name, DefenseConstants.BOOL_RANGELIST);
+    public MyDefenseApplicabilityOpMode(String a, String b, String c) {
+        super(a,b,c, DefenseConstants.BOOL_RANGELIST);
     }
     public void setValue(Comparable value) {
         super.setValue(value);
@@ -431,8 +431,8 @@ public class PlannedDisconnectManagerPlugin extends ServiceUserPluginBase
   
   
   public class MyDefenseEnabler extends DefenseEnablingOperatingMode {
-     public MyDefenseEnabler(String name) {
-        super(name);
+     public MyDefenseEnabler(String a, String b, String c) {
+        super(a,b,c);
      } 
      public void setValue(Comparable value) {
         super.setValue(value);
@@ -440,8 +440,8 @@ public class PlannedDisconnectManagerPlugin extends ServiceUserPluginBase
   }
   
   public class MyDefenseEnablerCondition extends DefenseCondition {
-     public MyDefenseEnablerCondition (String name) {
-        super(name, DefenseConstants.DEF_RANGELIST, DefenseConstants.DEF_DISABLED.toString());
+     public MyDefenseEnablerCondition (String a, String b, String c) {
+        super(a,b,c, DefenseConstants.DEF_RANGELIST, DefenseConstants.DEF_DISABLED.toString());
      }
      public void setValue(Comparable value) {
         super.setValue(value);
@@ -451,8 +451,8 @@ public class PlannedDisconnectManagerPlugin extends ServiceUserPluginBase
 
    
   public class MyMonitoringEnabler extends MonitoringEnablingOperatingMode {
-     public MyMonitoringEnabler(String name) {
-      super(name);
+     public MyMonitoringEnabler(String a, String b, String c) {
+      super(a,b,c);
     } 
      public void setValue(Comparable value) {
       super.setValue(value);
@@ -460,8 +460,8 @@ public class PlannedDisconnectManagerPlugin extends ServiceUserPluginBase
   }
   
   public class MyMonitoringEnablerCondition extends DefenseCondition {
-     public MyMonitoringEnablerCondition (String name) {   
-        super(name, DefenseConstants.DEF_RANGELIST, DefenseConstants.DEF_DISABLED.toString());
+     public MyMonitoringEnablerCondition (String a, String b, String c) {   
+        super(a,b,c, DefenseConstants.DEF_RANGELIST, DefenseConstants.DEF_DISABLED.toString());
      }
      public void setValue(Comparable value) {
         super.setValue(value);
@@ -469,8 +469,8 @@ public class PlannedDisconnectManagerPlugin extends ServiceUserPluginBase
   }
     
   public class MyReconnectTimeCondition extends ReconnectTimeCondition {
-    public MyReconnectTimeCondition(String name) {
-      super(name);
+    public MyReconnectTimeCondition(String a, String b, String c) {
+      super(a,b,c);
     }
     
     public void setValue(Double newValue) {

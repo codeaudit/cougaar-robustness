@@ -43,8 +43,8 @@ public class DefenseTimeCondition extends DefenseCondition
 
      /* Do not use. Only use the constructors of the subclasses.
      */
-    public DefenseTimeCondition(String name) {
-        super(name, allowedValues, new Double(0.0));
+    public DefenseTimeCondition(String a, String b, String c) {
+        super(a,b,c, allowedValues, new Double(0.0));
     }
        
     protected void setValue(String newValue) {

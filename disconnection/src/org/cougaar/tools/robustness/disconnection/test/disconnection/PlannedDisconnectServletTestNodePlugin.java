@@ -164,13 +164,13 @@ public class PlannedDisconnectServletTestNodePlugin extends ServiceUserPluginBas
      nodeID = nodeIdentificationService.getMessageAddress().toString();
 
      DisconnectionApplicabilityCondition dac = 
-        new MyDefenseApplicabilityCondition(MY_APPLICABILITY_CONDITION_NAME + nodeID);
+        new MyDefenseApplicabilityCondition(MY_APPLICABILITY_CONDITION_NAME + nodeID  , "myAsset", "myDefense");
      ReconnectTimeCondition rtc =
-        new MyReconnectTimeCondition(MY_RECONNECT_TIME_NAME + nodeID);
+        new MyReconnectTimeCondition(MY_RECONNECT_TIME_NAME + nodeID  , "myAsset", "myDefense");
      DefenseEnablingOperatingMode deom = 
-        new MyDefenseEnabler(MY_DEFENSE_OPMODE_NAME + nodeID);
+        new MyDefenseEnabler(MY_DEFENSE_OPMODE_NAME + nodeID  , "myAsset", "myDefense");
      MonitoringEnablingOperatingMode meom = 
-        new MyMonitoringEnabler(MY_MONITORING_OPMODE_NAME + nodeID);
+        new MyMonitoringEnabler(MY_MONITORING_OPMODE_NAME + nodeID  , "myAsset", "myDefense");
 
      //These InterAgents need UIDs.
      deom.setUID(us.nextUID());
@@ -249,27 +249,27 @@ public class PlannedDisconnectServletTestNodePlugin extends ServiceUserPluginBas
    **/
 
   public class MyDefenseApplicabilityCondition extends DisconnectionApplicabilityCondition {
-     public MyDefenseApplicabilityCondition(String name) {
-      super(name, DefenseConstants.BOOL_FALSE);
+     public MyDefenseApplicabilityCondition(String a, String b, String c) {
+      super(a,b,c, DefenseConstants.BOOL_FALSE);
     } 
   }
 
    
   public class MyDefenseEnabler extends DefenseEnablingOperatingMode {
-     public MyDefenseEnabler(String name) {
-      super(name);
+     public MyDefenseEnabler(String a, String b, String c) {
+      super(a,b,c);
     } 
   }
 
   public class MyMonitoringEnabler extends MonitoringEnablingOperatingMode {
-     public MyMonitoringEnabler(String name) {
-      super(name);
+     public MyMonitoringEnabler(String a, String b, String c ) {
+      super(a,b,c);
     } 
   }
   
   public class MyReconnectTimeCondition extends ReconnectTimeCondition {
-    public MyReconnectTimeCondition(String name) {
-      super(name);
+    public MyReconnectTimeCondition(String a, String b, String c) {
+      super(a,b,c);
     }
     
     public void setValue(Double newValue) {
