@@ -192,6 +192,40 @@ public class StateEstimation extends Hashtable implements NotPersistable
 
 
     /**
+     * Clone the shell of this StateEstimation, so that it can be used to
+     * try repair options and compare the utilities in a consistent manner.
+     * @param timestamp the timestamp for the new clone.
+     * @return A clone of all of this StateEstimation, except for the 
+     *         actual StateDimensionEstimations.
+     **/
+    public StateEstimation cloneSEShell( long timestamp ) 
+	throws BelievabilityException {
+
+	return new StateEstimation( getAssetID(), timestamp );
+    }
+
+
+    /**
+     * Clone this StateEstimation, so that it can be used to
+     * try repair options and compare the utilities in a consistent manner.
+     * @throws BelievabilityException but shouldn't
+     * @return A clone of all of this StateEstimation
+     **/
+    public StateEstimation cloneSE() throws BelievabilityException {
+	StateEstimation se =
+	    new StateEstimation( getAssetID(), getTimestamp() );
+	Enumeration sd_enum = this.keys();
+	while ( sd_enum.hasMoreElements() ) {
+	    AssetStateDimension asd = 
+		(AssetStateDimension) sd_enum.nextElement();
+	    se.setStateDimensionEstimation( asd,
+					    this.getStateDimensionEstimation( asd ) );
+	}
+	return se;
+    }
+
+
+    /**
      * Accessing whether or not there was an error encountered while
      * trying to create this state estimation object.
      *

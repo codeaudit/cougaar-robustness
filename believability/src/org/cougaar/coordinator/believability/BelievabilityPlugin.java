@@ -34,6 +34,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
 import java.util.Collection;
 import java.util.Iterator;
 
+import org.cougaar.core.agent.service.alarm.Alarm;
 import org.cougaar.core.adaptivity.ServiceUserPluginBase;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.component.Service;
@@ -133,10 +134,10 @@ public class BelievabilityPlugin extends ServiceUserPluginBase
         if (logger.isDebugEnabled()) 
             logger.debug("Believability Plugin in Execute Loop");
 
-        handleAsset();
-        handleDiagnosis();
+        handleAssetTS();
+        handleSensorTS();
         handleThreatModel();
-        handleDiagnosis();
+        handleDiagnosisWrapper();
 
     } // method execute
 
@@ -215,7 +216,7 @@ public class BelievabilityPlugin extends ServiceUserPluginBase
      * AssetTechSpecInterface objects.  
      *
      */
-    private void handleAsset()
+    private void handleAssetTS()
     {
         AssetTechSpecInterface asset_ts = null;
 
@@ -265,46 +266,34 @@ public class BelievabilityPlugin extends ServiceUserPluginBase
      * more threat types that may affect the same asset. 
      *
      */
-    private void handleDiagnosis()
+    private void handleSensorTS()
     {
-        DiagnosisTechSpecInterface diagnosis_ts = null;
+        DiagnosisTechSpecInterface sensor_ts = null;
 
-        //--------------------
-        //      ADD DiagnosisTechSpecInterface
-        //--------------------
-
+        //------- ADD DiagnosisTechSpecInterface
         for ( Iterator iter = _diagnosisSub.getAddedCollection().iterator();  
               iter.hasNext() ; ) 
         {
-            diagnosis_ts = (DiagnosisTechSpecInterface) iter.next(); 
-//***         _intermediate_model.addDiagnosis( diagnosis_ts );
-
+            sensor_ts = (DiagnosisTechSpecInterface) iter.next(); 
+	    _intermediate_model.consumeSensorType( sensor_ts );
         } // for ADD DiagnosisTechSpecInterface
 
-        //--------------------
-        //      CHANGE DiagnosisTechSpecInterface
-        //--------------------
 
-        for ( Iterator iter = _diagnosisSub.getChangedCollection
-                      ().iterator();  
+        //------- CHANGE DiagnosisTechSpecInterface
+        for ( Iterator iter = _diagnosisSub.getChangedCollection().iterator(); 
               iter.hasNext() ; ) 
         {
-
-            diagnosis_ts = (DiagnosisTechSpecInterface) iter.next(); 
-//***         _intermediate_model.changeDiagnosis( diagnosis_ts );
-
+            sensor_ts = (DiagnosisTechSpecInterface) iter.next(); 
+	    _intermediate_model.consumeSensorType( sensor_ts );
         } // for CHANGE DiagnosisTechSpecInterface
         
-        //--------------------
-        //      REMOVE DiagnosisTechSpecInterface
-        //--------------------
 
-        for ( Iterator iter = _diagnosisSub.getRemovedCollection().iterator();  
+        //------- REMOVE DiagnosisTechSpecInterface
+        for ( Iterator iter = _diagnosisSub.getRemovedCollection().iterator();
               iter.hasNext() ; ) 
         {
-            diagnosis_ts = (DiagnosisTechSpecInterface) iter.next(); 
-//***         _intermediate_model.removeDiagnosis( diagnosis_ts );
-
+            sensor_ts = (DiagnosisTechSpecInterface) iter.next(); 
+	    _intermediate_model.removeSensorType( sensor_ts );
         } // for REMOVE DiagnosisTechSpecInterface
 
     } // method handleDiagnosis
@@ -322,44 +311,30 @@ public class BelievabilityPlugin extends ServiceUserPluginBase
     {
         ThreatModelInterface threat_ts = null;
 
-        //--------------------
-        //      ADD ThreatModelInterface
-        //--------------------
-
+        //------- ADD ThreatModelInterface
         for ( Iterator iter = _threatModelSub.getAddedCollection().iterator();
               iter.hasNext() ; ) 
         {
             threat_ts = (ThreatModelInterface) iter.next(); 
-//***         _intermediate_model.addThreatType( threat_ts );
-
+	    _intermediate_model.consumeThreatModel( threat_ts );
         } // for ADD ThreatModelInterface
 
-        //--------------------
-        //      CHANGE ThreatModelInterface
-        //--------------------
 
-        for ( Iterator iter = _threatModelSub.getChangedCollection
-                  ().iterator();  
-          iter.hasNext() ; ) 
+        //------- CHANGE ThreatModelInterface
+        for ( Iterator iter = _threatModelSub.getChangedCollection().iterator();  
+	      iter.hasNext() ; ) 
         {
             threat_ts = (ThreatModelInterface) iter.next(); 
-//***         _intermediate_model.changeThreatType( threat_ts );
-
+	    _intermediate_model.consumeThreatModel( threat_ts );
         } // for CHANGE ThreatModelInterface
         
-        //--------------------
-        //      REMOVE ThreatModelInterface
-        //--------------------
-
-        for ( Iterator iter = _threatModelSub.getRemovedCollection
-                  ().iterator();  
-          iter.hasNext() ; ) 
+        //------- REMOVE ThreatModelInterface
+        for ( Iterator iter = _threatModelSub.getRemovedCollection().iterator();  
+	      iter.hasNext() ; ) 
         {
             threat_ts = (ThreatModelInterface) iter.next(); 
-//***         _intermediate_model.removeThreatType( threat_ts );
-
+	    _intermediate_model.removeThreatModel( threat_ts );
         } // for REMOVE ThreatModelInterface
-
     } // method handleThreatModel
 
 
@@ -378,89 +353,70 @@ public class BelievabilityPlugin extends ServiceUserPluginBase
 	// The Believability plugin receives a wrapped version of this
 	// object on the blackboard, when something changes.
 
-	// --- ADD DiagnosesWrapper
-
+	// ------- ADD DiagnosesWrapper
 	// Update the belief state for each asset
 	for ( Iterator iter = _diagnosisSub.getAddedCollection().iterator();  
-              iter.hasNext() ; ) {
-
+              iter.hasNext() ; ) 
+        {
 	    if (logger.isDebugEnabled() ) logger.debug ("Diagnosis ADD");
-            dw = (DiagnosesWrapper) iter.next(); 
 
-//***	    try {
-		// Copy out the diagnosis information
-		BelievabilityDiagnosis bd = new BelievabilityDiagnosis( dw );
-
-//***		if (logger.isDebugEnabled()) 
-//***		    logger.debug("ADDING BelievabilityDiagnosis "
-//***				 + bd.toString() );
-
-		// update the belief state, then remove the diagnosis input
-//***		StateEstimation se = 
-//***	    _intermediate_model.processDiagnosis( tdd );
-
-//***		if ( se != null ) {
-//***		    if (logger.isDebugEnabled()) 
-//***			logger.debug("ADDING StateEstimation " + se.toString() );
-//***		    publishAdd( se );
-//***		}
-//***		else {
-//***		    if (logger.isDebugEnabled()) 
-//***			logger.debug( " No valid diagnoses -- StateEstimation not added" );
-//***		}
-//***	    }
-//***	    catch ( BelievabilityException be ) {
-//***		logger.warn( "Received invalid DiagnosesWrapper -- "
-//***			     + be.getMessage() );
-//***	    }
+	    try {
+		dw = (DiagnosesWrapper) iter.next(); 
+		processAssertedDiagnosis( dw );
+	    }
+	    catch ( BelievabilityException be ) {
+		logger.warn( "Problem processing added diagnosis "
+			     + be.getMessage() );
+	    }
         } // iterator for ADD DiagnosesWrapper
 
-        // ----- CHANGE DiagnosesWrapper
-
+        // ------- CHANGE DiagnosesWrapper
 	// DiagnosesWrapper objects have changed.
-	// We do nothing with this, as it is downstream of our plugin.
-        for ( Iterator iter = _diagnosisSub.getChangedCollection
-		  ().iterator();  
-	      iter.hasNext() ; ) {
-//***	    try {
-		if (logger.isDebugEnabled() ) logger.debug ("Diagnosis CHANGE ");
-		// Copy out the diagnosis information
-		BelievabilityDiagnosis bd = new BelievabilityDiagnosis( dw );
-		
-		// update the belief state, then remove the diagnosis input
-//***		StateEstimation se = 
-//***	    _intermediate_model.processDiagnosis( tdd );
+	// This indicates some new diagnosis information has been asserted.
+        for ( Iterator iter = _diagnosisSub.getChangedCollection().iterator();
+	      iter.hasNext() ; ) 
+        {
+	    if (logger.isDebugEnabled() ) logger.debug ("Diagnosis CHANGE");
 
-//***		if ( se != null ) {
-//***		    if (logger.isDebugEnabled()) 
-//***			logger.debug("ADDING StateEstimation " + se.toString() );
-//***		    publishAdd( se );
-//***		}
-//***		else {
-//***		    if (logger.isDebugEnabled()) 
-//***			logger.debug( " No valid diagnoses -- StateEstimation not added" );
-//***		}
-//***	    }
-//***	    catch ( BelievabilityException be ) {
-//***		logger.warn( "Received invalid DiagnosesWrapper -- "
-//***			     + be.getMessage() );
-//***	    }
+	    try {
+		dw = (DiagnosesWrapper) iter.next(); 
+		processAssertedDiagnosis( dw );
+	    }
+	    catch ( BelievabilityException be ) {
+		logger.warn( "Problem processing updated diagnosis "
+			     + be.getMessage() );
+	    }
 	} // iterator for CHANGE DiagnosesWrapper
         
         // ----- REMOVE DiagnosesWrapper
-
 	// The DiagnosesWrapper has been removed successfully,
 	// we do nothing with this since it is controlled elsewhere, and
 	// we have already processed it.
-        for ( Iterator iter = _diagnosisSub.getRemovedCollection
-                  ().iterator();  
-          iter.hasNext() ; ) {
+        for ( Iterator iter = _diagnosisSub.getRemovedCollection().iterator(); 
+	      iter.hasNext() ; ) 
+        {
             dw = (DiagnosesWrapper) iter.next(); 
 	    // do absolutely nothing
         } // for REMOVE DiagnosesWrapper
 
     } // method handleDiagnosisWrapper
 
+
+    /**
+     * Accessor method for the MAU weight information
+     * @return The current MAU weights
+     **/
+    public MAUWeights getMAUWeights() { return _mau_weights; }
+
+    
+    /**
+     * Set an alarm
+     * @param The Alarm object for the alarm
+     **/
+    public void setAlarm( Alarm alarm_to_set ) {
+	getAlarmService().addRealTimeAlarm( alarm_to_set );
+    }
+    
 
     //-------------------------------------------------------------------
     // Private Methods
@@ -532,8 +488,65 @@ public class BelievabilityPlugin extends ServiceUserPluginBase
         EventService.class
     };
 
+
+
+    /**
+     * Process a diagnosis that has been asserted as either an add or a change.
+     * @param dw The diagnosis wrapper from the blackboard
+     * @throws BelievabilityException if there is a problem processing
+     **/
+    private void processAssertedDiagnosis( DiagnosesWrapper dw ) 
+	throws BelievabilityException {
+
+	// First check to see whether the defense controller is enabled at
+	// the moment
+	if ( ! _dc_enabled ) return;
+
+	// Copy out the diagnosis information
+	BelievabilityDiagnosis bd = new BelievabilityDiagnosis( dw );
+	
+	if (logger.isDebugEnabled()) 
+	    logger.debug("Updating BelievabilityDiagnosis " + bd.toString() );
+	
+	// Find the AssetModel and AssetStateWindow that this diagnosis
+	// concerns.
+	AssetModel am = _asset_container.getAssetModel( bd.getAssetID() );
+	DiagnosisConsumerInterface dci = am.getAssetStateWindow();
+
+	// Update the asset state window with the new diagnosis
+	try {
+	    dci.consumeDiagnosis( bd );
+	}
+	catch( Exception e ) {
+	    System.out.println( "***Need to code what to do with exceptions in BelievabilityPlugin.processAssertedDiagnosis");
+	}
+	
+	// Check to see whether or not the new state should be forwarded
+	// to the blackboard. 
+	if ( am.forwardStateP( ) ) publishAdd( am.getCurrentState() );
+    }
+
+
+    /**
+     * Set whether or not the defense controller is enabled.
+     * This is used to prevent thrashing during startup.
+     **/
+    private void setDCEnabled( boolean dc_enabled ) {
+	_dc_enabled = dc_enabled;
+    }
+
+
+    // Boolean saying whether this functionality is enabled or not.
+    private boolean _dc_enabled = true;
+
     // This is the intermediate model that has all of the information
     // from the techspecs.
-//***    private POMDPModelInterface _intermediate_model = new IntermediateModel();
+    private TechSpecConsumerInterface _intermediate_model = null; //****new IntermediateModel();
+
+    // This is the asset index for the AssetModels. It is indexed by AssetID
+    private AssetContainer _asset_container = new AssetContainer();
+
+    // This is the pointer to the MAU Weights object.
+    private MAUWeights _mau_weights = new MAUWeights();
 
 }  // class BelievabilityPlugin

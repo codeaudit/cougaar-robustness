@@ -115,6 +115,20 @@ public class BelievabilityDiagnosis
     }
 
 
+    /**
+     * Return the believability diagnosis as a string
+     **/
+    public String toString() {
+	StringBuffer sb = new StringBuffer();
+	sb.append( "BelievabilityDiagnosis: asset " );
+	sb.append( _asset_id.toString() );
+	sb.append( " asserted diagnosis " );
+	sb.append( _diagnosis_value );
+	sb.append( " at time " + _last_asserted_timestamp );
+	return sb.toString();
+    }
+
+
     //---------------------------------------------------------------
     // Private interface
     //---------------------------------------------------------------

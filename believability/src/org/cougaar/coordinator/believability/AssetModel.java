@@ -1,4 +1,4 @@
-/*
+/**
  * AssetModel.java
  *
  * Created on April 24, 2004
@@ -21,7 +21,7 @@
  *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
- */
+ **/
 
 package org.cougaar.coordinator.believability;
 
@@ -55,15 +55,22 @@ public class AssetModel extends Object
      * require one in the constructor.
      *
      * @param asset_ts The handle to the asset's TechSpec
+     * @param beleivability_plugin A back pointer to the believability plugin
      * @param pomdp_model The POMDPModelInterface for the believability model
-     * @param mau_weights The MAU weight object carrying the current weights
      **/
     public AssetModel( AssetTechSpecInterface asset_ts,
-		       POMDPModelInterface pomdp_model,
-		       MAUWeights mau_weights ) {
+		       BelievabilityPlugin believability_plugin,
+		       POMDPModelInterface pomdp_model ) {
 
-        setAssetTS( asset_ts, mau_weights );
-	_belief_update = new BeliefUpdate( this, pomdp_model );
+	_plugin = believability_plugin;
+        setAssetTS( asset_ts );
+	try {
+	    _asset_state_window = new AssetStateWindow( this );
+	    _belief_update = new BeliefUpdate( this, pomdp_model );
+	}
+	catch( Exception e ) {
+	    System.out.println( "***AssetModel Constructor: Need to code what to do with exceptions." );
+	}
     } // constructor AssetModel
 
 
@@ -80,15 +87,15 @@ public class AssetModel extends Object
      * Modify the asset's TechSpec handle and update internal information
      * @param asset_ts the new asset TechSpec handle
      **/
-    public void setAssetTS( AssetTechSpecInterface asset_ts,
-			    MAUWeights mau_weights ) {
+    public void setAssetTS( AssetTechSpecInterface asset_ts ) {
+
 	if (asset_ts != null) {
 	    _asset_ts = asset_ts;
 	    _asset_type = asset_ts.getAssetType();
 	    _asset_id = _asset_ts.getAssetID();
 	    _asset_state_dimensions = _asset_ts.getAssetStates();
 	    _asset_utility_weights = 
-		new UtilityWeights( asset_ts, mau_weights );
+		new UtilityWeights( asset_ts, _plugin.getMAUWeights() );
 	}
 	else {
 	    _asset_ts = null;
@@ -152,6 +159,78 @@ public class AssetModel extends Object
 
 
     /**
+     * Get the asset state window for the asset
+     * @return the asset state window
+     **/
+    public DiagnosisConsumerInterface getAssetStateWindow() {
+	return _asset_state_window;
+    }
+    /**
+     * Get the estimation of the current state of the asset
+     * @return The current StateEstimation
+     **/
+    public StateEstimation getCurrentState() {
+	//**	return getAssetStateWindow().getCurrentState();
+	System.out.println("****AssetModel.getCurrentState: NOT IMPLEMENTED");
+	return null;
+    }
+
+    /**
+     * Determine whether or not the asset's state estimation should be
+     * forwarded to the blackboard. If so, forward it. Manage the timer
+     * for putting StateEstimations on the blackboard.
+     * Returns true if the utility along some state dimension
+     * has fallen below a constant threshhold value, or if the timer
+     * has expired indicating that there has been an interval of 
+     * _max_diagnosis_latency from the arrival of the first diagnosis.
+     * @param asset_model The asset model to check.
+     **/
+    public boolean forwardStateP ( ) {
+
+	System.out.println ("*****forwardStateP: not completely implemented yet ***" );
+	
+	// Check to see if the state has fallen below some threshhold for
+	// some state dimension. If so, return true.
+	if ( false ) {
+	    _plugin.publishAdd( this.getCurrentState() );
+
+	    // Cancel the alarm
+	    if ( _asset_alarm != null ) _asset_alarm.cancel();
+
+	    return true;
+	}
+
+	// Check if the timer is running. If not, set the timer for the asset
+	if ( _asset_alarm == null ) {
+	    _asset_alarm = new AssetAlarm( this, _max_diagnosis_latency );
+
+	    // Start the alarm
+	    _plugin.setAlarm( _asset_alarm );
+	}
+
+	// Timeouts are handled separately by the timer callback, so just 
+	// need to return here.
+	return false; 
+    }
+
+
+    /**
+     * This method is called when the asset timer expires, is canceled, 
+     * or the AssetModel decides that the state should be forwarded
+     * immediately.
+     * @param expiredP True if the alarm expired validly, false if it was
+     *                 canceled.
+     **/
+    public void timerCallback ( boolean expiredP ) {
+	// Publish the state estimation if the timer expired validly.
+	_plugin.publishAdd( this.getCurrentState() );
+
+	// Clear the timer information from the local variables
+	_asset_alarm = null;
+    }
+
+
+    /**
      * Return a string representation of the asset model
      *
      * @return a string representation of the asset model
@@ -206,8 +285,20 @@ public class AssetModel extends Object
     // state dimension name
     private UtilityWeights _asset_utility_weights = null;
 
+    // Asset state window for the asset
+    private DiagnosisConsumerInterface _asset_state_window = null;
+
     // BeliefUpdate object for maintaining our belief states about this 
     // asset
     private BeliefUpdate _belief_update;
+
+    // Length of diagnosis window, in milliseconds
+    private long _max_diagnosis_latency = 0;
+    
+    // Alarm for timing out diagnosis window, if any is set.
+    private AssetAlarm _asset_alarm = null;
+
+    // Back pointer to the believability plugin 
+    private BelievabilityPlugin _plugin = null;
 
 } // class AssetModel

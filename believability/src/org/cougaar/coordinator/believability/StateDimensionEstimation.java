@@ -173,6 +173,26 @@ public class StateDimensionEstimation extends Object
     
 
     /**
+     * Clone this StateDimensionEstimation
+     * @throws BelievabilityException but really shouldn't
+     * @return the cloned StateDimensionEstimation
+     **/
+    public StateDimensionEstimation cloneSDE() 
+	throws BelievabilityException {
+
+	StateDimensionEstimation sde = 
+	    new StateDimensionEstimation( _asset_model,
+					  _state_dimension );
+	Enumeration state_names = getStateNames();
+	while ( state_names.hasMoreElements() ) {
+	    String sn = (String) state_names.nextElement();
+	    sde.setProbability( sn, this.getProbability( sn ) );
+	}
+	return sde;
+    }
+
+
+    /**
      * Returns a string represenation of the StateDimensionEstimation
      * @return the string representation.
      **/
