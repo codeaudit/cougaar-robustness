@@ -19,7 +19,8 @@
  * </copyright>
  *
  * CHANGE RECORD
- * 12 Feb 2003" Port to 10.0 (OBJS)
+ * 14 Mar 2003: Clean up (OBJS)
+ * 12 Feb 2003: Port to 10.0 (OBJS)
  * 30 Sep 2002: Add inband acking. (OBJS)
  * 22 Sep 2002: Revamp for new serialization. (OBJS)
  * 26 Apr 2002: Created from socket link protocol. (OBJS)
@@ -455,7 +456,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
           dsocket.receive (packet);
           receiveTime = now();
           if (doDebug()) log.debug (rid+ "Waiting for msg done " +dsockString);
-          if (showTraffic) System.err.print ("<U");
+          if (showTraffic) System.out.print ("<U");
         }
         catch (Exception e)
         { 
@@ -573,7 +574,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
               //  Send an ack
 
               sendTime = now();  // about as close as we can get to the send
-              byte[] ackBytes = createAck (msg, receiveTime, exception, sendTime);
+              byte[] ackBytes = createAck (msg, receiveTime, exception); //102B , sendTime);
               SocketAddress addr = packet.getSocketAddress();
               DatagramPacket ackPacket = new DatagramPacket (ackBytes, ackBytes.length, addr);
               if (doDebug()) log.debug (rid+ "Sending ack thru " +dsockString);
@@ -612,7 +613,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
       return ((PureAckAckMessage)msg).isInbandAckAck();
     }
 
-    private byte[] createAck (AttributedMessage msg, long receiveTime, Exception ex, long sendTime) 
+    private byte[] createAck (AttributedMessage msg, long receiveTime, Exception ex) //102B , long sendTime) 
       throws Exception
     {
       PureAckMessage pam = PureAckMessage.createInbandPureAckMessage (msg);
