@@ -225,8 +225,8 @@ public class LeashRequestServlet extends BaseServletComponent implements Blackbo
         out.print(
                   "</center></h2>\n"+
                   "<form name=\"myForm\" method=\"get\" >" );
-        out.println("<input type=submit name=\"SuppressDefenses\" value=\"Suppress\"><br>");
-        out.println("<input type=submit name=\"AllowDefenses\" value=\"Allow\"><br>");
+        out.println("<input type=submit name=\"LeashDefenses\" value=\"WantsToLeash\"><br>");
+        out.println("<input type=submit name=\"UnleashDefenses\" value=\"WantsToUnleash\"><br>");
         out.println("\n</form>");
 
       }
