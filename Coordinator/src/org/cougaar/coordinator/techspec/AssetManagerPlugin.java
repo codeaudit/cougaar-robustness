@@ -120,9 +120,7 @@ public class AssetManagerPlugin extends ComponentPlugin implements NotPersistabl
                 removedAsset = false;
 
 
-logger.warn("!!!! [STATUS CHANGED CALLED] on asset="+csce[i].getName()+" with:  \n= "+csce[i].toString());
-logger.warn("!!!! getCurrentLocation = " + csce[i].getCurrentLocation());
-logger.warn("!!!! getPriorLocation = " + csce[i].getPriorLocation());
+logger.warn("!!!! [STATUS CHANGED CALLED] on asset="+csce[i].getName()+" with:  \n= "+csce[i].toString()+"  getCurrentLocation = " + csce[i].getCurrentLocation()+" getPriorLocation = " + csce[i].getPriorLocation());
                 
 /*                
 logger.warn("!!!! ****************************************************");
@@ -568,7 +566,7 @@ logger.warn("!!!! **********************************************************");
     protected void queueChangeEvent(AssetChangeEvent ace) {
         synchronized (eventQueue) {
             eventQueue.add(ace);
-            logger.debug("queueEvent: (" + eventQueue.size() + ") " + ace);
+            logger.debug("queueEvent: (" + eventQueue.size() + ") " + ace.toString());
         }
         // Could potentially delay & announce every x seconds
         // IF there has been new events added to the queue

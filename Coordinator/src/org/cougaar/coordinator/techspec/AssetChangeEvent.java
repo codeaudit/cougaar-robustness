@@ -39,6 +39,7 @@ public class AssetChangeEvent implements NotPersistable {
     public static final Event MOVED_ASSET = new Event();    
     public static final Event REMOVED_ASSET = new Event();
     public static class Event {}
+    public static final String UNKNOWN = "?";
     
     private Event event;
     private AssetTechSpecInterface asset;
@@ -54,4 +55,12 @@ public class AssetChangeEvent implements NotPersistable {
     public boolean newAssetEvent() { return event == NEW_ASSET; }
     public boolean moveEvent() { return event == MOVED_ASSET; }
     public boolean assetRemovedEvent() { return event == REMOVED_ASSET; }
+    
+    public String toString() {
+        String evt = UNKNOWN;
+        if (event == NEW_ASSET) {evt = "NewAsset"; }
+        else if (event == MOVED_ASSET) {evt = "MovedAsset"; }
+        else if (event == REMOVED_ASSET) {evt = "RemovedAsset"; }
+        return "AssetChangeEvent:: Asset="+asset.getName() + " Event = "+evt;
+    }
 }
