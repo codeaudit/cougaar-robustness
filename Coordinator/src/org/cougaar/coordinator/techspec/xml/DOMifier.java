@@ -92,12 +92,12 @@ public class DOMifier implements ErrorHandler, EntityResolver  {
             try {
                 return domBuilder.parse(f);
             } catch (Exception e) {
-                logger.error("SOME TECH SPECS WILL NOT BE LOADED!! Exception finding/parsing file tech spec ["+f.getName()+"]: "+ e);
+                logger.error("SOME TECH SPECS WILL NOT BE LOADED!! Exception finding/parsing file tech spec ["+f.getName()+"] ");
                 return null;
             }
         } catch (Exception e) {         
-            logger.error("DOMifier Exception: "+e, e);
-            throw new Exception(e.toString());
+            logger.error("DOMifier Exception: "+e);
+            //throw new Exception(e.toString());
         }
     }
     
