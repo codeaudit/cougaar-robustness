@@ -156,7 +156,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                 new CostBenefitEvaluation(assetID, knob.getHorizon(), se);
 
         Collection actions = findActionCollection(assetID);
-        if (logger.isDebugEnabled()) logger.debug("Have "+actions.size()+" actions");
+        if (logger.isDebugEnabled()) logger.debug("Have "+((actions != null)?actions.size():0)+" actions");
 
         if (actions == null) return cbe; // No actions exist that even possibly apply - usually an initialization situation
 

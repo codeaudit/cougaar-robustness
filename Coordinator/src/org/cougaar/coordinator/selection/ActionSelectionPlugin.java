@@ -199,7 +199,8 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
     int index = 0;
     while (!done) {
         SelectedAction thisAction = selectBest(cbe, knob); 
-        if (logger.isDebugEnabled()) logger.debug(thisAction.toString());
+        if (logger.isDebugEnabled()) 
+	    logger.debug("SelectAction: thisAction="+((thisAction != null)?thisAction.toString():null));
         if (thisAction != null) {
             publishAdd(thisAction);
             index++;
