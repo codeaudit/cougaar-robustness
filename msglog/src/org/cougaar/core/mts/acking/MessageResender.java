@@ -220,7 +220,7 @@ class MessageResender implements Runnable
     }
 
     Ack ack = MessageUtils.getAck (msg);
-    int highTryCount = ack.getNumberOfLinkChoices();
+    int highTryCount = ack.getNumberOfLinkChoices() * 2;
 
     if (ack.getSendTry() > highTryCount) 
     {
