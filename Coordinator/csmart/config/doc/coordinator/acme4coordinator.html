@@ -1,0 +1,288 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta http-equiv="Content-Type"
+ content="text/html; charset=windows-1252">
+  <meta name="Generator" content="Microsoft Word 97">
+  <title>Adapting Defenses to the Coordinator API</title>
+</head>
+<body link="#0000ff" vlink="#800080">
+<div style="text-align: center;"><big><b><u><b><u>Configuring the
+Defense Coordinator under ACME and Cougaar 11.2</u></b></u></b></big><br>
+&nbsp;
+</div>
+<span style="font-family: arial,helvetica; text-decoration: underline;"><span
+ style="font-weight: bold;">Overlays</span></span>
+<ol start="1">
+</ol>
+<div style="margin-left: 40px;">The Coordinator is provided in two
+overlays:<br>
+<br>
+<table>
+  <tbody>
+    <tr>
+      <td>Robustness </td>
+      <td> <a
+ href="https://cvs.ultralog.net/dist/AR_telcordia_coordinator_HEAD_B11_2.zip">Telcordia
+believability/coordinator</a> </td>
+      <td>HEAD </td>
+      <td>B11_2 </td>
+    </tr>
+    <tr>
+      <td>Robustness </td>
+      <td> <a
+ href="https://cvs.ultralog.net/dist/AR_objs_Coordinator_HEAD_B11_2.zip">Objs
+Coordinator</a> </td>
+      <td>HEAD </td>
+      <td>B11_2 </td>
+    </tr>
+  </tbody>
+</table>
+<br>
+Because
+the Coordinator depends on the CommunityStatusModel,
+<br>
+which is
+populated by MIC's ARUC1 defense, the following <br>
+overlays are also
+required:<br>
+<br>
+<table>
+  <tbody>
+    <tr>
+      <td>Robustness </td>
+      <td> <a
+ href="https://cvs.ultralog.net/dist/AR_objs_sensors_HEAD_B11_2.zip">Objs
+sensors</a> </td>
+      <td>HEAD </td>
+      <td>B11_2 </td>
+    </tr>
+    <tr>
+      <td>Robustness </td>
+      <td> <a
+ href="https://cvs.ultralog.net/dist/AR_objs_common_HEAD_B11_2.zip">Objs
+Common</a> </td>
+      <td>HEAD </td>
+      <td>B11_2 </td>
+    </tr>
+    <tr>
+      <td>Robustness </td>
+      <td> <a
+ href="https://cvs.ultralog.net/dist/AR_boeing_exnihilo_HEAD_B11_2.zip">Boeing
+ExNihilo</a> </td>
+      <td>HEAD </td>
+      <td>B11_2 </td>
+    </tr>
+    <tr>
+      <td>Robustness </td>
+      <td> <a
+ href="https://cvs.ultralog.net/dist/AR_mic_HEAD_B11_2.zip">MIC
+Mgmt Agent</a> </td>
+      <td>HEAD </td>
+      <td>B11_2 </td>
+    </tr>
+    <tr>
+      <td>Robustness </td>
+      <td> <a
+ href="https://cvs.ultralog.net/dist/AR_common_HEAD_B11_2.zip">Robustness
+common</a> </td>
+      <td>HEAD </td>
+      <td>B11_2</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<ol start="2">
+</ol>
+<u><b>Rules</b></u>
+<div style="margin-left: 40px;"><br>
+<span style="font-family: monospace;">Assuming all the overlays
+above have
+been loaded, the Coordinator requires that the following&nbsp; rules be
+applied:</span><br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<div style="font-family: monospace; text-align: left;">&nbsp; -
+$CIP/csmart/config/rules/robustness<br>
+</div>
+<span style="font-family: monospace;">&nbsp; -
+$CIP/csmart/config/rules/robustness/common</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp; </span><span
+ style="font-family: monospace; font-weight: bold;">-
+$CIP/csmart/config/rules/coordinator</span><br
+ style="font-family: monospace; font-weight: bold;">
+<span style="font-family: monospace; font-weight: bold;">&nbsp; -
+$CIP/csmart/config/rules/coordinator/test</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp; -
+$CIP/csmart/config/rules/robustness/uc1</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp; -
+$CIP/csmart/config/rules/metrics/basic</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp; -
+$CIP/csmart/config/rules/metrics/sensors</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp; -
+$CIP/csmart/config/rules/metrics/serialization/metrics-only-serialization.rule</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp; -
+$CIP/csmart/config/rules/metrics/rss/tic</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">- community_rules:</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp; -
+$CIP/csmart/config/rules/robustness/communities</span><br
+ style="font-family: monospace;">
+<div style="text-align: left;"><big
+ style="color: rgb(204, 0, 0); font-family: monospace;"><b> </b></big><br
+ style="color: rgb(0, 0, 0); font-weight: bold; font-family: monospace;">
+<big style="color: rgb(204, 0, 0); font-family: monospace;"><b> </b><small
+ style="color: rgb(0, 0, 0); font-weight: bold;">Note: Only the two
+below are specific to the Coordinator.&nbsp; The others are for ARUC1.</small></big><br
+ style="font-family: monospace;">
+<br style="font-family: monospace;">
+<br style="font-family: monospace;">
+<span style="font-family: monospace;"><span style="font-weight: bold;">$CIP/csmart/config/rules/coordinator
+- </span>T</span><span style="font-family: monospace;">his rule loads
+the
+Coordinator's plugins into <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+each ARManager and a subset into each Node.</span><span
+ style="font-family: monospace;">&nbsp;&nbsp;
+</span><br style="font-family: monospace;">
+<span style="font-family: monospace;"></span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;"><span style="font-weight: bold;">$CIP/csmart/config/rules/coordinator/test
+- </span></span><span style="font-family: monospace;">This optional
+rule loads several monitor
+plugins<br>
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; and servlets useful
+for testing and debugging defenses.</span>
+</div>
+<span style="font-family: monospace;"></span><br>
+</div>
+<span style="text-decoration: underline; font-weight: bold;">Include
+Scripts</span><br>
+<br style="font-family: monospace;">
+<div style="margin-left: 40px; font-family: monospace;">Include the
+following include scripts are provided:<br>
+</div>
+<div style="margin-left: 40px;"><span
+ style="font-weight: bold; font-family: monospace;"><br>
+$CIP/csmart/lib/unleash_defenses.rb - </span><span
+ style="font-family: monospace;">This script Unleashes Defenses at
+:during_Stage_1. <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+It should be loaded in all Saves with the <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span><span style="font-family: monospace;">Coordinator </span><span
+ style="font-family: monospace;">loaded.<br>
+</span><span style="font-weight: bold; font-family: monospace;"><br>
+$CIP/csmart/lib/leash_on_restart.rb - </span><span
+ style="font-family: monospace;">This script Leashes Defenses on a
+Restore<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+at :snapshot_restored, and </span><span style="font-family: monospace;">then
+Unleashes <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+them at :starting_stage.&nbsp; It should be loaded<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+in all Restores with the Coordinator loaded.<br>
+</span></div>
+<span style="font-weight: bold;"><br>
+</span><br>
+<u><b>Actions and States</b></u>
+<blockquote> </blockquote>
+<div style="margin-left: 40px;"><span style="font-family: monospace;">The
+Coodinator defines the following ACME Actions and States for Leashing
+and Unleashing <br>
+Defenses in the following file:</span><br
+ style="font-family: monospace;">
+<br style="font-family: monospace;">
+<b style="font-family: monospace;">$CIP/csmart/config/lib/coordinator/leashing.rb</b><span
+ style="font-family: monospace;"><br>
+</span></div>
+<blockquote>
+  <blockquote> </blockquote>
+  <tt style="font-style: italic;"># This action is used to confirm that
+Defenses have been Unleashed by all Robustness Managers.<br>
+# The argument specifies the level of verbosity: 0 is silent</tt><tt
+ style="font-style: italic;">(the default)</tt><tt><i><span
+ style="font-style: italic;">, 1 prints the message.</span><br>
+  </i></tt><tt><b>do_action "MonitorUnleash", 1<br>
+  </b></tt><tt style="font-family: monospace;">Starting: MonitorUnleash</tt><tt
+ style="font-family: monospace;"><br>
+Finished: MonitorUnleash in 0 seconds<br>
+...<br>
+  </tt><tt style="font-family: monospace;">&nbsp;INFO: All Robustness
+Managers have Unleashed
+Defenses.</tt><br>
+  <tt><b><br>
+  </b><span style="font-style: italic;"># This action Unleashes all
+Defenses so that the Coordinator can enable them and they can <br>
+# operate normally.&nbsp; Its intended for execution after
+startup.&nbsp; </span></tt><span
+ style="font-style: italic; font-family: monospace;">If its not done,
+the <br>
+# Defenses will never be enabled by the Coordinator.</span><br
+ style="font-style: italic;">
+  <tt style="font-style: italic;"># The argument specifies the level of
+verbosity: 0=silent(the default), 1=info, 2=debug.</tt><br>
+  <tt><b>do_action "Unleash", 1<br>
+  </b></tt><tt>Starting: Unleash<br>
+&nbsp;INFO: Requested that CONUS-ARManager Unleash Defenses.<br>
+&nbsp;INFO: Requested that REAR-ARManager Unleash Defenses.<br>
+&nbsp;INFO: Requested that 1-AD-DIV-ARManager Unleash Defenses.<br>
+&nbsp;INFO: Requested that UA-ARManager Unleash Defenses.<br>
+Finished: Unleash in 0 seconds</tt><br>
+  <tt><b><br>
+  </b><span style="font-style: italic;"># This action Leashes Defenses
+when restarting.&nbsp; Its intended to be used when restoring a full <br>
+# society from persistence.</span><b><br>
+do_action "LeashOnRestart"<br>
+  <br>
+  </b><span style="font-style: italic;"># This state is reached when
+All the Robustness Managers have Unleashed their Defenses.<br>
+# Defense Actions will not be enabled until after this point, so no use
+starting them.<br>
+  </span></tt><tt style="font-style: italic;"># The first argument
+specifies the level of verbosity: 0=silent</tt><tt
+ style="font-style: italic;">(the default)</tt><tt><i><span
+ style="font-style: italic;">, 1=info.<br>
+# The second argument is a timeout.<br>
+  </span></i></tt><tt><b>wait_for "Unleashed", 1, 3.minutes<br>
+  </b></tt><tt>Waiting for: Unleashed<br>
+&nbsp;INFO: CONUS-ROB-MGMT-NODE: Defenses Unleashed.<br>
+&nbsp;INFO: REAR-ROB-MGMT-NODE: Defenses Unleashed.<br>
+&nbsp;INFO: 1-AD-DIV-ROB-MGMT-NODE: Defenses Unleashed.<br>
+&nbsp;INFO: UA-ROB-MGMT-NODE: Defenses Unleashed.<br>
+Done: Unleashed in 3 seconds</tt><tt><br>
+  </tt><tt></tt><br>
+</blockquote>
+Send questions or comments to:<br>
+<br>
+<tt>Steve Ford</tt><br>
+<tt> OBJS</tt><br>
+<tt> </tt><tt><a href="mailto:ford@objs.com">ford@objs.com</a></tt><br>
+<tt>610 345 0390</tt>
+<blockquote>
+  <blockquote> </blockquote>
+</blockquote>
+<ol style="margin-left: 40px;" start="2">
+  <ol>
+  </ol>
+</ol>
+<div style="margin-left: 40px;"><br>
+</div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+</body>
+</html>
