@@ -204,9 +204,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
   private CommunityService communityService = null;
   //private TopologyReaderService topologyService = null;
 
-  private Community community = null;
-  private boolean communityChanged = false;
-
+  private CommunityRoster roster = null;
   private Object rosterLock = new Object();
 
 
@@ -246,7 +244,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     Collection communities = communityService.search("(CommunityManager=" +
       myAgent.toString() + ")");
     if (!communities.isEmpty()) {
-      communityToMonitor = ((Community)communities.iterator().next()).getName();
+      communityToMonitor = (String)communities.iterator().next();
 
       // Initialize configurable paramaeters from defaults and plugin arguments.
       getPropertiesFromCommunityAttributes();
@@ -284,16 +282,11 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       (IncrementalSubscription)bbs.subscribe(propertiesPredicate);
 
     // Get Roster for community to monitor
-    //if (communityToMonitor != null && communityToMonitor.length() > 0) {
-    //  roster = communityService.getRoster(communityToMonitor);
+    if (communityToMonitor != null && communityToMonitor.length() > 0) {
+      roster = communityService.getRoster(communityToMonitor);
       // Register for updates to monitored community
-      communityService.getCommunity(communityToMonitor, -1, new CommunityResponseListener() {
-        public void getResponse(CommunityResponse resp) {
-          community = (Community)resp.getContent();
-        }
-      });
-      //communityService.addListener(this);
-    //}
+      communityService.addListener(this);
+    }
 
     // Start evaluation thread to periodically update and analyze the Health
     // Status of monitored agents
@@ -411,7 +404,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     */
     //System.out.print("*");
     // Process any Roster changes
-    if (community != null) {
+    if (roster != null) {
       processRosterChanges();
     }
     Collection currentAgents = findMonitoredAgents();
@@ -775,18 +768,15 @@ public class HealthMonitorPlugin extends SimplePlugin implements
   //private void processRosterChanges(CommunityRoster roster) {
   private void processRosterChanges() {
     Collection cmList = null;
-    //synchronized (rosterLock) {
-      //cmList = roster.getMembers();
-      cmList = community.getEntities();
-      communityChanged = false;
-    //}
+    synchronized (rosterLock) {
+      cmList = roster.getMembers();
+      roster = null;
+    }
     // If first time, copy members from roster to local list
     if (membersHealthStatus.isEmpty()) {
       for (Iterator it = cmList.iterator(); it.hasNext();) {
-        //CommunityMember cm = (CommunityMember)it.next();
-        Entity cm = (Entity)it.next();
-        if (cm instanceof Agent) {
-        //if (cm.isAgent() && !isNodeAgent(cm.getName())) {
+        CommunityMember cm = (CommunityMember)it.next();
+        if (cm.isAgent() && !isNodeAgent(cm.getName())) {
           HealthStatus hs = newHealthStatus(SimpleMessageAddress.getSimpleMessageAddress(cm.getName()));
           addHealthStatus(hs);
           //log.info("Adding " + cm.getName());
@@ -799,11 +789,9 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       // Look for additions
       Collection newMembers = new Vector();
       for (Iterator it = cmList.iterator(); it.hasNext();) {
-        //CommunityMember cm = (CommunityMember)it.next();
-        Entity cm = (Entity)it.next();
+        CommunityMember cm = (CommunityMember)it.next();
         MessageAddress agent = SimpleMessageAddress.getSimpleMessageAddress(cm.getName());
-        if (cm instanceof Agent && !hasHealthStatus(agent)) {
-        //if (cm.isAgent() && !isNodeAgent(cm.getName()) && !hasHealthStatus(agent)) {
+        if (cm.isAgent() && !isNodeAgent(cm.getName()) && !hasHealthStatus(agent)) {
           HealthStatus hs = newHealthStatus(agent);
           addHealthStatus(hs);
           newMembers.add(hs);
@@ -818,8 +806,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
         HealthStatus hs = getHealthStatus((MessageAddress)it.next());
         boolean found = false;
         for (Iterator it1 = cmList.iterator(); it1.hasNext();) {
-          //CommunityMember cm = (CommunityMember)it1.next();
-          Entity cm = (Entity)it1.next();
+          CommunityMember cm = (CommunityMember)it1.next();
           if (hs.getAgentId().equals(SimpleMessageAddress.getSimpleMessageAddress(cm.getName()))) {
             found = true;
             break;
@@ -833,7 +820,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
           bbs.closeTransaction();
         }
       }
-      communityChanged = false;
+      roster = null;
     }
   }
 
@@ -1290,23 +1277,13 @@ public class HealthMonitorPlugin extends SimplePlugin implements
   }
 
   public void communityChanged(CommunityChangeEvent cce) {
-    Collection entities = cce.getCommunity().getEntities();
-    log.info("CommunityChangeEvent: " + cce +
-             " entities=" + entities.size() + "-" + entityNames(entities));
     if (cce.getCommunityName().equals(communityToMonitor) &&
         (cce.getType() == cce.ADD_ENTITY || cce.getType() == cce.REMOVE_ENTITY)) {
-      communityChanged = true;
+      //log.info("CommunityChangeEvent: " + cce);
+      synchronized (rosterLock) {
+        roster = communityService.getRoster(communityToMonitor);
+      }
     }
-  }
-
-  // Converts a collection of Entities to a compact string representation of names
-  private String entityNames(Collection entities) {
-    StringBuffer sb = new StringBuffer("[");
-    for (Iterator it = entities.iterator(); it.hasNext();) {
-      Entity entity = (Entity)it.next();
-      sb.append(entity.getName() + (it.hasNext() ? "," : ""));
-    }
-    return(sb.append("]").toString());
   }
 
   public String getCommunityName() {
