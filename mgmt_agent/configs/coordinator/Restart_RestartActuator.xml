@@ -11,7 +11,7 @@
         <Transition WhenActualStateIs="*" EndStateWillBe="Live" IntermediateStateWillBe="Dead" >
             <OneTimeCost>
                 <CPU intensity="HIGH" agentSizeFactor="TRUE" />
-                <Time duration="60000" />
+                <Time duration="90000" />
             </OneTimeCost>
             <ContinuingCost>
                 <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
