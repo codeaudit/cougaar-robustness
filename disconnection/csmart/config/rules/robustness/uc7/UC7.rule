@@ -122,6 +122,7 @@ def run(society)
 		pm.add_argument("#{enc}_UC7CommunityLevel_playbook.txt")
 		# One more agent component -------------
 		rdc = Component.new("org.cougaar.tools.robustness.deconfliction.RemoteDefenseConditionMgrPlugin")
+	        rdc.add_argument(mgrByEnclave[enc].name)			
 	
 		# Add plugins for Mgr Agent
 		#-----------------------------
@@ -140,7 +141,6 @@ def run(society)
 		    ####nonMgrAgentList << node.name
 		    node.add_components(defensePluginsToAdd)
 		    node.add_component(rdc)
-		    rdc.add_argument(mgrByEnclave[enc].name)			
 		end
 		genEnclavePlaybook(enc, list)
 	end
