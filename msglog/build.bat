@@ -20,7 +20,7 @@ REM " TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR"
 REM " PERFORMANCE OF THE COUGAAR SOFTWARE."
 REM "</copyright>"
 
-rem Script to compile msglog
+rem Script to compile msglog 
 
 rem compile the code
 if not exist lib mkdir lib
@@ -35,8 +35,9 @@ set SOCKET=src\org\cougaar\core\mts\socket\*.java
 set ACKING=src\org\cougaar\core\mts\acking\*.java
 
 @echo on
-javac -deprecation -d lib -classpath %LIBPATHS% %MTS% %EMAIL% %UDP% %SOCKET% %ACKING% && jar cf %COUGAAR_INSTALL_PATH%\lib\Robustness_objs_msglog.jar -C lib ./org
+javac -deprecation -d lib -classpath %LIBPATHS% %MTS% %EMAIL% %UDP% %SOCKET% %ACKING% && jar cf %COUGAAR_INSTALL_PATH%\lib\msglog.jar -C lib ./org
 
-jarsigner.exe -keystore signingCA_keystore -storepass keystore %COUGAAR_INSTALL_PATH%\lib\Robustness_objs_msglog.jar privileged
+jarsigner.exe -keystore signingCA.keystore -storepass keystore %COUGAAR_INSTALL_PATH%\lib\msglog.jar privileged
 
-jarsigner.exe -keystore signingCA_keystore -storepass keystore %COUGAAR_INSTALL_PATH%\lib\core.jar privileged
+
+
