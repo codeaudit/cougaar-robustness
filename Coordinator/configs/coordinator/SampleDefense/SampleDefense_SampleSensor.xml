@@ -5,7 +5,7 @@
 <SensorType name="org.cougaar.coordinator.examples.SampleDefense.SampleDiagnosis" 
             sensesAssetType="Agent"
             sensesStateDimension="Compromised" 
-		sensorLatency="47">
+            sensorLatency="1000">
     <PotentialDiagnoses>
         <Diagnosis name="Compromised" />
         <Diagnosis name="Secure" />

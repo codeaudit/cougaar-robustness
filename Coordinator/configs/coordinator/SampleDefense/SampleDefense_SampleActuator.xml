@@ -7,8 +7,8 @@
               affectsStateDimension="Compromised" 
               actionType="CORRECTIVE">
 
-    <Action name="Quaranteen">
-        <Description value="Quaranteen the Agent so it can do no harm" />
+    <Action name="Quarantine">
+        <Description value="Quarantine the Agent so it can do no harm" />
         <Transition WhenActualStateIs="Yes" EndStateWillBe="Isolated" IntermediateStateWillBe="Yes" >
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
