@@ -236,6 +236,7 @@ public class SampleServlet extends ComponentPlugin
 	    try {
 		PrintWriter out = response.getWriter();
 		out.println("<html>");
+		out.println("<META HTTP-EQUIV=\"PRAGMA\" CONTENT=\"NO-CACHE\">");
 		out.println("<script type=\"text/javascript\">");
 		out.println("function refreshPage(){");   
 		out.println("     var szURL = \"?REFRESH="+refreshRate+" \";");
@@ -299,6 +300,7 @@ public class SampleServlet extends ComponentPlugin
 			}
 			out.print("</select>");
 			out.print("<input type=submit name=\"Submit\" value=\"Set Values Offered\" size=17 >");
+			out.println("<input type=hidden name=\"REFRESH\" value=\""+refreshRate+"\" >");
 			out.println("</form>");
 
                         // display valuesOffered
@@ -326,6 +328,7 @@ public class SampleServlet extends ComponentPlugin
 			}
 			out.print("</select>");
 			out.print("<input type=submit name=\"Submit\" value=\"Start\" size=17>");
+			out.println("<input type=hidden name=\"REFRESH\" value=\""+refreshRate+"\" >");
 			if (actionValueUpdated) {
 			    out.println("<b><font color=\"Blue\">Action "+data.getActionValue()+" Started.</font></b>");
 			    actionValueUpdated = false;
@@ -347,6 +350,7 @@ public class SampleServlet extends ComponentPlugin
 			    out.println("<b><font color=\"Blue\">Action "+data.getCompletionCode()+".</font></b>");
 			    completionCodeUpdated = false;
 			}
+			out.println("</form>");
 
 			out.println("<p><b>Current Action: </b>"+data.getActionValue());
 			out.println("<p><b>Current CompletionCode: </b>"+data.getCompletionCode());

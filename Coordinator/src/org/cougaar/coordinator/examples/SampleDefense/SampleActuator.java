@@ -122,7 +122,7 @@ public class SampleActuator extends ComponentPlugin
 		    break;
 		case SampleRawActuatorData.STOP:
 		    String codeStr = rawActuatorData.getCompletionCode();
-		    Action.CompletionCode code = (Action.CompletionCode)codeTbl.get(codeStr);
+                    Action.CompletionCode code = (Action.CompletionCode)codeTbl.get(codeStr);
 		    try {
 			action.stop(code);
 			blackboard.publishChange(action);
