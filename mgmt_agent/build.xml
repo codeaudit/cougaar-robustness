@@ -124,9 +124,6 @@
     <copy todir="${cougaar}/csmart/config/scripts/robustness/uc4">
       <fileset dir="csmart/config/scripts/robustness/uc4" />
     </copy>
-    <copy todir="${cougaar}/csmart/config/rules/robustness/communities">
-      <fileset dir="csmart/config/rules/robustness/communities" />
-    </copy>
     <copy file="configs/mic-local/uc1-small-1ad-layout.xml" toDir="${cougaar}/operator"/>
     <copy file="configs/mic-local/ron1-hosts.xml" toDir="${cougaar}/operator"/>
     <copy file="configs/mic-local/ron2-hosts.xml" toDir="${cougaar}/operator"/>
