@@ -266,7 +266,11 @@ module Cougaar
 	@filename = filename
       end
       def perform
-	file = File.new(@filename)
+        begin
+	  file = File.new(@filename)
+	rescue Exception #catch file not exist exception
+	  puts "#{@filename} does not exist"
+	end
 	doc = REXML::Document.new(file)
         @run.society.communities.each do |community|
 	  isRobustness = "false"
