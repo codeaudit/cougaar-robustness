@@ -270,9 +270,11 @@ public class LoadTechSpecsPlugin extends ServiceUserPluginBase implements NotPer
         loadDocs( utilityLoader, utilities );
 
         //5. Load events & publish them
-        eventDescriptions = loadDocs( eventLoader, events ); //must publish
-        eventLoader.setEventLinks(eventDescriptions);
-
+            eventDescriptions = loadDocs( eventLoader, events ); //must publish        
+        if (eventDescriptions != null) { //it would be null if this isn't the MgmtAgent
+            eventLoader.setEventLinks(eventDescriptions);
+        }
+        
         //Load actuators & sensors & cross diagnoses
         loadDocs( actuatorLoader,actuatorTypes );
         loadDocs( sensorLoader, sensors );
@@ -280,8 +282,9 @@ public class LoadTechSpecsPlugin extends ServiceUserPluginBase implements NotPer
 
         //Load threats & publish them
         threatDescriptions = loadDocs( threatLoader, threats ); //must publish
-        threatLoader.setEventLinks(threatDescriptions, eventDescriptions);
-        
+        if (threatDescriptions != null & eventDescriptions != null) { //it would be null if this isn't the MgmtAgent
+            threatLoader.setEventLinks(threatDescriptions, eventDescriptions);
+        }    
     }
     
     /** Causes the XMLLoader to load the tech specs */
