@@ -35,9 +35,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import javax.naming.directory.Attribute;
-import javax.naming.directory.BasicAttribute;
-
 /**
  * ThreatAlert handler to respond to threats of imminent loss of a host
  * computer.
@@ -185,7 +182,7 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
 
   protected Set getExcludedNodes() {
     Set excludedNodes = new HashSet();
-    String allNodes[] = model.listEntries(model.NODE);
+    String allNodes[] = model.listEntries(CommunityStatusModel.NODE);
     for (int i = 0; i < allNodes.length; i++) {
       if (model.hasAttribute(model.getAttributes(allNodes[i]), "UseForRestarts", "False")) {
         excludedNodes.add(allNodes[i]);

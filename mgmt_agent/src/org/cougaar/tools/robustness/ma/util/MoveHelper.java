@@ -112,7 +112,7 @@ public class MoveHelper extends BlackboardClientComponent {
     public boolean execute (Object o) {
       if (o instanceof HealthMonitorRequest) {
         HealthMonitorRequest hmr = (HealthMonitorRequest)o;
-        return (hmr.getRequestType() == hmr.MOVE);
+        return (hmr.getRequestType() == HealthMonitorRequest.MOVE);
       }
       return false;
   }};

@@ -61,7 +61,6 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
                             Date              start,
                             Date              expiration) {
     this();
-    this.source = source;
     this.severityLevel = severityLevel;
     this.creationTime = new Date();
     this.startTime = start.getTime();
@@ -78,7 +77,6 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
                             Date start,
                             long duration) {
     this();
-    this.source = source;
     this.severityLevel = severityLevel;
     this.startTime = start.getTime();
     this.duration = duration;
@@ -93,7 +91,6 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
   public DefaultThreatAlert(int  severityLevel,
                             long duration) {
     this();
-    this.source = source;
     this.severityLevel = severityLevel;
     this.duration = duration;
     this.creationTime = new Date();
@@ -107,7 +104,6 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
    */
   public DefaultThreatAlert(int  severityLevel) {
     this();
-    this.source = source;
     this.severityLevel = severityLevel;
     this.duration = FOREVER;
     this.creationTime = new Date();

@@ -712,7 +712,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
   private Set getActiveHosts() {
     Set hosts = new HashSet();
-    String activeNodes[] = model.listEntries(model.NODE, DefaultRobustnessController.ACTIVE);
+    String activeNodes[] = model.listEntries(CommunityStatusModel.NODE, DefaultRobustnessController.ACTIVE);
     for (int i = 0; i < activeNodes.length; i++) {
       hosts.add(model.getLocation(activeNodes[i]));
     }
@@ -796,7 +796,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   private boolean agentsAndLocationsActive() {
     String agents[] =
-        model.listEntries(model.AGENT, DefaultRobustnessController.ACTIVE);
+        model.listEntries(CommunityStatusModel.AGENT, DefaultRobustnessController.ACTIVE);
     if (agents.length < expectedAgents()) return false;
     List nodes = new ArrayList();
     boolean inactiveNode = false;
@@ -863,8 +863,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
     checkCommunityReady();
     if (didRestart && !suppressPingsOnRestart) {
-      newState(model.listEntries(model.AGENT, -1), HEALTH_CHECK);
-      newState(model.listEntries(model.NODE, -1), HEALTH_CHECK);
+      newState(model.listEntries(CommunityStatusModel.AGENT, -1), HEALTH_CHECK);
+      newState(model.listEntries(CommunityStatusModel.NODE, -1), HEALTH_CHECK);
     }
     // Setup defense coordination
     if (isSentinel()) {
@@ -1012,7 +1012,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
   private void pingAll(final int stateOnSuccess,
                          final int stateOnFail) {
-    doPing(model.listEntries(model.AGENT), stateOnSuccess, stateOnFail);
+    doPing(model.listEntries(CommunityStatusModel.AGENT), stateOnSuccess, stateOnFail);
   }
 
   private void checkLoadBalance() {
@@ -1078,7 +1078,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
        samples =  se.samples;
        high = (long)se.high;
      }
-     int agentsOnNode = model.entitiesAtLocation(activeNodes[i], model.AGENT).length;
+     int agentsOnNode = model.entitiesAtLocation(activeNodes[i], CommunityStatusModel.AGENT).length;
      Date lastHeard = new Date(se.last);
      summary.append(activeNodes[i] + "(" + agentsOnNode + "," +
                     samples + "," + high + "," + df.format(lastHeard) + ")");
@@ -1106,7 +1106,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
  private Set getAdditionalExcludedNodes(String deadNode) {
    Set excluded = new HashSet();
-   String[] nodes = model.listEntries(model.NODE);
+   String[] nodes = model.listEntries(CommunityStatusModel.NODE);
    StringBuffer detail = new StringBuffer();
    double now = System.currentTimeMillis();
    for (int i=0; i<nodes.length; i++) {

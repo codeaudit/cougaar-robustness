@@ -188,7 +188,7 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
                 " alert=" + ta +
                 " community=" + community +
                 " role=" + role +
-                " targets=" + taRelay.targetsToString(taRelay));
+                " targets=" + RelayAdapter.targetsToString(taRelay));
     }
     queueForSend(taRelay);
   }
@@ -207,7 +207,7 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
     if (log.isDebugEnabled()) {
       log.debug("sendAlert:" +
                 " alert=" + ta +
-                " target=" + taRelay.targetsToString(taRelay));
+                " target=" + RelayAdapter.targetsToString(taRelay));
     }
     queueForSend(taRelay);
   }

@@ -21,6 +21,7 @@ import org.cougaar.core.node.NodeControlService;
 import org.cougaar.core.service.EventService;
 
 import org.cougaar.core.service.community.Community;
+import org.cougaar.core.service.community.CommunityService;
 import org.cougaar.core.service.community.CommunityResponseListener;
 import org.cougaar.core.service.community.CommunityResponse;
 import org.cougaar.core.service.community.FindCommunityCallback;
@@ -203,7 +204,7 @@ public class ReaffiliationNotificationHandler extends RobustnessThreatAlertHandl
           } else {
             commSvc.joinCommunity(community,
                                   agentId.toString(),
-                                  commSvc.AGENT,
+                                  CommunityService.AGENT,
                                   attrs,
                                   false,
                                   null,

@@ -25,11 +25,6 @@ import org.cougaar.tools.robustness.threatalert.*;
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.mts.MessageAddress;
 
-import java.util.Properties;
-
-import javax.naming.directory.Attribute;
-import javax.naming.directory.BasicAttribute;
-
 /**
  * ThreatAlert handler to respond to changes in Security posture.
  */

@@ -74,7 +74,7 @@ public abstract class RobustnessThreatAlertHandlerBase
     Set nodes = new HashSet();
     for (Iterator it = locations.iterator(); it.hasNext();) {
       String location = (String)it.next();
-      if (model.getType(location) == model.NODE) {
+      if (model.getType(location) == CommunityStatusModel.NODE) {
         nodes.add(location);
       } else {  // Host
         String nodeNames[] = model.entitiesAtLocation(location);

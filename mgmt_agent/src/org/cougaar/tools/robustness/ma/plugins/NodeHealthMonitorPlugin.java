@@ -363,7 +363,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
     for (Iterator it1 = entities.iterator(); it1.hasNext(); ) {
       Entity entity = (Entity) it1.next();
       //targets.add(MessageAddress.getMessageAddress(entity.getName()));
-      if (model != null && model.getType(entity.getName()) == model.NODE) {
+      if (model != null && model.getType(entity.getName()) == CommunityStatusModel.NODE) {
         targets.add(getMessageAddressWithTimeout(entity.getName(),
                                                  updateInterval * MS_PER_MIN));
       }
@@ -497,7 +497,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
         String agentName = (String)it.next();
         if (community.hasEntity(agentName) && !myName.equals(agentName)) {
           int state = model.getCurrentState(agentName);
-          state = state < model.INITIAL ? model.INITIAL : state;
+          state = state < CommunityStatusModel.INITIAL ? CommunityStatusModel.INITIAL : state;
           l.add(new AgentStatus(agentName,
                                 ((Long)agentVersions.get(agentName)).longValue(),
                                 state));

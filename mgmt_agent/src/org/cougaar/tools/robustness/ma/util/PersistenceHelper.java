@@ -38,7 +38,6 @@ import org.cougaar.core.service.PersistenceControlService;
 import org.cougaar.core.persist.PersistenceNotEnabledException;
 
 import org.cougaar.core.component.BindingSite;
-import org.cougaar.core.component.ServiceBroker;
 
 import org.cougaar.core.mts.MessageAddress;
 

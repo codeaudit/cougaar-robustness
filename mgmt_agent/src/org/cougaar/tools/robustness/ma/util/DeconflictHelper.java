@@ -38,8 +38,6 @@ import org.cougaar.tools.robustness.deconfliction.MonitoringEnablingOperatingMod
 import org.cougaar.tools.robustness.deconfliction.DefenseApplicabilityBinaryCondition;
 import org.cougaar.tools.robustness.deconfliction.DefenseConstants;
 
-import org.cougaar.tools.robustness.ma.CommunityStatusModel;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;

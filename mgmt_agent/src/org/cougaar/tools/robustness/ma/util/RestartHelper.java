@@ -107,9 +107,9 @@ public class RestartHelper extends BlackboardClientComponent {
     public boolean execute (Object o) {
       if (o instanceof HealthMonitorRequest) {
         HealthMonitorRequest hmr = (HealthMonitorRequest)o;
-        return (hmr.getRequestType() == hmr.RESTART ||
-                hmr.getRequestType() == hmr.KILL ||
-                hmr.getRequestType() == hmr.ADD);
+        return (hmr.getRequestType() == HealthMonitorRequest.RESTART ||
+                hmr.getRequestType() == HealthMonitorRequest.KILL ||
+                hmr.getRequestType() == HealthMonitorRequest.ADD);
       }
       return false;
   }};

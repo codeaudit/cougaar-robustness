@@ -58,7 +58,7 @@ public class RestartDestinationLocator {
     }
 
     String activeNodes[] =
-        model.listEntries(model.NODE, DefaultRobustnessController.ACTIVE);
+        model.listEntries(CommunityStatusModel.NODE, DefaultRobustnessController.ACTIVE);
     Set candidateNodes = new HashSet();
     for (int i = 0; i < activeNodes.length; i++) {
       if (!excludedNodes.contains(activeNodes[i])) {

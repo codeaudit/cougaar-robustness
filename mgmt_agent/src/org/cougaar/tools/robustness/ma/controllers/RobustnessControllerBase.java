@@ -50,7 +50,6 @@ import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.SchedulerService;
 
 import org.cougaar.core.service.community.Community;
-import org.cougaar.core.service.community.CommunityService;
 import org.cougaar.core.service.community.CommunityResponse;
 import org.cougaar.core.service.community.CommunityResponseListener;
 
@@ -462,7 +461,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    */
   protected Set agentsOnNode(String nodeName) {
     Set agentNames = new HashSet();
-    String agentsOnNode[] = model.entitiesAtLocation(nodeName, model.AGENT);
+    String agentsOnNode[] = model.entitiesAtLocation(nodeName, CommunityStatusModel.AGENT);
     for (int i = 0; i < agentsOnNode.length; i++) {
       agentNames.add(agentsOnNode[i]);
     }
@@ -477,7 +476,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    */
   protected Set agentsOnNode(String nodeName, int state) {
     Set agentNames = new HashSet();
-    String agentsOnNode[] = model.entitiesAtLocation(nodeName, model.AGENT);
+    String agentsOnNode[] = model.entitiesAtLocation(nodeName, CommunityStatusModel.AGENT);
     for (int i = 0; i < agentsOnNode.length; i++) {
       if (getState(agentsOnNode[i]) == state) {
         agentNames.add(agentsOnNode[i]);
@@ -524,7 +523,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * @return True if type is AGENT
    */
   protected boolean isAgent(String name) {
-    return (model.getType(name) == model.AGENT);
+    return (model.getType(name) == CommunityStatusModel.AGENT);
   }
 
   /**
@@ -533,7 +532,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * @return True if type is NODE
    */
   protected boolean isNode(String name) {
-    return (model.getType(name) == model.NODE);
+    return (model.getType(name) == CommunityStatusModel.NODE);
   }
 
   /**
@@ -781,7 +780,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
     summary.append(" leader=" + model.getLeader());
     summary.append(" activeNodes=[");
     for (int i = 0; i < activeNodes.length; i++) {
-      int agentsOnNode = model.entitiesAtLocation(activeNodes[i], model.AGENT).length;
+      int agentsOnNode = model.entitiesAtLocation(activeNodes[i], CommunityStatusModel.AGENT).length;
       summary.append(activeNodes[i] + "(" + agentsOnNode + ")");
       if (i < activeNodes.length - 1) summary.append(",");
     }
@@ -822,7 +821,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
   }
   protected Set getExcludedNodes() {
     Set excludedNodes = new HashSet();
-    String allNodes[] = model.listEntries(model.NODE);
+    String allNodes[] = model.listEntries(CommunityStatusModel.NODE);
     for (int i = 0; i < allNodes.length; i++) {
       if (model.hasAttribute(model.getAttributes(allNodes[i]),
                              USE_FOR_RESTARTS_ATTRIBUTE, "False")) {
@@ -834,7 +833,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
 
   protected List getVacantNodes() {
     List vacantNodes = new ArrayList();
-    String allNodes[] = model.listEntries(model.NODE);
+    String allNodes[] = model.listEntries(CommunityStatusModel.NODE);
     for (int i = 0; i < allNodes.length; i++) {
       if (isVacantNode(allNodes[i])) {
         vacantNodes.add(allNodes[i]);
@@ -844,7 +843,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
   }
 
   protected boolean isVacantNode(String name) {
-    return model.entitiesAtLocation(name, model.AGENT).length == 0;
+    return model.entitiesAtLocation(name, CommunityStatusModel.AGENT).length == 0;
   }
 
   /**
@@ -940,7 +939,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
   }
 
   public String healthMonitorStatusToXML(String indent, String name) {
-    String type = model.getType(name) == model.AGENT ? "agent" : "node";
+    String type = model.getType(name) == CommunityStatusModel.AGENT ? "agent" : "node";
     long now = now();
     long expiresAt = NEVER;
     if (model.getStateExpiration(name) != NEVER) {

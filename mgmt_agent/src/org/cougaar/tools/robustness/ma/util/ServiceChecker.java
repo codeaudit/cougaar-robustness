@@ -150,7 +150,7 @@ public class ServiceChecker {
             if (logger.isDebugEnabled()) {
                 logger.debug("pingResult:" +
                             " agent=" + result[i].getName() +
-                            " result=" + result[i].statusAsString(result[i].getStatus()));
+                            " result=" + PingResult.statusAsString(result[i].getStatus()));
             }
             processPingResponse(result[i].getName(), result[i].getStatus());
           }

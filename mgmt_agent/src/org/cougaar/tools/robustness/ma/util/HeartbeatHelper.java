@@ -152,7 +152,7 @@ public class HeartbeatHelper extends BlackboardClientComponent {
       } else if (status == HeartbeatRequest.FAILED || status == HeartbeatRequest.REFUSED) {
         if (logger.isDebugEnabled()) {
           logger.debug("Heartbeat request failed: agent=" + target +
-                       " status=" + hbr.statusToString(hbr.getStatus()));
+                       " status=" + HeartbeatRequest.statusToString(hbr.getStatus()));
         }
         blackboard.publishRemove(hbr);
         heartbeatFailure(target);

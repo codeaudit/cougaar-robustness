@@ -43,7 +43,6 @@ import org.cougaar.tools.robustness.ma.ldm.HealthMonitorRequestImpl;
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorResponse;
 import org.cougaar.tools.robustness.ma.ldm.RelayAdapter;
 
-import org.cougaar.core.service.community.Community;
 import org.cougaar.core.service.community.CommunityResponse;
 import org.cougaar.core.service.community.CommunityResponseListener;
 
@@ -706,7 +705,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
         hmrResp = (HealthMonitorResponse)hmrRa.getResponse();
       }
 
-      if (hmrResp.getStatus() == hmrResp.FAIL && log.isDebugEnabled()) {
+      if (hmrResp.getStatus() == HealthMonitorResponse.FAIL && log.isDebugEnabled()) {
         log.error("try to get health monitor response: " +
                   hmrResp.getStatusAsString());
       }

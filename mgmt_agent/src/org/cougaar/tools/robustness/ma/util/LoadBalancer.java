@@ -30,7 +30,6 @@ import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.service.AlarmService;
 import org.cougaar.core.service.BlackboardService;
-import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.SchedulerService;
 import org.cougaar.core.service.UIDService;
@@ -77,7 +76,7 @@ public class LoadBalancer
     public boolean execute(Object o) {
       if (o instanceof HealthMonitorRequest) {
         HealthMonitorRequest hmr = (HealthMonitorRequest) o;
-        return (hmr.getRequestType() == hmr.LOAD_BALANCE);
+        return (hmr.getRequestType() == HealthMonitorRequest.LOAD_BALANCE);
       }
       return false;
     }
@@ -232,7 +231,7 @@ public class LoadBalancer
   }
 
   protected boolean isVacantNode(String name) {
-    return model.entitiesAtLocation(name, model.AGENT).length == 0;
+    return model.entitiesAtLocation(name, CommunityStatusModel.AGENT).length == 0;
   }
 
   public void doLoadBalance(int     solverMode,
@@ -267,7 +266,7 @@ public class LoadBalancer
    */
   protected List getDeadNodes() {
     List deadNodes = new ArrayList();
-    String nodes[] = model.listEntries(model.NODE, DefaultRobustnessController.DEAD);
+    String nodes[] = model.listEntries(CommunityStatusModel.NODE, DefaultRobustnessController.DEAD);
     for (int i = 0; i < nodes.length; i++) {
       deadNodes.add(nodes[i]);
     }
@@ -280,7 +279,7 @@ public class LoadBalancer
    */
   protected List getVacantNodes() {
     List vacantNodes = new ArrayList();
-    String nodes[] = model.listEntries(model.NODE, DefaultRobustnessController.ACTIVE);
+    String nodes[] = model.listEntries(CommunityStatusModel.NODE, DefaultRobustnessController.ACTIVE);
     for (int i = 0; i < nodes.length; i++) {
       if (isVacantNode(nodes[i])) {
         vacantNodes.add(nodes[i]);
@@ -349,7 +348,7 @@ public class LoadBalancer
       String newNode = (String) me.getValue();
       increaseCounts(newnodes, newNode);
       String currentNode = model.getLocation(agent);
-      if (model.getType(agent) == model.AGENT && currentNode != null) {
+      if (model.getType(agent) == CommunityStatusModel.AGENT && currentNode != null) {
         increaseCounts(oldnodes, currentNode);
         if (newNode.equals(currentNode)) {
           it.remove();
