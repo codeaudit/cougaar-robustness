@@ -183,6 +183,8 @@ public class MoveHelper extends BlackboardClientComponent {
     if ((wakeAlarm != null) &&
         ((wakeAlarm.hasExpired()))) {
       moveNext();
+      wakeAlarm = new WakeAlarm((new Date()).getTime() + TIMER_INTERVAL);
+      alarmService.addRealTimeAlarm(wakeAlarm);
     }
     // Get AgentControl objects
     for (Iterator it = agentControlSub.iterator(); it.hasNext();) {
@@ -550,8 +552,6 @@ public class MoveHelper extends BlackboardClientComponent {
       if (!expired) {
         expired = true;
         if (blackboard != null) blackboard.signalClientActivity();
-        wakeAlarm = new WakeAlarm((new Date()).getTime() + TIMER_INTERVAL);
-        alarmService.addRealTimeAlarm(wakeAlarm);
       }
     }
     public boolean hasExpired() {
