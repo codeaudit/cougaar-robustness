@@ -1,5 +1,5 @@
 /*
- * ThrashingSuppressionApplicabilityCondition.java
+ * ThrashingDiagnosis.java
  *
  * Created on September 29, 2003, 2:36 PM
  */
@@ -20,9 +20,13 @@ import org.cougaar.core.component.ServiceBroker;
  */
 public class ThrashingDiagnosis extends Diagnosis { 
 
+    // Values that the diagnosis can take.
+    public static final String THRASHING = "THRASHING";
+    public static final String STABLE = "STABLE";
+
     private DiagnosesWrapper myWrapper;
 
-    /** Creates new ThrashingSuppressionApplicabilityCondition */
+    /** Creates new ThrashingDiagnosis */
     public ThrashingDiagnosis(String assetName, Object initialValue, ServiceBroker serviceBroker) throws IllegalValueException, TechSpecNotFoundException 
     {
 
@@ -56,4 +60,21 @@ public class ThrashingDiagnosis extends Diagnosis {
                 (o instanceof ThrashingDiagnosis);
         }
     };
+
+    /**
+     * Return whether or not the diagnosis says the system is thrashing
+     **/
+    public boolean isThrashing() {
+	String diagnosis_value = (String) this.getValue();
+	return (diagnosis_value.equalsIgnoreCase( THRASHING ) );
+    }
+
+
+    /**
+     * Return whether or not the diagnosis says the system is stable
+     **/
+    public boolean isStable() {
+	String diagnosis_value = (String) this.getValue();
+	return (diagnosis_value.equalsIgnoreCase( STABLE ) );
+    }
 } 

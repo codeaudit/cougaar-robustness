@@ -73,8 +73,6 @@ public class ThrashingSuppressionServlet extends BaseServletComponent
                                implements BlackboardClient
  {
 
-  public static final String THRASHING = "THRASHING";
-  public static final String STABLE = "STABLE";
   public static final String CHANGE = "change";
   public static final String EXPIRE = "expire";
   
@@ -144,8 +142,8 @@ public class ThrashingSuppressionServlet extends BaseServletComponent
   private class MyServlet extends HttpServlet {
       
       public void doGet(HttpServletRequest request, HttpServletResponse response) {
-        String suppress = request.getParameter(THRASHING);
-        String allow = request.getParameter(STABLE);
+        String suppress = request.getParameter(ThrashingDiagnosis.THRASHING);
+        String allow = request.getParameter(ThrashingDiagnosis.STABLE);
         response.setContentType("text/html");
 
         try {
@@ -177,7 +175,7 @@ public class ThrashingSuppressionServlet extends BaseServletComponent
              td = (ThrashingDiagnosis)iter.next();
           }        
           if (td != null) {
-              td.setValue(THRASHING);
+              td.setValue(ThrashingDiagnosis.THRASHING);
               out.println("<center><h2>Status Changed - Defense Suppression Requested</h2></center><br>" );
               blackboard.publishChange(td); 
               if (logger.isDebugEnabled()) logger.debug("Status Changed - Defense Suppression Requested");
@@ -200,7 +198,7 @@ public class ThrashingSuppressionServlet extends BaseServletComponent
               }
 
               if (td != null) {
-                  td.setValue(STABLE);
+                  td.setValue(ThrashingDiagnosis.STABLE);
                   out.println("<center><h2>Status Changed - Defenses Allowed Requested</h2></center><br>" );
                   blackboard.publishChange(td); 
                   if (logger.isDebugEnabled()) logger.debug("Status Changed - Defenses Allowed Requested");
