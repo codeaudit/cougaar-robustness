@@ -107,10 +107,14 @@ include_scripts:
   - script: $CIP/csmart/lib/robustness/objs/planned_disconnect.rb
     parameters:
       - location: during_stage_1
-      - wait_location: after_stage_1
       - nodes: ["FSB-CO-HQ-CIC-NODE", "FSB-DISTRO-FWD-EVAC-NODE"]
       - planned_disconnect: 4.minutes
       - actual_disconnect: 8.minutes
+      - verbose: 2
+
+  - script: $CIP/csmart/lib/robustness/objs/planned_disconnect_completed.rb
+    parameters:
+      - wait_location: after_stage_1
       - timeout: 30.minutes
       - verbose: 2
 
