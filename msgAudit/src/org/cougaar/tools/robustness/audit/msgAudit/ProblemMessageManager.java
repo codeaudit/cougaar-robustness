@@ -26,6 +26,7 @@ public class ProblemMessageManager {
     AgentSummaryGUI agentSummaryGUI;
     ProblemMessagesDisplay problemsGUI;
     TrafficAuditor auditor;    
+    ProblemMessageQueue problemQueue;
     
     private boolean autoResolve = false;
 
@@ -44,6 +45,26 @@ public class ProblemMessageManager {
 
         problemQueue = new ProblemMessageQueue(3000);
         
+        //This thread waits for new problems from the EventQueueProcessor &
+        //dumps them into our problem vector.
+        Thread t = new Thread() {
+            LogPointEntry[] lpes;
+            public void run() {
+                try {
+                    while (true) {                    
+                        lpes = problemQueue.removeAtLeastOne();
+                        for (int i=0; i<lpes.length; i++) {
+                            handleProblemMessage(lpes[i]);
+                        }
+                    }
+               } catch (InterruptedException ie) {
+                   System.out.println("InterruptedException in ProblemMessageManager.");
+               }
+            }
+        };
+        t.start();
+            
+        
     }
     
     public void setAutoResolve(boolean _b) { 
@@ -58,7 +79,11 @@ public class ProblemMessageManager {
      * Pass in the troubled message. 
      */
     public void addProblemMessage( LogPointEntry _lpe) {    
-        problemQueue.add(_lpe);
+        try {
+            problemQueue.add(_lpe);
+       } catch (InterruptedException ie) {
+           System.out.println("InterruptedException in ProblemMessageManager.");
+       }            
     }
     
     
@@ -68,14 +93,14 @@ public class ProblemMessageManager {
     public void handleProblemMessage( LogPointEntry _lpe) {
 
         boolean handled = false;
-        
-        String probString = _lpe.isFromError() ? _lpe.from() : _lpe.dest();
+        boolean isFrom = _lpe.isFromError();
+        String probString = isFrom ? _lpe.from() : _lpe.dest();
         
         //Check and see if we can resolve this using user-defined mappings
         String map = (String)resolveMappings.get(probString);
         if (map != null) {
             //Found an auto map!
-           if (_isFrom) {
+           if (isFrom) {
                _lpe.setFrom(map);
            } else {
                _lpe.setDest(map);
@@ -88,7 +113,7 @@ public class ProblemMessageManager {
         if (autoResolve) { //see if there is one matching agent now
             String match = findMatch(probString);
             if (match != null) {
-               if (_isFrom) {
+               if (isFrom) {
                    _lpe.setFrom(match);
                } else {
                    _lpe.setDest(match);
@@ -108,7 +133,7 @@ public class ProblemMessageManager {
             }
         }
         if (!handled) {
-            problems.add(new ProblemMessage(probString, _lpe, _isFrom));
+            problems.add(new ProblemMessage(probString, _lpe, isFrom));
         }
         agentSummaryGUI.newProblemAlert();
     }
@@ -154,7 +179,7 @@ public class ProblemMessageManager {
             Vector list = pm.getLPEList();
             for (int j=0; j<list.size(); j++) {             
                 LogPointEntry lpe = (LogPointEntry)list.get(j);
-                this.handleProblemMessage(lpe, isFrom);
+                this.handleProblemMessage(lpe);
                 problems.remove(lpe);
                 problemsGUI.incAutoResolvedCount();
             }

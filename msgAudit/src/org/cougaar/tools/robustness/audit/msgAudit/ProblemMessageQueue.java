@@ -7,7 +7,7 @@
 
 package org.cougaar.tools.robustness.audit.msgAudit;
 
-import org.cougaar.core.mts.logging.ProblemMessage;
+import org.cougaar.tools.robustness.audit.msgAudit.LogPointEntry;
 
 /**
  *
@@ -18,7 +18,7 @@ public class ProblemMessageQueue {
     public ProblemMessageQueue() {
     }
 
-    private ProblemMessage[] queue;
+    private LogPointEntry[] queue;
     private int capacity;
     private int size;
     private int head;
@@ -26,7 +26,7 @@ public class ProblemMessageQueue {
 
     public ProblemMessageQueue(int cap) {
             capacity = ( cap > 0 ) ? cap : 1; // at least 1
-            queue = new ProblemMessage[capacity];
+            queue = new LogPointEntry[capacity];
             head = 0;
             tail = 0;
             size = 0;
@@ -48,7 +48,7 @@ public class ProblemMessageQueue {
             return ( size == capacity );
     }
 
-    public synchronized void add(ProblemMessage obj) 
+    public synchronized void add(LogPointEntry obj) 
                     throws InterruptedException {
 
             waitWhileFull();
@@ -60,7 +60,7 @@ public class ProblemMessageQueue {
             notifyAll(); // let any waiting threads know about change
     }
 
-    public synchronized void addEach(ProblemMessage[] list) 
+    public synchronized void addEach(LogPointEntry[] list) 
                     throws InterruptedException {
 
             //
@@ -73,12 +73,12 @@ public class ProblemMessageQueue {
             }
     }
 
-    public synchronized ProblemMessage remove() 
+    public synchronized LogPointEntry remove() 
                     throws InterruptedException {
 
             waitWhileEmpty();
 
-            ProblemMessage obj = queue[tail];
+            LogPointEntry obj = queue[tail];
 
             // don't block GC by keeping unnecessary reference
             queue[tail] = null; 
@@ -91,7 +91,7 @@ public class ProblemMessageQueue {
             return obj;
     }
 
-    public synchronized ProblemMessage[] removeAll() 
+    public synchronized LogPointEntry[] removeAll() 
                     throws InterruptedException {
 
             //
@@ -99,7 +99,7 @@ public class ProblemMessageQueue {
             // implementation here ... (see ByteFIFO.java)
             //
 
-            ProblemMessage[] list = new ProblemMessage[size]; // use the current size
+            LogPointEntry[] list = new LogPointEntry[size]; // use the current size
 
             for ( int i = 0; i < list.length; i++ ) {
                     list[i] = remove();
@@ -109,7 +109,7 @@ public class ProblemMessageQueue {
             return list; 
     }
 
-    public synchronized ProblemMessage[] removeAtLeastOne() 
+    public synchronized LogPointEntry[] removeAtLeastOne() 
                     throws InterruptedException {
 
             waitWhileEmpty(); // wait for a least one to be in FIFO
