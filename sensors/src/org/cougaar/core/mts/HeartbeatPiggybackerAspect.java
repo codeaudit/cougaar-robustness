@@ -118,16 +118,15 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
         //This is an optional property to increase/decrease buffer time to ensure
         //HBs arrive within their time limit.
         try {
-            String td = "org.cougaar.message.transport.aspects.heartbeatPiggybacker.timeDelay";
-            int tdi = Integer.valueOf(System.getProperty(td,"10000")).intValue();
+            int tdi = Integer.valueOf(System.getProperty(TIME_DELAY_PROP,"10000")).intValue();
             if (tdi >= 0) {
               TIME_DELAY = tdi;
               if (log.isInfoEnabled()) 
                   log.info("timeDelay set to " + tdi);
             }
         } catch (Exception e) {
-            log.error("Exception reading system property: org.cougaar.message.transport.aspects.heartbeatPiggybacker.timeDelay. " +
-                        "Using default value of "+ TIME_DELAY);
+            log.error("Exception reading system property: " + TIME_DELAY_PROP +
+                        ". Using default value of "+ TIME_DELAY);
         }
         
         metricsUpdateService = (MetricsUpdateService)
