@@ -40,15 +40,15 @@ public class DiagnosisConsumer extends Loggable
      *                     StateEstimations
      **/
     public DiagnosisConsumer( BelievabilityPlugin bel_plugin,
-			      ModelManagerInterface model_manager,
-			      StateEstimationPublisher se_publisher ) {
-	// Copy off the parameters
-	_plugin = bel_plugin;
-	_model_manager = model_manager;
-	_se_publisher = se_publisher;
+                     ModelManagerInterface model_manager,
+                     StateEstimationPublisher se_publisher ) {
+     // Copy off the parameters
+     _plugin = bel_plugin;
+     _model_manager = model_manager;
+     _se_publisher = se_publisher;
 
-	// Set up the asset containter
-	_asset_container = new AssetContainer();
+     // Set up the asset containter
+     _asset_container = new AssetContainer();
     }
 
 
@@ -58,10 +58,10 @@ public class DiagnosisConsumer extends Loggable
      * @throws BelievabilityException if there is a problem processing
      **/
     public void consumeUpdateTrigger( BeliefUpdateTrigger but ) 
-	throws BelievabilityException {
+     throws BelievabilityException {
 
-	// Forward the information
-	this.sendToAssetModel( but );
+     // Forward the information
+     this.sendToAssetModel( but );
     } // end consumeUpdateTrigger
 
 
@@ -70,7 +70,7 @@ public class DiagnosisConsumer extends Loggable
      * @return the Asset Container
      **/
     public AssetContainer getAssetContainer() {
-	return _asset_container;
+     return _asset_container;
     }
 
 
@@ -83,30 +83,30 @@ public class DiagnosisConsumer extends Loggable
      * @param but A BeliefUpdateTrigger (Believability diagnosis or action)
      **/
     private void sendToAssetModel( BeliefUpdateTrigger but ) {
-	if (_logger.isDebugEnabled()) 
-	    _logger.debug("Updating Belief State for " + but.toString() );
+     if (_logger.isDebugEnabled()) 
+         _logger.debug("Updating Belief State for " + but.toString() );
      
-	try {
-	    // Find the AssetModel and AssetStateWindow that this diagnosis
-	    // concerns.
-	    AssetModel am = _asset_container.getAssetModel( but.getAssetID() );
-	    if ( am == null ) {
-		am = new AssetModel( but.getAssetID(),
-				     _plugin,
-				     _model_manager, 
-				     _se_publisher );
-		_asset_container.addAssetModel( am );
-	    }
-	
-	    // Update the asset state window with the new diagnosis
-	    am.consumeBeliefUpdateTrigger( but );
-	}
-	catch( BelievabilityException be ) {
-	    if (_logger.isDebugEnabled()) 
-		_logger.debug("Failed to update diagnosis or action -- " +
-			     be.getMessage() );
-	    
-	}
+     try {
+         // Find the AssetModel and AssetStateWindow that this diagnosis
+         // concerns.
+         AssetModel am = _asset_container.getAssetModel( but.getAssetID() );
+         if ( am == null ) {
+          am = new AssetModel( but.getAssetID(),
+                         _plugin,
+                         _model_manager, 
+                         _se_publisher );
+          _asset_container.addAssetModel( am );
+         }
+     
+         // Update the asset state window with the new diagnosis
+         am.consumeBeliefUpdateTrigger( but );
+     }
+     catch( BelievabilityException be ) {
+         if (_logger.isDebugEnabled()) 
+          _logger.error("Failed to update diagnosis or action -- " +
+                        be.getMessage() );
+         
+     }
     }
 
     // A handle to the believability plugin
