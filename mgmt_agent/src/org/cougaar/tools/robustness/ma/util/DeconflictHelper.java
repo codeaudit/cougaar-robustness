@@ -52,12 +52,12 @@ import java.util.*;
  * to the robustness manager.
  */
 public class DeconflictHelper extends BlackboardClientComponent {
-  //prefix of applicable condition name for the agents
+  /*//prefix of applicable condition name for the agents
   public static final String MYCONDITION = "RestartApplicableAgent";
   //prefix of defense op mode name
   public static final String MYDEF_OPMODE = "RestartEnablerAgent";
   //prefix of monitor mode name
-  public static final String MYMONITOR_OPMODE = "RestartMonitorAgent";
+  public static final String MYMONITOR_OPMODE = "RestartMonitorAgent";*/
   public static final String assetType = "Agent";
   public static final String defenseName = "Restart";
 
@@ -161,8 +161,8 @@ public class DeconflictHelper extends BlackboardClientComponent {
       if(rde.getValue().equals("ENABLED")) {
         String name = rde.getName();
         //get agent name of the enabled opmode
-        if(name.indexOf("Agent") != -1) {
-          String agent = name.substring(name.indexOf("Agent")+5);
+        if(name.indexOf(defenseName) != -1) {
+          String agent = name.substring(name.indexOf(":")+1);
           opmodeEnabled(agent);
           logger.debug("get " + agent + ": " + rde.getName() + "=" + rde.getValue());
         }
@@ -237,9 +237,7 @@ public class DeconflictHelper extends BlackboardClientComponent {
    * @param desiredValue The desired value.
    */
   public void changeApplicabilityCondition(String name, boolean desiredValue) {
-    String condition = MYCONDITION + name;
-    Set conditions = conditionService.getAllConditionNames();
-    Condition obj = conditionService.getConditionByName(condition);
+    String condition = defenseName + ":" + name;
 
     String temp;
     if(desiredValue) temp = "true";
