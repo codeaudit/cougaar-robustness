@@ -104,20 +104,14 @@
     </jar>
   </target>
 
-  <!-- Adds needed files to Cougaar install path -->
   <target name="deploy" depends="build" description="Copies needed files to $CIP">
     <copy file="${lib}/${jar}" toDir="${cougaar}/lib"/>
     <copy file="configs/communities-full.xml" toDir="${cougaar}/robustness/configs"/>
     <copy file="configs/communities-small.xml" toDir="${cougaar}/robustness/configs"/>
     <copy file="configs/loggingConfig.conf" toDir="${cougaar}/robustness/configs"/>
-    <copy toDir="${cougaar}/robustness/configs/mic-local">
-      <fileset dir="configs/mic-local">
-         <include name="**" />
-      </fileset>
-    </copy>
   </target>
 
-  <!-- Adds needed files to Cougaar install path -->
+  <!-- Adds SMALL-1AD test files to Cougaar install path -->
   <target name="config-small" depends="build, deploy" description="Copies needed small-1ad files to $CIP">
     <copy file="${cougaar}/robustness/configs/communities-small.xml" toFile="${cougaar}/configs/common/communities.xml"/>
     <copy file="${cougaar}/robustness/configs/mic-local/uc1-small-1ad-layout.xml" toDir="${cougaar}/operator"/>
@@ -127,7 +121,7 @@
     <copy file="${cougaar}/robustness/configs/loggingConfig.conf" toDir="${cougaar}/configs/common"/>
   </target>
 
-  <!-- Adds needed files to Cougaar install path -->
+  <!-- Adds FULL-1AD test files to Cougaar install path -->
   <target name="config-full" depends="build, deploy" description="Copies needed full-1ad files to $CIP">
     <copy file="${cougaar}/robustness/configs/communities-full.xml" toFile="${cougaar}/configs/common/communities.xml"/>
     <copy file="${cougaar}/robustness/configs/loggingConfig.conf" toDir="${cougaar}/configs/common"/>
@@ -166,43 +160,6 @@
     </javadoc>
   </target>
 
-  <!-- Imports community descriptions into Configuration database from xml file-->
-  <target name="dbimport" description="Imports community descriptions into Config Db">
-    <java dir="${basedir}" fork="yes"
-      classname="org.cougaar.tools.robustness.ma.util.ConfigDbUtils">
-      <classpath>
-        <fileset dir="${cougaar}/lib">
-          <include name="**/*.jar"/>
-        </fileset>
-        <fileset dir="${cougaar}/sys">
-          <include name="**/*.jar"/>
-        </fileset>
-      </classpath>
-      <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;$$CWD/test/configs/common;$$INSTALL/configs/common"/>
-      <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
-      <arg line="import file=${file} experiment=${experiment} db=replace"/>
-      <!-- <arg line="import file=${file} assembly=${assembly} db=replace"/> -->
-    </java>
-  </target>
-
-  <!-- Exports community descriptions from Configuration database to xml file-->
-  <target name="dbexport">
-    <java dir="${basedir}" fork="yes"
-      classname="org.cougaar.tools.robustness.ma.util.ConfigDbUtils">
-      <classpath>
-        <fileset dir="${cougaar}/lib">
-          <include name="**/*.jar"/>
-        </fileset>
-        <fileset dir="${cougaar}/sys">
-          <include name="**/*.jar"/>
-        </fileset>
-      </classpath>
-      <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;$$CWD/test/configs/common;$$INSTALL/configs/common"/>
-      <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
-      <arg line="export file=${file} assembly=${assembly}"/>
-    </java>
-  </target>
-
   <!-- creates zip archive of development files -->
   <target name="zip" description="Creates zip archive of development files">
     <tstamp/>
@@ -220,186 +177,6 @@
     />
   </target>
 
-  <!-- Runs ManagementAgent -->
-  <target name="manager" description="Runs ManagementAgent">
-    <property name="agent_ini" value="${agent}.ini"/>
-    <property name="node_ini" value="${agent}Node.ini"/>
-    <property name="prototype" value="${agent}-prototype-ini.dat"/>
-    <mkdir dir="${workspace}/configs" />
-    <delete file="${workspace}/configs/${agent_ini}" />
-    <delete file="${workspace}/configs/${node_ini}" />
-    <delete file="${workspace}/configs/${prototype}" />
-    <copy file="${robustness}/configs/ManagementAgentNode.ini"
-          tofile="${workspace}/configs/${node_ini}" />
-    <copy file="${robustness}/configs/ManagementAgent.ini"
-          tofile="${workspace}/configs/${agent_ini}" />
-    <copy file="${robustness}/configs/ManagementAgent-prototype-ini.dat"
-          tofile="${workspace}/configs/${prototype}" />
-    <replace file="${workspace}/configs/${node_ini}" token="cluster=ManagementAgent" value="cluster=${agent}"/>
-    <replace file="${workspace}/configs/${prototype}" token="ManagementAgent" value="${agent}"/>
-    <antcall target="node-ini" >
-      <param name="node" value="${agent}Node" />
-    </antcall>
-  </target>
-
-  <!-- Runs MiniTestConfig on one node -->
-    <target name="minitestconfig" description="Runs MiniTestConfig society on a single node">
-    <antcall target="node-ini" >
-      <param name="node" value="MiniTestConfigNode" />
-    </antcall>
-  </target>
-
-  <!-- Runs a mininode1-->
-  <target name="mininode1" description="Runs agents 3-69-ARBN and MCCGlobalMode on a single node" >
-    <antcall target="node-ini" >
-      <param name="node" value="MiniNode1" />
-    </antcall>
-  </target>
-
-  <!-- Runs a mininode2-->
-  <target name="mininode2" description="Runs agent 3ID on a single node" >
-    <antcall target="node-ini" >
-      <param name="node" value="MiniNode2" />
-    </antcall>
-  </target>
-
-  <!-- Runs a mininode3-->
-  <target name="mininode3" description="Runs agent 1BDE on a single node" >
-    <antcall target="node-ini" >
-      <param name="node" value="MiniNode3" />
-    </antcall>
-  </target>
-
-  <!-- Runs a node with persistence enabled-->
-  <target name="pnode-ini" description="Run node with persistence enabled (use -Dnode=XXX to specify node name)" >
-    <antcall target="node-ini" >
-      <param name="node" value="${node}" />
-      <param name="persistenceEnabled" value="true" />
-    </antcall>
-  </target>
-
-  <!-- Runs a node with persistence enabled-->
-  <target name="pnode-db" description="Run node with persistence enabled (use -Dnode=XXX to specify node name)" >
-    <antcall target="node-db" >
-      <param name="node" value="${node}" />
-      <param name="persistenceEnabled" value="true" />
-    </antcall>
-  </target>
-
-  <target name="newrestartnode" description="Starts an empty restart node" >
-    <mkdir dir="${workspace}/configs" />
-    <copy file="test/configs/ma/${node}.ini" tofile="${workspace}/configs/${host}-${node}.ini" />
-    <echo message="Starting node: ${host}-${node}" />
-    <antcall target="pnode-ini" >
-      <param name="node" value="${host}-${node}" />
-    </antcall>
-  </target>
-
-  <!-- Runs an empty node -->
-  <target name="emptynode" >
-    <mkdir dir="${workspace}/configs" />
-    <copy file="test/configs/ma/EmptyNode.ini" tofile="${workspace}/configs/${node}.ini" />
-    <echo message="Starting node: ${node}" />
-    <antcall target="pnode-ini" >
-      <param name="node" value="${node}" />
-    </antcall>
-  </target>
-
-  <!-- Runs a Name Server node -->
-  <target name="nameserver" >
-    <mkdir dir="${workspace}/configs" />
-    <copy file="test/configs/ma/EmptyNode.ini" tofile="${workspace}/configs/NameServerNode.ini" />
-    <echo message="Starting NameServer" />
-    <antcall target="node-ini" >
-      <param name="node" value="NameServerNode" />
-    </antcall>
-  </target>
-
-  <!-- Starts a node -->
-    <target name="node-ini" description="Start a node from ini files">
-    <java dir="${basedir}" fork="yes"
-      maxmemory="350m"
-      classname="org.cougaar.bootstrap.Bootstrapper">
-      <jvmarg value="-Xms100m"/>
-      <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
-      <classpath>
-        <fileset dir="${lib}">
-          <include name="**/*.jar" />
-        </fileset>
-        <fileset dir="${cougaar}/lib">
-          <include name="**/*.jar" />
-        </fileset>
-        <fileset dir="${cougaar}/sys">
-          <include name="**/*.jar" />
-        </fileset>
-      </classpath>
-      <sysproperty key="java.Djava.security.manager" value=""/>
-      <sysproperty key="java.Djava.security.policy" value="${cougaar}/configs/common/Cougaar_Java.policy"/>
-      <sysproperty key="java.Dorg.cougaar.core.security.bootstrap.keystore" value="${cougaar}/configs/common/bootstrap_keystore"/>
-      <sysproperty key="org.cougaar.core.agent.heartbeat" value="false"/>
-      <sysproperty key="org.cougaar.core.agent.showTraffic" value="false"/>
-      <sysproperty key="org.cougaar.community.caching" value="${cache}"/>
-      <sysproperty key="org.cougaar.community.caching.mode" value="${cachemode}"/>
-      <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
-      <sysproperty key="org.cougaar.node.name" value="${node}"/>
-      <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
-      <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
-      <sysproperty key="org.cougaar.core.persistence.enable" value="${persistenceEnabled}"/>
-      <sysproperty key="org.cougaar.core.persistence.lazyInterval" value="${persistenceInterval}"/>
-      <sysproperty key="org.cougaar.message.transport.aspects" value="org.cougaar.core.mts.StatisticsAspect"/>
-      <sysproperty key="user.timezone" value="GMT"/>
-      <sysproperty key="org.cougaar.core.agent.startTime" value="8/10/2005"/>
-      <sysproperty key="org.cougaar.name.server" value="${nameserver}"/>
-      <sysproperty key="org.cougaar.system.path" value="${cougaar}/sys"/>
-      <sysproperty key="org.cougaar.config.path" value="${workspace}/configs;$$CWD/configs;$$CWD/configs/xsl;${robustness}/configs;$$INSTALL/configs/common;$$INSTALL/configs/glmtrans;$$INSTALL/configs/minitestconfig"/>
-      <arg line="org.cougaar.core.node.Node"/>
-    </java>
-  </target>
-
-  <!-- Starts a node -->
-    <target name="node-db" description="Start a node from config db">
-    <java dir="${basedir}" fork="yes"
-      maxmemory="350m"
-      classname="org.cougaar.bootstrap.Bootstrapper">
-      <jvmarg value="-Xms100m"/>
-      <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
-      <classpath>
-        <fileset dir="${cougaar}/lib">
-          <include name="**/*.jar" />
-        </fileset>
-        <fileset dir="${cougaar}/sys">
-          <include name="**/*.jar" />
-        </fileset>
-        <fileset dir="${lib}">
-          <include name="**/*.jar" />
-        </fileset>
-      </classpath>
-      <sysproperty key="org.cougaar.community.caching" value="${cache}"/>
-      <sysproperty key="org.cougaar.community.caching.mode" value="${cachemode}"/>
-      <sysproperty key="org.cougaar.core.persistence.enable" value="${persistenceEnabled}"/>
-      <sysproperty key="org.cougaar.core.persistence.clear" value="true"/>
-      <sysproperty key="org.cougaar.core.persistence.lazyInterval" value="${persistenceInterval}"/>
-      <sysproperty key="user.timezone" value="GMT"/>
-      <sysproperty key="org.cougaar.core.agent.startTime" value="8/10/2005"/>
-      <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
-      <sysproperty key="org.cougaar.configuration.database" value="jdbc:mysql://${dbserver}/cougaar"/>
-      <sysproperty key="org.cougaar.configuration.user" value="ul_user"/>
-      <sysproperty key="org.cougaar.configuration.password" value=""/>
-      <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
-      <sysproperty key="org.cougaar.control.port" value="${controlport}"/>
-      <sysproperty key="org.cougaar.node.name" value="${node}"/>
-      <sysproperty key="org.cougaar.planning.ldm.lpw.ComplainingLP.level" value="0"/>
-      <sysproperty key="org.cougaar.config.path" value="${workspace}/configs;${robustness}/configs;$$INSTALL/configs/common;$$INSTALL/configs/glmtrans;$$INSTALL/configs/minitestconfig"/>
-      <sysproperty key="org.cougaar.message.transport.aspects" value="org.cougaar.core.mts.StatisticsAspect"/>
-      <sysproperty key="org.cougaar.experiment.id" value="${experiment}"/>
-      <sysproperty key="org.cougaar.agent.startTime" value="8/10/2005"/>
-      <sysproperty key="org.cougaar.name.server" value="${nameserver}"/>
-      <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
-      <sysproperty key="org.cougaar.system.path" value="${cougaar}/sys"/>
-      <arg line="org.cougaar.core.node.Node"/>
-    </java>
-  </target>
-
   <!-- Create Cougaar overlay zip file -->
   <target name="create_cougaar_overlay">
     <delete dir="staging"/>
@@ -414,6 +191,7 @@
     <mkdir dir="staging/csmart/config/rules/robustness/uc1"/>
     <mkdir dir="staging/csmart/config/scripts/robustness/uc1"/>
     <mkdir dir="staging/robustness/configs/mic-local"/>
+    <mkdir dir="staging/operator"/>
 
     <antcall target="init"/>
     <antcall target="compile"/>
@@ -430,7 +208,7 @@
          <include name="*loggingConfig.conf" />
       </fileset>
     </copy>
-    <copy toDir="staging/robustness/configs/mic-local">
+    <copy toDir="staging/operator">
       <fileset dir="configs/mic-local">
          <include name="ron1-hosts.xml" />
          <include name="ron2-hosts.xml" />
@@ -449,6 +227,12 @@
     <copy toDir="staging/csmart/config/rules/robustness/uc1">
       <fileset dir="csmart/config/rules/robustness/uc1">
          <include name="aruc1.rule" />
+         <include name="manager.rule" />
+      </fileset>
+    </copy>
+    <copy toDir="staging/robustness/configs/mic-local">
+      <fileset dir="csmart/config/rules/robustness/uc1">
+         <include name="mic.rule" />
       </fileset>
     </copy>
     <copy toDir="staging/csmart/config/scripts/robustness/uc1">
