@@ -41,15 +41,16 @@ society.each_node_agent do |node|
 end
 
 i = 0
+k = 0
 society.each_enclave do |enclave|
     j = 0
     society.each_enclave_node(enclave) do |node|
 
       node.override_parameter("-Dorg.cougaar.message.protocol.email.inboxes." + node.name,
-                              "pop3://node" + mailusers[j].to_s + ":passwd@" + mailhosts[i] + ":110")
+                              "pop3://node" + (mailusers[j]+k).to_s + ":passwd@" + mailhosts[i] + ":110")
 
       node.override_parameter("-Dorg.cougaar.message.protocol.email.outboxes." + node.name, 
-                              "smtp://node" + mailusers[j].to_s + ":passwd@" + mailhosts[i] + ":25")
+                              "smtp://node" + (mailusers[j]+k).to_s + ":passwd@" + mailhosts[i] + ":25")
     
       # to avoid security exception when it tries to read .mailcap
       node.override_parameter("-Duser.home","/home/asmt/") 
@@ -60,9 +61,14 @@ society.each_enclave do |enclave|
       node.override_parameter("-Dorg.cougaar.message.protocol.email.incoming.socketTimeout", "30000")   # 30 secs
       node.override_parameter("-Dorg.cougaar.message.protocol.email.outgoing.socketTimeout", "30000")   # 30 secs
       node.override_parameter("-Dorg.cougaar.message.protocol.email.outgoing.maxMessageSizeKB", "1000") # 1MB
+
       j = j + 1
     end
     i = i + 1
+    if i >= mailhosts.length
+      k = k + mailusers[mailusers.length - 1]
+      i = 0
+    end
 end
 
 
