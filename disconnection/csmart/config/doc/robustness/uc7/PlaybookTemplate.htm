@@ -1,0 +1,290 @@
+<!-- saved from url=(0022)http://internet.e-mail -->
+<html xmlns:v="urn:schemas-microsoft-com:vml"
+xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:w="urn:schemas-microsoft-com:office:word"
+xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=ProgId content=Word.Document>
+<meta name=Generator content="Microsoft Word 9">
+<meta name=Originator content="Microsoft Word 9">
+<link rel=File-List href="./PlaybookTemplate_files/filelist.xml">
+<title>//PLAYS FOR &quot;NodeFOO&quot; </title>
+<!--[if gte mso 9]><xml>
+ <o:DocumentProperties>
+  <o:Author>OBJS</o:Author>
+  <o:LastAuthor>OBJS</o:LastAuthor>
+  <o:Revision>2</o:Revision>
+  <o:TotalTime>22</o:TotalTime>
+  <o:Created>2003-05-23T13:50:00Z</o:Created>
+  <o:LastSaved>2003-05-23T13:50:00Z</o:LastSaved>
+  <o:Pages>2</o:Pages>
+  <o:Words>388</o:Words>
+  <o:Characters>2215</o:Characters>
+  <o:Company>Dell Computer Corporation</o:Company>
+  <o:Lines>18</o:Lines>
+  <o:Paragraphs>4</o:Paragraphs>
+  <o:CharactersWithSpaces>2720</o:CharactersWithSpaces>
+  <o:Version>9.3821</o:Version>
+ </o:DocumentProperties>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:View>Print</w:View>
+ </w:WordDocument>
+</xml><![endif]-->
+<style>
+<!--
+ /* Style Definitions */
+p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{mso-style-parent:"";
+	margin:0in;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:12.0pt;
+	font-family:"Times New Roman";
+	mso-fareast-font-family:"Times New Roman";}
+p.MsoSubtitle, li.MsoSubtitle, div.MsoSubtitle
+	{margin-top:0in;
+	margin-right:0in;
+	margin-bottom:3.0pt;
+	margin-left:0in;
+	text-align:center;
+	mso-pagination:widow-orphan;
+	mso-outline-level:2;
+	font-size:12.0pt;
+	font-family:Arial;
+	mso-fareast-font-family:"Times New Roman";}
+@page Section1
+	{size:8.5in 11.0in;
+	margin:1.0in 1.25in 1.0in 1.25in;
+	mso-header-margin:.5in;
+	mso-footer-margin:.5in;
+	mso-paper-source:0;}
+div.Section1
+	{page:Section1;}
+-->
+</style>
+<!--[if gte mso 9]><xml>
+ <o:shapedefaults v:ext="edit" spidmax="1027"/>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <o:shapelayout v:ext="edit">
+  <o:idmap v:ext="edit" data="1"/>
+ </o:shapelayout></xml><![endif]-->
+</head>
+
+<body lang=EN-US style='tab-interval:.5in'>
+
+<div class=Section1>
+
+<p class=MsoNormal>//PLAYS FOR &quot;<b><i>NodeFOO</i></b>&quot;<span
+style="mso-spacerun: yes">  </span></p>
+
+<p class=MsoNormal>// Make a copy of this (changing the name) for EVERY Managed
+Node</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal>// Combine local conditions to set the DefenseApplicable
+condition for the Coordinator</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal>(PlannedDisconnect.UnscheduledDisconnect.Node.<b><i>NodeFOO</i></b>
+== TRUE)</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>:
+Applicable<b><i>NodeFOO</i></b> = TRUE;</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal>(PlannedDisconnect.ScheduledDisconnect.Node.<b><i>NodeFOO</i></b>
+== TRUE)</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>:
+Applicable<b><i>NodeFOO</i></b> = TRUE;</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal>(PlannedDisconnect.ScheduledDisconnect.Node.<b><i>NodeFOO</i></b>
+== FALSE) &amp; </p>
+
+<p class=MsoNormal>(PlannedDisconnect.UnscheduledDisconnect.Node.<b><i>NodeFOO</i></b>
+== FALSE)</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>:
+Applicable<b><i>NodeFOO</i></b> = FALSE;</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal>Applicable<b><i>NodeFOO</i></b> == TRUE</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>:
+PlannedDisconnect.Applicable.Node.<b><i>NodeFOO</i></b> = TRUE;</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal>Applicable<b><i>NodeFOO</i></b> == FALSE</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>:
+PlannedDisconnect.Applicable.Node.<b><i>NodeFOO</i></b> = FALSE;</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal>// Coordinator logic says this Defense always gets to do
+what it wants</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal>Applicable<b><i>NodeFOO</i></b> == TRUE </p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>: Defense<b><i>NodeFOO</i></b>
+= ENABLED</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>:
+Monitoring<b><i>NodeFOO</i></b> = ENABLED;</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal>Applicable<b><i>NodeFOO</i></b> == FALSE </p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>: Defense<b><i>NodeFOO</i></b>
+= DISABLED</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>:
+Monitoring<b><i>NodeFOO</i></b> = DISABLED;</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal>Defense<b><i>NodeFOO</i></b> == ENABLED</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>:
+PlannedDisconnect.Defense.Node.<b><i>NodeFOO</i></b> = ENABLED;</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal>Defense<b><i>NodeFOO</i></b> == DISABLED</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>:
+PlannedDisconnect.Defense.Node.<b><i>NodeFOO</i></b> = DISABLED;</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal>Monitoring<b><i>NodeFOO</i></b> == ENABLED</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>:
+PlannedDisconnect.Monitoring.Node.<b><i>NodeFOO</i></b> = ENABLED;</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal>Monitoring<b><i>NodeFOO</i></b> == DISABLED</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>:
+PlannedDisconnect.Monitoring.Node.<b><i>NodeFOO</i></b> = DISABLED;</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal>// Transfer OpModes back to the right Defense instances</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal>(Monitoring<b><i>NodeFOO</i></b> == ENABLED)<span
+style="mso-spacerun: yes">  </span>&amp;</p>
+
+<p class=MsoNormal>(PlannedDisconnect.UnscheduledDisconnect.Node.<b><i>NodeFOO</i></b>
+== TRUE) &amp; </p>
+
+<p class=MsoNormal>(PlannedDisconnect.UnscheduledReconnectTime.Node.<b><i>NodeFOO</i></b>
+&gt; 0)</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>: [agent.<b><i>NodeFOO</i></b>]PlannedDisconnect.NodeMonitoring.Node.<b><i>NodeFOO</i></b>
+= DISABLED</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>:
+PlannedDisconnect.ManagerMonitoring.Node.<b><i>NodeFOO</i></b> = ENABLED;</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal>(Monitoring<b><i>NodeFOO</i></b> == ENABLED) &amp;</p>
+
+<p class=MsoNormal>(PlannedDisconnect.ScheduledDisconnect.Node.<b><i>NodeFOO</i></b>
+== TRUE) &amp; </p>
+
+<p class=MsoNormal>(PlannedDisconnect.ScheduledReconnectTime.Node.<b><i>NodeFOO</i></b>
+&gt; 0)</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>: [agent.<b><i>NodeFOO</i></b>]PlannedDisconnect.NodeMonitoring.Node.<b><i>NodeFOO</i></b>
+= DISABLED</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>:
+PlannedDisconnect.ManagerMonitoring.Node.<b><i>NodeFOO</i></b> = ENABLED;</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal>(Monitoring<b><i>NodeFOO</i></b> == DISABLED)</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>:
+PlannedDisconnect.ManagerMonitoring.Node.<b><i>NodeFOO</i></b> = DISABLED</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>: [agent.<b><i>NodeFOO</i></b>]PlannedDisconnect.NodeMonitoring.Node.<b><i>NodeFOO</i></b>
+= DISABLED;</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal>(PlannedDisconnect.ScheduledReconnectTime.Node.<b><i>NodeFOO</i></b>
+== 0) &amp;</p>
+
+<p class=MsoNormal>(PlannedDisconnect.UnscheduledReconnectTime.Node.<b><i>NodeFOO</i></b>
+== 0)</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>:
+PlannedDisconnect.ManagerMonitoring.<b><i>NodeFOO</i></b> = DISABLED</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>: [agent.<b><i>NodeFOO</i></b>]PlannedDisconnect.NodeMonitoring.<b><i>NodeFOO</i></b>
+= DISABLED;</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal>(Defense<b><i>NodeFOO</i></b> == ENABLED)</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>:
+PlannedDisconnect.ManagerDefense.Node.<b><i>NodeFOO</i></b> = DISABLED</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>: [agent.<b><i>NodeFOO</i></b>]PlannedDisconnect.NodeDefense.Node.<b><i>NodeFOO</i></b>
+= ENABLED;</p>
+
+<p class=MsoNormal><![if !supportEmptyParas]>&nbsp;<![endif]><o:p></o:p></p>
+
+<p class=MsoNormal>(Defense<b><i>NodeFOO</i></b> == DISABLED)</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>: PlannedDisconnect.ManagerDefense.Node.<b><i>NodeFOO</i></b>
+= DISABLED</p>
+
+<p class=MsoNormal><span style='mso-tab-count:1'>            </span>: [agent.<b><i>NodeFOO</i></b>]PlannedDisconnect.NodeDefense.Node.<b><i>NodeFOO</i></b>
+= DISABLED;</p>
+
+</div>
+
+</body>
+
+</html>
