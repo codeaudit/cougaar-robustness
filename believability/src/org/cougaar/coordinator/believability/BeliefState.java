@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefState.java,v $
- * $Revision: 1.3 $
- * $Date: 2004-06-09 17:32:49 $
+ * $Revision: 1.4 $
+ * $Date: 2004-06-18 00:16:38 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -34,7 +34,7 @@ import org.cougaar.coordinator.techspec.AssetStateDimension;
  * asset instance.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.3 $Date: 2004-06-09 17:32:49 $
+ * @version $Revision: 1.4 $Date: 2004-06-18 00:16:38 $
  * 
  *
  */
@@ -111,6 +111,7 @@ public class BeliefState implements Cloneable
             return (BelievabilityDiagnosis) _trigger;
         else
             return null;
+
     } // method 
 
     //************************************************************

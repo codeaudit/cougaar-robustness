@@ -31,6 +31,7 @@ import org.cougaar.coordinator.DiagnosisUtils;
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.techspec.AssetType;
 import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
+import org.cougaar.coordinator.techspec.DiagnosisTechSpecService;
 
 /**
  * The class that contains a local copy of pertinent information
@@ -46,19 +47,20 @@ public class BelievabilityDiagnosis extends BeliefUpdateTrigger
      **/
     public BelievabilityDiagnosis( Diagnosis diag ) {
 
-        super( DiagnosisUtils.getAssetID( diag ),
-               DiagnosisUtils.getAssetType( diag ));
+        super( DiagnosisUtils.getAssetID( diag ) );
 
-     _blackboard_diagnosis = diag;
+	_blackboard_diagnosis = diag;
+	
+	// Copy relevant information from the diagnosis, as it may change
+	_diagnosis_value = (String) _blackboard_diagnosis.getValue();
+	_diagnosis_name = _blackboard_diagnosis.getClass().getName();
+	_diagnosis_state_dimension = 
+	    _blackboard_diagnosis.getTechSpec().getStateDimension().getStateName();
 
-     // Copy relevant information from the diagnosis, as it may change
-     _diagnosis_value = (String) _blackboard_diagnosis.getValue();
-     _diagnosis_TS = _blackboard_diagnosis.getTechSpec();
-
-     _last_asserted_timestamp = 
-         _blackboard_diagnosis.getLastAssertedTimestamp();
-     _last_changed_timestamp =
-         _blackboard_diagnosis.getLastChangedTimestamp();
+	_last_asserted_timestamp = 
+	    _blackboard_diagnosis.getLastAssertedTimestamp();
+	_last_changed_timestamp =
+	    _blackboard_diagnosis.getLastChangedTimestamp();
     }
 
 
@@ -66,23 +68,14 @@ public class BelievabilityDiagnosis extends BeliefUpdateTrigger
      * Return the value of the diagnosis, as published by the sensor
      * @return the diagnosis value
      **/
-    public String getDiagnosisValue() { return _diagnosis_value; }
-
-
-    /**
-     * Return the tech spec for the diagnosis, as published by the sensor
-     * @return the diagnosis tech spec
-     **/
-    public DiagnosisTechSpecInterface getDiagnosisTechSpec() {
-	return _diagnosis_TS; 
-    }
+    String getDiagnosisValue() { return _diagnosis_value; }
 
 
     /**
      * Return the last time the sensor asserted a value
      * @return the timestamp
      **/
-    public long getLastAssertedTimestamp() { 
+    long getLastAssertedTimestamp() { 
 	return _last_asserted_timestamp; 
     }
 
@@ -93,8 +86,9 @@ public class BelievabilityDiagnosis extends BeliefUpdateTrigger
      * @return the timestamp
      **/
     long getTriggerTimestamp() { 
-     return _last_changed_timestamp; 
+	return _last_changed_timestamp; 
     }
+
 
     /**
      * This routine should return the asset statew dimension name that
@@ -102,16 +96,16 @@ public class BelievabilityDiagnosis extends BeliefUpdateTrigger
      */
     String getStateDimensionName()
     {
-        return getDiagnosisTechSpec().getStateDimension().getStateName();
-
+        return _diagnosis_state_dimension;
     } // method getStateDimensionName
+
 
     /**
      * Return the name of the sensor that made this diagnosis
      * @return 
      **/
     public String getSensorName() { 
-     return _diagnosis_TS.getName(); 
+	return _diagnosis_name;
     }
 
 
@@ -139,8 +133,11 @@ public class BelievabilityDiagnosis extends BeliefUpdateTrigger
     // The value of the diagnosis, in the terms that the sensor uses
     private String _diagnosis_value;
 
-    // The interface to the diagnosis tech spec
-    private DiagnosisTechSpecInterface _diagnosis_TS;
+    // The name of the diagnosis
+    private String _diagnosis_name;
+
+    // The state dimension that the diagnosis concerns
+    private String _diagnosis_state_dimension;
 
     // The last time the sensor asserted a value
     private long _last_asserted_timestamp;

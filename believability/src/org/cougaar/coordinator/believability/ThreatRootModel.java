@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/Attic/ThreatRootModel.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-06-09 18:00:22 $
+ * $Revision: 1.2 $
+ * $Date: 2004-06-18 00:16:39 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -39,7 +39,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * asset instance by asset instance basis.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.1 $Date: 2004-06-09 18:00:22 $
+ * @version $Revision: 1.2 $Date: 2004-06-18 00:16:39 $
  * @see ThreatVariationModel
  *
  */
@@ -167,7 +167,7 @@ class ThreatRootModel extends Model
                 String to_name 
                         = _asset_dim_model.getStateDimValueName( to_idx );
                 
-                buff.append( "\t\t\tP( "
+                buff.append( "\t\t\tPr( "
                              + to_name + "|"
                              + from_name + ") = "
                              + _event_trans_prob[from_idx][to_idx]

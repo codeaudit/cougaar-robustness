@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/AssetTypeDimensionModel.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-06-09 18:00:22 $
+ * $Revision: 1.2 $
+ * $Date: 2004-06-18 00:16:38 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -43,7 +43,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * corresponds to the tech-spec AssetSatteDimension objects.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.1 $Date: 2004-06-09 18:00:22 $
+ * @version $Revision: 1.2 $Date: 2004-06-18 00:16:38 $
  * @see AssetTypeModel
  * @see AssetStateDimension
  */
@@ -259,7 +259,6 @@ class AssetTypeDimensionModel extends Model
     ActuatorTypeModel addActuatorTypeModel( ActionTechSpecInterface action_ts )
             throws BelievabilityException
     {
-
         
         if ( action_ts == null )
             throw new BelievabilityException
@@ -367,17 +366,19 @@ class AssetTypeDimensionModel extends Model
 
     //************************************************************
     /**
-     * returns a set of threat variations for the given asset ID.
+     * Returns a collection of threat variations for the given asset
+     * ID.
      *
-     * @param asset_id
+     * @param asset_id The aset id whose threat variations we want.
      */
-    Set getThreatVariationSet( AssetID asset_id )
+    ThreatVariationCollection getThreatVariations( AssetID asset_id )
     {
         // We use lazy evaluation for building the data structure, so
         // construct the set if it does not already exist.
 
-        HashSet threat_var_set 
-                = (HashSet) _asset_threat_var_table.get( asset_id );
+        ThreatVariationCollection threat_var_set 
+                = (ThreatVariationCollection) 
+                _asset_threat_var_table.get( asset_id );
 
         // This should evaluate to true and return in the normal case
         // where we just return the threat variation set.  We only
@@ -390,23 +391,14 @@ class AssetTypeDimensionModel extends Model
 
         // Else, we need to construct the set.
 
-        logDebug( "Threat variation set not found for asset '" 
+        logDebug( "Threat variation collection not found for asset '" 
                   + asset_id.getName() 
                   + "' in dimension '" 
                   + _state_dim_name
                   + "'. Creating." );
         
-        threat_var_set = new HashSet();
-
-        // We make a simplifying assumption (for now) that all threats
-        // affecting a particular sttae dimension, of a particular
-        // asset, will all result in the same event happening. (See
-        // comments elsewhere in the code.  Because of this, we
-        // definitely want to check to see if this assumption is
-        // violated.  We will find the event name of the first
-        // matching threat, and then compare all others to this one.
-        // 
-        String event_name = null;
+        threat_var_set = new ThreatVariationCollection();
+        _asset_threat_var_table.put( asset_id, threat_var_set );
 
         // Loop over all the threat root models and all their threat
         // variations, finding the ones that are applicable for this
@@ -429,28 +421,17 @@ class AssetTypeDimensionModel extends Model
 
                 threat_var_set.add( tv );
 
-                if ( event_name == null )
-                    event_name = tm.getEventName();
-                else
-                    if ( ! event_name.equalsIgnoreCase( tm.getEventName()))
-                        logError( "ASSUMPTION VIOLATED! "
-                                  + "There are different events that can "
-                                  + "affect a single asset state dimension."
-                                  + " (asset=" + asset_id.getName()
-                                  + ", threat1=" + event_name
-                                  + ", threat2=" + tm.getEventName() );
-                
             } // while tv_iter
             
         } // while tm_enum
         
-        logDebug( "Found " + threat_var_set.size() 
+        logDebug( "Found " + threat_var_set.getNumThreatVariations() 
                   + " applicable threat variations for "
                   + asset_id.getName() );
 
         return threat_var_set;
 
-    } // method getThreatVariationSet
+    } // method getThreatVariations
 
     //************************************************************
     /**
@@ -663,7 +644,7 @@ class AssetTypeDimensionModel extends Model
         //
         if ( ! sensor_enum.hasMoreElements() )
         {
-            logDebug( "AssetTypeDimensionModel.getMaxSensorLatency(). "
+            logDebug( "getMaxSensorLatency(). "
                       + "No sensor models found for this asset dimension: "
                       + _state_dim_name );
             return DEFAULT_SENSOR_LATENCY;
@@ -685,85 +666,22 @@ class AssetTypeDimensionModel extends Model
 
     //************************************************************
     /**
-     * Returns the event transition probability matix from an event
-     * description.  
+     * Returns the action transition probability matix from an
+     * actuator model for the given action.
      *
-     * @param asset_id The ID of the asset instance
+     * @param action Contains the action information.
      */
     double[][] getActionTransitionMatrix( BelievabilityAction action )
-    {
-        logError( "getActionTransitionMatrix() is not implements." );
+           throws BelievabilityException
+     {
+        
+        ActuatorTypeModel actuator_model
+                = getActuatorTypeModel( action.getActuatorName() );
 
-        // FIXME: Need to find out info from OBJS to know how to
-        // construct and access this info.
-        return null;
+        return actuator_model.getTransitionProbabilityMatrix
+                ( action.getActionValue() );
 
     } // method getActionTransitionMatrix
-
-    //************************************************************
-    /**
-     * Returns the event transition probability matix from an event
-     * description.  
-     *
-     * @param asset_id The ID of the asset instance
-     */
-    double[][] getEventTransitionMatrix( AssetID asset_id )
-    {
-        // This uses the asset ID to find the applicable threat
-        // variations, and from there we can determine the event
-        // transitions for this asset instance (which are stored in
-        // the ThreatRootModel).
-        //
-
-        // Note that we have a many-to-one relationship between
-        // AssetID and ThreatVariationModels.  Each of these threat
-        // variations will (likely) have different ThreatRootModels.
-        // In general, there is nothing to stop each of these
-        // ThreatRootModels having their threat generate different
-        // events. However, as per conversations with OBJS, we will
-        // not (in the near term) handle the case where multiple
-        // events can simultaneously act on the same asset instance.
-        // The main reason is that one has to either specify the full
-        // joint probability distributions for combinations of events,
-        // or make simplifying assumptions about what the semantics
-        // are when more than one event occurs simultaneously.  For
-        // now, we were not ready to do either of these, so make the
-        // deep assumption that all ThreatRootModels for an given
-        // AssetID have exactky the same Event.  Thus, we can grab any
-        // ThreatRootModel from the set and use it to get at the event
-        // transition probabilities.
-        //
-
-        Set threat_var_set = getThreatVariationSet( asset_id );
-
-        // The nature of the getThreatVariationSet() code should never
-        // result in a NULL being returned, but it never hurts to
-        // check.  Also, if there are no threats, then the probability
-        // of the threat should be zero.  However, rather than couting
-        // on that, we will assume that the absence of a threat means
-        // that the "event transition" is to not change state, so we
-        // return the indentity matrix.
-        //
-        //
-        if (( threat_var_set == null )
-            || ( threat_var_set.size() < 1 ))
-        {
-            double[][] probs = new double[_possible_states.length]
-                    [_possible_states.length];
-            
-            for ( int i = 0; i < _possible_states.length; i++ )
-                probs[i][i] = 1.0;
-            
-            return probs;
-        } // if no threats acting on this asset state dimension
-        
-        // Should be at least
-        ThreatVariationModel threat_var 
-                = (ThreatVariationModel) threat_var_set.iterator().next();
-        
-        return threat_var.getEventTransitionMatrix();
-
-    } // method getEventTransitionMatrix
 
     //************************************************************
     /**
@@ -771,26 +689,19 @@ class AssetTypeDimensionModel extends Model
      * asset.  This needs to account for all threats acting on this
      * asset's state dimension.
      *
-     * @param asset_id The ID of the asset instance
+     * @param threat_var_set The set of ThreatVariationModel objects
+     * that define the threats that can lead to an event (assumes all
+     * ThreatVariationModel in this set cause the same event.)
      * @param start_time time of last belief update
      * @param end_time time desired for new belief
      */
-    double getEventProbability( AssetID asset_id,
+    double getEventProbability( Set threat_var_set,
                                 long start_time,
                                 long end_time )
             throws BelievabilityException
     {
+
         // Some assumptions:
-        //
-        //  o For a given asset instance, there is only one possible
-        //  "coordinator event" that can cause this state dimension to
-        //  change value.  (If there are multiple coordinator events
-        //  that can cause a transition of this state dimension, then
-        //  we would have to consider the joint probability
-        //  distributions over all combinations of "coordinator
-        //  events" when trying to predict the state transition, see
-        //  comments in getEventTransitionMatrix() for more rational
-        //  about this assumption.)
         //
         //  o For a given coordinator event, there may be multiple
         //  threats defined for the asset that can cause this
@@ -800,44 +711,26 @@ class AssetTypeDimensionModel extends Model
         //  from one another.
         //
         //  o If there are more than three threats causing the same
-        //  event for this given asset sate dimension, then this
+        //  event for this given asset state dimension, then this
         //  routine will only estimate the transition probability.
-        //  The reason is that the general inclusion-exclusion rule
-        //  for determining the probability of a disjunction of events
-        //  (each individual threat) will result in computation time
-        //  exponential in the number of threats. If an exact answer is
-        //  needed for >=4 threats, then one will need to code the
-        //  exponential time algorithm here, or if a less
-        //  computationally intensive better approximation is needed
-        //  then possibly implementing something similar to this might
-        //  help: 
-        //
-        //   "Inclusion-Exclusion: Exact and Approximate" by Jeff
-        //    Kahn, Nathan Linial, Alex Samorodnitsky.
-        //    Combinatorica. 1993
-
+        //  This results from the computeEventUnionProbability()
+        //  routine, which contains a comment explaining the
+        //  rationale.
         // 
-        Set threat_var_set = getThreatVariationSet( asset_id );
 
-        // No threats -> no event possible
-        if ( threat_var_set != null )
+        // Having no threats implies no threat-induced event can
+        // happen.
+        //
+        if (( threat_var_set == null )
+            || ( threat_var_set.size() < 1 ))
             return 0.0;
 
         int num_threats = threat_var_set.size();
 
-        // No threats -> no event possible
-        if ( num_threats < 1 )
-            return 0.0;
-
         double[] prob = new double[num_threats];
         
-        double disjunction_prob = 0.0;
-        double conjunction_prob = 1.0;
-
         // This loop will get the individual event probabilities for
-        // each threat, and also accumulate the sum andproduct of al
-        // these probabilities, since these are used in the
-        // probability calculations for most cases.
+        // each threat.
         //
         Iterator threat_var_iter = threat_var_set.iterator();
         for ( int idx = 0; threat_var_iter.hasNext(); idx++ )
@@ -847,72 +740,152 @@ class AssetTypeDimensionModel extends Model
         
             prob[idx] = threat_var.getEventProbability( start_time, end_time );
 
-            disjunction_prob += prob[idx];
-            conjunction_prob *= prob[idx];
         } // for idx
 
-        switch ( num_threats )
-        {
-
-        case 1:
-            //--------------------
-            // CASE: One threat:  
-            //
-            //        P( Event ) = Pr( T1 )
-            //
-            return prob[0];
-            
-        case 2:
-            //--------------------
-            // CASE: Two threats:  
-            //
-            //        P( Event ) = Pr( T1 or T2 )
-            //                   = Pr( T1) + Pr( T2 ) - Pr( T1 and T2 )
-            //
-            // Then using the indpendence assumption:
-            //
-            //                   = Pr( T1) + Pr( T2 ) - Pr( T1 ) * Pr( T2 )
-            //
-            return disjunction_prob - conjunction_prob;
-
-        case 3:
-            //--------------------
-            // CASE: Three threats:  
-            //
-            //  P(Event) = Pr( T1 or T2 or T3 )
-            //           = Pr(T1) + Pr(T2) + Pr(T3) 
-            //             - Pr(T1 and T2 ) - Pr(T2 and T3 ) - Pr(T1 and T3 )
-            //             + Pr( T1 and T2 and T3 )
-            //
-            // Then using the indpendence assumption:
-            //
-            //      = Pr(T1) + Pr(T2) + Pr(T3) 
-            //        - Pr(T1) * Pr(T2) - Pr(T2) * Pr(T3) - Pr(T1) * Pr(T3)
-            //        + Pr(T1) * Pr(T2) * Pr(T3)
-            //
-            return disjunction_prob
-                    - ( prob[0] * prob[1] ) 
-                    - ( prob[1] * prob[2] ) 
-                    - ( prob[0] * prob[2] )
-                    + conjunction_prob;
-
-        default:
-            //--------------------
-            // CASE: More than three threats:  
-            //
-            // Here we approximate (crudely) the probability with:
-            //
-            //   P( Event ) = \sum_i [ Pr( T_i ) - \prod_i Pr( T_i ) ]
-            //
-            // this approximation will over-estimate the probability.
-
-            logError( "More than 3 threats. Probabilities only approximate.");
-
-            return disjunction_prob - ( num_threats * conjunction_prob );
-        
-        } // switch num_threats
+        // This may result in an approximation if there are more than
+        // 3 threats that can cause an event.
+        //
+        return ProbabilityUtils.computeEventUnionProbability( prob );
 
     } // method getEventProbability
+
+    //************************************************************
+    /**
+     * Returns the transition probability matix resulting from all
+     * threats and all events that could affect this asset state
+     * dimension.
+     *
+     * @param asset_id The ID of the asset instance
+     */
+    double[][] getThreatTransitionMatrix( AssetID asset_id,
+                                          long start_time,
+                                          long end_time )
+            throws BelievabilityException
+    {
+        // Note that because of the parameterize-by-time nature of
+        // the threat probabilities and the dynamic asset
+        // membership of the threats, we *cannopt* precompute this
+        // transition matrix. 
+        //
+
+        // Getting the transition probability matrix at the most
+        // abstract is a two step process.  We have to find all the
+        // unique events that are acting on this asset state
+        // dimension, and blend their individual transition matrices
+        // according to the probability of each event.  But to do
+        // this, requires us to blend together all the possible
+        // threats that can cause each event event.
+        //
+        
+        // General algorithm: Find each event, and compute the
+        // probability of each event (possibly factoring in multiple
+        // threats.)  Blending the threats together is done in
+        // ProbabilityUtils.computeEventUnionProbability(). Then,
+        // consider all possible combinations of the events occurring
+        // and not occurring, building up the transition matrix from
+        // the individual event components.  This blending of events
+        // occurs in the ProbabilityUtils.mergeMultiEventTransitions()
+        // method.
+        //
+
+        // First, get the threat variation set so we can see how many
+        // *different* events exist.
+        //
+        ThreatVariationCollection threat_var_collection
+                = getThreatVariations( asset_id );
+
+        logDebug( "Threat collection for asset '" + asset_id.getName() 
+                  + "', state dim. '"
+                  + _state_dim_name + "'\n"
+                  + threat_var_collection.toString() );
+
+        // The nature of the getThreatVariations() code should never
+        // result in a NULL being returned, but it never hurts to
+        // check (it is supposed to create the set when it finds there
+        // is none).  Also, if there are no threats, then the
+        // probability of the threat should be zero.  However, rather
+        // than couting on that, we will assume that the absence of a
+        // threat means that the "threat transition" effect is to not
+        // change state, so we return the indentity matrix.
+        //
+        //
+        if (( threat_var_collection == null )
+            || ( threat_var_collection.getNumEvents() < 1 ))
+        {
+            double[][] probs = new double[_possible_states.length]
+                    [_possible_states.length];
+            
+            for ( int i = 0; i < _possible_states.length; i++ )
+                probs[i][i] = 1.0;
+            
+            return probs;
+        } // if no threats acting on this asset state dimension
+
+        // This array will hold (for each event) the transition matrix
+        // *given* the event occurs. (We will assume the transitions
+        // are the identity matrix for the case when the event does
+        // not occur.) First index: the event, second index: the 'from'
+        // asset state, third index: the 'to' asset state.
+        //
+        double event_trans[][][]
+                = new double[threat_var_collection.getNumEvents()][][];
+
+        // This will hold (for each event) the probability that the
+        // event occurs (independent of all others).  This may need to
+        // factor in one or more threats by computing the probability
+        // of the union of all the threats that can cause a given
+        // event.
+        //
+        double event_probs[]
+                = new double[threat_var_collection.getNumEvents()];
+
+        // Fill out the arrays by looping over each event.
+        //
+        Enumeration event_name_enum 
+                = threat_var_collection.eventNameEnumeration();
+        for ( int idx = 0; event_name_enum.hasMoreElements(); idx++ )
+        {
+            String event_name = (String) event_name_enum.nextElement();
+            
+            HashSet threat_var_set 
+                    = (HashSet) threat_var_collection.getThreatVariationSet
+                    ( event_name );
+
+            //  The nature of this threat variation set is such that
+            //  it should not be empty (we would not consider an event
+            //  unless some threat could cause it), and every threat
+            //  variation in there should refer to the same event.
+            //  Because of that, we can get the first item and get the
+            //  event transition from that.
+            //
+            ThreatVariationModel threat_var 
+                    = (ThreatVariationModel) threat_var_set.iterator().next();
+            
+            event_trans[idx] = threat_var.getEventTransitionMatrix();
+
+            event_probs[idx] = getEventProbability( threat_var_set,
+                                                    start_time,
+                                                    end_time );
+        } // for idx
+
+        logDebug( "Event probs: " 
+                  + ProbabilityUtils.arrayToString( event_probs ));
+        
+        logDebug( "Event transitions: " 
+                  + ProbabilityUtils.arrayToString( event_trans ));
+        
+        // Ok, so now we have the individual state transition
+        // probabilities for each event and the individual
+        // probabilities that each event will occur.  Next up is
+        // merging these into a single transition matrix. Note the
+        // assumption that if an event does not occur, then the state
+        // remains unchanged. Or more accurately, if no events occurs,
+        // there is no state change.
+        //
+        return ProbabilityUtils.mergeMultiEventTransitions( event_probs,
+                                                            event_trans );
+
+    } // method getThreatTransitionMatrix
 
     //------------------------------------------------------------
     // private interface
@@ -944,13 +917,13 @@ class AssetTypeDimensionModel extends Model
     //
     private Hashtable _threat_model_set = new Hashtable();
 
-    // This maps asset IDs into a set of threat variations.  This uses
-    // lazy evaluation, so that we add a threat variation at the first
-    // time we are asked for the probability of an event.  Further, on
-    // threat model change events, we do not try to pluck out the one
-    // changed threat, but rather delete the asset ID from this tabel
-    // and allow the lazy evaluation to reconstruct the set for the
-    // asset.
+    // This maps asset IDs into a hashtable of threat variation
+    // collections.  This uses lazy evaluation, so that we add a
+    // threat variation at the first time we are asked for the
+    // probability of an event.  Further, on threat model change
+    // events, we do not try to pluck out the one changed threat, but
+    // rather delete the asset ID from this tabel and allow the lazy
+    // evaluation to reconstruct the set for the asset.
     //
     private Hashtable _asset_threat_var_table = new Hashtable();
 

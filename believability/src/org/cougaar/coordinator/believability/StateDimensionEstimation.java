@@ -56,6 +56,7 @@ public class StateDimensionEstimation extends Loggable {
 
      _belief_state_dimension = state_dimension;
      _mau_weighted_utils = mau_weighted_utils;
+     _asset_id = state_dimension.getAssetID();
 
     } // end constructor
 
@@ -130,7 +131,7 @@ public class StateDimensionEstimation extends Loggable {
         StringBuffer buff = new StringBuffer();
         
         buff.append( "StateDimensionEstimation for asset " );
-	buff.append( _asset_id.toString() + ":" );
+        buff.append( _asset_id.toString() + ":" );
         buff.append( _belief_state_dimension.toString() );
 
         return buff.toString();

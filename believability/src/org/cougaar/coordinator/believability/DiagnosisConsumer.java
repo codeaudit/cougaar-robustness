@@ -25,12 +25,8 @@
 
 package org.cougaar.coordinator.believability;
 
-import org.cougaar.coordinator.Diagnosis;
-
-import java.util.Hashtable;
-
 /**
- * Used to accept new diagnoses from the blackboard
+ * Used to accept new diagnoses or action successes from the blackboard
  * and take the appropriate action.
  */
 public class DiagnosisConsumer extends Loggable
@@ -57,20 +53,19 @@ public class DiagnosisConsumer extends Loggable
 
 
     /**
-     * Process a new diagnosis
-     * @param diag The diagnosis from the blackboard
+     * Process a new update trigger (diagnosis or successful action)
+     * @param but The belief update trigger to prcess
      * @throws BelievabilityException if there is a problem processing
      **/
-    public void consumeDiagnosis( Diagnosis diag ) 
+    public void consumeUpdateTrigger( BeliefUpdateTrigger but ) 
 	throws BelievabilityException {
 
-	// Copy out the diagnosis information and forward it.
-	BelievabilityDiagnosis bd = new BelievabilityDiagnosis( diag );
-	this.sendToAssetModel( bd );
-    } // end consumeDiagnosis
+	// Forward the information
+	this.sendToAssetModel( but );
+    } // end consumeUpdateTrigger
 
 
-    /**
+   /**
      * Provide an access to the AssetContainer
      * @return the Asset Container
      **/
@@ -84,19 +79,19 @@ public class DiagnosisConsumer extends Loggable
     //------------------------------------------------------------
 
     /**
-     * Pass the diagnosis to the asset model
-     * @param bd a BelievabilityDiagnosis
+     * Pass the diagnosis or successful action to the asset model
+     * @param but A BeliefUpdateTrigger (Believability diagnosis or action)
      **/
-    private void sendToAssetModel( BelievabilityDiagnosis bd ) {
+    private void sendToAssetModel( BeliefUpdateTrigger but ) {
 	if (_logger.isDebugEnabled()) 
-	    _logger.debug("Updating BelievabilityDiagnosis " + bd.toString() );
+	    _logger.debug("Updating Belief State for " + but.toString() );
      
 	try {
 	    // Find the AssetModel and AssetStateWindow that this diagnosis
 	    // concerns.
-	    AssetModel am = _asset_container.getAssetModel( bd.getAssetID() );
+	    AssetModel am = _asset_container.getAssetModel( but.getAssetID() );
 	    if ( am == null ) {
-		am = new AssetModel( bd.getAssetID(),
+		am = new AssetModel( but.getAssetID(),
 				     _plugin,
 				     _model_manager, 
 				     _se_publisher );
@@ -104,16 +99,15 @@ public class DiagnosisConsumer extends Loggable
 	    }
 	
 	    // Update the asset state window with the new diagnosis
-	    am.consumeBelievabilityDiagnosis( bd );
+	    am.consumeBeliefUpdateTrigger( but );
 	}
 	catch( BelievabilityException be ) {
 	    if (_logger.isDebugEnabled()) 
-		_logger.debug("Failed to update diagnosis -- " +
+		_logger.debug("Failed to update diagnosis or action -- " +
 			     be.getMessage() );
 	    
 	}
     }
-
 
     // A handle to the believability plugin
     private BelievabilityPlugin _plugin;

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetDimensionModel.java,v $
- * $Revision: 1.3 $
- * $Date: 2004-06-09 17:32:49 $
+ * $Revision: 1.4 $
+ * $Date: 2004-06-18 00:16:38 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -21,8 +21,6 @@
 
 package org.cougaar.coordinator.believability;
 
-import java.util.Random;
-
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.techspec.AssetType;
 
@@ -31,11 +29,15 @@ import org.cougaar.coordinator.techspec.AssetType;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.3 $Date: 2004-06-09 17:32:49 $
+ * @version $Revision: 1.4 $Date: 2004-06-18 00:16:38 $
  *
  */
 class POMDPAssetDimensionModel extends Model
 {
+    // This is for testing to ignore the actual threat transitions and
+    // randomly generate them.
+    //
+    private static final boolean SCRAMBLE_THREAT_TRANSITIONS = false;
 
     // Class implmentation comments go here ...
 
@@ -141,55 +143,65 @@ class POMDPAssetDimensionModel extends Model
             throws BelievabilityException
     {
 
-        // The event probability needs to factor in all the threats
-        // that could affect this state dimension.
+        // The updating of the belief state due to threats is a
+        // relatively complicated process.  The complication comes
+        // from the fact that we must allow multiple threats to cause
+        // the same event, and even allow multiple events to affect
+        // the state dimension of an asset.  We have models for how
+        // the threats and events act individually, but no models
+        // about how they act in combination.  Our job here is trying
+        // to estimate what effect these threats and events could have
+        // on the asset state dimension. (Note that threats cause
+        // events in the techspec model.
+        //
+        // Note that making a simplifying asumption that only one
+        // event will occur at a time does not help us in this
+        // computation: we are not trying to adjust after the fact
+        // when we *know* an event occurred; we are trying to deduce
+        // which of any number of events might have occurred.  Thus,
+        // we really do need to reason about combinations of events.
+        //
+        // The prospect of having the techspec encode the full joint
+        // probability distributions for a events is not something
+        // that will be managable, so we must live with the individual
+        // models and make some assumptions.  At the heart of the
+        // assumption sare that threats that can generate a given
+        // event will do so independently, and among multiple events,
+        // they too act independently.
         // 
-        double event_prob
-                =  _asset_dim_model.getEventProbability
+        // Details of the calculations and assumptions are found in
+        // the parts of the code where the calculations occur.
+        //
+
+        // All the complications of handling multiple threats happens
+        // in this method call.
+        //
+        double[][] trans_matrix
+                = _asset_dim_model.getThreatTransitionMatrix
                 ( prev_belief.getAssetID(),
                   start_time,
                   end_time );
 
-        // If there are no threats, then we assume that the state will
-        // not change.  Note that we copy the probability values from
-        // prev_belief to next_belief, even though the next_belief
-        // likely starts out as a clone of the prev_belief.  We do
-        // this because we were afraid of assuming it starts out as a
-        // clone, as this would make this more tightly coupled with
-        // the specific implmentation that calls this method. Only if
-        // this becomes a performance problem should this be
-        // revisited.
-        // 
-        if ( event_prob <= 0.0 )
+        logDebug( "Threat transition matrix: " 
+                  + _asset_dim_model.getStateDimensionName() + "\n" 
+                  + ProbabilityUtils.arrayToString( trans_matrix ));
+
+        if ( SCRAMBLE_THREAT_TRANSITIONS )
         {
-            next_belief.setProbabilityArray
-                    ( prev_belief.getProbabilityArray() );
-            return;
-        }  // if no threats exist
+            logError( "SCRAMBLING TRANSITIONS.  THIS IS FOR TESTING ONLY!");
+
+            ProbabilityUtils.setRandomDistribution( trans_matrix );
+
+            logDebug( "New threat transition matrix:\n" 
+                      + ProbabilityUtils.arrayToString( trans_matrix ));
+        } // if testing (SCRAMBLE_THREAT_TRANSITIONS)
 
         double[] prev_belief_prob = prev_belief.getProbabilityArray();
         double[] next_belief_prob = new double[prev_belief_prob.length];
-        double[][] event_trans
-                = _asset_dim_model.getEventTransitionMatrix
-                ( prev_belief.getAssetID() );
-
-        // If we get a non-zero event probability, then we can assume
-        // there is at least one threat affecting this asset, and
-        // thus, must be an event description defining the state
-        // transitions for when the event occurs.  Thus, we check
-        // this, but it really should never be null.
-        //
-        if ( event_trans == null )
-            throw new BelievabilityException
-                    ( "updateBeliefStateThreatTrans()",
-                      "Could not find event transition matrix for: "
-                      + prev_belief.getAssetID().getName() );
 
         // The event transition matrix will model how the asset state
-        // transitions occur *if* the event occurs.  Implied in this
-        // is that the state does *not* change when the event does not
-        // occur.  We have to consider this in our belief update
-        // calculation (see below).
+        // transitions occur.  We now need to fold this into the
+        // current belief sate to produce the next belief state.
         //
 
         for ( int cur_state = 0; 
@@ -201,31 +213,10 @@ class POMDPAssetDimensionModel extends Model
                   next_state < prev_belief_prob.length; 
                   next_state++ ) 
             {
-                // If the threat does not result in the event
-                // happening, then we assume there is no state change.
-                // Thus, most state transitions under the "event did
-                // not happen" condition will have probability zero,
-                // except...
-                //
-                double non_event_trans_prob = 0.0;
-                
-                // ...for the self-transitions, since absence of the
-                // event means we assume that the asset remains in its
-                // current state.
-                //
-                if ( cur_state == next_state )
-                    non_event_trans_prob = 1.0;
-
-                // If the event does occur, then the state transition
-                // is dictated by the state transition matrix
-                // associated with this event.
-                //
-                double trans_prob 
-                        = event_prob * event_trans[cur_state][next_state]
-                        + ( 1.0 - event_prob) * non_event_trans_prob;
 
                 next_belief_prob[next_state] 
-                        += prev_belief_prob[cur_state]  * trans_prob;
+                        += prev_belief_prob[cur_state]  
+                        * trans_matrix[cur_state][next_state];
                 
             } // for next_state
         }  // for cur_state
@@ -272,13 +263,16 @@ class POMDPAssetDimensionModel extends Model
                                        BeliefStateDimension next_belief )
             throws BelievabilityException
     {
-        // FIXME: implenent this method
-        //
-        logError( "updateBeliefStateActionTrans() not implemented." );
+        if (( prev_belief == null )
+            || ( action == null )
+            || ( next_belief == null ))
+            throw new BelievabilityException
+                    ( "updateBeliefStateActionTrans()",
+                      "NULL parameter(s) sent in." );
 
         // If the action does not pertain to this state dimension
         // (shouldn't happen), then we assume the state remains
-        // unchanged (identiy matrix.  Note that we copy the
+        // unchanged (identiy matrix).  Note that we copy the
         // probability values from prev_belief to next_belief, even
         // though the next_belief likely starts out as a clone of the
         // prev_belief.  We do this because we were afraid of assuming
@@ -296,6 +290,10 @@ class POMDPAssetDimensionModel extends Model
         //
         double[][] action_trans
                 = _asset_dim_model.getActionTransitionMatrix( action );
+
+        logDebug( "Action transition matrix: " 
+                  + _asset_dim_model.getStateDimensionName() + "\n" 
+                  + ProbabilityUtils.arrayToString( action_trans ));
 
         // We check this, but it really should never be null.
         //
@@ -375,6 +373,10 @@ class POMDPAssetDimensionModel extends Model
         double[] prev_belief_prob = prev_belief.getProbabilityArray();
         double[] next_belief_prob = new double[prev_belief_prob.length];
 
+        logDebug( "Updating belief given sensor '"
+                  + diagnosis.getSensorName()
+                  + "' has sensed '" + diagnosis_value + "'");
+
         SensorTypeModel sensor_model 
                 = _asset_dim_model.getSensorTypeModel 
                 ( diagnosis.getSensorName() );
@@ -390,18 +392,30 @@ class POMDPAssetDimensionModel extends Model
         // first index is the observation and the second is the state.
         //
         double[][] obs_prob = sensor_model.getObservationProbabilityArray();
+
+        logDebug( "Observation probabilities: " 
+                  + _asset_dim_model.getStateDimensionName() + "\n" 
+                  + ProbabilityUtils.arrayToString( obs_prob ));
+
+
         int obs_idx = sensor_model.getObsNameIndex( diagnosis_value );
+
+        logDebug( "Pre-update: " 
+                  + ProbabilityUtils.arrayToString( prev_belief_prob ));
 
         for ( int state = 0; state < prev_belief_prob.length; state++ ) 
         {
 
             next_belief_prob[state] 
-                    = prev_belief_prob[state] * obs_prob[obs_idx][state];
+                    = prev_belief_prob[state] * obs_prob[state][obs_idx];
             
             denom += next_belief_prob[state];
             
         } // for state
 
+        logDebug( "Pre-normalization: " 
+                  + ProbabilityUtils.arrayToString( next_belief_prob ));
+   
         if( Precision.isZero( denom ))
             throw new BelievabilityException
                     ( "updateBeliefStateDiagnosisObs()",
@@ -410,6 +424,9 @@ class POMDPAssetDimensionModel extends Model
         
         for( int i = 0; i < next_belief_prob.length; i++ )
             next_belief_prob[i] /= denom;
+
+        logDebug( "Post-normalization: " 
+                  + ProbabilityUtils.arrayToString( next_belief_prob ));
 
         next_belief.setProbabilityArray( next_belief_prob );
 
@@ -481,16 +498,7 @@ class POMDPAssetDimensionModel extends Model
 
         double[] belief_prob = new double[num_vals];
         
-        double total = 0.0;
-        for ( int idx = 0; idx < num_vals; idx++ )
-        {
-            belief_prob[idx] = _rand.nextDouble();
-             total += belief_prob[idx];
-        }
-
-        // Normalize
-        for ( int idx = 0; idx < num_vals; idx++ )
-            belief_prob[idx] /= total;
+        ProbabilityUtils.setRandomDistribution( belief_prob );
         
         return new BeliefStateDimension( _asset_dim_model,
                                          belief_prob,
@@ -506,7 +514,4 @@ class POMDPAssetDimensionModel extends Model
 
     private BeliefStateDimension _initial_belief;
     
-    private static Random _rand = new Random();
-
-
 } // class POMDPAssetDimensionModel

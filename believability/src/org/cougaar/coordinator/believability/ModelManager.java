@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManager.java,v $
- * $Revision: 1.3 $
- * $Date: 2004-06-09 17:32:49 $
+ * $Revision: 1.4 $
+ * $Date: 2004-06-18 00:16:38 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -50,7 +50,7 @@ import org.cougaar.util.log.Logger;
  * and provides information via the ModelManagerInterface. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.3 $Date: 2004-06-09 17:32:49 $
+ * @version $Revision: 1.4 $Date: 2004-06-18 00:16:38 $
  *
  */
 public class ModelManager extends Loggable
@@ -89,10 +89,12 @@ public class ModelManager extends Loggable
                                          AssetStateDimension state_dim )
             throws BelievabilityException
     {
-        logDebug( "==== getAssetUtilities() ====" );
+        logDebug( "getAssetUtilities() for state dim: " 
+                  + state_dim.getStateName() );
 
         AssetTypeModel at_model 
-                = _asset_type_container.get( asset_type.getName() );
+                = (AssetTypeModel) _asset_type_container.get
+                ( asset_type.getName() );
         
         if ( at_model == null )
         {
@@ -178,7 +180,8 @@ public class ModelManager extends Loggable
         logDebug( "==== getMaxSensorLatency() ====" );
 
         AssetTypeModel at_model 
-                = _asset_type_container.get( asset_type.getName() );
+                =  (AssetTypeModel) _asset_type_container.get
+                ( asset_type.getName() );
         
         if ( at_model == null )
         {
@@ -231,7 +234,7 @@ public class ModelManager extends Loggable
         // for this sensor.  Try to add and/or fetch the model first.
         //
         AssetType asset_type = diag_ts.getAssetType();
-        AssetTypeModel asset_type_model = addAssetType( asset_type );
+        AssetTypeModel asset_type_model = getOrAndAssetType( asset_type );
 
         if ( asset_type_model == null )
             return;
@@ -293,11 +296,11 @@ public class ModelManager extends Loggable
             return;
         }
 
-        // DO not make the assumption that the asset type model exists
+        // Do not make the assumption that the asset type model exists
         // for this actuator.  Try to add and/or fetch the model first.
         //
         AssetType asset_type = actuator_ts.getAssetType();
-        AssetTypeModel asset_type_model = addAssetType( asset_type );
+        AssetTypeModel asset_type_model = getOrAndAssetType( asset_type );
 
         if ( asset_type_model == null )
             return;
@@ -316,7 +319,7 @@ public class ModelManager extends Loggable
         }
         catch (BelievabilityException be)
         {
-            logError( "Cannot ActuatorTypeModel " + be.getMessage() );
+            logError( "Cannot add ActuatorTypeModel: " + be.getMessage() );
             return;
         }
 
@@ -349,7 +352,8 @@ public class ModelManager extends Loggable
     {
         logDebug( "==== Update Threat Type ====" );
 
-        logDebug( "** NOT IMPLEMENTED ** updateThreatType()" );
+        logDebug( "Ignoring update. This should be handled by "
+                  + "call to handleThreatModelChange()" );
     } // method updateThreatType
 
     //************************************************************
@@ -496,7 +500,8 @@ public class ModelManager extends Loggable
      */
     public AssetTypeModel getAssetTypeModel( AssetType asset_type )
     {
-        return _asset_type_container.get( asset_type.getName() );
+        return  (AssetTypeModel) _asset_type_container.get
+                ( asset_type.getName() );
 
     } // method getAssetTypeModel
 
@@ -513,7 +518,7 @@ public class ModelManager extends Loggable
      *
      * @param asset_type The asset type to be added.
      */
-    protected AssetTypeModel addAssetType( AssetType asset_type )
+    protected AssetTypeModel getOrAndAssetType( AssetType asset_type )
     {
         if ( asset_type == null )
         {
@@ -522,7 +527,8 @@ public class ModelManager extends Loggable
         }
 
         AssetTypeModel at_model 
-                = _asset_type_container.get( asset_type.getName() );
+                =  (AssetTypeModel) _asset_type_container.get
+                ( asset_type.getName() );
         
         if ( at_model != null )
         {
@@ -536,7 +542,8 @@ public class ModelManager extends Loggable
         {
             at_model = new AssetTypeModel( asset_type );
                 
-            _asset_type_container.add( at_model );
+            _asset_type_container.put( asset_type.getName(),
+                                       at_model );
 
             logDebug( "Added New AssetTypeModel:\n"
                       + at_model.toString() );
@@ -551,7 +558,7 @@ public class ModelManager extends Loggable
 
         return at_model;
 
-    } // method addAssetType
+    } // method getOrAndAssetType
 
     //************************************************************
     /**
@@ -589,7 +596,8 @@ public class ModelManager extends Loggable
 
     // These are the local models this class manages.
     //
-    private AssetTypeContainer _asset_type_container = new AssetTypeContainer();
+    private Hashtable _asset_type_container = new Hashtable();
+
     private MAUWeightModel _mau_weight_model = new MAUWeightModel();
     
     private POMDPModelManager _pomdp_manager = new POMDPModelManager(this);
@@ -623,7 +631,7 @@ public class ModelManager extends Loggable
         //
         AssetType asset_type 
                 = threat_mi.getThreatDescription().getAffectedAssetType();
-        AssetTypeModel asset_type_model = addAssetType( asset_type );
+        AssetTypeModel asset_type_model = getOrAndAssetType( asset_type );
 
         if ( asset_type_model == null )
             return;

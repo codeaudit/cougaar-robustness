@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ActuatorTypeModel.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-06-09 18:01:35 $
+ * $Revision: 1.2 $
+ * $Date: 2004-06-18 00:16:38 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -42,7 +42,7 @@ import org.cougaar.core.util.UID;
  * specs).
  *
  * @author Tony Cassandra
- * @version $Revision: 1.1 $Date: 2004-06-09 18:01:35 $
+ * @version $Revision: 1.2 $Date: 2004-06-18 00:16:38 $
  *
  */
 class ActuatorTypeModel extends Model
@@ -83,18 +83,66 @@ class ActuatorTypeModel extends Model
      *
      * @return the name of the state dimension
      **/
-    String getStateDimName() { return _state_dim_name; }
-
+    String getStateDimName() 
+    {
+        return _asset_dim_model.getStateDimensionName(); 
+    }
     
+    //************************************************************
+    /**
+     * Return the index corresponding to this acxtion name or -1 if
+     * not found.
+     *
+     * @param action_name The action name to map to an integer index.
+     */
+    int getActionValueIndex( String action_name )
+    {
+        if ( action_name == null )
+            return -1;
+
+        for ( int action_idx = 0; 
+              action_idx < _possible_values.length; 
+              action_idx++ )
+        {
+            if ( _possible_values[action_idx].equalsIgnoreCase
+                 ( action_name ))
+                return action_idx;
+        } // for dim_idx
+        
+        return -1;
+        
+    } // method getTransitionProbabilityMatrix
+
     //************************************************************
     /**
      * Return the conditional state transition probabilities
      * associated with this actuator.
      *
      */
-    double[][] getTransitionProbabilityMatrix( )
+    double[][] getTransitionProbabilityMatrix( int action_idx )
+                throws BelievabilityException
     {
-        return _trans_prob;
+        if (( action_idx < 0 )
+            || ( action_idx >= _possible_values.length ))
+            throw new BelievabilityException
+                    ( "ActuatorTypeModel.getTransitionProbabilityMatrix()",
+                      "Bad index found: " + action_idx );
+
+        return _trans_prob[action_idx];
+
+    } // method getTransitionProbabilityMatrix
+
+    //************************************************************
+    /**
+     * Return the conditional state transition probabilities
+     * associated with this actuator.
+     *
+     */
+    double[][] getTransitionProbabilityMatrix( String action_name )
+                throws BelievabilityException
+    {
+        return getTransitionProbabilityMatrix
+                ( getActionValueIndex( action_name ));
 
     } // method getTransitionProbabilityMatrix
 
@@ -108,10 +156,45 @@ class ActuatorTypeModel extends Model
         StringBuffer buff = new StringBuffer();
 
         buff.append( "\tActuator Type Name: " + _name + "\n" );
-        buff.append( "\tState Dimension: " + _state_dim_name  + "\n");
-
-        // FIXME: Need to add more infomration
+        buff.append( "\tState Dimension: " + getStateDimName() + "\n" );
+        buff.append( "\tNum values: " + _possible_values.length + "\n" );
+        buff.append( "\tTransitions:\n" );
         
+        int num_state_values = _asset_dim_model.getNumStateDimValues();
+
+        for ( int action_idx = 0; 
+              action_idx < _possible_values.length;
+              action_idx++ )
+        {
+            for ( int from_idx = 0;
+                  from_idx < num_state_values;
+                  from_idx++ )
+            {
+                for ( int to_idx = 0;
+                      to_idx < num_state_values;
+                      to_idx++ )
+                {
+                    if ( Precision.isZero
+                         ( _trans_prob[action_idx][from_idx][to_idx] ))
+                        continue;
+                    
+                    String from_state 
+                            = _asset_dim_model.getStateDimValueName(from_idx);
+                    String to_state 
+                            = _asset_dim_model.getStateDimValueName(to_idx);
+                    
+                    buff.append( "\t\tPr( "
+                                 + to_state + " | "
+                                 + from_state + ", "
+                                 + _possible_values[action_idx]
+                                 + " ) = " 
+                                 + _trans_prob[action_idx][from_idx][to_idx]
+                                 + "\n" );
+                    
+                } // for to_idx
+            } // for from_idx
+        } // for action_idx
+
         return buff.toString();
     } // method toString
 
@@ -126,10 +209,8 @@ class ActuatorTypeModel extends Model
     private ActionTechSpecInterface _action_ts;
     private AssetTypeDimensionModel _asset_dim_model;
 
-    // These are all the attributes we need for an aset model.
-    //
-    private String _state_dim_name;
-    private double[][] _trans_prob;
+    private String[] _possible_values;
+    private double[][][] _trans_prob;
 
     //************************************************************
     /**
@@ -148,43 +229,60 @@ class ActuatorTypeModel extends Model
                     ( "ActuatorTypeModel.setContents()",
                       "NULL parameter(s) sent in." );
 
-        // FIXME: Resolve multiple ActionDescriptions to see what this
-        // should be.
-        this._name = null;
-
         this._action_ts = action_ts;
+        this._name = _action_ts.getName();
         this._asset_dim_model = state_dim_model;
-        this._state_dim_name = state_dim_model.getStateDimensionName();
-
-        // FIXME: This is where I need to figure out what do do with
-        // all this information.  I think I extract everythong I need,
-        // I just do not do anything with it..
 
         Vector action_desc_list = action_ts.getActions();
+
+        if ( action_desc_list.size() < 1 )
+            throw new BelievabilityException
+                    ( "ActuatorTypeModel.setContents()",
+                      "Actuator has no action descriptions." );
+
+        // We will have a separate transition matrix for each
+        // ActionDescription.
+        //
+        _possible_values = new String[action_desc_list.size()];
+        _trans_prob = new double[action_desc_list.size()][][];
+
         Enumeration action_desc_enum = action_desc_list.elements();
-        while( action_desc_enum.hasMoreElements() )
+        for( int action_idx = 0; 
+             action_desc_enum.hasMoreElements();
+             action_idx++ )
         {
             ActionDescription action_desc
                     = (ActionDescription) action_desc_enum.nextElement();
 
-            String action_name = action_desc.name();
+            _possible_values[action_idx] = action_desc.name();
             
-            AssetType asset_type = action_desc.getAffectedAssetType();
-            
+            // FIXME: Uneeded sanity check?
+            //
             AssetStateDimension state_dim 
                     = action_desc.getAffectedStateDimension();
+            if ( ! state_dim.getStateName().equalsIgnoreCase
+                 ( _asset_dim_model.getStateDimensionName()))
+                throw new BelievabilityException
+                        ( "ActuatorTypeModel.setContents()",
+                          "Action description state dimension error: is "
+                          + state_dim.getStateName()  
+                          + " but should be " 
+                          + _asset_dim_model.getStateDimensionName() );
 
-            int num_state_values 
-                    = state_dim.getPossibleStates().size();
+            int num_state_values = _asset_dim_model.getNumStateDimValues();
 
-            double[][] intermediate_trans_prob 
-                    = new double[num_state_values][num_state_values];
-
-            double[][] end_trans_prob 
+            // NOTE: Our assumption is that the believability plugin
+            // will only factor in asset state change actions for
+            // those actions that have been reported to succeed.
+            // Thus, we cann ignore the call to get the intermediate
+            // sttae tranition values and only worry about the end
+            // state transition values. 
+            //
+            _trans_prob[action_idx]
                     = new double[num_state_values][num_state_values];
 
             for ( int from_idx = 0;
-                  from_idx < end_trans_prob.length;
+                  from_idx < num_state_values;
                   from_idx++ )
             {
                 AssetState from_state 
@@ -192,24 +290,23 @@ class ActuatorTypeModel extends Model
 
                 AssetTransitionWithCost transition
                         = action_desc.getTransitionForState( from_state );
+
+                if ( transition == null )
+                    throw new BelievabilityException
+                            ( "ActuatorTypeModel.setContents()",
+                              "NULL transition from action descripton: " 
+                              + _name + " with action name " 
+                              + _possible_values[action_idx]
+                              + " and from_state " + from_state.getName() );
                 
-                AssetState to_intermediate_state 
-                        = transition.getIntermediateValue();
+                AssetState to_state = transition.getEndValue();
 
-                AssetState to_end_state = transition.getEndValue();
+                int to_idx = _asset_dim_model.getStateDimValueIndex
+                        ( to_state.getName() );
 
-                int to_intermediate_idx 
-                        = _asset_dim_model.getStateDimValueIndex
-                        ( to_intermediate_state.getName() );
-
-                int to_end_idx = _asset_dim_model.getStateDimValueIndex
-                        ( to_end_state.getName() );
-
-                intermediate_trans_prob[from_idx][to_intermediate_idx] = 1.0;
-                end_trans_prob[to_intermediate_idx][to_end_idx] = 1.0;
+                _trans_prob[action_idx][from_idx][to_idx] = 1.0;
              
             } // for from_idx
-            
             
         } // while action_desc_enum
 

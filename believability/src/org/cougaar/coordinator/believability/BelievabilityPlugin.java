@@ -27,6 +27,8 @@ package org.cougaar.coordinator.believability;
 
 import org.cougaar.coordinator.DiagnosesWrapper;
 import org.cougaar.coordinator.Diagnosis;
+import org.cougaar.coordinator.monitoring.SuccessfulAction;
+import org.cougaar.coordinator.Action;
 
 import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
 import org.cougaar.coordinator.techspec.DiagnosisTechSpecService;
@@ -63,6 +65,7 @@ import org.cougaar.util.UnaryPredicate;
 public class BelievabilityPlugin 
         extends ServiceUserPluginBase
         implements NotPersistable 
+
 {
     
 
@@ -188,17 +191,11 @@ public class BelievabilityPlugin
 		     if ( o instanceof ThreatModelInterface ) {
 			 return true ;
 		     }
-		     //		     if ( o instanceof ThreatDescription ) {
-		     //			 return true ;
-		     //		     }
-		     //		     if ( o instanceof EventDescription ) {
-		     //			 return true ;
-		     //		     }
 		     return false ;
 		 }
 	     }) ;
         
-     _diagnosisSub 
+     _beliefUpdateTriggerSub 
 	 = ( IncrementalSubscription ) 
 	 getBlackboardService().subscribe
 	 ( new UnaryPredicate() 
@@ -207,8 +204,8 @@ public class BelievabilityPlugin
 		     if ( o instanceof DiagnosesWrapper ) {
 			 return true ;
 		     }
-		     if ( o instanceof Diagnosis ) {
-			 return false ;
+		     if ( o instanceof SuccessfulAction ) {
+			 return true ;
 		     }
 		     return false ;
 		 }
@@ -238,7 +235,7 @@ public class BelievabilityPlugin
 
         publishFromQueue();
         handleThreatModel();
-        handleDiagnosis();
+        handleUpdateTriggers();
 
     } // method execute
 
@@ -255,59 +252,44 @@ public class BelievabilityPlugin
      * type of threat.
      *
      */
-    private void handleThreatModel()
-    {
+    private void handleThreatModel() {
         ThreatModelInterface threat_ts = null;
+	Iterator iter;
+	Iterator i2;
 
         //------- ADD ThreatModelInterface
-        for ( Iterator iter = _threatModelSub.getAddedCollection().iterator();
-              iter.hasNext() ; ) 
-        {
-	    Object o = iter.next();
-	    if ( o instanceof ThreatModelInterface ) {
-		_model_manager.addThreatType( (ThreatModelInterface) o );
-		if ( logger.isDebugEnabled() ) 
-		    logger.debug( "ThreatModelInterface ADD" );
-	    }
-	    //	    if ( o instanceof ThreatDescription )
-	    //		_model_manager.addThreatDescription( (ThreatDescription) o );
-	    //	    if ( o instanceof EventDescription )
-	    //		_model_manager.addEventDescription( (EventDescription) o );
+        for ( iter = _threatModelSub.getAddedCollection().iterator();
+              iter.hasNext() ; ) {
+	    if ( logger.isDebugEnabled() ) 
+		logger.debug( "ThreatModelInterface ADD" );
+	    threat_ts = (ThreatModelInterface) iter.next();
+	    _model_manager.addThreatType( threat_ts );
         } // for ADD ThreatModelInterface
 
 
         //------- CHANGE ThreatModelInterface
-        for ( Iterator iter = _threatModelSub.getChangedCollection().iterator();  
-           iter.hasNext() ; ) 
-        {
-	    Object o = iter.next();
-	    if ( o instanceof ThreatModelInterface ) {
-		_model_manager.updateThreatType( (ThreatModelInterface) o );
-		for ( Iterator i2 = _threatModelSub.getChangeReports( o ).iterator(); 
-		      i2.hasNext() ; ) {
-		    Object o2 = i2.next();
-		    if ( o2 instanceof ThreatModelChangeEvent ) {
-			_model_manager.handleThreatModelChange( (ThreatModelChangeEvent) o2 );
-		    }
-		}
+        for ( iter = _threatModelSub.getChangedCollection().iterator();  
+	      iter.hasNext() ; ) {
+	    if ( logger.isDebugEnabled() ) 
+		logger.debug( "ThreatModelInterface CHANGE" );
+	    threat_ts = (ThreatModelInterface) iter.next();
+	    _model_manager.updateThreatType( threat_ts );
+
+	    for ( i2 = _threatModelSub.getChangeReports( threat_ts ).iterator(); 
+		  i2.hasNext() ; ) {
+		ThreatModelChangeEvent tmce = 
+		    (ThreatModelChangeEvent) i2.next();
+		_model_manager.handleThreatModelChange( tmce );
 	    }
-	    //	    if ( o instanceof ThreatDescription )
-	    //		_model_manager.updateThreatDescription( (ThreatDescription) o );
-	    //	    if ( o instanceof EventDescription )
-	    //		_model_manager.updateEventDescription( (EventDescription) o );
         } // for CHANGE ThreatModelInterface
         
         //------- REMOVE ThreatModelInterface
-        for ( Iterator iter = _threatModelSub.getRemovedCollection().iterator();  
-           iter.hasNext() ; ) 
-        {
-	    Object o = iter.next();
-	    if ( o instanceof ThreatModelInterface )
-		_model_manager.removeThreatType( (ThreatModelInterface) o );
-	    //	    if ( o instanceof ThreatDescription )
-	    //		_model_manager.removeThreatDescription( (ThreatDescription) o );
-	    //	    if ( o instanceof EventDescription )
-	    //		_model_manager.removeEventDescription( (EventDescription) o );
+        for ( iter = _threatModelSub.getRemovedCollection().iterator();  
+	      iter.hasNext() ; ) {
+	    if ( logger.isDebugEnabled() ) 
+		logger.debug( "ThreatModelInterface DELETE" );
+	    threat_ts = (ThreatModelInterface) iter.next();
+	    _model_manager.removeThreatType( threat_ts );
         } // for REMOVE ThreatModelInterface
     } // method handleThreatModel
 
@@ -315,74 +297,74 @@ public class BelievabilityPlugin
     /**
      * Invoked via execute() in response to some Blackboard activity.
      *
-     * This routine checks and handle BB events for DiagnosesWrapper
+     * This routine checks and handle BB events for DiagnosesWrappers
+     * and SuccessfulActions
      **/
-    private void handleDiagnosis()
+    private void handleUpdateTriggers()
     {
-	Diagnosis diag = null;
+	BeliefUpdateTrigger but = null;
+
+	Iterator iter;
 
         // Diagnoses are published to the blackboard. Each sensor has
 	// a Diagnosis object on the blackboard that it either asserts
 	// periodically or asserts when some value changes (or both).
 	// The Believability plugin receives a wrapped version of this
 	// object on the blackboard, when something changes.
+	//
+	// Successful actions are published to the blackboard by the 
+	// actuators, at the time of success
 	
-	// ------- ADD DiagnosesWrapper or Diagnosis
-	// Update the belief state for each asset
-	for ( Iterator iter = _diagnosisSub.getAddedCollection().iterator();  
+	// ------- ADD UpdateTrigger
+	for ( iter = _beliefUpdateTriggerSub.getAddedCollection().iterator();  
               iter.hasNext() ; ) {
-	    if (logger.isDebugEnabled() ) logger.debug ("Diagnosis ADD");
+	    if (logger.isDebugEnabled() ) logger.debug ("UpdateTrigger ADD");
 
 	    try {
-		Object o = iter.next();
-		if ( o instanceof DiagnosesWrapper ) 
-		    diag = ((DiagnosesWrapper)o).getDiagnosis();
-		else diag = (Diagnosis) o;
-	     
+		but = constructUpdateTrigger( (Object) iter.next() );
+
 		// Check to see whether the defense controller is enabled at
 		// the moment
-		if ( _dc_enabled ) _diagnosis_consumer.consumeDiagnosis( diag );
+		if (_dc_enabled) 
+		    _diagnosis_consumer.consumeUpdateTrigger( but );
 	    }
 	    catch ( BelievabilityException be ) {
 		logger.warn( "Problem processing added diagnosis "
 			     + be.getMessage() );
 	    }
-	} // iterator for ADD Diagnosis
+	} // iterator for ADD update trigger
 
-	// ------- CHANGE DiagnosesWrapper or Diagnosis
-	// This indicates some new diagnosis information has been asserted.
-	for ( Iterator iter = _diagnosisSub.getChangedCollection().iterator();
+	// ------- CHANGE UpdateTrigger
+	for ( iter = _beliefUpdateTriggerSub.getChangedCollection().iterator();
 	      iter.hasNext() ; ) {
 
-	    if (logger.isDebugEnabled() ) logger.debug ("Diagnosis CHANGE");
-
+	    if (logger.isDebugEnabled() ) logger.debug ("UpdateTrigger CHANGE");
 	    try {
-		Object o = iter.next();
-		if ( o instanceof DiagnosesWrapper ) 
-		    diag = ((DiagnosesWrapper)o).getDiagnosis();
-		else diag = (Diagnosis) o;
-	     
+		but = constructUpdateTrigger( (Object) iter.next() );
+
 		// Check to see whether the defense controller is enabled at
 		// the moment
-		if ( _dc_enabled ) _diagnosis_consumer.consumeDiagnosis( diag );
+		if (_dc_enabled) 
+		    _diagnosis_consumer.consumeUpdateTrigger( but );
+
 	    }
 	    catch ( BelievabilityException be ) {
-		logger.warn( "Problem processing updated diagnosis "
+		logger.warn( "Problem processing changed update trigger "
 			     + be.getMessage() );
 	    }
-	} // iterator for CHANGE Diagnosis
+	} // iterator for CHANGE UpdateTrigger
         
-	// ----- REMOVE DiagnosesWrapper or Diagnosis
-	// The DiagnosesWrapper has been removed successfully,
+	// ----- REMOVE UpdateTrigger
+	// The trigger has been removed successfully,
 	// we do nothing with this since it is controlled elsewhere, and
 	// we have already processed it.
-	for ( Iterator iter = _diagnosisSub.getRemovedCollection().iterator(); 
+	for ( iter = _beliefUpdateTriggerSub.getRemovedCollection().iterator(); 
 	      iter.hasNext() ; ) {
-	    Object o = iter.next(); 
+	    Object o = iter.next();
 	    // do absolutely nothing
-	} // for REMOVE DiagnosesWrapper
+	} // for REMOVE UpdateTrigger
 	
-    } // method handleDiagnosis
+    } // method handleUpdateTriggers
 
 
     /**
@@ -421,13 +403,12 @@ public class BelievabilityPlugin
      **/
     private boolean haveServices() {
 
-	//        if ( (eventService != null) 
-	//	     && (diagnosisTSService == null)
-	//	     && (actionTSService == null) )
-	// 	    return true;
+        if ( (eventService != null) 
+	     && (diagnosisTSService != null)
+	     && (actionTSService != null) )
+	    return true;
 
-        if (acquireServices()) 
-        {
+        if (acquireServices()) {
             if (logger.isDebugEnabled()) 
                 logger.debug(".haveServices - acquiredServices.");
 
@@ -436,27 +417,21 @@ public class BelievabilityPlugin
 		throw new RuntimeException ( "No service broker found." );
                 
 	    // Get the event service
-            eventService 
-                = (EventService ) sb.getService( this, 
-                                                 EventService.class, 
-                                                 null ) ;      
+            eventService = (EventService)
+		sb.getService( this, EventService.class, null ) ;      
             if (eventService == null) 
                 throw new RuntimeException("Unable to obtain EventService");
 
 	    // Get the diagnosis tech spec service
 	    diagnosisTSService = (DiagnosisTechSpecService)
-		sb.getService( this,
-			       DiagnosisTechSpecService.class, 
-			       null );
+		sb.getService( this, DiagnosisTechSpecService.class, null );
 	
 	    if ( diagnosisTSService == null )
 		throw new RuntimeException( "Unable to obtain DiagnosisTechSpecService." );
 
 	    // Get the action tech spec service
 	    actionTSService = (ActionTechSpecService)
-		sb.getService( this,
-			       ActionTechSpecService.class, 
-			       null );
+		sb.getService( this, ActionTechSpecService.class, null );
 	
 	    if ( actionTSService == null )
 		throw new RuntimeException( "Unable to obtain ActionTechSpecService." );
@@ -475,7 +450,7 @@ public class BelievabilityPlugin
     // These are the subscriptions we need to monitor the BB activity.
 
     private IncrementalSubscription _threatModelSub;
-    private IncrementalSubscription _diagnosisSub;
+    private IncrementalSubscription _beliefUpdateTriggerSub;
 
     private EventService eventService = null;
     private static final Class[] requiredServices = {
@@ -514,18 +489,43 @@ public class BelievabilityPlugin
 
 	// Get all of the actuator tech specs from the action tech spec 
 	// service.
-	//FIX	Iterator ts_enum = 
-	//	    actionTSService.getAllDiagnosisTechSpecs().iterator();
-	//	while ( ts_enum.hasNext() ) {
-	//	    ActionTechSpecInterface atsi = 
-	//		(ActionTechSpecInterface) ts_enum.next();
-	//
-	//	    if ( logger.isDebugEnabled() ) 
-	//		logger.debug("plugin adding actuator tech spec for action type  "
-	//			     + atsi.getActionType()
-	//			     + " on asset type " + atsi.getAssetType() );
-	//	    _model_manager.addActuatorType( atsi );
-	//	}
+	ts_enum = actionTSService.getAllActionTechSpecs().iterator();
+	while ( ts_enum.hasNext() ) {
+	    ActionTechSpecInterface atsi = 
+		(ActionTechSpecInterface) ts_enum.next();
+	
+	    if ( logger.isDebugEnabled() ) 
+		logger.debug("plugin adding actuator tech spec for action type  "
+			     + atsi.getActionType()
+			     + " on asset type " + atsi.getAssetType() );
+	    _model_manager.addActuatorType( atsi );
+	}
+    }
+
+
+    /**
+     * Make a BeliefUpdateTrigger from the input object on the blackboard,
+     * copying out relevant information
+     **/
+    private BeliefUpdateTrigger constructUpdateTrigger( Object o ) 
+	throws BelievabilityException {
+
+	if (o instanceof DiagnosesWrapper) {
+	    Diagnosis diag = ((DiagnosesWrapper) o).getDiagnosis();
+	    return new BelievabilityDiagnosis( diag );
+	}
+
+	else if (o instanceof SuccessfulAction) {
+	    Action act = ((SuccessfulAction) o).getAction();
+	    BelievabilityAction ba = new BelievabilityAction( act );
+	    publishRemove ( o );
+	    return ba;
+	}
+
+	else throw new BelievabilityException(
+		       "BelievabilityPlugin.constructUpdateTrigger",
+		       "Cannot create update trigger"
+		       );
     }
 
 

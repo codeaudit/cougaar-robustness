@@ -1,7 +1,7 @@
 /**
- * DiagnosisConsumerInterface.java
+ * BeliefUpdateTriggerConsumerInterface.java
  *
- * Created on May 6, 2004
+ * Created on June 10, 2004
  * <copyright>
  *  Copyright 2004 Telcordia Technoligies, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
@@ -25,23 +25,22 @@
 
 package org.cougaar.coordinator.believability;
 
-import org.cougaar.coordinator.Diagnosis;
-
 /**
- * Used to accept new diagnoses from the blackboard
- * and take the appropriate action.
- *
- * @author Tony Cassandra
- * @version $Revision: 1.12 $Date: 2004-07-02 21:49:33 $
- * 
+ * Used to accept new belief update triggers and take the appropriate action.
  */
-public interface DiagnosisConsumerInterface {
+public interface BeliefUpdateTriggerConsumerInterface {
 
     //------------------------------------------------------------
     // public interface
     //------------------------------------------------------------
 
-    public void consumeUpdateTrigger( BeliefUpdateTrigger but ) 
+    /**
+     * Process the belief update based on the trigger information
+     * Triggers may represent incoming diagnoses or successful actions
+     *
+     * @param trigger The new BeliefUpdateTrigger
+     **/    
+    public void consumeBeliefUpdateTrigger( BeliefUpdateTrigger trigger )
 	throws BelievabilityException;
 
 } // class DiagnosisConsumerInterface

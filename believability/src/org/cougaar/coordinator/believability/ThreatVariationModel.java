@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/Attic/ThreatVariationModel.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-06-09 18:00:22 $
+ * $Revision: 1.2 $
+ * $Date: 2004-06-18 00:16:39 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -36,7 +36,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * with tech spec package.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.1 $Date: 2004-06-09 18:00:22 $
+ * @version $Revision: 1.2 $Date: 2004-06-18 00:16:39 $
  *
  */
 class ThreatVariationModel extends Model
@@ -107,6 +107,15 @@ class ThreatVariationModel extends Model
     } // method getStateDimName
 
     
+    //************************************************************
+    /**
+     * Returns the name of the event caused by this threat.
+     */
+    String getEventName()
+    {
+        return _threat_root_model.getEventName();
+    } // method getEventName
+
     //************************************************************
     /**
      * Returns the matrix of transition probabilities for the event

@@ -1,22 +1,26 @@
 /*
- *<SOURCE_HEADER>
+ * BeliefUpdateTrigger.java
  *
- *<NAME>
- * $RCSfile: BeliefUpdateTrigger.java,v $
- *</NAME>
- *
- *<RCS_KEYWORD>
- * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefUpdateTrigger.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-06-09 17:58:33 $
- *</RCS_KEYWORD>
- *
- *<COPYRIGHT>
- * The following source code is protected under all standard copyright
- * laws.
- *</COPYRIGHT>
- *
- *</SOURCE_HEADER>
+ * Created on June 7, 2004
+ * <copyright>
+ *  Copyright 2004 Telcordia Technoligies, Inc.
+ *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
+ *  and the Defense Logistics Agency (DLA).
+ * 
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the Cougaar Open Source License as published by
+ *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
+ * 
+ *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
+ *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
+ *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
+ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE, AND WITHOUT
+ *  ANY WARRANTIES AS TO NON-INFRINGEMENT.  IN NO EVENT SHALL COPYRIGHT
+ *  HOLDER BE LIABLE FOR ANY DIRECT, SPECIAL, INDIRECT OR CONSEQUENTIAL
+ *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE OF DATA OR PROFITS,
+ *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ *  PERFORMANCE OF THE COUGAAR SOFTWARE.
+ * </copyright>
  */
 
 package org.cougaar.coordinator.believability;
@@ -33,7 +37,7 @@ import org.cougaar.coordinator.techspec.AssetType;
  * dimension.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.1 $Date: 2004-06-09 17:58:33 $
+ * @version $Revision: 1.10 $Date: 2004-07-02 23:34:03 $
  * @see BelievabilityDiagnosis
  * @see BelievabilityAction
  *
@@ -54,11 +58,20 @@ abstract class BeliefUpdateTrigger extends Loggable
      */
     abstract long getTriggerTimestamp();
 
+
     /**
      * This routine should return the asset statew dimension name that
      * this trigger pertains to.
      */
     abstract String getStateDimensionName();
+
+
+    /**
+     * This routine should return a string representation of the
+     * belief update trigger.
+     */
+    abstract public String toString();
+
 
     //------------------------------------------------------------
     // package interface
@@ -75,17 +88,6 @@ abstract class BeliefUpdateTrigger extends Loggable
 
     } // method getAssetID
 
-    /**
-     * Simple accessor
-     *
-     * @return the AssetType for the affected asset
-     */
-    public AssetType getAssetType() 
-    { 
-        return _asset_type; 
-
-    } // method getAssetType
-
     //------------------------------------------------------------
     // protected interface
     //------------------------------------------------------------
@@ -95,11 +97,8 @@ abstract class BeliefUpdateTrigger extends Loggable
      *
      * @param
      */
-    protected BeliefUpdateTrigger( AssetID asset_id,
-                                   AssetType asset_type )
-    {
+    public BeliefUpdateTrigger( AssetID asset_id ) {
         this._asset_id = asset_id;
-        this._asset_type = asset_type;
     }  // constructor BeliefUpdateTrigger
 
     
@@ -108,6 +107,6 @@ abstract class BeliefUpdateTrigger extends Loggable
     //------------------------------------------------------------
 
     private AssetID _asset_id;
-    private AssetType _asset_type;
 
 } // class BeliefUpdateTrigger
+

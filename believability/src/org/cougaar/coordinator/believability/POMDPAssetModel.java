@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetModel.java,v $
- * $Revision: 1.3 $
- * $Date: 2004-06-09 17:32:49 $
+ * $Revision: 1.4 $
+ * $Date: 2004-06-18 00:16:38 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.3 $Date: 2004-06-09 17:32:49 $
+ * @version $Revision: 1.4 $Date: 2004-06-18 00:16:38 $
  *
  */
 class POMDPAssetModel extends Model
@@ -252,12 +252,8 @@ class POMDPAssetModel extends Model
         // All state dimensions will be updated to the currrent
         // diagnosis time, factoring in the state transitions due to
         // threats.  We do all this first, and then we will go back
-        // and factor in the observation from the diagfnosis for the
-        // lone state dimension that the diagnosis pertains to.
-        //
-        // FIXME: Is the above staement true?  Or should we keep
-        // separate timestamps for each state dimension?  Should we be
-        // able to handle simultaneous diagnoses?
+        // and factor in the observation/action from the trigger for
+        // the lone state dimension that the trigger pertains to.
         //
 
         // This will create a new belief state with all state
@@ -269,6 +265,8 @@ class POMDPAssetModel extends Model
         BeliefState next_belief 
                 = updateBeliefState( start_belief,
                                      trigger.getTriggerTimestamp() );
+
+        logDebug( "Belief after threats: " + next_belief.toString() );
 
         // Now we go and do the single state dimension update to
         // factor in the observation/diagnosis.
@@ -284,13 +282,13 @@ class POMDPAssetModel extends Model
         POMDPAssetDimensionModel pomdp_model_dim
                 = getPOMDPAssetDimensionModel( state_dim_name );
         
-        // ..and then the appropriate start belief state dimension...
-        BeliefStateDimension start_belief_dim
-                = start_belief.getBeliefStateDimension( state_dim_name );
-
         // ...and then the appropriate next belief state dimension...
         BeliefStateDimension next_belief_dim
                 = next_belief.getBeliefStateDimension( state_dim_name );
+
+        // ..and a clone for the starting point...
+        BeliefStateDimension start_belief_dim 
+                = (BeliefStateDimension) next_belief_dim.clone();
 
         // ...then finally we adjust the belief state based on the
         // diagnosis we received (which is only done for the single
@@ -299,6 +297,8 @@ class POMDPAssetModel extends Model
         pomdp_model_dim.updateBeliefStateTrigger( start_belief_dim,
                                                   trigger,
                                                   next_belief_dim );
+
+        logDebug( "Belief after trigger: " + next_belief.toString() );
 
         return next_belief;
 

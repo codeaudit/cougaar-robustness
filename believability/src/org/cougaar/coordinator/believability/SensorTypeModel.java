@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/SensorTypeModel.java,v $
- * $Revision: 1.5 $
- * $Date: 2004-06-09 17:32:49 $
+ * $Revision: 1.6 $
+ * $Date: 2004-06-18 00:16:39 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -37,14 +37,14 @@ import org.cougaar.core.util.UID;
  * needs concerning a SensorType (from the tech specs). 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.5 $Date: 2004-06-09 17:32:49 $
+ * @version $Revision: 1.6 $Date: 2004-06-18 00:16:39 $
  *
  */
 class SensorTypeModel extends Model
 {
 
     // This class is highly dependent on the AssetTypeModel, since
-    // this dictates the conditional probabilities of P(obs|state).
+    // this dictates the conditional probabilities of Pr(obs|state).
     // Thus, this class registers iteself as an observer of the asset
     // type model to track changes.  We also extend the Observable,
     // because other model (e.g., POMDP model) will need to be
@@ -175,9 +175,9 @@ class SensorTypeModel extends Model
                 String actual_state = _asset_dim_model.getStateDimValueName
                         ( state_idx );
                 
-                buff.append( "\t\tP( " + _obs_names[obs_idx]
+                buff.append( "\t\tPr( " + _obs_names[obs_idx]
                              + " | " + actual_state
-                             + " ) = " + _obs_prob[obs_idx][state_idx]
+                             + " ) = " + _obs_prob[state_idx][obs_idx]
                              + "\n");
 
             } // for obs_idx
@@ -261,7 +261,7 @@ class SensorTypeModel extends Model
         int num_state_values 
                 = asset_dim_model.getNumStateDimValues( );
 
-        _obs_prob = new double[obs_set.size()][num_state_values];
+        _obs_prob = new double[num_state_values][obs_set.size()];
 
         Vector diag_prob_list = _diag_ts.getDiagnosisProbabilities();
 
@@ -332,7 +332,7 @@ class SensorTypeModel extends Model
 
                 double prob = diag_as.getProbability();
 
-                _obs_prob[obs_idx][state_idx] = prob;
+                _obs_prob[state_idx][obs_idx] = prob;
                 
                 obs_prob_sum += prob;
                 

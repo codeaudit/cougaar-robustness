@@ -122,12 +122,12 @@ public class AssetModel extends Loggable {
 
 
     /**
-     * Forward a BelievabilityDiagnosis to the belief state window
-     * @param BelievabilityDiagnosis diagnosis
+     * Forward a BeliefUpdateTrigger to the belief state window
+     * @param BeliefUpdateTrigger but
      * @throws BelievabilityException if there is a problem dealing
-     *                                with the diagnosis
+     *                                with the belief update trigger
      **/
-    public void consumeBelievabilityDiagnosis( BelievabilityDiagnosis diagnosis )
+    public void consumeBeliefUpdateTrigger( BeliefUpdateTrigger but )
 	throws BelievabilityException {
 
 	if ( getBeliefStateWindow() == null ) 
@@ -135,7 +135,7 @@ public class AssetModel extends Loggable {
 
 	else 
 	    // May throw BelievabilityException
-	    getBeliefStateWindow().consumeBelievabilityDiagnosis( diagnosis );
+	    getBeliefStateWindow().consumeBeliefUpdateTrigger( but );
     }
 
 
