@@ -37,6 +37,7 @@ import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.component.ServiceAvailableListener;
 import org.cougaar.core.component.ServiceAvailableEvent;
+import org.cougaar.core.mts.MessageAddress;
 
 import java.util.*;
 
@@ -378,13 +379,16 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
   }
 
+  private String thisAgent;
+
   /**
    * Initializes services and loads state controller classes.
    */
-  public void initialize(final String thisAgent,
-                         final BindingSite bs,
+  public void initialize(final MessageAddress       agentId,
+                         final BindingSite          bs,
                          final CommunityStatusModel csm) {
-    super.initialize(thisAgent, bs, csm);
+    super.initialize(agentId, bs, csm);
+    thisAgent = agentId.toString();
     addController(INITIAL,        "INITIAL", new InitialStateController());
     addController(LOCATED,        "LOCATED", new LocatedStateController());
     addController(DefaultRobustnessController.ACTIVE, "ACTIVE",  new ActiveStateController());
@@ -396,26 +400,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     addController(DECONFLICT,     "DECONFLICT", new DeconflictStateController());
     RestartDestinationLocator.setCommunityStatusModel(csm);
     RestartDestinationLocator.setLoggingService(logger);
-    ServiceBroker sb = bs.getServiceBroker();
-    if (sb.hasService(ThreatAlertService.class)) {
-      initThreatAlertListener();
-    } else {
-      sb.addServiceListener(new ServiceAvailableListener() {
-        public void serviceAvailable(ServiceAvailableEvent sae) {
-          if (sae.getService().equals(ThreatAlertService.class)) {
-            initThreatAlertListener();
-          }
-        }
-      });
-    }
-  }
-
-  private void initThreatAlertListener() {
-    logger.debug("Initializing ThreatAlertListener");
-    ServiceBroker sb = getBindingSite().getServiceBroker();
-    ThreatAlertService tas =
-      (ThreatAlertService) sb.getService(this, ThreatAlertService.class, null);
-    tas.addListener(new ThreatAlertHandler(thisAgent, this, model));
+    new ThreatAlertHandler(getBindingSite(), agentId, this, csm);
   }
 
   boolean communityReady = false;
