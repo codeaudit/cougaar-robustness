@@ -1,0 +1,399 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html; charset=ISO-8859-1"
+ http-equiv="content-type">
+  <title>ACUC #1</title>
+</head>
+<body>
+<h1 style="text-align: center;">UCUC #1 - AR Deconfliction<br>
+</h1>
+<h2 style="text-align: center;">David Wells - OBJS</h2>
+<div style="text-align: center;"></div>
+<h2 style="text-align: center;">11/8/04</h2>
+<pre><br></pre>
+<h2>Purpose:</h2>
+Select between conflicting Robusteness actions based on predictions of
+which action(s) will give the greatest expected benefit in the face of
+unrcertainty about the exact system status.<br>
+<pre><br></pre>
+<h2>Use Case Overview</h2>
+<ol>
+</ol>
+UC#1 deals with selecting corrective (repair)
+actions; it will not address either preventive actions or tradeoffs
+between desirable actions in resource-limited situations.&nbsp; The
+specific actions coordinated in UC#1 at present are agent restart and
+planned disconnect of nodes.&nbsp; Additionally, control of
+MsgLog&nbsp; had been anticipated, but MsgLog was not available.&nbsp;
+In the detailed documentation that follows, items related to MsgLog are
+shown in <span style="font-style: italic;">italics</span>.&nbsp; .<br>
+<br>
+The basic issue in this Use Case is that&nbsp; the agents on
+Disconnected nodes all appear to be Dead to the Restart defense and
+UnableToCommunicate to the MsgLog defense.&nbsp; Further Dead agents
+appear to be UnableToCommunicate and UnableToCommunicate agents appear
+Dead.&nbsp; So there are many situations where different defenses, from
+their own perspective, diagnoses a problem where either none exits (the
+Disconnected agents need nothing dopne to them) or where some other
+remedy may be more appropriate (try MsgLog before retsarting because of
+the diffreence in costs).<br>
+<br>
+<h2>Model Details</h2>
+<h3>State Dimensions:</h3>
+<ul>
+  <li>Connectedness (corrective)</li>
+</ul>
+<ul style="margin-left: 40px;">
+  <li>Connected</li>
+  <li>WantsToDisconnect</li>
+  <li>Disconnected</li>
+  <li>WantsToConnect</li>
+  <li>Tardy</li>
+</ul>
+<ul>
+  <li>Liveness (corrective)</li>
+</ul>
+<ul style="margin-left: 40px;">
+  <li>Live</li>
+  <li>Dead</li>
+</ul>
+<ul style="font-style: italic;">
+  <li>Unmediated Connection Status (base dimension) - (per network) (to
+have only 1 dimension, assume only 1 problem at a time) (there could be
+many more values, but these seem to be representative)</li>
+</ul>
+<ul style="margin-left: 40px; font-style: italic;">
+  <li>OK</li>
+  <li>Protocol Failure</li>
+  <li>Stationary Partition (e.g., jamming, switch rebooting)</li>
+  <li>Rolling Partition</li>
+</ul>
+<ul style="font-style: italic;">
+  <li>MsgLog Setting - (per link protocol) (from the
+MsgLog Actuator - these are the action variants for which it enabled
+and actually using (Note: allowing the Action to specify that it is
+using more than one variant requires an extension to the definition of
+the Action class)) </li>
+</ul>
+<ul style="margin-left: 40px; font-style: italic;">
+  <li>No Communications</li>
+  <li>Normal RMI Protocol</li>
+  <li>Alternate Direct Protocols</li>
+  <li>Use Store &amp; Forward Protocols</li>
+</ul>
+<ul style="font-style: italic;">
+  <li>MediatedConnectionStatus (compensated dimension) (how well we are
+doing
+wrt the agents)</li>
+</ul>
+<ul style="font-style: italic;">
+</ul>
+<ul style="margin-left: 40px; font-style: italic;">
+  <li>Good</li>
+  <ul>
+  </ul>
+  <li>Degraded_1</li>
+  <ul>
+  </ul>
+  <li>Degraded_2</li>
+  <ul>
+  </ul>
+  <li>Degraded_3</li>
+  <ul>
+  </ul>
+  <li>CannotCommunicateWith</li>
+</ul>
+<ul style="margin-left: 40px;">
+</ul>
+<h3>Sensors</h3>
+<ul>
+  <li>AgentRestart - (from Restart Defense)</li>
+</ul>
+<ul style="margin-left: 40px;">
+  <li>Live</li>
+  <li>Dead</li>
+</ul>
+<ul>
+  <li>NodeDisconnectDiagnosis</li>
+  <ul>
+    <li>Connected</li>
+    <li>WantsToDisconnect</li>
+    <li>Disconnected</li>
+    <li>WantsToConnect</li>
+    <li>Tardy<br>
+    </li>
+  </ul>
+</ul>
+<pre></pre>
+<ul style="font-style: italic;">
+  <li>MsgLog Link Status sensors (from MsgLog) - (over Link-Level
+Communications Status)</li>
+</ul>
+<pre style="font-style: italic;"></pre>
+<ul style="margin-left: 40px; font-style: italic;">
+  <li>Good (success &gt; 90%)</li>
+  <li>Degraded</li>
+  <li>CannotCommunicateWith (0% success) </li>
+  <li>Unknown (no attempts to use the link)</li>
+</ul>
+<ul style="font-style: italic;">
+  <li>&nbsp;Mediated Communications status sensor - (over Mediated
+Communications Status) -MsgLog will publish diagnoses which are a
+rolling average behavior over time of the aggregate behavior</li>
+</ul>
+<ul style="margin-left: 40px;">
+  <li style="font-style: italic;">Good (success &lt; 90%)</li>
+  <li style="font-style: italic;">Degraded 1 (75% &lt; success &lt;=90%</li>
+  <li style="font-style: italic;">Degraded 2 (25% &lt; success &lt;= 75%</li>
+  <li style="font-style: italic;">Degraded 3 (0% &lt; successes &lt;=
+25%)</li>
+  <li style="font-style: italic;">Can&#8217;t Communicate With (0% success)</li>
+  <li><span style="font-style: italic;">Unknown (no attempts to use the
+link)</span><br>
+  </li>
+</ul>
+<h3>Actions </h3>
+<ul>
+  <li>Restart - (operates in the Liveness dimension)</li>
+</ul>
+<ul style="margin-left: 40px;">
+  <li>No</li>
+  <li>Yes</li>
+</ul>
+<pre></pre>
+<ul>
+  <li>PlannedDisconnect</li>
+</ul>
+<ul style="margin-left: 40px;">
+  <li>RequestToConnect</li>
+  <li>RequestToDisconnect</li>
+</ul>
+<ul style="font-style: italic;">
+  <li>MsgLog - (operates in the MsgLog Settings dimension)</li>
+</ul>
+<ul style="margin-left: 40px; font-style: italic;">
+  <li>No Communications</li>
+  <li>Normal RMI Protocol</li>
+  <li>Alternate Direct Protocols</li>
+  <li>Use Store &amp; Forward Protocols</li>
+</ul>
+<h3>Stresses (Threats)<br>
+</h3>
+<ol>
+  <li>Kill one or more nodes</li>
+  <li>Request a planned disconnect for nodes on a host where the host:<br>
+  </li>
+  <ul>
+    <li>returns on time</li>
+    <li>returns late</li>
+    <li>killed while disconnected<br>
+    </li>
+  </ul>
+  <li>Kill the ManagerAgent<br>
+  </li>
+  <li style="font-style: italic;">Temporarily isolate a host - problem
+clears up as expected</li>
+  <li style="font-style: italic;">Temporarily isolate a host - problem
+clears up later than
+expected (after timeout)</li>
+  <li style="font-style: italic;">Rolling partition</li>
+</ol>
+Various combinations of the above are exercised in the experiments
+provided.&nbsp; Other combinations can also be supported simply by
+writing the additional test scripts.<br>
+<h3>Experiments</h3>
+1) Kill one or more Nodes - no coordination involved w/o MsgLog, but
+illustrates that the Cordinator can efficiently interact with a&nbsp;
+major robustness defense<br>
+<div style="margin-left: 40px;">T1 - Kill one or more Nodes <br>
+<span style="font-style: italic;">T2 - MsgLog = NotCommunicating (for
+each affecetd agent)</span><br>
+T3 - AgentRestartDiagnosis = Dead (for each affected agent)<br>
+<br>
+T4 - expected Belief = [Liveness=Dead:High, <span
+ style="font-style: italic;">Network=PermanentlyDead:Med</span>,<span
+ style="font-style: italic;">
+TemporarilyDead:Med</span>, <span style="font-style: italic;">RollingPartition:Med</span>
+]<br>
+<span style="font-style: italic;">T5 - expected to select some
+aggressive MsgLog setting for all affected
+agents</span><br>
+<span style="font-style: italic;">T6 - MsgLog times out after trying
+for a time related to expected
+recovery time if temporary isolation</span><br>
+T7 - expected to select Restart = "Yes" for all affected Agents<br>
+T8 - Restart succeeds<br>
+</div>
+<br>
+2) Timely Return from a Planned Disconnect for Node(s) on a host<br>
+<div style="margin-left: 40px;">T1 - Request a Disconnect<br>
+T2 - Disconnect permitted<br>
+T3 - Actual Disconnect occurs<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PlannedDisconnect = True<br>
+<span style="font-style: italic;">T4 - MsgLog = NotCommunicating</span><br>
+T6- AgentRestartDiagnosis = Dead<br>
+<span style="font-style: italic;"></span>T7 - Belief = [<span
+ style="font-style: italic;"></span>Disconnected=High;
+AgentLiveness=Dead:No, <span style="font-style: italic;">Network=PermanentlyDead:No,
+TemporailyDead:No,
+RollingPartition:No</span>] <br>
+&nbsp; &nbsp; &nbsp; &nbsp; no actions selected because
+PlannedDisconnect is so certain and is
+already authorized. <br>
+T8 - Nodes request to Reconnect<br>
+T9 - Reconnect permnitted<br>
+TA - Reconnect occurs<br>
+TB - all Diagnoses return to "normal" state <br>
+<br>
+</div>
+3) Late Return from a Planned Disconnect for Node(s) on a host<br>
+<div style="margin-left: 40px;">T1 - Request a Disconnect<br>
+T2 - Disconnect permitted<br>
+T3 - Actual Disconnect occurs<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PlannedDisconnect = True<br>
+<span style="font-style: italic;">T4 - MsgLog = NotCommunicating</span><br>
+T6- AgentRestartDiagnosis = Dead<br>
+<span style="font-style: italic;"></span>T7 - Belief = [<span
+ style="font-style: italic;"></span>Disconnected=High;
+AgentLiveness=Dead:No, <span style="font-style: italic;">Network=PermanentlyDead:No,
+TemporailyDead:No,
+RollingPartition:No</span>] <br>
+&nbsp; &nbsp; &nbsp; &nbsp; no actions selected because
+PlannedDisconnect is so certain and is
+already authorized. <br>
+T8 - Nodes stay gone longer than the permitted duration of the
+Disconnect<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Nodes declared "Tardy" by
+the PlannedDisconnect defense - results in a DisconnectedDiagnosis=Tardy<br>
+----&gt; at thispoint, if MsgLog were present, it would geta&nbsp;
+chance to try to resolve the problem (not shonw for clarity)<br>
+T9 - Belief = [<span style="font-style: italic;"></span>Disconnected=Tardy;
+AgentLiveness=Dead:Yes, <span style="font-style: italic;">Network=PermanentlyDead:No,
+TemporailyDead:No,
+RollingPartition:No</span>] <br>
+TA - Restart=Yes permitted for all agents on the Tardy nodes<br>
+TB - Agents are restarted<br>
+TC - Nodes request to Reconnect<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Request denied<br>
+</div>
+<div style="margin-left: 40px;"><br>
+</div>
+4) Late Return from a Planned Disconnect for Node(s) on a host<br>
+<div style="margin-left: 40px;">T1 - Request a Disconnect<br>
+T2 - Disconnect permitted<br>
+T3 - Actual Disconnect occurs<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PlannedDisconnect = True<br>
+<span style="font-style: italic;">T4 - MsgLog = NotCommunicating</span><br>
+T6- AgentRestartDiagnosis = Dead<br>
+<span style="font-style: italic;"></span>T7 - Belief = [<span
+ style="font-style: italic;"></span>Disconnected=High;
+AgentLiveness=Dead:No, <span style="font-style: italic;">Network=PermanentlyDead:No,
+TemporailyDead:No,
+RollingPartition:No</span>] <br>
+&nbsp; &nbsp; &nbsp; &nbsp;&nbsp; no actions selected because
+PlannedDisconnect is so certain and is
+already authorized. <br>
+T8- All agents on the disconnected nodes are killed (via acme script)<br>
+T9 - Nodes stay gone longer than the permitted duration of the
+Disconnect<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Nodes declared "Tardy" by
+the PlannedDisconnect defense - results in a DisconnectedDiagnosis=Tardy<br>
+----&gt; at thispoint, if MsgLog were present, it would geta&nbsp;
+chance to try to resolve the problem (not shonw for clarity)<br>
+TA - Belief = [<span style="font-style: italic;"></span>Disconnected=Tardy;
+AgentLiveness=Dead:Yes, <span style="font-style: italic;">Network=PermanentlyDead:No,
+TemporailyDead:No,
+RollingPartition:No</span>] <br>
+TB - Restart=Yes permitted for all agents on the Tardy nodes<br>
+TC - Agents are restarted<br>
+<br>
+</div>
+<br style="font-style: italic;">
+5) Timely Return from a Planned Disconnect for Node(s) on a host w/
+ManagerAgent Kill<br>
+<div style="margin-left: 40px;">T1 - Request a Disconnect<br>
+T2 - Disconnect permitted<br>
+T3 - Actual Disconnect occurs<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; PlannedDisconnect = True<br>
+<span style="font-style: italic;">T4 - MsgLog = NotCommunicating</span><br>
+T6- AgentRestartDiagnosis = Dead<br>
+<span style="font-style: italic;"></span>T7 - Belief = [<span
+ style="font-style: italic;"></span>Disconnected=High;
+AgentLiveness=Dead:No, <span style="font-style: italic;">Network=PermanentlyDead:No,
+TemporailyDead:No,
+RollingPartition:No</span>] <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; no actions selected because
+PlannedDisconnect is so certain and is
+already authorized. <br>
+T8 - ManagerAgnet is killed (via acme script)<br>
+T9 - MA restarts somewhere<br>
+T9 - Nodes request to Reconnect<br>
+TA - Reconnect permnitted<br>
+TB - Reconnect occurs<br>
+TC - all Diagnoses return to "normal" state<br>
+<br>
+Note: a possible variant is that the nodes request to return <span
+ style="text-decoration: underline;">while</span> the MA is down.&nbsp;
+In this case, the PlannedDisconnect defense gives the node s grace
+period because they could not successfgully return while the MA is
+down.&nbsp; There is no script foir this, but it is an easy change to
+the existing script - just change the time of the planned disconnect so
+the nodes tryu to come backj before the MA can possibly be up.<br>
+</div>
+<br>
+<br>
+<span style="font-style: italic;">Temporarily Isolate a Host - Problem
+clears up as expected</span><br style="font-style: italic;">
+<div style="margin-left: 40px; font-style: italic;">T1 - Drop a NIC<br>
+T2 - AgentRestart = Dead (TODO: It&#8217;d be nice to synch up some of the
+terminology here with what others use. I don&#8217;t ever hear Ron say
+&#8220;Liveness&#8221;. )<br>
+T3 - MsgLog = NotCommunicating<br>
+T4 - expected Belief = [Network=PermanentlyDead:Med,
+TemporailtDead:Med, RollingPartition:Med; AgentLiveness=Dead:High]<br>
+T5 - expected to select MsgLog Aggressive Comm. for all affected agents<br>
+T6 - Bring back the NIC - comm. problem clears up<br>
+T7 - MsgLog succeeds and signals that Comm. is normal (so no need for
+Aggressive Comm. anymore) - this will have the effect of lowering the
+costs by shutting off some of MsgLog&#8217;s data collection associated with
+the suppressed protocols) <br>
+</div>
+<br style="font-style: italic;">
+<span style="font-style: italic;">Temporarily Isolate a Host - Problem
+clears up later than expected</span><br style="font-style: italic;">
+<div style="margin-left: 40px; font-style: italic;">same as #2, except
+that when the comm.
+is restored autonomously after the restart has happened, the duplicate
+agent must be dealt with. Note: duplicate agents are not the
+Coordinator&#8217;s problem, but the system has to work when this happens.
+There may be some coordinator-related issues like internal cleanup. I
+don&#8217;t think there will be, but this is in the interest of making sure
+we actually fit into Cougaar properly at this point.<br>
+</div>
+<br style="font-style: italic;">
+<span style="font-style: italic;">Rolling Partition</span><br
+ style="font-style: italic;">
+<div style="margin-left: 40px; font-style: italic;">T1 Start a Rolling
+Partition (when
+there is only one node on the host)<br>
+T2 - AgentRestart = Dead<br>
+T3 - MsgLog = NotCommunicating (for the direct connect links)<br>
+T4 - expected Belief = [Network=PermanentlyDead:Med,
+TemporailtDead:Med, RollingPartition:Med; AgentLiveness=Dead:High] <br>
+T5 - expected to select MsgLog Aggressive Comm. for all affected agents<br>
+T6 - MsgLog succeeds, but signals that it is still necessary for
+AggressiveComm to be used<br>
+T7 - Belief = [Network=PermanentlyDead:No, TemporailtDead:No,
+RollingPartition:High; AgentLiveness=Live] <br>
+T8 - Rolling Partition clears up<br>
+T9 - MsgLog signals that AggressiveComm is no longer needed (this
+requires an additional sensor from MsgLog)<br>
+TA - expected Belief = [Network=PermanentlyDead:No, TemporailtDead:No,
+RollingPartition:No; AgentLiveness=Live:High] <br>
+TB - MsgLog is selected for Normal Communications<br>
+</div>
+<br>
+<br>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html; charset=ISO-8859-1"
+ http-equiv="content-type">
+  <title>ACUC #1</title>
+</head>
+<body>
+<h1 style="text-align: center;">ACUC #2a - MAU-Sensitive Control of
+Agent Data Compromise<br>
+</h1>
+<h2 style="text-align: center;">David Wells - OBJS</h2>
+<div style="text-align: center;"></div>
+<h2 style="text-align: center;">11/8/04</h2>
+<pre><br></pre>
+<h2>Purpose:</h2>
+Demonstrate the ability of the Coordinator to select different
+corrective actions based on which provides a greater benefit per a
+high-level MAU specification.<br>
+<pre><br></pre>
+<h2>Use Case Overview</h2>
+<ol>
+</ol>
+In UC #2a, the Coordinator is not choosing between two different
+defenses' actions, but whether or not it is worth performing an action
+offered by a single defense.&nbsp; In this case, the AgentCompromise
+defense detects that an agent has been compromised (in this case the
+compromise is forced via an acme action).&nbsp;&nbsp; AgentCompromise
+defense can either be permitted to kill the compromised agent and cause
+it to be restarted it from a&nbsp; persistent snapshot, or it can be
+denied permission to do this, in which case the compromised agent
+continues to run..&nbsp; <br>
+<br>
+The compromise may be either Moderate or Severe.&nbsp; A Moderate
+compromise is one that will have undesirable results, but will not
+interfere with the overall ability to complete a plan; an example would
+be an agent that was being used to commit thefts, but was otherwise
+behaving normally.&nbsp; A Severe compromise will undermine the ability
+of the society to perform its mission.&nbsp; A Moderate compromise
+loses half its MAU security value, bit only a small amount of its MAU
+completeness value.&nbsp; <br>
+<br>
+Two MAU policies are used: HighSecurityMau, which values security more
+highly than usual, and HighCompletenessMau, which does the
+opposite.&nbsp; Under HighSecurityMau, the negative MAU impact of
+running with even a Moderately compromised agent is significant enough
+that the Restart will be permitted.&nbsp; However, under the
+HighCompletenessMau, the benefits that would be lost by having to
+restart the agent and resynchronize with its neighbors outweighs the
+loss in MAU security&nbsp; dimension, so AgentCompromise is not
+permitted to restart the agent.<br>
+<br>
+<h2>Model Details</h2>
+<h3>State Dimensions:</h3>
+<ul>
+  <li>Compromise(corrective)</li>
+</ul>
+<ul style="margin-left: 40px;">
+  <li>OK<br>
+  </li>
+  <li>Moderate</li>
+  <li>Severe</li>
+</ul>
+<ul>
+  <li>Liveness (corrective)</li>
+</ul>
+<ul style="margin-left: 40px;">
+  <li>Live</li>
+  <li>Dead</li>
+</ul>
+<br>
+<ul style="margin-left: 40px;">
+</ul>
+<h3>Sensors</h3>
+<ul>
+  <li>AgentCompromise</li>
+  <ul>
+    <li>OK</li>
+    <li>Moderate</li>
+    <li>Severe</li>
+  </ul>
+</ul>
+<ul>
+  <li>AgentRestart - (from Restart Defense)</li>
+</ul>
+<ul>
+</ul>
+<ul style="margin-left: 40px;">
+  <li>Live</li>
+  <li>Dead</li>
+</ul>
+<h3>Actions</h3>
+<ul>
+  <li>AgentCompromise</li>
+  <ul>
+    <li>Restart</li>
+    <li>DoNothing<br>
+    </li>
+  </ul>
+</ul>
+<ul>
+  <li>Restart - (operates in the Liveness dimension)</li>
+</ul>
+<ul style="margin-left: 40px;">
+  <li>No</li>
+  <li>Yes</li>
+</ul>
+<pre></pre>
+<br>
+<h3>Stresses (Threats)<br>
+</h3>
+<ul>
+  <li>Moderate Compromise</li>
+</ul>
+<h3>Policy Settings</h3>
+<ul>
+  <li>HighSecurityMau</li>
+  <li>HighCompletenessMau<br>
+  </li>
+</ul>
+<h3>Experiments</h3>
+1) HighSecurityMau<br>
+<div style="margin-left: 40px;">T1 - Set HighSecurityMau policy via a
+servllet<br>
+T2 - Comprimise an agent moderately<br>
+T3 - AgentCompromiseDiagnosis=Moderate<br>
+T4 - Belief = {Compromise=Moderate:High certainty]<br>
+T5 - Restat is permitted<br>
+T6 - AgentCompromise defense invalidates bad persistent snapshots &amp;
+kills the agent<br>
+T7 - RestartDiagnosis=Dead (after a few minutes)<br>
+T8 - Belief = [Liveness=Dead:High certainty]<br>
+T9 - Restart defense is permitted to restat the agent, which it then
+does<br>
+<br>
+</div>
+2) HighCompletenessMau<br>
+<div style="margin-left: 40px;">T1 - Set HighCompletenessMau policy via
+a servllet<br>
+T2 - Comprimise an agent moderately<br>
+T3 - AgentCompromiseDiagnosis=Moderate<br>
+T4 - Belief = {Compromise=Moderate:High certainty] - but, a Restart has
+<span style="font-style: italic;">negative</span> benefit because the
+loss due to restarting outweighs the security advatage<br>
+T5 - Retssrt is not permitted<br>
+<br>
+</div>
+<br>
+<br>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html; charset=ISO-8859-1"
+ http-equiv="content-type">
+  <title>ACUC #1</title>
+</head>
+<body>
+<h1 style="text-align: center;">Coordinator Use Case Overview<br>
+</h1>
+<h2 style="text-align: center;">David Wells - OBJS</h2>
+<div style="text-align: center;"></div>
+<h2 style="text-align: center;">11/8/04</h2>
+<pre><br></pre>
+<h2>Purpose:</h2>
+<ol>
+  <li>Demonstrate that the Coordinator produces realistic believability
+estimates of problem states given TechSpecs and real and artificial
+sensor inputs. The believability must be visible and explainable.</li>
+  <li>Demonstrate the ability to select reasonable actions from
+available actions to correct believed problems. The reason for the
+choice must be visible and explainable.</li>
+  <li>Control real actuators.</li>
+  <li>Select alternate actions if the initially chosen action is
+ineffective</li>
+  <li>Demonstrate that the selected actions are sensitive to high-level
+poicy in the form of MAU settings<br>
+  </li>
+</ol>
+<pre><br></pre>
+<h2>Use Case Overview</h2>
+<ol>
+</ol>
+<ul>
+  <li>UC#1 will deal only with selecting corrective (repair)
+actions; it will not address either preventive actions or tradeoffs
+between desirable actions in resource-limited situations.</li>
+  <li>UC#2a also addresses corrective actions, but adds sensitivity to
+adjustable MAU weights</li>
+  <li>UC #2b controls compensatory defenses and chooses between them in
+accordance with high-level MAU policy when resources are artificially
+limited<br>
+  </li>
+</ul>
+<ol>
+</ol>
+<h2>Coordinator Overview</h2>
+<h3>Coordinator Operation</h3>
+All society assets are modeled by a collection of orthogional "asset
+dimensions".&nbsp; For example, an agent is described by its current
+status w.r.t. the dimensions Liveness, Compromise, Connectedness, and
+AbilityToCommunicate, among others.&nbsp; Additional dimensions can be
+added by deifining additional TechSpecs.&nbsp; The dimensions for
+different kinds of assets ovrelap, but need not be identical.&nbsp;
+Different asset states have different values for the society; this is
+expressed by assigning an MAU weight to each state.&nbsp; As with any
+MAU weight, in UltraLog an MAU wight has three components:
+completeness, security, and timeliness.&nbsp; For example, from a
+completeness standpoint, an agent is far more valuable Live than Dead;
+on the other hand, a Dead agent is quite secure, since it cannot be
+compromised.<br>
+<br>
+"Events" resulting from "threats" (alternatively "stresses") can cause
+an asset to spontaneously change state (generally, although not always
+for the worse - for example , a communications problem may clear up
+without any Cougaar intervention).&nbsp; Defense "actions" change the
+state of an asset.&nbsp; A typical defense can change the state of an
+asset in exactly one dimension, although this is not strictly a
+requirement.&nbsp;&nbsp; <br>
+<br>
+Sensors make "diagnoses" about the current state of the various
+assets.&nbsp; Diagnoses have varying degrees of accuracy, depending on
+the kind of problem being monitored.&nbsp; Together with models of the
+threats to which the assets are subject, the Coordiantor makes a
+probabilistic estimate of the current state of&nbsp; the individual
+assets.&nbsp; This "state estimation" is used to select defense actions
+appropriate to the current believed state, society goals represneted by
+MAU weights (i.e., is security, completeness, or timeliness most valued
+at the present tiem), and avaiable resources.<br>
+<h3>Defense Action Taxonomy:</h3>
+Actions are categorized in 2 types. This matters because this
+determines the relationship between state dimensions, actions, and
+sensors, and determine the state dimensions to which benefit values are
+assigned.:<br>
+<ul>
+  <li> CorrectiveActions - Restorative actions are those that fix a
+problem that has occurred by restoring the system to a good state. They
+are 1-time actions that change a state in the same state dimension as
+some stress event. Benefits are determined over this single state
+dimension. Sensors operate over this single dimension (with also the
+possiblity of cross-diagnoses).</li>
+  <br>
+Example: Restart changes the state in the same dimension as does
+NodeDeath event, moving an agent from Dead to Live whereas NodeDeath
+moves the agent from Live to Dead.<br>
+</ul>
+<ul>
+  <li>Compensatory Actions - Compensatory actions cannot fix a problem,
+but can compensate for it by offering a workaround that presents the
+assets with a better effective state than would otherwise be possible.
+These are contiunuing actions that maintain the asset in a
+"compensated" state
+dimension separate from the "base" state dimension over which stress
+events occur. <br>
+  </li>
+</ul>
+<div style="margin-left: 40px;">Example: MsgLog <br>
+</div>
+<ul style="margin-left: 40px;">
+  <li>Events (stresses) move us between states in a base
+UnmediatedCommunicationsStatus dimension (with states like Normal,
+StatioanryPartition, RollingPartition, etc.). There is nothing we can
+do about our base state there other than
+try to compensate for it if we don&#8217;t like it. <br>
+  </li>
+  <li>Actions place us into states in the MsgLog Settings dimension.
+This we have complete control over. The purpose of being in a
+particular state in this dimension is to ameliorate the consequences of
+a bad state in the UnmediatedCommunicationsStatus dimension at
+acceptable cost. The
+amelioration may or may not succeed depending on what actual state is
+in the Unmediated Comm Dimension (which we can only estimate).</li>
+  <li>The society does not directly see or care about the
+UnmediatedCommunicationStatus.&nbsp; What matters is the
+MediatedCommunicationStatus, and it is to this the MAU weights are
+assigned. (To make the caclutauons work out, the weights for base
+dimensions are all 1.0, but this is just an artifact of the way the
+TechSpecs are).<br>
+  </li>
+  <li>The combination of the base state in the UnmediatedCommunications
+dimension and the MsgLog Setting will produice a result visible at the
+society level.&nbsp; For example, if the actual base state is
+RollingPartition and the MsgLogSetting is AllowIndirectProtocols (like
+email), then the MediatedCommuniations statuis will be Degraded.&nbsp;
+For the combination of StationaryPartition and AllowIndirectProtcols,
+the MediatedCommunicationStatus will still be NotCommunicating.<br>
+  </li>
+  <li>Sensors over the Mediated Comm Dimension (per link) tells the
+behavior of individual MsgLog link protocols (RMI, UDP, SMTP, etc.).
+These sensors give measured behavior of what is actually observed to be
+going on in MsgLog on each link protocol. These sensors are used by
+Believability to make StateEsimations. But these sensors do not tell
+how much value (benefit) an agent gets because MsgLog will use any
+enabled links, so the behavior of a single link has little to do with
+overall benefit.</li>
+  <li>A single MsgLog sensor over the MediatedCommunicationsStatus
+dimenion (overall)
+tells the benefit to the agent. This is a function of timeToDeliver
+messages compared to a baseline of desired behavior and classified into
+one of several states (probably the same set of state values as used
+for the link-specific sensors, although not necessarily).</li>
+</ul>
+</body>
+</html>
