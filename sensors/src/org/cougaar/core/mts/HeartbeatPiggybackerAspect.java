@@ -83,7 +83,8 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
      * hearbeats arrive at their destination by the time they are expected. E.g. if a heartbeat is
      * due every 15 seconds, and it may take as long as 5 seconds to be transmitted then the
      * HeartbeatPiggybacker will make sure to emit the heartbeat no later than 10 seconds after 
-     * the HeartbeatPiggybacker sees it.  The default is 10000 milliseconds.
+     * the HeartbeatPiggybacker sees it.  The default is 10000 milliseconds. This value should
+     * be reasonably LESS than the periodic rate at which heartbeats are generated.
      */
     public static final String TIME_DELAY_PROP = "org.cougaar.message.transport.aspects.heartbeatPiggybacker.msgTransitTime";
     
