@@ -116,11 +116,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   class ActiveStateController extends StateControllerBase {
     public void enter(String name) {
-      if (isLeader(thisAgent)) {
+      if (thisAgent.equals(preferredLeader())) {
         //for deconflict: the applicability condition of one active agent should
         //be true and the defense op mode should be disabled.
-        if(getDeconflictHelper() != null) {
-          if(getDeconflictHelper().isDefenseApplicable(name)) {
+        if (isDeconflictionEnabled()) {
+          if (getDeconflictHelper().isDefenseApplicable(name)) {
             getDeconflictHelper().changeApplicabilityCondition(name);
           }
           getDeconflictHelper().opmodeDisabled(name);
@@ -216,12 +216,13 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (isAgent(name)) {
         if (thisAgent.equals(preferredLeader()) ||
           name.equals(preferredLeader()) && isLeader(thisAgent)) {
-          newState(name, RESTART);
+          newState(name, DECONFLICT);
         }
       } else if (isNode(name)) {
         deadNodes.add(name);
         if (!useGlobalSolver()) {
           newState(agentsOnNode(name), DEAD);
+          if (thisAgent.equals(preferredLeader())) { removeFromCommunity(name); }
         } else {
           if (isLeader(thisAgent)) {
             getLayout(new LoadBalancerListener() {
@@ -415,7 +416,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     new SecurityAlertHandler(getBindingSite(), agentId, this, csm);
   }
 
-  /**
+/**
  * Invoked when a status update is received from a monitoring node.
  * @param nodeName Name of reporting node
  */
