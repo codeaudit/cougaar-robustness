@@ -301,7 +301,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
                                     Community.AGENTS_ONLY);
     for (Iterator it1 = entities.iterator(); it1.hasNext(); ) {
       Entity entity = (Entity) it1.next();
-      targets.add(MessageAddress.getMessageAddress(entity.getName()));
+      //targets.add(MessageAddress.getMessageAddress(entity.getName()));
       targets.add(getMessageAddressWithTimeout(entity.getName(), updateInterval));
      }
     return targets;
