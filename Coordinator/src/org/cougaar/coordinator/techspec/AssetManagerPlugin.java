@@ -278,7 +278,9 @@ logger.warn("!!!! **********************************************************");
      */
     public void setupSubscriptions() {
                 
+
         getServices();
+        logger.debug("************************ AssetManagerPlugin loaded...");
 
         allAssets = new Vector(100,100);
         
@@ -294,10 +296,10 @@ logger.warn("!!!! **********************************************************");
     private void getServices() {
         
         logger =
-        (LoggingService)getBindingSite().getServiceBroker().getService(this, LoggingService.class, null);
+        (LoggingService)getServiceBroker().getService(this, LoggingService.class, null);
         logger = org.cougaar.core.logging.LoggingServiceWithPrefix.add(logger, agentId + ": ");
         
-        us = (UIDService ) getBindingSite().getServiceBroker().getService( this, UIDService.class, null ) ;
+        us = (UIDService ) getServiceBroker().getService( this, UIDService.class, null ) ;
         
         haveServices = true;
         
@@ -310,7 +312,7 @@ logger.warn("!!!! **********************************************************");
             if (!haveServices) {
                 //throw some nasty error...
                 Logger logger = Logging.getLogger(this.getClass().getName());
-                logger.error("Could not get needed services!!");
+                logger.error("------------------> Could not get needed services!!");
                 return;
             }
         }
