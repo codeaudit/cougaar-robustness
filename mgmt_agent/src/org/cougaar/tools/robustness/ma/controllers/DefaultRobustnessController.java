@@ -795,6 +795,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         agentsAndLocationsActive()) {
       communityReady = true;
       event("Community " + model.getCommunityName() + " Ready");
+      if (logger.isInfoEnabled()) {
+        logger.info(statusSummary());
+      }
       RestartDestinationLocator.clearRestarts();
     }
   }

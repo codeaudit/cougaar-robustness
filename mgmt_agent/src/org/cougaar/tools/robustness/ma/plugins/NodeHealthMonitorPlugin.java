@@ -99,6 +99,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
     implements RestartManagerConstants {
 
   public static long updateInterval;
+  public static List statusListeners = new ArrayList();
 
   // Info associated with this health monitor
   private String myName;
@@ -194,6 +195,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
     // Subscribe to Node Status updates sent by peer Health Monitors via Relay
     nodeStatusRelaySub =
         (IncrementalSubscription)blackboard.subscribe(nodeStatusRelayPredicate);
+    statusListeners.add(new StatusListener());
 
     // Subscribe to external requests
     healthMonitorRequests =
@@ -279,15 +281,14 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
                      " community=" + nsr.getCommunityName() +
                      " source=" + nsr.getSource() +
                      " numAgents=" + nsr.getAgentStatus().length +
-                     " leaderVote=" + nsr.getLeaderVote());
+                     " leaderVote=" + nsr.getLeaderVote() +
+                     " listeners=" + statusListeners.size());
       }
-      // update status model
-      updateCommunityStatus(nsr.getCommunityName(),
-                            nsr.getSource().toString(),
-                            nsr.getNodeStatus(),
-                            nsr.getAgentStatus(),
-                            nsr.getLeaderVote(),
-                            nsr.getLocation());
+      // send status updates to listeners
+      for (Iterator it1 = statusListeners.iterator(); it1.hasNext();) {
+        StatusListener listener = (StatusListener)it1.next();
+        listener.update(nsr);
+      }
     }
     nsCollection = nodeStatusRelaySub.getChangedCollection();
     for (Iterator it = nsCollection.iterator(); it.hasNext(); ) {
@@ -297,15 +298,14 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
                      " community=" + nsr.getCommunityName() +
                      " source=" + nsr.getSource() +
                      " numAgents=" + nsr.getAgentStatus().length +
-                     " leaderVote=" + nsr.getLeaderVote());
+                     " leaderVote=" + nsr.getLeaderVote() +
+                     " listeners=" + statusListeners.size());
       }
-     // update status model
-      updateCommunityStatus(nsr.getCommunityName(),
-                            nsr.getSource().toString(),
-                            nsr.getNodeStatus(),
-                            nsr.getAgentStatus(),
-                            nsr.getLeaderVote(),
-                            nsr.getLocation());
+      // send status updates to listeners
+      for (Iterator it1 = statusListeners.iterator(); it1.hasNext();) {
+        StatusListener listener = (StatusListener)it1.next();
+        listener.update(nsr);
+      }
     }
 
     // Get HealthMonitorRequests
@@ -350,7 +350,10 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
     for (Iterator it1 = entities.iterator(); it1.hasNext(); ) {
       Entity entity = (Entity) it1.next();
       //targets.add(MessageAddress.getMessageAddress(entity.getName()));
-      targets.add(getMessageAddressWithTimeout(entity.getName(), updateInterval));
+      if (model != null && model.getType(entity.getName()) == model.NODE) {
+        targets.add(getMessageAddressWithTimeout(entity.getName(),
+                                                 updateInterval));
+      }
      }
     return targets;
   }
@@ -540,14 +543,20 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
                                      AgentStatus[] agentStatus,
                                      String leader,
                                      String host) {
-    if (model == null) {
-      initializeModel(communityName);
+    //if (model == null) {
+    //  initializeModel(communityName);
+    //}
+    if (model != null) {
+      model.applyUpdates(nodeName,
+                         nodeStatus,
+                         agentStatus,
+                         leader,
+                         host);
+    } else {
+      if (logger.isDebugEnabled()) {
+        logger.debug("Model not initialized");
+      }
     }
-    model.applyUpdates(nodeName,
-                       nodeStatus,
-                       agentStatus,
-                       leader,
-                       host);
   }
 
   private UnaryPredicate communityPredicate = new UnaryPredicate() {
@@ -590,6 +599,11 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
             MessageAddress target = (MessageAddress) it1.next();
             if (!target.equals(agentId))
               nodeStatusRelay.addTarget(target);
+          }
+          // send status updates to listeners
+          for (Iterator it1 = statusListeners.iterator(); it1.hasNext();) {
+            StatusListener listener = (StatusListener)it1.next();
+            listener.update(nsr);
           }
           if (logger.isDebugEnabled()) {
             logger.debug("publishChange NodeStatusRelay:" +
@@ -775,6 +789,17 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
       boolean was = expired;
       expired = true;
       return was;
+    }
+  }
+
+  private class StatusListener {
+    void update(NodeStatusRelay nsr) {
+      updateCommunityStatus(nsr.getCommunityName(),
+                            nsr.getSource().toString(),
+                            nsr.getNodeStatus(),
+                            nsr.getAgentStatus(),
+                            nsr.getLeaderVote(),
+                            nsr.getLocation());
     }
   }
 

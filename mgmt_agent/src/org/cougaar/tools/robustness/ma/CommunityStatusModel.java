@@ -649,6 +649,11 @@ public class CommunityStatusModel extends BlackboardClientComponent
    * community
    */
   public void update(Community community) {
+    if (logger.isDebugEnabled()) {
+      logger.debug("update:" +
+                   " community=" + community.getName() +
+                   " numEntities=" + community.getEntities().size());
+    }
     if (communityName.equals(community.getName())) {
       synchronized (statusMap) {
         communityAttrs = community.getAttributes();
@@ -671,12 +676,13 @@ public class CommunityStatusModel extends BlackboardClientComponent
               StatusEntry se = new StatusEntry(entity.getName(), type,
                                                entity.getAttributes());
               statusMap.put(se.name, se);
+              logger.debug("Adding: " + se.name);
               queueChangeEvent(
                   new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
                                                  MEMBERS_ADDED, se));
               //setCurrentState(se.name, INITIAL);
-              if(type == NODE) {
-                for(Iterator iter = nodeChangeListeners.iterator(); iter.hasNext();) {
+              if (type == NODE) {
+                for (Iterator iter = nodeChangeListeners.iterator(); iter.hasNext();) {
                   NodeChangeListener ncl = (NodeChangeListener)iter.next();
                   ncl.addNode(se.name);
                 }
@@ -742,6 +748,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
       for (int i = 0; i < as.length; i++) {
         String agentName = as[i].getName();
         if (statusMap.containsKey(agentName)) {
+          //logger.info(agentStatusToString(as[i]));
           //if (isLocalAgent(agentName)) {
           //  setLocation(agentName, thisAgent);
           //} else {
@@ -762,6 +769,14 @@ public class CommunityStatusModel extends BlackboardClientComponent
                                      null,
                                      null,
                                      null));
+  }
+
+  private String agentStatusToString(AgentStatus as) {
+    StringBuffer sb = new StringBuffer("AgentStatus:");
+    sb.append(" name=" + as.getName());
+    sb.append(" loc=" + as.getLocation());
+    sb.append(" state=" + controller.stateName(as.getStatus()));
+    return sb.toString();
   }
 
   /**
@@ -1167,17 +1182,20 @@ public class CommunityStatusModel extends BlackboardClientComponent
   }
 
   private void findLocalAgents() {
-    if (getType(thisAgent) == NODE) {
-      String allAgents[] = listAllEntries();
-      for (int i = 0; i < allAgents.length; i++) {
-        MessageAddress addr = MessageAddress.getMessageAddress(allAgents[i]);
-        if (nodeControlService.getRootContainer().containsAgent(addr)) {
-          if (!thisAgent.equals(getLocation(allAgents[i]))) {
-            setLocationAndState(allAgents[i], thisAgent, INITIAL);
-            if (logger.isDebugEnabled()) {
-              logger.debug("Found agent " + allAgents[i] + " at node " +
-                           thisAgent);
-            }
+    if (nodeControlService != null) {
+      Set agentAddresses = nodeControlService.getRootContainer().
+          getAgentAddresses();
+      for (Iterator it = agentAddresses.iterator(); it.hasNext(); ) {
+        String agent = it.next().toString();
+        if (getType(agent) == AGENT) {
+          if (logger.isDebugEnabled() && getCurrentState(agent) < INITIAL) {
+            logger.debug("Found agent " + agent + " at node " + thisAgent);
+          }
+          if (!thisAgent.equals(getLocation(agent))) {
+            setLocation(agent, thisAgent);
+          }
+          if (getCurrentState(agent) < INITIAL) {
+            setCurrentState(agent, INITIAL);
           }
         }
       }

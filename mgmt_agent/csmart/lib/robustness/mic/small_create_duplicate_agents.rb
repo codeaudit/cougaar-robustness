@@ -1,7 +1,7 @@
 =begin script
 
-include_path: small_kill.rb
-description: Kill 1 node in small soc
+include_path: small_create_duplicate_agents.rb
+description: Create duplicate agents in small soc
 
 =end
 
