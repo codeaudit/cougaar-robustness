@@ -125,7 +125,9 @@ public class ServiceChecker {
         providerMap.put(serviceName, providerStatus);
         ServiceEntry se = (ServiceEntry)serviceMaps.get(serviceCategory);
         if (se != null) {
-          se.listeners.add(csl);
+          if (!se.listeners.contains(csl)) {
+            se.listeners.add(csl);
+          }
         } else {
           serviceMaps.put(serviceCategory, new ServiceEntry(community.getName(),
               serviceCategory,
