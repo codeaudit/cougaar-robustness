@@ -44,7 +44,6 @@
 		<mkdir dir="staging/csmart"/>
 		<mkdir dir="staging/operator"/>
 		<mkdir dir="staging/configs"/>
-		<mkdir dir="staging/msglog/test"/>
 		<antcall target="delete"/>
 		<antcall target="jar"/>
 		<signjar jar="${jar}" keystore="/var/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
@@ -64,9 +63,6 @@
 		</copy>
 		<copy todir="staging/configs">
 			<fileset dir="configs/"/>
-		</copy>
-		<copy todir="staging/msglog/test">
-			<fileset dir="test"/>
 		</copy>
     <exec dir="." executable="./overlayhelper.sh" os="Linux">
     	<arg line=" AR_objs_msglog.zip "/>
