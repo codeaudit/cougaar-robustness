@@ -1,7 +1,7 @@
 /*
  * DefenseOperatingMode.java
  *
- * @author David Wells - OBJS
+ * @author David Wells - OBJS  
  *
  * <copyright>
  *  Copyright 2003 Object Services and Consulting, Inc.
