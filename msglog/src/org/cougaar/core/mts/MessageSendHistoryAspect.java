@@ -65,8 +65,6 @@ public class MessageSendHistoryAspect extends StandardAspect
 
   private static final Object recLock = new Object();
 
-  private boolean debug;
-
   public MessageSendHistoryAspect () 
   {}
 
@@ -102,15 +100,10 @@ public class MessageSendHistoryAspect extends StandardAspect
       throws UnregisteredNameException, NameLookupException, 
   	         CommFailureException, MisdeliveredMessageException
     {
-      int id = -1, num = -1;
+      int id = -1;
       MessageAttributes attrs = null;
       MessageHistory.SendRecord rec;
       Exception exception = null;
-
-      UnregisteredNameException une;
-      NameLookupException nle;
-      CommFailureException cfe;
-      MisdeliveredMessageException mme;
 
       //  Try sending the message
 

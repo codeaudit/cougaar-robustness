@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2001-2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -18,14 +18,14 @@
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
  * </copyright>
  *
- * CHANGE RECORD 
+ * CHANGE RECORD
+ * 14 Mar 2003: Comment out tests - style police object to System.out 
  * 23 Apr 2002: Split out from MessageAckingAspect. (OBJS)
  */
 
 package org.cougaar.core.mts.acking;
 
 import java.util.Arrays;
-
 
 public class NumberList implements java.io.Serializable
 {
@@ -346,6 +346,8 @@ public class NumberList implements java.io.Serializable
       System.out.println (tag+ " NumberList: list[" +i+ "] =" +list[i]);
     }
   }
+
+/* //102B Comment out tests - style police object to System.out
     
   public boolean debugAdd (int number)
   {
@@ -372,6 +374,7 @@ public class NumberList implements java.io.Serializable
     remove (numbers);
     System.out.println ("After remove: " +this+ " n=" +n);
   }
+*/ //102B
 
   public synchronized int[] toArray ()
   {
@@ -396,6 +399,7 @@ public class NumberList implements java.io.Serializable
     return buf.toString();
   }
 
+/* //102B Comment out tests - style police object to System.out
   public static void main (String args[])
   {
     //  Test cases
@@ -453,4 +457,6 @@ public class NumberList implements java.io.Serializable
     // nl.initialize (new int[] { 1,3, 2,4 });
     // nl.initialize (new int[] { 1,3, 4,5 });
   }
+*/ //102B
+
 }

@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2002 Object Services and Consulting, Inc.
+ *  Copyright 2002-2003 Object Services and Consulting, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -45,10 +45,6 @@ public class RMISendTimeoutAspect extends StandardAspect
     "org.cougaar.message.transport.aspects.RMISendTimeoutAspect.readTimeout";
   private static final String WRITE_TIMEOUT = 
     "org.cougaar.message.transport.aspects.RMISendTimeoutAspect.writeTimeout";
-
-  private int connectTimeout;
-  private int readTimeout;
-  private int writeTimeout;
 
   private RMISocketControlService socCtlSvc;
   private SocketClosingService socCloseSvc;
@@ -113,12 +109,12 @@ public class RMISendTimeoutAspect extends StandardAspect
       //   calls RMISocketControlPolicy.getConnectTimeout() )
 
       // set up read timeout
-      readTimeout = Integer.valueOf(System.getProperty(READ_TIMEOUT,"5000")).intValue();
+      int readTimeout = Integer.valueOf(System.getProperty(READ_TIMEOUT,"5000")).intValue();
       if (readTimeout > 0) 
 	  socCtlSvc.setSoTimeout(getDestination(), readTimeout);
 
       // set up write timeout
-      writeTimeout = Integer.valueOf(System.getProperty(WRITE_TIMEOUT,"10000")).intValue();
+      int writeTimeout = Integer.valueOf(System.getProperty(WRITE_TIMEOUT,"10000")).intValue();
       ArrayList soclist = null;                                            //102B
       if (writeTimeout > 0 && socCloseSvc != null && socCtlSvc != null) {
         MessageAddress addr = getDestination();
