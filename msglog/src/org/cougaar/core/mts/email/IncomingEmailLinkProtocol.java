@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 06 Mar 2003: Completed support for URIs and multiple inboxes. (OBJS)
  * 12 Feb 2003: Port to 10.0 (OBJS)
  * 24 Sep 2002: Add new serialization, socket closer support and remove
  *              email streams stuff for more direct reading of email. (OBJS)
@@ -56,6 +57,7 @@ package org.cougaar.core.mts.email;
 import java.io.*;
 import java.util.*;
 import java.net.InetAddress;
+import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.cougaar.core.mts.*;
@@ -65,8 +67,8 @@ import org.cougaar.core.thread.Schedulable;
 
 
 /**
- * IncomingEmailLinkProtocol is an IncomingLinkProtocol which receives
- * Cougaar messages from other nodes in a society via email.
+ * IncomingEmailLinkProtocol is a LinkProtocol which receives Cougaar 
+ * messages from other nodes in a society via the POP3 protocol email.
  * <p>
  * <b>System Properties:</b>
  * <p>
@@ -80,7 +82,7 @@ import org.cougaar.core.thread.Schedulable;
  * <p>
  * <b>org.cougaar.message.protocol.email.inboxes</b> 
  * Specify the inbound POP3 mailboxes for a node by setting this property 
- * to a string of the form <i>pop3,host,port,user,pswd</i>, where:
+ * to a list of URIs delimited by vertical bars, <i>pop3://user:pswd@host:port</i>, where:
  * <pre>
  * pop3:  The literal string "pop3".
  * host:  The fully qualified domain name (FQDN) of the host running the POP3 mail server.
@@ -88,29 +90,23 @@ import org.cougaar.core.thread.Schedulable;
  * user:  The user name for the POP3 mailbox account.
  * pswd:  The password for the POP3 mailbox account
  * </pre>
- * (e.g. -Dorg.cougaar.message.protocol.email.inboxes=pop3,wally.objs.com,110,PerfNodeA,james)
- * <br><i>[Note:  Currently, only one inbox per node can be specified. That will change.]</i>
+ * (e.g. -Dorg.cougaar.message.protocol.email.inboxes=pop3://node1:passwd@wally.objs.com:110)
  * <p>
- * <b>org.cougaar.message.protocol.nntp.ignoreOldMessages</b>
- * By default, IncomingEmailLinkProtocol ignores Cougaar messages 
- * already cached at a POP3 server before the node is initialized, to avoid
- * processing messages that might have been sent in an earlier run.
- * To disable this feature, set this property to false. 
- * <br><i>[Note: this is a temporary workaround, and is likely to disappear.]</i>
+ * <b>org.cougaar.message.protocol.email.incoming.mailServerPollTimeSecs</b>
+ * The number of seconds waited between polls of the POP3 Servers.  The default is 5 seconds.
+ * <br>(e.g. -Dorg.cougaar.message.protocol.email.incoming.mailServerPollTimeSecs=5)
  * <p>
- * <b>org.cougaar.message.protocol.email.oldMsgGracePeriod</b>
- * Messages sent this number of milliseconds before initialization
- * of this node will be accepted when <b>ignoreOldMessages</b> is true,
- * to account for the fact clocks might not be synchronized.  It should
- * be set to less than the time between tests.  It defaults to 120000ms
- * (2 minutes). 
- * <br><i>[Note: this is a temporary workaround, and is likely to disappear.]</i>
+ * <b>org.cougaar.message.protocol.email.incoming.socketTimeout</b>
+ * The number of milliseconds to wait before closing an unresponsive POP3 socket.  The default is 10000 milliseconds.
+ * <br>(e.g. -Dorg.cougaar.message.protocol.email.incoming.socketTimeout=10000)
  * <p>
- * <b>org.cougaar.message.protocol.email.debug</b> 
- * If true, prints debug information to System.out.
+ * <b>org.cougaar.message.protocol.email.incoming.initialReadDelaySecs</b>
+ * The number of seconds to wait at initialization before starting to poll the POP3 Server.  The default is 20 seconds.
+ * <br>(e.g. -Dorg.cougaar.message.protocol.email.incoming.initialReadDelaySecs=20)
  * <p>
- * <b>mail.debug</b> 
- * If true, JavaMail prints debug information to System.out.
+ * <b>org.cougaar.message.protocol.email.incoming.showMailServerInteraction</b>
+ * If true, detailed interaction with the POP3 Server is logged at the DEBUG level.  The default is false.
+ * <br>(e.g. -Dorg.cougaar.message.protocol.email.incoming.showMailServerInteraction=false)
  * */
 
 public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
@@ -119,7 +115,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
 
   private static final MailMessageCache cache = new MailMessageCache();
 
-  private static final boolean useFQDNs;
+  //102 private static final boolean useFQDNs;
   private static final int mailServerPollTimeSecs;
   private static final int socketTimeout;
   private static final int initialReadDelaySecs;
@@ -132,21 +128,18 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
   private String nodeID;
   private String inboxesProp;
   private MailBox inboxes[];
-  private MailData myMailData;
   private Vector messageInThreads;
-  private ThreadService threadService;
-  private MessageAddress myAddress;
+  //102 private ThreadService threadService;
   private MailFilters filters;
-  private boolean firstTime = true;
 
   static
   {
     //  Read external properties
 
-    String s = "org.cougaar.message.protocol.email.useFQDNs";
-    useFQDNs = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
+    //102 String s = "org.cougaar.message.protocol.email.useFQDNs";
+    //102 useFQDNs = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
 
-    s = "org.cougaar.message.protocol.email.incoming.mailServerPollTimeSecs";
+    String s = "org.cougaar.message.protocol.email.incoming.mailServerPollTimeSecs";
     mailServerPollTimeSecs = Integer.valueOf(System.getProperty(s,"5")).intValue();
 
     s = "org.cougaar.message.protocol.email.incoming.socketTimeout";
@@ -196,8 +189,9 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
     }
 
     String fromFilter = "EmailStream#";
-    String toFilter = "To: " + nodeID;
-    filters.set (fromFilter, toFilter);
+    //102 String toFilter = "To: " + nodeID;
+    //102 filters.set (fromFilter, toFilter);
+    filters.set (fromFilter, null);
 
     if (startup (inboxesProp) == false)
     {
@@ -236,12 +230,11 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
             );
           }
         }
-
         msgInThread = new MessageInThread (inboxes[i]);  // actually a Runnable
+        //102 should probably give this a try again to see if thread starvation is still an issue
         // Schedulable thread = threadService().getThread (this, msgInThread, "inbox"+i);
         Thread thread = new Thread (msgInThread, "inbox"+i);
         thread.start();
-        registerMailData (nodeID, inboxes[i]);
         messageInThreads.add (msgInThread);
       }
       catch (Exception e)
@@ -264,11 +257,8 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
     {
       for (int i=0; i<inboxes.length; i++)
       {
-        // unregisterMailData ();
         inboxes[i] = null;
       }
-
-      unregisterMailData ();
       inboxes = null;
     }
 
@@ -284,127 +274,63 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
       MessageInThread msgInThread = (MessageInThread) e.nextElement();
       msgInThread.quit();  
     }
-
     messageInThreads.removeAllElements();
   }
-
-  public MailBox[] parseInboxes (String inboxesProp)
+  
+  //102 convert to URIs and multiple inboxes
+  private MailBox[] parseInboxes (String inboxesProp)
   {
     if (inboxesProp == null) return null;
 
     Vector in = new Vector();
 
-    int MaxBoxes = 1;  // only handling one at the moment
+    // Parse multiple inbox URIs (separated by vertical bars)
+    StringTokenizer URIs = new StringTokenizer (inboxesProp, "|");
 
-    //  Parse the inbox specs (separated by semicolons)
-
-    for (int i=0; i<MaxBoxes; i++)
-    {
-      StringTokenizer specs = new StringTokenizer (inboxesProp, ";");
-
-      if (specs.hasMoreTokens())
-      {
-        String spec = specs.nextToken();
-        StringTokenizer st = new StringTokenizer (spec, ",");
-
-        while (st.hasMoreTokens()) 
-        {
-          String protocol = st.nextToken();
-
-          //  POP3 inboxes
-          //
-          //  Format: pop3,host,port,user,pswd;...;...
-
-          if (protocol.equals ("pop3"))
-          {
-            try
-            {
-              String host = nextParm (st);
-              String port = nextParm (st);
-              String user = nextParm (st);
-              String pswd = nextParm (st);
-
-              if (useFQDNs)
-              {
-                String hostFQDN = getHostnameFQDN (host);
-                if (log.isInfoEnabled()) log.info ("Using FQDN " +hostFQDN+ " for inbox mailhost " +host);
-                host = hostFQDN;
-              }
-
-              in.add (new MailBox (protocol, host, port, user, pswd, "Inbox"));
-            }
-            catch (Exception e)
-            {
-              log.error ("Bad inbox spec: " +spec+ " (ignored): " +e);
-            }
+    while (URIs.hasMoreTokens()) {
+      String tkn = null;
+      try {
+        // POP3 inbox URIs have the following form:
+        // pop://userid:password@pop3ServerHostName:port
+        // e.g. pop://node1:passwd@atom.objs.com:110
+        
+        tkn = URIs.nextToken();
+        in.add(new MailBox(new URI(tkn)));
+        
+        /*  //102 may want to add support for FQDNs back in later
+          if (useFQDNs) {
+            String hostFQDN = InetAddress.getByName(host).getCanonicalHostName();
+            if (log.isInfoEnabled()) log.info ("Using FQDN " +hostFQDN+ " for inbox mailhost " +host);
+            host = hostFQDN;
           }
-          else break;
-        }
+        */
+
+      } catch (Exception e) {
+        log.error ("Bad inbox URI: " + tkn + " (ignored): " +e);
       }
-      else break;
     }
-
     //  Create the inboxes array and return it
-
-    if (in.size() > 0)  
+    if (in.size() > 0) 
     {
-      inboxes =  (MailBox[]) in.toArray  (new MailBox[in.size()]);
+      inboxes = (MailBox[])in.toArray(new MailBox[in.size()]);
       return inboxes;
-    }
-    else
+    } 
+    else 
     {
       log.error ("No inboxes defined in " +inboxesProp);
       return null;
     }
   }
 
-  private String nextParm (StringTokenizer st)
-  {
-    //  Convert "-" strings into nulls
-
-    String next = st.nextToken().trim();
-    if (next.equals("-")) next = null;
-    return next;
-  }
-
-  private String getHostnameFQDN (String hostname) throws java.net.UnknownHostException
-  {
-    return InetAddress.getByName(hostname).getCanonicalHostName();
-  }
-
-  private void registerMailData (String nodeID, MailBox mbox)
-  {
-    //  Update the name server
-    //  LIMITATION:  Only one MailData per node (thus only one inbox).
-    //  How to manage more than one (transactions can come into play).
-    MailBox myMailBox;
-    try {
-     myMailBox = new MailBox (mbox.getServerHost(), mbox.getUsername());  
-    } catch (URISyntaxException e) { //100
-      log.error("registerMailData: error creating MailBox host=" + mbox.getServerHost() + 
-                ",user=" + mbox.getUsername() ); //100
-      log.error(stackTraceToString (e)); //100
-      return; //100
-    } 
-    myMailData = new MailData (nodeID, myMailBox);
-    MessageAddress nodeAddress = getNameSupport().getNodeMessageAddress();
-    getNameSupport().registerAgentInNameServer (myMailData.getURI(), nodeAddress, PROTOCOL_TYPE); //100
-  }
-
-  private void unregisterMailData ()
-  {
-    if (myMailData == null) return;  // no data to unregister
-    MessageAddress nodeAddress = getNameSupport().getNodeMessageAddress();
-    getNameSupport().unregisterAgentInNameServer (myMailData.getURI(), nodeAddress, PROTOCOL_TYPE); //100
-  }
-
-  public final void registerClient (MessageTransportClient client) 
+  public final void registerClient (MessageTransportClient client) //102 convert to URIs and multiple inboxes
   {
     try 
     {
-      if (myMailData == null) return;  // no data to register
+      if (inboxes == null) return;  // nothing to register
       MessageAddress clientAddress = client.getMessageAddress();
-      getNameSupport().registerAgentInNameServer (myMailData.getURI(), clientAddress, PROTOCOL_TYPE); //100
+      for (int i = 0; i<inboxes.length; i++) {
+        getNameSupport().registerAgentInNameServer (inboxes[i].getMailto(), clientAddress, PROTOCOL_TYPE);
+      }
     } 
     catch (Exception e) 
     {
@@ -412,13 +338,15 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
     }
   }
 
-  public final void unregisterClient (MessageTransportClient client) 
+  public final void unregisterClient (MessageTransportClient client) //102 convert to URIs and multiple inboxes
   { 
     try 
     {
-      if (myMailData == null) return;  // no data to unregister
+      if (inboxes == null) return;  // no data to unregister
       MessageAddress clientAddress = client.getMessageAddress();
-      getNameSupport().unregisterAgentInNameServer (myMailData.getURI(), clientAddress, PROTOCOL_TYPE); //100
+      for (int i = 0; i<inboxes.length; i++) {
+        getNameSupport().unregisterAgentInNameServer (inboxes[i].getMailto(), clientAddress, PROTOCOL_TYPE);
+      }
     } 
     catch (Exception e) 
     {
@@ -428,23 +356,28 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
 
   public final void registerMTS (MessageAddress addr)
   {
+/* //102 no longer required
     try 
     {
-      if (myMailData == null) return;  // no data to register
-      getNameSupport().registerAgentInNameServer (myMailData.getURI(), addr, PROTOCOL_TYPE); //100
+      if (inboxes == null) return;  // no data to unregister
+      for (int i = 0; i<inboxes.length; i++) {
+        getNameSupport().registerAgentInNameServer (myMailData.getURI(), addr, PROTOCOL_TYPE); //100
     } 
     catch (Exception e) 
     {
       log.error (stackTraceToString (e));
     }
+*/
   }
 
+/* //102 not currently in use due to thread starvation problems
   private ThreadService threadService () 
   {
 	if (threadService != null) return threadService;
 	threadService = (ThreadService) getServiceBroker().getService (this, ThreadService.class, null);
 	return threadService;
   }
+*/
 
   private synchronized static int getNextReceiveID ()  // for debugging purposes
   {
@@ -474,7 +407,10 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
       //  before the node is ready for them (thus causing exceptions).
       if (firstTime)
       {
-        try { Thread.sleep (initialReadDelaySecs*1000); } catch (Exception e) {}
+        try { Thread.sleep (initialReadDelaySecs*1000); } 
+        catch (Exception e) {
+          log.debug("Caught exception in sleep " +e);
+        }
         if (log.isInfoEnabled()) log.info ("Initial email reading delay now over for " +inbox);
         firstTime = false;
       }
@@ -520,7 +456,10 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
               );
             }
 
-            try { Thread.sleep (waitTime*1000); } catch (Exception e) {}
+            try { Thread.sleep (waitTime*1000); } 
+            catch (Exception e) {
+              log.debug("Caught exception in sleep " +e);
+            }
           }
           else
           {
@@ -555,7 +494,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
 
         mailMsg = getNextMailMessage (rid, mbox);
         if (log.isDebugEnabled()) log.debug (rid+ "Got next msg from " +mbox);
-        if (showTraffic) System.err.print ("<E");
+        if (showTraffic) System.out.print ("<E");
       } 
       catch (Exception e) 
       {
@@ -638,7 +577,10 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
           }
           else 
           {
-            try { Thread.sleep (mailServerPollTimeSecs*1000); } catch (Exception e) {}
+            try { Thread.sleep (mailServerPollTimeSecs*1000); } 
+            catch (Exception e) {
+              log.debug("Caught exception in sleep " +e);
+            }
           }
         }
       }

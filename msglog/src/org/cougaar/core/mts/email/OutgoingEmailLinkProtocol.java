@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2001-2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 06 Mar 2003: Switched to URIs and added multiple outboxes. (OBJS)
  * 24 Sep 2002: Add new serialization & socket closer support. (OBJS)
  * 18 Aug 2002: Various enhancements for Cougaar 9.4.1 release. (OBJS)
  * 18 Jun 2002: Restored Node name to outboxes properties to facilitate
@@ -52,6 +53,7 @@ package org.cougaar.core.mts.email;
 import java.io.*;
 import java.util.*;
 import java.net.InetAddress;
+import java.net.URI;
 import javax.mail.URLName;
 import java.security.MessageDigest;
 
@@ -103,7 +105,7 @@ import org.cougaar.core.service.LoggingService;
  * When using AdaptiveLinkSelectionPolicy, cost is
  * one of the factors that are used to select a protocol. To modify the default
  * cost, set the property to an integer 
- * <br>(e.g. org.cougaar.message.protocol.email.cost= 750).
+ * <br>(e.g. org.cougaar.message.protocol.email.cost=750).
  * <p>
  * <b>org.cougaar.message.protocol.email.debug</b> 
  * If true, prints debug information to System.out.
@@ -117,7 +119,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
   public static final String PROTOCOL_TYPE = "-email";
 
   private static final int protocolCost;
-  private static final boolean useFQDNs;
+  //102 private static final boolean useFQDNs;
   private static final int socketTimeout;
   private static final long maxMessageSizeKB;
   private static final boolean embedMessageDigest;
@@ -126,7 +128,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
   private static int SID;
 
   private LoggingService log;
-  private Hashtable mailDataCache;
+  private Hashtable uriCache;
   private HashMap links;
   private MailBox outboxes[];
 
@@ -137,8 +139,8 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     String s = "org.cougaar.message.protocol.email.cost";  // one way
     protocolCost = Integer.valueOf(System.getProperty(s,"10000")).intValue();  // was 5000
 
-    s = "org.cougaar.message.protocol.email.useFQDNs";
-    useFQDNs = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
+    //102 s = "org.cougaar.message.protocol.email.useFQDNs";
+    //102 useFQDNs = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
 
     s = "org.cougaar.message.protocol.email.outgoing.socketTimeout";
     socketTimeout = Integer.valueOf(System.getProperty(s,"5000")).intValue();
@@ -155,7 +157,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
 
   public OutgoingEmailLinkProtocol ()
   {
-    mailDataCache = new Hashtable();
+    uriCache = new Hashtable();
     links = new HashMap();
   }
 
@@ -229,75 +231,38 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     outboxes = null;
   }
 
+  //102 convert to URIs and multiple outboxes
   public MailBox[] parseOutboxes (String outboxesProp)
   {
     if (outboxesProp == null) return null;
 
     Vector out = new Vector();
  
-    int MaxBoxes = 1;  // FIXED to 1 for now, perhaps forever
+    // Parse multiple outbox URIs (separated by vertical bars)
+    StringTokenizer URIs = new StringTokenizer (outboxesProp, "|");
 
-    //  Parse the outbox specs (separated by semicolons)
-
-    for (int i=0; i<MaxBoxes; i++)
-    {
-      StringTokenizer specs = new StringTokenizer (outboxesProp, ";");
-
-      if (specs.hasMoreTokens())
-      {
-        String spec = specs.nextToken();
-        StringTokenizer st = new StringTokenizer (spec, ",");
-
-        while (st.hasMoreTokens()) 
-        {
-          String protocol = st.nextToken();
-
-          //  SMTP outboxes  
-          //
-          //  Format: smtp,host,port,replyTo,cc,bcc;...;... (general)
-          //          smtp,host,port,-,-,-                  (typical)
-
-          if (protocol.equals ("smtp"))
-          {
-            try
-            {
-              String host = nextParm (st);
-              String port = nextParm (st);
-
-              if (useFQDNs)
-              {
-                String hostFQDN = getHostnameFQDN (host);
-                if (log.isInfoEnabled()) log.info ("Using FQDN " +hostFQDN+ " for outbox mailhost " +host);
-                host = hostFQDN;
-              }
-
-              MailBox mbox = new MailBox (protocol, host, port);
-
-              String replyTo = nextParm (st);
-              String cc = nextParm (st);
-              String bcc = nextParm (st);
-
-              if (replyTo != null || cc != null || bcc != null)
-              {
-                MailMessageHeader hdr = new MailMessageHeader (null, replyTo, null, cc, bcc, null);
-                mbox.setBoxHeader (hdr);
-              }
-
-              out.add (mbox);
-            }
-            catch (Exception e)
-            {
-              log.error ("Bad outbox spec: " +spec+ " (ignored): " +e);
-            }
+    while (URIs.hasMoreTokens()) {
+      String tkn = null;
+      try {
+        // SMTP outbox URIs have the following form:
+        // smtp://userid:password@smtpServerHostName:port
+        // e.g. smtp://node1:passwd@atom.objs.com:25
+        
+        out.add(new MailBox(new URI(URIs.nextToken())));
+              
+        /*  //102 may want to add support for FQDNs back in later              
+          if (useFQDNs) {
+            String hostFQDN = InetAddress.getByName(host).getCanonicalHostName();
+            if (log.isInfoEnabled()) log.info ("Using FQDN " +hostFQDN+ " for outbox mailhost " +host);
+            host = hostFQDN;
           }
-          else break;
-        }
+        */
+
+      } catch (Exception e) {
+        log.error ("Bad outbox URI: " +tkn+ " (ignored): " +e);
       }
-      else break;
     }
-
     //  Create the outboxes array and return it
-
     if (out.size() > 0)  
     {
       outboxes = (MailBox[]) out.toArray (new MailBox[out.size()]);
@@ -319,63 +284,39 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     return next;
   }
 
-  private String getHostnameFQDN (String hostname) throws java.net.UnknownHostException
-  {
-    return InetAddress.getByName(hostname).getCanonicalHostName();
-  }
-
   public String toString ()
   {
     return this.getClass().getName();
   }
 
-  private MailData lookupMailData (MessageAddress address)
+  private URI lookupEmailAddress (MessageAddress address) throws NameLookupException
   {
-    Object obj = getNameSupport().lookupAddressInNameServer (address, PROTOCOL_TYPE);
-
-    if (obj != null)
+    synchronized (uriCache)
     {
-      if (obj instanceof MailData)
-      {
-        return (MailData) obj;
+      URI uri = (URI)uriCache.get(address);
+      if (uri == null) {
+        uri = getNameSupport().lookupAddressInNameServer(address, PROTOCOL_TYPE);
+        if (uri != null) uriCache.put(address, uri);
       }
-      else
-      {
-        log.error ("Invalid non-MailData object in name server!");
-      }
-    }
-
-    return null;
-  }
-
-  private MailData getMailData (MessageAddress address) throws NameLookupException
-  {
-    synchronized (mailDataCache)
-    {
-      MailData mailData = (MailData) mailDataCache.get (address);
-      if (mailData != null) return mailData;
-      mailData = lookupMailData (address);
-      if (mailData != null) mailDataCache.put (address, mailData);
-      return mailData;
+      return uri;
     }
   }
 
   private synchronized void clearCaches ()
   {
-    mailDataCache.clear();
+    uriCache.clear();
   }
 
   public boolean addressKnown (MessageAddress address) 
   {
     try 
     {
-      return (getMailData (address) != null);
+      return (lookupEmailAddress(address) != null);
     } 
     catch (Exception e) 
     {
       log.error (stackTraceToString (e));
     }
-
     return false;
   }
 
@@ -406,7 +347,6 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
   class EmailOutLink implements DestinationLink 
   {
     private MessageAddress destination;
-    private MailData mailData, savedMailData;
     private String sid;
 
     public EmailOutLink (MessageAddress destination) 
@@ -463,11 +403,11 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
 
       //  Get emailing info for destination
     
-      MailData mailData = getMailData (destination);
+      URI uri = lookupEmailAddress(destination);
 
-      if (mailData == null)
+      if (uri == null)
       {
-        String s = "No nameserver info for " +destination;
+        String s = "No Email Address found for " + destination;
         if (log.isWarnEnabled()) log.warn (s);
         throw new NameLookupException (new Exception (s));
       }
@@ -479,7 +419,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
 
       try 
       {
-        success = sendMessage (msg, mailData);
+        success = sendMessage (msg, uri);
       } 
       catch (Exception e) 
       {
@@ -504,7 +444,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
       return successfulSend;
     }
    
-    private synchronized boolean sendMessage (AttributedMessage msg, MailData destAddr) throws Exception
+    private synchronized boolean sendMessage (AttributedMessage msg, URI destAddr) throws Exception
     {
       if (log.isDebugEnabled())
       {
@@ -549,9 +489,8 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
         String localnode = replaceSpaces (MessageUtils.getFromAgentNode (msg));
         String localhost = outbox.getServerHost();
 
-        String remotenode = replaceSpaces (destAddr.getNodeID());
-        String remoteuser = destAddr.getInbox().getUsername();
-        String remotehost = destAddr.getInbox().getServerHost();
+        //102 String remotenode = replaceSpaces(destAddr.getNodeID());
+        String remoteAgent = replaceSpaces(msg.getTarget().toString());
 
         MailMessageHeader boxHeader = outbox.getBoxHeader();
 
@@ -565,8 +504,8 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
           bcc =     boxHeader.getBcc().getMaxAddress();
         }
 
-        String to = remoteuser +"@"+ remotehost;
-        String subject = "To: " +remotenode+ " Msg: " + MessageUtils.getMessageNumber (msg);
+        String to = destAddr.getSchemeSpecificPart(); //102
+        String subject = "To: " +remoteAgent+ " Msg: " + MessageUtils.getMessageNumber (msg);
 
         MailMessageHeader header = new MailMessageHeader (from, replyTo, to, cc, bcc, subject);
 

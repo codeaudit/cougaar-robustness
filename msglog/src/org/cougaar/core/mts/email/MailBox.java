@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 06 Mar  2003: Switched completely to URIs
  * 13 Feb  2003: Port to 10.0 (OBJS)
  * 14 July 2001: Marked serializable, added new constructor. (OBJS)
  * 08 July 2001: Created. (OBJS)
@@ -38,58 +39,47 @@ public class MailBox implements java.io.Serializable
   private String protocol;
   private String serverHost;
   private String serverPort = "-1";  // -1 means use default port to JavaMail
-  private String emailAddress;
   private String username;
   private String password;
   private String folder;             // Note: POP3 only supports "INBOX" (case-insensitive)
   private URI uri; //100
+  private URI mailto; //102
 
   private MailMessageHeader boxHeader;
 
   public MailBox ()
   {}
 
-  public MailBox (String serverHost, String username)
-    throws URISyntaxException
-  {
-    this (null, serverHost, null, username, null, null);
-  }
-
-  public MailBox (String protocol, String serverHost, String serverPort)     
-    throws URISyntaxException
-  {
-    this (protocol, serverHost, serverPort, null, null, null);
-  }
-
-  public MailBox (String protocol, String serverHost, String serverPort, 
-                  String username, String password, String folder) 
-    throws URISyntaxException
-  {
-    this.protocol = protocol;
-    this.serverHost = serverHost;
-    this.serverPort = serverPort;
-    this.username = username;
-    this.password = password;
-    this.folder = folder;
-    this.uri = new URI (protocol, username+":"+password, serverHost, getServerPortAsInt(), "/"+folder, null, null); //100
-  }
-
   public MailBox (URI uri) //100
   {
-    this.protocol = uri.getScheme();
-    this.serverHost = uri.getHost();
-    this.serverPort = ""+uri.getPort();
+    protocol = uri.getScheme();
+    serverHost = uri.getHost();
+    serverPort = ""+uri.getPort();
     String userinfo = uri.getUserInfo();
     int i = userinfo.indexOf(':');
-    this.username = userinfo.substring(0, i);
-    this.password = userinfo.substring(i+1);
-    this.folder = uri.getPath().substring(1);  //strip off leading slash
+    username = userinfo.substring(0, i);
+    password = userinfo.substring(i+1);
+    String path = uri.getPath();
+    if (path == null || path.length() <= 1) {
+      folder = "Inbox";
+    } else {
+      folder = path.substring(1);  //strip off leading slash
+    }
     this.uri = uri;
   }
 
   public URI getURI () //100
   {
     return uri;
+  }
+
+  public URI getMailto () //102
+    throws URISyntaxException
+  {
+    if (mailto == null) {
+      mailto = new URI("mailto:"+username+"@"+serverHost);
+    }
+    return mailto;
   }
 
   public String getProtocol ()  
@@ -119,8 +109,12 @@ public class MailBox implements java.io.Serializable
 
   public int getServerPortAsInt ()  
   {
-    int port = -1;  // -1 means default port to JavaMail
-    try  { port = Integer.valueOf(serverPort).intValue(); } catch (Exception e) {}
+    int port; 
+    try  { 
+      port = Integer.valueOf(serverPort).intValue(); 
+    } catch (Exception e) {
+      port = -1;  // -1 means default port to JavaMail
+    }
     return port;
   }
 
@@ -132,16 +126,6 @@ public class MailBox implements java.io.Serializable
   public void setServerPort (int serverPort)
   {
     this.serverPort = "" + serverPort;
-  }
-
-  public String getEmailAddress ()  
-  {
-    return emailAddress;
-  }
-
-  public void setEmailAddress (String emailAddress)
-  {
-    this.emailAddress = emailAddress;
   }
 
   public String getUsername ()  
@@ -186,34 +170,36 @@ public class MailBox implements java.io.Serializable
 
   public String toString ()
   {
-    return "MailBox[" +protocol+ "," +serverHost+ ":" +serverPort+ "," +username+ "]";
+    return uri.toString();
   }
 
   public String toStringFull ()
   {
     return "[" + "\n" +
-           "     protocol= " + protocol + "\n" +
-           "   serverHost= " + serverHost + "\n" +
-           "   serverPort= " + serverPort + "\n" +
-           " emailAddress= " + emailAddress + "\n" +
-           "     username= " + username + "\n" +
-           "     password= " + password + "\n" +
-           "       folder= " + folder + "\n" +
-                               (boxHeader != null ? boxHeader+"\n" : "") +
+           "     protocol = " + protocol + "\n" +
+           "   serverHost = " + serverHost + "\n" +
+           "   serverPort = " + serverPort + "\n" +
+           "     username = " + username + "\n" +
+           "     password = " + password + "\n" +
+           "       folder = " + folder + "\n" +
+           "          uri = " + uri + "\n" +
+           "       mailto = " + mailto + "\n" +
+           (boxHeader != null ? boxHeader+"\n" : "") +
            "]";
   }
 
   public String toStringDiscreet ()
   {
     return "[" + "\n" +
-           "     protocol= " + protocol + "\n" +
-           "   serverHost= " + serverHost + "\n" +
-           "   serverPort= " + serverPort + "\n" +
-           " emailAddress= " + emailAddress + "\n" +
-           "     username= " + username + "\n" +
-           "     password= " + "*******" + "\n" +
-           "       folder= " + folder + "\n" +
-                               (boxHeader != null ? boxHeader+"\n" : "") +
+           "     protocol = " + protocol + "\n" +
+           "   serverHost = " + serverHost + "\n" +
+           "   serverPort = " + serverPort + "\n" +
+           "     username = " + username + "\n" +
+           "     password = " + "*******" + "\n" +
+           "       folder = " + folder + "\n" +
+           "          uri = " + uri + "\n" +
+           "       mailto = " + mailto + "\n" +
+           (boxHeader != null ? boxHeader+"\n" : "") +
            "]";
   }
 }
