@@ -28,4 +28,19 @@ public class HostLossThreatAlert extends DefaultThreatAlert {
     super(source, severityLevel, start, duration, uid);
   }
 
+  /**
+   * Create a new ThreatAlert.
+   * @param source         ThreatAlert source
+   * @param severityLevel  Severity level of alert
+   * @param start          Time at which alert becomes active
+   * @param expiration     Time at which alert expires
+   * @param uid            Unique identifier
+   */
+  public HostLossThreatAlert(MessageAddress    source,
+                            int               severityLevel,
+                            Date              start,
+                            Date              expiration,
+                            UID               uid) {
+   super(source, severityLevel, start, expiration, uid);
+  }
 }
