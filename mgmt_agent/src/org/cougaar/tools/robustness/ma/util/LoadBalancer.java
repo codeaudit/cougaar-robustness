@@ -141,7 +141,7 @@ public class LoadBalancer extends BlackboardClientComponent {
     for (Iterator it = healthMonitorRequests.getAddedCollection().iterator(); it.hasNext(); ) {
       HealthMonitorRequest hsm = (HealthMonitorRequest) it.next();
       if (hsm.getRequestType() == HealthMonitorRequest.LOAD_BALANCE) {
-        doLoadBalance(false,
+        doLoadBalance(true,
                       Collections.EMPTY_LIST,
                       Collections.EMPTY_LIST,
                       getExcludedNodes());
