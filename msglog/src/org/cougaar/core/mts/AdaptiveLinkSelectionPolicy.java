@@ -316,6 +316,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 	Message raw = msg.getRawMessage();
 	log.debug("raw msg = " + raw);
 	log.debug("raw.getClass() = " + raw.getClass());
+	/*
 	if (raw instanceof DirectiveMessage) {
 	    DirectiveMessage dirMsg = (DirectiveMessage)raw;
 	    Directive dirs[] = dirMsg.getDirectives();
@@ -347,6 +348,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 		}			
 	    }
 	}
+	*/
     }
     if (commStartDelaySeconds > 0)
     {
