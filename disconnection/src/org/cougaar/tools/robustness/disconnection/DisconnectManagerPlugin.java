@@ -43,6 +43,7 @@ import org.cougaar.util.UnaryPredicate;
 public class DisconnectManagerPlugin extends DisconnectPluginBase {
     
     private MessageAddress managerAddress;
+    private long lateReportingForgiveness;
     
     private IncrementalSubscription reconnectTimeConditionSubscription;
     private IncrementalSubscription defenseOpModeSubscription;
@@ -62,8 +63,22 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         cancelTimer();
     }
     
+    private void getPluginParams() {
+      // A forgiveness period for late reconnect reporting - mostly to compensate for messaging delays
+      Iterator iter = getParameters().iterator (); 
+      if (iter.hasNext()) {
+           lateReportingForgiveness = Long.parseLong((String)iter.next()) * 1000L;
+           logger.debug("Setting lateReportingForgiveness = " + lateReportingForgiveness/1000L + " sec.");
+      }
+      else {
+          lateReportingForgiveness = 10000L;
+          logger.debug("Defaulting lateReportingForgiveness = " + lateReportingForgiveness/1000 + " sec.");
+      }
+    }
+
     public void setupSubscriptions() {
-        
+
+        getPluginParams();
         initObjects(); 
         
         //Listen for the ManagerAddress
@@ -198,7 +213,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         double t = ((Double)rtc.getValue()).doubleValue();
         if (t > 0.0) {
             dac.setValue(DefenseConstants.BOOL_TRUE); // disconnected
-            OverdueAlarm overdueAlarm = new OverdueAlarm(dac, t > 10000.0 ? t : 10000.0);  // Don't monitor for less than 5 sec
+            OverdueAlarm overdueAlarm = new OverdueAlarm(dac, t > 10000.0 ? (t + lateReportingForgiveness) : (10000.0 + lateReportingForgiveness));  // Don't monitor for less than 10 sec
             activeDisconnects.put(dac.getExpandedName(), overdueAlarm);
             //getAlarmService().addRealTimeAlarm(overdueAlarm);  do this after getting permission
         }
@@ -233,7 +248,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                 OverdueAlarm oldAlarm = (OverdueAlarm) activeDisconnects.get(item);
                 if (oldAlarm != null) oldAlarm.cancel();
                 item.setValue(DefenseConstants.BOOL_TRUE); // disconnected
-                OverdueAlarm overdueAlarm = new OverdueAlarm(item, t > 10000.0 ? t : 10000.0);  // Don't monitor for less than 5 sec
+                OverdueAlarm overdueAlarm = new OverdueAlarm(item, t > 10000.0 ? (t + lateReportingForgiveness) : (10000.0 + lateReportingForgiveness));  // Don't monitor for less than10 sec
                 activeDisconnects.put(item.getExpandedName(), overdueAlarm);
                 //getAlarmService().addRealTimeAlarm(overdueAlarm);  do this after getting permission
             }

@@ -229,6 +229,8 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
                     reconnectInterval = (long) Double.parseDouble(lrtc.getValue().toString()) / 1000L;
               }
               // set the ReconnectTimeCondition for each agent on the node
+              if (eventService.isEventEnabled())
+                  eventService.event("Requesting to Disconnect Node: "+getNodeID());
               Iterator iter2 = reconnectTimeSubscription.iterator();
               while (iter2.hasNext()) {
                   ReconnectTimeCondition rtc = (ReconnectTimeCondition)iter2.next();
@@ -245,13 +247,13 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
       while (iter.hasNext()) {
           DisconnectDefenseAgentEnabler dmode = (DisconnectDefenseAgentEnabler)iter.next();
           if (dmode != null) {
-              if (dmode.getAssetType().equals("Node")) {
+              if (dmode.getExpandedName().equals("Node:"+getNodeID())) {
                   String defenseMode = dmode.getValue().toString();
                   if (eventService.isEventEnabled()) {
                       if (defenseMode.equals("ENABLED")) {
                           eventService.event(getNodeID()+" plans to Disconnect for "+reconnectInterval+" sec");
                       }
-                      else {
+                      else if (defenseMode.equals("DISABLED")){
                           eventService.event(getNodeID()+" has Reconnected");
                       }
                   }
