@@ -185,7 +185,7 @@ public class DecisionPlugin extends SimplePlugin {
               publishChange(hs);
             }
           }
-          log.error("Unable to restart agent, no destination node available:" +
+          log.error("Unable to restart agent(s), no destination node available:" +
             " agents=" + req.getAgents());
           bbs.publishRemove(req);
           break;

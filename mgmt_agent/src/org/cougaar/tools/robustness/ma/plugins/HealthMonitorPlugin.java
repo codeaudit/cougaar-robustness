@@ -67,6 +67,7 @@ import org.cougaar.core.util.UID;
  *                  Heartbeat Request,
  * hbReqRetries     Defines the number of times to retry a HeartbeatRequest
  *                  when a failure is encountered
+ * hbReqRetryFreq   Defines the interval between HeartbeatRequest retries
  * hbFreq           Defines the frequency (in milliseconds) at which the
  *                  monitored agents are to send heartbeats to the management
  *                  agent.
@@ -102,7 +103,8 @@ public class HealthMonitorPlugin extends SimplePlugin {
   private static String defaultParams[][] = {
     {"community",    ""},
     {"hbReqTimeout", "60000"},
-    {"hbReqRetries", "1"},
+    {"hbReqRetries", "-1"},
+    {"hbReqRetryFreq", "60000"},
     {"hbFreq",       "20000"},
     {"hbTimeout",    "10000"},
     {"hbPctLate",    "80.0"},
@@ -123,6 +125,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
   private long  heartbeatRequestTimeout;
   private int   heartbeatRequestRetries;
   private long  heartbeatFrequency;
+  private long  heartbeatRequestRetryFrequency;
   private long  heartbeatTimeout;
   private float heartbeatPctLateThreshold;
 
@@ -400,14 +403,14 @@ public class HealthMonitorPlugin extends SimplePlugin {
       if (state.equals(HealthStatus.INITIAL)) {
         switch (hs.getHeartbeatRequestStatus()) {
           case HealthStatus.UNDEFINED:
-            if (hs.getLastRestartAttempt() != null &&
-                elapsedTime(hs.getLastRestartAttempt(), new Date()) < 60000) {
+            //if (hs.getLastRestartAttempt() != null &&
+            //    elapsedTime(hs.getLastRestartAttempt(), new Date()) < 60000) {
               //log.info("HeartbeatDelay agent=" + hs.getAgentId() + " elapsedTime="
               //  + elapsedTime(hs.getLastRestartAttempt(), new Date()));
-            } else {
+            //} else {
               log.debug("Sending HeartbeatRequest to agent '" + hs.getAgentId() + "'");
               sendHeartbeatRequest(hs);
-            }
+            //}
             break;
           case HeartbeatRequest.NEW:
              break;
@@ -439,18 +442,55 @@ public class HealthMonitorPlugin extends SimplePlugin {
             //doHealthCheck(hs, HealthStatus.NO_RESPONSE);
             break;
           case HeartbeatRequest.FAILED:
-            int retries = hs.getHbReqRetryCtr();
-            if (hs.getHbReqRetries() == -1 || retries < hs.getHbReqRetries()) {
-              if (retries == 0) {
-                log.warn("HeartbeatRequest for agent '" + hs.getAgentId() + "' FAILED, retrying");
-              }
-			        hs.setHbReqRetryCtr(++retries);
-              hs.setHeartbeatRequestStatus(HealthStatus.UNDEFINED);
-		        } else {
-              log.error("HeartbeatRequest for agent '" + hs.getAgentId() + "' FAILED");
-			        //hs.setHbReqRetryCtr(0);
-              //doHealthCheck(hs, HealthStatus.NO_RESPONSE);
-			      }
+            // Ping the agent to see if it's alive
+            int pingStatus = hs.getPingStatus();
+            switch (pingStatus) {
+              case HealthStatus.UNDEFINED:
+                if (hs.getPingTimestamp() == null ||
+                    elapsedTime(hs.getPingTimestamp(), new Date()) >
+                      heartbeatRequestRetryFrequency)
+                doPing(hs);
+                break;
+              case PingRequest.SENT:
+                if (hs.getPingTimestamp() != null &&
+                    elapsedTime(hs.getPingTimestamp(), new Date()) > (pingTimeout * 2))
+                  hs.setPingStatus(PingRequest.FAILED);
+                break;
+              case PingRequest.RECEIVED:
+                hs.setPingStatus(HealthStatus.UNDEFINED);
+                hs.setPingRetryCtr(0);
+                // Agent is alive, retry HeartbeatRequests
+                int retries = hs.getHbReqRetryCtr();
+                if (hs.getHbReqRetries() == -1 || retries < hs.getHbReqRetries()) {
+                  if (retries == 0) {
+                    log.warn("HeartbeatRequest for agent '" + hs.getAgentId() + "' FAILED, retrying");
+                  }
+			            hs.setHbReqRetryCtr(++retries);
+                  hs.setHeartbeatRequestStatus(HealthStatus.UNDEFINED);
+		            } else {
+                  if (retries == hs.getHbReqRetries()) {
+			              hs.setHbReqRetryCtr(++retries);
+                    log.error("HeartbeatRequest for agent '" + hs.getAgentId() + "' FAILED");
+			            //hs.setHbReqRetryCtr(0);
+                  //doHealthCheck(hs, HealthStatus.NO_RESPONSE);
+                  }
+			          }
+                break;
+              case PingRequest.FAILED:
+                retries = hs.getPingRetryCtr();
+                if (retries < hs.getPingRetries()) {
+			            hs.setPingRetryCtr(++retries);
+		            } else {
+			            hs.setPingRetryCtr(0);
+                  hs.setPingStatus(HealthStatus.UNDEFINED);
+                  // Ping failed, perform Health Check
+                  log.error("HeartbeatRequest failed, ping failed: agent=" +
+                    hs.getAgentId());
+                  doHealthCheck(hs, HealthStatus.NO_RESPONSE);
+		            }
+                break;
+              default:
+            }
             break;
           default:
         }
@@ -906,6 +946,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
     communityToMonitor = props.getProperty("community");
     heartbeatRequestTimeout = Long.parseLong(props.getProperty("hbReqTimeout"));
     heartbeatRequestRetries = Integer.parseInt(props.getProperty("hbReqRetries"));
+    heartbeatRequestRetryFrequency = Long.parseLong(props.getProperty("hbReqRetryFreq"));
     heartbeatFrequency = Long.parseLong(props.getProperty("hbFreq"));
     heartbeatTimeout = Long.parseLong(props.getProperty("hbTimeout"));
     heartbeatPctLateThreshold = Float.parseFloat(props.getProperty("hbPctLate"));
