@@ -442,13 +442,13 @@ public class HealthMonitorPlugin extends SimplePlugin implements
             case HeartbeatRequest.ACCEPTED:
               log.debug("HeartbeatRequest ACCEPTED: agent=" + hs.getAgentId());
               if (hs.getStatus() == HealthStatus.RESTARTED) {
-                event("STATUS", "Restart succeeded:" +
-                                " agent=" + hs.getAgentId() +
-                                " node=" + hs.getNode());
+                event("Restart succeeded:" +
+                      " agent=" + hs.getAgentId() +
+                      " node=" + hs.getNode());
               } else if (hs.getStatus() == HealthStatus.MOVED) {
-                event("STATUS", "Move succeeded:" +
-                                " agent=" + hs.getAgentId() +
-                                " node=" + hs.getNode());
+                event("Move succeeded:" +
+                      " agent=" + hs.getAgentId() +
+                      " node=" + hs.getNode());
               }
               hs.setState(HealthStatus.NORMAL);
               hs.setStatus(HealthStatus.OK);
@@ -484,13 +484,13 @@ public class HealthMonitorPlugin extends SimplePlugin implements
                   log.info("HeartbeatRequest timeout, ping successful:" +
                     " agent=" + hs.getAgentId());
                   if (hs.getStatus() == HealthStatus.RESTARTED) {
-                    event("STATUS", "Restart succeeded:" +
-                                    " agent=" + hs.getAgentId() +
-                                    " node=" + hs.getNode());
+                    event("Restart succeeded:" +
+                          " agent=" + hs.getAgentId() +
+                          " node=" + hs.getNode());
                   } else if (hs.getStatus() == HealthStatus.MOVED) {
-                    event("STATUS", "Move succeeded:" +
-                                    " agent=" + hs.getAgentId() +
-                                    " node=" + hs.getNode());
+                    event("Move succeeded:" +
+                          " agent=" + hs.getAgentId() +
+                          " node=" + hs.getNode());
                   }
                   hs.setState(HealthStatus.NORMAL);
                   hs.setStatus(HealthStatus.OK);
@@ -661,7 +661,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       } else if (state.equals(HealthStatus.FAILED_RESTART)) {
         if (!state.equals(hs.getPriorState())) {
           log.error("Agent restart failed: agent=" + hs.getAgentId());
-          event("STATUS", "Restart failed: agent=" + hs.getAgentId());
+          event("Restart failed: agent=" + hs.getAgentId());
         }
         // While in this state periodically ping agent to see if it responds.
         //   If a response is received put agent back into NORMAL state.  Otherwise,
@@ -701,7 +701,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       } else if (state.equals(HealthStatus.FAILED_MOVE)) {
         // Move failed resume normal monitoring
         log.warn("Agent move failed: agent=" + hs.getAgentId());
-        event("STATUS", "Move failed: agent=" + hs.getAgentId());
+        event("Move failed: agent=" + hs.getAgentId());
         hs.setState(HealthStatus.NORMAL);
         hs.setHeartbeatStatus(HealthStatus.HB_NORMAL);
       //************************************************************************
@@ -1160,7 +1160,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       int totalAgents = agents.size();
       int agentsInNormalState = ((List)stateMap.get("NORMAL")).size();
       if (agentsInNormalState == totalAgents && totalAgents > 0) {
-        event("STATUS", "Robustness Community Ready");
+        event("Robustness Community Ready");
         log.info(totalAgents + " Agents Monitored - All in NORMAL state");
         allNormalLastTime = true;
       } else {
@@ -1332,9 +1332,9 @@ public class HealthMonitorPlugin extends SimplePlugin implements
   /**
    * Sends Cougaar event via EventService.
    */
-  private void event(String type, String message) {
+  private void event(String message) {
     if (eventService != null && eventService.isEventEnabled())
-      eventService.event("[" + type + "] " + message);
+      eventService.event(message);
   }
   /**
    * Gets reference to TopologyReaderService.

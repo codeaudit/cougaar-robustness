@@ -200,9 +200,9 @@ public class VacatePlugin extends SimplePlugin {
               if (hs != null) hs.setState(HealthStatus.MOVE);
               publishChange(hs);
               bbs.publishAdd(ac);
-              event("STATUS", "Moving agent:" +
-                              " agent=" + hs.getAgentId() +
-                              " destNode=" + newNodeName);
+              event("Moving agent:" +
+                    " agent=" + hs.getAgentId() +
+                    " destNode=" + newNodeName);
               log.info("Moving agent: agent=" + agent + " destHost=" + destHost +
                 " destNode=" + newNodeName);
               log.debug("Published AgentControl: " + ac);
@@ -248,9 +248,9 @@ public class VacatePlugin extends SimplePlugin {
   /**
    * Sends Cougaar event via EventService.
    */
-  private void event(String type, String message) {
+  private void event(String message) {
     if (eventService != null && eventService.isEventEnabled())
-      eventService.event("[" + type + "] " + message);
+      eventService.event(message);
   }
 
   /**

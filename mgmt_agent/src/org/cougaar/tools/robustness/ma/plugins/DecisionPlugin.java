@@ -298,9 +298,9 @@ public class DecisionPlugin extends SimplePlugin {
   /**
    * Sends Cougaar event via EventService.
    */
-  private void event(String type, String message) {
+  private void event(String message) {
     if (eventService != null && eventService.isEventEnabled())
-      eventService.event("[" + type + "] " + message);
+      eventService.event(message);
   }
 
   /**
@@ -343,7 +343,7 @@ public class DecisionPlugin extends SimplePlugin {
     AgentControl ac =
       mobilityFactory.createAgentControl(acUID, destNodeAddr, addTicket);
 
-    event("STATUS", "Restarting agent: agent=" + agent);
+    event("Restarting agent: agent=" + agent);
     if (log.isDebugEnabled()) {
       StringBuffer sb = new StringBuffer("AgentControl publication:" +
         " myUid=" + agentControlUIDs.contains(ac.getOwnerUID()) +
