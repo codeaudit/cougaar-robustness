@@ -75,12 +75,12 @@ public class ThreatDescription implements NotPersistable {
         this.causesEvent = rootTD.causesEvent;
         this.defaultEventLikelihoodProb = rootTD.defaultEventLikelihoodProb;
       
-        //if vf's ep is null crate new probability using default, o.w. use one from vf
-        if (vf != null && vf.getProbability() == null) {
+        //if vf's ep is null create new probability using default, o.w. use one from vf
+        if (vf != null && vf.getProbability() != null) {
             eventProbability = vf.getProbability();
-            if (eventProbability == null) { //use probability of the root TD
-                eventProbability = rootTD.getEventProbability();
-            }
+        } else {
+            //use probability of the root TD
+            eventProbability = rootTD.getEventProbability();
         }
         this.filter = vf;
     }
@@ -133,12 +133,13 @@ public class ThreatDescription implements NotPersistable {
     public String toString() {
      
         String s = "Threat ["+this.getName()+"], affects asset type="+this.getAffectedAssetType()+", causes event="+this.getEventThreatCauses()+"\n";
-        if (this.getEventProbability() == null) {
-            s += "[Probability = 0.0] -- this is a root threat with no direct impact. See embedded threats.\n";
-        } else {        
-            s += "[Probability = "+this.getEventProbability()+"]\n";
-        }
-        if (filter != null) {
+        if (filter == null) {
+            if (this.getEventProbability() == null ) {
+                s += "[Probability = 0.0] -- this is a root threat with no direct impact. See embedded threats.\n";
+            } else {        
+                s += "[Probability = "+this.getEventProbability()+"]\n";
+            }
+        } else {
              s = s + filter + "\n";
         } 
         return s;
