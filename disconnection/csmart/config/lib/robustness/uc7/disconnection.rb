@@ -21,6 +21,7 @@ module Cougaar
         @planned = planned
         @actual = actual
         @messaging = messaging
+        @result = false
         @thread = nil
       end
      
@@ -46,10 +47,8 @@ module Cougaar
           node_count = @nodes.length
           requestsSeen = {}
           results = {}
-          listener = @run.comms.on_cougaar_event do |event|
-            unless results.length < node_count 
-	      @run.comms.remove_on_cougaar_event(listener)
-            end
+          while results.length < node_count
+            event = @run.get_next_event
             node = event.node
             if event.component == "DisconnectNodePlugin" && event.data.include?("Requesting to Disconnect Node: ")
               requestsSeen[node] = true
@@ -70,6 +69,7 @@ module Cougaar
               end
             end
           end
+          @result = true
           results.each_value do |value|
             if value != 'enabled'
               @run.error_message "Permission to Disconnect was denied for some requesting Nodes. Experiment aborted. No disconnects will occur." if @messaging >= 1
@@ -121,10 +121,8 @@ module Cougaar
           node_count = @nodes.length
           seen = {}
           results = {}
-          listener = @run.comms.on_cougaar_event do |event|
-	    unless results.length < node_count
-             @run.comms.remove_on_cougaar_event(listener)
-            end
+          while results.length < node_count
+            event = @run.get_next_event
             node = event.node
             if event.component == "DisconnectNodePlugin" && event.data.include?("Requesting to Connect Node: ")
               seen[node] = true
@@ -149,6 +147,7 @@ module Cougaar
               end
             end
           end
+          @result = true
           results.each_value do |value|
             if value != 'enabled'
               @run.error_message "Permission to Reconnect was denied to some Nodes." if @messaging >= 1
