@@ -85,6 +85,11 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
     ServiceBroker sb = getServiceBroker();
     setAgentIdentificationService(
         (AgentIdentificationService)sb.getService(this, AgentIdentificationService.class, null));
+    setAlarmService(
+      (AlarmService)getServiceBroker().getService(this, AlarmService.class, null));
+    setSchedulerService(
+      (SchedulerService)getServiceBroker().getService(this, SchedulerService.class, null));
+    uidSvc = (UIDService)getServiceBroker().getService(this, UIDService.class, null);
     log = (LoggingService)sb.getService(this, LoggingService.class, null);
     log = org.cougaar.core.logging.LoggingServiceWithPrefix.add(log, agentId + ": ");
     if (sb.hasService(org.cougaar.core.service.BlackboardService.class)) {
@@ -101,15 +106,10 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
   }
 
   /**
-   * Get all required services.
+   * Set blackboard service and complete initialization.
    */
   public void init() {
     setBlackboardService((BlackboardService)getServiceBroker().getService(this, BlackboardService.class, null));
-    setAlarmService(
-      (AlarmService)getServiceBroker().getService(this, AlarmService.class, null));
-    setSchedulerService(
-      (SchedulerService)getServiceBroker().getService(this, SchedulerService.class, null));
-    uidSvc = (UIDService)getServiceBroker().getService(this, UIDService.class, null);
     initialize();
     load();
     start();
@@ -160,13 +160,9 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
    * @param role
    */
   public void sendAlert(ThreatAlert ta, String community, String role) {
-    log.debug("sendAlert:" +
-              " alert=" + ta +
-              " community=" + community +
-              " role=" + role);
-    // Send to remote listeners via ABA/Relay
     ta.setSource(agentId);
     ta.setUID(uidSvc.nextUID());
+    // Send to remote listeners via ABA/Relay
     RelayAdapter taRelay = new RelayAdapter(agentId, ta, ta.getUID());
     AttributeBasedAddress target =
         AttributeBasedAddress.getAttributeBasedAddress(community, "Role", role);
@@ -175,6 +171,11 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
     if (sendToLocalAgent(community, role)) {
       taRelay.addTarget(agentId);
     }
+    log.debug("sendAlert:" +
+              " alert=" + ta +
+              " community=" + community +
+              " role=" + role +
+              " targets=" + taRelay.targetsToString(taRelay));
     queueForSend(taRelay);
   }
 
@@ -244,10 +245,13 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
       blackboard.publishAdd(l.get(i));
       myRelays.put(ra.getUID(), ra);
       if (log.isDebugEnabled()) {
-        log.debug("publishAdd ThreatAlert: " + ra);
+        log.debug("publishAdd ThreatAlert Relay: " + ra);
       }
       if (ra.getTargets().contains(agentId)) {
         addThreatAlert((ThreatAlert)ra.getContent());
+        if (log.isDebugEnabled()) {
+          log.debug("add ThreatAlert locally: " + ra);
+        }
       }
     }
     // Publish updated ThreatAlerts

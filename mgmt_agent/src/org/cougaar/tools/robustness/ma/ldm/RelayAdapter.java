@@ -125,7 +125,8 @@ public class RelayAdapter implements Relay.Source {
     return "RelayAdapter:" +
         " uid=" + myUID +
         " source=" + source +
-        " content=" + content;
+        " content=" + content +
+        " targets=" + targetsToString(this);
   }
 }
 

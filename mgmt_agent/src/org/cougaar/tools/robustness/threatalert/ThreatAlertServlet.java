@@ -251,15 +251,17 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
     }
     ThreatAlert ta = makeThreatAlert(alertClass, level, start, expire, assets);
     String role;
-    if(conditions.containsKey("inputrole"))
+    if (conditions.containsKey("inputrole")) {
       role = (String)conditions.get("inputrole");
-    else
-      role = (String)conditions.get("selectrole");
+    } else {
+      role = (String) conditions.get("selectrole");
+    }
     String community;
-    if(conditions.containsKey("inputcommunity"))
+    if (conditions.containsKey("inputcommunity")) {
       community = (String)conditions.get("inputcommunity");
-    else
-      community = (String)conditions.get("selectcommunity");
+    } else {
+      community = (String) conditions.get("selectcommunity");
+    }
     threatAlertService.sendAlert(ta, community, role);
 
   }
@@ -294,7 +296,6 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
       for (Iterator it = assets.iterator(); it.hasNext(); ) {
         ta.addAsset( (Asset) it.next());
       }
-      ta.setUID(uidService.nextUID());
     } catch (Exception ex) {
       log.error("Unable to create ThreatAlert: class=" + className, ex);
     }
