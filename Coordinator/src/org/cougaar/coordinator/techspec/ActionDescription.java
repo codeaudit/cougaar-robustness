@@ -164,10 +164,6 @@ public class ActionDescription {
                 }
             }
 
-            Logger logger = Logging.getLogger(this.getClass().getName());
-            if (logger != null) {   
-                logger.error("getTransitionForState() - ERROR: cannot find transition from "+this.getAffectedAssetType()+":"+this.getAffectedStateDimension()+":"+s);
-            }
             return null; // didn't find one -- should NOT occur - bad actions are filtered out at load time
         }
     }
