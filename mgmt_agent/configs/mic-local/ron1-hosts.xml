@@ -9,6 +9,9 @@
     <facet service="operator"/>
     <facet service="acme"/>
   </host>
+  <host name='wayne'>
+    <facet service="acme"/>
+  </host>
   <host name='net3'>
     <facet service="acme"/>
   </host>
@@ -16,10 +19,7 @@
     <facet service="jabber"/>
     <facet service="acme"/>
   </host>
-  <host name='willow'>
-    <facet service="acme"/>
-  </host>
-  <host name='wayne'>
+  <host name='net4'>
     <facet service="acme"/>
   </host>
 </society>
