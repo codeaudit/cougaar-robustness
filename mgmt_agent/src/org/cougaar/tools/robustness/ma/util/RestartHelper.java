@@ -76,6 +76,7 @@ public class RestartHelper extends BlackboardClientComponent {
   public static final long MAX_CONCURRENT_RESTARTS = 1;
 
   private List restartQueue = Collections.synchronizedList(new ArrayList());
+  private List remoteRestartRequestQueue = Collections.synchronizedList(new ArrayList());
   private Map restartsInProcess = Collections.synchronizedMap(new HashMap());
 
   private WakeAlarm wakeAlarm;
@@ -161,6 +162,9 @@ public class RestartHelper extends BlackboardClientComponent {
     if (!restartQueue.isEmpty()) {
       restartNext();
     }
+    if (!remoteRestartRequestQueue.isEmpty()) {
+      sendRemoteRequests();
+    }
     // Get AgentControl objects
     for (Iterator it = agentControlSub.iterator(); it.hasNext();) {
       update(it.next());
@@ -198,28 +202,45 @@ public class RestartHelper extends BlackboardClientComponent {
       // Restart locally
       restartAgent(agentName);
     } else {
-      // Forward request to remote agent
-      UIDService uidService = (UIDService) getServiceBroker().getService(this, UIDService.class, null);
-      HealthMonitorRequest hmr =
-          new HealthMonitorRequestImpl(agentId,
-          communityName,
-          HealthMonitorRequest.RESTART,
-          new String[]{agentName},
-          origNode,
-          destNode,
-          uidService.nextUID());
-      RelayAdapter hmrRa = new RelayAdapter(agentId, hmr, hmr.getUID());
-      hmrRa.addTarget(SimpleMessageAddress.getSimpleMessageAddress(destNode));
-      if (logger.isDebugEnabled()) {
-        logger.debug("Publishing HealthMonitorRequest:" +
-                    " request=" + hmr.getRequestTypeAsString() +
-                    " targets=" + targetsToString(hmrRa.getTargets()) +
-                    " community-" + hmr.getCommunityName() +
-                    " agents=" +
-                    arrayToString(hmr.getAgents()) +
-                    " destNode=" + hmr.getDestinationNode());
+      // Queue request to remote agent
+      remoteRestartRequestQueue.add(new RemoteRestartRequest(agentName,
+                                                             origNode,
+                                                             destNode,
+                                                             communityName));
+    }
+  }
+
+  private void sendRemoteRequests() {
+    synchronized (remoteRestartRequestQueue) {
+      remoteRestartRequestQueue = Collections.synchronizedList(new ArrayList());
+      for (Iterator it = remoteRestartRequestQueue.iterator(); it.hasNext();) {
+        RemoteRestartRequest rrr = (RemoteRestartRequest)it.next();
+        it.remove();
+        UIDService uidService = (UIDService)getServiceBroker().getService(this,
+            UIDService.class, null);
+        HealthMonitorRequest hmr =
+            new HealthMonitorRequestImpl(agentId,
+                                         rrr.communityName,
+                                         HealthMonitorRequest.RESTART,
+                                         new String[] {rrr.agentName}
+                                         ,
+                                         rrr.origNode,
+                                         rrr.destNode,
+                                         uidService.nextUID());
+        RelayAdapter hmrRa = new RelayAdapter(agentId, hmr, hmr.getUID());
+        hmrRa.addTarget(SimpleMessageAddress.getSimpleMessageAddress(rrr.
+            destNode));
+        if (logger.isDebugEnabled()) {
+          logger.debug("Publishing HealthMonitorRequest:" +
+                       " request=" + hmr.getRequestTypeAsString() +
+                       " targets=" + targetsToString(hmrRa.getTargets()) +
+                       " community-" + hmr.getCommunityName() +
+                       " agents=" +
+                       arrayToString(hmr.getAgents()) +
+                       " destNode=" + hmr.getDestinationNode());
+        }
+        blackboard.publishAdd(hmrRa);
       }
-      blackboard.publishAdd(hmrRa);
     }
   }
 
@@ -485,6 +506,19 @@ public class RestartHelper extends BlackboardClientComponent {
       boolean was = expired;
       expired = true;
       return was;
+    }
+  }
+
+  private class RemoteRestartRequest {
+    private String agentName;
+    private String origNode;
+    private String destNode;
+    private String communityName;
+    RemoteRestartRequest (String agent, String orig, String dest, String community) {
+      this.agentName = agent;
+      this.origNode = orig;
+      this.destNode = dest;
+      this.communityName = community;
     }
   }
 
