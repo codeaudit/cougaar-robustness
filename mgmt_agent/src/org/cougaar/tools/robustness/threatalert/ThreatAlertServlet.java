@@ -60,6 +60,7 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
   private WhitePagesService wps; //white pages service
   private UIDService uidService; //uid service
   private CommunityService cs;   //community service
+  private ThreatAlertService threatAlertService;
   private MessageAddress agentId; //which agent address is invoked?
 
   /**
@@ -91,6 +92,13 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
    */
   public void setCommunityService(CommunityService cs) {
     this.cs = cs;
+  }
+
+  /**
+   * Add Threat Alert service.
+   */
+  public void setThreatAlertService(ThreatAlertService tas) {
+    this.threatAlertService = tas;
   }
 
   /**
@@ -134,6 +142,10 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
     if(cs != null) {
       serviceBroker.releaseService(this, CommunityService.class, cs);
       cs = null;
+    }
+    if(threatAlertService != null) {
+      serviceBroker.releaseService(this, ThreatAlertService.class, threatAlertService);
+      threatAlertService = null;
     }
     if(uidService != null) {
       serviceBroker.releaseService(this, UIDService.class, uidService);
@@ -203,11 +215,7 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
    * @param conditions name-value pair of all conditions of the threat alert.
    */
   private void fireThreatAlert(HashMap conditions) {
-    //ABA target
-    AttributeBasedAddress target = AttributeBasedAddress.getAttributeBasedAddress(
-        (String)conditions.get("community"),
-        "Role",
-        (String)conditions.get("role"));
+
     Date createTime = new Date();
     int level = getSeverityLevel((String)conditions.get("level")); //alert level
     Date start;
@@ -227,7 +235,7 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
     else
       expire = getDateCondition("expire", conditions); //alert expire time
     ThreatAlertImpl tai = new ThreatAlertImpl(agentId, level, start, expire, uidService.nextUID());
-    tai.setCreateionTime(createTime); //alert create time
+    tai.setCreationTime(createTime); //alert create time
     //add assets to this alert
     for(int i=0; i<5; i++) {
       if(conditions.containsKey("type" + i)) {
@@ -237,32 +245,8 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
       }
     }
 
-    //send the object directly
-    if(target.equals(agentId)) {
-      if(log.isInfoEnabled()) {
-        log.info("publish ThreatAlert " + tai.toString());
-      }
-      try {
-        bb.openTransaction();
-        bb.publishAdd(tai);
-      }finally {
-        bb.closeTransactionDontReset();
-      }
-    } else { //send the relay remotely
-      RelayAdapter taiRelay = new RelayAdapter(agentId, tai, tai.getUID());
-      taiRelay.addTarget(target);
-      if (log.isInfoEnabled()) {
-        log.info("publish ThreatAlert, remote agent is " + target.toString() +
-                 " " + tai.toString());
-      }
-      try {
-        bb.openTransaction();
-        bb.publishAdd(taiRelay);
-      }
-      finally {
-        bb.closeTransactionDontReset();
-      }
-    }
+    threatAlertService.sendAlert(tai, (String)conditions.get("community"), (String)conditions.get("role"));
+
   }
 
   private int getMonth(String month) {
