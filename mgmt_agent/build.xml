@@ -19,7 +19,7 @@
   <property name="nsport" value="8888:5555" />
   <property name="nameserver" value="${nshost}:${nsport}" />
   <property name="controlport" value="8484" />
-  <property name="agent" value="Enclave1RobustnessManager"/>
+  <property name="agent" value="1AD-Enclave1-RobustnessManager"/>
   <property name="persistenceEnabled" value="false"/>
   <property name="persistenceInterval" value="30000"/>
   <property name="packageDir" value="org/cougaar/tools/robustness"/>

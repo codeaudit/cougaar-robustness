@@ -117,14 +117,14 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     {"hbReqRetries", "1"},
     {"hbReqRetryFreq", "60000"},
     {"hbFreq",       "30000"},
-    {"hbTimeout",    "20000"},
-    {"hbPctLate",    "80.0"},
+    {"hbTimeout",    "30000"},
+    {"hbPctLate",    "100.0"},
     {"hbWindow",     "360000"},  // Default to 6 minute window
     {"hbFailRate",   "0.5"},
     {"activePingFreq", "180000"},
     {"pingTimeout",  "60000"},
     {"pingRetries",  "1"},
-    {"evalFreq",     "20000"},
+    {"evalFreq",     "10000"},
     {"restartRetryFreq", "120000"}
   };
   ManagementAgentProperties healthMonitorProps =
@@ -561,6 +561,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
             }
           }
 
+        /*
         } else if (hs.getHeartbeatStatus() == HealthStatus.HB_NORMAL ||
                    hs.getHeartbeatStatus() == HealthStatus.HB_INACTIVE) {
           // Ping agents periodically even if we haven't received a
@@ -601,6 +602,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
               doHealthCheck(hs, HealthStatus.NO_RESPONSE);
             }
           }
+          */
         }
       //************************************************************************
       // State: RESTART         - Agents in this state are being restarted

@@ -32,6 +32,7 @@ import org.cougaar.core.mobility.ldm.*;
 import org.cougaar.core.mobility.AbstractTicket;
 import org.cougaar.core.mobility.AddTicket;
 import org.cougaar.core.mobility.RemoveTicket;
+import org.cougaar.core.mobility.MoveTicket;
 
 import org.cougaar.core.util.UID;
 
@@ -162,10 +163,14 @@ public class DecisionPlugin extends SimplePlugin {
               // Agent is alive but not responding to HeartbeatRequests or Pings
               //hs.setState(HealthStatus.ROBUSTNESS_INIT_FAIL);
               //hs.setStatus(HealthStatus.DEGRADED);
-              publishChange(hs);
-              hs.setState(HealthStatus.RESTART_COMPLETE);
-              hs.setStatus(HealthStatus.RESTARTED);
-              bbs.publishRemove(ac);
+              log.warn("Restart of active agent, action=ADD status=" +
+                ac.getStatusCodeAsString() + " agent=" + addTicket.getMobileAgent() +
+                " destNode=" + addTicket.getDestinationNode());
+              moveAgent(addTicket.getMobileAgent(), addTicket.getDestinationNode());
+              //hs.setState(HealthStatus.RESTART_COMPLETE);
+              //hs.setStatus(HealthStatus.RESTARTED);
+              //publishChange(hs);
+              //bbs.publishRemove(ac);
             } else {
               hs.setState(HealthStatus.FAILED_RESTART);
               publishChange(hs);
@@ -308,6 +313,24 @@ public class DecisionPlugin extends SimplePlugin {
         addAgent(agentAddr.toString(), nodeName);
       }
     }
+  }
+
+  /**
+   * Initiates a restart at agents current node.
+   * @param agentAddr  MessageAddresses of agent to be restarted
+   * @param nodeAddr   MessageAddresses of destination node
+   */
+  private void moveAgent(MessageAddress agentAddr, MessageAddress nodeAddr) {
+    MoveTicket ticket = new MoveTicket(
+      mobilityFactory.createTicketIdentifier(),
+        agentAddr,
+        nodeAddr,
+        nodeAddr,
+        true);
+    UID acUID = getUIDService().nextUID();
+    AgentControl ac =
+      mobilityFactory.createAgentControl(acUID, agentAddr, ticket);
+    bbs.publishAdd(ac);
   }
 
   /**
