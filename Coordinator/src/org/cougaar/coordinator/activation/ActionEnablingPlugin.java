@@ -35,6 +35,8 @@ import org.cougaar.coordinator.costBenefit.ActionEvaluation;
 import org.cougaar.coordinator.costBenefit.VariantEvaluation;
 import org.cougaar.coordinator.policy.DefensePolicy;
 import org.cougaar.coordinator.selection.SelectedAction;
+import org.cougaar.coordinator.selection.RetractedActions;
+import org.cougaar.coordinator.selection.EnablingControl;
 
 import java.util.Iterator;
 import java.util.Collection;
@@ -56,6 +58,7 @@ import org.cougaar.core.blackboard.IncrementalSubscription;
  */
 public class ActionEnablingPlugin extends DeconflictionPluginBase implements NotPersistable {
     
+    private IncrementalSubscription retractedActionsSubscription;
     private IncrementalSubscription selectedActionSubscription;
     private IncrementalSubscription pluginControlSubscription;
     
@@ -105,6 +108,20 @@ public class ActionEnablingPlugin extends DeconflictionPluginBase implements Not
      */
     protected void execute() {
 
+        //***************************************************RetractedActions
+        //Handle the addition of new RetractedActions
+        for ( Iterator iter = retractedActionsSubscription.getAddedCollection().iterator();  
+          iter.hasNext() ; ) 
+        {
+            RetractedActions ra = (RetractedActions)iter.next();
+            long delay = delayTime(ra);
+            if (delay > 0L) 
+                activateWithDelay(ra, delay);
+            else 
+                activateNow(ra);
+            publishRemove(ra);     
+        }
+
         //***************************************************SelectedActions
         //Handle the addition of new SelectedActions
         for ( Iterator iter = selectedActionSubscription.getAddedCollection().iterator();  
@@ -126,9 +143,10 @@ public class ActionEnablingPlugin extends DeconflictionPluginBase implements Not
     protected boolean preconditionsMet(SelectedAction action) {
         return true;  // for now we do not support preconditions
     }
-    
+
+    // The delay time for enabling this action
     protected long delayTime(SelectedAction sa) {
-	Action a = sa.getActionEvaluation().getAction();
+	Action a = sa.getAction();
 	ActionTechSpecInterface ats = actionTechSpecService.getActionTechSpec(a.getClass().getName());
 	if (ats == null) {
 	    if (logger.isErrorEnabled()) 
@@ -141,29 +159,56 @@ public class ActionEnablingPlugin extends DeconflictionPluginBase implements Not
         else
             return 0L;
     }
+
+    // The delay time for disabling this action
+    protected long delayTime(RetractedActions ra) {
+	Action a = ra.getAction();
+	ActionTechSpecInterface ats = actionTechSpecService.getActionTechSpec(a.getClass().getName());
+	if (ats == null) {
+	    if (logger.isErrorEnabled()) 
+		logger.error("Cannot find ActionTechSpec for "+a.getClass().getName());
+	}
+        if ((ats != null ) &&
+	    ats.getStateDimension().equals("Comunications") && 
+	    ra.getActionVariants().contains("Disabled"))
+            return msglogDelay;
+        else
+            return 0L;
+    }
  
-    protected void activateWithDelay(SelectedAction sa, long delay) {
-        getAlarmService().addRealTimeAlarm(new DelayedActionAlarm(sa, delay));
+    
+    protected void activateWithDelay(EnablingControl ec, long delay) {
+        getAlarmService().addRealTimeAlarm(new DelayedActionAlarm(ec, delay));
     }
     
-    protected void activateNow(SelectedAction sa) {
-      Action action = sa.getActionEvaluation().getAction();
+    protected void activateNow(EnablingControl ec) {
+      Action action = ec.getAction();
       long maxPredictedTime = 0L;
       try {
-        Set permittedVariants = new HashSet();
-        Iterator iter = sa.getActionVariants().iterator();
-        while (iter.hasNext()) {
-            VariantEvaluation ve = (VariantEvaluation)iter.next();
-            permittedVariants.add(ve.getVariantName());
-        } 
-        action.setPermittedValues(permittedVariants);
-        }
+        if (ec instanceof RetractedActions) {
+            RetractedActions ra = (RetractedActions) ec;
+            if (ra.getActionVariants() == null) { // retract ALL actions
+                action.setPermittedValues(emptySet);
+            } 
+            else { // not supported yet
+            }
+        } else if (ec instanceof SelectedAction) {
+            SelectedAction sa = (SelectedAction) ec;
+            Set permittedVariants = new HashSet();
+            Iterator iter = sa.getActionVariants().iterator();
+            while (iter.hasNext()) {
+                VariantEvaluation ve = (VariantEvaluation)iter.next();
+                permittedVariants.add(ve.getVariantName());
+            } 
+            action.setPermittedValues(permittedVariants);
+            publishAdd(new ActionPatience(action, sa.getPatience()));
+            }
+      }
       catch (IllegalValueException e) {
         logger.error("attempting to enable a non-existent action variant");
         return ; // w/o publishing the bad action, but continue
-        }
+      }
       if (logger.isInfoEnabled()) logger.info("Setting: "+action);
-      publishAdd(new ActionPatience(action, sa.getPatience()));
       //if(logger.isDebugEnabled())logger.debug("publishChange "+action.dump());
       //publishChange(action);
       ActionsWrapper aw = action.getWrapper();
@@ -175,17 +220,18 @@ public class ActionEnablingPlugin extends DeconflictionPluginBase implements Not
 
         super.setupSubscriptions();
         selectedActionSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(SelectedAction.pred) ;        
+        retractedActionsSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(RetractedActions.pred) ;        
     }
 
     private class DelayedActionAlarm implements Alarm {
         private long detonate;
         private boolean expired;
-        SelectedAction sa;
+        EnablingControl ec;
         
-        public DelayedActionAlarm (SelectedAction sa, long delay) {
+        public DelayedActionAlarm (EnablingControl ec, long delay) {
             detonate = System.currentTimeMillis() + delay;
-            this.sa = sa;
-            if (logger.isDebugEnabled()) logger.debug("DelayedPublishAlarm created : "+sa+" in "+detonate+" sec");
+            this.ec = ec;
+            if (logger.isDebugEnabled()) logger.debug("DelayedPublishAlarm created : "+ec+" in "+detonate+" sec");
         }
         
         public long getExpirationTime () {return detonate;
@@ -194,9 +240,9 @@ public class ActionEnablingPlugin extends DeconflictionPluginBase implements Not
         public void expire () {
             if (!expired) {
                 expired = true;
-                if (logger.isDebugEnabled()) logger.debug("DelayedPublishAlarm expired for: "+sa);
+                if (logger.isDebugEnabled()) logger.debug("DelayedPublishAlarm expired for: "+ec);
                 blackboard.openTransaction();
-                activateNow(sa);
+                activateNow(ec);
                 blackboard.closeTransaction();
             }
         }
@@ -210,5 +256,5 @@ public class ActionEnablingPlugin extends DeconflictionPluginBase implements Not
  
     }
     
-    
+    static Set emptySet = new HashSet();
 }

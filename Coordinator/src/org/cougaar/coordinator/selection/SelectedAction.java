@@ -28,7 +28,7 @@ package org.cougaar.coordinator.selection;
 import org.cougaar.core.persist.NotPersistable;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.coordinator.techspec.AssetID;
-import org.cougaar.coordinator.costBenefit.ActionEvaluation;
+import org.cougaar.coordinator.Action;
 import org.cougaar.coordinator.costBenefit.VariantEvaluation;
 
 import java.util.Set;
@@ -39,23 +39,18 @@ import java.util.Iterator;
  *
  * @author  David Wells - OBJS
  */
-public class SelectedAction implements NotPersistable {
+public class SelectedAction extends EnablingControl implements NotPersistable {
     /** Base class for SelectedAction(s) with varius kinds of preconditions */
     
-    private ActionEvaluation actionEval;
     private Set actionVariants;
     private long patience;
     private Precondition precondition;
     
-    public SelectedAction(ActionEvaluation actionEval, Set actionVariants, long patience) {
-        this.actionEval = actionEval;
+    public SelectedAction(Action action, Set actionVariants, long patience) {
+        super(action);
         this.actionVariants = actionVariants;
         this.patience = patience;
         this.precondition = null;
-    }
-
-    public ActionEvaluation getActionEvaluation() {
-        return actionEval;
     }
         
     public Set getActionVariants() {
@@ -68,7 +63,7 @@ public class SelectedAction implements NotPersistable {
 
     public String toString() {
         String buff = "From Action: ";
-        buff = buff + actionEval.toString() + "\n";
+        buff = buff + super.getAction().toString() + "\n";
         Iterator iter = actionVariants.iterator();
         while (iter.hasNext()) {
             buff = buff + "Selected: " + ((VariantEvaluation)iter.next()).toString() + "\n";

@@ -69,7 +69,6 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
   private Hashtable alarmTable = new Hashtable();
   private ActionSelectionKnob knob;
   
-  //private TestObservationServlet testServlet = null;
   
   // Defaults for the Knob - may be overridden by parameters or the Knob may be set by policy
   int maxActions = 1;
@@ -183,7 +182,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
       }
 
       //********* Process Actions that have Responded ***********
-      if (logger.isDebugEnabled()) logger.debug("Ready to Process Action Responses");
+      if (logger.isDetailEnabled()) logger.detail("Ready to Process Action Responses");
       iter = actionPatienceSubscription.getChangedCollection().iterator();
       // Mark the resolution of all the Actions that just reported back (for now it will just be one Action)
       while (iter.hasNext()) {
@@ -195,32 +194,15 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
           CostBenefitEvaluation cbe = findCostBenefitEvaluation(action.getAssetID());
           if (logger.isDebugEnabled()) logger.debug(action + " has " + ap.getResult());
           if (ap.getResult().equals(Action.COMPLETED)) {
-              if (logger.isDebugEnabled()) logger.debug("Action succeeded - Nothing more to do.  Completed action no longer permitted w/o re-authorization.");
               Object variantAttempted = action.getValue().getAction();
-              Set newPermittedValues = action.getPermittedValues();
-              boolean removalP = newPermittedValues.remove(variantAttempted);
-              if (logger.isDebugEnabled()) logger.debug("Removed: " + variantAttempted.toString() + " successfully: " + removalP);
-              try {
-                    action.setPermittedValues(newPermittedValues);
-                    publishChange(action.getWrapper());
-              } catch (IllegalValueException e) { 
-                    // can't happen but must be caught
-              }
+              if (logger.isDebugEnabled()) logger.debug(variantAttempted.toString() + " succeeded - Nothing more to do.  Completed action no longer permitted w/o re-authorization.");
+              publishAdd(new RetractedActions(action));
           }
           else {
               if (action.getValue() != null) { // some action was tried & it did not help - mark it as "tried" & remove it from the permittedValues
                   Object variantAttempted = action.getValue().getAction();
-                  VariantEvaluation variantAttemptedEvaluation = cbe.getActionEvaluation(action).getVariantEvaluation(variantAttempted);
-                  variantAttemptedEvaluation.setTried();
-                  Set newPermittedValues = action.getPermittedValues();
-                  boolean removalP = newPermittedValues.remove(variantAttempted);
-                  if (logger.isDebugEnabled()) logger.debug("Removed: " + variantAttempted.toString() + " successfully: " + removalP);
-                  try {
-                        action.setPermittedValues(newPermittedValues);
-                        publishChange(action.getWrapper());
-                  } catch (IllegalValueException e) { 
-                        // can't happen but must be caught
-                  }
+                  if (logger.isDebugEnabled()) logger.debug(variantAttempted.toString() + " failed - Try something else.  Failed action no longer permitted w/o re-authorization.");
+                  publishAdd(new RetractedActions(action));
               }      
               else { // the actuator took no action - what should we do here? 
               }
@@ -228,7 +210,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
            }
       }
 
-      if (logger.isDebugEnabled()) logger.debug("Done processing TimeOuts");
+      if (logger.isDetailEnabled()) logger.detail("Done processing TimeOuts");
 
   }
 
@@ -244,7 +226,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 		logger.debug("SelectAction: thisAction="+thisAction.toString());
             publishAdd(thisAction);
             index++;
-            Action a = thisAction.getActionEvaluation().getAction();
+            Action a = thisAction.getAction();
 	    ActionTechSpecInterface ats = actionTechSpecService.getActionTechSpec(a.getClass().getName());
 	    if (ats == null) {
 		if (logger.isErrorEnabled()) 
@@ -296,7 +278,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
             HashSet permittedVariants = new HashSet();
             bestVariantEvaluation.setTried(); //sjf
             permittedVariants.add(bestVariantEvaluation); 
-            sa = new SelectedAction(bestActionEvaluation, permittedVariants, Math.round(knob.getPatienceFactor()*bestVariantEvaluation.getExpectedTransitionTime()));
+            sa = new SelectedAction(bestActionEvaluation.getAction(), permittedVariants, Math.round(knob.getPatienceFactor()*bestVariantEvaluation.getExpectedTransitionTime()));
         }
         
         return sa;

@@ -168,7 +168,7 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
         }
         alarm = new ActionTimeoutAlarm(ap);
         monitoredActions.put(ap.getAction(), alarm);
-        if (logger.isDebugEnabled()) logger.debug("Index after adding an Alarm:" + monitoredActions.toString());
+        if (logger.isDetailEnabled()) logger.detail("Index after adding an Alarm:" + monitoredActions.toString());
         getAlarmService().addRealTimeAlarm(alarm);            
         }
 
@@ -202,7 +202,7 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
             ap.setResult(Action.FAILED);
             monitoredActions.remove(action);
             if (logger.isDebugEnabled()) logger.debug("Alarm expired for: " + action.toString());
-            if (logger.isDebugEnabled()) logger.debug("Index after deleting alarm: " + monitoredActions.toString());
+            if (logger.isDetailEnabled()) logger.detail("Index after deleting alarm: " + monitoredActions.toString());
             publishChange(ap);
         }
 
