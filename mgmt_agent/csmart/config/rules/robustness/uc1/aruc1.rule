@@ -107,5 +107,5 @@ end
 society.each_node do |node|
   node.override_parameter("-Dorg.cougaar.robustness.exnihilo.plugin.COLLECT_MESSAGE_TRAFFIC", "false")
   node.append_value_on_parameter("-Dorg.cougaar.config.path", "$COUGAAR_INSTALL_PATH/configs/coordinator/Sledgehammer")
-  node.override_parameter("-Dorg.cougaar.robustness.minHostsForMgrRestart", "2")
+  node.override_parameter("-Dorg.cougaar.tools.robustness.minHostsForMgrRestart", "2")
 end
