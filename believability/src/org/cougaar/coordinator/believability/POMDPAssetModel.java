@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetModel.java,v $
- * $Revision: 1.17 $
- * $Date: 2004-07-15 15:07:19 $
+ * $Revision: 1.18 $
+ * $Date: 2004-07-15 20:19:42 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.17 $Date: 2004-07-15 15:07:19 $
+ * @version $Revision: 1.18 $Date: 2004-07-15 20:19:42 $
  *
  */
 class POMDPAssetModel extends Model

@@ -370,7 +370,12 @@ public class BelievabilityPlugin
           // Check to see whether the defense controller is enabled at
           // the moment
           if (_dc_enabled) 
-           _trigger_consumer.consumeUpdateTrigger( but );
+              _trigger_consumer.consumeUpdateTrigger( but );
+          else
+          {
+              if (logger.isDetailEnabled() ) 
+                  logger.detail ("Leashing Enabled: tigger ignored.");
+          }
 
           _dc_enabled = _dc_enabled_new;
          }
@@ -398,7 +403,12 @@ public class BelievabilityPlugin
           // the moment
           if (_dc_enabled) 
            _trigger_consumer.consumeUpdateTrigger( but );
-          
+          else
+          {
+              if (logger.isDetailEnabled() ) 
+                  logger.detail ("Leashing Enabled: tigger ignored.");
+          }
+
           _dc_enabled = _dc_enabled_new;
          }
          catch ( BelievabilityException be ) {
@@ -549,11 +559,19 @@ public class BelievabilityPlugin
     private BeliefUpdateTrigger constructUpdateTrigger( Object o ) 
      throws BelievabilityException {
 
+        if (logger.isDetailEnabled() ) 
+            logger.detail ("Constructing update trigger for: "
+                           + o.getClass().getName() );
+
      if (o instanceof DiagnosesWrapper) {
          Diagnosis diag = ((DiagnosesWrapper) o).getDiagnosis();
 
       // First check for leashing of diagnoses
       if ( o instanceof LeashRequestDiagnosis ) {
+          
+          if (logger.isDetailEnabled() ) 
+              logger.detail ("Handling leashing diagnosis.");
+
           boolean is_stable =
            (! ( (LeashRequestDiagnosis)diag).areDefensesLeashed() );
           if ( is_stable ) _dc_enabled_new = true;

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManager.java,v $
- * $Revision: 1.15 $
- * $Date: 2004-07-15 15:07:19 $
+ * $Revision: 1.16 $
+ * $Date: 2004-07-15 20:19:42 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -47,7 +47,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * and provides information via the ModelManagerInterface. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.15 $Date: 2004-07-15 15:07:19 $
+ * @version $Revision: 1.16 $Date: 2004-07-15 20:19:42 $
  *
  */
 public class ModelManager extends Loggable

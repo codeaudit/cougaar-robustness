@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefTriggerHistory.java,v $
- * $Revision: 1.2 $
- * $Date: 2004-07-15 15:07:19 $
+ * $Revision: 1.3 $
+ * $Date: 2004-07-15 20:19:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -52,7 +52,7 @@ import org.cougaar.core.service.AlarmService;
 import org.cougaar.core.agent.service.alarm.Alarm;
 
 /**
- * This is a container class for holding al information about the
+ * This is a container class for holding all information about the
  * history of belief update triggers for a particular asset. It does
  * not keep a full history, but rather just the necessary information
  * to satisfy the requirements:
@@ -94,7 +94,7 @@ import org.cougaar.core.agent.service.alarm.Alarm;
  * an instance of this class: one for each of these.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.2 $Date: 2004-07-15 15:07:19 $
+ * @version $Revision: 1.3 $Date: 2004-07-15 20:19:41 $
  * @see BeliefTriggerManager
  */
 class BeliefTriggerHistory 
@@ -249,6 +249,7 @@ class BeliefTriggerHistory
        }
        
     } // method handleBeliefTrigger
+
     //************************************************************
     /**
      * Add a trigger to this current history.
