@@ -29,23 +29,31 @@
   <property category="sys" name="WorkingDirectory" value="."/>
   <property category="team" name="ignorePath.0" value="bak"/>
   <property category="team" name="ignorePath.1" value="classes"/>
-  <property category="team" name="ignorePath.2" value="test/data"/>
   <property category="team" name="ignorePath.3" value="test/src/org/cougaar/tools/robustness"/>
   <property category="team" name="ignorePath.4" value="lib"/>
   <property category="team" name="ignorePath.5" value="mic-tic.jpx"/>
+  <property category="team" name="ignorePath.6" value="test/configs/common/cougaar.rc"/>
+  <property category="team" name="ignorePath.7" value="test/data/community_attribute.csv"/>
+  <property category="team" name="ignorePath.8" value="test/data/community_entity_attribute.csv"/>
   <node name="test" type="Folder">
     <node name="configs" type="Folder">
       <node name="common" type="Folder">
         <file path="test/configs/common/alpreg.ini"/>
+        <file path="test/configs/common/cougaar.rc"/>
         <file path="test/configs/common/debug.properties"/>
       </node>
       <node name="ma" type="Folder">
+        <file path="test/configs/ma/1BDE.ini"/>
+        <file path="test/configs/ma/3-69-ARBN.ini"/>
+        <file path="test/configs/ma/3ID.ini"/>
         <file path="test/configs/ma/CombinedNode.ini"/>
         <file path="test/configs/ma/Manager-prototype-ini.dat"/>
         <file path="test/configs/ma/Manager.ini"/>
         <file path="test/configs/ma/ManagerNode.ini"/>
+        <file path="test/configs/ma/MCCGlobalMode.ini"/>
         <file path="test/configs/ma/MiniNode1.ini"/>
         <file path="test/configs/ma/MiniNode2.ini"/>
+        <file path="test/configs/ma/MiniTestConfigNode.ini"/>
       </node>
       <node name="minitestconfig" type="Folder">
         <file path="test/configs/minitestconfig/1BDE.ini"/>
@@ -54,6 +62,11 @@
         <file path="test/configs/minitestconfig/MCCGlobalMode.ini"/>
         <file path="test/configs/minitestconfig/MiniTestConfigNode.ini"/>
       </node>
+    </node>
+    <node name="data" type="Folder">
+      <file path="test/data/communities.xml"/>
+      <file path="test/data/community_attribute.csv"/>
+      <file path="test/data/community_entity_attribute.csv"/>
     </node>
   </node>
   <node name="Ant Buildfile" type="AntRunner">

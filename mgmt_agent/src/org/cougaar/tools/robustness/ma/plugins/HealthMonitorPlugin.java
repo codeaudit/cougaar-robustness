@@ -22,10 +22,14 @@ package org.cougaar.tools.robustness.ma.plugins;
 
 import java.util.*;
 
-import org.cougaar.tools.robustness.HealthReport;
-import org.cougaar.tools.robustness.HeartbeatRequest;
-import org.cougaar.tools.robustness.ma.RobustnessFactory;
-import org.cougaar.tools.robustness.sensors.*;
+//import org.cougaar.tools.robustness.HealthReport;
+//import org.cougaar.tools.robustness.HeartbeatRequest;
+
+import org.cougaar.tools.robustness.sensors.SensorFactory;
+import org.cougaar.tools.robustness.sensors.HeartbeatRequest;
+import org.cougaar.tools.robustness.sensors.HeartbeatEntry;
+import org.cougaar.tools.robustness.sensors.HeartbeatHealthReport;
+import org.cougaar.tools.robustness.sensors.PingRequest;
 
 import org.cougaar.core.agent.ClusterIdentifier;
 import org.cougaar.core.blackboard.IncrementalSubscription;
@@ -41,42 +45,106 @@ import org.cougaar.community.*;
 import org.cougaar.util.UnaryPredicate;
 
 /**
- * This plugin monitors a set of agents and publishes messages the blackboard
- * when an agent is determined to be unresponsive.  These messages are picked
- * up by another plugin that is responsible for deciding whether the
- * unresponsive agent should be restarted.
+ * This plugin monitors a set of agents and publishes HealthStatus
+ * messages to the blackboard when it detects an anomaly that suggests a
+ * monitored agent may be dead or experiencing an abnormal stress.
  * The set of agents to be monitored is determined by community membership.
+ * This plugin may be externally configured with the following parameters
+ * that may either be specified as plugin arguments or in a
+ * ManagementAgentProperty object that is published to local the Blackboard.
+ * <PRE>
+ * Parameter Name                Use
+ * --------------   ---------------------------------------------------
+ * community        String that defines the name of the community to be
+ *                  monitored.  The names of individual agents within this
+ *                  community are obtained from the Name Server via the
+ *                  CommunityPlugin.
+ * hbReqTimeout     Defines the timeout period (in milliseconds) for a
+ *                  Heartbeat Request,
+ * hbFreq           Defines the frequency (in milliseconds) at which the
+ *                  monitored agents are to send heartbeats to the management
+ *                  agent.
+ * hbTimeout        Defines the timeout period (in milliseconds) for
+ *                  heartbeats.
+ * hbPctLate        Defines a tolerance for late heartbeats before they are
+ *                  reported in a HeartbeatHealthReport from sensor plugins.
+ *                  The value is defined as a Float number representing a
+ *                  percentage of the hbTimeout.
+ * hbWindow         Defines the interval (in milliseconds) over which a
+ *                  Heartbeat failure rate is calculated.  The heartbeat failure
+ *                  rate is the percentage of late hearbeats vs expected
+ *                  heartbeats.
+ * hbFailRate       Defines the heartbeat failure rate threshold.  When the
+ *                  calculated heartbeat failure rate exceeds this threshold
+ *                  the monitored agent is placed in a "HEALTH-CHECK" state
+ *                  for further evaluation by the Management Agent.  This value
+ *                  is defined as a Float number that represents the maximum
+ *                  acceptable heartbeat failure rate.
+ * pingTimeout      Defines the ping timeout period (in milliseconds).
+ * evalFreq         Defines how often (in milliseconds) the HealthStatus of
+ *                  monitored agents is evaluated.
+ * </PRE>
  */
 
 public class HealthMonitorPlugin extends SimplePlugin {
 
-  // Tuning parameters
-  private long heartbeatInterval  = 5000;
-  private long heartbeatTimeout   = 10000;
-  private long pingTimeout        = 10000;
-  private long evaluationInterval = 5000;
+  // Defines default values for configurable parameters.
+  private static String defaultParams[][] = {
+    {"hbReqTimeout", "20000"},
+    {"hbFreq",       "10000"},
+    {"hbTimeout",    "5000"},
+    {"hbPctLate",    "20.0"},
+    {"hbWindow",     "60000"},
+    {"hbFailRate",   "0.5"},
+    {"pingTimeout",  "10000"},
+    {"evalFreq",     "1000"}
+  };
+  ManagementAgentProperties healthMonitorProps = makeProps(defaultParams);
 
-  private RobustnessFactory robustnessFactory;
+
+  /////////////////////////////////////////////////////////////////////////
+  //  Externally configurable parameters
+  /////////////////////////////////////////////////////////////////////////
+  private long  heartbeatRequestTimeout;
+  private long  heartbeatFrequency;
+  private long  heartbeatTimeout;
+  private float heartbeatPctLateThreshold;
+
+  // Defines the interval over which a Heartbeat failure rate is calculated
+  // A "Heartbeat failure" is a Heartbeat that exceeded the limit defined
+  // by the heartbeatTimeout and heartbeatPctLateThreshold parameters but
+  // the agent was subsequently determined to be alive via a ping.
+  // The Heartbeat Failure Rate defines the number of late heartbeats
+  // as a percentage of total heartbeats expected during the timeframe defined
+  // by the heartbeatFailureRateWindow.
+  private long  heartbeatFailureRateWindow;
+
+  // Defines the threshold for late heartbeats.  If this threshold is exceeded
+  // the agent is put into the "HEALTH_CHECK" state for analysis by the
+  // Decision plugin.
+  private float heartbeatFailureRateThreshold;
+
+  private long pingTimeout;
+
+  // Determines how often our internal evaluation Thread is run
+  private long evaluationFrequency;
+
+  // Name of community to monitor
+  private String communityToMonitor = null;
+
+  /////////////////////////////////////////////////////////////////////////
+  //  End of externally configurable parameters
+  /////////////////////////////////////////////////////////////////////////
+
+
   private SensorFactory sensorFactory;
   private ClusterIdentifier myAgent = null;
   private LoggingService log;
   private BlackboardService bbs = null;
 
-  // Name of community to monitor
-  private String communityToMonitor = null;
-
   // HealthStatus objects for agents in monitored community
   private Collection membersHealthStatus = null;
 
-  /**
-   * Obtains name of community to monitor from plugin parameter
-   * @param obj CommunityName
-   */
-  public void setParameter(Object obj) {
-    List args = (List)obj;
-    if (args.size() == 1)
-      communityToMonitor = (String)args.get(0);
-  }
 
   /**
    * This method obtains a roster for the community to be monitored and sends
@@ -91,15 +159,11 @@ public class HealthMonitorPlugin extends SimplePlugin {
     log =  (LoggingService) getBindingSite().getServiceBroker().
       getService(this, LoggingService.class, null);
 
+    bbs = getBlackboardService();
+
     DomainService domainService =
       (DomainService) getBindingSite().getServiceBroker().
       getService(this, DomainService.class, null);
-
-    robustnessFactory =
-      ((RobustnessFactory) domainService.getFactory("robustness"));
-    if (robustnessFactory == null) {
-      log.error("Unable to get 'robustness' domain");
-    }
 
     sensorFactory =
       ((SensorFactory) domainService.getFactory("sensors"));
@@ -107,17 +171,31 @@ public class HealthMonitorPlugin extends SimplePlugin {
       log.error("Unable to get 'sensors' domain");
     }
 
-    bbs = getBlackboardService();
-
     myAgent = getClusterIdentifier();
 
-    // Subscribe to ping requests
-    //pingRequests = (IncrementalSubscription)bbs.subscribe(pingRequestPredicate);
+    // Initialize configurable paramaeters from defaults and plugin arguments.
+    updateParams(healthMonitorProps);
+    bbs.publishAdd(healthMonitorProps);
 
     // Subscribe to CommunityRequests to get roster (and roster updates)
     // from CommunityPlugin
     communityRequests =
       (IncrementalSubscription)bbs.subscribe(communityRequestPredicate);
+
+    // Subscribe to HeartbeatRequests to determine if HeartbeatRequest was
+    // received/accepted by monitored agent
+    heartbeatRequests =
+      (IncrementalSubscription)bbs.subscribe(heartbeatRequestPredicate);
+
+    // Subscribe to HeartbeatHealthReports to receive notification of failed
+    // heartbeats
+    heartbeatHealthReports =
+      (IncrementalSubscription)bbs.subscribe(heartbeatPredicate);
+
+    // Subscribe to ManagementAgentProperties to get changes to configurable
+    // parameters.
+    mgmtAgentProps =
+      (IncrementalSubscription)bbs.subscribe(propertiesPredicate);
 
     // Send request to CommunityPlugin to return a list of members in the
     // Robustness community thats being monitored.  This roster will be
@@ -128,14 +206,19 @@ public class HealthMonitorPlugin extends SimplePlugin {
     cr.setTargetCommunityName(communityToMonitor);
     bbs.publishAdd(cr);
 
-    startEvaluationThread(evaluationInterval);
-    log.warn("HealthMonitorPlugin started:" +
-      " agent=" + myAgent +
-      " monitoredCommunity=" + communityToMonitor +
-      " heartbeatInterval=" + heartbeatInterval + "ms" +
-      " heartbeatTimeout=" + heartbeatTimeout + "ms" +
-      " pingTimeout=" + pingTimeout + "ms" +
-      " evaluationInterval=" + evaluationInterval + "ms");
+    // Start evaluation thread to periodically update and analyze the Health
+    // Status of monitored agents
+    startEvaluationThread(evaluationFrequency);
+
+    // Print informational message defining current parameters
+    StringBuffer startMsg = new StringBuffer();
+    startMsg.append("HealthMonitorPlugin started: agent=" + myAgent);
+    for (Enumeration enum = healthMonitorProps.propertyNames(); enum.hasMoreElements();) {
+      String propName = (String)enum.nextElement();
+      startMsg.append(" " + propName + "=" +
+        healthMonitorProps.getProperty(propName));
+    }
+    log.warn(startMsg.toString());
   }
 
   /**
@@ -143,6 +226,51 @@ public class HealthMonitorPlugin extends SimplePlugin {
    * monitored agents.
    */
   public void execute() {
+
+    // Get Parameter changes
+    for (Iterator it = mgmtAgentProps.getAddedCollection().iterator();
+         it.hasNext();) {
+      ManagementAgentProperties props = (ManagementAgentProperties)it.next();
+      updateParams(props);
+    }
+
+    // Get HeartbeatRequests
+    for (Iterator it = heartbeatRequests.getChangedCollection().iterator();
+         it.hasNext();) {
+      HeartbeatRequest req = (HeartbeatRequest)it.next();
+      int status = req.getStatus();
+      Collection targets = req.getTargets();
+      for (Iterator targetIt = targets.iterator(); targetIt.hasNext();) {
+        MessageAddress target = (MessageAddress)targetIt.next();
+        HealthStatus hs = getHealthStatus(target);
+        hs.setHeartbeatRequestStatus(status);
+      }
+      if (status == HeartbeatRequest.REFUSED ||
+          status == HeartbeatRequest.FAILED) {
+        bbs.publishRemove(req);
+      }
+    }
+
+    // Get HeartbeatHealthReports
+    for (Iterator it = heartbeatHealthReports.getAddedCollection().iterator();
+         it.hasNext();) {
+      HeartbeatHealthReport hbhr = (HeartbeatHealthReport)it.next();
+      System.out.println("Got New HeartbeatHealthReport");
+      HeartbeatEntry hbe[] = hbhr.getHeartbeats();
+      for (int i = 0; i < hbe.length; i++) {
+        HealthStatus hs = getHealthStatus(hbe[i].getSource());
+        hs.setHeartbeatStatus(HealthStatus.HB_TIMEOUT);
+        hs.addHeartbeatTimeout(new Date());
+      }
+      bbs.publishRemove(hbhr);
+    }
+
+    // Get HeartbeatHealthReports
+    for (Iterator it = heartbeatHealthReports.getChangedCollection().iterator();
+         it.hasNext();) {
+      System.out.println("Got Changed HeartbeatHealthReport");
+      //bbs.publishRemove(hbhr);
+    }
 
     // Get CommunityRoster (and updates)
     for (Iterator it = communityRequests.getChangedCollection().iterator();
@@ -161,6 +289,71 @@ public class HealthMonitorPlugin extends SimplePlugin {
   }
 
   /**
+   * Periodically evaluates the HealthStatus of monitored agents.
+   */
+  private void evaluateHealthStatus() {
+    Date now = new Date();
+    for (Iterator it = membersHealthStatus.iterator(); it.hasNext();) {
+      HealthStatus hs = (HealthStatus)it.next();
+      String state = hs.getState();
+      if (state.equals(HealthStatus.INITIAL)) {
+        switch (hs.getHeartbeatRequestStatus()) {
+          case HealthStatus.UNDEFINED:
+            sendHeartbeatRequest(hs);
+            break;
+          case HeartbeatRequest.NEW:
+          case HeartbeatRequest.SENT:
+            if (elapsedTime(hs.getHeartbeatRequestTime(), new Date()) > heartbeatRequestTimeout) {
+              log.warn("HeartbeatRequest for agent '" + hs.getAgentId() + "' timed out");
+              hs.setHeartbeatRequestStatus(HeartbeatRequest.FAILED);
+            }
+            break;
+          case HeartbeatRequest.ACCEPTED:
+            hs.setState(HealthStatus.NORMAL);
+            break;
+          case HeartbeatRequest.REFUSED:
+            log.warn("HeartbeatRequest for agent '" + hs.getAgentId() + "' REFUSED");
+            doHealthCheck(hs, HealthStatus.NO_RESPONSE);
+            break;
+          case HeartbeatRequest.FAILED:
+            log.warn("HeartbeatRequest for agent '" + hs.getAgentId() + "' FAILED");
+            doHealthCheck(hs, HealthStatus.NO_RESPONSE);
+            break;
+          default:
+        }
+      } else if (state.equals(HealthStatus.NORMAL)) {
+        switch (hs.getHeartbeatStatus()) {
+          case HealthStatus.HB_TIMEOUT:
+            switch (hs.getPingStatus()) {
+              case HealthStatus.UNDEFINED:
+                log.error("Heartbeat timeout: agent=" + hs.getAgentId());
+                log.error("Performing ping: agent=" + hs.getAgentId());
+                hs.setPingTimestamp(new Date());
+                doPing(hs.getAgentId());
+                break;
+              case PingRequest.RECEIVED:
+                //System.out.println("HBFailureRate=" + hs.getFailureRate(heartbeatInterval));
+                if (!hs.hbFailureRateInSpec()) {
+                  log.error("Exceeded Heartbeat timeout threshold: agent="
+                    + hs.getAgentId());
+                  doHealthCheck(hs, HealthStatus.DEGRADED);
+                }
+                hs.setPingStatus(HealthStatus.UNDEFINED);
+                break;
+              case PingRequest.FAILED:
+                log.error("Ping failed: agent=" + hs.getAgentId());
+                hs.setPingStatus(HealthStatus.UNDEFINED);
+                doHealthCheck(hs, HealthStatus.NO_RESPONSE);
+                break;
+              default:
+            }
+          default:
+        }
+      }
+    }
+  }
+
+  /**
    * Evaluate roster for additions/deletions.  Update membersHealthStatus
    * collection to maintain consistency with roster.
    * @param roster
@@ -175,26 +368,36 @@ public class HealthMonitorPlugin extends SimplePlugin {
         CommunityMember cm = (CommunityMember)it.next();
         if (cm.isAgent()) {
           //HealthStatus hs = new HealthStatus(getAgentId());
-          HealthStatus hs = new HealthStatus(new ClusterIdentifier(cm.getName()));
+          HealthStatus hs = new HealthStatus(
+              new ClusterIdentifier(cm.getName()),
+              communityToMonitor,
+              getBindingSite().getServiceBroker(),
+              heartbeatFrequency,
+              heartbeatFailureRateWindow,
+              heartbeatFailureRateThreshold);
+          hs.setState(HealthStatus.INITIAL);
           membersHealthStatus.add(hs);
           log.warn("Adding " + cm.getName());
         }
       }
-      if (!membersHealthStatus.isEmpty()) sendHeartbeatRequest(membersHealthStatus);
     } else {
       // Look for additions
       Collection newMembers = new Vector();
       for (Iterator it = cmList.iterator(); it.hasNext();) {
         CommunityMember cm = (CommunityMember)it.next();
-        //if (cm.isAgent() && !hasHealthStatus(cm.getAgentId())) {
-        //  HealthStatus hs = new HealthStatus(cm.getAgentId());
         if (cm.isAgent() && !hasHealthStatus(new ClusterIdentifier(cm.getName()))) {
-          HealthStatus hs = new HealthStatus(new ClusterIdentifier(cm.getName()));
+          HealthStatus hs = new HealthStatus(
+            new ClusterIdentifier(cm.getName()),
+            communityToMonitor,
+            getBindingSite().getServiceBroker(),
+            heartbeatFrequency,
+            heartbeatFailureRateWindow,
+            heartbeatFailureRateThreshold);
+          hs.setState(HealthStatus.INITIAL);
           membersHealthStatus.add(hs);
           newMembers.add(hs);
           log.warn("Adding " + cm.getName());
         }
-        if (!newMembers.isEmpty()) sendHeartbeatRequest(newMembers);
       }
       // Look for deletions
       for (Iterator it = membersHealthStatus.iterator(); it.hasNext();) {
@@ -202,7 +405,6 @@ public class HealthMonitorPlugin extends SimplePlugin {
         boolean found = false;
         for (Iterator it1 = cmList.iterator(); it1.hasNext();) {
           CommunityMember cm = (CommunityMember)it1.next();
-          //if (hs.getAgentId().equals(cm.getAgentId())) {
           if (hs.getAgentId().equals(new ClusterIdentifier(cm.getName()))) {
             found = true;
             break;
@@ -216,32 +418,11 @@ public class HealthMonitorPlugin extends SimplePlugin {
     }
   }
 
-  /**
-   * Query blackboard for HealthReports.  Update corresponding HealthStatus
-   * objects.
-   */
-  private void getHealthReports() {
-    // Get new HealthReports.
-    Collection reports = bbs.query(healthReportsPredicate);
-    for (Iterator it = reports.iterator(); it.hasNext();) {
-      HealthReport hr = (HealthReport) it.next();
-      HealthStatus hs = getHealthStatus(hr.getSource());
-      if (hs != null) {
-        if (hr.getCategory() == HealthReport.HEARTBEAT) {
-          hs.heartbeatReceived(hr.getTimestamp());
-        } else {
-          hs.setStatus(hr.getStatus());
-          hs.setTimestamp(hr.getTimestamp());
-        }
-      }
-      bbs.openTransaction();
-      bbs.publishRemove(hr);
-      bbs.closeTransaction();
-    }
-  }
 
+  /**
+   * Get ping results.
+   */
   private void getPings() {
-    // Get Pings
     Collection pings = bbs.query(pingRequestPredicate);
     for (Iterator it = pings.iterator(); it.hasNext();) {
       PingRequest req = (PingRequest)it.next();
@@ -250,40 +431,14 @@ public class HealthMonitorPlugin extends SimplePlugin {
         HealthStatus hs = getHealthStatus(req.getTarget());
         hs.setPingStatus(status);
         switch (status) {
-          case PingRequest.NEW:
-            if (log.isDebugEnabled())
-              log.debug("Ping status = NEW, ignored.");
-            hs.setPingTimestamp(req.getTimeSent());
-            break;
           case PingRequest.SENT:
-            if (log.isDebugEnabled())
-              log.debug("Ping status = SENT, ignored.");
             // The following is used to simulate a Ping timeout.  This will
             // ultimately be done in MTS
             if (elapsedTime(hs.getPingTimestamp(), new Date()) > pingTimeout)
               req.setStatus(PingRequest.FAILED);
             break;
           case PingRequest.RECEIVED:
-            if (log.isDebugEnabled())
-              log.debug("Ping: agent=" + req.getTarget() +
-                      " status=RECEIVED" +
-                      " timeSent=" + req.getTimeSent() +
-                      " timeReceived=" + req.getTimeReceived() +
-                      " roundTripTime=" + req.getRoundTripTime() +
-                      " timeSent=" + req.getTimeSent());
-            hs.setPingTimestamp(req.getTimeReceived());
-            bbs.openTransaction();
-            bbs.publishRemove(req);
-            bbs.closeTransaction();
-            break;
           case PingRequest.FAILED:
-            if (log.isDebugEnabled())
-              log.debug("Ping: agent=" + req.getTarget() +
-                      " status=FAILED" +
-                      " timeSent=" + req.getTimeSent() +
-                      " timeReceived=" + req.getTimeReceived() +
-                      " roundTripTime=" + req.getRoundTripTime() +
-                      " timeSent=" + req.getTimeSent());
             bbs.openTransaction();
             bbs.publishRemove(req);
             bbs.closeTransaction();
@@ -299,72 +454,20 @@ public class HealthMonitorPlugin extends SimplePlugin {
     }
   }
 
-  private void evaluateHealthStatus() {
-    Date now = new Date();
-    for (Iterator it = membersHealthStatus.iterator(); it.hasNext();) {
-      HealthStatus hs = (HealthStatus)it.next();
-      if (hs.getStatus() == HealthReport.ALIVE ||
-          hs.getStatus() == HealthReport.UNDEFINED) {
-        if (elapsedTime(hs.getTimestamp(), now) > heartbeatTimeout) {
-          log.error("No response: agent=" + hs.getAgentId());
-          hs.setStatus(HealthReport.NO_RESPONSE);
-          hs.setPingTimestamp(new Date());
-          hs.setPingStatus(PingRequest.NEW);
-          doPing(hs.getAgentId());
-          log.error("Generating ping: agent=" + hs.getAgentId());
-        }
-      } else if (hs.getStatus() == HealthReport.NO_RESPONSE) {
-        if (hs.getPingStatus() == PingRequest.RECEIVED) {
-          hs.setStatus(HealthReport.ALIVE);
-          hs.setTimestamp(hs.getPingTimestamp());
-          hs.setPingStatus(-1);
-          log.error("Reacquired agent: agent=" + hs.getAgentId());
-        } else if (hs.getPingStatus() == PingRequest.FAILED) {
-          log.error("Ping failed: agent=" + hs.getAgentId());
-          log.error("Notifying DecisionPlugin:" +
-            " agent=" + hs.getAgentId() +
-            " status=NO_RESPONSE");
-          hs.setPingStatus(-1);
-          resendHeartbeatRequest(hs);
-        }
-      }
-      /*
-      if (elapsedTime(hs.lastHeartbeat(), now) > heartbeatTimeout) {
-        if (hs.isHeartbeatTimedout()) {
-          if (hs.isPingRequested()) {
-            if (hs.getPingStatus() == PingRequest.FAILED) {
-              log.error("Ping failed: agent=" + hs.getAgentId());
-              hs.setPingRequested(false);
-              // Requeue a Heartbeat request
-              resendHeartbeatRequest(hs);
-              log.error("Passing agent to DecisionPlugin: agent=" + hs.getAgentId());
-            } else if (hs.getPingStatus() == PingRequest.RECEIVED) {
-              hs.setHeartbeatTimedout(false);
-              hs.setPingRequested(false);
-              log.error("Ping received: agent=" + hs.getAgentId());
-              resendHeartbeatRequest(hs);
-            }
-          }
-        } else {
-          hs.setHeartbeatTimedout(true);
-          log.error("Heartbeat timeout: agent=" + hs.getAgentId());
-          //resendHeartbeatRequest(hs);
-          hs.setPingRequested(true);
-          hs.setPingRequestTime(new Date());
-          hs.setPingStatus(PingRequest.NEW);
-          doPing(hs.getAgentId());
-        }
-      } else {
-        if (hs.isHeartbeatTimedout()) {
-          hs.setHeartbeatTimedout(false);
-          hs.setPingRequested(false);
-          log.error("Reacquired agent: agent=" + hs.getAgentId());
-        }
-      }
-    */
-    }
+  /**
+   * Publishes HealthStatus object to Blackboard for receipt for further
+   * analysis and dispositioning by Decision plugin.
+   * @param hs      Agents HealthStatus object
+   * @param status  Status code
+   */
+  private void doHealthCheck(HealthStatus hs, int status) {
+    hs.setState(HealthStatus.HEALTH_CHECK);
+    hs.setStatus(status);
+    log.error("Passing agent to DecisionPlugin: agent=" + hs.getAgentId());
+    bbs.openTransaction();
+    bbs.publishChange(hs);
+    bbs.closeTransaction();
   }
-
 
   /**
    * Utility method for calculating difference between 2 time values.
@@ -388,7 +491,6 @@ public class HealthMonitorPlugin extends SimplePlugin {
       public void run() {
         while(true) {
           try { Thread.sleep(interval); } catch (Exception ex) {}
-          getHealthReports();
           getPings();
           evaluateHealthStatus();
         }
@@ -426,32 +528,24 @@ public class HealthMonitorPlugin extends SimplePlugin {
   }
 
   /**
-   * Use ABA messaging to send HeartbeatRequest objects to monitored agents.
-   * @param targets
-   */
-  private void sendHeartbeatRequest(Collection targets) {
-    if (robustnessFactory != null) {
-      HeartbeatRequest hbr =
-        robustnessFactory.newHeartbeatRequest(heartbeatInterval, myAgent);
-      for (Iterator it = targets.iterator(); it.hasNext();) {
-        HealthStatus hs = (HealthStatus)it.next();
-        hs.setTimestamp(new Date());
-        hbr.addTarget(hs.getAgentId());
-      }
-      if (hbr.getTargets().size() > 0) bbs.publishAdd(hbr);
-    }
-  }
-
-  /**
-   * Use ABA messaging to send HeartbeatRequest objects to agent identified in
-   * HealthStatus object
+   * Send HeartbeatRequest.
    * @param hs HealthStatus object containing ID of agent
    */
-  private void resendHeartbeatRequest(HealthStatus hs) {
-    if (robustnessFactory != null) {
-      HeartbeatRequest hbr =
-        robustnessFactory.newHeartbeatRequest(heartbeatInterval, myAgent);
-      hbr.addTarget(hs.getAgentId());
+  private void sendHeartbeatRequest(HealthStatus hs) {
+    if (sensorFactory != null) {
+      hs.setHeartbeatRequestTime(new Date());
+      Set targets = new HashSet();
+      targets.add(hs.getAgentId());
+      HeartbeatRequest hbr = sensorFactory.newHeartbeatRequest(
+                  myAgent,                  // Source address
+                  targets,                  // Target addresses
+                  heartbeatRequestTimeout,  // Request timeout
+                  heartbeatFrequency,       // Heartbeat frequency
+                  heartbeatTimeout,         // Heartbeat timeout
+                  true,                     // Only out of spec.
+                  heartbeatPctLateThreshold // Percent out of spec
+      );
+      hs.setHeartbeatRequestStatus(hbr.getStatus());
       bbs.openTransaction();
       bbs.publishAdd(hbr);
       bbs.closeTransaction();
@@ -459,9 +553,12 @@ public class HealthMonitorPlugin extends SimplePlugin {
   }
 
 
+  /**
+   * Sends a ping to a monitored agent.
+   * @param target  Monitored agents address
+   */
   private void doPing(MessageAddress target) {
     PingRequest req = sensorFactory.newPingRequest(myAgent, target, pingTimeout);
-    log.warn("Sending ping: " + req);
     bbs.openTransaction();
     bbs.publishAdd(req);
     bbs.closeTransaction();
@@ -469,12 +566,67 @@ public class HealthMonitorPlugin extends SimplePlugin {
 
 
   /**
-   * Predicate for HealthReports.
+   * Sets externally configurable parameters using supplied Properties object.
+   * @param props Propertie object defining paramater names and values.
    */
-  private UnaryPredicate healthReportsPredicate = new UnaryPredicate() {
+  private void updateParams(Properties props) {
+     communityToMonitor = props.getProperty("community");
+     heartbeatRequestTimeout = Long.parseLong(props.getProperty("hbReqTimeout"));
+     heartbeatFrequency = Long.parseLong(props.getProperty("hbFreq"));
+     heartbeatTimeout = Long.parseLong(props.getProperty("hbTimeout"));
+     heartbeatPctLateThreshold = Float.parseFloat(props.getProperty("hbPctLate"));
+     heartbeatFailureRateWindow = Long.parseLong(props.getProperty("hbWindow"));
+     heartbeatFailureRateThreshold = Float.parseFloat(props.getProperty("hbFailRate"));
+     pingTimeout = Long.parseLong(props.getProperty("pingTimeout"));
+     evaluationFrequency = Long.parseLong(props.getProperty("evalFreq"));
+  }
+
+  /**
+   * Utility method that creates a Properties object from a two dimension
+   * String array.
+   * @param s  Two-dimension array of parameters name/value pairs
+   * @return   Properties object with parameter name/values
+   */
+  private ManagementAgentProperties makeProps(String[][] s) {
+    ManagementAgentProperties props =
+      new ManagementAgentProperties(this.getClass().getName());
+    for (int i = 0; i < s.length; i++)
+      props.setProperty(s[i][0], s[i][1]);
+    return props;
+  }
+
+  /**
+   * Obtains plugin parameters
+   * @param obj CommunityName
+   */
+  public void setParameter(Object obj) {
+    List args = (List)obj;
+    for (Iterator it = args.iterator(); it.hasNext();) {
+      String arg = (String)it.next();
+      String name = arg.substring(0,arg.indexOf("="));
+      String value = arg.substring(arg.indexOf('=')+1);
+      healthMonitorProps.setProperty(name, value);
+    }
+  }
+
+  /**
+   * Predicate for HeartbeatRequests.
+   */
+  private IncrementalSubscription heartbeatRequests;
+  private UnaryPredicate heartbeatRequestPredicate = new UnaryPredicate() {
     public boolean execute(Object o) {
-      return (o instanceof HealthReport);
+      return (o instanceof HeartbeatRequest);
   }};
+
+  /**
+   * Predicate for Heartbeats.
+   */
+  private IncrementalSubscription heartbeatHealthReports;
+  private UnaryPredicate heartbeatPredicate = new UnaryPredicate() {
+    public boolean execute(Object o) {
+      return (o instanceof HeartbeatHealthReport);
+  }};
+
 
   private IncrementalSubscription communityRequests;
   /**
@@ -491,5 +643,22 @@ public class HealthMonitorPlugin extends SimplePlugin {
     public boolean execute(Object o) {
       return (o instanceof PingRequest);
   }};
+
+
+  /**
+   * Predicate for Management Agent properties
+   */
+  private IncrementalSubscription mgmtAgentProps;
+  private UnaryPredicate propertiesPredicate = new UnaryPredicate() {
+    public boolean execute(Object o) {
+      if (o instanceof ManagementAgentProperties) {
+        ManagementAgentProperties props = (ManagementAgentProperties)o;
+        String myName = this.getClass().getName();
+        String forName = props.getPluginName();
+        return (myName.equals(forName) || myName.endsWith(forName));
+      }
+      return false;
+  }};
+
 
 }
