@@ -276,6 +276,13 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             }
         expiredOverdueAlarms.clear();
         somethingOverdueExpired = false;
+        try {
+            blackboard.persistNow();
+        }
+        catch (org.cougaar.core.persist.PersistenceNotEnabledException e)
+        {
+            logger.error(e.toString());
+        }
         }
         
         if (managerAddress != null) {// already know the ManagerAgent, so create Diagnoes & Actions for newly announced Nodes & Agents
@@ -764,13 +771,6 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             nsr.setDiagnosis(TARDY);
             blackboard.publishChange(nodeStatus);
             if (logger.isDebugEnabled()) logger.debug(nsr.toString());
-            try {
-                blackboard.persistNow();
-            }
-            catch (org.cougaar.core.persist.PersistenceNotEnabledException e)
-            {
-                logger.error(e.toString());
-            }
         }
     }
 
