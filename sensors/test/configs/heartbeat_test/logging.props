@@ -1,5 +1,6 @@
 log4j.rootCategory=WARN,Ax
 log4j.category.org.cougaar.tools.robustness.sensors=INFO
+#log4j.category.org.cougaar.core.adaptivity.MetricsTestPlugin=INFO
 #log4j.category.org.cougaar.core.mobility=DEBUG
 log4j.appender.Ax=org.apache.log4j.ConsoleAppender
 log4j.appender.Ax.Target=System.out

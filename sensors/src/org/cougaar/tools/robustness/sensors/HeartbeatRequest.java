@@ -53,6 +53,7 @@ public class HeartbeatRequest implements UniqueObject, NotPersistable
   private Date timeSent;
   private Date timeReceived;
   private long roundTripTime; //milliseconds
+  private UID hbReqUID;
 
   /**
   * A new HeartbeatRequest that has not yet resulted in a request being
@@ -344,6 +345,18 @@ public class HeartbeatRequest implements UniqueObject, NotPersistable
   */
   public void setRoundTripTime(long roundTripTime) { 
     this.roundTripTime = roundTripTime; 
+  }
+
+  /**
+  * Get the UID of the HbReq for this HeartbeatRequest.
+  */
+  protected UID getHbReqUID() { return hbReqUID; }
+
+  /**
+  * Set the UID of the HbReq for this HeartbeatRequest.
+  */
+  protected void setHbReqUID(UID hbReqUID) { 
+    this.hbReqUID = hbReqUID; 
   }
 
   /**

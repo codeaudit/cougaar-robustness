@@ -115,10 +115,22 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     if (req.getStatus() == HeartbeatRequest.SENT) {
       bb.openTransaction();
       req.setStatus(HeartbeatRequest.FAILED);
+      reqTable.remove(req);
+      UID hbReqUID = req.getHbReqUID();
+      Iterator iter = hbReqSub.getCollection().iterator();
+      while (iter.hasNext()) {
+        HbReq hbReq = (HbReq)iter.next();
+        if (hbReq.getUID().equals(hbReqUID)) {
+          bb.publishRemove(hbReq);
+          if (log.isDebugEnabled()) {
+            log.debug("\nremoved HbReq = " + hbReq);
+          }
+        }
+      } 
       bb.publishChange(req);
       bb.closeTransaction();
       if (log.isDebugEnabled()) 
-        log.debug("\nHeartbeatRequesterPlugin.fail: published changed HeartbeatRequest = " + req);
+        log.debug("\npublished changed HeartbeatRequest = " + req);
     }
   }
     
@@ -221,13 +233,30 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
   }
 
   protected void execute() {
+   synchronized (lock) {
+    // process REMOVED HeartbeatRequests
+    Iterator iter = heartbeatRequestSub.getRemovedCollection().iterator();
+    while (iter.hasNext()) {
+      HeartbeatRequest req = (HeartbeatRequest)iter.next();
+      reqTable.remove(req);
+      UID hbReqUID = req.getHbReqUID();
+      Iterator iter2 = hbReqSub.getCollection().iterator();
+      while (iter2.hasNext()) {
+        HbReq hbReq = (HbReq)iter2.next();
+        if (hbReq.getUID().equals(hbReqUID)) {
+          bb.publishRemove(hbReq);
+          if (log.isDebugEnabled()) {
+            log.debug("\nremoved HbReq = " + hbReq);
+          }
+        }
+      } 
+    }
     // check for responses from HeartbeatServerPlugin
     // the first response will cause the status in the HeartbeatRequest to be updated
     // all responses except REFUSED are considered heartbeats and are entered in hbTable
     // Eventually, heartbeats won't show up this way, as they will be filtered in MTS,
     // and fed into the Metrics Service and we will get them there.
-   synchronized (lock) {
-    Iterator iter = hbReqSub.getChangedCollection().iterator();
+    iter = hbReqSub.getChangedCollection().iterator();
     while (iter.hasNext()) {
       HbReq hbReq = (HbReq)iter.next();
       if (log.isDebugEnabled()) 
@@ -290,7 +319,9 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
                                                 req.getReqTimeout(), 
                                                 req.getHbFrequency(), 
                                                 req.getHbTimeout());
-        HbReq hbReq = new HbReq(getUIDService().nextUID(), 
+        UID hbReqUID = getUIDService().nextUID();
+        req.setHbReqUID(hbReqUID);
+        HbReq hbReq = new HbReq(hbReqUID, 
                                 source, 
                                 targets, 
                                 content, 
@@ -298,8 +329,8 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
         bb.publishAdd(hbReq);
         bb.publishChange(req);
         if (log.isDebugEnabled()) {
-          log.debug("\nHeartbeatRequesterPlugin.execute: published new HbReq = " + hbReq);
-          log.debug("\nHeartbeatRequesterPlugin.execute: published changed HeartbeatRequest = " + req);
+          log.debug("\npublished new HbReq = " + hbReq);
+          log.debug("\npublished changed HeartbeatRequest = " + req);
         }
         // temp hack to timeout a request
         alarmService.addRealTimeAlarm(new HeartbeatRequestTimeout(req.getReqTimeout(),reqUID));
