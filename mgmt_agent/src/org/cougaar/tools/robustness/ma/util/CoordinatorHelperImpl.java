@@ -49,7 +49,6 @@ public class CoordinatorHelperImpl
     extends BlackboardClientComponent
     implements CoordinatorHelper, RestartManagerConstants {
 
-  public static final String INITIAL_DIAGNOSIS = LIVE;
   public static final String RESTART_ACTION = "Yes";
 
   // Blackboard publication modes
@@ -253,12 +252,16 @@ public class CoordinatorHelperImpl
     }
   }
 
+  public boolean hasAgent(String agentName) {
+    return agents.containsKey(agentName);
+  }
+
   /**
    * Publish Coordinators objects for  agent.
    */
-  public void addAgent(String agentName) {
+  public void addAgent(String agentName, String initialDiagnosis) {
     if (logger.isDebugEnabled()) {
-      logger.debug("addAgent: " + agentName);
+      logger.debug("addAgent: " + agentName + " initialDiagnosis=" + initialDiagnosis);
     }
     if (!agents.containsKey(agentName)) {
       AgentLivenessDiagnosis diagnosis = null;
@@ -266,7 +269,7 @@ public class CoordinatorHelperImpl
       try {
         diagnosis =
             new AgentLivenessDiagnosis(agentName,
-                                       INITIAL_DIAGNOSIS,
+                                       initialDiagnosis,
                                        getServiceBroker());
         fireLater(ADD, diagnosis);
         if (logger.isDetailEnabled()) {

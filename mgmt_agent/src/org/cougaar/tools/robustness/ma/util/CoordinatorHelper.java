@@ -25,7 +25,9 @@ public interface CoordinatorHelper {
 
   boolean isCoordinatorEnabled();
 
-  void addAgent(String agentName);
+  boolean hasAgent(String agentName);
+
+  void addAgent(String agentName, String initialDiagnosis);
 
   void removeAgent(String agentName);
 

@@ -665,13 +665,11 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * @param stateOnSuccess  New state if ping succeeds
    * @param stateOnFail     New state if ping fails
    */
-  protected void doPing(String[] agents,
+  protected void doPing(String[]  agents,
+                        long      timeout,
                         final int stateOnSuccess,
                         final int stateOnFail) {
-    long pingTimeout = getLongAttribute(agents[0],
-                                        DEFAULT_TIMEOUT_ATTRIBUTE,
-                                        DEFAULT_TIMEOUT) * 60000;
-    pingHelper.ping(agents, pingTimeout, new PingListener() {
+    pingHelper.ping(agents, timeout, new PingListener() {
       public void pingComplete(PingResult[] pr) {
         for (int i = 0; i < pr.length; i++) {
           if (pr[i].getStatus() == PingResult.FAIL) {
@@ -708,6 +706,15 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
     });
   }
 
+  protected void doPing(String[] agents,
+                        final int stateOnSuccess,
+                        final int stateOnFail) {
+    long pingTimeout = getLongAttribute(agents[0],
+                                        DEFAULT_TIMEOUT_ATTRIBUTE,
+                                        DEFAULT_TIMEOUT) * MS_PER_MIN;
+    doPing(agents, pingTimeout, stateOnSuccess, stateOnFail);
+  }
+
   /**
    * Start heartbeats on specified agent.
    * @param name Agent name
@@ -715,13 +722,13 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
   protected void startHeartbeats(String name) {
     long hbReqTimeout = getLongAttribute(name,
                                          DEFAULT_TIMEOUT_ATTRIBUTE,
-                                         DEFAULT_TIMEOUT) * 60000;
+                                         DEFAULT_TIMEOUT) * MS_PER_MIN;
     long hbFreq = getLongAttribute(name,
                                    HEARTBEAT_FREQUENCY_ATTRIBUTE,
-                                   DEFAULT_HEARTBEAT_FREQUENCY) * 60000;
+                                   DEFAULT_HEARTBEAT_FREQUENCY) * MS_PER_MIN;
     long hbTimeout = getLongAttribute(name,
                                      DEFAULT_TIMEOUT_ATTRIBUTE,
-                                     DEFAULT_TIMEOUT) * 60000;
+                                     DEFAULT_TIMEOUT) * MS_PER_MIN;
     long hbPctOutofSpec = getLongAttribute(name,
                                            HEARTBEAT_PCT_OUT_OF_SPEC_ATTRIBUTE,
                                            DEFAULT_HEARTBEAT_PCT_OUT_OF_SPEC);
@@ -852,7 +859,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * @param stateName  State name
    */
   protected void setExpiration(String name, String stateName) {
-    long expiration = DEFAULT_TIMEOUT * 60000;
+    long expiration = DEFAULT_TIMEOUT * MS_PER_MIN;
     if (model.hasAttribute(name, stateName + "_EXPIRATION")) {
       expiration = model.getLongAttribute(name, stateName + "_EXPIRATION");
     } else if (model.hasAttribute(name, stateName + "_TIMEOUT")) {

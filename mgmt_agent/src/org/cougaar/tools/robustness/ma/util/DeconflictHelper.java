@@ -232,7 +232,7 @@ public class DeconflictHelper extends BlackboardClientComponent
   /**
    * Publish Coordinators objects for  agent.
    */
-  public void addAgent(String agentName) {
+  public void addAgent(String agentName, String initialDiagnosis) {
     if (!agents.contains(agentName)) {
       fireLater(new RestartDefenseCondition(assetType, agentName, defenseName,
                                             DefenseConstants.BOOL_FALSE));
@@ -247,6 +247,10 @@ public class DeconflictHelper extends BlackboardClientComponent
    */
   public void removeAgent(String agentName) {
     // Nothing for now.
+  }
+
+  public boolean hasAgent(String agentName) {
+    return agents.contains(agentName);
   }
 
   /**

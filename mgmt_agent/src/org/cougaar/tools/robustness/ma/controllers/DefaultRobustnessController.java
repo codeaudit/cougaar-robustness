@@ -147,35 +147,42 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     public void enter(String name) {
       if (isSentinel()) {
         if (isCoordinatorEnabled()) {
-          // Cleanup previous restart
-          getCoordinatorHelper().opmodeDisabled(name);
-          // Set current diagnosis to "Live"
-          getCoordinatorHelper().setDiagnosis(name, CoordinatorHelper.LIVE);
+          CoordinatorHelper ch = getCoordinatorHelper();
+          if (!ch.hasAgent(name)) {
+            ch.addAgent(name, CoordinatorHelper.LIVE);
+          } else {
+            // Cleanup previous restart
+            ch.opmodeDisabled(name);
+            // Set current diagnosis to "Live"
+            ch.setDiagnosis(name, CoordinatorHelper.LIVE);
+          }
         }
         checkCommunityReady();
       }
       if (isLocal(name) || thisAgent.equals(name)) {
         setExpiration(name, NEVER);
       } else if (isNode(name)) {
-        setExpiration(name, (int)getNodeStatusExpiration(name));
+        setExpiration(name, (int) getNodeStatusExpiration(name));
       } else if (isAgent(name)) {
-        int nodeExpiration = (int)getNodeStatusExpiration(getLocation(name));
-        int updateInterval = (int)getLongAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE, DEFAULT_STATUS_UPDATE_INTERVAL);
+        int nodeExpiration = (int) getNodeStatusExpiration(getLocation(name));
+        int updateInterval = (int) getLongAttribute(
+            STATUS_UPDATE_INTERVAL_ATTRIBUTE, DEFAULT_STATUS_UPDATE_INTERVAL);
         // Increase timeout for agents so they don't timeout before node
-        int agentExpiration = nodeExpiration + updateInterval * 60000 * 2;
+        int agentExpiration = nodeExpiration + updateInterval * MS_PER_MIN * 2;
         setExpiration(name, agentExpiration);
       }
     }
+
     public void expired(String name) {
-      if ((isLocal(name) ||
-           isNode(name)) ||
-           isSentinel() ||
-           isLeader(name)) {
-         if (logger.isInfoEnabled()) {
-           logger.info("Expired Status:" +
-                       " agent=" + name +
-                       " state=ACTIVE");
-         }
+      if ( (isLocal(name) ||
+            isNode(name)) ||
+          isSentinel() ||
+          isLeader(name)) {
+        if (logger.isInfoEnabled()) {
+          logger.info("Expired Status:" +
+                      " agent=" + name +
+                      " state=ACTIVE");
+        }
         newState(name, DEAD);
       }
     }
@@ -195,10 +202,15 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                                   implements CoordinatorListener {
     public void enter(String name) {
       if (isCoordinatorEnabled()) {
-        if (getCoordinatorHelper().isOpEnabled(name)) {
-          newState(name, RESTART);
-        } else if (!getCoordinatorHelper().isDefenseApplicable(name)) {
-          getCoordinatorHelper().setDiagnosis(name, CoordinatorHelper.DEAD);
+        CoordinatorHelper ch = getCoordinatorHelper();
+        if (!ch.hasAgent(name)) {
+          ch.addAgent(name, CoordinatorHelper.DEAD);
+        } else {
+          if (ch.isOpEnabled(name)) {
+            newState(name, RESTART);
+          } else if (!ch.isDefenseApplicable(name)) {
+            ch.setDiagnosis(name, CoordinatorHelper.DEAD);
+          }
         }
       } else {
         newState(name, RESTART);
@@ -218,10 +230,12 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (logger.isInfoEnabled()) {
         logger.info("Coordinator Enabled");
       }
-      String allAgents[] = model.listEntries(CommunityStatusModel.AGENT);
+      String activeAgents[] =
+          model.listEntries(CommunityStatusModel.AGENT,
+                            DefaultRobustnessController.ACTIVE);
       CoordinatorHelper ch = getCoordinatorHelper();
-      for (int i = 0; i < allAgents.length; i++) {
-        ch.addAgent(allAgents[i]);
+      for (int i = 0; i < activeAgents.length; i++) {
+        ch.addAgent(activeAgents[i], CoordinatorHelper.LIVE);
       }
     }
   }
@@ -553,7 +567,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   private void updateStats(String source) {
     long updateInterval =
         getLongAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE,
-                         DEFAULT_STATUS_UPDATE_INTERVAL) * 60000;
+                         DEFAULT_STATUS_UPDATE_INTERVAL) * MS_PER_MIN;
     long now = now();
     StatsEntry se = (StatsEntry) runStats.get(source);
     if (se == null) {
@@ -810,9 +824,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (logger.isDebugEnabled()) {
         logger.debug("memberAdded: name=" + name);
       }
-      if (isCoordinatorEnabled()) {
-        getCoordinatorHelper().addAgent(name);
-      }
       if (isNode(name)) {
         if (logger.isInfoEnabled()) {
           logger.info("New node detected: node=" + name +
@@ -849,7 +860,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     if (isLeader(thisAgent) && model.getCurrentState(preferredLeader()) == DEAD) {
       long pingTimeout = getLongAttribute(preferredLeader(),
                                           DEFAULT_TIMEOUT_ATTRIBUTE,
-                                          DEFAULT_TIMEOUT) * 60000;
+                                          DEFAULT_TIMEOUT) * MS_PER_MIN;
       serviceChecker.checkServices(model.getCommunityName(),
                                    ESSENTIAL_RESTART_SERVICE_ATTRIBUTE,
                                    pingTimeout,
@@ -1001,21 +1012,38 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
   /**
    * Ping an agent and update current state based on result.
-   * @param agent           Agent to ping
+   * @param name           Agent to ping
    * @param stateOnSuccess  New state if ping succeeds
    * @param stateOnFail     New state if ping fails
    */
-  private void doPing(String agent,
+  private void doPing(String name,
                         final int stateOnSuccess,
                         final int stateOnFail) {
+    long timeout = getLongAttribute(DEFAULT_TIMEOUT_ATTRIBUTE,
+                                    DEFAULT_TIMEOUT) * MS_PER_MIN;
+    if (isNode(name)) {
+      timeout = getNodeStatusExpiration(name);
+    } else {
+      String node = model.getLocation(name);
+      if (node != null) {
+        timeout = getNodeStatusExpiration(name);
+      }
+    }
+    if (logger.isDebugEnabled()) {
+      logger.debug("doPing:" +
+                  " agent=" + name +
+                  " timeout=" + timeout +
+                  " stateOnSuccess=" + stateName(stateOnSuccess) +
+                  " stateOnFail=" + stateName(stateOnFail));
+    }
     PingHelper pinger = getPingHelper();
-    if (pinger.pingInProcess(agent)) {
+    if (pinger.pingInProcess(name)) {
       if (logger.isDetailEnabled()) {
         logger.detail(
-            "Duplicate ping requested, new ping not performed: agent=" + agent);
+            "Duplicate ping requested, new ping not performed: agent=" + name);
       }
     } else {
-      doPing(new String[]{agent}, stateOnSuccess, stateOnFail);
+      doPing(new String[]{name}, timeout, stateOnSuccess, stateOnFail);
     }
   }
 
