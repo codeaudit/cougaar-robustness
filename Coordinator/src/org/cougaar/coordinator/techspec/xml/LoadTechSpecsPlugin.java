@@ -278,7 +278,7 @@ public class LoadTechSpecsPlugin extends ServiceUserPluginBase implements NotPer
         //Now, process the tech specs in the desired order.
         processTechSpecs();
         
-        
+        cleanup();
     }
     
     //Publish the events & threats
@@ -319,6 +319,33 @@ public class LoadTechSpecsPlugin extends ServiceUserPluginBase implements NotPer
         if (threatDescriptions != null & eventDescriptions != null) { //it would be null if this isn't the MgmtAgent
             threatLoader.setEventLinks(threatDescriptions, eventDescriptions);
         }    
+    }
+    
+    /**
+     * Set all major objects to null to allow them to be garbage collected
+     */
+    private void cleanup() {
+
+        actuatorTypes = null;
+        assetStateDims = null;
+        assetSubtypes = null;
+        assetTypes = null;
+        crossDiagnoses = null;
+        threats = null;
+        sensors = null;
+        events = null;
+        utilities = null;
+
+        actuatorLoader= null;
+        assetStateDimLoader = null;
+        assetSubtypeLoader = null;
+        assetTypeLoader = null;
+        crossDiagnosisLoader = null;
+        threatLoader = null;
+        sensorLoader = null;
+        eventLoader = null;
+        utilityLoader = null;
+        
     }
     
     /** Causes the XMLLoader to load the tech specs */
