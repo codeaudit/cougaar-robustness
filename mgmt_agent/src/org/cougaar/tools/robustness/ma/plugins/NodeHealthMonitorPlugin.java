@@ -20,7 +20,11 @@ package org.cougaar.tools.robustness.ma.plugins;
 import org.cougaar.core.plugin.ComponentPlugin;
 
 import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.mts.MessageAttributes;
+import org.cougaar.core.mts.SimpleMessageAttributes;
 import org.cougaar.core.mts.SimpleMessageAddress;
+
+import org.cougaar.core.mts.Constants;
 
 import org.cougaar.core.service.AlarmService;
 import org.cougaar.core.service.BlackboardService;
@@ -64,6 +68,7 @@ import org.cougaar.tools.robustness.ma.ldm.NodeStatusRelayImpl;
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorRequest;
 import org.cougaar.tools.robustness.ma.ldm.HealthMonitorResponse;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -318,14 +323,18 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
    * specified community.
    */
   private Set findHealthMonitorPeers(Community community) {
-    Set nodes = new HashSet();
+    Set targets = new HashSet();
     Set entities = community.search("(Role=" + HEALTH_MONITOR_ROLE + ")",
                                     Community.AGENTS_ONLY);
     for (Iterator it1 = entities.iterator(); it1.hasNext(); ) {
       Entity entity = (Entity) it1.next();
-      nodes.add(SimpleMessageAddress.getSimpleMessageAddress(entity.getName()));
+      String name = entity.getName();
+      if (model.contains(name) && model.getCurrentState(name) == controller.getNormalState()) {
+        //targets.add(SimpleMessageAddress.getSimpleMessageAddress(entity.getName()));
+        targets.add(getMessageAddressWithTimeout(entity.getName(), updateInterval));
+      }
     }
-    return nodes;
+    return targets;
   }
 
   private boolean initialAttributesLogged = false;
@@ -372,8 +381,9 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
         Set targets = findHealthMonitorPeers(community);
         for(Iterator it1 = targets.iterator(); it1.hasNext(); ) {
           MessageAddress target = (MessageAddress)it1.next();
-          if(!target.equals(agentId))
+          if(!target.equals(agentId)) {
             nodeStatusRelay.addTarget(target);
+          }
         }
 
         blackboard.publishAdd(nodeStatusRelay);
@@ -412,6 +422,12 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
                   " community=" + communityName +
                   " controller=" + controller.getClass().getName());
     }
+  }
+
+  private MessageAddress getMessageAddressWithTimeout(String target, long timeout) {
+    MessageAttributes attrs = new SimpleMessageAttributes();
+    attrs.setAttribute(Constants.SEND_TIMEOUT, new Integer((int)timeout));
+    return MessageAddress.getMessageAddress(target, attrs);
   }
 
   private AgentStatus[] getLocalAgentStatus(String communityName) {
@@ -528,6 +544,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
         nsr.setAgentStatus(agentStatus);
         nsr.setLeaderVote(model.getLeaderVote(myName));
         Set targets = findHealthMonitorPeers(nsr.getCommunityName());
+        nodeStatusRelay.clearTargets();
         for (Iterator it1 = targets.iterator(); it1.hasNext(); ) {
           MessageAddress target = (MessageAddress)it1.next();
           if (!target.equals(agentId))

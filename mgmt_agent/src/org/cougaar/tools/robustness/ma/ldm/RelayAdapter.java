@@ -95,6 +95,13 @@ public class RelayAdapter implements Relay.Source {
       myTargetSet.add(target);
     }
   }
+
+ public void clearTargets() {
+    if (myTargetSet != null) {
+      myTargetSet.clear();
+    }
+  }
+
  public UID getUID() {
     return myUID;
   }
