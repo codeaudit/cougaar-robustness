@@ -854,8 +854,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   public void memberAdded(String name) {
     //robustness manager should publish deconfliction objects for every agent member.
     if (isSentinel()) {
-      if (logger.isInfoEnabled()) {
-        logger.info("memberAdded: name=" + name);
+      if (logger.isDebugEnabled()) {
+        logger.debug("memberAdded: name=" + name);
       }
       if (isCoordinatorEnabled()) {
         coordinatorHelper.addAgent(name);
@@ -876,8 +876,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
   public void memberRemoved(String name) {
     if (isSentinel()) {
-      if (logger.isInfoEnabled()) {
-        logger.info("memberRemoved: name=" + name);
+      if (logger.isDebugEnabled()) {
+        logger.debug("memberRemoved: name=" + name);
       }
       if (isCoordinatorEnabled()) {
         coordinatorHelper.removeAgent(name);
