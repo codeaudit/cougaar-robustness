@@ -30,6 +30,13 @@ import java.util.Date;
 public class HostLossThreatAlert extends DefaultThreatAlert {
 
   /**
+   * Default constructor.
+   */
+  public HostLossThreatAlert() {
+    super();
+  }
+
+  /**
    * Create a new HostLossThreatAlert.
    * @param source         ThreatAlert source
    * @param severityLevel  Severity level of alert

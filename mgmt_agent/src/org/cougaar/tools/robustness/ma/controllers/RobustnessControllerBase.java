@@ -122,7 +122,7 @@ public abstract class RobustnessControllerBase
     moveHelper = new MoveHelper(bs);
     pingHelper = new PingHelper(bs);
     restartHelper = new RestartHelper(bs);
-    loadBalancer = new LoadBalancer(bs, this);
+    loadBalancer = new LoadBalancer(bs, this, model);
   }
 
   /**
