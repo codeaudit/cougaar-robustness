@@ -129,4 +129,9 @@ public class TestDiagnosisTechSpec implements DiagnosisTechSpecInterface  {
         return null;
     }
     
+    /** @return the reportingPolicy 
+     */
+    public int getReportingPolicy() {
+        return DiagnosisTechSpecInterface.SNAPSHOT;
+    }
 }
