@@ -30,6 +30,8 @@ import org.cougaar.tools.robustness.ma.util.RestartListener;
 import org.cougaar.tools.robustness.ma.util.MoveHelper;
 import org.cougaar.tools.robustness.ma.util.MoveListener;
 import org.cougaar.tools.robustness.ma.util.LoadBalancer;
+import org.cougaar.tools.robustness.ma.util.DeconflictHelper;
+import org.cougaar.tools.robustness.ma.util.DeconflictListener;
 
 import org.cougaar.core.blackboard.BlackboardClientComponent;
 import org.cougaar.core.component.BindingSite;
@@ -85,6 +87,8 @@ public abstract class RobustnessControllerBase
   private PingHelper pingHelper;
   private RestartHelper restartHelper;
   private LoadBalancer loadBalancer;
+  private DeconflictHelper deconflictHelper = null;
+  private DeconflictListener dl = null;
 
   protected String thisAgent;
   protected LoggingService logger;
@@ -172,6 +176,13 @@ public abstract class RobustnessControllerBase
   }
 
   /**
+   * Get reference to controllers deconflict helper.
+   */
+  public DeconflictHelper getDeconflictHelper() {
+    return deconflictHelper;
+  }
+
+  /**
    * Get reference to controllers load balancer interface.
    */
   public LoadBalancer getLoadBalancer() {
@@ -222,6 +233,10 @@ public abstract class RobustnessControllerBase
    */
   protected void processMembershipChanges(CommunityStatusChangeEvent csce,
                                           CommunityStatusModel csm) {
+    //robustness manager should publish deconfliction objects for every agent member.
+    if(deconflictHelper != null) {
+      deconflictHelper.initObjs();
+    }
   }
 
   /**
@@ -231,6 +246,20 @@ public abstract class RobustnessControllerBase
    */
   protected void processLeaderChanges(CommunityStatusChangeEvent csce,
                                       CommunityStatusModel csm) {
+    String manager = null; //the robustness manager
+    try{
+      manager = (String) (csm.getCommunityAttributes().get("RobustnessManager").
+                      get());
+    }catch(NamingException e){manager = null;}
+    //the robustness manager invokes DeconflictHelper object and add necessary deconflict
+    //listener.
+    if(manager.equals(thisAgent) && deconflictHelper == null) {
+      deconflictHelper = new DeconflictHelper(bindingSite, model);
+      if(dl != null)
+        deconflictHelper.addListener(dl);
+      logger.info("==========deconflictHelper applies to " + thisAgent);
+    }
+
     leaderChange(csce.getPriorLeader(), csce.getCurrentLeader());
   }
 
@@ -520,6 +549,18 @@ public abstract class RobustnessControllerBase
    */
   protected void addMoveListener(MoveListener ml) {
     getMoveHelper().addListener(ml);
+  }
+
+  /**
+   * Add deconflict listener to receive deconflict events.
+   * @param dl Listener
+   */
+  protected void addDeconflictListener(DeconflictListener dl) {
+    if(getDeconflictHelper() == null) {
+      this.dl = dl;
+    }
+    else
+      getDeconflictHelper().addListener(dl);
   }
 
  /**

@@ -27,6 +27,8 @@ import org.cougaar.tools.robustness.ma.util.PingListener;
 import org.cougaar.tools.robustness.ma.util.RestartHelper;
 import org.cougaar.tools.robustness.ma.util.RestartListener;
 import org.cougaar.tools.robustness.ma.util.RestartDestinationLocator;
+import org.cougaar.tools.robustness.ma.util.DeconflictHelper;
+import org.cougaar.tools.robustness.ma.util.DeconflictListener;
 
 import org.cougaar.core.component.BindingSite;
 
@@ -42,6 +44,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   public static final int RESTART        = 5;
   public static final int FAILED_RESTART = 6;
   public static final int MOVE           = 7;
+  public static final int DECONFLICT     = 8;
 
   /**
    * State Controller: INITIAL
@@ -115,6 +118,12 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   class ActiveStateController extends StateControllerBase {
     public void enter(String name) {
       if (isLeader(thisAgent)) {
+        //for deconflict: the applicability condition of one active agent should
+        //be true and the defense op mode should be disabled.
+        if(getDeconflictHelper() != null) {
+          getDeconflictHelper().changeApplicabilityCondition(name, false);
+          getDeconflictHelper().opmodeDisabled(name);
+        }
         checkCommunityReady();
       }
       if (isLocal(name)) {
@@ -162,7 +171,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    * <pre>
    *   Entry:             Failed ping
    *   Actions performed: Notify deconflictor
-   *   Next state:        RESTART when OK'd by deconflictor
+   *   Next state:        DECONFLICT
    * </pre>
    */
   class DeadStateController extends StateControllerBase {
@@ -175,7 +184,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (thisAgent.equals(preferredLeader()) && isAgent(name)) {
         // Interface point for Deconfliction
         // If Ok'd by Deconflictor set state to RESTART
-        newState(name, RESTART);
+        newState(name, DECONFLICT);
         setLocation(name, null);
       } else if (isNode(name)) {
         setExpiration(name, NEVER);
@@ -186,7 +195,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
     public void expired(String name) {
       if (isLeader(thisAgent) && isAgent(name)) {
-        newState(name, RESTART);
+        newState(name, DECONFLICT);
       }
     }
   }
@@ -318,6 +327,41 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
 
   /**
+   * State Controller: DECONFLICT
+   * <pre>
+   *   Entry:             Agent determined to be DEAD or the defense op mode
+   *                      is enabled.
+   *   Actions performed: restart a dead agent or health check the agent
+   *   Next state:        RESTART on dead agent
+   *                      HEALTH_CHECK on undefined agent
+   * </pre>
+   */
+  class DeconflictStateController extends    StateControllerBase
+                               implements DeconflictListener {
+    { addDeconflictListener(this); }
+    public void enter(String name) {
+      if(getDeconflictHelper().isOpEnabaled(name))
+        newState(name, RESTART);
+    }
+    public void expired(String name) {
+      if(getState(name) == DEAD)
+        newState(name, RESTART);
+      else
+        newState(name, HEALTH_CHECK);
+    }
+    public void defenseOpModeEnabled(String name){
+      if(getState(name) == DEAD) {
+        getDeconflictHelper().changeApplicabilityCondition(name, true);
+        newState(name, RESTART);
+      }
+      else {
+        newState(name, HEALTH_CHECK);
+      }
+    }
+  }
+
+
+  /**
    * Initializes services and loads state controller classes.
    */
   public void initialize(final String thisAgent,
@@ -332,6 +376,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     addController(RESTART,        "RESTART", new RestartStateController());
     addController(FAILED_RESTART, "FAILED_RESTART", new FailedRestartStateController());
     addController(MOVE,           "MOVE", new MoveStateController());
+    addController(DECONFLICT,     "DECONFLICT", new DeconflictStateController());
     RestartDestinationLocator.setCommunityStatusModel(csm);
     RestartDestinationLocator.setLoggingService(logger);
   }
