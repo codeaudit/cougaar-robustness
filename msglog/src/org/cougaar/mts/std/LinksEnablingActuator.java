@@ -72,6 +72,7 @@ public class LinksEnablingActuator extends ComponentPlugin
 
     private static final LinkedHashSet myValuesOffered = new LinkedHashSet(3);
     static {
+	myValuesOffered.add(NONE);
 	myValuesOffered.add(RMI);
 	myValuesOffered.add(ALT);
 	myValuesOffered.add(SF);
@@ -204,7 +205,6 @@ public class LinksEnablingActuator extends ComponentPlugin
 				      +"action="+action+" was not started.");
 		    }
 		    if (startOK) {
-//			Action.CompletionCode cc = pv.equals(NONE) ? Action.COMPLETED : Action.ACTIVE;
 			Action.CompletionCode cc = Action.ACTIVE;
 			try {
 			    action.stop(cc);
