@@ -75,7 +75,7 @@ public class ActionIndex implements NotPersistable {
 	while (iter.hasNext()) {
             ActionsWrapper aw = (ActionsWrapper) iter.next();
             Action a = aw.getAction();
-            if (aw.getAssetID().equals(assetID)) return aw;
+            if (a.getAssetID().equals(assetID)) return aw;
         }
         return null;
     }
