@@ -11,10 +11,11 @@
 #          16-30 to socB, and 31-45 to socC.  If more nodes are added, more users will
 #          have to be defined, and these ranges will have to change.
 #
-#          This is set up for use on socC. Change range for other societies.
+#          This is set up for use on socVA, assuming a maximum of 25 nodes per enclave. 
+#          Change range for other societies.
 #
 
-mailusers = (31..45).to_a
+mailusers = (1..25).to_a
 
 mailhosts = []
 society.each_host do |host|
