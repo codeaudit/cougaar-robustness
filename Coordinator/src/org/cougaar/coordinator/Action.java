@@ -67,6 +67,9 @@ public abstract class Action
     /** CompletionCode to indicate that an action has failed */
     static public final CompletionCode FAILED = new CompletionCode(3);
     
+    /** CompletionCode to indicate that an action has finished its setup stage and is actively working */
+    static public final CompletionCode ACTIVE = new CompletionCode(5);
+
     /** TRUE if the class attributes have been initialized */
     private boolean inited = false;
     
@@ -802,6 +805,7 @@ public abstract class Action
                     case 2: return "Aborted";
                     case 3: return "Failed";
                     case 4: return "Ended_Unknown";
+                    case 5: return "Active";
                 }
                 return null;
         }

@@ -155,8 +155,7 @@ public class ActionEnablingPlugin extends DeconflictionPluginBase implements Not
         while (iter.hasNext()) {
             VariantEvaluation ve = (VariantEvaluation)iter.next();
             permittedVariants.add(ve.getVariantName());
-            maxPredictedTime = Math.max(ve.getExpectedTransitionTime(), maxPredictedTime);
-        }
+        } 
         action.setPermittedValues(permittedVariants);
         }
       catch (IllegalValueException e) {

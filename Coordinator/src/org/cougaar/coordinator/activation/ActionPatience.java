@@ -43,6 +43,13 @@ public class ActionPatience implements NotPersistable {
     public void setResult(Action.CompletionCode result) { this.result = result; }
 
     public Action.CompletionCode getResult() { return result; }
+
+    public String toString() {
+        String buff = "<ActionPatience: \n";
+        buff = buff + action.toString() + "\n";
+        buff = buff + "startTime=" + getStartTime() + ", duration=" + getDuration() + "\n";
+        return buff;
+    }
     
     public static final UnaryPredicate pred = new UnaryPredicate() {
             public boolean execute(Object o) {  

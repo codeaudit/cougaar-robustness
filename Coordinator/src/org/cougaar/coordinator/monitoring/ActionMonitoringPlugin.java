@@ -95,26 +95,28 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
             ActionsWrapper aw = (ActionsWrapper)iter.next();
             Action action = aw.getAction();
             ActionRecord latestResult = action.getValue();
+            ActionTimeoutAlarm alarm = (ActionTimeoutAlarm)monitoredActions.get(action);
             ActionPatience ap = findActionPatience(action);
-            if (logger.isDebugEnabled()) logger.debug(action.toString());
-            if (logger.isDebugEnabled()) if (ap != null) logger.debug(ap.toString()); else logger.debug("No ActionPatience Found");
-            if (latestResult != null &&                      // null when action is not started
-		latestResult.getCompletionCode() != null) {  // null when action is not stopped
-                if ((latestResult.getCompletionCode().equals(Action.COMPLETED)) // make sure it completed correctly
-                 && (latestResult.getStartTime() >= ap.getStartTime()))        // make sure it's a current action
-                    {
-                        ActionTimeoutAlarm alarm = (ActionTimeoutAlarm)monitoredActions.get(action);
-                        if (logger.isDebugEnabled()) logger.debug(monitoredActions.toString());
-                        monitoredActions.remove(action);
-                        ap.setResult(Action.COMPLETED);
-                        SuccessfulAction sa = new SuccessfulAction(action);
-                        publishChange(sa);
-                        if (logger.isDebugEnabled()) logger.debug("Published a SuccessfulAction object: " + sa.toString());
-                        publishChange(ap);
-                        alarm.cancel();
+            if (alarm != null) { // This is an Action change that we are monitoring (it could be an Action change we are not monitoring)
+                if (logger.isDebugEnabled()) logger.debug(action.toString());
+                if (logger.isDebugEnabled()) if (ap != null) logger.debug(ap.toString()); else logger.debug("No ActionPatience Found");
+                if (latestResult != null &&                      // null when action is not started
+                    latestResult.getCompletionCode() != null) {  // null when action is not stopped
+                    if ((latestResult.getCompletionCode().equals(Action.COMPLETED)) // make sure it completed correctly
+                     && (latestResult.getStartTime() >= ap.getStartTime()))        // make sure it's a current action
+                        {
+                            if (logger.isDebugEnabled()) logger.debug(monitoredActions.toString());
+                            monitoredActions.remove(action);
+                            ap.setResult(Action.COMPLETED);
+                            SuccessfulAction sa = new SuccessfulAction(action);
+                            publishChange(sa);
+                            if (logger.isDebugEnabled()) logger.debug("Published a SuccessfulAction object: " + sa.toString());
+                            publishChange(ap);
+                            alarm.cancel();
+                        }
                     }
-                }
             }
+        }
 
     }
 
@@ -169,7 +171,7 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
        // private UID uid;
         
         public ActionTimeoutAlarm (ActionPatience ap) {
-            detonate = ap.getDuration() + System.currentTimeMillis();
+            detonate = ap.getDuration() + ap.getStartTime();
             this.action = ap.getAction();
             this.ap = ap;
             if (logger.isDebugEnabled()) logger.debug("ActionTimeoutAlarm created : " + detonate + " " + action);

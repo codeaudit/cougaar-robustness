@@ -180,13 +180,32 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
           CostBenefitEvaluation cbe = findCostBenefitEvaluation(action.getAssetID());
           if (logger.isDebugEnabled()) logger.debug(action + " has " + ap.getResult());
           if (ap.getResult().equals(Action.COMPLETED)) {
-              if (logger.isDebugEnabled()) logger.debug("Action succeeded - Nothing more to do");
+              if (logger.isDebugEnabled()) logger.debug("Action succeeded - Nothing more to do.  Completed action no longer permitted w/o re-authorization.");
+              Object variantAttempted = action.getValue().getAction();
+              Set newPermittedValues = action.getPermittedValues();
+              boolean removalP = newPermittedValues.remove(variantAttempted);
+              if (logger.isDebugEnabled()) logger.debug("Removed: " + variantAttempted.toString() + " successfully: " + removalP);
+              try {
+                    action.setPermittedValues(newPermittedValues);
+                    publishChange(action.getWrapper());
+              } catch (IllegalValueException e) { 
+                    // can't happen but must be caught
+              }
           }
           else {
-              if (action.getValue() != null) { // some action was tried & it did not help - mark it as "tried"
+              if (action.getValue() != null) { // some action was tried & it did not help - mark it as "tried" & remove it from the permittedValues
                   Object variantAttempted = action.getValue().getAction();
                   VariantEvaluation variantAttemptedEvaluation = cbe.getActionEvaluation(action).getVariantEvaluation(variantAttempted);
                   variantAttemptedEvaluation.setTried();
+                  Set newPermittedValues = action.getPermittedValues();
+                  boolean removalP = newPermittedValues.remove(variantAttempted);
+                  if (logger.isDebugEnabled()) logger.debug("Removed: " + variantAttempted.toString() + " successfully: " + removalP);
+                  try {
+                        action.setPermittedValues(newPermittedValues);
+                        publishChange(action.getWrapper());
+                  } catch (IllegalValueException e) { 
+                        // can't happen but must be caught
+                  }
               }      
               else { // the actuator took no action - what should we do here? 
               }
