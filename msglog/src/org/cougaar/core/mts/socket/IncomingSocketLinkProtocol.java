@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD
+ * 12 Feb 2003: Style police (OBJS)
  * 12 Feb 2003: Port to 10.0 (OBJS)
  * 02 Oct 2002: Add a receiver queue to manage incoming message threads. (OBJS)
  * 27 Sep 2002: Add inband acking. (OBJS)
@@ -126,9 +127,9 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
   private SocketSpec socketSpecs[];
   private SocketSpec mySocketSpec;
   private Vector serverSocketListeners;
-  private EventWindow serverSocketMoveTrigger;
+  //102B private EventWindow serverSocketMoveTrigger;
   private WorkQueue receiverQueue;
-  private ThreadService threadService;
+  //102B private ThreadService threadService;
   private MessageAddress myAddress;
 
   static
@@ -398,8 +399,8 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
       listener = new ServerSocketListener (port);
       port = listener.getPort();  // port possibly updated
 
-      // Schedulable thread = threadService().getThread (this, listener, "ServerSock_"+port);
-      Thread thread = new Thread (listener, "ServerSock_"+port);
+      Schedulable thread = threadService.getThread (this, listener, "ServerSock_"+port);
+      //102B Thread thread = new Thread (listener, "ServerSock_"+port);
       thread.start();
 
       registerSocketSpec (new SocketSpec (localhost, port));
@@ -464,6 +465,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
         catch (SocketException e)
         {
           // port most likely in use
+          if (log.isDebugEnabled()) log.debug(null,e);
         }
       }
 
@@ -486,7 +488,8 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
       if (serverSock != null)
       {
-        try { serverSock.close(); } catch (Exception e) {}
+        try { serverSock.close(); } catch (Exception e) {
+          if (log.isDebugEnabled()) log.debug(null,e);}
         serverSock = null;
       }
     }
@@ -514,7 +517,8 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
         }
         catch (Exception e)
         {
-          try { e.printStackTrace(); } catch (Exception ex) { /* !! */ }
+          try { e.printStackTrace(); } catch (Exception ex) { 
+            if (log.isDebugEnabled()) log.debug(null,e);}
         }
       }
     }
@@ -558,7 +562,8 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
       if (serverSock != null)
       {
-        try { serverSock.close(); } catch (Exception e) {}
+        try { serverSock.close(); } catch (Exception e) {
+          if (log.isDebugEnabled()) log.debug(null,e);}
         serverSock = null;
       }
 
@@ -641,7 +646,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
           receiveTime = now();
           if (doDebug()) log.debug (rid+ "Waiting for msg done " +sockString);
           unscheduleSocketClose (socket);
-          if (showTraffic) System.err.print ("<S");
+          if (showTraffic) System.out.print("<S");
         }
         catch (InterruptedIOException e)
         {
@@ -889,7 +894,8 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     {
       if (socket != null)
       {
-        try { socket.close(); } catch (Exception e) {}
+        try { socket.close(); } catch (Exception e) {
+          if (log.isDebugEnabled()) log.debug(null,e);}
 
         socket = null;
         socketOut = null;

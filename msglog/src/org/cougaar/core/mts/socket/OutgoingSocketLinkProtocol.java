@@ -559,7 +559,8 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
     {
       if (socket != null)
       {
-        try { socket.close(); } catch (Exception e) {}
+        try { socket.close(); } catch (Exception e) {
+          if (log.isDebugEnabled()) log.debug(null,e);}
 
         socket = null;
         socketOut = null;
