@@ -19,8 +19,9 @@ import org.cougaar.util.UnaryPredicate;
 import org.cougaar.coordinator.costBenefit.CostBenefitEvaluation;
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.housekeeping.IndexKey;
+import org.cougaar.core.persist.NotPersistable;
 
-public class CostBenefitEvaluationIndex {
+public class CostBenefitEvaluationIndex implements NotPersistable {
 
     private Hashtable entries = new Hashtable();
 

@@ -70,6 +70,6 @@ public interface ActionTechSpecInterface extends TechSpecRootInterface {
     /**
      * @return the assetID
      */
-    public AssetID getAssetID();    
+    //    public AssetID getAssetID();    
     
 }

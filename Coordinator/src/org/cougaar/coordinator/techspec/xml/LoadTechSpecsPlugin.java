@@ -99,7 +99,7 @@ public class LoadTechSpecsPlugin extends ServiceUserPluginBase implements NotPer
     ActionTechSpecServiceProvider atssp;
     DiagnosisTechSpecServiceProvider dtssp;
 
-    ServiceBroker rootsb; //root service broker -- used to add services to the society
+    ServiceBroker rootsb; //root service broker -- used to make services available to all agents on a node.
     
     public LoadTechSpecsPlugin() {
         super(requiredServices);   
@@ -154,6 +154,14 @@ public class LoadTechSpecsPlugin extends ServiceUserPluginBase implements NotPer
                 logger.error("Unable to obtain NodeControlService");
             }
 
+            // create and advertise our service node-wide
+            this.dtssp = new DiagnosisTechSpecServiceProvider();
+            rootsb.addService(DiagnosisTechSpecService.class, dtssp);
+
+            // create and advertise our service node-wide
+            this.atssp = new ActionTechSpecServiceProvider();
+            rootsb.addService(ActionTechSpecService.class, atssp);
+
             diagnosisTechSpecService =
             (DiagnosisTechSpecService) getServiceBroker().getService(this, DiagnosisTechSpecService.class, null);
             if (diagnosisTechSpecService == null) {
@@ -168,16 +176,6 @@ public class LoadTechSpecsPlugin extends ServiceUserPluginBase implements NotPer
                 "Unable to obtain ActionTechSpecService");
             } 
 
-
-            // create and advertise our service
-             this.dtssp = new DiagnosisTechSpecServiceProvider();
-             rootsb.addService(DiagnosisTechSpecService.class, dtssp);
-
-             // create and advertise our service
-             this.atssp = new ActionTechSpecServiceProvider();
-             rootsb.addService(ActionTechSpecService.class, atssp);
-
-             
             return true;
 //        }
 //        else if (logger.isDebugEnabled()) logger.error(".haveServices - at least one service not available!");
