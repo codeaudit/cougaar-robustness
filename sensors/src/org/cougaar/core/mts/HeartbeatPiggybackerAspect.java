@@ -59,9 +59,6 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
     private static HeartbeatPiggybacking_Send_Delegate send_Delegate = null;
     private static boolean piggybackingIsOn;
 
-    public  static final String MSG_TYPE_HEARTBEAT = "MessageTypeHeartbeat";
-    public  static final String MSG_TYPE =           "MessageType";
-    public  static final String SEND_TIMEOUT =       "MessageSendTimeout";    
     private static final String AGENT = "Agent" + Constants.KEY_SEPR;
     private static final String HEARDTIME = Constants.KEY_SEPR + "HeardTime";
     private static final double SEND_CREDIBILITY = Constants.SECOND_MEAS_CREDIBILITY;
@@ -122,8 +119,8 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
 
     public static boolean isHeartbeatMessage (AttributedMessage msg)
     {
-        String type = (String) msg.getAttribute (MSG_TYPE);
-        return (type != null && type.equals (MSG_TYPE_HEARTBEAT));
+        String type = (String) msg.getAttribute (org.cougaar.core.mts.Constants.MSG_TYPE);
+        return (type != null && type.equals (org.cougaar.core.mts.Constants.MSG_TYPE_HEARTBEAT));
     }
   
     public String getNode(String agentName) {
@@ -481,7 +478,7 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
         /* Returns the time (system time) by which this heartbeat should be sent */
         long getDeliverBy(AttributedMessage message) {
             long db;
-            Integer i = (Integer)message.getAttribute(SEND_TIMEOUT);
+            Integer i = (Integer)message.getAttribute(org.cougaar.core.mts.Constants.SEND_TIMEOUT);
             //set deliverby to 60 secs if null, or to now+timeout-(10 seconds)
             db = (i == null) ? 60000 : (i.longValue()+now())-10000;
             if (log.isDebugEnabled()) 
