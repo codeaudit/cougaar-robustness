@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManager.java,v $
- * $Revision: 1.14 $
- * $Date: 2004-07-15 15:06:00 $
+ * $Revision: 1.15 $
+ * $Date: 2004-07-15 15:07:19 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -47,7 +47,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * and provides information via the ModelManagerInterface. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.14 $Date: 2004-07-15 15:06:00 $
+ * @version $Revision: 1.15 $Date: 2004-07-15 15:07:19 $
  *
  */
 public class ModelManager extends Loggable
@@ -63,13 +63,13 @@ public class ModelManager extends Loggable
     // These constants for testing purposes only.  Make sure the
     // bolean are set to false for a running system.
     //
-    public static final boolean USE_FAKE_SENSOR_LATENCY = true;
+    public static final boolean USE_FAKE_SENSOR_LATENCY = false;
     public static final long FAKE_SENSOR_LATENCY_MS = 15000;
 
-    public static final boolean USE_FAKE_PUBLISH_INTERVAL = true;
+    public static final boolean USE_FAKE_PUBLISH_INTERVAL = false;
     public static final long FAKE_PUBLISH_INTERVAL_MS = 120000;
 
-    public static final boolean USE_FAKE_IMPLICT_INTERVAL = true;
+    public static final boolean USE_FAKE_IMPLICT_INTERVAL = false;
     public static final long FAKE_IMPLICIT_INTERVAL_MS = 30000;
 
     /**
