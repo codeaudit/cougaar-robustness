@@ -275,7 +275,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
        if (diag.getValue().equals("None")) return 65.0;
        if (diag.getValue().equals("Moderate")) return 55.0;
        if (diag.getValue().equals("High")) return 45.0;
-       if (logger.isErrorEnabled()) logger.error("Bad value: " + diagn.getValue().toString() + " for OutsideLoadDiagnosis");
+       if (logger.isErrorEnabled()) logger.error("Bad value: " + diag.getValue().toString() + " for OutsideLoadDiagnosis");
        return 100.0;
     }
     else return 100.0;  
@@ -320,13 +320,13 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
             if (logger.isDebugEnabled()) logger.debug("Considering conflict for Action: " +thisActionEvaluation.getAction().getClass().getName() + "Variant: " + proposedVariant.toString());
             if (logger.isDebugEnabled()) logger.debug(proposedVariant + " doesNotConflict: " + thisActionEvaluation.doesNotConflict(proposedVariant, alreadyActiveActions, alreadySelectedVariants));
             if (thisActionEvaluation.doesNotConflict(proposedVariant, alreadyActiveActions, alreadySelectedVariants)) {
-                if ((proposeVariant.getPredictedCostPerTimeUnit() <= resourcePercentageRemaining) &&
+                if ((proposedVariant.getPredictedCostPerTimeUnit() <= resourcePercentageRemaining) &&
                         (proposedVariant.getPredictedBenefit() > 0.0) || (thisActionEvaluation.mustSelectOne())) {
                     pickedSomeVariant = true;
                     alreadySelectedVariants.add(proposedVariant);
                     proposedVariant.setChosen();
                     resourcePercentageRemaining = resourcePercentageRemaining - proposedVariant.getPredictedCostPerTimeUnit();
-                    if (logger.isInfoEnabled()) logger.info("Selected: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString() + ", % resources left " + resourcePercentageRemainaining);
+                    if (logger.isInfoEnabled()) logger.info("Selected: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString() + ", % resources left " + resourcePercentageRemainining);
                     if (eventService.isEventEnabled()) eventService.event(agentId + " selected " + thisAction.getClass().getName() + ":" + proposedVariant + " for " + thisAction.getAssetID().toString());
                     if ((!thisAction.getPermittedValues().contains(proposedVariant.getVariantName()))
                             && (thisAction.getValue() == null  
@@ -399,7 +399,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 	    Action thisAction = thisWrapper.getAction();
 	    if ((thisAction.getValue() != null && thisAction.getValue().isActive()) 
                     && (thisAction.getValuesOffered()==null 
-                              || (thisAction.getValuesOffered().size==1 && thisAction.getValuesOffered().contains(thisAction.getValue().getAction())))) {
+                              || (thisAction.getValuesOffered().size()==1 && thisAction.getValuesOffered().contains(thisAction.getValue().getAction())))) {
 		activeActions.add(thisAction);
 	    }
 	}

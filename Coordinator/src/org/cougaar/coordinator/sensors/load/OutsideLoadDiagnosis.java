@@ -47,7 +47,7 @@ public class OutsideLoadDiagnosis extends Diagnosis {
 	super.setValue(value);
     }
 
-    protected final static UnaryPredicate pred = new UnaryPredicate() {
+    public final static UnaryPredicate pred = new UnaryPredicate() {
             public boolean execute(Object o) {  
                 return 
                     (o instanceof OutsideLoadDiagnosis);
