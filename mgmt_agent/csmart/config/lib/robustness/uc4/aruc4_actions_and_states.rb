@@ -46,7 +46,7 @@ module Cougaar
           temp = str.chop
 	end
         @run.society.each_node do |node|
-            result, uri = Cougaar::Communications::HTTP.get(node.uri+"/$"+node.name+"/alert?community=#{@community}&role=#{@role}&level=#{@alertLevel}&startFromAction=#{start}&expireFromAction=#{expire}&submit=submit&#{temp}")
+            result, uri = Cougaar::Communications::HTTP.get(node.uri+"/$"+node.name+"/alert?inputcommunity=#{@community}&inputrole=#{@role}&level=#{@alertLevel}&startFromAction=#{start}&expireFromAction=#{expire}&submit=submit&#{temp}")
             #puts "#{node.uri}/$#{node.name}/alert?community=#{@community}&role=#{@role}&level=#{@alertLevel}&startFromAction=#{start}&expireFromAction=#{expire}&#{temp}"
             return
         end
