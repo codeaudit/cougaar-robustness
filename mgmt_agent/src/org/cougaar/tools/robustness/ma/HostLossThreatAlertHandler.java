@@ -1,8 +1,10 @@
-package org.cougaar.tools.robustness.ma.util;
+package org.cougaar.tools.robustness.ma;
 
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
 import org.cougaar.tools.robustness.ma.StatusChangeListener;
 import org.cougaar.tools.robustness.ma.CommunityStatusChangeEvent;
+import org.cougaar.tools.robustness.ma.util.MoveHelper;
+import org.cougaar.tools.robustness.ma.util.RestartDestinationLocator;
 
 import org.cougaar.tools.robustness.ma.controllers.RobustnessController;
 import org.cougaar.tools.robustness.threatalert.*;
@@ -12,18 +14,19 @@ import org.cougaar.core.mts.MessageAddress;
 import java.util.*;
 
 /**
+ * ThreatAlert handler to respond to threats of imminent loss of a host
+ * computer.
  */
-
-public class ThreatAlertHandler extends ThreatAlertHandlerBase {
+public class HostLossThreatAlertHandler extends ThreatAlertHandlerBase {
 
   private CommunityStatusModel model;
   private RobustnessController controller;
   private MoveHelper moveHelper;
 
-  public ThreatAlertHandler(BindingSite          bs,
-                            MessageAddress       agentId,
-                            RobustnessController controller,
-                            CommunityStatusModel model) {
+  public HostLossThreatAlertHandler(BindingSite          bs,
+                                    MessageAddress       agentId,
+                                    RobustnessController controller,
+                                    CommunityStatusModel model) {
     super(bs, agentId);
     this.model = model;
     this.controller = controller;
@@ -34,21 +37,25 @@ public class ThreatAlertHandler extends ThreatAlertHandlerBase {
   }
 
   public void newAlert(ThreatAlert ta) {
-    logger.info("Received ThreatAlert: " + ta);
-    if (agentId.toString().equals(preferredLeader())) {
-      Set nodes = new HashSet();
-      if (ta.getSeverityLevel() >= ThreatAlert.MEDIUM_SEVERITY) {
-        Asset affectedAssets[] = ta.getAffectedAssets();
-        for (int i = 0; i < affectedAssets.length; i++) {
-          String type = affectedAssets[i].getAssetType();
-          String id = affectedAssets[i].getAssetIdentifier();
-          if (type != null && type.equalsIgnoreCase("Node") &&
-              model.contains(id)) {
-            nodes.add(id);
+    if (ta instanceof HostLossThreatAlert) {
+      logger.info("Received HostLossThreatAlert: " + ta);
+      if (agentId.toString().equals(preferredLeader())) {
+        Set nodes = new HashSet();
+        if (ta.getSeverityLevel() >= ThreatAlert.MEDIUM_SEVERITY) {
+          Asset affectedAssets[] = ta.getAffectedAssets();
+          for (int i = 0; i < affectedAssets.length; i++) {
+            String type = affectedAssets[i].getAssetType();
+            String id = affectedAssets[i].getAssetIdentifier();
+            if (type != null && type.equalsIgnoreCase("Node") &&
+                model.contains(id)) {
+              nodes.add(id);
+            } else if (type != null && type.equalsIgnoreCase("Host")) {
+              // find nodes on host
+            }
           }
-        }
-        if (!nodes.isEmpty()) {
-          vacateNodes(nodes);
+          if (!nodes.isEmpty()) {
+            vacateNodes(nodes);
+          }
         }
       }
     }
