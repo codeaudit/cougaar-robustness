@@ -4,9 +4,13 @@
 
 <Events>
 
-<Event name="Disconnect_Request" affectsAssetType="Node" affectsStateDimension="DesireToCommunicateStatus">
+<Event name="Disconnect_Request" affectsAssetType="Node" affectsStateDimension="Connectedness">
     <DirectEffect>
-        <Transition WhenActualStateIs="*" EndStateWillBe="No" />
+        <Transition WhenActualStateIs="Connected" EndStateWillBe="WantsToDisconnect" />
+        <Transition WhenActualStateIs="WantsToDisconnect" EndStateWillBe="WantsToDisconnect" />
+        <Transition WhenActualStateIs="Disconnected" EndStateWillBe="Disconnected" />
+        <Transition WhenActualStateIs="WantsToConnect" EndStateWillBe="WantsToDisconnect" />
+        <Transition WhenActualStateIs="Tardy" EndStateWillBe="Tardy" />
     </DirectEffect>
     <TransitiveEffect>
         <CausesEvent name="Disconnect_Request" assetType="Agent"/>
@@ -17,9 +21,13 @@
     </TransitiveEffect> 
 </Event>
 
-<Event name="Reconnect_Request" affectsAssetType="Node" affectsStateDimension="DesireToCommunicateStatus">
+<Event name="Reconnect_Request" affectsAssetType="Node" affectsStateDimension="Connectedness">
     <DirectEffect>
-        <Transition WhenActualStateIs="*" EndStateWillBe="Yes" />
+        <Transition WhenActualStateIs="Connected" EndStateWillBe="Connected" />
+        <Transition WhenActualStateIs="WantsToDisconnect" EndStateWillBe="WantsToConnect" />
+        <Transition WhenActualStateIs="Disconnected" EndStateWillBe="WantsToConnect" />
+        <Transition WhenActualStateIs="WantsToConnect" EndStateWillBe="WantsToConnect" />
+        <Transition WhenActualStateIs="Tardy" EndStateWillBe="Tardy" />
     </DirectEffect>
     <TransitiveEffect>
         <CausesEvent name="Reconnect_Request" assetType="Agent"/>
@@ -30,15 +38,23 @@
     </TransitiveEffect> 
 </Event>
 
-<Event name="Disconnect_Request" affectsAssetType="Agent" affectsStateDimension="DesireToCommunicateStatus">
+<Event name="Disconnect_Request" affectsAssetType="Agent" affectsStateDimension="Connectedness">
     <DirectEffect>
-        <Transition WhenActualStateIs="*" EndStateWillBe="No" />
+        <Transition WhenActualStateIs="Connected" EndStateWillBe="WantsToDisconnect" />
+        <Transition WhenActualStateIs="WantsToDisconnect" EndStateWillBe="WantsToDisconnect" />
+        <Transition WhenActualStateIs="Disconnected" EndStateWillBe="Disconnected" />
+        <Transition WhenActualStateIs="WantsToConnect" EndStateWillBe="WantsToDisconnect" />
+        <Transition WhenActualStateIs="Tardy" EndStateWillBe="Tardy" />
     </DirectEffect>
 </Event>
 
-<Event name="Reconnect_Request" affectsAssetType="Agent" affectsStateDimension="DesireToCommunicateStatus">
+<Event name="Reconnect_Request" affectsAssetType="Agent" affectsStateDimension="Connectedness">
     <DirectEffect>
-        <Transition WhenActualStateIs="*" EndStateWillBe="Yes" />
+        <Transition WhenActualStateIs="Connected" EndStateWillBe="Connected" />
+        <Transition WhenActualStateIs="WantsToDisconnect" EndStateWillBe="WantsToConnect" />
+        <Transition WhenActualStateIs="Disconnected" EndStateWillBe="WantsToConnect" />
+        <Transition WhenActualStateIs="WantsToConnect" EndStateWillBe="WantsToConnect" />
+        <Transition WhenActualStateIs="Tardy" EndStateWillBe="Tardy" />
     </DirectEffect>
 </Event>
 

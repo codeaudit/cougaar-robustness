@@ -1,73 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!DOCTYPE ActuatorType SYSTEM "ActuatorTypeDTD.dtd">
+<!DOCTYPE ActuatorTypes SYSTEM "ActuatorTypeDTD.dtd">
 
-<ActuatorType name="org.cougaar.tools.robustness.NodeDisconnectActuator" 
+<ActuatorTypes>
+
+<ActuatorType name="org.cougaar.tools.robustness.disconnection.NodeDisconnectActuator" 
               affectsAssetType="Node" 
-              affectsStateDimension="ConnectAuthorizationSetting" 
+              affectsStateDimension="Connectedness" 
               actionType="CORRECTIVE">
 
     <Action name="Allow_Disconnect">
         <Description value="Allows the Node to Disconnect legally" />
-        <Transition WhenActualStateIs="OK_To_Disconnect" EndStateWillBe="OK_To_Disconnect" IntermediateStateWillBe="OK_To_Disconnect" >
+        <Transition WhenActualStateIs="WantsToDisconnect" EndStateWillBe="Disconnected" IntermediateStateWillBe="WantsToDisconnect" >
             <OneTimeCost>
-                <Time duration="1000" />
+                <Time duration="40000" />
             </OneTimeCost>
         </Transition>
-        <Transition WhenActualStateIs="OK_To_Connect" EndStateWillBe="OK_To_Disconnect" IntermediateStateWillBe="OK_To_Connect" >
-            <OneTimeCost>
-                <Time duration="1000" />
-            </OneTimeCost>
-        </Transition>
+        <Transition WhenActualStateIs="Connected" EndStateWillBe="Connected" IntermediateStateWillBe="Connected" />
+        <Transition WhenActualStateIs="Disconnected" EndStateWillBe="Disconnected" IntermediateStateWillBe="Disconnected" />
+        <Transition WhenActualStateIs="WantsToConnect" EndStateWillBe="WantsToConnect" IntermediateStateWillBe="WantsToConnect" />
+        <Transition WhenActualStateIs="Tardy" EndStateWillBe="Tardy" IntermediateStateWillBe="Tardy" />
     </Action>
     
-    <Action name="Allow_Reconnect">
+    <Action name="Allow_Connect">
         <Description value="Allows the Node to Reconnect" />
-        <Transition WhenActualStateIs="OK_To_Disconnect" EndStateWillBe="OK_To_Connect" IntermediateStateWillBe="OK_To_Disconnect" >
+        <Transition WhenActualStateIs="WantsToConnect" EndStateWillBe="Connected" IntermediateStateWillBe="WantsToConnect" >
             <OneTimeCost>
-                <Time duration="1000" />
+                <Time duration="40000" />
             </OneTimeCost>
         </Transition>
-        <Transition WhenActualStateIs="OK_To_Connect" EndStateWillBe="OK_To_Connect" IntermediateStateWillBe="OK_To_Connect" >
-            <OneTimeCost>
-                <Time duration="1000" />
-            </OneTimeCost>
-        </Transition>
+        <Transition WhenActualStateIs="Connected" EndStateWillBe="Connected" IntermediateStateWillBe="Connected" />
+        <Transition WhenActualStateIs="Disconnected" EndStateWillBe="Disconnected" IntermediateStateWillBe="Disconnected" />
+        <Transition WhenActualStateIs="WantsToDisconnect" EndStateWillBe="WantsToDisconnect" IntermediateStateWillBe="WantsToDisconnect" />
+        <Transition WhenActualStateIs="Tardy" EndStateWillBe="Tardy" IntermediateStateWillBe="Tardy" />
     </Action>
 
 </ActuatorType>
 
-<ActuatorType name="org.cougaar.tools.robustness.AgentDisconnectActuator" 
+<ActuatorType name="org.cougaar.tools.robustness.disconnection.AgentDisconnectActuator" 
               affectsAssetType="Agent" 
-              affectsStateDimension="ConnectAuthorizationSetting" 
+              affectsStateDimension="Connectedness" 
               actionType="CORRECTIVE">
 
     <Action name="Allow_Disconnect">
         <Description value="Allows the Agent to Disconnect legally" />
-        <Transition WhenActualStateIs="OK_To_Disconnect" EndStateWillBe="OK_To_Disconnect" IntermediateStateWillBe="OK_To_Disconnect" >
+        <Transition WhenActualStateIs="WantsToDisconnect" EndStateWillBe="Disconnected" IntermediateStateWillBe="WantsToDisconnect" >
             <OneTimeCost>
-                <Time duration="1000" />
+                <Time duration="40000" />
             </OneTimeCost>
         </Transition>
-        <Transition WhenActualStateIs="OK_To_Connect" EndStateWillBe="OK_To_Disconnect" IntermediateStateWillBe="OK_To_Connect" >
-            <OneTimeCost>
-                <Time duration="1000" />
-            </OneTimeCost>
-        </Transition>
+        <Transition WhenActualStateIs="Connected" EndStateWillBe="Connected" IntermediateStateWillBe="Connected" />
+        <Transition WhenActualStateIs="Disconnected" EndStateWillBe="Disconnected" IntermediateStateWillBe="Disconnected" />
+        <Transition WhenActualStateIs="WantsToConnect" EndStateWillBe="WantsToConnect" IntermediateStateWillBe="WantsToConnect" />
+        <Transition WhenActualStateIs="Tardy" EndStateWillBe="Tardy" IntermediateStateWillBe="Tardy" />
     </Action>
     
-    <Action name="Allow_Reconnect">
+    <Action name="Allow_Connect">
         <Description value="Allows the Agent to Reconnect" />
-        <Transition WhenActualStateIs="OK_To_Disconnect" EndStateWillBe="OK_To_Connect" IntermediateStateWillBe="OK_To_Disconnect" >
+        <Transition WhenActualStateIs="WantsToConnect" EndStateWillBe="Connected" IntermediateStateWillBe="WantsToConnect" >
             <OneTimeCost>
-                <Time duration="1000" />
+                <Time duration="40000" />
             </OneTimeCost>
         </Transition>
-        <Transition WhenActualStateIs="OK_To_Connect" EndStateWillBe="OK_To_Connect" IntermediateStateWillBe="OK_To_Connect" >
-            <OneTimeCost>
-                <Time duration="1000" />
-            </OneTimeCost>
-        </Transition>
+        <Transition WhenActualStateIs="Connected" EndStateWillBe="Connected" IntermediateStateWillBe="Connected" />
+        <Transition WhenActualStateIs="Disconnected" EndStateWillBe="Disconnected" IntermediateStateWillBe="Disconnected" />
+        <Transition WhenActualStateIs="WantsToDisconnect" EndStateWillBe="WantsToDisconnect" IntermediateStateWillBe="WantsToDisconnect" />
+        <Transition WhenActualStateIs="Tardy" EndStateWillBe="Tardy" IntermediateStateWillBe="Tardy" />
     </Action>
 
 </ActuatorType>
+
+</ActuatorTypes>

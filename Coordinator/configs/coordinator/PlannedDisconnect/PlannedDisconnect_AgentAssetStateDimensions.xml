@@ -4,21 +4,12 @@
 
 <AssetStateDimensions assetType="Agent">
 
-  <StateDimension name="DesireToCommunicateStatus" >
- 	<State name="Yes" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" defaultStartState="TRUE" />
- 	<State name="No" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
- 	<State name="Tardy" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
-  </StateDimension>
-
-  <StateDimension name="ConnectAuthorizationSetting" >
- 	<State name="OK_To_Connect" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" defaultStartState="TRUE" />
- 	<State name="OK_To_Disconnect" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" />
-  </StateDimension>
-
-  <StateDimension name="ConnectedStatus" >
+  <StateDimension name="Connectedness" >
  	<State name="Connected" relativeMauCompleteness="1.0" relativeMauSecurity="1.0" defaultStartState="TRUE" />
+ 	<State name="WantsToDisconnect" relativeMauCompleteness="0.1" relativeMauSecurity="0.1" />
  	<State name="Disconnected" relativeMauCompleteness="0.5" relativeMauSecurity="0.8" />
-  	<State name="Tardy" relativeMauCompleteness="0.1" relativeMauSecurity="0.1" />
+ 	<State name="WantsToConnect" relativeMauCompleteness="0.1" relativeMauSecurity="0.1" />
+  	<State name="Tardy" relativeMauCompleteness="0.0" relativeMauSecurity="0.0" />
  </StateDimension>
 
 </AssetStateDimensions>
