@@ -8,6 +8,7 @@ $:.unshift File.join(CIP, 'csmart', 'config', 'lib')
 require 'cougaar/scripting'
 require 'ultralog/scripting'
 require 'robustness/uc1/aruc1_actions_and_states'
+require 'robustness/uc4/aruc4_actions_and_states'
 require 'robustness/uc1/deconfliction'
 
 HOSTS_FILE = Ultralog::OperatorUtils::HostManager.new.get_hosts_file
@@ -17,18 +18,24 @@ Cougaar::ExperimentMonitor.enable_logging
 
 Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
 
-  #do_action "LoadSocietyFromScript", "#{CIP}/configs/ul/SMALL-1AD-TRANS-1359.rb"
   do_action "LoadSocietyFromScript", "#{CIP}/csmart/config/societies/ad/SMALL-1AD-TRANS-1359.rb"
   do_action "LayoutSociety", "#{CIP}/operator/uc1-small-1ad-layout.xml", HOSTS_FILE
 
   do_action "TransformSociety", false,
     "#{RULES}/isat",
     "#{RULES}/logistics",
-    "#{RULES}/robustness/uc1"
-  do_action "SaveCurrentSociety", "mySociety.xml"
-  do_action "SaveCurrentCommunities", "myCommunities.xml"
+    "#{RULES}/robustness/uc1",
+    "#{RULES}/robustness/uc4"
+
+  do_action "TransformSociety", false, "#{RULES}/robustness/communities"
+
+  # for debugging
+  #do_action "SaveCurrentSociety", "mySociety.xml"
+  #do_action "SaveCurrentCommunities", "myCommunities.xml"
+
   do_action "StartJabberCommunications"
   do_action "VerifyHosts"
+
   do_action "DeployCommunitiesFile"
 
   do_action "DisableDeconfliction"
@@ -50,6 +57,16 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
 
   # After CommunityReady event is received wait for persistence
   wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
+
+  # Action "PublishThreatAlert" has five parameters:
+  #   community name,
+  #   role in the community,
+  #   alert level(select from: max, high, medium, low, min, undefined),
+  #   alert duration, and
+  #   assets
+  assets = Hash['node'=>'TRANS-NODE', 'node'=>'FWD-NODE']
+  do_action "PublishThreatAlert", "1AD-SMALL-COMM", "HealthMonitor", "min", 10.minutes, assets
+
   do_action "Sleep", 5.minutes
 
   # Kill node that does not contain robustness manager
@@ -58,6 +75,8 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
 
   # Wait for restarts to complete
   wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
+
+  #do_action "PublishThreatAlert", "1AD-SMALL-COMM", "Medium", 5.minutes, "FWD-NODE"
 
   # Add an empty node to community
   do_action "AddNode", "NewNode1", "1AD-SMALL-COMM"
@@ -74,7 +93,7 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
   do_action "AddNode", "NewNode2", "1AD-SMALL-COMM"
   do_action "Sleep", 5.minutes
 
-  # Kill last of original nodes 
+  # Kill last of original nodes
   do_action "SaveHostOfNode", "1AD-SMALL-COMM", "REAR-NODE"
   do_action "KillNodes", "REAR-NODE"
 
