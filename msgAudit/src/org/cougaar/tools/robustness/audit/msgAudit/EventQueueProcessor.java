@@ -42,12 +42,13 @@ public class EventQueueProcessor implements Runnable {
                     
                     //Filter out troubled messages
                     if ( hasProblem(lpe.from()) ) {
-                        pmm.handleProblemMessage(lpe, true);
+                        lpe.setFromError(true);
+                        pmm.addProblemMessage(lpe);
                         continue;
                     } 
 
                     if ( hasProblem(lpe.dest()) ) {
-                        pmm.handleProblemMessage(lpe, false);
+                        pmm.addProblemMessage(lpe);
                         continue;
                     }
                     

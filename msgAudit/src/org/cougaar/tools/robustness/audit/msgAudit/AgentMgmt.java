@@ -48,10 +48,15 @@ public class AgentMgmt {
     }
 
     /**
-     * Iterator of all agents
+     * Iterator of all agents 
      */
     public Iterator agents() { return agents.iterator(); }
 
+    /**
+     * Vector of all agents 
+     */
+    public Vector agentsList() { return agents; }
+    
     
     /** 
      * @return Returns a new agent if agent not found

@@ -24,6 +24,10 @@ public class LogPointEntry {
     private Boolean isSend = null;
     private boolean isFinalLogPoint = false;
     private String msgtype = null;
+
+    private boolean fromError = false;
+    public boolean isFromError() { return fromError; }
+    public void setFromError(boolean _b) { fromError = _b; }
     
     private int logPointPosition;
     
