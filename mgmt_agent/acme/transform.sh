@@ -1,5 +1,5 @@
 #!/bin/sh
-ACMEDIR='/shares/development/acme'
+ACMEDIR='/usr/local/acme'
 WRKDIR=`pwd`
 
 java -cp ../lib/Robustness_mic_mgmt_agent.jar org.cougaar.tools.robustness.ma.util.ACMEXmlTransformer $1 $2 tmp.xml ../aruc1.xsl

@@ -19,6 +19,9 @@
 # </copyright>
 #
 
+$:.unshift "/shares/development/cougaar/csmart/acme_scripting/src/lib"
+$:.unshift "/shares/development/cougaar/csmart/acme_service/src/redist"
+
 require 'cougaar/scripting'
 require 'ultralog/scripting'
 require 'aruc1_actions_and_states'
@@ -26,9 +29,9 @@ require 'aruc1_actions_and_states'
 Cougaar::ExperimentMonitor.enable_stdout
 
 Cougaar.new_experiment("MyExperiment").run {
-  do_action "LoadSocietyFromCSmart", "TINY-1AD-TRANS-AR", "net3", "admin", "admin", "CSMART10_2"
+  do_action "LoadSocietyFromCSmart", "TINY-1AD-TRANS-AR", "dell8200", "admin", "admin", "CSMART10_2"
   #do_action "LoadSocietyFromXML", "TINY-1AD-TRANS-AR.xml"
-  do_action "StartJabberCommunications", "acme_console", "oak"
+  do_action "StartJabberCommunications", "acme_console", "dell8200"
 
 # Print out CougaarEvents as they come in 
   do_action "GenericAction" do |run|  
@@ -48,7 +51,7 @@ Cougaar.new_experiment("MyExperiment").run {
   #
 
   wait_for  "CommunityReady"
-  do_action "KillNodes", "1AD_TINY-KILL"
+  do_action "KillNodes", "TINY-1AD-3"
   wait_for  "CommunityReady"
 
   wait_for  "OPlanReady"
