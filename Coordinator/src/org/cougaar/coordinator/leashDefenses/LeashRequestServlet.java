@@ -69,6 +69,7 @@ import org.cougaar.util.log.Logger;
 
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.coordinator.selection.ActionSelectionKnob;
+import org.cougaar.coordinator.believability.BelievabilityKnob;
 
 
 public class LeashRequestServlet extends BaseServletComponent implements BlackboardClient
@@ -177,13 +178,23 @@ public class LeashRequestServlet extends BaseServletComponent implements Blackbo
 
           blackboard.openTransaction();
           ActionSelectionKnob ask = null;
+          BelievabilityKnob bk = null;
+
           Collection c = blackboard.query(ActionSelectionKnob.pred);
           Iterator iter = c.iterator();
           if (iter.hasNext()) {
              ask = (ActionSelectionKnob)iter.next();
-          }        
-          if (ask != null) {
+          }  
+      
+          c = blackboard.query(BelievabilityKnob.pred);
+          iter = c.iterator();
+          if (iter.hasNext()) {
+             bk = (BelievabilityKnob)iter.next();
+          } 
+       
+          if ((ask != null) && (bk != null)) {
               ask.leash();
+              bk.setIsLeashed(true);
               out.println("<center><h2>Status Changed - Defense Suppression Requested</h2></center><br>" );
               blackboard.publishChange(ask); 
               if (logger.isDebugEnabled()) logger.debug("Status Changed - Defense Suppression Requested");
@@ -196,25 +207,31 @@ public class LeashRequestServlet extends BaseServletComponent implements Blackbo
       /** Asking to Allow Defenses */
       private void allow(PrintWriter out) throws IllegalValueException {
 
-          try {
-              blackboard.openTransaction();
-              ActionSelectionKnob ask = null;
-              Collection c = blackboard.query(ActionSelectionKnob.pred);
-              Iterator iter = c.iterator();
-              if (iter.hasNext()) {
-                 ask = (ActionSelectionKnob)iter.next();
-              }
+          blackboard.openTransaction();
+          ActionSelectionKnob ask = null;
+          BelievabilityKnob bk = null;
+          Collection c = blackboard.query(ActionSelectionKnob.pred);
+          Iterator iter = c.iterator();
+          if (iter.hasNext()) {
+             ask = (ActionSelectionKnob)iter.next();
+          }
 
-              if (ask != null) {
-                  ask.unleash();
-                  out.println("<center><h2>Status Changed - Defenses Allowed Requested</h2></center><br>" );
-                  blackboard.publishChange(ask); 
-                  if (logger.isDebugEnabled()) logger.debug("Status Changed - Defenses Allowed Requested");
-              blackboard.closeTransaction();
-              }
-          } finally {
-                if (blackboard.isTransactionOpen()) blackboard.closeTransactionDontReset();
-          }            
+          c = blackboard.query(BelievabilityKnob.pred);
+          iter = c.iterator();
+          if (iter.hasNext()) {
+             bk = (BelievabilityKnob)iter.next();
+          }   
+     
+          if ((ask != null) && (bk != null)) {
+              ask.unleash();
+              bk.setIsLeashed(false);
+              out.println("<center><h2>Status Changed - Defenses Allowed Requested</h2></center><br>" );
+              blackboard.publishChange(ask); 
+              if (logger.isDebugEnabled()) logger.debug("Status Changed - Defenses Allowed Requested");
+          }
+              
+          blackboard.closeTransaction();
+              
       }   
         
 
