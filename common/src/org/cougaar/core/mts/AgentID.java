@@ -251,7 +251,7 @@ public class AgentID implements java.io.Serializable
    */
   public static AgentID getAgentID (Object requestor, ServiceBroker sb, 
                                     MessageAddress agent) 
-    throws NameLookupException
+    throws UnregisteredNameException
   {
     return getAgentID (requestor, sb, agent, false);    
   }
@@ -266,7 +266,7 @@ public class AgentID implements java.io.Serializable
    */
   public static AgentID getAgentID (Object requestor, ServiceBroker sb, 
                                     MessageAddress agent, boolean refreshCache) 
-    throws NameLookupException
+    throws UnregisteredNameException
   {
     if (log == null) 
       log = Logging.getLogger(AgentID.class);
@@ -447,7 +447,7 @@ public class AgentID implements java.io.Serializable
       if (node == null && node_cbte != null)
         doCallback(nodeCbTbl, node_cbte, agentName, TOPOLOGY);
       Exception e = new Exception ("Insufficient local information to create an AgentID for agent: " + agent); //104B
-      throw new NameLookupException(e);
+      throw new UnregisteredNameException(agent);
     }
     return new AgentID(node, agentName, incarnation); //102
   }

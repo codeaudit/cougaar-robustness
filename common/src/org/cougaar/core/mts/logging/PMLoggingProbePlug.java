@@ -214,8 +214,8 @@ public class PMLoggingProbePlug {
                 try {
                     AgentID agent = AgentID.getAgentID (_requestor, _sb, toAgent);
                     to = agent.getNodeName() + "." + agent.getAgentName() + "." + agent.getAgentIncarnation();          
-                } catch (NameLookupException nle) {
-                    to = "NameLookupException_for_"+toAgent;
+                } catch (UnregisteredNameException une) {
+                    to = "UnregisteredNameException_for_"+toAgent;
                 } catch (Exception e) {
                     to = e.toString()+toAgent;
                 }
