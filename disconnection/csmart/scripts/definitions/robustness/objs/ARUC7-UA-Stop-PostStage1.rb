@@ -31,16 +31,6 @@ parameters:
 include_scripts:
   - script: $CIP/csmart/lib/isat/clearPnLogs.rb
   - script: $CIP/csmart/lib/isat/initialize_network.rb
-  - script: $CIP/csmart/lib/robustness/objs/planned_disconnect.rb
-    parameters:
-      - location: during_stage_1
-      - wait_location: after_stage_1
-      - nodes: ["UA-FSB-A-NODE", "UA-FSB-C-NODE"]
-      - planned_disconnect: 12.minutes
-      - actual_disconnect: 8.minutes
-      - timeout: 30.minutes
-      - verbose: 1
-  - script: $CIP/csmart/lib/coordinator/unleash_defenses.rb 
 #  - script: $CIP/csmart/lib/isat/save_snapshot.rb
 #    parameters:
 #      - snapshot_name: $CIP/SAVE-Small-PreStage2-AR.tgz
@@ -51,6 +41,16 @@ include_scripts:
 #  - script: $CIP/csmart/lib/isat/wait_for_ok.rb
 #    parameters:
 #      - wait_for_location: after_stage_1
+  - script: $CIP/csmart/lib/robustness/objs/planned_disconnect.rb
+    parameters:
+      - location: during_stage_1
+      - wait_location: after_stage_1
+      - nodes: ["UA-FSB-A-NODE", "UA-FSB-C-NODE"]
+      - planned_disconnect: 12.minutes
+      - actual_disconnect: 8.minutes
+      - timeout: 30.minutes
+      - verbose: 1
+  - script: $CIP/csmart/lib/coordinator/unleash_defenses.rb 
 
 =end
 
