@@ -107,14 +107,19 @@
   <!-- Adds needed files to Cougaar install path -->
   <target name="deploy" depends="build" description="Copies needed files to $CIP">
     <copy file="${lib}/${jar}" toDir="${cougaar}/lib"/>
-    <copy file="configs/communities-full.xml" toDir="${cougaar}/robustness/configs/communities-full.xml"/>
-    <copy file="configs/communities-small.xml" toDir="${cougaar}/robustness/configs/communities-small.xml"/>
-    <copy file="confits/loggingConfig.conf" toDir="${cougaar}/robustness/configs"/>
+    <copy file="configs/communities-full.xml" toDir="${cougaar}/robustness/configs"/>
+    <copy file="configs/communities-small.xml" toDir="${cougaar}/robustness/configs"/>
+    <copy file="configs/loggingConfig.conf" toDir="${cougaar}/robustness/configs"/>
+    <copy toDir="${cougaar}/robustness/configs/mic-local">
+      <fileset dir="configs/mic-local">
+         <include name="**" />
+      </fileset>
+    </copy>
   </target>
 
   <!-- Adds needed files to Cougaar install path -->
   <target name="config-small" depends="build, deploy" description="Copies needed small-1ad files to $CIP">
-    <copy file="${cougaar}/robustness/configs/communities-small.xml" toDir="${cougaar}/configs/common/communities.xml"/>
+    <copy file="${cougaar}/robustness/configs/communities-small.xml" toFile="${cougaar}/configs/common/communities.xml"/>
     <copy file="${cougaar}/robustness/configs/mic-local/uc1-small-1ad-layout.xml" toDir="${cougaar}/operator"/>
     <copy file="${cougaar}/robustness/configs/mic-local/ron1-hosts.xml" toDir="${cougaar}/operator"/>
     <copy file="${cougaar}/robustness/configs/mic-local/ron2-hosts.xml" toDir="${cougaar}/operator"/>
@@ -124,7 +129,7 @@
 
   <!-- Adds needed files to Cougaar install path -->
   <target name="config-full" depends="build, deploy" description="Copies needed full-1ad files to $CIP">
-    <copy file="${cougaar}/robustness/configs/communities-full.xml" toDir="${cougaar}/configs/common/communities.xml"/>
+    <copy file="${cougaar}/robustness/configs/communities-full.xml" toFile="${cougaar}/configs/common/communities.xml"/>
     <copy file="${cougaar}/robustness/configs/loggingConfig.conf" toDir="${cougaar}/configs/common"/>
   </target>
 
