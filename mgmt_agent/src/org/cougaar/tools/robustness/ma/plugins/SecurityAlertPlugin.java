@@ -45,8 +45,7 @@ import java.util.Iterator;
 
 /**
  * Generates a SecurityAlert upon detection of a security generated
- * InterAgentOperatingMode containing a mode of
- * AdaptiveMnROperatingModes.PREVENTIVE_MEASURE_POLICY.
+ * InterAgentOperatingMode containing a mode of THREATCON_LEVEL.
  */
 public class SecurityAlertPlugin extends ComponentPlugin {
 
