@@ -174,9 +174,9 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
   private DestinationLink linkChoice (DestinationLink link, AttributedMessage msg)
   {
     recordLinkSelection (link, msg);
-    MessageUtils.setSendProtocolLink (msg, link.getProtocolClass().getName());
+    MessageUtils.setSendProtocolLink (msg, getName (link));
     if (showTraffic) showProgress (link);
-//debug ("Chose link = "+ link.getProtocolClass().getName());
+//debug ("Chose link = "+ getName (link));
     return link;
   }
 
@@ -199,7 +199,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       return null;
     }
 
-    //  Handle retries
+    //  Handle message attribute transfers in the case of send retries
 
     if (msg != failedMsg && failedMsg != null) 
     {
@@ -252,10 +252,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
     String msgString = MessageUtils.toString (msg);
 
-    if (doDebug)
-    {
-      if (!MessageUtils.isNewMessage(msg)) debug ("Processing " +msgString);
-    }
+    if (doDebug && !MessageUtils.isNewMessage(msg)) debug ("Processing " +msgString);
 
     /**
      **  Special case:  Message has passed its send deadline so we just drop it
@@ -279,6 +276,10 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     //
     //  First filter the given links into a vector of outgoing links that
     //  are able to send the given message.
+    //
+    //  NOTE:  Must insure that the link finally returned by this method
+    //  is a member of these filtered links, as they are the only valid
+    //  links for this iteration.
 
     Vector v = new Vector();
 
@@ -289,7 +290,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       try
       {
         link = (DestinationLink) links.next(); 
-        String protocol = link.getProtocolClass().getName();
+        String protocol = getName (link);
 
         if (protocol.equals ("org.cougaar.core.mts.LoopbackLinkProtocol")) continue;
 
@@ -383,18 +384,18 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     Arrays.sort (destLinks, linkRanker);
 
     DestinationLink topLink = destLinks[0];
-//debug ("\ntopLink = " +topLink.getProtocolClass().getName());
+//debug ("\ntopLink = " +geName(topLink));
 
     //  HACK!
 
     if (MessageUtils.isTrafficMaskingMessage (msg))
     {
       //  Link selection for these messages is limited to whatever link was last used
-      //  successfully to its target node.
+      //  successfully to its target node (if that link is currently available).
       
       Class linkClass = MessageAckingAspect.getLastSuccessfulLinkUsed (targetNode);
       DestinationLink link = pickLinkByClass (destLinks, linkClass);
-      if (link == null) link = topLink;  // last link may not be currently available
+      if (link == null) link = topLink;  // linkClass may not be currently available
 
       if (doDebug) debug ("Chose link for traffic masking msg: " +msgString);
       return linkChoice (link, msg);
@@ -406,11 +407,11 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     if (MessageUtils.isPureAckAckMessage (msg))
     {
       //  Link selection for these messages is limited to whatever link was last used
-      //  successfully to its target node.
+      //  successfully to its target node (if that link is currently available).
       
       Class linkClass = MessageAckingAspect.getLastSuccessfulLinkUsed (targetNode);
       DestinationLink link = pickLinkByClass (destLinks, linkClass);
-      if (link == null) link = topLink;  // last link may not be currently available
+      if (link == null) link = topLink;  // linkClass may not be currently available
 
       if (doDebug) debug ("Chose link for pure ack-ack msg: " +msgString);
       return linkChoice (link, msg);
@@ -540,11 +541,11 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
           ack.clearLinkSelections();
         }
 
-        //  In case of unexpected failure in link chosing
+        //  In case our previous first choice is not available
 
         if (link == null)
         {
-          if (doDebug) debug ("Unexpected failures, chosing top link");
+          if (doDebug) debug ("First link choice not available, chosing top link");
           link = topLink;
         }
 
@@ -567,7 +568,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 //debug ("last choice = " + lastChoice);
 //if (lastChoice != null) debug ("last choice was successful = " + lastChoice.wasSuccessful());
 
-    //  Special cases: First time a message is sent to this destination
+    //  Special Case:  First time a message is sent to this destination
     //  or there is only one link to choose from.  In these cases we always 
     //  choose the top/only link.
 
@@ -596,8 +597,8 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       if (++count >= tryOtherLinksInterval) count = 0;
       setTopLinkSteadyStateCountForNode (targetNode, count);
 
-      //  We've used this link so many times in a row now, it is time
-      //  to consider other links that may have improved, or never been tried
+      //  We've used this link so many times in a row now, it may be time
+      //  to consider other links that may have improved, or never been tried.
 
 //debug ("\n** COUNT= "+count);
 
@@ -606,7 +607,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 //debug ("\n** trying OTHER LINKS");
 
         //  Look for the highest ranking link left that still has a RTT of 0 (which means
-        //  there are not enough samples to establish a RTT for the link/node combo).
+        //  there are not enough samples to establish a RTT for the link-node combo).
 
         for (int i=0; i<destLinks.length; i++)
         {
@@ -618,7 +619,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
         }
 
         //  Otherwise, choose the link that was last chosen the longest ago that
-        //  can currently be chosen.
+        //  is currently available/valid.
 
         DestinationLink oldestLink = topLink;
         long oldestTime = Long.MAX_VALUE;
@@ -628,7 +629,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
         for (Enumeration e=linkSelections.elements(); e.hasMoreElements(); )
         {
           LinkSelectionRecord rec = (LinkSelectionRecord) e.nextElement();
-          if (!isMemberOf (destLinks, rec.link)) continue;
+          if (!isMemberOf (destLinks, rec.link)) continue;  // link not currently available
 
           if (rec.selectionTime < oldestTime)
           {
@@ -637,11 +638,11 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
           }
         }
 
-//debug ("\n** chose link last chosen longest ago");
+//debug ("\n** chose (currenly valid) link last chosen longest ago");
         return linkChoice (setReplacementChoice (lastChoice, oldestLink, msg), msg);
       }
 
-      //  Special case: If last choice is already the top link, keep using it
+      //  Special Case:  At this point, if last choice is the top link, keep using it
 
       if (lastChoice.getLink() == topLink)
       {
@@ -671,7 +672,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       }
       else  // not yet time to upgrade or no upgrade available
       {
-        // Keep on keeping on with what we got for now, if it is still available
+        // Keep on keeping on with what we got for now, if it is still valid
 
         if (isMemberOf (destLinks, lastChoice.getLink()))
         {
@@ -686,7 +687,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     
     //  The last choice was not successful
 
-    //  Ok, we are still in the game.  We respond based on the category the last
+    //  We are still in the game.  We respond based on the category the last
     //  choice falls into (upgrade, steady state, or replacement choice).
 
     if (lastChoice.wasUpgradeChoice())
@@ -717,7 +718,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
         {
           return linkChoice (setSteadyStateChoice (lastChoice, lastChoice.getSteadyStateLink(), msg), msg);
         }
-        else
+        else  // surest bet is to get a replacement (an upgrade may not be available)
         {
           DestinationLink replacement = pickReplacementChoice (lastChoice, destLinks, msg);
           return linkChoice (setReplacementChoice (lastChoice, replacement, msg), msg);
@@ -748,21 +749,22 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     }
     else
     {
-      //  What?  How did we get here?  Make a note of it and move on.
+      //  What?  How did we get here?  Make a note of it and move on...
 
-      loggingService.error ("Invalid state reached!");
+      loggingService.error ("Invalid state reached! (but we can deal with it)");
 
       DestinationLink replacement = pickReplacementChoice (lastChoice, destLinks, msg);
       return linkChoice (setReplacementChoice (lastChoice, replacement, msg), msg);
     }
   }
 
-//  TODO - need to guarantee the choices returned are members of links[]
-
   private DestinationLink pickUpgradeChoice (SelectionChoice lastChoice, DestinationLink links[], AttributedMessage msg)
   {
     //  First filter the candidate links to those that are higher ranked than the last choice
     //  and that have not been tried yet this go round.
+
+    //  NOTE:  This method must guarantee that the choice it returns is a member of the
+    //  given links array (or null), as those links are the only valid ones at the moment.
 
     Vector v = new Vector();
     int currentMetric = getMetric (lastChoice.getLink(), msg);
@@ -771,7 +773,6 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     {
       if (getMetric (links[i], msg) >= currentMetric) continue;
       if (lastChoice.hasUpgradeBeenTried (links[i])) continue;
-
       v.add (links[i]);
     }
 
@@ -795,13 +796,17 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
   {
     //  Pick a replacement choice, meaning a choice that we have not picked before in this go
     //  round, unless we have run out of replacement choices, at which point we return the
-    //  given lastChoice steady state link.
+    //  given lastChoice steady state link if it is still valid; otherwise we return the
+    //  highest ranking link that is not the last choice; otherwise the last choice.
 
-    //  If we find the lastChoice steady state link in our list of tries, that is the
-    //  signal that we have made a complete cycle, and it is time to start over again.
+    //  NOTE:  This method must guarantee that the choice it returns is a member of the
+    //  given links array, as those links are the only valid ones at the moment.
 
     if (lastChoice.hasReplacementBeenTried (lastChoice.getSteadyStateLink()))
     {
+      //  If we find the lastChoice steady state link in our list of tries, that is the
+      //  signal that we have made a complete cycle, and it is time to start over again.
+
       lastChoice.clearReplacementTries();
     }
 
@@ -814,13 +819,30 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     {
       if (lastChoice.hasReplacementBeenTried (links[i])) continue;
       if (lastChoice.getSteadyStateLink() == links[i]) continue;
-
       v.add (links[i]);
     }
 
     //  Handle special cases
 
-    if (v.size() == 0) return lastChoice.getSteadyStateLink();  // time to do this now
+    if (v.size() == 0) 
+    {
+      //  If the last choice steady state link is still valid, return it
+
+      if (isMemberOf (links, lastChoice.getSteadyStateLink()))
+      {
+        return lastChoice.getSteadyStateLink();
+      }
+      else lastChoice.clearReplacementTries();  // cycle effectively over
+
+      //  Otherwise, choose the highest ranking link that is not the last choice
+
+      for (int i=0; i<links.length; i++) if (links[i] != lastChoice.getLink()) return links[i];
+
+      //  Ok, no choice, return the last choice
+
+      return lastChoice.getLink();
+    }
+
     if (v.size() == 1) return (DestinationLink) v.firstElement();
 
     //  Ok, at this point we have to choose between 2 or more replacement links.
@@ -828,8 +850,8 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     //  a little deeper at other factors such as send successes and failures,
     //  or we could make a random selection, round robin, etc.
 
-    //  For now, we'll choose the highest ranked link.  So rank the links we have and 
-    //  return the first one.
+    //  For now, we'll choose the highest ranked link.  So re-rank the links we have 
+    //  filtered and return the first one.
 
     DestinationLink replacementLinks[] = (DestinationLink[]) v.toArray (new DestinationLink[v.size()]); 
     linkRanker.setMessage (msg);
@@ -850,8 +872,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       selectionHistory.put (targetNode, choice);
     }
 
-    if (doDebug) debug ("SteadyState selected: " +link.getProtocolClass().getName());
-
+    if (doDebug) debug ("SteadyState selected: " +getName (link));
     return link;
   }
 
@@ -862,8 +883,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     int msgNum = MessageUtils.getMessageNumber (msg);
     choice.makeUpgradeChoice (link, msgNum);
 
-    if (doDebug) debug ("Upgrade selected: " +link.getProtocolClass().getName());
-
+    if (doDebug) debug ("Upgrade selected: " +getName (link));
     return link;
   }
 
@@ -874,8 +894,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     int msgNum = MessageUtils.getMessageNumber (msg);
     choice.makeReplacementChoice (link, msgNum);
 
-    if (doDebug) debug ("Replacement selected: " +link.getProtocolClass().getName());
-
+    if (doDebug) debug ("Replacement selected: " +getName (link));
     return link;
   }
 
@@ -1012,7 +1031,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
     public String toString ()
     {
-      return (link != null ? link.getProtocolClass().getName() : "null");
+      return (link != null ? getName(link) : "null");
     }
   }
 
@@ -1098,7 +1117,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     {
       String targetNode = MessageUtils.getToAgentNode (msg);
       int bestRTT = rttService.getBestRoundtripTimeForLink (link, targetNode);
-//debug ("bestRTT: " +bestRTT+ " for " +link.getProtocolClass().getName()+ " to " +targetNode);
+//debug ("bestRTT: " +bestRTT+ " for " +getName(link)+ " to " +targetNode);
       if (bestRTT > 0) return bestRTT;
     }
 
@@ -1112,7 +1131,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     return System.currentTimeMillis();
   }
 
-  private static class Int  // a mutable int
+  private static class Int  // for mutable int objects
   {
     public int value;
     public Int (int v) { value = v; }
@@ -1195,12 +1214,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
   private DestinationLink pickLinkByClass (DestinationLink links[], Class linkClass)
   {
     if (links == null || linkClass == null) return null;
-  
-    for (int i=0; i<links.length; i++)
-    {
-      if (links[i].getProtocolClass() == linkClass) return links[i];
-    }
-  
+    for (int i=0; i<links.length; i++) if (links[i].getProtocolClass() == linkClass) return links[i];
     return null;
   }
 
@@ -1211,7 +1225,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     return false;
   }
 
-  private static String getLinkClassname (DestinationLink link)
+  private static String getName (DestinationLink link)
   {
     return link.getProtocolClass().getName();
   }
@@ -1264,7 +1278,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
   {
     try 
     { 
-      String name = link.getProtocolClass().getName();                                                           
+      String name = getName (link);
       String statusChar;
 
            if (name.equals("org.cougaar.core.mts.LoopbackLinkProtocol")) statusChar = "l";             

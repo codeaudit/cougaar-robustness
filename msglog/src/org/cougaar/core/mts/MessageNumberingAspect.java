@@ -151,7 +151,7 @@ public class MessageNumberingAspect extends StandardAspect
 
       setMessageNumber (msg, n);
 
-System.err.println ("MessageNumberingAspect: outgoing msg= "+MessageUtils.toString(msg));
+//System.err.println ("MessageNumberingAspect: outgoing msg= "+MessageUtils.toString(msg));
 
       return link.forwardMessage (msg);
     }
