@@ -28,7 +28,7 @@ package org.cougaar.core.mts.email;
 import java.io.*;
 import com.sun.mail.util.*;
 
-import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.*;
 
 /**
  *  Base64 is a utility class providing Base64 encoding and 
@@ -93,7 +93,8 @@ public class Base64
     }
     catch (Exception e)
     {
-      Logging.getLogger(Base64.class).error ("decoding string: " +stackTraceToString(e));
+      Logging.getLogger(Base64.class).warn("in decodeString(): " + stackTraceToString(e));
+      Logging.getLogger(Base64.class).warn("A few of these are ok, else lengthen email stream timeouts.");
     }
     
     return (n >= 0 ? buf : null);
