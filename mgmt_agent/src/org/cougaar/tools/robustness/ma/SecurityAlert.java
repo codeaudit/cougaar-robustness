@@ -31,6 +31,13 @@ import java.util.Date;
 public class SecurityAlert extends DefaultThreatAlert {
 
   /**
+   * Default constructor.
+   */
+  public SecurityAlert() {
+    super();
+  }
+
+  /**
    * Create a new SecurityAlert.
    * @param source         Alert source
    * @param severityLevel  Severity level of alert
