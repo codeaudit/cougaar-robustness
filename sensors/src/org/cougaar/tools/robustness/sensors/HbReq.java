@@ -48,7 +48,7 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable
   private Object content;
   private Object response;
   private Properties props;
-  private ClusterIdentifier dummy = new ClusterIdentifier();
+  //private ClusterIdentifier dummy = new ClusterIdentifier();
 
   /**
    * @param uid UID of this HbReq object
