@@ -59,7 +59,7 @@ public class SampleSensor extends ComponentPlugin
     {
         rawSensorDataSub = 
 	    (IncrementalSubscription)blackboard.subscribe(rawSensorDataPred);
-	Object initialValue = null;
+	Object initialValue = "No Threat";
 	try {
 	    diagnosis = new SampleDiagnosis(agentId.toString(), initialValue, sb);
 	    blackboard.publishAdd(diagnosis);
@@ -97,12 +97,14 @@ public class SampleSensor extends ComponentPlugin
 	    }
 	}
 
+/* if data goes away, just leave diagnosis at its last setting
         iter = rawSensorDataSub.getRemovedCollection().iterator();
 	while (iter.hasNext()) {
 	    SampleRawSensorData data = (SampleRawSensorData)iter.next();
 	    if (data != null) {
 		try {
-		    diagnosis.setValue(null);
+
+                    diagnosis.setValue(null);
 		    blackboard.publishChange(diagnosis);
 		    if (log.isDebugEnabled()) 
 			log.debug(diagnosis + " changed.");
@@ -112,6 +114,8 @@ public class SampleSensor extends ComponentPlugin
 		}
 	    }
 	}
+*/
+
     }
 }
 

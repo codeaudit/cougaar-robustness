@@ -72,7 +72,6 @@ public class SampleAction extends Action
 	    "   response = " + getResponse() + "\n" +
 	    "   source = " + getSource() + "\n" +
 	    "   targets = " + getTargets() + "\n" +
-	    "   techSpec = " + getTechSpec() + "\n" +
 	    "   uid = " + getUID() + "\n" +
 	    "   value = " + getValue() + "\n" +
 	    "   valuesOffered = " + getValuesOffered() + ">";

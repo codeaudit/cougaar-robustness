@@ -58,7 +58,6 @@ public class SampleDiagnosis extends Diagnosis
 	    "   response = " + getResponse() + "\n" +
 	    "   source = " + getSource() + "\n" +
 	    "   targets = " + getTargets() + "\n" +
-	    "   techSpec = " + getTechSpec() + "\n" +
 	    "   uid = " + getUID() + "\n" +
 	    "   value = " + getValue() + ">";
     }
