@@ -129,7 +129,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
     // Join Robustness Community designated by startup parameter
     String initialCommunity = System.getProperty(COMMUNITY_PROP_NAME);
     if (initialCommunity != null) {
-      logger.debug(COMMUNITY_PROP_NAME + "=" + initialCommunity);
+      logger.info("Joining community " + initialCommunity);
       UID joinRequestUID = uidService.nextUID();
       myUIDs.add(joinRequestUID);
       Attributes memberAttrs = new BasicAttributes();
@@ -145,6 +145,8 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
                                               false,
                                               null,
                                               joinRequestUID));
+    } else {
+      logger.info("No initial community defined");
     }
 
     // Subscribe to Node Status updates sent by peer Health Monitors via Relay
@@ -177,7 +179,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
       for (Iterator it1 = robustnessCommunities.iterator(); it1.hasNext();) {
         Community c = (Community)it1.next();
         logger.debug("Received changed SearchCommunity:" +
-                    " community=" + c.getName());
+                    " community=" + (c != null ? c.getName() : null));
       }
       processCommunityChanges(robustnessCommunities);
     }
@@ -449,7 +451,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
           if (!target.equals(agentId))
             nodeStatusRelay.addTarget(target);
         }
-        logger.info("publishChange NodeStatusRelay:" +
+        logger.debug("publishChange NodeStatusRelay:" +
                      " source=" + nsr.getSource() +
                      " targets=" + targetsToString(nodeStatusRelay.getTargets()) +
                      " community=" + nsr.getCommunityName() +

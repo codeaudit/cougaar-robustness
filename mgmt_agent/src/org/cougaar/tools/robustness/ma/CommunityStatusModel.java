@@ -67,7 +67,7 @@ public class CommunityStatusModel {
   public static final int NODE  = 1;
 
   public static final long NOTIFICATION_INTERVAL = 2 * 1000;
-      public static final long LOCATION_UPDATE_INTERVAL = 15 * 1000;
+  public static final long LOCATION_UPDATE_INTERVAL = 15 * 1000;
 
   private long DEFAULT_TTL = 3 * 60 * 1000; // Time to Live for status entries,
                                  // used in calculation of status expirations
@@ -135,7 +135,7 @@ public class CommunityStatusModel {
     alarmService =
        (AlarmService)serviceBroker.getService(this, AlarmService.class, null);
     alarmService.addRealTimeAlarm(new ChangeNotificationTimer(NOTIFICATION_INTERVAL));
-    //alarmService.addRealTimeAlarm(new LocationUpdateTimer(LOCATION_UPDATE_INTERVAL));
+    alarmService.addRealTimeAlarm(new LocationUpdateTimer(LOCATION_UPDATE_INTERVAL));
   }
 
   public void setController(RobustnessController rc) {
@@ -861,7 +861,6 @@ public class CommunityStatusModel {
   }
 
   private void updateAgentLocations() {
-    logger.info("updateAgentLocations");
     updateLocations(listEntries(AGENT), 0);
   }
 

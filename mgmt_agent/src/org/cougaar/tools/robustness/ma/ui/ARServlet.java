@@ -137,7 +137,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     private String action = "", format = "", dest="";
     //private List communities = new ArrayList();
     private String robustnessCommunity = "";
-    private String lastop="", lastma="", laston="", lastdn=""; //lastfs="";
+    private String lastop="", lastma="", laston="", lastdn="", method=""; //lastfs="";
 
     public void execute(HttpServletRequest req, HttpServletResponse res)
       throws IOException, ServletException
@@ -205,6 +205,8 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
             if(name.equals("loadBalance")) {
               action = "loadBalance";
             }
+           // if(name.equals("method"))
+             // method = value;
           }
         };
       // visit the URL parameters
@@ -226,9 +228,17 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
           writeSuccess(format); //this is just for refresh, don't do a publishAdd.
         else {
           try {
-              //AgentControl ac = createAgentControl(command);
-              //addAgentControl(ac);
+             /*if(method.equals("MoveTicket")) {
+              AgentControl ac = createAgentControl(command);
+              addAgentControl(ac);
+             }
+             else*/
+            if(command.equals("Move"))
               publishHealthMonitorMove(robustnessCommunity);
+            else {
+              AgentControl ac = createAgentControl(command);
+              addAgentControl(ac);
+            }
           } catch (Exception e) {
             writeFailure(e);
             return;
@@ -260,7 +270,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
       }
     }
 
-    /**
+     /**
      * List names of all robustness communities in the homepage. Every name is a link to show
      * the detail of this community.
      */
@@ -441,6 +451,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     try {
       bb.openTransaction();
       bb.publishAdd(ac);
+      log.debug("publishing AgentControl: source=" + ac.getSource().toAddress() + " target=" + ac.getTarget().toAddress());
     } finally {
       bb.closeTransactionDontReset();
     }
@@ -736,7 +747,7 @@ if(hmrResp.getStatus() == hmrResp.FAIL)
           uidService.nextUID());
       MessageAddress target = MessageAddress.getMessageAddress(destNode);
       MessageAddress orig = MessageAddress.getMessageAddress(origNode);
-      if (target.equals(agentId)) {
+      if (orig.equals(agentId)) {
         if (log.isInfoEnabled()) {
           log.info("Publishing HealthMonitorRequest: " + hmr.getRequestTypeAsString());
         }
