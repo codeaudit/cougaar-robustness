@@ -130,7 +130,6 @@ public class EventLoader extends XMLLoader {
 
         //Create default threat
         EventDescription event = new EventDescription( eventName, affectsAssetType, asd );
-        events.add(event);
 
         Element e;
         for (Node child = element.getFirstChild(); child != null; child = child.getNextSibling()) {
@@ -143,8 +142,23 @@ public class EventLoader extends XMLLoader {
             } //else, likely a text element - ignore
         }
 
-        logger.debug("Added new Event: \n"+event.toString() );
-            
+        
+        //Now verify that all states are covered by this action - we have closure -- if not, do not add action.
+        boolean error = false;
+        Iterator states = asd.getPossibleStates().iterator();
+        while ( states.hasNext() ) {
+            AssetState as = (AssetState) states.next();
+            if ( event.getDirectEffectTransitionForState(as) == null) {
+                logger.error(" ERROR: cannot find transition from "+assetType+":"+asd.getStateName()+":"+as.getName()+ " --> IGNORING EVENT ["+event.getName()+"]!!");
+                error = true;
+            }
+        }
+
+        if (!error) {
+            events.add(event);
+            logger.debug("Added new Event: \n"+event.toString() );
+        }
+        
         return events;
     }
 
