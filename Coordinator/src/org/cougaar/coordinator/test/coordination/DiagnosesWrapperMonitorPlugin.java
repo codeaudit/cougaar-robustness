@@ -134,7 +134,7 @@ implements NotPersistable {
         while (iter.hasNext()) {
             DiagnosesWrapper a = (DiagnosesWrapper)iter.next();
             if (servlet != null) { servlet.addDiagnosesWrapper(a); }
-            logger.debug("**** Saw new DiagnosesWrapper["+DiagnosisUtils.getExpandedName((Diagnosis)a.getContent())+"], with value = " + ((Diagnosis)a.getContent()).getValue());
+            logger.debug("**** Saw new DiagnosesWrapper["+DiagnosisUtils.getAssetID((Diagnosis)a.getContent())+"], with value = " + ((Diagnosis)a.getContent()).getValue());
         }
         
         //********* Check for changes in our modes ************
@@ -145,7 +145,7 @@ implements NotPersistable {
         while (iter.hasNext()) {
             DiagnosesWrapper a = (DiagnosesWrapper)iter.next();
             if (servlet != null) { servlet.changedDiagnosesWrapper(a); }
-            logger.debug("**** Saw changed DiagnosesWrapper["+DiagnosisUtils.getExpandedName((Diagnosis)a.getContent())+"], with value = " + ((Diagnosis)a.getContent()).getValue());
+            logger.debug("**** Saw changed DiagnosesWrapper["+DiagnosisUtils.getAssetID((Diagnosis)a.getContent())+"], with value = " + ((Diagnosis)a.getContent()).getValue());
         }
         
     }

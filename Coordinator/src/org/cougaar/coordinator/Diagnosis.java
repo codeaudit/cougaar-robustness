@@ -142,7 +142,7 @@ public abstract class Diagnosis
         // get the diagnosis tech spec & load the possibleValues
         initPossibleValues();
 
-        this.assetID = AssetName.generateExpandedAssetName(assetName, assetType);
+        this.assetID = new AssetID(assetName, assetType);
         this.setUID(uidService.nextUID());
         
     }

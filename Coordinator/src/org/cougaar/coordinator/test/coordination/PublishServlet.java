@@ -232,7 +232,7 @@ public class PublishServlet extends BaseServletComponent implements BlackboardCl
         try {
             Diagnosis d = createDiagnosis(assetname); 
             blackboard.publishAdd(d);
-            logger.debug("**** Published Diagnosis["+DiagnosisUtils.getExpandedName(d)+" UID=" + d.getUID());
+            logger.debug("**** Published Diagnosis["+DiagnosisUtils.getAssetID(d)+" UID=" + d.getUID());
         } catch (Exception e) {
             error = e.toString();
         }
@@ -240,7 +240,7 @@ public class PublishServlet extends BaseServletComponent implements BlackboardCl
         try {
             Action a = createAction(assetname);    
             blackboard.publishAdd(a);
-            logger.debug("**** Saw new Action["+ActionUtils.getExpandedName(a)+" UID=" + a.getUID());
+            logger.debug("**** Saw new Action["+ActionUtils.getAssetID(a)+" UID=" + a.getUID());
         } catch (Exception e) {
             error = error + "\n" + e.toString();
         }

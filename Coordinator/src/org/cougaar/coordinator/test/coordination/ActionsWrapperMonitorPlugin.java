@@ -132,7 +132,7 @@ implements NotPersistable {
         while (iter.hasNext()) {
             ActionsWrapper a = (ActionsWrapper)iter.next();
             if (servlet != null) { servlet.addActionsWrapper(a); }
-            logger.debug("**** Saw new ActionsWrapper["+(ActionUtils.getExpandedName((Action)a.getContent()))+"], with ActionRecord = " + ((Action)a.getContent()).getValue());
+            logger.debug("**** Saw new ActionsWrapper["+ActionUtils.getAssetID((Action)a.getContent())+"], with ActionRecord = " + ((Action)a.getContent()).getValue());
         }
         
         //********* Check for changes in our modes ************
@@ -143,7 +143,7 @@ implements NotPersistable {
         while (iter.hasNext()) {
             ActionsWrapper a = (ActionsWrapper)iter.next();
             if (servlet != null) { servlet.changedActionsWrapper(a); }
-            logger.debug("**** Saw changed ActionsWrapper["+(ActionUtils.getExpandedName((Action)a.getContent()))+"], with ActionRecord = " + ((Action)a.getContent()).getValue());
+            logger.debug("**** Saw changed ActionsWrapper["+ActionUtils.getAssetID((Action)a.getContent())+"], with ActionRecord = " + ((Action)a.getContent()).getValue());
         }
         
     }

@@ -133,7 +133,7 @@ implements NotPersistable {
         while (iter.hasNext()) {
             Diagnosis a = (Diagnosis)iter.next();
             if (servlet != null) { servlet.addDiagnosis(a); }
-            logger.debug("**** Saw new Diagnosis["+DiagnosisUtils.getExpandedName(a)+"], with value = " + a.getValue() + " UID=" + a.getUID());
+            logger.debug("**** Saw new Diagnosis["+DiagnosisUtils.getAssetID(a)+"], with value = " + a.getValue() + " UID=" + a.getUID());
         }
         
         //********* Check for changes in our modes ************
@@ -144,7 +144,7 @@ implements NotPersistable {
         while (iter.hasNext()) {
             Diagnosis a = (Diagnosis)iter.next();
             if (servlet != null) { servlet.changedDiagnosis(a); }
-            logger.debug("**** Saw changed Diagnosis["+DiagnosisUtils.getExpandedName(a)+"], with value = " + a.getValue() + " UID=" + a.getUID());
+            logger.debug("**** Saw changed Diagnosis["+DiagnosisUtils.getAssetID(a)+"], with value = " + a.getValue() + " UID=" + a.getUID());
         }
         
     }

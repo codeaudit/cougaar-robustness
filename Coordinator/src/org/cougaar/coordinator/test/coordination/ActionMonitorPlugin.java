@@ -130,7 +130,7 @@ implements NotPersistable {
         while (iter.hasNext()) {
             Action a = (Action)iter.next();
             if (servlet != null) { servlet.addAction(a); }
-            logger.debug("**** Saw new Action["+a.getAssetID()+"], with ActionRecord = " + a.getValue() + " UID=" + a.getUID());
+            logger.debug("**** Saw new Action["+ActionUtils.getAssetID(a)+"], with ActionRecord = " + a.getValue() + " UID=" + a.getUID());
         }
         
         //********* Check for changes in our modes ************
@@ -140,7 +140,7 @@ implements NotPersistable {
         while (iter.hasNext()) {
             Action a = (Action)iter.next();
             if (servlet != null) { servlet.changedAction(a); }
-            logger.debug("**** Saw changed Action["+a.getAssetID()+"], with ActionRecord = " + a.getValue() + " UID=" + a.getUID());
+            logger.debug("**** Saw changed Action["+ActionUtils.getAssetID(a)+"], with ActionRecord = " + a.getValue() + " UID=" + a.getUID());
         }
         
     }

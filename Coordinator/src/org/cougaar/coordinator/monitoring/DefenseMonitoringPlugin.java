@@ -196,7 +196,8 @@ public class DefenseMonitoringPlugin extends DeconflictionPluginBase implements 
                 // Did the Defense succeed?
                 try {
                     if (dac == null) {
-                        dac = DefenseApplicabilityCondition.find(defense, AssetName.generateExpandedAssetName(asset,AssetType.findAssetType(assetType)), blackboard);
+////////////////////// taken out for now  26 April 2004                        
+////////////////      dac = DefenseApplicabilityCondition.find(defense, AssetName.generateExpandedAssetName(asset,AssetType.findAssetType(assetType)), blackboard);
                     }
                     DefenseApplicabilityConditionSnapshot snapshot = new DefenseApplicabilityConditionSnapshot(dac);
                     snapshot.setCompletionTime(System.currentTimeMillis()); //set time that this defense completed (succeed or failure)

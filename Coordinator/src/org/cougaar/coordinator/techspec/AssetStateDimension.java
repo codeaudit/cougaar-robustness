@@ -152,8 +152,8 @@ public class AssetStateDimension implements NotPersistable, Serializable {
     public String StateIndexToStateName( int state_index ) {
 
         if (state_index >= possibleStates.size() ) return null;
-        return possibleStates.get(state_index);
-
+        AssetState as = (AssetState) possibleStates.get(state_index);
+        return (as != null ? as.getName() : null );
     }
 
     /**
