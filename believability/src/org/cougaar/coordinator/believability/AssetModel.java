@@ -63,7 +63,7 @@ public class AssetModel extends Loggable
      * asset's existence.
      **/
     public AssetModel( AssetID asset_id,
-                       BelievabilityPlugin bel_plugin,
+                       IntervalAlarmHandler alarm_handler,
                        ModelManagerInterface model_manager,
                        StateEstimationPublisher se_publisher,
                        long initial_time ) 
@@ -78,7 +78,7 @@ public class AssetModel extends Loggable
              = new BeliefTriggerHistory( asset_id,
                                          model_manager,
                                          se_publisher,
-                                         bel_plugin.getAlarmServiceHandle());
+                                         alarm_handler );
 
     } // constructor AssetModel
 

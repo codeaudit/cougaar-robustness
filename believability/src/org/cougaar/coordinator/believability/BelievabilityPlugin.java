@@ -75,7 +75,7 @@ import org.cougaar.util.UnaryPredicate;
  */
 public class BelievabilityPlugin 
         extends ServiceUserPluginBase
-        implements NotPersistable 
+        implements NotPersistable
 
 {
     // We keep a state variable about rehydration status to know what
@@ -106,19 +106,30 @@ public class BelievabilityPlugin
     /** 
      * Creates a new instance of BelievabilityPlugin 
      **/
-    public BelievabilityPlugin() {
+    public BelievabilityPlugin() 
+    {
 
         super(requiredServices);
 
-
-     // Initialize various classes
-     _model_manager = new ModelManager();
-     _se_publisher = new StateEstimationPublisher( this, _model_manager );
-     _trigger_consumer = new TriggerConsumer( this,
-                                _model_manager,
-                                _se_publisher );
-     _se_publisher.setAssetContainer( _trigger_consumer.getAssetContainer() );
-     
+        // We canot do any real work, or publish in the expire()
+        // method of an alarm.  Thus, we use this class to manage
+        // alarm which will turn alarm expire() invocations into
+        // execute() time methods that do not have such restrictions.
+        // This is done by queuing up the alarms and having this
+        // plugin call a queu processing execute() routine on this
+        // handler in its execute() method.
+        //
+        _alarm_handler = new IntervalAlarmHandler( this );
+        
+        
+        // Initialize various classes
+        _model_manager = new ModelManager();
+        _se_publisher = new StateEstimationPublisher( this, _model_manager );
+        _trigger_consumer = new TriggerConsumer( this,
+                                                 _model_manager,
+                                                 _se_publisher );
+        _se_publisher.setAssetContainer( _trigger_consumer.getAssetContainer() );
+        
     } // constructor BelievabilityPlugin
     
 
@@ -189,37 +200,66 @@ public class BelievabilityPlugin
      getBlackboardService().publishRemove( o );
         return true;
     } // method publishRemove
-    
 
+    //************************************************************
     /**
      * Method to queue an object for publication the next time execute() runs
      * @param obj The object to publish
      **/
-    public synchronized void queueForPublication( Object obj ) {
-        _publication_list.add( obj );
+    public void queueForPublication( Object obj ) 
+    {
+        synchronized( _publication_list )
+        {
+            _publication_list.add( obj );
+        }
+
         getBlackboardService().signalClientActivity();
     }
 
+    //************************************************************
     /**
      * Method to publish the items on the queue
      **/
-    public synchronized void publishFromQueue() {
-        Iterator pli = _publication_list.iterator();
-        while ( pli.hasNext() ) {
-            Object o = pli.next();
-            if ( logger.isDebugEnabled() )
-                 logger.debug( " publishFromQueue publishing object " + o.toString() );
-            publishAdd(o);
-         pli.remove();
+    public void publishFromQueue() 
+    {
+        synchronized( _publication_list )
+        {
+            Iterator pli = _publication_list.iterator();
+            while ( pli.hasNext() ) 
+            {
+                Object o = pli.next();
+                if ( logger.isDebugEnabled() )
+                    logger.debug( " publishFromQueue publishing object "
+                                  + o.toString() );
+                publishAdd(o);
+                pli.remove();
+            }
         }
+    } // method publishFromQueue
+    
+    //************************************************************
+    /**
+     * Simple accessor fo the local alarm handler object
+     */
+    IntervalAlarmHandler getIntervalAlarmHandler() { return _alarm_handler; }
+
+    //************************************************************
+    /**
+     * Adds an alarm to cougaar (relay method)
+     */
+    void addRealTimeAlarm( Alarm alarm ) 
+    { 
+        getAlarmService().addRealTimeAlarm( alarm );
     }
 
+    //************************************************************
     /**
-     * Since getAlarmService() is a protected method, we need to wrap
-     * it this way to provide other classes access so they can set
-     * timers.
+     * Signals clietn activity to cougaar (relay method)
      */
-    AlarmService getAlarmServiceHandle() { return getAlarmService(); }
+    void signalClientActivity( ) 
+    { 
+        getBlackboardService().signalClientActivity();
+    }
 
     /**
      * Get the system start time
@@ -321,12 +361,13 @@ public class BelievabilityPlugin
         if (logger.isDetailEnabled()) 
             logger.detail("Believability Plugin in Execute Loop");
 
-        // We choose to do these two things first as they are somewhat
-        // independent of whether there are update triggers to process
-        // or if some special event (like rehydrating or
+        // We choose to do these first few things first as they are
+        // somewhat independent of whether there are update triggers
+        // to process or if some special event (like rehydrating or
         // leashing/unleashing is happening.
         //
         publishFromQueue();
+        _alarm_handler.execute();
         handleThreatModel();
 
         // We must have all the techspecs in order to handle any
@@ -454,19 +495,20 @@ public class BelievabilityPlugin
      **/
     private void handleUpdateTriggers()
     {
+        int num_add = _beliefUpdateTriggerSub.getAddedCollection().size();
+        
+        int num_change = _beliefUpdateTriggerSub.getChangedCollection().size();
+
         // First and foremost, we ignore all update triggers unless we
         // are unleashed.
         //
         if ( _leashing_state != LEASHING_STATE_UNLEASHED )
         {
-            int num_add = _beliefUpdateTriggerSub.getAddedCollection().size();
-
             if (( num_add > 0 )
                 && logger.isDetailEnabled() ) 
                 logger.detail("Plugin Leashed. Ignoring ADD for "
                               + num_add + " update trigger(s)." );
             
-            int num_change = _beliefUpdateTriggerSub.getChangedCollection().size();
             if (( num_change > 0 )
                 && logger.isDetailEnabled() ) 
                 logger.detail("Plugin Leashed. Ignoring CHANGE for "
@@ -487,6 +529,12 @@ public class BelievabilityPlugin
         // actuators, at the time of success
      
         // ------- ADD UpdateTrigger
+
+        if  (( num_add > 0 )
+             && logger.isDetailEnabled() ) 
+            logger.detail ("Starting to process " + num_add 
+                           + " ADD triggers." );
+
         for ( iter = _beliefUpdateTriggerSub.getAddedCollection().iterator();  
               iter.hasNext() ; ) 
         {
@@ -498,8 +546,15 @@ public class BelievabilityPlugin
         } // iterator for ADD update trigger
 
         // ------- CHANGE UpdateTrigger
+
+        if  (( num_change > 0 )
+             && logger.isDetailEnabled() ) 
+            logger.detail ("Starting to process " + num_add 
+                           + " CHANGE triggers." );
+
         for ( iter = _beliefUpdateTriggerSub.getChangedCollection().iterator();
-              iter.hasNext() ; ) {
+              iter.hasNext() ; ) 
+        {
 
             if (logger.isDetailEnabled() ) 
                 logger.detail ("UpdateTrigger CHANGE");
@@ -513,7 +568,8 @@ public class BelievabilityPlugin
         // we do nothing with this since it is controlled elsewhere, and
         // we have already processed it.
         for ( iter = _beliefUpdateTriggerSub.getRemovedCollection().iterator(); 
-              iter.hasNext() ; ) {
+              iter.hasNext() ; ) 
+        {
             Object o = iter.next();
             // do absolutely nothing
         } // for REMOVE UpdateTrigger
@@ -1106,11 +1162,11 @@ public class BelievabilityPlugin
     // about publishing state estimations.
     private StateEstimationPublisher _se_publisher = null;
 
-    // This is the asset index for the AssetModels. It is indexed by AssetID
-    private TriggerConsumer _trigger_consumer = null;
-
     // Vector of things waiting to be published to the blackboard
     private Vector _publication_list = new Vector();
+
+    // This is the asset index for the AssetModels. It is indexed by AssetID
+    private TriggerConsumer _trigger_consumer = null;
 
     // When the plugin rehydrates, we need to specially handle getting
     // older information from blackboard objects.  We use this state
@@ -1129,6 +1185,16 @@ public class BelievabilityPlugin
     // finally to the 'unleashed' state.
     //
     private int _leashing_state = LEASHING_STATE_LEASHED;
+
+    // We canot do any real work, or publish in the expire()
+    // method of an alarm.  Thus, we use this class to manage
+    // alarm which will turn alarm expire() invocations into
+    // execute() time methods that do not have such restrictions.
+    // This is done by queuing up the alarms and having this
+    // plugin call a queu processing execute() routine on this
+    // handler in its execute() method.
+    //
+    private IntervalAlarmHandler _alarm_handler;
 
     // Use this for externally controllable policy-based
     // settings/parameters.

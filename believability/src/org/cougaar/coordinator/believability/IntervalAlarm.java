@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/IntervalAlarm.java,v $
- * $Revision: 1.12 $
- * $Date: 2004-08-05 20:58:53 $
+ * $Revision: 1.15 $
+ * $Date: 2004-08-09 20:46:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -28,7 +28,7 @@ import org.cougaar.core.agent.service.alarm.Alarm;
  * interval of time.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.12 $Date: 2004-08-05 20:58:53 $
+ * @version $Revision: 1.15 $Date: 2004-08-09 20:46:41 $
  *
  */
 public class IntervalAlarm extends Loggable implements Alarm
@@ -44,12 +44,23 @@ public class IntervalAlarm extends Loggable implements Alarm
      * Constructor documentation comments go here ...
      *
      * @param duration The timer duration in milliseconds
-     * @param handler The object that will handle when the timer expires
+     * @param immediate_expire_handler The object that will handle
+     * when the timer expires. It is called from the expire() method
+     * of this alarm.  This handler should do little work, and cannot
+     * publish to the blackboard.  This should is also call the
+     * handleDeferredExpiration() method sometime after during an
+     * execute() call. 
+     * @param deferred_expire_handler The object that will handle the
+     * expire() some time after the expire() method. This has none of
+     * the restriction that the immediate expire handler does.
      */
     public IntervalAlarm( long duration,
-                          AlarmExpirationHandler handler )
+                          IntervalAlarmHandler immediate_expire_handler,
+                          AlarmExpirationHandler deferred_expire_handler )
     {
-        this._handler = handler;
+        this._immediate_handler = immediate_expire_handler;
+        this._deferred_handler = deferred_expire_handler;
+
         _start_time = System.currentTimeMillis();
         _duration = duration;
         _expired = false;
@@ -98,16 +109,30 @@ public class IntervalAlarm extends Loggable implements Alarm
 
         _expired = true;
 
+        _immediate_handler.queueExpiredAlarm( this );
+
+    } // method expire
+
+    //************************************************************
+    /**
+     * This should be called sometime after expire() by the immediate
+     * expiration handler.  This should be invoked in the context of
+     * an execute() and is allowed to do a significant amount of work
+     * and publish things to the blackboard.
+     */
+    public void handleDeferredExpiration( )
+    {
         try
         {
-            _handler.handleAlarmExpired( this );
+            _deferred_handler.handleAlarmExpired( this );
         }
         catch (BelievabilityException be)
         {
-            logDebug( "Problem handling alarm expire: " + be.getMessage() );
+            logDebug( "Problem handling deferred alarm expire: "
+                      + be.getMessage() );
         }
 
-    } // method expire
+    } // method handleDeferredExpiration
 
     //************************************************************
     /**
@@ -152,7 +177,9 @@ public class IntervalAlarm extends Loggable implements Alarm
     // private interface
     //------------------------------------------------------------
 
-    private AlarmExpirationHandler _handler;
+    private IntervalAlarmHandler _immediate_handler;
+    private AlarmExpirationHandler _deferred_handler;
+
     private long _start_time;
     private long _duration;
     private boolean _expired;

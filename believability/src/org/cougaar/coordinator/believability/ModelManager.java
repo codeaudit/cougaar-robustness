@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManager.java,v $
- * $Revision: 1.25 $
- * $Date: 2004-08-05 20:58:53 $
+ * $Revision: 1.26 $
+ * $Date: 2004-08-06 04:18:46 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -47,7 +47,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * and provides information via the ModelManagerInterface. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.25 $Date: 2004-08-05 20:58:53 $
+ * @version $Revision: 1.26 $Date: 2004-08-06 04:18:46 $
  *
  */
 public class ModelManager extends Loggable
@@ -683,6 +683,9 @@ public class ModelManager extends Loggable
     {
         _rehydration_happening = value;
 
+        if ( value )
+            _is_in_rehydrated_state = true;
+
     } // method setRehydrationHappening
 
     //************************************************************
@@ -698,6 +701,23 @@ public class ModelManager extends Loggable
         return _rehydration_happening;
 
     } // method isRehydrationHappening
+
+    //************************************************************
+    /**
+     * Checks whether or not the rehydration processis is in progress
+     * or has happened in the past.  We can move out of the rehydrated
+     * state if the system is leashed and unleashed after the
+     * rehydration.
+     *
+     * @return True if the plugin is rehydrating
+     */
+    public boolean isInRehydratedState( )
+    {
+        return _is_in_rehydrated_state;
+
+    } // method isInRehydratedState
+
+
 
     //************************************************************
     /**
@@ -722,7 +742,18 @@ public class ModelManager extends Loggable
      */
     public void setUnleashingHappening( boolean value )
     {
+
         _unleashing_happening = value;
+
+        // If unleashing occurs after rehydration, then we will treat
+        // the state of the plugin to be sort of reset.  This is used
+        // to determine what initial belief state to use.  When
+        // rehydrated, we use the uniform distribution, when
+        // unleashed, we use the techspec-derived a priori initial
+        // belief state.
+        //
+        if ( value )
+            _is_in_rehydrated_state = false;
 
     } // method setUnleashingHappening
 
@@ -838,6 +869,10 @@ public class ModelManager extends Loggable
     // of state).
     //
     private boolean _rehydration_happening = false;
+
+    // Whether or not rehydration has hapened.
+    //
+    private boolean _is_in_rehydrated_state = false;
 
     // Whether or not rehydration is happening (in progress recreation
     // of state).

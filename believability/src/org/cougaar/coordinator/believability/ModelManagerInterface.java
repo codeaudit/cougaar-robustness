@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManagerInterface.java,v $
- * $Revision: 1.25 $
- * $Date: 2004-08-05 20:58:53 $
+ * $Revision: 1.26 $
+ * $Date: 2004-08-06 04:18:46 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -39,7 +39,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * tech spec information. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.25 $Date: 2004-08-05 20:58:53 $
+ * @version $Revision: 1.26 $Date: 2004-08-06 04:18:46 $
  *
  */
 public interface ModelManagerInterface
@@ -94,6 +94,7 @@ public interface ModelManagerInterface
 
     public void setRehydrationHappening( boolean value );
     public boolean isRehydrationHappening( );
+    public boolean isInRehydratedState( );
 
     public boolean isLeashed( );
     public void setUnleashingHappening( boolean value );

@@ -48,8 +48,8 @@ public class TriggerConsumer extends Loggable
      *                     StateEstimations
      **/
     public TriggerConsumer( BelievabilityPlugin bel_plugin,
-                     ModelManagerInterface model_manager,
-                     StateEstimationPublisher se_publisher ) 
+                            ModelManagerInterface model_manager,
+                            StateEstimationPublisher se_publisher ) 
     {
         // Copy off the parameters
         _plugin = bel_plugin;
@@ -103,7 +103,7 @@ public class TriggerConsumer extends Loggable
             AssetModel am = _asset_container.getAssetModel( but.getAssetID() );
             if ( am == null ) {
                 am = new AssetModel( but.getAssetID(),
-                                     _plugin,
+                                     _plugin.getIntervalAlarmHandler(),
                                      _model_manager, 
                                      _se_publisher,
                                      but.getTriggerTimestamp() );

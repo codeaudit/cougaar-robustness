@@ -33,6 +33,23 @@ import java.util.Hashtable;
 public class StateEstimationPublisher 
         extends Loggable implements BeliefConsumer {
 
+    // Previously, we used to generate the SE object to publish
+    // during the expire() of an alarm.  This prevented us from
+    // publishing to the blackboard, so we used this routine
+    //
+    //     _plugin.queueForPublication( state_estimation );
+    //
+    // to queue up the object for later processing in the
+    // execute() method.   We subsequently change the expire()
+    // handling so that the alarms are queued instead, so the
+    // SE objects to be published are now created in the
+    // execute() so we are allowed to immediately publish them.
+    //
+    // We allow doing it either way by flipping the logic of this
+    // constant.
+    //
+    public static final boolean PUBLISH_IMMEDIATELY = true;
+
     /**
      * Constructor.
      * @param plugin the BelievabilityPlugin that can talk to the blackboard.
@@ -59,12 +76,13 @@ public class StateEstimationPublisher
             //
             StateEstimation se = new StateEstimation ( belief_state,
                                                        _model_manager );
-            // This doesn't really publish the state estimation to the
-            // blackboard, but queues it for later publishing.  This
-            // consumeBeliefState() method can be called in the
-            // context of an expired alarm, and it is wrong cougaar
-            // protocol to publish while processing the alarm's
-            // expiration. 
+
+            // This may either immediately publish the state
+            // estimation to the blackboard or queue it for later
+            // publishing.  This consumeBeliefState() method can be
+            // called in the context of an expired alarm, and it is
+            // wrong cougaar protocol to publish while processing the
+            // alarm's expiration.
             //
             publish( se );
 
@@ -87,8 +105,28 @@ public class StateEstimationPublisher
     protected void publish ( StateEstimation state_estimation ) 
      throws BelievabilityException {
 
-     try {
-         _plugin.queueForPublication( state_estimation );
+     try 
+     {
+         
+         // Previously, we used to generate the SE object to publish
+         // during the expire() of an alarm.  This prevented us from
+         // publishing to the blackboard, so we used this routine
+         //
+         //     _plugin.queueForPublication( state_estimation );
+         //
+         // to queue up the object for later processing in the
+         // execute() method.   We subsequently change the expire()
+         // handling so that the alarms are queued instead, so the
+         // SE objects to be published are now created in the
+         // execute() so we are allowed to immediately publish them.
+         //
+         // We allow the choice based on a constant.
+         //
+         if ( PUBLISH_IMMEDIATELY )
+             _plugin.publishAdd( state_estimation );
+         else
+             _plugin.queueForPublication( state_estimation );
+ 
      }
      catch ( Exception e ) {
          throw new BelievabilityException( "StateEstimationPublisher.publish",

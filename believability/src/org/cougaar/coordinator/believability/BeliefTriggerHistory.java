@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefTriggerHistory.java,v $
- * $Revision: 1.13 $
- * $Date: 2004-08-05 20:58:53 $
+ * $Revision: 1.14 $
+ * $Date: 2004-08-06 04:18:46 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -99,7 +99,7 @@ import org.cougaar.core.agent.service.alarm.Alarm;
  * an instance of this class: one for each of these.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.13 $Date: 2004-08-05 20:58:53 $
+ * @version $Revision: 1.14 $Date: 2004-08-06 04:18:46 $
  * @see BeliefTriggerManager
  */
 class BeliefTriggerHistory 
@@ -126,7 +126,7 @@ class BeliefTriggerHistory
     BeliefTriggerHistory( AssetID asset_id, 
                           ModelManagerInterface model_manager,
                           BeliefConsumer consumer,
-                          AlarmService alarm_service )
+                          IntervalAlarmHandler alarm_handler )
     {
         super();
 
@@ -135,7 +135,7 @@ class BeliefTriggerHistory
         this._asset_id = asset_id;
         this._model_manager = model_manager;
         this._consumer = consumer;
-        this._alarm_service = alarm_service;
+        this._alarm_handler = alarm_handler;
 
     }  // constructor BeliefTriggerHistory
 
@@ -477,13 +477,12 @@ class BeliefTriggerHistory
             throws BelievabilityException
     {
 
-        // If we are handling a trigger while rehydration is in
-        // progress, then this measn that this is an asset that
-        // existed before rehydration, and thus we want to make sure
-        // we use the uniform distribution for the initial belief
-        // state.
+        // If we are handling a trigger while rehydrated, then this
+        // measn that this is an asset that (more than likely) existed
+        // before rehydration, and thus we want to make sure we use
+        // the uniform distribution for the initial belief state.
         //
-        if ( _model_manager.isRehydrationHappening() )
+        if ( _model_manager.isInRehydratedState() )
         {
 
             // If we are rehydrating the plugin, then using the tech spec
@@ -967,9 +966,11 @@ class BeliefTriggerHistory
         _publish_alarm = null;
 
         _delay_alarm = new IntervalAlarm
-                ( _model_manager.getPublishDelayInterval(), this );
+                ( _model_manager.getPublishDelayInterval(), 
+                  _alarm_handler,
+                  this );
         
-        _alarm_service.addRealTimeAlarm( _delay_alarm );
+        _alarm_handler.addAlarm( _delay_alarm );
 
         logDetail( "Publish delay timer started for " + _asset_id
                    + ". Alarm:" + _delay_alarm.toString() );
@@ -1018,10 +1019,11 @@ class BeliefTriggerHistory
 
         _latency_alarm = new IntervalAlarm
                 ( _model_manager.getMaxSensorLatency
-                  ( _asset_id.getType() ), 
+                  ( _asset_id.getType() ),
+                  _alarm_handler,
                   this );
         
-        _alarm_service.addRealTimeAlarm( _latency_alarm );
+        _alarm_handler.addAlarm( _latency_alarm );
 
         logDetail( "Latency timer started for " + _asset_id
                    + ". Alarm:" + _latency_alarm.toString() );
@@ -1057,9 +1059,10 @@ class BeliefTriggerHistory
         _publish_alarm = new IntervalAlarm
                 ( _model_manager.getMaxPublishInterval
                   ( _asset_id.getType() ),
+                  _alarm_handler,
                   this );
         
-        _alarm_service.addRealTimeAlarm( _publish_alarm );
+        _alarm_handler.addAlarm( _publish_alarm );
 
         logDetail( "Publish timer started for " + _asset_id
                    + ". Alarm:" + _publish_alarm.toString() );
@@ -1107,24 +1110,15 @@ class BeliefTriggerHistory
     //************************************************************
     /**
      * This will be called when the alarm expires, and if it had not
-     * been cancelled previously.
+     * been cancelled previously. This will be a deferred call, so
+     * that it run's in the plugin execute() context and not in the
+     * alarm expire() context (the latter restricts what we can do.)
      *
      * @param alarm the alarm object that has expired.
      */
     public void handleAlarmExpired( Alarm alarm )
             throws BelievabilityException
     {
-        // When handling an e\alarm expiration, we may need to do
-        // things differently.
-        //
-        _handling_alarm_expire = true;
-
-        // FIXME: A better way to do this would be to have the alarm
-        // expire() (or this method) simply queue itself up, and then
-        // call the plugin's signalClientActivity() method to force
-        // its execute() method to be invoked. executes() do not
-        // happen in parallel.
-        //
 
         if ( alarm == _delay_alarm )
         {
@@ -1166,8 +1160,6 @@ class BeliefTriggerHistory
                       + _asset_id );
         }
 
-        _handling_alarm_expire = false;
-
     } // method handleAlarmExpired
 
     //------------------------------------------------------------
@@ -1193,7 +1185,7 @@ class BeliefTriggerHistory
     // This is needed to properly set and mamage alarms in the cougaar
     // system. 
     //
-    private AlarmService _alarm_service;
+    private IntervalAlarmHandler _alarm_handler;
 
     // For the current latency window, we need to track which sensors
     // we have heard from during the window. The reason for this is
@@ -1271,14 +1263,6 @@ class BeliefTriggerHistory
     // Also keep track of the time that a belief was last published.
     //
     private long _last_publish_time;
-
-    // When handling cougaar alarms, we want to do as little work as
-    // possible in the expire() handler, and are forbidden from
-    // publishing to the blackboard.  Thus, we want the entire class
-    // to be aware of when it is an is not handling and alarm
-    // expire(). 
-    //
-    private boolean _handling_alarm_expire = false;
 
     // A handle to the current alarm (if any) associated with the
     // sensor latency.
