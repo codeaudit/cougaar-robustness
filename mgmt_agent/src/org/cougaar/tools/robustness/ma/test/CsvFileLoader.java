@@ -99,9 +99,9 @@ public class CsvFileLoader
     Statement st = null;
     try{
       st = conn.createStatement();
-      ResultSet rs = st.executeQuery("select * from " + tableName);
+      //ResultSet rs = st.executeQuery("select * from " + tableName);
       st.executeUpdate("drop table " + tableName);
-    }catch(SQLException e){e.printStackTrace();}
+    }catch(SQLException e){} //catch exception if the table doesn't exist, ignore it.
 
     if(file != null)
     {
@@ -130,7 +130,7 @@ public class CsvFileLoader
           StringTokenizer token = new StringTokenizer(str, ",");
           while(token.hasMoreTokens())
           {
-            insertQuery += "'" + token.nextToken() + "', ";
+            insertQuery += token.nextToken() + ", ";
           }
           insertQuery = insertQuery.substring(0, insertQuery.length()-2);
           if(str.endsWith(","))

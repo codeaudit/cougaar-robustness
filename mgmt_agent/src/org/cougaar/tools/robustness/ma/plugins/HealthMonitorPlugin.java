@@ -84,6 +84,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
 
   // Defines default values for configurable parameters.
   private static String defaultParams[][] = {
+    {"community",    ""},
     {"hbReqTimeout", "20000"},
     {"hbFreq",       "10000"},
     {"hbTimeout",    "5000"},
@@ -192,14 +193,10 @@ public class HealthMonitorPlugin extends SimplePlugin {
     mgmtAgentProps =
       (IncrementalSubscription)bbs.subscribe(propertiesPredicate);
 
-    // Send request to CommunityPlugin to return a list of members in the
-    // Robustness community thats being monitored.  This roster will be
-    // automatically updated by the CommunityPlugin when changes to community
-    // membership occur.
-    CommunityRequest cr = new CommunityRequestImpl();
-    cr.setVerb("GET_ROSTER_WITH_UPDATES");
-    cr.setTargetCommunityName(communityToMonitor);
-    bbs.publishAdd(cr);
+    // Get Roster for community to monitor
+    if (communityToMonitor != null && communityToMonitor.length() > 0) {
+      sendRosterRequest(communityToMonitor);
+    }
 
     // Start evaluation thread to periodically update and analyze the Health
     // Status of monitored agents
@@ -210,6 +207,20 @@ public class HealthMonitorPlugin extends SimplePlugin {
     startMsg.append("HealthMonitorPlugin started: agent=" + myAgent);
     startMsg.append(" " + paramsToString());
     log.info(startMsg.toString());
+  }
+
+  /**
+   * Send request to CommunityPlugin to return a list of members in the
+   * Robustness community thats being monitored.  This roster will be
+   * automatically updated by the CommunityPlugin when changes to community
+   * membership occur.
+   * @param communityName Name of community to be monitored
+   */
+  private void sendRosterRequest(String communityName) {
+    CommunityRequest cr = new CommunityRequestImpl();
+    cr.setVerb("GET_ROSTER_WITH_UPDATES");
+    cr.setTargetCommunityName(communityToMonitor);
+    bbs.publishAdd(cr);
   }
 
   /**
@@ -236,6 +247,10 @@ public class HealthMonitorPlugin extends SimplePlugin {
     for (Iterator it = mgmtAgentProps.getChangedCollection().iterator();
          it.hasNext();) {
       ManagementAgentProperties props = (ManagementAgentProperties)it.next();
+      if (!props.getProperty("community").equals(communityToMonitor)) {
+        communityToMonitor = props.getProperty("community");
+        sendRosterRequest(communityToMonitor);
+      }
       updateParams(props);
       log.info("Parameters modified: " + paramsToString());
     }
@@ -317,11 +332,11 @@ public class HealthMonitorPlugin extends SimplePlugin {
             break;
           case HeartbeatRequest.REFUSED:
             log.warn("HeartbeatRequest for agent '" + hs.getAgentId() + "' REFUSED");
-            doHealthCheck(hs, HealthStatus.NO_RESPONSE);
+            //doHealthCheck(hs, HealthStatus.NO_RESPONSE);
             break;
           case HeartbeatRequest.FAILED:
             log.warn("HeartbeatRequest for agent '" + hs.getAgentId() + "' FAILED");
-            doHealthCheck(hs, HealthStatus.NO_RESPONSE);
+            //doHealthCheck(hs, HealthStatus.NO_RESPONSE);
             break;
           default:
         }
@@ -589,15 +604,15 @@ public class HealthMonitorPlugin extends SimplePlugin {
    * @param props Propertie object defining paramater names and values.
    */
   private void updateParams(Properties props) {
-     communityToMonitor = props.getProperty("community");
-     heartbeatRequestTimeout = Long.parseLong(props.getProperty("hbReqTimeout"));
-     heartbeatFrequency = Long.parseLong(props.getProperty("hbFreq"));
-     heartbeatTimeout = Long.parseLong(props.getProperty("hbTimeout"));
-     heartbeatPctLateThreshold = Float.parseFloat(props.getProperty("hbPctLate"));
-     heartbeatFailureRateWindow = Long.parseLong(props.getProperty("hbWindow"));
-     heartbeatFailureRateThreshold = Float.parseFloat(props.getProperty("hbFailRate"));
-     pingTimeout = Long.parseLong(props.getProperty("pingTimeout"));
-     evaluationFrequency = Long.parseLong(props.getProperty("evalFreq"));
+    communityToMonitor = props.getProperty("community");
+    heartbeatRequestTimeout = Long.parseLong(props.getProperty("hbReqTimeout"));
+    heartbeatFrequency = Long.parseLong(props.getProperty("hbFreq"));
+    heartbeatTimeout = Long.parseLong(props.getProperty("hbTimeout"));
+    heartbeatPctLateThreshold = Float.parseFloat(props.getProperty("hbPctLate"));
+    heartbeatFailureRateWindow = Long.parseLong(props.getProperty("hbWindow"));
+    heartbeatFailureRateThreshold = Float.parseFloat(props.getProperty("hbFailRate"));
+    pingTimeout = Long.parseLong(props.getProperty("pingTimeout"));
+    evaluationFrequency = Long.parseLong(props.getProperty("evalFreq"));
   }
 
   /**
@@ -640,7 +655,12 @@ public class HealthMonitorPlugin extends SimplePlugin {
    */
   private UnaryPredicate communityRequestPredicate = new UnaryPredicate() {
     public boolean execute (Object o) {
-      return (o instanceof CommunityRequest);
+      if (o instanceof CommunityRequest) {
+        String communityName = ((CommunityRequest)o).getTargetCommunityName();
+        return (communityName != null &&
+                communityName.equals(communityToMonitor));
+      }
+      return false;
   }};
 
 

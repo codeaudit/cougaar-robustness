@@ -128,7 +128,7 @@ public class XmlToCsv extends DefaultHandler
         for(int i=0; i<attrs.size(); i++)
         {
           NVPair pair = (NVPair)attrs.get(i);
-          file.write((communityName + "," + pair.getName() + "," + pair.getValue() + "\n").getBytes());
+          file.write(("\"" + communityName + "\", \"" + pair.getName() + "\", \"" + pair.getValue() + "\"\n").getBytes());
         }
       }
     }catch(IOException e){e.printStackTrace();}
@@ -150,7 +150,8 @@ public class XmlToCsv extends DefaultHandler
           for(int i=0; i<attrs.size(); i++)
           {
             NVPair pair = (NVPair)attrs.get(i);
-            file.write((communityName + "," + entName + "," + pair.getName() + "," + pair.getValue() + "\n").getBytes());
+            file.write(("\"" + communityName + "\", \"" + entName + "\", \"" + pair.getName()
+               + "\", \"" + pair.getValue() + "\"\n").getBytes());
           }
         }
       }

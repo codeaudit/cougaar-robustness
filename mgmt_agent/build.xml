@@ -10,7 +10,9 @@
   <property environment="env"/>
   <property name="cougaar" value="${env.COUGAAR_INSTALL_PATH}"/>
   <property name="host" value="${env.HOST}"/>
+  <property name="port" value="8800"/>
   <property name="node" value="RestartNode"/>
+  <property name="agent" value="TINY-1AD-Enclave-ManagementAgent"/>
   <property name="persistenceEnabled" value="false"/>
   <property name="persistenceInterval" value="30000"/>
   <property name="packageDir" value="org/cougaar/tools/robustness"/>
@@ -122,7 +124,12 @@
   </target>
 
   <!-- initializes community tables in configdb from xmlfile -->
-  <target name="xmltodb" description="Initializes community tables in Config DB from XML file">
+  <target name="xmltodb" depends="xmltocsv, csvimport"
+          description="Convert community XML file to CSV and import into config db">
+  </target>
+
+  <!-- Converts a Community XML file to CSV files suitable for db import -->
+  <target name="xmltocsv" description="Converts a community xml file to CSV files">
     <java dir="${basedir}" fork="yes"
       classname="org.cougaar.tools.robustness.ma.test.XmlToCsv">
       <classpath>
@@ -133,6 +140,10 @@
       </classpath>
       <arg line="test/data/communities.xml"/>
     </java>
+  </target>
+
+  <!-- Imports community CSV files into configuration database -->
+  <target name="csvimport" description="Imports community CSV files into config db">
     <java dir="${basedir}" fork="yes"
       classname="org.cougaar.tools.robustness.ma.test.CsvFileLoader">
       <classpath>
@@ -181,14 +192,14 @@
   </target>
 
   <!-- Runs a mininode1-->
-  <target name="mininode1" description="Runs Partial MiniTestConfig society (1BDE, 3-69-ARBN, MCCGlobalMode) on a single node" >
+  <target name="mininode1" description="Runs agents 1BDE, 3-69-ARBN, MCCGlobalMode on a single node" >
     <antcall target="startnode" >
       <param name="node" value="MiniNode1" />
     </antcall>
   </target>
 
   <!-- Runs a mininode2-->
-  <target name="mininode2" description="Runs Partial MiniTestConfig society (3ID) on a single node" >
+  <target name="mininode2" description="Runs agent 3ID on a single node" >
     <antcall target="startnode" >
       <param name="node" value="MiniNode2" />
       <param name="persistenceEnabled" value="true" />
@@ -196,7 +207,7 @@
   </target>
 
   <!-- Runs a mininode3-->
-  <target name="mininode3" description="Runs Partial MiniTestConfig society (1BDE) on a single node" >
+  <target name="mininode3" description="Runs agent 1BDE on a single node" >
     <antcall target="startnode" >
       <param name="node" value="MiniNode3" />
       <param name="persistenceEnabled" value="true" />
@@ -204,7 +215,7 @@
   </target>
 
   <!-- Runs a mininode4-->
-  <target name="mininode4" description="Runs Partial MiniTestConfig society (3-69-ARBN, MCCGlobalMode) on a single node" >
+  <target name="mininode4" description="Runs agents 3-69-ARBN, MCCGlobalMode on a single node" >
     <antcall target="startnode" >
       <param name="node" value="MiniNode4" />
     </antcall>
@@ -218,14 +229,14 @@
   </target>
 
   <!-- Runs a node without persistence enabled-->
-  <target name="node" description="Runs a test node without persistence enabled (use -Dnode=XXX to specify node name)" >
+  <target name="node" description="Run node with persistence disabled (use -Dnode=XXX to specify node name)" >
     <antcall target="startnode" >
       <param name="node" value="${node}" />
     </antcall>
   </target>
 
   <!-- Runs a node with persistence enabled-->
-  <target name="pnode" description="Runs a test node with persistence enabled (use -Dnode=XXX to specify node name)" >
+  <target name="pnode" description="Run node with persistence enabled (use -Dnode=XXX to specify node name)" >
     <antcall target="startnode" >
       <param name="node" value="${node}" />
       <param name="persistenceEnabled" value="true" />
@@ -289,11 +300,12 @@
           <include name="**/*.jar"/>
         </fileset>
       </classpath>
+      <arg line="${host} ${port} ${agent}"/>
     </java>
   </target>
 
   <!-- Copies latest working files to release directory -->
-  <target name="movetorelease" description="Moves modified files to release directory">
+  <target name="movetorelease">
     <copy todir="../${ant.project.name}" >
       <fileset dir="${basedir}"
         includes="build.xml,**/*.txt,**/*.java,**/*.properties,**/*.dat,**/*.ini,**/*.xml,**/*.csv,**/*.jar,**/*.rc"
@@ -306,7 +318,7 @@
   </target>
 
   <!-- CVS checkout - TIC -->
-  <target name="checkout-tic" description="CVS Checkout - TIC">
+  <target name="checkout-tic">
     <cvs cvsRoot=":ext:rsnyder@cvs.ultralog.net:/cvs/robustness/mic"
          package="${ant.project.name}"
          dest=".."
@@ -315,7 +327,7 @@
   </target>
 
   <!-- CVS update - TIC -->
-  <target name="update-tic" description="CVS Update - TIC">
+  <target name="update-tic">
     <cvs cvsRoot=":ext:rsnyder@cvs.ultralog.net:/cvs/robustness/mic"
          package="${ant.project.name}"
          dest=".."
@@ -324,7 +336,7 @@
   </target>
 
   <!-- CVS Commit - TIC -->
-  <target name="commit-tic" description="CVS Commit - TIC">
+  <target name="commit-tic">
     <cvs cvsRoot=":ext:rsnyder@cvs.ultralog.net:/cvs/robustness/mic"
          package="${ant.project.name}"
          dest=".."
@@ -333,7 +345,7 @@
   </target>
 
   <!-- CVS Update - Local -->
-  <target name="update-local" description="CVS Update - Local">
+  <target name="update-local">
     <cvs cvsRoot=":pserver:ron@oak:/cvsroot"
          package="robustness"
          dest=".."
@@ -342,7 +354,7 @@
   </target>
 
   <!-- CVS Commit - Local -->
-  <target name="commit-local" description="CVS Commit - Local">
+  <target name="commit-local">
     <cvs cvsRoot=":pserver:ron@oak:/cvsroot"
          package="robustness"
          dest=".."
