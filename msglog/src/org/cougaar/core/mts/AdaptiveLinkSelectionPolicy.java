@@ -484,6 +484,19 @@ if (commStartDelaySeconds > 0)
         //  Retry/resend: bypass topological caching to get latest target agent info
 
         AgentID toAgent = AgentID.getAgentID (this, getServiceBroker(), targetAgent, true);
+        
+        if (log.isInfoEnabled())
+        {
+          AgentID oldToAgent = MessageUtils.getToAgent (msg);
+
+          if (oldToAgent != null && (!oldToAgent.equals(toAgent)))
+          {
+            log.info ("Message re-address: " +MessageUtils.toShortString(msg)+
+                      "\n  old destination: " +oldToAgent+
+                      "\n  new destination: " +toAgent);
+          }
+        }
+
         MessageUtils.setToAgent (msg, toAgent);
         targetNode = toAgent.getNodeName();      
       }

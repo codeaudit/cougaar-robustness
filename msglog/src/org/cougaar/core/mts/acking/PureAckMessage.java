@@ -32,6 +32,7 @@ import org.cougaar.core.mts.*;
 public class PureAckMessage extends AttributedMessage
 {
   private static final String RECEPTION_EXCEPTION = "MessageReceptionException";
+  private static final String RECEPTION_NODE =      "MessageReceptionNode";
   private static final String INBAND_NODE_TIME =    "InbandNodeTime";
 
   public PureAckMessage () {}  // needed for incoming deserialization
@@ -92,6 +93,16 @@ public class PureAckMessage extends AttributedMessage
   public boolean hasReceptionException ()
   {
     return (getReceptionException() != null);
+  }
+
+  public void setReceptionNode (String node)
+  {
+    setAttribute (RECEPTION_NODE, node);
+  }
+
+  public String getReceptionNode ()
+  {
+    return (String) getAttribute (RECEPTION_NODE);
   }
 
   public void setInbandNodeTime (int time)

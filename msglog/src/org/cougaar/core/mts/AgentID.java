@@ -147,6 +147,16 @@ public class AgentID implements java.io.Serializable
     return fromAgent.toShortString() +" to "+ toAgent.toShortString();
   }
 
+  public boolean equals (Object obj)
+  {
+    if (!(obj instanceof AgentID)) return false;
+    AgentID that = (AgentID) obj;
+    if (!this.nodeName.equals         (that.nodeName))         return false;
+    if (!this.agentName.equals        (that.agentName))        return false;
+    if (!this.agentIncarnation.equals (that.agentIncarnation)) return false;
+    return true;
+  }
+
   public static TopologyReaderService getTopologyReaderService (Object requestor, ServiceBroker sb)
   {
     if (topologyReaderService != null) return topologyReaderService;

@@ -106,6 +106,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
   private static LoggingService log;
   private SocketClosingService socketCloser;
   private RTTService rttService;
+  private String nodeID;
   private boolean showTraffic;
   private SocketSpec socketSpecs[];
   private SocketSpec mySocket;
@@ -188,6 +189,8 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     {
       rttService = (RTTService) getServiceBroker().getService (this, RTTService.class, null);
     }
+
+    nodeID = getRegistry().getIdentifier();
 
     String s = "org.cougaar.core.mts.ShowTrafficAspect";
     showTraffic = (getAspectSupport().findAspect(s) != null);
@@ -676,7 +679,13 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     private byte[] createAck (AttributedMessage msg, long receiveTime, Exception exception) throws Exception
     {
       PureAckMessage pam = PureAckMessage.createInbandPureAckMessage (msg);
-      if (exception != null) pam.setReceptionException (exception);
+
+      if (exception != null) 
+      {
+        pam.setReceptionException (exception);
+        pam.setReceptionNode (nodeID);
+      }
+
       pam.setInbandNodeTime ((int)(now()-receiveTime));
       byte ackBytes[] = MessageSerializationUtils.writeMessageToByteArray (pam, getDigest());
       return ackBytes;

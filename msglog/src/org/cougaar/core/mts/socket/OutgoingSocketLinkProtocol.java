@@ -463,8 +463,9 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
 
             if (log.isWarnEnabled())
             {
-              log.warn ("Message send over " +sockString+ " got reception exception " +
-                        "(ignored for now): " +ex);
+              String node = pam.getReceptionNode();
+              String s = (sockString != null ? " over " +sockString : "");
+              log.warn ("Message reception exception from node " +node+s+ " (ignored for now): " +ex);
             }
           }
         }
