@@ -60,7 +60,7 @@ import org.w3c.dom.*;
  */
 public abstract class XMLLoader extends ComponentPlugin implements NotPersistable  {
 
-    private LoggingService logger;
+    protected LoggingService logger;
     private String singleTag;
     private String pluralTag;
     
@@ -96,12 +96,11 @@ public abstract class XMLLoader extends ComponentPlugin implements NotPersistabl
             filename = (String)iter.next();
             try {
                 doc = dom.parseFile(filename);
-
                 //Call subclass to process the dom tree (both plural elements & single (e.g. <AssetType> and <AssetTypes>)
                 processDocument(doc); 
                 
             } catch (Exception e) {
-                logger.error("Error parsing XML file [" + filename + "]. Error was: "+ e.toString());
+                logger.error("Error parsing XML file [" + filename + "]. Error was: "+ e.toString(), e);
             }
                 
         }    

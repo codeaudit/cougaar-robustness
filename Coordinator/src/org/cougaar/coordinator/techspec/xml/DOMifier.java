@@ -80,9 +80,11 @@ public class DOMifier {
         try {
             
             File f = configFinder.locateFile(fileParam); //steve
-            if (!f.exists()) { //look 
-                logger.debug("*** Did not find XML file: " + fileParam);
-                logger.debug("*** Path checked was = " + f.getAbsolutePath()+". Checking CIP...");
+            if (f==null || !f.exists()) { //look 
+                if (f != null) {
+                    logger.debug("*** Did not find XML file: " + fileParam);
+                    logger.debug("*** Path checked was = " + f.getAbsolutePath()+". Checking CIP...");
+                }
                 String installpath = System.getProperty("org.cougaar.install.path");
                 String defaultPath = installpath + File.separatorChar + "csmart" + File.separatorChar + "config" +
                    File.separatorChar + "lib" + File.separatorChar + "coordinator" + File.separatorChar + fileParam;
@@ -95,10 +97,12 @@ public class DOMifier {
             }                
             logger.debug("path for XML file = " + f.getAbsolutePath());
             //(new InputSource(new FileInputStream(f)));
+
             
             return domBuilder.parse(f);
             
         } catch (Exception e) {         
+            logger.warn("DOMifier Exception: "+e, e);
             throw new Exception(e.toString());
         }
     }

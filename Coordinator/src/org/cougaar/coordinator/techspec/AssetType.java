@@ -35,6 +35,8 @@ import org.cougaar.core.persist.NotPersistable;
  */
 public class AssetType implements NotPersistable {
 
+    public static final AssetType HOST = new AssetType("network", null);
+    public static final AssetType HOST = new AssetType("enclave", null);
     public static final AssetType HOST = new AssetType("host", null);
     public static final AssetType NODE = new AssetType("node", null);
     public static final AssetType AGENT = new AssetType("agent", null);
@@ -69,8 +71,11 @@ public class AssetType implements NotPersistable {
     /** the name of this asset type */
     private String name;
     
-    /** the asset states (ala AssetStateDescriptor) that this type can be in */
+    /** the asset states (ala AssetStateDimension) that this type can be in */
     private Vector states;
+    
+    /** the superType of the asset type */
+    private AssetType superType = null;
     
     
     /** Creates a new instance of AssetType 
@@ -84,7 +89,7 @@ public class AssetType implements NotPersistable {
     /** 
      * Creates a new instance of AssetType 
      *@param asset type name
-     *@param vector of AssetStateDescriptor
+     *@param vector of AssetStateDimension
      */
     private AssetType(String name, Vector assetStates) {
         this.name = name;
@@ -94,6 +99,12 @@ public class AssetType implements NotPersistable {
         }
     }
     
+    private AssetType(AssetType superType, String newType) {
+        this.name = newType;
+        this.superType = superType;
+        states = new Vector();            
+    }
+
     
     /**
      *@return the name of this asset type
@@ -119,42 +130,53 @@ public class AssetType implements NotPersistable {
  
     
      /**
-      * Add an asset state to the AssetStateDescriptor vector
+      * Add an asset state to the AssetStateDimension vector
       */
-     public void addState(AssetStateDescriptor as) {
+     public void addStateDimension(AssetStateDimension as) {
          states.addElement(as);
      }
      
      /**
-      * Remove an asset state from the AssetStateDescriptor vector
+      * Remove an asset state from the AssetStateDimension vector
       */
-     public void removeState(AssetStateDescriptor as) {
+     public void removeStateDimension(AssetStateDimension as) {
          states.removeElement(as);
      }
 
      /**
       * May be called while threat models are loaded. This allows the creation of 
-      * the threat models & reference to AssetStateDescriptors.
+      * the threat models & reference to AssetStateDimensions.
       *
-      * @return An AssetStateDescriptor with the given name
+      * @return An AssetStateDimension with the given name
       */
-     public AssetStateDescriptor findState(String name) {
+     public AssetStateDimension findStateDimension(String name) {
          
-         AssetStateDescriptor state = null;
+         AssetStateDimension state = null;
          Iterator i = states.iterator();
          while (i.hasNext()) {
-            state = (AssetStateDescriptor)i.next();
+            state = (AssetStateDimension)i.next();
             if (state.getStateName().equalsIgnoreCase(name)) {
                 return state;
             }
          }
          
          return null;
-         //state = new AssetStateDescriptor( this, name );
+         //state = new AssetStateDimension( this, name );
          //states.addElement(state);
          //return state;
      }
 
+     /**
+      * @return the superType of this asset type
+      */
+     public AssetType getSuperType() { return superType; }
+     
+     /**
+      * @return TRUE if this asset type has a superType 
+      */
+     public boolean hasSuperType() { return superType != null; }
+
+     
      /** Equality based upon name */
      public boolean equals(Object o) {
          
