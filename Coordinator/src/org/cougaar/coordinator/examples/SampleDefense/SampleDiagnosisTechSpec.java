@@ -160,4 +160,12 @@ public class SampleDiagnosisTechSpec implements DiagnosisTechSpecInterface  {
        //do nothing
     }
     
+    public String getStateDimension() {
+        return "SampleDimension"; // added by DW
+    }
+
+    public int getLatency() {
+        return 42;    // added by DW
+    }
+
 }
