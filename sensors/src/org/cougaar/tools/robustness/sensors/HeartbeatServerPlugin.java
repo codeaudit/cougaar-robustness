@@ -136,6 +136,7 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
       getService(this, LoggingService.class, null);
     bb = getBlackboardService();
     sub = (IncrementalSubscription)bb.subscribe(hbReqPred);
+    processHeartbeats();
   }
 
   protected void execute() {

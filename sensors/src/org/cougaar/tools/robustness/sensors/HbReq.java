@@ -48,7 +48,6 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable
   private Object content;
   private Object response;
   private Properties props;
-  //private ClusterIdentifier dummy = new ClusterIdentifier();
 
   /**
    * @param uid UID of this HbReq object
@@ -67,46 +66,6 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable
     this.content = content;
     this.response = response;
     this.targets = ((targets == null) ? Collections.EMPTY_SET : new HashSet(targets));
-
-    // temporary hack - pass properties to MTS via MessageAddress's string
-/*
-    if (targets == null) {
-      this.targets = Collections.EMPTY_SET;
-    } else {
-      Properties props = new Properties();
-      props.setProperty(AgentToMTSAttributesAspect.UNRELIABLE, "true");
-      props.setProperty(AgentToMTSAttributesAspect.UNSEQUENCED, "true");
-      if (content instanceof HbReqContent) {
-        long timeout = ((HbReqContent)content).getReqTimeout();
-        if (timeout > 0) {
-          props.setProperty(AgentToMTSAttributesAspect.TIMEOUT, Long.toString(timeout));
-        }
-      }
-      ByteArrayOutputStream s = new ByteArrayOutputStream();
-      try {
-        props.store(s, null);
-      } catch (java.io.IOException e) {
-        // shouldn't happen, but ...
-        e.printStackTrace();
-      }
-      String propsStr =  s.toString();
-      HashSet newTargets = new HashSet();
-      Iterator iter = targets.iterator();
-      while (iter.hasNext()) {
-        Object o = iter.next();
-        if (o.getClass().equals(dummy.getClass())) {
-          ClusterIdentifier addr = (ClusterIdentifier)o;
-          String addrStr = addr.getAddress();
-          String newAddrStr = addrStr + " " + propsStr;
-          ClusterIdentifier newAddr = new ClusterIdentifier(newAddrStr);
-          newTargets.add(newAddr);
-        } else {
-          newTargets.add((MessageAddress)o);
-        }
-      }
-      this.targets = newTargets;
-    }  
-*/
   }
 
   // Unique Object implementation
@@ -136,7 +95,7 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable
   * Get the addresses of the target agents to which this Relay should be sent.
   **/
   public Set getTargets() {
-    return targets;
+    return ((targets == null) ? Collections.EMPTY_SET : targets);
   }
 
   /**
