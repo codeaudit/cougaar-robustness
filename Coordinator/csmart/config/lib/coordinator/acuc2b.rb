@@ -1,0 +1,71 @@
+module Cougaar
+  module Actions
+    class SetOutsideLoad < Cougaar::Action
+      PRIOR_STATES = []
+      DOCUMENTATION = Cougaar.document {
+        @description = "Set OutsideLoadDiagnosis to None, Moderate, or High in a specific enclave."
+        @parameters = [
+	    {:enclave => "Name of the Enclave (e.g. 1-UA)"}
+	    {:value => 	"None, Moderate, or High."}
+            {:messaging => "0 is no messages (the default), 1 is normal messages, 2 is verbose."}
+        ]
+        @example = "do_action 'SetOutsideLoad', '1-UA', 'High', 1" 
+	}
+    
+      def initialize(run, value, messaging=0)
+        super(run)
+        @value = value
+        @messaging = messaging
+      end
+
+      def perform 
+        @run.info_message "Setting OutsideLoadDiagnosis to "+@value+ for "+@enclave+" enclave" if @messaging >= 1
+        armgr = @enclave+"-ARManager"
+        @run.society.each_agent do |agent|
+          if agent.name == armgr
+            url = "#{agent.uri}/OutsideLoadServlet?"+@value+"="+@value
+	    @run.info_message "Calling "+url
+	    response, uri = Cougaar::Communications::HTTP.get(url)
+            raise "Could not connect to #{url}" unless response
+            Cougaar.logger.info "OutsideLoadDiagnosis set to "+@value+" at "+armgr
+	  end
+        end
+      end
+    end
+
+    class SetAvailableBandwidth < Cougaar::Action
+      PRIOR_STATES = []
+      DOCUMENTATION = Cougaar.document {
+        @description = "Set AvailableBandwidthDiagnosis to Low, Moderate, or High in a specific enclave."
+        @parameters = [
+	    {:enclave => "Name of the Enclave (e.g. 1-UA)"}
+	    {:value => 	"Low, Moderate, or High."}
+            {:messaging => "0 is no messages (the default), 1 is normal messages, 2 is verbose."}
+        ]
+        @example = "do_action 'SetAvailableBandwidth', '1-UA', 'Low', 1" 
+	}
+    
+      def initialize(run, value, messaging=0)
+        super(run)
+        @value = value
+        @messaging = messaging
+      end
+
+      def perform 
+        @run.info_message "Setting AvailableBandwidthDiagnosis to "+@value+ for "+@enclave+" enclave" if @messaging >= 1
+        armgr = @enclave+"-ARManager"
+        @run.society.each_agent do |agent|
+          if agent.name == armgr
+            url = "#{agent.uri}/AvailableBandwidthServlet?"+@value+"="+@value
+	    @run.info_message "Calling "+url
+	    response, uri = Cougaar::Communications::HTTP.get(url)
+            raise "Could not connect to #{url}" unless response
+            Cougaar.logger.info "AvailableBandwidthDiagnosis set to "+@value+" at "+armgr
+	  end
+        end
+      end
+    end
+  end
+end
+
+
