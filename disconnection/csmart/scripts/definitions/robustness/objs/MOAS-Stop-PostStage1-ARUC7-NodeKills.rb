@@ -113,11 +113,11 @@ include_scripts:
       - actual_disconnect: 12.minutes
       - verbose: 2
 
-  - script: $CIP/csmart/lib/robustness/objs/planned_disconnect_completed.rb
-    parameters:
-      - wait_location: after_stage_1
-      - timeout: 30.minutes
-      - verbose: 2
+#  - script: $CIP/csmart/lib/robustness/objs/planned_disconnect_completed.rb
+#    parameters:
+#      - wait_location: after_stage_1
+#      - timeout: 30.minutes
+#      - verbose: 2
 
   - script: $CIP/csmart/lib/coordinator/unleash_defenses.rb 
     parameters:
