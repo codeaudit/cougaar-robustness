@@ -92,7 +92,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     private boolean monitorStartup() {
       if (model != null) {
         String attrVal = model.getAttribute("MONITOR_STARTUP");
-        return (attrVal == null || attrVal.equalsIgnoreCase("True"));
+        return (attrVal != null && attrVal.equalsIgnoreCase("True"));
       }
       return false;
     }
