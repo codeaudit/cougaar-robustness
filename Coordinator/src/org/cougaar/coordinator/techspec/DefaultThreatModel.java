@@ -60,6 +60,8 @@ public class DefaultThreatModel implements ThreatModelInterface, NotPersistable 
 
     /** The UID of this object */
     private UID uid;
+
+    private Object lock = new Object();
     
     /** The vector containing a list of all assets this threat is concerned about */
     private Vector assets;
@@ -138,11 +140,11 @@ public class DefaultThreatModel implements ThreatModelInterface, NotPersistable 
      *@return a clone of the vector of newly added assets
      */
     public Vector clearNewAssets() {
-        
+      synchronized(lock) {
         Vector temp = (Vector) newAssets.clone();
         newAssets.clear();
         return temp;
-        
+      }    
     }
 
     
@@ -151,18 +153,19 @@ public class DefaultThreatModel implements ThreatModelInterface, NotPersistable 
      *@return a clone of the vector of removed assets
      */
     public Vector clearRemovedAssets() {
-        
+      synchronized(lock) {
         Vector temp = (Vector) removedAssets.clone();
         removedAssets.clear();
         return temp;
-        
+      }        
     }
     
     /**
      * @return the list of assets that the threat cares about.
      */
     public java.util.Vector getAssetList() {
-        return assets;
+// ALERT: potential source of CMEs
+        return assets;     
     }    
 
     /**
@@ -170,25 +173,29 @@ public class DefaultThreatModel implements ThreatModelInterface, NotPersistable 
      * @return TRUE if asset was not already there
      */
     public boolean addAsset(AssetTechSpecInterface asset) {
-        if (!containsAsset(asset)) {
+      synchronized(lock) {
+	if (!containsAsset(asset)) {
             assets.addElement(asset);
             newAssets.add(asset);
             return true;
         }
         return false;
-    }    
+      }    
+    }
     
 
     /**
      * Remove an asset
      */
     public boolean removeAsset(AssetTechSpecInterface asset) {
+      synchronized(lock) {
         if (assets.removeElement(asset)) {
             removedAssets.add(asset);
             return true;
         } else {
             return false;
         }
+      }
     }    
     
     
@@ -264,7 +271,7 @@ public class DefaultThreatModel implements ThreatModelInterface, NotPersistable 
      * @return TRUE if this Threat cares about this asset.
      */
     public boolean containsAsset(AssetTechSpecInterface asset) {
-
+      synchronized(lock) {
         AssetTechSpecInterface atsi;
         Iterator iter = assets.iterator();
         while (iter.hasNext()) {
@@ -274,11 +281,9 @@ public class DefaultThreatModel implements ThreatModelInterface, NotPersistable 
             }
         }
         return false;
-        
+      }
     }
     
-
-
     
 /*
     // @return the likelihood that this threat will occur. Returns 0 if there are no likelihoods defined, or
