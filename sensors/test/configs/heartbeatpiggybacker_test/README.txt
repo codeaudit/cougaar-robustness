@@ -7,10 +7,32 @@ message.
 
 Activation
 ----------
-To activate the HeartbeatPiggybacker one must include the class in the 
-list of aspects to be loaded:
+To activate the HeartbeatPiggybacker one must include the following aspect:
 
 	org.cougaar.core.mts.HeartbeatPiggybackerAspect 
+
+In addition, the Heartbeat Sensor is assumed to also be in operation.
+
+
+
+Test Configuration
+------------------
+
+To test efficacy, 
+
+1. Add in the StatisticsAspect after the HeartbeatPiggybackerAspect.
+
+	org.cougaar.core.mts.StatisticsAspect 
+
+2. Add the following plugin to the MonitoredNodeAgent so that message count & 
+   bytes generated can be collected. 
+
+        plugin = org.cougaar.core.mts.StatisticsPlugin
+
+   This will provide feedback with respect to the bandwidth used for messaging.
+   When the HeartbeatPiggybacker is in use, the bandwidth should be noticeably 
+   lower.
+
 
 Test
 ----
@@ -33,10 +55,30 @@ Two possible situations could arise:
      In this case, all pending heartbeats are packed up into one message and sent
      to the ManagerNode.
 
-Output
-------
 
-To test this the output (after initialization) in the MonitoredNode will look something like the 
+Running the test
+----------------
+This directory includes a test to run a Monitored Node containing 36 agents, and a
+Manager Node. Run the test by starting the .bat files, then observe the traffic 
+by looking at the StatisticsServlet.
+
+Using the following Heartbest configuration (in ManagerAgent.ini):
+
+   org.cougaar.tools.robustness.sensors.HeartbeatTesterMICPlugin(40000, 20000, 15000, true, 50.0, ...)
+
+After roughly 40 minutes, one would see about 4000 heartbeat messages. With piggybacking enabled
+this would be closer to 140 messages.
+
+
+
+Output For 3 monitored agents
+-----------------------------
+
+For illustration purposes we show the debug output for 3 monitored agents (as opposed to the
+36 agents in the test). This allows one to more easily consume & understand it without unduly 
+burdening the reader.
+
+The output (after initialization) in the MonitoredNode will look something like the 
 following:
 
 21:44:58,365 DEBUG HeartbeatPiggybackerAspect PB========= handleHeartbeat() Saw HB from MonitoredAgent3
