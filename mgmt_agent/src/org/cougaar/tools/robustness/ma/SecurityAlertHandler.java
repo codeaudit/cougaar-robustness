@@ -96,32 +96,7 @@ public class SecurityAlertHandler extends RobustnessThreatAlertHandlerBase
                   sa.getSeverityLevelAsString() +
                   " reset=" + resetToDefault);
     }
-    long persistenceInterval = model.hasAttribute(PERSISTENCE_INTERVAL_ATTRIBUTE)
-                           ? model.getLongAttribute(PERSISTENCE_INTERVAL_ATTRIBUTE)
-                           : DEFAULT_PERSISTENCE_INTERVAL;
-    double persistenceAdjustmentCoefficient = 1.0;
-    if (!resetToDefault && sa.getSeverityLevel() > sa.MEDIUM_SEVERITY) {
-      persistenceAdjustmentCoefficient = model.getDoubleAttribute(PERSISTENCE_INTERVAL_THREATCON_HIGH_COEFFICIENT);
-    }
-    persistenceInterval = (long)((double)persistenceInterval * persistenceAdjustmentCoefficient);
-    Properties controls = new Properties();
-    controls.setProperty("lazyInterval", Long.toString(persistenceInterval));
-    persistenceHelper.controlPersistence(model.listEntries(model.AGENT), true, controls);
-
-    long statusUpdateInterval = model.hasAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE)
-                          ? model.getLongAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE)
-                          : DEFAULT_STATUS_UPDATE_INTERVAL;
-    double pingThreatconCoefficient = 1.0;
-    double statusUpdateAdjustmentCoefficient = 1.0;
-    if (!resetToDefault && sa.getSeverityLevel() > sa.MEDIUM_SEVERITY) {
-      statusUpdateAdjustmentCoefficient = getDoubleAttribute(STATUS_UPDATE_INTERVAL_THREATCON_HIGH_COEFFICIENT, statusUpdateAdjustmentCoefficient);
-      pingThreatconCoefficient = getDoubleAttribute(PING_TIMEOUT_THREATCON_HIGH_COEFFICIENT, pingThreatconCoefficient);
-    }
-    statusUpdateInterval = (long)((double)statusUpdateInterval * statusUpdateAdjustmentCoefficient);
-    Attribute mods[] =
-        new Attribute[] {new BasicAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE, Long.toString(statusUpdateInterval)),
-                         new BasicAttribute(PING_ADJUSTMENT_ATTRIBUTE, Double.toString(pingThreatconCoefficient))};
-    changeAttributes(model.getCommunityName(), null, mods);
+    // TODO: Adjust robustness parameter values, if any
   }
 
   protected double getLongAttribute(String id, long defaultValue) {
