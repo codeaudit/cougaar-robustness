@@ -330,7 +330,7 @@ public class MediatedTechSpecMap {
             }
         }
 	  if (logger.isErrorEnabled())
-		logger.error("Could not map" + baseStateName + " : " + actionSettingName);
+		logger.error("Could not map " + actionName + ":" + baseStateName + " : " + actionSettingName);
         return null;
     }
 

@@ -373,7 +373,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
         ActionCost oneTimeCost = atwc.getOneTimeCost();
         ActionCost continuingCost = atwc.getContinuingCost();
 
-        String actionName = thisActionEvaluation.getActionName();
+        String actionName = thisActionEvaluation.getAction().getClass().getName();
         String compensatedDimensionName = compensatedStateDimension.getStateName();
 
         String currentVariantName;
