@@ -21,6 +21,7 @@
 <!ELEMENT Transition (OneTimeCost? , ContinuingCost? )  >
 <!ATTLIST Transition
     WhenActualStateIs CDATA #REQUIRED
+    IntermediateStateWillBe CDATA #REQUIRED
     EndStateWillBe CDATA #REQUIRED
 >
 
@@ -57,7 +58,7 @@
 <ActuatorType name="RestartAgent" affectsAssetType="Agent" affectsStateDimension="Liveness" >
     <Action name="LocalRestart">
         <Description value="Restarts agent in node on local host" />
-        <Transition WhenActualStateIs="*" EndStateWillBe="LIVE" >
+        <Transition WhenActualStateIs="*" EndStateWillBe="LIVE" IntermediateStateWillBe="DEAD" >
             <OneTimeCost>
                 <CPU intensity="HIGH" agentSizeFactor="TRUE" />
             </OneTimeCost>
@@ -69,7 +70,7 @@
     
     <Action name="QuickRemoteRestart">
         <Description value="Restarts agent in first available node" />
-        <Transition WhenActualStateIs="*" EndStateWillBe="LIVE" >
+        <Transition WhenActualStateIs="*" EndStateWillBe="LIVE" IntermediateStateWillBe="DEAD" >
             <OneTimeCost>
                 <Bandwidth intensity="MEDIUM" agentSizeFactor="TRUE" />
                 <CPU intensity="HIGH" agentSizeFactor="TRUE" />
@@ -78,7 +79,7 @@
     </Action>
 
     <Action name="BalancingRestart">
-        <Description value="Restarts multiple agents with a rebalancing plan" />
+        <Description value="Restarts multiple agents with a rebalancing plan" IntermediateStateWillBe="DEAD" />
         <Transition WhenActualStateIs="*" EndStateWillBe="LIVE" >
             <OneTimeCost>
                 <Bandwidth intensity="MEDIUM" agentSizeFactor="TRUE" />

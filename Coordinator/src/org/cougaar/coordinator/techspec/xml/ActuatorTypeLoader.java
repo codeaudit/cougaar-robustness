@@ -200,10 +200,12 @@ public class ActuatorTypeLoader extends XMLLoader {
 
         String whenState = element.getAttribute("WhenActualStateIs");
         String endState = element.getAttribute("EndStateWillBe");
+        String interState = element.getAttribute("IntermediateStateWillBe");
+ 
         //desc.setWhenStateIs(whenState);
         //desc.setEndStateWillBe(endState);
           
-        AssetTransitionWithCost atwc = new AssetTransitionWithCost(assetType, stateDim, whenState, endState );
+        AssetTransitionWithCost atwc = new AssetTransitionWithCost(assetType, stateDim, whenState, endState, interState );
         desc.addTransition(atwc);
         //Creating ActionCosts
         Element e;
