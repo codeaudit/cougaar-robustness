@@ -178,6 +178,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
         log.debug("RestartLocationRequest: " + destinationsToString(destinations));
         restartRequestMap.put(req, destinations);
         Destination dest = (Destination)destinations.iterator().next();
+        // Ping destination node to verify that it's alive
         doPing(new ClusterIdentifier(dest.node));
       } else {
         req.setStatus(RestartLocationRequest.FAIL);
@@ -368,39 +369,6 @@ public class RestartLocatorPlugin extends SimplePlugin {
             if (!c.contains(agentName)) c.add(agentName);
           }
         }
-        // Add RestartNodes associated with hosts currently used by community members
-        /*
-        for (Iterator it = hosts.keySet().iterator(); it.hasNext();) {
-          String nodeAgentName = (String)it.next() + "-RestartNode";
-          TopologyEntry te = topologyService.getEntryForAgent(nodeAgentName);
-          if (te != null) {
-            String hostName = te.getHost();
-            String nodeName = nodeAgentName;
-            if (!hosts.containsKey(hostName)) hosts.put(hostName, new Vector());
-            Collection c = (Collection)hosts.get(hostName);
-            if (!c.contains(nodeName)) c.add(nodeName);
-            if (!nodes.containsKey(nodeName)) nodes.put(nodeName, new Vector());
-          }
-        }
-        // Add RestartNodes associated with specified Restart Hosts
-        String specifiedRestartHosts = restartLocatorProps.getProperty("restartHosts");
-        if (specifiedRestartHosts != null && specifiedRestartHosts.trim().length() > 0) {
-          StringTokenizer st = new  StringTokenizer(specifiedRestartHosts, " ");
-          while (st.hasMoreTokens()) {
-            String nodeAgentName = st.nextToken() + "-RestartNode";
-            TopologyEntry te = topologyService.getEntryForAgent(nodeAgentName);
-            if (te != null) {
-              String hostName = te.getHost();
-              String nodeName = nodeAgentName;
-              specifiedHosts.add(hostName);
-              if (!hosts.containsKey(hostName)) hosts.put(hostName, new Vector());
-              Collection c = (Collection)hosts.get(hostName);
-              if (!c.contains(nodeName)) c.add(nodeName);
-              if (!nodes.containsKey(nodeName)) nodes.put(nodeName, new Vector());
-            }
-          }
-        }
-        */
       } catch (Exception ex) {
         log.error("Exception getting community topology", ex);
       }
@@ -595,13 +563,6 @@ public class RestartLocatorPlugin extends SimplePlugin {
                                    addr,
                                    pingTimeout);
     pingUIDs.add(pr.getUID());
-    /*
-    if (log.isDebugEnabled()) {
-      log.debug("Performing ping: source=" + pr.getSource() + "(" +
-        pr.getSource().getClass().getName() + ") target=" +
-        pr.getTarget() + "(" + pr.getTarget().getClass().getName() + ")");
-    }
-    */
     bbs.publishAdd(pr);
   }
 

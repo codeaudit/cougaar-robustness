@@ -34,6 +34,9 @@ import org.cougaar.core.mobility.AddTicket;
 import org.cougaar.core.mobility.RemoveTicket;
 import org.cougaar.core.mobility.MoveTicket;
 
+import org.cougaar.core.service.AlarmService;
+import org.cougaar.core.agent.service.alarm.Alarm;
+
 import org.cougaar.core.util.UID;
 
 import org.cougaar.util.CougaarEvent;
@@ -49,32 +52,38 @@ import org.cougaar.util.UnaryPredicate;
  */
 public class DecisionPlugin extends SimplePlugin {
 
+  // Defines default values for configurable parameters.
+  private static String defaultParams[][] = {
+    {"maxConcurrentRestarts", "1"},
+    {"restartTimerInterval",  "2000"}
+  };
+  ManagementAgentProperties decisionProps =
+    ManagementAgentProperties.makeProps(this.getClass().getName(), defaultParams);
+
   private LoggingService log;
   private BlackboardService bbs = null;
 
   // Unique ID assiciated with this plugin
   private UID myUID;
 
+  // List of agents waiting to be restarted
+  private List restartQueue = new Vector();
+
+
+  private List restartsInProcess = new Vector();
+
+  // Timer for periodically checking for restart queue
+  private RestartTimer restartTimer;
+  private long restartTimerInterval = 2000; // 2 second interval
+
+  private int maxConcurrentRestarts = 1;
+
   // Collection of UIDs associated with my AgentControl objects
   private Collection agentControlUIDs = new Vector();
-
-  // Defines default values for configurable parameters.
-  private static String defaultParams[][] = new String[0][0];
-
-  ManagementAgentProperties decisionProps =
-    ManagementAgentProperties.makeProps(this.getClass().getName(), defaultParams);
 
   protected MobilityFactory mobilityFactory;
 
   IncrementalSubscription sub;
-
-  /*
-  public void setDomainService(DomainService domain) {
-    log.info("setDomainService");
-    this.domain = domain;
-    mobilityFactory = (MobilityFactory) domain.getFactory("mobility");
-  }
-  */
 
   protected void setupSubscriptions() {
 
@@ -97,7 +106,7 @@ public class DecisionPlugin extends SimplePlugin {
 
     sub = (IncrementalSubscription) bbs.subscribe(AGENT_CONTROL_PRED);
     // Initialize configurable paramaeters from defaults and plugin arguments.
-    //updateParams(decisionProps);
+    updateParams(decisionProps);
     bbs.publishAdd(decisionProps);
 
     // Subscribe to ManagementAgentProperties to receive parameter changes
@@ -117,11 +126,14 @@ public class DecisionPlugin extends SimplePlugin {
     agentControlStatus =
       (IncrementalSubscription) bbs.subscribe(AGENT_CONTROL_PRED);
 
+    // Start restart timer
+    getAlarmService().addRealTimeAlarm(new RestartTimer(restartTimerInterval));
+
     // Print informational message defining current parameters
     StringBuffer startMsg = new StringBuffer();
     startMsg.append("DecisionPlugin started: ");
     startMsg.append(" " + paramsToString());
-    log.debug(startMsg.toString());
+    log.info(startMsg.toString());
   }
 
   public void execute() {
@@ -148,7 +160,7 @@ public class DecisionPlugin extends SimplePlugin {
     // Get AgentControl objects
     if (agentControlStatus.hasChanged()) {
       for (Enumeration en = agentControlStatus.getChangedList(); en.hasMoreElements(); ) {
-	      AgentControl ac = (AgentControl) en.nextElement();
+        AgentControl ac = (AgentControl) en.nextElement();
         AbstractTicket ticket = ac.getAbstractTicket();
         if (ticket instanceof AddTicket) {
           AddTicket addTicket = (AddTicket)ticket;
@@ -171,20 +183,12 @@ public class DecisionPlugin extends SimplePlugin {
                 ac.getStatusCodeAsString() + " agent=" + addTicket.getMobileAgent() +
                 " destNode=" + addTicket.getDestinationNode());
               // Try a forced restart
-                hs.setLastRestartAttempt(new Date());
-                moveAgent(addTicket.getMobileAgent(), addTicket.getDestinationNode());
               /*
-              log.warn("Restart of active agent attempted, " +
-                " setting agent state to NORMAL:  action=ADD status=" +
-                ac.getStatusCodeAsString() + " agent=" + addTicket.getMobileAgent() +
-                " destNode=" + addTicket.getDestinationNode());
-              hs.setState(HealthStatus.NORMAL);
-              hs.setStatus(HealthStatus.OK);
-              hs.setHeartbeatStatus(HealthStatus.HB_NORMAL);
-              hs.setHbReqRetryCtr(0);
+                moveAgent(addTicket.getMobileAgent(), addTicket.getDestinationNode());
+              */
+              hs.setState(HealthStatus.FAILED_RESTART);
               publishChange(hs);
               bbs.publishRemove(ac);
-              */
             } else {
               hs.setState(HealthStatus.FAILED_RESTART);
               publishChange(hs);
@@ -193,6 +197,8 @@ public class DecisionPlugin extends SimplePlugin {
                 ac.getStatusCodeAsString() + " agent=" + addTicket.getMobileAgent() +
                 " destNode=" + addTicket.getDestinationNode());
             }
+            // Remove agent from list of pending restarts
+            restartsInProcess.remove(addTicket.getMobileAgent());
           }
         }
       }
@@ -205,7 +211,9 @@ public class DecisionPlugin extends SimplePlugin {
       int status = req.getStatus();
       switch (status) {
         case RestartLocationRequest.SUCCESS:
-          restartAgents(req.getAgents(), req.getNode());
+          for (Iterator agentsToRestart = req.getAgents().iterator(); agentsToRestart.hasNext();) {
+            restartAgent((MessageAddress)agentsToRestart.next(), req.getNode());
+          }
           bbs.publishRemove(req);
           break;
         case RestartLocationRequest.FAIL:
@@ -213,23 +221,24 @@ public class DecisionPlugin extends SimplePlugin {
           for (Iterator it1 = req.getAgents().iterator(); it1.hasNext();) {
             HealthStatus hs = getHealthStatus((MessageAddress)it1.next());
             if (hs != null) {
-              hs.setLastRestartAttempt(new Date());
               hs.setState(HealthStatus.FAILED_RESTART);
               publishChange(hs);
             }
           }
-          /*
+
           log.error("Unable to restart agent(s), no destination node available:" +
             " agents=" + req.getAgents());
           bbs.publishRemove(req);
-          */
+
 
           // RestartLocator did not return a destination, try to restart agent at
           // its prior location
+          /*
           HealthStatus hs =
             getHealthStatus((MessageAddress)req.getAgents().iterator().next());
           restartAgents(req.getAgents(), hs.getNode());
           bbs.publishRemove(req);
+          */
 
           break;
         default:
@@ -264,11 +273,8 @@ public class DecisionPlugin extends SimplePlugin {
     switch (status) {
       case HealthStatus.DEAD:
       case HealthStatus.NO_RESPONSE:
-        // Agent is most likely dead.  Initiate a restart.
-        RestartLocationRequest req =
-          new RestartLocationRequest(RestartLocationRequest.LOCATE_NODE, myUID);
-        req.addAgent(hs.getAgentId());
-        bbs.publishAdd(req);
+        // Agent is most likely dead.  A restart is required.
+        queueAgentForRestart(hs.getAgentId());
         break;
       case HealthStatus.DEGRADED:
         // Agent is alive but operating under stress.  For now just increase
@@ -283,56 +289,6 @@ public class DecisionPlugin extends SimplePlugin {
     }
   }
 
-  /**
-   * Returns a string representation of a Set of agent addresses.
-   * @param agents Set of agent addresses
-   * @return String of agent names
-   */
-  private String agentSetToString(Set agents) {
-    StringBuffer sb = new StringBuffer();
-    if (agents != null) {
-      for (Iterator it = agents.iterator(); it.hasNext();) {
-        sb.append(((MessageAddress)it.next()).toString());
-        if (it.hasNext()) sb.append(" ");
-      }
-    }
-    return sb.toString();
-  }
-
-  /**
-   * Initiates a restart.
-   * @param agents    Set of MessageAddresses of agents to be restarted
-   * @param nodeName  Name of restart node
-   */
-  private void restartAgents(Set agents, String nodeName) {
-    if (nodeName == null) {
-      log.warn("Unable to perform restart, no node selected: agents=[" +
-        agentSetToString(agents) + "]");
-    } else {
-      //if (log.isInfoEnabled()) {
-      //  log.info("Restarting agent: agent(s)=[" +
-      //    agentSetToString(agents) + "], nodeName=" + nodeName);
-      //}
-      for (Iterator it = agents.iterator(); it.hasNext();) {
-        MessageAddress agentAddr = (MessageAddress)it.next();
-
-        // Update agents status object
-        HealthStatus hs = getHealthStatus(agentAddr);
-        CougaarEvent.postComponentEvent(CougaarEventType.START,
-                                        getAgentIdentifier().toString(),
-                                        this.getClass().getName(),
-                                        "Restarting agent: agent=" + hs.getAgentId() +
-                                        " node=" + nodeName);
-        hs.setLastRestartAttempt(new Date());
-        hs.setState(HealthStatus.RESTART);
-        hs.setStatus(HealthStatus.DEAD);
-        bbs.publishChange(hs);
-
-        // add the AgentControl request
-        addAgent(agentAddr.toString(), nodeName);
-      }
-    }
-  }
 
   /**
    * Initiates a forced restart at agents current node.
@@ -353,25 +309,30 @@ public class DecisionPlugin extends SimplePlugin {
     bbs.publishAdd(ac);
   }
 
-
-  protected void addAgent(String newAgent, String destNode) {
-
-    MessageAddress newAgentAddr = null;
-    MessageAddress destNodeAddr = null;
-    if (newAgent != null) {
-      newAgentAddr = new ClusterIdentifier(newAgent);
+  protected void queueAgentForRestart(MessageAddress agent) {
+    synchronized (restartQueue) {
+      restartQueue.add(agent);
     }
+  }
+
+  protected void restartAgent(MessageAddress agent, String destNode) {
+
+    MessageAddress destNodeAddr = null;
     if (destNode != null) {
       destNodeAddr = new MessageAddress(destNode);
     }
     Object ticketId = mobilityFactory.createTicketIdentifier();
-    AddTicket addTicket = new AddTicket(ticketId, newAgentAddr, destNodeAddr);
+    AddTicket addTicket = new AddTicket(ticketId, agent, destNodeAddr);
 
     UID acUID = getUIDService().nextUID();
     agentControlUIDs.add(acUID);
     AgentControl ac =
       mobilityFactory.createAgentControl(acUID, destNodeAddr, addTicket);
 
+    CougaarEvent.postComponentEvent(CougaarEventType.START,
+                                    getAgentIdentifier().toString(),
+                                    this.getClass().getName(),
+                                    "Restarting agent: agent=" + agent);
     if (log.isDebugEnabled()) {
       StringBuffer sb = new StringBuffer("AgentControl publication:" +
         " myUid=" + agentControlUIDs.contains(ac.getOwnerUID()) +
@@ -436,19 +397,18 @@ public class DecisionPlugin extends SimplePlugin {
    * Sets externally configurable parameters using supplied Properties object.
    * @param props Propertie object defining paramater names and values.
    */
-  /*
   private void updateParams(Properties props) {
-     // None for now
+    maxConcurrentRestarts = Integer.parseInt(props.getProperty("maxConcurrentRestarts"));
+    restartTimerInterval = Long.parseLong(props.getProperty("restartTimerInterval"));
   }
-  */
 
  /**
   * Predicate for AgentControl objects
   */
   private IncrementalSubscription agentControlStatus;
   protected UnaryPredicate AGENT_CONTROL_PRED = new UnaryPredicate() {
-	  public boolean execute(Object o) {
-	    if (o instanceof AgentControl) {
+    public boolean execute(Object o) {
+      if (o instanceof AgentControl) {
         AgentControl ac = (AgentControl)o;
         if (log.isDebugEnabled()) {
           StringBuffer sb = new StringBuffer("AgentControl subscription:" +
@@ -505,4 +465,75 @@ public class DecisionPlugin extends SimplePlugin {
       }
       return false;
   }};
+
+  /**
+   * Periodically look at restart queue and pending restart list to see if any
+   * agents need to be restarted.
+   */
+  private class RestartTimer implements Alarm {
+    private long expirationTime = -1;
+    private boolean expired = false;
+
+    /**
+     * Create an Alarm to go off in the milliseconds specified,.
+     **/
+    public RestartTimer (long delay) {
+      expirationTime = delay + System.currentTimeMillis();
+    }
+
+    /** @return absolute time (in milliseconds) that the Alarm should
+     * go off.
+     **/
+    public long getExpirationTime () {
+      return expirationTime;
+    }
+
+    /**
+     * Called by the cluster clock when clock-time >= getExpirationTime().
+     **/
+    public void expire () {
+      if (!expired) {
+        try {
+          synchronized (restartQueue) {
+            if (!restartQueue.isEmpty() && restartsInProcess.size() < maxConcurrentRestarts) {
+              MessageAddress agent = (MessageAddress)restartQueue.remove(0);
+              restartsInProcess.add(agent);
+              bbs.openTransaction();
+              HealthStatus hs = getHealthStatus(agent);
+              hs.setLastRestartAttempt(new Date());
+              hs.setState(HealthStatus.RESTART);
+
+              RestartLocationRequest req =
+                new RestartLocationRequest(RestartLocationRequest.LOCATE_NODE, myUID);
+              req.addAgent(agent);
+              bbs.publishChange(hs);
+              bbs.publishAdd(req);
+              bbs.closeTransaction();
+            }
+          }
+          getAlarmService().addRealTimeAlarm(new RestartTimer(restartTimerInterval));
+        } catch (Exception e) {
+          e.printStackTrace();
+        } finally {
+         expired = true;
+        }
+      }
+    }
+
+    /** @return true IFF the alarm has expired or was canceled. **/
+    public boolean hasExpired () {
+      return expired;
+    }
+
+    /** can be called by a client to cancel the alarm.  May or may not remove
+     * the alarm from the queue, but should prevent expire from doing anything.
+     * @return false IF the the alarm has already expired or was already canceled.
+     **/
+    public synchronized boolean cancel () {
+      if (!expired)
+        return expired = true;
+      return false;
+    }
+  }
+
 }

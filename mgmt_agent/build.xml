@@ -296,6 +296,9 @@
       <jvmarg value="-Xms100m"/>
       <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
       <classpath>
+        <fileset dir="${lib}">
+          <include name="**/*.jar" />
+        </fileset>
         <fileset dir="${cougaar}/lib">
           <include name="**/*.jar" />
         </fileset>
@@ -321,7 +324,7 @@
       <sysproperty key="org.cougaar.core.agent.startTime" value="8/10/2005"/>
       <sysproperty key="org.cougaar.name.server" value="${nameserver}"/>
       <sysproperty key="org.cougaar.system.path" value="${cougaar}/sys"/>
-      <sysproperty key="org.cougaar.config.path" value="${workspace}/configs;${robustness}/configs;$$INSTALL/configs/common;$$INSTALL/configs/glmtrans;$$INSTALL/configs/minitestconfig"/>
+      <sysproperty key="org.cougaar.config.path" value="${workspace}/configs;$$CWD/configs;${robustness}/configs;$$INSTALL/configs/common;$$INSTALL/configs/glmtrans;$$INSTALL/configs/minitestconfig"/>
       <arg line="org.cougaar.core.node.Node"/>
     </java>
   </target>

@@ -28,6 +28,9 @@
     <Attribute ID="hbPctLate" Value="50.0" />
     <Attribute ID="pingRetries" Value="0" />
     <Attribute ID="pingTimeout" Value="5000" />
+    <Attribute ID="restartTimeout" Value="60000" />
+    <Attribute ID="restartRetryFreq" Value="60000" />
+    <Attribute ID="hbFailRate" Value="100.0" />
     <Entity Name="Manager" >
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="ManagementAgent" />
