@@ -25,6 +25,20 @@
   <property name="jar" value="ar_mic.jar"/>
   <property name="configs" value="configs" />
 
+  <!-- For DocBook-based documentaton -->
+  <property name="docbook.dir" value="${env.DOCBOOK_HOME}"/>
+  <property name="fop.dir" value="${env.FOP_HOME}"/>
+
+  <!-- Custom Ant task for invoking FOP (Apache XML to PDF tool) -->
+  <taskdef name="fop"
+           classname="org.apache.fop.tools.anttasks.Fop">
+    <classpath>
+      <pathelement location="${fop.dir}/build/fop.jar"/>
+      <pathelement location="${fop.dir}/lib/avalon-framework-cvs-20020806.jar"/>
+      <pathelement location="${fop.dir}/lib/batik.jar"/>
+    </classpath>
+  </taskdef>
+
   <!-- Initialization target -->
   <target name="init" >
     <mkdir dir="${lib}"/>
@@ -160,6 +174,18 @@
     </javadoc>
   </target>
 
+  <!-- Generates user manual -->
+  <target name="manual" description="Creates user manual">
+    <xslt basedir="${basedir}/doc/src"
+          extension=".fo"
+          style="${docbook.dir}/fo/docbook.xsl"
+          destdir="doc/fo"
+          includes="test.xml" />
+    <fop format="application/pdf"
+         fofile="${basedir}/doc/fo/test.fo"
+         outfile="${basedir}/doc/pdf/test.pdf" />
+  </target>
+
   <!-- creates zip archive of development files -->
   <target name="zip" description="Creates zip archive of development files">
     <tstamp/>
@@ -177,7 +203,7 @@
     />
   </target>
 
-	<target name="overlay-compile" description="Compile source code">
+  <target name="overlay-compile" description="Compile source code">
     <!-- Compile the java code into ${classes} -->
     <mkdir dir="${classes}" />
     <javac srcdir="${src}" source="1.4" destdir="${classes}" debug="on">
