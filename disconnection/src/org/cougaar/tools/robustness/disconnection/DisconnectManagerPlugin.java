@@ -66,6 +66,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     private RequestToDisconnectNodeSensorIndex requestToDisconnectNodeSensorIndex = new RequestToDisconnectNodeSensorIndex();
     private NodeDisconnectActuatorIndex nodeDisconnectActuatorIndex = new NodeDisconnectActuatorIndex();
     private RequestToDisconnectAgentSensorIndex requestToDisconnectAgentSensorIndex = new RequestToDisconnectAgentSensorIndex();
+    private AgentDisconnectActuatorIndex agentDisconnectActuatorIndex = new AgentDisconnectActuatorIndex();
 
     // Legal Diagnosis Values
     private final static String DISCONNECT_REQUEST = DisconnectConstants.DISCONNECT_REQUEST;
@@ -299,7 +300,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
 
         // Set the values of the Node Sensor & all Agent Sensors
         double time = ((Double)rtc.getValue()).doubleValue();
-        Diagnosis diag = requestToDisconnectNodeSensorIndex.getDiagnosis(new AssetID(rtc.getAsset(), AssetType.findAssetType("Node")));
+        RequestToDisconnectNodeSensor diag = requestToDisconnectNodeSensorIndex.getDiagnosis(new AssetID(rtc.getAsset(), AssetType.findAssetType("Node")));
 
         try {
             if (time > 0.0) {
@@ -318,7 +319,18 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
 
         Iterator iter = rtc.getAgents().iterator();
         while (iter.hasNext()) {
-            Diagnosis agentDiag = requestToDisconnectAgentSensorIndex.getDiagnosis(new AssetID(rtc.getAsset(), AssetType.findAssetType("Agent")));
+            RequestToDisconnectAgentSensor agentDiag = requestToDisconnectAgentSensorIndex.getDiagnosis(new AssetID(rtc.getAsset(), AssetType.findAssetType("Agent")));
+            if (agentDiag == null) { // never seen this agent anywhere in the enclave, so create a new Diagnosis & Action for it
+                try {
+                    agentDiag = new RequestToDisconnectAgentSensor(diag.getAssetName(), sb);
+                    requestToDisconnectAgentSensorIndex.putDiagnosis(agentDiag);
+                    AgentDisconnectActuator agentAction = new AgentDisconnectActuator(diag.getAssetName(), sb);
+                    agentDisconnectActuatorIndex.putAction(agentAction);
+                } catch (TechSpecNotFoundException e) {
+                    logger.error(e.toString());
+                    return false;
+                }
+            }    
             try {
                 if (time > 0.0) {
                     diag.setValue(DISCONNECT_REQUEST); // wants to disconnect
@@ -332,9 +344,6 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             }
         }
 
-        iter = rtc.getAgents().iterator();
-        while (iter.hasNext()) {
-        }
 
         // If all Sensor settings succeeded, publish all the sensors
         if (logger.isDebugEnabled()) logger.debug("DisconnectChange set "
@@ -345,8 +354,9 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
 
         iter = rtc.getAgents().iterator();
         while (iter.hasNext()) {
+            Diagnosis agentDiag = requestToDisconnectAgentSensorIndex.getDiagnosis(new AssetID(rtc.getAsset(), AssetType.findAssetType("Agent")));
+            blackboard.publishChange(agentDiag);
         }
-
         
         return true;
     }
