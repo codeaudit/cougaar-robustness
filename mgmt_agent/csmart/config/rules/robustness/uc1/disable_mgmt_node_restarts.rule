@@ -6,9 +6,9 @@ society.each_enclave do |enclave|
     if node.has_facet?(:role)
       node.each_facet("role") do |facet|
         role = facet["role"]
-        if role == "Management"
+        if role == "AR-Management"
           society.communities.each do |community|
-	    if community.name == "1AD-#{enclave}-COMM"
+	    if community.name == "#{enclave}-COMM"
               community.each do |entity|
 	        if entity.name == node.name && entity.entity_type == "Node"
 	          entity.add_attribute("UseForRestarts", "False")
