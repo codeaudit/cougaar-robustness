@@ -75,10 +75,15 @@
       <node name="scripts" type="Folder">
         <node name="robustness" type="Folder">
           <node name="uc1" type="Folder">
+            <file path="csmart/config/scripts/robustness/uc1/disconnection.rule"/>
             <file path="csmart/config/scripts/robustness/uc1/kill_1_agent.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/kill_1_node.rb"/>
+            <file path="csmart/config/scripts/robustness/uc1/msglog.rule"/>
             <file path="csmart/config/scripts/robustness/uc1/uc1-full.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/uc1-lb.rb"/>
+            <file path="csmart/config/scripts/robustness/uc1/uc1-small-disconnect-agent.rb"/>
+            <file path="csmart/config/scripts/robustness/uc1/uc1-small-disconnect-node.rb"/>
+            <file path="csmart/config/scripts/robustness/uc1/uc1-small-msglog.rb"/>
             <file path="csmart/config/scripts/robustness/uc1/uc1-small.rb"/>
           </node>
           <node name="uc4" type="Folder">

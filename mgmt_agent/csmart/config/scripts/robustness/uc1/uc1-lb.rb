@@ -60,7 +60,8 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
   wait_for "CommunitiesReady", ["1AD-FWD-COMM"]
   do_action "Sleep", 5.minutes
 
-  # Add an empty node to community
+  # Add an empty node to community, put on same host as manager node
+  do_action "SaveHostOfNode", "1AD-FWD-COMM", "FWD-MGMT-NODE"
   do_action "AddNode", "FWD-NEW-1", "1AD-FWD-COMM"
   do_action "Sleep", 3.minutes
 
@@ -78,7 +79,7 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
   wait_for  "SocietyQuiesced"  do
     wait_for  "Command", "shutdown"
     do_action "SaveSocietyCompletion", "completion_#{experiment.name}.xml"
-    include "inventory.inc", "RunSoc"
+    #include "inventory.inc", "RunSoc"
     do_action "StopSociety"
     do_action "ArchiveLogs"
     do_action "StopCommunications"
@@ -87,7 +88,7 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
   wait_for "Command", "shutdown"
   do_action "Sleep", 30.seconds
   do_action "SaveSocietyCompletion", "completion_#{experiment.name}.xml"
-  include "inventory.inc", "RunSoc"
+  #include "inventory.inc", "RunSoc"
   do_action "Sleep", 30.seconds
   do_action "StopSociety"
   do_action "ArchiveLogs"

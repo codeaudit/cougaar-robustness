@@ -75,7 +75,7 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
   wait_for  "SocietyQuiesced"  do
     wait_for  "Command", "shutdown"
     do_action "SaveSocietyCompletion", "completion_#{experiment.name}.xml"
-    include "inventory.inc", "RunSoc"
+    #include "inventory.inc", "RunSoc"
     do_action "StopSociety"
     do_action "ArchiveLogs"
     do_action "StopCommunications"
@@ -84,7 +84,7 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
   wait_for "Command", "shutdown"
   do_action "Sleep", 30.seconds
   do_action "SaveSocietyCompletion", "completion_#{experiment.name}.xml"
-  include "inventory.inc", "RunSoc"
+  #include "inventory.inc", "RunSoc"
   do_action "Sleep", 30.seconds
   do_action "StopSociety"
   do_action "ArchiveLogs"
