@@ -419,7 +419,7 @@
     <antcall target="compile"/>
     <antcall target="jar"/>
 
-    <signjar jar="${lib}/${jar}" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
+    <signjar jar="${lib}/${jar}" keystore="/var/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
 
     <move file="${lib}/${jar}" toDir="staging/lib"/>
     <copy file="build.xml" toDir="staging/robustness"/>

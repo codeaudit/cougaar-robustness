@@ -38,7 +38,7 @@
 		<mkdir dir="staging/lib"/>
 		<antcall target="delete"/>
 		<antcall target="jar"/>
-		<signjar jar="${jar}" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
+		<signjar jar="${jar}" keystore="/var/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
     <move file="${jar}" todir="staging/lib"/>
     <zip zipfile="AR_objs_common.zip" basedir="staging"/>
     <delete dir="staging"/>
