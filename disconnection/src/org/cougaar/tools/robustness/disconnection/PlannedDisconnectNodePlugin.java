@@ -179,19 +179,9 @@ public class PlannedDisconnectNodePlugin extends ServiceUserPluginBase {
      
      
       getBlackboardService().publishAdd(dac);
-      System.out.println();
-      System.out.println("NodeA Published:");
-      System.out.println("Condition: " + dac.getName() + " with value = " + dac.getValue());
-      System.out.println(" with allowed values  = " + dac.getAllowedValues());
       getBlackboardService().publishAdd(rtc);
-      System.out.println("Condition: " + rtc.getName() + " with value = " + rtc.getValue());
-      System.out.println(" with allowed values  = " + rtc.getAllowedValues());
       getBlackboardService().publishAdd(deom);
-      System.out.println("OpMode: " + deom.getName() + " with value = " + deom.getValue());
-      System.out.println(" with allowed values  = " + deom.getAllowedValues());
       getBlackboardService().publishAdd(meom);
-      System.out.println("OpMode: " + meom.getName() + " with value = " + meom.getValue());
-      System.out.println(" with allowed values  = " + meom.getAllowedValues());
 
       startTimer(10000);
   }      
@@ -221,9 +211,6 @@ public class PlannedDisconnectNodePlugin extends ServiceUserPluginBase {
 
   public void execute() {
 
-     System.out.println();
-     System.out.println(new Date() + " in NodeDefense");
-     
      Iterator iter;
       
       //********* Check for changes in our modes ************
@@ -233,7 +220,7 @@ public class PlannedDisconnectNodePlugin extends ServiceUserPluginBase {
       while (iter.hasNext()) {
           DefenseEnablingOperatingMode dmode = (DefenseEnablingOperatingMode)iter.next();
           if (dmode != null) {
-            System.out.println(dmode.getName() + " set to " + dmode.getValue());
+            //System.out.println(dmode.getName() + " set to " + dmode.getValue());
           }
       }
       //We have one defense mode, so we only get the one from iter.next();
@@ -241,7 +228,7 @@ public class PlannedDisconnectNodePlugin extends ServiceUserPluginBase {
       while (iter.hasNext()) {      
           MonitoringEnablingOperatingMode mmode = (MonitoringEnablingOperatingMode)iter.next();
           if (mmode != null) {
-            System.out.println(mmode.getName() + " set to " + mmode.getValue());
+            //System.out.println(mmode.getName() + " set to " + mmode.getValue());
           }
       }
       
@@ -252,7 +239,7 @@ public class PlannedDisconnectNodePlugin extends ServiceUserPluginBase {
       while (iter.hasNext()) {
           DefenseCondition sc = (DefenseCondition)iter.next();
           if (sc != null) {
-            System.out.println(sc.getName() + " set to " + sc.getValue());
+            //System.out.println(sc.getName() + " set to " + sc.getValue());
           }
       }
       

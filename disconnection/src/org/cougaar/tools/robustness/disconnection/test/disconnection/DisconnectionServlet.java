@@ -245,7 +245,7 @@ public class DisconnectionServlet extends BaseServletComponent
   void setTestCondition(double reconnectTime, PrintWriter out) {
       
       DisconnectionApplicabilityCondition cond = null;
-      ReconnectTimeCondition rtc = null;
+      PlannedDisconnectServletTestNodePlugin.MyReconnectTimeCondition rtc = null;
       
        Condition c1 = 
         conditionService.getConditionByName(MY_APPLICABILITY_CONDITION_NAME+nodeID);
@@ -256,8 +256,8 @@ public class DisconnectionServlet extends BaseServletComponent
       if (c1 != null && c1 instanceof DisconnectionApplicabilityCondition) {
         cond = (DisconnectionApplicabilityCondition)c1;
       }
-      if (c2 != null && c2 instanceof ReconnectTimeCondition) {
-        rtc = (ReconnectTimeCondition)c2;
+      if (c2 != null && c2 instanceof PlannedDisconnectServletTestNodePlugin.MyReconnectTimeCondition) {
+        rtc = (PlannedDisconnectServletTestNodePlugin.MyReconnectTimeCondition)c2;
       }
 
       if (cond == null) {

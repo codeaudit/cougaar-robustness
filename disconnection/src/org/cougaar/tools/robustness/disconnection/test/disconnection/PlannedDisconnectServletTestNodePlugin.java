@@ -45,7 +45,7 @@ import org.cougaar.core.service.ConditionService;
 import org.cougaar.core.service.OperatingModeService;
 import org.cougaar.core.service.UIDService;
 import org.cougaar.core.service.AgentIdentificationService;
-
+import org.cougaar.core.node.NodeIdentificationService;
 import org.cougaar.core.adaptivity.InterAgentCondition;
 import org.cougaar.core.relay.Relay;
 import org.cougaar.core.mts.MessageAddress;
@@ -63,7 +63,6 @@ public class PlannedDisconnectServletTestNodePlugin extends ServiceUserPluginBas
   private OperatingModeService operatingModeService;
   private UIDService us = null;
   
-  private static String nodeID = "NodeA";
 
   //private IncrementalSubscription myOpModes;
   private IncrementalSubscription reconnectTimeConditionSubscription;
@@ -71,23 +70,26 @@ public class PlannedDisconnectServletTestNodePlugin extends ServiceUserPluginBas
   private IncrementalSubscription defenseModeSubscription;      
   private IncrementalSubscription monitoringModeSubscription;
   private IncrementalSubscription conditionSubscription;
+  private NodeIdentificationService nodeIdentificationService;
   
+  private String nodeID;
+
 
   private static final Class[] requiredServices = {
     ConditionService.class,
     OperatingModeService.class,
-    UIDService.class
-    
+    UIDService.class,
+    NodeIdentificationService.class
   };
   
   public static final String MY_APPLICABILITY_CONDITION_NAME 
-    = "PlannedDisconnect.UnscheduledDisconnect.Node." + nodeID;
+    = "PlannedDisconnect.UnscheduledDisconnect.Node.";
   public static final String MY_RECONNECT_TIME_NAME 
-    = "PlannedDisconnect.UnscheduledReconnectTime.Node." + nodeID;
+    = "PlannedDisconnect.UnscheduledReconnectTime.Node.";
   public static final String MY_DEFENSE_OPMODE_NAME 
-    = "PlannedDisconnect.NodeDefense.Node." + nodeID;
+    = "PlannedDisconnect.NodeDefense.Node.";
   public static final String MY_MONITORING_OPMODE_NAME 
-    = "PlannedDisconnect.NodeMonitoring.Node." + nodeID;
+    = "PlannedDisconnect.NodeMonitoring.Node.";
 
   public PlannedDisconnectServletTestNodePlugin() {
     super(requiredServices);
@@ -159,14 +161,16 @@ public class PlannedDisconnectServletTestNodePlugin extends ServiceUserPluginBas
 
   //Create one condition and one of each type of operating mode
   private void initObjects() {
+     nodeID = nodeIdentificationService.getMessageAddress().toString();
+
      DisconnectionApplicabilityCondition dac = 
-        new MyDefenseApplicabilityCondition(MY_APPLICABILITY_CONDITION_NAME);
+        new MyDefenseApplicabilityCondition(MY_APPLICABILITY_CONDITION_NAME + nodeID);
      ReconnectTimeCondition rtc =
-        new MyReconnectTimeCondition(MY_RECONNECT_TIME_NAME);
+        new MyReconnectTimeCondition(MY_RECONNECT_TIME_NAME + nodeID);
      DefenseEnablingOperatingMode deom = 
-        new MyDefenseEnabler(MY_DEFENSE_OPMODE_NAME);
+        new MyDefenseEnabler(MY_DEFENSE_OPMODE_NAME + nodeID);
      MonitoringEnablingOperatingMode meom = 
-        new MyMonitoringEnabler(MY_MONITORING_OPMODE_NAME);
+        new MyMonitoringEnabler(MY_MONITORING_OPMODE_NAME + nodeID);
 
      //These InterAgents need UIDs.
      deom.setUID(us.nextUID());
@@ -177,7 +181,6 @@ public class PlannedDisconnectServletTestNodePlugin extends ServiceUserPluginBas
       getBlackboardService().publishAdd(rtc);
       getBlackboardService().publishAdd(deom);
       getBlackboardService().publishAdd(meom);
-
   }      
   
   private boolean haveServices() {
@@ -193,6 +196,9 @@ public class PlannedDisconnectServletTestNodePlugin extends ServiceUserPluginBas
       
       us = (UIDService ) 
         sb.getService( this, UIDService.class, null ) ;
+        
+      nodeIdentificationService = (NodeIdentificationService)
+        sb.getService(this, NodeIdentificationService.class, null);
       
       return true;
     }
@@ -202,27 +208,24 @@ public class PlannedDisconnectServletTestNodePlugin extends ServiceUserPluginBas
 
   public void execute() {
 
-     System.out.println();
-     System.out.println(new Date() + " in NodeDefense");
-     
      Iterator iter;
       
       //********* Check for changes in our modes ************
       
       //We have one defense mode, so we only get the one from iter.next();
       iter = defenseModeSubscription.iterator();
-      if (iter.hasNext()) {
+      while (iter.hasNext()) {
           DefenseEnablingOperatingMode dmode = (DefenseEnablingOperatingMode)iter.next();
           if (dmode != null) {
-            System.out.println(dmode.getName() + " set to " + dmode.getValue());
+            //System.out.println(dmode.getName() + " set to " + dmode.getValue());
           }
       }
       //We have one defense mode, so we only get the one from iter.next();
       iter = monitoringModeSubscription.iterator();
-      if (iter.hasNext()) {      
+      while (iter.hasNext()) {      
           MonitoringEnablingOperatingMode mmode = (MonitoringEnablingOperatingMode)iter.next();
           if (mmode != null) {
-            System.out.println(mmode.getName() + " set to " + mmode.getValue());
+            //System.out.println(mmode.getName() + " set to " + mmode.getValue());
           }
       }
       
@@ -233,7 +236,7 @@ public class PlannedDisconnectServletTestNodePlugin extends ServiceUserPluginBas
       while (iter.hasNext()) {
           DefenseCondition sc = (DefenseCondition)iter.next();
           if (sc != null) {
-            System.out.println(sc.getName() + " set to " + sc.getValue());
+            //System.out.println(sc.getName() + " set to " + sc.getValue());
           }
       }
       
