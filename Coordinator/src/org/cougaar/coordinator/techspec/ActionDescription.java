@@ -136,7 +136,8 @@ public class ActionDescription {
                     return at; // return the AssetTransitionWithCost with the state we'd transition to if this event occurs given the (as) starting state.
                 }
             }
-            return null; // didn't find one
+            
+            return null; // didn't find one -- should NOT occur - bad actions are filtered out at load time
         }
     }
 
@@ -162,7 +163,12 @@ public class ActionDescription {
                     return at; // return the AssetTransitionWithCost with the state we'd transition to if this event occurs given the (as) starting state.
                 }
             }
-            return null; // didn't find one
+
+            Logger logger = Logging.getLogger(this.getClass().getName());
+            if (logger != null) {   
+                logger.error("getTransitionForState() - ERROR: cannot find transition from "+this.getAffectedAssetType()+":"+this.getAffectedStateDimension()+":"+s);
+            }
+            return null; // didn't find one -- should NOT occur - bad actions are filtered out at load time
         }
     }
     

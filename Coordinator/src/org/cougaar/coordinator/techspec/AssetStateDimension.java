@@ -93,7 +93,7 @@ public class AssetStateDimension implements NotPersistable, Serializable {
     public String getStateName() { return name; }
     
     /**
-     *@return the asset type this state is associated with
+     *@return the asset type this state dimension is associated with
      */
     public AssetType getAssetType() { return assetType; }
     
@@ -106,12 +106,12 @@ public class AssetStateDimension implements NotPersistable, Serializable {
     }
     
     /**
-     * @return the possible states that this state could have
+     * @return the possible AssetState that this state dimension could have
      */
     public Vector getPossibleStates() { return possibleStates; }
     
     /**
-     * @return the default state for the state
+     * @return the default state for the state dimension
      */
     public AssetState getDefaultState() { return defaultState; }
     

@@ -4,8 +4,8 @@
     <fileobject name="AssetID.java">
         <attr name="class_dependency_java.io.Serializable" stringvalue="AssetID"/>
     </fileobject>
-    <fileobject name="ActionTechSpecServiceProvider.java">
-        <attr name="class_dependency_org.cougaar.coordinator.techspec.ActionTechSpecService" stringvalue="ActionTechSpecServiceProvider.ActionTechSpecServiceImpl"/>
+    <fileobject name="AssetStateDimension.java">
+        <attr name="class_dependency_java.io.Serializable" stringvalue="AssetStateDimension"/>
     </fileobject>
     <fileobject name="TransitiveEffectDescription.java">
         <attr name="class_dependency_java.io.Serializable" stringvalue="TransitiveEffectDescription"/>

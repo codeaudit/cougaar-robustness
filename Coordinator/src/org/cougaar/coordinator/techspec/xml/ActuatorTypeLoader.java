@@ -188,7 +188,21 @@ public class ActuatorTypeLoader extends XMLLoader {
                 parseTransition(e, ad, assetType, asd);
             } //else, likely a text element - ignore
         }
-        actuator.addAction(ad);
+        
+        //Now verify that all states are covered by this action - we have closure -- if not, do not add action.
+        boolean error = false;
+        Iterator states = asd.getPossibleStates().iterator();
+        while ( states.hasNext() ) {
+            AssetState as = (AssetState) states.next();
+            if ( ad.getTransitionForState(as) == null) {
+                logger.error("parseAction() - ERROR: cannot find transition from "+assetType+":"+asd.getStateName()+":"+as.getName()+ " --> IGNORING ACTION ["+ad.name()+"]!!");
+                error = true;
+            }
+        }
+
+        if (!error) {
+            actuator.addAction(ad);
+        }
         
     }
 
