@@ -487,6 +487,10 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
                         AgentCommunicationDiagnosis1 td = (AgentCommunicationDiagnosis1)d;
                         try {
                            td.setValue(newvalue);
+                           blackboard.openTransaction();
+                           blackboard.publishChange(td);
+                           blackboard.publishChange(td.getWrapper());
+                           blackboard.closeTransaction();
                         } catch (IllegalValueException ive) {
                         }
                     } 
@@ -494,6 +498,10 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
                         AgentCommunicationDiagnosis2 td = (AgentCommunicationDiagnosis2)d;
                         try {
                            td.setValue(newvalue);
+                           blackboard.openTransaction();
+                           blackboard.publishChange(td);
+                           blackboard.publishChange(td.getWrapper());
+                           blackboard.closeTransaction();
                         } catch (IllegalValueException ive) {
                         }
                     } 
