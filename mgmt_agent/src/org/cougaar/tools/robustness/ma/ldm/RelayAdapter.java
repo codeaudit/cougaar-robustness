@@ -66,7 +66,6 @@ public class RelayAdapter implements Relay.Source {
    * Set the response that was sent from a target.
    **/
   public int updateResponse(MessageAddress target, Object response) {
-    System.out.println("updateResponse: response=" + response.getClass().getName());
     this.resp = response;
     return Relay.RESPONSE_CHANGE;
   }
