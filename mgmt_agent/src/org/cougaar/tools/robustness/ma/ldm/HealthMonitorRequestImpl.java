@@ -26,7 +26,33 @@ import org.cougaar.core.util.UID;
 import org.cougaar.core.relay.Relay;
 
 /**
- * Implementation of HealthMonitorRequest interface.
+ * Implementation of HealthMonitorRequest type.  Instances of this type are
+ * used by external (non-robustness) agents to request operations to be
+ * performed by restart manager.  This type is also used internally to
+ * send requests between the robustness manager and node agents.  When used
+ * by non-robustness clients the request should be published to the manager
+ * agent, this is most easily accomplished via a AttributeBasedAddress defining
+ * the robustness community and manager attribute (i.e., "Role=RobustnessManager").
+ * For example:
+ * <pre>
+ * HealthMonitorRequest myRequest =
+ *   new HealthMonitorRequestImpl(communityName,
+ *                                HealthMonitorRequest.FORCED_RESTART,
+ *                                new String[] {mobileAgent},
+ *                                null,
+ *                                null,
+ *                                uidService.nextUID()));
+ * AttributeBasedAddress target =
+ *   AttributeBasedAddress.getAttributeBasedAddress(communityName,
+ *                                                  "Role",
+ *                                                  "RobustnessManager");
+ * Object requestToPublish = myRequest;
+ * if (!target.equals(agentId)) {  // send to remote agent using Relay
+ *   request = new RelayAdapter(agentId, hmr, hmr.getUID());
+ *   ((RelayAdapter)request).addTarget(target);
+ * }
+ * blackboard.publishAdd(request);
+ * </pre>
  **/
 public class HealthMonitorRequestImpl
   implements HealthMonitorRequest, java.io.Serializable {
@@ -41,16 +67,25 @@ public class HealthMonitorRequestImpl
   private HealthMonitorResponse resp;
 
   /**
-   * Constructor.
+   * Construct a HealthMonitorRequest.  When this request is sent to the
+   * robustness manager the orig and dest fields can be null.  The only exception
+   * to this is a MOVE request in which case the dest field must be specified.
+   * However, if this request is sent directly to a robustness node agent the orig
+   * field is also required for the MOVE and KILL request.
+   * @param communityName Name of agents robustness community
+   * @param reqType       Action to be performed (i.e., MOVE, RESTART, etc)
+   * @param agents        Name of affected agents
+   * @param orig          Name of agents current node (Required for MOVE)
+   * @param dest          Name of agents destination node
+   * @param               Unique identifier
    */
-  public HealthMonitorRequestImpl(MessageAddress     source,
-                                  String             communityName,
+  public HealthMonitorRequestImpl(String             communityName,
                                   int                reqType,
                                   String[]           agents,
                                   String             orig,
                                   String             dest,
                                   UID                uid) {
-    this.source = source;
+    //this.source = source;
     this.communityName = communityName;
     this.requestType = reqType;
     this.agents = agents;

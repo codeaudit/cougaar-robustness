@@ -58,6 +58,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Provides convenience methods for invoking restarts on local and remote
@@ -75,7 +77,7 @@ public class RestartHelper extends BlackboardClientComponent {
 
   private List localActionQueue = Collections.synchronizedList(new ArrayList());
   private List remoteRequestQueue = new ArrayList();
-  private List actionsInProcess = Collections.synchronizedList(new ArrayList());
+  private Map actionsInProcess = Collections.synchronizedMap(new HashMap());
 
   private WakeAlarm wakeAlarm;
 
@@ -264,8 +266,7 @@ public class RestartHelper extends BlackboardClientComponent {
     UIDService uidService = (UIDService)getServiceBroker().getService(this,
         UIDService.class, null);
     HealthMonitorRequest hmr =
-        new HealthMonitorRequestImpl(agentId,
-                                     rr.communityName,
+        new HealthMonitorRequestImpl(rr.communityName,
                                      rr.action,
                                      rr.agentNames,
                                      rr.origNode,
@@ -366,7 +367,7 @@ public class RestartHelper extends BlackboardClientComponent {
       LocalRequest request = (LocalRequest)localActionQueue.remove(0);
       MessageAddress agent = MessageAddress.getMessageAddress(request.agentName);
       request.expiration = now() + ACTION_TIMEOUT;
-      actionsInProcess.add(request);
+      actionsInProcess.put(agent.toString(), request);
       try {
         UID acUID = uidService.nextUID();
         myUIDs.add(acUID);
@@ -506,7 +507,7 @@ public class RestartHelper extends BlackboardClientComponent {
     */
   private LocalRequest[] getActionsInProcess() {
     synchronized (actionsInProcess) {
-      return (LocalRequest[])actionsInProcess.toArray(new LocalRequest[0]);
+      return (LocalRequest[])actionsInProcess.values().toArray(new LocalRequest[0]);
     }
   }
 
