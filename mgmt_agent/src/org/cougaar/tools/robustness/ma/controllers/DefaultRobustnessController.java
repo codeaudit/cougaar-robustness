@@ -489,11 +489,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                se.high > newSc.getHigh()) {                     // Record highs thereafter
               if (originalStats.contains(source)) {
                 newSc = (StatCalc) originalStats.get(source).clone();
-                if (se.high > newSc.getMean() / 2) { //   sanity check
+                //if (se.high > newSc.getMean() / 2) { //   sanity check
                   newSc.enter(se.high);
                   nodeLatencyStats.put(newSc);
                   saveNodeStats();
-                }
+                //}
               } else {
                 newSc = new StatCalc(model.getCommunityName(), source);
                 newSc.enter(se.high);
@@ -938,6 +938,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     StatsEntry(String source, long last) {
       this.source = source;
       this.last = last;
+    }
+    public String toString() {
+      return "source=" + source + " samples=" + samples + " high=" + high;
     }
   }
 
