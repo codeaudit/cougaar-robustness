@@ -413,8 +413,10 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
                     }
                 }
                 
+                
+                String submit = request.getParameter("Submit");
                 String diagVal = request.getParameter("CHANGEDIAGNOSISVALUE");
-                if (diagVal != null && diagVal.length() >0 ) { //the user wants to update the value of an action
+                if (submit != null && submit.equals("Set Value") && diagVal != null && diagVal.length() >0 ) { //the user wants to update the value of an action
 
                     String uid  = request.getParameter("UID");
 
