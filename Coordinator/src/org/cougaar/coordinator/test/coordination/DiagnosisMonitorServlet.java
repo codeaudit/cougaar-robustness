@@ -456,7 +456,7 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
               out.println("<center><h2>"+i+"</h2></center><br>" );
           } else {
  */
-                emitHeader(out, refreshRate, useShortName);
+                emitHeader(out, refreshRate, useShortName, assetFilter);
                 if (error != null) { // then emit the error
                     out.print("<font color=\"#0C15FE\">"+ error + "</h2></font>");
                 }
@@ -519,12 +519,15 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
         }
         
         
+        
         /**
          * Output page header
          */
-        private void emitHeader(PrintWriter out, int refreshRate, boolean useShortName) {
+        private void emitHeader(PrintWriter out, int refreshRate, boolean useShortName, String assetFilter) {
             out.println("<html><META HTTP-EQUIV=\"PRAGMA\" CONTENT=\"NO-CACHE\">");
-            out.println("<head></head><body onload=\"setTimeout('location.reload()',"+refreshRate+");\">");
+            String nFormat = (useShortName) ? "SHORTNAME" : "LONGNAME" ;
+            String qStr = "?NAMEFORMAT="+nFormat+"&REFRESH="+refreshRate+"&ASSETFILTER="+assetFilter;
+            out.println("<head></head><body onload=\"foo=location.href.substr(0, location.href.indexOf('Servlet')+7)+'"+qStr+"';setTimeout('location.replace(foo)', "+refreshRate+");\">");
             out.println("<center><h1>Coordinator Diagnosis Monitoring Servlet</h1>");
             out.println("<p>Will refresh every " + (refreshRate/1000) + " seconds. ");
             out.println("You can change this rate at the bottom of the page.");
