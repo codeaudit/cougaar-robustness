@@ -40,6 +40,8 @@ class AckFrontend extends DestinationLinkDelegateImplBase
   private DestinationLink link;
   private MessageAttributes success;
 
+public static long startTime;
+
   public AckFrontend (DestinationLink link) 
   {
     super (link);
@@ -257,7 +259,7 @@ class AckFrontend extends DestinationLinkDelegateImplBase
           System.err.println (str+ " contains acks: ");
           AckList.printAcks ("specific", ack.getSpecificAcks());
           AckList.printAcks ("  latest", ack.getLatestAcks());
-          System.err.println ("Outbound roundtrip time: " +ack.getSenderRoundtripTime());
+//        System.err.println ("Outbound roundtrip time: " +ack.getSenderRoundtripTime());
         }
       }
 

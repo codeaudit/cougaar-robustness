@@ -41,8 +41,10 @@ public final class MessageUtils
   public static final String MSG_TYPE_HEARTBEAT = "MessageTypeHeartbeat";
   public static final String MSG_TYPE_PING = "MessageTypePing";
   public static final String MSG_TYPE_TMASK = "MessageTypeTrafficMasking";
+  public static final String MSG_SEND_TIME = "MessageSendTime";
   public static final String SEND_TIMEOUT = "SendTimeout";
   public static final String SEND_DEADLINE = "SendDeadline";
+  public static final String SEND_PROTOCOL_LINK = "SendProtocolLink";
   public static final String SRC_MSG_NUM = "SrcMessageNumber";
 
   // from TrafficMaskingGeneratorAspect.java
@@ -194,6 +196,17 @@ public final class MessageUtils
     setMessageType (msg, MSG_TYPE_TMASK);
   }
 */
+  public static void setMessageSendTime (AttributedMessage msg, long time)
+  {
+    msg.setAttribute (MSG_SEND_TIME, new Long (time));
+  }
+
+  public static long getMessageSendTime (AttributedMessage msg)
+  {
+    Long time = (Long) msg.getAttribute (MSG_SEND_TIME);
+    return (time != null ? time.longValue() : 0);
+  }
+
   public static boolean isRegularAckMessage (AttributedMessage msg)
   {
     Ack ack = getAck (msg);
@@ -244,6 +257,16 @@ public final class MessageUtils
     return Long.MAX_VALUE;
   }
 
+  public static void setSendProtocolLink (AttributedMessage msg, String protocolLink)
+  {
+    msg.setAttribute (SEND_PROTOCOL_LINK, protocolLink);
+  }
+
+  public static String getSendProtocolLink (AttributedMessage msg)
+  {
+    return (String) msg.getAttribute (SEND_PROTOCOL_LINK);
+  }
+
   public static void setSrcMsgNumber (AttributedMessage msg, int msgNum)
   {
     msg.setAttribute (SRC_MSG_NUM, new Integer (msgNum));
@@ -263,46 +286,51 @@ public final class MessageUtils
     return AgentID.makeSequenceID (fromAgent, toAgent);    
   }
 
-  public static String toString (AttributedMessage msg)
-  {
-    if (msg != null)
-    {
-      String specialType = "";
-
-      if (isPureAckMessage (msg))
-      {
-        specialType = " (PureAckMsg for Msg " +getSrcMsgNumber(msg)+ ")";
-      }
-      else if (isPureAckAckMessage (msg))
-      {
-        specialType = " (PureAckAckMsg for PureAckMsg " +getSrcMsgNumber(msg)+ ")";
-      }
-
-      String msgNum = (hasMessageNumber (msg) ? ""+getMessageNumber (msg) : "[]");
-      String key = AgentID.makeSequenceID (getFromAgent(msg), getToAgent(msg));
-      return "Msg " + msgNum + specialType + " of " + key;
-    }
-    else return "[null msg]";
-  }
-
   public static String toShortString (AttributedMessage msg)
   {
-    if (msg != null)
+    if (msg == null) return "[null msg]";
+
+    if (isLocalMessage (msg))
     {
-      String specialType = "";
-
-      if (isPureAckMessage (msg))
-      {
-        specialType = " (PureAckMsg for Msg " +getSrcMsgNumber(msg)+ ")";
-      }
-      else if (isPureAckAckMessage (msg))
-      {
-        specialType = " (PureAckAckMsg for PureAckMsg " +getSrcMsgNumber(msg)+ ")";
-      }
-
-      String msgNum = (hasMessageNumber (msg) ? ""+getMessageNumber (msg) : "[]");
-      return "Msg " + msgNum + specialType;
+      String from = getOriginatorAgentAsString (msg);
+      String to = getTargetAgentAsString (msg);
+      return "Local Msg (from " +from+ " to " +to+ ")";
     }
-    else return "[null msg]";
+
+    String specialType = "";
+
+    if (isPureAckMessage (msg))
+    {
+      specialType = "(PureAckMsg for Msg " +getSrcMsgNumber(msg)+ ")";
+    }
+    else if (isPureAckAckMessage (msg))
+    {
+      specialType = "(PureAckAckMsg for PureAckMsg " +getSrcMsgNumber(msg)+ ")";
+    }
+    else if (isHeartbeatMessage (msg))
+    {
+      specialType = "(HeartbeatMsg)";
+    }
+    else if (isPingMessage (msg))
+    {
+      specialType = "(PingMsg)";
+    }
+    else if (isTrafficMaskingMessage (msg))
+    {
+      specialType = "(TrafficMaskingMsg)";
+    }
+
+    String msgNum = (hasMessageNumber (msg) ? ""+getMessageNumber (msg) : "[]");
+    return "Msg " + msgNum + " " + specialType;
+  }
+
+  public static String toString (AttributedMessage msg)
+  {
+    String hdr = toShortString (msg);
+
+    if (msg == null || isLocalMessage(msg)) return hdr;
+
+    String key = AgentID.makeSequenceID (getFromAgent(msg), getToAgent(msg));
+    return hdr + " of " + key;
   }
 }

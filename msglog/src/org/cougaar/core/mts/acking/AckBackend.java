@@ -106,7 +106,7 @@ class AckBackend extends MessageDelivererDelegateImplBase
           System.err.println ("Received " +msgShortStr+ " contains acks: ");
           AckList.printAcks ("specific", ack.getSpecificAcks());
           AckList.printAcks ("  latest", ack.getLatestAcks());
-          System.err.println ("Inbound roundtrip time: " + ack.getSenderRoundtripTime());
+//        System.err.println ("Inbound roundtrip time: " + ack.getSenderRoundtripTime());
         }
 
         if (ack.getSpecificAcks() != null)
@@ -137,29 +137,6 @@ class AckBackend extends MessageDelivererDelegateImplBase
         return result;
       }
     }
-
-    //  Handle messages from out-of-date senders or to out-of-date receivers
-    //  NOTE:  May want to send NACKs back for these messages.
-
-    if (!isLatestAgentIncarnation (MessageUtils.getFromAgent (msg)))
-    {
-      if (MessageAckingAspect.debug) 
-      {
-        System.err.println ("Msg has out of date or unknown sender (msg ignored): " +msgString);
-      }
-
-      return result;
-    }
-
-    if (!isLatestAgentIncarnation (MessageUtils.getToAgent (msg)))
-    {
-      if (MessageAckingAspect.debug) 
-      {
-        System.err.println ("Msg has out of date or unknown receiver (msg ignored): " +msgString);
-      }
-
-      return result;
-    }
 /*
     Can't do this integrity check yet - msg system architecture wrong for it
 
@@ -174,14 +151,17 @@ class AckBackend extends MessageDelivererDelegateImplBase
 */
     int msgNum = MessageUtils.getMessageNumber (msg);
 
-    if (ack.isRegularAck() && msgNum <= 0)
+    if (ack.isRegularAck() && msgNum < 0)  // changed from <= 0 for new numbering scheme
     {
-      if (MessageAckingAspect.debug) 
+      if (!MessageUtils.isPingMessage (msg))  // pings are an exception
       {
-        System.err.println ("Invalid msg number (msg ignored): " +msgString);
-      }
+        if (MessageAckingAspect.debug) 
+        {
+          System.err.println ("Invalid msg number (msg ignored): " +msgString);
+        }
 
-      return result;
+        return result;
+      }
     }
 
     if (ack.isPureAck() && msgNum >= 0)
@@ -265,6 +245,36 @@ class AckBackend extends MessageDelivererDelegateImplBase
       }
     }
 
+    //  Handle messages from out-of-date senders or to out-of-date receivers
+    //  NOTE:  May want to send NACKs back for these messages.
+
+    if (!isLatestAgentIncarnation (MessageUtils.getFromAgent (msg)))
+    {
+
+// if (regular msg)  not pure ack, ack ack, ping, etc
+// if (not a duplicate) // only send once?
+//   send it or schedule it
+//   if sched, need nack vs. pure nack
+//   a pure nack has no msg num - it is not acked?
+
+      if (MessageAckingAspect.debug) 
+      {
+        System.err.println ("Msg has out of date or unknown sender (msg ignored): " +msgString);
+      }
+
+      return result;
+    }
+
+    if (!isLatestAgentIncarnation (MessageUtils.getToAgent (msg)))
+    {
+      if (MessageAckingAspect.debug) 
+      {
+        System.err.println ("Msg has out of date or unknown receiver (msg ignored): " +msgString);
+      }
+
+      return result;
+    }
+
     //  At this point we feel the received message is legitimate, so now we deliver
     //  it and record its reception while making sure that it is not a message we have 
     //  already received and delivered.  Note that there is also checking for duplicate
@@ -302,7 +312,14 @@ class AckBackend extends MessageDelivererDelegateImplBase
         return result;
       }
     }
-
+/*
+int n = MessageUtils.getMessageNumber (msg);
+if (n == 20)
+{
+  System.err.println ("======== End time.");
+  System.err.println ("Elapsed time = " +(now()-AckFrontend.startTime));
+}  
+*/
     //  Ack-related processing
 
     if (MessageAckingAspect.isAckingOn())

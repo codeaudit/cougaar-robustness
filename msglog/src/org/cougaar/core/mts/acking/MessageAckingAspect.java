@@ -723,7 +723,7 @@ public class MessageAckingAspect extends StandardAspect
 
         //  HACK - set averages to be fairly fast reacting for now
 
-        data.measurement = new RunningAverage (runningAveragePoolSize, 0.0, 0);  
+        data.measurement = new RunningAverage (runningAveragePoolSize, 0, 0.0, 0);  
       }
 
       int roundtripTime = (int) (ackList.getReceiveTime() - ack.getSendTime());
@@ -929,13 +929,13 @@ public class MessageAckingAspect extends StandardAspect
     pureAckSender.add (ackMsg);
   }
 
-  private static class Int
+  private static class Int  // a mutable int
   {
     public int value;
     public Int (int v) { value = v; }
   }
 
-  private static class LongInt
+  private static class LongInt  // a mutable long
   {
     public long value;
     public LongInt (long v) { value = v; }

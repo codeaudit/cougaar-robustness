@@ -45,7 +45,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 {
   public static final String PROTOCOL_TYPE = "-UDP";
 
-  private static final boolean debug;
+  private static boolean debug;
   private static final String localhost;
 
   private static boolean showTraffic;
@@ -59,16 +59,13 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
   {
     //  Read external properties
 
-    String s = "org.cougaar.message.protocol.udp.debug";
-    debug = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
-
-    s = "org.cougaar.message.protocol.udp.localhost";
+    String s = "org.cougaar.message.protocol.udp.localhost";
     localhost = System.getProperty (s, getLocalHost());
   }
  
   public IncomingUDPLinkProtocol ()
   {
-    System.err.println ("Creating " + this);
+// System.err.println ("Creating " + this);
 
     datagramSocketListeners = new Vector();
 
@@ -84,18 +81,8 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
     //  Check if ShowTrafficAspect is loaded
 
     String sta = "org.cougaar.core.mts.ShowTrafficAspect";
-//    showTraffic = (getAspectSupport().findAspect(sta) != null);
+//  showTraffic = (getAspectSupport().findAspect(sta) != null);
 //  showTraffic = (AspectSupportImpl.instance().findAspect(sta) != null);
-/*
-    //  HACK!!!  See setNameSupport() as to why this is commented out 
-
-    //  Start things going
-
-    if (startup() == false)
-    {
-      throw new RuntimeException ("Problem starting IncomingUDPLinkProtocol");
-    }
-*/
   }
 
   public String toString ()
@@ -112,12 +99,12 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 
     if (getNameSupport() == null)
     {
-      throw new RuntimeException ("IncomingUDPLinkProtocol: nameSupport is null!");
+      throw new RuntimeException ("nameSupport is null!");
     }
 
     if (startup() == false)
     {
-      throw new RuntimeException ("Problem starting IncomingUDPLinkProtocol");
+      throw new RuntimeException ("Problem starting " +this);
     }
   }
 
@@ -190,7 +177,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
     } 
     catch (Exception e) 
     {
-      System.err.println ("\nIncomingUDPLinkProtocol: registerClient");
+      loggingService.error ("registerClient: " +e);
       e.printStackTrace();
     }
   }
@@ -206,7 +193,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
     } 
     catch (Exception e) 
     {
-      System.err.println ("\nIncomingUDPLinkProtocol: unregisterClient");
+      loggingService.error ("unregisterClient: " +e);
       e.printStackTrace();
     }
   }
@@ -221,7 +208,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
     } 
     catch (Exception e) 
     {
-      System.err.println ("\nIncomingUDPLinkProtocol: registerMTS");
+      loggingService.error ("registerMTS: " +e);
       e.printStackTrace();
     }
   }
@@ -240,15 +227,24 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 
       registerDatagramSocketSpec (localhost, port);
       datagramSocketListeners.add (listener);
+/*
 
-      if (debug) 
-      {
-        System.err.println ("IncomingUDP: Datagram socket created on port " +port);
-      }
+loggingService is null here
+
+      if (loggingService.isInfoEnabled()) 
+        loggingService.info ("Datagram socket created on port " +port);
+*/
+      System.err.println ("Datagram socket created on port " +port);
     }
     catch (Exception e)
     {
-      System.err.println ("\nIncomingUDP: Error creating datagram socket on port " +port+ ": ");
+/*
+
+loggingService is null here
+
+      loggingService.error ("Error creating datagram socket on port " +port+ ": " +e);
+*/
+      System.err.println ("Error creating datagram socket on port " +port+ ": ");
       e.printStackTrace();
 
       if (listener != null) listener.quit();
@@ -274,14 +270,12 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 
       datagramSocketListeners.remove (listener);
 
-      if (debug) 
-      {
-        System.err.println ("IncomingUDP: Datagram socket destroyed on port " +port);
-      }
+      if (loggingService.isInfoEnabled()) 
+        loggingService.info ("Datagram socket destroyed on port " +port);
     }
     catch (Exception e)
     {
-      System.err.println ("\nError destroying datagram socket on port " +listener.getPort()+ ": ");
+      loggingService.error ("Error destroying datagram socket on port " +listener.getPort()+ ": " +e);
       e.printStackTrace();
     }
   }
@@ -330,19 +324,17 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 
       while (!quitNow)
       {
+        AttributedMessage msg = null;
+
         try 
         {
           //  Wait for an incoming packet
 
           datagramSocket.receive (datagramPacket);
 
-//long start = System.currentTimeMillis();
-
           //  Convert packet into a Cougaar message
 
           Object obj = fromBytes (datagramPacket.getData());
-
-          AttributedMessage msg = null;
 
           try
           {
@@ -350,45 +342,46 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
           }
           catch (Exception e)
           {
-            System.err.println ("\nIncomingUDP: got non AttributedMessage! (ignored)");
+            loggingService.error ("Got non AttributedMessage! (msg ignored)");
             continue;
           }
 
-//long end = System.currentTimeMillis();
-//System.out.println ("UDP receive (ms): " +(end-start));
-
           if (showTraffic) System.err.print ("<S");
 
-          if (debug) 
+          if (loggingService.isDebugEnabled()) 
           {
-            System.out.println ("\nIncomingUDP: datagram packet is from " + showAddress (datagramPacket));
-            System.out.println ("IncomingUDP: read " +MessageUtils.toString(msg));
+            loggingService.debug ("Datagram packet is from " +showAddress(datagramPacket));
+            loggingService.debug ("Read " +MessageUtils.toString(msg));
           }
-
-          //  Deliver the message
-
-          getDeliverer().deliverMessage (msg, msg.getTarget());
-        }
-        catch (MisdeliveredMessageException e)
-        { 
-          //  Not socket's fault - this exception comes from the deliverMessage call above
-
-          System.err.println ("\nIncomingUDP: got MisdeliveredMessageException: " + e);
         }
         catch (Exception e)
         { 
           //  Typically a socket exception raised when the party at the
-          //  other end closes their socket connection.
+          //  other end closes their socket connection, but this is not
+          //  the case here with datagram sockets.
 
-// not with udp sockets!
+          if (loggingService.isInfoEnabled()) 
+            loggingService.info ("Terminating datagram socket exception: " + e);
 
-        if (debug) System.err.println ("\nIncomingUDP: Terminating socket exception: " + e);
-/*
-System.err.println ("\nIncomingUDP: Terminating socket exception: ");
-e.printStackTrace();
-*/
+//System.err.println ("\nIncomingUDP: Terminating socket exception: ");  e.printStackTrace();
+
           quitNow = true;
           break;
+        }
+
+        //  Deliver the message
+
+        try
+        {
+          getDeliverer().deliverMessage (msg, msg.getTarget());
+        }
+        catch (MisdeliveredMessageException e)
+        { 
+          loggingService.error ("Got MisdeliveredMessageException: " + e);
+        }
+        catch (Exception e)
+        { 
+          loggingService.error ("Got exception while delivering msg: " + e);
         }
       }
 
@@ -426,7 +419,7 @@ e.printStackTrace();
     }
   }
 
-  public static Object fromBytes (byte[] data) 
+  private Object fromBytes (byte[] data) 
   {
 	ObjectInputStream ois = null;
 	Object obj = null;
@@ -439,15 +432,13 @@ e.printStackTrace();
 	} 
     catch (ClassNotFoundException cnfe) 
     {
-System.err.println ("\nIncomingUDP: fromBytes cnfe exception: ");
-cnfe.printStackTrace();
-	    return null;
+      loggingService.error ("fromBytes cnfe exception: " +cnfe);
+      return null;
 	}
     catch (Exception e) 
     {
-System.err.println ("\nIncomingUDP: fromBytes exception: ");
-e.printStackTrace();
-	    return null;
+      loggingService.error ("fromBytes exception: " +e);
+      return null;
 	}
 	
 	try 

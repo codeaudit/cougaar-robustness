@@ -38,9 +38,7 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
 {
   public static final String PROTOCOL_TYPE = "-UDP";
 
-  private static final boolean debug;
   private static final int protocolCost;
-
   private static final Object sendLock = new Object();
 
   private DatagramSocket datagramSocket;
@@ -52,16 +50,13 @@ private int cnt = 0;
   {
     //  Read external properties
 
-    String s = "org.cougaar.message.protocol.udp.debug";
-    debug = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
-
-    s = "org.cougaar.message.protocol.udp.cost";
+    String s = "org.cougaar.message.protocol.udp.cost";
     protocolCost = Integer.valueOf(System.getProperty(s,"166")).intValue();
   }
  
   public OutgoingUDPLinkProtocol ()
   {
-    System.err.println ("Creating " + this);
+    // System.err.println ("Creating " + this);
 
     links = new HashMap();
 
@@ -69,7 +64,7 @@ private int cnt = 0;
 
     if (startup() == false)
     {
-      throw new RuntimeException ("Failure starting up OutgoingUDPLinkProtocol!");
+      throw new RuntimeException ("Failure starting up " +this);
     }
   }
 
@@ -114,7 +109,7 @@ private int cnt = 0;
       }
       else
       {
-        System.err.println ("OutgoingUDPLinkProtocol: invalid obj in lookup!");
+        loggingService.error ("Invalid DatagramSocketSpec in lookup!");
       }
     }
 
@@ -263,10 +258,8 @@ else
    
     private boolean sendMessage (AttributedMessage msg, DatagramSocketSpec spec) throws Exception
     {
-      if (debug) 
-      {
-        System.err.println ("\nOutgoingUDP: sending " +MessageUtils.toString(msg));
-      }
+      if (loggingService.isDebugEnabled()) 
+        loggingService.debug ("Sending " +MessageUtils.toString(msg));
 
       //  Since UDP datagram sockets are unconnected (unlike TCP sockets), we
       //  just send the message on its way and maybe it gets there (UDP is 
@@ -282,10 +275,8 @@ if (msgBytes.length >= 64*1024)
 {
   //  HACK!!! Need better way to handle UDP 64kb packet length limitation
 
-  if (debug)
-  {
-    System.err.println ("\nOutgoingUDP: msg exceeds 64kb limit! : " +msg);
-  }
+  if (loggingService.isWarnEnabled()) 
+    loggingService.warn ("Msg exceeds 64kb datagram limit! : " +msg);
   
   return false;
 }

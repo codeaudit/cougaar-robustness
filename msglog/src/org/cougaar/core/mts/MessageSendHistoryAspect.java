@@ -58,8 +58,6 @@ package org.cougaar.core.mts;
 
 public class MessageSendHistoryAspect extends StandardAspect
 {
-  private static final String DEBUG_PROPERTY = "org.cougaar.message.transport.aspects.sendhistory.debug";
-
 //  HACK  - where to house history?
   //private static final MessageHistory messageHistory = AdaptiveLinkSelectionPolicy.messageHistory;
   public static final MessageHistory messageHistory = new MessageHistory();
@@ -70,13 +68,7 @@ public class MessageSendHistoryAspect extends StandardAspect
   private boolean debug;
 
   public MessageSendHistoryAspect () 
-  {
-    //  Read external properties
-
-    debug = false;
-    String debugProp = System.getProperty (DEBUG_PROPERTY);
-    if (debugProp != null && debugProp.equals("true")) debug = true;
-  }
+  {}
 
   public Object getDelegate (Object delegate, Class type) 
   {
@@ -166,7 +158,7 @@ Open issue: How to tell masking messages now?
       
         messageHistory.sends.put (rec);
       
-        if (debug) System.out.println ("SendHistory: msg " +num+ " send record =\n" + rec);
+ // System.out.println ("SendHistory: msg " +num+ " send record =\n" + rec);
       }
 
       if (exception != null)

@@ -468,11 +468,13 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
  
       while (!quitNow)
       {
+        AttributedMessage msg = null;
+
         try 
         {
           //  Sit and wait for a message (till timeout)
 
-          AttributedMessage msg = (AttributedMessage) messageIn.readObject();
+          msg = (AttributedMessage) messageIn.readObject();
 
           if (showTraffic) System.err.print ("<S");
 
@@ -481,10 +483,6 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
             System.out.println ("\nIncomingSocket: socket= " + socket);
             System.out.println ("IncomingSocket: read " +MessageUtils.toString(msg));
           }
-
-          //  Deliver the message
-
-          getDeliverer().deliverMessage (msg, msg.getTarget());
         }
         catch (InterruptedIOException e)
         {
@@ -500,22 +498,32 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
           quitNow = true;
           break;
         }
-        catch (MisdeliveredMessageException e)
-        { 
-          //  Not socket's fault - this exception comes from the deliverMessage call above
-
-          System.err.println ("\nIncomingSocket: got MisdeliveredMessageException: " + e);
-        }
         catch (Exception e)
         { 
           //  Typically a socket exception raised when the party at the
           //  other end closes their socket connection.
 
           if (debug) System.err.println ("\nIncomingSocket: Terminating socket exception: " + e);
-e.printStackTrace();
+//e.printStackTrace();
 
           quitNow = true;
           break;
+        }
+
+        //  Deliver the message
+
+        try
+        {
+          getDeliverer().deliverMessage (msg, msg.getTarget());
+        }
+        catch (MisdeliveredMessageException e)
+        { 
+          loggingService.error ("Got MisdeliveredMessageException: " + e);
+        }
+        catch (Exception e)
+        { 
+//          loggingService.error ("Got exception while delivering msg: " + e);
+System.err.println ("Got exception while delivering msg: " + e);
         }
       }
 

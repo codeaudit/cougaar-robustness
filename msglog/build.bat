@@ -36,3 +36,7 @@ set ACKING=src\org\cougaar\core\mts\acking\*.java
 
 @echo on
 javac -deprecation -d lib -classpath %LIBPATHS% %MTS% %EMAIL% %UDP% %SOCKET% %ACKING% && jar cf %COUGAAR_INSTALL_PATH%\lib\Robustness_objs_msglog.jar -C lib ./org
+
+jarsigner.exe -keystore signingCA_keystore -storepass keystore %COUGAAR_INSTALL_PATH%\lib\Robustness_objs_msglog.jar privileged
+
+jarsigner.exe -keystore signingCA_keystore -storepass keystore %COUGAAR_INSTALL_PATH%\lib\core.jar privileged

@@ -67,7 +67,7 @@ public class AgentID implements java.io.Serializable
 
   public String getID ()
   {
-    return nodeName +"_"+ agentName +"_"+ agentIncarnation;
+    return nodeName+ "/" +agentName+ "/" +agentIncarnation;
   }
 
   public String toString ()

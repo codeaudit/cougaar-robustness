@@ -19,7 +19,8 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 23 Apr  2001: Split out from MessageAckingAspect. (OBJS)
+ * 25 Jul 2001: Add startDelay and getLastSampleTimestamp(). (OBJS)
+ * 23 Apr 2001: Split out from MessageAckingAspect. (OBJS)
  */
 
 package org.cougaar.core.mts.acking;
@@ -29,23 +30,29 @@ public class RunningAverage
 {
   private double data[];
   private int n, point;
-  private int changeLimitDelay, delayCount;
+  private int startDelay, changeLimitDelay, delayCount;
   private boolean hasChangeLimit;
   private double changeLimit;
+  private long lastSampleTimestamp;
 
   public RunningAverage (int poolsize)
   {
-    this (poolsize, 0.0, 0);
+    this (poolsize, 0, 0.0, 0);
   }
 
   public RunningAverage (int poolsize, double percentChangeLimit)
   {
-    this (poolsize, percentChangeLimit, poolsize);
+    this (poolsize, 0, percentChangeLimit, poolsize);
   }
 
-  public RunningAverage (int poolsize, double percentChangeLimit, int changeLimitDelay)
+  public RunningAverage (int poolsize, int startDelay, double percentChangeLimit)
   {
-    if (poolsize < 1 || percentChangeLimit < 0.0 || changeLimitDelay < 0)
+    this (poolsize, startDelay, percentChangeLimit, poolsize);
+  }
+
+  public RunningAverage (int poolsize, int startDelay, double percentChangeLimit, int changeLimitDelay)
+  {
+    if (poolsize < 1 || startDelay < 0 || percentChangeLimit < 0.0 || changeLimitDelay < 0)
     {
       throw new IllegalArgumentException ("RunningAverage: Bad arg(s)!");
     }
@@ -53,6 +60,8 @@ public class RunningAverage
     data = new double[poolsize];
     n = 0;
     point = 0;
+
+    this.startDelay = startDelay;
 
     hasChangeLimit = (percentChangeLimit > 0.001);  // avoid zero comparison
     if (hasChangeLimit) changeLimit = percentChangeLimit;
@@ -96,6 +105,11 @@ public class RunningAverage
     } 
   }
 
+  public synchronized long getLastSampleTimestamp ()  // sync because of long
+  {
+    return lastSampleTimestamp;
+  }
+
   public synchronized void add (int entry)
   {
     add ((double) entry);
@@ -103,6 +117,18 @@ public class RunningAverage
 
   public synchronized void add (double entry)
   {
+    //  Timestamp sample
+
+    lastSampleTimestamp = now();
+
+    //  Throw away data until startDelay is satisfied
+
+    if (startDelay > 0)
+    {
+      startDelay--;
+      return;
+    }
+
     //  Special case - first entry
 
     if (n == 0)
@@ -168,6 +194,11 @@ public class RunningAverage
       "n=" +n+ " " +
       "point=" + point
     );
+  }
+
+  private static long now ()
+  {
+    return System.currentTimeMillis();
   }
 
   public static void main (String args[])

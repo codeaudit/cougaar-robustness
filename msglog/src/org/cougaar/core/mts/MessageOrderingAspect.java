@@ -38,8 +38,6 @@ public class MessageOrderingAspect extends StandardAspect
 {
   private static final Hashtable sequenceTable = new Hashtable();
 
-  private static boolean debug = false;
-
   public MessageOrderingAspect () 
   {}
 
@@ -75,7 +73,9 @@ public class MessageOrderingAspect extends StandardAspect
 
       if (MessageUtils.hasMessageNumber (msg) == false)
       {
-        throw new RuntimeException ("Msg missing number!");
+        String s = "Message has no number! : " +MessageUtils.toString(msg);
+        loggingService.error (s);
+        throw new RuntimeException (s);
       }
 
       MessageAttributes attrs = new SimpleMessageAttributes();
@@ -154,11 +154,6 @@ public class MessageOrderingAspect extends StandardAspect
         //  such as acks and pings.  Acks are never delivered to agents but
         //  pings are.
 
-        if (debug)
-        {
-          System.err.println ("MessageOrdering: Delivering msg num " +num);
-        }
-
         doDelivery (msg);
         status = MessageAttributes.DELIVERY_STATUS_DELIVERED;
       }
@@ -169,10 +164,8 @@ public class MessageOrderingAspect extends StandardAspect
 
     private void doDelivery (AttributedMessage msg)
     {
-      if (debug)
-      {
-        System.err.println ("MessageOrdering: Delivering msg num " +MessageUtils.getMessageNumber(msg));
-      }
+      if (loggingService.isDebugEnabled()) 
+        loggingService.debug ("Delivering msg " +MessageUtils.toString(msg));
 
       super.deliverMessage (msg);
     }

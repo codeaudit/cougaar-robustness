@@ -29,12 +29,13 @@ import java.util.Hashtable;
 import org.cougaar.core.service.TopologyReaderService;
 import org.cougaar.core.service.TopologyEntry;
 import org.cougaar.core.component.ServiceBroker;
+import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.mts.acking.AgentID;
 
 
 /**
- **  Assign numbers to messages.  Message numbers are used in message 
- **  ordering (sequencing), acking, and history.
+ **  Assign numbers to messages.  Message numbers are used in areas
+ **  such as message ordering (sequencing), acking, and history.
  **/
 
 public class MessageNumberingAspect extends StandardAspect
@@ -64,7 +65,7 @@ public class MessageNumberingAspect extends StandardAspect
 
   private class Link extends DestinationLinkDelegateImplBase 
   {
-    DestinationLink link;
+    private DestinationLink link;
     
     private Link (DestinationLink link) 
     {
@@ -86,11 +87,11 @@ public class MessageNumberingAspect extends StandardAspect
       {
         if (isLocalMessage (msg))
         {
-          //  NOTE: In acking and message ordering messages without numbers are
+          //  NOTE: In acking and message ordering, messages without numbers are
           //  considered errors, so we give even local messages a number.
 
-          MessageUtils.setMessageTypeToLocal (msg);
           n = 0;
+          MessageUtils.setMessageTypeToLocal (msg);
         }
         else if (MessageUtils.isTrafficMaskingMessage (msg))
         {
@@ -116,13 +117,31 @@ public class MessageNumberingAspect extends StandardAspect
         {
           //  Unknown message type - should not occur, except during system development
 
-          String mtype = MessageUtils.getMessageType (msg);
-          throw new RuntimeException ("MessageNumberingAspect: Unknown msg type! : " +mtype);
+          String type = MessageUtils.getMessageType (msg);
+          loggingService.error ("Unknown msg type! : " +type);
 
-          //  log error, set msg num to 1 ?
+          n = -1;  // will nearly always result as a duplicate msg on the remote side
         }
 
         setMessageNumber (msg, n);
+      }
+
+      //  TEMP HACK - insure agent settings regardless of msg number
+
+      AgentID fromAgent = MessageUtils.getFromAgent (msg);
+
+      if (fromAgent == null) 
+      {
+        fromAgent = getAgentID (MessageUtils.getOriginatorAgent (msg));
+        MessageUtils.setFromAgent (msg, fromAgent);
+      }
+
+      AgentID toAgent = MessageUtils.getToAgent (msg);
+
+      if (toAgent == null)
+      {
+        toAgent = getAgentID (MessageUtils.getTargetAgent (msg));
+        MessageUtils.setToAgent (msg, toAgent);
       }
 
 //System.err.println ("MessageNumberingAspect: outgoing msg= "+MessageUtils.toString(msg));
