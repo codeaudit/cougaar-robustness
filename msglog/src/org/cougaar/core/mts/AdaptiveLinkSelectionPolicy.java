@@ -261,6 +261,13 @@ if (commStartDelaySeconds > 0)
         }
       }
 
+      //  Insure newly local msgs (msgs to formerly remote agents that have now moved to our node)
+      //  have the correct msg type designation.
+
+      if (link == loopbackLink) MessageUtils.setMessageTypeToLocal (msg);
+
+      //  Remember selected links
+
       recordLinkSelection (link, msg);
     }
 
