@@ -71,8 +71,10 @@ public class AssetModel extends Loggable {
 	POMDPModelInterface pmif = model_manager.getPOMDPModel();
 	
 	try {
+	    // Set up with a longer window length 
 	    long window_length = 
 		_model_manager.getMaxSensorLatency( _asset_id.getType() );
+	    window_length = window_length * 5;
 	    _belief_state_window = 
 		new BeliefStateWindow( asset_id, 
 				       window_length,

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManager.java,v $
- * $Revision: 1.7 $
- * $Date: 2004-06-22 04:02:12 $
+ * $Revision: 1.9 $
+ * $Date: 2004-06-24 16:36:56 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -50,7 +50,7 @@ import org.cougaar.util.log.Logger;
  * and provides information via the ModelManagerInterface. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.7 $Date: 2004-06-22 04:02:12 $
+ * @version $Revision: 1.9 $Date: 2004-06-24 16:36:56 $
  *
  */
 public class ModelManager extends Loggable
@@ -352,7 +352,7 @@ public class ModelManager extends Loggable
     {
         logDebug( "==== Update Threat Type ====" );
 
-        logDebug( "Ignoring update. This should be handled by "
+        logDebug( "Ignoring threat update. This should be handled by "
                   + "call to handleThreatModelChange()" );
     } // method updateThreatType
 
@@ -428,94 +428,34 @@ public class ModelManager extends Loggable
 
         ThreatModelInterface threat_model = tm_change.getThreatModel();
 
-        // This is a list of AssetTechSpecInterface objects
-        Vector asset_list = tm_change.getAddedAssets();
-        Enumeration enum = asset_list.elements();
-        while ( enum.hasMoreElements() )
-        { 
-            AssetTechSpecInterface asset_ts
-                    = (AssetTechSpecInterface) enum.nextElement();
+        // Do not assume the asset type exists.  First attempt to add,
+        // or simply retrieve the asset model. 
+        //
+        // Note that a given threat is defined on only one state
+        // dimension of only one asset type.  Thus, we do not have to
+        // check all the individual asset types for the asset
+        // instances included in this change event: they should all be
+        // the same.
+        //
+        AssetType asset_type 
+                = threat_model.getThreatDescription().getAffectedAssetType();
+        AssetTypeModel asset_type_model 
+                = getOrCreateAssetTypeModel( asset_type );
 
-            AssetID asset_id = asset_ts.getAssetID();
+        if ( asset_type_model == null )
+            return;
 
-            AssetTypeModel at_model
-                    = getAssetTypeModel( asset_ts.getAssetType() );
-
-            try
-            {
-                at_model.handleThreatModelChange
-                    ( threat_model, 
-                      asset_id,
-                      AssetTypeModel.THREAT_CHANGE_ADD );
-            }
-            catch (BelievabilityException be)
-            {
-                logError( "Problem adding threat applicability for: "
-                          + asset_id.getName() );
-            }
-
-        } // while asset list of added assets
-
-        // Repeat sam logic as above, but this time for removed
-        // assets.
-
-        asset_list = tm_change.getRemovedAssets();
-        enum = asset_list.elements();
-        while ( enum.hasMoreElements() )
-        { 
-            AssetTechSpecInterface asset_ts
-                    = (AssetTechSpecInterface) enum.nextElement();
-
-            AssetID asset_id = asset_ts.getAssetID();
-
-            AssetTypeModel at_model
-                    = getAssetTypeModel( asset_ts.getAssetType() );
-
-            try
-            {
-                at_model.handleThreatModelChange
-                    ( threat_model, 
-                      asset_id,
-                      AssetTypeModel.THREAT_CHANGE_REMOVE );
-            }
-            catch (BelievabilityException be)
-            {
-                logError( "Problem removing threat applicability for added: "
-                          + asset_id.getName() );
-            }
-
-        } // while asset list of removed assets
-
-        asset_list = tm_change.getRemovedAssets();
-        enum = asset_list.elements();
-        while ( enum.hasMoreElements() )
-        { 
-            AssetTechSpecInterface asset_ts
-                    = (AssetTechSpecInterface) enum.nextElement();
-
-            AssetID asset_id = asset_ts.getAssetID();
-
-            AssetTypeModel at_model
-                    = getAssetTypeModel( asset_ts.getAssetType() );
-
-            try
-            {
-                at_model.handleThreatModelChange
-                    ( threat_model, 
-                      asset_id,
-                      AssetTypeModel.THREAT_CHANGE_REMOVE );
-            }
-            catch (BelievabilityException be)
-            {
-                logError( "Problem removing threat applicability for removed: "
-                          + asset_id.getName() );
-            }
-
-        } // while asset list of removed assets
+        try
+        {
+            asset_type_model.handleThreatModelChange( tm_change );
+        }
+        catch (BelievabilityException be)
+        {
+            logError( "Problem handling threat model change: "
+                      + be.getMessage() );
+        }
 
     } // method handleThreatModelChange
-
-
 
     //************************************************************
     /**

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/AssetTypeDimensionModel.java,v $
- * $Revision: 1.6 $
- * $Date: 2004-06-22 04:02:12 $
+ * $Revision: 1.7 $
+ * $Date: 2004-06-23 22:26:40 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -36,6 +36,7 @@ import org.cougaar.coordinator.techspec.AssetStateDimension;
 import org.cougaar.coordinator.techspec.AssetTechSpecInterface;
 import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
 import org.cougaar.coordinator.techspec.ThreatModelInterface;
+import org.cougaar.coordinator.techspec.ThreatModelChangeEvent;
 
 /**
  * Holds model information specific to a given state dimension.  This
@@ -43,7 +44,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * corresponds to the tech-spec AssetSatteDimension objects.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.6 $Date: 2004-06-22 04:02:12 $
+ * @version $Revision: 1.7 $Date: 2004-06-23 22:26:40 $
  * @see AssetTypeModel
  * @see AssetStateDimension
  */
@@ -299,6 +300,46 @@ class AssetTypeDimensionModel extends Model
 
     //************************************************************
     /**
+     * This method will purge the cached set of threat variations for
+     * every aset instance in the list sent in.  
+     *
+     * @param asset_ts_list A vector of AssetTechSpecInterface objects
+     * of the assets to remove
+     */
+    void purgeThreatVariationCache( Vector asset_ts_list )
+    {
+
+        Enumeration asset_enum = asset_ts_list.elements();
+        while( asset_enum.hasMoreElements() )
+        {
+            AssetTechSpecInterface asset_ts
+                    = (AssetTechSpecInterface) asset_enum.nextElement();
+
+            // We choose to keep the management of the mapping from asset
+            // IDs to applicable threats simple.  In this way, on a threat
+            // model change, we do not attempt the surgical manuevers
+            // required to bring the data structure into compliance.
+            // Instead, we simply wipe out the existence of any mapping
+            // for this asset ID to the threats, and rely on a lazy
+            // evaluation scheme of building the mapping only at the point
+            // we need it and find it does not exist.  Note that this
+            // implies that we ignore the 'change_type parameter.
+            //
+            logDebug( "Removing applicable threat variations for "
+                      + asset_ts.getAssetID() 
+                      + " in state dimension " + _state_dim_name );
+
+            // Because we build the threat variation set on the fly, it is
+            // very possible that we may try to remove things that were
+            // never created. In this case, we will do nothing silently.
+            //
+            _asset_threat_var_table.remove( asset_ts.getAssetID() );
+
+        } // while enum */
+
+    } // method purgeThreatVariationCache
+    //************************************************************
+    /**
      * Adds a threat variation model to this asset dimension. 
      *
      * @param threat_var The threat variation model to be added
@@ -356,19 +397,7 @@ class AssetTypeDimensionModel extends Model
                     ( "AssetTypeModel.addThreatVariationModel()",
                       "Found null asset list." );
             
-        Enumeration asset_enum = asset_list.elements();
-        while( asset_enum.hasMoreElements() )
-        {
-            AssetTechSpecInterface asset_ts
-                    = (AssetTechSpecInterface) asset_enum.nextElement();
-
-            // Because we build the threat variation set on the fly, it is
-            // very possible that we may try to remove things that were
-            // never created. In this case, we will do nothing silently.
-            //
-            _asset_threat_var_table.remove( asset_ts.getAssetID() );
-
-        } // while enum */
+        purgeThreatVariationCache( asset_list );
 
         return threat_var;
 
@@ -449,40 +478,25 @@ class AssetTypeDimensionModel extends Model
      * of assets it pertains to.  This could be the addition and/or
      * removal of assets.
      *
-     * @param threat_model the threat model that has had the asset
-     * membership change.
-     * @param asset_id the ID of the asset affected by the threat
-     * model change
-     * @param change_type Whether this asset has been added or removed
-     * from the threat
+     * @param tm_change the threat model change event that has had the
+     * asset membership change.
      */
-    public void handleThreatModelChange( ThreatModelInterface threat_model,
-                                         AssetID asset_id,
-                                         int change_type )
+    public void handleThreatModelChange( ThreatModelChangeEvent tm_change )
             throws BelievabilityException
     {
-        // We choose to keep the management of the mapping from asset
-        // IDs to applicable threats simple.  In this way, on a threat
-        // model change, we do not attempt the surgical manuevers
-        // required to bring the data structure into compliance.
-        // Instead, we simply wipe out the existence of any mapping
-        // for this asset ID to the threats, and rely on a lazy
-        // evaluation scheme of building the mapping only at the point
-        // we need it and find it does not exist.  Note that this
-        // implies that we ignore the 'change_type parameter.
-        //
-        logDebug( "Removing applicable threat variations for "
-                  + asset_id.getName() );
- 
-        // Because we build the threat variation set on the fly, it is
-        // very possible that we may try to remove things that were
-        // never created. In this case, we will do nothing silently
-        // (aside from the debug statement.
-        //
-        if ( _asset_threat_var_table.remove( asset_id ) == null )
-            logDebug( "There were no applicable threat variations for "
-                      + asset_id.getName() );
+        if ( tm_change == null )
+            throw new BelievabilityException
+                    ( "AssetTypeDimensionModel.handleThreatModelChange()",
+                      "Found NULL for threat change object." );
 
+        ThreatModelInterface threat_model = tm_change.getThreatModel();
+        
+        // We deal with the removed and added assets the same.  Just
+        // purge the cahce to force it to be recalculated.
+        //
+        purgeThreatVariationCache( tm_change.getAddedAssets() );
+
+        purgeThreatVariationCache(  tm_change.getRemovedAssets() );
         
     } // method handleThreatModelChange
 

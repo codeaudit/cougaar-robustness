@@ -38,6 +38,7 @@ import org.cougaar.coordinator.techspec.EventDescription;
 import org.cougaar.coordinator.techspec.ThreatDescription;
 import org.cougaar.coordinator.techspec.ThreatModelInterface;
 import org.cougaar.coordinator.techspec.ThreatModelChangeEvent;
+import org.cougaar.coordinator.techspec.DefaultThreatModel;
 
 import java.util.Collection;
 import java.util.Enumeration;
@@ -189,6 +190,9 @@ public class BelievabilityPlugin
 	     {
 		 public boolean execute(Object o) {
 		     if ( o instanceof ThreatModelInterface ) {
+			 return true ;
+		     }
+		     if ( o instanceof DefaultThreatModel ) {
 			 return true ;
 		     }
 		     return false ;
@@ -517,7 +521,11 @@ public class BelievabilityPlugin
 
 	else if (o instanceof SuccessfulAction) {
 	    Action act = ((SuccessfulAction) o).getAction();
-	    BelievabilityAction ba = new BelievabilityAction( act );
+            String techspec_key = act.getClass().getName();
+	    ActionTechSpecInterface atsi =
+		actionTSService.getActionTechSpec( techspec_key );
+            BelievabilityAction ba = new BelievabilityAction( act, atsi );
+	    // BelievabilityAction ba = new BelievabilityAction( act );
 	    publishRemove ( o );
 	    return ba;
 	}

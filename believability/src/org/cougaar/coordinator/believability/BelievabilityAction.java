@@ -54,12 +54,15 @@ class BelievabilityAction extends BeliefUpdateTrigger {
      *
      * @param action The action from the blackboard
      */
-    public BelievabilityAction( Action action) 
+    public BelievabilityAction( Action action, ActionTechSpecInterface tech) 
     {
         super( action.getAssetID() );
-        _blackboard_action = action; 
-	_actuator_info = _blackboard_action.getTechSpec();
-        logError( "Got Actuator Tech Spec Handle.\n BelievabilitAction constructor done." );
+        _blackboard_action = action;
+	_actuator_info = tech;
+	_action_ts = _blackboard_action.getValue().getEndTime();
+	_action_state_dim = _blackboard_action.getAssetStateDimensionName();
+	_actuator_name = _actuator_info.getName();
+        logError( "Got time stamp frmo Actuator Tech Spec Handle.\n BelievabilitAction constructor done." );
     } // constructor BelievabilityAction
     
 
@@ -92,7 +95,7 @@ class BelievabilityAction extends BeliefUpdateTrigger {
     {
         try {
 	    logError( "Getting TriggerTimeStamp for action record :" + _blackboard_action.getValue().toString() );
-	    return _blackboard_action.getValue().getEndTime();
+	    return _action_ts; 
 	} catch (Exception e){
 	    logError( "Error getting Trigger Timestamp for the action record :" + _blackboard_action.getValue().toString());
 	    return 0;
@@ -108,7 +111,7 @@ class BelievabilityAction extends BeliefUpdateTrigger {
     {
 	try{
 	    logError("Getting StateDimensionName for :" + _asset_id.toString()); 
-	    return _blackboard_action.getAssetStateDimensionName();
+	    return _action_state_dim;
 	} catch (Exception e){
 	    return null;
 	}
@@ -148,7 +151,6 @@ class BelievabilityAction extends BeliefUpdateTrigger {
      * @return the actuator name
      */
      public String getActuatorName( ){
-	 _actuator_name = _actuator_info.getName();
 	 return _actuator_name;
      }
      
@@ -176,7 +178,11 @@ class BelievabilityAction extends BeliefUpdateTrigger {
 
     // The object where the action information came from
     private Action _blackboard_action;
+    //private ActionTechSpecInterface _action_tech;
+    private long _action_ts;
     private ActionTechSpecInterface _actuator_info;
+    private String _action_state_dim;
+    private String actuator_name;
     private String _actuator_name;
     private AssetID _asset_id;
 

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/AssetTypeModel.java,v $
- * $Revision: 1.8 $
- * $Date: 2004-06-22 04:02:12 $
+ * $Revision: 1.10 $
+ * $Date: 2004-06-24 16:36:56 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -38,6 +38,7 @@ import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
 import org.cougaar.coordinator.techspec.EventDescription;
 import org.cougaar.coordinator.techspec.ThreatDescription;
 import org.cougaar.coordinator.techspec.ThreatModelInterface;
+import org.cougaar.coordinator.techspec.ThreatModelChangeEvent;
 
 /**
  * Believability component's representation for all information it
@@ -47,7 +48,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * be notified is there is a change.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.8 $Date: 2004-06-22 04:02:12 $
+ * @version $Revision: 1.10 $Date: 2004-06-24 16:36:56 $
  *
  */
 class AssetTypeModel extends Model
@@ -58,11 +59,6 @@ class AssetTypeModel extends Model
     //------------------------------------------------------------
     // package interface
     //------------------------------------------------------------
-
-    // Used when a threat's asset membership changes to indicate the
-    //manner in which it changed for an asset.
-    public static final int THREAT_CHANGE_REMOVE  = 0;
-    public static final int THREAT_CHANGE_ADD  = 1;
 
     //************************************************************
     /**
@@ -533,21 +529,22 @@ class AssetTypeModel extends Model
      * of assets it pertains to.  This could be the addition and/or
      * removal of assets.
      *
-     * @param threat_model the threat model that has had the asset
-     * membership change.
-     * @param asset_id the ID of the asset affected by the threat
-     * model change
-     * @param change_type Whether this asset has been added or removed
-     * from the threat
+     * @param tm_change the threat model change event that has had the
+     * asset membership change.
      */
-    public void handleThreatModelChange( ThreatModelInterface threat_model,
-                                         AssetID asset_id,
-                                         int change_type )
+    public void handleThreatModelChange( ThreatModelChangeEvent tm_change )
             throws BelievabilityException
     {
         // We just relay this to the specific state dimension model,
         // as that is where the data structures for this are managed.
         //
+        
+        if ( tm_change == null )
+            throw new BelievabilityException
+                    ( "AssetTypeModel.handleThreatModelChange()",
+                      "Found NULL for threat change object." );
+        
+        ThreatModelInterface threat_model = tm_change.getThreatModel();
         
         ThreatDescription td = threat_model.getThreatDescription();
         
@@ -572,9 +569,7 @@ class AssetTypeModel extends Model
                       "Threat has unknown state dimension : "
                       + state_dim_name );
         
-        _dim_model[dim_idx].handleThreatModelChange( threat_model,
-                                                     asset_id,
-                                                     change_type);
+        _dim_model[dim_idx].handleThreatModelChange( tm_change );
 
     } // method handleThreatModelChange
      
