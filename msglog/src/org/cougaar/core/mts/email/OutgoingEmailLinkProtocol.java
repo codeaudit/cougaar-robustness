@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 18 Aug 2002: Various enhancements for Cougaar 9.4.1 release. (OBJS)
  * 18 Jun 2002: Restored Node name to outboxes properties to facilitate
                 CSMART test configuration. (OBJS)
  * 11 Apr 2002: Removed Node name from outboxes property (2 reasons -
@@ -115,7 +116,6 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
 
   private static final int protocolCost;
   private static final boolean debugMail;
-  private static final Object sendLock = new Object();
 
   private LoggingService log;
   private HashMap links;
@@ -426,12 +426,6 @@ return false;
 
     public int cost (AttributedMessage msg) 
     {
-      // return protocolCost;  // pre 8.6.1
-
-      //  Calling lookupMailData() is a hack to perform the canSendMessage()
-      //  kind of method within the cost function rather than in the adaptive
-      //  link selection policy code, where we think it makes more sense.
-
       try 
       {
         if (msg != null) lookupMailData (msg.getTarget());
@@ -468,21 +462,18 @@ return false;
 
       //  Try mailing the message
 
-      synchronized (sendLock)
+      boolean success = sendMessage (msg, mailData);
+
+      if (success == false)
       {
-        boolean success = sendMessage (msg, mailData);
-
-        if (success == false)
-        {
-          Exception e = new Exception ("OutgoingEmail: sendMessage unsuccessful");
-          throw new CommFailureException (e);
-        }
-
-        MessageAttributes result = new SimpleMessageAttributes();
-        String status = MessageAttributes.DELIVERY_STATUS_DELIVERED;
-        result.setAttribute (MessageAttributes.DELIVERY_ATTRIBUTE, status);
-        return result;
+        Exception e = new Exception ("OutgoingEmail: sendMessage unsuccessful");
+        throw new CommFailureException (e);
       }
+
+      MessageAttributes result = new SimpleMessageAttributes();
+      String status = MessageAttributes.DELIVERY_STATUS_DELIVERED;
+      result.setAttribute (MessageAttributes.DELIVERY_ATTRIBUTE, status);
+      return result;
     }
    
     private final boolean sendMessage (AttributedMessage msg, MailData destAddr)
@@ -521,8 +512,12 @@ return false;
 
         //  Try to send the message
 
-        messageOut.writeMsg (msg);
-        messageOut.sendMsg (header);
+        synchronized (messageOut)
+        {
+          messageOut.writeMsg (msg);
+          messageOut.sendMsg (header);
+        }
+
         success = true;
       }
       catch (Exception e)

@@ -125,24 +125,15 @@ public class MessageSendHistoryAspect extends StandardAspect
       {
         exception = e;
       }
-/*
-      //  HACK!!!  Last minute hack to handle traffic masking messages.  All it 
-      //  deserves for now.  Real support for this and other message types and 
-      //  features (such as message priority) will come later this year as it
-      //  was supposed to, rather than be some last minute hack.
 
-Open issue: How to tell masking messages now?
-
-      if (message instanceof TrafficMaskingGeneratorAspect.MaskingMessageEnvelope)
-      {
-        return;
-      }
-*/
+      //  NOTE:  Should we include traffic masking messages or heartbeats and the
+      //  like in the message send history?
+      
       //  If we got to this point, we assume the link has successfully
       //  sent the message or otherwise thrown an exception.  
 
       //  HACK!!!  Are we really guaranteed this situation though?  What if the 
-      //  message is stuck in a queue, or in some delayed send situation?
+      //  message is stuck in a queue, or some other delayed send situation?
       
       id = AdaptiveLinkSelectionPolicy.getTransportID (link.getProtocolClass());
       num = MessageUtils.getMessageNumber (message);

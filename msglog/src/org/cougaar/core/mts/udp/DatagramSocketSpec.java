@@ -31,7 +31,7 @@ import java.net.InetAddress;
  *  DatagramSocketSpec holds information about the host and port for a
  *  datagram (UDP) socket connection.  Additionally, it has a slot to
  *  cache Inet Address data on the client side.
-**/
+ */
 
 public class DatagramSocketSpec implements java.io.Serializable
 {

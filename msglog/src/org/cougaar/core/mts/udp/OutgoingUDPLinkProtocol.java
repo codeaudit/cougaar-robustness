@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD
+ * 18 Aug 2002: Various enhancements for Cougaar 9.4.1 release. (OBJS)
  * 26 Apr 2002: Created from socket link protocol. (OBJS)
  */
 
@@ -32,8 +33,8 @@ import org.cougaar.core.mts.*;
 import org.cougaar.core.service.LoggingService;
 
 /**
- *  Outgoing UDP Link Protocol
-**/
+ *  Outgoing UDP Link Protocol - send messages via UDP
+ */
 
 public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
 {
@@ -41,13 +42,10 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
   public static final int    MAX_UDP_MSG_SIZE = 64*1024;
 
   private static final int protocolCost;
-  private static final Object sendLock = new Object();
 
   private LoggingService log;
-  private DatagramSocket datagramSocket;
+  private Hashtable specCache, addressCache;
   private HashMap links;
-
-private int cnt = 0;
 
   static
   {
@@ -59,6 +57,8 @@ private int cnt = 0;
  
   public OutgoingUDPLinkProtocol ()
   {
+    specCache = new Hashtable();
+    addressCache = new Hashtable();
     links = new HashMap();
   }
 
@@ -77,6 +77,11 @@ private int cnt = 0;
     }
   }
 
+  public String toString ()
+  {
+    return this.getClass().getName();
+  }
+
   public synchronized boolean startup ()
   {
     shutdown();
@@ -86,9 +91,34 @@ private int cnt = 0;
   public synchronized void shutdown ()
   {}
 
-  public String toString ()
+  private DatagramSocketSpec getDatagramSocketSpec (MessageAddress address) throws NameLookupException
   {
-    return this.getClass().getName();
+    synchronized (specCache)
+    {
+      DatagramSocketSpec spec = (DatagramSocketSpec) specCache.get (address);
+      if (spec != null) return spec;
+      spec = lookupDatagramSocketSpec (address);
+      specCache.put (address, spec);
+      return spec;
+    }
+  }
+
+  private InetAddress getInetAddress (String host) throws UnknownHostException
+  {
+    synchronized (addressCache)
+    {
+      InetAddress addr = (InetAddress) addressCache.get (host);
+      if (addr != null) return addr;
+      addr = InetAddress.getByName (host);
+      addressCache.put (host, addr);
+      return addr;
+    }
+  }
+
+  private synchronized void clearCaches ()
+  {
+    specCache.clear();
+    addressCache.clear();    
   }
 
   private DatagramSocketSpec lookupDatagramSocketSpec (MessageAddress address) throws NameLookupException
@@ -101,11 +131,9 @@ private int cnt = 0;
       {
         DatagramSocketSpec spec = (DatagramSocketSpec) obj;
 
-        //  Cache inet addresses?
-
         try
         {
-          spec.setInetAddress (InetAddress.getByName (spec.getHost()));
+          spec.setInetAddress (getInetAddress (spec.getHost()));
         }
         catch (Exception e)
         {
@@ -116,7 +144,7 @@ private int cnt = 0;
       }
       else
       {
-        loggingService.error ("Invalid DatagramSocketSpec in lookup!");
+        log.error ("Invalid DatagramSocketSpec in nameserver lookup!");
       }
     }
 
@@ -127,7 +155,7 @@ private int cnt = 0;
   {
     try 
     {
-      return (lookupDatagramSocketSpec (address) != null);
+      return (getDatagramSocketSpec (address) != null);
     } 
     catch (Exception e) 
     {
@@ -171,7 +199,7 @@ private int cnt = 0;
 
     public String toString ()
     {
-      return OutgoingUDPLinkProtocol.this + "-destination:" + destination;
+      return OutgoingUDPLinkProtocol.this + "-dest:" + destination;
     }
 
     public Class getProtocolClass () 
@@ -181,13 +209,9 @@ private int cnt = 0;
    
     public int cost (AttributedMessage msg) 
     {
-      //  Calling lookup spec is a hack to perform a name server lookup
-      //  kind of method within the cost function rather than in the adaptive
-      //  link selection policy code, where we believe it makes more sense.
-
       try 
       {
-        if (msg != null) lookupDatagramSocketSpec (destination);
+        if (msg != null) getDatagramSocketSpec (destination);  // HACK binding
         return protocolCost;
       } 
       catch (Exception e) 
@@ -209,63 +233,68 @@ private int cnt = 0;
       return true;
     }
 
+    private void dumpCachedData ()
+    {
+      clearCaches();
+      datagramSocket = null;
+    }
+
     public MessageAttributes forwardMessage (AttributedMessage msg) 
         throws NameLookupException, UnregisteredNameException,
                CommFailureException, MisdeliveredMessageException
     {
-      //  Get socket spec for destination
+      //  Dump our cached data on message send retries
 
-      DatagramSocketSpec spec = lookupDatagramSocketSpec (destination);
+      if (MessageUtils.getSendTry (msg) > 1) dumpCachedData();
+
+      //  Get datagram socket spec for destination
+
+      DatagramSocketSpec destSpec = getDatagramSocketSpec (destination);
 
       //  Send message via udp
 
-      synchronized (sendLock)
+      boolean success = false;
+      Exception save = null;
+
+      try 
       {
-        boolean success = false;
-        Exception save = null;
-
-        try 
-        {
-/*
-//  Testing hack
-String toNode = MessageUtils.getToAgentNode(msg);
-cnt++;
-boolean isRegMsg = MessageUtils.isRegularAckMessage (msg);
-if (toNode.equals("PerformanceNodeB") && isRegMsg && (cnt > 4 && cnt < 7)) success = true;
-else
-*/
-          success = sendMessage (msg, spec);
-        } 
-        catch (Exception e) 
-        {
-          save = e;
-        }
-
-        if (success == false)
-        {
-          datagramSocket = null;  // force new socket creation
-          Exception e = (save==null ? new Exception ("UDP sendMessage unsuccessful") : save);
-          throw new CommFailureException (e);
-        }
-
-		MessageAttributes result = new SimpleMessageAttributes();
-        String status = MessageAttributes.DELIVERY_STATUS_DELIVERED;
-		result.setAttribute (MessageAttributes.DELIVERY_ATTRIBUTE, status);
-        return result;
+        success = sendMessage (msg, destSpec);
+      } 
+      catch (Exception e) 
+      {
+        save = e;
       }
+
+      //  Dump our cached data on failed sends and throw an exception
+
+      if (success == false)
+      {
+        dumpCachedData();
+        Exception e = (save==null ? new Exception ("UDP sendMessage unsuccessful") : save);
+        throw new CommFailureException (e);
+      }
+
+      //  Successful send
+
+	  MessageAttributes successfulSend = new SimpleMessageAttributes();
+      String status = MessageAttributes.DELIVERY_STATUS_DELIVERED;
+	  successfulSend.setAttribute (MessageAttributes.DELIVERY_ATTRIBUTE, status);
+      return successfulSend;
     }
    
     private boolean sendMessage (AttributedMessage msg, DatagramSocketSpec spec) throws Exception
     {
       if (log.isDebugEnabled()) log.debug ("Sending " +MessageUtils.toString(msg));
 
-      //  Since UDP datagram sockets are unreliable we just send the message on its way 
-      //  and maybe it gets there.  Acking will tell us if it does or not.
+      //  NOTE:  UDP is an unreliable communications protocol.  We just send the message
+      //  on its way and maybe it gets there.  Acking will tell us if it does or not.
+
+      //  Serialize the message into a byte buffer
 
       byte msgBytes[] = toBytes (msg);
       if (msgBytes == null) return false;
 
-      //  Make sure message will fit into 64 KB datagram packet limitation
+      //  Make sure the message will fit into the 64 KB datagram packet size limitation
 
       if (msgBytes.length >= MAX_UDP_MSG_SIZE)
       {
@@ -273,14 +302,17 @@ else
         //  The problem with this is that it pollutes the send history of UDP with false 
         //  errors - size limitation it is not a UDP send error.
 
-        if (log.isWarnEnabled()) 
-          log.warn ("Msg exceeds 64kb datagram limit! (" +msgBytes.length+ "): " +MessageUtils.toString(msg));
+        if (log.isWarnEnabled())
+        {
+          log.warn ("Msg exceeds 64kb datagram limit! (" +msgBytes.length+ "): " 
+                    +MessageUtils.toString(msg));
+        }
 
-        MessageUtils.setMessageSize (msg, msgBytes.length);  // avoid udp selection again for this msg
+        MessageUtils.setMessageSize (msg, msgBytes.length);  // size stops UDP link selection
         return false;
       }
 
-      //  Build the datagram
+      //  Build the datagram for the message
 
       InetAddress addr = spec.getInetAddress();
       int port = spec.getPortAsInt();
@@ -290,6 +322,9 @@ else
 
       if (datagramSocket == null) 
       {
+        if (log.isDebugEnabled()) 
+          log.debug ("New datagram socket to " +addr+ ":" +port+ " for " + this);
+
         datagramSocket = new DatagramSocket();
         datagramSocket.connect (addr, port);  // new in Java 1.4
       }
@@ -310,16 +345,23 @@ else
         {
           if (tryN == 1 && e instanceof IllegalArgumentException)
           {
+            if (log.isDebugEnabled()) 
+              log.debug ("Reconnecting datagram socket to " +addr+ ":" +port+ " for " + this);
+
             datagramSocket.connect (addr, port);
           }
-          else throw (e);
+          else 
+          {
+            datagramSocket = null;
+            throw (e);
+          }
         }
       }
  
       return true;  // send successful
     }
 
-    private byte[] toBytes (Object data) 
+    private synchronized byte[] toBytes (Object data)  // serialization has needed sync before
     {
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
       ObjectOutputStream oos = null;

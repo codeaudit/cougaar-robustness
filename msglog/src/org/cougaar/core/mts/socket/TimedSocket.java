@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 18 Aug 2002: Add inet address parameter. (OBJS)
  * 10 Jun 2002: Revamped thread use, allow use of new Cougaar threads. (OBJS)
  * 11 Dec 2001: Revamped thread use, made reusable threads the default. (OBJS)
  * 27 Oct 2001: Added code to ensure socket close in case of timeout. (OBJS)
@@ -28,11 +29,8 @@
 package org.cougaar.core.mts.socket;
 
 import java.io.*;
-import java.net.Socket;
+import java.net.*;
 
-import org.cougaar.core.component.Service;
-import org.cougaar.core.component.ServiceBroker;
-import org.cougaar.core.component.ServiceProvider;
 import org.cougaar.core.service.ThreadService;
 import org.cougaar.core.thread.Schedulable;
 
@@ -47,16 +45,28 @@ public class TimedSocket
   public static Socket getSocket (String host, int port, int timeout)
     throws InterruptedIOException, Exception
   {
-    return getSocket (host, port, timeout, null);
+    return getSocket (host, null, port, timeout, null);
   }
 
-  public static Socket getSocket (String host, int port, int timeout, MyThreadService threadSvc)
+  public static Socket getSocket (InetAddress addr, int port, int timeout)
+    throws InterruptedIOException, Exception
+  {
+    return getSocket (null, addr, port, timeout, null);
+  }
+
+  public static Socket getSocket (String host, InetAddress addr, int port, int timeout)
+    throws InterruptedIOException, Exception
+  {
+    return getSocket (host, addr, port, timeout, null);
+  }
+
+  public static Socket getSocket (String host, InetAddress addr, int port, int timeout, MyThreadService threadSvc)
     throws InterruptedIOException, Exception
   {
     //  Get the socket in another thread so we can timeout on it here
 
-    SocketConnector socketConn = new SocketConnector (host, port);
-    String name = "SocketConn_" + host + ":" + port;
+    SocketConnector socketConn = new SocketConnector (host, addr, port);
+    String name = "SocketConn_" + (host != null ? host : addr.toString()) + ":" + port;
 
     if (threadSvc != null)
     {
@@ -91,7 +101,7 @@ public class TimedSocket
       if (sleepTime > timeout)
       {
         socketConn.ensureClose();
-        String s = "TimedSocket: Timeout trying to connect in " +timeout+ " msecs";
+        String s = "TimedSocket: Timeout trying to connect in " +timeout+ " ms";
         throw new InterruptedIOException (s);
       }
     }
@@ -100,14 +110,16 @@ public class TimedSocket
   private static class SocketConnector implements Runnable
   {
     private String host;
+    private InetAddress addr;
     private int port;
     private boolean doCloseSock;
     private Socket sock;
     private Exception exception;
 
-    public SocketConnector (String host, int port)
+    public SocketConnector (String host, InetAddress addr, int port)
     {
       this.host = host;
+      this.addr = addr;
       this.port = port;
 
       doCloseSock = false;
@@ -119,7 +131,7 @@ public class TimedSocket
 
       try
       {
-        s = new Socket (host, port);
+        s = (addr==null ? new Socket (host,port) : new Socket (addr,port));
       }
       catch (Exception e)
       {

@@ -93,15 +93,9 @@ private int cnt=0;
 
       ack = new Ack (msg);
       MessageUtils.setAck (msg, ack);
-      ack.setResendMultiplier (MessageAckingAspect.resendMultiplier);
-
-      //  This info is updated by the AdaptiveLinkSelection on retrys/resends
-
       ack.addLinkSelection (link);  // the first selection (already made)
-      ack.setSendLink (link.getProtocolClass().getName());
-      ack.setRTT (getBestFullRTTForLink (link, toNode, msg));
- log.debug ("AckFrontend: setRTT to "+ack.getRTT()+" for " +msgString);
-    }
+      ack.setResendMultiplier (MessageAckingAspect.resendMultiplier);
+     }
     else if (ack.isAck())
     {
       //  If the message has been acked already  we can just return success
@@ -125,6 +119,9 @@ private int cnt=0;
 String n = MessageUtils.getFromAgentNode(msg);
 if (n.equals("PerformanceNodeB") && cnt++ > 5) return success;
 */
+    ack.setSendLink (link.getProtocolClass().getName());
+    ack.setRTT (getBestFullRTTForLink (link, toNode, msg));
+
     //  Set the specific acks in the message based on the ack type it contains
 
     if (ack.isAck())
@@ -271,12 +268,15 @@ if (n.equals("PerformanceNodeB") && cnt++ > 5) return success;
       //  to be resent around the obstruction, if we did this after the send.  Above
       //  we make sure than any resends don't go out on any excluded links in case
       //  one is chosen for a resend.
-
+/*
       if (ack.getSendCount() == 0)
       {
         ack.setSendTime (now()); // resends get their send time set in the resender
         if (ack.isAck()) MessageAckingAspect.messageResender.add (msg);
       }  
+*/
+        ack.setSendTime (now());
+        if (ack.isAck()) MessageAckingAspect.messageResender.add (msg);
 
       ack.incrementSendTry();
       ack.incrementSendCount();
@@ -367,7 +367,7 @@ if (n.equals("PerformanceNodeB") && cnt++ > 5) return success;
     int rtt = 0;
     RTTService rttService = (RTTService) aspect.getServiceBroker().getService (aspect, RTTService.class, null);
     if (rttService != null) rtt = rttService.getBestFullRTTForLink (link, node);
-    if (rtt <= 0) rtt = link.cost (msg);
+    if (rtt <= 0) try { rtt = link.cost (msg); } catch (Exception e) { rtt = 2000; }  // HACK
     return rtt;
   }
 

@@ -110,9 +110,7 @@ import org.cougaar.core.service.LoggingService;
 
 public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 {
-// HACK - where to house history?
   private static final MessageHistory messageHistory = MessageSendHistoryAspect.messageHistory;
-  //public static final MessageHistory messageHistory = new MessageHistory();
 
   private static LoggingService log;
   private static boolean debug;
@@ -133,6 +131,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
   private static final Random random = new Random();
 
   private static boolean firstTime = true;
+  private static String thisNode;
 
   private final LinkRanker linkRanker = new LinkRanker();
 
@@ -178,6 +177,8 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
     String sta = "org.cougaar.core.mts.ShowTrafficAspect";
     showTraffic = (getAspectSupport().findAspect(sta) != null);
+
+    thisNode = getRegistry().getIdentifier();
   }
 
   public String toString ()
@@ -232,19 +233,11 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
           if (!lastLinkName.equals (thisLinkName))
           {
-/*
             CougaarEvent.postComponentEvent 
             (
-              CougaarEventType.STATUS, MessageUtils.getOriginatorAgent(msg).toString(), this,
-              "Switch from " +lastLinkName+ " to " +thisLinkName+ " for messages from " +
-              MessageUtils.getFromAgentNode(msg)+ " to " +targetNode
-            );
-*/
-            CougaarEvent.postEvent 
-            (
-              CougaarEventType.STATUS, 
-              "Switch from " +lastLinkName+ " to " +thisLinkName+ " for messages from " +
-              MessageUtils.getFromAgentNode(msg)+ " to " +targetNode
+              CougaarEventType.STATUS, MessageUtils.getOriginatorAgent(msg).toString(), this.toString(),
+              "Switch from " +lastLinkName+ " to " +thisLinkName+ " for messages from " +thisNode+
+              " to " +targetNode
             );
           }
         }
@@ -332,8 +325,6 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
         MessageUtils.setMessageSize (msg, MessageUtils.getMessageSize (failedMsg)); 
         MessageUtils.setSendTimeout (msg, MessageUtils.getSendTimeout (failedMsg)); 
         MessageUtils.setSendDeadline (msg, MessageUtils.getSendDeadline (failedMsg)); 
-
-msg.setAttribute ("RsndNum", msg.getAttribute ("RsndNum"));
       }
     }
 
@@ -368,12 +359,7 @@ msg.setAttribute ("RsndNum", msg.getAttribute ("RsndNum"));
     //  Get started
 
     String msgString = MessageUtils.toString (msg);
-
-String rns = "-";
-Integer rn = (Integer) msg.getAttribute ("RsndNum");
-if (rn != null) rns = "" + rn;
-
-    if (debug && !MessageUtils.isNewMessage(msg)) log.debug ("Processing #" +rns+" " +msgString);
+    if (debug && !MessageUtils.isNewMessage(msg)) log.debug ("Processing " +msgString);
 
     /**
      **  Special case:  Check on a possible message send deadline.  If the message has 
@@ -396,11 +382,32 @@ if (rn != null) rns = "" + rn;
 
       if (debug) log.debug ("Dropping msg past its send deadline: " +msgString); 
       MessageAckingAspect.addSuccessfulSend (msg);
-      return blackHoleLink;  // drop message
+      return blackHoleLink;
     }
 
-//  Check for incorrect from node to detect resend msgs from newly arrived agent
-//  get new to node while at it probably  What about the acks in these msgs?
+    //  Check that the sending agent is a current agent in this node.  If not,
+    //  it has moved on, and its outstanding messages with it, so we just drop the 
+    //  message.  As with send deadline above, maybe put this in a dropped msg 
+    //  table instead of the successful sends table?  NOTE:  Could get into trouble
+    //  if the agent returns and still needs to send this message!
+
+    if (!getRegistry().isLocalClient(MessageUtils.getOriginatorAgent(msg)))
+    {
+      if (debug) log.debug ("Dropping msg from no longer local agent: " +msgString); 
+      MessageAckingAspect.addSuccessfulSend (msg);  // HACK: needs work - see above
+      return blackHoleLink;
+    }
+
+    //  Check the from node in the message.  If the message is a resend from a newly
+    //  arrived agent, its from node may be off, so correct it.
+
+    String fromNode = MessageUtils.getFromAgentNode (msg);
+
+    if (fromNode != null && (!(fromNode.equals(thisNode))))
+    {
+      if (debug) log.debug ("Fixing msg with wrong from node: " +msgString); 
+      MessageUtils.getFromAgent(msg).setNodeName (thisNode);
+    }
 
     //  Get the target node for the message.  If this message is a retry/resend, we try to
     //  get the latest uncached data because the target node may have changed and thus be
@@ -411,7 +418,7 @@ if (rn != null) rns = "" + rn;
 
     try
     {
-      if (ack != null && (ack.getSendTry() > 0 || ack.getSendCount() > 0))
+      if (ack != null && ack.getSendTry() > 0)
       {
         //  Retry/resend: bypass topological caching to get latest target agent info
 
@@ -552,7 +559,7 @@ if (rn != null) rns = "" + rn;
 
       if (latestDeadline > now())
       {
-        //  Reschedule the ack and don't send it now
+        //  Reschedule the pure ack msg and don't send it now
 
         if (debug) 
         {
@@ -591,9 +598,8 @@ if (rn != null) rns = "" + rn;
     {
       //  Link selection for these messages is limited to whatever link was last used
       //  successfully to its target node (if that link is currently available).
+      //  NOTE:  Needs work.
 
-// needs work!!
-      
       Class linkClass = MessageAckingAspect.getLastSuccessfulLinkUsed (targetNode);
       DestinationLink link = pickLinkByClass (destLinks, linkClass);
       if (link == null) link = topLink;  // linkClass may not be currently available
@@ -617,7 +623,8 @@ if (rn != null) rns = "" + rn;
       }
       else
       {
-        //  For now, if there are send failures, just drop masking messages
+        //  For now, if there are send failures, just drop masking messages, as
+        //  we don't need to be clogging up the pipes with chafe at this time.
 
         if (debug) log.debug ("Send failure with masking msg, dropping it: " +msgString);
         return blackHoleLink;
@@ -627,7 +634,7 @@ if (rn != null) rns = "" + rn;
     //  Special Case:  Message retrying (first send attempt generated an exception)
     //  or resending (message did not get an ack).  What's special here is that we avoid 
     //  (if possible) choosing any link that the message has already tried and actually
-    //  or apparently failed with.  
+    //  or apparently failed with.  HACK!
 
     if (ack != null && (ack.getSendTry() > 0 || ack.getSendCount() > 0))
     {
@@ -938,14 +945,19 @@ if (rn != null) rns = "" + rn;
     //  highest ranking link that is not the last choice; otherwise the last choice.
 
     //  NOTE:  This method must guarantee that the choice it returns is a member of the
-    //  given links array, as those links are the only valid ones at the moment.
+    //  given links array (or null), as those links are the only valid ones at the moment.
 
     if (lastChoice.hasReplacementBeenTried (lastChoice.getSteadyStateLink()))
     {
       //  If we find the lastChoice steady state link in our list of tries, that is the
       //  signal that we have made a complete cycle, and it is time to start over again.
+      //  We will return null at this point to gain a delay in trying to send the message
+      //  again as it appears its destination is unreachable for now.
 
       lastChoice.clearReplacementTries();
+
+      //if (debug) log.debug ("Cycled thru links, injecting delay before next try"); 
+      //return null;
     }
 
     //  Filter the given candidate links to those that have not been tried before and
@@ -1027,6 +1039,8 @@ if (rn != null) rns = "" + rn;
 
   private DestinationLink setReplacementChoice (SelectionChoice lastChoice, DestinationLink link, AttributedMessage msg)
   {
+    if (link == null) return null;
+
     SelectionChoice choice = lastChoice;
 
     int msgNum = MessageUtils.getMessageNumber (msg);

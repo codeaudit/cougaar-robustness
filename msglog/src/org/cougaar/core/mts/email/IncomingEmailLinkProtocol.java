@@ -116,6 +116,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
   private static final MailMessageCache cache = new MailMessageCache();
 
   private static final int mailServerPollTime;
+  private static final int initialReadDelaySecs;
   private static final boolean debugMail;
   private static boolean showTraffic;
 
@@ -135,6 +136,9 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
 
     String s = "org.cougaar.message.protocol.email.mailServerPollTimeSecs";
     mailServerPollTime = Integer.valueOf(System.getProperty(s,"5")).intValue();
+
+    s = "org.cougaar.message.protocol.email.initialReadDelaySecs";
+    initialReadDelaySecs = Integer.valueOf(System.getProperty(s,"10")).intValue();
 
     s = "org.cougaar.message.protocol.email.debugMail";
     debugMail = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
@@ -435,6 +439,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
     private NoHeaderInputStream messageIn = null;
     private boolean quitNow;
     private Schedulable thread;
+    boolean firstTime = true;
 
     public MessageInThread (MailBox inbox)
     {
@@ -453,6 +458,15 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
 
     public void run() 
     {
+      //  HACK - workaround for problem where email messages are read and deserialized
+      //  before the node is ready for them (thus causing exceptions).
+
+      if (firstTime)
+      {
+        try { Thread.sleep (initialReadDelaySecs*1000); } catch (Exception e) {}
+        firstTime = false;
+      }
+
       //  We don't want this thread to stop until we want it to stop, so
       //  we do things very carefully here.  Later on, this and other
       //  sensitive threads should probably be monitored.
@@ -634,9 +648,10 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
       {
         if (log.isInfoEnabled())
         {
-          if (msg == null) log.info ("Email instream lost...");
-          else log.info ("Problem delivering msg " +MessageUtils.toString(msg));
-//e.printStackTrace();
+          String s;
+          if (msg == null) s = "Email instream lost... ";
+          else s = "Problem delivering msg " +MessageUtils.toString(msg)+ ": ";
+          log.info (s + stackTraceToString(e));
         }
       
         //  It's important to close the message stream due to its

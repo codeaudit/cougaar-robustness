@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD
+ * 18 Aug 2002: Various enhancements for Cougaar 9.4.1 release. (OBJS)
  * 11 Jun 2002: Move to Cougaar threads. (OBJS)
  * 16 May 2002: Port to Cougaar 9.2.x (OBJS)
  * 08 Apr 2002: Port to Cougaar 9.1.0 (OBJS)
@@ -110,8 +111,8 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     String s = "org.cougaar.message.protocol.socket.localhost";
     localhost = System.getProperty (s, getLocalHost());
 
-    s = "org.cougaar.message.protocol.socket.incoming.idleTimeoutSecs";
-    idleTimeout = Integer.valueOf(System.getProperty(s,"60")).intValue();
+    s = "org.cougaar.message.protocol.socket.incoming.idleTimeoutMinutes";
+    idleTimeout = Integer.valueOf(System.getProperty(s,"5")).intValue();
   }
  
   public IncomingSocketLinkProtocol ()
@@ -212,56 +213,49 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
   public final void registerClient (MessageTransportClient client) 
   {
-    if (mySocket == null) return;  // no socket spec to register
-
     try 
     {
+      if (mySocket == null) return;  // no socket spec to register
       MessageAddress clientAddress = client.getMessageAddress();
       getNameSupport().registerAgentInNameServer (mySocket, clientAddress, PROTOCOL_TYPE);
     } 
     catch (Exception e) 
     {
-      System.err.println ("\nIncomingSocketLinkProtocol: registerClient");
-      e.printStackTrace();
+      log.error ("registerClient: " +e);
     }
   }
 
   public final void unregisterClient (MessageTransportClient client) 
   { 
-    if (mySocket == null) return;  // no socket spec to unregister
-
     try 
     {
+      if (mySocket == null) return;  // no socket spec to unregister
       MessageAddress clientAddress = client.getMessageAddress();
       getNameSupport().unregisterAgentInNameServer (mySocket, clientAddress, PROTOCOL_TYPE);
     } 
     catch (Exception e) 
     {
-      System.err.println ("\nIncomingSocketLinkProtocol: unregisterClient");
-      e.printStackTrace();
+      log.error ("unregisterClient: " +e);
     }
   }
 
   public final void registerMTS (MessageAddress addr)
   {
-    if (mySocket == null) return;  // no socket spec to register
-
     try 
     {
+      if (mySocket == null) return;  // no socket spec to register
       getNameSupport().registerAgentInNameServer (mySocket, addr, PROTOCOL_TYPE);
     } 
     catch (Exception e) 
     {
-      System.err.println ("\nIncomingSocketLinkProtocol: registerMTS");
-      e.printStackTrace();
+      log.error ("registerMTS: " +e);
     }
   }
 
   private ThreadService threadService () 
   {
 	if (threadService != null) return threadService;
-	ServiceBroker sb = getServiceBroker();
-	threadService = (ThreadService) sb.getService (this, ThreadService.class, null);
+	threadService = (ThreadService) getServiceBroker().getService (this, ThreadService.class, null);
 	return threadService;
   }
 
@@ -273,25 +267,17 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     {
       listener = new ServerSocketListener (port);
       port = listener.getPort();  // port possibly updated
-
-      // Thread thread = getThread (listener, "ServerSock_"+port);
       Schedulable thread = threadService().getThread (this, listener, "ServerSock_"+port);
       thread.start();
-
       registerSocketSpec (localhost, port);
-
       serverSocketListeners.add (listener);
-
-      if (log.isDebugEnabled()) log.debug ("Server socket created on port " +port);
+      if (log.isDebugEnabled()) log.debug ("Created server socket on port " +port);
     }
     catch (Exception e)
     {
-      if (log.isWarnEnabled()) log.warn ("Error creating server socket on port " +port+ ": ");
-      e.printStackTrace();
-
+      log.error ("Error creating server socket on port " +port+ ": " +stackTraceToString(e));
       if (listener != null) listener.quit();
       listener = null;
-
       return -1;
     }
 
@@ -301,23 +287,18 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
   private void destroyServerSocket (ServerSocketListener listener)
   {
     if (listener == null) return;
-
     int port = listener.getPort();
 
     try
     {
-      listener.quit();
-
-//    unregisterSocketSpec();   // synchronization problem?
-
-      serverSocketListeners.remove (listener);
-
       if (log.isDebugEnabled()) log.debug ("Server socket destroyed on port " +port);
+      listener.quit();
+      // unregisterSocketSpec();   // synchronization problem?
+      serverSocketListeners.remove (listener);
     }
     catch (Exception e)
     {
-      System.err.println ("\nError destroying server socket on port " +listener.getPort()+ ": ");
-      e.printStackTrace();
+      log.error ("Error destroying server socket on port " +port+ ": " +e);
     }
   }
 
@@ -364,15 +345,13 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
           //  to run it in and kick it off.
 
           MessageInListener listener = new MessageInListener (s);
-          // Thread thread = getThread (listener, "MessageIn_"+s.getPort());
           Schedulable thread = threadService().getThread (this, listener, "MessageIn_"+s.getPort());
-          thread.start();  // using new Cougaar threads, not Java threads
-
+          thread.start();
           messageInListeners.add (listener);
         }
         catch (Exception e) 
         {
-          if (log.isDebugEnabled()) log.debug ("Server socket: " +e);
+          if (log.isWarnEnabled()) log.warn ("Server socket exception: " +e);
           quitNow = true;
           break;
         }
@@ -395,12 +374,12 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
   private class MessageInListener implements Runnable
   { 
     private Socket socket;
-    private NoHeaderInputStream messageIn;
+    private NoHeaderInputStream socketIn;
     private boolean quitNow;
 
     public MessageInListener (Socket s)
     {
-      if (log.isDebugEnabled()) log.debug ("new MessageInListener created on socket " +s);
+      if (log.isDebugEnabled()) log.debug ("New in socket created: " +s);
       socket = s;
     }
 
@@ -408,9 +387,9 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     {
       quitNow = true;
 
-      if (messageIn != null)
+      if (socketIn != null)
       {
-        try { messageIn.close(); } catch (Exception e) {}
+        try { socketIn.close(); } catch (Exception e) {}
       }
     }
 
@@ -418,12 +397,12 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     {
       try
       {
-        socket.setSoTimeout (idleTimeout*1000);
-        messageIn = new NoHeaderInputStream (socket.getInputStream());
+        socket.setSoTimeout (idleTimeout*60*1000);
+        socketIn = new NoHeaderInputStream (socket.getInputStream());
       }
       catch (Exception e)
       { 
-        System.err.println ("\nIncomingSocketLinkProtocol: creating messageIn: " +e);
+        log.error ("Error creating new socketIn: " +e);
         messageInListeners.remove (this);
         return;
       }
@@ -434,38 +413,53 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
         try 
         {
-          //  Sit and wait for a message (till timeout)
+          //  Sit and wait for a message (till socket timeout)
+          
+          ByteArrayObject msgObject = (ByteArrayObject) socketIn.readObject();
 
-          msg = (AttributedMessage) messageIn.readObject();
+          //  Deserialize bytes into a Cougaar message
+
+          Object obj = fromBytes (msgObject.getBytes());
+
+          try
+          {
+            msg = (AttributedMessage) obj;
+          }
+          catch (Exception e)
+          {
+            log.error ("Got non (or broken) AttributedMessage! (msg ignored): " +e);
+            continue;
+          }
 
           if (showTraffic) System.err.print ("<S");
 
-          if (log.isDebugEnabled()) log.debug ("Socket= " +socket+ "\nRead " +MessageUtils.toString(msg));
+          if (log.isDebugEnabled()) 
+          {
+            InetAddress addr = socket.getInetAddress();
+            int port = socket.getPort();
+            log.debug ("From " +addr+ ":" +port+ " read " +MessageUtils.toString(msg));
+          }
         }
         catch (InterruptedIOException e)
         {
           //  Socket SO timeout (set above).  Socket still good, but we will close
           //  it as it has not been used in a while.
 
-          if (log.isDebugEnabled()) log.debug ("Closing socket due to lack of use: SO timeout: " +e);
+          if (log.isDebugEnabled()) log.debug ("Closing socket due to lack of use (SO timeout): " +e);
           quitNow = true;
           break;
         }
         catch (Exception e)
         { 
-          //  Typically a socket exception raised when the party at the
-          //  other end closes their socket connection.
+          //  Typically a socket exception raised when the party at the  other end 
+          //  closes their socket connection.
 
-          if (log.isInfoEnabled()) 
-          {
-            log.info ("Terminating datagram socket exception:\n" +stackTraceToString(e));
-          }
-
+          if (log.isDebugEnabled()) log.debug ("Terminating socket exception: " +stackTraceToString(e));
           quitNow = true;
           break;
         }
 
-        //  Deliver the message
+        //  Deliver the message.  Nobody to send exceptions to, so we just log them.
 
         try
         {
@@ -481,13 +475,44 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
         }
       }
 
-      if (messageIn != null)
+      if (socketIn != null)
       {
-        try { messageIn.close(); } catch (Exception e) {}
-        messageIn = null;
+        try { socketIn.close(); } catch (Exception e) {}
+        socketIn = null;
       }
 
       messageInListeners.remove (this);
+    }
+
+    private Object fromBytes (byte[] data) 
+    {
+      ObjectInputStream ois = null;
+      Object obj = null;
+
+      try 
+      {
+        ByteArrayInputStream bais = new ByteArrayInputStream (data);
+        ois = new ObjectInputStream (bais);
+        obj = ois.readObject();
+      } 
+      catch (ClassNotFoundException cnfe) 
+      {
+        log.error ("fromBytes cnfe exception: " +cnfe);
+        return null;
+      }
+      catch (Exception e) 
+      {
+        log.error ("fromBytes exception: " +e);
+        return null;
+      }
+	
+      try 
+      {
+	    ois.close();
+      } 
+      catch (IOException e) {}
+
+      return obj;
     }
   }
 
@@ -507,11 +532,12 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     }
     catch (Exception e)
     {
+      log.error ("Getting local host inet addr" +stackTraceToString(e));
       throw new RuntimeException (e.toString());
     }
   }
 
-  private String stackTraceToString (Exception e)
+  private static String stackTraceToString (Exception e)
   {
     StringWriter stringWriter = new StringWriter();
     PrintWriter printWriter = new PrintWriter (stringWriter);

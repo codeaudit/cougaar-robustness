@@ -84,7 +84,8 @@ public class MessageOrderingAspect extends StandardAspect
       if (num == 0)
       {
         //  Unordered messages (like heartbeats) have a message number of 0.
-        //  Local messages, if numbered, are also given a message number of 0.
+        //  Local messages used to have a message number of 0, but now are
+        //  numbered to avoid a race condition due to agent mobility.
 
         doDelivery (msg);
         status = MessageAttributes.DELIVERY_STATUS_DELIVERED;

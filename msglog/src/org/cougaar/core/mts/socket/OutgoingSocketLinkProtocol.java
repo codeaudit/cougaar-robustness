@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD
+ * 18 Aug 2002: Various enhancements for Cougaar 9.4.1 release. (OBJS)
  * 16 May 2002: Port to Cougaar 9.2.x (OBJS)
  * 08 Apr 2002: Port to Cougaar 9.1.x (OBJS)
  * 21 Mar 2002: Port Cougaar 9.0.0 (OBJS)
@@ -54,14 +55,11 @@
 package org.cougaar.core.mts.socket;
 
 import java.io.*;
+import java.net.*;
 import java.util.*;
-import java.net.Socket;
 
-import org.cougaar.util.*;
 import org.cougaar.core.mts.*;
-import org.cougaar.core.component.Service;
-import org.cougaar.core.component.ServiceBroker;
-import org.cougaar.core.component.ServiceProvider;
+import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.ThreadService;
 
 
@@ -96,14 +94,13 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
 {
   public static final String PROTOCOL_TYPE = "-socket";
 
-  private static final boolean debug = false;
-
   private static final int protocolCost;
   private static final int connectTimeout;
-  private static final Object sendLock = new Object();
 
-  private HashMap links, sockets;
+  private LoggingService log;
   private MyThreadService myThreadService;
+  private Hashtable specCache, addressCache;
+  private HashMap links;
 
 private int cnt=0;  // temp
 
@@ -120,16 +117,23 @@ private int cnt=0;  // temp
  
   public OutgoingSocketLinkProtocol ()
   {
-    System.err.println ("Creating " + this);
-
+    specCache = new Hashtable();
+    addressCache = new Hashtable();
     links = new HashMap();
-    sockets = new HashMap();
+  }
 
-    //  Transport initialization
+  public void load ()
+  {
+    super_load();
+
+    log = loggingService;
+    if (log.isInfoEnabled()) log.info ("Creating " + this);
 
     if (startup() == false)
     {
-      throw new RuntimeException ("Failure starting up OutgoingSocketLinkProtocol!");
+      String str = "Failure starting up " + this;
+      log.error (str);
+      throw new RuntimeException (str);
     }
   }
 
@@ -145,11 +149,39 @@ private int cnt=0;  // temp
   }
 
   public synchronized void shutdown ()
+  {}
+
+  private SocketSpec getSocketSpec (MessageAddress address) throws NameLookupException
   {
-    // TBD
+    synchronized (specCache)
+    {
+      SocketSpec spec = (SocketSpec) specCache.get (address);
+      if (spec != null) return spec;
+      spec = lookupSocketSpec (address);
+      specCache.put (address, spec);
+      return spec;
+    }
   }
 
-  private SocketSpec lookupSocketSpec (MessageAddress address)
+  private InetAddress getInetAddress (String host) throws UnknownHostException
+  {
+    synchronized (addressCache)
+    {
+      InetAddress addr = (InetAddress) addressCache.get (host);
+      if (addr != null) return addr;
+      addr = InetAddress.getByName (host);
+      addressCache.put (host, addr);
+      return addr;
+    }
+  }
+
+  private synchronized void clearCaches ()
+  {
+    specCache.clear();
+    addressCache.clear();    
+  }
+
+  private SocketSpec lookupSocketSpec (MessageAddress address) throws NameLookupException
   {
     Object obj = getNameSupport().lookupAddressInNameServer (address, PROTOCOL_TYPE);
 
@@ -157,11 +189,22 @@ private int cnt=0;  // temp
     {
       if (obj instanceof SocketSpec)
       {
-        return (SocketSpec) obj;
+        SocketSpec spec = (SocketSpec) obj;
+
+        try
+        {
+          spec.setInetAddress (getInetAddress (spec.getHost()));
+        }
+        catch (Exception e)
+        {
+          throw new NameLookupException (e);
+        }
+
+        return spec;
       }
       else
       {
-        System.err.println ("OutgoingSocketLinkProtocol: invalid obj in lookup!");
+        log.error ("Invalid SocketSpec in nameserver lookup!");
       }
     }
 
@@ -172,15 +215,12 @@ private int cnt=0;  // temp
   {
     try 
     {
-      return (lookupSocketSpec (address) != null);
+      return (getSocketSpec (address) != null);
     } 
     catch (Exception e) 
     {
-      // System.err.println ("Failed in addressKnown: " +e);
-      // e.printStackTrace();
+      return false;
     }
-
-    return false;
   }
 
   public DestinationLink getDestinationLink (MessageAddress address) 
@@ -199,16 +239,13 @@ private int cnt=0;  // temp
   
   public Object getRemoteReference (MessageAddress address) 
   {
-    Socket s = (Socket) sockets.get (address);
-
-    return "Socket[dst=" +s.getInetAddress()+  ":" +s.getPort() + 
-                 ",src=" +s.getLocalAddress()+ ":" +s.getLocalPort()+ "]";
+    return null;
   }
 
   class Link implements DestinationLink 
   {
     private MessageAddress destination;
-    private NoHeaderOutputStream messageOut;
+    private NoHeaderOutputStream socketOut;
 
     Link (MessageAddress dest) 
     {
@@ -222,7 +259,7 @@ private int cnt=0;  // temp
 
     public String toString ()
     {
-      return OutgoingSocketLinkProtocol.this + "-destination:" + destination;
+      return OutgoingSocketLinkProtocol.this + "-dest:" + destination;
     }
 
     public Class getProtocolClass () 
@@ -232,15 +269,9 @@ private int cnt=0;  // temp
    
     public int cost (AttributedMessage msg) 
     {
-      // return protocolCost;  // pre 8.6.1
-
-      //  Calling lookupSocketSpec() is a hack to perform the canSendMessage()
-      //  kind of method within the cost function rather than in the adaptive
-      //  link selection policy code, where we believe it makes more sense.
-
       try 
       {
-        if (msg != null) lookupSocketSpec (destination);
+        if (msg != null) getSocketSpec (destination);  // HACK binding
         return protocolCost;
       } 
       catch (Exception e) 
@@ -255,124 +286,135 @@ private int cnt=0;  // temp
     }
 
     public void addMessageAttributes (MessageAttributes attrs)
-    {
-      // TBD
-    }
+    {}
 
     public boolean retryFailedMessage (AttributedMessage msg, int retryCount)
     {
       return true;
     }
    
+    private void dumpCachedData ()
+    {
+      clearCaches();
+      socketOut = null;
+    }
+
     public MessageAttributes forwardMessage (AttributedMessage msg) 
         throws NameLookupException, UnregisteredNameException,
                CommFailureException, MisdeliveredMessageException
     {
-/*
-if (cnt++ == 5)
-{
-  int delay = 30;
-  System.err.println ("TEST: Pausing Socket send for "+delay+" seconds");
-  try { Thread.sleep (delay*1000); } catch (Exception e) {}
-}
-*/
-      //  Get socket address of destination 
+      //  Dump our cached data on message send retries
 
-      SocketSpec destSpec = lookupSocketSpec (destination);
+      if (MessageUtils.getSendTry (msg) > 1) dumpCachedData();
 
-      //  Try sending the message over the socket
+      //  Get socket spec for destination
 
-      synchronized (sendLock)
+      SocketSpec destSpec = getSocketSpec (destination);
+
+      //  Send message via socket
+
+      boolean success = false;
+      Exception save = null;
+
+      try 
       {
-        boolean success = false;
-        Exception save = null;
-
-        try 
-        {
-          success = sendMessage (msg, destSpec);
-        } 
-        catch (Exception e) 
-        {
-          save = e;
-        }
-
-        if (success == false)
-        {
-           Exception e = (save==null ? new Exception ("socket sendMessage unsuccessful") : save);
-           throw new CommFailureException (e);
-        }
-
-        MessageAttributes result = new SimpleMessageAttributes();
-        String status = MessageAttributes.DELIVERY_STATUS_DELIVERED;
-        result.setAttribute (MessageAttributes.DELIVERY_ATTRIBUTE, status);
-        return result;
+        success = sendMessage (msg, destSpec);
+      } 
+      catch (Exception e) 
+      {
+        save = e;
       }
+
+      //  Dump our cached data on failed sends and throw an exception
+
+      if (success == false)
+      {
+        dumpCachedData();
+        Exception e = (save==null ? new Exception ("socket sendMessage unsuccessful") : save);
+        throw new CommFailureException (e);
+      }
+
+      //  Successful send
+
+	  MessageAttributes successfulSend = new SimpleMessageAttributes();
+      String status = MessageAttributes.DELIVERY_STATUS_DELIVERED;
+	  successfulSend.setAttribute (MessageAttributes.DELIVERY_ATTRIBUTE, status);
+      return successfulSend;
     }
 
     //  Send Cougaar message out to another node via socket
 
-    private boolean sendMessage (AttributedMessage msg, SocketSpec destSpec) throws Exception
+    private boolean sendMessage (AttributedMessage msg, SocketSpec spec) throws Exception
     {
-      if (debug) 
-      {
-        System.err.println ("\nOutgoingSocket: send " +MessageUtils.toString(msg));
-      }
+      if (log.isDebugEnabled()) log.debug ("Sending " +MessageUtils.toString(msg));
 
-      //  It appears that the only way we can determine whether our message
-      //  output stream is still valid is to try using it.  So we try it,
-      //  and if it fails, we create a new output stream and try again.
+      //  Serialize the message into a byte buffer
+
+      byte msgBytes[] = toBytes (msg);
+      if (msgBytes == null) return false;
+
+      //  Since it is a hassle to read variable length arrays on the other side, we wrap
+      //  the byte buffer in a simple object.
+
+      ByteArrayObject msgObject = new ByteArrayObject (msgBytes);
+
+      //  It appears that the only way we can determine whether our socket
+      //  connection is still valid is to try using it.  So we try it,
+      //  and if it fails, we create a new connected socket and try again.
       
-      boolean success = false;
-
-      for (int tryN=1; success==false && tryN<=2; tryN++) // try at most twice
+      for (int tryN=1; tryN<=2; tryN++) // try at most twice
       {
         try
         {
-          if (messageOut == null) messageOut = getMessageOutputStream (destSpec);
+          if (socketOut == null) 
+          {
+            socketOut = getSocketOutputStream (spec);
+            tryN = 3;  // only try once after new socket
+          }
 
-          messageOut.reset();  // important!! Fixes stream corruption bug!
+          socketOut.reset();
+          socketOut.writeObject (msgObject);
+          socketOut.flush();
 
-          messageOut.writeObject (msg);
-          messageOut.flush();
-
-          success = true;
+          break;  // success
         }
         catch (Exception e)
         {
-          //  Out stream has failed somehow.  Close it and null it out
+          //  The send has failed somehow.  Close the socket and null it out
           //  so that it will get reconstructed next time.
 
-          if (messageOut != null)
+          if (socketOut != null)
           {
-            try { messageOut.close(); } catch (Exception me) {}
-            messageOut = null;
+            try { socketOut.close(); } catch (Exception ee) {}
+            socketOut = null;
           }
 
-          //  If this is the second try, go ahead and throw the exception
+          //  If this is the second send try, go ahead and throw the exception
           //  so that the caller can see it.
 
-          if (tryN == 2) throw (e);
+          if (tryN >= 2) throw (e);
         }
       }
 
-      return success;
+      return true;  // send successful
     }
 
-    private NoHeaderOutputStream getMessageOutputStream (SocketSpec dest) 
-      throws CommFailureException
+    private NoHeaderOutputStream getSocketOutputStream (SocketSpec spec) throws CommFailureException
     {
-      //  We use a timeout on establishing a connection because if there
-      //  is a network or some other kind of problem we could just hang
-      //  here for awhile, perhaps indefinitely, otherwise.
+      //  We use a timeout on establishing a socket connection because if
+      //  there is a network or some other kind of problem we could otherwise
+      //  potentially hang here for awhile, perhaps indefinitely.
       
-      String host = dest.getHost();
-      int port = dest.getPortAsInt();
+      String host = spec.getHost();
+      InetAddress addr = spec.getInetAddress();
+      int port = spec.getPortAsInt();
+
+      if (log.isDebugEnabled()) log.debug ("Making new socket to " +addr+ ":" +port+ " for " +this);
       
       try 
       { 
         if (myThreadService == null) myThreadService = new MyThreadService (this, getThreadService(this));
-        Socket socket = TimedSocket.getSocket (host, port, connectTimeout*1000, myThreadService);
-        sockets.put (destination, socket);
+        Socket socket = TimedSocket.getSocket (host, addr, port, connectTimeout*1000, myThreadService);
         socket.shutdownInput();  // not essential
         return new NoHeaderOutputStream (socket.getOutputStream());
       }
@@ -384,9 +426,33 @@ if (cnt++ == 5)
 
     private ThreadService getThreadService (Object obj) 
     {
-      ServiceBroker sb = getServiceBroker();
-      threadService = (ThreadService) sb.getService (obj, ThreadService.class, null);
+      threadService = (ThreadService) getServiceBroker().getService (obj, ThreadService.class, null);
       return threadService;
     }
+  }
+
+  private synchronized byte[] toBytes (Object data)  // serialization has needed sync before
+  {
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    ObjectOutputStream oos = null;
+
+    try 
+    {
+      oos = new ObjectOutputStream (baos);
+      oos.writeObject (data);
+      oos.flush();
+    } 
+    catch (Exception e) 
+    {
+      return null;
+    }
+
+    try 
+    {
+      oos.close();
+    } 
+    catch (Exception e) {}
+
+    return baos.toByteArray();
   }
 }

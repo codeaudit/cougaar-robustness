@@ -19,37 +19,27 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 18 Jun 2002: Created. (OBJS)
+ * 17 Aug 2002: Created. (OBJS)
  */
 
 package org.cougaar.core.mts.socket;
 
-import org.cougaar.core.service.ThreadService;
-import org.cougaar.core.thread.Schedulable;
-
 
 /**
- **  Utility class to help create Cougaar threads from static methods.
- **/ 
+ *  Wrapper class for a byte array.
+ */ 
 
-public class MyThreadService
+public class ByteArrayObject implements java.io.Serializable
 {
-  private Object obj;
-  private ThreadService threadService;
+  private byte[] bytes;
 
-  public MyThreadService (Object obj, ThreadService threadService)
+  public ByteArrayObject (byte[] bytes)
   {
-    this.obj = obj;
-    this.threadService = threadService;
-  } 
-
-  public Schedulable getThread (Runnable r)
-  {
-    return threadService.getThread (obj, r, r.getClass().getName());
+    this.bytes = bytes;
   }
 
-  public Schedulable getThread (Runnable r, String name)
+  public byte[] getBytes ()
   {
-    return threadService.getThread (obj, r, name);
+    return bytes;
   }
 }

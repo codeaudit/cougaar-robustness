@@ -33,7 +33,7 @@ import java.util.Hashtable;
  **
  **  Number Range   Message Properties
  **  
- **  1,2,3 ...      acked, ordered, not loseable
+ **  1,2,3 ...      acked, ordered, not loseable (exception: local msgs)
  **  0              not acked, not ordered, loseable
  **  -1,-2,-3 ...   ackable, not ordered, loseable
  **/
@@ -93,7 +93,7 @@ public class MessageNumberingAspect extends StandardAspect
         MessageUtils.setFromAgent (msg, fromAgent);
       }
 
-      if (!isLocalAgent (fromAgent))  // ensure the from agent is still local
+      if (!isLocalAgent (MessageUtils.getOriginatorAgent(msg)))
       {
         String s = "Sending agent " +fromAgent+ " no longer on local node!";
         loggingService.error (s);
@@ -115,9 +115,13 @@ public class MessageNumberingAspect extends StandardAspect
             
       if (isLocalMessage (msg))  // every msg needs a number, even local ones
       {
-// HACK note:  add positive numbers for local msgs - leave comment telling why
+        //  Local messages are numbered with positive numbers in order to avoid
+        //  a race condition where messages from the agent state of a newly 
+        //  arrived message that have now become local (because the agent they
+        //  have been talking to is on this node) are in competition with the
+        //  new agent itself (2 sources of msgs).
 
-        n = 0;  
+        n = getNextMessageNumber (POSITIVE, msg);  
         MessageUtils.setMessageTypeToLocal (msg);
       }
       else if (MessageUtils.isTrafficMaskingMessage (msg))
@@ -145,24 +149,21 @@ public class MessageNumberingAspect extends StandardAspect
         //  Unknown message type - should not occur, except during system development
 
         loggingService.fatal ("Unknown msg type! : " +MessageUtils.getMessageType(msg));
-        n = -1;  // will nearly always result as a duplicate msg on the remote side
+        n = -1;  // will nearly always result in a duplicate msg on the remote side
       }
 
       setMessageNumber (msg, n);
-
-//System.err.println ("MessageNumberingAspect: outgoing msg= "+MessageUtils.toString(msg));
-
       return link.forwardMessage (msg);
     }
 
-    private boolean isLocalAgent (AgentID agent)
+    private boolean isLocalAgent (MessageAddress agent)
     {
-      return getRegistry().getIdentifier().equals(agent.getNodeName());
+      return getRegistry().isLocalClient (agent);
     }
 
     private boolean isLocalMessage (AttributedMessage msg)
     {
-      return getRegistry().isLocalClient (MessageUtils.getTargetAgent (msg));
+      return isLocalAgent (MessageUtils.getTargetAgent(msg));
     }
 
     public String toString ()

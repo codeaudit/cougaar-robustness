@@ -48,8 +48,6 @@ class MessageResender implements Runnable
   private Comparator deadlineSort;
   private long minResendDeadline;
 
-private static int rsndNum=0;
-
   public MessageResender (MessageAckingAspect aspect) 
   {
     this.aspect = aspect;
@@ -95,7 +93,7 @@ private static int rsndNum=0;
 
     //  Remove the message from the agent state
 // sync (agentState)
-//   remove from agentState;
+//   if (acked || sendCount==0) remove from agentState;
 
     //  Remove the message from the waiting queue.  This can
     //  raise the minResendDeadline, but doesn't seem like
@@ -251,13 +249,12 @@ private static int rsndNum=0;
 
         //  See if time to resend message
 
-if (debug()) log.debug ("MessageResender: rsndTimeout="+ack.getResendTimeout()+" rsndDelay="+ack.getResendDelay());
         int timeout = ack.getResendTimeout() + ack.getResendDelay();
         long resendDeadline = ack.getSendTime() + timeout;
         long timeLeft = resendDeadline - now();
 
         if (debug()) log.debug ("MessageResender: Msg " +MessageUtils.getMessageNumber(msg)+
-          ": timeout=" +timeout+ "  timeLeft=" +timeLeft);
+          ": timeout=" +timeout+ "  timeLeft=" +timeLeft+ "  " +MessageUtils.toShortSequenceID(msg));
 
         if (timeLeft <= 0)
         {
@@ -268,32 +265,14 @@ if (debug()) log.debug ("MessageResender: rsndTimeout="+ack.getResendTimeout()+"
           //  wants to try every possbile transport link in its efforts to get a 
           //  message through.
 
-rsndNum++;
-
-          if (debug()) log.debug ("MessageResender: Resending #"+rsndNum+" " +MessageUtils.toString(msg));
-          ack.setSendTime (now());
-msg.setAttribute ("RsndNum", new Integer(rsndNum));
+          if (debug()) log.debug ("MessageResender: Resending " +MessageUtils.toString(msg));
+          remove (msg);  // remove first to avoid race condition with send
           SendMessage.sendMsg (msg);
-          if (debug()) log.debug ("MessageResender: SendQueue len = " +SendMessage.getSendQueueLength());
-
-          //  Calculate the new message resend deadline.  Note that we do not know at
-          //  this point what new link will be chosen for the message we just resent,
-          //  so all we can do at this point is use the timeout we currently have.
-          //  At the end of link selection the ack is updated with the new link timing
-          //  information and so then the timeout will be correct, and it is expected
-          //  that this update will occur before a resend based on the old link info.
-          //  Note that with each resend we add some delay to the message resend timeout 
-          //  if the message send count is getting high (num links + 1), so that will
-          //  also affect the time available for the link selection to occur.  Note that 
-          //  the delay is limited by the max delay time set in the ack, with a current
-          //  default of 1 minute.
-
-          int highSendCount = ack.getNumberOfLinkChoices() + 1;
-          if (ack.getSendCount() > highSendCount) ack.addResendDelay (500);
-          resendDeadline = ack.getSendTime() + ack.getResendTimeout() + ack.getResendDelay();
         }
-
-        if (resendDeadline < minResendDeadline) minResendDeadline = resendDeadline;
+        else
+        {
+          if (resendDeadline < minResendDeadline) minResendDeadline = resendDeadline;
+        }
       }
 
       Arrays.fill (messages, null);  // release references

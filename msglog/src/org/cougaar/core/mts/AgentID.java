@@ -64,6 +64,11 @@ public class AgentID implements java.io.Serializable
     return nodeName;
   }
 
+  public void setNodeName (String name)
+  {
+    nodeName = name;
+  }
+
   public String getAgentName ()
   {
     return agentName;
@@ -104,6 +109,11 @@ public class AgentID implements java.io.Serializable
   public String toShortString ()
   {
     return agentName +"@"+ nodeName;
+  }
+
+  public static String makeShortSequenceID (AgentID fromAgent, AgentID toAgent)
+  {
+    return fromAgent.toShortString() +" to "+ toAgent.toShortString();
   }
 
   public static String makeAckingSequenceID (AgentID fromAgent, AgentID toAgent)
@@ -173,11 +183,11 @@ public class AgentID implements java.io.Serializable
     if (timedOut) 
     {
       entry = (TopologyEntry) getCachedTopologyLookup (agent);
-System.err.println ("timed topology lookup timed out, using value from cache: " +entry);
+      //System.err.println ("timed topology lookup timed out, using value from cache: " +entry);
     }
     else 
     {
-System.err.println ("timed topology lookup completed on time");
+      //System.err.println ("timed topology lookup completed on time");
       cacheTopologyLookup (agent, entry);
     }
 
@@ -216,16 +226,16 @@ System.err.println ("timed topology lookup completed on time");
 
       try
       {
-System.err.println ("timed topology lookup called: agent=" +agent+ " refreshCache=" +refreshCache);
+        //System.err.println ("timed topology lookup called: agent=" +agent+ " refreshCache=" +refreshCache);
 
         if (!refreshCache) entry = topologyService.getEntryForAgent    (agent.getAddress());
         else               entry = topologyService.lookupEntryForAgent (agent.getAddress());
 
-System.err.println ("timed topology lookup returned");
+        //System.err.println ("timed topology lookup returned");
       }
       catch (Exception e)
       {
-System.err.println ("timed topology lookup exception: " +stackTraceToString(e));
+        //System.err.println ("timed topology lookup exception: " +stackTraceToString(e));
         exception = e;
       }
     }

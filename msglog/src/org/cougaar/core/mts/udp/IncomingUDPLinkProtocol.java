@@ -302,7 +302,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
           }
           catch (Exception e)
           {
-            log.error ("Got non (or broken) AttributedMessage! (msg ignored)");
+            log.error ("Got non (or broken) AttributedMessage! (msg ignored): " +e);
             continue;
           }
 

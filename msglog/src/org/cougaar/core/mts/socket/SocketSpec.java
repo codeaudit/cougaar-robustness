@@ -19,22 +19,27 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 11 July 2001: Marked serializable, added equals method. (OBJS)
- * 08 July 2001: Created. (OBJS)
+ * 18 Aug 2002: Added inet address field. (OBJS)
+ * 11 Jul 2001: Marked serializable, added equals method. (OBJS)
+ * 08 Jul 2001: Created. (OBJS)
  */
 
 package org.cougaar.core.mts.socket;
 
+import java.net.InetAddress;
+
 
 /**
- *  SocketSpec holds information about the host and port for a
- *  socket connection.
-**/
+ *  SocketSpec holds information about the host, port, and 
+ *  inet address for a socket connection.
+ */
 
 public class SocketSpec implements java.io.Serializable
 {
   private String host;
   private String port;
+
+  private transient InetAddress inetAddress;
 
   public SocketSpec (String port)
   {
@@ -82,6 +87,16 @@ public class SocketSpec implements java.io.Serializable
   public void setPort (int port)
   {
     this.port = "" + port;
+  }
+
+  public void setInetAddress (InetAddress addr)
+  {
+    inetAddress = addr;
+  }
+
+  public InetAddress getInetAddress ()
+  {
+    return inetAddress;
   }
 
   public boolean equals (Object obj)

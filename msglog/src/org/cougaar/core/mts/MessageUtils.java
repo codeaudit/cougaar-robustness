@@ -297,6 +297,12 @@ public final class MessageUtils
     msg.setAttribute (SEND_PROTOCOL_LINK, protocolLink);
   }
 
+  public static int getSendTry (AttributedMessage msg)
+  {
+    Ack ack = getAck (msg);
+    return (ack != null ? ack.getSendTry() : -1); 
+  }
+
   public static String getSendProtocolLink (AttributedMessage msg)
   {
     return (String) msg.getAttribute (SEND_PROTOCOL_LINK);
@@ -325,16 +331,13 @@ public final class MessageUtils
   {
     if (msg == null) return "[null msg]";
 
-    if (isLocalMessage (msg))
-    {
-      String from = getOriginatorAgentAsString (msg);
-      String to = getTargetAgentAsString (msg);
-      return "Local Msg (from " +from+ " to " +to+ ")";
-    }
-
     String specialType = "";
 
-    if (isPureAckMessage (msg))
+    if (isLocalMessage (msg))
+    {
+      specialType = " (LocalMsg)";
+    }
+    else if (isPureAckMessage (msg))
     {
       specialType = " (PureAckMsg for Msg " +getSrcMsgNumber(msg)+ ")";
     }
@@ -362,10 +365,14 @@ public final class MessageUtils
   public static String toString (AttributedMessage msg)
   {
     String hdr = toShortString (msg);
-
-    if (msg == null || isLocalMessage(msg)) return hdr;
-
+    if (msg == null) return hdr;
     String key = AgentID.makeAckingSequenceID (getFromAgent(msg), getToAgent(msg));
     return hdr + " of " + key;
+  }
+
+  public static String toShortSequenceID (AttributedMessage msg)
+  {
+    if (msg == null) return "[null msg]";
+    return AgentID.makeShortSequenceID (getFromAgent(msg), getToAgent(msg));
   }
 }
