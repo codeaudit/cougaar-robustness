@@ -40,7 +40,7 @@ public class RequestRecord extends java.util.Hashtable {
     public void setRequest(String request) { this.request = request; }
 
     public String dump() {
-        return "Request: " + request + ":" +((Object)request).toString() + "\n"
+        return "Request: " + request + ":" +assetID.toString() + "\n"
             + "Original Actions: " + originalActions + "\n"
             + "RemainingActions: " + remainingActions + "\n";
     }

@@ -29,8 +29,6 @@
 
 package org.cougaar.tools.robustness.disconnection.InternalConditionsAndOpModes;
 
-import org.cougaar.tools.robustness.deconfliction.*;
-
 import org.cougaar.tools.robustness.disconnection.DisconnectConstants;
 
 import org.cougaar.core.service.BlackboardService;
@@ -38,6 +36,8 @@ import org.cougaar.util.UnaryPredicate;
 import java.util.Collection;
 import java.util.Iterator;
 
+import java.io.Serializable;
+//import org.cougaar.core.persist.Persistable;
 
 /**
  *
@@ -56,7 +56,10 @@ import org.cougaar.core.adaptivity.OMCRangeList;
  * <b>NOT</b> change the values of this instance. It should only call getState() to find
  * what the value is & then act accordingly.
  */
-public class DisconnectDefenseAgentEnabler extends DefenseOperatingMode {
+public class DisconnectDefenseAgentEnabler extends DefenseOperatingMode implements Serializable {
+    
+    public boolean isPersistable() { return true; }
+
     
     // searches the BB for an object of this type with a given signature 
     public static DisconnectDefenseAgentEnabler findOnBlackboard(String assetType, String assetID, BlackboardService blackboard) {
@@ -90,7 +93,8 @@ public class DisconnectDefenseAgentEnabler extends DefenseOperatingMode {
         super(assetType, asset, DisconnectConstants.DEFENSE_NAME, DefenseConstants.DEF_RANGELIST, DefenseConstants.DEF_DISABLED.toString());
 
     }
-    
+
+
     /*
      * @return the String value of the state of this mode.
      */
@@ -103,5 +107,15 @@ public class DisconnectDefenseAgentEnabler extends DefenseOperatingMode {
           (this.assetName.equals(id)) &&
           (this.defenseName.equals(defenseName)));
     }
+
+    public static final UnaryPredicate pred = new UnaryPredicate() {
+            public boolean execute(Object o) {
+                if ( o instanceof DisconnectDefenseAgentEnabler ) {
+                    return true ;
+                }
+                return false ;
+            }
+        };
+
 }
   

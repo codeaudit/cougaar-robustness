@@ -26,7 +26,6 @@
 
 package org.cougaar.tools.robustness.disconnection.InternalConditionsAndOpModes;
 
-import org.cougaar.tools.robustness.deconfliction.*;
 
 import org.cougaar.core.adaptivity.SensorCondition;
 import org.cougaar.core.adaptivity.OMCThruRange;

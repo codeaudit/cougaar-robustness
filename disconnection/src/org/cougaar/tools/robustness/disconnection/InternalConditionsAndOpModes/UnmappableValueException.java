@@ -1,11 +1,8 @@
 /*
+ * UnmappableValueException.java
  *
- * AgentExistsCondition.java
- *
- * Created on August 20, 2003, 11:03 PM
- *
- * @author David Wells - OBJS 
- *
+ * Created on March 19, 2003, 4:37 PM
+ * 
  * <copyright>
  *  Copyright 2003 Object Services and Consulting, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
@@ -24,20 +21,27 @@
  *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE OF DATA OR PROFITS,
  *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
- *
- * </copyright> 
- */ 
+ * </copyright>
+ */
 
 package org.cougaar.tools.robustness.disconnection.InternalConditionsAndOpModes;
 
-import org.cougaar.tools.robustness.disconnection.DisconnectConstants;
-
-public class AgentExistsCondition extends DefenseApplicabilityBinaryCondition
-                                  implements java.io.Serializable {
-
-    /** Creates new AgentExistsCondition */
-    public AgentExistsCondition(String assetType, String assetID) {
-        super(assetType, assetID, DisconnectConstants.DEFENSE_NAME, DefenseConstants.BOOL_FALSE);
+/**
+ */
+public class UnmappableValueException extends java.lang.Exception {
+    
+    /**
+     * Creates a new instance of <code>UnmappableValueException</code> without detail message.
+     */
+    public UnmappableValueException() {
     }
-
+    
+    
+    /**
+     * Constructs an instance of <code>UnmappableValueException</code> with the specified detail message.
+     * @param msg the detail message.
+     */
+    public UnmappableValueException(String msg) {
+        super(msg);
+    }
 }

@@ -28,23 +28,25 @@
  
 package org.cougaar.tools.robustness.disconnection.InternalConditionsAndOpModes;
 
-import org.cougaar.tools.robustness.deconfliction.*;
 import org.cougaar.core.relay.Relay;
-import org.cougaar.core.persist.NotPersistable;
 import java.io.Serializable;
+//import org.cougaar.core.persist.Persistable;
 
 import org.cougaar.core.util.UniqueObject;
 
 import org.cougaar.tools.robustness.disconnection.DisconnectConstants;
+import org.cougaar.tools.robustness.disconnection.AgentVector;
 
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.util.UnaryPredicate;
 import java.util.Collection;
 import java.util.Iterator;
 
-public class ReconnectTimeCondition extends DefenseTimeCondition 
-        implements NotPersistable, Serializable, Relay.Source, Relay.Target, UniqueObject
+public class ReconnectTimeCondition extends DefenseTimeCondition
+        implements Serializable, Relay.Source, Relay.Target, UniqueObject
     {
+
+    public boolean isPersistable() { return true; }
 
     private AgentVector agents;
     

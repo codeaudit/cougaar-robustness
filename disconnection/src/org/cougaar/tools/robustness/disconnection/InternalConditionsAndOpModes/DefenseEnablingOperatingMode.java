@@ -1,10 +1,8 @@
 /*
- * LocalReconnectTimeCondition.java
+ * DefenseEnablingOperatingMode.java
  *
- * Created on August 20, 2003, 8:31 PM
- *
- * @uthor David Wells - OBJS
- *
+ * Created on March 19, 2003, 4:08 PM
+ * 
  * <copyright>
  *  Copyright 2003 Object Services and Consulting, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
@@ -23,51 +21,67 @@
  *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE OF DATA OR PROFITS,
  *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  *  PERFORMANCE OF THE COUGAAR SOFTWARE.
- * </copyright> 
+ * </copyright>
  */
- 
+
 package org.cougaar.tools.robustness.disconnection.InternalConditionsAndOpModes;
 
-import org.cougaar.tools.robustness.disconnection.DisconnectConstants;
+import org.cougaar.core.adaptivity.OMCPoint;
+import org.cougaar.core.adaptivity.OMCRange;
+import org.cougaar.core.adaptivity.OMCRangeList;
 
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.util.UnaryPredicate;
 import java.util.Collection;
 import java.util.Iterator;
 
-
-public class LocalReconnectTimeCondition extends DefenseTimeCondition {
+/**
+ * The Defense publishes a DefenseEnablingOperatingMode for each asset it may defend.
+ * The DefenseEnablingOperatingMode is used to control the actions of the Defense as
+ * described in the Defense Deconfliction API & Architecture paper. The Defense does
+ * <b>NOT</b> change the values of this instance. It should only call getState() to find
+ * what the value is & then act accordingly.
+ */
+public class DefenseEnablingOperatingMode extends DefenseOperatingMode {
     
+    
+    /** Creates a new instance of DefenseEnablingOperatingMode. This mode 
+     *  supports two values: ENABLED and DISABLED. The default is set to DISABLED.
+     *@param name - the name of the OperatingMode
+     */
+    public DefenseEnablingOperatingMode(String assetType, String asset, String defenseName) {
+        
+        super(assetType, asset, defenseName, DefenseConstants.DEF_RANGELIST, DefenseConstants.DEF_DISABLED.toString());
+
+    }
+    
+    /*
+     * @return the String value of the state of this mode.
+     */
+    public String getState() { 
+        return getValue().toString();
+    }
+    
+  
     // searches the BB for an object of this type with a given signature 
-    public static LocalReconnectTimeCondition findOnBlackboard(String assetType, String assetID, BlackboardService blackboard) {
+    public static DefenseEnablingOperatingMode findOnBlackboard(String defenseName, String expandedName, BlackboardService blackboard) {
         UnaryPredicate pred = new UnaryPredicate() {
             public boolean execute(Object o) {  
                 return 
-                    (o instanceof LocalReconnectTimeCondition);
+                    (o instanceof DefenseEnablingOperatingMode);
             }
         };
 
-        LocalReconnectTimeCondition rtc = null;
+        DefenseEnablingOperatingMode deom = null;
         Collection c = blackboard.query(pred);
         Iterator iter = c.iterator();
         //if (logger.isDebugEnabled()) logger.debug(new Integer(c.size()).toString());
         while (iter.hasNext()) {
-           rtc = (LocalReconnectTimeCondition)iter.next();
-           if (rtc.compareSignature(assetType, assetID, DisconnectConstants.DEFENSE_NAME)) {
-               return rtc;
+           deom = (DefenseEnablingOperatingMode)iter.next();
+           if (deom.compareSignature(expandedName, defenseName)) {
+               return deom;
            }
         }
         return null;
     }  
-    
-    /** Creates new LocalReconnectTimeCondition */
-    
-    public LocalReconnectTimeCondition(String assetType, String assetID) {
-        super(assetType, assetID, DisconnectConstants.DEFENSE_NAME);
-    }
-
-    public void setTime(Double newValue) {
-         super.setValue(newValue);
-    }
-    
 }

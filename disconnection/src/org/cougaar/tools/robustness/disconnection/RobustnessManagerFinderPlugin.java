@@ -36,8 +36,6 @@ import org.cougaar.core.service.community.Entity;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.UIDService;
 
-import org.cougaar.tools.robustness.deconfliction.*;
-
 import org.cougaar.util.UnaryPredicate;
 
 import java.util.Collection;

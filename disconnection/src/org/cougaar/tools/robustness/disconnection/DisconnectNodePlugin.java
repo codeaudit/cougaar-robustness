@@ -34,8 +34,6 @@
 
 package org.cougaar.tools.robustness.disconnection;
 
-import org.cougaar.tools.robustness.deconfliction.*;
-
 import org.cougaar.tools.robustness.disconnection.InternalConditionsAndOpModes.*;
 
 import java.util.Iterator;
@@ -196,9 +194,13 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
       // This was set by the DisconnectServlet for the Node
       iter = localReconnectTimeSubscription.getChangedCollection().iterator();
       if (iter.hasNext()) { 
-          if (getNodeAddress().equals(managerAddress)) {
+          if (logger.isDebugEnabled()) logger.debug(localAgents.toString() + ", " + managerAddress);
+          if (localAgents.contains(managerAddress.toString())) {
               if (eventService.isEventEnabled()) {
                   eventService.event("Not allowed to Disconnect ManagementAgent on "+getNodeAddress().toString());
+              }
+              if (logger.isInfoEnabled()) {
+                  logger.info("Not allowed to Disconnect ManagementAgent on "+getNodeAddress().toString());
               }
           }
           else {

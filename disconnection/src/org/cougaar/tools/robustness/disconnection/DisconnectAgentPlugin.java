@@ -26,8 +26,6 @@
 
 package org.cougaar.tools.robustness.disconnection;
 
-import org.cougaar.tools.robustness.deconfliction.*;
-
 import org.cougaar.tools.robustness.disconnection.InternalConditionsAndOpModes.*;
 
 import java.util.Iterator;
