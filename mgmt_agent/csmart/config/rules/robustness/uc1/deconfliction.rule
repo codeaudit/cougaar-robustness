@@ -5,28 +5,88 @@ ompm = "org.cougaar.core.adaptivity.OperatingModePolicyManager"
 csp  = "org.cougaar.core.adaptivity.ConditionServiceProvider"
 co = "org.cougaar.tools.robustness.deconfliction.CoordinatorPlugin"
 
-# Defense Node Plugins
+# Disconnection Plugins
 # -----------------------
-ds = "org.cougaar.tools.robustness.ma.test.DeconflictionServlet"
-std   = "org.cougaar.tools.robustness.deconfliction.test.defense.MyServletTestDefense"
-domce = "org.cougaar.tools.robustness.deconfliction.test.defense.DefenseOperatingModeChangeEvents"
+dap = "org.cougaar.tools.robustness.disconnection.DisconnectAgentPlugin"
+disconnectServlet = "org.cougaar.tools.robustness.disconnection.DisconnectServlet"
+dmp = "org.cougaar.tools.robustness.disconnection.DisconnectManagerPlugin"
 
-managerPluginsToAdd = [omsp, ompm, csp, co]
-defensePluginsToAdd = [ds]
+# Msglog
+#----------
+mp = "org.cougaar.core.mts.MsglogPlugin"
+
+managerPluginsToAdd = [omsp, ompm, csp]
+coplugins = [co]
 
 society.each_agent do |agent|
   if agent.name =~ /.*ARManager.*/
     agent.add_components(managerPluginsToAdd)
-    #agent.add_components(defensePluginsToAdd)
+    agent.add_components(coplugins)
+    agent.add_component do |c|
+      c.classname = mp
+      c.add_argument("10000")
+    end
+    agent.add_component do |c|
+      c.classname = dmp
+      c.add_argument(agent.name)
+    end
+  else
+    agent.add_component do |c|
+      c.classname = dap
+      c.add_argument("SMALL-ARManager")
+    end
+    agent.add_component do |c|
+      c.classname = disconnectServlet
+    end
+    agent.add_components(managerPluginsToAdd)
+  end
+  if agent.name == "1-35-ARBN"
+    agent.add_component do |c|
+      c.classname = "org.cougaar.core.mobility.ping.PingAdderPlugin"
+      c.add_argument("target=GlobalAir")
+    end
+    agent.add_component do |c|
+      c.classname = "org.cougaar.core.mobility.ping.PingTimerPlugin"
+      c.add_argument("wakeMillis=1000")
+    end
+    agent.add_component do |c|
+      c.classname = "org.cougaar.core.mobility.ping.PingServlet"
+      c.add_argument("/ping")
+    end
   end
 end
 
 #agentList = Array.new
-#society.each_node_agent do |agent|
- # agentList << agent.name
-  #agent.add_components(managerPluginsToAdd)
- # agent.add_components(defensePluginsToAdd)
-#end
+society.each_node do |node|
+    node.add_component do |c|
+      c.classname = disconnectServlet
+    end
+end
+
+policy = "org.cougaar.core.mts.AdaptiveLinkSelectionPolicy"
+
+aspects = "org.cougaar.core.mts.MsglogEnablingAspect," +
+          "org.cougaar.core.mts.LastSpokeErrorAspect," +
+          "org.cougaar.core.mts.GossipAspect," +
+          "org.cougaar.core.mts.GossipStatisticsServiceAspect," +
+          "org.cougaar.core.mts.ShowTrafficAspect," +
+          "org.cougaar.core.mts.StatisticsAspect," + 
+          "org.cougaar.core.mts.MessageSendHistoryAspect," + 
+          "org.cougaar.core.mts.acking.MessageAckingAspect," + 
+          "org.cougaar.core.mts.RTTAspect," + 
+          "org.cougaar.core.mts.MessageNumberingAspect," +
+          "org.cougaar.core.mts.MessageOrderingAspect"
+
+protocols = "org.cougaar.core.mts.LoopbackLinkProtocol," +
+            "org.cougaar.core.mts.RMILinkProtocol"
+
+society.each_node do |node|
+    node.override_parameter("-Dorg.cougaar.message.transport.policy", policy)
+    node.override_parameter("-Dorg.cougaar.message.transport.aspects", aspects)
+    node.override_parameter("-Dorg.cougaar.message.protocol.classes", protocols)
+end
+
+
 
 
 
