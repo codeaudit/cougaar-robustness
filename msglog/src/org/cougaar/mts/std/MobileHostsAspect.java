@@ -154,7 +154,8 @@ public class MobileHostsAspect extends StandardAspect
 		    eventSvc.event("IP Address of "+myHost+" changed from "+myAddr+" to "+addr);
 		myAddr = addr;
 		try {
-		    System.setProperty("java.rmi.server.hostname",myAddr);
+//                  moved to RMILinkProtocol
+//                  System.setProperty("java.rmi.server.hostname",myAddr);
 		    registry.ipAddressChanged();
 		} catch (Exception e) {
 		    log.error("run: ERROR calling System.setProperty(\"java.rmi.server.hostname\","+myAddr+")",e);
