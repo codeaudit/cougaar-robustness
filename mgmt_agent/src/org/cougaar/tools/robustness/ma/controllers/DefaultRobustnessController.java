@@ -474,10 +474,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    * Receives notification of change in agent location.
    */
   public void locationChange(String name, String priorLocation, String newLocation) {
-    logger.info("LocationChange:" +
-                " agent=" + name +
-                " prior=" + priorLocation +
-                " new=" + newLocation);
     // If agent has moved off this node stop heartbeats
     if (thisAgent.equals(priorLocation)) stopHeartbeats(name);
     checkCommunityReady();
