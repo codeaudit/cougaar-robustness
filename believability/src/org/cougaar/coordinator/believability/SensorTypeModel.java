@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/SensorTypeModel.java,v $
- * $Revision: 1.3 $
- * $Date: 2004-05-28 20:01:17 $
+ * $Revision: 1.4 $
+ * $Date: 2004-05-28 20:56:43 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -37,7 +37,7 @@ import org.cougaar.core.util.UID;
  * needs concerning a SensorType (from the tech specs). 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.3 $Date: 2004-05-28 20:01:17 $
+ * @version $Revision: 1.4 $Date: 2004-05-28 20:56:43 $
  *
  */
 class SensorTypeModel extends Model
@@ -383,7 +383,7 @@ class SensorTypeModel extends Model
             {
                 DiagnoseAs diag_as = (DiagnoseAs) diag_as_iter.next();
 
-                String obs_name = diag_as.getDiagnosisValue().getName();
+                String obs_name = diag_as.getDiagnosisValue();
 
                 int obs_idx = getObsNameIndex( obs_name );
 
