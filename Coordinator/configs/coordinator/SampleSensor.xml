@@ -5,7 +5,7 @@
 <SensorType name="org.cougaar.coordinator.examples.SampleDefense.SampleDiagnosis" 
             sensesAssetType="Agent"
             sensesStateDimension="Eavesdropping" 
-		sensorLatency="47">
+            sensorLatency="47">
     <PotentialDiagnoses>
         <Diagnosis name="Low Threat" />
         <Diagnosis name="Medium Threat" />
@@ -14,20 +14,28 @@
     </PotentialDiagnoses>
     <Diagnoses>
         <WhenActualStateIs name="NoVulnerability" >
-            <WillDiagnoseAs name="No Threat" withProbability="0.99" />
-            <WillDiagnoseAs name="Low Threat" withProbability="0.01" />
+            <WillDiagnoseAs name="No Threat" withProbability="0.93" />
+            <WillDiagnoseAs name="Low Threat" withProbability="0.04" />
+            <WillDiagnoseAs name="Medium Threat" withProbability="0.02" />
+            <WillDiagnoseAs name="High Threat" withProbability="0.01" />
         </WhenActualStateIs >
         <WhenActualStateIs name="LowVulnerability" >
-            <WillDiagnoseAs name="Low Threat" withProbability="0.9" />
-            <WillDiagnoseAs name="Medium Threat" withProbability="0.1" />
+            <WillDiagnoseAs name="No Threat" withProbability="0.04" />
+            <WillDiagnoseAs name="Low Threat" withProbability="0.90" />
+            <WillDiagnoseAs name="Medium Threat" withProbability="0.04" />
+            <WillDiagnoseAs name="High Threat" withProbability="0.02" />
         </WhenActualStateIs >
         <WhenActualStateIs name="MediumVulnerability" >
-            <WillDiagnoseAs name="Medium Threat" withProbability="0.8" />
-            <WillDiagnoseAs name="High Threat" withProbability="0.2" />
+            <WillDiagnoseAs name="No Threat" withProbability="0.02" />
+            <WillDiagnoseAs name="Low Threat" withProbability="0.04" />
+            <WillDiagnoseAs name="Medium Threat" withProbability="0.90" />
+            <WillDiagnoseAs name="High Threat" withProbability="0.04" />
         </WhenActualStateIs >
         <WhenActualStateIs name="HighVulnerability" >
-            <WillDiagnoseAs name="Medium Threat" withProbability="0.2" />
-            <WillDiagnoseAs name="High Threat" withProbability="0.8" />
+            <WillDiagnoseAs name="No Threat" withProbability="0.01" />
+            <WillDiagnoseAs name="Low Threat" withProbability="0.02" />
+            <WillDiagnoseAs name="Medium Threat" withProbability="0.04" />
+            <WillDiagnoseAs name="High Threat" withProbability="0.93" />
         </WhenActualStateIs >
     </Diagnoses>
 </SensorType>
