@@ -27,8 +27,6 @@ import org.cougaar.core.adaptivity.InterAgentOperatingMode;
 import org.cougaar.core.adaptivity.InterAgentCondition;
 import org.cougaar.core.adaptivity.OMCRangeList;
 
-import org.cougaar.core.security.constants.AdaptiveMnROperatingModes;
-
 import org.cougaar.core.plugin.ComponentPlugin;
 
 import org.cougaar.core.component.ServiceBroker;
