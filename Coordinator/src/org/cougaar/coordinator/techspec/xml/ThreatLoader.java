@@ -130,21 +130,21 @@ public class ThreatLoader extends XMLLoader {
 
         //Create default threat
         ThreatDescription threat = new ThreatDescription( threatName, affectsAssetType, causesEvent, fProb );
-        
+/*        
         try {
             double prob = threat.getEventProbability().computeIntervalProbability(System.currentTimeMillis(), System.currentTimeMillis()+600000);
             if (logger.isDebugEnabled()) { logger.debug("Testing event likelihood. Prob = "+prob); }            
         } catch (Exception e1) {
-            if (logger.isDebugEnabled()) { logger.debug("Testing event likelihood interval. EXCEPTION!"); }            
+            if (logger.isDebugEnabled()) { logger.debug("Testing event likelihood interval. EXCEPTION:"+e1); e1.printStackTrace(); }            
         }
-        
+*/        
         threats.add(threat);
 
         Element e;
         for (Node child = element.getFirstChild(); child != null; child = child.getNextSibling()) {
             if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("VulnerableAssets") ) {
                 e = (Element)child;
-                logger.warn("calling parseVulnerableAssets...");
+                //logger.debug("calling parseVulnerableAssets...");
                 parseVulnerableAssets(e, threat);
             } //else, likely a text element - ignore
         }

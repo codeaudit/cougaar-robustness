@@ -41,37 +41,55 @@ import java.util.TimeZone;
  * Defines the threat likelihood for a specific interval of time. 
  */
 public class EventProbabilityInterval implements NotPersistable {
+
+    //This is the assume interval over which a probability of occurrence is specified in the tech specs.
+    private static float G_PROB_LENGTH_IN_MINUTES = 60.0F;
     
     private static int G_OID = 0;
 
-    private int startTime = -1;
+    private int startHr = -1;
+    private int startMin = -1;
     private int intervalLength = 0;
     private float prob = 0;
+    private float minuteProbOfNotOccuring = 0;
+    
     private int oid; //used by the servlet gui
     private ClockInterval[] clockIntervals;
     
     private Logger logger;
+
+    static {
+
+        Logger logger = Logging.getLogger(EventProbabilityInterval.class.getName());
+        if (logger.isDebugEnabled()) { logger.debug("Assuming interval length of techspec probabilities are "+G_PROB_LENGTH_IN_MINUTES+" minutes."); }
+        
+    }
     
     /** 
      * Creates a new instance of EventProbabilityInterval, with a specified applicability interval 
      * over some clock period. startTime should be in the range from 0001-2400 (24 hr clock). intervalLength
      * (in HOURS) should be less than 24 hours & the interval must not overlap itself.
      */
-    public EventProbabilityInterval(int startTime, int intervalLength, float probability) {
+    public EventProbabilityInterval(int startHr, int startMin, int intervalLength, float probability) {
 
-        this.startTime = startTime;
+        this.startHr = startHr;
+        this.startMin = startMin;
         this.intervalLength = intervalLength;
         this.prob = probability;
+        this.minuteProbOfNotOccuring = (float) java.lang.Math.pow((1.0-prob), 1d/60d );
         
         logger = Logging.getLogger(this.getClass().getName());
         
         
         GregorianCalendar start = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
-        start.setTimeInMillis(startTime);
+        start.set(Calendar.HOUR_OF_DAY, startHr);
+        start.set(Calendar.MINUTE, startMin);
+        
         GregorianCalendar end = (GregorianCalendar)start.clone();
         end.add(Calendar.HOUR_OF_DAY, intervalLength);
 
         //Build up array of clockIntervals to compare against
+        if (logger.isDebugEnabled()) { logger.debug(">>EventProbabilityInterval init(): creating interval with start time hr= "+start.get(Calendar.HOUR_OF_DAY)+":"+ start.get(Calendar.MINUTE)+ ">>End time= "+end.get(Calendar.HOUR_OF_DAY)+":"+end.get(Calendar.MINUTE) + ", IntervalLength="+intervalLength+" -- minuteProbOfNotOccuring="+minuteProbOfNotOccuring); }
         clockIntervals = ClockInterval.generateIntervals(start, end, intervalLength);
         
     }
@@ -80,8 +98,10 @@ public class EventProbabilityInterval implements NotPersistable {
     public EventProbabilityInterval(float probability) {
 
         this.prob = probability;
+        this.minuteProbOfNotOccuring = (float)java.lang.Math.pow((1.0-prob), 1d/60d );
         
         logger = Logging.getLogger(this.getClass().getName());
+        if (logger.isDebugEnabled()) { logger.debug(">>EventProbabilityInterval static init(): -- probOfOccurring="+prob+", minuteProbOfNotOccuring="+minuteProbOfNotOccuring); }
         
     }
 
@@ -96,7 +116,7 @@ public class EventProbabilityInterval implements NotPersistable {
      *
      *@return the start time of this interval probability, -1 if infinite interval
      */
-    public int getStartTime() { return this.startTime; }
+    public int getStartTime() { return this.startHr; }
 
     /**
      *@return the length (in hours) of this interval probability, 0 if an infinite length.
@@ -110,14 +130,15 @@ public class EventProbabilityInterval implements NotPersistable {
     /** Set the probability of this object */
    // public void setProbability(float p) { this.prob = p; }
     
-    /** @return the computed, weighted probability of this object for the interval specified */
+    /** @return the computed, weighted probability of NOT OCCURRING for the interval specified */
     public double computeIntervalProbability(int intervalMinutes) {         
-        return java.lang.Math.pow((1.0 - prob), intervalMinutes);        
+                
+        return java.lang.Math.pow(minuteProbOfNotOccuring, (double)intervalMinutes);        
     }
     
     public String toString() {
      
-        if (this.startTime == -1) { // then this is an "all the time" interval"
+        if (this.startHr == -1) { // then this is an "all the time" interval"
             return "Constant Probability = " + this.getProbability();
         } else {
             String s= "\nClockIntervals:";
@@ -125,7 +146,7 @@ public class EventProbabilityInterval implements NotPersistable {
              
                 s += "\n     " + clockIntervals[i].toString();
             }
-            return "Interval Probability: " + this.getProbability() + "[startTime=" + this.startTime + 
+            return "Interval Probability: " + this.getProbability() + "[startTime=" + this.startHr + 
                                            ", durationHrs=" + this.intervalLength + s;
         }
     }

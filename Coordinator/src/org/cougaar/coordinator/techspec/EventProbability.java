@@ -113,9 +113,10 @@ public class EventProbability {
         //See if there is an infinite interval probability. If so, we don't need to break up
         //the entire interval into sub-intervals.
         if (infiniteIntervalProbability != null) {
-            double pr = infiniteIntervalProbability.computeIntervalProbability(durationInMins);
-            if (logger.isDebugEnabled()) { logger.debug("Infinite interval, called infiniteIntervalProbability.computeIntervalProbability(). Prob = "+pr); }            
-            return pr;
+            if (logger.isDebugEnabled()) { logger.debug("computeIntervalProbability(). Interval="+interval+", durationInMins="+durationInMins); }            
+            double pr = infiniteIntervalProbability.computeIntervalProbability(durationInMins); //returns prob of NOT occurring during interval
+            if (logger.isDebugEnabled()) { logger.debug("Infinite interval, called infiniteIntervalProbability.computeIntervalProbability(). Prob of non-occurrence= "+pr); }            
+            return (1.0 - pr);
         }
         
         GregorianCalendar startTime = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
@@ -123,11 +124,23 @@ public class EventProbability {
         
         GregorianCalendar endTime = (GregorianCalendar)startTime.clone();
         endTime.add(Calendar.MINUTE, durationInMins); // find ending time
-        int durHrs = durationInMins / 60;
         
-        if (logger.isDebugEnabled()) { logger.debug("endTime - startTime = "+ durHrs + " hours (truncated)"); }                    
+        //durHrs = the length of the interval in hour units. Any # of minutes > 0 will consume 1 interval, e.g.
+        // 1.0 = 1 interval, 1.1 = 2 intervals, 5.3 hours = 6 intervals
         
-        ClockInterval[] clockIntervals = ClockInterval.generateIntervals(startTime, endTime, durHrs);
+        int startHr = startTime.get(Calendar.HOUR_OF_DAY);
+        int endHr   = endTime.get(Calendar.HOUR_OF_DAY);
+        int endMin   = endTime.get(Calendar.MINUTE);
+        if (endHr < startHr) { endHr += 24; } // add 24 hours so we can subtract to get interval length
+        if (endMin > 0) { endHr++; } //it extends into the next hour so add one.
+        
+        int numHrIntervals = endHr - startHr;
+        
+        if (logger.isDebugEnabled()) { logger.debug("computeIntervalProbability(). Interval="+interval+", durationInMins="+durationInMins + ", numHrIntervals="+numHrIntervals); }            
+        
+        if (logger.isDebugEnabled()) { logger.debug("Calculating prob for startTime= "+startTime.get(Calendar.HOUR_OF_DAY)+":"+ startTime.get(Calendar.MINUTE)+ ">>End time= "+endTime.get(Calendar.HOUR_OF_DAY)+":"+endTime.get(Calendar.MINUTE) + ", and occupies "+ numHrIntervals + " intervals"); }                    
+        
+        ClockInterval[] clockIntervals = ClockInterval.generateIntervals(startTime, endTime, numHrIntervals);
         
         if (logger.isDebugEnabled()) { logger.debug("Number of clock intervals that overlap with threat intervals = "+ clockIntervals.length ); }            
         
@@ -138,13 +151,14 @@ public class EventProbability {
         while (i.hasNext()) {
             
             epi = (EventProbabilityInterval) i.next();
-            int minutes = ClockInterval.computeOverlap(clockIntervals, epi.getClockIntervals() );
+            int minutes = ClockInterval.computeOverlap(clockIntervals, epi.getClockIntervals(), numHrIntervals );
+            if (minutes == 0) continue; // no probability in this interval...
             double prob = epi.computeIntervalProbability(minutes);
             if (logger.isDebugEnabled()) { logger.debug("Minutes in interval="+minutes+", prob = "+prob); }            
             
             cumulativeProb = cumulativeProb * prob;
         }
-        if (logger.isDebugEnabled()) { logger.debug("Returning prob of ="+(1.0-cumulativeProb)); }            
+        if (logger.isDebugEnabled()) { logger.debug("Returning prob of ="+(1.0-cumulativeProb)+" -- cumulativeProb = "+cumulativeProb ); }            
         
         return 1.0 - cumulativeProb;
     }

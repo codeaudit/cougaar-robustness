@@ -27,6 +27,9 @@ package org.cougaar.coordinator.techspec;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+
 /**
  *
  * @author  Administrator
@@ -35,9 +38,15 @@ public class ClockInterval {
     
     int hr, startMin, endMin; //, overlap;
     boolean fullInterval = false;
-        
+    static protected Logger logger;
+
+    static {
+        logger = Logging.getLogger(ClockInterval.class); 
+    }        
+    
     /** Creates a new instance of ClockInterval */
     public ClockInterval(int hr, int startMin, int endMin) {
+
         this.hr = hr;
         this.startMin = startMin;
         this.endMin = endMin;
@@ -61,11 +70,9 @@ public class ClockInterval {
         int finalMin = endTime.get(Calendar.MINUTE);
         int startHr = startTime.get(Calendar.HOUR_OF_DAY);
         int startMin = startTime.get(Calendar.MINUTE);
-
-        if (finalMin > 0 && (startHr != endHr ) ) { // extends into next hr, so we need to add another interval
-            intervalLength++;
-        }
         
+        if (logger.isDebugEnabled()) { logger.debug(">>generateIntervals(): Current Interval start hr= "+startHr + ">>End interval hr= "+endHr+", #intervals="+intervalLength); }
+                
         //Build up array of clockIntervals to compare against
         ClockInterval[] clockIntervals = new ClockInterval[intervalLength]; //in case it's less than an hour!
         
@@ -75,6 +82,7 @@ public class ClockInterval {
         int eMin = 0; 
 
         GregorianCalendar tempTime = (GregorianCalendar)startTime.clone();
+        if (logger.isDebugEnabled()) { logger.debug(">>generateIntervals(): Cloned start hr= "+tempTime.get(Calendar.HOUR_OF_DAY) ); }
 
         //Populate the interval
         int t = startHr;
@@ -95,6 +103,9 @@ public class ClockInterval {
             }
 
             clockIntervals[i] = new ClockInterval(t, sMin, eMin);
+
+            if (logger.isDebugEnabled()) { logger.debug(">>Computing Clock Interval start hr= "+t); }
+
             tempTime.add(Calendar.HOUR_OF_DAY, 1); //add one hour
             t = tempTime.get(Calendar.HOUR_OF_DAY);
         }
@@ -109,24 +120,34 @@ public class ClockInterval {
      * they actually overlap. This is a simplisitic, non-optimized approach & assumes that the
      * probability interval does not exceed a 24 hour length.
      */
-    protected static int computeOverlap(ClockInterval[] currentIntervals, ClockInterval[] probIntervals) {
+    protected static int computeOverlap(ClockInterval[] currentIntervals, ClockInterval[] probIntervals, int durationHrs) {
     
         
         ClockInterval cI, pI;
         int totalMin = 0;
         
+        if (logger.isDebugEnabled()) { logger.debug(">>Current Intervals length= "+currentIntervals.length + ">>Prob Intervals length= "+probIntervals.length); }
+        
         //Look for matching interval
         for (int i = 0; i<currentIntervals.length; i++) {
 
             cI = currentIntervals[i];
+            if (logger.isDebugEnabled()) { logger.debug(">>Current Interval ["+i+"]: "+cI.toString()); }
             
             //Look for matching interval
             for (int j = 0; j<probIntervals.length; j++) {
             
                 pI = probIntervals[j];
+                if (logger.isDebugEnabled()) { logger.debug(">> Comparing prob interval "+pI.hr+" to current interval "+cI.hr); }
         
                 if (pI.hr == cI.hr) {
-                    totalMin += findMinuteOverlap( cI, pI);
+                    int min = findMinuteOverlap( cI, pI);
+                    totalMin += min;
+                    if (logger.isDebugEnabled()) { logger.debug(">> In ClockInterval "+pI.hr+", Min overlap = "+min); }
+                    if (durationHrs <23) { // then we won't see this interval again, so stop looking
+                        if (logger.isDebugEnabled()) { logger.debug(">> In ClockInterval. Less than 24 hr interval, so stop looking for more matches. "); }
+                        break; //skip to next currentInterval
+                    }
                 }                
             }
         }
