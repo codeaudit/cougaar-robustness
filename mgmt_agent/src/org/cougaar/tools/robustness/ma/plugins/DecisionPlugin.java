@@ -1,8 +1,5 @@
 /*
  * <copyright>
- *  Copyright 1997-2001 Mobile Intelligence Corp
- *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
- *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
@@ -26,6 +23,7 @@ import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.plugin.SimplePlugin;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.BlackboardService;
+import org.cougaar.core.mts.MessageAddress;
 
 import org.cougaar.util.UnaryPredicate;
 
@@ -40,12 +38,23 @@ public class DecisionPlugin extends SimplePlugin {
   private LoggingService log;
   private BlackboardService bbs = null;
 
+  // Defines default values for configurable parameters.
+  private static String defaultParams[][] = {
+    {}
+  };
+  ManagementAgentProperties decisionProps =
+    ManagementAgentProperties.makeProps(this.getClass().getName(), defaultParams);
+
   protected void setupSubscriptions() {
 
     log =  (LoggingService) getBindingSite().getServiceBroker().
       getService(this, LoggingService.class, null);
 
     bbs = getBlackboardService();
+
+    // Initialize configurable paramaeters from defaults and plugin arguments.
+    updateParams(decisionProps);
+    bbs.publishAdd(decisionProps);
 
     // Subscribe to ManagementAgentProperties to receive parameter changes
     mgmtAgentProps =
@@ -56,6 +65,9 @@ public class DecisionPlugin extends SimplePlugin {
     healthStatus =
       (IncrementalSubscription)bbs.subscribe(healthStatusPredicate);
 
+    // Subscribe to RestartLocationRequest objects
+    restartRequests =
+      (IncrementalSubscription)bbs.subscribe(restartRequestPredicate);
 
   }
 
@@ -75,10 +87,28 @@ public class DecisionPlugin extends SimplePlugin {
       log.debug("Received HEALTH_CHECK for agent " + hs.getAgentId());
       evaluate(hs);
     }
+
+    // Get RestartLocationRequests
+    for (Iterator it = restartRequests.getChangedCollection().iterator();
+         it.hasNext();) {
+      RestartLocationRequest req = (RestartLocationRequest)it.next();
+      int status = req.getStatus();
+      switch (status) {
+        case RestartLocationRequest.SUCCESS:
+          initiateRestart(req.getAgents(), req.getHost());
+          bbs.publishRemove(req);
+          break;
+        case RestartLocationRequest.FAIL:
+          log.error("RestartLocationRequest failed");
+          bbs.publishRemove(req);
+          break;
+        default:
+      }
+    }
   }
 
   /**
-   * Evaluate the stat
+   * Evaluate the status of agent
    * @param hs
    */
   private void evaluate(HealthStatus hs) {
@@ -86,12 +116,9 @@ public class DecisionPlugin extends SimplePlugin {
     switch (status) {
       case HealthStatus.NO_RESPONSE:
         // Agent is most likely dead.  Initiate a restart.
-        hs.setState(HealthStatus.INITIAL);
-        hs.setStatus(HealthStatus.UNDEFINED);
-        hs.setHeartbeatRequestStatus(HealthStatus.UNDEFINED);
-        System.out.println("Changing run state of agent '" +
-          hs.getAgentId() + "' to INITIAL");
-        bbs.publishChange(hs);
+        RestartLocationRequest req = new RestartLocationRequest();
+        req.addAgent(hs.getAgentId());
+        bbs.publishAdd(req);
         break;
       case HealthStatus.DEGRADED:
         // Agent is alive but operating under stress.  For now just increase
@@ -100,12 +127,28 @@ public class DecisionPlugin extends SimplePlugin {
         // is a hardware problem or external attack.
         adjustHbSensitivity(hs, 0.1f);  // Increase threshold by 10%
         hs.setState(HealthStatus.NORMAL);
-        System.out.println("Changing run state of agent '" +
-          hs.getAgentId() + "' to NORMAL");
         bbs.publishChange(hs);
         break;
       default:
     }
+  }
+
+  /**
+   * Initiates a restart.
+   * @param agents  Set of MessageAddresses of agents to be restarted
+   * @param host    Name of restart host
+   */
+  private void initiateRestart(Set agents, String host) {
+    if (log.isInfoEnabled()) {
+      StringBuffer msg = new StringBuffer("Initiating restart: agent(s)=[");
+      for (Iterator it = agents.iterator(); it.hasNext();) {
+        msg.append(((MessageAddress)it.next()).toString());
+        if (it.hasNext()) msg.append(" ");
+      }
+      msg.append("], selectedHost=" + host);
+      log.info(msg.toString());
+    }
+    // TODO: Add code to invoke restart by ActionPlugin
   }
 
   /**
@@ -117,8 +160,36 @@ public class DecisionPlugin extends SimplePlugin {
     float hbFailureRateThreshold = hs.getHbFailureRateThreshold();
     hbFailureRateThreshold = hbFailureRateThreshold * (1.0f + value);
     hs.setHbFailureRateThreshold(hbFailureRateThreshold);
+    if (log.isInfoEnabled()) {
+      StringBuffer msg = new StringBuffer("Adjusting heartbeat sensitivity: ");
+      msg.append("agent=" + hs.getAgentId());
+      msg.append(", hbFailureRateThreshold=" + hbFailureRateThreshold);
+      log.info(msg.toString());
+    }
   }
 
+
+  /**
+   * Obtains plugin parameters
+   * @param obj List of "name=value" parameters
+   */
+  public void setParameter(Object obj) {
+    List args = (List)obj;
+    for (Iterator it = args.iterator(); it.hasNext();) {
+      String arg = (String)it.next();
+      String name = arg.substring(0,arg.indexOf("="));
+      String value = arg.substring(arg.indexOf('=')+1);
+      decisionProps.setProperty(name, value);
+    }
+  }
+
+  /**
+   * Sets externally configurable parameters using supplied Properties object.
+   * @param props Propertie object defining paramater names and values.
+   */
+  private void updateParams(Properties props) {
+    // Nothing defined for now
+  }
 
  /**
   * Predicate for HealthStatus objects
@@ -131,6 +202,15 @@ public class DecisionPlugin extends SimplePlugin {
         return hs.getState().equals(HealthStatus.HEALTH_CHECK);
       }
       return false;
+  }};
+
+  /**
+   * Predicate for RestartLocationRequest objects
+   */
+  private IncrementalSubscription restartRequests;
+  private UnaryPredicate restartRequestPredicate = new UnaryPredicate() {
+    public boolean execute(Object o) {
+      return (o instanceof RestartLocationRequest);
   }};
 
   /**

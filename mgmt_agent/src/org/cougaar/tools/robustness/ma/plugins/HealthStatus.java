@@ -1,8 +1,5 @@
 /*
  * <copyright>
- *  Copyright 1997-2001 Mobile Intelligence Corp
- *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
- *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
@@ -25,12 +22,16 @@ import java.util.*;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.service.community.CommunityService;
+import org.cougaar.core.blackboard.Publishable;
+
 import javax.naming.directory.*;
+
 /**
  * Class for tracking status of a monitored agent.
  */
 
-public class HealthStatus {
+public class HealthStatus implements
+  Publishable, java.io.Serializable {
 
   public static final int UNDEFINED   = -1;
 
@@ -114,7 +115,6 @@ public class HealthStatus {
    */
   protected void setHbFailureRateThreshold(float rate) {
     this.hbFailureRateThreshold = rate;
-    System.out.println("HeartbeatFailureRateThreshold=" + hbFailureRateThreshold);
   }
 
   /**
@@ -142,6 +142,7 @@ public class HealthStatus {
    *         HeartbeatFailureRateThreshold
    */
   protected boolean hbFailureRateInSpec() {
+    System.out.println(failureRateData());
     return getFailureRate() < hbFailureRateThreshold;
   }
 
@@ -259,6 +260,7 @@ public class HealthStatus {
       timeout = (Date)it.next();
       if (timeout.before(cutoff)) {
         it.remove();
+        System.out.println("Removing timeout: agent=" + getAgentId());
       }
     }
   }
@@ -278,6 +280,18 @@ public class HealthStatus {
     //  ", totalHeartbeats=" + totalHeartbeats +
     //  ", rate=" + rate);
     return (rate > 1.0f ? 1.0f : rate);
+  }
+
+
+  protected String failureRateData() {
+    pruneTimeoutList();
+    float lateHeartbeats = heartbeatTimeouts.size();
+    float totalHeartbeats = hbWindow/hbFrequency;
+    float rate = lateHeartbeats/totalHeartbeats;
+    return "HbFailureRateData: agent=" + getAgentId() +
+      ", lateHeartbeats=" + lateHeartbeats +
+      ", totalHeartbeats=" + totalHeartbeats +
+      ", rate=" + rate;
   }
 
 
@@ -365,4 +379,7 @@ public class HealthStatus {
     return this.pingStatus;
   }
 
+  public boolean isPersistable() {
+    return false;
+  }
 }

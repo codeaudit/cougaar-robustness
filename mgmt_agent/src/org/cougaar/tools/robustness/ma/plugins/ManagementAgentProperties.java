@@ -1,8 +1,5 @@
 /*
  * <copyright>
- *  Copyright 1997-2001 Mobile Intelligence Corp
- *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
- *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
@@ -26,7 +23,8 @@ import java.util.Properties;
  * Defines the names and values of configurable parameters used by various
  * Management Agent plugins.
  */
-public class ManagementAgentProperties extends Properties {
+public class ManagementAgentProperties extends Properties
+  implements java.io.Serializable {
 
   // Defines the name of the plugin that this Properties object is used by.
   private String pluginName = new String();
@@ -65,4 +63,20 @@ public class ManagementAgentProperties extends Properties {
   public void setPluginName(String pluginName) {
     this.pluginName = pluginName;
   }
+
+  /**
+   * Utility method that creates a Properties object from a two dimension
+   * String array.
+   * @param s  Two-dimension array of parameters name/value pairs
+   * @return   Properties object with parameter name/values
+   */
+  public static ManagementAgentProperties makeProps(String name, String[][] s) {
+    ManagementAgentProperties props =
+      new ManagementAgentProperties(name);
+    for (int i = 0; i < s.length; i++)
+      if (s[i].length == 2)
+        props.setProperty(s[i][0], s[i][1]);
+    return props;
+  }
+
 }

@@ -1,8 +1,5 @@
 /*
  * <copyright>
- *  Copyright 1997-2001 Mobile Intelligence Corp
- *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
- *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
@@ -93,13 +90,14 @@ public class HealthMonitorPlugin extends SimplePlugin {
     {"hbReqTimeout", "20000"},
     {"hbFreq",       "10000"},
     {"hbTimeout",    "5000"},
-    {"hbPctLate",    "20.0"},
-    {"hbWindow",     "60000"},
+    {"hbPctLate",    "80.0"},
+    {"hbWindow",     "120000"},  // Default to 2 minute window
     {"hbFailRate",   "0.5"},
     {"pingTimeout",  "10000"},
     {"evalFreq",     "1000"}
   };
-  ManagementAgentProperties healthMonitorProps = makeProps(defaultParams);
+  ManagementAgentProperties healthMonitorProps =
+    ManagementAgentProperties.makeProps(this.getClass().getName(), defaultParams);
 
 
   /////////////////////////////////////////////////////////////////////////
@@ -143,7 +141,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
   private BlackboardService bbs = null;
 
   // HealthStatus objects for agents in monitored community
-  private Collection membersHealthStatus = null;
+  private Collection membersHealthStatus = new Vector();
 
 
   /**
@@ -259,7 +257,11 @@ public class HealthMonitorPlugin extends SimplePlugin {
       for (int i = 0; i < hbe.length; i++) {
         HealthStatus hs = getHealthStatus(hbe[i].getSource());
         hs.setHeartbeatStatus(HealthStatus.HB_TIMEOUT);
-        hs.addHeartbeatTimeout(new Date());
+        if (hs.getState().equals(HealthStatus.NORMAL)) {
+          hs.addHeartbeatTimeout(new Date());
+          log.warn("HeartbeatTimeout: agent=" + hs.getAgentId() +
+            ", pctLate=" + hbe[i].getPercentLate());
+        }
       }
       bbs.publishRemove(hbhr);
     }
@@ -302,6 +304,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
             break;
           case HeartbeatRequest.ACCEPTED:
             hs.setState(HealthStatus.NORMAL);
+            hs.setHeartbeatStatus(HealthStatus.OK);
             break;
           case HeartbeatRequest.REFUSED:
             log.warn("HeartbeatRequest for agent '" + hs.getAgentId() + "' REFUSED");
@@ -314,12 +317,16 @@ public class HealthMonitorPlugin extends SimplePlugin {
           default:
         }
       } else if (state.equals(HealthStatus.NORMAL)) {
-        switch (hs.getHeartbeatStatus()) {
+        int hbStatus = hs.getHeartbeatStatus();
+        //System.out.println("hbStatus=" + hbStatus);
+        switch (hbStatus) {
           case HealthStatus.HB_TIMEOUT:
-            switch (hs.getPingStatus()) {
+            int pingStatus = hs.getPingStatus();
+            //System.out.println("PingStatus=" + pingStatus);
+            switch (pingStatus) {
               case HealthStatus.UNDEFINED:
-                log.error("Heartbeat timeout: agent=" + hs.getAgentId());
-                log.error("Performing ping: agent=" + hs.getAgentId());
+                log.debug("Heartbeat timeout: agent=" + hs.getAgentId());
+                log.debug("Performing ping: agent=" + hs.getAgentId());
                 hs.setPingTimestamp(new Date());
                 doPing(hs.getAgentId());
                 break;
@@ -331,6 +338,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
                   doHealthCheck(hs, HealthStatus.DEGRADED);
                 }
                 hs.setPingStatus(HealthStatus.UNDEFINED);
+                hs.setHeartbeatStatus(HealthStatus.OK);
                 break;
               case PingRequest.FAILED:
                 log.error("Ping failed: agent=" + hs.getAgentId());
@@ -353,9 +361,8 @@ public class HealthMonitorPlugin extends SimplePlugin {
   private void processRosterChanges(CommunityRoster roster) {
     Collection cmList = roster.getMembers();
     // If first time, copy members from roster to local list
-    if (membersHealthStatus == null) {
+    if (membersHealthStatus.isEmpty()) {
       //log.debug(roster.toString());
-      membersHealthStatus = new Vector();
       for (Iterator it = cmList.iterator(); it.hasNext();) {
         CommunityMember cm = (CommunityMember)it.next();
         if (cm.isAgent()) {
@@ -369,7 +376,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
               heartbeatFailureRateThreshold);
           hs.setState(HealthStatus.INITIAL);
           membersHealthStatus.add(hs);
-          log.debug("Adding " + cm.getName());
+          log.info("Adding " + cm.getName());
         }
       }
     } else {
@@ -388,7 +395,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
           hs.setState(HealthStatus.INITIAL);
           membersHealthStatus.add(hs);
           newMembers.add(hs);
-          log.debug("Adding " + cm.getName());
+          log.info("Adding " + cm.getName());
         }
       }
       // Look for deletions
@@ -403,7 +410,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
           }
         }
         if (!found) {
-          log.debug("Removed " + hs.getAgentId());
+          log.info("Removed " + hs.getAgentId());
           it.remove();
         }
       }
@@ -455,7 +462,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
   private void doHealthCheck(HealthStatus hs, int status) {
     hs.setState(HealthStatus.HEALTH_CHECK);
     hs.setStatus(status);
-    log.info("Passing agent to DecisionPlugin: agent=" + hs.getAgentId());
+    log.debug("Passing agent to DecisionPlugin: agent=" + hs.getAgentId());
     bbs.openTransaction();
     bbs.publishChange(hs);
     bbs.closeTransaction();
@@ -574,22 +581,8 @@ public class HealthMonitorPlugin extends SimplePlugin {
   }
 
   /**
-   * Utility method that creates a Properties object from a two dimension
-   * String array.
-   * @param s  Two-dimension array of parameters name/value pairs
-   * @return   Properties object with parameter name/values
-   */
-  private ManagementAgentProperties makeProps(String[][] s) {
-    ManagementAgentProperties props =
-      new ManagementAgentProperties(this.getClass().getName());
-    for (int i = 0; i < s.length; i++)
-      props.setProperty(s[i][0], s[i][1]);
-    return props;
-  }
-
-  /**
    * Obtains plugin parameters
-   * @param obj CommunityName
+   * @param obj List of "name=value" parameters
    */
   public void setParameter(Object obj) {
     List args = (List)obj;
