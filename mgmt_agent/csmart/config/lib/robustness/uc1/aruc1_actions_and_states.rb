@@ -296,6 +296,38 @@ module Cougaar
       end
     end
 
+   class ModifyCommunityAttribute < Cougaar::Action
+      def initialize(run, agent, community, attrId, attrValue)
+        super(run)
+	@myAgent = agent
+        @myCommunity = community
+	@myAttrId = attrId
+        @myAttrValue = attrValue
+      end
+      def perform
+        @run.society.each_agent do |agent|
+	  if agent.name == @myAgent
+	    result, uri = Cougaar::Communications::HTTP.get(agent.uri+"/modcommattr?community=#{@myCommunity}&id=#{@myAttrId}&value=#{@myAttrValue}")
+	  end
+	end
+      end
+    end
+
+   # Suspend restarts by setting PING_TIMEOUT attribute in all Robustness communities
+   # to an arbitrarily high value
+   class SuspendRestarts < Cougaar::Action
+      def initialize(run)
+        super(run)
+      end
+      def perform
+        @run.society.each_agent do |agent|
+          if agent.name =~ /.*ARManager.*/
+	    result, uri = Cougaar::Communications::HTTP.get(agent.uri+"/modcommattr?id=PING_TIMEOUT&value=99999999")
+	  end
+	end
+      end
+    end
+
   end
 
 end
