@@ -83,6 +83,10 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
     this.creationTime = new Date();
   }
 
+  public void setSource(MessageAddress source) {
+    this.source = source;
+  }
+
   public int getSeverityLevel() {
     return this.severityLevel;
   }

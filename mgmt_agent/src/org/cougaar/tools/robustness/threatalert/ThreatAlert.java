@@ -18,6 +18,7 @@
 
 package org.cougaar.tools.robustness.threatalert;
 
+import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.relay.Relay;
 import org.cougaar.core.util.UniqueObject;
 
@@ -35,6 +36,11 @@ public interface ThreatAlert extends UniqueObject, Relay.Target {
   public static final int LOW_SEVERITY       = 1;
   public static final int MINIMUM_SEVERITY   = 0;
   public static final int UNDEFINED_SEVERITY = -1;
+
+  /**
+   * Get alert source.
+   */
+  public void setSource(MessageAddress source);
 
   /**
    * Get severity level associated with this alert.
