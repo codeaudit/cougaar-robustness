@@ -282,8 +282,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                     if (logger.isInfoEnabled()) {
                       logger.info("layout from EN4J: " + layout);
                     }
-                    RestartDestinationLocator.setPreferredRestartLocations(
-                        layout);
+                    getRestartLocator().setPreferredRestartLocations(layout);
                     newState(agentsOnNode(name, DefaultRobustnessController.ACTIVE), DEAD);
                     removeFromCommunity(name);
                   } else { // Abort, node no longer classified as DEAD
@@ -345,7 +344,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         if (status == RestartHelper.SUCCESS) {
           event("Restart complete: agent=" + name + " location=" + dest +
                 " community=" + community);
-          RestartDestinationLocator.restartSuccess(name);
+          getRestartLocator().restartSuccess(name);
           if (logger.isDebugEnabled()) {
             logger.debug("Next Status:" + " agent=" + name + " state=INITIAL");
           }
@@ -482,7 +481,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
             Set excludedNodes = getExcludedNodes();  // dead nodes
             excludedNodes.add(curNode);  // agents current node
             destNode =
-                RestartDestinationLocator.getRestartLocation(agentsToRestart[i],
+                getRestartLocator().getRestartLocation(agentsToRestart[i],
                 excludedNodes);
           }
           restartAgent(agentsToRestart[i], destNode);
@@ -504,6 +503,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   private boolean collectNodeStats = false;
   private boolean suppressPingsOnRestart = false;
   private int minimumHostsForManagerRestart = 2;
+  private RestartDestinationLocator restartLocator;
 
   /**
    * Initializes services and loads state controller classes.
@@ -534,7 +534,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     addController(MOVE,           "MOVE", new MoveStateController());
     addController(DECONFLICT,     "DECONFLICT", new DeconflictStateController());
     addController(FORCED_RESTART, "FORCED_RESTART", new ForcedRestartStateController());
-    RestartDestinationLocator.setCommunityStatusModel(csm);
+    //RestartDestinationLocator.setCommunityStatusModel(csm);
     serviceChecker = new ServiceChecker(bs.getServiceBroker(), getPingHelper());
     new HostLossThreatAlertHandler(getBindingSite(), agentId, this, csm);
     new SecurityAlertHandler(getBindingSite(), agentId, this, csm);
@@ -669,8 +669,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   }
 
   private void restartAgent(String name) {
+    RestartDestinationLocator locator = getRestartLocator();
     String dest =
-        RestartDestinationLocator.getRestartLocation(name, getExcludedNodes());
+        locator.getRestartLocation(name, getExcludedNodes());
     if (logger.isInfoEnabled()) {
       logger.info("Restarting agent:" +
                   " agent=" + name +
@@ -682,7 +683,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
     if (name != null && dest != null) {
       restartAgent(name, dest);
-      RestartDestinationLocator.restartOneAgent(dest);
+      locator.restartOneAgent(dest);
     } else {
       if (logger.isErrorEnabled()) {
         logger.error("Invalid restart parameter: " +
@@ -693,7 +694,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (name != null) {
         dest = getLocation(thisAgent);
         restartAgent(name, dest);
-        RestartDestinationLocator.restartOneAgent(dest);
+        locator.restartOneAgent(dest);
       }
     }
   }
@@ -773,7 +774,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       if (logger.isInfoEnabled()) {
         logger.info(statusSummary());
       }
-      RestartDestinationLocator.clearRestarts();
+      if (restartLocator != null) restartLocator.clearRestarts();
     }
   }
 
@@ -995,6 +996,13 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
       }
     }
+  }
+
+  protected RestartDestinationLocator getRestartLocator() {
+    if (restartLocator == null) {
+      restartLocator = new RestartDestinationLocator(model);
+    }
+    return restartLocator;
   }
 
   /**

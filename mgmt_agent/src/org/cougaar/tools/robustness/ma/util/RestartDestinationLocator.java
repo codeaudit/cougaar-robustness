@@ -18,17 +18,14 @@ import java.util.Set;
 public class RestartDestinationLocator {
   protected static Logger logger =
       LoggerFactory.getInstance().createLogger(RestartDestinationLocator.class);
-  static CommunityStatusModel model;
-  static Hashtable restartAgents = new Hashtable();
-  static Hashtable selectedNodes = new Hashtable();
-  static Map preferredRestartLocations = Collections.synchronizedMap(new HashMap());
+  CommunityStatusModel model;
+  Hashtable restartAgents = new Hashtable();
+  Hashtable selectedNodes = new Hashtable();
+  Map preferredRestartLocations = Collections.synchronizedMap(new HashMap());
 
 
-  public RestartDestinationLocator() {
-  }
-
-  public static void setCommunityStatusModel(CommunityStatusModel cmodel) {
-    model = cmodel;
+  public RestartDestinationLocator(CommunityStatusModel model) {
+    this.model = model;
   }
 
   /**
@@ -36,11 +33,11 @@ public class RestartDestinationLocator {
    * @param preferredLocations  Map of agent names (key) and node name of
    *                            preferred restart destination
    */
-  public static void setPreferredRestartLocations(Map preferredLocations) {
+  public void setPreferredRestartLocations(Map preferredLocations) {
     preferredRestartLocations.putAll(preferredLocations);
   }
 
-  public static String getRestartLocation(String agent, Set excludedNodes) {
+  public String getRestartLocation(String agent, Set excludedNodes) {
     if (logger.isDebugEnabled()) {
       logger.debug("getRestartLocation: agent=" + agent + " selectedNodes=" + selectedNodes.keySet());
     }
@@ -119,7 +116,7 @@ public class RestartDestinationLocator {
     return next;
   }
 
-  public static void restartOneAgent(String nodeName) {
+  public void restartOneAgent(String nodeName) {
     if(restartAgents.containsKey(nodeName)) {
       int restarts = Integer.parseInt((String)(restartAgents.get(nodeName)));
       restarts += 1;
@@ -130,11 +127,11 @@ public class RestartDestinationLocator {
     }
   }
 
-  public static void clearRestarts() {
+  public void clearRestarts() {
     restartAgents.clear();
   }
 
-  public static void restartSuccess(String agentName) {
+  public void restartSuccess(String agentName) {
     if(selectedNodes.containsKey(agentName))
       selectedNodes.remove(agentName);
   }
