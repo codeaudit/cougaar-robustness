@@ -1,8 +1,6 @@
 
 module Cougaar
 
-  Mgrs = Hash.new(0)
-
   module Actions
 
     class Set_MAU_Normal < Cougaar::Action
@@ -27,7 +25,6 @@ module Cougaar
             url = "#{agent.uri}/MAUPolicy?Normal=Normal"
 	    response, uri = Cougaar::Communications::HTTP.get(url)
             raise "Could not connect to #{url}" unless response
-            Mgrs[agent.name] = agent
             @run.info_message "Requested that "+agent.name+" set MAU Policy to Normal." if @messaging >= 1
             Cougaar.logger.info "MAU Policy set to Normal at #{agent.name}"
 	  end
@@ -58,7 +55,6 @@ module Cougaar
             url = "#{agent.uri}/MAUPolicy?HighSecurity=HighSecurity"
 	    response, uri = Cougaar::Communications::HTTP.get(url)
             raise "Could not connect to #{url}" unless response
-            Mgrs[agent.name] = agent
             @run.info_message "Requested that "+agent.name+" set MAU Policy to HighSecurity." if @messaging >= 1
             Cougaar.logger.info "MAU Policy set to HighSecurity at #{agent.name}"
 	  end
@@ -90,7 +86,6 @@ module Cougaar
             url = "#{agent.uri}/MAUPolicy?HighCompleteness=HighCompleteness"
 	    response, uri = Cougaar::Communications::HTTP.get(url)
             raise "Could not connect to #{url}" unless response
-            Mgrs[agent.name] = agent
             @run.info_message "Requested that "+agent.name+" set MAU Policy to HighCompleteness." if @messaging >= 1
             Cougaar.logger.info "MAU Policy set to HighCompleteness at #{agent.name}"
 	  end
