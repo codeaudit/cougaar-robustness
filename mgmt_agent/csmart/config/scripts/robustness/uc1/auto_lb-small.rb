@@ -62,9 +62,8 @@ Cougaar.new_experiment("ARUC1_Auto_Load_Balance").run(1) {
   # Add an empty node to community, co-locate with REAR-NODE
   do_action "SaveHostOfNode", "1AD-SMALL-COMM", "REAR-NODE"
   do_action "AddNode", "NewNode1", "1AD-SMALL-COMM"
-  do_action "Sleep", 5.minutes
 
-  #wait_for "Command", "ok"
+  wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
 
   wait_for  "GLSConnection", true
   wait_for  "NextOPlanStage"

@@ -65,7 +65,7 @@ Cougaar.new_experiment("ARUC1_Auto_Load_Balance").run(1) {
   do_action "SaveHostOfNode", "1AD-REAR-COMM", "REAR-A"
   do_action "AddNode", "REAR-NEW-1", "1AD-REAR-COMM"
 
-  wait_for "CommunitiesReady", ["1AD-FWD-COMM"]
+  wait_for "CommunitiesReady", ["1AD-FWD-COMM", "1AD-REAR-COMM"]
 
   wait_for  "GLSConnection", true
   wait_for  "NextOPlanStage"
