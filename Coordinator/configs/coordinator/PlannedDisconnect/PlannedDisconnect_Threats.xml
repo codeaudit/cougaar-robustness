@@ -3,7 +3,7 @@
 <!DOCTYPE Threat >
 <Threats>
 
-<Threat name="Bug_Out" affectsAssetType="Node" causesEvent="Disconnect_Request" defaultEventLikelihoodProb="LOW" />
-<Threat name="Arrival" affectsAssetType="Node" causesEvent="Reconnect_Request" defaultEventLikelihoodProb="LOW" />
+<Threat name="Bug_Out" affectsAssetType="Node" causesEvent="Disconnect_Request" defaultEventLikelihoodProb="LOW" probIntervalInMins="1000" />
+<Threat name="Arrival" affectsAssetType="Node" causesEvent="Reconnect_Request" defaultEventLikelihoodProb="LOW" probIntervalInMins="1000" />
 
 </Threats>

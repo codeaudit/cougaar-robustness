@@ -3,10 +3,9 @@
 <!DOCTYPE Threat >
 <Threats>
 
-<Threat name="Stationary_Partition" affectsAssetType="Host" causesEvent="Stationary_Partition" defaultEventLikelihoodProb="LOW" />
-<Threat name="Rolling_Partition" affectsAssetType="Enclave" causesEvent="Rolling_Partition" defaultEventLikelihoodProb="LOW" />
-<Threat name="Heal_Partition" affectsAssetType="Host" causesEvent="Heal_Partition" defaultEventLikelihoodProb="MEDIUM" />
-
-<Threat name="Protocol_Failure" affectsAssetType="Host" causesEvent="Protocol_Failure" defaultEventLikelihoodProb="MEDIUM" />
+<Threat name="Stationary_Partition" affectsAssetType="Host" causesEvent="Stationary_Partition" defaultEventLikelihoodProb="LOW" probIntervalInMins="1000" />
+<Threat name="Rolling_Partition" affectsAssetType="Enclave" causesEvent="Rolling_Partition" defaultEventLikelihoodProb="LOW" probIntervalInMins="1000" />
+<Threat name="Heal_Partition" affectsAssetType="Host" causesEvent="Heal_Partition" defaultEventLikelihoodProb="MEDIUM" probIntervalInMins="1000" />
+<Threat name="Protocol_Failure" affectsAssetType="Host" causesEvent="Protocol_Failure" defaultEventLikelihoodProb="MEDIUM" probIntervalInMins="1000" />
 
 </Threats>

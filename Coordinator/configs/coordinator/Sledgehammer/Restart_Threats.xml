@@ -9,7 +9,7 @@
             <Term propName="location" propValue="HiWay" op="=" />
         </AssetFilter>
         <EventLikelihoodInterval>
-            <ClockInterval intervalStart="1800" durationHrs="12" probability="VERY_LOW" />
+            <ClockInterval intervalStart="1800" durationHrs="12" probability="VERY_LOW" probIntervalInMins="1000" />
         </EventLikelihoodInterval>
     </VulnerableAssets>
 
@@ -18,8 +18,8 @@
             <Term propName="location" propValue="OffRoad" op="=" />
         </AssetFilter>
         <EventLikelihoodInterval>
-            <ClockInterval intervalStart="1800" durationHrs="12" probability="MEDIUM" />
-            <ClockInterval intervalStart="0600" durationHrs="12" probability="LOW" />
+            <ClockInterval intervalStart="1800" durationHrs="12" probability="MEDIUM" probIntervalInMins="1000" />
+            <ClockInterval intervalStart="0600" durationHrs="12" probability="LOW" probIntervalInMins="1000" />
         </EventLikelihoodInterval>
     </VulnerableAssets>
 
@@ -27,21 +27,21 @@
 	  <AssetFilter>
            <CorruptHostExistsOnNetwork value="TRUE" />    
 	  </AssetFilter>
-        <EventLikelihood probability="LOW" />
+        <EventLikelihood probability="LOW" probIntervalInMins="1000" />
     </VulnerableAssets>
 
     <VulnerableAssets>
 	  <AssetFilter>
            <CorruptHostExists value="TRUE" />    
 	  </AssetFilter>
-        <EventLikelihood probability="HIGH" />
+        <EventLikelihood probability="HIGH" probIntervalInMins="1000" />
     </VulnerableAssets>
 
 </Threat>
 
-<Threat name="AgentVirus" affectsAssetType="Agent" causesEvent="AgentDeath" defaultEventLikelihoodProb="VERY_LOW" />
+<Threat name="AgentVirus" affectsAssetType="Agent" causesEvent="AgentDeath" defaultEventLikelihoodProb="VERY_LOW" probIntervalInMins="1000" />
 
-<Threat name="NodeVirus" affectsAssetType="Node" causesEvent="NodeDeath" defaultEventLikelihoodProb="VERY_LOW" />
+<Threat name="NodeVirus" affectsAssetType="Node" causesEvent="NodeDeath" defaultEventLikelihoodProb="VERY_LOW" probIntervalInMins="1000" />
 
 
 </Threats>
