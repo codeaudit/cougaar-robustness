@@ -110,7 +110,7 @@ public class TransitiveEffectModel implements  NotPersistable  {
     //public TransitiveEffectType getTransitiveEffectType() { return threatType; }
        
 
-    TransitiveEffectDescription getTransitiveEffectDescription() { return td; }
+    public TransitiveEffectDescription getTransitiveEffectDescription() { return td; }
 
     
     /**
