@@ -97,7 +97,7 @@
             </node>
             <node name="tuning" type="Folder">
               <file path="csmart/config/rules/robustness/uc1/tuning/add_tuning_parameters.rule"/>
-              <file path="csmart/config/rules/robustness/uc1/tuning/collect_stats.rule"/>
+              <file path="csmart/config/rules/robustness/uc1/tuning/disable_autotuning.rule"/>
             </node>
             <file path="csmart/config/rules/robustness/uc1/aruc1.rule"/>
             <file path="csmart/config/rules/robustness/uc1/coordinator.rule"/>
