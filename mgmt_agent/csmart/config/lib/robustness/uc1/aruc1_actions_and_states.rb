@@ -117,9 +117,9 @@ module Cougaar
       end
       def perform
         @run.society.each_node do |node|
-          result, uri = Cougaar::Communications::HTTP.get(node.uri+"/communityViewer")
+          result, uri = Cougaar::Communications::HTTP.get(node.uri+"/$"+node.name+"/communityViewer")
           if result and result.include?("community=#{@community}>")
-            Cougaar::Communications::HTTP.get(node.uri+"/ar?loadBalance=Load+Balance")
+            Cougaar::Communications::HTTP.get(node.uri+"/$"+node.name+"/ar?loadBalance=Load+Balance")
             return
           end
         end
