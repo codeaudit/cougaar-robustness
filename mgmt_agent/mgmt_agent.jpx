@@ -23,7 +23,7 @@
   <property category="sys" name="JDK" value="java version 1.4.2_01-b06"/>
   <property category="sys" name="JvmVersion" value="1.2"/>
   <property category="sys" name="LastTag" value="0"/>
-  <property category="sys" name="Libraries" value="cougaar"/>
+  <property category="sys" name="Libraries" value="cougaar;Ant-FOP"/>
   <property category="sys" name="MakeStable" value="0"/>
   <property category="sys" name="OutPath" value="classes"/>
   <property category="sys" name="SourcePath" value="src;../test"/>
@@ -100,6 +100,7 @@
               <file path="csmart/config/rules/robustness/uc1/tuning/collect_stats.rule"/>
             </node>
             <file path="csmart/config/rules/robustness/uc1/aruc1.rule"/>
+            <file path="csmart/config/rules/robustness/uc1/coordinator.rule"/>
           </node>
           <node name="uc4" type="Folder">
             <file path="csmart/config/rules/robustness/uc4/aruc4.rule"/>
@@ -195,6 +196,16 @@
           </node>
         </node>
       </node>
+    </node>
+  </node>
+  <node name="doc" type="Folder">
+    <node name="html" type="Folder">
+      <file path="doc/html/main.html"/>
+    </node>
+    <node name="src" type="Folder">
+      <file path="doc/src/main.xml"/>
+      <file path="doc/src/overview.xml"/>
+      <file path="doc/src/setup.xml"/>
     </node>
   </node>
   <file path="build.xml"/>
