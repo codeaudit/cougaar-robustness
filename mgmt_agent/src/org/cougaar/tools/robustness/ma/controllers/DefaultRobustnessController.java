@@ -227,8 +227,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
             }
           }
           long pingTimeout = getLongAttribute(name, "PING_TIMEOUT", PING_TIMEOUT);
-          long annealTime = pingTimeout > 0 ? pingTimeout/2/1000 : LoadBalancer.DEFAULT_ANNEAL_TIME;
-          //long annealTime = LoadBalancer.DEFAULT_ANNEAL_TIME;
+          //long annealTime = pingTimeout > 0 ? pingTimeout/2/1000 : LoadBalancer.DEFAULT_ANNEAL_TIME;
+          long annealTime = LoadBalancer.DEFAULT_ANNEAL_TIME;
           getLoadBalancer().doLayout((int)annealTime,
                                      true,
                                      new ArrayList(newNodes),
@@ -528,7 +528,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   public void membershipChange(String name) {
     if (isNode(name)) {
       newNodes.add(name);
-      logger.info("New node detected: name=" + name);
+      logger.debug("New node detected: name=" + name);
     }
   }
 
