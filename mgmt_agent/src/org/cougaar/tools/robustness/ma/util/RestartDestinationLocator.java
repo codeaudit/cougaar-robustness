@@ -1,6 +1,7 @@
 package org.cougaar.tools.robustness.ma.util;
 
-import org.cougaar.core.service.LoggingService;
+import org.cougaar.util.log.Logger;
+import org.cougaar.util.log.LoggerFactory;
 
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
 import org.cougaar.tools.robustness.ma.controllers.DefaultRobustnessController;
@@ -15,8 +16,9 @@ import java.util.LinkedList;
 import java.util.Set;
 
 public class RestartDestinationLocator {
+  protected static Logger logger =
+      LoggerFactory.getInstance().createLogger(RestartDestinationLocator.class);
   static CommunityStatusModel model;
-  static LoggingService logger;
   static Hashtable restartAgents = new Hashtable();
   static Hashtable selectedNodes = new Hashtable();
   static Map preferredRestartLocations = Collections.synchronizedMap(new HashMap());
@@ -29,10 +31,6 @@ public class RestartDestinationLocator {
     model = cmodel;
   }
 
-  public static void setLoggingService(LoggingService ls) {
-    logger = ls;
-  }
-
   /**
    * Defines the preferred location for a future agent restart.
    * @param preferredLocations  Map of agent names (key) and node name of
@@ -43,9 +41,12 @@ public class RestartDestinationLocator {
   }
 
   public static String getRestartLocation(String agent, Set excludedNodes) {
-    if(selectedNodes.containsKey(agent)) {
+    if (logger.isDebugEnabled()) {
+      logger.debug("getRestartLocation: agent=" + agent + " selectedNodes=" + selectedNodes.keySet());
+    }
+    if (selectedNodes.containsKey(agent)) {
       LinkedList nodes = (LinkedList)selectedNodes.get(agent);
-      if(nodes.size() > 0) {
+      if (nodes.size() > 0) {
         return (String) nodes.removeFirst();
       } else {
         selectedNodes.remove(agent);
@@ -60,6 +61,10 @@ public class RestartDestinationLocator {
       if (!excludedNodes.contains(activeNodes[i])) {
           candidateNodes.add(activeNodes[i]);
       }
+    }
+    if (logger.isDebugEnabled()) {
+      logger.debug("getRestartLocation: agent=" + agent + " candidates=" +
+                   candidateNodes);
     }
     int numAgents = 0;
     String selectedNode = null;

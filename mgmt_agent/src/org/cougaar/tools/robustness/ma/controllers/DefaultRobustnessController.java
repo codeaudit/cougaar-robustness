@@ -535,7 +535,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     addController(DECONFLICT,     "DECONFLICT", new DeconflictStateController());
     addController(FORCED_RESTART, "FORCED_RESTART", new ForcedRestartStateController());
     RestartDestinationLocator.setCommunityStatusModel(csm);
-    RestartDestinationLocator.setLoggingService(logger);
     serviceChecker = new ServiceChecker(bs.getServiceBroker(), getPingHelper());
     new HostLossThreatAlertHandler(getBindingSite(), agentId, this, csm);
     new SecurityAlertHandler(getBindingSite(), agentId, this, csm);
