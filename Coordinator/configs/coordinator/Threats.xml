@@ -43,6 +43,9 @@
 <Threat name="NodeVirus" affectsAssetType="Node" causesEvent="NodeDeath" defaultEventLikelihoodProb="VERY_LOW" >
 </Threat>
 
+<Threat name="Snooper" affectsAssetType="agent" causesEvent="MailRead" defaultEventLikelihoodProb="LOW" >
+</Threat>
+
 
 
 </Threats>

@@ -37,6 +37,21 @@
 ]>
 
 <Events>
+<Event name="MailRead" affectsAssetType="Agent" affectsStateDimension="Eavesdropping">
+    <DirectEffect>
+        <Transition WhenActualStateIs="NoVulnerability" EndStateWillBe="LowVulnerability" />
+        <Transition WhenActualStateIs="LowVulnerability" EndStateWillBe="MediumVulnerability" />
+        <Transition WhenActualStateIs="MediumVulnerability" EndStateWillBe="HighVulnerability" />
+        <Transition WhenActualStateIs="HighVulnerability" EndStateWillBe="HighVulnerability" />
+    </DirectEffect>
+    <TransitiveEffect>
+        <CausesEvent name="NodeDeath" assetType="Node"/>
+        <VulnerableAssets>
+            <ContainmentFilter eventAssetContainerName="Node" />
+            <EventLikelihood probability="ALWAYS" />
+        </VulnerableAssets>
+    </TransitiveEffect> 
+</Event>
 <Event name="HostDeath" affectsAssetType="Host" affectsStateDimension="LIVENESS">
     <DirectEffect>
         <Transition WhenActualStateIs="*" EndStateWillBe="DEAD" />
