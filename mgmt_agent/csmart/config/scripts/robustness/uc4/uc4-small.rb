@@ -16,7 +16,7 @@ HOSTS_FILE = Ultralog::OperatorUtils::HostManager.new.get_hosts_file
 Cougaar::ExperimentMonitor.enable_stdout
 Cougaar::ExperimentMonitor.enable_logging
 
-Cougaar.new_experiment("UC4_Small_1AD_Tests").run(1) {
+Cougaar.new_experiment("ARUC4_HostLossThreatAlert").run(1) {
 
   do_action "LoadSocietyFromScript", "#{CIP}/csmart/config/societies/ad/SMALL-1AD-TRANS-1359.rb"
   do_action "LayoutSociety", "#{CIP}/operator/uc1-small-1ad-layout.xml", HOSTS_FILE
@@ -26,26 +26,27 @@ Cougaar.new_experiment("UC4_Small_1AD_Tests").run(1) {
     "#{RULES}/logistics",
     "#{RULES}/robustness",
     "#{RULES}/robustness/uc1",
+    "#{RULES}/robustness/uc4",
     "#{RULES}/metrics/basic",
     "#{RULES}/metrics/sensors"
 
   do_action "TransformSociety", false, "#{RULES}/robustness/communities"
 
-  # for debugging
   #do_action "SaveCurrentSociety", "mySociety.xml"
   #do_action "SaveCurrentCommunities", "myCommunities.xml"
 
   do_action "StartJabberCommunications"
+  do_action "CleanupSociety"
   do_action "VerifyHosts"
 
   do_action "DeployCommunitiesFile"
 
   do_action "DisableDeconfliction"
 
-  do_action "CleanupSociety"
-
   do_action "ConnectOperatorService"
   do_action "ClearPersistenceAndLogs"
+  do_action "InstallCompletionMonitor"
+
   do_action "StartSociety"
 
   ## Print events from Robustness Controller
@@ -58,7 +59,6 @@ Cougaar.new_experiment("UC4_Small_1AD_Tests").run(1) {
   end
 
   wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
-  do_action "Sleep", 5.minutes
 
   # Action "PublishThreatAlert" has 6 parameters:
   #   alert classname,

@@ -8,6 +8,7 @@ $:.unshift File.join(CIP, 'csmart', 'config', 'lib')
 require 'cougaar/scripting'
 require 'ultralog/scripting'
 require 'robustness/uc1/aruc1_actions_and_states'
+require 'robustness/uc4/aruc4_actions_and_states'
 require 'robustness/uc1/deconfliction'
 
 HOSTS_FILE = Ultralog::OperatorUtils::HostManager.new.get_hosts_file
@@ -15,7 +16,7 @@ HOSTS_FILE = Ultralog::OperatorUtils::HostManager.new.get_hosts_file
 Cougaar::ExperimentMonitor.enable_stdout
 Cougaar::ExperimentMonitor.enable_logging
 
-Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
+Cougaar.new_experiment("ARUC4_SecurityAlert").run(1) {
 
   do_action "LoadSocietyFromScript", "#{CIP}/csmart/config/societies/ad/SMALL-1AD-TRANS-1359.rb"
   do_action "LayoutSociety", "#{CIP}/operator/uc1-small-1ad-layout.xml", HOSTS_FILE
@@ -25,6 +26,7 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
     "#{RULES}/logistics",
     "#{RULES}/robustness",
     "#{RULES}/robustness/uc1",
+    "#{RULES}/robustness/uc4",
     "#{RULES}/metrics/basic",
     "#{RULES}/metrics/sensors"
 
@@ -70,8 +72,8 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
             "org.cougaar.tools.robustness.ma.SecurityAlert",
             "1AD-SMALL-COMM",
             "HealthMonitor",
-            "medium",
-            1.minutes,
+            "high",
+            2.minutes,
             assets
 
   wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]

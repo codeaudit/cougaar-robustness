@@ -15,7 +15,7 @@ HOSTS_FILE = Ultralog::OperatorUtils::HostManager.new.get_hosts_file
 Cougaar::ExperimentMonitor.enable_stdout
 Cougaar::ExperimentMonitor.enable_logging
 
-Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
+Cougaar.new_experiment("ARUC1_Complete").run(1) {
 
   do_action "LoadSocietyFromScript", "#{CIP}/csmart/config/societies/ad/FULL-1AD-TRANS-1359.rb"
   do_action "LayoutSociety", "#{CIP}/operator/1ad-layout.xml", HOSTS_FILE
