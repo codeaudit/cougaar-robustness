@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+
+#<network operator="u123">
+#  <subnet name="CONUS-REAR" ip="10.2.20.0/24" vlan="20" bw="100mbit">
+#    <k-link to="1-UA" interface="eth0.21" bw="1524kbit" />
+#  </subnet>
+
+#  <subnet name="1-UA" ip="10.2.22.0/24" vlan="22" bw="100mbit">
+#    <k-link to="CONUS-REAR" interface="eth0.21" bw="1524kbit" />
+#  </subnet>
+#</network>
