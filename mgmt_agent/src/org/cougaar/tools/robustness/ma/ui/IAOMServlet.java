@@ -144,7 +144,7 @@ public class IAOMServlet extends BaseServletComponent implements BlackboardClien
       InterAgentOperatingMode iaom = new InterAgentOperatingMode("org.cougaar.core.security.monitoring.THREATCON_LEVEL", list);
       //MessageAddress target = MessageAddress.getMessageAddress("SMALL-ARManager");
       //iaom.setTarget(target);
-      if(level.equals("HIGH"))
+      if(level.equalsIgnoreCase("HIGH"))
         iaom.setValue(new Integer(HIGH));
       else
         iaom.setValue(new Integer(LOW));
