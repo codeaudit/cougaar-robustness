@@ -35,8 +35,8 @@ import org.cougaar.core.persist.NotPersistable;
  */
 public class AssetType implements NotPersistable {
 
-    public static final AssetType HOST = new AssetType("network", null);
-    public static final AssetType HOST = new AssetType("enclave", null);
+    public static final AssetType NETWORK = new AssetType("network", null);
+    public static final AssetType ENCLAVE = new AssetType("enclave", null);
     public static final AssetType HOST = new AssetType("host", null);
     public static final AssetType NODE = new AssetType("node", null);
     public static final AssetType AGENT = new AssetType("agent", null);
@@ -99,7 +99,7 @@ public class AssetType implements NotPersistable {
         }
     }
     
-    private AssetType(AssetType superType, String newType) {
+    public AssetType(AssetType superType, String newType) {
         this.name = newType;
         this.superType = superType;
         states = new Vector();            

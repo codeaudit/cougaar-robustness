@@ -83,7 +83,7 @@ public class AssetSubtypeLoader extends XMLLoader {
             return;
         }
         
-        AssetType at = new AssetType(newtype, superType);        
+        AssetType at = new AssetType(superType, newtype);        
         logger.debug("Created new AssetType = " + newtype);
     }
     
