@@ -33,16 +33,25 @@ import org.cougaar.tools.robustness.ma.util.MoveListener;
 import org.cougaar.tools.robustness.ma.util.LoadBalancer;
 import org.cougaar.tools.robustness.ma.util.DeconflictHelper;
 import org.cougaar.tools.robustness.ma.util.DeconflictListener;
+import org.cougaar.tools.robustness.ma.util.StatCalc;
 
 import org.cougaar.core.blackboard.BlackboardClientComponent;
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.component.ServiceBroker;
+import org.cougaar.core.component.ServiceAvailableListener;
+import org.cougaar.core.component.ServiceAvailableEvent;
 import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.service.AlarmService;
 import org.cougaar.core.service.BlackboardService;
+import org.cougaar.core.service.community.CommunityService;
 import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.SchedulerService;
+
+import org.cougaar.core.service.community.Community;
+import org.cougaar.core.service.community.CommunityService;
+import org.cougaar.core.service.community.CommunityResponse;
+import org.cougaar.core.service.community.CommunityResponseListener;
 
 import org.cougaar.core.qos.metrics.Metric;
 
@@ -51,10 +60,13 @@ import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.agent.service.alarm.Alarm;
 import java.util.*;
 
-import javax.naming.directory.Attribute;
-import javax.naming.directory.Attributes;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.BasicAttribute;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.ModificationItem;
 
 /**
  * Robustness controller base class (for sledgehammer use case).  Dispatches
@@ -91,9 +103,12 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
   private DeconflictHelper deconflictHelper = null;
   private DeconflictListener dl = null;
 
+  private CommunityService commSvc;
+
   protected MessageAddress agentId;
   protected LoggingService logger;
   protected EventService eventService;
+  protected StatCalc pingStats = new StatCalc();
   //private BindingSite bindingSite;
 
   // Status model containing current information about monitored community
@@ -119,6 +134,20 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
     pingHelper = new PingHelper(bs);
     restartHelper = new RestartHelper(bs);
     loadBalancer = new LoadBalancer(bs, this, model);
+    final ServiceBroker sb = getBindingSite().getServiceBroker();
+    if (sb.hasService(CommunityService.class)) {
+      commSvc =
+          (CommunityService) sb.getService(this, CommunityService.class, null);
+    } else {
+      sb.addServiceListener(new ServiceAvailableListener() {
+        public void serviceAvailable(ServiceAvailableEvent sae) {
+          if (sae.getService().equals(CommunityService.class)) {
+            commSvc =
+                (CommunityService) sb.getService(this, CommunityService.class, null);
+          }
+        }
+      });
+    }
     initialize();
     load();
     start();
@@ -386,8 +415,11 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * @return      True if running on local node
    */
   protected boolean isLocal(String name) {
-    return (model != null &&
-            agentId.toString().equals(model.getLocation(name)));
+    String thisAgent = agentId.toString();
+    String myLocation = (isNode(thisAgent) ? thisAgent
+                                           : model.getLocation(thisAgent));
+    String agentLocation = model.getLocation(name);
+    return (myLocation != null && myLocation.equals(agentLocation));
   }
 
   /**
@@ -538,7 +570,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
                         final int stateOnFail) {
     long pingTimeout = getLongAttribute(name, "PING_TIMEOUT", PING_TIMEOUT);
     pingHelper.ping(name, pingTimeout, new PingListener() {
-      public void pingComplete(String name, int status) {
+      public void pingComplete(String name, int status, long time) {
         logger.debug("Ping:" +
                      " agent=" + name +
                      " state=" + stateName(model.getCurrentState(name)) +
@@ -546,6 +578,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
                      (status == PingHelper.SUCCESS ? "" : " newState=" + stateName(stateOnFail)));
         if (status == PingHelper.SUCCESS) {
           newState(name, stateOnSuccess);
+          pingStats.enter(time);
         } else {
           newState(name, stateOnFail);
         }
@@ -681,6 +714,10 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
     summary.append(" leader=" + model.getLeader());
     //summary.append(" busyThreshold=" + model.getDoubleAttribute(COMMUNITY_BUSY_ATTRIBUTE));
     summary.append(" isBusy=" + isCommunityBusy());
+    summary.append(" pingStats=(" + pingStats.getCount() + "," +
+                   (long)pingStats.getMean() + "," +
+                   (long)pingStats.getHigh() + "," +
+                   (long)pingStats.getStandardDeviation() + ")");
     summary.append(" activeNodes=[");
     for (int i = 0; i < activeNodes.length; i++) {
       double loadAverage = getNodeLoadAverage(activeNodes[i]);
@@ -847,6 +884,68 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
     }
     sb.append("]");
     return sb.toString();
+  }
+
+  /**
+   * Modify one or more attributes of a community or entity.
+   * @param communityName  Target community
+   * @param entityName     Name of entity or null to modify community attributes
+   * @param newAttrs       New attributes
+   */
+  protected void changeAttributes(String communityName, final String entityName, final Attribute[] newAttrs) {
+    Community community =
+      commSvc.getCommunity(communityName, new CommunityResponseListener() {
+        public void getResponse(CommunityResponse resp) {
+          changeAttributes((Community) resp.getContent(), entityName, newAttrs);
+        }
+      }
+    );
+    if (community != null) {
+      changeAttributes(community, entityName, newAttrs);
+    }
+  }
+
+  /**
+   * Modify one or more attributes of a community or entity.
+   * @param community      Target community
+   * @param entityName     Name of entity or null to modify community attributes
+   * @param newAttrs       New attributes
+   */
+  protected void changeAttributes(final Community community, final String entityName, Attribute[] newAttrs) {
+    if (community != null) {
+      List mods = new ArrayList();
+      for (int i = 0; i < newAttrs.length; i++) {
+        try {
+          Attributes attrs = community.getAttributes();
+          Attribute attr = attrs.get(newAttrs[i].getID());
+          if (attr == null || !attr.contains(newAttrs[i].get())) {
+            int type = attr == null
+                ? DirContext.ADD_ATTRIBUTE
+                : DirContext.REPLACE_ATTRIBUTE;
+            mods.add(new ModificationItem(type, newAttrs[i]));
+          }
+        } catch (NamingException ne) {
+          logger.error("Error setting community attribute:" +
+                       " community=" + community.getName() +
+                       " attribute=" + newAttrs[i]);
+        }
+      }
+      if (!mods.isEmpty()) {
+        CommunityResponseListener crl = new CommunityResponseListener() {
+          public void getResponse(CommunityResponse resp) {
+            if (resp.getStatus() != CommunityResponse.SUCCESS) {
+              logger.warn("Unexpected status from CommunityService modifyAttributes request:" +
+                          " status=" + resp.getStatusAsString() +
+                          " community=" + community.getName());
+            }
+          }
+      };
+        commSvc.modifyAttributes(community.getName(),
+                            entityName,
+                            (ModificationItem[])mods.toArray(new ModificationItem[0]),
+                            crl);
+      }
+    }
   }
 
   /**

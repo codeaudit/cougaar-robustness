@@ -44,7 +44,8 @@ import org.cougaar.core.component.ServiceAvailableEvent;
 import org.cougaar.core.mts.MessageAddress;
 
 import java.util.*;
-import javax.naming.NamingEnumeration;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.BasicAttribute;
 
 public class DefaultRobustnessController extends RobustnessControllerBase {
 
@@ -318,13 +319,16 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
 
     public void restartComplete(String name, String dest, int status) {
+      String community = model.getCommunityName();
       if (status == RestartHelper.SUCCESS) {
-        event("Restart complete: agent=" + name + " location=" + dest);
+        event("Restart complete: agent=" + name + " location=" + dest +
+              " community=" + community);
         RestartDestinationLocator.restartSuccess(name);
         logger.debug("Next Status:" + " agent=" + name + " state=INITIAL");
         newState(name, DefaultRobustnessController.INITIAL);
       } else {
-        event("Restart failed: agent=" + name + " location=" + dest);
+        event("Restart failed: agent=" + name + " location=" + dest +
+              " community=" + community);
         newState(name, FAILED_RESTART);
       }
     }
@@ -493,6 +497,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         ((wakeAlarm.hasExpired()))) {
       if (thisAgent.equals(preferredLeader())) {
         logger.info(statusSummary());
+        checkCommunityReady();
         checkLoadBalance();
       }
       wakeAlarm = new WakeAlarm((new Date()).getTime() + STATUS_INTERVAL);
@@ -510,6 +515,14 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         agentsAndLocationsActive()) {
       communityReady = true;
       event("Community " + model.getCommunityName() + " Ready");
+      if (pingStats.getCount() > 10) {
+        long oldPingTimeout = getLongAttribute("PING_TIMEOUT", PING_TIMEOUT);
+        long newPingTimeout = (long)pingStats.getMean() + ((long)pingStats.getStandardDeviation() * 5);
+        logger.info("Change PingTimeout: old=" + oldPingTimeout +
+                    " new=" + newPingTimeout + " PingStats=(" + pingStats + ")");
+        changeAttributes(model.getCommunityName(), null,
+                         new Attribute[]{new BasicAttribute("PING_TIMEOUT", Long.toString(newPingTimeout))});
+      }
       RestartDestinationLocator.clearRestarts();
     }
   }
@@ -538,10 +551,12 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         nodes.add(location);
       }
     }
-    logger.info("checkCommunityReady:" +
+    /*
+     logger.info("checkCommunityReady:" +
                 " agents=" + expectedAgents() +
                 " active=" + agents.length +
                 (inactiveNode ? " inactiveNode=" + location + " agent=" + agent : ""));
+     */
     return !inactiveNode;
   }
 
@@ -602,21 +617,32 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   protected void doPing(String name,
                         final int stateOnSuccess,
                         final int stateOnFail) {
-    long pingTimeout = getLongAttribute(name, "PING_TIMEOUT", PING_TIMEOUT);
+    final long pingTimeout = calcPingTimeout(name);
+    //logger.debug("doPing: agent=" + name + " timeout=" + pingTimeout);
     getPingHelper().ping(name, pingTimeout, new PingListener() {
-      public void pingComplete(String name, int status) {
-        logger.debug("Ping:" +
+      public void pingComplete(String name, int status, long time) {
+        logger.info("Ping:" +
                      " agent=" + name +
                      " state=" + stateName(model.getCurrentState(name)) +
+                     " timeout=" + pingTimeout +
+                     " actual=" + time +
                      " result=" + (status == PingHelper.SUCCESS ? "SUCCESS" : "FAIL") +
                      (status == PingHelper.SUCCESS ? "" : " newState=" + stateName(stateOnFail)));
         if (status == PingHelper.SUCCESS) {
           newState(name, stateOnSuccess);
+          if (!isLocal(name)) pingStats.enter(time);
         } else {
           newState(name, stateOnFail);
         }
       }
     });
+  }
+
+  protected long calcPingTimeout(String name) {
+    String node = model.getLocation(name);
+    double nodeLoad = getNodeLoadAverage(node);
+    long pingTimeout = getLongAttribute(name, "PING_TIMEOUT", PING_TIMEOUT);
+    return (long)(pingTimeout * (1.0 + nodeLoad));
   }
 
   protected Set getExcludedNodes() {

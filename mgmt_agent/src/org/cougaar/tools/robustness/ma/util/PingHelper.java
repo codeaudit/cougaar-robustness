@@ -143,7 +143,7 @@ public class PingHelper extends BlackboardClientComponent {
                       " agent=" + pr.getTarget().toString() +
                       " status=SUCCESS");
           ((PingListener)myUIDs.remove(pr.getUID())).
-              pingComplete(pr.getTarget().toString(), SUCCESS);
+              pingComplete(pr.getTarget().toString(), SUCCESS, pr.getRoundTripTime());
           blackboard.publishRemove(pr);
           break;
         case PingRequest.FAILED:
@@ -151,7 +151,7 @@ public class PingHelper extends BlackboardClientComponent {
                       " agent=" + pr.getTarget().toString() +
                       " status=FAIL");
           ((PingListener)myUIDs.get(pr.getUID())).
-              pingComplete(pr.getTarget().toString(), FAIL);
+              pingComplete(pr.getTarget().toString(), FAIL, pr.getRoundTripTime());
           break;
       }
     }
@@ -159,7 +159,7 @@ public class PingHelper extends BlackboardClientComponent {
 
   public void ping(final String agentName, final long timeout, final PingListener pl) {
     if (agentId.toString().equals(agentName)) {
-      pl.pingComplete(agentName, SUCCESS);  // Can't ping self, return SUCCESS
+      pl.pingComplete(agentName, SUCCESS, 0l);  // Can't ping self, return SUCCESS
     } else {
       fireLater(new QueueEntry(MessageAddress.getMessageAddress(agentName),
                                timeout, pl));
