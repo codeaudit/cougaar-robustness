@@ -140,7 +140,7 @@ public class AssetType implements NotPersistable, Serializable {
     public String toString() { return name; }
     
     /**
-     *@return the states that this asset type can be in
+     *@return the state dimensions that this asset type can be in
      *
      */
     public Vector getCompositeState() { 
@@ -151,10 +151,15 @@ public class AssetType implements NotPersistable, Serializable {
  
     
      /**
-      * Add an asset state to the AssetStateDimension vector
+      * Add an asset state to the AssetStateDimension vector. Only works if it isn't already there.
+      *@return true if added.
       */
-     public void addStateDimension(AssetStateDimension as) {
-         states.addElement(as);
+     public boolean addStateDimension(AssetStateDimension as) {
+         if (this.findStateDimension(as.getStateName()) == null) {
+             states.addElement(as);
+             return true;
+         }
+         return false;
      }
      
      /**

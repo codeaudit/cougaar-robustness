@@ -88,10 +88,15 @@ public class AssetStateDimensionLoader extends XMLLoader {
             if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("StateDimension") ) {
                 AssetStateDimension asd = parseStateDimension((Element)child, assetType);
                 if (asd != null) { // then add it to the asset type
-                    assetType.addStateDimension(asd);
+                    boolean added = assetType.addStateDimension(asd);
                     states.add(asd);
+                    if (!added) {
+                        logger.warn("Tried to add duplicate state dimention: "+asd.toString());
+                        continue;
+                    }
                 }
                 logger.debug(asd.toString());
+
             } //else, likely a text element - ignore
         }
         return states;
@@ -103,6 +108,7 @@ public class AssetStateDimensionLoader extends XMLLoader {
         
         String stateDimName = element.getAttribute("name");
         AssetStateDimension asd = new AssetStateDimension(assetType, stateDimName);
+        //logger.error("**************************************** Saw new state dim = "+ asd.getStateName() + "for type="+assetType.toString());
         
         for (Node child = element.getFirstChild(); child != null; child = child.getNextSibling()) { 
             if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("State") ) {
