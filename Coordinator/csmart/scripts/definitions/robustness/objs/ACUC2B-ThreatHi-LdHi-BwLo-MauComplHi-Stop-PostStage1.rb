@@ -93,6 +93,7 @@ include_scripts:
   - script: $CIP/csmart/lib/security/scripts/setup_scripting.rb
   - script: $CIP/csmart/lib/security/scripts/build_config_jarfiles.rb
   - script: $CIP/csmart/lib/security/scripts/build_policies.rb
+  - script: $CIP/csmart/lib/security/scripts/build_coordinator_policies.rb
 #  - script: $CIP/csmart/lib/security/scripts/setup_userManagement.rb
   - script: $CIP/csmart/lib/security/scripts/security_archives.rb
   - script: $CIP/csmart/lib/security/scripts/saveAcmeEvents.rb
