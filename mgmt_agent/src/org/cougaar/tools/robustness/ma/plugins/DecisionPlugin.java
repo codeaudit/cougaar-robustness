@@ -39,6 +39,9 @@ import org.cougaar.core.mobility.MoveTicket;
 import org.cougaar.core.service.AlarmService;
 import org.cougaar.core.agent.service.alarm.Alarm;
 
+import org.cougaar.core.service.wp.WhitePagesService;
+import org.cougaar.core.service.wp.AddressEntry;
+
 import org.cougaar.core.util.UID;
 
 import org.cougaar.core.service.EventService;
@@ -85,9 +88,15 @@ public class DecisionPlugin extends SimplePlugin {
 
   protected MobilityFactory mobilityFactory;
 
+  private WhitePagesService wps;
+
   IncrementalSubscription sub;
 
+  private MessageAddress agentID;
+
   protected void setupSubscriptions() {
+
+    agentID = this.getAgentIdentifier();
 
     myUID = getUIDService().nextUID();
 
@@ -101,6 +110,9 @@ public class DecisionPlugin extends SimplePlugin {
     eventService =
       (EventService) getBindingSite().getServiceBroker().
       getService(this, EventService.class, null);
+
+    wps = (WhitePagesService)getBindingSite().getServiceBroker().
+        getService(this, WhitePagesService.class, null);
 
     mobilityFactory = (MobilityFactory) domainService.getFactory("mobility");
     if (mobilityFactory == null) {
@@ -375,6 +387,33 @@ public class DecisionPlugin extends SimplePlugin {
     }
   }
 
+  /**
+   * Gets agents current location.
+   * @param agentName Name of agent
+   * @return Name of node
+   */
+  private String getLocation(String agentName) {
+    // Get agents current location
+    String node = "";
+    try {
+      /*TopologyEntry te = topologyService.getEntryForAgent(agentName);
+      node = te.getNode();*/
+      AddressEntry entrys[] = wps.get(agentName);
+      for(int i=0; i<entrys.length; i++) {
+        if(entrys[i].getApplication().toString().equals("topology")) {
+          String uri = entrys[i].getAddress().toString();
+          if(uri.startsWith("node:")) {
+            node = uri.substring(uri.lastIndexOf("/")+1, uri.length());
+            break;
+          }
+        }
+      }
+    } catch (Exception ex) {
+      log.error("Exception getting agent location for WhitePagesService", ex);
+    }
+    return node;
+  }
+
 
   /**
    * Obtains plugin parameters
@@ -516,6 +555,10 @@ public class DecisionPlugin extends SimplePlugin {
 
               RestartLocationRequest req =
                 new RestartLocationRequest(RestartLocationRequest.LOCATE_NODE, myUID);
+              Collection excludedNodes = new ArrayList();
+              excludedNodes.add(hs.getNode());
+              excludedNodes.add(getLocation(agentID.toString()));
+              req.setExcludedNodes(excludedNodes);
               req.addAgent(agent);
               bbs.publishChange(hs);
               bbs.publishAdd(req);
