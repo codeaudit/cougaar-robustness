@@ -127,7 +127,15 @@ public class ActionEnablingPlugin extends DeconflictionPluginBase implements Not
     }
     
     protected long delayTime(SelectedAction sa) {
-        if ((sa.getActionEvaluation().getAction().getTechSpec().getStateDimension().equals("Comunications")) && (sa.getActionVariants().contains("Disabled")))
+	Action a = sa.getActionEvaluation().getAction();
+	ActionTechSpecInterface ats = actionTechSpecService.getActionTechSpec(a.getClass().getName());
+	if (ats == null) {
+	    if (logger.isErrorEnabled()) 
+		logger.error("Cannot find ActionTechSpec for "+a.getClass().getName());
+	}
+        if ((ats != null ) &&
+	    ats.getStateDimension().equals("Comunications") && 
+	    sa.getActionVariants().contains("Disabled"))
             return msglogDelay;
         else
             return 0L;
