@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/TMIStressInstance.java,v $
- * $Revision: 1.19 $
- * $Date: 2004-08-09 20:46:41 $
+ * $Revision: 1.20 $
+ * $Date: 2004-10-20 16:48:21 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -33,7 +33,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * This wraps and extends the ThreatModelInterface object.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.19 $Date: 2004-08-09 20:46:41 $
+ * @version $Revision: 1.20 $Date: 2004-10-20 16:48:21 $
  *
  */
 class TMIStressInstance extends StressInstance
@@ -141,12 +141,14 @@ class TMIStressInstance extends StressInstance
         }
         catch (NegativeIntervalException nie)
         {
-            logDebug( "Caught NegativeIntervalException exception."
-                      + " Using prob = 0.0" );
+            if ( _logger.isDebugEnabled() )
+                _logger.debug( "Caught NegativeIntervalException exception."
+                               + " Using prob = 0.0" );
             prob = 0.0;
         }
 
-        logDetail( "For threat " 
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "For threat " 
                   + getName()
                   + " from " + start_time + " to " + end_time
                   + " received prob = " + prob );

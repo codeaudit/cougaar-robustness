@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/Model.java,v $
- * $Revision: 1.28 $
- * $Date: 2004-08-09 20:46:41 $
+ * $Revision: 1.29 $
+ * $Date: 2004-10-20 16:48:21 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -34,7 +34,7 @@ import org.cougaar.util.log.Logger;
  * facilities. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.28 $Date: 2004-08-09 20:46:41 $
+ * @version $Revision: 1.29 $Date: 2004-10-20 16:48:21 $
  * 
  *
  */
@@ -42,6 +42,9 @@ abstract class Model extends Observable implements Observer
 {
 
     // Class implmentation comments go here ...
+
+    // For logging
+    protected Logger _logger = Logging.getLogger(this.getClass().getName());
 
     //------------------------------------------------------------
     // public interface
@@ -52,7 +55,6 @@ abstract class Model extends Observable implements Observer
      */
     Model()
     {
-        _logger = Logging.getLogger(this.getClass().getName());
     } // constructor Model
 
     /**
@@ -96,61 +98,7 @@ abstract class Model extends Observable implements Observer
         _valid = valid;
     }  // method setValidity
 
-    /**
-     * Log a debugging message if debugging is enabled.
-     *
-     * @param msg The message to log if debugging is enabled.
-     */
-    protected void logDebug( String msg )
-    {
-        if ( _logger.isDebugEnabled() )
-            _logger.debug( msg );
-
-    } // method logDebug
-
-    /**
-     * Log a warning
-     *
-     * @param msg The error message to log.
-     */
-    protected void logWarning( String msg )
-    {
-         _logger.warn( msg );
-    } // method logWarning
-
-    /**
-     * Log an error message.
-     *
-     * @param msg The error message to log.
-     */
-    protected void logError( String msg )
-    {
-        _logger.error( msg );
-    } // method logError
-
-    /**
-     * Log some information
-     *
-     * @param msg The error message to log.
-     */
-    protected void logInfo( String msg )
-    {
-        if ( _logger.isInfoEnabled() )
-         _logger.info( msg );
-    } // method logInfo
-
-    /**
-     * Log some detail information
-     *
-     * @param msg The detail message to log.
-     */
-    protected void logDetail( String msg )
-    {
-        if ( _logger.isDetailEnabled() )
-         _logger.detail( msg );
-    } // method logDetail
-
-     //------------------------------------------------------------
+    //------------------------------------------------------------
     // private interface
     //------------------------------------------------------------
 
@@ -159,10 +107,5 @@ abstract class Model extends Observable implements Observer
     // parsing of the the source of information.  
     //
     private boolean _valid = false;
-
-    // For logging debug, warning and error messages to the cougaar
-    // logging system
-    //
-    Logger _logger;
 
 } // class Model

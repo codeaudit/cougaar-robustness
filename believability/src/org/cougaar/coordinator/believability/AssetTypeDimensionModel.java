@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/AssetTypeDimensionModel.java,v $
- * $Revision: 1.27 $
- * $Date: 2004-08-09 20:46:41 $
+ * $Revision: 1.28 $
+ * $Date: 2004-10-20 16:48:21 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -44,7 +44,7 @@ import org.cougaar.coordinator.techspec.ThreatModelChangeEvent;
  * corresponds to the tech-spec AssetSatteDimension objects.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.27 $Date: 2004-08-09 20:46:41 $
+ * @version $Revision: 1.28 $Date: 2004-10-20 16:48:21 $
  * @see AssetTypeModel
  * @see AssetStateDimension
  */
@@ -228,7 +228,8 @@ class AssetTypeDimensionModel extends Model
                       "Cannot add null diagnosis tech spec" );
 
         if ( _sensor_model_set.get( diag_ts.getName()) != null )
-            logInfo( "Replacing sensor type model: "
+            if ( _logger.isInfoEnabled() )
+                _logger.info( "Replacing sensor type model: "
                         + diag_ts.getName() );
 
         SensorTypeModel s_model
@@ -272,7 +273,8 @@ class AssetTypeDimensionModel extends Model
                 = new ActuatorTypeModel( action_ts, this );
 
         if ( _actuator_model_set.get( a_model.getName()) != null )
-            logInfo( "Replacing actuator type model: "
+            if ( _logger.isInfoEnabled() )
+                _logger.info( "Replacing actuator type model: "
                         + a_model.getName() );
         
         _actuator_model_set.put( a_model.getName(),
@@ -321,7 +323,8 @@ class AssetTypeDimensionModel extends Model
 
         if ( ! USE_EVENT_COLLECTION_CACHING )
         {
-            logDetail( "NOTE: Event collection caching disabled."
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "NOTE: Event collection caching disabled."
                       + " Ignoring threat asset list." );
             return;
         }
@@ -351,14 +354,16 @@ class AssetTypeDimensionModel extends Model
 
         if ( asset_ts_list == null )
         {
-            logDetail( "No event collections to purge (NULL list)"
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "No event collections to purge (NULL list)"
                       + " in state dimension " + _state_dim_name );
             return;
        }
 
         if ( asset_ts_list.size() < 1 )
         {
-            logDetail( "No event collections to purge (empty list)"
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "No event collections to purge (empty list)"
                       + " in state dimension " + _state_dim_name );
             return;
        }
@@ -384,14 +389,16 @@ class AssetTypeDimensionModel extends Model
             if ( _asset_event_collection_table.contains
                  ( asset_ts.getAssetID() ))
             {
-                logDetail( "Purging event collection from cache for "
+                if ( _logger.isDetailEnabled() )
+                    _logger.detail( "Purging event collection from cache for "
                           + asset_ts.getAssetID() 
                           + " in state dimension " + _state_dim_name );
                 _asset_event_collection_table.remove( asset_ts.getAssetID() );
             }
             else
             {
-                logDetail( "No event collection to purge from cache for "
+                if ( _logger.isDetailEnabled() )
+                    _logger.detail( "No event collection to purge from cache for "
                           + asset_ts.getAssetID() 
                           + " in state dimension " + _state_dim_name );
             }
@@ -425,7 +432,8 @@ class AssetTypeDimensionModel extends Model
         //
         if ( event_collection != null )
         {
-            logDetail( "Found existing event collection for asset '" 
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Found existing event collection for asset '" 
                       + asset_id.getName() 
                       + "' in dimension '" 
                       + _state_dim_name );
@@ -435,7 +443,8 @@ class AssetTypeDimensionModel extends Model
 
         // Else, we need to construct the set.
 
-        logDetail( "Event collection not found for asset '" 
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Event collection not found for asset '" 
                   + asset_id.getName() 
                   + "' in dimension '" 
                   + _state_dim_name
@@ -461,7 +470,8 @@ class AssetTypeDimensionModel extends Model
         }
         else
         {
-            logDetail( "NOTE: Event collection caching disabled." );
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "NOTE: Event collection caching disabled." );
         }
 
         return event_collection;
@@ -487,7 +497,8 @@ class AssetTypeDimensionModel extends Model
 
         if ( ! USE_EVENT_COLLECTION_CACHING )
         {
-            logDetail( "NOTE: Event collection caching disabled."
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "NOTE: Event collection caching disabled."
                       + " Ignoring threat change event." );
             return;
         }
@@ -678,7 +689,8 @@ class AssetTypeDimensionModel extends Model
         //
         if ( ! sensor_enum.hasMoreElements() )
         {
-            logDetail( "getMaxSensorLatency(). "
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "getMaxSensorLatency(). "
                       + "No sensor models found for this asset dimension: "
                       + _state_dim_name );
             return DEFAULT_SENSOR_LATENCY;
@@ -820,9 +832,12 @@ class AssetTypeDimensionModel extends Model
         if (( event_collection == null )
             || ( event_collection.getNumEvents() < 1 ))
         {
-            logDetail( "Event collection for asset '" + asset_id.getName() 
-                      + "', state dim. '"
-                      + _state_dim_name  + " is null or has no events." );
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Event collection for asset '" 
+                                + asset_id.getName() 
+                                + "', state dim. '"
+                                + _state_dim_name  
+                                + " is null or has no events." );
 
             double[][] probs = new double[_possible_states.length]
                     [_possible_states.length];
@@ -833,10 +848,12 @@ class AssetTypeDimensionModel extends Model
             return probs;
         } // if no threats acting on this asset state dimension
 
-        logDetail( "Event collection for asset '" + asset_id.getName() 
-                  + "', state dim. '"
-                  + _state_dim_name + "'\n"
-                  + event_collection.toString() );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Event collection for asset '" 
+                            + asset_id.getName() 
+                            + "', state dim. '"
+                            + _state_dim_name + "'\n"
+                            + event_collection.toString() );
 
         // All the hard work is done in here.
         //

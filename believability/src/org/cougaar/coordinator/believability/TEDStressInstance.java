@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/TEDStressInstance.java,v $
- * $Revision: 1.19 $
- * $Date: 2004-08-09 20:46:41 $
+ * $Revision: 1.20 $
+ * $Date: 2004-10-20 16:48:21 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -45,7 +45,7 @@ import org.cougaar.coordinator.techspec.TransitiveEffectModel;
  * check for the model whenever we attempt to use it.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.19 $Date: 2004-08-09 20:46:41 $
+ * @version $Revision: 1.20 $Date: 2004-10-20 16:48:21 $
  *
  */
 class TEDStressInstance extends StressInstance
@@ -191,7 +191,8 @@ class TEDStressInstance extends StressInstance
 
         if ( _model == null )
         {
-            logDetail( "Attempting to compute the probability of a "
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Attempting to compute the probability of a "
                         + "stress while there is no model instance: "
                         + getName() + ". Assuming prob=0.0" );
             
@@ -200,7 +201,8 @@ class TEDStressInstance extends StressInstance
 
         double prob = _model.getTransitiveEffectLikelihood();
         
-        logDetail( "For trans effect " + getName()
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "For trans effect " + getName()
                   + " received prob = " + prob );
         
         return prob;
@@ -227,7 +229,8 @@ class TEDStressInstance extends StressInstance
         
         if ( _model != null )
         {
-            logDetail( "New TransitiveEffectModel: "
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "New TransitiveEffectModel: "
                       + "TED Stress " + getName() 
                       + " converted to TEM stress.");
 

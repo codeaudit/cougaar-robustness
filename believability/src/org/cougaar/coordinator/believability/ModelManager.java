@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManager.java,v $
- * $Revision: 1.30 $
- * $Date: 2004-09-21 00:43:49 $
+ * $Revision: 1.31 $
+ * $Date: 2004-10-20 16:48:21 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -41,20 +41,26 @@ import org.cougaar.coordinator.techspec.ThreatDescription;
 import org.cougaar.coordinator.techspec.ThreatModelChangeEvent;
 import org.cougaar.coordinator.techspec.ThreatModelInterface;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+
 /**
  * This is the main container class that handles acces to all local
  * models. It received data input via the TechSpecManagerInterface,
  * and provides information via the ModelManagerInterface. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.30 $Date: 2004-09-21 00:43:49 $
+ * @version $Revision: 1.31 $Date: 2004-10-20 16:48:21 $
  *
  */
-public class ModelManager extends Loggable
+public class ModelManager extends Object
         implements ModelManagerInterface
 {
 
     // Class implmentation comments go here ...
+
+    // For logging
+    protected Logger _logger = Logging.getLogger(this.getClass().getName());
 
     //------------------------------------------------------------
     // public interface
@@ -101,7 +107,8 @@ public class ModelManager extends Loggable
                                          AssetStateDimension state_dim )
             throws BelievabilityException
     {
-        logDetail( "getAssetUtilities() for state dim: " 
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "getAssetUtilities() for state dim: " 
                   + state_dim.getStateName() );
 
         AssetTypeModel at_model 
@@ -189,11 +196,13 @@ public class ModelManager extends Loggable
             throws BelievabilityException
     {
 
-        logDetail( "==== getMaxSensorLatency() ====" );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "==== getMaxSensorLatency() ====" );
 
         if ( USE_FAKE_SENSOR_LATENCY )
         {
-            logWarning( "USING FAKE LATENCY FOR TESTING ! (FIXME)" );
+            if ( _logger.isWarnEnabled() )
+                _logger.warn( "USING FAKE LATENCY FOR TESTING ! (FIXME)" );
             return FAKE_SENSOR_LATENCY_MS;
         }
 
@@ -225,7 +234,8 @@ public class ModelManager extends Loggable
             throws BelievabilityException
     {
 
-        logDetail( "==== getSensorLatency() ====" );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "==== getSensorLatency() ====" );
 
         AssetTypeModel at_model 
                 =  (AssetTypeModel) _asset_type_container.get
@@ -307,7 +317,8 @@ public class ModelManager extends Loggable
 
         if ( USE_FAKE_PUBLISH_INTERVAL )
         {
-            logWarning( "USING FAKE PUBLISH INTERVAL FOR TESTING ! (FIXME)" );
+            if ( _logger.isWarnEnabled() )
+                _logger.warn( "USING FAKE PUBLISH INTERVAL FOR TESTING ! (FIXME)" );
             return FAKE_PUBLISH_INTERVAL_MS;
 
         }
@@ -327,7 +338,8 @@ public class ModelManager extends Loggable
 
         if ( USE_FAKE_PUBLISH_DELAY_INTERVAL )
         {
-            logWarning( "USING FAKE PUBLISH DELAY INTERVAL FOR TESTING ! (FIXME)" );
+            if ( _logger.isWarnEnabled() )
+                _logger.warn( "USING FAKE PUBLISH DELAY INTERVAL FOR TESTING ! (FIXME)" );
             return FAKE_PUBLISH_DELAY_INTERVAL_MS;
 
         }
@@ -367,7 +379,8 @@ public class ModelManager extends Loggable
     {
         if ( diag_ts == null )
         {
-            logDebug( "NULL found for DiagnosisTechSpecInterface.");
+            if ( _logger.isDebugEnabled() )
+                _logger.debug( "NULL found for DiagnosisTechSpecInterface.");
             return;
         }
 
@@ -380,7 +393,8 @@ public class ModelManager extends Loggable
         if ( asset_type_model == null )
             return;
 
-        logDetail( "==== Start: Add Sensor Type ====" );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "==== Start: Add Sensor Type ====" );
         
         SensorTypeModel s_model;
 
@@ -389,18 +403,21 @@ public class ModelManager extends Loggable
             
             s_model= asset_type_model.addSensorTypeModel( diag_ts );
             
-            logDetail( "Added New SensorTypeModel:\n" 
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Added New SensorTypeModel:\n" 
                       + s_model.toString() );
                 
         }
         catch (BelievabilityException be)
         {
-            logError( "Cannot add SensorTypeModel "
+            if ( _logger.isErrorEnabled() )
+                _logger.error( "Cannot add SensorTypeModel "
                       +  diag_ts.getName() + ": " + be.getMessage() );
             return;
         }
 
-        logDebug( "Added sensor: " + s_model.getName() );
+        if ( _logger.isDebugEnabled() )
+            _logger.debug( "Added sensor: " + s_model.getName() );
 
     } // method addSensorType
 
@@ -412,11 +429,13 @@ public class ModelManager extends Loggable
      */
     public void addThreatType( ThreatModelInterface threat_mi )
     {
-        logDetail( "==== Start: Add Threat Model ====" );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "==== Start: Add Threat Model ====" );
 
         if ( threat_mi == null )
         {
-            logDebug( "addThreatType() sent NULL ThreatModelInterface. " );
+            if ( _logger.isDebugEnabled() )
+                _logger.debug( "addThreatType() sent NULL ThreatModelInterface. " );
             return;
         }
 
@@ -432,7 +451,8 @@ public class ModelManager extends Loggable
 
         _stress_graph.add( threat_mi, new_stress_set );
 
-        logDetail( "Added " + new_stress_set.size()
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Added " + new_stress_set.size()
                   + " new stresses. Current Stress Graph: " 
                   + _stress_graph.toString() );
 
@@ -463,14 +483,16 @@ public class ModelManager extends Loggable
 
             if ( asset_type_model == null )
             {
-                logDebug( "Cannot find AssetTypeModel for asset type: "
+                if ( _logger.isDebugEnabled() )
+                    _logger.debug( "Cannot find AssetTypeModel for asset type: "
                           + asset_type.getName() );
                 continue;
             }
 
             try
             {
-                logDetail( "Adding new stress to asset model: "
+                if ( _logger.isDetailEnabled() )
+                    _logger.detail( "Adding new stress to asset model: "
                           + stress.getName() );
             
                 asset_type_model.addStressInstance( stress );
@@ -478,14 +500,16 @@ public class ModelManager extends Loggable
             }
             catch (BelievabilityException be)
             {
-                logError( "Cannot add stress "
+                if ( _logger.isErrorEnabled() )
+                    _logger.error( "Cannot add stress "
                           + stress.getName() + " to asset model : " 
                           + be.getMessage() );
                 return;
             }
         } // while stress_enum
 
-        logDebug( "Added threat: " + threat_mi.getName() );
+        if ( _logger.isDebugEnabled() )
+            _logger.debug( "Added threat: " + threat_mi.getName() );
 
     } // method addThreatModel
 
@@ -499,7 +523,8 @@ public class ModelManager extends Loggable
     {
         if ( actuator_ts == null )
         {
-            logDebug( "NULL found for ActionTechSpecInterface.");
+            if ( _logger.isDebugEnabled() )
+                _logger.debug( "NULL found for ActionTechSpecInterface.");
             return;
         }
 
@@ -513,7 +538,8 @@ public class ModelManager extends Loggable
         if ( asset_type_model == null )
             return;
 
-        logDetail( "==== Start: Add Actuator Type ====" );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "==== Start: Add Actuator Type ====" );
         
         ActuatorTypeModel a_model;
         try
@@ -521,17 +547,21 @@ public class ModelManager extends Loggable
             
             a_model = asset_type_model.addActuatorTypeModel( actuator_ts );
             
-            logDetail( "Added New ActuatorTypeModel:\n" 
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Added New ActuatorTypeModel:\n" 
                       + a_model.toString() );
                 
         }
         catch (BelievabilityException be)
         {
-            logError( "Cannot add ActuatorTypeModel: " + be.getMessage() );
+            if ( _logger.isErrorEnabled() )
+                _logger.error( "Cannot add ActuatorTypeModel: " 
+                               + be.getMessage() );
             return;
         }
 
-        logDebug( "Added actuator: " + a_model.getName() );
+        if ( _logger.isDebugEnabled() )
+            _logger.debug( "Added actuator: " + a_model.getName() );
 
     } // method addActuatorType
 
@@ -547,7 +577,8 @@ public class ModelManager extends Loggable
      */ 
     public void updateSensorType( DiagnosisTechSpecInterface diag_ts )
     {
-        logDetail( "** NOT IMPLEMENTED ** updateSensorType()" );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "** NOT IMPLEMENTED ** updateSensorType()" );
     } // method updateSensorType
 
 
@@ -557,7 +588,8 @@ public class ModelManager extends Loggable
      */
     public void updateThreatType( ThreatModelInterface threat_model )
     {
-        logDetail( "Ignoring updateThreatType(). This should be handled by "
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Ignoring updateThreatType(). This should be handled by "
                   + "call to handleThreatModelChange()" );
     } // method updateThreatType
 
@@ -567,7 +599,8 @@ public class ModelManager extends Loggable
      */
     public void updateActuatorType( ActionTechSpecInterface actuator_ts )
     {
-        logDetail( "** NOT IMPLEMENTED ** updateActuatorType()" );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "** NOT IMPLEMENTED ** updateActuatorType()" );
     } // method updateActuatorType
 
     //--------------------
@@ -584,7 +617,8 @@ public class ModelManager extends Loggable
      */
     public void removeSensorType( DiagnosisTechSpecInterface diag_ts )
     {
-        logDetail( "** NOT IMPLEMENTED ** removeSensorType()" );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "** NOT IMPLEMENTED ** removeSensorType()" );
 
     } // method removeSensorType
 
@@ -595,7 +629,8 @@ public class ModelManager extends Loggable
      */
     public void removeThreatType( ThreatModelInterface threat_model )
     {
-        logDetail( "** NOT IMPLEMENTED ** removeThreatType()" );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "** NOT IMPLEMENTED ** removeThreatType()" );
     } // method removeThreatModel
 
     //************************************************************
@@ -604,7 +639,8 @@ public class ModelManager extends Loggable
      */
     public void removeActuatorType( ActionTechSpecInterface actuator_ts )
     {
-        logDetail( "** NOT IMPLEMENTED ** removeActuatorType()" );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "** NOT IMPLEMENTED ** removeActuatorType()" );
     } // method removeActuatorType
 
     //************************************************************
@@ -621,7 +657,8 @@ public class ModelManager extends Loggable
         // objects for each of the affected assets.
         //
 
-        logDetail( "==== Start: Handle Threat Model Change ====" );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "==== Start: Handle Threat Model Change ====" );
 
         ThreatModelInterface threat_model = tm_change.getThreatModel();
 
@@ -648,11 +685,13 @@ public class ModelManager extends Loggable
         }
         catch (BelievabilityException be)
         {
-            logError( "Problem handling threat model change: "
+            if ( _logger.isErrorEnabled() )
+                _logger.error( "Problem handling threat model change: "
                       + be.getMessage() );
         }
 
-        logDebug( "Handled threat change for : "
+        if ( _logger.isDebugEnabled() )
+            _logger.debug( "Handled threat change for : "
                   + tm_change.getThreatModel().getName() );
 
     } // method handleThreatModelChangxe
@@ -779,7 +818,8 @@ public class ModelManager extends Loggable
     {
         if ( asset_type == null )
         {
-            logDebug( "NULL found for asset_type.");
+            if ( _logger.isDebugEnabled() )
+                _logger.debug( "NULL found for asset_type.");
             return null;
         }
 
@@ -789,11 +829,13 @@ public class ModelManager extends Loggable
         
         if ( at_model != null )
         {
-            logDetail( "Asset model found: " + at_model.getName() );
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Asset model found: " + at_model.getName() );
             return at_model;
         }
 
-        logDetail( "==== Start: Add Asset Type ====" );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "==== Start: Add Asset Type ====" );
 
         try
         {
@@ -802,18 +844,21 @@ public class ModelManager extends Loggable
             _asset_type_container.put( asset_type.getName(),
                                        at_model );
 
-            logDetail( "Added New AssetTypeModel:\n"
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Added New AssetTypeModel:\n"
                       + at_model.toString() );
             
         }
         catch (BelievabilityException be)
         {
-            logError( "Cannot add AssetTypeModel "
+            if ( _logger.isErrorEnabled() )
+                _logger.error( "Cannot add AssetTypeModel "
                       +  asset_type.getName() + ": " + be.getMessage() );
             return null;
         }
 
-        logDebug( "Added asset type: " + at_model.getName() );
+        if ( _logger.isDebugEnabled() )
+            _logger.debug( "Added asset type: " + at_model.getName() );
 
         return at_model;
 
@@ -827,7 +872,8 @@ public class ModelManager extends Loggable
      */ 
     protected void updateAssetType( AssetType asset_type )
     {
-        logDetail( "** NOT IMPLEMENTED ** updateAssetType()" );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "** NOT IMPLEMENTED ** updateAssetType()" );
 
     } // method updateAssetType
 
@@ -841,7 +887,8 @@ public class ModelManager extends Loggable
      */
     protected void removeAssetType( AssetType asset_type )
     {
-        logDetail( "** NOT IMPLEMENTED ** removeAssetType()" );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "** NOT IMPLEMENTED ** removeAssetType()" );
 
     } // method removeAssetStateDimension
 
@@ -985,7 +1032,8 @@ public class ModelManager extends Loggable
          BeliefState belief = pomdp_model.getInitialBeliefState();
          belief.setAssetID( asset_id );
 
-         logDetail( "Blurring initial belief probabilities." );
+         if ( _logger.isDetailEnabled() )
+             _logger.detail( "Blurring initial belief probabilities." );
 
          // This is the routine that does the main work here.
          //
@@ -1052,7 +1100,8 @@ public class ModelManager extends Loggable
         POMDPAssetModel pomdp_model
                 = getPOMDPModel( start_belief.getAssetType() );
 
-        logDebug( "Belief update for :" + start_belief.getAssetID() );
+        if ( _logger.isDebugEnabled() )
+            _logger.debug( "Belief update for :" + start_belief.getAssetID() );
 
         return pomdp_model.updateBeliefState( start_belief,
                                               trigger );
@@ -1141,19 +1190,22 @@ public class ModelManager extends Loggable
     AssetType _test_asset_type;
     void testInitialBeliefStates()
     {
-        logDetail( "\n==== TESTING INITIAL BELIEF STATES ====\n" );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "\n==== TESTING INITIAL BELIEF STATES ====\n" );
 
         try
         {
             BeliefState initial_belief
                     = getInitialBeliefState( _test_asset_type );
             
-            logDetail( "Initial Belief:\n"
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Initial Belief:\n"
                            + initial_belief.toString() );
         }
         catch (BelievabilityException be)
         {
-            logDebug( "Initial Belief Exception: "
+            if ( _logger.isDebugEnabled() )
+                _logger.debug( "Initial Belief Exception: "
                            + be.getMessage() );
    
         }

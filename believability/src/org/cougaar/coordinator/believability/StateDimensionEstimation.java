@@ -31,12 +31,18 @@ import java.util.Enumeration;
 import org.cougaar.coordinator.techspec.AssetStateDimension;
 import org.cougaar.coordinator.techspec.AssetID;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
 
 /**
  * This class represents the belief state along a single state dimension
  * of an asset.
  **/
-public class StateDimensionEstimation extends Loggable {
+public class StateDimensionEstimation extends Object
+{
+
+    // For logging
+    protected Logger _logger = Logging.getLogger(this.getClass().getName());
 
     //------------------------------------------------------------
     // public interface

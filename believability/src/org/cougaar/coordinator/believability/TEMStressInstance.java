@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/TEMStressInstance.java,v $
- * $Revision: 1.19 $
- * $Date: 2004-08-09 20:46:41 $
+ * $Revision: 1.20 $
+ * $Date: 2004-10-20 16:48:21 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -32,7 +32,7 @@ import org.cougaar.coordinator.techspec.TransitiveEffectModel;
  * This wraps and extends the TransitveEffectModel objects.  
  *
  * @author Tony Cassandra
- * @version $Revision: 1.19 $Date: 2004-08-09 20:46:41 $
+ * @version $Revision: 1.20 $Date: 2004-10-20 16:48:21 $
  *
  */
 class TEMStressInstance extends StressInstance
@@ -143,7 +143,8 @@ class TEMStressInstance extends StressInstance
     {
         double prob = _stress_object.getTransitiveEffectLikelihood();
         
-        logDetail( "For trans effect " + getName()
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "For trans effect " + getName()
                   + " received prob = " + prob );
                   
         return prob;

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/IntervalAlarmHandler.java,v $
- * $Revision: 1.3 $
- * $Date: 2004-08-09 20:46:41 $
+ * $Revision: 1.4 $
+ * $Date: 2004-10-20 16:48:21 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -29,6 +29,9 @@ import org.cougaar.core.service.BlackboardService;
 
 import org.cougaar.core.agent.service.alarm.Alarm;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+
 /**
  * This is the class that will handle the starting and expiration of
  * various interval alarms.  The necessity of this class comes from
@@ -45,13 +48,16 @@ import org.cougaar.core.agent.service.alarm.Alarm;
  * expiration handler.
  * 
  * @author Tony Cassandra
- * @version $Revision: 1.3 $Date: 2004-08-09 20:46:41 $
+ * @version $Revision: 1.4 $Date: 2004-10-20 16:48:21 $
  *
  */
-public class IntervalAlarmHandler extends Loggable 
+public class IntervalAlarmHandler extends Object 
 {
 
     // Class implmentation comments go here ...
+
+    // For logging
+    protected Logger _logger = Logging.getLogger(this.getClass().getName());
 
     //------------------------------------------------------------
     // public interface
@@ -102,8 +108,9 @@ public class IntervalAlarmHandler extends Loggable
             {
                 IntervalAlarm alarm = (IntervalAlarm) iter.next();
 
-                logDetail( "Handling deferred expire for alarm: " 
-                           + alarm.toString()  );
+                if ( _logger.isDetailEnabled() )
+                    _logger.detail( "Handling deferred expire for alarm: " 
+                                    + alarm.toString()  );
 
                 alarm.handleDeferredExpiration();
 
@@ -130,7 +137,9 @@ public class IntervalAlarmHandler extends Loggable
 
         synchronized( _expired_alarm_queue )
         {
-            logDetail( "Queuing expired alarm: " + alarm.toString()  );
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Queuing expired alarm: "
+                                + alarm.toString()  );
             
             _expired_alarm_queue.add( alarm );
             

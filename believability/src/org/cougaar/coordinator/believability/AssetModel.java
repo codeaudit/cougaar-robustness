@@ -31,6 +31,8 @@ import org.cougaar.coordinator.techspec.AssetType;
 import java.util.Enumeration;
 import java.util.Vector;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
 
 /**
  * The class representing assets, holding the basic information and modeling
@@ -40,9 +42,12 @@ import java.util.Vector;
  *
  * @author Misty Nodine
  */
-public class AssetModel extends Loggable
+public class AssetModel extends Object
         implements TriggerConsumerInterface 
 {
+
+    // For logging
+    protected Logger _logger = Logging.getLogger(this.getClass().getName());
 
     //------------------------------------------------------------
     // public interface

@@ -33,8 +33,8 @@ import org.cougaar.util.log.Logger;
  * logging mechanism. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.28 $Date: 2004-08-09 20:46:41 $
- * 
+ * @version $Revision: 1.29 $Date: 2004-10-20 16:48:21 $
+ * @deprecated This class no longer used do to string cons'ing inefficiency.
  *
  */
 abstract class Loggable

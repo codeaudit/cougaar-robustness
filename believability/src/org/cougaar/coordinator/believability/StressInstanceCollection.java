@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/StressInstanceCollection.java,v $
- * $Revision: 1.19 $
- * $Date: 2004-08-09 20:46:41 $
+ * $Revision: 1.20 $
+ * $Date: 2004-10-20 16:48:21 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -32,7 +32,7 @@ import java.util.Iterator;
  * assets).
  *
  * @author Tony Cassandra
- * @version $Revision: 1.19 $Date: 2004-08-09 20:46:41 $
+ * @version $Revision: 1.20 $Date: 2004-10-20 16:48:21 $
  *
  */
 class StressInstanceCollection extends Model
@@ -83,13 +83,18 @@ class StressInstanceCollection extends Model
         _stress_set.add( stress );
 
         if ( _event_desc == null )
+        {
             setEventDescription( stress.getEventDescription());
+        }
 
         else if ( ! getEventName().equalsIgnoreCase( stress.getEventName()))
-            logDebug( "Added stress " + stress.getName()
-                      + " in collection has non-matching event name. "
-                      + " (" + getEventName() + "!=" 
-                      + stress.getName() + ")" );
+        {
+            if ( _logger.isDebugEnabled() )
+                _logger.debug( "Added stress " + stress.getName()
+                               + " in collection has non-matching event name. "
+                               + " (" + getEventName() + "!=" 
+                               + stress.getName() + ")" );
+        }
 
     } // method addParent
 
@@ -171,13 +176,15 @@ class StressInstanceCollection extends Model
                                                              end_time );
         } // while stress_iter
 
-        logDetail( "Stress collection individual probs = "
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Stress collection individual probs = "
                   + ProbabilityUtils.arrayToString( stress_prob ));
 
         double prob = ProbabilityUtils.computeEventUnionProbability
                 ( stress_prob );
         
-        logDetail( "Stress collection total prob = " + prob );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Stress collection total prob = " + prob );
 
         return prob;
 

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/StressGraph.java,v $
- * $Revision: 1.19 $
- * $Date: 2004-08-09 20:46:41 $
+ * $Revision: 1.20 $
+ * $Date: 2004-10-20 16:48:21 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -47,7 +47,7 @@ import org.cougaar.coordinator.techspec.TransitiveEffectModel;
  * for us.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.19 $Date: 2004-08-09 20:46:41 $
+ * @version $Revision: 1.20 $Date: 2004-10-20 16:48:21 $
  *
  */
 class StressGraph extends Model
@@ -91,7 +91,8 @@ class StressGraph extends Model
 
         if ( event == null )
         {
-            logDetail( "NULL event found for stress instance "
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "NULL event found for stress instance "
                       + stress.getName() );
             return;
         }
@@ -104,13 +105,16 @@ class StressGraph extends Model
         //
         if ( caused_ted == null )
         {
-            logDetail( "No transitve effect for stress " + stress.getName() );
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "No transitve effect for stress " 
+                                + stress.getName() );
             return;
         }
 
         if ( _recursion_depth > MAX_RECURSION_DEPTH )
         {
-            logDebug( "connectAndRecurse(): Maximum recursion depth reached.");
+            if ( _logger.isDebugEnabled() )
+                _logger.debug( "connectAndRecurse(): Maximum recursion depth reached.");
             return;
         }
 
@@ -122,7 +126,8 @@ class StressGraph extends Model
 
         if ( caused_tem == null )
         {
-            logDetail( "No TransitiveEffectModel found for"
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "No TransitiveEffectModel found for"
                       + " TransitiveEffectDescription of: " 
                       + stress.getName() );
 
@@ -131,14 +136,16 @@ class StressGraph extends Model
         }
         else
         {
-            logDetail( "Found transitve effect model for stress "
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Found transitve effect model for stress "
                       + stress.getName());
 
             caused_stress = add( caused_tem, new_stress_set );
 
             if ( caused_stress == null )
             {
-                logDebug( "Unknown stress object type. Ignoring." );
+                if ( _logger.isDebugEnabled() )
+                    _logger.debug( "Unknown stress object type. Ignoring." );
                 _recursion_depth -= 1;
                 return;
             }
@@ -185,7 +192,8 @@ class StressGraph extends Model
         //
         if ( stress != null )
         {
-            logDetail( "Not adding existing "
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Not adding existing "
                       + stress.getTypeStr() 
                       + " stress " + stress.getName() );
             return stress;
@@ -193,7 +201,8 @@ class StressGraph extends Model
         
         stress = StressInstanceFactory.create( stress_obj );
 
-        logDetail( "Adding new "
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Adding new "
                   + stress.getTypeStr() 
                   + " stress " + stress.getName() );
         

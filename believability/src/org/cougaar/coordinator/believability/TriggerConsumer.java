@@ -27,15 +27,21 @@ package org.cougaar.coordinator.believability;
 
 import java.util.Enumeration;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+
 /**
  * Used to accept new diagnoses or action successes from the blackboard
  * and take the appropriate action.
  *
  * @author Tony Cassandra, Misty Nodine
  */
-public class TriggerConsumer extends Loggable
+public class TriggerConsumer extends Object
         implements TriggerConsumerInterface 
 {
+
+    // For logging
+    protected Logger _logger = Logging.getLogger(this.getClass().getName());
 
     //************************************************************
     /**
@@ -113,9 +119,11 @@ public class TriggerConsumer extends Loggable
             // Update the asset state window with the new trigger
             am.consumeUpdateTrigger( but );
         }
-        catch( BelievabilityException be ) {
-            logWarning( "Failed handling trigger: " +
-                        be.getMessage() );
+        catch( BelievabilityException be ) 
+        {
+            if ( _logger.isWarnEnabled())
+                _logger.warn( "Failed handling trigger: " +
+                            be.getMessage() );
          
         }
     }

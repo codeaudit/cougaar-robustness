@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/IntervalAlarm.java,v $
- * $Revision: 1.15 $
- * $Date: 2004-08-09 20:46:41 $
+ * $Revision: 1.16 $
+ * $Date: 2004-10-20 16:48:21 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -23,21 +23,27 @@ package org.cougaar.coordinator.believability;
 
 import org.cougaar.core.agent.service.alarm.Alarm;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+
 /**
  * Base class for all alarms that are based on the passing of some
  * interval of time.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.15 $Date: 2004-08-09 20:46:41 $
+ * @version $Revision: 1.16 $Date: 2004-10-20 16:48:21 $
  *
  */
-public class IntervalAlarm extends Loggable implements Alarm
+public class IntervalAlarm extends Object implements Alarm
 {
 
     // Class implmentation comments go here ...
 
+    // For logging
+    protected Logger _logger = Logging.getLogger(this.getClass().getName());
+
     //------------------------------------------------------------
-      // public interface
+    // public interface
     //------------------------------------------------------------
 
     /**
@@ -128,7 +134,8 @@ public class IntervalAlarm extends Loggable implements Alarm
         }
         catch (BelievabilityException be)
         {
-            logDebug( "Problem handling deferred alarm expire: "
+            if ( _logger.isDebugEnabled() )
+                _logger.debug( "Problem handling deferred alarm expire: "
                       + be.getMessage() );
         }
 

@@ -30,8 +30,14 @@ import org.cougaar.coordinator.techspec.AssetType;
 
 import java.util.Hashtable;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+
 public class StateEstimationPublisher 
-        extends Loggable implements BeliefConsumer {
+        extends Object implements BeliefConsumer {
+
+    // For logging
+    protected Logger _logger = Logging.getLogger(this.getClass().getName());
 
     // Previously, we used to generate the SE object to publish
     // during the expire() of an alarm.  This prevented us from
@@ -88,7 +94,8 @@ public class StateEstimationPublisher
 
         }
         catch ( BelievabilityException be ) {
-            logWarning( "Cannot publish belief state [" 
+            if ( _logger.isWarnEnabled() )
+                _logger.warn( "Cannot publish belief state [" 
                         + belief_state.toString()
                         + "] -- got exception "
                         + be.getMessage() );

@@ -65,7 +65,8 @@ class BelievabilityAction extends BeliefUpdateTrigger {
      _action_state_dim = action.getAssetStateDimensionName();
 
      if ( _action_state_dim == null )
-         logWarning( "Action.getAssetStateDimensionName() returned NULL" );
+         if ( _logger.isWarnEnabled() )
+             _logger.warn( "Action.getAssetStateDimensionName() returned NULL" );
 
      _actuator_name = tech.getName();
      _action_record_string = action.getValue().toString();
@@ -73,7 +74,9 @@ class BelievabilityAction extends BeliefUpdateTrigger {
      _action_has_completed = action.getValue().hasCompleted();
      //_action_description = " ";
      _action_description = tech.getActionDescriptionForValue(action,(Object)action.getValue().getAction()).name();
-        logDetail( "Got time stamp frmo Actuator Tech Spec Handle.\n BelievabilitAction constructor done." );
+
+     if ( _logger.isDetailEnabled() )
+         _logger.detail( "Got time stamp frmo Actuator Tech Spec Handle.\n BelievabilitAction constructor done." );
     } // constructor BelievabilityAction
     
 
@@ -108,7 +111,9 @@ class BelievabilityAction extends BeliefUpdateTrigger {
     public String getStateDimensionName()
     {
      try{
-         logDetail("Getting StateDimensionName for :" + _asset_id.toString()); 
+         if ( _logger.isDetailEnabled() )
+             _logger.detail("Getting StateDimensionName for :" 
+                            + _asset_id.toString()); 
          return _action_state_dim;
      } catch (Exception e){
          return null;
@@ -120,7 +125,9 @@ class BelievabilityAction extends BeliefUpdateTrigger {
      *@return status of BelievabilityAction 
      */
     public String getBelivabilityActionStatus(){
-     logDetail("Believability Action status for " + _asset_id.toString() + " is " + _action_status );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail("Believability Action status for " 
+                           + _asset_id.toString() + " is " + _action_status );
       return _action_status;
     }
     /**
@@ -131,7 +138,12 @@ class BelievabilityAction extends BeliefUpdateTrigger {
      try {
          if ((_action_has_completed) && 
           (_action_status.compareToIgnoreCase("COMPLETED") == 0)){
-          logDetail("Believability Action  for " + _asset_id.toString() + " is  successfully completed");
+
+             if ( _logger.isDetailEnabled() )
+                 _logger.detail("Believability Action  for " 
+                                + _asset_id.toString() 
+                                + " is  successfully completed");
+
           return true;
          } else {return false; } 
      } catch (Exception e){

@@ -28,6 +28,9 @@ package org.cougaar.coordinator.believability;
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.techspec.AssetType;
 
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
+
 /**
  * This is the abstract superclass that defines those objects that
  * trigger a belief update computation.  Catches those things common
@@ -37,15 +40,17 @@ import org.cougaar.coordinator.techspec.AssetType;
  * dimension.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.26 $Date: 2004-08-09 20:46:41 $
+ * @version $Revision: 1.27 $Date: 2004-10-20 16:48:21 $
  * @see BelievabilityDiagnosis
  * @see BelievabilityAction
  *
  */
-abstract class BeliefUpdateTrigger extends Loggable implements Comparable
+abstract class BeliefUpdateTrigger extends Object implements Comparable
 {
-
     // Class implmentation comments go here ...
+
+    // For logging
+    protected Logger _logger = Logging.getLogger(this.getClass().getName());
 
     //------------------------------------------------------------
     // abstract interface

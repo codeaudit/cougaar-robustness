@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefTriggerHistory.java,v $
- * $Revision: 1.17 $
- * $Date: 2004-10-08 20:25:41 $
+ * $Revision: 1.18 $
+ * $Date: 2004-10-20 16:48:21 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -50,6 +50,9 @@ import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.core.service.AlarmService;
 
 import org.cougaar.core.agent.service.alarm.Alarm;
+
+import org.cougaar.util.log.Logging;
+import org.cougaar.util.log.Logger;
 
 /**
  * This is a container class for holding all information about the
@@ -102,12 +105,14 @@ import org.cougaar.core.agent.service.alarm.Alarm;
  * an instance of this class: one for each of these.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.17 $Date: 2004-10-08 20:25:41 $
+ * @version $Revision: 1.18 $Date: 2004-10-20 16:48:21 $
  * @see BeliefTriggerManager
  */
 class BeliefTriggerHistory 
-        extends Loggable implements AlarmExpirationHandler
+        extends Object implements AlarmExpirationHandler
 {
+    // For logging
+    protected Logger _logger = Logging.getLogger(this.getClass().getName());
 
     // Aside from history information, this object maintains the
     // context of the current processing of belief triggers.  In
@@ -144,7 +149,8 @@ class BeliefTriggerHistory
     {
         super();
 
-        logDetail( "Creating trigger history for: " + asset_id );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Creating trigger history for: " + asset_id );
 
         this._asset_id = asset_id;
         this._model_manager = model_manager;
@@ -160,7 +166,9 @@ class BeliefTriggerHistory
         //
         if ( _model_manager.isInRehydratedState())
         {
-            logDetail( "Will use blurred initial belief for: " + asset_id );
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Will use blurred initial belief for: " 
+                                + asset_id );
 
             this._default_belief 
                     = _model_manager.getNoInformationBeliefState( _asset_id );
@@ -168,7 +176,9 @@ class BeliefTriggerHistory
         }
         else
         {
-            logDetail( "Will use techspec initial belief for: " + asset_id );
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Will use techspec initial belief for: " 
+                                + asset_id );
 
             this._default_belief 
                     = _model_manager.getInitialBeliefState( _asset_id );
@@ -188,7 +198,8 @@ class BeliefTriggerHistory
     {
         // Method implementation comments go here ...
 
-        logDetail( "Handling trigger: " + trigger.toString() );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Handling trigger: " + trigger.toString() );
 
         // There are two events that can happen which impact the
         // details about how to deal with triggers: rehydration and
@@ -207,7 +218,8 @@ class BeliefTriggerHistory
         //
         if ( ! add( trigger ))
         {
-            logDebug( "Trigger discarded for "
+            if ( _logger.isDebugEnabled() )
+                _logger.debug( "Trigger not added to history "
                       + _asset_id + " (happened in the past?)" );
             return;
         }
@@ -224,10 +236,11 @@ class BeliefTriggerHistory
         //
         if ( trigger instanceof TimeUpdateTrigger )
         {
-            logDetail( "Time-based update trigger "
-                       + trigger.getClass().getName()
-                       + ". Updating and publishing for asset "
-                       + _asset_id );
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Time-based update trigger "
+                                + trigger.getClass().getName()
+                                + ". Updating and publishing for asset "
+                                + _asset_id );
 
             // When we are forcing an update, we want to ensure that
             // any alarams started to delay the belief computation are
@@ -264,16 +277,18 @@ class BeliefTriggerHistory
             //
             if ( USE_DELAY_TIMER )
             {
-                logDetail( "Action trigger. Starting publish delay timer for: "
-                           + _asset_id );
+                if ( _logger.isDetailEnabled() )
+                    _logger.detail( "Action trigger. Starting publish delay timer for: "
+                                    + _asset_id );
                 startPublishDelayTimer();
             }
             else
             {
-                logDetail( "Action trigger "
-                           + trigger.getClass().getName()
-                           + ". Updating and publishing for asset "
-                           + _asset_id );
+                if ( _logger.isDetailEnabled() )
+                    _logger.detail( "Action trigger "
+                                    + trigger.getClass().getName()
+                                    + ". Updating and publishing for asset "
+                                    + _asset_id );
                 updateBeliefState( );
                 publishLatestBelief( );
             }
@@ -293,16 +308,18 @@ class BeliefTriggerHistory
 
             if ( USE_DELAY_TIMER )
             {
-                logDetail( "Seen all sensors. "
-                           + "Starting publish delay timer for: "
-                           + _asset_id );
+                if ( _logger.isDetailEnabled() )
+                    _logger.detail( "Seen all sensors. "
+                                    + "Starting publish delay timer for: "
+                                    + _asset_id );
                 startPublishDelayTimer();
             }
             else
             {
-                logDetail( "Seen all sensors. "
-                           + "Updating and publishing for asset "
-                           + _asset_id );
+                if ( _logger.isDetailEnabled() )
+                    _logger.detail( "Seen all sensors. "
+                                    + "Updating and publishing for asset "
+                                    + _asset_id );
                 updateBeliefState( );
                 publishLatestBelief( );
             }
@@ -322,7 +339,8 @@ class BeliefTriggerHistory
         {
             if ( _current_triggers.size() == 1 )
             {
-                logDetail( "First, diagnosis, deferring belief update for: "
+                if ( _logger.isDetailEnabled() )
+                    _logger.detail( "First, diagnosis, deferring belief update for: "
                            + _asset_id );
                 
                 startSensorLatencyTimer();
@@ -330,7 +348,8 @@ class BeliefTriggerHistory
             }
             else
             {
-                logDetail( "Deferring belief update (diagnosis) for: "
+                if ( _logger.isDetailEnabled() )
+                    _logger.detail( "Deferring belief update (diagnosis) for: "
                            + _asset_id );
                 return;
             }
@@ -338,7 +357,8 @@ class BeliefTriggerHistory
 
         else
         {
-            logDebug( "unknown trigger for: "
+            if ( _logger.isDebugEnabled() )
+                _logger.debug( "unknown trigger for: "
                       + _asset_id );
        }
        
@@ -367,8 +387,18 @@ class BeliefTriggerHistory
             && ( trigger.getTriggerTimestamp() 
                  < _last_computed_belief.getTimestamp() ))
         {
-            return false;
-        }
+            if ( _logger.isDetailEnabled() )
+                _logger.detail("Found late arriving trigger.");
+
+            if( ! shouldAddLateArrivingTrigger( trigger ))
+            {
+                return false;
+            }
+
+            if ( _logger.isDetailEnabled() )
+                _logger.detail("Decided to add late arriving trigger.");
+
+        } // if late arriving trigger
 
         // This will simply append it, though we will sort it by
         // timestamp later.
@@ -431,19 +461,23 @@ class BeliefTriggerHistory
         //
         if ( _current_triggers.size() < 1 )
         {
-            logInfo( "Ignoring belief update due to zero triggers." );
+            if ( _logger.isInfoEnabled() )
+                _logger.info( "Ignoring belief update due to zero triggers." );
             return;
         }
 
-        logInfo( "Belief Update Starting for: " + _asset_id );
+        if ( _logger.isInfoEnabled() )
+            _logger.info( "Belief Update Starting for: " + _asset_id );
 
         // We should first sort this trigger collection, as
         // everything else here will require it to be sorted.
         //
         Collections.sort( _current_triggers, new TriggerComparator() );
         
-        logDetail( "Explicit trigger count is " + _current_triggers.size()
-                   + " for " + _asset_id );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Explicit trigger count is " 
+                            + _current_triggers.size()
+                            + " for " + _asset_id );
 
         // Before updating the belief state, we need to check whether
         // or not we will need to add any implicit diagnoses.  Some
@@ -454,8 +488,10 @@ class BeliefTriggerHistory
         //
         addImplicitDiagnoses( getLatestCurrentTriggerTime() );
 
-        logDetail( "Updating belief based on " + _current_triggers.size()
-                   + " triggers for " + _asset_id );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Updating belief based on " 
+                            + _current_triggers.size()
+                            + " triggers for " + _asset_id );
 
         // Handle case where we might be computing the first belief
         // state.
@@ -474,7 +510,8 @@ class BeliefTriggerHistory
 
         BeliefState latest_belief = _last_computed_belief;
 
-        logDetail( "Initial belief before trigger list: "
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Initial belief before trigger list: "
                    + latest_belief.toString() );
 
         // This iterator will return items in ascending order (by
@@ -486,12 +523,15 @@ class BeliefTriggerHistory
             BeliefUpdateTrigger trigger 
                     = (BeliefUpdateTrigger) trigger_iter.next();
 
-            logDetail( "Processing trigger: " + trigger.toString() );
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Processing trigger: " + trigger.toString() );
             
             latest_belief = _model_manager.updateBeliefState( latest_belief,
                                                               trigger );
             
-            logDetail( "Belief after trigger: " + latest_belief.toString() );
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Belief after trigger: " 
+                                + latest_belief.toString() );
             
         } // while trigger_iter
 
@@ -510,9 +550,78 @@ class BeliefTriggerHistory
         // update method.
         //
 
-        logInfo( "Belief Update Ended for: " + _asset_id );
+        if ( _logger.isInfoEnabled() )
+            _logger.info( "Belief Update Ended for: " + _asset_id );
 
     } // method updateBeliefState
+
+    //************************************************************
+    /**
+     * This method implements the policy about what to do when
+     * triggers arrive with timestamps that come before the time stamp
+     * of the last computed state belief state: i.e., late arriving
+     * triggers.
+     *
+     * @param trigger The arriving trigger (assumed to be non-null)
+     *
+     * @return If the trigger should be added to the current triggers
+     * (i.e., processed like regular triggers), this routine returns
+     * true.  If the trigger should not be added, then we return
+     * false, but this routine may also have some side effects to
+     * update other internal variables based on this late arriving
+     * trigger. 
+     */
+    boolean shouldAddLateArrivingTrigger( BeliefUpdateTrigger trigger )
+    {
+        // Presently, we do not add any late arriving triggers, but we
+        // do create some side effects for diagnosis triggers.  The
+        // implicit diagnosis possibility for sensors means that
+        // disscarding diagnoses can wreck havoc on future implicit
+        // diagnoses.  Thus, though we will not process a late
+        // arriving diagnosis, we *may* update our internal hashtables
+        // to reflect this diagnosis value.  However, we will only do
+        // that if this explicit diagnosis time stamp is later in time
+        // than the previous explicit timestamp.
+        //
+
+        if ( trigger instanceof BelievabilityDiagnosis )
+        {
+            BelievabilityDiagnosis diag =
+                    (BelievabilityDiagnosis) trigger;
+           
+            BelievabilityDiagnosis last_explicit_diag
+                = (BelievabilityDiagnosis) _last_explicit_diagnosis.get
+                    ( diag.getSensorName() );
+
+            // If there is no last explicit diagnosis, or if this
+            // current diagnosis occurred after the previous explicit
+            // diagnosis, then we set the last explicit diagnosis to
+            // this new diagnosis.
+            //
+           if (( last_explicit_diag == null )
+               || ( diag.getTriggerTimestamp()
+                    > last_explicit_diag.getTriggerTimestamp() ))
+           {
+
+               if ( _logger.isDetailEnabled() )
+                   _logger.detail("Remembering diag. value of late trigger.");
+
+               _last_explicit_diagnosis.put( diag.getSensorName(),
+                                             trigger );
+
+           } // if should add as an explicit diagnosis
+
+           else
+           {
+               if ( _logger.isDetailEnabled() )
+                   _logger.detail("Ignoring late trigger. Older than previous diag.");
+           }
+
+        } // if instance of BelievabilityDiagnosis
+
+        return false;
+
+    } // method handleLateArrivingTrigger
 
     //************************************************************
     /**
@@ -601,7 +710,8 @@ class BeliefTriggerHistory
         }
         catch (IndexOutOfBoundsException ioobe)
         {
-            logInfo( "Cannot get latest trigger time from empty list." );
+            if ( _logger.isInfoEnabled() )
+                _logger.info( "Cannot get latest trigger time from empty list." );
             return System.currentTimeMillis();
         }
 
@@ -630,7 +740,8 @@ class BeliefTriggerHistory
         }
         catch (IndexOutOfBoundsException ioobe)
         {
-            logInfo( "Cannot get earliest trigger time from empty list." );
+            if ( _logger.isInfoEnabled() )
+                _logger.info( "Cannot get earliest trigger time from empty list." );
             return System.currentTimeMillis();
         }
 
@@ -666,19 +777,37 @@ class BeliefTriggerHistory
             // this sensor, then we do not need to consider it.
             //
             if ( _current_sensors.contains( sensor_name ))
+            {
+                if ( _logger.isDetailEnabled() )
+                    _logger.detail( "Implict diagnosis check: Skipping '"
+                           + sensor_name 
+                           + "' which has current explicit diagnosis.");
                 continue;
+            }
 
             // Next, we need to see whether or not this is a sensor
             // for which we need to add an implicit diagnosis at all.
             //
             if ( ! usesImplicitDiagnoses( sensor_name ))
+            {
+                if ( _logger.isDetailEnabled() )
+                    _logger.detail( "Implict diagnosis check: Skipping '"
+                           + sensor_name 
+                           + "' not defined to use implicit diagnosis.");
                 continue;
+            }
 
             // Last check is to see when the last explicit or implict
             // diagnosis was made for this sensor.
             //
             if ( ! needImplicitDiagnosis( sensor_name, time ))
+             {
+                 if ( _logger.isDetailEnabled() )
+                     _logger.detail( "Implict diagnosis check: Skipping '"
+                           + sensor_name 
+                           + "' not time for another implicit diagnosis.");
                 continue;
+            }
 
             // If we get here, then we know we need to add an implicit
             // diagnosis for this sensor.
@@ -691,7 +820,8 @@ class BeliefTriggerHistory
             if ( diag == null )
                 continue;
 
-            logDetail( "Adding implict diagnosis: "
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Adding implict diagnosis: "
                        + diag.toString() );
 
             add( diag );
@@ -732,7 +862,8 @@ class BeliefTriggerHistory
         //
         if ( last_explicit_diag == null )
         {
-            logDebug( "Didn't find last explict diagnosis for: "
+            if ( _logger.isDebugEnabled() )
+                _logger.debug( "Didn't find last explict diagnosis for: "
                       + sensor_name );
             return false;
         }
@@ -750,7 +881,8 @@ class BeliefTriggerHistory
         //
         if ( last_time > time )
         {
-            logDebug( "Implicit diag. time less than last diag. time for: "
+            if ( _logger.isDebugEnabled() )
+                _logger.debug( "Implicit diag. time less than last diag. time for: "
                       + sensor_name 
                       + " ( " + last_time + " > " + time + ")" );
             return false;
@@ -828,7 +960,8 @@ class BeliefTriggerHistory
 
         if ( last_diag == null )
         {
-            logDebug( "Cannot find last explicit diagnosis."
+            if ( _logger.isDebugEnabled() )
+                _logger.debug( "Cannot find last explicit diagnosis."
                       + "No implicit diagnosis for :" + _asset_id );
             return null;
         }
@@ -898,7 +1031,8 @@ class BeliefTriggerHistory
         //
         if ( _last_computed_belief == null )
         {
-            logInfo( "Did not find last computed belief in utility calc.");
+            if ( _logger.isInfoEnabled() )
+                _logger.info( "Did not find last computed belief in utility calc.");
             return false;
         }
 
@@ -995,7 +1129,8 @@ class BeliefTriggerHistory
         
         _alarm_handler.addAlarm( _delay_alarm );
 
-        logDetail( "Publish delay timer started for " + _asset_id
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Publish delay timer started for " + _asset_id
                    + ". Alarm:" + _delay_alarm.toString() );
 
     } // method startPublishDelayTimer
@@ -1022,7 +1157,8 @@ class BeliefTriggerHistory
         if (( _delay_alarm != null )
             && ( ! _delay_alarm.hasExpired() ))
         {
-            logDetail( "Latency timer not started for " + _asset_id
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Latency timer not started for " + _asset_id
                        + ". Existing publish delay alarm exists." );
             return;
         }
@@ -1048,7 +1184,8 @@ class BeliefTriggerHistory
         
         _alarm_handler.addAlarm( _latency_alarm );
 
-        logDetail( "Latency timer started for " + _asset_id
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Latency timer started for " + _asset_id
                    + ". Alarm:" + _latency_alarm.toString() );
 
     } // method startSensorLatencyTimer
@@ -1087,7 +1224,8 @@ class BeliefTriggerHistory
         
         _alarm_handler.addAlarm( _publish_alarm );
 
-        logDetail( "Publish timer started for " + _asset_id
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Publish timer started for " + _asset_id
                    + ". Alarm:" + _publish_alarm.toString() );
 
     } // method startPublishIntervalTimer
@@ -1106,7 +1244,8 @@ class BeliefTriggerHistory
             throws BelievabilityException
     {
 
-        logDetail( "Publish belief for " + _asset_id );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Publish belief for " + _asset_id );
 
         _consumer.consumeBeliefState( _last_computed_belief );
 
@@ -1145,7 +1284,8 @@ class BeliefTriggerHistory
 
         if ( alarm == _delay_alarm )
         {
-            logDetail( "Handling delay alarm expiration for: "
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Handling delay alarm expiration for: "
                        + _asset_id );
 
             handleBeliefTrigger
@@ -1156,7 +1296,8 @@ class BeliefTriggerHistory
 
         else if ( alarm == _latency_alarm )
         {
-            logDetail( "Handling latency alarm expiration for: "
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Handling latency alarm expiration for: "
                        + _asset_id );
 
             handleBeliefTrigger
@@ -1167,7 +1308,8 @@ class BeliefTriggerHistory
         
         else if ( alarm == _publish_alarm )
         {
-            logDetail( "Handling publish alarm expiration for: "
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Handling publish alarm expiration for: "
                        + _asset_id );
 
             handleBeliefTrigger
@@ -1178,7 +1320,8 @@ class BeliefTriggerHistory
 
         else
         {
-            logDebug( "Unknown alarm expiration: " 
+            if ( _logger.isDebugEnabled() )
+                _logger.debug( "Unknown alarm expiration: " 
                       + alarm.getClass().getName() + " for "
                       + _asset_id );
         }
@@ -1226,7 +1369,7 @@ class BeliefTriggerHistory
     // and has the information, it is just an optimization that it
     // chooses not to relay what it knows. Thus, when we decide a new
     // belief state calculation is in order, we will need to factor
-    // this in. To do this requires remebering the last diagnosis
+    // this in. To do this requires remembering the last diagnosis
     // value we received for each sensor.  This Hashtable has this
     // information: key is the sensor name, value is a
     // BelievabilityDiagnosis object for the last reported value.
@@ -1238,12 +1381,12 @@ class BeliefTriggerHistory
     // need to track the last time we added an implicit diagnosis for
     // each sensor, since it is the interval between this time and the
     // current time that really matters as far as whether we should
-    // add another explicit sensor.  Key here is the sensor name,
+    // add another implicit diagnosis.  Key here is the sensor name,
     // values are Long objects.
     //
     private Hashtable _last_implicit_diagnosis_time = new Hashtable();
 
-    // This is a cahce of the results that the model mamager tells us
+    // This is a cache of the results that the model mamager tells us
     // about which sensors we need to consider implicit diagnoses for.
     // Key is the sensor name (String), values are Boolean objects.
     //

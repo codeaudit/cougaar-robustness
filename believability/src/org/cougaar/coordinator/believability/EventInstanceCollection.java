@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/EventInstanceCollection.java,v $
- * $Revision: 1.21 $
- * $Date: 2004-10-08 20:25:41 $
+ * $Revision: 1.22 $
+ * $Date: 2004-10-20 16:48:21 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -38,7 +38,7 @@ import org.cougaar.coordinator.techspec.EventDescription;
  * artifact of the nature of the threat and event objects). 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.21 $Date: 2004-10-08 20:25:41 $
+ * @version $Revision: 1.22 $Date: 2004-10-20 16:48:21 $
  *
  */
 class EventInstanceCollection extends Model
@@ -162,23 +162,26 @@ class EventInstanceCollection extends Model
 
         this._asset_id = asset_id;
 
-        logDetail ( "Creating new event collection for asset "
-                   + asset_id.getName()
-                   + " in state dim "
-                   + asset_dim_model.getStateDimensionName( ) );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Creating new event collection for asset "
+                            + asset_id.getName()
+                            + " in state dim "
+                            + asset_dim_model.getStateDimensionName( ) );
 
-        logDetail ( "Considering a set of " 
-                   + stress_set.size() + " stresses." );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Considering a set of " 
+                            + stress_set.size() + " stresses." );
 
         // This is the way to convert and IS into its techspec.
         //
         AssetTechSpecInterface asset_ts 
 //sjf                = DefaultAssetTechSpec.findAssetByID( asset_id );
-	    = AssetManagerPlugin.getAssetTechSpec( asset_id ); //sjf
+         = AssetManagerPlugin.getAssetTechSpec( asset_id ); //sjf
 
         if ( asset_ts == null )
         {
-            logError( "Found a NULL tech spec for asset ID "
+            if ( _logger.isErrorEnabled() )
+                _logger.error( "Found a NULL tech spec for asset ID "
                       + asset_id + " (name=" + asset_id.getName() 
                       + "). Assuming no events/stresses." );
             return;
@@ -191,13 +194,16 @@ class EventInstanceCollection extends Model
 
             if ( ! stress.affectsAsset( asset_ts ))
             {
-                logDetail ( "Stress " + stress.getName()
-                           + " is not applicable for " + asset_id.getName() );
+                if ( _logger.isDetailEnabled() )
+                    _logger.detail( "Stress " + stress.getName()
+                                    + " is not applicable for " 
+                                    + asset_id.getName() );
                 continue;
             }
 
-            logDetail ( "Applicable Stress " + stress.getName()
-                       + " found for " + asset_id.getName() );
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Applicable Stress " + stress.getName()
+                                + " found for " + asset_id.getName() );
             
             // See whether or not we already have a stres fo this
             // event.
@@ -207,7 +213,8 @@ class EventInstanceCollection extends Model
 
             if ( event_desc == null )
             {
-                logDetail( "NULL found for stress event. Skipping."); 
+                if ( _logger.isDetailEnabled() )
+                    _logger.detail( "NULL found for stress event. Skipping."); 
                 continue;
             }
 
@@ -224,12 +231,15 @@ class EventInstanceCollection extends Model
                 _event_instance_hash.put( event_desc.getName(),
                                           event_im );
 
-                logDetail ( "New stress event added: " + event_im.getName() );
+                if ( _logger.isDetailEnabled() )
+                    _logger.detail( "New stress event added: " 
+                                    + event_im.getName() );
             }
             else
             {
-                logDetail ( "Using existing stress event: "
-                           + event_im.getName() );
+                if ( _logger.isDetailEnabled() )
+                    _logger.detail( "Using existing stress event: "
+                                    + event_im.getName() );
             }
 
             event_im.addStress( stress );
@@ -323,7 +333,8 @@ class EventInstanceCollection extends Model
 
             if ( OVERRIDE_EVENT_PROBABILITIES )
             {
-                logWarning( "OVERRIDE EVENT PROBS.  THIS IS FOR TESTING ONLY!");
+                if ( _logger.isWarnEnabled() )
+                    _logger.warn( "OVERRIDE EVENT PROBS.  THIS IS FOR TESTING ONLY!");
                 
                 if ( event_probs[idx] < 0.0001 )
                     event_probs[idx] = 0.1;
@@ -332,16 +343,19 @@ class EventInstanceCollection extends Model
                 else
                     event_probs[idx] = 0.5;
 
-                logDetail( "New event prob for  " + event.getName() 
-                          + " is " + event_probs[idx] );
+                if ( _logger.isDetailEnabled() )
+                    _logger.detail( "New event prob for  " + event.getName() 
+                                    + " is " + event_probs[idx] );
             }
 
         } // for idx
 
-        logDetail( "Event probs: " 
-                  + ProbabilityUtils.arrayToString( event_probs ));
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Event probs: " 
+                            + ProbabilityUtils.arrayToString( event_probs ));
         
-        logDetail( "Event transitions:\n" 
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Event transitions:\n" 
                   + ProbabilityUtils.arrayToString( event_trans, "\t" ));
         
         // Ok, so now we have the individual state transition

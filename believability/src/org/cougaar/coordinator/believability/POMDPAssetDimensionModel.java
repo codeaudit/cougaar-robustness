@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetDimensionModel.java,v $
- * $Revision: 1.30 $
- * $Date: 2004-09-21 00:43:49 $
+ * $Revision: 1.31 $
+ * $Date: 2004-10-20 16:48:21 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -29,7 +29,7 @@ import org.cougaar.coordinator.techspec.AssetType;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.30 $Date: 2004-09-21 00:43:49 $
+ * @version $Revision: 1.31 $Date: 2004-10-20 16:48:21 $
  *
  */
 class POMDPAssetDimensionModel extends Model
@@ -55,7 +55,8 @@ class POMDPAssetDimensionModel extends Model
         
         this._asset_dim_model = dim_model;
 
-        logDetail( "\tCreating POMDP model for dimension: " 
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "\tCreating POMDP model for dimension: " 
                   + _asset_dim_model.getStateDimensionName( ) );
 
         createInitialBeliefState();
@@ -84,7 +85,8 @@ class POMDPAssetDimensionModel extends Model
                     ( "POMDPAssetDimensionModel.createInitialBeliefState()",
                       "Asset model is NULL" );
         
-        logDetail( "\tCreating POMDP iinitial belief for dimension: " 
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "\tCreating POMDP iinitial belief for dimension: " 
                   + _asset_dim_model.getStateDimensionName( ) );
 
         int num_vals = _asset_dim_model.getNumStateDimValues( );
@@ -177,7 +179,8 @@ class POMDPAssetDimensionModel extends Model
                   start_time,
                   end_time );
 
-        logDetail( "Threat transition matrix: " 
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Threat transition matrix: " 
                   + _asset_dim_model.getStateDimensionName() + "\n" 
                   + ProbabilityUtils.arrayToString( trans_matrix ));
 
@@ -276,7 +279,8 @@ class POMDPAssetDimensionModel extends Model
         double[][] action_trans
                 = _asset_dim_model.getActionTransitionMatrix( action );
 
-        logDetail( "Action transition matrix: " 
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Action transition matrix: " 
                   + _asset_dim_model.getStateDimensionName() + "\n" 
                   + ProbabilityUtils.arrayToString( action_trans ));
 
@@ -358,7 +362,8 @@ class POMDPAssetDimensionModel extends Model
         double[] prev_belief_prob = prev_belief.getProbabilityArray();
         double[] next_belief_prob = new double[prev_belief_prob.length];
 
-        logDebug( "Updating belief given sensor '"
+        if ( _logger.isDebugEnabled() )
+            _logger.debug( "Updating belief given sensor '"
                   + diagnosis.getSensorName()
                   + "' has sensed '" + diagnosis_value + "'");
 
@@ -378,7 +383,8 @@ class POMDPAssetDimensionModel extends Model
         //
         double[][] obs_prob = sensor_model.getObservationProbabilityArray();
 
-        logDetail( "Observation probabilities: " 
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Observation probabilities: " 
                   + _asset_dim_model.getStateDimensionName() + "\n" 
                   + ProbabilityUtils.arrayToString( obs_prob ));
 
@@ -392,7 +398,8 @@ class POMDPAssetDimensionModel extends Model
                       + diagnosis_value + "' not found. "
                       + diagnosis.toString() );
  
-        logDetail( "Pre-update: " 
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Pre-update: " 
                   + ProbabilityUtils.arrayToString( prev_belief_prob ));
 
         for ( int state = 0; state < prev_belief_prob.length; state++ ) 
@@ -405,7 +412,8 @@ class POMDPAssetDimensionModel extends Model
             
         } // for state
 
-        logDetail( "Pre-normalization: " 
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Pre-normalization: " 
                   + ProbabilityUtils.arrayToString( next_belief_prob ));
    
         // Here we choose to ignore impossible observations, though we
@@ -417,7 +425,8 @@ class POMDPAssetDimensionModel extends Model
         //
         if( Precision.isZeroComputation( denom ))
         {
-            logWarning( "updateBeliefStateDiagnosisObs(): "
+            if ( _logger.isWarnEnabled() )
+                _logger.warn( "updateBeliefStateDiagnosisObs(): "
                         + "Diagnosis is not possible. i.e., Pr("
                         + diagnosis_value + ") = 0.0. Ignoring diagnosis.");
             next_belief.setProbabilityArray
@@ -429,7 +438,8 @@ class POMDPAssetDimensionModel extends Model
         for( int i = 0; i < next_belief_prob.length; i++ )
             next_belief_prob[i] /= denom;
 
-        logDetail( "Post-normalization: " 
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Post-normalization: " 
                   + ProbabilityUtils.arrayToString( next_belief_prob ));
 
         next_belief.setProbabilityArray( next_belief_prob );
@@ -489,7 +499,8 @@ class POMDPAssetDimensionModel extends Model
                     ( "POMDPAssetDimensionModel.getRandomBeliefState()",
                       "Asset type dimension model is NULL" );
         
-        logDetail( "\tCreating POMDP random belief for dimension: " 
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "\tCreating POMDP random belief for dimension: " 
                   + _asset_dim_model.getStateDimensionName( ) );
 
         int num_vals = _asset_dim_model.getNumStateDimValues( );
@@ -524,7 +535,8 @@ class POMDPAssetDimensionModel extends Model
                     ( "POMDPAssetDimensionModel.getUniformBeliefState()",
                       "Asset type dimension model is NULL" );
         
-        logDetail( "\tCreating POMDP uniform belief for dimension: " 
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "\tCreating POMDP uniform belief for dimension: " 
                   + _asset_dim_model.getStateDimensionName( ) );
 
         int num_vals = _asset_dim_model.getNumStateDimValues( );

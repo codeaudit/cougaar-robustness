@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetModel.java,v $
- * $Revision: 1.32 $
- * $Date: 2004-10-08 20:25:41 $
+ * $Revision: 1.33 $
+ * $Date: 2004-10-20 16:48:21 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.32 $Date: 2004-10-08 20:25:41 $
+ * @version $Revision: 1.33 $Date: 2004-10-20 16:48:21 $
  *
  */
 class POMDPAssetModel extends Model
@@ -92,7 +92,8 @@ class POMDPAssetModel extends Model
                     ( "POMDPAssetModel.POMDPAssetModel()",
                       "AssetType model is NULL" );
 
-        logDebug( "Creating POMDP model for asset type: " 
+        if ( _logger.isDebugEnabled() )
+            _logger.debug( "Creating POMDP model for asset type: " 
                   + at_model.getName() );
         
         this._asset_type_model = at_model;
@@ -126,7 +127,8 @@ class POMDPAssetModel extends Model
         //
         createInitialBeliefState();
 
-        logDetail( "Finished creating POMDP model for asset type: " 
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Finished creating POMDP model for asset type: " 
                   + _asset_type_model.getName() );
         
         setValidity( true );
@@ -203,7 +205,8 @@ class POMDPAssetModel extends Model
         //
         _initial_belief.setTimestamp( System.currentTimeMillis() );
 
-        logDetail( "Creating POMDP initial belief for asset type: " 
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Creating POMDP initial belief for asset type: " 
                   + _asset_type_model.getName() );
         
     } // method createInitialBeliefState
@@ -233,7 +236,8 @@ class POMDPAssetModel extends Model
         //
         if ( USE_FAKE_TRIGGER_TIME )
         {
-            logWarning( "USING FAKE TIME FOR TESTING ! (FIXME)" );
+            if ( _logger.isWarnEnabled() )
+                _logger.warn( "USING FAKE TIME FOR TESTING ! (FIXME)" );
             end_time = nextFakeTime(); 
         }
    
@@ -257,7 +261,8 @@ class POMDPAssetModel extends Model
 
         if ( start_time > end_time )
         {
-            logDebug( "updateBeliefStateForTime(): "
+            if ( _logger.isDebugEnabled() )
+                _logger.debug( "updateBeliefStateForTime(): "
                       + " Found a negative update interval."
                       + "[ " + start_time + ", " + end_time + "]"
                       + " for asset " + start_belief.getAssetID()
@@ -267,7 +272,8 @@ class POMDPAssetModel extends Model
 
         if ( start_time == end_time )
         {
-            logDebug( "updateBeliefStateForTime(): Zero length interval."
+            if ( _logger.isDebugEnabled() )
+                _logger.debug( "updateBeliefStateForTime(): Zero length interval."
                      + "[ " + start_time + ", " + end_time + "]"
                      + " for asset " + start_belief.getAssetID()
                      + ". Threats already accounted for." );
@@ -278,7 +284,8 @@ class POMDPAssetModel extends Model
         {
             if ( (end_time - start_time) < SMALLEST_THREAT_INTERVAL_MS/2 )
             {
-                logDetail( "updateBeliefStateForTime(): "
+                if ( _logger.isDetailEnabled() )
+                    _logger.detail( "updateBeliefStateForTime(): "
                            + " Found miniscule update interval."
                            + "[ " + start_time + ", " + end_time + "]"
                            + " for asset " + start_belief.getAssetID()
@@ -288,7 +295,8 @@ class POMDPAssetModel extends Model
             
             if ( (end_time - start_time) < SMALLEST_THREAT_INTERVAL_MS )
             {
-                logDetail( "updateBeliefStateForTime(): "
+                if ( _logger.isDetailEnabled() )
+                    _logger.detail( "updateBeliefStateForTime(): "
                            + " Found small update interval."
                            + "[ " + start_time + ", " + end_time + "]"
                            + " for asset " + start_belief.getAssetID()
@@ -299,13 +307,16 @@ class POMDPAssetModel extends Model
             
         } // if WORRY_ABOUT_SMALL_INTERVALS
         
-        logDetail( "updateBeliefStateForTime(): "
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "updateBeliefStateForTime(): "
                    + "Updating for all threats over interval."
                    + "[ " + start_time + ", " + end_time + "]"
                    + " for asset " + start_belief.getAssetID()
                    + "." );
         
-        logDetail( "Belief before threat update: " + start_belief.toString() );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Belief before threat update: " 
+                            + start_belief.toString() );
 
          // Here we will be updating all the state dimensions.
         //
@@ -335,7 +346,9 @@ class POMDPAssetModel extends Model
 
         } // for dim_idx
 
-        logDetail( "Belief after threat update: " + next_belief.toString() );
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Belief after threat update: " 
+                            + next_belief.toString() );
 
         return next_belief;
 
@@ -386,7 +399,8 @@ class POMDPAssetModel extends Model
         //
         if ( trigger instanceof TimeUpdateTrigger )
         {
-            logDetail( "Belief after time trigger: " 
+            if ( _logger.isDetailEnabled() )
+                _logger.detail( "Belief after time trigger: " 
                        + next_belief.toString() );
             return next_belief;
         }
@@ -425,7 +439,8 @@ class POMDPAssetModel extends Model
                                                   trigger,
                                                   next_belief_dim );
 
-        logDetail( "Belief after diagnosis/action trigger: " 
+        if ( _logger.isDetailEnabled() )
+            _logger.detail( "Belief after diagnosis/action trigger: " 
                    + next_belief.toString() );
 
         return next_belief;
