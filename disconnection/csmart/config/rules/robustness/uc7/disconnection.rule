@@ -1,5 +1,5 @@
-######################################################################################
-# Adds Adaptive Robustness Use Case 7 (Disconnection) components to society definition
+#####################################################
+# Adds Disconnection components to society definition
 # 
 
 omsp = "org.cougaar.core.adaptivity.OperatingModeServiceProvider"
@@ -7,15 +7,22 @@ ompm = "org.cougaar.core.adaptivity.OperatingModePolicyManager"
 csp = "org.cougaar.core.adaptivity.ConditionServiceProvider"
 cp = "org.cougaar.tools.robustness.deconfliction.CoordinatorPlugin"
 dap = "org.cougaar.tools.robustness.disconnection.DisconnectAgentPlugin"
+dnp = "org.cougaar.tools.robustness.disconnection.DisconnectNodePlugin"
+dmp = "org.cougaar.tools.robustness.disconnection.DisconnectManagerPlugin"
 ds = "org.cougaar.tools.robustness.disconnection.test.disconnection.DisconnectionServlet"
 
-mgrPlugins = [omsp, ompm, csp, cp]
-agentPlugins = [omsp, ompm, csp, dap, ds]
+agentPlugins = [omsp, ompm, csp, dap]
+nodePlugins = [omsp, ompm, csp, dnp, ds]
+mgrPlugins = [omsp, ompm, csp, cp, dmp]
 
 society.each_agent do |agent|
     if agent.name =~ /.*ARManager.*/
         agent.add_components(mgrPlugins)
     else
-	agent.add_components(agentPlugins)
+	  agent.add_components(agentPlugins)
     end
+end
+
+society.each_node_agent do |node|
+    node.add_components(nodePlugins)
 end
