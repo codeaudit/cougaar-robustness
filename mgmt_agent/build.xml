@@ -366,10 +366,12 @@
 	<target name="create_cougaar_overlay">
 		<delete dir="staging"/>
 		<mkdir dir="staging/lib"/>
+    <mkdir dir="staging/configs/mic/"/>
 		<antcall target="init"/>
 		<antcall target="compile"/>
 		<antcall target="jar"/>
 		<move file="${lib}/${jar}" toDir="staging/lib"/>
+    <copy file="test/data/communities.xml" toDir="staging/configs/mic"/>
 		<zip zipfile="Robustness_mic_mgmt_agent_overlay.zip" basedir="staging"/>
 		<delete dir="staging"/>
 	</target>
