@@ -763,6 +763,14 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             nsr.setReconnectTime(-1.0);
             nsr.setDiagnosis(TARDY);
             blackboard.publishChange(nodeStatus);
+            if (logger.isDebugEnabled()) logger.debug(nsr.toString());
+            try {
+                blackboard.persistNow();
+            }
+            catch (org.cougaar.core.persist.PersistenceNotEnabledException e)
+            {
+                logger.error(e.toString());
+            }
         }
     }
 
