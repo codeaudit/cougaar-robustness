@@ -455,6 +455,9 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
       blackboard.publishRemove(nodeStatusRelay);
       nodeStatusRelay = null;
     }
+    model = new CommunityStatusModel(myName,
+                                     communityName,
+                                     getBindingSite());
     String controllerClassname =
         System.getProperty(CONTROLLER_CLASS_PROPERTY,
                            DEFAULT_CONTROLLER_CLASSNAME);
@@ -467,9 +470,6 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
         logger.error("Exception creating RobustnessController", ex);
       }
     }
-    model = new CommunityStatusModel(myName,
-                                     communityName,
-                                     getBindingSite());
     model.setController(controller);
     model.addChangeListener(controller);
     blackboard.publishAdd(model);
