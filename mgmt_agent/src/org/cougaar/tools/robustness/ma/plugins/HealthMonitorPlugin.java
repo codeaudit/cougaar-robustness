@@ -207,8 +207,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
   //private TopologyReaderService topologyService = null;
 
   private CommunityRoster roster = null;
-  private Object rosterLock = new Object();
-
+  private boolean communityChanged = false;
 
   /**
    * This method obtains a roster for the community to be monitored and sends
@@ -287,11 +286,12 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     mgmtAgentProps =
       (IncrementalSubscription)bbs.subscribe(propertiesPredicate);
 
+    // Register for updates to monitored community
+    communityService.addListener(this);
+
     // Get Roster for community to monitor
     if (communityToMonitor != null && communityToMonitor.length() > 0) {
       roster = communityService.getRoster(communityToMonitor);
-      // Register for updates to monitored community
-      communityService.addListener(this);
     }
 
     // Start evaluation thread to periodically update and analyze the Health
@@ -749,62 +749,70 @@ public class HealthMonitorPlugin extends SimplePlugin implements
    * collection to maintain consistency with roster.
    * @param roster
    */
-  //private void processRosterChanges(CommunityRoster roster) {
   private void processRosterChanges() {
     Collection cmList = null;
-    synchronized (rosterLock) {
+    if (communityChanged) {
+      roster = communityService.getRoster(communityToMonitor);
       cmList = roster.getMembers();
-      roster = null;
-    }
-    // If first time, copy members from roster to local list
-    if (membersHealthStatus.isEmpty()) {
-      for (Iterator it = cmList.iterator(); it.hasNext();) {
-        CommunityMember cm = (CommunityMember)it.next();
-        if (cm.isAgent() && !isNodeAgent(cm.getName())) {
-          HealthStatus hs = newHealthStatus(SimpleMessageAddress.getSimpleMessageAddress(cm.getName()));
-          addHealthStatus(hs);
-          //log.info("Adding " + cm.getName());
-          bbs.openTransaction();
-          bbs.publishAdd(hs);
-          bbs.closeTransaction();
-        }
-      }
-    } else {
-      // Look for additions
-      Collection newMembers = new Vector();
-      for (Iterator it = cmList.iterator(); it.hasNext();) {
-        CommunityMember cm = (CommunityMember)it.next();
-        MessageAddress agent = SimpleMessageAddress.getSimpleMessageAddress(cm.getName());
-        if (cm.isAgent() && !isNodeAgent(cm.getName()) && !hasHealthStatus(agent)) {
-          HealthStatus hs = newHealthStatus(agent);
-          addHealthStatus(hs);
-          newMembers.add(hs);
-          //log.info("Adding " + cm.getName());
-          bbs.openTransaction();
-          bbs.publishAdd(hs);
-          bbs.closeTransaction();
-        }
-      }
-      // Look for deletions
-      for (Iterator it = findMonitoredAgents().iterator(); it.hasNext();) {
-        HealthStatus hs = getHealthStatus((MessageAddress)it.next());
-        boolean found = false;
-        for (Iterator it1 = cmList.iterator(); it1.hasNext();) {
-          CommunityMember cm = (CommunityMember)it1.next();
-          if (hs.getAgentId().equals(SimpleMessageAddress.getSimpleMessageAddress(cm.getName()))) {
-            found = true;
-            break;
+      communityChanged = false;
+      // If first time, copy members from roster to local list
+      if (membersHealthStatus.isEmpty()) {
+        for (Iterator it = cmList.iterator(); it.hasNext(); ) {
+          CommunityMember cm = (CommunityMember) it.next();
+          if (cm.isAgent() &&
+              !cm.getName().equals(myAgent.toString()) &&
+              !isNodeAgent(cm.getName())) {
+            HealthStatus hs = newHealthStatus(SimpleMessageAddress.
+                                              getSimpleMessageAddress(cm.
+                getName()));
+            addHealthStatus(hs);
+            //log.info("Adding " + cm.getName());
+            bbs.openTransaction();
+            bbs.publishAdd(hs);
+            bbs.closeTransaction();
           }
         }
-        if (!found) {
-          log.info("Removed " + hs.getAgentId());
-          it.remove();
-          bbs.openTransaction();
-          bbs.publishRemove(hs);
-          bbs.closeTransaction();
+      } else {
+        // Look for additions
+        Collection newMembers = new Vector();
+        for (Iterator it = cmList.iterator(); it.hasNext(); ) {
+          CommunityMember cm = (CommunityMember) it.next();
+          MessageAddress agent = SimpleMessageAddress.getSimpleMessageAddress(
+              cm.getName());
+          if (cm.isAgent() &&
+              !isNodeAgent(cm.getName()) &&
+              !cm.getName().equals(myAgent.toString()) &&
+              !hasHealthStatus(agent)) {
+            HealthStatus hs = newHealthStatus(agent);
+            addHealthStatus(hs);
+            newMembers.add(hs);
+            //log.info("Adding " + cm.getName());
+            bbs.openTransaction();
+            bbs.publishAdd(hs);
+            bbs.closeTransaction();
+          }
+        }
+        // Look for deletions
+        for (Iterator it = findMonitoredAgents().iterator(); it.hasNext(); ) {
+          HealthStatus hs = getHealthStatus( (MessageAddress) it.next());
+          boolean found = false;
+          for (Iterator it1 = cmList.iterator(); it1.hasNext(); ) {
+            CommunityMember cm = (CommunityMember) it1.next();
+            if (hs.getAgentId().equals(SimpleMessageAddress.
+                                       getSimpleMessageAddress(cm.getName()))) {
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            log.info("Removed " + hs.getAgentId());
+            it.remove();
+            bbs.openTransaction();
+            bbs.publishRemove(hs);
+            bbs.closeTransaction();
+          }
         }
       }
-      roster = null;
     }
   }
 
@@ -1151,9 +1159,9 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     if (changed) {
       int totalAgents = agents.size();
       int agentsInNormalState = ((List)stateMap.get("NORMAL")).size();
-      if (agentsInNormalState == totalAgents) {
-        log.info("Agents Monitored: " + totalAgents +
-        (totalAgents > 0 ? " - All in NORMAL state" : ""));
+      if (agentsInNormalState == totalAgents && totalAgents > 0) {
+        event("STATUS", "Robustness Community Ready");
+        log.info(totalAgents + " Agents Monitored - All in NORMAL state");
         allNormalLastTime = true;
       } else {
         log.info("Agents Monitored: " + totalAgents);
@@ -1179,6 +1187,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
    * Gets externally configurable parameters defined in community attributes.
    */
   private void getPropertiesFromCommunityAttributes() {
+    //StringBuffer sb = new StringBuffer("getPropertiesFromCommunityAttributes:");
     Attributes attrs =
       communityService.getCommunityAttributes(communityToMonitor);
     try {
@@ -1187,9 +1196,12 @@ public class HealthMonitorPlugin extends SimplePlugin implements
         Attribute attr = (Attribute)enum.nextElement();
         String id = attr.getID();
         if (healthMonitorProps.containsKey(id)) {
-          healthMonitorProps.setProperty(id, (String)attr.get());
+          String value = (String)attr.get();
+          healthMonitorProps.setProperty(id, value);
+          //sb.append(" " + id + "=" + value);
         }
       }
+      //log.info(sb.toString());
     } catch (NamingException ne) {
       log.error("Exception getting attributes from CommunityService, " + ne);
     }
@@ -1261,12 +1273,10 @@ public class HealthMonitorPlugin extends SimplePlugin implements
   }
 
   public void communityChanged(CommunityChangeEvent cce) {
+    //log.info("CommunityChangeEvent: " + cce);
     if (cce.getCommunityName().equals(communityToMonitor) &&
         (cce.getType() == cce.ADD_ENTITY || cce.getType() == cce.REMOVE_ENTITY)) {
-      //log.info("CommunityChangeEvent: " + cce);
-      synchronized (rosterLock) {
-        roster = communityService.getRoster(communityToMonitor);
-      }
+      communityChanged = true;
     }
   }
 
