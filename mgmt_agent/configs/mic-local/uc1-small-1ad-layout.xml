@@ -1,0 +1,81 @@
+<society name='1ad-small-layout'
+  xmlns:xsi='http:/www.w3.org/2001/XMLSchema-instance'
+  xsi:noNamespaceSchemaLocation='http:/www.cougaar.org/2003/society.xsd'>
+  <host name='HOST1'>
+    <facet enclave='FWD'/>
+    <node name='FWD-NODE'>
+      <facet role="NameServer"/>
+      <agent name='1-35-ARBN'/>
+      <agent name='1-6-INFBN'/>
+      <agent name='1-AD'/>
+      <agent name='102-POL-SUPPLYCO'/>
+      <agent name='123-MSB'/>
+      <agent name='47-FSB'/>
+      <agent name='123-MSB'/>
+      <agent name='16-CSG'/>
+      <agent name='18-MAINTBN'/>
+      <agent name='2-BDE-1-AD'/>
+      <agent name='227-SUPPLYCO'/>
+      <agent name='26-SSCO'/>
+      <agent name='485-CSB'/>
+      <agent name='DISCOM-1-AD'/>
+    </node>
+  </host>
+  <host name='HOST2'>
+    <facet enclave='REAR'/>
+    <node name='REAR-NODE'>
+      <agent name='1-27-FABN'/>
+      <agent name='110-POL-SUPPLYCO'/>
+      <agent name='125-ORDBN'/>
+      <agent name='130-ENGBDE'/>
+      <agent name='191-ORDBN'/>
+      <agent name='21-TSC-HQ'/>
+      <agent name='240-SSCO'/>
+      <agent name='29-SPTGP'/>
+      <agent name='3-SUPCOM-HQ'/>
+      <agent name='316-POL-SUPPLYBN'/>
+      <agent name='343-SUPPLYCO'/>
+      <agent name='37-TRANSGP'/>
+      <agent name='41-FABDE'/>
+      <agent name='5-CORPS'/>
+      <agent name='5-CORPS-ARTY'/>
+      <agent name='5-CORPS-REAR'/>
+      <agent name='51-MAINTBN'/>
+      <agent name='52-ENGBN-CBTHVY'/>
+      <agent name='565-RPRPTCO'/>
+      <agent name='574-SSCO'/>
+      <agent name='592-ORDCO'/>
+      <agent name='597-MAINTCO'/>
+      <agent name='6-TCBN'/>
+      <agent name='7-CSG'/>
+      <agent name='561-SSBN'/>
+      <agent name='200-MMC'/>
+      <agent name='226-MAINTCO'/>
+      <agent name='632-MAINTCO'/>
+      <agent name='406-SUPPLYCO'/>
+      <agent name='71-MAINTBN'/>
+      <agent name='900-POL-SUPPLYCO'/>
+      <agent name='AWR-2'/>
+      <agent name='DLAHQ'/>
+      <agent name='FORSCOM'/>
+      <agent name='HNS'/>
+      <agent name='NCA'/>
+      <agent name='OSC'/>
+      <agent name='USAEUR'/>
+      <agent name='USEUCOM'/>
+    </node>
+  </host>
+  <host name='HOST3'>
+    <facet enclave='TRANS'/>
+    <node name='TRANS-NODE'>
+      <agent name='TRANSCOM'/>
+      <agent name='CONUSGround'/>
+      <agent name='GlobalAir'/>
+      <agent name='GlobalSea'/>
+      <agent name='PlanePacker'/>
+      <agent name='ShipPacker'/>
+      <agent name='TRANSCOM'/>
+      <agent name='TheaterGround'/>
+    </node>
+  </host>
+</society>

@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<society name='ARsmall-hosts' 
+  xmlns:xsi='http:/www.w3.org/2001/XMLSchema-instance'
+  xsi:noNamespaceSchemaLocation='http:/www.cougaar.org/2003/society.xsd'>
+  <host name='oak'>
+    <facet service="cougaar-db"/>
+    <facet service="jabber"/>
+  </host>
+  <host name='qing'>
+    <facet service="operator"/>
+  </host>
+  <host name='net1'>
+    <facet service="acme"/>
+    <facet service="nameserver"/>
+  </host>
+  <host name='net2'>
+    <facet service="acme"/>
+  </host>
+  <host name='doug'>
+    <facet service="acme"/>
+  </host>
+</society>

@@ -1,0 +1,1925 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE Communities [
+<!ELEMENT Communities (Community+)>
+<!ELEMENT Community (Attribute*, Entity*)>
+<!ATTLIST Community Name CDATA #REQUIRED>
+<!ELEMENT Entity (Attribute*)>
+<!ATTLIST Entity Name CDATA #REQUIRED>
+<!ELEMENT Attribute EMPTY>
+<!ATTLIST Attribute ID CDATA #REQUIRED>
+<!ATTLIST Attribute Value CDATA #REQUIRED>
+]>
+<Communities>
+  <!--********************************************************
+      *                                                      *
+      *  1 A D - R E A R - C O M M                           *
+      *                                                      *
+      ********************************************************-->
+  <Community Name="1AD-REAR-COMM" >
+    <Attribute ID="CommunityType"             Value="Robustness" />
+    <!-- Defines name of Robustness Manager node agent -->
+    <Attribute ID="Manager"                   Value="REAR-A" />
+    <!-- Number of agents expected to join community.  Robustness manager
+         will generate a "Community Ready" CougaarEvent when the
+         number of active agents in the community hits this level.  -->
+    <Attribute ID="NumberOfAgents"            Value="73" />
+    <!-- Parameter values used by Robustness Manager.  Parameters set for
+         Entities override these values -->
+    <Attribute ID="INITIAL_EXPIRATION"        Value="180000" />
+    <Attribute ID="ACTIVE_EXPIRATION"         Value="30000" />
+    <Attribute ID="HEALTH_CHECK_EXPIRATION"   Value="30000" />
+    <Attribute ID="DEAD_EXPIRATION"           Value="-1" />
+    <Attribute ID="RESTART_EXPIRATION"        Value="180000" />
+    <Attribute ID="FAILED_RESTART_EXPIRATION" Value="-1" />
+    <Attribute ID="MOVE_EXPIRATION"           Value="300000" />
+    <Attribute ID="PING_TIMEOUT"              Value="30000" />
+    <Attribute ID="HEARTBEAT_REQUEST_TIMEOUT" Value="30000" />
+    <Attribute ID="HEARTBEAT_FREQUENCY"       Value="15000" />
+    <Attribute ID="HEARTBEAT_TIMEOUT"         Value="30000" />
+    <Attribute ID="HEARTBEAT_PCT_OUT_OF_SPEC" Value="50" />
+    <!-- Nodes -->
+    <Entity Name="REAR-A" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
+    <Entity Name="REAR-B" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
+    <Entity Name="REAR-C" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
+    <Entity Name="REAR-D" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
+    <Entity Name="REAR-E" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
+    <!-- Node REAR-A -->
+    <Entity Name="NATO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="JSRCMDSE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="USEUCOM" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="USAEUR" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="5-CORPS" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="HNS" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="5-CORPS-REAR" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="11-AVN-RGT" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="12-AVNBDE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="130-ENGBDE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="244-ENGBN-CBTHVY" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="52-ENGBN-CBTHVY" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="18-MPBDE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="205-MIBDE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="22-SIGBDE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="30-MEDBDE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="69-ADABDE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="286-ADA-SCCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="5-CORPS-ARTY" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="41-FABDE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-27-FABN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="2-4-FABN-MLRS" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="3-13-FABN-155" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <!-- Node REAR-B -->
+    <Entity Name="3-SUPCOM-HQ" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="19-MMC" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="208-SCCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="27-TCBN-MVTCTRL" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="7-CSG" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="316-POL-SUPPLYBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="515-POL-TRKCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="900-POL-SUPPLYCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="71-MAINTBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="240-SSCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="317-MAINTCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="565-RPRPTCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="597-MAINTCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="71-ORDCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <!-- Node REAR-C -->
+    <Entity Name="125-ORDBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="452-ORDCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="529-ORDCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="181-TCBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="377-HVY-TRKCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="41-POL-TRKCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="51-MDM-TRKCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="561-SSBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="406-SUPPLYCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="541-POL-TRKCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="584-MAINTCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <!-- Node REAR-D -->
+    <Entity Name="21-TSC-HQ" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="200-MMC" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="7-TCGP-TPTDD" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="AWR-2" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="RSA" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="37-TRANSGP" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="28-TCBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="109-MDM-TRKCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="66-MDM-TRKCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="68-MDM-TRKCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="6-TCBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="110-POL-SUPPLYCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="416-POL-TRKCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="632-MAINTCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <!-- Node REAR-E -->
+    <Entity Name="29-SPTGP" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="191-ORDBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="23-ORDCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="24-ORDCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="702-EODDET" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="720-EODDET" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="51-MAINTBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="18-PERISH-SUBPLT" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="343-SUPPLYCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="5-MAINTCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="512-MAINTCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="574-SSCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+  </Community>
+  <!--********************************************************
+      *                                                      *
+      *  1 A D - F W D - C O M M                             *
+      *                                                      *
+      ********************************************************-->
+  <Community Name="1AD-FWD-COMM" >
+    <Attribute ID="CommunityType"             Value="Robustness" />
+    <Attribute ID="Manager"                   Value="FWD-A" />
+    <Attribute ID="NumberOfAgents"            Value="55" />
+    <Attribute ID="INITIAL_EXPIRATION"        Value="180000" />
+    <Attribute ID="ACTIVE_EXPIRATION"         Value="30000" />
+    <Attribute ID="HEALTH_CHECK_EXPIRATION"   Value="30000" />
+    <Attribute ID="DEAD_EXPIRATION"           Value="-1" />
+    <Attribute ID="RESTART_EXPIRATION"        Value="180000" />
+    <Attribute ID="FAILED_RESTART_EXPIRATION" Value="-1" />
+    <Attribute ID="MOVE_EXPIRATION"           Value="300000" />
+    <Attribute ID="PING_TIMEOUT"              Value="30000" />
+    <Attribute ID="HEARTBEAT_REQUEST_TIMEOUT" Value="30000" />
+    <Attribute ID="HEARTBEAT_FREQUENCY"       Value="15000" />
+    <Attribute ID="HEARTBEAT_TIMEOUT"         Value="30000" />
+    <Attribute ID="HEARTBEAT_PCT_OUT_OF_SPEC" Value="50" />
+    <!-- Nodes -->
+    <Entity Name="FWD-A" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
+    <Entity Name="FWD-B" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
+    <Entity Name="FWD-C" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
+    <Entity Name="FWD-D" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
+    <Entity Name="FWD-E" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
+    <Entity Name="FWD-F" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
+    <!-- Node FWD-A -->
+    <Entity Name="1-AD" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-AD-DIV" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-4-ADABN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="141-SIGBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="501-MIBN-CEWI" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="501-MPCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="69-CHEMCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="DIVARTY-1-AD" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-94-FABN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="25-FABTRY-TGTACQ" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="DISCOM-1-AD" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="123-MSB" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <!-- Node FWD-B -->
+    <Entity Name="1-BDE-1-AD" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-36-INFBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-37-ARBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="16-ENGBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="2-3-FABN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="2-37-ARBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="501-FSB" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <!-- Node FWD-C -->
+    <Entity Name="2-BDE-1-AD" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-35-ARBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-6-INFBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="2-6-INFBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="4-27-FABN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="40-ENGBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="47-FSB" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <!-- Node FWD-D -->
+    <Entity Name="3-BDE-1-AD" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-13-ARBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-41-INFBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="125-FSB" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="2-70-ARBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="4-1-FABN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="70-ENGBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <!-- Node FWD-E -->
+    <Entity Name="AVNBDE-1-AD" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-1-CAVSQDN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-501-AVNBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="127-DASB" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="2-501-AVNBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <!-- Node FWD-F -->
+    <Entity Name="16-CSG" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="485-CSB" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="102-POL-SUPPLYCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="26-SSCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="588-MAINTCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="592-ORDCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="596-MAINTCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="18-MAINTBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="226-MAINTCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="227-SUPPLYCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="263-FLDSVC-CO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="77-MAINTCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="106-TCBN" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="15-PLS-TRKCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="238-POL-TRKCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="372-CGO-TRANSCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="594-MDM-TRKCO" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+  </Community>
+  <!--********************************************************
+      *                                                      *
+      *  1 A D - C O N U S - C O M M                         *
+      *                                                      *
+      ********************************************************-->
+  <Community Name="1AD-CONUS-COMM" >
+    <Attribute ID="CommunityType"             Value="Robustness" />
+    <Attribute ID="Manager"                   Value="NCA-NODE" />
+    <Attribute ID="NumberOfAgents"            Value="4" />
+    <Attribute ID="INITIAL_EXPIRATION"        Value="180000" />
+    <Attribute ID="ACTIVE_EXPIRATION"         Value="30000" />
+    <Attribute ID="HEALTH_CHECK_EXPIRATION"   Value="30000" />
+    <Attribute ID="DEAD_EXPIRATION"           Value="-1" />
+    <Attribute ID="RESTART_EXPIRATION"        Value="180000" />
+    <Attribute ID="FAILED_RESTART_EXPIRATION" Value="-1" />
+    <Attribute ID="MOVE_EXPIRATION"           Value="300000" />
+    <Attribute ID="PING_TIMEOUT"              Value="30000" />
+    <Attribute ID="HEARTBEAT_REQUEST_TIMEOUT" Value="30000" />
+    <Attribute ID="HEARTBEAT_FREQUENCY"       Value="15000" />
+    <Attribute ID="HEARTBEAT_TIMEOUT"         Value="30000" />
+    <Attribute ID="HEARTBEAT_PCT_OUT_OF_SPEC" Value="50" />
+    <!-- Nodes -->
+    <Entity Name="NCA-NODE" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
+    <Entity Name="CONUS-NODE" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
+    <Entity Name="AGG-NODE" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
+    <Entity Name="PLAN-NODE" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
+    <!-- Node NCA-NODE -->
+    <Entity Name="NCA" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <!-- Node CONUS-NODE -->
+    <Entity Name="DLAHQ" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="OSC" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FORSCOM" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <!-- Node AGG-NODE -->
+    <Entity Name="AGG-Agent" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="DomainManager" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <!-- Node PLAN-NODE -->
+    <Entity Name="PlanLogAgent" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+  </Community>
+  <!--********************************************************
+      *                                                      *
+      *  1 A D - T R A N S - C O M M                         *
+      *                                                      *
+      ********************************************************-->
+  <Community Name="1AD-TRANS-COMM" >
+    <Attribute ID="CommunityType"             Value="Robustness" />
+    <Attribute ID="Manager"                   Value="TRANSCOM-NODE" />
+    <Attribute ID="NumberOfAgents"            Value="4" />
+    <Attribute ID="INITIAL_EXPIRATION"        Value="180000" />
+    <Attribute ID="ACTIVE_EXPIRATION"         Value="30000" />
+    <Attribute ID="HEALTH_CHECK_EXPIRATION"   Value="30000" />
+    <Attribute ID="DEAD_EXPIRATION"           Value="-1" />
+    <Attribute ID="RESTART_EXPIRATION"        Value="180000" />
+    <Attribute ID="FAILED_RESTART_EXPIRATION" Value="-1" />
+    <Attribute ID="MOVE_EXPIRATION"           Value="300000" />
+    <Attribute ID="PING_TIMEOUT"              Value="30000" />
+    <Attribute ID="HEARTBEAT_REQUEST_TIMEOUT" Value="30000" />
+    <Attribute ID="HEARTBEAT_FREQUENCY"       Value="15000" />
+    <Attribute ID="HEARTBEAT_TIMEOUT"         Value="30000" />
+    <Attribute ID="HEARTBEAT_PCT_OUT_OF_SPEC" Value="50" />
+    <!-- Nodes -->
+    <Entity Name="TRANSCOM-NODE" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
+    <Entity Name="AIR-NODE" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
+    <Entity Name="SEA-NODE" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
+    <Entity Name="THEATERTRANS-NODE" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
+    <Entity Name="CONUSTRANS-NODE" >
+      <Attribute ID="EntityType" Value="Node" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" />
+    </Entity>
+    <!-- Node TRANSCOM-NODE -->
+    <Entity Name="TRANSCOM" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <!-- Node AIR-NODE -->
+    <Entity Name="GlobalAir" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="PlanePacker" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <!-- Node SEA-NODE -->
+    <Entity Name="GlobalSea" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="ShipPacker" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <!-- Node THEATERTRANS-NODE -->
+    <Entity Name="TheaterGround" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <!-- Node CONUSTRANS-NODE -->
+    <Entity Name="CONUSGround" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+  </Community>
+  <!--********************************************************
+      *                                                      *
+      *               S E C U R I T Y                        *
+      *                                                      *
+      ********************************************************-->
+  <Community Name="Enclave1Security-COMM" >
+    <Attribute ID="CommunityType" Value="Security" />
+    <Entity Name="SocietySecurityMnRManager" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Manager" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="Root" />
+    </Entity>
+    <Entity Name="1-27-FABN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="109-MDM-TRKCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="11-AVN-RGT" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="110-POL-SUPPLYCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="12-AVNBDE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="125-ORDBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="130-ENGBDE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="18-MPBDE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="18-PERISH-SUBPLT" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="181-TCBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="19-MMC" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="191-ORDBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="2-4-FABN-MLRS" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="200-MMC" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="205-MIBDE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="208-SCCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="21-TSC-HQ" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="22-SIGBDE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="23-ORDCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="24-ORDCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="240-SSCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="244-ENGBN-CBTHVY" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="27-TCBN-MVTCTRL" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="28-TCBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="286-ADA-SCCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="29-SPTGP" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="3-13-FABN-155" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="3-SUPCOM-HQ" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="30-MEDBDE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="316-POL-SUPPLYBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="317-MAINTCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="343-SUPPLYCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="37-TRANSGP" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="377-HVY-TRKCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="41-FABDE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="41-POL-TRKCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="416-POL-TRKCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="452-ORDCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="5-CORPS" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="5-CORPS-ARTY" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="5-CORPS-REAR" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="5-MAINTCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="51-MAINTBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="51-MDM-TRKCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="512-MAINTCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="515-POL-TRKCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="52-ENGBN-CBTHVY" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="529-ORDCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="541-POL-TRKCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="561-SSBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="406-SUPLYCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="565-RPRPTCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="574-SSCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="584-MAINTCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="597-MAINTCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="6-TCBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="632-MAINTCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="66-MDM-TRKCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="68-MDM-TRKCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="69-ADABDE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="7-CSG" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="7-TCGP-TPTDD" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="702-EODDET" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="71-MAINTBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="71-ORDCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="720-EODDET" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="900-POL-SUPPLYCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="AWR-2" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="ENCLAVE1-MANAGEMENT" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="Enclave1CANode" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="Enclave1CRLProvider" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="CrlProvider" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="Enclave1PersistenceManager" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="PersistenceManager" />
+    </Entity>
+    <Entity Name="Enclave1SecurityMnRManager" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Manager" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FULL_1AD_b" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="GLMTRANS" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="HNS" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="JSRCMDSE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="NATO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="PolicyDomainManager1" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="PolicyDomainManager1Servlet" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="REAR-A" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="REAR-B" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="REAR-C" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="REAR-CA-NODE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="REAR-D" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="REAR-E" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="REAR-F" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="REAR-G" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="REAR-MGMT-NODE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="RSA" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="SMALL_1AD" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="USAEUR" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="USEUCOM" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="UserAdminAgent1" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+  </Community>
+  <Community Name="Enclave2Security-COMM" >
+    <Attribute ID="CommunityType" Value="Security" />
+    <Entity Name="SocietySecurityMnRManager" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Manager" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="Root" />
+    </Entity>
+    <Entity Name="1-1-CAVSQDN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-13-ARBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-35-ARBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-36-INFBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-37-ARBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-4-ADABN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-41-INFBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-501-AVNBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-6-INFBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-94-FABN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-AD" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-AD-DIV" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="1-BDE-1-AD" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="102-POL-SUPPLYCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="106-TCBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="123-MSB" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="125-FSB" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="127-DASB" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="141-SIGBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="15-PLS-TRKCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="16-CSG" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="16-ENGBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="18-MAINTBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="2-3-FABN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="2-37-ARBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="2-501-AVNBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="2-6-INFBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="2-70-ARBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="2-BDE-1-AD" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="226-MAINTCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="227-SUPPLYCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="238-POL-TRKCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="25-FABTRY-TGTACQ" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="26-SSCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="263-FLDSVC-CO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="3-BDE-1-AD" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="372-CGO-TRANSCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="4-1-FABN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="4-27-FABN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="40-ENGBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="47-FSB" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="485-CSB" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="501-FSB" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="501-MIBN-CEWI" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="501-MPCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="588-MAINTCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="592-ORDCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="594-MDM-TRKCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="596-MAINTCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="69-CHEMCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="70-ENGBN" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="77-MAINTCO" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="AVNBDE-1-AD" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="DISCOM-1-AD" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="DIVARTY-1-AD" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="ENCLAVE2-MANAGEMENT" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="Enclave2CANode" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="Enclave2CRLProvider" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="CrlProvider" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="Enclave2PersistenceManager" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="PersistenceManager" />
+    </Entity>
+    <Entity Name="Enclave2SecurityMnRManager" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Manager" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="Enclave2Sub1Manager" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="Enclave2Sub2Manager" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FULL_1AD_c" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FWD-B" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FWD-CA-NODE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FWD-D" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FWD-E" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FWD-F" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FWD-G" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FWD-MGMT-NODE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="PolicyDomainManager2" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="PolicyDomainManager2Servlet" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="UserAdminAgent2" >
+      <Attribute ID="MemberType" Value="Agent" />
+    </Entity>
+    <Entity Name="UserAdminAgent3" >
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+  </Community>
+  <Community Name="Enclave2SecuritySub1-COMM" >
+    <Attribute ID="CommunityType" Value="Security" />
+    <Entity Name="Enclave2Sub1Manager" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Manager" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FWD-A" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+  </Community>
+  <Community Name="Enclave2SecuritySub2-COMM" >
+    <Attribute ID="CommunityType" Value="Security" />
+    <Entity Name="Enclave2Sub2Manager" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Manager" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FWD-C" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+  </Community>
+  <Community Name="Enclave3Security-COMM" >
+    <Attribute ID="CommunityType" Value="Security" />
+    <Entity Name="SocietySecurityMnRManager" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Manager" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="Root" />
+    </Entity>
+    <Entity Name="AGG-Agent" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="CONUS-CA-NODE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="CONUS-MGMT-NODE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="ENCLAVE3-MANAGEMENT" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="Enclave3CANode" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="Enclave3CRLProvider" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="CrlProvider" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="Enclave3PersistenceManager" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="PersistenceManager" />
+    </Entity>
+    <Entity Name="Enclave3SecurityMnRManager" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Manager" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="Enclave3Sub1Manager" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FULL_1AD_top" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="NAME-AGG-NODE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="NCA" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="NCA-NODE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="NameServiceAgent" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="PLANLOG" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="PlanLogAgent" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="PolicyDomainManager3" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="PolicyDomainManager3Servlet" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="ROBUST-1" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="ROBUST-2" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="ROBUST-3" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="ROOT-CA-NODE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="RootCANode" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="SCmrmanager" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="SOCIETY-SECURITY" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="USERADMIN-NODE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="UserAdminAgent3" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+  </Community>
+  <Community Name="Enclave3SecuritySub1-COMM" >
+    <Attribute ID="CommunityType" Value="Security" />
+    <Entity Name="Enclave3Sub1Manager" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Manager" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+  </Community>
+  <Community Name="Enclave4Security-COMM" >
+    <Attribute ID="CommunityType" Value="Security" />
+    <Entity Name="SocietySecurityMnRManager" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Manager" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="Root" />
+    </Entity>
+    <Entity Name="AIR-NODE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="CONUS-NODE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="CONUSGround" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="CONUSTRANS-NODE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="DLAHQ" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="ENCLAVE4-MANAGEMENT" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="Enclave4CANode" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="Enclave4CRLProvider" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="CrlProvider" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="Enclave4PersistenceManager" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="PersistenceManager" />
+    </Entity>
+    <Entity Name="Enclave4SecurityMnRManager" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Manager" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FORSCOM" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FULL_1AD_a" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="GlobalAir" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="GlobalSea" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="OSC" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="PlanePacker" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="PolicyDomainManager4" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="PolicyDomainManager4Servlet" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="SEA-NODE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="ShipPacker" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="THEATERTRANS-NODE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="TRANS-CA-NODE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="TRANS-MGMT-NODE" >
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="TRANSCOM" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="TRANSCOM-NODE" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="TheaterGround" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="UserAdminAgent4" >
+      <Attribute ID="MemberType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+  </Community>
+  <Community Name="UserDomain1" >
+    <Attribute ID="CommunityType" Value="User" />
+    <Entity Name="REAR-A" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="REAR-B" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="REAR-C" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="REAR-CA-NODE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="REAR-D" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="REAR-E" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="REAR-F" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="REAR-G" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="REAR-MGMT-NODE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="UserAdminAgent1" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="UserManager" />
+    </Entity>
+  </Community>
+  <Community Name="UserDomain2" >
+    <Attribute ID="CommunityType" Value="User" />
+    <Entity Name="FWD-A" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FWD-B" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FWD-C" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FWD-CA-NODE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FWD-D" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FWD-E" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FWD-F" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FWD-G" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FWD-MGMT-NODE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="UserAdminAgent2" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="UserManager" />
+    </Entity>
+  </Community>
+  <Community Name="UserDomain3" >
+    <Attribute ID="CommunityType" Value="User" />
+    <Entity Name="CONUS-CA-NODE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="CONUS-MGMT-NODE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="CONUS-NODE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="CONUSTRANS-NODE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="NCA-NODE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="ROOT-CA-NODE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="UserAdminAgent3" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="UserManager" />
+    </Entity>
+  </Community>
+  <Community Name="UserDomain4" >
+    <Attribute ID="CommunityType" Value="User" />
+    <Entity Name="AIR-NODE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="SEA-NODE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="THEATERTRANS-NODE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="TRANS-CA-NODE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="TRANS-MGMT-NODE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="TRANS-NODE" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="UserAdminAgent4" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="UserManager" />
+    </Entity>
+  </Community>
+</Communities>
