@@ -27,13 +27,14 @@ package org.cougaar.core.mts;
 import java.io.*;
 import java.util.*;
 
-import org.cougaar.core.mts.acking.MessageAckingService;
-import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.component.ServiceProvider;
+import org.cougaar.core.mts.acking.MessageAckingService;
 import org.cougaar.core.qos.metrics.Constants;
 import org.cougaar.core.qos.metrics.Metric;
 import org.cougaar.core.qos.metrics.MetricsService;
+import org.cougaar.core.service.EventService;
+import org.cougaar.core.service.LoggingService;
 import org.cougaar.util.log.Logger;
 import org.cougaar.util.log.Logging;
 
@@ -45,6 +46,7 @@ public class MsglogEnablingAspect extends StandardAspect
     private LoggingService log;
     private MetricsService metricsSvc;
     private MessageAckingService ackingSvc;
+    private EventService eventSvc;
     
     private static final Hashtable agents = new Hashtable();
     
@@ -61,6 +63,8 @@ public class MsglogEnablingAspect extends StandardAspect
 	    getServiceBroker().getService(this, MetricsService.class, null);
 	ackingSvc = (MessageAckingService)
 	    getServiceBroker().getService(this, MessageAckingService.class, null);
+        eventSvc = (EventService)
+	    getServiceBroker().getService(this, EventService.class, null);
 
 	Provider provider = new Provider();
 	enablingService = new Impl();
@@ -151,10 +155,17 @@ public class MsglogEnablingAspect extends StandardAspect
 			agents.put(orig, entry);
 			entry.observer = new AgentObserver(orig); 
 		    } else {
-			// enabling messaging to any agent that can send me a message
-			entry.msglogEnabled = true;
-			// this causes message resending to originator to be re-enabled
-			if (ackingSvc != null) ackingSvc.release(orig);
+			if (!entry.msglogEnabled) {
+			    // enabling messaging to any agent that can send me a message
+			    entry.msglogEnabled = true;
+			    // this causes message resending to originator to be re-enabled
+			    if (ackingSvc != null) ackingSvc.release(orig);
+			    if (eventSvc.isEventEnabled())                         
+				eventSvc.event("Messaging Enabled from Node " 
+					       + getRegistry().getIdentifier()
+					       + " to Agent " 
+					       + orig);
+			}
 		    }
 		}
 	    }   
@@ -193,11 +204,18 @@ public class MsglogEnablingAspect extends StandardAspect
 		    if (log.isErrorEnabled()) 
 			log.error("Impl.enable: AgentEntry not found for agent="+remoteAgent);
 		} else {
-		    if (log.isDebugEnabled()) 
-			log.debug("Impl.enable: Messaging to "+remoteAgent+" enabled.");
-		    entry.msglogEnabled = true;
-		    // this causes message resending to remoteAgent to be re-enabled
-		    if (ackingSvc != null) ackingSvc.release(remoteAgent);
+		    if (!entry.msglogEnabled) {
+			if (log.isDebugEnabled()) 
+			    log.debug("Impl.enable: Messaging to "+remoteAgent+" enabled.");
+			entry.msglogEnabled = true;
+			// this causes message resending to remoteAgent to be re-enabled
+			if (ackingSvc != null) ackingSvc.release(remoteAgent);
+			if (eventSvc.isEventEnabled())                         
+			    eventSvc.event("Messaging Enabled from Node " 
+					   + getRegistry().getIdentifier()
+					   + " to Agent " 
+					   + remoteAgent);
+		    }
 		}
 	    }
 	}
@@ -229,11 +247,18 @@ public class MsglogEnablingAspect extends StandardAspect
 		    if (log.isErrorEnabled()) 
 			log.error("Impl.disable: AgentEntry not found for agent="+remoteAgent);
 		} else {
-		    if (log.isDebugEnabled()) 
-			log.debug("Impl.disable: Messaging to "+remoteAgent+" disabled.");
-		    entry.msglogEnabled = false;
-		    // this causes message resending to remoteAgent to be disabled
-		    if (ackingSvc != null) ackingSvc.hold(remoteAgent);
+		    if (entry.msglogEnabled) {
+			if (log.isDebugEnabled()) 
+			    log.debug("Impl.disable: Messaging to "+remoteAgent+" disabled.");
+			entry.msglogEnabled = false;
+			// this causes message resending to remoteAgent to be disabled
+			if (ackingSvc != null) ackingSvc.hold(remoteAgent);
+			if (eventSvc.isEventEnabled())                         
+			    eventSvc.event("Messaging Disabled from Node " 
+					   + getRegistry().getIdentifier()
+					   + " to Agent " 
+					   + remoteAgent);
+		    }
 		}
 	    }
 	}
