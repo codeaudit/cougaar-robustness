@@ -146,7 +146,7 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
             //Iterate over threatDescriptions
             if ( (threatDescriptions != null && threatDescriptions.size() > 0) ) {
 
-logger.debug("evaluateThreatAssetMembership has " + threatDescriptions.size() + " threatDescriptions to examine.");
+//logger.debug("evaluateThreatAssetMembership has " + threatDescriptions.size() + " threatDescriptions to examine.");
 
                 Iterator i = threatDescriptions.iterator();
                 while (i.hasNext()) {
@@ -167,7 +167,7 @@ logger.debug("evaluateThreatAssetMembership has " + threatDescriptions.size() + 
 
                                 //** First check type of asset against type of threatModel. Ignore if they don't match
                                 if (!(metaModel.getAffectedAssetType().equals(asset.getAssetType()))) {
-logger.debug("evaluateThreatAssetMembership -- asset types don't match: \n modelAssetType="+metaModel.getAffectedAssetType()+"\nasset's type["+asset.getName()+"] = "+asset.getAssetType());
+//logger.debug("evaluateThreatAssetMembership -- asset types don't match: \n modelAssetType="+metaModel.getAffectedAssetType()+"\nasset's type["+asset.getName()+"] = "+asset.getAssetType());
                                     continue;
                                 }
 
@@ -187,7 +187,7 @@ logger.debug("evaluateThreatAssetMembership -- asset types don't match: \n model
                                 }
 
                                 if (qualifies) {
-                                    logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] Qualifies! Adding to the "+metaModel.getName()+" threatModel ["+metaModel.getAffectedAssetType().getName()+"]");
+ //                                   logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] Qualifies! Adding to the "+metaModel.getName()+" threatModel ["+metaModel.getAffectedAssetType().getName()+"]");
                                     threatModel = addAssetAsMember(asset, metaModel);
                                 } else { //remove the asset from the threat model's membership, if it's there                         
 //logger.debug("evaluateThreatAssetMembership - doesn't qualify.");

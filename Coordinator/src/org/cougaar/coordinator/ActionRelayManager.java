@@ -213,7 +213,7 @@ public class ActionRelayManager extends MinimalPluginBase implements NotPersista
             //add newly created wrappers (that aren't yet on the BB) to the ones from the BB
             //wrappers.addAll(newWrappers);  -- should already be there, since publishAdd was called.
             
-            //Now look at changed Actions
+            //Now look at changed Actions & publish change the associated wrapper if the action was publish-changed.
             Collection changed  = actionsSubscription.getChangedCollection();        
             //added.addAll(changed);
 

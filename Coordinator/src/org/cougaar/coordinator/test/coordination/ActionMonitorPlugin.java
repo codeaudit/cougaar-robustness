@@ -130,7 +130,9 @@ implements NotPersistable {
         while (iter.hasNext()) {
             Action a = (Action)iter.next();
             if (servlet != null) { servlet.addAction(a); }
-            logger.debug("[AgentId="+agentId+"]**** Saw new Action["+ActionUtils.getAssetID(a)+"], with ActionRecord = " + a.getValue() + " UID=" + a.getUID());
+            //At least temp for testing -- next 2 lines
+            String target = ((MessageAddress) a.getTargets().iterator().next()).toString();
+            logger.debug("[AgentId="+agentId+"]**** Saw new Action["+ActionUtils.getAssetID(a)+"], with ActionRecord = " + a.getValue() + " UID=" + a.getUID()+" src="+a.getSource()+",tgt="+target);
         }
         
         //********* Check for changes in our modes ************        

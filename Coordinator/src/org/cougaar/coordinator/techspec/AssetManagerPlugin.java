@@ -120,7 +120,7 @@ public class AssetManagerPlugin extends ComponentPlugin implements NotPersistabl
                 removedAsset = false;
 
 
-logger.warn("!!!! [STATUS CHANGED CALLED] on asset="+csce[i].getName()+" with:  \n= "+csce[i].toString()+"  getCurrentLocation = " + csce[i].getCurrentLocation()+" getPriorLocation = " + csce[i].getPriorLocation());
+//logger.warn("!!!! [STATUS CHANGED CALLED] on asset="+csce[i].getName()+" with:  \n= "+csce[i].toString()+"  getCurrentLocation = " + csce[i].getCurrentLocation()+" getPriorLocation = " + csce[i].getPriorLocation());
                 
 /*                
 logger.warn("!!!! ****************************************************");
@@ -175,7 +175,7 @@ logger.warn("!!!! **********************************************************");
                     }
                     
                     if (hostName == null || nodeName == null) {
-                        logger.warn("!!!- [ASSET NOT ADDED] Saw new agent asset ["+agentName+"] without host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
+                      //  logger.warn("!!!- [ASSET NOT ADDED] Saw new agent asset ["+agentName+"] without host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
                         continue;
                     } else { //continue
                         hostAsset = getHost(hostName);
@@ -236,7 +236,7 @@ logger.warn("!!!! **********************************************************");
                         //if (csce[i].getType() == CommunityStatusModel.NODE) { }
                         
                 } else {
-                    logger.debug("!!!! [STATUS CHANGED CALLED] - UNKNOWN change");
+                   // logger.debug("!!!! [STATUS CHANGED CALLED] - UNKNOWN change");
                 }
             }
         }
@@ -422,9 +422,9 @@ logger.warn("!!!! **********************************************************");
 
         if (hostName == null || nodeName == null) {
             if ( type == CommunityStatusModel.AGENT ) {
-                logger.warn("!!!! [ASSET NOT ADDED] Saw new AGENT asset ["+agentName+"] without host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
+                //logger.warn("!!!! [ASSET NOT ADDED] Saw new AGENT asset ["+agentName+"] without host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
             } else if ( type == CommunityStatusModel.NODE ) {
-                logger.warn("!!!! [ASSET NOT ADDED] Saw new NODE asset ["+agentName+"] without host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
+                //logger.warn("!!!! [ASSET NOT ADDED] Saw new NODE asset ["+agentName+"] without host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
             }
             return;
         }
