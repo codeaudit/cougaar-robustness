@@ -19,7 +19,7 @@ parameters:
     - $CIP/csmart/config/rules/coordinator/test
     - $CIP/csmart/config/rules/robustness/uc1
 #    - $CIP/csmart/config/rules/robustness/uc7
-#    - $CIP/csmart/config/rules/robustness/uc9
+    - $CIP/csmart/config/rules/robustness/uc9
   - community_rules:
     - $CIP/csmart/config/rules/robustness/communities
 
