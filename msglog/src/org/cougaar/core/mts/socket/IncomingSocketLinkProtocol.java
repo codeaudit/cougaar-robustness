@@ -113,7 +113,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     localhost = System.getProperty (s, getLocalHost());
 
     s = "org.cougaar.message.protocol.socket.incoming.firstMsgSoTimeout";
-    firstMsgSoTimeout = Integer.valueOf(System.getProperty(s,"1000")).intValue();
+    firstMsgSoTimeout = Integer.valueOf(System.getProperty(s,"5000")).intValue();
 
     s = "org.cougaar.message.protocol.socket.incoming.subsequentMsgsSoTimeout";
     subsequentMsgsSoTimeout = Integer.valueOf(System.getProperty(s,"100")).intValue();
@@ -470,7 +470,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
           //  closes their socket connection.  If the OutgoingSocketLinkProtocol has
           //  oneSendPerConnection set to true, you will get these all the time.
 
-          if (log.isDebugEnabled()) log.debug ("Remote socket closed: " +e);
+          // if (log.isDebugEnabled()) log.debug ("Remote socket closed: " +e);
           quitNow = true;
           break;
         }

@@ -213,7 +213,32 @@ class MessageResender implements Runnable
     return (log != null ? log.isDebugEnabled() : false);
   }
 
-  public void run() 
+  public void run () 
+  {
+    while (true)
+    {
+      String s = "MessageResender: Unexpected exception, restarting";
+
+      try
+      { 
+        try 
+        { 
+          doRun(); 
+        } 
+        catch (Exception e) 
+        {
+          s += ": " + stackTraceToString (e);
+          if (log.isWarnEnabled()) log.warn (s);
+        }
+      }
+      catch (Exception e)
+      {
+        try { System.err.println (s); } catch (Exception ex) { /* !! */ }
+      }
+    }
+  }
+
+  private void doRun () 
   {
     int len;
 
@@ -256,7 +281,10 @@ class MessageResender implements Runnable
         messages = (AttributedMessage[]) queue.toArray (messages);  // try array reuse
         len = queue.size();
         if (len > 1) Arrays.sort (messages, 0, len, deadlineSort);
-      }
+
+// HACK - sync all the code to the queue so not caught out below with attribute
+// changes in the DestinationQueue.
+//    }
 
       //  Next we try to match the messages with the acks we've collected so far.
       //  Possible many-to-many relationship between the messages and the acks.
@@ -341,6 +369,10 @@ class MessageResender implements Runnable
         }
       }
 
+// HACK - sync all the code to the queue so not caught out below with attribute
+// changes in the DestinationQueue (see above).
+      }
+
       Arrays.fill (messages, null);  // release references
     }
   }
@@ -377,5 +409,13 @@ class MessageResender implements Runnable
   private static long now ()
   {
     return System.currentTimeMillis();
+  }
+
+  private static String stackTraceToString (Exception e)
+  {
+    java.io.StringWriter stringWriter = new java.io.StringWriter();
+    java.io.PrintWriter printWriter = new java.io.PrintWriter (stringWriter);
+    e.printStackTrace (printWriter);
+    return stringWriter.getBuffer().toString();
   }
 }

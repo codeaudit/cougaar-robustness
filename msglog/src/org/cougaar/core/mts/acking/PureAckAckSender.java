@@ -84,8 +84,33 @@ class PureAckAckSender implements Runnable
     if (log == null) log = aspect.getTheLoggingService();
     return (log != null ? log.isDebugEnabled() : false);
   }
+  
+  public void run () 
+  {
+    while (true)
+    {
+      String s = "PureAckAckSender: Unexpected exception, restarting";
 
-  public void run() 
+      try
+      { 
+        try 
+        { 
+          doRun(); 
+        } 
+        catch (Exception e) 
+        {
+          s += ": " + stackTraceToString (e);
+          if (log.isWarnEnabled()) log.warn (s);
+        }
+      }
+      catch (Exception e)
+      {
+        try { System.err.println (s); } catch (Exception ex) { /* !! */ }
+      }
+    }
+  }
+
+  private void doRun () 
   {
     int len;
 
@@ -212,5 +237,13 @@ class PureAckAckSender implements Runnable
   private static long now ()
   {
     return System.currentTimeMillis();
+  }
+
+  private static String stackTraceToString (Exception e)
+  {
+    java.io.StringWriter stringWriter = new java.io.StringWriter();
+    java.io.PrintWriter printWriter = new java.io.PrintWriter (stringWriter);
+    e.printStackTrace (printWriter);
+    return stringWriter.getBuffer().toString();
   }
 }

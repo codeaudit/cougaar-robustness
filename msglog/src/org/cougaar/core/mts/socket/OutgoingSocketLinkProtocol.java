@@ -153,36 +153,6 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
   public synchronized void shutdown ()
   {}
 
-  private SocketSpec getSocketSpec (MessageAddress address) throws NameLookupException
-  {
-    synchronized (specCache)
-    {
-      SocketSpec spec = (SocketSpec) specCache.get (address);
-      if (spec != null) return spec;
-      spec = lookupSocketSpec (address);
-      specCache.put (address, spec);
-      return spec;
-    }
-  }
-
-  private InetAddress getInetAddress (String host) throws UnknownHostException
-  {
-    synchronized (addressCache)
-    {
-      InetAddress addr = (InetAddress) addressCache.get (host);
-      if (addr != null) return addr;
-      addr = InetAddress.getByName (host);
-      addressCache.put (host, addr);
-      return addr;
-    }
-  }
-
-  private synchronized void clearCaches ()
-  {
-    specCache.clear();
-    addressCache.clear();    
-  }
-
   private SocketSpec lookupSocketSpec (MessageAddress address) throws NameLookupException
   {
     Object obj = getNameSupport().lookupAddressInNameServer (address, PROTOCOL_TYPE);
@@ -213,6 +183,36 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
     return null;
   }
 
+  private SocketSpec getSocketSpec (MessageAddress address) throws NameLookupException
+  {
+    synchronized (specCache)
+    {
+      SocketSpec spec = (SocketSpec) specCache.get (address);
+      if (spec != null) return spec;
+      spec = lookupSocketSpec (address);
+      if (spec != null) specCache.put (address, spec);
+      return spec;
+    }
+  }
+
+  private InetAddress getInetAddress (String host) throws UnknownHostException
+  {
+    synchronized (addressCache)
+    {
+      InetAddress addr = (InetAddress) addressCache.get (host);
+      if (addr != null) return addr;
+      addr = InetAddress.getByName (host);
+      if (addr != null) addressCache.put (host, addr);
+      return addr;
+    }
+  }
+
+  private synchronized void clearCaches ()
+  {
+    specCache.clear();
+    addressCache.clear();    
+  }
+
   public boolean addressKnown (MessageAddress address) 
   {
     try 
@@ -231,25 +231,21 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
 
     if (link == null) 
     {
-      link = new Link (address);
+      link = new SocketOutLink (address);
       link = (DestinationLink) attachAspects (link, DestinationLink.class);
       links.put (address, link);
     }
 
     return link;
   }
-  
-  public Object getRemoteReference (MessageAddress address) 
-  {
-    return null;
-  }
 
-  class Link implements DestinationLink 
+  class SocketOutLink implements DestinationLink 
   {
     private MessageAddress destination;
     private NoHeaderOutputStream socketOut;
+int largestMsg = 0;
 
-    Link (MessageAddress dest) 
+    public SocketOutLink (MessageAddress dest) 
     {
       destination = dest;
     }
@@ -324,6 +320,7 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
       } 
       catch (Exception e) 
       {
+        if (log.isDebugEnabled()) log.debug ("sendMessage: " +stackTraceToString(e));
         save = e;
       }
 
@@ -354,6 +351,13 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
 
       byte msgBytes[] = toBytes (msg);
       if (msgBytes == null) return false;
+
+if (msgBytes.length > largestMsg)
+{
+  log.debug ("Largest msg " +msgBytes.length+ " " +MessageUtils.getMessageTypeString(msg)+
+             " " + MessageUtils.toShortSequenceID(msg));
+  largestMsg = msgBytes.length;
+}
 
       //  Since it is a hassle to read variable length arrays on the other side, we wrap
       //  the byte buffer in a simple object.
@@ -429,8 +433,8 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
         Socket socket = TimedSocket.getSocket (host, addr, port, connectTimeout*1000, myThreadService);
 */
         Socket socket = new Socket (addr, port);
-        socket.shutdownInput();  // not essential
-        return new NoHeaderOutputStream (socket.getOutputStream());
+        socket.shutdownInput();  // not doing any input
+        return new NoHeaderOutputStream (socket);
       }
       catch (Exception e) 
       {

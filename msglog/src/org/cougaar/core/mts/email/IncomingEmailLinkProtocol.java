@@ -311,7 +311,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
               if (useFQDNs)
               {
                 String hostFQDN = getHostnameFQDN (host);
-                if (log.isInfoEnabled()) log.info ("Using FQDN " +hostFQDN+ " for specified mailhost " +host);
+                if (log.isInfoEnabled()) log.info ("Using FQDN " +hostFQDN+ " for inbox mailhost " +host);
                 host = hostFQDN;
               }
 
@@ -498,7 +498,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
               log.info 
               (
                 "ALERT: Unable to access mail inbox:\n" +inbox.toStringDiscreet()+
-                "Try " +n+ ": Will try to access it again in " +waitTime+ " seconds..."
+                "\nTry " +n+ ": Will try to access it again in " +waitTime+ " seconds..."
               );
             }
 

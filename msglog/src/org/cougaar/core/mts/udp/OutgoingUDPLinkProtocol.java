@@ -52,7 +52,7 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
     //  Read external properties
 
     String s = "org.cougaar.message.protocol.udp.cost";  // one way
-    protocolCost = Integer.valueOf(System.getProperty(s,"5000")).intValue();  // was 750
+    protocolCost = Integer.valueOf(System.getProperty(s,"4000")).intValue();  // was 750
   }
  
   public OutgoingUDPLinkProtocol ()
@@ -91,36 +91,6 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
   public synchronized void shutdown ()
   {}
 
-  private DatagramSocketSpec getDatagramSocketSpec (MessageAddress address) throws NameLookupException
-  {
-    synchronized (specCache)
-    {
-      DatagramSocketSpec spec = (DatagramSocketSpec) specCache.get (address);
-      if (spec != null) return spec;
-      spec = lookupDatagramSocketSpec (address);
-      specCache.put (address, spec);
-      return spec;
-    }
-  }
-
-  private InetAddress getInetAddress (String host) throws UnknownHostException
-  {
-    synchronized (addressCache)
-    {
-      InetAddress addr = (InetAddress) addressCache.get (host);
-      if (addr != null) return addr;
-      addr = InetAddress.getByName (host);
-      addressCache.put (host, addr);
-      return addr;
-    }
-  }
-
-  private synchronized void clearCaches ()
-  {
-    specCache.clear();
-    addressCache.clear();    
-  }
-
   private DatagramSocketSpec lookupDatagramSocketSpec (MessageAddress address) throws NameLookupException
   {
     Object obj = getNameSupport().lookupAddressInNameServer (address, PROTOCOL_TYPE);
@@ -151,6 +121,36 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
     return null;
   }
 
+  private DatagramSocketSpec getDatagramSocketSpec (MessageAddress address) throws NameLookupException
+  {
+    synchronized (specCache)
+    {
+      DatagramSocketSpec spec = (DatagramSocketSpec) specCache.get (address);
+      if (spec != null) return spec;
+      spec = lookupDatagramSocketSpec (address);
+      if (spec != null) specCache.put (address, spec);
+      return spec;
+    }
+  }
+
+  private InetAddress getInetAddress (String host) throws UnknownHostException
+  {
+    synchronized (addressCache)
+    {
+      InetAddress addr = (InetAddress) addressCache.get (host);
+      if (addr != null) return addr;
+      addr = InetAddress.getByName (host);
+      if (addr != null) addressCache.put (host, addr);
+      return addr;
+    }
+  }
+
+  private synchronized void clearCaches ()
+  {
+    specCache.clear();
+    addressCache.clear();    
+  }
+
   public boolean addressKnown (MessageAddress address) 
   {
     try 
@@ -169,25 +169,20 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
 
     if (link == null) 
     {
-      link = new Link (address);
+      link = new UDPOutLink (address);
       link = (DestinationLink) attachAspects (link, DestinationLink.class);
       links.put (address, link);
     }
 
     return link;
   }
-  
-  public Object getRemoteReference (MessageAddress address) 
-  {
-    return null;
-  }
 
-  class Link implements DestinationLink 
+  class UDPOutLink implements DestinationLink 
   {
     private MessageAddress destination;
     private DatagramSocket datagramSocket;
 
-    Link (MessageAddress dest) 
+    public UDPOutLink (MessageAddress dest) 
     {
       destination = dest;
     }
@@ -233,13 +228,13 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
       return true;
     }
 
-    private void dumpCachedData ()
+    private synchronized void dumpCachedData ()
     {
       clearCaches();
       datagramSocket = null;
     }
 
-    public MessageAttributes forwardMessage (AttributedMessage msg) 
+    public synchronized MessageAttributes forwardMessage (AttributedMessage msg) 
         throws NameLookupException, UnregisteredNameException,
                CommFailureException, MisdeliveredMessageException
     {
@@ -282,7 +277,7 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
       return successfulSend;
     }
    
-    private boolean sendMessage (AttributedMessage msg, DatagramSocketSpec spec) throws Exception
+    private synchronized boolean sendMessage (AttributedMessage msg, DatagramSocketSpec spec) throws Exception
     {
       if (log.isDebugEnabled()) log.debug ("Sending " +MessageUtils.toString(msg));
 

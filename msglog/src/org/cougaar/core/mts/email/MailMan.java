@@ -48,21 +48,22 @@ import org.cougaar.util.log.Logging;
 
 public class MailMan 
 {
-  public static final int DEFAULT_SERVER_CONN_TIMEOUT = 8*1000;  // in msecs
+  private static final int pop3ConnectionTimeout;
+  private static final int smtpConnectionTimeout;
 
-  private static final String TIMEOUT_PROPERTY = "org.cougaar.message.protocol.email.serverConnTimeout";
-
-  private static int serverConnectionTimeout;
   private static final Message[] zeroMsgs = new Message[0];
   static boolean Debug;
 
-  static 
+  static
   {
-    String timeoutProp = System.getProperty (TIMEOUT_PROPERTY);
-    try  { serverConnectionTimeout = Integer.valueOf(timeoutProp).intValue(); } 
-    catch (Exception e) { serverConnectionTimeout = DEFAULT_SERVER_CONN_TIMEOUT; }
-  }
+    //  Read external properties
 
+    String s = "org.cougaar.message.protocol.email.pop3.connectionTimeout";
+    pop3ConnectionTimeout = Integer.valueOf(System.getProperty(s,"10000")).intValue();
+
+    s = "org.cougaar.message.protocol.email.smtp.connectionTimeout";
+    smtpConnectionTimeout = Integer.valueOf(System.getProperty(s,"10000")).intValue();
+  }
 
   public static void setDebug (boolean b)
   {
@@ -73,8 +74,8 @@ public class MailMan
   {
     // Get a Session object
 
-    Properties props = new Properties();  // was System.getProperties();
-    props.put ("mail.pop3.connectiontimeout", ""+serverConnectionTimeout);
+    Properties props = new Properties();
+    props.put ("mail.pop3.connectiontimeout", ""+pop3ConnectionTimeout);
     Session session = Session.getDefaultInstance (props, null);
     session.setDebug (Debug);
 
@@ -128,7 +129,7 @@ public class MailMan
       String host = mbox.getServerHost();
       int port = mbox.getServerPortAsInt();
 
-      socket = TimedSocket.getSocket (host, port, serverConnectionTimeout);
+      socket = TimedSocket.getSocket (host, port, smtpConnectionTimeout);
 
       return true;
     }
@@ -521,8 +522,8 @@ public class MailMan
 
     Properties props = new Properties();
     props.put ("mail.smtp.host", mbox.getServerHost());
-    props.put ("mail.smtp.port", mbox.getServerPort());                    // Sun impl supports this
-    props.put ("mail.smtp.connectiontimeout", ""+serverConnectionTimeout); // Sun impl supports this
+    props.put ("mail.smtp.port", mbox.getServerPort());                   // Sun impl supports this
+    props.put ("mail.smtp.connectiontimeout", ""+smtpConnectionTimeout);  // Sun impl supports this
     if (Debug) props.put ("mail.debug", "true");
 
     Session session = Session.getInstance (props);  // note not (potentially) shared session!

@@ -25,6 +25,7 @@
 package org.cougaar.core.mts.socket;
 
 import java.io.*;
+import java.net.Socket;
 
 
 /**
@@ -33,11 +34,20 @@ import java.io.*;
 
 public class NoHeaderOutputStream extends ObjectOutputStream
 {
-  public NoHeaderOutputStream (OutputStream out) throws IOException
+  private Socket socket;
+
+  public NoHeaderOutputStream (Socket socket) throws IOException
   {
-    super (out);
+    super (socket.getOutputStream());
+    this.socket = socket;
   }
 
   protected void writeStreamHeader () throws IOException
   {}
+
+  public void close () throws IOException
+  {
+    super.close();
+    socket.close();
+  }
 }

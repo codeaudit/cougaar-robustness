@@ -119,6 +119,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
   private static final boolean debugMail;
 
   private LoggingService log;
+  private Hashtable mailDataCache;
   private HashMap links;
   private MailBox outboxes[];
   private EmailMessageOutputStream messageOut;
@@ -139,6 +140,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
 
   public OutgoingEmailLinkProtocol ()
   {
+    mailDataCache = new Hashtable();
     links = new HashMap();
   }
 
@@ -249,7 +251,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
               if (useFQDNs)
               {
                 String hostFQDN = getHostnameFQDN (host);
-                if (log.isInfoEnabled()) log.info ("Using FQDN " +hostFQDN+ " for specified mailhost " +host);
+                if (log.isInfoEnabled()) log.info ("Using FQDN " +hostFQDN+ " for outbox mailhost " +host);
                 host = hostFQDN;
               }
 
@@ -332,18 +334,35 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
       }
       else
       {
-        log.error ("Invalid mail data in name server!");
+        log.error ("Invalid non-MailData object in name server!");
       }
     }
 
     return null;
   }
 
+  private MailData getMailData (MessageAddress address) throws NameLookupException
+  {
+    synchronized (mailDataCache)
+    {
+      MailData mailData = (MailData) mailDataCache.get (address);
+      if (mailData != null) return mailData;
+      mailData = lookupMailData (address);
+      if (mailData != null) mailDataCache.put (address, mailData);
+      return mailData;
+    }
+  }
+
+  private synchronized void clearCaches ()
+  {
+    mailDataCache.clear();
+  }
+
   public boolean addressKnown (MessageAddress address) 
   {
     try 
     {
-      return (lookupMailData (address) != null);
+      return (getMailData (address) != null);
     } 
     catch (Exception e) 
     {
@@ -359,7 +378,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
 
     if (link == null) 
     {
-      link = new Link (address);
+      link = new EmailOutLink (address);
       link = (DestinationLink) attachAspects (link, DestinationLink.class);
       links.put (address, link);
     }
@@ -367,33 +386,12 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     return link;
   }
 
-  public Object getRemoteReference (MessageAddress address) 
-  {
-    MailBox outbox = outboxes[0];
-
-    String host = outbox.getServerHost();
-    String addr;
-    try { addr = InetAddress.getByName(host).getHostAddress(); } 
-    catch (Exception e) { addr = host; }
-    int port = outbox.getServerPortAsInt();
-
-    return new URLName
-    (
-      outbox.getProtocol(),
-      addr,
-      ((port >= 0) ? port : 25),
-      outbox.getFolder(),
-      outbox.getUsername(),
-      "*"
-    );
-  }
-
-  class Link implements DestinationLink 
+  class EmailOutLink implements DestinationLink 
   {
     private MessageAddress destination;
     private MailData mailData, savedMailData;
 
-    Link (MessageAddress destination) 
+    public EmailOutLink (MessageAddress destination) 
     {
       this.destination = destination;
     }
@@ -417,7 +415,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     {
       try 
       {
-        if (msg != null) lookupMailData (msg.getTarget());
+        if (msg != null) getMailData (msg.getTarget());
         return protocolCost;
       } 
       catch (Exception e) 
@@ -432,22 +430,29 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     }
     
     public void addMessageAttributes (MessageAttributes attrs)
-    {
-      // TBD
-    }
+    {}
 
     public boolean retryFailedMessage (AttributedMessage msg, int retryCount)
     {
       return true;
     }
 
-    public MessageAttributes forwardMessage (AttributedMessage msg) 
+    private synchronized void dumpCachedData ()
+    {
+      clearCaches();
+    }
+
+    public synchronized MessageAttributes forwardMessage (AttributedMessage msg) 
       throws NameLookupException, UnregisteredNameException,
              CommFailureException, MisdeliveredMessageException
     {
+      //  Dump our cached data on message send retries
+
+      if (MessageUtils.getSendTry (msg) > 1) dumpCachedData();
+
       //  Get email info for destination address
     
-      MailData mailData = lookupMailData (destination);
+      MailData mailData = getMailData (destination);
 
       //  Try mailing the message
 
@@ -465,7 +470,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
       return result;
     }
    
-    private final boolean sendMessage (AttributedMessage msg, MailData destAddr)
+    private final synchronized boolean sendMessage (AttributedMessage msg, MailData destAddr)
     {
       if (log.isDebugEnabled()) log.debug ("sending " +MessageUtils.toString(msg));
 
@@ -529,7 +534,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     }
   }
 
-  private String stackTraceToString (Exception e)
+  private static String stackTraceToString (Exception e)
   {
     StringWriter stringWriter = new StringWriter();
     PrintWriter printWriter = new PrintWriter (stringWriter);
