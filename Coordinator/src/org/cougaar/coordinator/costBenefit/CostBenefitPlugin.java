@@ -213,23 +213,25 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
                     try {
                         // Get the StateDimensionEstimation for the base dimension the Action applies to - Throws an exception if SDE not found
-                        StateDimensionEstimation currentEstimatedBaseStateDimension = se.getStateDimensionEstimation(baseStateDimension);
-                        // create the Action container that will hold the evaluations of all offered Variants
-                        ActionEvaluation thisActionEvaluation = new ActionEvaluation(thisAction);
-                        cbe.addActionEvaluation(thisActionEvaluation);
+                        if (baseStateDimension != null) {
+                            StateDimensionEstimation currentEstimatedBaseStateDimension = se.getStateDimensionEstimation(baseStateDimension);
+                            // create the Action container that will hold the evaluations of all offered Variants
+                            ActionEvaluation thisActionEvaluation = new ActionEvaluation(thisAction);
+                            cbe.addActionEvaluation(thisActionEvaluation);
 
-                        // Get the TechSpec data for all the Variants
-                        Collection variantDescriptions = atsi.getActions();
-                        // iterate thru all offered Variants of this Action
-                        Iterator variantIter = variantDescriptions.iterator();
-                        while (variantIter.hasNext()) {
-                            // Get TechSpec for this Variant
-                            ActionDescription thisVariantDescription = (ActionDescription) variantIter.next();
-                            boolean thisVariantActiveP = thisAction.getValue().isActive() && thisAction.getValue().getAction().equals(thisVariantDescription.name());
-                            // Add an entry to the current Action containing the information about this Variant
-                            thisActionEvaluation.addVariantEvaluation(createCompensatoryVariantEvaluation
+                            // Get the TechSpec data for all the Variants
+                            Collection variantDescriptions = atsi.getActions();
+                            // iterate thru all offered Variants of this Action
+                            Iterator variantIter = variantDescriptions.iterator();
+                            while (variantIter.hasNext()) {
+                                // Get TechSpec for this Variant
+                                ActionDescription thisVariantDescription = (ActionDescription) variantIter.next();
+                                boolean thisVariantActiveP = thisAction.getValue().isActive() && thisAction.getValue().getAction().equals(thisVariantDescription.name());
+                                // Add an entry to the current Action containing the information about this Variant
+                                thisActionEvaluation.addVariantEvaluation(createCompensatoryVariantEvaluation
                                        (thisVariantDescription, thisActionEvaluation, currentEstimatedBaseStateDimension, thisAction, 
                                         baseStateDimension, compensatedStateDimension, thisVariantActiveP, knob));
+                            }
                         }
                     }
                     catch (BelievabilityException e) {
