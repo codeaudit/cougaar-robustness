@@ -57,4 +57,12 @@ public class DefenseTimeCondition extends DefenseCondition
     protected static class OMCStrPoint extends OMCPoint {
         public OMCStrPoint (String a) { super (a); }
     }
+
+    public boolean compareSignature(String type, String id, String defenseName) {
+    return ((this.assetType.equalsIgnoreCase(type)) &&
+          (this.assetName.equals(id)) &&
+          (this.defenseName.equals(defenseName)));
+}
+  
+
 }

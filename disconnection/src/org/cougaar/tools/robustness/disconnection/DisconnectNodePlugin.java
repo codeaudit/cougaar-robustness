@@ -238,7 +238,7 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
               String defenseMode = dmode.getValue().toString();
               if (eventService.isEventEnabled()) {
                   if (defenseMode.equals("ENABLED")) {
-                      eventService.event(getNodeID()+" plans to Disconnect for "+reconnectInterval+" sec");
+                      eventService.event(getNodeID()+" plans to Disconnect for "+reconnectInterval/1000L+" sec");
                   }
                   else if (defenseMode.equals("DISABLED")){
                       eventService.event(getNodeID()+" has Reconnected");

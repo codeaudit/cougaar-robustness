@@ -98,6 +98,10 @@ public class DisconnectDefenseAgentEnabler extends DefenseOperatingMode {
         return getValue().toString();
     }
     
-
+    public boolean compareSignature(String type, String id, String defenseName) {
+    return ((this.assetType.equalsIgnoreCase(type)) &&
+          (this.assetName.equals(id)) &&
+          (this.defenseName.equals(defenseName)));
+    }
 }
   
