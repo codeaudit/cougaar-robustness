@@ -458,7 +458,22 @@ public class BelievabilityPlugin
         // are unleashed.
         //
         if ( _leashing_state != LEASHING_STATE_UNLEASHED )
+        {
+            int num_add = _beliefUpdateTriggerSub.getAddedCollection().size();
+
+            if (( num_add > 0 )
+                && logger.isDetailEnabled() ) 
+                logger.detail("Plugin Leashed. Ignoring ADD for "
+                              + num_add + " update trigger(s)." );
+            
+            int num_change = _beliefUpdateTriggerSub.getChangedCollection().size();
+            if (( num_change > 0 )
+                && logger.isDetailEnabled() ) 
+                logger.detail("Plugin Leashed. Ignoring CHANGE for "
+                              + num_change + " update trigger(s)." );
+            
             return;
+        }
 
         Iterator iter;
 

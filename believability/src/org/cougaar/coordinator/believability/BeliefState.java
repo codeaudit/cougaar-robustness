@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefState.java,v $
- * $Revision: 1.22 $
- * $Date: 2004-08-05 13:27:08 $
+ * $Revision: 1.23 $
+ * $Date: 2004-08-05 17:14:19 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -34,7 +34,7 @@ import org.cougaar.coordinator.techspec.AssetStateDimension;
  * asset instance.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.22 $Date: 2004-08-05 13:27:08 $
+ * @version $Revision: 1.23 $Date: 2004-08-05 17:14:19 $
  * 
  *
  */
@@ -169,7 +169,7 @@ public class BeliefState implements Cloneable
     {
         StringBuffer buff = new StringBuffer();
 
-        buff.append( "BeliefState:"
+        buff.append( "BeliefState (" + super.toString() + "):"
                      + "\n\tAssetID: " + _asset_id
                      + "\n\tAssetType: " + _asset_type_model.getName()
                      + "\n\tTrigger: " + _trigger

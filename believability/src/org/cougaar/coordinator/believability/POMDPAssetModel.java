@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetModel.java,v $
- * $Revision: 1.25 $
- * $Date: 2004-08-05 13:27:08 $
+ * $Revision: 1.26 $
+ * $Date: 2004-08-05 17:14:19 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.25 $Date: 2004-08-05 13:27:08 $
+ * @version $Revision: 1.26 $Date: 2004-08-05 17:14:19 $
  *
  */
 class POMDPAssetModel extends Model
@@ -128,7 +128,10 @@ class POMDPAssetModel extends Model
     // Simple accessors
     //
 
-    BeliefState getInitialBeliefState() { return _initial_belief; }
+    BeliefState getInitialBeliefState() 
+    { 
+        return (BeliefState) _initial_belief.clone(); 
+    }
 
     //************************************************************
     /**
