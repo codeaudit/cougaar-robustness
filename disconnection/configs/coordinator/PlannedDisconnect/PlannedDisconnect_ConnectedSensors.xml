@@ -5,7 +5,7 @@
 <SensorTypes>
 
 <SensorType name="org.cougaar.tools.robustness.disconnection.RequestToDisconnectNodeDiagnosis" sensesAssetType="node"
-            sensesStateDimension="Connectedness" sensorLatency="10000" reportingPolicy="ALWAYS_CURRENT" >
+            sensesStateDimension="Connectedness" sensorLatency="15000" reportingPolicy="ALWAYS_CURRENT" >
     <PotentialDiagnoses>
         <Diagnosis name="Disconnect_Request" />
         <Diagnosis name="Connect_Request" defaultValue="TRUE" />
@@ -25,19 +25,25 @@
             <WillDiagnoseAs name="Connected" withProbability="0.001" />
         </WhenActualStateIs >
         <WhenActualStateIs name="Connected" >
-            <WillDiagnoseAs name="Connected" withProbability="1.0" />
+            <WillDiagnoseAs name="Connected" withProbability="0.998" />
+            <WillDiagnoseAs name="Disconnect_Request" withProbability="0.001" />
+            <WillDiagnoseAs name="Connect_Request" withProbability="0.001" />
         </WhenActualStateIs >
         <WhenActualStateIs name="Disconnected" >
-            <WillDiagnoseAs name="Disconnected" withProbability="1.0" />
+            <WillDiagnoseAs name="Disconnected" withProbability="0.998" />
+            <WillDiagnoseAs name="Disconnect_Request" withProbability="0.001" />
+            <WillDiagnoseAs name="Connect_Request" withProbability="0.001" />
         </WhenActualStateIs >
         <WhenActualStateIs name="Tardy" >
-            <WillDiagnoseAs name="Tardy" withProbability="1.0" />
+            <WillDiagnoseAs name="Tardy" withProbability="0.998" />
+            <WillDiagnoseAs name="Disconnected" withProbability="0.001" />
+            <WillDiagnoseAs name="Connect_Request" withProbability="0.001" />
         </WhenActualStateIs >
     </Diagnoses>
 </SensorType>
 
 <SensorType name="org.cougaar.tools.robustness.disconnection.RequestToDisconnectAgentDiagnosis" sensesAssetType="agent"
-            sensesStateDimension="Connectedness" sensorLatency="10000" reportingPolicy="ALWAYS_CURRENT" >
+            sensesStateDimension="Connectedness" sensorLatency="15000" reportingPolicy="ALWAYS_CURRENT" >
     <PotentialDiagnoses>
         <Diagnosis name="Disconnect_Request" />
         <Diagnosis name="Connect_Request" defaultValue="TRUE" />
@@ -57,15 +63,22 @@
             <WillDiagnoseAs name="Connected" withProbability="0.001" />
         </WhenActualStateIs >
         <WhenActualStateIs name="Connected" >
-            <WillDiagnoseAs name="Connected" withProbability="1.0" />
+            <WillDiagnoseAs name="Connected" withProbability="0.998" />
+            <WillDiagnoseAs name="Disconnect_Request" withProbability="0.001" />
+            <WillDiagnoseAs name="Connect_Request" withProbability="0.001" />
         </WhenActualStateIs >
         <WhenActualStateIs name="Disconnected" >
-            <WillDiagnoseAs name="Disconnected" withProbability="1.0" />
+            <WillDiagnoseAs name="Disconnected" withProbability="0.998" />
+            <WillDiagnoseAs name="Disconnect_Request" withProbability="0.001" />
+            <WillDiagnoseAs name="Connect_Request" withProbability="0.001" />
         </WhenActualStateIs >
         <WhenActualStateIs name="Tardy" >
-            <WillDiagnoseAs name="Tardy" withProbability="1.0" />
+            <WillDiagnoseAs name="Tardy" withProbability="0.998" />
+            <WillDiagnoseAs name="Disconnected" withProbability="0.001" />
+            <WillDiagnoseAs name="Connect_Request" withProbability="0.001" />
         </WhenActualStateIs >
     </Diagnoses>
 </SensorType>
 
 </SensorTypes>
+
