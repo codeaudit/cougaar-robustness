@@ -70,22 +70,25 @@ public abstract class Diagnosis
     static private boolean inited = false;
     
     /** The asset type of this object */
-    static private AssetType assetType = null;
+    private AssetType assetType = null;
 
     /** The possible values that getValue() can return */
-    static private Set possibleValues;
+    private Set possibleValues;
     
     /** Logger  */
     Logger logger = null;
     
     /** The possible values that getValue() can return -- cloned for dissemination to others */
-    //static protected Set possibleValuesCloned;
+    protected Set possibleValuesCloned;
 
     /** The service broker passed in  */
     static private ServiceBroker serviceBroker = null;
         
-    /** The DiagnosisTechSpec for this action class */
-    static private DiagnosisTechSpecInterface diagnosisTechSpec;
+    /** The vector of all local DiagnosisTechSpecs */
+    static private Vector diagnosisTechSpecs;
+
+    /** The DiagnosisTechSpecInterface for this action class */
+    private DiagnosisTechSpecInterface diagnosisTechSpec;
     
     /** 
      *  The address of the node agent. May change if the diagnosis is moved. 
@@ -123,6 +126,7 @@ public abstract class Diagnosis
      */
     public Diagnosis(String assetName, ServiceBroker serviceBroker) throws TechSpecNotFoundException 
     {
+                
         this.serviceBroker = serviceBroker;        
         this.assetName = assetName;
         this.possibleValues = new LinkedHashSet();    
@@ -131,6 +135,9 @@ public abstract class Diagnosis
         if (!inited) { //only called once!
             init(); //get the possibleValues from the techSpec.
         }
+        
+        // get the diagnosis tech spec & load the possibleValues
+        initPossibleValues();
 
         this.expandedName = AssetName.generateExpandedAssetName(assetName, assetType);
         this.setUID(uidService.nextUID());
@@ -156,12 +163,12 @@ public abstract class Diagnosis
       */
     private synchronized boolean init() throws TechSpecNotFoundException {
      
+        //Set up a vector to hold all found tech specs, so we can look them up later.
+        diagnosisTechSpecs = new Vector();
+        
         //set up the relay mechanism to the node level coordinator
         initSourceAndTarget(); 
-        
-        // get the diagnosis tech spec & load the possibleValues
-        initPossibleValues();
-     
+             
         this.inited = true;
 
         logger = Logging.getLogger(getClass());
@@ -215,10 +222,19 @@ public abstract class Diagnosis
             "Unable to obtain agent id");
         }
 
+        //**********************************************get the UIDService
+        this.uidService = (UIDService) 
+            serviceBroker.getService( this, UIDService.class, null);
+        if (uidService == null) {
+            throw new RuntimeException(
+            "Unable to obtain UIDService");
+        }        
+        
+        
     }
 
     /**
-     * Retrieves the DiagnosisTechSpec for this class from the DiagnosisTechSpecService.
+     * Retrieves the DiagnosisTechSpecInterface for this class from the DiagnosisTechSpecService.
      * Then it populates the possibleValues & assetType
      */
     private void initPossibleValues() throws TechSpecNotFoundException {
@@ -243,27 +259,22 @@ public abstract class Diagnosis
             "Unable to obtain tech spec service");
         }
         
-        this.uidService = (UIDService) 
-            serviceBroker.getService( this, UIDService.class, null);
-        if (uidService == null) {
-            throw new RuntimeException(
-            "Unable to obtain UIDService");
-        }        
       
         //call tech spec service & get action tech spec        
-        diagnosisTechSpec = (DiagnosisTechSpecInterface) DiagnosisTechSpecService.getDiagnosisTechSpec(this.getClass().getName());
+        this.diagnosisTechSpec = (DiagnosisTechSpecInterface) DiagnosisTechSpecService.getDiagnosisTechSpec(this.getClass().getName());
         if (diagnosisTechSpec == null) {
             throw new TechSpecNotFoundException("Cannot find Diagnosis Tech Spec for "+ this.getClass().getName() );
         }        
         this.setPossibleValues(diagnosisTechSpec.getPossibleValues());
         this.assetType = diagnosisTechSpec.getAssetType();
         
+        
         serviceBroker.releaseService(this, DiagnosisTechSpecService.class, DiagnosisTechSpecService);
         
     }
     
-    
-    
+
+   
     //*************************************************** PossibleValues
     
     /**
@@ -409,11 +420,11 @@ public abstract class Diagnosis
     /**
      * @return a string representing an instance of this class of the form "<classname:assetType:assetName=value>"
      */
-    public String toString ( ) { return "<" + this.getClass().getName()+ ":" + 
-                                              this.getAssetType() + ":" + 
-                                              this.getAssetName() + "=" + 
-                                              this.getValue()  + ">"; 
-    }
+//    public String toString ( ) { return "<" + this.getClass().getName()+ ":" + 
+//                                              this.getAssetType() + ":" + 
+//                                              this.getAssetName() + "=" + 
+//                                              this.getValue()  + ">"; 
+//    }
     
     
     
@@ -549,6 +560,12 @@ public abstract class Diagnosis
         wrapper = w;
     }
 
+    
+    //****************************************************************SharedData
+    
+    
+    
+    
 }
     
     

@@ -66,6 +66,8 @@ public class AssetType implements NotPersistable {
                 break;
             }
         }
+        System.out.println("*****************************name = "+ name);
+        System.out.println("*****************************Asset type = "+ found);
         return found;
     }
     

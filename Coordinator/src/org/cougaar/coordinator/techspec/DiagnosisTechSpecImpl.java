@@ -47,9 +47,12 @@ public class DiagnosisTechSpecImpl implements DiagnosisTechSpecInterface  {
     String revision = "0";
     Vector probabilities = null;
     Vector crossProbabilities;
+    AssetType assetType;
+    String stateDim;
+    int latency;
     
     /** Creates a new instance of DiagnosisTechSpecImpl */
-    public DiagnosisTechSpecImpl(String name, UID uid) {
+    public DiagnosisTechSpecImpl(String name, UID uid, AssetType type, String stateDim, int latency) {
 
         this.name = name;
         this.levels = new Vector();        
@@ -58,13 +61,27 @@ public class DiagnosisTechSpecImpl implements DiagnosisTechSpecInterface  {
         this.uid = uid;
         this.probabilities = new Vector();
         this.crossProbabilities = new Vector();
-        
+        this.assetType = type;
+        this.stateDim = stateDim;
+        this.latency = latency;
     }
     
-    /** @return the asset type that the threat cares about.
+    /** @return the asset type that the sensor is watching.
      */
     public AssetType getAssetType() {
-        return AssetType.findAssetType("AGENT");
+        return assetType;
+    }
+
+    /** @return the State Dimension that the sensor is watching.
+     */
+    public String getStateDimension() {
+        return stateDim;
+    }
+
+    /** @return the latency -- the time it takes this sensor to diagnose/notice & report a problem, in milliseconds.
+     */
+    public int getLatency() {
+        return latency;
     }
     
     /** @return the vector of monitoring levels that this sensor supports
