@@ -555,7 +555,7 @@ try {
     { 
       topoAgent = AgentID.getAgentID (aspect, aspect.getServiceBroker(), agentAddr); 
     }
-    catch (NameLookupException e)
+    catch (UnregisteredNameException e)
     {
       //  Thrown by AgentID.getAgentID when can't get & don't have any topo data for agent
     } 

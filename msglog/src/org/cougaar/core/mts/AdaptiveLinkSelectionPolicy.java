@@ -82,6 +82,10 @@ import org.cougaar.core.service.EventService; //102
 import org.cougaar.core.component.ServiceBroker; //102
 import org.cougaar.core.wp.WhitePagesMessage; //104B
 
+import org.cougaar.core.blackboard.*;
+import org.cougaar.core.relay.*;
+import java.util.Collection;
+
 /**
  * Adaptive link selection policy that uses transport cost and 
  * message send history captured by the MessageSendHistoryAspect
@@ -308,15 +312,42 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
     if (debug) log.debug ("Entered selectLink: msg= " +MessageUtils.toString(msg)+
       " failedMsg=" +MessageUtils.toString(failedMsg));
-    if (debug) log.debug ("raw msg = " + msg.getRawMessage());
-
-    /* 
-    if (debug) log.debug ("sleeping for 1 second");
-    try {
-      Thread.sleep(1000);
-    } catch (Exception e){}
-    */
-
+    if (debug) {
+	Message raw = msg.getRawMessage();
+	log.debug("raw msg = " + raw);
+	log.debug("raw.getClass() = " + raw.getClass());
+	if (raw instanceof DirectiveMessage) {
+	    DirectiveMessage dirMsg = (DirectiveMessage)raw;
+	    Directive dirs[] = dirMsg.getDirectives();
+            for (int i=0; i<dirs.length; i++) {
+		Directive dir = dirs[i];
+        	log.debug("dir.getClass() = " + dir.getClass());
+                if (dir instanceof RelayDirective.Change) {
+		    RelayDirective.Change chg = (RelayDirective.Change)dir;
+                    log.debug("RelayDirective.Change content = " + chg.getContent());
+		} else if (dir instanceof DirectiveMessage.DirectiveWithChangeReports) {
+		    DirectiveMessage.DirectiveWithChangeReports dwcr = (DirectiveMessage.DirectiveWithChangeReports)dir;
+                    log.debug("DirectiveMessage.DirectiveWithChangeReports  = " + dwcr);
+                    Directive d = dwcr.getDirective();
+                    if (d instanceof RelayDirective.Response) {
+			RelayDirective.Response res = (RelayDirective.Response)d;
+			log.debug("DirectiveWithChangeReports.getDirective() is RelayDirective.Response response = " + res.getResponse());
+		    }
+                    if (d instanceof RelayDirective.Change) {
+			RelayDirective.Change chg = (RelayDirective.Change)d;
+			log.debug("DirectiveWithChangeReports.getDirective() is RelayDirective.Change content = " + chg.getContent());
+		    }
+                    Collection changes = dwcr.getChangeReports();
+		    if (changes != null) {
+			Iterator it = changes.iterator();
+                        while (it.hasNext()) {
+			    log.debug("ChangeReport = " + it.next());
+			}
+		    }
+		}			
+	    }
+	}
+    }
     if (commStartDelaySeconds > 0)
     {
       //  HACK to attempt to get around nameserver/topology lookup problems

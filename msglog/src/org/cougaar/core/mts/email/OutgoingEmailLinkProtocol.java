@@ -488,7 +488,7 @@ if (log.isDebugEnabled()) log.debug("Enter forwardMessage("+MessageUtils.toStrin
         if (log.isWarnEnabled()) log.warn (s);
 if (log.isDebugEnabled()) log.debug("Exit forwardMessage("+MessageUtils.toString(msg)+")");
 //if (log.isDebugEnabled()) log.debug("raw msg = "+msg.getRawMessage());
-        throw new NameLookupException (new Exception (s));
+        throw new UnregisteredNameException(destination);
       }
 
       //  Send message via email

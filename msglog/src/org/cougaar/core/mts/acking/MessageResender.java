@@ -522,7 +522,8 @@ class MessageResender implements Runnable
             Iterator i = msgs.iterator();
             while (i.hasNext()) {
               AttributedMessage msg = (AttributedMessage)i.next();
-              if (MessageUtils.getToAgent(msg).equals(oldToAgent) && 
+              if (msg != null &&
+                  MessageUtils.getToAgent(msg).equals(oldToAgent) && 
                   !aspect.hasMessageBeenAcked(msg)) {
 		// change AgentID and renumber messages
                 MessageUtils.setToAgent(msg, newToAgent);
