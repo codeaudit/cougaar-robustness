@@ -5,7 +5,7 @@
 <SensorTypes>
 
 <SensorType name="org.cougaar.tools.robustness.disconnection.RequestToDisconnectNodeDiagnosis" sensesAssetType="node"
-            sensesStateDimension="Connectedness" sensorLatency="1000" reportingPolicy="ALWAYS_CURRENT" >
+            sensesStateDimension="Connectedness" sensorLatency="5000" reportingPolicy="ALWAYS_CURRENT" >
     <PotentialDiagnoses>
         <Diagnosis name="Disconnect_Request" />
         <Diagnosis name="Connect_Request" defaultValue="TRUE" />
@@ -37,7 +37,7 @@
 </SensorType>
 
 <SensorType name="org.cougaar.tools.robustness.disconnection.RequestToDisconnectAgentDiagnosis" sensesAssetType="agent"
-            sensesStateDimension="Connectedness" sensorLatency="1000" reportingPolicy="ALWAYS_CURRENT" >
+            sensesStateDimension="Connectedness" sensorLatency="5000" reportingPolicy="ALWAYS_CURRENT" >
     <PotentialDiagnoses>
         <Diagnosis name="Disconnect_Request" />
         <Diagnosis name="Connect_Request" defaultValue="TRUE" />
@@ -48,11 +48,13 @@
     <Diagnoses>
         <WhenActualStateIs name="WantsToDisconnect" >
             <WillDiagnoseAs name="Disconnect_Request" withProbability="0.998" />
-            <WillDiagnoseAs name="Disconnected" withProbability="0.002" />
+            <WillDiagnoseAs name="Disconnected" withProbability="0.001" />
+            <WillDiagnoseAs name="Connected" withProbability="0.001" />
         </WhenActualStateIs >
         <WhenActualStateIs name="WantsToConnect" >
             <WillDiagnoseAs name="Connect_Request" withProbability="0.998" />
-            <WillDiagnoseAs name="Connected" withProbability="0.002" />
+            <WillDiagnoseAs name="Disconnected" withProbability="0.001" />
+            <WillDiagnoseAs name="Connected" withProbability="0.001" />
         </WhenActualStateIs >
         <WhenActualStateIs name="Connected" >
             <WillDiagnoseAs name="Connected" withProbability="1.0" />
