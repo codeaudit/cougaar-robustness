@@ -1,0 +1,15 @@
+###############################################################################
+# Adds Coordinator test components to all agents (incl. node agents) in society
+# 
+
+awmp = "org.cougaar.coordinator.test.coordination.ActionsWrapperMonitorPlugin"
+dwmp = "org.cougaar.coordinator.test.coordination.DiagnosesWrapperMonitorPlugin"
+ams  = "org.cougaar.coordinator.test.coordination.ActionMonitorServlet"
+dms  = "org.cougaar.coordinator.test.coordination.DiagnosisMonitorServlet"
+ps   = "org.cougaar.coordinator.test.coordination.PublishServlet"
+
+plugins = [awmp,dwmp,ams,dms,ps]
+
+society.each_agent(true) do |agent|
+    agent.add_components(plugins)
+end

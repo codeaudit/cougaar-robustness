@@ -1,0 +1,14 @@
+########################################################
+# Adds SampleDefense components to all agents in society
+# 
+
+sact = "org.cougaar.coordinator.examples.SampleDefense.SampleActuator"
+ssen = "org.cougaar.coordinator.examples.SampleDefense.SampleSensor"
+ssrv = "org.cougaar.coordinator.examples.SampleDefense.SampleServlet"
+
+plugins = [sact,ssen,ssrv]
+
+society.each_agent(true) do |agent|
+    agent.add_components(plugins)
+end
+

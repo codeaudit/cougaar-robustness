@@ -1,0 +1,74 @@
+###################################################
+# Adds Coordinator components to society definition
+# 
+
+# Coordinator components
+arm  = "org.cougaar.coordinator.ActionRelayManager"
+drm  = "org.cougaar.coordinator.DiagnosesRelayManager"
+rmfp = "org.cougaar.coordinator.RobustnessManagerFinderPlugin"
+bp   = "org.cougaar.coordinator.believability.BelievabilityPlugin"
+cbp  = "org.cougaar.coordinator.costBenefit.CostBenefitPlugin"
+cmp  = "org.cougaar.coordinator.housekeeping.CoordinatorManagerPlugin"
+asp  = "org.cougaar.coordinator.selection.ActionSelectionPlugin"
+amp  = "org.cougaar.coordinator.techspec.AssetManagerPlugin"
+tmmp = "org.cougaar.coordinator.techspec.ThreatModelManagerPlugin"
+ltsp = "org.cougaar.coordinator.techspec.xml.LoadTechSpecsPlugin"
+
+# Coordinator TechSpecs
+aasd = 'AgentAssetTest.xml'
+nasd = 'NodeAssetTest.xml'
+hasd = 'HostAssetTest.xml'
+easd = 'EnclaveAssetTest.xml'
+t    = 'ThreatTestXML.xml'
+e    = 'EventTestXML.xml'
+
+# Sensors TechSpecs
+as   = 'AgentSensorTypeTest.xml'
+tss  = 'ThrashingSuppressionSensorTypeTest.xml'
+
+# Actuator TechSpecs
+ra   = 'RestartActuatorTypeTestXML.xml'
+fca  = 'FakeCommActuatorTypeTestXML.xml'
+
+# Cross Diagnosis TechSpecs
+cd   = 'CrossDiagnosisTestXML.xml'
+
+mgr_node_techspecs = [aasd,nasd,hasd,easd,t,e,as,tss,ra,fca,cd]
+
+other_node_techspecs = [aasd,nasd,hasd,easd,as,tss,ra,fca,   t,e]
+
+nodePlugins = [arm,drm,rmfp]
+
+mgrPlugins = [bp,cbp,cmp,asp,tmmp]
+
+society.each_agent do |agent|
+    if agent.name =~ /.*ARManager.*/
+        agent.add_components(mgrPlugins)
+    end
+end
+
+society.each_node do |node|
+    node.add_components(nodePlugins)
+    mgr_node = false
+    if node.has_facet?("role")
+        node.each_facet("role") do |facet|
+            if facet["role"] == "AR-Management"
+                mgr_node = true
+            end
+        end
+    end
+    node.add_component do |c|
+        c.classname = ltsp
+#        c.priority = 'HIGH'
+        c.insertionpoint = 'Node.AgentManager.Agent.PluginManager.Plugin'
+        if mgr_node == true
+	    mgr_node_techspecs.each do |ts|
+                c.add_argument(ts)
+            end
+        else
+            other_node_techspecs.each do |ts|
+                c.add_argument(ts)
+            end
+        end
+    end
+end
