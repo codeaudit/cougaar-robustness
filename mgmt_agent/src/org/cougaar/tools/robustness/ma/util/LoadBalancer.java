@@ -40,9 +40,9 @@ import org.cougaar.util.UnaryPredicate;
 import org.cougaar.scalability.util.CougaarSociety;
 import org.cougaar.scalability.util.CougaarNode;
 import org.cougaar.scalability.util.CougaarAgent;
-import com.boeing.pw.mct.exnihilo2002.CSParser;
-import com.boeing.pw.mct.exnihilo.plugin.LoadBalanceRequest;
-import com.boeing.pw.mct.exnihilo.plugin.LoadBalanceRequestPredicate;
+import org.cougaar.robustness.exnihilo.CSParser;
+import org.cougaar.robustness.exnihilo.plugin.LoadBalanceRequest;
+import org.cougaar.robustness.exnihilo.plugin.LoadBalanceRequestPredicate;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -164,7 +164,8 @@ public class LoadBalancer extends BlackboardClientComponent {
     if(enSociety == null) return null;
     logger.debug("get society xml before load balance: \n" + enSociety);
     CougaarSociety cs = loadSocietyFromXML(enSociety);
-    LoadBalanceRequest loadBalReq = new LoadBalanceRequest(cs);
+    //LoadBalanceRequest loadBalReq = new LoadBalanceRequest(cs);
+    LoadBalanceRequest loadBalReq = new LoadBalanceRequest();
     logger.debug("publishing LoadBalanceRequest");
     fireLater(loadBalReq);
     return cs;
@@ -296,7 +297,7 @@ public class LoadBalancer extends BlackboardClientComponent {
    * @param xml
    * @return
    */
-  private CougaarSociety loadSocietyFromXML(String xml) {
+   private CougaarSociety loadSocietyFromXML(String xml) {
     CSParser csp = new CSParser();
     csp.echoStruct_ = false;    // be quiet
     CougaarSociety society  = null;
@@ -311,7 +312,6 @@ public class LoadBalancer extends BlackboardClientComponent {
 
     return society;
   } // loadSocietyFromXML
-
 
   /**
    * Sends Cougaar event via EventService.
