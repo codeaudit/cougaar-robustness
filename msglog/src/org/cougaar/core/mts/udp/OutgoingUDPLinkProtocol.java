@@ -37,6 +37,9 @@ import org.cougaar.core.mts.*;
 public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
 {
   public static final String PROTOCOL_TYPE = "-UDP";
+  public static final int    MAX_UDP_MSG_SIZE = 64*1024;
+
+  private static boolean showTraffic;
 
   private static final int protocolCost;
   private static final Object sendLock = new Object();
@@ -66,6 +69,13 @@ private int cnt = 0;
     {
       throw new RuntimeException ("Failure starting up " +this);
     }
+  }
+
+  public void load () 
+  {
+    super_load();
+    String sta = "org.cougaar.core.mts.ShowTrafficAspect";
+    showTraffic = (getAspectSupport().findAspect(sta) != null);
   }
 
   public String toString ()
@@ -266,20 +276,24 @@ else
       //  unreliable by design, we only know by acking).
       //  UPDATE: Now in Java 1.4 datagram sockets can be connected.
 
-//long start = System.currentTimeMillis();
-
       byte msgBytes[] = toBytes (msg);
       if (msgBytes == null) return false;
 
-if (msgBytes.length >= 64*1024)
-{
-  //  HACK!!! Need better way to handle UDP 64kb packet length limitation
+      //  HACK!!!  Need better way to handle the UDP 64kb packet length limitation
+      //  The problem with this is that it pollutes the send history of UDP
+      //  with false errors - it is not a UDP error that a message is larger
+      //  than it can handle.
 
-  if (loggingService.isWarnEnabled()) 
-    loggingService.warn ("Msg exceeds 64kb datagram limit! : " +msg);
-  
-  return false;
-}
+      if (msgBytes.length >= MAX_UDP_MSG_SIZE)
+      {
+        MessageUtils.setMessageSize (msg, msgBytes.length);  // avoid udp selection again for this msg
+
+        if (loggingService.isWarnEnabled()) 
+        {
+          loggingService.warn ("Msg exceeds 64kb datagram limit! (" +msgBytes.length+ "): " +MessageUtils.toString(msg));
+          return false;
+        }
+      }
 
       InetAddress addr = spec.getInetAddress();
       int port = spec.getPortAsInt();
@@ -287,6 +301,8 @@ if (msgBytes.length >= 64*1024)
 
       if (datagramSocket == null) datagramSocket = new DatagramSocket();
 /*
+      //  With Java 1.4 UDP can now have connected datagram sockets
+
       if (!connected)
       {
         datagramSocket.connect (addr, port);
@@ -294,9 +310,6 @@ if (msgBytes.length >= 64*1024)
       }
 */
       datagramSocket.send (dp);
-
-//long end = System.currentTimeMillis();
-//System.out.println ("UDP transmit (ms): " +(end-start));
 
       return true;  // send successful
     }

@@ -250,6 +250,8 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
   {
     private DestinationLink link;
 
+private RunningAverage rmiAvg = new RunningAverage (samplePoolsize, startDelay, percentChangeLimit, changeLimitDelay);
+ 
     public RTTOutbound (DestinationLink link) 
     {
       super (link);
@@ -304,6 +306,16 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
 
       //  Send the message on its way
 
+if (link.getProtocolClass().getName().equals("org.cougaar.core.mts.RMILinkProtocol"))
+{
+  MessageAttributes ma = link.forwardMessage (msg);
+  long finish = now();
+  int rtt = (int)(finish - sendTime);
+  rmiAvg.add (rtt);
+  System.err.println ("\n   RMI RTT= " +rtt+ " avg= "+rmiAvg.getAverage());
+  return ma;
+}
+else
       return link.forwardMessage (msg);
     }
   }

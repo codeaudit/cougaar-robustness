@@ -34,6 +34,11 @@ class Classname implements java.io.Serializable
     name = c.getName();
   }
 
+  public Classname (String classname)
+  {
+    name = classname;
+  }
+
   public boolean equals (Object obj)
   {
     return name.equals (obj);

@@ -555,11 +555,11 @@ public class MessageAckingAspect extends StandardAspect
   //  lastReceiveLinkTable
 
   private static final Classname UDPReceiveLink =
-    new Classname (org.cougaar.core.mts.udp.IncomingUDPLinkProtocol.class);
+    new Classname ("org.cougaar.core.mts.udp.IncomingUDPLinkProtocol");
   private static final Classname SocketReceiveLink =
-    new Classname (org.cougaar.core.mts.socket.IncomingSocketLinkProtocol.class);
+    new Classname ("org.cougaar.core.mts.socket.IncomingSocketLinkProtocol");
   private static final Classname EmailReceiveLink =
-    new Classname (org.cougaar.core.mts.email.IncomingEmailLinkProtocol.class);
+    new Classname ("org.cougaar.core.mts.email.IncomingEmailLinkProtocol");
 
   static void setLastReceiveLink (String node, Classname link)
   {

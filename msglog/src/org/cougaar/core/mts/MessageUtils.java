@@ -42,6 +42,7 @@ public final class MessageUtils
   public static final String MSG_TYPE_PING = "MessageTypePing";
   public static final String MSG_TYPE_TMASK = "MessageTypeTrafficMasking";
   public static final String MSG_SEND_TIME = "MessageSendTime";
+  public static final String MSG_SIZE = "MessageSize";
   public static final String SEND_TIMEOUT = "SendTimeout";
   public static final String SEND_DEADLINE = "SendDeadline";
   public static final String SEND_PROTOCOL_LINK = "SendProtocolLink";
@@ -196,6 +197,18 @@ public final class MessageUtils
     setMessageType (msg, MSG_TYPE_TMASK);
   }
 */
+
+  public static void setMessageSize (AttributedMessage msg, int size)
+  {
+    msg.setLocalAttribute (MSG_SIZE, new Integer (size));  // note LOCAL attribute
+  }
+
+  public static int getMessageSize (AttributedMessage msg)
+  {
+    Integer size = (Integer) msg.getAttribute (MSG_SIZE);  // note LOCAL attribute
+    return (size != null ? size.intValue() : -1);
+  }
+
   public static void setMessageSendTime (AttributedMessage msg, long time)
   {
     msg.setAttribute (MSG_SEND_TIME, new Long (time));
@@ -247,12 +260,12 @@ public final class MessageUtils
 
   public static void setSendDeadline (AttributedMessage msg, long deadline)
   {
-    msg.setLocalAttribute (SEND_DEADLINE, new Long (deadline));  // NOTE: local attribute
+    msg.setLocalAttribute (SEND_DEADLINE, new Long (deadline));  // note LOCAL attribute
   }
 
   public static long getSendDeadline (AttributedMessage msg)
   {
-    Long deadline = (Long) msg.getAttribute (SEND_DEADLINE);  // NOTE: local attribute
+    Long deadline = (Long) msg.getAttribute (SEND_DEADLINE);     // note LOCAL attribute
     if (deadline != null) return deadline.longValue();
     return Long.MAX_VALUE;
   }

@@ -97,6 +97,8 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
   public static final String PROTOCOL_TYPE = "-socket";
 
   private static final boolean debug;
+  private static boolean showTraffic;
+
   private static final int protocolCost;
   private static final int connectTimeout;
   private static final Object sendLock = new Object();
@@ -131,6 +133,13 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
     {
       throw new RuntimeException ("Failure starting up OutgoingSocketLinkProtocol!");
     }
+  }
+
+  public void load () 
+  {
+    super_load();
+    String sta = "org.cougaar.core.mts.ShowTrafficAspect";
+    showTraffic = (getAspectSupport().findAspect(sta) != null);
   }
 
   public String toString ()
@@ -268,19 +277,6 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
         throws NameLookupException, UnregisteredNameException,
                CommFailureException, MisdeliveredMessageException
     {
-/*
-if (message instanceof MessageAckingAspect.AckEnvelope)
-{
-  MessageAckingAspect.AckEnvelope env = (MessageAckingAspect.AckEnvelope)message;
-
-  int num = env.getMessageNumber();
-  int sndCount = env.getSendCount();
-  String target = env.getTargetNode();
-
-  if (target.equals("PerformanceNodeA") && sndCount == 1 && num == 5) return;
-//if (sndCount == 1 && num == 5) return;
-}
-*/
       //  Get socket address of destination 
 
       SocketSpec destSpec = lookupSocketSpec (destination);
@@ -326,8 +322,6 @@ if (message instanceof MessageAckingAspect.AckEnvelope)
       //  It appears that the only way we can determine whether our message
       //  output stream is still valid is to try using it.  So we try it,
       //  and if it fails, we create a new output stream and try again.
-
-//long start = System.currentTimeMillis();
       
       boolean success = false;
 
@@ -361,9 +355,6 @@ if (message instanceof MessageAckingAspect.AckEnvelope)
           if (tryN == 2) throw (e);
         }
       }
-
-//long end = System.currentTimeMillis();
-//System.out.println ("Socket transmit (ms): " +(end-start));
 
       return success;
     }
