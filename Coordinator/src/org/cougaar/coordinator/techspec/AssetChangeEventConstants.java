@@ -1,6 +1,9 @@
 /*
+ * AssetChangeListener.java
+ *
+ * Created on September 15, 2003, 2:32 PM
  * <copyright>
- *  Copyright 2004 Object Services and Consulting, Inc.
+ *  Copyright 2003 Object Services and Consulting, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
  *  and the Defense Logistics Agency (DLA).
  * 
@@ -22,28 +25,11 @@
 
 package org.cougaar.coordinator.techspec;
 
-import java.io.Serializable;
+public interface AssetChangeEventConstants {
+    
+    int NEW_ASSET = 0;
+    int MOVED_ASSET = 1;    
+    int REMOVED_ASSET = 2;
+    String UNKNOWN = "?";
 
-public class AssetChangeEvent implements Serializable, AssetChangeEventConstants {
-    
-    private int event;
-    private AssetTechSpecInterface asset;
-    
-    public AssetChangeEvent(AssetTechSpecInterface asset, int event) {
-        this.asset = asset;
-        this.event = event;
-    }
-    
-    public AssetTechSpecInterface getAsset() { return asset; }
-    public boolean newAssetEvent() { return event == NEW_ASSET; }
-    public boolean moveEvent() { return event == MOVED_ASSET; }
-    public boolean assetRemovedEvent() { return event == REMOVED_ASSET; }
-    
-    public String toString() {
-        String evt = UNKNOWN;
-        if (event == NEW_ASSET) {evt = "NewAsset"; }
-        else if (event == MOVED_ASSET) {evt = "MovedAsset"; }
-        else if (event == REMOVED_ASSET) {evt = "RemovedAsset"; }
-        return "AssetChangeEvent:: Asset="+asset.getName() + " Event = "+evt;
-    }
 }

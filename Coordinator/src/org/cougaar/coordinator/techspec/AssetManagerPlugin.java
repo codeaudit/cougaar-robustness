@@ -45,7 +45,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Vector;
 import org.xml.sax.InputSource;
 
 //Parts of this code were taken from Ron Snyder's StatusChangeListenerPlugin.java.
@@ -57,7 +56,7 @@ import org.xml.sax.InputSource;
  *
  * @author  Paul Pazandak, Ph.D. OBJS
  */
-public class AssetManagerPlugin extends ComponentPlugin implements NotPersistable {
+public class AssetManagerPlugin extends ComponentPlugin implements NotPersistable, AssetChangeEventConstants {
     
     private ServiceBroker sb;
     private LoggingService logger;
@@ -67,8 +66,9 @@ public class AssetManagerPlugin extends ComponentPlugin implements NotPersistabl
     private static AssetTechSpecTable assetTechSpecs = null;
     private boolean assetTechSpecsChanged = false;
     
-    private Vector allAssets;
-    private Vector pendingAssets;
+    private AssetChangeEventQueue allEvents = null;
+    private boolean allEventsChanged = false;
+    private AssetChangeEventQueue pendingEvents;
     
     private CommunityStatusModel csm = null;
     private List changeListeners = Collections.synchronizedList(new ArrayList());
@@ -77,11 +77,11 @@ public class AssetManagerPlugin extends ComponentPlugin implements NotPersistabl
     
     private IncrementalSubscription communityStatusModelSub;
     private UnaryPredicate communityStatusModelPredicate = new UnaryPredicate() {
-        public boolean execute(Object o) {
-            return (o instanceof CommunityStatusModel);
-        }
-    };
-      
+	    public boolean execute(Object o) {
+		return (o instanceof CommunityStatusModel);
+	    }
+	};
+    
     //Subscribe to new assets / changes announced by the CommunityStatusModel
     private StatusChangeListener myChangeListener = new StatusChangeListener() {
 	    
@@ -114,7 +114,11 @@ public class AssetManagerPlugin extends ComponentPlugin implements NotPersistabl
 		    movingAgent = false;
 		    removedAsset = false;
 
-		    if (logger.isDebugEnabled()) logger.debug("!!!! [STATUS CHANGED CALLED] on asset="+csce[i].getName()+" with:  \n= "+csce[i].toString()+"  getCurrentLocation = " + csce[i].getCurrentLocation()+" getPriorLocation = " + csce[i].getPriorLocation());
+		    if (logger.isDebugEnabled()) 
+			logger.debug("!!!! [STATUS CHANGED CALLED] on asset="+
+				     csce[i].getName()+" with:  \n= "+csce[i].toString()+
+				     "  getCurrentLocation = " + csce[i].getCurrentLocation()+
+				     " getPriorLocation = " + csce[i].getPriorLocation());
                 
 /*                
 logger.warn("!!!! ****************************************************");
@@ -182,7 +186,7 @@ logger.warn("!!!! **********************************************************");
 				logger.debug("!!!- Queued new agent asset ["+agentName+"]"+
 					     " without host/node info: hostName="+hostName+
 					     " nodeName="+nodeName);
-			    pendingAssets.add(csce[i]);
+			    pendingEvents.add(csce[i]);
 			    continue;
 			} else { //continue
 			    hostAsset = getHost(hostName);
@@ -216,7 +220,7 @@ logger.warn("!!!! **********************************************************");
 				agentAsset.addProperty(new AgentAssetProperty(AgentAssetProperty.location, "FORWARD"));
 			    }
 */
-			    queueChangeEvent(new AssetChangeEvent( agentAsset, AssetChangeEvent.NEW_ASSET));
+			    queueChangeEvent(new AssetChangeEvent( agentAsset, NEW_ASSET));
 			    
                         //*** Handle an agent moving
 			} else if (movingAgent) { //it's a movingAgent
@@ -227,11 +231,12 @@ logger.warn("!!!! **********************************************************");
 			    
 			    agentAsset = assetSvc.getAssetTechSpec(new AssetID(agentName, AssetType.AGENT));
 			    if (agentAsset == null) { // then this is an agent we've never seen before!
-				agentAsset = new DefaultAssetTechSpec( hostAsset, nodeAsset,  agentName, AssetType.AGENT, us.nextUID());                            
+				agentAsset = new DefaultAssetTechSpec( hostAsset, nodeAsset,  agentName, 
+								       AssetType.AGENT, us.nextUID());                            
 				assetSvc.putAssetTechSpec(agentAsset);
 			    }
 			    agentAsset.setNewLocation(hostAsset, nodeAsset);
-			    queueChangeEvent(new AssetChangeEvent( agentAsset, AssetChangeEvent.MOVED_ASSET));
+			    queueChangeEvent(new AssetChangeEvent( agentAsset, MOVED_ASSET));
 /*			    
 			    //Use NODE name to assign FWD / REAR property
 			    if (nodeName.startsWith("REAR")) {
@@ -251,18 +256,18 @@ logger.warn("!!!! **********************************************************");
                             logger.info("Agent REMOVED: agent=" + agentName);                        
                             agentAsset = assetSvc.getAssetTechSpec(new AssetID(agentName, AssetType.AGENT));
                             if (agentAsset != null) {
-                                queueChangeEvent(new AssetChangeEvent( agentAsset, AssetChangeEvent.REMOVED_ASSET));                                                
+                                queueChangeEvent(new AssetChangeEvent( agentAsset, REMOVED_ASSET));                                                
                             }
                         } else if (csce[i].getType() == CommunityStatusModel.NODE) {
                             //then we must remove both the node asset and the node-agent asset
                             logger.info("NODE AND NODE-AGENT REMOVED: node=" + agentName);                        
                             nodeAsset = assetSvc.getAssetTechSpec(new AssetID(agentName, AssetType.NODE));
                             if (nodeAsset != null) {
-                                queueChangeEvent(new AssetChangeEvent( nodeAsset, AssetChangeEvent.REMOVED_ASSET));                                                
+                                queueChangeEvent(new AssetChangeEvent( nodeAsset, REMOVED_ASSET));                                                
                             }
                             agentAsset = assetSvc.getAssetTechSpec(new AssetID(agentName, AssetType.AGENT));
                             if (agentAsset != null) {
-                                queueChangeEvent(new AssetChangeEvent( agentAsset, AssetChangeEvent.REMOVED_ASSET));                                                
+                                queueChangeEvent(new AssetChangeEvent( agentAsset, REMOVED_ASSET));                                                
                             }
                         }
                         
@@ -273,7 +278,7 @@ logger.warn("!!!! **********************************************************");
             }
 
             // dw - check if any of the agents for which there was previously incomplete info can now be completed
-            Iterator iter = pendingAssets.iterator();
+            Iterator iter = pendingEvents.iterator();
             while (iter.hasNext()) {
                 CommunityStatusChangeEvent thisCSCE = (CommunityStatusChangeEvent) iter.next();
                 agentName = thisCSCE.getName();
@@ -289,7 +294,10 @@ logger.warn("!!!! **********************************************************");
                 }
 
                 if (hostName == null || nodeName == null || hostName.length() == 0 || nodeName.length() == 0) {
-                    if (logger.isDebugEnabled()) logger.debug("!!!- Still incomplete: "+agentName+"] without host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
+                    if (logger.isDebugEnabled()) 
+			logger.debug("!!!- Still incomplete: "+agentName+
+				     "] without host/node info: hostName = "+
+				     hostName + "  nodeName = "+nodeName);
                     continue;
                 } else { //continue
                     hostAsset = getHost(hostName);
@@ -298,13 +306,20 @@ logger.warn("!!!! **********************************************************");
 
                 //*** Handle an agent whose info is now complete - it becomes a new agent entry
 
-                //Make sure we haven't seen this agent before we create a new one! - this should be impossible when handling pending requests
+                // Make sure we haven't seen this agent before we create a new one! 
+		// this should be impossible when handling pending requests
                 agentAsset = assetSvc.getAssetTechSpec(new AssetID(agentName, AssetType.AGENT));
                 if (agentAsset != null) {
-                    if (logger.isDebugEnabled()) logger.debug("Saw DUPLICATE agent asset ["+agentName+"] with host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
+                    if (logger.isDebugEnabled()) 
+			logger.debug("Saw DUPLICATE agent asset ["+agentName+
+				     "] with host/node info: hostName = "+
+				     hostName + "  nodeName = "+nodeName);
                     continue;
                 }                    
-                if (logger.isDebugEnabled()) logger.debug("Saw new agent asset from pending queue ["+agentName+"] with host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
+                if (logger.isDebugEnabled()) 
+		    logger.debug("Saw new agent asset from pending queue ["+
+				 agentName+"] with host/node info: hostName = "+
+				 hostName + "  nodeName = "+nodeName);
                 agentAsset = new DefaultAssetTechSpec( hostAsset, nodeAsset,  agentName, AssetType.AGENT, us.nextUID());
 		assetSvc.putAssetTechSpec(agentAsset);
 /*
@@ -316,7 +331,7 @@ logger.warn("!!!! **********************************************************");
                 }
 */
                 iter.remove();
-                queueChangeEvent(new AssetChangeEvent( agentAsset, AssetChangeEvent.NEW_ASSET));
+                queueChangeEvent(new AssetChangeEvent( agentAsset, NEW_ASSET));
             }
         }
     };
@@ -342,32 +357,42 @@ logger.warn("!!!! **********************************************************");
      * and then publishes itself.
      */
     public void setupSubscriptions() {
-	if (blackboard.didRehydrate()) {
-	    Collection c = blackboard.query(new UnaryPredicate() {
-		    public boolean execute(Object o) {
-			return (o instanceof AssetTechSpecTable);
-		    }
-		});
-	    if (c.isEmpty()) {
-		blackboard.publishAdd(assetTechSpecs);
-	    } else {
-		assetTechSpecs = (AssetTechSpecTable)c.iterator().next();
-	    }
+	Collection c = blackboard.query(new UnaryPredicate() {
+		public boolean execute(Object o) {
+		    return (o instanceof AssetTechSpecTable);
+		}
+	    });
+	if (c.isEmpty()) {
+	    if (logger.isDebugEnabled()) 
+		logger.debug("AssetTechSpecTable not found on blackboard.");
+	    blackboard.publishAdd(assetTechSpecs);
+	} else {
+	    assetTechSpecs = (AssetTechSpecTable)c.iterator().next();
+	    if (logger.isDebugEnabled()) 
+		logger.debug("AssetTechSpecTable found on blackboard = "+assetTechSpecs);
 	}
-        allAssets = new Vector(100,100);
-        pendingAssets = new Vector(100);
+	c = blackboard.query(new UnaryPredicate() {
+		public boolean execute(Object o) {
+		    return (o instanceof AssetChangeEventQueue);
+		}
+	    });
+	if (c.isEmpty()) {
+	    if (logger.isDebugEnabled()) 
+		logger.debug("AssetChangeEventQueue not found on blackboard.");
+	    allEvents = new AssetChangeEventQueue(100,100);
+	    blackboard.publishAdd(allEvents);
+	} else {
+	    allEvents = (AssetChangeEventQueue)c.iterator().next();
+	    if (logger.isDebugEnabled()) 
+		logger.debug("AssetChangeEventQueue found on blackboard = "+allEvents);
+	}
+        pendingEvents = new AssetChangeEventQueue(100);
         communityStatusModelSub =
-        (IncrementalSubscription)blackboard.subscribe(communityStatusModelPredicate);                
+	    (IncrementalSubscription)blackboard.subscribe(communityStatusModelPredicate);                
         blackboard.publishAdd(this); //publish myself, ONLY after reading in XML
     }
     
     public void execute() {
-	synchronized (assetTechSpecs) {
-	    if (assetTechSpecsChanged) {
-		blackboard.publishChange(assetTechSpecs);
-		assetTechSpecsChanged = false;
-	    }
-	}
         sendEvents();
         Collection models = communityStatusModelSub.getAddedCollection();
         for (Iterator it = models.iterator(); it.hasNext();) {
@@ -381,6 +406,18 @@ logger.warn("!!!! **********************************************************");
             //get all agents already known by the csm - called once.
             getCurrentAssetsInCSM();
         }
+	synchronized (assetTechSpecs) {
+	    if (assetTechSpecsChanged) {
+		blackboard.publishChange(assetTechSpecs);
+		assetTechSpecsChanged = false;
+	    }
+	}
+	synchronized (allEvents) {
+	    if (allEventsChanged) {
+		blackboard.publishChange(allEvents);
+		allEventsChanged = false;
+	    }
+	}
     }
     
     /**
@@ -417,11 +454,13 @@ logger.warn("!!!! **********************************************************");
      * This is called until the community name is found.
      */
     private void addEnclave() {
-        String cName = csm.getCommunityName();
+	//String cName = csm.getCommunityName();
+	// change to use Robustness Manager name
+	String cName = csm.getAttribute("RobustnessManager"); 
         if (cName != null) {
             AssetTechSpecInterface enclave = new DefaultAssetTechSpec( null, null, cName, AssetType.ENCLAVE, us.nextUID());
 	    assetSvc.putAssetTechSpec(enclave);
-            queueChangeEvent(new AssetChangeEvent( enclave, AssetChangeEvent.NEW_ASSET));
+            queueChangeEvent(new AssetChangeEvent( enclave, NEW_ASSET));
             enclaveNameFound = true;
         }
     }
@@ -451,9 +490,11 @@ logger.warn("!!!! **********************************************************");
 
         if (hostName == null || nodeName == null) {
             if ( type == CommunityStatusModel.AGENT ) {
-                //logger.warn("!!!! [ASSET NOT ADDED] Saw new AGENT asset ["+agentName+"] without host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
+                //logger.warn("!!!! [ASSET NOT ADDED] Saw new AGENT asset ["+agentName+
+                //"] without host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
             } else if ( type == CommunityStatusModel.NODE ) {
-                //logger.warn("!!!! [ASSET NOT ADDED] Saw new NODE asset ["+agentName+"] without host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
+                //logger.warn("!!!! [ASSET NOT ADDED] Saw new NODE asset ["+agentName+
+                //"] without host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
             }
             return;
         }
@@ -466,7 +507,7 @@ logger.warn("!!!! **********************************************************");
         if (agentAsset == null) {
             agentAsset = new DefaultAssetTechSpec( hostAsset, nodeAsset,  agentName, AssetType.AGENT, us.nextUID());
 	    assetSvc.putAssetTechSpec(agentAsset);
-            queueChangeEvent(new AssetChangeEvent( agentAsset, AssetChangeEvent.NEW_ASSET));
+            queueChangeEvent(new AssetChangeEvent( agentAsset, NEW_ASSET));
         }
     }
     
@@ -479,7 +520,7 @@ logger.warn("!!!! **********************************************************");
         if (hostAsset == null) {
             hostAsset = new DefaultAssetTechSpec( null, null,  hostName, AssetType.HOST, us.nextUID() );
 	    assetSvc.putAssetTechSpec(hostAsset);
-            queueChangeEvent(new AssetChangeEvent( hostAsset, AssetChangeEvent.NEW_ASSET));
+            queueChangeEvent(new AssetChangeEvent( hostAsset, NEW_ASSET));
             if (logger.isDebugEnabled()) logger.debug("Queued new host asset");
         }
         return hostAsset;
@@ -494,7 +535,7 @@ logger.warn("!!!! **********************************************************");
         if (nodeAsset == null) {
             nodeAsset = new DefaultAssetTechSpec(hostAsset, null, nodeName, AssetType.NODE, us.nextUID());
 	    assetSvc.putAssetTechSpec(nodeAsset);
-            queueChangeEvent(new AssetChangeEvent( nodeAsset, AssetChangeEvent.NEW_ASSET));
+            queueChangeEvent(new AssetChangeEvent( nodeAsset, NEW_ASSET));
             if (logger.isDebugEnabled()) logger.debug("Queued new node asset");
 /*            
             //Use NODE name to assign FWD / REAR property
@@ -521,8 +562,8 @@ logger.warn("!!!! **********************************************************");
         //Now return the current list of assets. This way the lsitener won't miss any new assets.
         AssetChangeEvent myArray[];
         synchronized(eventQueue) {
-            myArray = new AssetChangeEvent[allAssets.size()];
-            allAssets.copyInto(myArray);
+            myArray = new AssetChangeEvent[allEvents.size()];
+            allEvents.copyInto(myArray);
         }
         return myArray;
     }
@@ -560,7 +601,8 @@ logger.warn("!!!! **********************************************************");
             AssetChangeEvent[] events = new AssetChangeEvent[0];
             synchronized (eventQueue) {
                 if (logger.isDebugEnabled()) logger.debug("AssetChangeEvent -- sendEvents(): numEvents=" + eventQueue.size());
-                allAssets.addAll(eventQueue); //add current set into permanent set                
+                allEvents.addAll(eventQueue); //add current set into permanent set   
+		allEventsChanged = true;
                 events =
                    (AssetChangeEvent[]) eventQueue.toArray(new AssetChangeEvent[0]);
                 eventQueue.clear();
