@@ -31,8 +31,8 @@
   <property name="dbserver" value="${host}"/>
 
   <!-- for JavaDoc -->
-  <property name="packageNames" value="org.cougaar.tools.robustness.ma.plugins,
-                                       org.cougaar.tools.robustness.ma.test"/>
+  <property name="packageNames" value="org.cougaar.tools.robustness.ma,
+                                       org.cougaar.tools.robustness.threatalert"/>
 
   <!-- standard directories -->
   <property name="classes" value="classes"/>
@@ -42,7 +42,6 @@
   <property name="lib" value="lib"/>
   <property name="jar" value="ar_mic.jar"/>
   <property name="configs" value="configs" />
-  <property name="release" value="../mic-tic"/>
 
   <!-- Initialization target -->
   <target name="init" >
@@ -106,21 +105,32 @@
 
   <target name="deploy" depends="build" description="Copies needed files to $CIP">
     <copy file="${lib}/${jar}" toDir="${cougaar}/lib"/>
-    <copy file="configs/loggingConfig.conf" toDir="${cougaar}/robustness/configs"/>
-  </target>
-
-  <!-- Adds SMALL-1AD test files to Cougaar install path -->
-  <target name="config-small" depends="build, deploy" description="Copies needed small-1ad files to $CIP">
-    <copy file="${cougaar}/robustness/configs/mic-local/uc1-small-1ad-layout.xml" toDir="${cougaar}/operator"/>
-    <copy file="${cougaar}/robustness/configs/mic-local/ron1-hosts.xml" toDir="${cougaar}/operator"/>
-    <copy file="${cougaar}/robustness/configs/mic-local/ron2-hosts.xml" toDir="${cougaar}/operator"/>
-    <copy file="${cougaar}/robustness/configs/mic-local/qing-hosts.xml" toDir="${cougaar}/operator"/>
-    <copy file="${cougaar}/robustness/configs/loggingConfig.conf" toDir="${cougaar}/configs/common"/>
-  </target>
-
-  <!-- Adds FULL-1AD test files to Cougaar install path -->
-  <target name="config-full" depends="build, deploy" description="Copies needed full-1ad files to $CIP">
-    <copy file="${cougaar}/robustness/configs/loggingConfig.conf" toDir="${cougaar}/configs/common"/>
+    <copy file="configs/loggingConfig.conf" toDir="${cougaar}/configs/common"/>
+    <copy todir="${cougaar}/csmart/config/lib/robustness/uc1">
+      <fileset dir="csmart/config/lib/robustness/uc1" />
+    </copy>
+    <copy todir="${cougaar}/csmart/config/lib/robustness/uc4">
+      <fileset dir="csmart/config/lib/robustness/uc4" />
+    </copy>
+    <copy todir="${cougaar}/csmart/config/rules/robustness/uc1">
+      <fileset dir="csmart/config/rules/robustness/uc1" />
+    </copy>
+    <copy todir="${cougaar}/csmart/config/rules/robustness/uc4">
+      <fileset dir="csmart/config/rules/robustness/uc4" />
+    </copy>
+    <copy todir="${cougaar}/csmart/config/scripts/robustness/uc1">
+      <fileset dir="csmart/config/scripts/robustness/uc1" />
+    </copy>
+    <copy todir="${cougaar}/csmart/config/scripts/robustness/uc4">
+      <fileset dir="csmart/config/scripts/robustness/uc4" />
+    </copy>
+    <copy todir="${cougaar}/csmart/config/rules/robustness/communities">
+      <fileset dir="csmart/config/rules/robustness/communities" />
+    </copy>
+    <copy file="configs/mic-local/uc1-small-1ad-layout.xml" toDir="${cougaar}/operator"/>
+    <copy file="configs/mic-local/ron1-hosts.xml" toDir="${cougaar}/operator"/>
+    <copy file="configs/mic-local/ron2-hosts.xml" toDir="${cougaar}/operator"/>
+    <copy file="configs/mic-local/qing-hosts.xml" toDir="${cougaar}/operator"/>
   </target>
 
   <!-- Deletes generated files -->

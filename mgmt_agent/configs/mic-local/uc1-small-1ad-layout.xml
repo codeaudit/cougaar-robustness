@@ -2,8 +2,10 @@
   xmlns:xsi='http:/www.w3.org/2001/XMLSchema-instance'
   xsi:noNamespaceSchemaLocation='http:/www.cougaar.org/2003/society.xsd'>
   <host name='HOST1'>
-    <node name='NAME_SERVER'>
+    <facet enclave='SMALL'/>
+    <node name='1AD-SMALL-MGMT-NODE'>
       <facet role='NameServer'/>
+      <facet role='ARManager'/>
     </node>
   </host>
   <host name='HOST2'>
