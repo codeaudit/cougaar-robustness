@@ -190,7 +190,10 @@ public class HealthStatus implements
     this.hbTimeout = hbTimeout;
     this.hbPctLate = hbPctLate;
     this.hbWindow = hbWindow;
-    this.hbFailRate = hbFailRate;
+    if (hbFailRate != 0)
+      this.hbFailRate = hbFailRate/100.0f;
+    else
+      this.hbFailRate = 0.0f;
     this.pingTimeout = pingTimeout;
     this.pingRetries = pingRetries;
     this.activePingFreq = activePingFreq;
