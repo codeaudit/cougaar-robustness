@@ -64,8 +64,17 @@ public interface RestartManagerConstants {
   public static final long HEARTBEAT_TIMEOUT = 2 * 60 * 1000;
   public static final long HEARTBEAT_PCT_OUT_OF_SPEC = 80;
 
+  public static final String COLLECT_NODE_STATS_PROPERTY =
+      "org.cougaar.tools.robustness.collect.stats";
+
+  /*
+    Restart time = DEFAULT_STATUS_UPDATE_INTERVAL +
+                   DEFAULT_STATUS_LATENCY_MEAN +
+                   (DEFAULT_STATUS_LATENCY_STDDEV * DEFAULT_RESTART_CONFIDENCE)
+  */
   public static final long DEFAULT_STATUS_UPDATE_INTERVAL = 30000;
-  public static final long DEFAULT_STATUS_UPDATE_LATENCY = 4 * 60 * 1000;
+  public static final long DEFAULT_STATUS_LATENCY_MEAN =   150000;
+  public static final long DEFAULT_STATUS_LATENCY_STDDEV =  25000;
   public static final long DEFAULT_RESTART_CONFIDENCE = 4;
 
   // Minimum value for EN4J annealTime parameter

@@ -388,6 +388,7 @@ public class NewRobustnessController extends RobustnessControllerBase {
   private Map runStats = new HashMap();
   private NodeLatencyStatistics original;
   private NodeLatencyStatistics nodeLatencyStats;
+  private boolean collectNodeStats = false;
 
   /**
    * Initializes services and loads state controller classes.
@@ -397,6 +398,8 @@ public class NewRobustnessController extends RobustnessControllerBase {
                          final CommunityStatusModel csm) {
     super.initialize(agentId, bs, csm);
     thisAgent = agentId.toString();
+    String propValue = System.getProperty(COLLECT_NODE_STATS_PROPERTY);
+    collectNodeStats = propValue != null && propValue.equalsIgnoreCase("true");
     addController(INITIAL,        "INITIAL", new InitialStateController());
     //addController(LOCATED,        "LOCATED", new LocatedStateController());
     addController(NewRobustnessController.ACTIVE, "ACTIVE",  new ActiveStateController());
@@ -437,30 +440,25 @@ public class NewRobustnessController extends RobustnessControllerBase {
         }
       }
       se.last = now;
-      ++se.count;
-      updatePersistentStats(source);
+      ++se.samples;
+      collectNodeStats(source);
     }
   }
 
-  protected boolean usePersistentStats() {
-    return getBooleanAttribute("USE_PERSISTENT_LATENCY_STATS", false);
-  }
-
-  protected void updatePersistentStats(String source) {
-    if (usePersistentStats()) {
-      if (nodeLatencyStats == null) {
-        initializeNodeStats();
-      }
+  protected void collectNodeStats(String source) {
+    if (collectNodeStats) {
+      if (nodeLatencyStats == null) { initializeNodeStats(); }
       if (thisAgent.equals(preferredLeader()) &&
           !source.equals(getLocation(thisAgent))) {
         StatsEntry se = (StatsEntry) runStats.get(source);
-        if (se.count >= 20) {
+        if (se.samples >= 20) {
           StatCalc newSc = (StatCalc) nodeLatencyStats.get(source);
-          if (newSc == null || se.high > newSc.getHigh() || se.count == 20) {
+          if ((se.samples == 20 && se.high > 0) ||             // Take snapshot at 2 samples
+              (newSc == null || se.high > newSc.getHigh())) {  // Record highs thereafter
             if (original.contains(source)) {
-              newSc = (StatCalc) original.get(source).clone();
+              newSc = (StatCalc)original.get(source).clone();
             } else {
-              newSc = new StatCalc(source);
+              newSc = new StatCalc(model.getCommunityName(), source);
             }
             newSc.enter(se.high);
             nodeLatencyStats.put(newSc);
@@ -483,32 +481,42 @@ public class NewRobustnessController extends RobustnessControllerBase {
     logger.detail("initializeNodeStats: " + nodeLatencyStats.toXML());
   }
 
+  /**
+   * Calculate expiration time for node status.  This value determines how long
+   * the manager waits for a status update before reporting the problem and
+   * initiating a restart.  The expiration time is based on statistical data
+   * obtained from the community attributes.
+   * @param nodeName String  Name of node
+   * @return long Expiration in milliseconds
+   */
   protected long getNodeStatusExpiration(String nodeName) {
-    if (nodeLatencyStats == null) {
-      initializeNodeStats();
-    }
-    long updateInterval =
-        getLongAttribute("STATUS_UPDATE_INTERVAL", DEFAULT_STATUS_UPDATE_INTERVAL);
-    long updateLatency = getLongAttribute("MAX_STATUS_UPDATE_LATENCY", DEFAULT_STATUS_UPDATE_LATENCY);
-    long restartConf = getLongAttribute("RESTART_CONFIDENCE", DEFAULT_RESTART_CONFIDENCE);
-    if (nodeLatencyStats != null && nodeLatencyStats.contains(nodeName)) {
-      StatCalc sc = nodeLatencyStats.get(nodeName);
-      if (sc != null && sc.getCount() > 0) {
-        if (sc.getStandardDeviation() > 0) {
-          updateLatency = (long) sc.getMean() +
-              (long) (sc.getStandardDeviation() * restartConf);
-        } else {
-          updateLatency = (long) (sc.getMean() + sc.getMean() * 2);
-        }
-      }
-    }
-    long expiration = updateInterval + updateLatency;
+
+    // Community-wide default values
+    long defaultMean = getLongAttribute("DEFAULT_STATUS_LATENCY_MEAN",
+                                        DEFAULT_STATUS_LATENCY_MEAN);
+    long defaultStdDev = getLongAttribute("DEFAULT_STATUS_LATENCY_STDDEV",
+                                          DEFAULT_STATUS_LATENCY_STDDEV);
+    long updateInterval = getLongAttribute("STATUS_UPDATE_INTERVAL",
+                                           DEFAULT_STATUS_UPDATE_INTERVAL);
+    long restartConf = getLongAttribute("RESTART_CONFIDENCE",
+                                        DEFAULT_RESTART_CONFIDENCE);
+
+    // Node-specific values; community defaults used if not available
+    long nodeMean = getLongAttribute(nodeName,
+                                     "STATUS_LATENCY_MEAN",
+                                     defaultMean);
+    long nodeStdDev = getLongAttribute(nodeName,
+                                       "STATUS_LATENCY_STDDEV",
+                                       defaultStdDev);
+
+    long expiration = updateInterval +
+                      nodeMean +
+                      (nodeStdDev * restartConf);
     logger.info("getNodeStateExpiration: node=" + nodeName + " expiration=" + expiration);
     return expiration;
   }
 
   private boolean canRestartAgent(String name) {
-    String preferredLeader = preferredLeader();
     return thisAgent.equals(preferredLeader()) ||
         (isLeader(thisAgent) && name.equals(preferredLeader()) && (getActiveHosts().size() > 1));
   }
@@ -967,16 +975,16 @@ public class NewRobustnessController extends RobustnessControllerBase {
    summary.append(" leader=" + model.getLeader());
    summary.append(" activeNodes=[");
    for (int i = 0; i < activeNodes.length; i++) {
-     long count = 0;
+     long samples = 0;
      long high = 0;
      StatsEntry se = (StatsEntry)runStats.get(activeNodes[i]);
      if (se != null) {
-       count =  se.count;
+       samples =  se.samples;
        high = (long)se.high;
      }
      int agentsOnNode = model.entitiesAtLocation(activeNodes[i], model.AGENT).length;
      summary.append(activeNodes[i] + "(" + agentsOnNode + "," +
-                    count + "," + high + ")");
+                    samples + "," + high + ")");
      if (i < activeNodes.length - 1) summary.append(",");
    }
    summary.append("]");
@@ -996,7 +1004,7 @@ public class NewRobustnessController extends RobustnessControllerBase {
 
   private class StatsEntry {
     String source;
-    int count;
+    int samples;
     long last;  // Timestamp of last status update
     long high;  // Longest elapsed time
     StatsEntry(String source, long last) {
