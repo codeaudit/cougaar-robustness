@@ -483,6 +483,7 @@
 		<antcall target="init"/>
 		<antcall target="compile"/>
 		<antcall target="jar"/>
+		<signjar jar="${lib}/${jar}" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
 		<move file="${lib}/${jar}" toDir="staging/lib"/>
     <copy file="test/data/communities.xml" toDir="staging/configs/mic"/>
 		<zip zipfile="Robustness_mic_mgmt_agent_overlay.zip" basedir="staging"/>
