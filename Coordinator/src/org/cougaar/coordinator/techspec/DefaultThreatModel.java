@@ -169,12 +169,21 @@ public class DefaultThreatModel implements ThreatModelInterface, NotPersistable 
         assetType = type;
     }    
     
+
     
     /**
-     * @return the likelihood that this threat will occur. Returns 0 if there are no likelihoods defined, or
-     * if end < = start. 
+     *@return the threat likelihood during the given time interval
+     * @deprecated - use getProbabilityOfEvent
      */
-    public double getThreatLikelihood(long start, long end) throws NegativeIntervalException {
+    public double getThreatLikelihood(long start_time, long end_time)  throws NegativeIntervalException
+    { return 0; }
+
+    
+    /**
+     * @return the probability that this threat will occur. Returns 0 if there are no probabilities defined
+     * @throws NegativeIntervalException if end < start. 
+     */
+    public double getProbabilityOfEvent(long start, long end) throws NegativeIntervalException {
 
         //If no probability, then return 0
         if (eventProbability == null) { return 0; }

@@ -45,16 +45,23 @@ public interface ThreatModelInterface extends TechSpecRootInterface {
     
 
     /**
-     *@return the vector of asset tech specs that this threat model pertains to.
+     *@return the vector of asset tech specs that this threat model affects.
+     * That is, the set of assets that might be affected by this threat.
      *
      */
     public Vector getAssetList();
     
     /**
      *@return the threat likelihood during the given time interval
-     *
+     * @deprecated - use getProbabilityOfEvent
      */
     public double getThreatLikelihood(long start_time, long end_time)  throws NegativeIntervalException;
+
+    /**
+     * @return the probability that this threat will occur. Returns 0 if there are no probabilities defined
+     * @throws NegativeIntervalException if end < start. 
+     */
+    public double getProbabilityOfEvent(long start, long end) throws NegativeIntervalException;
     
     /**
      *@return the vector of associated damage distribution instances. This may be 
