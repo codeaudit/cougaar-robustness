@@ -34,7 +34,7 @@ import org.cougaar.core.persist.NotPersistable;
  */
 public class CostBenefitKnob implements NotPersistable {
     
-    long horizon = 1000L * 60L * 60L; // 1 hour
+    long horizon = 1000L * 60L * 15L; // 15 minutes
     double completenessWeight = 0.4;
     double securityWeight = 0.3;
     double timelinessWeight = 0.3;

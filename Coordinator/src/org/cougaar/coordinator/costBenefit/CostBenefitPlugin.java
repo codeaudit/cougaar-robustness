@@ -158,6 +158,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
         Collection actions = findActionCollection(assetID);
         if (logger.isDebugEnabled()) logger.debug("Have "+((actions != null)?actions.size():0)+" actions");
+        if (logger.isDebugEnabled()) logger.debug("StateEstimation: "+se.toString());
 
         if (actions == null) return cbe; // No actions exist that even possibly apply - usually an initialization situation
 
@@ -178,12 +179,11 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                 // Which StateDimension does this Action apply to?
                 AssetStateDimension asd = atsi.getStateDimension();
                 if (logger.isDebugEnabled()) logger.debug("This Action: "+thisAction+":"+atsi+":"+asd);
-                if (logger.isDebugEnabled()) logger.debug("StateEstimation: "+se.toString());
                 
                 try { 
                     // Get the StateDimensionEstimation for the dimension the Action applies to - Throws an exception if SDE not found
                     StateDimensionEstimation currentEstimatedStateDimension = se.getStateDimensionEstimation(asd);
-                    if (logger.isDebugEnabled()) logger.debug("Current ESD: "+((currentEstimatedStateDimension==null)?"null":"cesd="+currentEstimatedStateDimension.toString()));
+                    //if (logger.isDebugEnabled()) logger.debug("Current ESD: "+((currentEstimatedStateDimension==null)?"null":"cesd="+currentEstimatedStateDimension.toString()));
                     // create the Action container that will hold the evaluations of all offered Variants
                     ActionEvaluation thisActionEvaluation = new ActionEvaluation(thisAction);
                     cbe.addActionEvaluation(thisActionEvaluation);
@@ -284,15 +284,23 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                     continuingCost = atwc.getContinuingCost();
 
                     if (horizon >= transitionTime)  { // the normal case
-                        predictedBenefit = predictedBenefit + startStateProb*(transitionTime*intermediateStateBenefit + (horizon-transitionTime)*endStateBenefit - horizon*startStateBenefit);
+                        double stateBenefit = 0.5 * endStateBenefit * (horizon - transitionTime) // time-depreciated benefit of being in the end state
+                                            + 0.5 * transitionTime * intermediateStateBenefit * (1 + (horizon-transitionTime)/horizon) // time-depreciated benefoit of being in the intermediate (transition) state
+                                            - 0.5 * horizon * startStateBenefit; // the benefit of doing nothing
+
+
+                        predictedBenefit = predictedBenefit + startStateProb * stateBenefit;
+                        if (logger.isDebugEnabled()) logger.debug("**** stateBenefit for: " + startStateName + " is: " + stateBenefit + " with prob: " + startStateProb);
                         predictedCost = predictedCost + startStateProb*(transitionTime
                                 * aggregateCost(oneTimeCost, memorySize, bandwidthSize) + (horizon-transitionTime)*aggregateCost(continuingCost, memorySize, bandwidthSize));
                         }
                     else  { // transition takes longer than the planning horizon, so action transition will not complete
-                        predictedBenefit = predictedBenefit + startStateProb*(horizon*intermediateStateBenefit - horizon*startStateBenefit);
+                        double stateBenefit = horizon*intermediateStateBenefit;
+                        predictedBenefit = predictedBenefit + startStateProb * stateBenefit;
+                        if (logger.isDebugEnabled()) logger.debug("**** stateBenefit for: " + startStateName + " is: " + stateBenefit + " with prob: " + startStateProb);
                         predictedCost = predictedCost + startStateProb*(horizon*aggregateCost(oneTimeCost, memorySize, bandwidthSize));
                         }
-                    if (logger.isDebugEnabled()) logger.debug("**** "+startStateName+", prob="+startStateProb+", E(B)="+predictedBenefit+", horizon="+horizon+", Time="+transitionTime+", E(C)="+predictedCost);
+                    if (logger.isDebugEnabled()) logger.debug("**** Cumlative Benefit: " + predictedBenefit);
                     maxTransitionTime = Math.max(maxTransitionTime, transitionTime);
                     
                     }

@@ -200,7 +200,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
           // get the CBE associated with the Action
           CostBenefitEvaluation cbe = findCostBenefitEvaluation(action.getAssetID());
           if (logger.isDebugEnabled()) logger.debug(action + " has " + ap.getResult());
-          if (ap.getResult().equals(Action.COMPLETED)) {
+          if ((ap.getResult().equals(Action.COMPLETED)) || (ap.getResult().equals(Action.ACTIVE))) {
               Object variantAttempted = action.getValue().getAction();
               if (logger.isDebugEnabled()) logger.debug(variantAttempted.toString() + " succeeded - Nothing more to do.  Completed action no longer permitted w/o re-authorization.");
               publishAdd(new RetractedActions(action));

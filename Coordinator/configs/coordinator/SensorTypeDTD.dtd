@@ -9,6 +9,7 @@
     sensesAssetType CDATA #REQUIRED
     sensesStateDimension CDATA #REQUIRED
     sensorLatency CDATA #REQUIRED
+    reportingPolicy CDATA #IMPLIED
 >
 
 <!ELEMENT PotentialDiagnoses (Diagnosis+) >
