@@ -471,6 +471,36 @@ public class AgentID implements java.io.Serializable
     return new AgentID(node, agentName, incarnation); //102
   }
 
+   /*
+   * Remove entries from AgentID caches.
+   * @return boolean if anything is decached
+   */
+   public synchronized static boolean decache (AgentID id) {
+    boolean result = false;
+    String agentName = id.getAgentName();
+    // check inc
+    CbTblEntry inc_cbte = (CbTblEntry)incCbTbl.get(agentName);
+    if ((inc_cbte != null) && (inc_cbte.result != null)) {
+      String path = inc_cbte.result.getPath();
+      int i = path.indexOf('/', 1);
+      String inc = path.substring(1,i);
+      if (!inc.equals(id.getAgentIncarnation())) {
+        inc_cbte.result = null;
+        result = true;
+      }
+    }
+    // check inc
+    CbTblEntry node_cbte = (CbTblEntry)nodeCbTbl.get(agentName);
+    if ((node_cbte != null) && (node_cbte.result != null)) {
+      String node = node_cbte.result.getPath().substring(1);
+      if (!node.equals(id.getNodeName())) {
+        node_cbte.result = null;
+        result = true;
+      }
+    }
+    return result;
+  }
+    
   /*
    * Converts an exception's stacktrace to a string
    * @param Exception the exception
