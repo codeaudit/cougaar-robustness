@@ -23,6 +23,7 @@ package org.cougaar.coordinator.examples.SampleDefense;
 
 import java.util.Iterator;
 import java.util.Hashtable;
+import java.util.HashSet;
 import java.util.Set;
 import org.cougaar.coordinator.*;
 import org.cougaar.coordinator.techspec.TechSpecNotFoundException;
@@ -75,7 +76,7 @@ public class SampleActuator extends ComponentPlugin
 	    (IncrementalSubscription)blackboard.subscribe(actionPred);
         rawActuatorDataSub = 
 	    (IncrementalSubscription)blackboard.subscribe(rawActuatorDataPred);
-	Set initialValuesOffered = null;
+	Set initialValuesOffered = new HashSet();
 	try {
 	    action = new SampleAction(agentId.toString(), initialValuesOffered, sb);
 	    blackboard.publishAdd(action);
