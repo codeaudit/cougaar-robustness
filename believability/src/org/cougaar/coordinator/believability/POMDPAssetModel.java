@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetModel.java,v $
- * $Revision: 1.10 $
- * $Date: 2004-06-29 22:43:18 $
+ * $Revision: 1.11 $
+ * $Date: 2004-06-30 16:04:53 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.10 $Date: 2004-06-29 22:43:18 $
+ * @version $Revision: 1.11 $Date: 2004-06-30 16:04:53 $
  *
  */
 class POMDPAssetModel extends Model
@@ -44,7 +44,7 @@ class POMDPAssetModel extends Model
 
     // For testing purposes only.
     //
-    private static final boolean USE_FAKE_TRIGGER_TIME = true;
+    private static final boolean USE_FAKE_TRIGGER_TIME = false;
 
     private static long FAKE_TIME_INCREMENT_MS = 600000;
 
