@@ -29,7 +29,7 @@ import java.util.*;
  */
 public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
 
-  public static final long NEVER = -1;
+  public static final long FOREVER = -1;
 
   private MessageAddress source;
   private int severityLevel;
@@ -73,7 +73,7 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
    * @param source         ThreatAlert source
    * @param severityLevel  Severity level of alert
    * @param start          Time at which alert becomes active
-   * @param duration       Duration of threat period (-1 == never expires)
+   * @param duration       Duration of threat period (FOREVER == never expires)
    * @param uid            Unique identifier
    */
   public DefaultThreatAlert(MessageAddress  source,
@@ -88,6 +88,26 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
     this.duration = duration;
     this.uid = uid;
     this.creationTime = new Date();
+  }
+
+  /**
+   * Create a new ThreatAlert using the current time as the threat start time.
+   * @param source         ThreatAlert source
+   * @param severityLevel  Severity level of alert
+   * @param duration       Duration of threat period (FOREVER == never expires)
+   * @param uid            Unique identifier
+   */
+  public DefaultThreatAlert(MessageAddress  source,
+                            int             severityLevel,
+                            long            duration,
+                            UID             uid) {
+    this();
+    this.source = source;
+    this.severityLevel = severityLevel;
+    this.duration = duration;
+    this.uid = uid;
+    this.creationTime = new Date();
+    this.startTime = creationTime.getTime();
   }
 
   public void setSource(MessageAddress source) {
@@ -118,7 +138,12 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
   }
 
   public Date getExpirationTime() {
-    return new Date(startTime + duration);
+    if (duration == FOREVER) {
+      // 1000 years from now, not quite forever but close enough
+      return new Date(startTime + 1000 * 24 * 60 * 60 * 1000);
+    } else {
+      return new Date(startTime + duration);
+    }
   }
 
   public void setExpirationTime(Date expirationTime) {
@@ -153,8 +178,7 @@ public class DefaultThreatAlert implements ThreatAlert, java.io.Serializable {
    * @return True if alert period has expired
    */
   public boolean isExpired() {
-    long now = now();
-    return duration == NEVER || now > (startTime + duration);
+    return duration != FOREVER && now() > (startTime + duration);
   }
 
   public void addAsset(Asset asset) {
