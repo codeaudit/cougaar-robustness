@@ -20,12 +20,13 @@ society.communities.each do |community|
 
   #get the stats file of this community
   filename = "#{CIP}/workspace/nodestats/" + community.name + ".nodestats"
+
   if !File.exists?(filename)
     xml ||= []
     xml << "<NodeLatencyStatistics>"
     community.each do |entity|
       if entity.entity_type == "Node"
-        xml << "  <Item community='#{community.name}' node='#{entity.name}' mean='300000' stdev='60000' />"
+        xml << "  <Item community='#{community.name}' node='#{entity.name}' samples='1' sum='300000' sumSquares='90000000000' low='300000' high='300000' mean='300000' stdev='60000' />"
       end
     end
     xml << "</NodeLatencyStatistics>"
