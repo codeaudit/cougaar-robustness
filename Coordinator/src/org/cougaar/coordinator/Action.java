@@ -634,10 +634,10 @@ System.out.println("Updating permitted values.");
     //*******************************Action History tracking routines*************************************
 
     /** Used to ensure that only this type is used to set the action code */
-    static class CompletionCode {
+    public static class CompletionCode {
     
         private int val;
-        CompletionCode(int i) { this.val = i; }
+        protected CompletionCode(int i) { this.val = i; }
     }
     
     
