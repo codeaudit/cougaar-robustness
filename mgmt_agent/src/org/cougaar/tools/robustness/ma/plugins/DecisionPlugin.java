@@ -97,7 +97,7 @@ public class DecisionPlugin extends SimplePlugin {
 
     sub = (IncrementalSubscription) bbs.subscribe(AGENT_CONTROL_PRED);
     // Initialize configurable paramaeters from defaults and plugin arguments.
-    updateParams(decisionProps);
+    //updateParams(decisionProps);
     bbs.publishAdd(decisionProps);
 
     // Subscribe to ManagementAgentProperties to receive parameter changes
@@ -130,7 +130,7 @@ public class DecisionPlugin extends SimplePlugin {
     for (Iterator it = mgmtAgentProps.getChangedCollection().iterator();
          it.hasNext();) {
       ManagementAgentProperties props = (ManagementAgentProperties)it.next();
-      updateParams(props);
+      //updateParams(props);
       log.info("Parameters modified: " + paramsToString());
     }
 
@@ -290,8 +290,8 @@ public class DecisionPlugin extends SimplePlugin {
 
   /**
    * Initiates a restart.
-   * @param agents  Set of MessageAddresses of agents to be restarted
-   * @param host    Name of restart host
+   * @param agents    Set of MessageAddresses of agents to be restarted
+   * @param nodeName  Name of restart node
    */
   private void restartAgents(Set agents, String nodeName) {
     if (nodeName == null) {
@@ -414,9 +414,11 @@ public class DecisionPlugin extends SimplePlugin {
    * Sets externally configurable parameters using supplied Properties object.
    * @param props Propertie object defining paramater names and values.
    */
+  /*
   private void updateParams(Properties props) {
      // None for now
   }
+  */
 
  /**
   * Predicate for AgentControl objects

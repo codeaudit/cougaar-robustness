@@ -92,7 +92,7 @@ public class VacatePlugin extends SimplePlugin {
     bbs = getBlackboardService();
 
     // Initialize configurable paramaeters from defaults and plugin arguments.
-    updateParams(vacateProps);
+    //updateParams(vacateProps);
     bbs.publishAdd(vacateProps);
 
     // Subscribe to ManagementAgentProperties to receive parameter changes
@@ -123,7 +123,7 @@ public class VacatePlugin extends SimplePlugin {
     for (Iterator it = mgmtAgentProps.getChangedCollection().iterator();
          it.hasNext();) {
       ManagementAgentProperties props = (ManagementAgentProperties)it.next();
-      updateParams(props);
+      //updateParams(props);
       log.info("Parameters modified: " + paramsToString());
     }
 
@@ -292,9 +292,11 @@ public class VacatePlugin extends SimplePlugin {
    * Sets externally configurable parameters using supplied Properties object.
    * @param props Propertie object defining paramater names and values.
    */
+  /*
   private void updateParams(Properties props) {
      // None for now
   }
+  */
 
   /**
    * Get a Map that contains all nodes and agents on a specified host that are

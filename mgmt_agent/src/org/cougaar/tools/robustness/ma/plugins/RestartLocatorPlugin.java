@@ -482,6 +482,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
    * @return                Collection of host names that may be used for an
    *                        agent move/restart
    */
+  /*
   private Collection selectHosts(Collection candidateHosts, Collection excludedHosts) {
     Collection selectedHosts = new Vector();
     for (Iterator it = candidateHosts.iterator(); it.hasNext();) {
@@ -492,11 +493,12 @@ public class RestartLocatorPlugin extends SimplePlugin {
     }
     return selectedHosts;
   }
+  */
 
   /**
    * Get collection of specified restart nodes from community attributes entry
    * in Name Server.
-   * @return
+   * @return Collection of specified nodes
    */
   private Collection getSpecifiedNodes() {
     Collection specifiedNodes = new Vector();
@@ -579,6 +581,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
 
   /**
    * Gets reference to CommunityService.
+   * @return Reference to CommunityService
    */
   private CommunityService getCommunityService() {
     ServiceBroker sb = getBindingSite().getServiceBroker();
@@ -592,6 +595,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
 
   /**
    * Gets reference to TopologyReaderService.
+   * @return Reference to TopologyReaderService
    */
   private TopologyReaderService getTopologyReaderService() {
     ServiceBroker sb = getBindingSite().getServiceBroker();

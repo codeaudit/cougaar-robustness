@@ -148,6 +148,7 @@ public class HealthStatus implements
 
   /**
    * HealthStatus constructor.
+   * @param uid            HealthStatus UID
    * @param agentId        MessageAddress of monitored agent.
    * @param communityName  Name of agents Robustness community.
    * @param node           Name of agents node.
@@ -190,10 +191,11 @@ public class HealthStatus implements
     this.hbTimeout = hbTimeout;
     this.hbPctLate = hbPctLate;
     this.hbWindow = hbWindow;
-    if (hbFailRate != 0)
+    if (hbFailRate != 0) {
       this.hbFailRate = hbFailRate/100.0f;
-    else
+    } else {
       this.hbFailRate = 0.0f;
+    }
     this.pingTimeout = pingTimeout;
     this.pingRetries = pingRetries;
     this.activePingFreq = activePingFreq;
@@ -373,7 +375,7 @@ public class HealthStatus implements
 
   /**
    * Sets Active ping frequency.
-   * @param Rate to perform active pings
+   * @param freq Rate to perform active pings
    */
   public void setActivePingFrequency(long freq) {
     this.activePingFreq = freq;
@@ -409,7 +411,7 @@ public class HealthStatus implements
 
   /**
    * Sets monitored agents prior state.
-   * @param  status State string
+   * @param state State string
    */
   public void setPriorState(String state) {
     this.priorState = state;
@@ -584,6 +586,7 @@ public class HealthStatus implements
   /**
    * Sets time of last restart attempt.
    * @param restartAttempted Time of last attempted restart
+   * @return Time of last restart attempt
    */
   public Date setLastRestartAttempt(Date restartAttempted) {
     return lastRestartAttempt = restartAttempted;
@@ -771,7 +774,7 @@ public class HealthStatus implements
 
   /**
    * Sets status of a pending Ping.
-   * @param status Status code associated with ping status.
+   * @param pingStatus Status code associated with ping status.
    * (refer to org.cougaar.tools.robustness.sensors.PingRequest for values)
    */
   public void setPingStatus(int pingStatus) {
@@ -814,6 +817,7 @@ public class HealthStatus implements
   /** set the UID of a UniqueObject.  This should only be done by
    * an LDM factory.  Will throw a RuntimeException if
    * the UID was already set.
+   * @param uid Unique ID
    **/
   public void setUID(UID uid) {
     if (myUID != null) {

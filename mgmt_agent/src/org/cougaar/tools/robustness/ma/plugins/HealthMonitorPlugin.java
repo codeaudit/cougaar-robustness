@@ -282,7 +282,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
    * Robustness community thats being monitored.  This roster will be
    * automatically updated by the CommunityPlugin when changes to community
    * membership occur.
-   * @param String communityName Community to Monitor
+   * @param communityName Community to Monitor
    */
   private void sendRosterRequest(String communityName) {
     CommunityRequest cr = new CommunityRequestImpl();
@@ -403,7 +403,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
        performed for each state and when appropriate the state is transitioned
        to reflect the agents new condition.
     */
-    System.out.print("*");
+    //System.out.print("*");
     Collection currentAgents = findMonitoredAgents();
     for (Iterator it = currentAgents.iterator(); it.hasNext();) {
       HealthStatus hs = getHealthStatus((MessageAddress)it.next());
@@ -983,7 +983,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
 
   /**
    * Adds an agent to the HealthStatus map.
-   * @param agentId
+   * @param hs Agents HealthStatus object
    */
   private void addHealthStatus(HealthStatus hs) {
     synchronized (membersHealthStatus) {
@@ -1039,7 +1039,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
 
   /**
    * Sends a ping to a monitored agent.
-   * @param target  Monitored agents address
+   * @param hs HealthStatus object associated with agent to ping
    */
   private void doPing(HealthStatus hs) {
     // Check to see if there is already a ping in-process for this agent
@@ -1156,7 +1156,6 @@ public class HealthMonitorPlugin extends SimplePlugin implements
   private void updateCommunityAttributes(Properties props) {
     ModificationItem mods[] = new ModificationItem[props.size()];
     int index = 0;
-    Attributes attrs = new BasicAttributes();
     for (Enumeration enum = props.propertyNames(); enum.hasMoreElements();) {
       String id = (String)enum.nextElement();
       String value = props.getProperty(id);
@@ -1272,6 +1271,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
 
   /**
    * Gets reference to CommunityService.
+   * @return Reference to CommunityService
    */
   private CommunityService getCommunityService() {
     int counter = 0;
@@ -1286,6 +1286,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
 
   /**
    * Gets reference to TopologyReaderService.
+   * @return Reference to TopolotyReaderService
    */
   private TopologyReaderService getTopologyReaderService() {
     int counter = 0;
@@ -1327,6 +1328,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
 
     /**
      * Create an Alarm to go off in the milliseconds specified,.
+     * @param delay Alarm delay
      **/
     public RosterUpdateAlarm (long delay) {
       expirationTime = delay + System.currentTimeMillis();

@@ -31,7 +31,7 @@ public class ManagementAgentProperties extends Properties
 
   /**
    * Constructor that defines the intended user of these properties.
-   * @param pluinName  Name of plugin
+   * @param pluginName  Name of plugin
    */
   public ManagementAgentProperties(String pluginName) {
     super();
@@ -41,7 +41,8 @@ public class ManagementAgentProperties extends Properties
   /**
    * Constructor that defines the intended user of these properties and
    * default properties.
-   * @param pluinName  Name of plugin
+   * @param pluginName  Name of plugin
+   * @param defaults    Default properties
    */
   public ManagementAgentProperties(String pluginName, Properties defaults) {
     super(defaults);
@@ -67,6 +68,7 @@ public class ManagementAgentProperties extends Properties
   /**
    * Utility method that creates a Properties object from a two dimension
    * String array.
+   * @param name Components name
    * @param s  Two-dimension array of parameters name/value pairs
    * @return   Properties object with parameter name/values
    */
