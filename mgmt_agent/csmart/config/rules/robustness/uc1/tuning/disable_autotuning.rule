@@ -1,0 +1,8 @@
+####################################################
+# Disables learn mode to auto-tune restart
+# timeouts
+####################################################
+
+society.each_node do |node|
+  node.override_parameter("-Dorg.cougaar.tools.robustness.autotuning", "disabled")
+end
