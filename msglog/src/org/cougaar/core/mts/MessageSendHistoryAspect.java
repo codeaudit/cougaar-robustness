@@ -1,0 +1,229 @@
+/*
+ * <copyright>
+ *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
+ * 
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the Cougaar Open Source License as published by
+ *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
+ * 
+ *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
+ *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
+ *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
+ *  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE, AND WITHOUT
+ *  ANY WARRANTIES AS TO NON-INFRINGEMENT.  IN NO EVENT SHALL COPYRIGHT
+ *  HOLDER BE LIABLE FOR ANY DIRECT, SPECIAL, INDIRECT OR CONSEQUENTIAL
+ *  DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE OF DATA OR PROFITS,
+ *  TORTIOUS CONDUCT, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+ *  PERFORMANCE OF THE COUGAAR SOFTWARE.
+ * </copyright>
+ *
+ * CHANGE RECORD 
+ * 18 Apr  2002: Update from Cougaar 9.0.0 to 9.1.x (OBJS)
+ * 21 Mar  2002: Update from Cougaar 8.6.2.x to 9.0.0 (OBJS)
+ * 08 Jan  2002: Egregious temporary hack to handle last minute traffic
+ *               masking messages.  (OBJS)
+ * 13 Dec  2001: Re-org history to only record history after the message
+ *               is forwarded, add wasLastSendSuccessful() method. (OBJS)
+ * 02 Dec  2001: Removed aspect order dependency by getting message number
+ *               by direct method call rather than envelope extraction.
+ *               Removed rejectTransport() method - it had silently gone
+ *               away.  Altered getDelegate() to keep out local msgs. (OBJS)
+ * 29 Nov  2001: Change getting message number to MessageAckingAspect way. (OBJS)
+ * 20 Nov  2001: Cougaar 8.6.1 compatibility changes. (OBJS)
+ * 24 Sept 2001: Updated from Cougaar 8.4 to 8.4.1 (OBJS)
+ * 18 Sept 2001: Updated from Cougaar 8.3.1 to 8.4 (OBJS)
+ * 08 Sept 2001: Created. (OBJS)
+ */
+
+package org.cougaar.core.mts;
+
+
+/**
+ * An aspect which collects a history of message sends, used in
+ * conjunction with the AdaptiveLinkSelectionPolicy.
+ * <p>
+ * <b>System Properties:</b>
+ * <p>
+ * <b>org.cougaar.message.transport.aspects</b>
+ * To cause this aspect to be loaded at init time, which is required if you are using
+ * AdaptiveLinkSelectionPolicy, add <i>org.cougaar.core.mts.MessageSendHistoryAspect</i> 
+ * to this property, adjacent to, and before, <i>org.cougaar.core.mts.MessageNumberAspect</i>.
+ * <br>(e.g. -Dorg.cougaar.message.transport.aspects=org.cougaar.core.mts.MessageSendHistoryAspect,
+ * org.cougaar.core.mts.MessageNumberAspect)
+ * <br><i>[Note: For more information, see the javadoc for AdaptiveLinkSelectionPolicy.]</i>
+ * <p><b>org.cougaar.message.transport.aspects.sendHistory.debug</b> 
+ * If true, prints debug information to System.out.
+ * */
+
+public class MessageSendHistoryAspect extends StandardAspect
+{
+  private static final String DEBUG_PROPERTY = "org.cougaar.message.transport.aspects.sendhistory.debug";
+
+//  HACK  - where to house history?
+  //private static final MessageHistory messageHistory = AdaptiveLinkSelectionPolicy.messageHistory;
+  public static final MessageHistory messageHistory = new MessageHistory();
+
+
+  private static final Object recLock = new Object();
+
+  private boolean debug;
+
+  public MessageSendHistoryAspect () 
+  {
+    //  Read external properties
+
+    debug = false;
+    String debugProp = System.getProperty (DEBUG_PROPERTY);
+    if (debugProp != null && debugProp.equals("true")) debug = true;
+  }
+
+  public Object getDelegate (Object delegate, Class type) 
+  {
+    if (type == DestinationLink.class) 
+    {
+      DestinationLink link = (DestinationLink) delegate;
+      String linkProtocol = link.getProtocolClass().getName();
+
+      //  Avoid the loopback link - currently we are not keeping history on local messages
+      
+      if (!linkProtocol.equals("org.cougaar.core.mts.LoopbackLinkProtocol")) 
+      {
+        return new MessageSendHistoryDestinationLink (link);
+      }
+    }
+ 
+    return null;
+  }
+
+  private class MessageSendHistoryDestinationLink extends DestinationLinkDelegateImplBase 
+  {
+    DestinationLink link;
+
+    private MessageSendHistoryDestinationLink (DestinationLink link) 
+    {
+      super (link); 
+      this.link = link;
+    }
+
+    public MessageAttributes forwardMessage (AttributedMessage message) 
+      throws UnregisteredNameException, NameLookupException, 
+  	         CommFailureException, MisdeliveredMessageException
+    {
+      int id = -1, num = -1;
+      MessageAttributes attrs = null;
+      MessageHistory.SendRecord rec;
+      Exception exception = null;
+
+      UnregisteredNameException une;
+      NameLookupException nle;
+      CommFailureException cfe;
+      MisdeliveredMessageException mme;
+
+      //  Try sending the message
+
+      long sendTime = 0;
+
+      try
+      {
+        sendTime = now();
+        attrs = link.forwardMessage (message);
+      }
+      catch (Exception e)
+      {
+        exception = e;
+      }
+/*
+      //  HACK!!!  Last minute hack to handle traffic masking messages.  All it 
+      //  deserves for now.  Real support for this and other message types and 
+      //  features (such as message priority) will come later this year as it
+      //  was supposed to, rather than be some last minute hack.
+
+Open issue: How to tell masking messages now?
+
+      if (message instanceof TrafficMaskingGeneratorAspect.MaskingMessageEnvelope)
+      {
+        return;
+      }
+*/
+      //  If we got to this point, we assume the link has successfully
+      //  sent the message or otherwise thrown an exception.  
+
+      //  HACK!!!  Are we really guaranteed this situation though?  What if the 
+      //  message is stuck in a queue, or in some delayed send situation?
+      
+      id = AdaptiveLinkSelectionPolicy.getTransportID (link.getProtocolClass());
+      num = MessageUtils.getMessageNumber (message);
+      
+      synchronized (recLock)
+      {
+        rec = messageHistory.sends.get (id, num);
+        if (rec == null) rec = new MessageHistory.SendRecord (id, message);
+      
+        rec.sendTimestamp = sendTime;
+        rec.abandonTimestamp = (exception == null ? 0 : now());
+        rec.success = (exception == null);
+      
+        messageHistory.sends.put (rec);
+      
+        if (debug) System.out.println ("SendHistory: msg " +num+ " send record =\n" + rec);
+      }
+
+      if (exception != null)
+      {
+        if (exception instanceof UnregisteredNameException)
+        {
+          throw (UnregisteredNameException) exception;
+        }
+        else if (exception instanceof NameLookupException)
+        {
+          throw (NameLookupException) exception;
+        }
+        else if (exception instanceof CommFailureException)
+        {
+          throw (CommFailureException) exception;
+        }
+        else if (exception instanceof MisdeliveredMessageException)
+        {
+          throw (MisdeliveredMessageException) exception;
+        }
+        else
+        {
+          throw new CommFailureException (exception);
+        }
+      }
+
+      return attrs;
+    }
+
+    public boolean retryFailedMessage (AttributedMessage message, int retryCount)
+    {
+      return link.retryFailedMessage (message, retryCount);
+    }
+
+    public Class getProtocolClass ()
+    {
+      return link.getProtocolClass();
+    }
+
+    public String toString ()
+    {
+      return link.toString();
+    }
+
+    public int cost (AttributedMessage message) 
+    {
+      return link.cost (message);
+    }
+  }
+
+  public static boolean wasLastSendSuccessful (int id)
+  {
+    return messageHistory.sends.lastSendSuccessfulByTransportID (id);
+  }
+
+  private static long now ()
+  {
+    return System.currentTimeMillis();
+  }
+}
