@@ -151,6 +151,13 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
       this.receiveTime = receiveTime;
     }
 
+    public MessageTimes (MessageTimes mt)
+    {
+      sendLink = mt.sendLink;
+      sendTime = mt.sendTime;
+      receiveTime = mt.receiveTime;
+    }
+
     public void setTimes (long sendTime, long receiveTime)
     {
       this.sendTime = sendTime;
@@ -169,7 +176,7 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
 
     if (sendNode == null || sendLink == null) 
     {
-      loggingService.error ("Missing sendNode or sendLink - missing msg attribute?");
+      loggingService.error ("Missing sendNode or sendLink (missing msg attribute?)");
       return;
     }
 
@@ -198,7 +205,7 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
 
     if (sendNode == null)
     {
-      loggingService.error ("Missing sendNode - missing msg attribute?");
+      loggingService.error ("Missing sendNode (missing msg attribute?)");
       return new MessageTimes[0];
     }
 
@@ -207,8 +214,16 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
     synchronized (latestReceptionsTable)
     {
       Hashtable table = (Hashtable) latestReceptionsTable.get (sendNode);
-      Vector v = (table != null ? new Vector (table.values()) : new Vector());
-      return (MessageTimes[]) v.toArray (new MessageTimes[v.size()]);
+      MessageTimes latest[] = new MessageTimes[(table != null ? table.size() : 0)];
+
+      if (latest.length > 0)
+      {
+        int i = 0;
+        for (Enumeration e=table.elements(); e.hasMoreElements(); )
+          latest[i++] = new MessageTimes ((MessageTimes)e.nextElement());
+      }
+
+      return latest;
     }
   }
 
@@ -257,24 +272,30 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
       throws UnregisteredNameException, NameLookupException, 
              CommFailureException, MisdeliveredMessageException
     {
-      //  Set a send time for the message.  Kind of a hack, but need BBN 
-      //  support to have link protocols set the send time at the time a 
-      //  message is actually sent.
-
-      long sendTime = now();
-      MessageUtils.setMessageSendTime (msg, sendTime);
-      
-      //  Get a candidate set of times from our stored data about the
-      //  destination node - these are the latest inbound times of
-      //  messages from the destination node, that, in concert with
-      //  information from this message being sent, the destination
-      //  node will be able to calculate RTTs for a set of currently
-      //  active protocol links.
-
-      int MAX_RTTS = 5;  // HACK: arbitrary for now
+      //  Get a the message times for the latest messages to arrive
+      //  on this node.
 
       String node = MessageUtils.getToAgentNode (msg);
       MessageTimes times[] = getLatestMessageReceptions (node);
+
+      //  Set a send time for the message.  Kind of a hack, but need BBN 
+      //  support to have link protocols set the send time at the time a 
+      //  message is actually sent.  On the other hand, travel time thru
+      //  MTS can be considered a legitimate part of the RTT. 
+      //
+      //  NOTE: It is important that this send time be established after 
+      //  getting the latest receptions (above), to avoid the case where
+      //  the latest receptions are possibly later than the send time,
+      //  resulting in negative node times in the calculations below.
+
+      long sendTime = now();
+      MessageUtils.setMessageSendTime (msg, sendTime);
+
+      //  We now calculate the first half of the RTTs and store the results
+      //  in the outgoing message.  On the other node these results will be
+      //  used to calculate RTTs for a set of protocol links.
+      
+      int MAX_RTTS = 5;  // HACK: arbitrary for now
       Vector v = null;
 
       if (times.length > 0)
@@ -291,10 +312,6 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
           v.add (start);
         }
       }
-
-//inject bug to test link delivery 
-//v = new Vector();
-//v.add (new String ("a bug"));
 
       msg.setAttribute (RTT_ATTRIBUTE, v);
 
@@ -322,7 +339,8 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
 
       //  Record the receive time for the message.  Like with the send time above, kind
       //  of a hack, but need BBN support to have link protocols set the receive time
-      //  at the time a message is actually received.
+      //  at the time a message is actually received.  Also again, on the other hand, 
+      //  travel time thru MTS can be considered a legitimate part of the RTT. 
 
       long receiveTime = now();
 
@@ -336,7 +354,7 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
       //  Now we turn around and view this received message as completing a
       //  round trip from us to the node we got it from (now the destination
       //  node).  We take the "first half" roundtrip times in the message and
-      //  make real RTTs out of them and save them.
+      //  make real RTTs out of them and store them away.
 
       Vector v = (Vector) msg.getAttribute (RTT_ATTRIBUTE);
 
@@ -360,7 +378,7 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
     }
   }
 
-  private static void updateRTT (String sendLink, String node, String receiveLink, int rtt)
+  private void updateRTT (String sendLink, String node, String receiveLink, int rtt)
   {
     synchronized (roundtripTable)
     {
@@ -387,14 +405,18 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
         table.put (key, avgRTT);
       }
 
-      if (rtt > 0) avgRTT.add (rtt);
-/*
-      System.err.println ("\nupdateRTT:"+
-                          "\n  sendLink= "+sendLink+
-                          "\n      node= "+node+
-                          "\n  recvLink= "+receiveLink+
-                          "\n       RTT= " +rtt+ " avg= " +avgRTT.getAverage()); 
-*/
+      if (rtt >= 0) avgRTT.add (rtt);
+
+      if (loggingService.isDebugEnabled())
+      {
+        StringBuffer buf = new StringBuffer();
+        buf.append ("\n\nupdateRTT:");
+        buf.append ("\n  sendLink= " +sendLink);
+        buf.append ("\n      node= " +node);
+        buf.append ("\n  recvLink= " +receiveLink);
+        buf.append ("\n       RTT= " +rtt+ " avg= " +avgRTT.getAverage()+ "\n");
+        loggingService.debug (buf.toString());
+      }
     }    
   }
 
@@ -423,32 +445,6 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
       }
       
       return 0;  // no rtt available
-    }
-  }
-
-  private static long getLastRTTSampleTimestamp (DestinationLink link, String node)
-  {
-    synchronized (roundtripTable)
-    {
-      String sendLink = link.getProtocolClass().getName();
-      String key = sendLink +"-"+ node;
-      Hashtable table = (Hashtable) roundtripTable.get (key);
-
-      long lastTimestamp = 0;
-
-      if (table != null)
-      {
-        //  Go through the table and find the latest timestamp
-
-        for (Enumeration e=table.elements(); e.hasMoreElements(); )
-        {
-          RunningAverage avgRTT = (RunningAverage) e.nextElement();
-          long timestamp = avgRTT.getLastSampleTimestamp();
-          if (timestamp > lastTimestamp) lastTimestamp = timestamp;
-        }
-      }
-      
-      return lastTimestamp;
     }
   }
 
