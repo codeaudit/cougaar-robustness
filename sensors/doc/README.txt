@@ -57,7 +57,6 @@ Caveats:
     HeartbeatHealthReports report on them, but HeartbeatRequest.getStatus()
     hasn't been updated to reflect the status of multiple-target requests. 
   - haven't tested with ABA
-  - haven't converted to logging yet (debug info is still printed to System.out)
   - heartbeats don't use UDP yet
 
 Please report any problems to ford@objs.com.

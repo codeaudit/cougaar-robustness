@@ -33,6 +33,8 @@ import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.agent.ClusterIdentifier;
 import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.service.LoggingService;
+import org.cougaar.core.component.ServiceBroker;
 
 /**
  * This Plugin tests HeartbeatRequester and HeartbeatServerPlugin.
@@ -46,6 +48,7 @@ public class HeartbeatTesterPlugin extends ComponentPlugin {
   private IncrementalSubscription reportSub;
   private BlackboardService bb;
   private SensorFactory sensorFactory;
+  private LoggingService log;
 
   private UnaryPredicate reqPred = new UnaryPredicate() {
     public boolean execute(Object o) {
@@ -68,8 +71,9 @@ public class HeartbeatTesterPlugin extends ComponentPlugin {
   };
 
   protected void setupSubscriptions() {
-    DomainService domainService = 
-      (DomainService) getBindingSite().getServiceBroker().getService(this, DomainService.class, null);
+    ServiceBroker sb = (ServiceBroker)getBindingSite().getServiceBroker();
+    log =  (LoggingService) sb.getService(this, LoggingService.class, null);
+    DomainService domainService = (DomainService) sb.getService(this, DomainService.class, null);
     sensorFactory = (SensorFactory)domainService.getFactory("sensors");
     bb = getBlackboardService();
     reqSub = (IncrementalSubscription)bb.subscribe(reqPred);
@@ -111,7 +115,8 @@ public class HeartbeatTesterPlugin extends ComponentPlugin {
                                                              onlyOutOfSpec,
                                                              percentOutOfSpec);
     bb.publishAdd(req);
-    System.out.println("\nHeartbeatTesterPlugin.setupSubscriptions: added HeartbeatRequest = " + req);
+    if (log.isInfoEnabled()) 
+      log.info("\nHeartbeatTesterPlugin.setupSubscriptions: added HeartbeatRequest = " + req);
   }
 
   protected void execute () {
@@ -121,28 +126,35 @@ public class HeartbeatTesterPlugin extends ComponentPlugin {
       HeartbeatRequest req = (HeartbeatRequest)iter.next();
       MessageAddress myAddr = getBindingSite().getAgentIdentifier();
       if (req.getSource().equals(myAddr)) {
-        System.out.println("\nHeartbeatTesterPlugin.execute: received changed HeartbeatRequest = " + req);
+        if (log.isInfoEnabled()) 
+          log.info("\nHeartbeatTesterPlugin.execute: received changed HeartbeatRequest = " + req);
         int status = req.getStatus();
 	  switch (status) {
           case HeartbeatRequest.NEW:
-            System.out.println("HeartbeatTesterPlugin.execute: status = NEW, ignored.");
+            if (log.isInfoEnabled()) 
+              log.info("HeartbeatTesterPlugin.execute: status = NEW, ignored.");
             break;
           case HeartbeatRequest.SENT:
-            System.out.println("HeartbeatTesterPlugin.execute: status = SENT, ignored.");
+            if (log.isInfoEnabled()) 
+              log.info("HeartbeatTesterPlugin.execute: status = SENT, ignored.");
             break;
           case HeartbeatRequest.ACCEPTED:
-            System.out.println("HeartbeatTesterPlugin.execute: status = ACCEPTED.");
+            if (log.isInfoEnabled()) 
+              log.info("HeartbeatTesterPlugin.execute: status = ACCEPTED.");
             break;
           case HeartbeatRequest.REFUSED:
-            System.out.println("HeartbeatTesterPlugin.execute: status = REFUSED, removed.");
+            if (log.isInfoEnabled()) 
+              log.info("HeartbeatTesterPlugin.execute: status = REFUSED, removed.");
             bb.publishRemove(req); 
             break;
           case HeartbeatRequest.FAILED:
-            System.out.println("HeartbeatTesterPlugin.execute: status = FAILED, removed.");
+            if (log.isInfoEnabled()) 
+              log.info("HeartbeatTesterPlugin.execute: status = FAILED, removed.");
             bb.publishRemove(req); 
             break;
           default:
-            System.out.println("HeartbeatTesterPlugin.execute: illegal status = " + req.getStatus() + ", removed.");
+            if (log.isInfoEnabled()) 
+              log.info("HeartbeatTesterPlugin.execute: illegal status = " + req.getStatus() + ", removed.");
             bb.publishRemove(req); 
         }
       }
@@ -151,7 +163,8 @@ public class HeartbeatTesterPlugin extends ComponentPlugin {
     iter = reportSub.getAddedCollection().iterator();
     while (iter.hasNext()) {
       HeartbeatHealthReport rpt = (HeartbeatHealthReport)iter.next();
-      System.out.println("\nHeartbeatTesterPlugin.execute: received HeartbeatHealthReport = " + rpt);
+      if (log.isInfoEnabled()) 
+        log.info("\nHeartbeatTesterPlugin.execute: received HeartbeatHealthReport = " + rpt);
       bb.publishRemove(rpt);
     }
   }

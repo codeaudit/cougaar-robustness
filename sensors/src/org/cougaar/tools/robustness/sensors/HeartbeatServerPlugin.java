@@ -29,6 +29,7 @@ import org.cougaar.core.service.BlackboardService;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.agent.service.alarm.Alarm;
 import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.service.LoggingService;
 
 /**
  * This Plugin requests for heartbeats (HbReq) and responds with
@@ -38,6 +39,7 @@ import org.cougaar.core.mts.MessageAddress;
 public class HeartbeatServerPlugin extends ComponentPlugin {
   private IncrementalSubscription sub;
   private BlackboardService bb;
+  private LoggingService log;
 
   private UnaryPredicate hbReqPred = new UnaryPredicate() {
     public boolean execute(Object o) {
@@ -98,7 +100,8 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
     Iterator iter = sub.getCollection().iterator();
     while (iter.hasNext()) {
       HbReq req = (HbReq)iter.next();
-      System.out.println("\nHeartbeatServerPlugin.processHeartbeats: processing HbReq = " + req);
+      if (log.isDebugEnabled()) 
+        log.debug("\nHeartbeatServerPlugin.processHeartbeats: processing HbReq = " + req);
       HbReqContent content = (HbReqContent)req.getContent();
       HbReqResponse response = (HbReqResponse)req.getResponse();
       long now = System.currentTimeMillis();
@@ -116,7 +119,8 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
           response.setLastHbSent(now);
           req.updateResponse(me, response);
           bb.publishChange(req);
-          System.out.println("\nHeartbeatServerPlugin.processHeartbeats: published changed HbReq = " + req);
+          if (log.isDebugEnabled()) 
+            log.debug("\nHeartbeatServerPlugin.processHeartbeats: published changed HbReq = " + req);
         } else {  // its not time yet for this one
           long fromNow = nextHb - now;
           if (minFreq > fromNow) minFreq = fromNow;
@@ -128,6 +132,8 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
   } 
 
   protected void setupSubscriptions() {
+    log =  (LoggingService) getBindingSite().getServiceBroker().
+      getService(this, LoggingService.class, null);
     bb = getBlackboardService();
     sub = (IncrementalSubscription)bb.subscribe(hbReqPred);
   }
@@ -137,7 +143,8 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
     Iterator iter = sub.getAddedCollection().iterator();
     while (iter.hasNext()) {
       HbReq req = (HbReq)iter.next();
-      System.out.println("\nHeartbeatServerPlugin.execute: received new HbReq = " + req);
+      if (log.isDebugEnabled()) 
+        log.debug("\nHeartbeatServerPlugin.execute: received new HbReq = " + req);
       HbReqContent content = (HbReqContent)req.getContent();
       long now = System.currentTimeMillis();
       long freq = content.getHbFrequency();
@@ -145,7 +152,8 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
       MessageAddress me = getBindingSite().getAgentIdentifier();
       req.updateResponse(me, new HbReqResponse(me, HeartbeatRequest.ACCEPTED, now));
       bb.publishChange(req);
-      System.out.println("\nHeartbeatServerPlugin.execute: published changed HbReq = " + req);
+      if (log.isDebugEnabled()) 
+        log.debug("\nHeartbeatServerPlugin.execute: published changed HbReq = " + req);
     } 
     if (minFreq != Long.MAX_VALUE)
       alarmService.addRealTimeAlarm(new ProcessHeartbeatsAlarm(minFreq));

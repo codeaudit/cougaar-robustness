@@ -29,6 +29,7 @@ import java.util.Set;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.service.LoggingService;
 
 /**
  * This Plugin receives and echoes Pings that originate 
@@ -38,6 +39,7 @@ import org.cougaar.core.mts.MessageAddress;
 public class PingServerPlugin extends ComponentPlugin {
   private IncrementalSubscription sub;
   private BlackboardService bb;
+  private LoggingService log;
 
   private UnaryPredicate pingPred = new UnaryPredicate() {
     public boolean execute(Object o) {
@@ -46,6 +48,8 @@ public class PingServerPlugin extends ComponentPlugin {
   };
 
   protected void setupSubscriptions() {
+    log =  (LoggingService) getBindingSite().getServiceBroker().
+      getService(this, LoggingService.class, null);
     bb = getBlackboardService();
     sub = (IncrementalSubscription)bb.subscribe(pingPred);
   }
@@ -55,10 +59,12 @@ public class PingServerPlugin extends ComponentPlugin {
     while (iter.hasNext()) {
       Ping ping = (Ping)iter.next();
       MessageAddress me = getBindingSite().getAgentIdentifier();
-      System.out.println("PingServerPlugin.execute: received Ping = " + ping);
+      if (log.isDebugEnabled()) 
+        log.debug("PingServerPlugin.execute: received Ping = " + ping);
       ping.updateResponse(me, "Got it!");
       bb.publishChange(ping);
-      System.out.println("PingServerPlugin.execute: published changed Ping = " + ping);
+      if (log.isDebugEnabled()) 
+        log.debug("PingServerPlugin.execute: published changed Ping = " + ping);
     }
   }
 

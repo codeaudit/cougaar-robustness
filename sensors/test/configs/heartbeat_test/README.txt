@@ -32,6 +32,14 @@ heartbeat hasn't arrived in 15 seconds, it will be reported.
 
 The rest are the names of the agents that should send heartbeats. 
 
+Logging is turned on by adding -Dorg.cougaar.core.logging.config.filename=logging.props
+to MYPROPERTIES in %COUGAAR_INSTALL_PATH%\bin\setarguments.bat.  The default log 
+setting in logging.props is INFO.  To get full visibility into this module's operation,
+as in the attached dumps, set it to DEBUG, by changing the line:
+  log4j.category.org.cougaar.tools.robustness.sensors=INFO,A1
+to
+  log4j.category.org.cougaar.tools.robustness.sensors=DEBUG,A1
+
 To run the test, open two cmd windows, cd to test\configs\heartbeat_test in each, and
 run "Node MonitoredAgentNode" in one, and "Node ManagerAgentNode" in the other.
 

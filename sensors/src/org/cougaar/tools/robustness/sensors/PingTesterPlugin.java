@@ -26,6 +26,7 @@ import org.cougaar.core.plugin.*;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import java.util.Iterator;
+import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.DomainService;
 import org.cougaar.core.service.LoggingService;
@@ -43,6 +44,7 @@ public class PingTesterPlugin extends ComponentPlugin {
   private IncrementalSubscription sub;
   private BlackboardService bb;
   private SensorFactory sensorFactory;
+  private LoggingService log;
 
   private UnaryPredicate pred = new UnaryPredicate() {
     public boolean execute(Object o) {
@@ -55,8 +57,9 @@ public class PingTesterPlugin extends ComponentPlugin {
   };
 
   protected void setupSubscriptions() {
-    DomainService domainService = 
-      (DomainService) getBindingSite().getServiceBroker().getService(this, DomainService.class, null);
+    ServiceBroker sb = (ServiceBroker)getBindingSite().getServiceBroker();
+    log =  (LoggingService) sb.getService(this, LoggingService.class, null);
+    DomainService domainService = (DomainService) sb.getService(this, DomainService.class, null);
     sensorFactory = (SensorFactory)domainService.getFactory("sensors");
     bb = getBlackboardService();
     sub = (IncrementalSubscription)bb.subscribe(pred);
@@ -73,42 +76,51 @@ public class PingTesterPlugin extends ComponentPlugin {
     }
     PingRequest req = sensorFactory.newPingRequest(source, target, timeout);
     bb.publishAdd(req);
-    System.out.println("PingTesterPlugin.setupSubscriptions: added PingRequest = " + req);
+    if (log.isInfoEnabled()) 
+      log.info("PingTesterPlugin.setupSubscriptions: added PingRequest = " + req);
   }
 
   protected void execute () {
     Iterator iter = sub.getChangedCollection().iterator();
     while (iter.hasNext()) {
       PingRequest req = (PingRequest)iter.next();
-      System.out.println("PingTesterPlugin.execute: received changed PingRequest = " + req);
+      if (log.isInfoEnabled()) 
+        log.info("PingTesterPlugin.execute: received changed PingRequest = " + req);
       MessageAddress myAddr = getBindingSite().getAgentIdentifier();
       if (req.getSource().equals(myAddr)) {
         int status = req.getStatus();
 	  switch (status) {
           case PingRequest.NEW:
-            System.out.println("PingTesterPlugin.execute: status = NEW, ignored.");
+            if (log.isInfoEnabled()) 
+              log.info("PingTesterPlugin.execute: status = NEW, ignored.");
             break;
           case PingRequest.SENT:
-            System.out.println("PingTesterPlugin.execute: status = SENT, ignored.");
+            if (log.isInfoEnabled()) 
+              log.info("PingTesterPlugin.execute: status = SENT, ignored.");
             break;
           case PingRequest.RECEIVED:
-            System.out.println("PingTesterPlugin.execute: status = RECEIVED.");
-            System.out.println("PingTesterPlugin.execute: timeSent = " + req.getTimeSent());
-            System.out.println("PingTesterPlugin.execute: timeReceived = " + req.getTimeReceived());
-            System.out.println("PingTesterPlugin.execute: roundTripTime = " + req.getRoundTripTime());
-            System.out.println("PingTesterPlugin.execute: timeSent = " + req.getTimeSent());
+            if (log.isInfoEnabled()) {
+              log.info("PingTesterPlugin.execute: status = RECEIVED.");
+              log.info("PingTesterPlugin.execute: timeSent = " + req.getTimeSent());
+              log.info("PingTesterPlugin.execute: timeReceived = " + req.getTimeReceived());
+              log.info("PingTesterPlugin.execute: roundTripTime = " + req.getRoundTripTime());
+              log.info("PingTesterPlugin.execute: timeSent = " + req.getTimeSent());
+            }
             bb.publishRemove(req); 
             break;
           case PingRequest.FAILED:
-            System.out.println("PingTesterPlugin.execute: status = FAILED.");
-            System.out.println("PingTesterPlugin.execute: timeSent = " + req.getTimeSent());
-            System.out.println("PingTesterPlugin.execute: timeReceived = " + req.getTimeReceived());
-            System.out.println("PingTesterPlugin.execute: roundTripTime = " + req.getRoundTripTime());
-            System.out.println("PingTesterPlugin.execute: timeSent = " + req.getTimeSent());
+            if (log.isInfoEnabled()) {
+              log.info("PingTesterPlugin.execute: status = FAILED.");
+              log.info("PingTesterPlugin.execute: timeSent = " + req.getTimeSent());
+              log.info("PingTesterPlugin.execute: timeReceived = " + req.getTimeReceived());
+              log.info("PingTesterPlugin.execute: roundTripTime = " + req.getRoundTripTime());
+              log.info("PingTesterPlugin.execute: timeSent = " + req.getTimeSent());
+            }
             bb.publishRemove(req); 
             break;
           default:
-            System.out.println("PingTesterPlugin.execute: illegal status = " + req.getStatus());
+            if (log.isInfoEnabled()) 
+              log.info("PingTesterPlugin.execute: illegal status = " + req.getStatus());
             bb.publishRemove(req); 
         }
       }

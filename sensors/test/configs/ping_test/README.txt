@@ -13,6 +13,14 @@ name of the agent to be pinged, and the second is the timeout.  A timeout
 of 0 means "no timeout".  A positive integer indicates the number of 
 milliseconds to wait before returning a FAILED status to the requestor.  
 
+Logging is turned on by adding -Dorg.cougaar.core.logging.config.filename=logging.props
+to MYPROPERTIES in %COUGAAR_INSTALL_PATH%\bin\setarguments.bat.  The default log 
+setting in logging.props is INFO.  To get full visibility into this module's operation,
+as in the attached dumps, set it to DEBUG, by changing the line:
+  log4j.category.org.cougaar.tools.robustness.sensors=INFO,A1
+to
+  log4j.category.org.cougaar.tools.robustness.sensors=DEBUG,A1
+
 To run the test, open two cmd windows, cd to test\configs\ping_test in each, and
 run "Node MonitoredAgentNode" in one, and "Node ManagerAgentNode" in the other.
 

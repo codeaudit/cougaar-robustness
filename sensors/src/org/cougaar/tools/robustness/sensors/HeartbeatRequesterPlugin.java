@@ -36,6 +36,7 @@ import org.cougaar.core.service.UIDService;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.blackboard.UniqueObjectSet;
 import org.cougaar.core.agent.service.alarm.Alarm;
+import org.cougaar.core.service.LoggingService;
 
 /**
  * This Plugin receives HeartbeatRequests from the local Blackboard and
@@ -46,6 +47,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
   private IncrementalSubscription heartbeatRequestSub;
   private IncrementalSubscription hbReqSub;
   private BlackboardService bb;
+  private LoggingService log;
   private UniqueObjectSet reqTable;
   private Hashtable hbTable;
   private Hashtable reportTable;
@@ -112,7 +114,8 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
       req.setStatus(HeartbeatRequest.FAILED);
       bb.publishChange(req);
       bb.closeTransaction();
-      System.out.println("\nHeartbeatRequesterPlugin.fail: published changed HeartbeatRequest = " + req);
+      if (log.isDebugEnabled()) 
+        log.debug("\nHeartbeatRequesterPlugin.fail: published changed HeartbeatRequest = " + req);
     }
   }
     
@@ -138,7 +141,8 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     req.setStatus(response.getStatus());
     req.setRoundTripTime(timeReceived.getTime() - req.getTimeSent().getTime());
     bb.publishChange(req);
-    System.out.println("\nHeartbeatRequesterPlugin.updateHeartbeatRequest: published changed HeartbeatRequest = " + req);
+    if (log.isDebugEnabled())  
+      log.debug("\nHeartbeatRequesterPlugin.updateHeartbeatRequest: published changed HeartbeatRequest = " + req);
   }
 
   // produce HeartbeatHealthReports from ACCEPTED HeartbeatRequests
@@ -188,7 +192,8 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
             HeartbeatEntry[] entryArray = (HeartbeatEntry[])entries.toArray(new HeartbeatEntry[entries.size()]);
             HeartbeatHealthReport report = new HeartbeatHealthReport(entryArray);
             bb.publishAdd(report);
-            System.out.println("\nHeartbeatRequesterPlugin.prepareHealthReports:" +
+            if (log.isDebugEnabled()) 
+              log.debug("\nHeartbeatRequesterPlugin.prepareHealthReports:" +
                                " published new HeartbeatHealthReport = " + report);
           }   
         }    
@@ -201,6 +206,8 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
   }
 
   protected void setupSubscriptions() {
+    log = (LoggingService) getBindingSite().getServiceBroker().
+      getService(this, LoggingService.class, null);
     reqTable = new UniqueObjectSet();
     hbTable = new Hashtable();
     reportTable = new Hashtable();
@@ -218,7 +225,8 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     Iterator iter = hbReqSub.getChangedCollection().iterator();
     while (iter.hasNext()) {
       HbReq hbReq = (HbReq)iter.next();
-      System.out.println("\nHeartbeatRequesterPlugin.execute: changed HbReq received = " + hbReq);
+      if (log.isDebugEnabled()) 
+        log.debug("\nHeartbeatRequesterPlugin.execute: changed HbReq received = " + hbReq);
       MessageAddress myAddr = getBindingSite().getAgentIdentifier();
       if (hbReq.getSource().equals(myAddr)) {
         HbReqResponse response = (HbReqResponse)hbReq.getResponse();
@@ -265,7 +273,8 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
       HeartbeatRequest req = (HeartbeatRequest)iter.next();
       int status = req.getStatus();
       if (status == HeartbeatRequest.NEW) {
-        System.out.println("\nHeartbeatRequesterPlugin.prepareHealthReports: new HeartbeatRequest received = " + req);
+        if (log.isDebugEnabled()) 
+          log.debug("\nHeartbeatRequesterPlugin.prepareHealthReports: new HeartbeatRequest received = " + req);
         MessageAddress source = getBindingSite().getAgentIdentifier();
         Set targets = req.getTargets();
         UID reqUID = req.getUID();
@@ -283,8 +292,10 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
                                 null);
         bb.publishAdd(hbReq);
         bb.publishChange(req);
-        System.out.println("\nHeartbeatRequesterPlugin.execute: published new HbReq = " + hbReq);
-        System.out.println("\nHeartbeatRequesterPlugin.execute: published changed HeartbeatRequest = " + req);
+        if (log.isDebugEnabled()) {
+          log.debug("\nHeartbeatRequesterPlugin.execute: published new HbReq = " + hbReq);
+          log.debug("\nHeartbeatRequesterPlugin.execute: published changed HeartbeatRequest = " + req);
+        }
         // temp hack to timeout a request
         alarmService.addRealTimeAlarm(new HeartbeatRequestTimeout(req.getReqTimeout(),reqUID));
       }

@@ -30,7 +30,8 @@ REM pass in "NodeName" to run a specific named Node
 set MYPROPERTIES= -Dorg.cougaar.system.path=%COUGAAR_INSTALL_PATH%\sys -Dorg.cougaar.install.path=%COUGAAR_INSTALL_PATH% -Dorg.cougaar.core.servlet.enable=true -Dorg.cougaar.lib.web.scanRange=100 -Dorg.cougaar.lib.web.http.port=8800 -Dorg.cougaar.lib.web.https.port=-1 -Dorg.cougaar.lib.web.https.clientAuth=true
 
 set MYMEMORY=
-set MYCLASSES=org.cougaar.bootstrap.Bootstrapper org.cougaar.core.node.Node
+#set MYCLASSES=org.cougaar.bootstrap.Bootstrapper org.cougaar.core.node.Node
+set MYCLASSES=%1
 set MYARGUMENTS= -c -n "%1"
 
 
