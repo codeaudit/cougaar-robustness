@@ -46,7 +46,7 @@ public class ThreatDescription implements NotPersistable {
     private String causesEvent;
     private float defaultEventLikelihoodProb;
     //<Threat name="Bomb" affectsAssetType="Host" causesEvent="HostDeath" defaultEventLikelihoodProb="NONE" />
-    private EventProbability eventProbability;
+    private EventProbability eventProbability = null;
     
     /** Threat filter */
     private ThreatVulnerabilityFilter filter = null;
@@ -59,8 +59,11 @@ public class ThreatDescription implements NotPersistable {
         this.causesEvent = causesEvent;
         this.defaultEventLikelihoodProb = defaultEventLikelihoodProb;        
         
-        eventProbability = new EventProbability();
-        eventProbability.addInterval(new EventProbabilityInterval(defaultEventLikelihoodProb));
+        //Create an ALWAYS interval if the defaultEventLikelihoodProb > 0
+        if (defaultEventLikelihoodProb > 0.0) {
+            eventProbability = new EventProbability();
+            eventProbability.addInterval(new EventProbabilityInterval(defaultEventLikelihoodProb));
+        }
         this.filter = null;
     }
 
@@ -74,9 +77,11 @@ public class ThreatDescription implements NotPersistable {
       
         //if vf's ep is null crate new probability using default, o.w. use one from vf
         if (vf != null && vf.getProbability() == null) {
-                eventProbability = new EventProbability();
-                eventProbability.addInterval(new EventProbabilityInterval(defaultEventLikelihoodProb));                
-        }        
+            eventProbability = vf.getProbability();
+            if (eventProbability == null) { //use probability of the root TD
+                eventProbability = rootTD.getEventProbability();
+            }
+        }
         this.filter = vf;
     }
             
@@ -94,10 +99,9 @@ public class ThreatDescription implements NotPersistable {
      */
     public String getEventThreatCauses() { return causesEvent; }
     /**
-     * @return the default probability. Applicable, if the prob is not NONE,
-     * to all assets of the specified type.
+     * @return the event probability. 
      */
-    public float getDefaultProbability() { return defaultEventLikelihoodProb; }
+    public EventProbability getEventProbability() { return eventProbability; }
         
     /**
      * Get vulnerability filter
@@ -129,7 +133,7 @@ public class ThreatDescription implements NotPersistable {
     public String toString() {
      
         String s = "Threat ["+this.getName()+"], affects asset type="+this.getAffectedAssetType()+", causes event="+this.getEventThreatCauses()+"\n";
-        s += "[Default Probability = "+this.getDefaultProbability()+"]\n";
+        s += "[Probability = "+this.getEventProbability()+"]\n";
         if (filter != null) {
              s = s + filter + "\n";
         }        

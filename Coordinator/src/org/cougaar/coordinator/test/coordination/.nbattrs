@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE attributes PUBLIC "-//NetBeans//DTD DefaultAttributes 1.0//EN" "http://www.netbeans.org/dtds/attributes-1_0.dtd">
 <attributes version="1.0">
-    <fileobject name="ActionMonitorServlet.java">
-        <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="ActionMonitorServlet.MyServlet"/>
-    </fileobject>
     <fileobject name="DiagnosisMonitorServlet.java">
         <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="DiagnosisMonitorServlet.MyServlet"/>
+    </fileobject>
+    <fileobject name="ActionMonitorServlet.java">
+        <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="ActionMonitorServlet.MyServlet"/>
     </fileobject>
     <fileobject name="PublishServlet.java">
         <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="PublishServlet.MyServlet"/>

@@ -25,7 +25,6 @@
 
 package org.cougaar.coordinator;
 
-import org.cougaar.coordinator.techspec.AssetName;
 import org.cougaar.coordinator.techspec.AssetType;
 
 import org.cougaar.core.adaptivity.OMCRangeList;
@@ -45,7 +44,8 @@ import org.cougaar.util.log.Logging;
 /**
  * This class is to act as a supertype for all Defense-related OperatingMode
  * objects. This enables interested parties to subscribe to all Defense Operating modes.
- */
+ *@deprecated
+*/
 public class DefenseOperatingMode extends OMCBase
        implements NotPersistable, Serializable, Relay.Source, Relay.Target, UniqueObject
 {
@@ -73,7 +73,7 @@ public class DefenseOperatingMode extends OMCBase
         this.assetName = assetName;
         this.defenseName = defenseName;
         this.timestamp = System.currentTimeMillis();
-        this.expandedName = AssetName.generateExpandedAssetName(assetName, AssetType.findAssetType(assetType));
+//        this.expandedName = AssetName.generateExpandedAssetName(assetName, AssetType.findAssetType(assetType));
         
     }
 
@@ -86,7 +86,7 @@ public class DefenseOperatingMode extends OMCBase
         this.assetName = assetName;
         this.defenseName = defenseName;
         this.timestamp = System.currentTimeMillis();
-        this.expandedName = AssetName.generateExpandedAssetName(assetName, AssetType.findAssetType(assetType));
+//        this.expandedName = AssetName.generateExpandedAssetName(assetName, AssetType.findAssetType(assetType));
     }        
     
     /**

@@ -39,31 +39,31 @@ import java.util.Iterator;
 import org.cougaar.core.util.UID;
 
 
-public class DefenseTimeCondition extends DefenseCondition
+public class DefenseTimeCondition //extends DefenseCondition
 {
     public static final Double MINTIME  = new Double(0.0);
     public static final Double MAXTIME = new Double(9223372036854775807.0);
 
-    protected static OMCRangeList allowedValues = new OMCRangeList(new OMCThruRange (MINTIME, MAXTIME));
+    //protected static OMCRangeList allowedValues = new OMCRangeList(new OMCThruRange (MINTIME, MAXTIME));
 
      /* Do not use. Only use the constructors of the subclasses.
      */
     public DefenseTimeCondition(String assetType, String assetName, String managerID) {
-        super(assetType, assetName, managerID, allowedValues, new Double(0.0));
+        //super(assetType, assetName, managerID, allowedValues, new Double(0.0));
     }
     
     public DefenseTimeCondition(String assetType, String assetName, String managerID, long time) {
-        super(assetType, assetName, managerID, allowedValues, new Double(time));
+        //super(assetType, assetName, managerID, allowedValues, new Double(time));
     }
     
     protected void setValue(String newValue) {
-        super.setValue(newValue);
+        //super.setValue(newValue);
     }
 
     /** tiny helper class for VTH Operating Modes */
-    protected static class OMCStrPoint extends OMCPoint {
-        public OMCStrPoint (String a) { super (a); }
-    }
+    //protected static class OMCStrPoint extends OMCPoint {
+    //    public OMCStrPoint (String a) { super (a); }
+    //}
     
 
 }

@@ -98,7 +98,7 @@ public class TestResponderPlugin extends ServiceUserPluginBase {
 
   /** Set up needed subscriptions */
   public void setupSubscriptions() {
-             
+  /*           
      logger.debug("setupSubscriptions called.");
 
      if (!haveServices()) {
@@ -117,6 +117,7 @@ public class TestResponderPlugin extends ServiceUserPluginBase {
     }) ;
 
     logger.debug("Listening for DefenseConditions");
+   */
   }
 
   
@@ -129,7 +130,7 @@ public class TestResponderPlugin extends ServiceUserPluginBase {
    * test the firing of the plays.
    */
   public void execute() {
-
+/*
       Iterator iter;
       //********* Check for our modes being added ***********
       //We have one defense mode, so we only get the one from iter.next();
@@ -163,7 +164,7 @@ public class TestResponderPlugin extends ServiceUserPluginBase {
               }
           }
       }
-      
+*/      
   }
 
 

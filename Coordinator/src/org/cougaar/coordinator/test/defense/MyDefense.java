@@ -74,6 +74,7 @@ import org.cougaar.core.service.AgentIdentificationService;
  * involving that asset. Then, it would act only if the DefenseEnablingOperatingMode
  * object was properly set (as described in the Defense Deconfliction API &
  * Architecture paper).
+ *@deprecated
  */
 public class MyDefense extends ServiceUserPluginBase {
     
@@ -92,11 +93,11 @@ public class MyDefense extends ServiceUserPluginBase {
   };
   
   /** Name of condition object */
-  public static final String MYCONDITION_NAME = "MyDefense.MyCondition";
+ // public static final String MYCONDITION_NAME = "MyDefense.MyCondition";
   /** Name of Defense Enabling Operating Mode object */
-  public static final String MYDEF_OPMODE_NAME = "MyDefense.MyEnabler";
+ // public static final String MYDEF_OPMODE_NAME = "MyDefense.MyEnabler";
   /** Name of Monitor Enabling Operating Mode object */
-  public static final String MYMONITORING_OPMODE_NAME = "MyDefense.MyMonitor";
+//  public static final String MYMONITORING_OPMODE_NAME = "MyDefense.MyMonitor";
 
   /** Create a new MyDefense instance */
   public MyDefense() {
@@ -120,7 +121,7 @@ public class MyDefense extends ServiceUserPluginBase {
      } 
 
      initObjects(); //create & publish condition and op mode objects
-
+/*
      //Listen for changes in out defense mode object
      defenseModeSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
         public boolean execute(Object o) {
@@ -144,11 +145,12 @@ public class MyDefense extends ServiceUserPluginBase {
       if (logger.isInfoEnabled()) {
          logger.info ("Published condition and two OpMode ");
       }
+ */
   }
 
   //Create one condition and one of each type of operating mode
   private void initObjects() {
-     MyCondition dabc = 
+/*     MyCondition dabc = 
         new MyCondition(MYCONDITION_NAME, "assetType", "defenseName", DefenseConstants.BOOL_FALSE);
      MyDefenseEnabler deom = 
         new MyDefenseEnabler(MYDEF_OPMODE_NAME,"assetType", "defenseName");
@@ -163,7 +165,7 @@ public class MyDefense extends ServiceUserPluginBase {
       getBlackboardService().publishAdd(dabc);
       getBlackboardService().publishAdd(deom);
       getBlackboardService().publishAdd(meom);
-
+*/
       setTestCondition();
   }      
   
@@ -194,7 +196,7 @@ public class MyDefense extends ServiceUserPluginBase {
    * test the firing of the plays.
    */
   public void execute() {
-
+/*
       Iterator iter;
       //********* Check for our modes being added ***********
       //We have one defense mode, so we only get the one from iter.next();
@@ -247,12 +249,14 @@ public class MyDefense extends ServiceUserPluginBase {
       } else {
           if (logger.isDebugEnabled()) logger.debug("** Timer not expired");
       }      
+ */
   }
 
   /* Periodically change the condition value from TRUE to FALSE and back to 
    * allow testing of the plays.
    */
   private void setTestCondition() {
+/*      
       if (logger.isDebugEnabled()) logger.debug("** In setTestCondition");
       MyCondition cond = 
         (MyCondition)conditionService.getConditionByName(MYCONDITION_NAME);
@@ -272,6 +276,7 @@ public class MyDefense extends ServiceUserPluginBase {
 	if (logger.isDebugEnabled()) logger.debug("** Cannot find condition object!");
       }          
     startTimer(10000);
+ */
   }
 
   /**
@@ -279,7 +284,8 @@ public class MyDefense extends ServiceUserPluginBase {
    * measurement. Others can only reference the base Condition
    * class which has no setter method.
    **/
-   private static class MyCondition extends DefenseApplicabilityBinaryCondition implements NotPersistable {
+  /*
+   private static class MyCondition extends  DefenseApplicabilityBinaryCondition implements NotPersistable {
     public MyCondition(String a, String b, String c) {
       super(a,b,c);
     }
@@ -293,20 +299,20 @@ public class MyDefense extends ServiceUserPluginBase {
     }
   }
    
-  /**  DefenseEnablingOperatingMode subtype for the Defense Enabling Operating Mode */
+  //  DefenseEnablingOperatingMode subtype for the Defense Enabling Operating Mode 
   public class MyDefenseEnabler extends DefenseEnablingOperatingMode {
      public MyDefenseEnabler(String a, String b, String c) {
       super(a,b,c);
     } 
   }
 
-  /**  MonitoringEnablingOperatingMode subtype for the Monitoring Enabling Operating Mode */
+  //  MonitoringEnablingOperatingMode subtype for the Monitoring Enabling Operating Mode 
   public class MyMonitoringEnabler extends MonitoringEnablingOperatingMode {
      public MyMonitoringEnabler(String a, String b, String c) {
       super(a,b,c);
     } 
   }
-  
+  */
 }
 
   

@@ -29,7 +29,6 @@
 
 package org.cougaar.coordinator;
 
-import org.cougaar.coordinator.techspec.AssetName;
 import org.cougaar.coordinator.techspec.AssetType;
 
 import org.cougaar.core.adaptivity.OMCBase;
@@ -54,6 +53,7 @@ import java.util.Iterator;
 
 /**
  * Generic superclass to act as supertype for all Defense Condition objects.
+ *@deprecated
  *
  */
 public abstract class DefenseCondition extends OMCBase 
@@ -87,8 +87,8 @@ public abstract class DefenseCondition extends OMCBase
         this.timestamp = System.currentTimeMillis();
         if ((assetType == null) && (assetName == null))
             this.expandedName = "NULL";
-        else
-            this.expandedName = AssetName.generateExpandedAssetName(assetName, AssetType.findAssetType(assetType));
+//        else
+//2004            this.expandedName = AssetID..generateExpandedAssetName(assetName, AssetType.findAssetType(assetType));
     }
    
     /**
@@ -103,8 +103,8 @@ public abstract class DefenseCondition extends OMCBase
 
         if ((assetType == null) && (assetName == null))
             this.expandedName = "NULL";
-        else
-            this.expandedName = AssetName.generateExpandedAssetName(assetName, AssetType.findAssetType(assetType));
+//        else
+//            this.expandedName = AssetName.generateExpandedAssetName(assetName, AssetType.findAssetType(assetType));
     }    
 
     

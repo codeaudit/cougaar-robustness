@@ -228,7 +228,7 @@ public class PublishDefenseConditionsServlet extends BaseServletComponent
    */
   private String emitDACs(String assetName, String assetType, boolean state, String setMsgLog, String setRestart) {
 
-
+/*
 
       DefenseConstants.OMCStrBoolPoint omcState = ( state ? DefenseConstants.BOOL_TRUE : DefenseConstants.BOOL_FALSE );
 
@@ -284,13 +284,13 @@ public class PublishDefenseConditionsServlet extends BaseServletComponent
             }
           }
 
-/*          DefenseApplicabilityCondition cond3 = DefenseApplicabilityCondition.find("Restart", assetName+":"+assetType, blackboard);
-          if (cond3 != null) { //let's create it!
-            cond3.setValue(omcState.toString());
-            blackboard.publishChange(cond3);
-            msg = msg+", Restart";
-          }
-*/
+//          DefenseApplicabilityCondition cond3 = DefenseApplicabilityCondition.find("Restart", assetName+":"+assetType, blackboard);
+//          if (cond3 != null) { //let's create it!
+//            cond3.setValue(omcState.toString());
+//            blackboard.publishChange(cond3);
+//            msg = msg+", Restart";
+//          }
+
           
           DefenseApplicabilityCondition cond3 = DefenseApplicabilityCondition.find("Restart", assetName+":"+assetType, blackboard);
           if (cond3 != null && setRestart != null && setRestart.equalsIgnoreCase("TRUE")) { //let's create it!
@@ -330,13 +330,15 @@ public class PublishDefenseConditionsServlet extends BaseServletComponent
       }           
 
       return msg;
+ */
+      return null;
   }
   
 
   private class MyServlet extends HttpServlet {
       
       public void doGet(HttpServletRequest request, HttpServletResponse response) {
-          
+/*          
         String assetName = null;
         String assetType = null; 
         String state = null;
@@ -371,6 +373,7 @@ public class PublishDefenseConditionsServlet extends BaseServletComponent
           }
           out.close();
         } catch (java.io.IOException ie) { ie.printStackTrace(); }
+*/        
       }
 
       /**
@@ -398,6 +401,7 @@ public class PublishDefenseConditionsServlet extends BaseServletComponent
     //	      "}\n"+
     //	      "// -->\n"+
     //	      "</script>\n");
+/*          
         out.print("<h2><center>PublishDefenseConditionsServlet in Agent ");
         out.print(agentId.toString() + "</center></h2><p><p>\n");
         out.print("<h3><center>Publishes DefenseApplicabilityConditions </center></h3>\n");
@@ -412,7 +416,7 @@ public class PublishDefenseConditionsServlet extends BaseServletComponent
         out.println("<p> [ ** Value can be TRUE or FALSE only.]");
         out.println("<input type=submit name=\"Submit\" value=\"Submit\"><br>");
         out.println("\n</form>");
-
+*/
       }
   }
 //**End of servlet class  
@@ -439,6 +443,7 @@ public class PublishDefenseConditionsServlet extends BaseServletComponent
    * measurement. Others can only reference the base Condition
    * class which has no setter method.
    **/
+  /*
    private static class ServletApplicabilityCondition extends DefenseApplicabilityCondition { //implements NotPersistable {
     public ServletApplicabilityCondition(String a, String b, String c) {
       super(a,b,c, DefenseConstants.BOOL_RANGELIST);
@@ -462,5 +467,5 @@ public class PublishDefenseConditionsServlet extends BaseServletComponent
          super(assetType, assetID, defense);
       } 
   }
-
+*/
 }

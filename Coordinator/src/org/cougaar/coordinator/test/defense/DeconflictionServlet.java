@@ -228,7 +228,7 @@ public class DeconflictionServlet extends BaseServletComponent
    * Change the condition value to the specified value
    */
   private void setTestCondition(String condName, boolean bool) {
-
+/*
       Condition condX = conditionService.getConditionByName(condName);
       
       DisconnectDefCon cond = null;
@@ -267,13 +267,14 @@ public class DeconflictionServlet extends BaseServletComponent
       if (eventService.isEventEnabled()) {
           eventService.event("Condition "+condName+" set to "+ cond.getValue());
       }
+ */
   }
   
 
   private class MyServlet extends HttpServlet {
       
       public void doGet(HttpServletRequest request, HttpServletResponse response) {
-        String condName = request.getParameter(CONDITION_NAME);
+/*        String condName = request.getParameter(CONDITION_NAME);
         String condValue = request.getParameter(CONDITION_VALUE);
         response.setContentType("text/html");
 
@@ -294,6 +295,7 @@ public class DeconflictionServlet extends BaseServletComponent
           }
           out.close();
         } catch (java.io.IOException ie) { ie.printStackTrace(); }
+ */
       }
 
       /**
@@ -322,14 +324,14 @@ public class DeconflictionServlet extends BaseServletComponent
     //	      "// -->\n"+
     //	      "</script>\n");
         out.print("<h2><center>DeconflictionServlet in Agent ");
-        out.print(agentId.toString());
+  //      out.print(agentId.toString());
         out.print(
                   "</center></h2>\n"+
                   "<form name=\"myForm\" method=\"get\" >" );
-        out.println("ConditionName: <input type=text name="+CONDITION_NAME+" value=\""+
-                        MyServletTestDefense.MYCONDITION_NAME+"\">");
+    //    out.println("ConditionName: <input type=text name="+CONDITION_NAME+" value=\""+
+      //                  MyServletTestDefense.MYCONDITION_NAME+"\">");
         out.println("<p>");
-        out.println("        Value: <input type=text name="+CONDITION_VALUE+" value=TRUE >");
+   //     out.println("        Value: <input type=text name="+CONDITION_VALUE+" value=TRUE >");
         out.println("<p> [ ** Value can be TRUE or FALSE only.]");
         out.println("<input type=submit name=\"Submit\" value=\"Submit\"><br>");
         out.println("\n</form>");
@@ -360,7 +362,7 @@ public class DeconflictionServlet extends BaseServletComponent
    * measurement. Others can only reference the base Condition
    * class which has no setter method.
    **/
-   private static class DisconnectDefCon extends DefenseCondition { //implements NotPersistable {
+/*   private static class DisconnectDefCon extends DefenseCondition { //implements NotPersistable {
     public DisconnectDefCon(String a, String b, String c) {
       super(a,b,c, DefenseConstants.BOOL_RANGELIST);
     }
@@ -368,16 +370,15 @@ public class DeconflictionServlet extends BaseServletComponent
     public DisconnectDefCon(String a, String b, String c, DefenseConstants.OMCStrBoolPoint pt) {
       super(a,b,c, DefenseConstants.BOOL_RANGELIST, pt.toString());
     }
-
+*/
     /* Called by Defense to set current condition. Limited to statically defined values
      * of this class. **This methd should NOT be public as anyone can modify the value.
      * Rather should be subclassed, and super.setValue() called.
      *@param new value
      */
-    protected void setValue(DefenseConstants.OMCStrBoolPoint newValue) {
+/*    protected void setValue(DefenseConstants.OMCStrBoolPoint newValue) {
         super.setValue(newValue.toString());
     }
-    
-   }
+*/    
   
 }

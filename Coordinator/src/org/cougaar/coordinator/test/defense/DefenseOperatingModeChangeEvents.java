@@ -22,7 +22,7 @@
 
 package org.cougaar.coordinator.test.defense;
 
-import org.cougaar.coordinator.DefenseOperatingMode;
+//import org.cougaar.coordinator.DefenseOperatingMode;
 import java.util.Iterator;
 import org.cougaar.core.adaptivity.ServiceUserPluginBase;
 import org.cougaar.core.persist.NotPersistable;
@@ -88,7 +88,7 @@ public class DefenseOperatingModeChangeEvents extends ServiceUserPluginBase impl
   }
   
   public void setupSubscriptions() {
-    
+/*    
      opModes = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
             public boolean execute(Object o) {
                 if ( o instanceof DefenseOperatingMode ) {
@@ -97,6 +97,7 @@ public class DefenseOperatingModeChangeEvents extends ServiceUserPluginBase impl
                 return false ;
             }
         }) ;
+ */
     }
 
     public void execute() {
@@ -110,7 +111,7 @@ public class DefenseOperatingModeChangeEvents extends ServiceUserPluginBase impl
                             ((DefenseOperatingMode)o).getName() + "=" + ((DefenseOperatingMode)o).getValue());
             }
         }
- */        
+        
         for ( Iterator iter = opModes.getChangedCollection().iterator() ;  iter.hasNext() ; ) {
             Object o = iter.next();
             if (o instanceof DefenseOperatingMode) {
@@ -119,6 +120,8 @@ public class DefenseOperatingModeChangeEvents extends ServiceUserPluginBase impl
                eventService.event("DefenseOperatingMode: " + 
                             ((DefenseOperatingMode)o).getName() + "=" + ((DefenseOperatingMode)o).getValue());
             }
-        }        
+        }
+ */        
     }
+ 
 }

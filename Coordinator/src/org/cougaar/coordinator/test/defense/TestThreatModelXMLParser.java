@@ -48,7 +48,7 @@ public class TestThreatModelXMLParser extends ComponentPlugin {
     
     
     public void setupSubscriptions() {
-    
+/*    
     
         getPluginParams();
         try {
@@ -85,7 +85,7 @@ public class TestThreatModelXMLParser extends ComponentPlugin {
             e.printStackTrace();
         }
         
-    
+  */  
     }
     public void execute() {}
     
@@ -110,7 +110,7 @@ public class TestThreatModelXMLParser extends ComponentPlugin {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-
+/*
         try {
             ThreatModelXML_DTDHandler h = new ThreatModelXML_DTDHandler();
             ThreatModelXML_DTDParser parser = new ThreatModelXML_DTDParser(h);
@@ -123,6 +123,7 @@ public class TestThreatModelXMLParser extends ComponentPlugin {
             System.out.println("Exception: "+e);
             e.printStackTrace();
         }
+ */
     }
     
 }

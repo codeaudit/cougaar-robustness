@@ -46,53 +46,55 @@ import java.util.Iterator;
  * This class is abstract. Subclasses may implement different types of belief 
  * representation, e.g. TRUE|FALSE, a confidence level, etc.
  */
-public class DefenseApplicabilityConditionSnapshot extends DefenseCondition {
+public class DefenseApplicabilityConditionSnapshot {// extends DefenseCondition {
 
     /* 
      * The allowed values of the DefenseApplicabilityCondition. Set in the subclasses. 
      */
     //protected static OMCRangeList allowed_Values;
     
-
+/*
     private long timeToBeDone;
 
     private long completionTimestamp = 0L;
     
-
+*/
     public DefenseApplicabilityConditionSnapshot(DefenseApplicabilityCondition dc) {
-        super(dc.getAssetType(), dc.getAsset(), dc.getDefenseName(), DefenseConstants.BOOL_RANGELIST, dc.getValue());
-        timeToBeDone = dc.getTimeToBeDone();
+  //      super(dc.getAssetType(), dc.getAsset(), dc.getDefenseName(), DefenseConstants.BOOL_RANGELIST, dc.getValue());
+  //      timeToBeDone = dc.getTimeToBeDone();
         
-        this.timestamp = dc.getTimestamp();
+  //      this.timestamp = dc.getTimestamp();
     }
    
 
-    public long getTimeToBeDone() { return timeToBeDone; }
+    public long getTimeToBeDone() { return 0; }//timeToBeDone; }
 
-    /** @return the completion time - the time this defense set applicability to false */
-    public long getCompletionTime() { return completionTimestamp; }
+    // @return the completion time - the time this defense set applicability to false 
+    public long getCompletionTime() { return 0; } //completionTimestamp; }
     
-    /** set the completion time - the time this defense set applicability to false */
-    public void setCompletionTime(long t) { completionTimestamp = t; }
+    // set the completion time - the time this defense set applicability to false 
+    public void setCompletionTime(long t) { 
+    //    completionTimestamp = t; 
+    }
     
-    private final static UnaryPredicate pred = new UnaryPredicate() {
-            public boolean execute(Object o) {  
-                return 
-                    (o instanceof DefenseApplicabilityCondition);
-            }
-        };
+//    private final static UnaryPredicate pred = new UnaryPredicate() {
+//            public boolean execute(Object o) {  
+//                return 
+//                    (o instanceof DefenseApplicabilityCondition);
+//            }
+//        };
     
     
   /**
    * Update with new content. THis subtype has no additional slots so it
    * doesn't inspect the content. It just passes the object up for inspection
    **/
-    public int updateContent(Object content, Relay.Token token) {
-        return super.updateContent(content, token);
-    }
-    
+ //   public int updateContent(Object content, Relay.Token token) {
+ //       return super.updateContent(content, token);
+ //   }
+   
     public static DefenseApplicabilityConditionSnapshot find(String defenseName, String expandedName, BlackboardService blackboard) {
-
+/*
         DefenseApplicabilityConditionSnapshot dc = null;
         Collection c = blackboard.query(pred);
         Iterator iter = c.iterator();
@@ -103,12 +105,13 @@ public class DefenseApplicabilityConditionSnapshot extends DefenseCondition {
                return dc;
            }
         }
+    */
         return null;
     } 
     
 
     public static DefenseApplicabilityConditionSnapshot find(String defenseName, String expandedName, Collection c) {
-
+/*
         DefenseApplicabilityConditionSnapshot dc = null;
         Iterator iter = c.iterator();
         //if (logger.isDebugEnabled()) logger.debug(new Integer(c.size()).toString());
@@ -121,6 +124,8 @@ public class DefenseApplicabilityConditionSnapshot extends DefenseCondition {
                }
            }
         }
+    */
         return null;
-    }      
+    }
+        
 }

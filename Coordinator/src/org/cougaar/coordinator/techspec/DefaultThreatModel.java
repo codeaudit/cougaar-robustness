@@ -68,10 +68,7 @@ public class DefaultThreatModel implements ThreatModelInterface, NotPersistable 
      * @deprecated
      */
     private ThreatType threatType;
-    
-    //FIX  -- do we need this here?
-    private float defaultProbability;
-    
+        
     /** All of the DamageDistributions */
     private EventProbability eventProbability = null;
       
@@ -104,14 +101,8 @@ public class DefaultThreatModel implements ThreatModelInterface, NotPersistable 
         this.assetType = td.getAffectedAssetType();
         this.filter = td.getVulnerabilityFilter(); // not used here, other than to retrieve the prob. below.
         
-        //FIX -- what are we doing with this -- do we use this if the eventProbability is null?
-        //Or, is it never null
-        this.defaultProbability = td.getDefaultProbability();
+        this.eventProbability = td.getEventProbability();
         
-        
-        if (filter != null) {
-            this.eventProbability = td.getVulnerabilityFilter().getProbability();
-        }
     }
 
     /** 
@@ -185,6 +176,9 @@ public class DefaultThreatModel implements ThreatModelInterface, NotPersistable 
      */
     public double getThreatLikelihood(long start, long end) throws NegativeIntervalException {
 
+        //If no probability, then return 0
+        if (eventProbability == null) { return 0; }
+        
         //First get the threat probability intervals (ThreatProbabilityInterval) over this time. 
         return eventProbability.computeIntervalProbability(start, end);
         

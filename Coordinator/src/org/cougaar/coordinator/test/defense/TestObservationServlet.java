@@ -26,9 +26,9 @@
 
 package org.cougaar.coordinator.test.defense;
 //org.cougaar.coordinator.test.defense.TestObservationServlet
-import org.cougaar.coordinator.DefenseApplicabilityConditionSnapshot;
-import org.cougaar.coordinator.costBenefit.CostBenefitDiagnosis;
-import org.cougaar.coordinator.techspec.DefaultDefenseTechSpec;
+//import org.cougaar.coordinator.DefenseApplicabilityConditionSnapshot;
+//import org.cougaar.coordinator.costBenefit.CostBenefitDiagnosis;
+//import org.cougaar.coordinator.techspec.DefaultDefenseTechSpec;
 
 import java.io.PrintWriter;
 import java.io.IOException;
@@ -208,12 +208,12 @@ public class TestObservationServlet extends BaseServletComponent
     
     public void addCostBenefitDiagnosis(CostBenefitDiagnosis cbd) {
 
-        activeCostBenefits.addElement(cbd);
+   //     activeCostBenefits.addElement(cbd);
     }
 
     
     public void updateDefenseStatus(CostBenefitDiagnosis cbd, String defenseName, String status) {
-
+/*
         CostBenefitDiagnosis.DefenseBenefit defenses[] = cbd.getDefenses();
         CostBenefitDiagnosis.DefenseBenefit def;
         
@@ -230,10 +230,11 @@ public class TestObservationServlet extends BaseServletComponent
         if (!found) {
            logger.debug("No defense "+defenseName+" found to update status to "+status);   
         }
+ */
     }
 
     public void updateCostBenefitStatus(CostBenefitDiagnosis cbd, String status) {
-
+/*
         //If done, move to old CBD vector
         if (status.equalsIgnoreCase("SUCCEEDED") || status.equalsIgnoreCase("FAILED") || status.startsWith("COMPLETED")) {
             activeCostBenefits.removeElement(cbd);
@@ -241,10 +242,11 @@ public class TestObservationServlet extends BaseServletComponent
         }
         
         cbd.setStatus(status);
+ */
     }
     
     public void setTimeout(CostBenefitDiagnosis cbd, String defenseName, long l) {
-        
+        /*
         CostBenefitDiagnosis.DefenseBenefit defenses[] = cbd.getDefenses();
         CostBenefitDiagnosis.DefenseBenefit def;
         
@@ -255,10 +257,11 @@ public class TestObservationServlet extends BaseServletComponent
                 break;
             }
         }
+        */
     }
     
     public void updateDefenseOutcome(CostBenefitDiagnosis cbd, String defenseName, String outcome) {
-
+/*
         CostBenefitDiagnosis.DefenseBenefit defenses[] = cbd.getDefenses();
         CostBenefitDiagnosis.DefenseBenefit def;
         
@@ -269,13 +272,14 @@ public class TestObservationServlet extends BaseServletComponent
                 break;
             }
         }
+        */
     }
     
 
   private class MyServlet extends HttpServlet {
       
       public void doGet(HttpServletRequest request, HttpServletResponse response) {
-          
+/*          
         String refresh = null;
         String error = null;
         
@@ -306,6 +310,7 @@ public class TestObservationServlet extends BaseServletComponent
         
         try {
           PrintWriter out = response.getWriter();
+ */
 /*          if (assetName != null && assetType != null && state != null && (state.equalsIgnoreCase("TRUE") || state.equalsIgnoreCase("FALSE")) ) {
               sendData(out);
               boolean stateBool = Boolean.valueOf(state).booleanValue();
@@ -313,7 +318,8 @@ public class TestObservationServlet extends BaseServletComponent
               out.println("<center><h2>Emitted DefenseApplicabilityConditions for the specified asset.</h2></center><br>" );            
               out.println("<center><h2>"+i+"</h2></center><br>" );            
           } else {
-*/              
+*/
+/*          
           emitHeader(out);
           if (error != null) { // then emit the error
              out.print("<font color=\"#0C15FE\">"+ error + "</h2></font>");
@@ -333,12 +339,14 @@ public class TestObservationServlet extends BaseServletComponent
 //          }
           out.close();
         } catch (java.io.IOException ie) { ie.printStackTrace(); }
+        */
       }
 
       /**
        * Output page with disconnect  / reconnect button & reconnect time slot
        */
       private void emitHeader(PrintWriter out) {
+/*          
         out.println("<html><head></head><body onload=\"setTimeout('location.reload()',"+refreshRate+");\">");
         out.println("<center><h1>Deconfliction Test Observation Servlet</h1>");
         out.println("<p>Will refresh every " + (refreshRate/1000) + " seconds. ");
@@ -349,6 +357,7 @@ public class TestObservationServlet extends BaseServletComponent
         out.println("<input type=submit name=\"Submit\" value=\"Submit\" size=10 ><br>");
         out.println("\n</form>");
         out.println("</center><hr>");
+ */
       }
 
       /**
@@ -362,7 +371,7 @@ public class TestObservationServlet extends BaseServletComponent
        *
        */      
       private boolean emitData(PrintWriter out, Vector vector, boolean isOld) {
-
+/*
          CostBenefitDiagnosis cbd = null;
          boolean emittedData = false;
          Iterator i = vector.iterator(); 
@@ -455,8 +464,8 @@ public class TestObservationServlet extends BaseServletComponent
               out.print("</TABLE>");
               out.print("<hr>");
          }
-          
-         return emittedData;
+*/          
+         return false; //emittedData;
       }
       
 
@@ -476,7 +485,7 @@ public class TestObservationServlet extends BaseServletComponent
     //	      "// -->\n"+
     //	      "</script>\n");
         out.print("<h2><center>TestObservationServlet in Agent ");
-        out.print(agentId.toString() + "</center></h2><p><p>\n");
+   //     out.print(agentId.toString() + "</center></h2><p><p>\n");
         out.print("<h3><center>Publishes DefenseApplicabilityConditions </center></h3>\n");
         out.print("<form name=\"myForm\" method=\"get\" >" );
         out.println("AssetName: <input type=text name=ASSETNAME value=\"\"><p>");

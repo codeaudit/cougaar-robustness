@@ -110,7 +110,7 @@ public class MyServletTestDefense extends ServiceUserPluginBase {
 
   /** Set up needed subscriptions */
   public void setupSubscriptions() {
-             
+/*             
      if (logger.isDebugEnabled()) logger.debug("setupSubscriptions called.");
 
      if (!haveServices()) {
@@ -143,11 +143,13 @@ public class MyServletTestDefense extends ServiceUserPluginBase {
       if (logger.isInfoEnabled()) {
          logger.info ("Published condition and two OpMode ");
       }
+ */
   }
 
   //Create one condition and one of each type of operating mode
   private void initObjects() {
-     MyCondition dabc = 
+/*
+      MyCondition dabc = 
         new MyCondition(MYCONDITION_NAME, "assetType", "defenseName",DefenseConstants.BOOL_FALSE);
      MyDefenseEnabler deom = 
         new MyDefenseEnabler(MYDEF_OPMODE_NAME, "assetType", "defenseName");
@@ -162,10 +164,11 @@ public class MyServletTestDefense extends ServiceUserPluginBase {
       getBlackboardService().publishAdd(dabc);
       getBlackboardService().publishAdd(deom);
       getBlackboardService().publishAdd(meom);
-
+*/
   }      
   
   private boolean haveServices() {
+      /*
     if (conditionService != null && operatingModeService != null && us != null) return true;
     if (acquireServices()) {
       if (logger.isDebugEnabled()) logger.debug(".haveServices - acquiredServices.");
@@ -184,7 +187,7 @@ public class MyServletTestDefense extends ServiceUserPluginBase {
     
     logger.error(".haveServices - did NOT acquire services.");    
     return false;
-    
+    */
   }
 
   /** 
@@ -192,7 +195,7 @@ public class MyServletTestDefense extends ServiceUserPluginBase {
    * test the firing of the plays.
    */
   public void execute() {
-
+/*
       Iterator iter;
       //********* Check for our modes being added ***********
       //We have one defense mode, so we only get the one from iter.next();
@@ -233,7 +236,7 @@ public class MyServletTestDefense extends ServiceUserPluginBase {
               if (logger.isDebugEnabled()) logger.debug("****MonitoringEnablingOperatingMode set to " + mmode.getValue());
           }
       }
-      
+  */    
   }
 
 
@@ -242,7 +245,7 @@ public class MyServletTestDefense extends ServiceUserPluginBase {
    * measurement. Others can only reference the base Condition
    * class which has no setter method.
    **/
-   static class MyCondition extends DefenseApplicabilityBinaryCondition implements NotPersistable {
+/*   static class MyCondition extends DefenseApplicabilityBinaryCondition implements NotPersistable {
     public MyCondition(String a, String b, String c) {
       super(a,b,c);
     }
@@ -256,20 +259,20 @@ public class MyServletTestDefense extends ServiceUserPluginBase {
     }
   }
    
-  /**  DefenseEnablingOperatingMode subtype for the Defense Enabling Operating Mode */
+  //  DefenseEnablingOperatingMode subtype for the Defense Enabling Operating Mode 
   public class MyDefenseEnabler extends DefenseEnablingOperatingMode {
      public MyDefenseEnabler(String a, String b, String c) {
       super(a,b,c);
     } 
   }
 
-  /**  MonitoringEnablingOperatingMode subtype for the Monitoring Enabling Operating Mode */
+  //  MonitoringEnablingOperatingMode subtype for the Monitoring Enabling Operating Mode 
   public class MyMonitoringEnabler extends MonitoringEnablingOperatingMode {
      public MyMonitoringEnabler(String a, String b, String c) {
       super(a,b,c);
     } 
   }
-  
+  */
 }
 
   

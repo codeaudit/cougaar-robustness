@@ -46,7 +46,7 @@ import java.util.Iterator;
  * This class is abstract. Subclasses may implement different types of belief 
  * representation, e.g. TRUE|FALSE, a confidence level, etc.
  */
-public abstract class DefenseApplicabilityCondition extends DefenseCondition {
+public abstract class DefenseApplicabilityCondition  extends DefenseCondition {
 
     /* 
      * The allowed values of the DefenseApplicabilityCondition. Set in the subclasses. 
@@ -85,8 +85,7 @@ public abstract class DefenseApplicabilityCondition extends DefenseCondition {
     
     private final static UnaryPredicate pred = new UnaryPredicate() {
             public boolean execute(Object o) {  
-                return 
-                    (o instanceof DefenseApplicabilityCondition);
+                return false;
             }
         };
     
@@ -101,50 +100,21 @@ public abstract class DefenseApplicabilityCondition extends DefenseCondition {
     
     public static DefenseApplicabilityCondition find(String defenseName, String expandedName, BlackboardService blackboard) {
 
-        DefenseApplicabilityCondition dc = null;
-        Collection c = blackboard.query(pred);
-        Iterator iter = c.iterator();
-        //if (logger.isDebugEnabled()) logger.debug(new Integer(c.size()).toString());
-        while (iter.hasNext()) {
-           dc = (DefenseApplicabilityCondition)iter.next();
-           if (dc.compareSignature(expandedName, defenseName)) {
-               return dc;
-           }
-        }
         return null;
     } 
     
     public static DefenseApplicabilityCondition find(UID uid, BlackboardService blackboard) {
 
-        DefenseApplicabilityCondition dc = null;
-        Collection c = blackboard.query(pred);
-        Iterator iter = c.iterator();
-        //if (logger.isDebugEnabled()) logger.debug(new Integer(c.size()).toString());
-        while (iter.hasNext()) {
-           dc = (DefenseApplicabilityCondition)iter.next();
-           if (dc.compareSignature(uid)) {
-               return dc;
-           }
-        }
         return null;
     }     
 
     public static Collection findCollection(String expandedName, BlackboardService blackboard) {
 
-        Collection c = blackboard.query(pred);
-        Collection result = new HashSet();
-        Iterator iter = c.iterator();
-        while (iter.hasNext()) {
-           DefenseApplicabilityCondition dc = (DefenseApplicabilityCondition)iter.next();
-           if (dc.getExpandedName().equals(expandedName)) {
-               result.add(dc);
-           }
-        }
-        return result;
+        return null;
     }    
 
     public static Collection findCollection(String expandedName, Collection c) {
-
+/*
         Collection result = new HashSet();
         Iterator iter = c.iterator();
         while (iter.hasNext()) {
@@ -153,50 +123,22 @@ public abstract class DefenseApplicabilityCondition extends DefenseCondition {
                result.add(dc);
            }
         }
-        return result;
+ */
+        return null; //2004result;
     }    
 
     public static Collection findDefenseCollection(String defenseName, Collection c) {
 
-        Collection result = new HashSet();
-        Iterator iter = c.iterator();
-        while (iter.hasNext()) {
-           DefenseCondition dc = (DefenseCondition)iter.next();
-           if ((dc instanceof DefenseApplicabilityCondition) && (dc.getDefenseName().equals(defenseName))) {
-               result.add(dc);
-           }
-        }
-        return result;
+        return null;
     }    
     
     public static Collection findDefenseCollection(String defenseName, BlackboardService blackboard) {
 
-        Collection c = blackboard.query(pred);
-        Collection result = new HashSet();
-        Iterator iter = c.iterator();
-        while (iter.hasNext()) {
-           DefenseCondition dc = (DefenseCondition)iter.next();
-           if ((dc instanceof DefenseApplicabilityCondition) && (dc.getDefenseName().equals(defenseName))) {
-               result.add(dc);
-           }
-        }
-        return result;
+        return null;
     } 
     
     public static DefenseApplicabilityCondition find(String defenseName, String expandedName, Collection c) {
 
-        DefenseApplicabilityCondition dc = null;
-        Iterator iter = c.iterator();
-        //if (logger.isDebugEnabled()) logger.debug(new Integer(c.size()).toString());
-        while (iter.hasNext()) {
-            Object o = iter.next();
-            if (o instanceof DefenseApplicabilityCondition) {
-               dc = (DefenseApplicabilityCondition) o;
-               if (dc.compareSignature(expandedName, defenseName)) {
-                return dc;
-               }
-           }
-        }
         return null;
     }      
 }

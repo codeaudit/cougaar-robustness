@@ -49,9 +49,9 @@ import org.cougaar.core.service.OperatingModeService;
 
 import org.cougaar.util.GenericStateModelAdapter;
 
-import org.cougaar.core.adaptivity.InterAgentCondition;
-import org.cougaar.core.adaptivity.InterAgentOperatingMode;
-import org.cougaar.core.adaptivity.InterAgentOperatingModePolicy;
+//import org.cougaar.core.adaptivity.InterAgentCondition;
+//import org.cougaar.core.adaptivity.InterAgentOperatingMode;
+//import org.cougaar.core.adaptivity.InterAgentOperatingModePolicy;
 import org.cougaar.core.relay.Relay;
 import org.cougaar.core.service.UIDService;
 import org.cougaar.core.util.UID;
@@ -80,7 +80,7 @@ public class TestPlugin extends ServiceUserPluginBase {
     /** Name of condition object */
     public static final String MYCONDITION_NAME = "MyDefense.MyCondition";
     
-    private MyCondition dabc;
+//    private MyCondition dabc;
     private ConditionService conditionService;
     private OperatingModeService operatingModeService;
     private IncrementalSubscription defenseConditionsSubscription;
@@ -127,7 +127,8 @@ public class TestPlugin extends ServiceUserPluginBase {
 
   //Create one condition and one of each type of operating mode
   private void initObjects() {
-     dabc = 
+/*
+      dabc = 
         new MyCondition("MyAssetType", "MyAsset", "MyDefense", DefenseConstants.BOOL_FALSE);
 
      UID uid = null;
@@ -147,9 +148,11 @@ public class TestPlugin extends ServiceUserPluginBase {
      logger.debug("Published new Defense Condition, sending to "+ RemoteAgent);
      
      startTimer(10000);
+ */
   }      
   
   public void execute() { //do nothing 
+/*      
       logger.debug("execute() called");
     
       if (timerExpired()) { //then change the value of the condition
@@ -158,12 +161,14 @@ public class TestPlugin extends ServiceUserPluginBase {
       } else {
           logger.debug("** Timer not expired");
       }      
+ */
   } 
     
   public void setupSubscriptions() { //do nothing
   }
     
     private boolean haveServices() {
+/*        
     if (us != null) return true;
     if (acquireServices()) {
         if (logger.isDebugEnabled()) logger.debug(".haveServices - acquiredServices.");
@@ -206,8 +211,9 @@ public class TestPlugin extends ServiceUserPluginBase {
       }
       else if (logger.isDebugEnabled()) 
           logger.debug(".haveServices - did NOT acquire services.");
-      
+ */     
       return false;
+ 
     }
     
     
@@ -233,7 +239,7 @@ public class TestPlugin extends ServiceUserPluginBase {
     */
     private void setTestCondition() {
 
-              dabc.testSlot = "Foo"+(count++);
+ //             dabc.testSlot = "Foo"+(count++);
 /*        
         logger.debug("** In setTestCondition -- dabc.getValue()="+dabc.getValue());
           if ("FALSE".equals(dabc.getValue())) {
@@ -248,9 +254,10 @@ public class TestPlugin extends ServiceUserPluginBase {
           } else
               logger.debug("** setTestCondition - Condition is UNKNOWN.");
              
-*/
+
           getBlackboardService().publishChange(dabc);
           startTimer(10000);
+ */
     }
 
     
@@ -261,7 +268,8 @@ public class TestPlugin extends ServiceUserPluginBase {
    * measurement. Others can only reference the base Condition
    * class which has no setter method.
    **/
-   static class MyCondition extends DefenseApplicabilityBinaryCondition implements NotPersistable {
+/*
+    static class MyCondition extends DefenseApplicabilityBinaryCondition implements NotPersistable {
     public MyCondition(String at, String a, String defenseName) {
       super(at, a, defenseName);
     }
@@ -274,7 +282,7 @@ public class TestPlugin extends ServiceUserPluginBase {
       super.setValue(newValue);
     }
   }
-   
+*/   
   /**  DefenseEnablingOperatingMode subtype for the Defense Enabling Operating Mode */
 //  public class MyDefenseEnabler extends DefenseEnablingOperatingMode {
 //     public MyDefenseEnabler(String name) {

@@ -151,13 +151,11 @@ public class EventLoader extends XMLLoader {
     protected void setupSubscriptions() {
         Iterator i = events.iterator();
         while (i.hasNext() ) {
-            blackboard.publishAdd(i.next());
+            EventDescription e = (EventDescription)i.next();
+            blackboard.publishAdd(e);
+            blackboard.publishAdd(e.getTransitiveEffect());
         }
-        if (logger.isDebugEnabled()) { logger.debug("Published " + events.size() + "event descriptions to the blackboard."); }
-
-//FIX        
-//***        ALSO publish the TransitiveEffects to the BB
-        
+        if (logger.isDebugEnabled()) { logger.debug("Published " + events.size() + "event descriptions & transitive effects to the blackboard."); }
     }
 
     protected void execute() {

@@ -4,6 +4,12 @@
     <fileobject name="TestObservationServlet.java">
         <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="TestObservationServlet.MyServlet"/>
     </fileobject>
+    <fileobject name="DeconflictionServlet.java">
+        <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="DeconflictionServlet.MyServlet"/>
+    </fileobject>
+    <fileobject name="PublishDefenseConditionsServlet.java">
+        <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="PublishDefenseConditionsServlet.MyServlet"/>
+    </fileobject>
     <fileobject name="Httpd.java">
         <attr name="NetBeansAttrArguments" serialvalue="aced0005757200135b4c6a6176612e6c616e672e537472696e673badd256e7e91d7b4702000078700000000174000439303030"/>
     </fileobject>
