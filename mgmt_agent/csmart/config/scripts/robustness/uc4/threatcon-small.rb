@@ -66,6 +66,10 @@ Cougaar.new_experiment("ARUC4_Threatcon").run(1) {
 
   do_action "Sleep", 5.minutes
 
+  do_action "PublishInterAgentOperatingMode",
+            "SMALL-ARManager",
+            "LOW"
+
   #wait_for "Command", "ok"
 
   wait_for  "GLSConnection", true

@@ -66,12 +66,12 @@ Cougaar.new_experiment("ARUC4_HostLossThreatAlert").run(1) {
   #   alert level(select from: maximum, high, medium, low, minimum, undefined),
   #   alert duration, and
   #   assets
-  assets = Hash['node'=>'REAR-A', 'node'=>'REAR-A']
+  assets = {'node' => 'REAR-A, REAR-B'}
   do_action "PublishThreatAlert",
             "org.cougaar.tools.robustness.ma.HostLossThreatAlert",
             "1AD-SMALL-COMM",
             "HealthMonitor",
-            "medium",
+            "high",
             10.minutes,
             assets
 

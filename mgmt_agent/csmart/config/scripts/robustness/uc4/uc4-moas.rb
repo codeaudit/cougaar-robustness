@@ -67,7 +67,7 @@ Cougaar.new_experiment("ARUC4_HostLossThreatAlert").run(1) {
   #   alert level(select from: maximum, high, medium, low, minimum, undefined),
   #   alert duration, and
   #   assets
-  assets = {'node' => 'REAR-A-NODE, REAR-B-NDOE'}
+  assets = {'node' => 'REAR-A-NODE, REAR-B-NODE'}
   do_action "PublishThreatAlert",
             "org.cougaar.tools.robustness.ma.HostLossThreatAlert",
             "CONUS-REAR-COMM",

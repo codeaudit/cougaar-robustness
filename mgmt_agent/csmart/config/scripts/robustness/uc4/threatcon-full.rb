@@ -64,7 +64,11 @@ Cougaar.new_experiment("ARUC4_SecurityAlert").run(1) {
             "REAR-ARManager",
             "HIGH"
 
-  do_action "Sleep", 5.minutes
+  do_action "Sleep", 1.minutes
+
+  do_action "PublishInterAgentOperatingMode",
+            "REAR-ARManager",
+            "LOW"
 
   #wait_for "Command", "ok"
 
