@@ -31,6 +31,7 @@ import org.cougaar.core.service.ThreadService;
 import org.cougaar.core.service.TopologyReaderService;
 import org.cougaar.core.service.TopologyEntry;
 import org.cougaar.core.thread.Schedulable;
+import org.cougaar.util.log.Logging;
 
 
 public class AgentID implements java.io.Serializable
@@ -205,7 +206,7 @@ public class AgentID implements java.io.Serializable
     boolean hadException = false;
     boolean timedOut = false;
 
-System.err.println ("starting timed topology lookup ("+callTimeout+" ms) for agent " +agent);
+Logging.getLogger(AgentID.class).warn ("starting timed topology lookup ("+callTimeout+" ms) for agent " +agent);
 
     while (true)
     {
@@ -231,11 +232,11 @@ System.err.println ("starting timed topology lookup ("+callTimeout+" ms) for age
     {
       entry = (TopologyEntry) getCachedTopologyLookup (agent);
 String s = (hadException ? "had exception" : "timed out");
-System.err.println ("timed topology lookup "+s+", using value from cache for agent "+agent+": " +entry);
+Logging.getLogger(AgentID.class).warn ("timed topology lookup "+s+", using value from cache for agent "+agent+": " +entry);
     }
     else 
     {
-System.err.println ("timed topology lookup completed on time for agent " +agent);
+Logging.getLogger(AgentID.class).warn ("timed topology lookup completed on time for agent " +agent);
       cacheTopologyLookup (agent, entry);
     }
 
@@ -281,7 +282,7 @@ System.err.println ("timed topology lookup completed on time for agent " +agent)
       }
       catch (Exception e)
       {
-System.err.println ("timed topology lookup exception: " +stackTraceToString(e));
+Logging.getLogger(AgentID.class).warn ("timed topology lookup exception: " +stackTraceToString(e));
         exception = e;
       }
 
