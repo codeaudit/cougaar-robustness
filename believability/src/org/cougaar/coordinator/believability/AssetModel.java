@@ -56,8 +56,10 @@ public class AssetModel extends Loggable {
      *                      in estimation
      * @param se_publisher The publisher that will create and publish
      *                     StateEstimations to the blackboard as needed.
+     * @param bel_plugin A handle to the believability plugin
      **/
     public AssetModel( AssetID asset_id,
+		       BelievabilityPlugin bel_plugin,
 		       ModelManagerInterface model_manager,
 		       StateEstimationPublisher se_publisher ) {
 
@@ -75,10 +77,12 @@ public class AssetModel extends Loggable {
 		new BeliefStateWindow( asset_id, 
 				       window_length,
 				       pmif,
-				       se_publisher );
+				       se_publisher,
+				       bel_plugin );
 	}
 	catch( BelievabilityException be ) {
-	    logDebug( be.getMessage() );
+	    logDebug( "Failed to create belief state window -- " 
+		      + be.getMessage() );
 	}
     } // constructor AssetModel
 
@@ -102,6 +106,22 @@ public class AssetModel extends Loggable {
 
 
     /**
+     * Get the current belief state for the asset
+     * @throws BelievabilityException if there is a problem getting
+     *                                the current state
+     * @return the current belief state for the asset
+     **/
+    public BeliefState getCurrentBeliefState() throws BelievabilityException {
+	if ( getBeliefStateWindow() == null ) {
+	    logError( "Null BeliefStateWindow for asset " + getAssetID() );
+	    return null;
+	}
+
+	else return _belief_state_window.getCurrentBeliefState();
+    }
+
+
+    /**
      * Forward a BelievabilityDiagnosis to the belief state window
      * @param BelievabilityDiagnosis diagnosis
      * @throws BelievabilityException if there is a problem dealing
@@ -110,8 +130,12 @@ public class AssetModel extends Loggable {
     public void consumeBelievabilityDiagnosis( BelievabilityDiagnosis diagnosis )
 	throws BelievabilityException {
 
-	// May throw BelievabilityException
-	getBeliefStateWindow().consumeBelievabilityDiagnosis( diagnosis );
+	if ( getBeliefStateWindow() == null ) 
+	    logError( "Null BeliefStateWindow for asset " + getAssetID() );
+
+	else 
+	    // May throw BelievabilityException
+	    getBeliefStateWindow().consumeBelievabilityDiagnosis( diagnosis );
     }
 
 

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/Attic/POMDPModelManager.java,v $
- * $Revision: 1.2 $
- * $Date: 2004-05-28 20:01:17 $
+ * $Revision: 1.4 $
+ * $Date: 2004-06-18 00:16:39 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -32,7 +32,7 @@ import org.cougaar.coordinator.techspec.AssetType;
  * manage and access them all. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.2 $Date: 2004-05-28 20:01:17 $
+ * @version $Revision: 1.4 $Date: 2004-06-18 00:16:39 $
  */
 public class POMDPModelManager 
         extends Loggable implements POMDPModelInterface
@@ -122,7 +122,7 @@ public class POMDPModelManager
      *
      */
     public BeliefState updateBeliefState( BeliefState start_belief,
-                                          BelievabilityDiagnosis diagnosis )
+                                          BeliefUpdateTrigger diagnosis )
             throws BelievabilityException
     {
         if (( start_belief == null )

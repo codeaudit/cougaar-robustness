@@ -30,13 +30,17 @@ import org.cougaar.coordinator.Diagnosis;
 
 import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
 import org.cougaar.coordinator.techspec.DiagnosisTechSpecService;
+import org.cougaar.coordinator.techspec.ActionTechSpecInterface;
+import org.cougaar.coordinator.techspec.ActionTechSpecService;
 import org.cougaar.coordinator.techspec.EventDescription;
 import org.cougaar.coordinator.techspec.ThreatDescription;
 import org.cougaar.coordinator.techspec.ThreatModelInterface;
+import org.cougaar.coordinator.techspec.ThreatModelChangeEvent;
 
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.Vector;
 
 import org.cougaar.core.agent.service.alarm.Alarm;
 import org.cougaar.core.adaptivity.ServiceUserPluginBase;
@@ -72,8 +76,10 @@ public class BelievabilityPlugin
      // Initialize various classes
      _model_manager = new ModelManager();
      _se_publisher = new StateEstimationPublisher( this, _model_manager );
-     _diagnosis_consumer = new DiagnosisConsumer( _model_manager,
-                                   _se_publisher );
+     _diagnosis_consumer = new DiagnosisConsumer( this,
+						  _model_manager,
+						  _se_publisher );
+     _se_publisher.setAssetContainer( _diagnosis_consumer.getAssetContainer() );
      
     } // constructor BelievabilityPlugin
     
@@ -125,6 +131,30 @@ public class BelievabilityPlugin
     } // method publishRemove
     
 
+    /**
+     * Method to queue an object for publication the next time execute() runs
+     * @param obj The object to publish
+     **/
+    public void queueForPublication( Object obj ) {
+        _publication_list.add( obj );
+        getBlackboardService().signalClientActivity();
+    }
+
+    /**
+     * Method to publish the items on the queue
+     **/
+    public synchronized void publishFromQueue() {
+        Iterator pli = _publication_list.iterator();
+        while ( pli.hasNext() ) {
+            Object o = pli.next();
+            if ( logger.isDebugEnabled() )
+                 logger.debug( " publishFromQueue publishing object " + o.toString() );
+            publishAdd(o);
+	    pli.remove();
+        }
+    }
+
+
     //------------------------------------------------------------
     // protected interface
     //------------------------------------------------------------
@@ -141,7 +171,7 @@ public class BelievabilityPlugin
      // First read in sensor type and asset type information. The
      // asset types are found from the sensor types.
      try {
-         readInSensorTypeInformation();
+         readInTechSpecInformation();
      }
      catch ( BelievabilityException be ) {
          if ( logger.isDebugEnabled() )
@@ -158,12 +188,12 @@ public class BelievabilityPlugin
 		     if ( o instanceof ThreatModelInterface ) {
 			 return true ;
 		     }
-		     if ( o instanceof ThreatDescription ) {
-			 return true ;
-		     }
-		     if ( o instanceof EventDescription ) {
-			 return true ;
-		     }
+		     //		     if ( o instanceof ThreatDescription ) {
+		     //			 return true ;
+		     //		     }
+		     //		     if ( o instanceof EventDescription ) {
+		     //			 return true ;
+		     //		     }
 		     return false ;
 		 }
 	     }) ;
@@ -206,8 +236,9 @@ public class BelievabilityPlugin
         if (logger.isDebugEnabled()) 
             logger.debug("Believability Plugin in Execute Loop");
 
+        publishFromQueue();
         handleThreatModel();
-	handleDiagnosis();
+        handleDiagnosis();
 
     } // method execute
 
@@ -233,12 +264,15 @@ public class BelievabilityPlugin
               iter.hasNext() ; ) 
         {
 	    Object o = iter.next();
-	    if ( o instanceof ThreatModelInterface )
+	    if ( o instanceof ThreatModelInterface ) {
 		_model_manager.addThreatType( (ThreatModelInterface) o );
-	    if ( o instanceof ThreatDescription )
-		_model_manager.addThreatDescription( (ThreatDescription) o );
-	    if ( o instanceof EventDescription )
-		_model_manager.addEventDescription( (EventDescription) o );
+		if ( logger.isDebugEnabled() ) 
+		    logger.debug( "ThreatModelInterface ADD" );
+	    }
+	    //	    if ( o instanceof ThreatDescription )
+	    //		_model_manager.addThreatDescription( (ThreatDescription) o );
+	    //	    if ( o instanceof EventDescription )
+	    //		_model_manager.addEventDescription( (EventDescription) o );
         } // for ADD ThreatModelInterface
 
 
@@ -247,12 +281,20 @@ public class BelievabilityPlugin
            iter.hasNext() ; ) 
         {
 	    Object o = iter.next();
-	    if ( o instanceof ThreatModelInterface )
+	    if ( o instanceof ThreatModelInterface ) {
 		_model_manager.updateThreatType( (ThreatModelInterface) o );
-	    if ( o instanceof ThreatDescription )
-		_model_manager.updateThreatDescription( (ThreatDescription) o );
-	    if ( o instanceof EventDescription )
-		_model_manager.updateEventDescription( (EventDescription) o );
+		for ( Iterator i2 = _threatModelSub.getChangeReports( o ).iterator(); 
+		      i2.hasNext() ; ) {
+		    Object o2 = i2.next();
+		    if ( o2 instanceof ThreatModelChangeEvent ) {
+			_model_manager.handleThreatModelChange( (ThreatModelChangeEvent) o2 );
+		    }
+		}
+	    }
+	    //	    if ( o instanceof ThreatDescription )
+	    //		_model_manager.updateThreatDescription( (ThreatDescription) o );
+	    //	    if ( o instanceof EventDescription )
+	    //		_model_manager.updateEventDescription( (EventDescription) o );
         } // for CHANGE ThreatModelInterface
         
         //------- REMOVE ThreatModelInterface
@@ -262,10 +304,10 @@ public class BelievabilityPlugin
 	    Object o = iter.next();
 	    if ( o instanceof ThreatModelInterface )
 		_model_manager.removeThreatType( (ThreatModelInterface) o );
-	    if ( o instanceof ThreatDescription )
-		_model_manager.removeThreatDescription( (ThreatDescription) o );
-	    if ( o instanceof EventDescription )
-		_model_manager.removeEventDescription( (EventDescription) o );
+	    //	    if ( o instanceof ThreatDescription )
+	    //		_model_manager.removeThreatDescription( (ThreatDescription) o );
+	    //	    if ( o instanceof EventDescription )
+	    //		_model_manager.removeEventDescription( (EventDescription) o );
         } // for REMOVE ThreatModelInterface
     } // method handleThreatModel
 
@@ -379,8 +421,10 @@ public class BelievabilityPlugin
      **/
     private boolean haveServices() {
 
-        if ( (eventService != null) && (diagnosisTSService == null) )
-	    return true;
+	//        if ( (eventService != null) 
+	//	     && (diagnosisTSService == null)
+	//	     && (actionTSService == null) )
+	// 	    return true;
 
         if (acquireServices()) 
         {
@@ -408,6 +452,15 @@ public class BelievabilityPlugin
 	    if ( diagnosisTSService == null )
 		throw new RuntimeException( "Unable to obtain DiagnosisTechSpecService." );
 
+	    // Get the action tech spec service
+	    actionTSService = (ActionTechSpecService)
+		sb.getService( this,
+			       ActionTechSpecService.class, 
+			       null );
+	
+	    if ( actionTSService == null )
+		throw new RuntimeException( "Unable to obtain ActionTechSpecService." );
+
 	    return true;
         }
 
@@ -424,14 +477,12 @@ public class BelievabilityPlugin
     private IncrementalSubscription _threatModelSub;
     private IncrementalSubscription _diagnosisSub;
 
-    private IncrementalSubscription pluginControlSubscription;
-    
     private EventService eventService = null;
     private static final Class[] requiredServices = {
         EventService.class
     };
     private DiagnosisTechSpecService diagnosisTSService = null;
-
+    private ActionTechSpecService actionTSService = null;
 
 
     /**
@@ -445,19 +496,36 @@ public class BelievabilityPlugin
 
     // Method to read in the sensor types. Used during setup.
     // Throws BelievabilityException if it has a problem finding the techspecs
-    private void readInSensorTypeInformation() throws BelievabilityException {
-	logger.debug("About to enter sensor tech spec read loop " );
-
-	// Get all of the sensor tech specs from the service.
+    private void readInTechSpecInformation() throws BelievabilityException {
+	// Get all of the sensor tech specs from the diagnosis tech spec
+	// service.
 	Iterator ts_enum = 
 	    diagnosisTSService.getAllDiagnosisTechSpecs().iterator();
 	while ( ts_enum.hasNext() ) {
 	    DiagnosisTechSpecInterface dtsi = 
 		(DiagnosisTechSpecInterface) ts_enum.next();
 
-	    logger.debug("plugin adding a sensor tech spec " );
+	    if ( logger.isDebugEnabled() )
+		logger.debug("plugin adding sensor tech spec for sensor "
+			     + dtsi.getName()
+			     + " on asset type " + dtsi.getAssetType() );
 	    _model_manager.addSensorType( dtsi );
 	}
+
+	// Get all of the actuator tech specs from the action tech spec 
+	// service.
+	//FIX	Iterator ts_enum = 
+	//	    actionTSService.getAllDiagnosisTechSpecs().iterator();
+	//	while ( ts_enum.hasNext() ) {
+	//	    ActionTechSpecInterface atsi = 
+	//		(ActionTechSpecInterface) ts_enum.next();
+	//
+	//	    if ( logger.isDebugEnabled() ) 
+	//		logger.debug("plugin adding actuator tech spec for action type  "
+	//			     + atsi.getActionType()
+	//			     + " on asset type " + atsi.getAssetType() );
+	//	    _model_manager.addActuatorType( atsi );
+	//	}
     }
 
 
@@ -474,5 +542,8 @@ public class BelievabilityPlugin
 
     // This is the asset index for the AssetModels. It is indexed by AssetID
     private DiagnosisConsumer _diagnosis_consumer = null;
+
+    // Vector of things waiting to be published to the blackboard
+    private Vector _publication_list = new Vector();
 
 }  // class BelievabilityPlugin

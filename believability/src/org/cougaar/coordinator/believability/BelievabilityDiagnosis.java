@@ -37,26 +37,28 @@ import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
  * related to the diagosis.
  * @author Misty Nodine
  */
-public class BelievabilityDiagnosis extends Loggable {
+public class BelievabilityDiagnosis extends BeliefUpdateTrigger
+{
 
     /**
      * Constructor, from a diagnosis on the blackboard
      * @param diag The diagnosis from the blackboard
      **/
     public BelievabilityDiagnosis( Diagnosis diag ) {
-     
-	_blackboard_diagnosis = diag;
 
-	// Copy relevant information from the diagnosis, as it may change
-	_diagnosis_value = (String) _blackboard_diagnosis.getValue();
-	_diagnosis_TS = _blackboard_diagnosis.getTechSpec();
+        super( DiagnosisUtils.getAssetID( diag ),
+               DiagnosisUtils.getAssetType( diag ));
 
-	_last_asserted_timestamp = 
-	    _blackboard_diagnosis.getLastAssertedTimestamp();
-        _last_changed_timestamp =
-	    _blackboard_diagnosis.getLastChangedTimestamp();
-        _asset_id = DiagnosisUtils.getAssetID( _blackboard_diagnosis );
-        _asset_type = DiagnosisUtils.getAssetType( _blackboard_diagnosis );
+     _blackboard_diagnosis = diag;
+
+     // Copy relevant information from the diagnosis, as it may change
+     _diagnosis_value = (String) _blackboard_diagnosis.getValue();
+     _diagnosis_TS = _blackboard_diagnosis.getTechSpec();
+
+     _last_asserted_timestamp = 
+         _blackboard_diagnosis.getLastAssertedTimestamp();
+     _last_changed_timestamp =
+         _blackboard_diagnosis.getLastChangedTimestamp();
     }
 
 
@@ -71,15 +73,17 @@ public class BelievabilityDiagnosis extends Loggable {
      * Return the tech spec for the diagnosis, as published by the sensor
      * @return the diagnosis tech spec
      **/
-    public DiagnosisTechSpecInterface 
-            getDiagnosisTechSpec() { return _diagnosis_TS; }
+    public DiagnosisTechSpecInterface getDiagnosisTechSpec() {
+	return _diagnosis_TS; 
+    }
+
 
     /**
      * Return the last time the sensor asserted a value
      * @return the timestamp
      **/
     public long getLastAssertedTimestamp() { 
-     return _last_asserted_timestamp; 
+	return _last_asserted_timestamp; 
     }
 
 
@@ -88,26 +92,26 @@ public class BelievabilityDiagnosis extends Loggable {
      * the previous value
      * @return the timestamp
      **/
-    public long getLastChangedTimestamp() { 
+    long getTriggerTimestamp() { 
      return _last_changed_timestamp; 
     }
 
+    /**
+     * This routine should return the asset statew dimension name that
+     * this trigger pertains to.
+     */
+    String getStateDimensionName()
+    {
+        return getDiagnosisTechSpec().getStateDimension().getStateName();
+
+    } // method getStateDimensionName
 
     /**
-     * Return the identifier of the affected asset
-     * @return the AssetID for the affected asset
+     * Return the name of the sensor that made this diagnosis
+     * @return 
      **/
-    public AssetID getAssetID() { 
-     return _asset_id; 
-    }
-
-
-    /**
-     * Return the type of the affected asset
-     * @return the AssetType of the affected asset
-     **/
-    public AssetType getAssetType() { 
-     return _asset_type; 
+    public String getSensorName() { 
+     return _diagnosis_TS.getName(); 
     }
 
 
@@ -117,7 +121,7 @@ public class BelievabilityDiagnosis extends Loggable {
     public String toString() {
      StringBuffer sb = new StringBuffer();
      sb.append( "BelievabilityDiagnosis: asset " );
-     sb.append( _asset_id.toString() );
+     sb.append( this.getAssetID().toString() );
      sb.append( " asserted diagnosis " );
      sb.append( _diagnosis_value );
      sb.append( " at time " + _last_asserted_timestamp );
@@ -144,12 +148,6 @@ public class BelievabilityDiagnosis extends Loggable {
     // The last time the sensor asserted a value that was different from
     // the previous value
     private long _last_changed_timestamp;
-
-    // The AssetID of the affected asset
-    private AssetID _asset_id;
-
-    // The type of the affected asset
-    private AssetType _asset_type;
 
 } // class BelievabilityDiagnosis
 

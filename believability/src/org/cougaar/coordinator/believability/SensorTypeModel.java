@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/SensorTypeModel.java,v $
- * $Revision: 1.4 $
- * $Date: 2004-05-28 20:56:43 $
+ * $Revision: 1.5 $
+ * $Date: 2004-06-09 17:32:49 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -37,7 +37,7 @@ import org.cougaar.core.util.UID;
  * needs concerning a SensorType (from the tech specs). 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.4 $Date: 2004-05-28 20:56:43 $
+ * @version $Revision: 1.5 $Date: 2004-06-09 17:32:49 $
  *
  */
 class SensorTypeModel extends Model
@@ -63,51 +63,14 @@ class SensorTypeModel extends Model
      * this sensor will be sensing.
      */
     SensorTypeModel( DiagnosisTechSpecInterface diag_ts,
-                     AssetTypeModel asset_type_model )
+                     AssetTypeDimensionModel asset_dim_modell )
             throws BelievabilityException
     {
-        updateContents( diag_ts, asset_type_model );
+        setContents( diag_ts, asset_dim_modell );
         
-        // If all goes well, add this sensory model to the asset type
-        // model, since there is a close relationship between them
-        // (state dependencies).  The asset type model will be an
-        // observer of this model.
-        //
-        _asset_type_model.addSensorTypeModel( this );
+        this.setValidity( true );
 
     }  // constructor SensorTypeModel
-
-    //************************************************************
-    /**
-     * Resets this objects internal values to be those form the given
-     * sensor info.
-     *
-     * @param diag_ts The diagnosis tech spec from which we get sensor
-     * information 
-     * @param asset_type_model The asset type model for the asset that
-     * this sensor will be sensing.
-     */
-    void updateContents( DiagnosisTechSpecInterface diag_ts,
-                         AssetTypeModel asset_type_model )
-            throws BelievabilityException
-    {
-        try
-        {
-            setContents( diag_ts, asset_type_model );
-        }
-
-        // Whether or not an exception is thrown, we want to notify
-        // the observers that we have changed.  If we atempt to update
-        // the contents and fail, then the model will be in an invalid
-        // state so we need to notify the obvservers of this.
-        //
-        finally
-        {
-            setChanged();
-            notifyObservers();
-        }
-        
-    } // method updateContents
 
     //************************************************************
     /**
@@ -115,7 +78,15 @@ class SensorTypeModel extends Model
      *
      * @return the name of the sensor
      **/
-    String getName() { return _diag_ts.getName(); }
+    String getName() { return _name; }
+
+    //************************************************************
+    /**
+     * Get the name of the state dimension this sensor monitors
+     *
+     * @return the name of the state dimension
+     **/
+    String getStateDimName() { return _state_dim_name; }
 
     //************************************************************
     /**
@@ -163,6 +134,18 @@ class SensorTypeModel extends Model
 
     //************************************************************
     /**
+     * Return the conditional probabilities associated with this
+     * sensor.
+     *
+     */
+    double[][] getObservationProbabilityArray( )
+    {
+        return _obs_prob;
+
+    } // method getObservationProbabilityArray
+
+    //************************************************************
+    /**
      * Convert this model to a string.
      *
      */
@@ -173,7 +156,6 @@ class SensorTypeModel extends Model
         buff.append( "\tSensor Type Name: " + _name + "\n" );
         buff.append( "\tSensor UID: " + _uid  + "\n");
         buff.append( "\tSensor Latency: " + _latency  + "\n");
-        buff.append( "\tAsset Type: " + _asset_type_model.getName()  + "\n");
         buff.append( "\tState Dimension: " + _state_dim_name  + "\n");
 
         buff.append( "\tPossible values [" );
@@ -184,15 +166,14 @@ class SensorTypeModel extends Model
         buff.append( " ]\n" );
 
         for ( int state_idx = 0; 
-              state_idx < _asset_type_model.getNumStateDimValues
-                      ( _state_dim_name ); 
+              state_idx < _asset_dim_model.getNumStateDimValues();
               state_idx++ )
         {
             for ( int obs_idx = 0; obs_idx <  _obs_names.length; obs_idx++ )
             {
 
-                String actual_state = _asset_type_model.getStateDimValueName
-                        ( _state_dim_name, state_idx );
+                String actual_state = _asset_dim_model.getStateDimValueName
+                        ( state_idx );
                 
                 buff.append( "\t\tP( " + _obs_names[obs_idx]
                              + " | " + actual_state
@@ -206,52 +187,13 @@ class SensorTypeModel extends Model
     } // method toString
 
     //------------------------------------------------------------
-    // protected interface
-    //------------------------------------------------------------
-
-    //**************************************************************
-    /** 
-     * This checks to see whether or not the sensor type model is
-     * still consistent with the AssetTypeModel in terms of the
-     * presenbce of the state dimension andthe number of sate values
-     * it can take.
-     * 
-     * @return If the sensor type model is still consistent with the
-     * asset type model, then true is returned. Otherwise, this object
-     * is set to be invalid and false is returned.
-     */
-    protected boolean isStillConsistent( ) 
-    {
-        // The only thing we care about here is whether this state
-        // dimension exists, and has the same number of possible
-        // values.  We ignore name changes and other properties that
-        // do not impact this sensor model.
-        //
-        
-        if ( ! _asset_type_model.isValidStateDimName( _state_dim_name ))
-        {
-            setValidity( false );
-            return false;
-        }
-
-        if ( _obs_prob[0].length 
-             != _asset_type_model.getNumStateDimValues( _state_dim_name ))
-        {
-            setValidity( false );
-            return false;
-        }
-
-        return true;
-    } // update
-
-    //------------------------------------------------------------
     // private interface
     //------------------------------------------------------------
 
     // Original handles to sources of model information.
     //
     private DiagnosisTechSpecInterface _diag_ts;
-    private AssetTypeModel _asset_type_model;
+    private AssetTypeDimensionModel _asset_dim_model;
 
     // These are all the attributes we need for an aset model.
     //
@@ -270,11 +212,11 @@ class SensorTypeModel extends Model
      * @param asset_type The source of information for this model
      */
     private void setContents( DiagnosisTechSpecInterface diag_ts,
-                              AssetTypeModel asset_type_model )
+                              AssetTypeDimensionModel asset_dim_model )
             throws BelievabilityException
     {
         if (( diag_ts == null )
-            || ( asset_type_model == null ))
+            || ( asset_dim_model == null ))
             throw new BelievabilityException
                     ( "SensorTypeModel.setContents()",
                       "NULL parameter(s) sent in." );
@@ -286,18 +228,13 @@ class SensorTypeModel extends Model
         setValidity( false );
 
         this._diag_ts = diag_ts;
-        this._asset_type_model = asset_type_model;
+        this._asset_dim_model = asset_dim_model;
 
         _name = diag_ts.getName();
         _uid = diag_ts.getUID();
         _latency = diag_ts.getLatency();
-        _state_dim_name = diag_ts.getStateDimension().getStateName();
+        _state_dim_name = asset_dim_model.getStateDimensionName();
 
-        if ( ! asset_type_model.isValidStateDimName( _state_dim_name ))
-            throw new BelievabilityException
-                    ( "SensorTypeModel.setContents(" + _name + ")",
-                      "Sensor state dimension doesn't match asset:"
-                      + _state_dim_name );
 
         Set obs_set = diag_ts.getPossibleValues();
 
@@ -322,7 +259,7 @@ class SensorTypeModel extends Model
         } // while name_iter
 
         int num_state_values 
-                = asset_type_model.getNumStateDimValues( _state_dim_name );
+                = asset_dim_model.getNumStateDimValues( );
 
         _obs_prob = new double[obs_set.size()][num_state_values];
 
@@ -353,8 +290,7 @@ class SensorTypeModel extends Model
             String actual_state = obs_prob.getActualState().getName();
 
             int state_idx
-                    = asset_type_model.getStateDimValueIndex( _state_dim_name,
-                                                              actual_state );
+                    = asset_dim_model.getStateDimValueIndex( actual_state );
 
             if ( state_idx < 0 )
                 throw new BelievabilityException
@@ -410,11 +346,6 @@ class SensorTypeModel extends Model
                           + _state_dim_name + ":" + actual_state );
 
         } // while diag_prob_iter
-
-        // Only at this point do we know that we have successfully set
-        // all the values.
-        //
-        setValidity( true );
 
     } // method setContents
 

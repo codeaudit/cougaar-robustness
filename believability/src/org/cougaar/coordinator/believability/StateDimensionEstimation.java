@@ -36,9 +36,7 @@ import org.cougaar.coordinator.techspec.AssetID;
  * This class represents the belief state along a single state dimension
  * of an asset.
  **/
-public class StateDimensionEstimation 
-        extends Object
-{
+public class StateDimensionEstimation extends Loggable {
 
     //------------------------------------------------------------
     // public interface
@@ -131,21 +129,11 @@ public class StateDimensionEstimation
     public String toString() {
         StringBuffer buff = new StringBuffer();
         
-     //        buff.append( _asset_id.toString() 
-     //                     + " : " + _state_dimension_name
-     //                     + " : [" );
-     //
-     //        Enumeration key_enum = getStateNames();
-     //
-     //   while ( key_enum.hasMoreElements()) {
-     //       String state = (String) key_enum.nextElement();
-     //       buff.append( " " + state + ":" + getProbability( state ) );
-     //   }
-     //   
-     //        buff.append( " ]" );
-        
-        return buff.toString();
+        buff.append( "StateDimensionEstimation for asset " );
+	buff.append( _asset_id.toString() + ":" );
+        buff.append( _belief_state_dimension.toString() );
 
+        return buff.toString();
     } // method toString
 
 

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManager.java,v $
- * $Revision: 1.2 $
- * $Date: 2004-05-28 20:01:17 $
+ * $Revision: 1.3 $
+ * $Date: 2004-06-09 17:32:49 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
 
+import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.techspec.ActionTechSpecInterface;
 import org.cougaar.coordinator.techspec.AssetState;
 import org.cougaar.coordinator.techspec.AssetStateDimension;
@@ -37,6 +38,7 @@ import org.cougaar.coordinator.techspec.DiagnosisProbability.DiagnoseAs;
 import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
 import org.cougaar.coordinator.techspec.EventDescription;
 import org.cougaar.coordinator.techspec.ThreatDescription;
+import org.cougaar.coordinator.techspec.ThreatModelChangeEvent;
 import org.cougaar.coordinator.techspec.ThreatModelInterface;
 
 import org.cougaar.util.log.Logging;
@@ -48,7 +50,7 @@ import org.cougaar.util.log.Logger;
  * and provides information via the ModelManagerInterface. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.2 $Date: 2004-05-28 20:01:17 $
+ * @version $Revision: 1.3 $Date: 2004-06-09 17:32:49 $
  *
  */
 public class ModelManager extends Loggable
@@ -219,6 +221,12 @@ public class ModelManager extends Loggable
     {
         logDebug( "Starting call to: addSensorType()" );
 
+        if ( diag_ts == null )
+        {
+            logError( "NULL found for DiagnosisTechSpecInterface.");
+            return;
+        }
+
         // DO not make the assumption that the asset type model exists
         // for this sensor.  Try to add and/or fetch the model first.
         //
@@ -230,28 +238,11 @@ public class ModelManager extends Loggable
 
         logDebug( "==== Add Sensor Type ====" );
         
-        if ( diag_ts == null )
-        {
-            logError( "NULL found for DiagnosisTechSpecInterface.");
-            return;
-        }
-
-        SensorTypeModel s_model 
-                = _sensor_type_container.get( diag_ts.getName() );
-        
-        if ( s_model != null )
-        {
-            logError( "Trying to add duplicate SensorTypeModel: "
-                      +  diag_ts.getName() );
-            return;
-        }
-
         try
         {
-            s_model = new SensorTypeModel( diag_ts,
-                                           asset_type_model );
             
-            _sensor_type_container.add( s_model );
+            SensorTypeModel s_model 
+                    = asset_type_model.addSensorTypeModel( diag_ts );
             
             logDebug( "Added New SensorTypeModel:\n" 
                       + s_model.toString() );
@@ -272,55 +263,19 @@ public class ModelManager extends Loggable
      *
      * @param threat_model Threat type to be added
      */
-    public void addThreatType( ThreatModelInterface threat_ts )
+    public void addThreatType( ThreatModelInterface threat_model )
     {
         logDebug( "addThreatType() called" );
 
-        if ( threat_ts == null )
+        if ( threat_model == null )
         {
             logError( "addThreatType() sent NULL ThreatModelInterface. " );
             return;
         }
 
-        createThreatTypeModel( threat_ts.getThreatDescription() );
+        addThreatVariation( threat_model );
 
     } // method addThreatModel
-
-    //************************************************************
-    /**
-     * Adding a new threat description to the local models
-     *
-     * @param threat_desc Threat description to be added
-     */
-    public void addThreatDescription( ThreatDescription threat_desc )
-    {
-        logDebug( "addThreatDescription() called" );
-
-        if ( threat_desc == null )
-        {
-            logError( "addThreatDescription() sent NULL ThreatDescription. " );
-            return;
-        }
-
-        if ( CREATE_THREAT_MODEL_FROM_DESCRIPTIONS )
-            createThreatTypeModel( threat_desc );
-
-    } // method addThreatDescription
-
-    //************************************************************
-    /**
-     * Adding a new event description to the local models
-     *
-     * @deprecated We can now get at the EventDesciptions directly 
-     * from the ThreatDescriptions, so this is no longer needed and
-     * actually does nothing. 
-     * @param event_desc Event description to be added
-     */
-    public void addEventDescription( EventDescription event_desc )
-    {
-        // Deprecated: do nothing now.
-
-    } // method addEventDescription
 
     //************************************************************
     /**
@@ -330,9 +285,40 @@ public class ModelManager extends Loggable
      */
     public void addActuatorType( ActionTechSpecInterface actuator_ts )
     {
-        logDebug( "==== Add Actuator Type ====" );
+        logDebug( "Starting call to: addActuatorType()" );
 
-        logDebug( "** NOT IMPLEMENTED ** addActuatorType()" );
+        if ( actuator_ts == null )
+        {
+            logError( "NULL found for ActionTechSpecInterface.");
+            return;
+        }
+
+        // DO not make the assumption that the asset type model exists
+        // for this actuator.  Try to add and/or fetch the model first.
+        //
+        AssetType asset_type = actuator_ts.getAssetType();
+        AssetTypeModel asset_type_model = addAssetType( asset_type );
+
+        if ( asset_type_model == null )
+            return;
+
+        logDebug( "==== Add Actuator Type ====" );
+        
+        try
+        {
+            
+            ActuatorTypeModel a_model
+                    = asset_type_model.addActuatorTypeModel( actuator_ts );
+            
+            logDebug( "Added New ActuatorTypeModel:\n" 
+                      + a_model.toString() );
+                
+        }
+        catch (BelievabilityException be)
+        {
+            logError( "Cannot ActuatorTypeModel " + be.getMessage() );
+            return;
+        }
 
     } // method addActuatorType
 
@@ -365,31 +351,6 @@ public class ModelManager extends Loggable
 
         logDebug( "** NOT IMPLEMENTED ** updateThreatType()" );
     } // method updateThreatType
-
-    //************************************************************
-    /**
-     * docs here...
-     */
-    public void updateThreatDescription( ThreatDescription threat_ts )
-    {
-        logDebug( "==== Update Threat Description ====" );
-
-        logDebug( "** NOT IMPLEMENTED ** updateThreatDescription()" );
-    } // method updateThreatDescription
-
-    //************************************************************
-    /**
-     * Updating a new event description in the local models
-     *
-     * @deprecated We can now get at the EventDesciptions directly 
-     * from the ThreatDescriptions, so this is no longer needed and
-     * actually does nothing. 
-     * @param event_desc Event description to be added
-     */
-    public void updateEventDescription( EventDescription event_desc )
-    {
-        // Deprecated.
-    } // method updateEventDescription
 
     //************************************************************
     /**
@@ -438,37 +399,94 @@ public class ModelManager extends Loggable
     /**
      * docs here...
      */
-    public void removeThreatDescription( ThreatDescription threat_ts )
-    {
-        logDebug( "==== Remove Threat Description ====" );
-
-        logDebug( "** NOT IMPLEMENTED ** removeThreatDescription()" );
-    } // method removeThreatDescription
-
-    //************************************************************
-    /**
-     * Removing a new event description from the local models
-     *
-     * @deprecated We can now get at the EventDesciptions directly 
-     * from the ThreatDescriptions, so this is no longer needed and
-     * actually does nothing. 
-     * @param event_desc Event description to be added
-     */
-    public void removeEventDescription( EventDescription event_desc )
-    {
-        // Deprecated
-    } // method removeEventDescription
-
-    //************************************************************
-    /**
-     * docs here...
-     */
     public void removeActuatorType( ActionTechSpecInterface actuator_ts )
     {
         logDebug( "==== Remove Actuator Type ====" );
 
         logDebug( "** NOT IMPLEMENTED ** removeActuatorType()" );
     } // method removeActuatorType
+
+    //************************************************************
+    /**
+     * Handle the situation where a threat model has changed the set
+     * of assets it pertains to.  This could be the addition and/or
+     * removal of assets.
+     * @param tm_change The object that defines the nature of the
+     * threat change
+     */
+    public void handleThreatModelChange( ThreatModelChangeEvent tm_change )
+    {
+        // We just relay the change to the appropriate AssetTypeModel
+        // objects for each of the affected assets.
+        //
+
+        logDebug( "==== Handle Threat Model Change ====" );
+
+        ThreatModelInterface threat_model = tm_change.getThreatModel();
+
+        // This is a list of AssetTechSpecInterface objects
+        Vector asset_list = tm_change.getAddedAssets();
+        Enumeration enum = asset_list.elements();
+        while ( enum.hasMoreElements() )
+        { 
+            AssetTechSpecInterface asset_ts
+                    = (AssetTechSpecInterface) enum.nextElement();
+
+            AssetID asset_id = asset_ts.getAssetID();
+
+            AssetTypeModel at_model
+                    = getAssetTypeModel( asset_ts.getAssetType() );
+
+             try
+            {
+                at_model.handleThreatModelChange
+                    ( threat_model, 
+                      asset_id,
+                      AssetTypeModel.THREAT_CHANGE_ADD );
+            }
+            catch (BelievabilityException be)
+            {
+                logError( "Problem adding threat applicability for: "
+                          + asset_id.getName() );
+            }
+
+        } // while asset list of added assets
+
+        // Repeat sam logic as above, but this time for removed
+        // assets.
+
+        asset_list = tm_change.getRemovedAssets();
+        enum = asset_list.elements();
+        while ( enum.hasMoreElements() )
+        { 
+            AssetTechSpecInterface asset_ts
+                    = (AssetTechSpecInterface) enum.nextElement();
+
+            AssetID asset_id = asset_ts.getAssetID();
+
+            AssetTypeModel at_model
+                    = getAssetTypeModel( asset_ts.getAssetType() );
+
+            try
+            {
+                at_model.handleThreatModelChange
+                    ( threat_model, 
+                      asset_id,
+                      AssetTypeModel.THREAT_CHANGE_REMOVE );
+            }
+            catch (BelievabilityException be)
+            {
+                logError( "Problem removing threat applicability for: "
+                          + asset_id.getName() );
+            }
+
+        } // while asset list of removed assets
+
+        asset_list = tm_change.getRemovedAssets();
+
+    } // method handleThreatModelChange
+
+
 
     //************************************************************
     /**
@@ -482,18 +500,6 @@ public class ModelManager extends Loggable
 
     } // method getAssetTypeModel
 
-    //************************************************************
-    /**
-     * For retrieving an SensorTypeModel.
-     *
-     * @param diag_ts Source for the sensor information
-     */
-    public SensorTypeModel getSensorTypeModel
-            ( DiagnosisTechSpecInterface diag_ts )
-    {
-        return _sensor_type_container.get( diag_ts.getName() );
-
-    } // method getSensorTypeModel
 
     //------------------------------------------------------------
     // protected interface
@@ -581,77 +587,67 @@ public class ModelManager extends Loggable
     // private interface
     //------------------------------------------------------------
 
-    // This is a flag to control whether or not we should create the
-    // local threat models from threat descriptions.  If true, then
-    // the instant we see a matching threat and event desciption pair,
-    // we will create the local ThreatTypeModel.  If false, then we
-    // will only create the local model when a ThreatModelInterface
-    // object is added.
-    //
-    private static final boolean CREATE_THREAT_MODEL_FROM_DESCRIPTIONS = true;
-
     // These are the local models this class manages.
     //
     private AssetTypeContainer _asset_type_container = new AssetTypeContainer();
-    private SensorTypeContainer _sensor_type_container = new SensorTypeContainer();
-    private ThreatTypeContainer _threat_type_container = new ThreatTypeContainer();
     private MAUWeightModel _mau_weight_model = new MAUWeightModel();
     
     private POMDPModelManager _pomdp_manager = new POMDPModelManager(this);
 
     //************************************************************
     /**
-     * Creates a new threat model from a threat description, which
-     * must have a valid event description contined in it.
+     * Creates a new threat variation model from a threat description,
+     * which must have a valid event description contined in it.
      *
      * @param threat_desc The threat description to add.
      */
-    private void createThreatTypeModel( ThreatDescription threat_desc )
+    private void addThreatVariation( ThreatModelInterface threat_mi )
     {
-        // Method implementation comments go here ...
-        logDebug( "Starting call to: createThreatTypeModel()" );
+        // Important note: There may be many ThreatModelInterface
+        // objects with the same name published.  Each will have a
+        // different filter for the vulerable assets that the threat
+        // is defining.  Locally in the believability package, we only
+        // keep one ThreatRootModel for a given threat name, but many
+        // ThreatVariationModels for each. We also keep the mapping
+        // from AssetID to the threat models based on the vulerability
+        // filter, but that is handled by the asset type model for the
+        // initial creation and elsewhere for the dynamically changing
+        // membership of which threats affect which assets.
+        //
+
+        logDebug( "Starting call to: addThreatVariation()" );
 
         // Do not make the assumption that the asset type model
         // exists.  First attempt to add, or simply retrieve the asset
         // model.  
         //
-        AssetType asset_type = threat_desc.getAffectedAssetType();
+        AssetType asset_type 
+                = threat_mi.getThreatDescription().getAffectedAssetType();
         AssetTypeModel asset_type_model = addAssetType( asset_type );
 
         if ( asset_type_model == null )
             return;
 
-        logDebug( "==== Add Threat Type ====" );
-
-       ThreatTypeModel threat_model
-               = _threat_type_container.get( threat_desc.getName() );
-        
-        if ( threat_model != null )
-        {
-            logError( "Trying to add duplicate ThreatModel: " 
-                      + threat_desc.getName() );
-            return;
-        }
+        logDebug( "==== Add Threat Variation ====" );
 
         try
         {
-            threat_model = new ThreatTypeModel( threat_desc, 
-                                                asset_type_model );
+            ThreatVariationModel threat_var
+                    = asset_type_model.addThreatVariationModel( threat_mi );
             
-            _threat_type_container.add( threat_model );
-
-            logDebug( "Added New ThreatTypeModel:\n"
-                      + threat_model.toString() );
+            logDebug( "Added New ThreatVariationModel:\n"
+                      + threat_var.getName() );
             
         }
         catch (BelievabilityException be)
         {
-            logError( "Cannot add ThreatTypeModel "
-                      + threat_desc.getName() + ": " + be.getMessage() );
+            logError( "Cannot add ThreatModelInterface "
+                      + threat_mi.getName() + ": " 
+                      + be.getMessage() );
             return;
         }
 
-    } // method createThreatTypeModel
+    } // method addThreatVariation
 
     //------------------------------------------------------------
     // Test code section

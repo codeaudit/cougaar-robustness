@@ -35,7 +35,8 @@ import java.util.Hashtable;
  * There is one AssetContainer for the whole believability plugin.
  * @author Misty Nodine
  */
-public class AssetContainer extends Hashtable {
+public class AssetContainer extends Hashtable 
+{
 
     //------------------------------------------------------------
     // public interface

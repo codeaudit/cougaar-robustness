@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetModel.java,v $
- * $Revision: 1.2 $
- * $Date: 2004-05-28 20:01:17 $
+ * $Revision: 1.3 $
+ * $Date: 2004-06-09 17:32:49 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.2 $Date: 2004-05-28 20:01:17 $
+ * @version $Revision: 1.3 $Date: 2004-06-09 17:32:49 $
  *
  */
 class POMDPAssetModel extends Model
@@ -83,8 +83,8 @@ class POMDPAssetModel extends Model
             // accessing the sensor models as needed.
             //
             _dimension_pomdp_model[dim_idx]
-                    = new POMDPAssetDimensionModel( at_model,
-                                                    dim_idx );
+                   = new POMDPAssetDimensionModel
+                    ( at_model.getAssetTypeDimensionModel( dim_idx) );
         } // for dim_idx
 
         // This just gathers all the individual state dimension
@@ -174,7 +174,7 @@ class POMDPAssetModel extends Model
      *
      */
     BeliefState updateBeliefState( BeliefState start_belief, 
-                                   long time )
+                                   long end_time )
             throws BelievabilityException
     {
         if ( start_belief == null )
@@ -187,17 +187,15 @@ class POMDPAssetModel extends Model
         // Set this to null to indicate that no diagnosis was
         // responsible for this update.
         //
-        next_belief.setDiagnosis( null );
+        next_belief.setUpdateTrigger( null );
 
-        // FIXME: I do not think this is the right value to set here.
-        // 
-        next_belief.setTimestamp( time );
+        next_belief.setTimestamp( end_time );
 
-        // FIXME: verify that this is the corect changhe in time.  In
+        // FIXME: verify that this is the corect change in time.  In
         // particular, make sure it does not need to be computed on a
         // state dimension by state dimnesion basis.
         //
-        long delta_time = time - start_belief.getTimestamp();
+        long start_time = start_belief.getTimestamp();
 
         // Here we will be updating all the state dimensions.
         //
@@ -220,9 +218,10 @@ class POMDPAssetModel extends Model
                     = next_belief.getBeliefStateDimension( state_dim_name );
 
             // ...then finally we do the belief update proper.
-            pomdp_model_dim.updateBeliefStateTrans( start_belief_dim,
-                                                    delta_time,
-                                                    next_belief_dim );
+            pomdp_model_dim.updateBeliefStateThreatTrans( start_belief_dim,
+                                                          start_time,
+                                                          end_time,
+                                                          next_belief_dim );
 
         } // for dim_idx
 
@@ -241,17 +240,17 @@ class POMDPAssetModel extends Model
      *
      */
     BeliefState updateBeliefState( BeliefState start_belief,
-                                   BelievabilityDiagnosis diagnosis )
+                                   BeliefUpdateTrigger trigger )
             throws BelievabilityException
     {
         if (( start_belief == null )
-            || ( diagnosis == null ))
+            || ( trigger == null ))
             throw new BelievabilityException
                     ( "POMDPModelManager.updateBeliefState()",
                       "NULL parameters(s) passed in." );
         
         // All state dimensions will be updated to the currrent
-        // diagnosis time, factopring in the state transitions due to
+        // diagnosis time, factoring in the state transitions due to
         // threats.  We do all this first, and then we will go back
         // and factor in the observation from the diagfnosis for the
         // lone state dimension that the diagnosis pertains to.
@@ -263,23 +262,23 @@ class POMDPAssetModel extends Model
 
         // This will create a new belief state with all state
         // dimensions belief adjusted for the passage of time (state
-        // transitions).
+        // transitions based on threats).
         //
         // FIXME: Is this the right timestamp to use?
         //
         BeliefState next_belief 
                 = updateBeliefState( start_belief,
-                                     diagnosis.getLastAssertedTimestamp() );
+                                     trigger.getTriggerTimestamp() );
 
-        // Now we go and do the single state dimension updtae to
-        // factro in the observation/diagnosis.
+        // Now we go and do the single state dimension update to
+        // factor in the observation/diagnosis.
         //
-        next_belief.setDiagnosis( diagnosis );
+        next_belief.setUpdateTrigger( trigger );
 
         // Next we need to find the state dimension that this diagnosis
         // is relevanmt to.
-        DiagnosisTechSpecInterface diag_ts = diagnosis.getDiagnosisTechSpec();
-        String state_dim_name = diag_ts.getStateDimension().getStateName();
+        //
+        String state_dim_name = trigger.getStateDimensionName();
 
         // First, fetch the appropriate POMDP model for this dimension...
         POMDPAssetDimensionModel pomdp_model_dim
@@ -293,10 +292,13 @@ class POMDPAssetModel extends Model
         BeliefStateDimension next_belief_dim
                 = next_belief.getBeliefStateDimension( state_dim_name );
 
-        // ...then finally we do the belief update proper.
-        pomdp_model_dim.updateBeliefStateObs( start_belief_dim,
-                                              diagnosis.getDiagnosisValue(),
-                                              next_belief_dim );
+        // ...then finally we adjust the belief state based on the
+        // diagnosis we received (which is only done for the single
+        // state dimension that the diagnosis pertains to). 
+        //
+        pomdp_model_dim.updateBeliefStateTrigger( start_belief_dim,
+                                                  trigger,
+                                                  next_belief_dim );
 
         return next_belief;
 

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefState.java,v $
- * $Revision: 1.2 $
- * $Date: 2004-05-28 20:01:17 $
+ * $Revision: 1.3 $
+ * $Date: 2004-06-09 17:32:49 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -34,7 +34,7 @@ import org.cougaar.coordinator.techspec.AssetStateDimension;
  * asset instance.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.2 $Date: 2004-05-28 20:01:17 $
+ * @version $Revision: 1.3 $Date: 2004-06-09 17:32:49 $
  * 
  *
  */
@@ -60,7 +60,7 @@ public class BeliefState implements Cloneable
     /**
      * Gets the asset id for which this is the belief for
      */
-    public AssetID getAssetID() { return _id; }
+    public AssetID getAssetID() { return _asset_id; }
 
     //************************************************************
     /**
@@ -70,9 +70,65 @@ public class BeliefState implements Cloneable
 
     //************************************************************
     /**
-     * Gets the last diagnosis that led to this belief state
+     * Simple accessor
+     *
+     * @return the trigger object that resulted in the existence of
+     * this belief state (if any)
      */
-    public BelievabilityDiagnosis getDiagnosis() { return _diagnosis; }
+    public BeliefUpdateTrigger getUpdateTrigger() { return _trigger; }
+
+    //************************************************************
+    /**
+     * Sets the object that resulted in the belief computation.
+     *
+     * @param trigger The triggering event/object (a diagnosis or action)
+     */
+    void setUpdateTrigger( BeliefUpdateTrigger trigger ) 
+    { 
+        _trigger = trigger; 
+    }
+
+    //************************************************************
+    /**
+     * @deprecated Replace with call to 'setUpdateTrigger()'
+     */
+    void setDiagnosis( BelievabilityDiagnosis diag ) 
+    { 
+        _trigger = diag; 
+    }
+
+    //************************************************************
+    /**
+     * Gets the diagnosis that led to this belief state (if any)
+     *
+     * @return The diagnosis value if this belief sttae resuklted from
+     * the arrival of a diagnosis.  Returns null if this belief sttae
+     * resulted from some other triggering event. 
+     */
+    public BelievabilityDiagnosis getDiagnosis()
+    {
+        if ( _trigger instanceof BelievabilityDiagnosis)
+            return (BelievabilityDiagnosis) _trigger;
+        else
+            return null;
+    } // method 
+
+    //************************************************************
+    /**
+     * Gets the action that led to this belief state (if any)
+     *
+     * @return The action value if this belief state resuklted from
+     * the arrival of a action.  Returns null if this belief sttae
+     * resulted from some other triggering event. 
+     */
+    public BelievabilityAction getAction() 
+    {
+        if ( _trigger instanceof BelievabilityAction)
+            return (BelievabilityAction) _trigger;
+        else
+            return null;
+
+    } // method BelievabilityAction
 
     //************************************************************
     /**
@@ -122,9 +178,9 @@ public class BeliefState implements Cloneable
         StringBuffer buff = new StringBuffer();
 
         buff.append( "BeliefState:"
-                     + "\n\tAssetID: " + _id
+                     + "\n\tAssetID: " + _asset_id
                      + "\n\tAssetType: " + _asset_type_model.getName()
-                     + "\n\tDiagnosis: " + _diagnosis
+                     + "\n\tTrigger: " + _trigger
                      + "\n\tTimestamp: " + _timestamp
                      + "\n\tProbabilities: "
                      + "\n" );
@@ -191,15 +247,33 @@ public class BeliefState implements Cloneable
     } // method addBeliefStateDimension
 
     //************************************************************
-    // Simple mutators
-    //
-
-    void setAssetID( AssetID aid ) { _id = aid; }
+    /**
+     * Simple mutators
+     *
+     * @param long timestamp to be set
+     */
     void setTimestamp( long timestamp ) { _timestamp = timestamp; }
-    void setDiagnosis( BelievabilityDiagnosis diagnosis ) 
-    { 
-        _diagnosis = diagnosis; 
-    }
+
+    //************************************************************
+    /**
+     * Sets Asset ID for this belief state
+     *
+     * @param aid The asset id to be set
+     */
+    void setAssetID( AssetID aid ) 
+    {
+        _asset_id = aid; 
+        
+        Enumeration enum = _belief_dimensions.elements();
+        while ( enum.hasMoreElements() )
+        {
+            BeliefStateDimension belief_dim 
+                    = (BeliefStateDimension) enum.nextElement();
+
+            belief_dim.setAssetID( aid );
+        } // while enum
+
+    } // method setAssetID
 
     //------------------------------------------------------------
     // protected interface
@@ -214,8 +288,8 @@ public class BeliefState implements Cloneable
         try
         {
             BeliefState belief = new BeliefState( _asset_type_model );
-            belief._id = _id;
-            belief._diagnosis = _diagnosis;
+            belief._asset_id = _asset_id;
+            belief._trigger = _trigger;
             belief._timestamp = _timestamp;
 
             Enumeration belief_dim_enum = _belief_dimensions.elements();
@@ -243,7 +317,7 @@ public class BeliefState implements Cloneable
     // private interface
     //------------------------------------------------------------
 
-    private AssetID _id;
+    private AssetID _asset_id;
 
     private AssetTypeModel _asset_type_model;
 
@@ -251,7 +325,7 @@ public class BeliefState implements Cloneable
     // state.  If it is null, then that indicates this is the a priori
     // belief for this asset.
     //
-    private BelievabilityDiagnosis _diagnosis;
+    private BeliefUpdateTrigger _trigger;
 
     private long _timestamp;
 

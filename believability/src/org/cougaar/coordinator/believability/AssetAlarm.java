@@ -43,15 +43,13 @@ public class AssetAlarm extends Loggable implements Alarm {
      * @param alarm_period the length of the alarm.
      * @param callback the object to call back to when the alarm expires
      **/
-    public AssetAlarm ( AssetID asset_id, long alarm_period, StateEstimationPublisher callback ) {
-	_asset_id = asset_id;
+    public AssetAlarm ( long alarm_period,
+			CallbackInterface callback ) {
 	_callback = callback;
 	_expired = false;
 	_start_time = System.currentTimeMillis();
 	_expiration_time = _start_time + alarm_period;
 
-	logInfo( "Asset alarm set for asset " + _asset_id.toString() 
-		 + " for time " + _expiration_time );
     }
 
         
@@ -71,8 +69,7 @@ public class AssetAlarm extends Loggable implements Alarm {
 
 	if ( _expired ) return;
 	_expired = true;
-	logInfo( "Alarm expired for: " + _asset_id.toString());
-	_callback.timerCallback( _asset_id, true );
+	_callback.timerCallback( true );
     }
 
 
@@ -100,18 +97,21 @@ public class AssetAlarm extends Loggable implements Alarm {
 
 	// Otherwise cancel everything.
 	_canceled = true;
-	logInfo( "Alarm canceled for: " + _asset_id.toString() );
-
-	_callback.timerCallback( _asset_id, false );
+	_callback.timerCallback( false );
 	return true;
     }
 
  
-    // The asset id for the asset that this alarm is attached to
-    private AssetID _asset_id;
+    /**
+     * Check to see if the alarm has expired.
+     **/
+    public boolean isCanceled () {
+	return _canceled;
+    }
+
 
     // The object to call back to
-    private StateEstimationPublisher _callback;
+    private CallbackInterface _callback;
 
     // The start time of the alarm
     private long _start_time;

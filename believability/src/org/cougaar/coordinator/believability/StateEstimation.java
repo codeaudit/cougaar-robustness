@@ -207,6 +207,16 @@ public class StateEstimation extends Hashtable implements NotPersistable
     }
 
 
+    /**
+     * Return a string representation of the StateEstimation
+     * @ return the string
+     **/
+    public String toString() {
+	return ( "State Estimation for Belief State -- "
+		 + _belief_state.toString() );
+    }
+
+
     //************************************************************
     // Static methods 
     
@@ -216,8 +226,6 @@ public class StateEstimation extends Hashtable implements NotPersistable
                 return false ;
             }
 	};
-
-
 
 
     //************************************************************

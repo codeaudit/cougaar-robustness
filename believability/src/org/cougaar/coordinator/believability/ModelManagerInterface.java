@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManagerInterface.java,v $
- * $Revision: 1.2 $
- * $Date: 2004-05-28 20:01:17 $
+ * $Revision: 1.4 $
+ * $Date: 2004-06-18 00:16:38 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -28,6 +28,7 @@ import org.cougaar.coordinator.techspec.ActionTechSpecInterface;
 import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
 import org.cougaar.coordinator.techspec.EventDescription;
 import org.cougaar.coordinator.techspec.ThreatDescription;
+import org.cougaar.coordinator.techspec.ThreatModelChangeEvent;
 import org.cougaar.coordinator.techspec.ThreatModelInterface;
 
 /**
@@ -37,7 +38,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * tech spec information. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.2 $Date: 2004-05-28 20:01:17 $
+ * @version $Revision: 1.4 $Date: 2004-06-18 00:16:38 $
  *
  */
 public interface ModelManagerInterface
@@ -73,29 +74,22 @@ public interface ModelManagerInterface
 
     public AssetTypeModel getAssetTypeModel( AssetType asset_type );
 
-    public SensorTypeModel getSensorTypeModel
-            ( DiagnosisTechSpecInterface diag_ts );
-
     //----------------------------------------
     // Model mutator methods
     //----------------------------------------
 
     public void addSensorType( DiagnosisTechSpecInterface diag_ts );
     public void addThreatType( ThreatModelInterface threat_model );
-    public void addThreatDescription( ThreatDescription threat_ts );
-    public void addEventDescription( EventDescription event_ts );
     public void addActuatorType( ActionTechSpecInterface actuator_ts );
 
     public void updateSensorType( DiagnosisTechSpecInterface diag_ts );
     public void updateThreatType( ThreatModelInterface threat_model );
-    public void updateThreatDescription( ThreatDescription threat_ts );
-    public void updateEventDescription( EventDescription event_ts );
     public void updateActuatorType( ActionTechSpecInterface actuator_ts );
 
     public void removeSensorType( DiagnosisTechSpecInterface diag_ts );
     public void removeThreatType( ThreatModelInterface threat_model );
-    public void removeThreatDescription( ThreatDescription threat_ts );
-    public void removeEventDescription( EventDescription event_ts );
     public void removeActuatorType( ActionTechSpecInterface actuator_ts );
+
+    public void handleThreatModelChange( ThreatModelChangeEvent tm_change );
 
 } // class ModelManagerInterface

@@ -55,7 +55,7 @@ public interface POMDPModelInterface
      *
      */
     public BeliefState updateBeliefState( BeliefState start_belief,
-                                          BelievabilityDiagnosis diagnosis )
+                                          BeliefUpdateTrigger diagnosis )
             throws BelievabilityException;
 
     /**

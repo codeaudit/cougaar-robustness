@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefStateDimension.java,v $
- * $Revision: 1.2 $
- * $Date: 2004-05-28 20:01:17 $
+ * $Revision: 1.4 $
+ * $Date: 2004-06-18 00:16:38 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -23,6 +23,7 @@ package org.cougaar.coordinator.believability;
 
 import java.util.Vector;
 
+import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.techspec.AssetType;
 import org.cougaar.coordinator.techspec.AssetStateDimension;
 
@@ -32,7 +33,7 @@ import org.cougaar.coordinator.techspec.AssetStateDimension;
  * dimensions. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.2 $Date: 2004-05-28 20:01:17 $
+ * @version $Revision: 1.4 $Date: 2004-06-18 00:16:38 $
  */
 public class BeliefStateDimension
         implements Cloneable
@@ -63,11 +64,19 @@ public class BeliefStateDimension
     public AssetStateDimension getAssetStateDimension()
     {
 
-        AssetType asset_type = _asset_type_model.getAssetType();
-
-        return asset_type.findStateDimension( _state_dim_name );
-
+        return _asset_dim_model.getAssetStateDimension();
     } // method getAssetStateDimension
+
+    //************************************************************
+    /** 
+     * Simple accessor
+     *
+     *  @return the asset ID for this belief sate dimension.
+     */
+    public AssetID getAssetID( )
+    {
+        return _asset_id;
+    } // method getAssetID
 
     //************************************************************
     /**
@@ -85,17 +94,27 @@ public class BeliefStateDimension
                     ( "BeliefStateDimension.getProbability()",
                       "State name is NULL." );
         
-        int val_idx = _asset_type_model.getStateDimValueIndex( _state_dim_name,
-                                                               state_name );
+        int val_idx = _asset_dim_model.getStateDimValueIndex( state_name );
 
         if ( val_idx < 0 )
             throw new BelievabilityException
                     ( "BeliefStateDimension.getProbability()",
-                      "State name not found." );
+                      "State name not found: " +  state_name );
         
         return _belief_probs[val_idx];
 
     } // method getProbability
+
+    //************************************************************
+    /**
+     * Sets Asset ID for this belief state
+     *
+     * @param aid The asset id to be set
+     */
+    void setAssetID( AssetID aid ) 
+    {
+        _asset_id = aid; 
+    } // method setAssetID
 
     //************************************************************
     /**
@@ -118,41 +137,8 @@ public class BeliefStateDimension
     } // method toString
 
     //------------------------------------------------------------
-    // protected interface
+    // package interface
     //------------------------------------------------------------
-
-    //************************************************************
-    /**
-     * Main constructor
-     *
-     * @param at_model The asset type model encompassing the state
-     * dimension for which this is part of the belief state for
-     * @param dim_idx The positional index of the state dimension, in
-     * tersm fo the local internal models.
-     * @param probs The probability vector defining this belief
-     *state. 
-     */
-    protected BeliefStateDimension( AssetTypeModel at_model,
-                                    int dim_idx,
-                                    double[] probs )
-            throws BelievabilityException
-    {
-        if ( at_model == null )
-            throw new BelievabilityException
-                    ( "BeliefStateDimension.BeliefStateDimension()",
-                      "Asset type model param is NULL." );
-
-        _asset_type_model = at_model;
-        _state_dim_name = at_model.getStateDimName( dim_idx );
-
-        if ( _state_dim_name == null )
-            throw new BelievabilityException
-                    ( "BeliefStateDimension.BeliefStateDimension()",
-                      "State dimension name not found." );
-
-        _belief_probs = probs;
-
-    }  // constructor BeliefStateDimension
 
     //************************************************************
     /**
@@ -165,13 +151,14 @@ public class BeliefStateDimension
      * @param probs The probability vector defining this belief
      *state. 
      */
-    protected BeliefStateDimension( AssetTypeModel at_model,
-                                    String state_dim_name,
-                                    double[] probs )
+    BeliefStateDimension( AssetTypeDimensionModel dim_model,
+                          double[] probs,
+                          AssetID asset_id )
             throws BelievabilityException
     {
-        _asset_type_model = at_model;
-        _state_dim_name = state_dim_name;
+        _asset_dim_model = dim_model;
+        _state_dim_name = dim_model.getStateDimensionName( );
+        _asset_id = asset_id;
 
         _belief_probs = new double[probs.length];
         
@@ -184,10 +171,25 @@ public class BeliefStateDimension
     /**
      *  Returns the entire array of belief probabbilities. 
      */
-    protected double[] getProbabilityArray( )
+    double[] getProbabilityArray( )
     {
         return _belief_probs;
     }
+
+    //************************************************************
+    /**
+     *  Returns the entire array of belief probabbilities. 
+     */
+    void setProbabilityArray( double[] probs )
+    {
+        for ( int i = 0; i < _belief_probs.length; i++ )
+            _belief_probs[i] = probs[i];
+
+    }
+
+    //------------------------------------------------------------
+    // protected interface
+    //------------------------------------------------------------
 
     //************************************************************
     /**
@@ -197,9 +199,9 @@ public class BeliefStateDimension
     {
         try
         {
-            return new BeliefStateDimension( _asset_type_model,
-                                             _state_dim_name,
-                                             _belief_probs );
+            return new BeliefStateDimension( _asset_dim_model,
+                                             _belief_probs,
+                                             _asset_id );
         }
         catch (BelievabilityException be)
         {
@@ -212,7 +214,9 @@ public class BeliefStateDimension
     // private interface
     //------------------------------------------------------------
 
-    private AssetTypeModel _asset_type_model;
+    private AssetID _asset_id;
+
+    private AssetTypeDimensionModel _asset_dim_model;
 
     private String _state_dim_name;
 

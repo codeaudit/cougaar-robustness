@@ -43,9 +43,11 @@ public class DiagnosisConsumer extends Loggable
      * @param se_publisher The publisher that will publish any resulting
      *                     StateEstimations
      **/
-    public DiagnosisConsumer( ModelManagerInterface model_manager,
+    public DiagnosisConsumer( BelievabilityPlugin bel_plugin,
+			      ModelManagerInterface model_manager,
 			      StateEstimationPublisher se_publisher ) {
 	// Copy off the parameters
+	_plugin = bel_plugin;
 	_model_manager = model_manager;
 	_se_publisher = se_publisher;
 
@@ -68,6 +70,15 @@ public class DiagnosisConsumer extends Loggable
     } // end consumeDiagnosis
 
 
+    /**
+     * Provide an access to the AssetContainer
+     * @return the Asset Container
+     **/
+    public AssetContainer getAssetContainer() {
+	return _asset_container;
+    }
+
+
     //------------------------------------------------------------
     // private interface
     //------------------------------------------------------------
@@ -86,6 +97,7 @@ public class DiagnosisConsumer extends Loggable
 	    AssetModel am = _asset_container.getAssetModel( bd.getAssetID() );
 	    if ( am == null ) {
 		am = new AssetModel( bd.getAssetID(),
+				     _plugin,
 				     _model_manager, 
 				     _se_publisher );
 		_asset_container.addAssetModel( am );
@@ -103,15 +115,18 @@ public class DiagnosisConsumer extends Loggable
     }
 
 
+    // A handle to the believability plugin
+    private BelievabilityPlugin _plugin;
+
     // The interface to the model manager with all of the modeling
     // information
-    private ModelManagerInterface _model_manager;
+    private ModelManagerInterface _model_manager = null;
 
     // The interface to the publisher of state estimations
-    private StateEstimationPublisher _se_publisher;
+    private StateEstimationPublisher _se_publisher = null;
 
     // The asset container for all of the asset models.
-    private AssetContainer _asset_container;
+    private AssetContainer _asset_container = null;
 
 } // class DiagnosisConsumer
 
