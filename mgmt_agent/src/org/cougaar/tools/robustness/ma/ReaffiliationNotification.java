@@ -27,29 +27,46 @@ import org.cougaar.core.mts.MessageAddress;
 public class ReaffiliationNotification extends DefaultThreatAlert {
 
   private String entityType = "Node";
+  private String oldCommunity;
+  private String newCommunity;
+
   /**
    * Default constructor.
    */
   public ReaffiliationNotification(MessageAddress source,
+                                   String         oldCommunity,
                                    String         newCommunity) {
     super();
     setSource(source);
-    setContent(newCommunity);
+    this.oldCommunity = oldCommunity;
+    this.newCommunity = newCommunity;
   }
 
   public ReaffiliationNotification(MessageAddress source,
+                                   String         oldCommunity,
                                    String         newCommunity,
                                    String         entityType) {
-    this (source, newCommunity);
+    this (source, oldCommunity, newCommunity);
     this.entityType = entityType;
   }
 
-  public String getCommunity() {
-    return (String)getContent();
+  public String getOldCommunity() {
+    return oldCommunity;
+  }
+
+  public String getNewCommunity() {
+    return newCommunity;
   }
 
   public String getEntityType() {
     return entityType;
+  }
+
+  public String toString() {
+    return "ReaffiliationNotification:" +
+           " source=" + getSource() +
+           " oldCommunity=" + oldCommunity +
+           " newCommunity=" + newCommunity;
   }
 
 }

@@ -296,59 +296,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
           newState(agentsOnNode(name), DEAD);
         }
       }
-
-      /*
-      if (isAgent(name) &&
-          isSentinel() &&
-          (getPriorState(name) == DefaultRobustnessController.ACTIVE ||
-          getPriorState(name) < INITIAL || getPriorState(name) == HEALTH_CHECK))
-      {
-        newState(name, DECONFLICT);
-      } else if (isNode(name)) {
-        deadNodes.add(name);
-        if (!useGlobalSolver()) {
-          newState(agentsOnNode(name), DEAD);
-          if (isSentinel()) { removeFromCommunity(name); }
-        } else {
-          if (isLeader(thisAgent)) {
-            if (agentsOnNode(name).size() > 0) {
-              getLayout(new LoadBalancerListener() {
-                public void layoutReady(Map layout) {
-                  if (getState(name) == DEAD) {
-                    if (logger.isInfoEnabled()) {
-                      logger.info("layout from EN4J: " + layout);
-                    }
-                    RestartDestinationLocator.setPreferredRestartLocations(layout);
-                    newState(agentsOnNode(name), DEAD);
-                    if (isSentinel()) {
-                      removeFromCommunity(name);
-                    }
-                  } else { // Abort, node no longer classified as DEAD
-                    deadNodes.remove(name);
-                    if (logger.isInfoEnabled()) {
-                      logger.info("Restart aborted: node=" + name +
-                                  " state=" + stateName(getState(name)));
-                    }
-                  }
-                }
-              });
-            } else {
-              removeFromCommunity(name);
-            }
-          } else {
-            newState(agentsOnNode(name), DEAD);
-          }
-        }
-      } else {
-        if (logger.isWarnEnabled()) {
-          logger.warn("Unexpected transition to DEAD state: agent=" + name +
-                      " priorState=" + stateName(getPriorState(name)));
-        }
-      }*/
-
-      //if (isLocal(name)) {
-      //  stopHeartbeats(name);
-      //}
     }
   }
 
@@ -527,7 +474,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
             excludedNodes.add(curNode);  // agents current node
             destNode =
                 RestartDestinationLocator.getRestartLocation(agentsToRestart[i],
-                getExcludedNodes());
+                excludedNodes);
           }
           restartAgent(agentsToRestart[i], destNode);
         }

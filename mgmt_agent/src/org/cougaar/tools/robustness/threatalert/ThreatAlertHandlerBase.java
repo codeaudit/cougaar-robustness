@@ -165,4 +165,18 @@ public abstract class ThreatAlertHandlerBase implements ThreatAlertListener {
       }
     }
   }
+
+  public void unload() {
+  if (logger != null) {
+    bindingSite.getServiceBroker().releaseService(this, LoggingService.class,
+        logger);
+    logger = null;
+  }
+  if (commSvc != null) {
+    bindingSite.getServiceBroker().releaseService(this, CommunityService.class,
+        commSvc);
+    commSvc = null;
+  }
+}
+
 }

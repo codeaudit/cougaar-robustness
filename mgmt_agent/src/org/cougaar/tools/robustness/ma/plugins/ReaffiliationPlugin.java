@@ -27,15 +27,30 @@ import org.cougaar.core.service.LoggingService;
 public class ReaffiliationPlugin extends ComponentPlugin {
 
   private LoggingService logger;
+  private ReaffiliationNotificationHandler reaffiliationHandler;
 
-  public void setupSubscriptions() {
+  public void load() {
+    super.load();
     logger =
       (LoggingService)getBindingSite().getServiceBroker().getService(this, LoggingService.class, null);
     logger = org.cougaar.core.logging.LoggingServiceWithPrefix.add(logger, agentId + ": ");
     if (logger.isDebugEnabled()) {
       logger.debug("load ReaffiliationNotificationHandler: agentId=" + agentId);
     }
-    new ReaffiliationNotificationHandler(getBindingSite(), agentId, null);
+    reaffiliationHandler = new ReaffiliationNotificationHandler(getBindingSite(), agentId);
+  }
+
+  public void unload() {
+    if (logger != null) {
+      getBindingSite().getServiceBroker().releaseService(this, LoggingService.class, logger);
+      logger = null;
+    }
+    if (reaffiliationHandler != null) {
+      reaffiliationHandler.unload();
+    }
+  }
+
+  public void setupSubscriptions() {
   }
 
   public void execute() {

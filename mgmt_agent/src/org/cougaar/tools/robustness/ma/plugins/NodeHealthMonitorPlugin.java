@@ -230,7 +230,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
     updateInterval = Long.parseLong(updateIntervalStr);
     wakeAlarm = new WakeAlarm(now() + updateInterval);
     alarmService.addRealTimeAlarm(wakeAlarm);
-    new ReaffiliationNotificationHandler(getBindingSite(), agentId, null);
+    new ReaffiliationNotificationHandler(getBindingSite(), agentId);
   }
 
   /**

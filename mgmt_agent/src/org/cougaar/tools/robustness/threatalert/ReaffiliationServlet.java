@@ -134,22 +134,26 @@ public class ReaffiliationServlet extends BaseServletComponent implements Blackb
       };
       // visit the URL parameters
       ServletUtil.parseParams(vis, request);
-      if (props.containsKey("community") && props.containsKey("target")) {
-        doReaffiliation(props.getProperty("community"),
+      if (props.containsKey("old") &&
+          props.containsKey("new") &&
+          props.containsKey("target")) {
+        doReaffiliation(props.getProperty("old"),
+                        props.getProperty("new"),
                         props.getProperty("target"));
       } else {
         log.warn("Incomplete arguments: args=" + props.keySet());
       }
     }
 
-    public void doReaffiliation(String community, String target) {
+    public void doReaffiliation(String oldComm, String newComm, String target) {
       if (log.isDebugEnabled()) {
         log.debug("doReaffiliation:" +
-                  " community=" + community +
+                  " oldCommunity=" + oldComm +
+                  " newCommunity=" + newComm +
                   " target=" + target);
       }
       ReaffiliationNotification ra =
-          new ReaffiliationNotification(agentId, community);
+          new ReaffiliationNotification(agentId, oldComm, newComm);
       ThreatAlertService tas = getThreatAlertService();
       if (tas != null) {
         threatAlertService.sendAlert(ra, target);
