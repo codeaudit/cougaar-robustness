@@ -69,6 +69,15 @@ public class StateDimensionEstimation extends Loggable {
      return _belief_state_dimension.getName();
     }
 
+    /** 
+     * Get the name of the state dimension that this estimation concerns
+     * @return the name of the state dimension
+     **/
+    public BeliefStateDimension getBeliefStateDimension()
+    { 
+        return _belief_state_dimension; 
+    }
+
     /**
      * Gets a probability to this belief state using a numeric state.
      *
