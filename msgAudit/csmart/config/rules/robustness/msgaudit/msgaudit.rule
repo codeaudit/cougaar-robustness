@@ -1,0 +1,19 @@
+##################################################################
+# Adds MsgAudit aspect and properties
+#
+# Note: change Log4JHost to where you are running MsgAudit console 
+
+society.each_node_agent() do |node_agent|
+  node_agent.add_component do |c|
+    c.classname = "org.cougaar.core.mts.MessageAuditAspect"
+    c.insertionpoint = "Node.AgentManager.Agent.MessageTransport.Aspect"
+  end
+end
+
+society.each_node do |node|
+  node.override_parameter("-Dorg.cougaar.core.mts.logging.Log4JHost","10.44.100.96") 
+  node.override_parameter("-Dorg.cougaar.core.mts.logging.Log4JPort","7887") 
+  node.override_parameter("-Dorg.cougaar.core.mts.logging.Log4JLevel","DEBUG")
+  node.override_parameter("-Dorg.cougaar.message.transport.aspects.messageaudit.includeLocalMsgs","false")
+end
+
