@@ -1,0 +1,84 @@
+<?xml encoding="UTF-8" ?>
+
+<!-- Created by Administrator on March 24, 2004, 11:32 AM -->
+
+<!ELEMENT Threat (VulnerableAssets*)>
+
+<!ATTLIST Threat
+    name CDATA #REQUIRED
+    affectsAssetType CDATA #REQUIRED
+    causesEvent CDATA #REQUIRED
+    defaultEventLikelihoodProb ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH | ALWAYS ) 'NONE'
+>
+
+<!ELEMENT VulnerableAssets AssetFilter, (EventLikelihoodInterval|EventLikelihood)? >
+
+<!ELEMENT AssetFilter (Term | CorruptHostExistsOnNetwork | CorruptHostExists)+ >
+<!ELEMENT EventLikelihoodInterval (ClockInterval)+ >
+
+<!ELEMENT EventLikelihood  EMPTY>
+<!ATTLIST EventLikelihood
+    probability ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH | ALWAYS ) 'NONE'
+>
+
+<!ELEMENT ClockInterval  EMPTY>
+<!ATTLIST ClockInterval
+    intervalStart CDATA #REQUIRED
+    durationHrs CDATA #REQUIRED
+    probability ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH | ALWAYS ) 'NONE'
+>
+
+<!ELEMENT Term >
+<!ATTLIST Term
+    propName CDATA #REQUIRED
+    propValue CDATA #REQUIRED
+    op ( '<' | '>' | '>=' | '<=' | '=' | '!=' ) '='
+    propType ( S | L | D | I ) "S"
+>
+<!-- propType = [S]tring [L]ong [D]ouble [I]nteger -->
+
+<!ELEMENT CorruptHostExistsOnNetwork EMPTY >
+<!ATTLIST CorruptHostExistsOnNetwork
+    value CDATA #REQUIRED
+>
+<!ELEMENT CorruptHostExists EMPTY >
+<!ATTLIST CorruptHostExists
+    value CDATA #REQUIRED
+>
+
+<!-- Example
+<Threat name="Bomb" affectsAssetType="Host" causesEvent="HostDeath" defaultEventLikelihoodProb="NONE" />
+
+    <VulnerableAssets>
+        <AssetFilter>
+            <Term propName="location" propValue="HiWay" op="=" />
+        </AssetFilter >
+        <EventLikelihoodInterval>
+            <ClockInterval intervalStart="1800" durationHrs="12" probability="VERY_LOW" />
+        </EventLikelihoodInterval>
+    </VulnerableAssets>
+
+    <VulnerableAssets>
+        <AssetFilter>
+            <Term propName="location" propValue="OffRoad" op="=" />
+        </AssetFilter>
+        <EventLikelihoodInterval>
+            <ClockInterval intervalStart="1800" durationHrs="12" probability="MEDIUM" />
+            <ClockInterval intervalStart="1800" durationHrs="12" probability="LOW" />
+        </EventLikelihoodInterval>
+    </VulnerableAssets>
+
+</Threat>
+
+Some variations:
+ 
+<AssetFilter>
+    <CorruptHostExistsOnNetwork value="TRUE" />    
+</AssetFilter >
+ 
+<AssetFilter>
+    <CorruptHostExists value="TRUE" />    
+</AssetFilter >
+ 
+ 
+-->
