@@ -35,7 +35,7 @@ communityViewerServlet     = "org.cougaar.community.util.CommunityViewerServlet"
 society.each_node do |node|
   if node.has_facet?("role")
     node.each_facet("role") do |facet|
-      if facet["role"] == "ARManager"
+      if facet["role"] == "Management"
         enclave = node.host.get_facet("enclave")
 	node.add_agent(enclave + "-ARManager")
       end
