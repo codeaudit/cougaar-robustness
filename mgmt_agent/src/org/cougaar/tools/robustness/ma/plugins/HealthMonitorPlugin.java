@@ -103,8 +103,12 @@ import org.cougaar.core.util.UID;
  *                  when a failure is encountered
  * evalFreq         Defines how often (in milliseconds) the HealthStatus of
  *                  monitored agents is evaluated.
+ * restartTimeout   Defines how long to wait (in milliseconds) for a restart to
+ *                  complete before determining that the restart has failed. If
+ *                  a negative number is specified no timeouts will occur.  This
+ *                  would in effect turn off restart retries.
  * restartRetryFreq Defines how often (in milliseconds) to retry a failed
- *                  restart.
+ *                  restart after it has failed.
  * </PRE>
  */
 
@@ -126,6 +130,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     {"pingTimeout",       "60000"},
     {"pingRetries",           "1"},
     {"evalFreq",          "10000"},
+    {"restartTimeout",   "120000"},
     {"restartRetryFreq", "120000"}
   };
   ManagementAgentProperties healthMonitorProps =
@@ -161,6 +166,9 @@ public class HealthMonitorPlugin extends SimplePlugin implements
 
   // Determines how often our internal evaluation Thread is run
   private long evaluationFrequency;
+
+  // Determines how long to wait for a restart to complete
+  private long restartTimeout;
 
   // Determines how often to retry a failed restart
   private long restartRetryFrequency;
@@ -693,7 +701,8 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       //                        restart).
       //************************************************************************
       } else if (state.equals(HealthStatus.HEALTH_CHECK)) {
-        if (elapsedTime(hs.getHealthCheckTime(), now()) > 120000) {
+        if ((elapsedTime(hs.getHealthCheckTime(), now()) > restartTimeout) &&
+            (restartTimeout > 0)) {
           log.warn("Agent Health Check timed out: agent=" + hs.getAgentId());
           doHealthCheck(hs, hs.getStatus());
         }
@@ -1179,6 +1188,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     pingTimeout = Long.parseLong(props.getProperty("pingTimeout"));
     pingRetries = Integer.parseInt(props.getProperty("pingRetries"));
     evaluationFrequency = Long.parseLong(props.getProperty("evalFreq"));
+    restartTimeout = Long.parseLong(props.getProperty("restartTimeout"));
     restartRetryFrequency = Long.parseLong(props.getProperty("restartRetryFreq"));
     activePingFrequency = Long.parseLong(props.getProperty("activePingFreq"));
     updateCommunityAttributes(props);

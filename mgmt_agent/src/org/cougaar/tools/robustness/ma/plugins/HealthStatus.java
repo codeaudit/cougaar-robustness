@@ -710,7 +710,7 @@ public class HealthStatus implements
    * @param state Current run state of monitored agent
    */
   public void setState(String state) {
-    log.debug("SetState: agent=" + agentId + " state=" + state);
+    //log.debug("SetState: agent=" + agentId + " state=" + state);
     currentState = state;
 
     ModificationItem mods[] = new ModificationItem[1];
@@ -736,12 +736,12 @@ public class HealthStatus implements
       if (stateAttr != null) {
         String state = (String)stateAttr.get();
         if (state == null || state.trim().length() == 0) {
-          setState(currentState);
           log.debug("GetState: agent=" + agentId +
             " state is null/empty, setting state to " + currentState);
+          setState(currentState);
           return currentState;
         } else {
-          log.debug("GetState: agent=" + agentId + " state=" + state);
+          //log.debug("GetState: agent=" + agentId + " state=" + state);
           return state;
         }
       } else {

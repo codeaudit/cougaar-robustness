@@ -77,8 +77,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
 
   // Defines default values for configurable parameters.
   private static String defaultParams[][] = {
-    {"restartNode",  ""},
-    {"restartHost",  ""}
+    {"restartNode",  ""}
   };
 
   ManagementAgentProperties restartLocatorProps =
@@ -136,10 +135,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
       (IncrementalSubscription)bbs.subscribe(pingRequestPredicate);
 
     // Print informational message defining current parameters
-    StringBuffer startMsg = new StringBuffer();
-    startMsg.append("RestartLocatorPlugin started: ");
-    startMsg.append(paramsToString());
-    log.debug(startMsg.toString());
+    log.info(paramsToString());
 
   }
 
@@ -209,9 +205,9 @@ public class RestartLocatorPlugin extends SimplePlugin {
       PingRequest req = (PingRequest)it.next();
       int status = req.getStatus();
       String node = req.getTarget().toString();
-      if (log.isDebugEnabled()) {
-        log.debug("PingRequest changed, agent=" + node + " request" + req);
-      }
+      //if (log.isDebugEnabled()) {
+      //  log.debug("PingRequest changed, agent=" + node + " request" + req);
+      //}
       switch (status) {
         case PingRequest.SENT:
           break;
@@ -224,7 +220,7 @@ public class RestartLocatorPlugin extends SimplePlugin {
               Destination dest = (Destination)it2.next();
               if (dest.node.equals(node) && dest.pingStatus == PingRequest.NEW) {
                 dest.pingStatus = PingRequest.RECEIVED;
-                log.debug("Ping succeeded, agent=" + node);
+                //log.debug("Ping succeeded, agent=" + node);
                 // Remove PingRequest from BB and our internal list
                 if (pingUIDs.contains(req.getUID())) pingUIDs.remove(req.getUID());
                 bbs.publishRemove(req);
@@ -317,25 +313,15 @@ public class RestartLocatorPlugin extends SimplePlugin {
       ModificationItem mods[] = new ModificationItem[]{
         new ModificationItem(DirContext.REPLACE_ATTRIBUTE, restartNodesAttr),
       };
-      //communityService.modifyEntityAttributes(communityToMonitor, myAgent.toString(), mods);
       communityService.modifyCommunityAttributes(communityToMonitor, mods);
     }
-    Attribute restartHostsAttr = new BasicAttribute("RestartHosts");
-    String specifiedRestartHosts = restartLocatorProps.getProperty("restartHosts");
-    if (specifiedRestartHosts != null && specifiedRestartHosts.trim().length() > 0) {
-      StringTokenizer st = new  StringTokenizer(specifiedRestartHosts, " ");
-      while (st.hasMoreTokens()) {
-        restartHostsAttr.add(st.nextToken());
-      }
-      ModificationItem mods[] = new ModificationItem[]{
-        new ModificationItem(DirContext.REPLACE_ATTRIBUTE, restartHostsAttr),
-      };
-      //communityService.modifyEntityAttributes(communityToMonitor, myAgent.toString(), mods);
-      communityService.modifyCommunityAttributes(communityToMonitor, mods);
+    Collection restartNodes = getSpecifiedNodes();
+    StringBuffer sb = new StringBuffer("[");
+    for (Iterator it = restartNodes.iterator(); it.hasNext();) {
+      sb.append((String)it.next());
+      sb.append(it.hasNext() ? "," : "]");
     }
-    //log.debug("UpdateParams: " + myAttrs.size() +
-    //  " restartHosts=[" + specifiedRestartHosts +
-    //  "] restartNodes=[" + specifiedRestartNodes + "]");
+    props.setProperty("restartNode",sb.toString());
   }
 
   /**
@@ -532,21 +518,13 @@ public class RestartLocatorPlugin extends SimplePlugin {
       Collection excludedNodes, Collection excludedHosts) {
     List destinations = new Vector();
     Collection selectedNodes = new Vector();
-    //String specifiedRestartNodes = restartLocatorProps.getProperty("restartNodes");
-    //log.debug("SpecifiedRestartNodes=" + specifiedRestartNodes);
-    //if (specifiedRestartNodes != null && specifiedRestartNodes.trim().length() > 0) {
-    //  Collection specifiedNodes = new Vector();
-    //  StringTokenizer st = new  StringTokenizer(specifiedRestartNodes, " ");
-    //  while (st.hasMoreTokens()) specifiedNodes.add(st.nextToken());
-    Collection candidateNodes = getSpecifiedNodes();
-    candidateNodes.addAll(nodes.keySet());
-    selectedNodes = selectNodes(candidateNodes, excludedAgents, excludedNodes, excludedHosts);
-    //if (specifiedNodes.size() > 0) {
-    //  selectedNodes = selectNodes(specifiedNodes, excludedAgents, excludedNodes, excludedHosts);
-    //} else {
-    //  selectedNodes = selectNodes(nodes.keySet(), excludedAgents, excludedNodes, excludedHosts);
-    //}
-    log.debug("SelectedNodes=" + selectedNodes);
+    Collection specifiedNodes = getSpecifiedNodes();
+    if (specifiedNodes.size() > 0) {
+      selectedNodes = selectNodes(specifiedNodes, excludedAgents, excludedNodes, excludedHosts);
+    } else {
+      selectedNodes = selectNodes(nodes.keySet(), excludedAgents, excludedNodes, excludedHosts);
+    }
+    //log.debug("SelectedNodes=" + selectedNodes);
     for (Iterator it = selectedNodes.iterator(); it.hasNext();) {
       Destination dest = new Destination();
       dest.node = (String)it.next();
@@ -619,11 +597,13 @@ public class RestartLocatorPlugin extends SimplePlugin {
                                    addr,
                                    60000);
     pingUIDs.add(pr.getUID());
+    /*
     if (log.isDebugEnabled()) {
       log.debug("Performing ping: source=" + pr.getSource() + "(" +
         pr.getSource().getClass().getName() + ") target=" +
         pr.getTarget() + "(" + pr.getTarget().getClass().getName() + ")");
     }
+    */
     bbs.publishAdd(pr);
   }
 
