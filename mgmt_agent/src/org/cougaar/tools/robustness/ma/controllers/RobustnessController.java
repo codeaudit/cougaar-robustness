@@ -23,6 +23,7 @@ import org.cougaar.tools.robustness.ma.StatusChangeListener;
 import org.cougaar.tools.robustness.ma.util.MoveHelper;
 import org.cougaar.tools.robustness.ma.util.HeartbeatHelper;
 import org.cougaar.tools.robustness.ma.util.PingHelper;
+import org.cougaar.tools.robustness.ma.util.RestartDestinationLocator;
 import org.cougaar.tools.robustness.ma.util.RestartHelper;
 import org.cougaar.tools.robustness.ma.util.LoadBalancer;
 
@@ -133,5 +134,11 @@ public interface RobustnessController extends StatusChangeListener {
    * Returns name of specified state.
    */
   public String stateName(int state);
+
+  /**
+   * Returns restart locator helper.
+   * @return
+   */
+  public RestartDestinationLocator getRestartLocator();
 
 }

@@ -39,6 +39,7 @@ import org.cougaar.core.mts.SimpleMessageAddress;
 
 import org.cougaar.core.mobility.AbstractTicket;
 import org.cougaar.core.mobility.AddTicket;
+import org.cougaar.core.mobility.MoveTicket;
 import org.cougaar.core.mobility.RemoveTicket;
 import org.cougaar.core.mobility.ldm.AgentControl;
 import org.cougaar.core.mobility.ldm.MobilityFactory;
@@ -113,6 +114,17 @@ public class RestartHelper extends BlackboardClientComponent {
       }
       return false;
   }};
+
+  private UnaryPredicate agentMovePredicate = new UnaryPredicate() {
+    public boolean execute(Object o) {
+      if (o instanceof AgentControl) {
+        AgentControl ac = (AgentControl)o;
+        return (ac.getAbstractTicket() instanceof MoveTicket);
+      } else {
+        return false;
+      }
+    }
+  };
 
   public RestartHelper(BindingSite bs) {
     this.setBindingSite(bs);
@@ -408,7 +420,7 @@ public class RestartHelper extends BlackboardClientComponent {
                    " agent=" + agentName +
                    " action=" + action);
     }
-    if (!localActionQueue.contains(agentName)) {
+    if (!localActionQueue.contains(agentName) && !agentMoving(agentName)) {
       localActionQueue.add(new LocalRequest(agentName, action));
       blackboard.signalClientActivity();
     }
@@ -638,6 +650,20 @@ public class RestartHelper extends BlackboardClientComponent {
     doNextAction();
   }
 
+  protected boolean agentMoving(String agentName) {
+  	Collection movesInProcess = blackboard.query(agentMovePredicate);
+  	for (Iterator it = movesInProcess.iterator(); it.hasNext();) {
+  	  AgentControl ac = (AgentControl)it.next();
+  	  MoveTicket ticket = (MoveTicket)ac.getAbstractTicket();
+  	  if (ticket.getMobileAgent().toString().equals(agentName)) {
+  	  	if (logger.isDebugEnabled()) {
+  	      logger.debug("Request to kill moving agent, kill not performed: agent=" + agentName);
+  	  	}
+  	  	return true;
+  	  }
+  	}
+  	return false;
+  }
 
   /**
    * Sends Cougaar event via EventService.

@@ -202,7 +202,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
     return ce != null ? ce.controller : null;
   }
 
-  protected RestartDestinationLocator getRestartLocator() {
+  public RestartDestinationLocator getRestartLocator() {
     if (restartLocator == null) {
       restartLocator = new RestartDestinationLocator(model);
     }

@@ -32,7 +32,7 @@ public interface RestartManagerConstants {
   public static final int DEFAULT_STATUS_UPDATE_INTERVAL       = 1;
 
   public static final String DEFAULT_LOAD_BALANCER             = "Internal";
-  public static final int DEFAULT_LOAD_BALANCER_MODE           = 6;
+  public static final int DEFAULT_LOAD_BALANCER_MODE           = 4;
   public static final String DEFAULT_AUTO_LOAD_BALANCE_ENABLED = "False";
 
   public static final String RESTART_AGGRESSIVENESS_ATTRIBUTE  = "RestartAggressiveness";

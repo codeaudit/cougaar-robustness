@@ -23,6 +23,8 @@ import org.cougaar.tools.robustness.ma.StatusChangeListener;
 import org.cougaar.tools.robustness.ma.CommunityStatusChangeEvent;
 import org.cougaar.tools.robustness.ma.util.LoadBalancer;
 import org.cougaar.tools.robustness.ma.util.LoadBalancerListener;
+import org.cougaar.tools.robustness.ma.util.RestartDestinationLocator;
+import org.cougaar.tools.robustness.ma.util.MoveHelper;
 
 import org.cougaar.tools.robustness.ma.controllers.RobustnessController;
 import org.cougaar.tools.robustness.threatalert.*;
@@ -32,6 +34,7 @@ import org.cougaar.core.mts.MessageAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -117,6 +120,8 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
    */
   private void vacate(final Set nodesToVacate) {
     final Set agentsToMove = affectedAgents(nodesToVacate);
+    final Set excludedNodes = getExcludedNodes();
+    final String communityName = model.getCommunityName();
     if (logger.isInfoEnabled()) {
       logger.info("Vacating nodes: " + nodesToVacate);
     }
@@ -138,8 +143,26 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
       }
     });
     LoadBalancerListener lbl = new LoadBalancerListener() {
-      public void layoutReady(Map layout) {
-        controller.getLoadBalancer().moveAgents(layout);
+     public void layoutReady(Map layout) {
+        //controller.getLoadBalancer().moveAgents(layout);
+      	RestartDestinationLocator locator = controller.getRestartLocator();
+      	MoveHelper mover = controller.getMoveHelper();
+        locator.setPreferredRestartLocations(layout);
+        for (Iterator it = nodesToVacate.iterator(); it.hasNext();) {
+          String origin = (String)it.next();
+          Set agentsOnNode = affectedAgents(Collections.singleton(origin));
+          for (Iterator it1 = agentsOnNode.iterator(); it1.hasNext();) {
+          	String agent = (String)it1.next();
+            String dest = locator.getRestartLocation(agent, excludedNodes);
+            if (logger.isInfoEnabled()) {
+              logger.info("Moving agent:" +
+              		      " agent=" + agent +
+						  " origin=" + origin +
+						  " dest=" + dest);
+            }
+            mover.moveAgent(agent, origin, dest, communityName);
+          }
+        }
       }
     };
     controller.getLoadBalancer().doLayout(RestartManagerConstants.DEFAULT_LOAD_BALANCER_MODE,
@@ -147,7 +170,7 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
                                           LoadBalancer.DEFAULT_HAMMING,
                                           Collections.EMPTY_LIST,
                                           new ArrayList(nodesToVacate),
-                                          new ArrayList(getExcludedNodes()),
+                                          new ArrayList(excludedNodes),
                                           lbl);
   }
 
