@@ -1,0 +1,37 @@
+
+
+// Combine local conditions to set the DefenseApplicable condition for the Coordinator
+
+(PlannedDisconnect.UnscheduledDisconnect.Node.NodeA == TRUE)
+	: PlannedDisconnect.Applicable.Node.NodeA = TRUE;
+
+(PlannedDisconnect.ScheduledDisconnect.Node.NodeA == TRUE)
+	: PlannedDisconnect.Applicable.Node.NodeA = TRUE;
+
+
+(PlannedDisconnect.ScheduledDisconnect.Node.NodeA == FALSE) & 
+(PlannedDisconnect.UnscheduledDisconnect.Node.NodeA == FALSE)
+	: PlannedDisconnect.Applicable.Node.NodeA = FALSE;
+
+
+PlannedDisconnect.UnscheduledDisconnect.Node.NodeA == TRUE 
+	: [agent.NodeA]PlannedDisconnect.NodeDefense.Node.NodeA = ENABLED;
+
+
+(PlannedDisconnect.Monitoring.Node.NodeA == ENABLED)  & 
+(PlannedDisconnect.UnscheduledReconnectTime.Node.NodeA > 0)
+	: [agent.NodeA]PlannedDisconnect.NodeMonitoring.Node.NodeA = ENABLED;
+
+(PlannedDisconnect.Monitoring.Node.NodeA == ENABLED) & 
+(PlannedDisconnect.ScheduledReconnectTime.Node.NodeA > 0)
+	: PlannedDisconnect.CommunityMonitoring.Node.NodeA = ENABLED;
+
+(PlannedDisconnect.Monitoring.Node.NodeA == DISABLED)
+	: PlannedDisconnect.CommunityMonitoring.Node.NodeA = DISABLED
+	: [agent.NodeA]PlannedDisconnect.NodeMonitoring.Node.NodeA = DISABLED;
+
+(PlannedDisconnect.ScheduledReconnectTime.Node.NodeA == 0)
+	: PlannedDisconnect.CommunityMonitoring.Node.NodeA = DISABLED;
+
+(PlannedDisconnect.UnscheduledReconnectTime.Node.NodeA == 0)
+	: [agent.NodeA]PlannedDisconnect.NodeMonitoring.NodeA = DISABLED;
