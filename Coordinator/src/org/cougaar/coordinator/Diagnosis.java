@@ -54,6 +54,8 @@ import org.cougaar.util.log.Logger;
 import org.cougaar.util.log.Logging;
 import org.cougaar.core.relay.Relay;
 
+import org.cougaar.core.service.AgentContainmentService;
+import org.cougaar.core.component.ComponentDescription;
 
 
 /**
@@ -87,6 +89,9 @@ public abstract class Diagnosis
     /** The vector of all local DiagnosisTechSpecs */
     //static private Vector diagnosisTechSpecs;
 
+    //TRUE if the ActionRelayManager is on this agent (if so, this is the mgmt agent)
+    boolean isActionRelayManagerLoadedInThisAgent = false;
+    
     /** The DiagnosisTechSpecInterface for this action class 
      *
      * It's transient for now... not sure we need access to this on the mgmt agent.
@@ -236,6 +241,14 @@ public abstract class Diagnosis
             "Unable to obtain UIDService");
         }        
         
+        AgentContainmentService acs =
+        (AgentContainmentService)serviceBroker.getService(this, org.cougaar.core.service.AgentContainmentService.class, null);
+        ComponentDescription cd = new
+            ComponentDescription("org.cougaar.coordinator.ActionRelayManager", // component name
+                "Node.AgentManager.Agent.PluginManager.Plugin",    // insertion point
+                "org.cougaar.coordinator.ActionRelayManager",      // component classname
+            null,null,null,null,null);
+        isActionRelayManagerLoadedInThisAgent = acs.contains(cd);
         
     }
 
@@ -496,7 +509,10 @@ public abstract class Diagnosis
      * singleton set contain just one target.
      **/
     public Set getTargets() {
-        return Collections.singleton(nodeId);
+        if (!isActionRelayManagerLoadedInThisAgent)
+            return Collections.singleton(nodeId);
+        else 
+            return Collections.singleton(agentId); //i.e., don't relay anywhere
     }
     
     /**
