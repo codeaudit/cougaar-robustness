@@ -26,6 +26,7 @@
 package org.cougaar.coordinator.techspec;
 
 import org.cougaar.core.component.Service;
+import java.util.Collection;
 
 /**
  *
@@ -35,5 +36,6 @@ public interface ActionTechSpecService extends Service {
     
     public ActionTechSpecInterface getActionTechSpec(String cls);    
     public void addActionTechSpec(String cls, ActionTechSpecInterface atsi);    
+    public Collection getAllActionTechSpecs();    
     
 }

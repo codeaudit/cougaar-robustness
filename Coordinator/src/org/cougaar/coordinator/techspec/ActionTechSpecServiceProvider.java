@@ -74,6 +74,15 @@ public class ActionTechSpecServiceProvider implements ServiceProvider {
             allActions = new Hashtable(100);
             newActions = new Vector();            
         }
+
+        /**
+         *  @return all diagnoses. May want to return a clone to protect vector.
+         *
+         */
+        public Collection getAllActionTechSpecs() {
+
+            return allActions.values(); // may want to clone so it isn't 
+        }
         
         
         /**
