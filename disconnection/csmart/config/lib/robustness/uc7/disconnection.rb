@@ -184,7 +184,7 @@ module Cougaar
 	while loop
           event = @run.get_next_event
           #puts event.data
-          if (event.component=="DisconnectNodePlugin") && (event.data.include?(@node+" has Reconnected")
+          if (event.component=="DisconnectNodePlugin") && event.data.include?(@node+" has Reconnected")
             loop = false
             puts event.data
           end
