@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2002 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2002-2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify

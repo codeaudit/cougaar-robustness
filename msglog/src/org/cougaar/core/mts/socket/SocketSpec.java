@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2001-2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 12 Feb 2003: Ported to 10.0 (OBJS)
  * 18 Aug 2002: Added inet address field. (OBJS)
  * 11 Jul 2001: Marked serializable, added equals method. (OBJS)
  * 08 Jul 2001: Created. (OBJS)
@@ -27,6 +28,8 @@
 package org.cougaar.core.mts.socket;
 
 import java.net.InetAddress;
+import java.net.URI;  //100
+import java.net.URISyntaxException;  //100
 
 
 /**
@@ -38,23 +41,44 @@ public class SocketSpec implements java.io.Serializable
 {
   private String host;
   private String port;
+  private URI uri; //100
+  private final static String scheme = "tcp"; //100
 
   private transient InetAddress inetAddress;
 
   public SocketSpec (String port)
+    throws URISyntaxException //100
   {
     this ("localhost", port);
   }
 
-  public SocketSpec (String host, int port)
+  public SocketSpec (String host, int port) 
+    throws URISyntaxException //100
   {
-    this (host, ""+port);
+    this.host = host;
+    this.port = ""+port;
+    cacheURI(); //100
   }
 
   public SocketSpec (String host, String port)
+    throws URISyntaxException //100
   {
     this.host = host;
     this.port = port;
+    cacheURI(); //100
+  }
+
+  public SocketSpec (URI uri) //100
+  {
+    this.host = uri.getHost();
+    this.port = "" + uri.getPort();
+    this.uri = uri;
+  }
+  
+  private void cacheURI () //100
+    throws URISyntaxException
+  {
+    this.uri = new URI (scheme, null, host, getPortAsInt(), null, null, null);
   }
 
   public String getHost ()  
@@ -63,8 +87,10 @@ public class SocketSpec implements java.io.Serializable
   }
 
   public void setHost (String host)
+    throws URISyntaxException //100
   {
     this.host = host;
+    cacheURI(); //100
   }
 
   public String getPort ()  
@@ -80,13 +106,22 @@ public class SocketSpec implements java.io.Serializable
   }
 
   public void setPort (String port)
+    throws URISyntaxException //100
   {
     this.port = port;
+    cacheURI(); //100
   }
 
   public void setPort (int port)
+    throws URISyntaxException //100
   {
     this.port = "" + port;
+    cacheURI(); //100
+  }
+
+  public InetAddress getInetAddress ()
+  {
+    return inetAddress;
   }
 
   public void setInetAddress (InetAddress addr)
@@ -94,9 +129,9 @@ public class SocketSpec implements java.io.Serializable
     inetAddress = addr;
   }
 
-  public InetAddress getInetAddress ()
+  public URI getURI () //100
   {
-    return inetAddress;
+    return uri;
   }
 
   public boolean equals (Object obj)
@@ -119,6 +154,7 @@ public class SocketSpec implements java.io.Serializable
 
   public String toString ()
   {
-    return "SocketSpec[" +host+ ":" +port+ "]";
+    //100 return "SocketSpec[" +host+ ":" +port+ "]";
+    return uri.toString(); //100
   }
 }

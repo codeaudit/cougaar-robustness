@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2001-2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -172,8 +172,8 @@ private static long startTime = 0;
     s = "org.cougaar.message.transport.policy.adaptive.maxUpgradeTries";
     maxUpgradeTries = Integer.valueOf(System.getProperty(s,"2")).intValue();
 
-s = "org.cougaar.message.transport.policy.adaptive.commStartDelaySeconds";
-commStartDelaySeconds = Integer.valueOf(System.getProperty(s,"0")).intValue();
+    s = "org.cougaar.message.transport.policy.adaptive.commStartDelaySeconds";
+    commStartDelaySeconds = Integer.valueOf(System.getProperty(s,"0")).intValue();
   } 
 
   public AdaptiveLinkSelectionPolicy ()
@@ -599,7 +599,7 @@ log.info ("exception getting toAgent for " +msgString+ ": " +e);
     //  No able outgoing links
 
     if (v.size() == 0) return linkChoice (null, msg);
-    
+
     //  Rank the links based on the chosen (via property) metric
 
     DestinationLink destLinks[] = (DestinationLink[]) v.toArray (new DestinationLink[v.size()]); 
@@ -735,7 +735,6 @@ log.info ("exception getting toAgent for " +msgString+ ": " +e);
     }
 
 /*
-
 was new, now old; should be deleted soon
 
     //  Special Case:  Message retrying (first send attempt generated an exception)
@@ -938,7 +937,7 @@ was new, now old; should be deleted soon
         }
       }
     }
-    
+
     //  The last choice was not successful
 
     //  We are still in the game.  We respond based on the category the last

@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2001-2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD
+ * 12 Feb 2003: Port to 10.0 (OBJS)
  * 02 Oct 2002: Add a receiver queue to manage incoming message threads. (OBJS)
  * 27 Sep 2002: Add inband acking. (OBJS)
  * 22 Sep 2002: Revamp for new serialization & socket closer. (OBJS)
@@ -94,7 +95,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 {
   public static final String PROTOCOL_TYPE = "-socket";
 
-  private static final SocketSpec emptySpec = new SocketSpec ("","");
+  private static SocketSpec emptySpec; //100
 
   private static final String localhost;
   private static final boolean doInbandAcking;
@@ -192,15 +193,6 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
   public IncomingSocketLinkProtocol ()
   {
     serverSocketListeners = new Vector();
-
-    //  Get server socket portnumber(s) from a property?
-
-    String port = "0";   // port of 0 means auto-choose port number
-
-    //  Create a single socket spec for now
-
-    socketSpecs = new SocketSpec[1];
-    socketSpecs[0] = new SocketSpec (localhost, port);
   }
 
   public void load () 
@@ -216,6 +208,33 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
       ServiceBroker sb = getServiceBroker();
       socketCloser = (SocketClosingService) sb.getService (this, SocketClosingService.class, null);
       if (socketCloser == null) log.error ("Cannot do socket timeouts - socket closing service not available!");
+    }
+
+    //100
+    try {
+      //100 emptySpec = new SocketSpec("",""); 
+      emptySpec = new SocketSpec("localhost","0"); 
+    } catch (URISyntaxException e) {
+      String s = "load: error creating emptySpec for " + this;
+      log.error(s);
+      log.error(stackTraceToString(e));
+      throw new RuntimeException(s);
+    }
+
+    //  Get incoming socket portnumber(s) from a property?
+    String port = "0";   // port of 0 means auto-choose port number
+
+    //  Create a single socket spec for now
+    socketSpecs = new SocketSpec[1];
+
+    //100
+    try {
+      socketSpecs[0] = new SocketSpec (localhost, port);
+    } catch (URISyntaxException e) {
+      String s = "failure creating SocketSpec for host=" + localhost + ", port=" + port;
+      log.error(s);
+      log.error(stackTraceToString(e));
+      throw new RuntimeException(s);
     }
 
     if (serverSocketTimeout > 0)
@@ -256,7 +275,14 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     for (int i=0; i<socketSpecs.length; i++) 
     {
       int port = createServerSocketListener (socketSpecs[i].getPortAsInt());
-      socketSpecs[i].setPort (port);  // potentially new port number
+      try { //100
+        socketSpecs[i].setPort (port);  // potentially new port number
+      } catch (URISyntaxException e) {
+        String s = "startup: failure creating URI with port=" + port;
+        log.error(s);
+        log.error(stackTraceToString(e));
+        throw new RuntimeException(s);
+      }
       if (port > 0) count++;          // if port < 1 bad port
     }
 
@@ -298,8 +324,9 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     //  Update the name server.  Note: Allow any exceptions to be thrown.
   
     mySocketSpec = spec;
-    MessageAddress address = new MessageAddress (nodeID+ "(MTS" +PROTOCOL_TYPE+ ")");
-    getNameSupport().registerAgentInNameServer (mySocketSpec, address, PROTOCOL_TYPE);
+    URI uri = mySocketSpec.getURI(); //100
+    MessageAddress address = MessageAddress.getMessageAddress (nodeID+ "(MTS" +PROTOCOL_TYPE+ ")"); //100
+    getNameSupport().registerAgentInNameServer (uri, address, PROTOCOL_TYPE); //100
   }
 
   private void unregisterSocketSpec ()
@@ -309,8 +336,8 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     try
     {
       if (mySocketSpec == null) return;
-      MessageAddress address = new MessageAddress (nodeID+ "(MTS" +PROTOCOL_TYPE+ ")");
-      getNameSupport().unregisterAgentInNameServer (mySocketSpec, address, PROTOCOL_TYPE);
+      MessageAddress address = MessageAddress.getMessageAddress (nodeID+ "(MTS" +PROTOCOL_TYPE+ ")"); //100
+      getNameSupport().unregisterAgentInNameServer (mySocketSpec.getURI(), address, PROTOCOL_TYPE); //100
     }
     catch (Exception e)
     {
@@ -325,7 +352,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     try 
     {
       MessageAddress clientAddress = client.getMessageAddress();
-      getNameSupport().registerAgentInNameServer (emptySpec, clientAddress, PROTOCOL_TYPE);
+      getNameSupport().registerAgentInNameServer (emptySpec.getURI(), clientAddress, PROTOCOL_TYPE); //100
     } 
     catch (Exception e) 
     {
@@ -340,7 +367,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     try 
     {
       MessageAddress clientAddress = client.getMessageAddress();
-      getNameSupport().unregisterAgentInNameServer (emptySpec, clientAddress, PROTOCOL_TYPE);
+      getNameSupport().unregisterAgentInNameServer (emptySpec.getURI(), clientAddress, PROTOCOL_TYPE); //100
     } 
     catch (Exception e) 
     {
@@ -354,7 +381,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
     try 
     {
-      getNameSupport().registerAgentInNameServer (emptySpec, address, PROTOCOL_TYPE);
+      getNameSupport().registerAgentInNameServer (emptySpec.getURI(), address, PROTOCOL_TYPE); //100
     } 
     catch (Exception e) 
     {

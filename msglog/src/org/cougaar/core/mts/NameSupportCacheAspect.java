@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2002 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2002-2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,11 +19,13 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 5 Sept 2002: Created. (OBJS)
+ * 13 Feb  2003: Port to 10.0 (OBJS)
+ *  5 Sept 2002: Created. (OBJS)
  */
 
 package org.cougaar.core.mts;
 
+import java.net.URI; //100
 import java.util.*;
 //import org.cougaar.core.topology.*;
 
@@ -85,19 +87,20 @@ public class NameSupportCacheAspect extends StandardAspect
       return addr;
     }
 
-    public void registerAgentInNameServer (Object proxy, MessageAddress address,
+    public void registerAgentInNameServer (URI uri, MessageAddress address, //100
       String transportType)
     {
-      if (doDebug()) debug ("registerAgentInNameServer() called: address="+
-        address+" transportType="+transportType);
-      nameSupport.registerAgentInNameServer (proxy, address, transportType);
+      if (doDebug()) debug ("registerAgentInNameServer() called: URI="+uri+ //100
+                            " address="+address+" transportType="+transportType);
+      nameSupport.registerAgentInNameServer(uri, address, transportType); //100
       if (doDebug()) debug ("registerAgentInNameServer() returned");
     }
 
-    public void unregisterAgentInNameServer (Object proxy, MessageAddress address, String transportType)
+    public void unregisterAgentInNameServer (URI uri, MessageAddress address, String transportType) //100
     {
-      if (doDebug()) debug ("unregisterAgentInNameServer() called: address="+address+" transportType="+transportType);
-      nameSupport.unregisterAgentInNameServer(proxy, address, transportType);
+      if (doDebug()) debug ("unregisterAgentInNameServer() called: URI="+uri+ //100
+                            " address="+address+" transportType="+transportType);
+      nameSupport.unregisterAgentInNameServer(uri, address, transportType); //100
       if (doDebug()) debug ("Finshed calling unregisterAgentInNameServer() returned");
     }
 
@@ -108,7 +111,7 @@ public class NameSupportCacheAspect extends StandardAspect
       if (doDebug()) debug ("registerMTS() returned");
     }
 
-    public Object lookupAddressInNameServer (MessageAddress address, String transportType)
+    public URI lookupAddressInNameServer (MessageAddress address, String transportType) //100
     {
       callTimeout = Integer.valueOf(System.getProperty(callTimeoutProp,"1000")).intValue();
          
@@ -135,7 +138,11 @@ public class NameSupportCacheAspect extends StandardAspect
         }
       }
       debug("returned value="+value+", for addr="+address+",transportType="+transportType);
-      return value;
+      if ((value != null) && !(value instanceof URI)) { //100
+        loggingService.error("lookupAddressInNameServer returned non-URI Object="+value+", null substituted."); //100
+        value = null; //100
+      } 
+      return (URI)value;
     }
 
     public Iterator lookupMulticast (MulticastMessageAddress address) 

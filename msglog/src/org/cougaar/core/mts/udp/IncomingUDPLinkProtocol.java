@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2001-2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD
+ * 12 Feb 2003" Port to 10.0 (OBJS)
  * 30 Sep 2002: Add inband acking. (OBJS)
  * 22 Sep 2002: Revamp for new serialization. (OBJS)
  * 26 Apr 2002: Created from socket link protocol. (OBJS)
@@ -49,7 +50,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
   public static final String PROTOCOL_TYPE = "-UDP";
   public static final int    MAX_DATAGRAM_PACKET_SIZE = 64*1024;
 
-  private static final DatagramSocketSpec emptySpec = new DatagramSocketSpec ("","");
+  private static DatagramSocketSpec emptySpec; //100
 
   private static final String localhost;
   private static final boolean doInbandAcking;
@@ -108,15 +109,6 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
   public IncomingUDPLinkProtocol ()
   {
     datagramSocketListeners = new Vector();
-
-    //  Get incoming socket portnumber(s) from a property?
-
-    String port = "0";   // port of 0 means auto-choose port number
-
-    //  Create a single socket spec for now
-
-    datagramSocketSpecs = new DatagramSocketSpec[1];
-    datagramSocketSpecs[0] = new DatagramSocketSpec (localhost, port);
   }
 
   public void load () 
@@ -126,6 +118,32 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 
     if (log.isInfoEnabled()) log.info ("Creating " + this);
     if (log.isInfoEnabled()) log.info ("Using " +localhost+ " as the name of the local host");
+
+    //100
+    try {
+      emptySpec = new DatagramSocketSpec("localhost","0"); 
+    } catch (URISyntaxException e) {
+      String s = "load: error creating emptySpec for " + this;
+      log.error(s);
+      log.error(stackTraceToString(e));
+      throw new RuntimeException(s);
+    }
+
+    //  Get incoming socket portnumber(s) from a property?
+    String port = "0";   // port of 0 means auto-choose port number
+
+    //  Create a single socket spec for now
+    datagramSocketSpecs = new DatagramSocketSpec[1];
+
+    //100
+    try {
+      datagramSocketSpecs[0] = new DatagramSocketSpec (localhost, port);
+    } catch (URISyntaxException e) {
+      String s = "failure creating DatagramSocketSpec for host=" + localhost + ", port=" + port;
+      log.error(s);
+      log.error(stackTraceToString(e));
+      throw new RuntimeException(s);
+    }
 
     if (doInbandRTTUpdates)
     {
@@ -156,7 +174,14 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
     for (int i=0; i<datagramSocketSpecs.length; i++) 
     {
       int port = createDatagramSocketListener (datagramSocketSpecs[i].getPortAsInt());
-      datagramSocketSpecs[i].setPort (port);  // potentially new port number
+      try { //100
+        datagramSocketSpecs[i].setPort (port);  // potentially new port number
+      } catch (URISyntaxException e) {
+        String s = "startup: failure creating URI with port=" + port;
+        log.error(s);
+        log.error(stackTraceToString(e));
+        throw new RuntimeException(s);
+      }
       if (port > 0) count++;                  // if port < 1 is bad port
     }
 
@@ -189,8 +214,8 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
     //  Update the name server.  Note: Allow any exceptions to be thrown.
   
     myDatagramSocketSpec = spec;
-    MessageAddress address = new MessageAddress (nodeID+ "(MTS" +PROTOCOL_TYPE+ ")");
-    getNameSupport().registerAgentInNameServer (myDatagramSocketSpec, address, PROTOCOL_TYPE);
+    MessageAddress address = MessageAddress.getMessageAddress (nodeID+ "(MTS" +PROTOCOL_TYPE+ ")"); //100
+    getNameSupport().registerAgentInNameServer (myDatagramSocketSpec.getURI(), address, PROTOCOL_TYPE); //100
   }
 
   private void unregisterDatagramSocketSpec ()
@@ -200,8 +225,8 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
     try
     {
       if (myDatagramSocketSpec == null) return;
-      MessageAddress address = new MessageAddress (nodeID+ "(MTS" +PROTOCOL_TYPE+ ")");
-      getNameSupport().unregisterAgentInNameServer (myDatagramSocketSpec, address, PROTOCOL_TYPE);
+      MessageAddress address = MessageAddress.getMessageAddress (nodeID+ "(MTS" +PROTOCOL_TYPE+ ")"); //100
+      getNameSupport().unregisterAgentInNameServer (myDatagramSocketSpec.getURI(), address, PROTOCOL_TYPE); //100
     }
     catch (Exception e)
     {
@@ -216,7 +241,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
     try 
     {
       MessageAddress clientAddress = client.getMessageAddress();
-      getNameSupport().registerAgentInNameServer (emptySpec, clientAddress, PROTOCOL_TYPE);
+      getNameSupport().registerAgentInNameServer (emptySpec.getURI(), clientAddress, PROTOCOL_TYPE); //100
     } 
     catch (Exception e) 
     {
@@ -231,7 +256,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
     try 
     {
       MessageAddress clientAddress = client.getMessageAddress();
-      getNameSupport().unregisterAgentInNameServer (emptySpec, clientAddress, PROTOCOL_TYPE);
+      getNameSupport().unregisterAgentInNameServer (emptySpec.getURI(), clientAddress, PROTOCOL_TYPE); //100
     } 
     catch (Exception e) 
     {
@@ -241,11 +266,11 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 
   public final void registerMTS (MessageAddress address)
   {
-    //  Of uknown utility
+    //  Of unknown utility
 
     try 
     {
-      getNameSupport().registerAgentInNameServer (emptySpec, address, PROTOCOL_TYPE);
+      getNameSupport().registerAgentInNameServer (emptySpec.getURI(), address, PROTOCOL_TYPE); //100
     } 
     catch (Exception e) 
     {

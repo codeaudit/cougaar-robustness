@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2001,2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,12 +19,15 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 13 Feb  2003: Port to 10.0 (OBJS)
  * 14 July 2001: Marked serializable, added new constructor. (OBJS)
  * 08 July 2001: Created. (OBJS)
  */
 
 package org.cougaar.core.mts.email;
 
+import java.net.URI; //100
+import java.net.URISyntaxException; //100
 
 /**
  *  Data object for a mailbox used to send or receive email.
@@ -39,6 +42,7 @@ public class MailBox implements java.io.Serializable
   private String username;
   private String password;
   private String folder;             // Note: POP3 only supports "INBOX" (case-insensitive)
+  private URI uri; //100
 
   private MailMessageHeader boxHeader;
 
@@ -46,16 +50,20 @@ public class MailBox implements java.io.Serializable
   {}
 
   public MailBox (String serverHost, String username)
+    throws URISyntaxException
   {
     this (null, serverHost, null, username, null, null);
   }
 
-  public MailBox (String protocol, String serverHost, String serverPort)
+  public MailBox (String protocol, String serverHost, String serverPort)     
+    throws URISyntaxException
   {
     this (protocol, serverHost, serverPort, null, null, null);
   }
 
-  public MailBox (String protocol, String serverHost, String serverPort, String username, String password, String folder)
+  public MailBox (String protocol, String serverHost, String serverPort, 
+                  String username, String password, String folder) 
+    throws URISyntaxException
   {
     this.protocol = protocol;
     this.serverHost = serverHost;
@@ -63,6 +71,25 @@ public class MailBox implements java.io.Serializable
     this.username = username;
     this.password = password;
     this.folder = folder;
+    this.uri = new URI (protocol, username+":"+password, serverHost, getServerPortAsInt(), "/"+folder, null, null); //100
+  }
+
+  public MailBox (URI uri) //100
+  {
+    this.protocol = uri.getScheme();
+    this.serverHost = uri.getHost();
+    this.serverPort = ""+uri.getPort();
+    String userinfo = uri.getUserInfo();
+    int i = userinfo.indexOf(':');
+    this.username = userinfo.substring(0, i);
+    this.password = userinfo.substring(i+1);
+    this.folder = uri.getPath().substring(1);  //strip off leading slash
+    this.uri = uri;
+  }
+
+  public URI getURI () //100
+  {
+    return uri;
   }
 
   public String getProtocol ()  

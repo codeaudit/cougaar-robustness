@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2001, 2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,11 +19,13 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 12 Feb 2003: port to 10.0 (OBJS)
  * 24 Aug  2001: Created. (OBJS)
  */
 
 package org.cougaar.core.mts.email;
 
+import java.net.URI;
 
 /**
  *  Data object used by the email transport to store information
@@ -50,6 +52,11 @@ public class MailData implements java.io.Serializable
   public MailBox getInbox ()
   {
     return inbox;
+  }
+
+  public URI getURI () //100
+  {
+    return inbox.getURI();
   }
 
   public String toString ()

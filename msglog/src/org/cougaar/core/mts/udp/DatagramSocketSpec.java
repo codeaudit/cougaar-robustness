@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2001-2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,12 +19,15 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 12 Feb 2003: Ported to 10.0 (OBJS)
  * 26 Apr 2002: Created from socket link protocol. (OBJS)
  */
 
 package org.cougaar.core.mts.udp;
 
 import java.net.InetAddress;
+import java.net.URI;  //100
+import java.net.URISyntaxException; //100
 
 
 /**
@@ -37,22 +40,43 @@ public class DatagramSocketSpec implements java.io.Serializable
 {
   private String host;
   private String port;
+  private URI uri; //100
+  private final static String scheme = "udp"; //100
   private transient InetAddress inetAddress;
 
   public DatagramSocketSpec (String port)
+    throws URISyntaxException //100
   {
     this ("localhost", port);
   }
 
-  public DatagramSocketSpec (String host, int port)
+  public DatagramSocketSpec (String host, int port) 
+    throws URISyntaxException //100
   {
-    this (host, ""+port);
+    this.host = host;
+    this.port = ""+port;
+    cacheURI(); //100
   }
 
   public DatagramSocketSpec (String host, String port)
+    throws URISyntaxException //100
   {
     this.host = host;
     this.port = port;
+    cacheURI(); //100
+  }
+
+  public DatagramSocketSpec (URI uri) //100
+  {
+    this.host = uri.getHost();
+    this.port = "" + uri.getPort();
+    this.uri = uri;
+  }
+
+  private void cacheURI () //100
+    throws URISyntaxException
+  {
+    this.uri = new URI (scheme, null, host, getPortAsInt(), null, null, null);
   }
 
   public String getHost ()  
@@ -61,8 +85,10 @@ public class DatagramSocketSpec implements java.io.Serializable
   }
 
   public void setHost (String host)
+    throws URISyntaxException //100
   {
     this.host = host;
+    cacheURI();
   }
 
   public String getPort ()  
@@ -78,13 +104,22 @@ public class DatagramSocketSpec implements java.io.Serializable
   }
 
   public void setPort (String port)
+    throws URISyntaxException //100
   {
     this.port = port;
+    cacheURI(); //100
   }
 
   public void setPort (int port)
+    throws URISyntaxException //100
   {
     this.port = "" + port;
+    cacheURI(); //100
+  }
+
+  public InetAddress getInetAddress ()
+  {
+    return inetAddress;
   }
 
   public void setInetAddress (InetAddress addr)
@@ -92,9 +127,9 @@ public class DatagramSocketSpec implements java.io.Serializable
     inetAddress = addr;
   }
 
-  public InetAddress getInetAddress ()
+  public URI getURI () //100
   {
-    return inetAddress;
+    return uri;
   }
 
   public boolean equals (Object obj)
@@ -117,6 +152,7 @@ public class DatagramSocketSpec implements java.io.Serializable
 
   public String toString ()
   {
-    return "DatagramSocketSpec[" +host+ ":" +port+ "]";
+    //100 return "DatagramSocketSpec[" +host+ ":" +port+ "]";
+    return uri.toString();
   }
 }

@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2001-2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 12 Feb 2003: Port to 10.0 (OBJS)
  * 27 Sep 2002: Add inband acking support. (OBJS)
  * 23 Apr 2002: Split out from MessageAckingAspect. (OBJS)
  * 17 May 2001: Created. (OBJS)
@@ -67,8 +68,8 @@ public class PureAckMessage extends AttributedMessage
     }
     else
     {
-      MessageAddress originator = new MessageAddress ("Unknown");
-      MessageAddress target = new MessageAddress ("Unknown");
+      MessageAddress originator = MessageAddress.getMessageAddress ("Unknown"); //100
+      MessageAddress target = MessageAddress.getMessageAddress ("Unknown"); //100
       msg = new AttributedMessage (new NullMessage (originator, target));
     }
 

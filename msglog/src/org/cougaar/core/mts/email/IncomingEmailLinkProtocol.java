@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2001-2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 12 Feb 2003: Port to 10.0 (OBJS)
  * 24 Sep 2002: Add new serialization, socket closer support and remove
  *              email streams stuff for more direct reading of email. (OBJS)
  * 19 Jun 2002: Removed "ignoreOldMessages" functionality - obsolete in
@@ -55,6 +56,7 @@ package org.cougaar.core.mts.email;
 import java.io.*;
 import java.util.*;
 import java.net.InetAddress;
+import java.net.URISyntaxException;
 
 import org.cougaar.core.mts.*;
 import org.cougaar.core.service.LoggingService;
@@ -379,18 +381,25 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
     //  Update the name server
     //  LIMITATION:  Only one MailData per node (thus only one inbox).
     //  How to manage more than one (transactions can come into play).
-
-    MailBox myMailBox = new MailBox (mbox.getServerHost(), mbox.getUsername());  
+    MailBox myMailBox;
+    try {
+     myMailBox = new MailBox (mbox.getServerHost(), mbox.getUsername());  
+    } catch (URISyntaxException e) { //100
+      log.error("registerMailData: error creating MailBox host=" + mbox.getServerHost() + 
+                ",user=" + mbox.getUsername() ); //100
+      log.error(stackTraceToString (e)); //100
+      return; //100
+    } 
     myMailData = new MailData (nodeID, myMailBox);
     MessageAddress nodeAddress = getNameSupport().getNodeMessageAddress();
-    getNameSupport().registerAgentInNameServer (myMailData, nodeAddress, PROTOCOL_TYPE);
+    getNameSupport().registerAgentInNameServer (myMailData.getURI(), nodeAddress, PROTOCOL_TYPE); //100
   }
 
   private void unregisterMailData ()
   {
     if (myMailData == null) return;  // no data to unregister
     MessageAddress nodeAddress = getNameSupport().getNodeMessageAddress();
-    getNameSupport().unregisterAgentInNameServer (myMailData, nodeAddress, PROTOCOL_TYPE);
+    getNameSupport().unregisterAgentInNameServer (myMailData.getURI(), nodeAddress, PROTOCOL_TYPE); //100
   }
 
   public final void registerClient (MessageTransportClient client) 
@@ -399,7 +408,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
     {
       if (myMailData == null) return;  // no data to register
       MessageAddress clientAddress = client.getMessageAddress();
-      getNameSupport().registerAgentInNameServer (myMailData, clientAddress, PROTOCOL_TYPE);
+      getNameSupport().registerAgentInNameServer (myMailData.getURI(), clientAddress, PROTOCOL_TYPE); //100
     } 
     catch (Exception e) 
     {
@@ -413,7 +422,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
     {
       if (myMailData == null) return;  // no data to unregister
       MessageAddress clientAddress = client.getMessageAddress();
-      getNameSupport().unregisterAgentInNameServer (myMailData, clientAddress, PROTOCOL_TYPE);
+      getNameSupport().unregisterAgentInNameServer (myMailData.getURI(), clientAddress, PROTOCOL_TYPE); //100
     } 
     catch (Exception e) 
     {
@@ -426,7 +435,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
     try 
     {
       if (myMailData == null) return;  // no data to register
-      getNameSupport().registerAgentInNameServer (myMailData, addr, PROTOCOL_TYPE);
+      getNameSupport().registerAgentInNameServer (myMailData.getURI(), addr, PROTOCOL_TYPE); //100
     } 
     catch (Exception e) 
     {

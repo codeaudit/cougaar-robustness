@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2001-2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD
+ * 12 Feb 2003: Port to 10.0 (OBJS)
  * 30 Sep 2002: Add inband acking. (OBJS)
  * 22 Sep 2002: Revamp for new serialization & socket closer. (OBJS)
  * 18 Aug 2002: Various enhancements for Cougaar 9.4.1 release. (OBJS)
@@ -135,39 +136,28 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
   public synchronized void shutdown ()
   {}
 
-  private DatagramSocketSpec lookupDatagramSocketSpec (MessageAddress address) throws NameLookupException
+  private DatagramSocketSpec lookupDatagramSocketSpec (MessageAddress address) 
+    throws NameLookupException
   {
-    Object obj = getNameSupport().lookupAddressInNameServer (address, PROTOCOL_TYPE);
+    URI uri = getNameSupport().lookupAddressInNameServer (address, PROTOCOL_TYPE); //100
 
-    if (obj != null)
+    if (uri != null) //100
     {
-      if (obj instanceof DatagramSocketSpec)
-      {
-        DatagramSocketSpec spec = (DatagramSocketSpec) obj;
+      DatagramSocketSpec spec = new DatagramSocketSpec (uri); //100
 
-        try
-        {
-          spec.setInetAddress (getInetAddress (spec.getHost()));
-        }
-        catch (Exception e)
-        {
-          throw new NameLookupException (e);
-        }
-
-        return spec;
+      try {
+        spec.setInetAddress (getInetAddress (spec.getHost()));
+      } catch (Exception e) {
+        throw new NameLookupException (e);
       }
-      else
-      {
-        log.error ("Invalid DatagramSocketSpec in nameserver lookup!");
-      }
-    }
-
+      return spec;
+    } 
     return null;
   }
 
   private DatagramSocketSpec getDatagramSocketSpecByNode (String node) throws NameLookupException
   {
-    return getDatagramSocketSpec (new MessageAddress (node+ "(MTS" +PROTOCOL_TYPE+ ")"));
+    return getDatagramSocketSpec (MessageAddress.getMessageAddress (node+ "(MTS" +PROTOCOL_TYPE+ ")")); //100
   }
 
   private DatagramSocketSpec getDatagramSocketSpec (MessageAddress address) throws NameLookupException
