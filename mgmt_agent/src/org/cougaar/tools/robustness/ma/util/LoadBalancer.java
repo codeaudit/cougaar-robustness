@@ -31,6 +31,7 @@ import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.SchedulerService;
+import org.cougaar.core.service.UIDService;
 
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.component.ServiceBroker;
@@ -72,7 +73,9 @@ public class LoadBalancer extends BlackboardClientComponent {
   private MoveHelper moveHelper;
   private RobustnessController controller;
   private CommunityStatusModel model;
+  private UIDService uidService;
   private List lbReqQueue = Collections.synchronizedList(new ArrayList());
+  private Map myRequests = Collections.synchronizedMap(new HashMap());
 
   // Subscription to HealthMonitorRequests for load balancing
   private IncrementalSubscription healthMonitorRequests;
@@ -106,17 +109,18 @@ public class LoadBalancer extends BlackboardClientComponent {
    * Load requires services.
    */
   public void load() {
+    ServiceBroker sb = getBindingSite().getServiceBroker();
     setAgentIdentificationService(
-      (AgentIdentificationService)getServiceBroker().getService(this, AgentIdentificationService.class, null));
+      (AgentIdentificationService)sb.getService(this, AgentIdentificationService.class, null));
     setAlarmService(
-      (AlarmService)getServiceBroker().getService(this, AlarmService.class, null));
+      (AlarmService)sb.getService(this, AlarmService.class, null));
     setSchedulerService(
-      (SchedulerService)getServiceBroker().getService(this, SchedulerService.class, null));
+      (SchedulerService)sb.getService(this, SchedulerService.class, null));
     setBlackboardService(
-      (BlackboardService)getServiceBroker().getService(this, BlackboardService.class, null));
-    logger =
-      (LoggingService)getBindingSite().getServiceBroker().getService(this, LoggingService.class, null);
+      (BlackboardService)sb.getService(this, BlackboardService.class, null));
+    logger = (LoggingService)sb.getService(this, LoggingService.class, null);
     logger = org.cougaar.core.logging.LoggingServiceWithPrefix.add(logger, agentId + ": ");
+    uidService = (UIDService)sb.getService(this, UIDService.class, null);
     super.load();
   }
 
@@ -150,46 +154,76 @@ public class LoadBalancer extends BlackboardClientComponent {
 
     for (Iterator it = loadBalanceRequests.getChangedCollection().iterator(); it.hasNext(); ){
       LoadBalanceRequest lbr = (LoadBalanceRequest)it.next();
-      if(lbr.isResult()) {
+      if (lbr.isResult()) {
         CougaarSociety society = lbr.getCougaarSociety();
-        if(society == null) continue;
-        logger.debug("result society: \n" + society.toXML());
-        moveAgents(society);
+        if (society != null) {
+          if (logger.isDebugEnabled()) {
+            logger.debug("LoadBalancer result: \n" + society.toXML());
+          }
+          Map layout = layoutFromSociety(society);
+          if (lbr instanceof UniqueLoadBalanceRequest) {
+            UniqueLoadBalanceRequest ulbr = (UniqueLoadBalanceRequest) lbr;
+            LoadBalancerListener listener =
+                (LoadBalancerListener) myRequests.remove(ulbr.getUID());
+            if (listener != null) {
+              listener.layoutReady(layout);
+            }
+          }
+        }
       }
     }
+  }
+
+  /**
+   * Get recommended layout from EN4J and execute the listener callback with
+   * results.
+   * @param useHamming
+   * @param newNodes
+   * @param killedNodes
+   * @param leaveAsIsNodes
+   * @param listener
+   */
+  public void doLayout(boolean useHamming, List newNodes, List killedNodes, List leaveAsIsNodes, LoadBalancerListener listener) {
+    UID uid = uidService.nextUID();
+    int solverMode = DEFAULT_SOLVER_MODE;
+    logger.info("getLayout:" +
+                " solverMode=" + solverMode +
+                " useHamming=" + useHamming +
+                " newNodes=" + newNodes +
+                " killedNodes=" + killedNodes +
+                " leaveAsIsNodes=" + leaveAsIsNodes +
+                " uid=" + uid);
+    LoadBalanceRequest loadBalReq =
+        new UniqueLoadBalanceRequest(DEFAULT_ANNEAL_TIME,
+                                     DEFAULT_SOLVER_MODE,
+                                     useHamming,
+                                     newNodes,
+                                     killedNodes,
+                                     leaveAsIsNodes,
+                                     uid);
+    myRequests.put(uid, listener);
+    logger.debug("publishing LoadBalanceRequest");
+    fireLater(loadBalReq);
   }
 
   /**
    * Submit request to EN for new community laydown and perform required moves.
    */
   public void doLoadBalance() {
-    // submit request to EN plugin and send move requests to moveHelper
-    //       upon receipt of EN response
-    logger.info("doLoadBalance");
     List newNodes = Collections.EMPTY_LIST;
     List killedNodes = Collections.EMPTY_LIST;
     List leaveAsIsNodes = getExcludedNodes();
     doLoadBalance(DEFAULT_HAMMING, newNodes, killedNodes, leaveAsIsNodes);
-    logger.debug("publishing LoadBalanceRequest");
   }
 
   public void doLoadBalance(boolean useHamming, List newNodes, List killedNodes, List leaveAsIsNodes) {
-    int solverMode = DEFAULT_SOLVER_MODE;
-    logger.info("doLoadBalance:" +
-                " solverMode=" + solverMode +
-                " useHamming=" + useHamming +
-                " newNodes=" + newNodes +
-                " killedNodes=" + killedNodes +
-                " leaveAsIsNodes=" + leaveAsIsNodes);
-    LoadBalanceRequest loadBalReq =
-        new LoadBalanceRequest(DEFAULT_ANNEAL_TIME,
-                               DEFAULT_SOLVER_MODE,
-                               useHamming,
-                               newNodes,
-                               killedNodes,
-                               leaveAsIsNodes);
-    logger.debug("publishing LoadBalanceRequest");
-    fireLater(loadBalReq);
+    // submit request to EN plugin and send move requests to moveHelper
+    //       upon receipt of EN response
+    logger.info("doLoadBalance");
+    doLayout(useHamming, newNodes, killedNodes, leaveAsIsNodes, new LoadBalancerListener() {
+      public void layoutReady(Map layout) {
+        moveAgents(layout);
+      }});
   }
 
   protected List getExcludedNodes() {
@@ -221,7 +255,8 @@ public class LoadBalancer extends BlackboardClientComponent {
     }
   }
 
-  private void moveAgents(CougaarSociety newSociety){
+  private Map layoutFromSociety(CougaarSociety newSociety) {
+    Map layout = new HashMap();
     String society = controller.getCompleteStatus();
     int index = society.indexOf("<community name=");
     index = society.indexOf("\"", index);
@@ -230,12 +265,22 @@ public class LoadBalancer extends BlackboardClientComponent {
       CougaarNode node = (CougaarNode)it.next();
       for(Iterator ait = node.getAgents(); ait.hasNext();) {
         CougaarAgent agent = (CougaarAgent)ait.next();
-        String name = agent.getName();
-        String oldNode = model.getLocation(name);
-        if(!(agent.getNode().getName().equals(oldNode))) {
-          logger.debug("move agent " + name + " from " + oldNode + " to " + node.getName() + " in " + comm);
-          moveHelper.moveAgent(name, oldNode, node.getName(), comm);
-        }
+        layout.put(agent.getName(), node.getName());
+      }
+    }
+    return layout;
+  }
+
+  public void moveAgents(Map layout){
+    String communityName = model.getCommunityName();
+    for (Iterator it = layout.entrySet().iterator(); it.hasNext();) {
+      Map.Entry me = (Map.Entry)it.next();
+      String agent = (String)me.getKey();
+      String newNode = (String)me.getValue();
+      String currentNode = model.getLocation(agent);
+      if(!(newNode.equals(currentNode))) {
+        logger.debug("move agent " + agent + " from " + currentNode + " to " + newNode + " in comm " + communityName);
+        moveHelper.moveAgent(agent, currentNode, newNode, communityName);
       }
     }
   }
