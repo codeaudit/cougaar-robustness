@@ -257,9 +257,6 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
     // Publish new ThreatAlerts
     synchronized (sendQueue) {
       n = sendQueue.size();
-      if (n <= 0 || !servicesReady()) {
-        return;
-      }
       l = new ArrayList(sendQueue);
       sendQueue.clear();
     }
@@ -280,9 +277,6 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
     // Publish updated ThreatAlerts
     synchronized (updateQueue) {
       n = updateQueue.size();
-      if (n <= 0 || !servicesReady()) {
-        return;
-      }
       l = new ArrayList(updateQueue);
       updateQueue.clear();
     }
@@ -299,9 +293,6 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
     // Process canceled ThreatAlerts
     synchronized (cancelQueue) {
       n = cancelQueue.size();
-      if (n <= 0 || !servicesReady()) {
-        return;
-      }
       l = new ArrayList(cancelQueue);
       cancelQueue.clear();
     }
@@ -393,6 +384,7 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
   }
 
   private void cancelThreatAlert(ThreatAlert alert) {
+    log.debug("cancelThreatAlert: listeners=" + listeners.size());
     if (currentThreatAlerts.containsKey(alert.getUID())) {
       // Remove from current alert list
       currentThreatAlerts.remove(alert.getUID());

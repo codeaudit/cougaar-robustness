@@ -141,30 +141,33 @@ public class IAOMServlet extends BaseServletComponent implements BlackboardClien
 
     private void submit() {
       OMCRangeList list = new OMCRangeList(new Integer(LOW), new Integer(HIGH));
-      InterAgentOperatingMode iaom = new InterAgentOperatingMode("org.cougaar.core.security.monitoring.THREATCON_LEVEL", list);
-      //MessageAddress target = MessageAddress.getMessageAddress("SMALL-ARManager");
-      //iaom.setTarget(target);
-      if(level.equalsIgnoreCase("HIGH"))
-        iaom.setValue(new Integer(HIGH));
-      else
-        iaom.setValue(new Integer(LOW));
-      iaom.setTarget(MessageAddress.getMessageAddress(target));
-      boolean temp = modeExists(iaom);
-      if(modeExists(iaom)) {
-         publishMode(iaom, "change");
-      }
-      else {
-         publishMode(iaom, "add");
+      InterAgentOperatingMode threatcon = getThreatcon();
+      if (threatcon == null) {
+        threatcon = new InterAgentOperatingMode("org.cougaar.core.security.monitoring.THREATCON_LEVEL", list);
+        setThreatLevel(threatcon, level);
+        threatcon.setUID(uidService.nextUID());
+        threatcon.setTarget(MessageAddress.getMessageAddress(target));
+        publishThreatcon(threatcon, "add");
+      } else {
+        setThreatLevel(threatcon, level);
+        publishThreatcon(threatcon, "change");
       }
     }
 
   }
 
-  private void publishMode(InterAgentOperatingMode iaom, String action) {
+  private void setThreatLevel(InterAgentOperatingMode threatcon, String level) {
+    if(level.equalsIgnoreCase("HIGH")) {
+      threatcon.setValue(new Integer(HIGH));
+    } else {
+      threatcon.setValue(new Integer(LOW));
+    }
+  }
+
+  private void publishThreatcon(InterAgentOperatingMode iaom, String action) {
       try {
         bb.openTransaction();
         if(action.equals("add")) {
-          iaom.setUID(uidService.nextUID());
           bb.publishAdd(iaom);
         }
         else
@@ -177,19 +180,17 @@ public class IAOMServlet extends BaseServletComponent implements BlackboardClien
     log.info("publish " + action + " InterAgentOperatingMode: target=" + iaom.getTargets() + " content=" + iaom.toString());
   }
 
-  private boolean modeExists (InterAgentOperatingMode iaom) {
+  private InterAgentOperatingMode getThreatcon() {
+    InterAgentOperatingMode threatcon = null;
     try {
       bb.openTransaction();
       opModes = (IncrementalSubscription)bb.subscribe(_threatConOM);
-      Collection list = opModes.getCollection();
-      /*for(Iterator it = list.iterator(); it.hasNext();) {
-        InterAgentOperatingMode temp = (InterAgentOperatingMode)it.next();
-        if(temp.getTargets() == iaom.getTargets()) {
-          return true;
-        }
+      Collection threatcons = opModes.getCollection();
+      for(Iterator it = threatcons.iterator(); it.hasNext();) {
+        threatcon = (InterAgentOperatingMode)it.next();
+        break;
       }
-      return false;*/
-      return list.size() > 0;
+      return threatcon;
     } finally
     {bb.closeTransactionDontReset();}
   }
