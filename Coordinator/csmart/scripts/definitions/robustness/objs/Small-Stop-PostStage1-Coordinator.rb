@@ -29,7 +29,7 @@ parameters:
 
 include_scripts:
   - script: $CIP/csmart/lib/isat/clearPnLogs.rb
-  - script: $CIP/csmart/lib/robustness/objs/deconfliction.rb 
+#  - script: $CIP/csmart/lib/robustness/objs/deconfliction.rb 
   - script: $CIP/csmart/lib/coordinator/unleash_defenses.rb 
 #  - script: $CIP/csmart/lib/robustness/objs/disconnect.rb
 #    parameters:
@@ -42,9 +42,9 @@ include_scripts:
 #    parameters:
 #      - snapshot_name: $CIP/SAVE-Small-PreStage2-AR.tgz
 #      - snapshot_location: before_stage_2
-#  - script: $CIP/csmart/lib/isat/stop_society.rb
-#    parameters:
-#      - stop_location: after_stage_1
+  - script: $CIP/csmart/lib/isat/stop_society.rb
+    parameters:
+      - stop_location: after_stage_1
   - script: $CIP/csmart/lib/isat/wait_for_ok.rb
     parameters:
       - wait_for_location: after_stage_1
