@@ -123,7 +123,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     {"hbFailRate",   "0.5"},
     {"activePingFreq", "180000"},
     {"pingTimeout",  "60000"},
-    {"pingRetries",  "0"},
+    {"pingRetries",  "1"},
     {"evalFreq",     "20000"},
     {"restartRetryFreq", "120000"}
   };
@@ -174,7 +174,6 @@ public class HealthMonitorPlugin extends SimplePlugin implements
   //  End of externally configurable parameters
   /////////////////////////////////////////////////////////////////////////
 
-
   private SensorFactory sensorFactory;
   private ClusterIdentifier myAgent;
   private LoggingService log;
@@ -200,6 +199,8 @@ public class HealthMonitorPlugin extends SimplePlugin implements
    * HealthReports for monitored agents.
    */
   protected void setupSubscriptions() {
+
+    String value = System.getProperty("org.cougaar.community.caching");
 
     // Setup logger
     log =  (LoggingService) getBindingSite().getServiceBroker().
@@ -763,9 +764,11 @@ public class HealthMonitorPlugin extends SimplePlugin implements
         }
       }
     }
+
     if (nextAlarm != null) nextAlarm.cancel();
     nextAlarm =  new RosterUpdateAlarm(120000);
     getAlarmService().addRealTimeAlarm(nextAlarm);
+
   }
 
   /**
@@ -836,9 +839,9 @@ public class HealthMonitorPlugin extends SimplePlugin implements
   private boolean isNodeAgent(String agentName) {
     try {
       TopologyEntry te = topologyService.getEntryForAgent(agentName);
-      return (te.getType() == te.NODE_AGENT_TYPE);
+      return (te != null && te.getType() == te.NODE_AGENT_TYPE);
     } catch (Exception ex) {
-      log.error("Exception getting agent location for TopologyReaderService", ex);
+      log.error("Exception getting agent location from TopologyReaderService", ex);
     }
     return false;
   }
