@@ -321,7 +321,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 
 
                     // special code to activate/deactivate RMIAction in tandem with SecurityDefenseAction - a special case for ACUC #2B
-                    if (thisAction.getClass().getName().equals("org.cougaar.core.security.coordinator.Security_Defense_Setting") {
+                    if (thisAction.getClass().getName().equals("org.cougaar.core.security.coordinator.Security_Defense_Setting")) {
                         Action rmiAction = findAction(thisAction.getAssetID(), "org.cougaar.robustness.dos.coordinator.RMIAction");
                         if (proposedVariant.getVariantName().equals(cbe, "High")) {
                             String rmiVariantName = "Disabled";
