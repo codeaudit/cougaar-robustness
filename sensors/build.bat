@@ -35,10 +35,13 @@ rem set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\build.jar
 rem set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\glm.jar
 rem set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\sys\servlet.jar
 set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\manager.jar
-set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\Robustness_objs_msglog.jar
+set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\msglog.jar
 
 set FILES=src\org\cougaar\tools\robustness\sensors\*.java
 if exist tutorial\assets set FILES=%FILES% tutorial\assets\*.java
 
 @echo on
-javac -deprecation -d lib -classpath %LIBPATHS% %FILES% && jar cf %COUGAAR_INSTALL_PATH%\lib\Robustness_objs_sensors.jar -C lib ./org
+javac -deprecation -d lib -classpath %LIBPATHS% %FILES% && jar cf %COUGAAR_INSTALL_PATH%\lib\sensors.jar -C lib ./org
+
+jarsigner.exe -keystore signingCA.keystore -storepass keystore %COUGAAR_INSTALL_PATH%\lib\sensors.jar privileged
+

@@ -69,28 +69,28 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     public long getExpirationTime () {
       return detonate;
     }
-    public synchronized void expire () {
-    //public void expire () {
-      if (!expired) {
-        bb.openTransaction();
-        prepareHealthReports();
-        bb.closeTransaction();
-        expired = true;
+    public void expire () {
+      synchronized (lock) {
+        if (!expired) {
+          bb.openTransaction();
+          prepareHealthReports();
+          bb.closeTransaction();
+          expired = true;
+        }
       }
     }
     public boolean hasExpired () {
       return expired;
     }
-    public synchronized boolean cancel () {
-    //public boolean cancel () {
-      if (!expired)
-        return expired = true;
-      return false;
+    public boolean cancel () {
+      synchronized (lock) {
+        if (!expired)
+          return expired = true;
+        return false;
+      }
     }
   }
 
-  // temporary implementation of HeartbeatRequest timeout.
-  // will be replaced by MTS-based implementation.
   private class HeartbeatRequestTimeout implements Alarm {
     private long detonate = -1;
     private boolean expired = false;
@@ -103,16 +103,22 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     public long getExpirationTime () {return detonate;
     }
     public void expire () {
-      if (!expired) {
-        fail(reqUID);
-        expired = true;}
+      synchronized (lock) {
+        if (!expired) {
+          fail(reqUID);
+          expired = true;
+        }
+      }
     }
     public boolean hasExpired () {return expired;
     }
     public boolean cancel () {
-      if (!expired)
-        return expired = true;
-      return false;}
+      synchronized (lock) {
+        if (!expired)
+          return expired = true;
+        return false;
+      }
+    }
   }
 
   private void fail(UID reqUID) {
@@ -168,7 +174,6 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
 
   // produce HeartbeatHealthReports from ACCEPTED HeartbeatRequests
   private void prepareHealthReports() {
-   synchronized (lock) {
     long timeUntilNextAlarm = Long.MAX_VALUE; // milliseconds until next call to prepareHealthReports
     Iterator iter = heartbeatRequestSub.getCollection().iterator();
     while (iter.hasNext()) {
@@ -245,7 +250,6 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
       nextAlarm = new SendHealthReportsAlarm(timeUntilNextAlarm);
       alarmService.addRealTimeAlarm(nextAlarm);
     }
-   }
   }
 
   protected void setupSubscriptions() {

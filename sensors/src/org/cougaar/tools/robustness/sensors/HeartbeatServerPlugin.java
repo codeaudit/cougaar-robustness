@@ -72,16 +72,18 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
     /** 
      * Called by the cluster clock when clock-time >= getExpirationTime().
      **/
-    public synchronized void expire () {
-      if (!expired) {
-        try {
-          bb.openTransaction();
-          processHeartbeats();
-        } catch (Exception e) {
-          e.printStackTrace();
-        } finally {
-          expired = true;
-          bb.closeTransaction();
+    public void expire () {
+      synchronized (lock) {
+        if (!expired) {
+          try {
+            bb.openTransaction();
+            processHeartbeats();
+          } catch (Exception e) {
+            e.printStackTrace();
+          } finally {
+            expired = true;
+            bb.closeTransaction();
+          }
         }
       }
     }
@@ -103,7 +105,6 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
   }
 
   private void processHeartbeats() {
-   synchronized (lock) {
     long minFreq = Long.MAX_VALUE;  // milliseconds until next heartbeat should be sent
     Iterator iter = sub.getCollection().iterator();
     while (iter.hasNext()) {
@@ -143,7 +144,6 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
       nextAlarm =  new ProcessHeartbeatsAlarm(minFreq);
       alarmService.addRealTimeAlarm(nextAlarm);
     }
-   }
   } 
 
   public void suspend() {
@@ -162,11 +162,13 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
   }
 
   protected void setupSubscriptions() {
-    log =  (LoggingService) getServiceBroker().
-      getService(this, LoggingService.class, null);
-    bb = getBlackboardService();
-    sub = (IncrementalSubscription)bb.subscribe(hbReqPred);
-    processHeartbeats();
+    synchronized (lock) {
+      log =  (LoggingService) getServiceBroker().
+        getService(this, LoggingService.class, null);
+      bb = getBlackboardService();
+      sub = (IncrementalSubscription)bb.subscribe(hbReqPred);
+      processHeartbeats();
+    }
   }
 
   protected void execute() {
