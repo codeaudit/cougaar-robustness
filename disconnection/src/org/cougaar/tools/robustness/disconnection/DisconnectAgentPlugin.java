@@ -127,12 +127,11 @@ public class DisconnectAgentPlugin extends ServiceUserPluginBase {
   
   //Create one condition and one of each type of operating mode
   private void initObjects() {
-    
-      
+           
      assetAddress = agentIdentificationService.getMessageAddress();
      assetID = agentIdentificationService.getName();
      nodeAddress = nodeIdentificationService.getMessageAddress();
-
+    
      AgentExistsCondition aec =
         new AgentExistsCondition("Agent", assetID);
      aec.setUID(us.nextUID());
@@ -140,6 +139,7 @@ public class DisconnectAgentPlugin extends ServiceUserPluginBase {
      if (logger.isDebugEnabled()) logger.debug("Source: "+assetAddress+", Target: "+nodeAddress);
 
      getBlackboardService().openTransaction();
+     getBlackboardService().publishAdd(new Dummy(assetID));  // weird hack so the agent doesnt get lost on rehydration
      getBlackboardService().publishAdd(aec);
      getBlackboardService().closeTransaction();
 

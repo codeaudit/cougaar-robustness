@@ -81,11 +81,11 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
   private MessageAddress managerAddress;
   private String managerID;
   private static String nodeID;
-  private String MANAGER_NAME;
   
   private IncrementalSubscription reconnectTimeConditionSubscription;
   private IncrementalSubscription defenseOpModeSubscription;
   private IncrementalSubscription monitoringOpModeSubscription;
+  private IncrementalSubscription managerAddressSubscription;
   
   private Hashtable activeDisconnects = new Hashtable();
 
@@ -113,10 +113,20 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
      haveServices(); 
      if (logger.isDebugEnabled()) logger.debug("setupSubscriptions called.");
 
-     getPluginParams();
+     //getPluginParams();
 
      initObjects(); //create & publish condition and op mode objects - none yet
       
+     //Listen for the ManagerAddress
+     managerAddressSubscription = (IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
+        public boolean execute(Object o) {
+            if ( o instanceof RobustnessManagerID) {
+                return true ;
+            }
+            return false ;
+        }
+     });
+     
      //Listen for changes to Conditions
      reconnectTimeConditionSubscription = (IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
         public boolean execute(Object o) {
@@ -152,8 +162,6 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
   
   //Create one condition and one of each type of operating mode
   private void initObjects() {
-      // Find the ManagerAgent
-      //communityService.searchCommunity(
   }
   
   private boolean haveServices() {
@@ -198,81 +206,131 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
   }
 
   
-  // Takes the Name of the Manager Agent as a required String parameter
-  private void getPluginParams() {
-      if (logger.isInfoEnabled() && getParameters().isEmpty()) logger.error("plugin saw 0 parameters [must supply the name of the Manager Agent].");
-
-      Iterator iter = getParameters().iterator (); 
-      if (iter.hasNext()) {
-           MANAGER_NAME = (String)iter.next();
-           logger.debug("Setting Manager Agent Name = " + MANAGER_NAME);
-      }
-  }  
-  
-  
   public void execute() {
 
       Iterator iter;
     
-      // A new Disconnect remote has appeared, so create the Defense Conditions & OpModes for it     
       assetAddress = agentIdentificationService.getMessageAddress();
-      assetID = agentIdentificationService.getName();
-      managerAddress = MessageAddress.getMessageAddress(MANAGER_NAME);
-      iter = reconnectTimeConditionSubscription.getAddedCollection().iterator();
-      while (iter.hasNext()) {
-          ReconnectTimeCondition rtc = (ReconnectTimeCondition)iter.next();
-          if (rtc != null) {
-              
-          //if the DefenseApplicability condition already exists, don't make anotherset of conditions & opmodes
-            UnaryPredicate pred = new UnaryPredicate() {
-              public boolean execute(Object o) {  
-                return 
-                  (o instanceof DisconnectApplicabilityCondition);
-              }
-            };
-            
-            boolean found = false;
-            Collection c = blackboard.query(pred);
-            Iterator iter2 = c.iterator();
-            while ((iter2.hasNext()) && (!found)) {
-               DisconnectApplicabilityCondition cond = (DisconnectApplicabilityCondition)iter2.next();
-               if (cond.compareSignature(rtc.getAssetType(), rtc.getAsset(), rtc.getDefenseName())) {
-                   found = true;
-                   if (logger.isDebugEnabled()) logger.debug(found+": Not creating redundant modes & conditions for "+rtc.getAsset()
-                                                    +" matched on "+cond.getAsset());
-               }
-            }
+      assetID = agentIdentificationService.getName();     
+      
+      if (managerAddress != null) {// already know the ManagerAgent, so create conditions & opmodes for newly announced Nodes & Agents
+          iter = reconnectTimeConditionSubscription.getAddedCollection().iterator();
+          while (iter.hasNext()) {
+              ReconnectTimeCondition rtc = (ReconnectTimeCondition)iter.next();
+              if (rtc != null) {
 
-            if (!found) { // make new conditions & opmodes
-                DisconnectApplicabilityCondition dac = new DisconnectApplicabilityCondition(rtc.getAssetType(), rtc.getAsset());
-                double t = ((Double)rtc.getValue()).doubleValue();
-                if (t > 0.0) {
-                    dac.setValue(DefenseConstants.BOOL_TRUE); // disconnected
-                    OverdueAlarm overdueAlarm = new OverdueAlarm(dac, t > 10000.0 ? t : 10000.0);  // Don't monitor for less than 5 sec
-                    activeDisconnects.put(dac, overdueAlarm);
-                    getAlarmService().addRealTimeAlarm(overdueAlarm);
+              //if the DefenseApplicability condition already exists, don't make anotherset of conditions & opmodes
+                UnaryPredicate pred = new UnaryPredicate() {
+                  public boolean execute(Object o) {  
+                    return 
+                      (o instanceof DisconnectApplicabilityCondition);
+                  }
+                };
+
+                boolean found = false;
+                Collection c = blackboard.query(pred);
+                Iterator iter2 = c.iterator();
+                while ((iter2.hasNext()) && (!found)) {
+                   DisconnectApplicabilityCondition cond = (DisconnectApplicabilityCondition)iter2.next();
+                   if (cond.compareSignature(rtc.getAssetType(), rtc.getAsset(), rtc.getDefenseName())) {
+                       found = true;
+                       if (logger.isDebugEnabled()) logger.debug(found+": Not creating redundant modes & conditions for "+rtc.getAsset());
+                   }
                 }
-                else {
-                    dac.setValue(DefenseConstants.BOOL_FALSE); // not disconnected
-                }          
-                dac.setUID(us.nextUID());
-                dac.setSourceAndTarget(assetAddress, managerAddress);
-                blackboard.publishAdd(dac);
 
-                DisconnectDefenseEnabler dde = new DisconnectDefenseEnabler(rtc.getAssetType(), rtc.getAsset());
-                dde.setUID(us.nextUID());
-                dde.setSourceAndTarget(assetAddress, managerAddress);
-                blackboard.publishAdd(dde);
+                if (!found) { // make new conditions & opmodes
+                    DisconnectApplicabilityCondition dac = new DisconnectApplicabilityCondition(rtc.getAssetType(), rtc.getAsset());
+                    double t = ((Double)rtc.getValue()).doubleValue();
+                    if (t > 0.0) {
+                        dac.setValue(DefenseConstants.BOOL_TRUE); // disconnected
+                        OverdueAlarm overdueAlarm = new OverdueAlarm(dac, t > 10000.0 ? t : 10000.0);  // Don't monitor for less than 5 sec
+                        activeDisconnects.put(dac, overdueAlarm);
+                        getAlarmService().addRealTimeAlarm(overdueAlarm);
+                    }
+                    else {
+                        dac.setValue(DefenseConstants.BOOL_FALSE); // not disconnected
+                    }          
+                    dac.setUID(us.nextUID());
+                    dac.setSourceAndTarget(assetAddress, managerAddress);
+                    blackboard.publishAdd(dac);
 
-                DisconnectMonitoringEnabler dme = new DisconnectMonitoringEnabler(rtc.getAssetType(), rtc.getAsset());
-                dme.setUID(us.nextUID());
-                dme.setSourceAndTarget(assetAddress, managerAddress);
-                blackboard.publishAdd(dme);
+                    DisconnectDefenseEnabler dde = new DisconnectDefenseEnabler(rtc.getAssetType(), rtc.getAsset());
+                    dde.setUID(us.nextUID());
+                    dde.setSourceAndTarget(assetAddress, managerAddress);
+                    blackboard.publishAdd(dde);
 
-                if (logger.isDebugEnabled()) logger.debug("Added "+rtc.getAsset()+" Conditions & OpModes for Coordinator");
-            }
+                    DisconnectMonitoringEnabler dme = new DisconnectMonitoringEnabler(rtc.getAssetType(), rtc.getAsset());
+                    dme.setUID(us.nextUID());
+                    dme.setSourceAndTarget(assetAddress, managerAddress);
+                    blackboard.publishAdd(dme);
+
+                    if (logger.isDebugEnabled()) logger.debug("Added "+rtc.getAsset()+" Conditions & OpModes for Coordinator");
+                }
+              }
+
           }
-            
+      }
+      
+      Iterator i = managerAddressSubscription.getAddedCollection().iterator();
+      if (i.hasNext()) { // just found the ManagerAgentAddress
+          managerAddress = ((RobustnessManagerID)i.next()).getMessageAddress();
+          if (logger.isDebugEnabled()) logger.debug("ManagerAddress: "+managerAddress.toString());
+          // so create conditions & opmodes for everything we've seen so far but not created
+          iter = reconnectTimeConditionSubscription.iterator();
+          while (iter.hasNext()) {
+              ReconnectTimeCondition rtc = (ReconnectTimeCondition)iter.next();
+              if (rtc != null) {
+
+              //if the DefenseApplicability condition already exists, don't make anotherset of conditions & opmodes
+                UnaryPredicate pred = new UnaryPredicate() {
+                  public boolean execute(Object o) {  
+                    return 
+                      (o instanceof DisconnectApplicabilityCondition);
+                  }
+                };
+
+                boolean found = false;
+                Collection c = blackboard.query(pred);
+                Iterator iter2 = c.iterator();
+                while ((iter2.hasNext()) && (!found)) {
+                   DisconnectApplicabilityCondition cond = (DisconnectApplicabilityCondition)iter2.next();
+                   if (cond.compareSignature(rtc.getAssetType(), rtc.getAsset(), rtc.getDefenseName())) {
+                       found = true;
+                       if (logger.isDebugEnabled()) logger.debug(found+": Not creating redundant modes & conditions for "+rtc.getAsset());
+                   }
+                }
+
+                if (!found) { // make new conditions & opmodes
+                    DisconnectApplicabilityCondition dac = new DisconnectApplicabilityCondition(rtc.getAssetType(), rtc.getAsset());
+                    double t = ((Double)rtc.getValue()).doubleValue();
+                    if (t > 0.0) {
+                        dac.setValue(DefenseConstants.BOOL_TRUE); // disconnected
+                        OverdueAlarm overdueAlarm = new OverdueAlarm(dac, t > 10000.0 ? t : 10000.0);  // Don't monitor for less than 5 sec
+                        activeDisconnects.put(dac, overdueAlarm);
+                        getAlarmService().addRealTimeAlarm(overdueAlarm);
+                    }
+                    else {
+                        dac.setValue(DefenseConstants.BOOL_FALSE); // not disconnected
+                    }          
+                    dac.setUID(us.nextUID());
+                    dac.setSourceAndTarget(assetAddress, managerAddress);
+                    blackboard.publishAdd(dac);
+
+                    DisconnectDefenseEnabler dde = new DisconnectDefenseEnabler(rtc.getAssetType(), rtc.getAsset());
+                    dde.setUID(us.nextUID());
+                    dde.setSourceAndTarget(assetAddress, managerAddress);
+                    blackboard.publishAdd(dde);
+
+                    DisconnectMonitoringEnabler dme = new DisconnectMonitoringEnabler(rtc.getAssetType(), rtc.getAsset());
+                    dme.setUID(us.nextUID());
+                    dme.setSourceAndTarget(assetAddress, managerAddress);
+                    blackboard.publishAdd(dme);
+
+                    if (logger.isDebugEnabled()) logger.debug("Added "+rtc.getAsset()+" Conditions & OpModes for Coordinator");
+                }
+              }
+
+          }
       }
 
       iter = reconnectTimeConditionSubscription.getChangedCollection().iterator();
@@ -346,7 +404,7 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
             return false;
       }
 
-      private boolean propagateMonitoringEnablerChange(DisconnectMonitoringEnabler dme) {
+      private boolean propagateMonitoringEnablerChange(DisconnectMonitoringEnabler dme) {          
           
           // Find the corresponding DisconnectMonitoringAgentEnabler
             UnaryPredicate pred = new UnaryPredicate() {
@@ -356,19 +414,19 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
               }
             };
             
-            if (logger.isDebugEnabled()) logger.debug("Starting to PROGPAGATE MonitoringEnabler");
+            //if (logger.isDebugEnabled()) logger.debug("Starting to PROGPAGATE MonitoringEnabler");
             DisconnectMonitoringAgentEnabler cond = null;
             Collection c = blackboard.query(pred);
             Iterator iter = c.iterator();
-            if (logger.isDebugEnabled()) logger.debug(new Integer(c.size()).toString());
+            //if (logger.isDebugEnabled()) logger.debug(new Integer(c.size()).toString());
             while (iter.hasNext()) {
                cond = (DisconnectMonitoringAgentEnabler)iter.next();
-               if (logger.isDebugEnabled()) logger.debug(cond.getAssetType()+" "+cond.getAsset());
+               //if (logger.isDebugEnabled()) logger.debug(cond.getAssetType()+" "+cond.getAsset());
                if (cond.compareSignature(dme.getAssetType(), dme.getAsset(), dme.getDefenseName())) {
                    cond.setValue(dme.getValue());
-                    if (logger.isDebugEnabled()) logger.debug("Propagating "
-                            +cond.getClass()+" "
-                            +cond.getAssetType()+" "+cond.getAsset()+" " +cond.getDefenseName()+" " +cond.getValue());
+                    //if (logger.isDebugEnabled()) logger.debug("Propagating "
+                            //+cond.getClass()+" "
+                            //+cond.getAssetType()+" "+cond.getAsset()+" " +cond.getDefenseName()+" " +cond.getValue());
                    blackboard.publishChange(cond);
                    return true;
                }
@@ -394,9 +452,9 @@ public class DisconnectManagerPlugin extends ServiceUserPluginBase
                cond = (DisconnectDefenseAgentEnabler)iter.next();
                if (cond.compareSignature(dme.getAssetType(), dme.getAsset(), dme.getDefenseName())){ 
                    cond.setValue(dme.getValue());
-                   if (logger.isDebugEnabled()) logger.debug("Propagating "
-                            +cond.getClass()+" "
-                            +cond.getAssetType()+" "+cond.getAsset()+" " +cond.getDefenseName()+" " +cond.getValue());
+                   //if (logger.isDebugEnabled()) logger.debug("Propagating "
+                            //+cond.getClass()+" "
+                            //+cond.getAssetType()+" "+cond.getAsset()+" " +cond.getDefenseName()+" " +cond.getValue());
                    blackboard.publishChange(cond);
                    return true;
                }
