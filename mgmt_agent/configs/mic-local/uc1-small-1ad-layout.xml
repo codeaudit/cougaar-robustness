@@ -2,6 +2,11 @@
   xmlns:xsi='http:/www.w3.org/2001/XMLSchema-instance'
   xsi:noNamespaceSchemaLocation='http:/www.cougaar.org/2003/society.xsd'>
   <host name='HOST1'>
+    <node name='NAME_SERVER'>
+      <facet role='NameServer'/>
+    </node>
+  </host>
+  <host name='HOST2'>
     <facet enclave='FWD'/>
     <node name='FWD-NODE'>
       <agent name='1-35-ARBN'/>
@@ -20,10 +25,9 @@
       <agent name='DISCOM-1-AD'/>
     </node>
   </host>
-  <host name='HOST2'>
+  <host name='HOST3'>
     <facet enclave='REAR'/>
     <node name='REAR-NODE'>
-      <facet role="NameServer"/>
       <agent name='1-27-FABN'/>
       <agent name='110-POL-SUPPLYCO'/>
       <agent name='125-ORDBN'/>
@@ -65,7 +69,7 @@
       <agent name='USEUCOM'/>
     </node>
   </host>
-  <host name='HOST3'>
+  <host name='HOST4'>
     <facet enclave='TRANS'/>
     <node name='TRANS-NODE'>
       <agent name='TRANSCOM'/>

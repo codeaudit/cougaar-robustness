@@ -4,15 +4,18 @@
   xsi:noNamespaceSchemaLocation='http:/www.cougaar.org/2003/society.xsd'>
   <host name='oak'>
     <facet service="cougaar-db"/>
-    <facet service="jabber"/>
   </host>
   <host name='ron'>
     <facet service="operator"/>
+  </host>
+  <host name='karen'>
+    <facet service="acme"/>
   </host>
   <host name='net3'>
     <facet service="acme"/>
   </host>
   <host name='net5'>
+    <facet service="jabber"/>
     <facet service="acme"/>
   </host>
   <host name='wayne'>
