@@ -82,10 +82,10 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * Inner class used to maintain info about registered state controller.
    */
   class ControllerEntry {
-    private int state;
-    private String stateName;
-    private StateController controller;
-    private ControllerEntry(int state, String name, StateController sc) {
+    protected int state;
+    protected String stateName;
+    protected StateController controller;
+    protected ControllerEntry(int state, String name, StateController sc) {
       this.state = state;
       this.stateName = name;
       this.controller = sc;
@@ -93,16 +93,16 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
   }
 
   // Map of ControllerEntry instances
-  private Map controllers = new HashMap();
+  protected Map controllers = new HashMap();
 
   // Helper classes
-  private HeartbeatHelper heartbeatHelper;
-  private MoveHelper moveHelper;
-  private PingHelper pingHelper;
-  private RestartHelper restartHelper;
-  private LoadBalancer loadBalancer;
-  private DeconflictHelper deconflictHelper = null;
-  private DeconflictListener dl = null;
+  protected HeartbeatHelper heartbeatHelper;
+  protected MoveHelper moveHelper;
+  protected PingHelper pingHelper;
+  protected RestartHelper restartHelper;
+  protected LoadBalancer loadBalancer;
+  protected DeconflictHelper deconflictHelper = null;
+  protected DeconflictListener dl = null;
 
   protected CommunityService communityService;
 
@@ -235,11 +235,13 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * @param csm   Status model associated with event
    */
   public void statusChanged(CommunityStatusChangeEvent[] csce) {
-                            //CommunityStatusModel csm) {
     boolean interestingChange = false;
     for(int i = 0; i < csce.length; i++) {
       if(logger.isDebugEnabled()) {
         logger.debug(csce[i].toString());
+      }
+      if(csce[i].statusReceived()) {
+        statusUpdateReceived(csce[i].getName());
       }
       if(csce[i].membersAdded() || csce[i].membersRemoved()) {
         processMembershipChanges(csce[i]);
@@ -265,6 +267,12 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
       logger.info(statusSummary());
     }
   }
+
+  /**
+   * Invoked when a status update is received from a monitoring node.
+   * @param csce CommunityStatusChangeEvent
+   */
+  protected void statusUpdateReceived(String nodeName) {}
 
   /**
    * Default handler for membership changes in monitored community.
@@ -423,6 +431,31 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
   }
 
   /**
+   * Change state for ass specified agents/nodes.
+   * @param name  Set of agent/node names
+   * @param state New state
+   */
+  protected void newState(Set names, int state) {
+    for (Iterator it = names.iterator(); it.hasNext(); ) {
+      newState((String)it.next(), state);
+    }
+  }
+
+  /**
+   * Return name of all agents on specified node.
+   * @param nodeName Name of node
+   * @return Set of agent names
+   */
+  protected Set agentsOnNode(String nodeName) {
+    Set agentNames = new HashSet();
+    String agentsOnDeadNode[] = model.entitiesAtLocation(nodeName, model.AGENT);
+    for (int i = 0; i < agentsOnDeadNode.length; i++) {
+      agentNames.add(agentsOnDeadNode[i]);
+    }
+    return agentNames;
+  }
+
+  /**
    * Get current state for specified agent/node.
    * @param name  Agent/node name
    * @return Current state
@@ -474,6 +507,20 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    */
   protected String getLocation(String name) {
     return model.getLocation(name);
+  }
+
+  /**
+   * Get community attribute from model.
+   * @param id  Attribute identifier
+   * @param defaultValue  Default value if attribute not found
+   * @return Attribute value as a long
+   */
+  protected boolean getBooleanAttribute(String id, boolean defaultValue) {
+    if (model.hasAttribute(id)) {
+      return model.getBooleanAttribute(id);
+    } else {
+      return defaultValue;
+    }
   }
 
   /**
@@ -703,7 +750,6 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * Returns a String containing top-level health status of monitored community.
    */
   public String statusSummary() {
-
     String activeNodes[] = model.listEntries(CommunityStatusModel.NODE, getNormalState());
     String agents[] = model.listEntries(CommunityStatusModel.AGENT);
     StringBuffer summary = new StringBuffer("community=" + model.getCommunityName());
@@ -736,7 +782,6 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
     return summary.toString();
   }
 
-
   /**
    * Creates an XML representation of an Attribute set.
    */
@@ -756,6 +801,31 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
     }
     sb.append(indent + "</attributes>\n");
     return sb.toString();
+  }
+  protected Set getExcludedNodes() {
+    Set excludedNodes = new HashSet();
+    String allNodes[] = model.listEntries(model.NODE);
+    for (int i = 0; i < allNodes.length; i++) {
+      if (model.hasAttribute(model.getAttributes(allNodes[i]), "UseForRestarts", "False")) {
+        excludedNodes.add(allNodes[i]);
+      }
+    }
+    return excludedNodes;
+  }
+
+  protected List getVacantNodes() {
+    List vacantNodes = new ArrayList();
+    String allNodes[] = model.listEntries(model.NODE);
+    for (int i = 0; i < allNodes.length; i++) {
+      if (isVacantNode(allNodes[i])) {
+        vacantNodes.add(allNodes[i]);
+      }
+    }
+    return vacantNodes;
+  }
+
+  protected boolean isVacantNode(String name) {
+    return model.entitiesAtLocation(name, model.AGENT).length == 0;
   }
 
   /**
@@ -841,7 +911,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
     StringBuffer sb = new StringBuffer();
     sb.append(indent + "<agent name=\"" + agentName + "\" >\n");
     sb.append(indent + "  <status " +
-        " state=\"" + stateName(getState(agentName)) + "\"" +
+        " state=\"" + stateName(model.getCurrentState(agentName)) + "\"" +
         " last=\"" + (now - model.getTimestamp(agentName)) + "\"" +
         " expires=\"" + (expiresAt == NEVER ? "NEVER" : Long.toString(expiresAt)) + "\" />\n");
     String priorLoc = model.getPriorLocation(agentName);
