@@ -58,7 +58,7 @@
 
   <target name="compile">
     <!-- Compile the java code into ${classes} -->
-    <javac srcdir="${src}" destdir="${classes}">
+    <javac srcdir="${src}" destdir="${classes}" debug="on">
       <classpath>
         <fileset dir="./lib">
           <include name="**/*.jar"/>
