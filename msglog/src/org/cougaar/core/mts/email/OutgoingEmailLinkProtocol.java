@@ -123,6 +123,8 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
   private static final boolean embedMessageDigest;
   private static final boolean showMailServerInteraction;
 
+  private static int SID;
+
   private LoggingService log;
   private Hashtable mailDataCache;
   private HashMap links;
@@ -396,10 +398,16 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
     return maxMessageSizeKB*1024;
   }
 
+  private synchronized static int getNextSendID ()  // for debugging purposes
+  {
+    return SID++;
+  }
+
   class EmailOutLink implements DestinationLink 
   {
     private MessageAddress destination;
     private MailData mailData, savedMailData;
+    private String sid;
 
     public EmailOutLink (MessageAddress destination) 
     {
@@ -498,7 +506,11 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
    
     private synchronized boolean sendMessage (AttributedMessage msg, MailData destAddr) throws Exception
     {
-      if (log.isDebugEnabled()) log.debug ("Sending " +MessageUtils.toString(msg));
+      if (log.isDebugEnabled())
+      {
+        sid = "s" +getNextSendID()+ " ";
+        log.debug (sid+ "Sending " +MessageUtils.toString(msg));
+      }
 
       //  Serialize the message into a byte array.  Optionally help insure message integrity
       //  via a message digest (eg. an embedded MD5 hash of the message).
@@ -513,7 +525,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
       {
         if (log.isWarnEnabled())
         {
-          log.warn ("Msg exceeds " +(getMaxMessageSizeInBytes()/1024)+ " KB max email " +
+          log.warn (sid+ "Msg exceeds " +(getMaxMessageSizeInBytes()/1024)+ " KB max email " +
             "message size! (" +(msgBytes.length/1024)+ " KB): " +MessageUtils.toString(msg));
         }
 
@@ -522,7 +534,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
       }
       else if (msgBytes.length == 0)
       {
-        if (log.isWarnEnabled()) log.warn ("No email sent as msg is 0 bytes");
+        if (log.isWarnEnabled()) log.warn (sid+ "No email sent as msg is 0 bytes");
         return true;
       }
 
@@ -568,7 +580,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
 
         //  Send email message
 
-        if (log.isDebugEnabled()) log.debug ("Sending email:\n" + emailMsg);
+        if (log.isDebugEnabled()) log.debug (sid+ "Sending email:\n" + emailMsg);
         MailMan.sendMessage (outbox, emailMsg);
       }
       catch (Exception e)

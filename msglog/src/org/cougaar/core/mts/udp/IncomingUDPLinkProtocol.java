@@ -62,6 +62,8 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
   private static final int maxPortNumber;
 
   private static LoggingService log;
+  private static int RID;
+
   private SocketClosingService socketCloser;
   private RTTService rttService;
   private String nodeID;
@@ -299,13 +301,18 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
     }
   }
 
+  private synchronized static int getNextReceiveID ()  // for debugging purposes
+  {
+    return RID++;
+  }
+
   private class DatagramSocketListener implements Runnable
   { 
     private DatagramSocket dsocket;
     private DatagramPacket packet;
     private EventWindow moveTrigger;
     private boolean quitNow;
-    private String dsockString;
+    private String dsockString, rid;
     
     public DatagramSocketListener (int port) throws IOException
     {
@@ -412,10 +419,15 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 
           //  Sit and wait for an incoming UDP packet
 
-          if (doDebug()) log.debug ("Waiting for msg from " +dsockString);
+          if (doDebug())
+          {  
+             rid = "r" +getNextReceiveID()+ " ";
+             log.debug (rid+ "Waiting for msg from " +dsockString);
+          }
+
           dsocket.receive (packet);
           receiveTime = now();
-          if (doDebug()) log.debug ("Waiting for msg done " +dsockString);
+          if (doDebug()) log.debug (rid+ "Waiting for msg done " +dsockString);
           if (showTraffic) System.err.print ("<U");
         }
         catch (Exception e)
@@ -424,7 +436,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
           //  other end closes their socket connection, but this is not
           //  the case here with datagram sockets.
 
-          if (doDebug()) log.debug ("Terminating socket exception:\n" +stackTraceToString(e)); 
+          if (doDebug()) log.debug (rid+ "Terminating socket exception:\n" +stackTraceToString(e)); 
           quitNow = true;
           break;
         }
@@ -443,7 +455,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
         }
         catch (MessageDeserializationException e)
         {
-          if (doWarn()) log.warn ("Deserialization exception (msg ignored): " +e);
+          if (doWarn()) log.warn (rid+ "Deserialization exception (msg ignored): " +e);
           exception = e;
 
           //  Certain kinds of deserialization errors occur to invalid messages being
@@ -466,16 +478,16 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
           //  Note:  If there was an reception exception with the original message there
           //  will not be any inband ack-ack coming back for the inband ack sent. 
 
-          if (doDebug()) log.debug ("Received inband ack-ack " +dsockString);
+          if (doDebug()) log.debug (rid+ "Received inband ack-ack " +dsockString);
           PureAckAckMessage paam;
 
           try
           {
-            paam = processAckAck (msg);
+            paam = processAckAck (rid, msg);
           }
           catch (Exception e)
           {
-            if (doDebug()) log.debug ("Error processing inband ack-ack (ack-ack ignored): " +e);
+            if (doDebug()) log.debug (rid+ "Error processing inband ack-ack (ack-ack ignored): " +e);
             quitNow = true;
             return;
           }
@@ -506,7 +518,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
             if (doDebug()) 
             {
               msgString = MessageUtils.toString (msg);
-              log.debug ("From " +dsockString+ " read " +msgString);
+              log.debug (rid+ "From " +dsockString+ " read " +msgString);
             }
 
             try
@@ -515,12 +527,12 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
             }
             catch (MisdeliveredMessageException e)
             { 
-              if (doDebug()) log.debug ("Delivery exception for " +msgString+ ": " +e);
+              if (doDebug()) log.debug (rid+ "Delivery exception for " +msgString+ ": " +e);
               exception = e;
             }
             catch (Exception e)
             { 
-              if (doDebug()) log.debug ("Exception delivering " +msgString+ ": " +stackTraceToString(e));
+              if (doDebug()) log.debug (rid+ "Exception delivering " +msgString+ ": " +stackTraceToString(e));
               exception = e;
             }
           }
@@ -537,15 +549,15 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
               byte[] ackBytes = createAck (msg, receiveTime, exception, sendTime);
               SocketAddress addr = packet.getSocketAddress();
               DatagramPacket ackPacket = new DatagramPacket (ackBytes, ackBytes.length, addr);
-              if (doDebug()) log.debug ("Sending ack thru " +dsockString);
+              if (doDebug()) log.debug (rid+ "Sending ack thru " +dsockString);
               dsocket.send (ackPacket);
-              if (doDebug()) log.debug ("Sending ack done " +dsockString);
+              if (doDebug()) log.debug (rid+ "Sending ack done " +dsockString);
             }
             catch (Exception e)
             {
               //  Any acking that did not complete will be taken care of in later acking
 
-              if (doDebug()) log.debug ("Inband acking stopped for " +dsockString+ ": " +e);
+              if (doDebug()) log.debug (rid+ "Inband acking stopped for " +dsockString+ ": " +e);
             }
           }
         } 
@@ -589,7 +601,7 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
       return ackBytes;
     }
 
-    private PureAckAckMessage processAckAck (AttributedMessage msg) throws Exception
+    private PureAckAckMessage processAckAck (String rid, AttributedMessage msg) throws Exception
     {
       PureAckAckMessage paam = (PureAckAckMessage) msg;
       PureAckAck pureAckAck = (PureAckAck) MessageUtils.getAck (paam);
@@ -619,9 +631,9 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
           buf.append ("Got inband ack-ack:\n");
           if (sbuf != null) buf.append (sbuf);
           if (lbuf != null) buf.append ("\n"+lbuf);
-          log.debug (buf.toString());
+          log.debug (rid+buf.toString());
         }
-        else log.debug ("Got an empty inband ack-ack!");
+        else log.debug (rid+ "Got an empty inband ack-ack!");
       }
 
       if (specificAcks != null)

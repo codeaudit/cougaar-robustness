@@ -34,6 +34,7 @@ import java.util.*;
 import org.cougaar.core.mts.*;
 import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.ThreadService;
+import org.cougaar.core.component.ServiceBroker;
 
 
 /**
@@ -57,6 +58,7 @@ public class MessageAckingAspect extends StandardAspect
   static PureAckAckSender pureAckAckSender;
 
   private LoggingService log;
+  private static TrafficAuditService trafficAuditer;
   private ThreadService threadService;
   private SendQueueDelegate sendQueueDelegate;
   private RouterDelegate routerDelegate;
@@ -108,6 +110,20 @@ public class MessageAckingAspect extends StandardAspect
 
     log = loggingService;
     thisNode = getRegistry().getIdentifier();
+
+    if (log.isInfoEnabled())
+    {
+      synchronized (this)
+      {
+        if (trafficAuditer == null)
+        {
+          ServiceBroker sb = getServiceBroker();
+          new TrafficAuditServiceImpl (sb);
+          trafficAuditer = (TrafficAuditService) sb.getService (this, TrafficAuditService.class, null);
+          if (trafficAuditer == null) log.warn ("Cannot do traffic auditing - TrafficAuditService not available!");
+        }
+      }
+    }
 
     synchronized (MessageAckingAspect.class)
     {
@@ -742,6 +758,16 @@ public class MessageAckingAspect extends StandardAspect
   LoggingService getTheLoggingService ()
   {
     return loggingService;
+  }
+
+  static void recordMessageSend (AttributedMessage msg)
+  {
+    if (trafficAuditer != null) trafficAuditer.recordMessageSend (msg);
+  }
+
+  static void recordMessageReceive (AttributedMessage msg)
+  {
+    if (trafficAuditer != null) trafficAuditer.recordMessageReceive (msg);
   }
 
   AgentState getAgentState (MessageAddress agent)

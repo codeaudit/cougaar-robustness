@@ -55,6 +55,8 @@ class AckBackend extends MessageDelivererDelegateImplBase
     String msgString = MessageUtils.toString (msg);
     if (log.isDebugEnabled()) log.debug ("AckBackend: entered by " +msgString);
 
+    MessageAckingAspect.recordMessageReceive (msg);  // for msg auditing
+
     //  Special Case:  Local messages are completely excluded from acking
 
     if (MessageUtils.isLocalMessage (msg)) 

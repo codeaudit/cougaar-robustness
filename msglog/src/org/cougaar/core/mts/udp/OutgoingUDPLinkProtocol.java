@@ -56,6 +56,8 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
   private static final int socketTimeout;
   private static final int inbandAckSoTimeout;
 
+  private static int SID;
+
   private LoggingService log;
   private SocketClosingService socketCloser;
   private RTTService rttService;
@@ -239,11 +241,16 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
     return socketTimeout;
   }
 
+  private synchronized static int getNextSendID ()  // for debugging purposes
+  {
+    return SID++;
+  }
+
   class UDPOutLink implements DestinationLink 
   {
     private MessageAddress destination;
     private DatagramSocket dsocket;
-    private String dsockString = null;
+    private String sid, dsockString = null;
 
     public UDPOutLink (MessageAddress dest) 
     {
@@ -349,7 +356,11 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
       //  NOTE:  UDP is an unreliable communications protocol.  We just send the message
       //  on its way and maybe it gets there.  Acking will tell us if it does or not.
 
-      if (doDebug()) log.debug ("Sending " +MessageUtils.toString(msg));
+      if (doDebug()) 
+      {
+        sid = "s" +getNextSendID()+ " ";
+        log.debug (sid+ "Sending " +MessageUtils.toString(msg));
+      }
 
       //  Set message send time for RTT service (updates msg attribute)
 
@@ -372,7 +383,7 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
 
         if (log.isWarnEnabled())
         {
-          log.warn ("Msg exceeds " +(getMaxMessageSizeInBytes()/1024)+ "KB max UDP " +
+          log.warn ("sid+ Msg exceeds " +(getMaxMessageSizeInBytes()/1024)+ "KB max UDP " +
             "message size! (" +msgSizeKB+ "KB): " +MessageUtils.toString(msg));
         }
 
@@ -409,7 +420,7 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
 
       if (dsocket == null || dsocket.isClosed()) 
       {
-        if (doDebug()) log.debug ("Creating datagram socket to " +destination+ " with " +spec);
+        if (doDebug()) log.debug (sid+ "Creating datagram socket to " +destination+ " with " +spec);
 
         dsocket = new DatagramSocket();
         scheduleSocketClose (dsocket, socketTimeout);
@@ -418,7 +429,7 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
         if (doDebug()) 
         {
           dsockString = datagramSocketToString (dsocket);
-          log.debug ("Created datagram socket " +dsockString);
+          log.debug (sid+ "Created datagram socket " +dsockString);
         }
       }
       else scheduleSocketClose (dsocket, socketTimeout);
@@ -435,17 +446,17 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
       {
         try
         {
-          if (doDebug()) log.debug ("Sending " +msgBytes.length+ " byte msg thru " +dsockString);
+          if (doDebug()) log.debug (sid+ "Sending " +msgBytes.length+ " byte msg thru " +dsockString);
           sendTime = now();
           dsocket.send (packet);
-          if (doDebug()) log.debug ("Sending " +msgBytes.length+ " byte msg done " +dsockString);
+          if (doDebug()) log.debug (sid+ "Sending " +msgBytes.length+ " byte msg done " +dsockString);
           break; // success
         }
         catch (Exception e)
         {
           if (tryN == 1 && e instanceof IllegalArgumentException)
           {
-            if (doDebug()) log.debug ("Reconnecting " +dsockString+ " to " +spec+ " for " +destination);
+            if (doDebug()) log.debug (sid+ "Reconnecting " +dsockString+ " to " +spec+ " for " +destination);
             dsocket.connect (addr, port);
           }
           else 
@@ -466,12 +477,12 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
           //  See if we get an ack
 
           if (packet.getData().length < MAX_ACK_MSG_SIZE) packet.setData (new byte[MAX_ACK_MSG_SIZE]);
-          if (doDebug()) log.debug ("Waiting for ack from " +dsockString);
+          if (doDebug()) log.debug (sid+ "Waiting for ack from " +dsockString);
           dsocket.setSoTimeout (inbandAckSoTimeout);
           dsocket.receive (packet);
           receiveTime = now();
-          if (doDebug()) log.debug ("Waiting for ack done " +dsockString);
-          pam = processAck (packet.getData());
+          if (doDebug()) log.debug (sid+ "Waiting for ack done " +dsockString);
+          pam = processAck (sid, packet.getData());
 
           //  Send an ack-ack
           //
@@ -481,9 +492,9 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
           if (!pam.hasReceptionException())
           {
             packet.setData (createAckAck (pam, receiveTime));
-            if (doDebug()) log.debug ("Sending ack-ack thru " +dsockString);
+            if (doDebug()) log.debug (sid+ "Sending ack-ack thru " +dsockString);
             dsocket.send (packet);
-            if (doDebug()) log.debug ("Sending ack-ack done " +dsockString);
+            if (doDebug()) log.debug (sid+ "Sending ack-ack done " +dsockString);
           }
           else
           {
@@ -492,7 +503,7 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
             if (doWarn()) 
             {
               String node = pam.getReceptionNode();
-              log.warn ("Got reception exception from node " +node+ " " +dsockString+ ": " +e);
+              log.warn (sid+ "Got reception exception from node " +node+ " " +dsockString+ ": " +e);
             }
 
             throw e;
@@ -502,7 +513,7 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
         {
           //  Any acking that did not complete will be taken care of in later acking
 
-          if (doDebug()) log.debug ("Inband acking stopped for " +dsockString+ ": " +e);
+          if (doDebug()) log.debug (sid+ "Inband acking stopped for " +dsockString+ ": " +e);
 
           //  Selectively close the socket 
 
@@ -532,7 +543,7 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
       return true;  // msg send successful
     }
 
-    private PureAckMessage processAck (byte[] ackBytes) throws Exception
+    private PureAckMessage processAck (String sid, byte[] ackBytes) throws Exception
     {
       AttributedMessage msg = MessageSerializationUtils.readMessageFromByteArray (ackBytes);
       PureAckMessage pam = (PureAckMessage) msg;
@@ -548,7 +559,7 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
         {
           StringBuffer buf = new StringBuffer();
           AckList.printAcks (buf, "  latest", latestAcks);
-          log.debug ("Got inband ack:\n" +buf);
+          log.debug (sid+ "Got inband ack:\n" +buf);
         }
 
         for (Enumeration a=latestAcks.elements(); a.hasMoreElements(); )
@@ -557,7 +568,7 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
         String fromNode = MessageUtils.getFromAgentNode (pam);
         MessageAckingAspect.addReceivedAcks (fromNode, latestAcks);
       }
-      else if (doDebug()) log.debug ("Got empty inband ack!");
+      else if (doDebug()) log.debug (sid+ "Got empty inband ack!");
 
       return pam;
     }

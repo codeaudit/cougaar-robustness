@@ -125,6 +125,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
 
   private static boolean showTraffic;
   private static LoggingService log;
+  private static int RID;
 
   private String nodeID;
   private String inboxesProp;
@@ -440,11 +441,17 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
 	return threadService;
   }
 
+  private synchronized static int getNextReceiveID ()  // for debugging purposes
+  {
+    return RID++;
+  }
+
   private class MessageInThread implements Runnable
   { 
     private MailBox inbox;
+    private String rid;
     private boolean quitNow;
-    boolean firstTime = true;
+    private boolean firstTime = true;
 
     public MessageInThread (MailBox inbox)
     {
@@ -536,9 +543,14 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
       {
         //  Get next mail message, waiting for it if needed
       
-        if (log.isDebugEnabled()) log.debug ("Waiting for next msg from " +mbox);
-        mailMsg = getNextMailMessage (mbox);
-        if (log.isDebugEnabled()) log.debug ("Got next msg from " +mbox);
+        if (log.isDebugEnabled()) 
+        {
+          rid = "r" +getNextReceiveID()+ " ";
+          log.debug (rid+ "Waiting for next msg from " +mbox);
+        }
+
+        mailMsg = getNextMailMessage (rid, mbox);
+        if (log.isDebugEnabled()) log.debug (rid+ "Got next msg from " +mbox);
         if (showTraffic) System.err.print ("<E");
       } 
       catch (Exception e) 
@@ -548,7 +560,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
           if (mailMsg == null) 
           {
             String detail = (log.isDebugEnabled() ? stackTraceToString(e) : "");
-            log.info ("Lost access to " +mbox+ "... " +detail);
+            log.info (rid+ "Lost access to " +mbox+ "... " +detail);
           }
         }
 
@@ -568,11 +580,11 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
       }
       catch (MessageDeserializationException e)
       {
-        if (log.isWarnEnabled()) log.warn ("Deserialization exception (msg ignored): " +e);
+        if (log.isWarnEnabled()) log.warn (rid+ "Deserialization exception (msg ignored): " +e);
         return true;  
       }
 
-      if (log.isDebugEnabled()) log.debug ("Got " +MessageUtils.toString(msg));
+      if (log.isDebugEnabled()) log.debug (rid+ "Got " +MessageUtils.toString(msg));
 
       //  Deliver the message.  Nobody to send exceptions to, so we just log them.
 
@@ -583,18 +595,18 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
       catch (MisdeliveredMessageException e)
       { 
         if (log.isDebugEnabled()) 
-          log.debug ("Got MisdeliveredMessageException for " +MessageUtils.toString(msg)+ ": " +e);
+          log.debug (rid+ "Got MisdeliveredMessageException for " +MessageUtils.toString(msg)+ ": " +e);
       }
       catch (Exception e)
       { 
         if (log.isWarnEnabled()) 
-          log.warn ("Exception delivering " +MessageUtils.toString(msg)+ ": " +stackTraceToString(e));
+          log.warn (rid+ "Exception delivering " +MessageUtils.toString(msg)+ ": " +stackTraceToString(e));
       }
 
       return true;  // mbox still accessible
     }
 
-    private MailMessage getNextMailMessage (MailBox mbox) throws Exception
+    private MailMessage getNextMailMessage (String rid, MailBox mbox) throws Exception
     {
       while (true)
       {
@@ -615,7 +627,7 @@ public class IncomingEmailLinkProtocol extends IncomingLinkProtocol
           if (n > 0) 
           {
             if (log.isDebugEnabled()) 
-              for (int i=0; i<n; i++) log.debug ("Read email:\n" + mailMsgs[i]);
+              for (int i=0; i<n; i++) log.debug (rid+ "Read email:\n" + mailMsgs[i]);
 
             cache.addMessages (mailMsgs);
             break;

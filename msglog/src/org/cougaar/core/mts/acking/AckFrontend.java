@@ -303,6 +303,7 @@ class AckFrontend extends DestinationLinkDelegateImplBase
 
     //  Ok, the first (and possibly only) leg of the message send has completed successfully
 
+    MessageAckingAspect.recordMessageSend (msg);  // for msg auditing
     MessageAckingAspect.setLastSendTime (ack.getSendLink(), toNode, ack.getSendTime());
     MessageAckingAspect.setLastSuccessfulLinkUsed (toNode, link.getProtocolClass());
 
