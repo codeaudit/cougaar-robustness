@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/AssetTypeDimensionModel.java,v $
- * $Revision: 1.7 $
- * $Date: 2004-06-23 22:26:40 $
+ * $Revision: 1.8 $
+ * $Date: 2004-06-24 16:36:56 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -44,7 +44,7 @@ import org.cougaar.coordinator.techspec.ThreatModelChangeEvent;
  * corresponds to the tech-spec AssetSatteDimension objects.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.7 $Date: 2004-06-23 22:26:40 $
+ * @version $Revision: 1.8 $Date: 2004-06-24 16:36:56 $
  * @see AssetTypeModel
  * @see AssetStateDimension
  */
@@ -60,7 +60,8 @@ class AssetTypeDimensionModel extends Model
     // time-dependent making testing difficult.
     //
     private static final boolean OVERRIDE_EVENT_PROBABILITIES = false;
-    
+    private static final boolean USE_THREAT_VARIATION_CACHING = false;
+
     //------------------------------------------------------------
     // public interface
     //------------------------------------------------------------
@@ -437,7 +438,15 @@ class AssetTypeDimensionModel extends Model
                   + "'. Creating." );
         
         threat_var_set = new ThreatVariationCollection();
-        _asset_threat_var_table.put( asset_id, threat_var_set );
+
+        if ( USE_THREAT_VARIATION_CACHING )
+        {
+            _asset_threat_var_table.put( asset_id, threat_var_set );
+        }
+        else
+        {
+            logDebug( "NOTE: Threat variation caching disabled." );
+        }
 
         // Loop over all the threat root models and all their threat
         // variations, finding the ones that are applicable for this

@@ -29,8 +29,7 @@ import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.techspec.AssetType;
 import org.cougaar.coordinator.techspec.ActionTechSpecInterface;
 import org.cougaar.coordinator.Action;
-import org.cougaar.coordinator.techspec.AssetID;
-
+import org.cougaar.coordinator.techspec.ActionDescription;
 
 /**
  * The class that contains a local copy of pertinent information
@@ -57,11 +56,15 @@ class BelievabilityAction extends BeliefUpdateTrigger {
     public BelievabilityAction( Action action, ActionTechSpecInterface tech) 
     {
         super( action.getAssetID() );
-        _blackboard_action = action;
-	_actuator_info = tech;
-	_action_ts = _blackboard_action.getValue().getEndTime();
-	_action_state_dim = _blackboard_action.getAssetStateDimensionName();
-	_actuator_name = _actuator_info.getName();
+        //_blackboard_action = action;
+     _actuator_info = tech;
+     _action_ts = action.getValue().getEndTime();
+     _action_state_dim = action.getAssetStateDimensionName();
+     _actuator_name = tech.getName();
+     _action_status = action.getValue().getCompletionCodeString();
+     _action_has_completed = action.getValue().hasCompleted();
+     //_action_description = " ";
+     _action_description = tech.getActionDescriptionForValue(action,(Object)action.getValue().getAction());
         logError( "Got time stamp frmo Actuator Tech Spec Handle.\n BelievabilitAction constructor done." );
     } // constructor BelievabilityAction
     
@@ -76,10 +79,16 @@ class BelievabilityAction extends BeliefUpdateTrigger {
     public String toString() {
         StringBuffer buff = new StringBuffer();
 
-        // FIXME: Change this when body of this class is filled out.
-
-        buff.append( "BelievabilityAction: ??? " );
-
+        buff.append( "BelievabilityAction:" + _action_description + "\n");
+     buff.append( "\t Actuator Name:" + _actuator_name + "\n");
+     buff.append( "\tAction Status:" + _action_description + "\n");
+     buff.append( "\tAction Completion Time:" + _action_ts + "\n");
+     buff.append( "\tAction State Dimension Name" + _action_state_dim + "\n");
+     
+     /*for (int dim_count = 0; dim_count < _action_state_dim.length; dim_count++){
+          buff.append(_action_state_dim[dim_count].toString());
+     }*/
+     
         return buff.toString();
     } // method toString
 
@@ -94,12 +103,12 @@ class BelievabilityAction extends BeliefUpdateTrigger {
     public long getTriggerTimestamp() 
     {
         try {
-	    logError( "Getting TriggerTimeStamp for action record :" + _blackboard_action.getValue().toString() );
-	    return _action_ts; 
-	} catch (Exception e){
-	    logError( "Error getting Trigger Timestamp for the action record :" + _blackboard_action.getValue().toString());
-	    return 0;
-	}
+         logError( "Getting TriggerTimeStamp for action record :" + _blackboard_action.getValue().toString() );
+         return _action_ts; 
+     } catch (Exception e){
+         logError( "Error getting Trigger Timestamp for the action record :" + _blackboard_action.getValue().toString());
+         return 0;
+     }
     } // method getTriggerTimestamp
 
 
@@ -109,12 +118,12 @@ class BelievabilityAction extends BeliefUpdateTrigger {
      */
     public String getStateDimensionName()
     {
-	try{
-	    logError("Getting StateDimensionName for :" + _asset_id.toString()); 
-	    return _action_state_dim;
-	} catch (Exception e){
-	    return null;
-	}
+     try{
+         logError("Getting StateDimensionName for :" + _asset_id.toString()); 
+         return _action_state_dim;
+     } catch (Exception e){
+         return null;
+     }
     } // method getStateDimensionName
     
     /**
@@ -122,25 +131,24 @@ class BelievabilityAction extends BeliefUpdateTrigger {
      *@return status of BelievabilityAction 
      */
     public String getBelivabilityActionStatus(){
-	logError("Believability Action status for " + _asset_id.toString() + " is " + _blackboard_action.getValue().getCompletionCodeString());
-	 return _blackboard_action.getValue().getCompletionCodeString();
+     logError("Believability Action status for " + _asset_id.toString() + " is " + _blackboard_action.getValue().getCompletionCodeString());
+      return _action_status;
     }
- 
     /**
      *
      *
      */
     public boolean getBelievabilityActionSuccessStatus(){
-	try {
-	    if ((_blackboard_action.getValue().hasCompleted()) && 
-		(_blackboard_action.getValue().getCompletionCodeString().compareToIgnoreCase("COMPLETED") == 0)){
-		logError("Believability Action  for " + _asset_id.toString() + " is  successfully completed");
-		return true;
-	    } else {return false; } 
-	} catch (Exception e){
-	    return false;
-	}
-	
+     try {
+         if ((_action_has_completed) && 
+          (_action_status.compareToIgnoreCase("COMPLETED") == 0)){
+          logError("Believability Action  for " + _asset_id.toString() + " is  successfully completed");
+          return true;
+         } else {return false; } 
+     } catch (Exception e){
+         return false;
+     }
+     
     }
     
     
@@ -151,25 +159,15 @@ class BelievabilityAction extends BeliefUpdateTrigger {
      * @return the actuator name
      */
      public String getActuatorName( ){
-	 return _actuator_name;
+      return _actuator_name;
      }
      
     /**
-     * Returns the action value for the action. i.e., of all the
-     * possible values the actuator offers (possible actions) which
-     * one does this action correspond to.  This should be one of the
-     * values returned by name() method on the ActionDescription
-     * obejcts, where the getActions() method of the
-     * ActionTechSpecInterface object gives you a vector of the
-     * ActionDescriptions for the given actuator.
-     * @param the action value name
+     * Returns the action description for the action.
+     * @return the ActionDescription
      */
      public String getActionValue( ){
-	 /*Vector actuator_actions = _actuator_info.getActions();
-	 for (i=0; i< actuator_actions.size(); i++){
-	     ActionDescription _descriptions = (ActionDescriptions) actuator_actions.elementAt(i);
-	 }*/
-	 return null;
+      return _action_description.name();
      }
     
     //---------------------------------------------------------------
@@ -181,8 +179,10 @@ class BelievabilityAction extends BeliefUpdateTrigger {
     //private ActionTechSpecInterface _action_tech;
     private long _action_ts;
     private ActionTechSpecInterface _actuator_info;
+    private String _action_status;
+    private boolean _action_has_completed;
     private String _action_state_dim;
-    private String actuator_name;
+    private ActionDescription _action_description;
     private String _actuator_name;
     private AssetID _asset_id;
 

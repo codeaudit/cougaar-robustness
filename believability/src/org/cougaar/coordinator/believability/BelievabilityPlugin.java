@@ -159,6 +159,25 @@ public class BelievabilityPlugin
     }
 
 
+    /**
+     * Set an alarm
+     * @param The Alarm object for the alarm
+     **/
+    public void setAlarm( Alarm alarm_to_set ) {
+	getAlarmService().addRealTimeAlarm( alarm_to_set );
+    }
+    
+
+    /**
+     * Get the system start time
+     * @return the start time from when believability is to be
+     *         calculated, in milliseconds.
+     **/
+    public long getSystemStartTime() {
+	return _system_start_time;
+    }
+
+
     //------------------------------------------------------------
     // protected interface
     //------------------------------------------------------------
@@ -371,15 +390,6 @@ public class BelievabilityPlugin
     } // method handleUpdateTriggers
 
 
-    /**
-     * Set an alarm
-     * @param The Alarm object for the alarm
-     **/
-    public void setAlarm( Alarm alarm_to_set ) {
-     getAlarmService().addRealTimeAlarm( alarm_to_set );
-    }
-    
-
     //-------------------------------------------------------------------
     // Private Methods
     //-------------------------------------------------------------------
@@ -539,6 +549,9 @@ public class BelievabilityPlugin
 
     // Boolean saying whether this functionality is enabled or not.
     private boolean _dc_enabled = true;
+
+    // The time the system started up.
+    private long _system_start_time = System.currentTimeMillis();
 
     // This is the model manager that has all of the information
     // from the techspecs.
