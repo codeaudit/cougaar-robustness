@@ -104,7 +104,7 @@ public class AssetStateDimension implements NotPersistable {
     /**
      * @return the possible states that this state could have
      */
-    public Vector getpossibleStates() { return possibleStates; }
+    public Vector getPossibleStates() { return possibleStates; }
     
     /**
      * @return the default state for the state
@@ -190,10 +190,10 @@ public class AssetStateDimension implements NotPersistable {
      public String toString() {
                
          String out = "\n   AssetStateDimension [" + this.name + "] AssetType = "+ this.assetType;
-         if (this.getpossibleStates() == null) { 
+         if (this.getPossibleStates() == null) { 
              out = out + "\n    --- No State Dimensions";
          }
-         for (Iterator i = this.getpossibleStates().iterator(); i.hasNext(); ) {
+         for (Iterator i = this.getPossibleStates().iterator(); i.hasNext(); ) {
               AssetState as = (AssetState)i.next();
               out = out + "\n      State["+as.getName()+"] mauSecurity="+as.getRelativeMauSecurity()+"  mauCompleteness="+as.getRelativeMauCompleteness();
          }

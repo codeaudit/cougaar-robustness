@@ -41,6 +41,8 @@ public class AssetType implements NotPersistable {
     public static final AssetType NODE = new AssetType("node", null);
     public static final AssetType AGENT = new AssetType("agent", null);
 
+    public static final AssetType VIRTUAL = new AssetType("VirtualAsset", null);
+    
     
     private static Vector types;
     static {
@@ -77,6 +79,8 @@ public class AssetType implements NotPersistable {
     /** the superType of the asset type */
     private AssetType superType = null;
     
+    /** The societal utility of this asset type */
+    private int societalUtility;
     
     /** Creates a new instance of AssetType 
      *@param asset type name
@@ -99,10 +103,14 @@ public class AssetType implements NotPersistable {
         }
     }
     
+    /**
+     * Create a subtype AssetType
+     */
     public AssetType(AssetType superType, String newType) {
         this.name = newType;
         this.superType = superType;
-        states = new Vector();            
+        states = new Vector();   
+        types.add(this);        
     }
 
     
@@ -183,5 +191,15 @@ public class AssetType implements NotPersistable {
          return ( (o instanceof AssetType) &&
                 ( (AssetType)o).getName().equalsIgnoreCase(this.getName()) );
      }
-    
+
+     /**
+      * @return the societal utility of the asset type
+      */
+     public int getUtilityValue() { return societalUtility; }
+
+     /**
+      * Set the societal utility of the asset type
+      */
+     public void setUtilityValue(int value) { societalUtility = value; }
+
 }

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/Coordinator/src/org/cougaar/coordinator/believability/Attic/BeliefUpdate.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-02-26 15:18:21 $
+ * $Revision: 1.2 $
+ * $Date: 2004-03-24 15:29:48 $
 *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -21,8 +21,8 @@
 
 package org.cougaar.coordinator.believability;
 
-import org.cougaar.coordinator.techspec.AssetStateDescriptor;
-import org.cougaar.coordinator.techspec.StateValue;
+import org.cougaar.coordinator.techspec.AssetStateDimension;
+import org.cougaar.coordinator.techspec.AssetState;
 
 
 import org.cougaar.coordinator.timedDiagnosis.TimedDefenseDiagnosis;
@@ -41,7 +41,7 @@ import java.util.Vector;
  * AssetTechSpecInterface).
  *
  * @author Misty Nodine and Tony Cassandra
- * @version $Revision: 1.1 $Date: 2004-02-26 15:18:21 $
+ * @version $Revision: 1.2 $Date: 2004-03-24 15:29:48 $
  */
 public class BeliefUpdate extends Object
 {
@@ -109,8 +109,8 @@ public class BeliefUpdate extends Object
                 this._asset_model.getAssetStateDescriptors().elements();
 
         while ( sd_enum.hasMoreElements() ) {
-            AssetStateDescriptor asd = 
-                    (AssetStateDescriptor) sd_enum.nextElement();
+            AssetStateDimension asd = 
+                    (AssetStateDimension) sd_enum.nextElement();
             String asd_name = asd.getStateName();
 
             this._last_diag_times.put( asd_name, cur_time );
@@ -132,13 +132,13 @@ public class BeliefUpdate extends Object
      * @see 
      */
     public AssetBeliefState getAprioriBelief( String asset_name,
-                                              AssetStateDescriptor asd )
+                                              AssetStateDimension asd )
             throws BelievabilityException
     {
         String asd_name = asd.getStateName();
          
         // Get a new AssetBeliefState
-        Vector aspv = asd.getPossibleValues();
+        Vector aspv = asd.getPossibleStates();
         AssetBeliefState apriori_belief_state =
                 new AssetBeliefState( asset_name,
                                       asd_name, 
@@ -148,7 +148,7 @@ public class BeliefUpdate extends Object
         Enumeration aspv_enum = aspv.elements();
         while ( aspv_enum.hasMoreElements() ) 
         {
-         StateValue sv = (StateValue) aspv_enum.nextElement();
+         AssetState sv = (AssetState) aspv_enum.nextElement();
             String state_name = sv.getName();
 
             // Set the probability in the AssetBeliefState
@@ -176,7 +176,7 @@ public class BeliefUpdate extends Object
      * @return A belief state over the given asset state descriptor
      */
     public AssetBeliefState getInitialBelief( String asset_name,
-                                              AssetStateDescriptor asd )
+                                              AssetStateDimension asd )
             throws BelievabilityException
     {
         // For now, we assume we always start from scratch wiht the a
@@ -202,7 +202,7 @@ public class BeliefUpdate extends Object
      * @exception BelievabilityException if there is a problem finding needed
      *            informaton in the state descriptor
      */
-    public AssetBeliefState update( AssetStateDescriptor asd,
+    public AssetBeliefState update( AssetStateDimension asd,
                                     CompositeDiagnosis composite_diagnosis ) 
             throws BelievabilityException 
     {

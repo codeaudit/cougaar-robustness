@@ -80,7 +80,7 @@ public interface DefenseTechSpecInterface extends TechSpecRootInterface {
     /** 
       * @return The asset state descriptor that this defense affects / diagnoses 
       */
-    public AssetStateDescriptor getAffectedAssetState();
+    public AssetStateDimension getAffectedAssetState();
 
         /**
       * @return the cost of executing this defense

@@ -42,7 +42,7 @@ public class ThreatModelXML_DTDHandler implements ThreatModelXML_DTDHandlerInter
     
     private MetaThreatModel threatModel;
     private AssetType assetType = null;
-    private AssetStateDescriptor assetStateName;
+    private AssetStateDimension assetStateName;
     
     public Vector getModels() { return models; }
     
@@ -197,7 +197,7 @@ public class ThreatModelXML_DTDHandler implements ThreatModelXML_DTDHandlerInter
         }
 
         try {
-            assetStateName = assetType.findState(name);
+            assetStateName = assetType.findStateDimension(name);
         } catch (Exception e) {
             ERROR = true;
             logger.warn("*** Cannot process -- ThreatModel XML [start_Distribution()] - exception seen. ", e);
@@ -249,8 +249,8 @@ public class ThreatModelXML_DTDHandler implements ThreatModelXML_DTDHandlerInter
                 prob = meta.getValue("probability");
 
                 if (start != null && end != null && prob != null) {
-                    StateValue startState = assetStateName.findStateValue(start);
-                    StateValue endState = assetStateName.findStateValue(end);
+                    AssetState startState = assetStateName.findAssetState(start);
+                    AssetState endState = assetStateName.findAssetState(end);
 
                     if (startState != null && endState != null ) {
                     

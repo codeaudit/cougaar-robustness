@@ -45,13 +45,13 @@ public class DamageDistribution implements NotPersistable {
     private int oid;
 
     /** asset state */
-    private AssetStateDescriptor state;
+    private AssetStateDimension state;
  
     /** start state */
-    private StateValue startState;
+    private AssetState startState;
     
     /** start state */
-    private StateValue endState;
+    private AssetState endState;
 
     /** probability */
     private double probability;
@@ -63,7 +63,7 @@ public class DamageDistribution implements NotPersistable {
     /** Creates a new instance of DamageDistribution with a single probability for all transitions.
      *
      */
-    public DamageDistribution(AssetStateDescriptor state, StateValue startState, StateValue endState, double probability ) {
+    public DamageDistribution(AssetStateDimension state, AssetState startState, AssetState endState, double probability ) {
         
         this.state = state;
         this.startState = startState;
@@ -93,7 +93,7 @@ public class DamageDistribution implements NotPersistable {
     /**
      *@return the asset state
      */
-    public AssetStateDescriptor getAssetState() { return state; }
+    public AssetStateDimension getAssetState() { return state; }
     
     /**
      *@return the probability for this asset & state & transition from startValue to endValue
@@ -114,7 +114,7 @@ public class DamageDistribution implements NotPersistable {
     /**
      * @return the start State Value
      */
-    public StateValue getStartState() {
+    public AssetState getStartState() {
         
         return startState;
     }
@@ -122,13 +122,13 @@ public class DamageDistribution implements NotPersistable {
     /**
      * @return the end State Value
      */
-    public StateValue getEndState() {
+    public AssetState getEndState() {
         
         return endState;
     }
     
     public String toString() {
 
-        return "AssetStateDescriptor="+state.getStateName()+"  --- startState="+startState.getName()+"   endState="+endState.getName() + "   prob="+probability;
+        return "AssetStateDimension="+state.getStateName()+"  --- startState="+startState.getName()+"   endState="+endState.getName() + "   prob="+probability;
     }    
 }

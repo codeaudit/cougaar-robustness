@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/Coordinator/src/org/cougaar/coordinator/believability/Attic/IntermediateModel.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-02-26 15:18:24 $
+ * $Revision: 1.2 $
+ * $Date: 2004-03-24 15:29:48 $
 *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -27,12 +27,12 @@ import org.cougaar.coordinator.DefenseConstants;
 import org.cougaar.coordinator.techspec.AssetTechSpecInterface;
 import org.cougaar.coordinator.techspec.DefenseTechSpecInterface;
 import org.cougaar.coordinator.techspec.ThreatModelInterface;
-import org.cougaar.coordinator.techspec.AssetStateDescriptor;
+import org.cougaar.coordinator.techspec.AssetStateDimension;
 import org.cougaar.coordinator.techspec.AssetType;
 import org.cougaar.coordinator.techspec.MonitoringLevel;
 import org.cougaar.coordinator.techspec.DiagnosisAccuracyFunction;
 import org.cougaar.coordinator.techspec.DamageDistribution;
-import org.cougaar.coordinator.techspec.StateValue;
+import org.cougaar.coordinator.techspec.AssetState;
 
 import org.cougaar.coordinator.timedDiagnosis.TimedDefenseDiagnosis;
 
@@ -102,14 +102,14 @@ public class IntermediateModel extends Object implements POMDPModelInterface
             throws BelievabilityException 
     {
         
-        // Get the AssetStateDescriptor. This may throw a
+        // Get the AssetStateDimension. This may throw a
         // BelievabilityException
-        AssetStateDescriptor asd = 
-                getAssetStateDescriptor ( asset_expanded_name, 
+        AssetStateDimension asd = 
+                getAssetStateDimension ( asset_expanded_name, 
                                           state_descriptor_name );
         
         // Get the set of possible values and return the length
-        Vector aspv = asd.getPossibleValues();
+        Vector aspv = asd.getPossibleStates();
         return aspv.size();
     }
 
@@ -130,15 +130,15 @@ public class IntermediateModel extends Object implements POMDPModelInterface
             throws BelievabilityException
     {
 
-        AssetStateDescriptor asd = 
-                getAssetStateDescriptor ( asset_ext_name, 
+        AssetStateDimension asd = 
+                getAssetStateDimension ( asset_ext_name, 
                                           state_descriptor_name );
 
-        Vector aspv = asd.getPossibleValues();
+        Vector aspv = asd.getPossibleStates();
 
         for ( int index = 0; index < aspv.size(); index++ )
         {
-            StateValue sv = (StateValue) aspv.elementAt( index );
+            AssetState sv = (AssetState) aspv.elementAt( index );
 
             if ( state_desc_value.equalsIgnoreCase( sv.getName() ))
                 return index;
@@ -165,17 +165,17 @@ public class IntermediateModel extends Object implements POMDPModelInterface
             throws BelievabilityException
     {
 
-        AssetStateDescriptor asd = 
-                getAssetStateDescriptor ( asset_ext_name, 
+        AssetStateDimension asd = 
+                getAssetStateDimension ( asset_ext_name, 
                                           state_descriptor_name );
 
-        Vector aspv = asd.getPossibleValues();
+        Vector aspv = asd.getPossibleStates();
 
         if (( index < 0 )
             || ( index >= aspv.size()))
             throw new BelievabilityException( "Bad state index." );
 
-        return ((StateValue) aspv.elementAt( index )).getName();
+        return ((AssetState) aspv.elementAt( index )).getName();
         
     } // method indexToStateName
 
@@ -203,15 +203,15 @@ public class IntermediateModel extends Object implements POMDPModelInterface
             throws BelievabilityException 
     {
 
-        // Get the AssetStateDescriptor. This may throw a
+        // Get the AssetStateDimension. This may throw a
         // BelievabilityException
-        AssetStateDescriptor asd = 
-                getAssetStateDescriptor ( asset_expanded_name, 
+        AssetStateDimension asd = 
+                getAssetStateDimension ( asset_expanded_name, 
                                           state_descriptor_name );
 
         // Get the default state value and compare it to the input state
         // value. Return 1 if they are equal, otherwise return zero
-        StateValue default_state_value = asd.getDefaultValue();
+        AssetState default_state_value = asd.getDefaultState();
         String default_state_value_name = default_state_value.getName();
         if ( default_state_value_name.equalsIgnoreCase
              ( state_descriptor_value ) ) {
@@ -270,10 +270,10 @@ public class IntermediateModel extends Object implements POMDPModelInterface
         if (_logger.isDebugEnabled() && (start_time >= end_time) ) 
             _logger.debug( "getTransProb -- negative time from state " ); 
 
-        // Get the AssetStateDescriptor. This may throw a
+        // Get the AssetStateDimension. This may throw a
         // BelievabilityException
-        AssetStateDescriptor asd = 
-                getAssetStateDescriptor ( asset_expanded_name, 
+        AssetStateDimension asd = 
+                getAssetStateDimension ( asset_expanded_name, 
                                           state_descriptor_name );
         
         // Iterate through the threat models, looking for one that 
@@ -436,10 +436,10 @@ public class IntermediateModel extends Object implements POMDPModelInterface
 	AssetTechSpecInterface atsi =
 	    getAssetModel( asset_expanded_name ).getAssetTS();
         
-        // Get the AssetStateDescriptor. This may throw a
+        // Get the AssetStateDimension. This may throw a
         // BelievabilityException
-        AssetStateDescriptor asset_sd = 
-                getAssetStateDescriptor ( asset_expanded_name, 
+        AssetStateDimension asset_sd = 
+                getAssetStateDimension ( asset_expanded_name, 
                                           state_descriptor_name );
 
         // Get the DefenseTechSpecInterface. This may throw a
@@ -637,8 +637,8 @@ public class IntermediateModel extends Object implements POMDPModelInterface
      *
      *****************************************************************/
 
-    protected AssetStateDescriptor 
-     getAssetStateDescriptor ( String asset_expanded_name,
+    protected AssetStateDimension 
+     getAssetStateDimension ( String asset_expanded_name,
                       String state_descriptor_name ) 
      throws BelievabilityException {
 
@@ -647,12 +647,12 @@ public class IntermediateModel extends Object implements POMDPModelInterface
 
      // Have the asset model, now find the state descriptor
      AssetType asset_type = asset_tsi.getAssetType();
-     AssetStateDescriptor asd = 
-         asset_type.findState( state_descriptor_name );
+     AssetStateDimension asd = 
+         asset_type.findStateDimension( state_descriptor_name );
 
      // Check if null, if so, throw exception
      if ( asd == null ) {
-         throw new BelievabilityException ( " IntermediateModel.getAssetStateDescriptor -- "
+         throw new BelievabilityException ( " IntermediateModel.getAssetStateDimension -- "
                            + " No such state descriptor named " 
                            + state_descriptor_name 
                            + " in asset "
@@ -1408,8 +1408,8 @@ public class IntermediateModel extends Object implements POMDPModelInterface
         Enumeration asd_enum = asd_list.elements();
         while ( asd_enum.hasMoreElements() )
         { 
-            AssetStateDescriptor asd 
-                    = (AssetStateDescriptor) asd_enum.nextElement();
+            AssetStateDimension asd 
+                    = (AssetStateDimension) asd_enum.nextElement();
 
             if (_logger.isDebugEnabled()) 
                 _logger.debug("Handling asset state: " + asd.getStateName() );

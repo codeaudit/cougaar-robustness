@@ -34,17 +34,17 @@ public class DiagnosisAccuracyFunction implements NotPersistable {
     /**
      * The state of the asset
      */
-    private AssetStateDescriptor assetState;
+    private AssetStateDimension assetState;
 
     /**
      * the state value of the asset
      */
-    private StateValue stateValue;
+    private AssetState stateValue;
     
     /**
-     * This StateValue must be one that is associated with the AssetStateDescriptor defined for this defense.
+     * This AssetState must be one that is associated with the AssetStateDimension defined for this defense.
      */
-    private StateValue diagnosisState;
+    private AssetState diagnosisState;
 
     /**
      * if the asset is in assetState:stateValue, the Defense will say the asset is in diagnosisState with this probability. 
@@ -65,10 +65,10 @@ public class DiagnosisAccuracyFunction implements NotPersistable {
      *  if the asset is "NotCommunicating", the Defense will say the asset is "Dead" with p=0.5 (a misdiagnosis) and implying the Defense will say "OK" with p=0.5 (also a misdiagnosis)
      *<p>
      *
-     * <i>Note: The diagnosisState must be one that is associated with the AssetStateDescriptor defined for this defense.</i>
+     * <i>Note: The diagnosisState must be one that is associated with the AssetStateDimension defined for this defense.</i>
      *
      */
-    public DiagnosisAccuracyFunction(AssetStateDescriptor assetState, StateValue stateValue, StateValue diagnosisState, double probability) {
+    public DiagnosisAccuracyFunction(AssetStateDimension assetState, AssetState stateValue, AssetState diagnosisState, double probability) {
     
         this.assetState = assetState;
         this.stateValue = stateValue;
@@ -77,20 +77,20 @@ public class DiagnosisAccuracyFunction implements NotPersistable {
     }
     
     /**
-     *@return the AssetStateDescriptor
+     *@return the AssetStateDimension
      */
-    public AssetStateDescriptor getAssetState() {return assetState;}
+    public AssetStateDimension getAssetState() {return assetState;}
 
     /**
      *@return the diagnosis state
      */
-    public StateValue getAssetStateValue() {return stateValue;}
+    public AssetState getAssetStateValue() {return stateValue;}
     
     /**
-     *@return the diagnosis state value - This StateValue must be one that is associated with the AssetStateDescriptor 
+     *@return the diagnosis state value - This AssetState must be one that is associated with the AssetStateDimension 
      *          defined for this defense.
      */
-    public StateValue getDiagnosisStateValue() {return diagnosisState;}
+    public AssetState getDiagnosisStateValue() {return diagnosisState;}
     
     /**
      *@return the probability

@@ -278,7 +278,7 @@ public class DefenseXMLParser implements ContentHandler {
                 logger.warn("*** Cannot process this defense entry -- Defense XML -  unknown asset type = : "+type);            
                 return;
             }
-            AssetStateDescriptor assetState = assetType.findState(stateName);
+            AssetStateDimension assetState = assetType.findStateDimension(stateName);
             if ( assetState == null) { 
                 ERROR = true; 
                 logger.warn("*** Cannot process this defense entry -- Defense XML -  unknown asset state = : "+stateName + " for this asset type: "+type);            
@@ -294,7 +294,7 @@ public class DefenseXMLParser implements ContentHandler {
 
 
             if (name != null && !ERROR) {
-                currentDefense = new DefaultDefenseTechSpec(name, uid.nextUID(), isIdempotent, isReversible, isAbortable, dTempCost.doubleValue(), dTempBenefit.doubleValue(), assetType, assetState);
+//3 removed to compile                currentDefense = new DefaultDefenseTechSpec(name, uid.nextUID(), isIdempotent, isReversible, isAbortable, dTempCost.doubleValue(), dTempBenefit.doubleValue(), assetType, assetState);
                 currentMonitoringLevel = null;
             } else {
                 ERROR = true;
@@ -363,19 +363,19 @@ public class DefenseXMLParser implements ContentHandler {
         }
         
         
-        AssetStateDescriptor assetState = assetType.findState(state);
-        if ( assetState == null) { 
+        AssetStateDimension assetStateDim = assetType.findStateDimension(state);
+        if ( assetStateDim == null) { 
             ERROR = true; 
             logger.warn("*** Cannot process this defense entry -- Defense XML -  unknown asset state = : "+state + " for this asset type: "+assetType.getName());            
             return;
         }
-        StateValue stateValue = assetState.findStateValue(value);
+        AssetState stateValue = assetStateDim.findAssetState(value);
         if ( stateValue == null) { 
             ERROR = true; 
             logger.warn("*** Cannot process this defense entry -- Defense XML -  unknown state value = : "+value + " for this asset state = : "+state + " & this asset type: "+assetType.getName());            
             return;
         }
-        StateValue diagnosisStateValue = currentDefense.getAffectedAssetState().findStateValue(diagnosis);
+        AssetState diagnosisStateValue = currentDefense.getAffectedAssetState().findAssetState(diagnosis);
         if ( diagnosisStateValue == null) { 
             ERROR = true; 
             logger.warn("*** Cannot process this defense entry -- Defense XML -  unknown diagnosis state value= : "+diagnosis + "for this asset state = : "+state + " & this asset type: "+assetType.getName());            
@@ -384,7 +384,7 @@ public class DefenseXMLParser implements ContentHandler {
 
         try {
             double probability = Double.parseDouble(prob);
-            DiagnosisAccuracyFunction daf = new DiagnosisAccuracyFunction(assetState, stateValue, diagnosisStateValue, probability);
+            DiagnosisAccuracyFunction daf = new DiagnosisAccuracyFunction(assetStateDim, stateValue, diagnosisStateValue, probability);
             currentMonitoringLevel.addDiagnosis(daf);
         } catch (Exception e) {
             ERROR = true;
@@ -395,7 +395,7 @@ public class DefenseXMLParser implements ContentHandler {
     }
     
     
-    /** Called when the end of the end_AssetStateDescriptors element is seen */
+    /** Called when the end of the end_AssetStateDimensions element is seen */
     private void end_Defense(){
     
         if (!ERROR) { //add the currentDefense

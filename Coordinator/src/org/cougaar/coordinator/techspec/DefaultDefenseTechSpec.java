@@ -49,7 +49,7 @@ public class DefaultDefenseTechSpec implements DefenseTechSpecInterface, NotPers
         double tempCost;
         double tempBenefit;
         AssetType assetType;
-        AssetStateDescriptor affectsAssetState; 
+        AssetStateDimension affectsAssetState; 
         
         //Unused Attributes
         Vector states = null;
@@ -76,7 +76,7 @@ public class DefaultDefenseTechSpec implements DefenseTechSpecInterface, NotPers
 
     /** Creates a new instance of DefenseTechSpec */
     public DefaultDefenseTechSpec(String name, UID uid, boolean idempotent, boolean reversible, boolean abortable, 
-                                 double tempCost, double tempBenefit, AssetType assetType, AssetStateDescriptor assetState) {
+                                 double tempCost, double tempBenefit, AssetType assetType, AssetStateDimension assetState) {
     
         this.name = name;
         this.uid = uid;
@@ -173,7 +173,7 @@ public class DefaultDefenseTechSpec implements DefenseTechSpecInterface, NotPers
     }
 
     /** @return The asset state descriptor that this defense affects / diagnoses */
-    public AssetStateDescriptor getAffectedAssetState() {
+    public AssetStateDimension getAffectedAssetState() {
         return affectsAssetState;
     }
     

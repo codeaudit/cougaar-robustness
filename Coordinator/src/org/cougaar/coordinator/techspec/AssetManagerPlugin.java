@@ -237,7 +237,7 @@ logger.warn("!!!! **********************************************************");
     private String fileParam = null;
     
     /**
-      * Read in AssetStateDescriptor XML file parameter passed in via configuration file. 
+      * Read in AssetStateDimension XML file parameter passed in via configuration file. 
      * Temp - read in the # of assets to see before emitting AllAssetsSeenCondition
       */
     private void getPluginParams() {
@@ -260,12 +260,12 @@ logger.warn("!!!! **********************************************************");
         }
     }       
     
-    /** Read in the AssetStateDescriptors from an XML file */
+    /** Read in the AssetStateDimensions from an XML file */
     private void readInAssetDescriptors() {
         
         getPluginParams();
         if (fileParam == null) {
-            logger.error("No AssetStateDescriptor definitions to import! Must include xml file as plugin parameter!!");
+            logger.error("No AssetStateDimension definitions to import! Must include xml file as plugin parameter!!");
             return;
         }
 
@@ -274,7 +274,7 @@ logger.warn("!!!! **********************************************************");
 //steve     File f = new File(fileParam);
             File f = getConfigFinder().locateFile(fileParam); //steve
             if (!f.exists()) { //look 
-                logger.debug("*** Did not find AssetStateDescriptor XML file:");
+                logger.debug("*** Did not find AssetStateDimension XML file:");
                 logger.debug("*** Path checked was = " + f.getAbsolutePath()+". Checking CIP...");
                 String installpath = System.getProperty("org.cougaar.install.path");
                 String defaultPath = installpath + File.separatorChar + "csmart" + File.separatorChar + "config" +
@@ -283,32 +283,32 @@ logger.warn("!!!! **********************************************************");
 
                 f = new File(defaultPath);
                 if (!f.exists()) {                    
-                    logger.warn("*** Did not find AssetStateDescriptor XML file in = " + f.getAbsolutePath());
-                    logger.error("**** CANNOT FIND AssetStateDescriptors file!");
+                    logger.warn("*** Did not find AssetStateDimension XML file in = " + f.getAbsolutePath());
+                    logger.error("**** CANNOT FIND AssetStateDimensions file!");
                     return;
                 }
             }                
-            logger.debug("path for AssetStateDescriptor XML file = " + f.getAbsolutePath());
+            logger.debug("path for AssetStateDimension XML file = " + f.getAbsolutePath());
             parser.parse(new InputSource(new FileInputStream(f)));
 
             Vector assetStates = parser.getParsedDescriptors();
-            AssetStateDescriptor sd;
+            AssetStateDimension sd;
             
             // Now add each read in descriptor to its AssetType
             if (assetStates != null && assetStates.size() > 0) {             
                     for (Iterator i = assetStates.iterator(); i.hasNext(); ) {
-                        sd = (AssetStateDescriptor)i.next();
-                        sd.getAssetType().addState(sd);                
-                        logger.debug("Added AssetStateDescriptor "+sd.getStateName()+" to AssetType = "+sd.getAssetType().getName());
+                        sd = (AssetStateDimension)i.next();
+                        sd.getAssetType().addStateDimension(sd);                
+                        logger.debug("Added AssetStateDimension "+sd.getStateName()+" to AssetType = "+sd.getAssetType().getName());
                     }
             } else {
-                logger.warn("*** Added NO AssetStateDescriptors *** ");
+                logger.warn("*** Added NO AssetStateDimensions *** ");
             }                
             
-            logger.debug("Imported "+assetStates.size()+" AssetStateDescriptors!");
+            logger.debug("Imported "+assetStates.size()+" AssetStateDimensions!");
         } catch (Exception e) {
             
-            logger.error("Exception while importing AssetStateDescriptors!",e);
+            logger.error("Exception while importing AssetStateDimensions!",e);
         }
     }        
     
@@ -316,7 +316,7 @@ logger.warn("!!!! **********************************************************");
     
     
     /**
-     * Subscribes to the CommunityStatusModel, reads in the AssetStateDescriptors from XML,
+     * Subscribes to the CommunityStatusModel, reads in the AssetStateDimensions from XML,
      * and then publishes itself.
      */
     public void setupSubscriptions() {
