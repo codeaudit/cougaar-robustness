@@ -701,4 +701,162 @@
     </Entity>
   </Community>
 
+  <Community Name="TINY-1AD-Enclave-COMM">
+    <Attribute ID="CommunityType"    Value="Robustness" />
+    <Attribute ID="CommunityManager" Value="" />
+    <Entity Name="TINY-1AD-Manager"  >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="ManagementAgent" />
+      <Attribute ID="Role"         Value="HealthReportConsumer" />
+    </Entity>
+    <Entity Name="123-MSB" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="47-FSB" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="1-35-ARBN" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="1-6-INFBN" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="1-AD" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="102-POL-SUPPLYCO" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="106-TCBN" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="110-POL-SUPPLYCO" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="16-CSG" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="18-MAINTBN" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="191-ORDBN" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="2-BDE-1-AD" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="21-TSC-HQ" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="227-SUPPLYCO" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="28-TCBN" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="29-SPTGP" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="3-SUPCOM-HQ" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="343-SUPPLYCO" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="37-TRANSGP" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="485-CSB" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="6-TCBN" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="5-CORPS" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="51-MAINTBN" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="565-RPRTCO" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="592-ORDCO" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="6-TCBN" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="7-CSG" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="71-MAINTBN" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="AWR-2" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="DISCOM-1-AD" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="DLAHQ" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="HNS" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="NCA" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="OSC" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="TRANSCOM" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="USAEUR" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+    <Entity Name="USEUCOM" >
+      <Attribute ID="EntityType"   Value="Agent"  />
+      <Attribute ID="Role"         Value="Member" />
+    </Entity>
+  </Community>
+
 </Communities>
