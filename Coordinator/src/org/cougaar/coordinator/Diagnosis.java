@@ -116,7 +116,7 @@ public abstract class Diagnosis
     private long lastAssertedTimestamp = 0L;
     
     /** a single string identifier of this object, e.g. might be assetType:assetName */
-    private String expandedName = null;
+    private AssetID assetID = null;
     
     /** Name of the asset that this object describes */
     private  String assetName = null;
@@ -142,7 +142,7 @@ public abstract class Diagnosis
         // get the diagnosis tech spec & load the possibleValues
         initPossibleValues();
 
-        this.expandedName = AssetName.generateExpandedAssetName(assetName, assetType);
+        this.assetID = AssetName.generateExpandedAssetName(assetName, assetType);
         this.setUID(uidService.nextUID());
         
     }
@@ -412,7 +412,7 @@ public abstract class Diagnosis
     /**
      * @return expanded name - "type:String"
      */
-    String getExpandedName() { return expandedName; }
+    AssetID getAssetID() { return assetID; }
 
     /**
      * @return the (read-only) tech spec for this diagnosis type
@@ -448,11 +448,11 @@ public abstract class Diagnosis
         this.uid = uid;
     }
     
-    //public boolean compareSignature(String expandedName, String defenseName) {
+    //public boolean compareSignature(String assetID, String defenseName) {
     //    Logger logger = Logging.getLogger(getClass());
     //    if (logger.isDebugEnabled()) logger.debug("DefOpMode/compareSignature");
     //    return ((this.getSensorName().equals(defenseName)) &&
-    //    (this.getExpandedName().equals(expandedName)));
+    //    (this.getAssetID().equals(assetID)));
     //}
     
     //public boolean compareSignature(String type, String id, String defenseName) {

@@ -108,7 +108,7 @@ public abstract class Action
     private UID uid = null;
     
     /** a single string identifier of this object, e.g. might be assetType:assetName */
-    private String expandedName = null;
+    private AssetID assetID = null;
 
     /** The last action set */
     
@@ -154,7 +154,7 @@ public abstract class Action
         // get the diagnosis tech spec & load the possibleValues
         initPossibleValues();
 
-        this.expandedName = AssetName.generateExpandedAssetName(assetName, assetType);
+        this.assetID = new AssetID(assetName, assetType);
         this.setUID(uidService.nextUID());
         
     }
@@ -507,9 +507,9 @@ logger.debug("///////////////////////////////////Adding permitted value: "+o);
     public String getAssetName() { return assetName; }
     
     /**
-     * @return expanded name - "type:name"
+     * @return AssetID
      */
-    String getExpandedName() { return expandedName; }
+    AssetID getAssetID() { return assetID; }
 
     /**
      * @return the (read-only) tech spec for this action type
@@ -546,11 +546,11 @@ logger.debug("///////////////////////////////////Adding permitted value: "+o);
     //*******************************compare routines*******************************************
     //Unsure if still needed, but likely
     
-    //boolean compareSignature(String expandedName, String defenseName) {
+    //boolean compareSignature(String assetID, String defenseName) {
     //    Logger logger = Logging.getLogger(getClass());
     //    if (logger.isDebugEnabled()) logger.debug("DefOpMode/compareSignature");
     //    return ((this.getActuatorName().equals(defenseName)) &&
-    //    (this.getExpandedName().equals(expandedName)));
+    //    (this.getassetID().equals(assetID)));
     // }
     
     //boolean compareSignature(String type, String id, String defenseName) {
