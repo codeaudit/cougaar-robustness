@@ -23,7 +23,6 @@ package org.cougaar.tools.robustness.ma;
 
 public interface StatusChangeListener {
 
-  public void statusChanged(CommunityStatusChangeEvent[] csce,
-                            CommunityStatusModel csm);
+  public void statusChanged(CommunityStatusChangeEvent[] csce);
 
 }
