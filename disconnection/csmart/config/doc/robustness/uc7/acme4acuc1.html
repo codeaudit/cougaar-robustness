@@ -1,0 +1,776 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>Adaptive Control Use Case #1</title>
+  <meta http-equiv="content-type"
+ content="text/html; charset=ISO-8859-1">
+  <meta name="author" content="Steve Ford">
+</head>
+<body>
+<div style="text-align: center;"><u><big><span
+ style="font-weight: bold;">ACME Automation for Adaptive Control Use
+Case #1<br>
+AR Deconfliction <br>
+(incl. Adaptive Robustness Use
+Case #7)<br>
+</span></big></u><br>
+</div>
+<br>
+Adaptive Control Use Case #1 (ACUC1) employs the Coordinator to control
+conflicting corrective Adaptive Robustness defenses.&nbsp; OBJS'
+Disconnection defense for ARUC7 and MIC's Sledgehammer
+for ARUC1 are coordinated by OBJS'
+Coordinator module.<br>
+<br>
+These instructions describe the ACME automation
+for
+the ACUC1 experiments and include complete configuration information
+for Planned Disconnect, which is no longer a separable defense, as it
+depends on the coordinator, which is turn depends on the Restart
+defense.&nbsp; So, in all cases, coordination between restart and
+disconnection must occur.&nbsp; ACUC1's TimelyReturn experiment is the
+closest remaining analogue to the original PlannedDisconnect experiment.<br>
+<br>
+<u><b>Overlays:</b></u>
+<blockquote><b>ACUC1 requires the following overlays
+be
+loaded:<br>
+  <br>
+  </b>
+  <table>
+    <tbody>
+      <tr>
+        <td>Robustness </td>
+        <td> <a
+ href="https://cvs.ultralog.net/dist/AR_telcordia_coordinator_HEAD_B11_2.zip">Telcordia
+believability/coordinator</a> </td>
+        <td>HEAD </td>
+        <td>B11_2 </td>
+      </tr>
+      <tr>
+        <td>Robustness </td>
+        <td> <a
+ href="https://cvs.ultralog.net/dist/AR_objs_Coordinator_HEAD_B11_2.zip">Objs
+Coordinator</a> </td>
+        <td>HEAD </td>
+        <td>B11_2 </td>
+      </tr>
+      <tr>
+        <td>Robustness </td>
+        <td> <a
+ href="https://cvs.ultralog.net/dist/AR_objs_sensors_HEAD_B11_2.zip">Objs
+sensors</a> </td>
+        <td>HEAD </td>
+        <td>B11_2 </td>
+      </tr>
+      <tr>
+        <td style="color: rgb(0, 0, 0);">Robustness </td>
+        <td style="color: rgb(0, 0, 0);"> <a
+ href="https://cvs.ultralog.net/dist/AR_objs_disconnection_HEAD_B11_2.zip">Objs
+disconnection</a> </td>
+        <td style="color: rgb(0, 0, 0);">HEAD </td>
+        <td style="color: rgb(0, 0, 0);">B11_2 </td>
+      </tr>
+      <tr>
+        <td>Robustness </td>
+        <td> <a
+ href="https://cvs.ultralog.net/dist/AR_objs_common_HEAD_B11_2.zip">Objs
+Common</a> </td>
+        <td>HEAD </td>
+        <td>B11_2 </td>
+      </tr>
+      <tr>
+        <td>Robustness </td>
+        <td> <a
+ href="https://cvs.ultralog.net/dist/AR_boeing_exnihilo_HEAD_B11_2.zip">Boeing
+ExNihilo</a> </td>
+        <td>HEAD </td>
+        <td>B11_2 </td>
+      </tr>
+      <tr>
+        <td>Robustness </td>
+        <td> <a
+ href="https://cvs.ultralog.net/dist/AR_mic_HEAD_B11_2.zip">MIC
+Mgmt Agent</a> </td>
+        <td>HEAD </td>
+        <td>B11_2 </td>
+      </tr>
+      <tr>
+        <td>Robustness </td>
+        <td> <a
+ href="https://cvs.ultralog.net/dist/AR_common_HEAD_B11_2.zip">Robustness
+common</a> </td>
+        <td>HEAD </td>
+        <td>B11_2 </td>
+      </tr>
+    </tbody>
+  </table>
+  <br>
+  <span style="font-weight: bold;">Note: ACUC1 requires OBJS'
+Disconnection module
+and MIC's </span><span style="font-weight: bold;">Mgmt
+Agent.&nbsp; Both depend on&nbsp; </span><span
+ style="font-weight: bold;">OBJS'
+Coordinator, which depends on Telcordia's Believability and MIC's Mgmt
+Agent, which in turn depends on OBJS' Sensors &amp; Common, Boeing's
+ExNihilo &amp; Robustness Common.</span><br>
+</blockquote>
+<u><b>
+Transformation Rules:</b></u><br>
+<blockquote>To run ACUC1, apply the following to
+the
+society:<br>
+  <br>
+- $CIP/csmart/config/rules/robustness<br>
+- $CIP/csmart/config/rules/robustness/common<br>
+- $CIP/csmart/config/rules/coordinator<br>
+- $CIP/csmart/config/rules/coordinator/test<br>
+- $CIP/csmart/config/rules/robustness/uc1<br>
+- $CIP/csmart/config/rules/metrics/basic<br>
+- $CIP/csmart/config/rules/metrics/sensors<br>
+-
+$CIP/csmart/config/rules/metrics/serialization/metrics-only-serialization.rule<br>
+- $CIP/csmart/config/rules/metrics/rss/tic<br>
+-
+$CIP/csmart/config/rules/robustness/uc7<small> </small> <big
+ style="color: rgb(204, 0, 0);"><br>
+  <br style="color: rgb(0, 0, 0);">
+  <small style="color: rgb(0, 0, 0); font-weight: bold;">Note: All
+but the last ruleset are required to run ARUC1 (Sledgehammer).</small><b><br>
+  </b></big><b> <br>
+  </b></blockquote>
+<blockquote>
+  <blockquote>
+    <ul>
+      <ul>
+      </ul>
+    </ul>
+    <ul>
+    </ul>
+  </blockquote>
+  <ul>
+    <ul>
+    </ul>
+  </ul>
+  <blockquote>
+    <ul>
+    </ul>
+  </blockquote>
+</blockquote>
+<u><b>ACME Actions and States</b></u>
+<blockquote> </blockquote>
+<blockquote>ACUC1 requires Acme actions and
+states defined in the following files:<br>
+  <br>
+  <b>$CIP/csmart/config/lib/robustness/uc7/disconnection.rb<br>
+  </b><b>$CIP/csmart/config/lib/coordinator/leashing.rb</b><br>
+  <b> </b><br>
+They are documented at the end of this file.<br>
+  <br>
+</blockquote>
+<span style="text-decoration: underline; font-weight: bold;">Parameterized
+Include Scripts</span><br>
+<br>
+<div style="margin-left: 40px;">The following scripts are used in ACUC1
+experiments:<br>
+<span style="font-weight: bold;"><br>
+</span><span style="font-weight: bold;">$CIP/csmart/lib/coordinator/unleash_defenses.rb
+- </span>activate defenses, normally inserted after completion of
+startup and&nbsp; restore.<span style="font-weight: bold;"><br>
+</span><span style="font-weight: bold;">$CIP/csmart/lib/coordinator/</span><span
+ style="font-weight: bold;">leash_on_restart.rb - </span>deactive all
+defenses, normally inserted before a full society restore and then
+followed by an <span style="font-weight: bold;">unleash_defenses</span>
+once the restore is complete.<span style="font-weight: bold;"><br>
+$CIP/csmart/lib/coordinator/nodes_persisted_find_providers.rb&nbsp; </span>-
+wait for certain nodes to persist, normally inserted after startup and
+restore are complete, and before an experiment.<span
+ style="font-weight: bold;"><br>
+</span><span style="font-weight: bold;">$CIP/csmart/lib/robustness/objs/planned_disconnect.rb
+- </span>the basic PlannedDisconnect experiment, wherein nodes request
+to disconnect for a specified time period, and then their network
+interfaces are disconnected for a generally somewhat shorter period, to
+account for latency, and then the nodes request permission to reconnect
+when they reconnect, which is granted if they return on time, and is
+denied if they are not.&nbsp; Restarts are inhibited during the
+PlannedDisconnect period, but are enabled if the node hasn't returned
+during the PlannedDisconnect period.<span style="font-weight: bold;"><br>
+</span><span style="font-weight: bold;">$CIP/csmart/lib/robustness/objs/</span><b>planned_disconnect_with_node_kill.rb
+- </b>a variant of the planned_disconnect script which includes node
+kills during a planned disconnect, either the ARManager's node or the
+disconnected nodes.<b><br>
+</b><span style="font-weight: bold;">$CIP/csmart/lib/robustness/objs/planned_disconnect_completed.rb
+- </span>wait for the end of the planned disconnect experiment<br>
+<br>
+See the <span style="font-weight: bold; text-decoration: underline;">Sample
+Run Script</span> for examples of the usage of each script.<br>
+<br>
+</div>
+<span style="font-weight: bold;">
+<span style="text-decoration: underline;">Sample Run Script<br>
+<br>
+</span></span>
+<div style="margin-left: 40px;">The following sample run scripts for
+the four ACUC1 experiments are provided:<br>
+<br style="font-family: monospace;">
+<span style="font-family: monospace; font-weight: bold;">$CIP/csmart/scripts/definitions/robustness/objs/MOAS-Stop-PostStage1-ARUC7-TimelyReconnect.rb
+- </span><span style="font-family: monospace;">disconnected nodes
+return on time</span><br
+ style="font-family: monospace; font-weight: bold;">
+<span style="font-family: monospace; font-weight: bold;">$CIP/csmart/scripts/definitions/robustness/objs/MOAS-Stop-PostStage1-ARUC7-LateReturn.rb
+- </span><span style="font-family: monospace;">disconnected nodes
+return late</span><span style="font-family: monospace;"></span><br
+ style="font-family: monospace; font-weight: bold;">
+<span style="font-family: monospace; font-weight: bold;">$CIP/csmart/scripts/definitions/robustness/objs/MOAS-Stop-PostStage1-ARUC7-NodeKills.rb
+- </span><span style="font-family: monospace;">nodes are killed while
+disconnected<br>
+</span><span style="font-family: monospace; font-weight: bold;">$CIP/csmart/scripts/definitions/robustness/objs/MOAS-Stop-PostStage1-ARUC7-MgrKill.rb
+- </span><span style="font-family: monospace;">the ARManager (incl.
+the Coordinator) is killed while nodes are disconnected</span><br>
+<span style="font-weight: bold;"><br>
+</span>The TimelyReconnect script
+is
+annotated below:<br>
+</div>
+<div style="margin-left: 40px;"><br style="font-weight: bold;">
+</div>
+<hr style="width: 100%; height: 2px; margin-left: 40px;">
+<div
+ style="margin-left: 40px; font-family: courier new,courier,monospace;"><small>=begin
+experiment<br>
+<br>
+name: MOAS-II-ARUC7-TimelyReconnect-Stop-PostStage1<br>
+description:&nbsp; ACUC1 TimelyReconnect<br>
+script: $CIP/csmart/scripts/definitions/UR-BaselineTemplate-ExtOplan.rb<br>
+parameters:<br>
+&nbsp; - run_count: 1<br>
+&nbsp;- society_file:
+$CIP/csmart/config/societies/ua/full-tc20-avn-234a703v.plugins.rb<br>
+&nbsp; - layout_file: $CIP/operator/layouts/UR-OP-layout.xml<br>
+&nbsp; - archive_dir: /mnt/archive<br>
+&nbsp; <br>
+&nbsp; - rules:<br>
+&nbsp;&nbsp;&nbsp; - $CIP/csmart/config/rules/isat<br>
+&nbsp;&nbsp;&nbsp; - $CIP/csmart/config/rules/yp<br>
+&nbsp;&nbsp;&nbsp; - $CIP/csmart/config/rules/logistics<br>
+&nbsp;&nbsp;&nbsp; - $CIP/csmart/config/rules/robustness<br>
+&nbsp;&nbsp;&nbsp; - $CIP/csmart/config/rules/robustness/common<br>
+&nbsp;&nbsp;&nbsp; - $CIP/csmart/config/rules/coordinator<br>
+&nbsp;&nbsp;&nbsp; - $CIP/csmart/config/rules/coordinator/test<br>
+&nbsp;&nbsp;&nbsp; - $CIP/csmart/config/rules/robustness/uc1<br>
+&nbsp;&nbsp;&nbsp; - $CIP/csmart/config/rules/metrics/basic<br>
+&nbsp;&nbsp;&nbsp; - $CIP/csmart/config/rules/metrics/sensors<br>
+&nbsp;&nbsp;&nbsp; -
+$CIP/csmart/config/rules/metrics/serialization/metrics-only-serialization.rule<br>
+&nbsp;&nbsp;&nbsp; - $CIP/csmart/config/rules/metrics/rss/tic<br>
+</small><small>&nbsp;&nbsp;&nbsp; -
+$CIP/csmart/config/rules/robustness/uc7</small><br>
+<small>&nbsp; - community_rules:<br>
+&nbsp;&nbsp;&nbsp; - $CIP/csmart/config/rules/robustness/communities<br>
+<br>
+include_scripts:<br>
+&nbsp; - script: $CIP/csmart/lib/isat/clearPnLogs.rb<br>
+&nbsp; - script: $CIP/csmart/lib/isat/initialize_network.rb<br>
+&nbsp; - script: $CIP/csmart/lib/isat/stop_society.rb<br>
+&nbsp;&nbsp;&nbsp; parameters:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; - stop_location: after_stage_1<br>
+<br>
+</small>
+<div style="margin-left: 40px;"><small
+ style="font-style: italic; color: rgb(0, 0, 0);"><font size="-1"><span
+ style="font-family: courier new,courier,monospace;">#
+This script inserts the Planned Disconnect Experiment Definition.&nbsp;
+Its parameters are descibed below.&nbsp;
+planned_disconnect_with_node_kill.rb (sample at the end of this
+section) is a variant of this script which includes the kill of the
+ARManager node or disconnected node(s) during the Planned Disconnect
+period.</span></font></small><br>
+</div>
+<small><span style="font-weight: bold;">&nbsp; - script:
+$CIP/csmart/lib/robustness/objs/planned_disconnect.rb</span><br
+ style="font-weight: bold;">
+<span style="font-weight: bold;">&nbsp;&nbsp;&nbsp; parameters:<br>
+</span></small>
+<div style="margin-left: 80px;"><small
+ style="font-style: italic; color: rgb(0, 0, 0);"># the location in the
+template to insert the first step, "do_action PlannedDisconnect". This
+must be after Defenses are
+Unleashed by unleash_defenses.rb (below)</small><br
+ style="font-weight: bold;">
+</div>
+<small><span style="font-weight: bold;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+- location: during_stage_1</span></small><br>
+<div style="margin-left: 80px;"><small style="font-style: italic;">#
+the nodes to
+be disconnected.&nbsp; Make sure that all nodes are listed for any
+hosts on
+which any nodes will be disconnected, else the ARManager will restart
+the agents on the unlisted nodes.</small><br style="font-weight: bold;">
+</div>
+<small><span style="font-weight: bold;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+- nodes: ["UA-FSB-A-NODE", "UA-FSB-C-NODE"]<br>
+</span></small>
+<div style="margin-left: 80px;"><small style="font-style: italic;">#
+the period
+of time that the listed nodes plan to be disconnected.&nbsp; At
+present,
+this should be somewhat longer than the actual_disconnect time to
+compensate for delays reestablishing communications after a
+disconnect.&nbsp; In this example, 4 additional minutes has generally
+sufficed.&nbsp; If the disconnect is shorter or longer, less or more
+additional time would be appropriate.</small><br
+ style="font-weight: bold;">
+</div>
+<small><span style="font-weight: bold;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+- planned_disconnect: 12.minutes<br>
+</span></small>
+<div style="margin-left: 80px;"><small>#
+the actual amount of time to disconnect from the network (i.e. ifdown)
+the hosts on which the listed nodes reside.&nbsp; 'LateReturn'
+experiments set the planned_disconnect period shorter than the
+actual_disconnect period.</small><br style="font-weight: bold;">
+</div>
+<small><span style="font-weight: bold;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+- actual_disconnect: 8.minutes</span></small><small><span
+ style="font-weight: bold;"><br>
+</span></small>
+<div style="color: rgb(0, 0, 0); font-style: italic; margin-left: 80px;"><font
+ size="-1" style="color: rgb(0, 0, 0);"># </font><font size="-1"
+ style="color: rgb(255, 0, 0);"><span style="color: rgb(0, 0, 0);">the
+verbosity level </span></font><font size="-1"
+ style="color: rgb(255, 0, 0);"><span style="color: rgb(0, 0, 0);">of
+ACME messaging to the console. (0=silent, 1=errors, 2=info, 3=debug)</span></font></div>
+<small><span style="font-weight: bold;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+- verbose: 2<br>
+<br>
+</span></small><font size="-1"><big><span style="font-style: italic;"></span></big></font>
+<div style="margin-left: 40px;"><font size="-1"><big><span
+ style="font-style: italic;"><small># The purpose of the
+planned_disconnect_completed script is to keep the run running until
+the experiment completes, especially in Stage1 scratch runs with long
+disconnect periods where the society might quiesce during the
+disconnect period and then end.&nbsp; It can be omitted in runs in
+which there are additional stages to be run after the experiment (e.g.
+MOAS).</small></span></big></font><br>
+</div>
+<small><span style="font-weight: bold;">&nbsp; - script:
+$CIP/csmart/lib/robustness/objs/planned_disconnect_completed.rb<br>
+&nbsp;&nbsp;&nbsp; parameters:<br>
+</span></small>
+<div style="margin-left: 80px;"><small style="font-style: italic;"><font
+ size="-1"># the location in the
+template to wait until the experiment completes.&nbsp; This must be
+after the location
+above and before the start of the next stage or the end of the run.</font></small><br>
+</div>
+<small><span style="font-weight: bold;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+- wait_location: after_stage_1<br>
+</span></small><big><font size="-1"><big></big></font></big>
+<div style="margin-left: 80px;"><big><font style="color: rgb(0, 0, 0);"
+ size="-1"><big><span style="font-style: italic;"></span><small
+ style="font-style: italic;"># </small></big></font><small
+ style="font-style: italic;"><font style="color: rgb(255, 0, 0);"
+ size="-1"><span style="color: rgb(0, 0, 0);">the
+period of time given to the final step of the experiment, "wait_for
+PlannedDisconnectCompleted", for all nodes to either reconnect or be
+declared Tardy.</span></font></small></big><br>
+</div>
+<small><span style="font-weight: bold;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+- timeout: 30.minutes<br>
+</span></small>
+<div style="color: rgb(0, 0, 0); font-style: italic; margin-left: 80px;"><font
+ size="-1" style="color: rgb(0, 0, 0);"># </font><font size="-1"
+ style="color: rgb(255, 0, 0);"><span style="color: rgb(0, 0, 0);">the
+verbosity level </span></font><font size="-1"
+ style="color: rgb(255, 0, 0);"><span style="color: rgb(0, 0, 0);">of
+ACME messaging to the console. (0=silent, 1=errors, 2=info, 3=debug)</span></font></div>
+<small><span style="font-weight: bold;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+- verbose: 2<br>
+<br>
+</span></small>
+<div style="margin-left: 40px;"><small style="font-style: italic;"><font
+ size="-1"><span style="font-family: courier new,courier,monospace;">#
+This script inserts the Unleash action</span></font></small><small
+ style="font-style: italic;"><font size="-1"><span
+ style="font-family: courier new,courier,monospace;"> to activate all
+defenses</span></font></small><small style="font-style: italic;"><font
+ size="-1"><span style="font-family: courier new,courier,monospace;">.</span></font></small><small
+ style="font-style: italic;"><font size="-1"><span
+ style="font-family: courier new,courier,monospace;"></span></font></small></div>
+<small><span style="font-weight: bold;">&nbsp; - script:
+$CIP/csmart/lib/coordinator/unleash_defenses.rb <br>
+&nbsp;&nbsp;&nbsp; parameters:<br>
+</span></small>
+<div style="margin-left: 80px;"><small style="font-style: italic;"><font
+ size="-1"># the location in the
+template to unleash defenses.&nbsp; It mus</font></small><small
+ style="font-style: italic;"><font size="-1"><span
+ style="font-family: courier new,courier,monospace;">t be executed </span></font></small><small
+ style="font-style: italic;"><font size="-1"><span
+ style="font-family: courier new,courier,monospace;">after startup is
+complete</span></font></small><small style="font-style: italic;"><font
+ size="-1"><span style="font-family: courier new,courier,monospace;">
+and before the experiment starts.</span></font></small><br>
+</div>
+<small><span style="font-weight: bold;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+- location: during_stage_1<br>
+</span></small>
+<div style="color: rgb(0, 0, 0); font-style: italic; margin-left: 80px;"><font
+ size="-1" style="color: rgb(0, 0, 0);"># </font><font size="-1"
+ style="color: rgb(255, 0, 0);"><span style="color: rgb(0, 0, 0);">the
+verbosity level </span></font><font size="-1"
+ style="color: rgb(255, 0, 0);"><span style="color: rgb(0, 0, 0);">of
+ACME messaging to the console. (0=silent, 1=errors, 2=info, 3=debug)</span></font></div>
+<small><span style="font-weight: bold;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+- verbose: 1<br>
+</span><br style="font-style: italic;">
+</small>
+<div style="margin-left: 40px;"><small><span style="font-style: italic;">#
+This script waits until the <span style="font-weight: bold;">nodes</span>
+that are about to disconnect have persisted, or until the specified <span
+ style="font-weight: bold;">start_delay</span> has passed, which ever
+is longer.&nbsp; This provides sufficient time for coordinator
+initialization, which depends on ARUC1 initialization, and is identical
+to the delay inserted in ARUC1 Kill scripts.</span></small><br>
+</div>
+<small><span style="font-weight: bold;">&nbsp; - script:
+$CIP/csmart/lib/coordinator/nodes_persisted_find_providers.rb <br>
+&nbsp;&nbsp;&nbsp; parameters:<br>
+</span></small>
+<div style="margin-left: 80px;"><small style="font-style: italic;"><font
+ size="-1"># the location in the
+template to persist the nodes.&nbsp; It mus</font></small><small
+ style="font-style: italic;"><font size="-1"><span
+ style="font-family: courier new,courier,monospace;">t be executed </span></font></small><small
+ style="font-style: italic;"><font size="-1"><span
+ style="font-family: courier new,courier,monospace;">after startup is
+complete</span></font></small><small style="font-style: italic;"><font
+ size="-1"><span style="font-family: courier new,courier,monospace;">
+and before the experiment starts.</span></font></small><br>
+</div>
+<small><span style="font-weight: bold;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+- location: during_stage_1<br>
+</span></small>
+<div style="margin-left: 80px;"><big><font style="color: rgb(0, 0, 0);"
+ size="-1"><big><small style="font-style: italic;"># </small></big></font><small
+ style="font-style: italic;"><font style="color: rgb(255, 0, 0);"
+ size="-1"><span style="color: rgb(0, 0, 0);">the minumum delay, in
+seconds.</span></font></small></big><br>
+</div>
+<small><span style="font-weight: bold;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+- start_delay: 60<br>
+</span></small>
+<div style="margin-left: 80px;"><small style="font-style: italic;">#
+the nodes the should persist before disconnecting.</small><br>
+</div>
+<small><span style="font-weight: bold;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+- nodes: ["FSB-CO-HQ-CIC-NODE", "FSB-DISTRO-FWD-EVAC-NODE"]</span></small><small><br>
+<br>
+=end<br>
+<br>
+require 'cougaar/scripting'<br>
+Cougaar::ExperimentDefinition.register(__FILE__)<br>
+<br>
+</small><span style="font-weight: bold;"></span><small><span
+ style="font-weight: bold; text-decoration: underline;">In the MgrKill
+and NodeKill experiments,</span> the following script is used
+in place of planned_disconnect.rb.<br>
+<br>
+</small>
+<div style="margin-left: 40px;"><small
+ style="font-style: italic; color: rgb(0, 0, 0);"><font size="-1"><span
+ style="font-family: courier new,courier,monospace;">#
+This script is avariant of the Planned Disconnect Experiment, which
+includes the</span></font></small><small
+ style="font-style: italic; color: rgb(0, 0, 0);"><font size="-1"><span
+ style="font-family: courier new,courier,monospace;"> kill of the
+ARManager node or disconnected node(s) </span></font></small><small
+ style="font-style: italic; color: rgb(0, 0, 0);"><font size="-1"><span
+ style="font-family: courier new,courier,monospace;">during the Planned
+Disconnect period. </span></font></small><br>
+</div>
+<small><span style="font-weight: bold;">&nbsp; - script:
+$CIP/csmart/lib/robustness/objs/planned_disconnect_with_node_kill.rb</span><br
+ style="font-weight: bold;">
+<span style="font-weight: bold;">&nbsp;&nbsp;&nbsp; parameters:<br>
+</span></small>
+<div style="margin-left: 40px;">
+<div style="margin-left: 40px;"><small
+ style="font-style: italic; color: rgb(0, 0, 0);"># the location in the
+template to insert the first step, "do_action PlannedDisconnect". This
+must be after Defenses are
+Unleashed by unleash_defenses.rb (below<span style="font-weight: bold;">)
+</span></small><br>
+</div>
+<small style="font-style: italic; color: rgb(0, 0, 0);"><span
+ style="font-weight: bold;">- </span></small><small><span
+ style="font-weight: bold;">location: during_stage_1</span></small><br>
+</div>
+<div style="margin-left: 80px;"><small style="font-style: italic;">#
+the nodes to
+be disconnected.&nbsp; Make sure that all nodes are listed for any
+hosts on
+which any nodes will be disconnected, else the ARManager will restart
+the agents on the unlisted nodes.</small><br style="font-weight: bold;">
+</div>
+<small><span style="font-weight: bold;">&nbsp;&nbsp;&nbsp;&nbsp; -
+nodes: ["UA-FSB-A-NODE", "UA-FSB-C-NODE"]<br>
+</span></small>
+<div style="margin-left: 80px;"><small># the nodes to kill, in this
+case, the ARManager's node.&nbsp; This tests the continuity of the
+Coordinator across restarts.&nbsp; The other case, the kill of a
+disconnected node, tests the Coordinator's control of the Restart
+defense in the presence of disconnects.</small><br>
+</div>
+<div style="margin-left: 40px;"><small style="font-weight: bold;">-
+nodes_to_kill: ["1-UA-ROB-MGMT-NODE"]</small><br>
+</div>
+<div style="margin-left: 80px;"><small style="font-style: italic;">#
+the period
+of time that the listed nodes plan to be disconnected.&nbsp; At
+present,
+this should be somewhat longer than the actual_disconnect time to
+compensate for delays reestablishing communications after a
+disconnect.&nbsp; In this example, 4 additional minutes has generally
+sufficed.&nbsp; If the disconnect is shorter or longer, less or more
+additional time would be appropriate.</small><br>
+</div>
+<div style="margin-left: 40px;"><small><span style="font-weight: bold;">-
+planned_disconnect: 12.minutes</span></small><br>
+</div>
+<small><span style="font-weight: bold;"></span></small>
+<div style="margin-left: 40px;">
+<div style="margin-left: 40px;"><small>#
+the actual amount of time to disconnect from the network (i.e. ifdown)
+the hosts on which the listed nodes reside.&nbsp; 'LateReturn'
+experiments
+set the planned_disconnect period shorter than the actual_disconnect
+period.</small><small><span style="font-weight: bold;"> </span></small><br>
+</div>
+<small><span style="font-weight: bold;">- actual_disconnect: 8.minute</span></small>
+</div>
+<div style="color: rgb(0, 0, 0); font-style: italic; margin-left: 80px;"><font
+ size="-1" style="color: rgb(0, 0, 0);"># </font><font size="-1"
+ style="color: rgb(255, 0, 0);"><span style="color: rgb(0, 0, 0);">the
+verbosity level </span></font><font size="-1"
+ style="color: rgb(255, 0, 0);"><span style="color: rgb(0, 0, 0);">of
+ACME messaging to the console. (0=silent, 1=errors, 2=info, 3=debug)</span></font></div>
+<div style="margin-left: 40px;"><small><span style="font-weight: bold;">-
+verbose: 2</span></small><br>
+</div>
+</div>
+<div style="margin-left: 40px;"><br>
+<hr style="width: 100%; height: 2px;"><span style="font-weight: bold;"><br>
+</span></div>
+<u><b>ACME Actions and States Detail<br>
+<br>
+</b></u>
+<blockquote>
+  <blockquote> </blockquote>
+</blockquote>
+<b>$CIP/csmart/config/lib/robustness/uc7/</b><b>disconnection.rb</b>
+define the PlannedDisconnect ACME Actions and States that the above
+script uses.<br>
+<blockquote> <br>
+Note: All action &amp; states take an optional parameter (0, 1, 2, 3)
+to
+allow the verbosity of messaging to the acme console to be set.&nbsp;
+Default is 0 which
+prints no messages, 1 adds error messages, 2 adds info messages, and 3
+adds debug messages.&nbsp; We suggest a setting of 2 during testing and
+1 otherwise.<br>
+  <br>
+# This action prints out Planned Disconnect events of interest.&nbsp;
+The PlannedDisconnect action (below) controls the experiment.<br>
+  <span style="font-weight: bold;">do_action "MonitorPlannedDisconnect
+", 2</span><br>
+  <tt><b> <br>
+  </b></tt><tt><i># This action performs the bulk of the work.&nbsp; It
+starts the PlannedDisconnect,<br>
+# confirms Permission to Disconnect, performs the actual network
+disconnect<br>
+# and reconnect, initiates the Request to Reconnect, confirms the
+Permission<br>
+# to Reconnect, reports the final status and handles any deviations
+that occur<br>
+# along the way. It runs in a separate thread so as not to interfere
+with the<br>
+# progress of the run script, especially detection of quiescence, and
+sets a <br>
+# a flag when complete.<br style="font-family: monospace;">
+  </i><b style="font-family: monospace; font-weight: bold;">do_action
+"PlannedD</b><span style="font-weight: bold; font-family: monospace;">isconnect",
+  </span></tt><tt style="font-weight: bold; font-family: monospace;">[</tt><span
+ style="font-family: monospace; font-weight: bold;">"UA-FSB-A-NODE",
+"UA-FSB-C-NODE"</span><tt><span
+ style="font-weight: bold; font-family: monospace;">], 12.m</span><b><span
+ style="font-family: monospace; font-weight: bold;">inutes, 8.minutes, 2<br>
+  <br>
+  </span></b></tt><tt># This state waits for the flag set
+above to be set.&nbsp; Its purpose is to be inserted<br>
+# after "wait_for SocietyQuiesced" in the main thread, to delay moving
+to the next stage<br>
+# until the PlannedDisconnect experiment is completed, if so desired.
+If the experiment<br>
+# ends before the society quiesces, this state will return immediately.<br>
+  </tt><tt><b>wait_for "PlannedDisconnectCompleted", 30.minutes</b></tt><span
+ style="font-weight: bold;"> ,</span><tt><b> 2</b></tt><br>
+  <tt><b> </b><br>
+  <br>
+The following messages will be emitted in a successful run:<br>
+  <br>
+  </tt><tt>Starting: PlannedDisconnect<br>
+&nbsp; INFO: Performing Planned Disconnect of nodes UA-FSB-A-NODE,
+UA-FSB-C-NODE for 720 secs. Actually disconnecting for 480 secs.<br>
+&nbsp; INFO: Starting Planned Disconnect of node UA-FSB-A-NODE for 720
+secs<br>
+  </tt><tt>&nbsp; </tt><tt>INFO: Starting Planned Disconnect of node
+UA-FSB-C-NODE for 720 secs <br>
+&nbsp; INFO: UA-FSB-A-NODE: Requesting to Disconnect Node: UA-FSB-A-NODE<br>
+&nbsp; INFO: UA-FSB-C-NODE: Requesting to Disconnect Node: UA-FSB-C-NODE<br>
+&nbsp; INFO: UA-FSB-C-NODE: UA-FSB-C-NODE has received permission to
+Disconnect for 720 sec<br>
+&nbsp; INFO: UA-FSB-A-NODE: UA-FSB-A-NODE has received permission to
+Disconnect for 720 sec<br>
+&nbsp; INFO: Taking down network for host sv084 that has nodes
+UA-FSB-C-NODE, UA-FSB-A-NODE<br>
+&nbsp; INFO: Taking down network for host sv084 that has nodes
+UA-FSB-C-NODE, UA-FSB-A-NODE<br>
+  </tt><tt>Finished: PlannedDisconnect in 102 seconds<br>
+Waiting for: PlannedDisconnectCompleted<br>
+&nbsp; INFO: Waiting 1800 seconds for Completion of the Planned
+Disconnect Experiment.<br>
+  </tt><tt>&nbsp; INFO: Bringing up network for host sv084 that has
+nodes
+UA-FSB-C-NODE, UA-FSB-A-NODE<br>
+&nbsp; INFO: Bringing up network for host sv084 that has nodes
+UA-FSB-C-NODE, UA-FSB-A-NODE<br>
+&nbsp; INFO: Node UA-FSB-A-NODE Requesting Permission to Reconnect<br>
+&nbsp; INFO: Node UA-FSB-C-NODE Requesting Permission to Reconnect<br>
+&nbsp; INFO: UA-FSB-A-NODE: Requesting to Connect Node: UA-FSB-A-NODE<br>
+&nbsp; INFO: UA-FSB-C-NODE: Requesting to Connect Node: UA-FSB-C-NODE<br>
+&nbsp; INFO: UA-FSB-C-NODE: UA-FSB-C-NODE has received permission to
+Reconnect<br>
+&nbsp; INFO: UA-FSB-A-NODE: UA-FSB-A-NODE has received permission to
+Reconnect<br>
+&nbsp; INFO: All Nodes were Permitted to Reconnect.<br>
+&nbsp; INFO: Planned Disconnect Experiment Complete.<br>
+Done: PlannedDisconnectCompleted in 418 seconds<br>
+  <br>
+  </tt><tt style="font-weight: bold; text-decoration: underline;">Note</tt><br>
+  <tt>If the actual disconnect time is
+greater than the planned disconnect time, then the following messages
+will be emitted:<br style="font-weight: bold;">
+  </tt></blockquote>
+<div style="margin-left: 40px;"><big><font size="-1"
+ style="font-family: monospace;"><big>&nbsp; INFO: UA-FSB-A-NODE is
+Tardy and is no longer legitimately
+Disconnected<br>
+&nbsp; INFO: UA-FSB-C-NODE is Tardy and is no longer legitimately
+Disconnected</big></font></big><br>
+</div>
+<blockquote><tt style="font-weight: bold;"> <br>
+  </tt><tt>and the ARManager should be enabled to restart the agents on
+these nodes
+on other nodes, resulting in one of the following for each agent:<br>
+  </tt></blockquote>
+<div style="margin-left: 40px;"><tt>&nbsp; INFO: Moving agent:
+FTTS-U-C2-1.CIC.FSB.1-UA.ARMY.MIL to node: UA-XNODE-1</tt><br>
+</div>
+<blockquote><tt><br>
+When the actual disconnect concludes, the disconnected nodes and agents
+will return and the following message printed:<br>
+  <br>
+  </tt><tt>&nbsp; INFO: Bringing up network for host sv084 that has
+nodes
+UA-FSB-C-NODE, UA-FSB-A-NODE<br>
+&nbsp; INFO: Bringing up network for host sv084 that has nodes
+UA-FSB-C-NODE, UA-FSB-A-NODE<br>
+&nbsp; INFO: Node UA-FSB-A-NODE Requesting Permission to Reconnect<br>
+&nbsp; INFO: Node UA-FSB-C-NODE Requesting Permission to Reconnect<br>
+&nbsp; INFO: UA-FSB-A-NODE: Requesting to Connect Node: UA-FSB-A-NODE<br>
+&nbsp; INFO: UA-FSB-C-NODE: Requesting to Connect Node: UA-FSB-C-NODE<br>
+  </tt><tt>&nbsp; INFO: </tt><tt>UA-FSB-C-NODE</tt><tt>: </tt><tt>UA-FSB-C-NODE</tt><tt>
+is denied permission to Reconnect.&nbsp; </tt><br>
+  <tt>&nbsp; INFO: </tt><tt>UA-FSB-C-NODE</tt><tt>: </tt><tt>UA-FSB-C-NODE</tt><tt>
+is denied permission to Reconnect.&nbsp; <br>
+  <br>
+In the past, Cougaar could not tolerate duplicate agents and the run
+would not complete successfully.&nbsp; Now, under 11.2, this problem is
+solved, and the Tardy agents will be shunned.</tt><br>
+</blockquote>
+<blockquote><tt><b> </b></tt><tt><b></b></tt><tt></tt></blockquote>
+<b>$CIP/csmart/config/lib/coordinator/leashing</b><b>.rb</b>
+defines the Coordinator's ACME Actions and States for Unleashing
+Defenses.<tt></tt><br>
+<blockquote><tt><br>
+  </tt><span style="font-style: italic; font-family: monospace;">#
+Unleash Suppressed Defenses<br>
+# If this is not done once startup or restore is complete, the Defenses
+will not be enabled when stresses occur.<br>
+  </span><span style="font-style: italic; font-family: monospace;"><span
+ style="font-weight: bold;">do_action "Unleash", 1</span></span><tt><br>
+Starting: Unleash<br>
+&nbsp;INFO: Requested that CONUS-ARManager on CONUS-ROB-MGMT-NODE
+Unleash Defenses.<br>
+&nbsp;INFO: Defenses Unleashed on CONUS-ROB-MGMT-NODE<br>
+&nbsp;INFO: Requested that REAR-ARManager on REAR-ROB-MGMT-NODE Unleash
+Defenses.<br>
+&nbsp;INFO: Defenses Unleashed on REAR-ROB-MGMT-NODE<br>
+&nbsp;INFO: Requested that 1-AD-DIV-ARManager on 1-AD-DIV-ROB-MGMT-NODE
+Unleash Defenses.<br>
+&nbsp;INFO: Defenses Unleashed on 1-AD-DIV-ROB-MGMT-NODE<br>
+&nbsp;INFO: Requested that UA-ARManager on UA-ROB-MGMT-NODE Unleash
+Defenses.<br>
+&nbsp;INFO: Defenses Unleashed on 1-AD-BDE-ROB-MGMT-NODE<br>
+  </tt><tt>&nbsp;INFO: All Robustness Managers have Unleashed
+Defenses.</tt><br>
+  <tt>Finished: Unleash in 31 seconds</tt><tt></tt><br>
+  <tt> <br>
+  </tt><tt># This action causes defenses to be leashed at restart even
+if they were unleashed when persisted, if executed right after
+snapshot_restored.&nbsp; This is used to avoid defenses reacting to
+startup stresses associated with full-society restore.<br>
+  </tt><tt><span style="font-weight: bold;">do_action "LeashOnRestart"<br>
+  </span></tt><tt>Starting: LeashOnRestart<br>
+Finished: </tt><tt>LeashOnRestart</tt><tt> in 83 seconds</tt><br>
+  <tt><br>
+# This action caused defenses to be unleashed persistently, so that
+when the Coordinator is killed and rehydrated, it will not be leashed.<br>
+  <span style="font-weight: bold;">do_action
+"UnleashOnSubsequentRestarts", 1<br>
+  </span>Starting: UnleashOnSubsequentRestarts<br>
+Finished: UnleashOnSubsequentRestarts in 83 seconds<br>
+  <br>
+  </tt><tt># This action leashes defenses. No defenses will be enabled
+after
+the completion of this action.&nbsp; This was used before a freeze to
+disable restarts, but could not disable ARManager restarts, so is no
+longer used.<br>
+  </tt><tt><span style="font-weight: bold;">do_action "Leash", 1<br>
+  </span></tt><tt>Starting: Leash<br>
+  </tt><tt>&nbsp;
+INFO: Requested that CONUS-ARManager Leash Defenses.<br>
+&nbsp; INFO: Requested that REAR-ARManager Leash Defenses.<br>
+&nbsp; INFO: Requested that 1-AD-DIV-ARManager Leash Defenses.<br>
+&nbsp; INFO: Requested that UA-ARManager Leash Defenses.</tt><br>
+  <tt>Finished: Leash in 0 seconds</tt><br>
+  <br>
+</blockquote>
+For further information configuring these defenses, see <a
+ href="https://cvs.ultralog.net/ultralog/UltraLogRobustness">https://cvs.ultralog.net/ultralog/UltraLogRobustness</a>.<br>
+<br>
+Send questions or comments to:<br>
+<br>
+<tt>Steve Ford</tt><br>
+<tt> OBJS</tt><br>
+<tt> </tt><tt><a href="mailto:ford@objs.com">ford@objs.com</a></tt><br>
+<tt>610 345 0290</tt>
+<blockquote>
+  <blockquote> </blockquote>
+</blockquote>
+<br>
+<br>
+<br>
+</body>
+</html>

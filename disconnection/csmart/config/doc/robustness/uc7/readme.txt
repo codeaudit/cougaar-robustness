@@ -1,4 +1,4 @@
-Instructions for configuring and running Planned Disconnect using Acme can be found in the file acme4deconfliction.html in this directory.
+Instructions for configuring and running Planned Disconnect using Acme can be found in the file acme4acuc1.html in this directory.
 
 The 2004 scripts are in the directory $CIP/csmart/lib/robustness/objs.
 
