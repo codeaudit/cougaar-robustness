@@ -514,7 +514,7 @@ logger.debug("///////////////////////////////////Adding permitted value: "+o);
     public String toString ( ) { return "<" + this.getClass().getName()+ ":" + 
                                               this.getAssetType() + ":" + 
                                               this.getAssetName() + "=" + 
-                                              this.getValue().getAction() + ">";
+                                              (this.getValue()!=null ? this.getValue().getAction():"NULL") + ">";
     }
 
        
