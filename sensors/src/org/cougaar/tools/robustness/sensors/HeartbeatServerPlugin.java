@@ -177,18 +177,20 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
     Iterator iter = sub.getAddedCollection().iterator();
     while (iter.hasNext()) {
       HbReq req = (HbReq)iter.next();
-      if (log.isDebugEnabled()) 
-        log.debug("execute: received added HbReq = " + req);
-      HbReqContent content = (HbReqContent)req.getContent();
-      long now = System.currentTimeMillis();
-      long freq = content.getHbFrequency();
-      if (minFreq > freq) minFreq = freq;
-      MessageAddress me = getAgentIdentifier();
-      req.updateResponse(me, new HbReqResponse(me, HeartbeatRequest.ACCEPTED, now, now));
-      if (log.isDebugEnabled()) 
-        log.debug("execute: publishChange HbReq = " + req);
-      bb.publishChange(req);
-    } 
+      if (!req.getSource().equals(getAgentIdentifier())) {
+        if (log.isDebugEnabled()) 
+          log.debug("execute: received added HbReq = " + req);
+        HbReqContent content = (HbReqContent)req.getContent();
+        long now = System.currentTimeMillis();
+        long freq = content.getHbFrequency();
+        if (minFreq > freq) minFreq = freq;
+        MessageAddress me = getAgentIdentifier();
+        req.updateResponse(me, new HbReqResponse(me, HeartbeatRequest.ACCEPTED, now, now));
+        if (log.isDebugEnabled()) 
+          log.debug("execute: publishChange HbReq = " + req);
+        bb.publishChange(req);
+      } 
+    }
     if (minFreq != Long.MAX_VALUE) {
       if (nextAlarm != null) nextAlarm.cancel();
       nextAlarm =  new ProcessHeartbeatsAlarm(minFreq);

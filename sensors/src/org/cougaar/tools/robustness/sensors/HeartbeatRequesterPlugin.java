@@ -368,29 +368,39 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
           log.debug("execute: received added HeartbeatRequest = " + req);
         MessageAddress source = getAgentIdentifier();
         Set targets = req.getTargets();
-        UID reqUID = req.getUID();
-        reqTable.add(req);
-        req.setStatus(HeartbeatRequest.SENT);
-        req.setTimeSent(new Date());
-        HbReqContent content = new HbReqContent(reqUID, 
-                                                req.getReqTimeout(), 
-                                                req.getHbFrequency(), 
-                                                req.getHbTimeout());
-        UID hbReqUID = getUIDService().nextUID();
-        req.setHbReqUID(hbReqUID);
-        HbReq hbReq = new HbReq(hbReqUID, 
-                                source, 
-                                targets, 
-                                content, 
-                                null);
-        if (log.isDebugEnabled())
-          log.debug("execute: publishAdd HbReq = " + hbReq);
-        bb.publishAdd(hbReq);
-        if (log.isDebugEnabled())
-          log.debug("execute: publishChange HeartbeatRequest = " + req);
-        bb.publishChange(req);
+        if (!targets.contains(source)){  //source cannot be a target
+          UID reqUID = req.getUID();
+          reqTable.add(req);
+          req.setStatus(HeartbeatRequest.SENT);
+          req.setTimeSent(new Date());
+          HbReqContent content = new HbReqContent(reqUID, 
+                                                  req.getReqTimeout(), 
+                                                  req.getHbFrequency(), 
+                                                  req.getHbTimeout());
+          UID hbReqUID = getUIDService().nextUID();
+          req.setHbReqUID(hbReqUID);
+          HbReq hbReq = new HbReq(hbReqUID, 
+                                  source, 
+                                  targets, 
+                                  content, 
+                                  null);
+          if (log.isDebugEnabled())
+            log.debug("execute: publishAdd HbReq = " + hbReq);
+          bb.publishAdd(hbReq);
+          if (log.isDebugEnabled())
+            log.debug("execute: publishChange HeartbeatRequest = " + req);
+          bb.publishChange(req);
 
-        alarmService.addRealTimeAlarm(new HeartbeatRequestTimeout(req.getReqTimeout(),reqUID));
+          alarmService.addRealTimeAlarm(new HeartbeatRequestTimeout(req.getReqTimeout(),reqUID));
+        } else { //exclude source in targets
+          if (log.isErrorEnabled()) {
+            log.error("execute: Illegal HeartbeatRequest received. Source cannot also be a target. HeartbeatRequest = " + req);
+          }
+          req.setStatus(HeartbeatRequest.FAILED);
+          if (log.isDebugEnabled())  
+            log.debug("execute: publishChange HeartbeatRequest = " + req);
+          bb.publishChange(req);
+        } 
       }
     }
   }
