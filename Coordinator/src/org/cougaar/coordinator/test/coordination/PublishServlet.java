@@ -47,7 +47,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.cougaar.core.servlet.ComponentServlet;
-import org.cougaar.core.service.UIDService;
 
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.service.BlackboardService;
@@ -81,7 +80,6 @@ public class PublishServlet extends BaseServletComponent implements BlackboardCl
     private EventService eventService = null;
     private BlackboardService blackboard = null;
     private Logger logger = null;
-    private UIDService uidService;
     
     private MessageAddress agentId = null;
 
@@ -154,15 +152,6 @@ public class PublishServlet extends BaseServletComponent implements BlackboardCl
             "Unable to obtain EventService");
         }
         
-        this.uidService = (UIDService)
-        serviceBroker.getService(
-        this,
-        UIDService.class,
-        null);
-        if (uidService == null) {
-            throw new RuntimeException(
-            "Unable to obtain UIDService");
-        }
         
         
         super.load();
@@ -210,11 +199,6 @@ public class PublishServlet extends BaseServletComponent implements BlackboardCl
             serviceBroker.releaseService(
             this, LoggingService.class, logger);
             logger = LoggingService.NULL;
-        }
-        if (uidService != null) {
-            serviceBroker.releaseService(
-            this, UIDService.class, uidService);
-            uidService = null;
         }
         
     }
@@ -267,13 +251,11 @@ public class PublishServlet extends BaseServletComponent implements BlackboardCl
     
     private Diagnosis createDiagnosis(String s) throws IllegalValueException, TechSpecNotFoundException {
         TestDiagnosis d = new TestDiagnosis(s, serviceBroker);        
-        d.setUID(uidService.nextUID());
         return d;
     }
     
     private Action createAction(String s) throws IllegalValueException, TechSpecNotFoundException {
         TestAction a = new TestAction(s, serviceBroker);        
-        a.setUID(uidService.nextUID());
         return a;
     }
     

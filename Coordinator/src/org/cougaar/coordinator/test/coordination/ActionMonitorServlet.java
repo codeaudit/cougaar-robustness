@@ -214,11 +214,11 @@ public class ActionMonitorServlet extends BaseServletComponent implements Blackb
             while (i.hasNext() ) {      
                 actionData = (ActionData) i.next();
                 if ( actionData.contains(a) ) { //found it
-System.out.println("Changed Action Data Found. Asset ="+a.getAssetName());                    
+//System.out.println("Changed Action Data Found. Asset ="+a.getAssetName());                    
                     actionData.setAction(a, state, isWrapper);
                     return;
                 } else {
-System.out.println("Added Action Data Found. Asset = "+a.getAssetName());                    
+//System.out.println("Added Action Data Found. Asset = "+a.getAssetName());                    
                 }                    
             }
             //Not found so create it
@@ -378,10 +378,9 @@ System.out.println("Added Action Data Found. Asset = "+a.getAssetName());
                     }
                 }
                 
-                String[] newvalues = request.getParameterValues("NEWVALUE");
+
+                String[] newvalues = request.getParameterValues("SETPERMITTEDVALUES");
                 if (newvalues != null && newvalues.length >0 ) { //the user wants to update a value
-                    
-                    System.out.println("*************** newvalue = " + newvalues);
                     
                     String type = request.getParameter("TYPE");
                     String uid  = request.getParameter("UID");
@@ -393,7 +392,8 @@ System.out.println("Added Action Data Found. Asset = "+a.getAssetName());
                     updateResult = updateAction(type, uid, hs);
                     wasUpdated = true;
                 }
-/*                
+                
+                /*                
                 String lnf = request.getParameter("LNF");
                 if (lnf != null) {
                     LONG_NUM_FORMAT = lnf;
@@ -626,9 +626,11 @@ System.out.println("Added Action Data Found. Asset = "+a.getAssetName());
                 return; 
             }
             
-            emitModifiableSelect(out, action.getPossibleValues(), ad, isActionObject, actiondataFilter, refresh, nameformat);
+            emitSelect(out, action.getPossibleValues());
+            emitModifiableSelect(out, action.getValuesOffered(), ad, isActionObject, actiondataFilter, refresh, nameformat, "SETPERMITTEDVALUES");
             emitSelect(out, action.getPermittedValues());
-            emitSelect(out, action.getValuesOffered());
+            
+            
             
             if ( isActionObject ) { //emit value indicating if data has changed or was just added.
                 out.print("   <TD><TABLE>");
@@ -664,13 +666,13 @@ System.out.println("Added Action Data Found. Asset = "+a.getAssetName());
 
 
         private void emitModifiableSelect(PrintWriter out, Set s, ActionData ad, boolean isActionObject, 
-                                          String actiondataFilter, int refresh, String nameformat) {
+                                          String actiondataFilter, int refresh, String nameformat, String setName) {
                        
             String str;
             if (s != null && s.size() >0 ) {
                 Iterator iter = s.iterator();
                 out.print("    <TD><form clsname=\"UPDATEVALUE\" method=\"get\" ><br><br>" );
-                out.print("    <SELECT MULTIPLE NAME=\"NEWVALUE\" size=\"3\" ");
+                out.print("    <SELECT MULTIPLE NAME=\""+setName+"\" size=\"3\" ");
                 out.print("  STYLE=\"margin: 0em 0 0 0em; color: white; background-color: red; font-size: 8pt;\">\n");            
                 while (iter.hasNext()) {
                     str = iter.next().toString();
@@ -728,10 +730,10 @@ System.out.println("Added Action Data Found. Asset = "+a.getAssetName());
             out.print("   <TH>Action <sp> </TH>");
             out.print("   <TH>Type</TH>");
             out.print("   <TH>Poss. Values</TH>");
-            out.print("   <TH>Permitted</TH>");
             out.print("   <TH>Offered</TH>");
+            out.print("   <TH>Permitted</TH>");
             out.print("   <TH>Value / Completed?</TH>");
-            out.print("   <TH>Status</TH>");
+            out.print("   <TH>BB Status</TH>");
             //out.print("   <TH>Time</TH>");
             out.print("</TR>");
         }

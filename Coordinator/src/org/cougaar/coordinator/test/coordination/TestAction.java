@@ -10,6 +10,7 @@ import org.cougaar.coordinator.techspec.*;
 
 import org.cougaar.core.component.ServiceBroker;
 import java.util.Set;
+import java.util.HashSet;
 
 /**
  *
@@ -23,6 +24,7 @@ public class TestAction extends Action {
     public TestAction(String assetName, ServiceBroker serviceBroker) throws TechSpecNotFoundException
     {
         super(assetName, serviceBroker);
+        setOffered(this.getPossibleValues());
     }
 
 
@@ -35,6 +37,14 @@ public class TestAction extends Action {
     {
         
         super(assetName, initialValuesOffered, serviceBroker);
+        setOffered(this.getPossibleValues());
     }        
     
+    /** Sets the values Offered to the possible values */
+    private void setOffered(Set s) {
+        try {
+            this.setValuesOffered(s);
+        } catch (Exception e) {}
+    }        
+        
 }

@@ -64,6 +64,7 @@ public class DiagnosesRelayManager extends DeconflictionPluginBase implements No
       */
     public DiagnosesRelayManager() {
         super();
+        relayFilters = new Vector();
     }
     
     /**
@@ -161,7 +162,9 @@ public class DiagnosesRelayManager extends DeconflictionPluginBase implements No
                    diagnosesRelayManagerKnob = (DiagnosesRelayManagerKnob)iter.next();
                    diagnosesRelayManagerKnob.setFoundCoordinator(managerAddress);
                }               
-            }
+            } else {
+               if (logger.isDebugEnabled()) logger.debug("++++++++++++++++++++++++++++> ManagerAddress subscription empty.");
+            }                
         }
         
         if (managerAddress == null || !shouldRelayDiagnoses) 
@@ -181,6 +184,7 @@ public class DiagnosesRelayManager extends DeconflictionPluginBase implements No
             Collection added   = diagnosesSubscription.getAddedCollection();
             for ( iter = added.iterator(); iter.hasNext() ; ) 
             {
+                logger.debug("============= Saw new Diagnosis -- Wrapping it.");
                 Diagnosis d = (Diagnosis)iter.next();                
                 UID uid = this.us.nextUID(); //gen UID for this wrapper
                 DiagnosesWrapper dw = new DiagnosesWrapper(d, this.agentId, managerAddress, uid); //wrap the diagnosis
