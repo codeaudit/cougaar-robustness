@@ -80,7 +80,7 @@ public class MediatedTechSpecMap {
     public AssetStateDimension getBaseDimension(String actionName, DiagnosisTechSpecService diagnosisTechSpecService) {
         if (actionName.equals("org.cougaar.mts.std.LinksEnablingAction")) 
             return diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.mts.std.RMILinksStatusDiagnosis").getStateDimension();
-        if (actionName.equals("org.cougaar.core.security.coordinator.Security_Defense_Setting")) 
+        if (actionName.equals("org.cougaar.core.security.coordinator.ThreatConAction")) 
             return diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.core.security.coordinator.ThreatConDiagnosis").getStateDimension();
         if (actionName.equals("org.cougaar.robustness.dos.coordinator.CompressionAction")) 
             return diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.coordinator.sensors.load.AvailableBandwidthDiagnosis").getStateDimension();
@@ -103,10 +103,10 @@ public class MediatedTechSpecMap {
     public AssetStateDimension getCompensatedDimension(String actionName, DiagnosisTechSpecService diagnosisTechSpecService) {
         if (actionName.equals("org.cougaar.mts.std.LinksEnablingAction")) 
             return diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.mts.std.AllLinksStatusDiagnosis").getStateDimension();
-        if (actionName.equals("org.cougaar.core.security.coordinator.Security_Defense_Setting")) 
+        if (actionName.equals("org.cougaar.core.security.coordinator.ThreatConAction")) 
             return diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.core.security.coordinator.EffectiveSecurityDiagnosis").getStateDimension();
         if (actionName.equals("org.cougaar.robustness.dos.coordinator.CompressionAction")) 
-            return diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.robustness.dos.coordinator.Effective_Bandwidth_Status").getStateDimension();
+            return diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.robustness.dos.coordinator.EffectiveBandwidthDiagnosis").getStateDimension();
         if (actionName.equals("org.cougaar.robustness.dos.coordinator.AttackResetAction")) {
               if (logger.isInfoEnabled()) logger.info("Ignoring: " + actionName);
               return null;
