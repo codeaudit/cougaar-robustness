@@ -12,45 +12,16 @@
 
 <Communities>
 
-  <Community Name="SUPERDUPER_COMMUNITY" >
+  <Community Name="SAMPLE_COMMUNITY" >
 
     <Attribute ID="CommunityType"             Value="Robustness" />
-
     <Attribute ID="CommunityManager"          Value="ManagementAgent" />
-
     <Attribute ID="RobustnessManager"         Value="ManagementAgent" />
+    <Attribute ID="NumberOfAgents"            Value="2" />
+    <Attribute ID='PING_TIMEOUT' Value='300000' />
+    <Attribute ID='MIMIMUM_PING_TIMEOUT' Value='120000' />
 
-    <Attribute ID="NumberOfAgents"            Value="3" />
-
-        <Attribute ID='PING_TIMEOUT' Value='30000' />
-        <Attribute ID='MIMIMUM_PING_TIMEOUT' Value='12000' />
-
-
-    <Entity Name="NodeZ" >
-      <Attribute ID="EntityType" Value="Node" />
-      <Attribute ID="Role" Value="Member" />
-      <Attribute ID="Role" Value="HealthMonitor" /> 
-    </Entity>
-
-    <Entity Name="REAR_NODE" >
-      <Attribute ID="EntityType" Value="Node" />
-      <Attribute ID="Role" Value="Member" />
-      <Attribute ID="Role" Value="HealthMonitor" /> 
-    </Entity>
-
-    <Entity Name="FWD_NODE" >
-      <Attribute ID="EntityType" Value="Node" />
-      <Attribute ID="Role" Value="Member" />
-      <Attribute ID="Role" Value="HealthMonitor" /> 
-    </Entity>
-
-    <Entity Name="EnclaveNode" >
-      <Attribute ID="EntityType" Value="Node" />
-      <Attribute ID="Role" Value="Member" />
-      <Attribute ID="Role" Value="HealthMonitor" /> 
-    </Entity>
-
-    <Entity Name="SomeNode" >
+    <Entity Name="ManagementAgentNode" >
       <Attribute ID="EntityType" Value="Node" />
       <Attribute ID="Role" Value="Member" />
       <Attribute ID="Role" Value="HealthMonitor" /> 
@@ -63,13 +34,13 @@
       <Attribute ID="Role" Value="HealthMonitor" /> 
     </Entity>
 
-
-    <Entity Name="TestAgent" >
-      <Attribute ID="EntityType" Value="Agent" />
+    <Entity Name="T1" >
+      <Attribute ID="EntityType" Value="Node" />
       <Attribute ID="Role" Value="Member" />
+      <Attribute ID="Role" Value="HealthMonitor" /> 
     </Entity>
 
-    <Entity Name="AgentC" >
+    <Entity Name="TestAgent" >
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="Member" />
     </Entity>
