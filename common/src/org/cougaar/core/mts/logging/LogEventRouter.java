@@ -99,6 +99,14 @@ public class LogEventRouter {
 
                     Logging.currentLogger().debug("**** Initing Msg Traffic Logging Socket ***");
                     log4JLogger = org.apache.log4j.Logger.getLogger(loggerName);
+                    
+                    if (log4JLogger.getAllAppenders() instanceof NullEnumeration) {
+                        Logging.currentLogger().debug("**** Found no other appenders.");
+                    } else {
+                        Logging.currentLogger().debug("**** Found other appenders!");
+                        log4JLogger.removeAllAppenders();
+                    }
+                    
                     log4JLogger.addAppender(new SocketAppender(loggingHost, loggingPort));
                     log4JLogger.setLevel(log4JLevel);
                     logToCougaar = false;
