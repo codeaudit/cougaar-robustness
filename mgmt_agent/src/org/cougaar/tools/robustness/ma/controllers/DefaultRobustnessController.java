@@ -877,7 +877,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       newState(preferredLeader(), RESTART);
     }
     checkCommunityReady();
-    if (didRestart && !suppressPingsOnRestart) {
+    if (isSentinel() && didRestart && !suppressPingsOnRestart) {
       newState(model.listEntries(CommunityStatusModel.AGENT, -1), HEALTH_CHECK);
       newState(model.listEntries(CommunityStatusModel.NODE, -1), HEALTH_CHECK);
     }

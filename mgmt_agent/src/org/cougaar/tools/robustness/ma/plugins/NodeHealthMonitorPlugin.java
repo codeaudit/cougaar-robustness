@@ -495,7 +495,8 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
       Set agents = listLocalAgents();
       for (Iterator it = agents.iterator(); it.hasNext();) {
         String agentName = (String)it.next();
-        if (community.hasEntity(agentName) && !myName.equals(agentName)) {
+        //if (community.hasEntity(agentName) && !myName.equals(agentName)) {
+        if (!myName.equals(agentName)) {
           int state = model.getCurrentState(agentName);
           state = state < CommunityStatusModel.INITIAL ? CommunityStatusModel.INITIAL : state;
           l.add(new AgentStatus(agentName,
