@@ -250,16 +250,16 @@ public class PublishServlet extends BaseServletComponent implements BlackboardCl
     
     private void createDiagnoses(String s) throws IllegalValueException, TechSpecNotFoundException {
         AgentCommunicationDiagnosis1 d1 = new AgentCommunicationDiagnosis1(s, "OK", serviceBroker);
-        DiagnosesWrapper dw1 = new DiagnosesWrapper(d1, null, null, new UID());
-        d1.setWrapper(dw1);
+        //DiagnosesWrapper dw1 = new DiagnosesWrapper(d1, null, null, new UID());
+        //d1.setWrapper(dw1);
         blackboard.publishAdd(d1);
-        blackboard.publishAdd(dw1);
+        //blackboard.publishAdd(dw1);
 
         AgentCommunicationDiagnosis2 d2 = new AgentCommunicationDiagnosis2(s, "OK", serviceBroker);
-        DiagnosesWrapper dw2 = new DiagnosesWrapper(d2, null, null, new UID());
-        d2.setWrapper(dw2);
+        //DiagnosesWrapper dw2 = new DiagnosesWrapper(d2, null, null, new UID());
+        //d2.setWrapper(dw2);
         blackboard.publishAdd(d2);
-        blackboard.publishAdd(dw2);
+        //blackboard.publishAdd(dw2);
 
         logger.debug("**** Published Diagnoses for: "+s);
         return;
@@ -270,19 +270,19 @@ public class PublishServlet extends BaseServletComponent implements BlackboardCl
         initValues.add("LocalRestart");
         initValues.add("QuickRemoteRestart" );
         RestartAgentDefense ra = new RestartAgentDefense(s, initValues, serviceBroker);
-        ActionsWrapper raw = new ActionsWrapper(ra, null, null, new UID());
-        ra.setWrapper(raw);
+        //ActionsWrapper raw = new ActionsWrapper(ra, null, null, new UID());
+        //ra.setWrapper(raw);
         blackboard.publishAdd(ra);
-        blackboard.publishAdd(raw);
+        //blackboard.publishAdd(raw);
 
         initValues = new HashSet();
         initValues.add("TryHard");
         initValues.add("Normal" );
         FakeCommDefense fcd = new FakeCommDefense(s, initValues, serviceBroker);
-        ActionsWrapper fcdw = new ActionsWrapper(fcd, null, null, new UID());
-        ra.setWrapper(fcdw);
+        //ActionsWrapper fcdw = new ActionsWrapper(fcd, null, null, new UID());
+        //ra.setWrapper(fcdw);
         blackboard.publishAdd(fcd);
-        blackboard.publishAdd(fcdw);
+        //blackboard.publishAdd(fcdw);
 }
     
     private class MyServlet extends HttpServlet {
