@@ -27,6 +27,7 @@ import org.cougaar.tools.robustness.ma.util.RestartHelper;
 import org.cougaar.tools.robustness.ma.util.LoadBalancer;
 
 import org.cougaar.core.component.BindingSite;
+import org.cougaar.core.mts.MessageAddress;
 
 /**
  * Interface defining operations supported by a controller that is
@@ -39,12 +40,12 @@ public interface RobustnessController extends StatusChangeListener {
 
   /**
    * Initialize controller.
-   * @param thisAgent  Name of host agent
+   * @param agentId    Host agent
    * @param bs         Host agents BindingSite
    * @param csm        Status model to use
    */
-  public void initialize(String thisAgent,
-                         BindingSite bs,
+  public void initialize(MessageAddress       agentId,
+                         BindingSite          bs,
                          CommunityStatusModel csm);
 
   /**
