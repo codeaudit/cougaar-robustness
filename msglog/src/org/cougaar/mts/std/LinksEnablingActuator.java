@@ -58,7 +58,7 @@ import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.agent.service.alarm.Alarm;
 
 public class LinksEnablingActuator extends ComponentPlugin
-    implements Constants
+    implements Constants, LinksEnablingConstants
 {
     private ServiceBroker sb;
     private LoggingService log;
@@ -69,11 +69,6 @@ public class LinksEnablingActuator extends ComponentPlugin
     private Vector newAgentQueue = new Vector();
     private Community community = null;
     private MessageAddress thisAgent;
-
-    private static final String NONE = "Disable";
-    private static final String RMI  = "Normal";
-    private static final String ALT  = "AlternateDirect";
-    private static final String SF   = "StoreAndForward";
 
     private static final LinkedHashSet myValuesOffered = new LinkedHashSet(3);
     static {

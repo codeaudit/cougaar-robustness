@@ -53,15 +53,16 @@ import org.cougaar.util.log.Logging;
  **  An aspect which implements the LinksEnablingService.
  **/
 public class LinksEnablingAspect extends StandardAspect
+    implements LinksEnablingConstants
 {
     private LoggingService log;
     private MetricsService metricsSvc;
     private MessageAckingService ackingSvc;
     private EventService eventSvc;
     
-    private static final Hashtable agents = new Hashtable();
-    
-    private Impl enablingService;
+    private LinksEnablingService enablingService;
+
+    String defaultAdvice = RMI;
     
     public LinksEnablingAspect () 
     {}
@@ -78,7 +79,7 @@ public class LinksEnablingAspect extends StandardAspect
 	    getServiceBroker().getService(this, EventService.class, null);
 
 	Provider provider = new Provider();
-	enablingService = new Impl();
+	enablingService = new LinksEnablingServiceImpl();
 	getServiceBroker().addService(LinksEnablingService.class, provider);
 	if (log.isDebugEnabled()) 
 	    log.debug("load: LinksEnablingService was added.");
@@ -98,54 +99,41 @@ public class LinksEnablingAspect extends StandardAspect
     
     private class Link extends DestinationLinkDelegateImplBase 
     {
+	DestinationLink link;
+
 	private Link (DestinationLink link) {
 	    super(link);
+	    this.link = link;
 	}
 	
 	public MessageAttributes forwardMessage (AttributedMessage msg) 
 	    throws UnregisteredNameException, NameLookupException, 
 		   CommFailureException, MisdeliveredMessageException
 	{
-	    // subscribe to LinksEnable for remote agents only
+	    // subscribe to Coordinator advice for remote agents only
 	    MessageAddress target = msg.getTarget().getPrimary();
-	    if (!getRegistry().isLocalClient(target)) {
-		synchronized (agents) {
-		    AgentEntry entry = (AgentEntry)agents.get(target);
-		    if (entry == null) {
-			entry = new AgentEntry(target,true);
-			agents.put(target, entry);
-			entry.observer = new AgentObserver(target);
-		    }
-		}
-	    }   
+	    if (!getRegistry().isLocalClient(target))
+		enablingService.register(target);
 	    return super.forwardMessage(msg);
 	}
-
-	public int cost(AttributedMessage msg) 
+	
+	//TODO: Change ALSP to use isValid rather than cost()
+	public boolean isValid()
 	{
-	    if (msg != null) {
-		// Return Integer.MAX_VALUE if messaging is disabled to the target agent. 
-		// This causes the LinkSelectionPolicy to not select a link.
-		MessageAddress target = msg.getTarget().getPrimary();
-		if (!getRegistry().isLocalClient(target)) {
-		    synchronized (agents) {
-			AgentEntry entry = (AgentEntry)agents.get(target);
-			if (entry == null) {
-			    entry = new AgentEntry(target,true);
-			    agents.put(target, entry);
-			    entry.observer = new AgentObserver(target);
-			} else if (!entry.msglogEnabled) {
-			    if (log.isDebugEnabled()) 
-				log.debug("Messaging disabled to agent "+target
-					  +", cost() returning Integer.MAX_VALUE for msg "
-					  +MessageUtils.toString(msg));
-			    return Integer.MAX_VALUE;
-			} 
-		    }
-		}
+	    // Return false if messaging is disabled to the target agent. 
+	    // This causes the LinkSelectionPolicy to not select a link.
+	    MessageAddress agent = link.getDestination();
+	    if (!getRegistry().isLocalClient(agent)) {
+		if (!enablingService.isEnabled(agent)){
+		    if (log.isDebugEnabled()) 
+			log.debug("Messaging disabled to agent "+agent
+				  +". isValid() returning false.");
+		    return false;
+		} 
 	    }
-	    return super.cost(msg);
+	    return super.isValid();
 	}
+	
     }
     
     public class Deliverer extends MessageDelivererDelegateImplBase
@@ -158,29 +146,20 @@ public class LinksEnablingAspect extends StandardAspect
 	public MessageAttributes deliverMessage (AttributedMessage msg, MessageAddress dest) 
 	    throws MisdeliveredMessageException
 	{ 
-	    // subscribe to LinksEnable for remote agents only
+	    // subscribe to Coordinator advice for remote agents only
 	    MessageAddress orig = msg.getOriginator().getPrimary();
 	    if (!getRegistry().isLocalClient(orig)) {
-		synchronized (agents) {
-		    AgentEntry entry = (AgentEntry)agents.get(orig);
-		    if (entry == null) {
-			entry = new AgentEntry(orig,true);
-			agents.put(orig, entry);
-			entry.observer = new AgentObserver(orig); 
-		    } else {
-			if (!entry.msglogEnabled) {
-			    // enabling messaging to any agent that can send me a message
-			    entry.msglogEnabled = true;
-			    // this causes message resending to originator to be re-enabled
-			    if (ackingSvc != null) ackingSvc.release(orig);
-			    if (eventSvc.isEventEnabled())                         
-				eventSvc.event("Messaging Enabled from Node " 
-					       + getRegistry().getIdentifier()
-					       + " to Agent " 
-					       + orig);
-			}
-		    }
-		}
+
+// hack at the moment - not sure I want to let incoming messages re-enable messaging, but
+// that's what I did before.  Ideally, messaging would only be re-enabled as a result
+// of gossip arriving from the coordinator re-enabling it, but gossip is not so reliable.
+// if there was no message travelling from the coordinator's node to this one, then no 
+// gossip would flow, so maybe if I'm using gossip for control, it should only be advice,
+// and if I want reliable control, I should use piggybacking or Action Relays.
+// So, I leave open this back door for the present.
+
+		// enabling messaging to any agent that can send me a message
+		enablingService.enable(orig);
 	    }   
 	    return super.deliverMessage(msg, dest);
 	}
@@ -203,85 +182,111 @@ public class LinksEnablingAspect extends StandardAspect
 	}
     } 
     
-    private class Impl implements LinksEnablingService
+    private class LinksEnablingServiceImpl implements LinksEnablingService
     {
-	Impl() {}
+	private final Hashtable agents;
+	
+	LinksEnablingServiceImpl() {
+	    agents = new Hashtable();
+        }
 
 	/*
-	 *  Enable messaging to remote agent.
+	 *  Register an agent if not already registered.
 	 */
-	public void enable(MessageAddress remoteAgent) {
-	    synchronized (agents) {
-		AgentEntry entry = (AgentEntry)agents.get(remoteAgent);
-		if (entry == null) {
-		    if (log.isErrorEnabled()) 
-			log.error("Impl.enable: AgentEntry not found for agent="+remoteAgent);
-		} else {
-		    if (!entry.msglogEnabled) {
-			if (log.isDebugEnabled()) 
-			    log.debug("Impl.enable: Messaging to "+remoteAgent+" enabled.");
-			entry.msglogEnabled = true;
-			// this causes message resending to remoteAgent to be re-enabled
-			if (ackingSvc != null) ackingSvc.release(remoteAgent);
-			if (eventSvc.isEventEnabled())                         
-			    eventSvc.event("Messaging Enabled from Node " 
-					   + getRegistry().getIdentifier()
-					   + " to Agent " 
-					   + remoteAgent);
-		    }
-		}
-	    }
-	}
-	    
+        public void register(MessageAddress agent) {
+            assureRegistered(agent);
+	}   
+	
 	/*
-	 *  Is messaging to remote agent?
+	 *  Register an agent if not already registered.
 	 */
-	public boolean isEnabled(MessageAddress remoteAgent) {
+        private AgentEntry assureRegistered(MessageAddress agent) {
+            AgentEntry entry = (AgentEntry)agents.get(agent);
+	    if (entry == null) {
+	        entry = new AgentEntry(agent, defaultAdvice);
+                agents.put(agent, entry);
+		entry.observer = new AgentObserver(agent);
+	    }
+	    return entry;
+	}   
+	
+	/*
+	 *  Set Link Selection Advice for messaging to remote agent.
+	 */
+	public void setAdvice(MessageAddress agent, String newAdvice) {
 	    synchronized (agents) {
-		AgentEntry entry = (AgentEntry)agents.get(remoteAgent);
-		if (entry == null) {
-		    if (log.isErrorEnabled()) 
-			log.error("Impl.isEnabled: No AgentEntry for agent="
-				  +remoteAgent+", returning true.");
-		    return true;
-		} else {
-		    return entry.msglogEnabled;
-		}
+                AgentEntry entry = assureRegistered(agent);
+                setAdvice(entry,newAdvice);
 	    }
 	}
 	
-	/*
-	 *  Disable messaging to remote agent.
-	 */
-	public void disable(MessageAddress remoteAgent) {
-	    synchronized (agents) {
-		AgentEntry entry = (AgentEntry)agents.get(remoteAgent);
-		if (entry == null) {
-		    if (log.isErrorEnabled()) 
-			log.error("Impl.disable: AgentEntry not found for agent="+remoteAgent);
-		} else {
-		    if (entry.msglogEnabled) {
-			if (log.isDebugEnabled()) 
-			    log.debug("Impl.disable: Messaging to "+remoteAgent+" disabled.");
-			entry.msglogEnabled = false;
-			// this causes message resending to remoteAgent to be disabled
-			if (ackingSvc != null) ackingSvc.hold(remoteAgent);
-			if (eventSvc.isEventEnabled())                         
-			    eventSvc.event("Messaging Disabled from Node " 
-					   + getRegistry().getIdentifier()
-					   + " to Agent " 
-					   + remoteAgent);
-		    }
+	private void setAdvice(AgentEntry entry, String newAdvice) {
+	    String currentAdvice = entry.advice;
+	    if (!newAdvice.equals(currentAdvice)) { 
+		MessageAddress agent = entry.agentAddress;
+		if (log.isDebugEnabled()) 
+		    log.debug("LinksEnablingServiceImpl.setAdvice: Link Selection Advice for Messaging to "
+			      +agent+" changed from "+currentAdvice+" to "+newAdvice+".");
+		entry.previous = currentAdvice;
+		entry.advice = newAdvice;
+		if (eventSvc.isEventEnabled())                         
+		    eventSvc.event("Link Selection Advice for Messaging from Node " 
+				   +getRegistry().getIdentifier()
+				   +" to Agent "+agent
+				   +" changed from "+currentAdvice 
+				   +" to "+newAdvice);
+		// this causes message resending to agent to be re-enabled
+		if (NONE.equals(currentAdvice) 
+		    && ackingSvc != null) {
+		    ackingSvc.release(agent);
+		    if (eventSvc.isEventEnabled())                         
+			eventSvc.event("Messaging Enabled from Node " 
+				       + getRegistry().getIdentifier()
+				       + " to Agent " 
+				       + agent);
 		}
 	    }
 	}
-	
+
 	/*
-	 *  Is messaging disabled to remote agent?
+	 *  Enable messaging to remote agent.  Reverts to previous advice.
 	 */
-	public boolean isDisabled(MessageAddress remoteAgent) {
-	    return !isEnabled(remoteAgent);
+	public void enable(MessageAddress agent) {
+	    synchronized (agents) {
+		AgentEntry entry = assureRegistered(agent);
+		if (!NONE.equals(entry.advice)) {
+		    if (log.isWarnEnabled())
+			log.warn("LinksEnablingServiceImpl.enable: Ignored.  Agent="+agent+" already enabled.");
+		} else {
+		    setAdvice(entry, NONE);
+		}
+	    }
 	}
+    	
+        /*
+	 *  Get Link Selection Advice for messaging to remote agent.
+	 */
+        public String getAdvice(MessageAddress agent) {
+	    synchronized (agents) {
+		AgentEntry entry = assureRegistered(agent);
+		String advice = entry.advice;
+		if (log.isDebugEnabled()) 
+		    log.debug("LinksEnablingServiceImpl.getAdvice: Link Selection Advice for Messaging to "
+			      +agent+" is "+advice);
+		return advice;
+	    }
+	}
+	
+	/* 
+	 *  Is messaging to remote agent enabled?
+	 */
+	public boolean isEnabled(MessageAddress agent) {
+	    synchronized (agents) {
+		AgentEntry entry = assureRegistered(agent);
+		return !NONE.equals(entry.advice);
+	    }
+	}
+	
     }
     
     private class AgentObserver implements Observer, Constants {
@@ -293,61 +298,55 @@ public class LinksEnablingAspect extends StandardAspect
 	    if (log.isDebugEnabled()) 
 		log.debug("AgentObserver("+agent+")");
             this.agent = agent;
-	    path = "Integrater(Agent"+KEY_SEPR+agent+KEY_SEPR+"LinksEnable"+")"+PATH_SEPR+"Formula";
+	    path = "Integrater(Agent"+KEY_SEPR+agent+KEY_SEPR+"MsglogLinksEnable"+")"+PATH_SEPR+"Formula";
 	    key = metricsSvc.subscribeToValue(path, this);
 	}
-
 	public void update(Observable obs, Object obj) {
 	    Metric metric = (Metric)obj; 
 	    if (metric != null) {
-		//if (log.isDebugEnabled()) {
-		//    log.debug("AgentObserver.update: metric.getRawValue() = "+metric.getRawValue());
-		//    log.debug("AgentObserver.update: metric.getRawValue().getClass() = "+metric.getRawValue().getClass());
-		//}
-		if (metric.getRawValue() instanceof Boolean) {
-		    boolean msglogEnabled = metric.booleanValue();
+		if (log.isDebugEnabled()) {
+		    log.debug("AgentObserver.update: metric.getRawValue() = "+metric.getRawValue());
+		    log.debug("AgentObserver.update: metric.getRawValue().getClass() = "+metric.getRawValue().getClass());
+		}
+		if (metric.getRawValue() instanceof String) {
+		    String advice = (String)metric.getRawValue();
 		    if (log.isDebugEnabled()) 
 			log.debug("AgentObserver.update: agent="+agent
-				  +",msglogEnabled="+msglogEnabled);
-		    if (msglogEnabled) {
-			enablingService.enable(agent);
-		    } else {
-			enablingService.disable(agent);
-		    }
+				  +",advice="+advice);
+		    enablingService.setAdvice(agent, advice);
 		}
             }
 	}
-
 	void unsubscribe() {
 	    metricsSvc.unsubscribeToValue(key);
 	    key = null;
 	}
-
-	public String toString () {
+	public String toString() {
 	    return "AgentObserver("+agent+","+path+")";
 	}
-
     }
 
     private class AgentEntry {
         MessageAddress agentAddress;
         String agentName;
-        boolean msglogEnabled;
+	String advice;
+        String previous;
 	AgentObserver observer;
-      
-        AgentEntry (MessageAddress agentAddress,
-		    boolean msglogEnabled) {
+	
+        AgentEntry(MessageAddress agentAddress,
+		   String advice) {
             this.agentAddress = agentAddress;
             agentName = agentAddress.getAddress();
-            this.msglogEnabled = msglogEnabled;
+            this.advice = advice;
+	    previous = null;
         }
-	void unsubscribe () {
+	void unsubscribe() {
 	    if (observer != null)
 		observer.unsubscribe();
 	}
-	public String toString () {
+	public String toString() {
 	    return agentName;
 	}
     }
-
+    
 }

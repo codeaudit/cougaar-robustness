@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2003 Object Services and Consulting, Inc.
+ *  Copyright 2004 Object Services and Consulting, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -21,35 +21,12 @@
 
 package org.cougaar.mts.std;
 
-import org.cougaar.core.component.Service;
-import org.cougaar.core.mts.MessageAddress;
-
-public interface LinksEnablingService extends Service
+public interface LinksEnablingConstants
 {
-    /*
-     *  Register an agent if not already registered.
-     */
-    public void register(MessageAddress agent);
-    
-    /*
-     *  Get Link Selection Advice for messaging to remote agent.
-     */
-    public String getAdvice(MessageAddress remoteAgent);	
-
-    /*
-     *  Set Link Selection Advice for messaging to remote agent.
-     */
-    public void setAdvice(MessageAddress remoteAgent, String advice);
-
-    /*
-     *  Is messaging enabled to remote agent?
-     */
-    public boolean isEnabled(MessageAddress remoteAgent);
-
-    /*
-     *  Enable messaging to remote agent (reverts to previous advice).
-     */
-    public void enable(MessageAddress agent);
-
+    static final String NONE = "Disable";
+    static final String RMI  = "Normal";
+    static final String ALT  = "AlternateDirect";
+    static final String SF   = "StoreAndForward";
 }
+
 
