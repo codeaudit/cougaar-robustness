@@ -237,8 +237,8 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
         DiagRecord rec;
         
         //First look for rec
-        Iterator i = diagnoses.iterator();
-        //synchronized(changes) { //so 
+        synchronized(diagnoses) { //so 
+            Iterator i = diagnoses.iterator();
             while (i.hasNext() ) {      
                 rec = (DiagRecord) i.next();
                 if ( rec.contains(d) ) { //found it
@@ -250,7 +250,7 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
             rec = new DiagRecord(d, state, isWrapper);
             diagnoses.add(rec);
             assetNames.add(d.getAssetName());
-        //}        
+        }        
     }
     
     //These methods are called by the DiagnosisMonitorPlugin
