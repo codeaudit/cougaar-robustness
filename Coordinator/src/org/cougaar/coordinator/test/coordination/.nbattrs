@@ -4,11 +4,14 @@
     <fileobject name="ThreatnTransEffectMembershipServlet.java">
         <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="ThreatnTransEffectMembershipServlet.MyServlet"/>
     </fileobject>
-    <fileobject name="ActionMonitorServlet.java">
-        <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="ActionMonitorServlet.MyServlet"/>
+    <fileobject name="TestAction.java">
+        <attr name="class_dependency_org.cougaar.coordinator.Action" stringvalue="TestAction"/>
     </fileobject>
     <fileobject name="DiagnosisMonitorServlet.java">
         <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="DiagnosisMonitorServlet.MyServlet"/>
+    </fileobject>
+    <fileobject name="ActionMonitorServlet.java">
+        <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="ActionMonitorServlet.MyServlet"/>
     </fileobject>
     <fileobject name="PublishServlet.java">
         <attr name="class_dependency_javax.servlet.http.HttpServlet" stringvalue="PublishServlet.MyServlet"/>
