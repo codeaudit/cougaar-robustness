@@ -139,7 +139,7 @@ public class DisconnectAgentPlugin extends ServiceUserPluginBase {
      if (logger.isDebugEnabled()) logger.debug("Source: "+assetAddress+", Target: "+nodeAddress);
 
      getBlackboardService().openTransaction();
-     getBlackboardService().publishAdd(new Dummy(assetID));  // weird hack so the agent doesnt get lost on rehydration
+     getBlackboardService().publishAdd(new Dummy(assetID));  // weird hack so the agent doesnt get lost on rehydration - not entirely clear this is the problem
      getBlackboardService().publishAdd(aec);
      getBlackboardService().closeTransaction();
 

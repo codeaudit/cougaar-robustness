@@ -204,7 +204,6 @@ public class DisconnectServlet extends BaseServletComponent
       private void disconnect(HttpServletRequest request, PrintWriter out) {
 
           String expire = request.getParameter(EXPIRE);
-          //System.out.println("Expire = "+ expire);
           Double d;
           if (expire != null) {
               try {
@@ -218,7 +217,8 @@ public class DisconnectServlet extends BaseServletComponent
                            if (logger.isDebugEnabled()) logger.debug("DisconnectServlet published ReconnectTimeCondition: "+lrtc.getAsset()+" = "+lrtc.getValue().toString());
                         }
                         else {
-                            out.println("<center><h2>Failed to Disconnect - No Condition Objects</h2></center><br>");
+                            out.println("<center><h2>Failed to Disconnect - No Condition Objects - Caused by not finding a ManagementAgent address</h2></center><br>");
+                            if (logger.isErrorEnabled()) logger.error("Failed to Disconnect - No Condition Objects - Caused by not finding a ManagementAgent address");
                         }
                         blackboard.closeTransaction();
                     } finally {
@@ -251,54 +251,19 @@ public class DisconnectServlet extends BaseServletComponent
           }            
       }
 
-
-      /** publish conditional with new status for this agent */ 
-      private DefenseCondition setConditionValue(DefenseConstants.OMCStrBoolPoint value) {
-           
-            UnaryPredicate pred = new UnaryPredicate() {
-              public boolean execute(Object o) {
-                return 
-                  (o instanceof DisconnectApplicabilityCondition);
-              }
-            };
-            
-            DisconnectApplicabilityCondition cond = null;
-
-            Collection c = blackboard.query(pred);
-            if (c.iterator().hasNext()) {
-               cond = (DisconnectApplicabilityCondition)c.iterator().next();
-               //System.out.println(cond.getAssetType()+" "+cond.getAsset()+" " +cond.getDefenseName());
-               if (cond.compareSignature(assetType, assetID, DisconnectConstants.DEFENSE_NAME)) 
-                    cond.setValue(value); //true = disconnected
-            }
-            
-            return cond;
-      }      
-        
         
       /** Publish reconnect time */
       private LocalReconnectTimeCondition setReconnectTimeConditionValue(Double d) {
-            
-            UnaryPredicate pred = new UnaryPredicate() {
-              public boolean execute(Object o) {  
-                return 
-                  (o instanceof LocalReconnectTimeCondition);
-              }
-            };
-            
-            if (logger.isDebugEnabled()) logger.debug("setReconnectTimeConditionValue");
-            LocalReconnectTimeCondition cond = null;
-            Collection c = blackboard.query(pred);
-            if (c.iterator().hasNext()) {
-               cond = (LocalReconnectTimeCondition)c.iterator().next();
-               if (logger.isDebugEnabled()) logger.debug(assetType+" "+cond.getAssetType()+" "+assetID+" "+cond.getAsset()+" "+DisconnectConstants.DEFENSE_NAME+" "+cond.getDefenseName());
-               if (cond.compareSignature(assetType, assetID, DisconnectConstants.DEFENSE_NAME)) {
-                    cond.setTime(d); //true = disconnected
-                    return cond;
-               }
-            }
 
-            return null;
+          LocalReconnectTimeCondition item = LocalReconnectTimeCondition.findOnBlackboard(assetType, assetID, blackboard);
+          if (item != null) { //  better always be true
+              item.setTime(d);
+              return item;
+          }
+          else {
+              if (logger.isWarnEnabled()) logger.warn("No LocalReconnectTimeCondition for "+assetID+" be patient, sometimes this takes a while to set up");
+              return null;
+          }
       }      
         
 

@@ -20,6 +20,7 @@ import java.util.Iterator;
 
 public class DisconnectMonitoringAgentEnabler extends DefenseOperatingMode {
       
+    // searches the BB for an object of this type with a given signature 
     public static DisconnectMonitoringAgentEnabler findOnBlackboard(String assetType, String assetID, BlackboardService blackboard) {
         UnaryPredicate pred = new UnaryPredicate() {
             public boolean execute(Object o) {  
