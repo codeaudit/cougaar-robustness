@@ -273,7 +273,7 @@ public class EventLoader extends XMLLoader {
                     return;
                 } 
                 
-                ted = new TransitiveEffectDescription(transName, assetType);
+                ted = new TransitiveEffectDescription(transName, assetType, us.nextUID());
                 event.setTransitiveEffect(ted);
                 
             } else if (child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equalsIgnoreCase("VulnerableAssets") ) {

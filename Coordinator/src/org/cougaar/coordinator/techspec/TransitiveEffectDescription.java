@@ -21,17 +21,19 @@ import java.io.Serializable;
 public class TransitiveEffectDescription  implements NotPersistable, Serializable {
 
     
+    
     private String transitiveEventName = null; 
     private EventDescription transitiveEvent = null; 
     private AssetType transitiveAssetType = null; 
     private TransitiveEffectVulnerabilityFilter transitiveVulnerabilityFilter = null;     
-
+    private UID uid;
     
     /** Creates a new instance of TransitiveEffect */
-    public TransitiveEffectDescription(String eventName, AssetType assetType) {
+    public TransitiveEffectDescription(String eventName, AssetType assetType, UID uid) {
         
         this.transitiveEventName = eventName;
         this.transitiveAssetType = assetType;
+        this.uid = uid;
         
     }
 
@@ -41,6 +43,8 @@ public class TransitiveEffectDescription  implements NotPersistable, Serializabl
     public void settransitiveAssetType(AssetType transType) { this.transitiveAssetType = transType; }
     public void setTransitiveVulnerabilityFilter(TransitiveEffectVulnerabilityFilter vf) { this.transitiveVulnerabilityFilter = vf; }
 
+    public UID getUID() { return uid; }
+    
     /** Supports only ONE transitive effect in 2004 
      * @return the name of the event read in from XML that is transitively caused by this event
      */
@@ -64,10 +68,14 @@ public class TransitiveEffectDescription  implements NotPersistable, Serializabl
         
     
     /**
-     * @return true if an asset qualifies -- if the threat's filter doesn't exclude the asset.
+     * @return true if an asset qualifies -- if the transitive effect's filter doesn't exclude the asset.
      * Will return <b>false</b> if the asset type of the asset and the getTransitiveAssetType() aren't equal.
      * If this is a TransitiveEffectDescription without a filter, it will return true if the asset type of the
      * asset equals the getTransitiveAssetType() of the threat.
+     *
+     * @deprecated - not used/functioanl. The ThreatModelManager uses a different approach, with built-in
+     * assumptions about containment. If/when containment is expanded beyond enclave-host-node-agent, this
+     * method will need to be activated/implemented.
      */
     public boolean qualifies(TransitiveEffectModelManagerPlugin mgr, AssetTechSpecInterface asset) {
 
@@ -104,4 +112,15 @@ public class TransitiveEffectDescription  implements NotPersistable, Serializabl
         return instantiation; 
     }
     
+    /**
+     * @return throws hashCode() returned by the object's UID object.
+     */
+    public int hashCode() { return uid.hashCode(); }
+    
+    /**
+     * @return TRUE if the UIDs of each object match.
+     */
+    public boolean equals(Object o) {        
+        return ( (o instanceof TransitiveEffectDescription) && ( ((TransitiveEffectDescription)o).getUID().equals(this.uid)) );
+    }
 }

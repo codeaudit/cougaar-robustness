@@ -234,13 +234,14 @@ logger.warn("!!!! **********************************************************");
                             agentAsset = DefaultAssetTechSpec.findAssetByID(new AssetID(agentName, AssetType.AGENT));
                             queueChangeEvent(new AssetChangeEvent( agentAsset, AssetChangeEvent.REMOVED_ASSET));                                                
                         } else if (csce[i].getType() == CommunityStatusModel.NODE) {
-                            logger.info("NODE REMOVED: node=" + agentName);                        
+                            //then we must remove both the node asset and the node-agent asset
+                            logger.info("NODE AND NODE-AGENT REMOVED: node=" + agentName);                        
                             nodeAsset = DefaultAssetTechSpec.findAssetByID(new AssetID(agentName, AssetType.NODE));
                             queueChangeEvent(new AssetChangeEvent( nodeAsset, AssetChangeEvent.REMOVED_ASSET));                                                
+                            agentAsset = DefaultAssetTechSpec.findAssetByID(new AssetID(agentName, AssetType.AGENT));
+                            queueChangeEvent(new AssetChangeEvent( agentAsset, AssetChangeEvent.REMOVED_ASSET));                                                
                         }
                         
-                        //REMOVE the node asset too???
-                        //if (csce[i].getType() == CommunityStatusModel.NODE) { }
                         
                 } else {
                    // logger.debug("!!!! [STATUS CHANGED CALLED] - UNKNOWN change");

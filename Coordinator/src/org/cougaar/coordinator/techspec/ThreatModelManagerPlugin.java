@@ -33,6 +33,7 @@ import java.io.FileInputStream;
 import java.util.Vector;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Hashtable;
@@ -72,6 +73,9 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
     private LoggingService logger;
     private UIDService us = null;
 
+    /** All transitive effects */
+    Hashtable transEffects;
+
     /** The file param passed in via the plugin */
     private String fileParam  = null;
 
@@ -91,6 +95,7 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
     public ThreatModelManagerPlugin() {
     
         assets = new Vector(100,50);
+        transEffects = new Hashtable( );
     }
     
     private Vector changesToProcess = new Vector(20,20);
@@ -141,14 +146,21 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
             DefaultThreatModel threatModel;
             DefaultAssetTechSpec asset;
             
+            //vectors of assets added /moved that need to be added to transitive effects
             Vector hosts  = new Vector();
             Vector nodes  = new Vector();
             Vector agents = new Vector();
+
+            Vector removedAssets = new Vector();
 
             //Emit list of assets to consider
             Iterator itr = changesToProcess.iterator();
             while (itr.hasNext()) {
                 event = (AssetChangeEvent)itr.next();
+                if (event.assetRemovedEvent()) { 
+                    removedAssets.add(event.getAsset()); //place here for later processing
+                    continue; //don't add these assets to the lists of current assets!
+                } 
                 asset = (DefaultAssetTechSpec) event.getAsset();
                 if (logger.isDebugEnabled()) logger.debug("evaluateThreatAssetMembership looking at asset " + asset.getName() + "["+asset.getAssetType()+"]");
                 if (asset.getAssetType().equals(AssetType.HOST)) { hosts.add(asset); }
@@ -215,7 +227,8 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
                                 } else { //remove the asset from the threat model's membership, if it's there                         
 //if (logger.isDebugEnabled()) logger.debug("evaluateThreatAssetMembership - doesn't qualify.");
                                     threatModel = removeAssetAsMember(asset, metaModel);                                                        
-                                    if (threatModel != null) {
+                                    if (threatModel != null) { // then the asset WAS a member of the threat & now it isn't
+                                        removeAssetsChildrenFromTransitiveEffects(asset, threatModel);
                                         if (logger.isDebugEnabled()) logger.debug("==> "+asset.getName()+"["+asset.getAssetType().getName()+"] was REMOVED from "+metaModel.getName()+" threatModel ["+metaModel.getAffectedAssetType().getName()+"]");
                                     }
                                 }
@@ -253,6 +266,14 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
                             this.blackboard.publishChange(dtm, changes);
                             if (logger.isDebugEnabled()) logger.debug("Announced "+added.size()+" assets were added, and " +removed.size()+" assets were removed in threat = " + dtm.getName());
                         }                        
+                    }
+
+                    //If any assets were removed from the enclave, further process by now removing this asset from any transitive effects 
+                    //it was a member of.
+                    for (Iterator it2 = removedAssets.iterator(); it2.hasNext(); ) {
+                        asset = (DefaultAssetTechSpec )it2.next();
+                        if (logger.isDebugEnabled()) logger.debug("...Trying to remove "+asset.getName()+"["+asset.getAssetType().getName()+"] from all transitive effects.");
+                        removeAssetFromAllTransitiveEffects(asset);
                     }
                 }
 
@@ -557,6 +578,196 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
             }
         }      
     }
+
+    /**
+     *
+     * Call to remove an asset from ALL transitive effects, e.g., when the asset is removed from the enclave.
+     *<p>
+     * In this case we will remove the asset from all transitive effects. The method does NOT remove the asset's children
+     * from subsequent child transitive effects however. This is because the society model should inform us itself that 
+     * each child has been removed. E.g. we should hear that if a node is removed, that each of the node's agents have also
+     * been removed.
+     */
+    private void removeAssetFromAllTransitiveEffects(AssetTechSpecInterface atsi) {
+     
+        ThreatDescription metaModel;        
+
+        Enumeration keys = transEffects.keys();
+        while (keys.hasMoreElements()) {
+            
+            TransitiveEffectDescription ted = (TransitiveEffectDescription)transEffects.get(keys.nextElement());
+            if (ted != null && ted.getInstantiation() != null && ted.getTransitiveAssetType().equals(atsi.getAssetType()) ) {                
+                if (ted.getInstantiation().removeAsset(atsi) ) {
+                    if (logger.isDebugEnabled()) logger.debug("Removed "+atsi.getAssetID()+" from transitive effect for event["+ted.getTransitiveEventName()+"].");
+                }                
+            }
+        }
+    }
+
+    /**
+     *  Remove an asset from a transitive effect.
+     * <p>
+     *  When an asset is removed from a threat, we must remove all assets "contained" by it in any related
+     *  transitive effects. E.g. if it's a host that is removed, then we have to remove any nodes or agents;
+     *  if it is a node, then we have to remove any agents.  The complex part of this is that since multiple 
+     *  threats can cause the same event, we first need to make sure that the original (aka parent) asset 
+     *  does not belong to multiple threats that cause the same event (if it did, then it's contained assets
+     *  can remain in the respective transitive effects.
+     * <p>
+     *  The current version of this method will NOT work when assets can belong to multiple containers, i.e.,
+     *  more than just hosts containing nodes, and nodes containing agents; when a computer room can contain a
+     *  node/agent.
+     * <p>
+     *  Assumption: Only hosts and nodes can be removed. If an agent, there are no possible transitive effects;
+     *  if the enclave, then nothing will exist.
+     *
+     *@param atsi The asset removed from the threat
+     *@param dtm The threat the asset was removed from
+     */
+    private void removeAssetsChildrenFromTransitiveEffects(AssetTechSpecInterface atsi, DefaultThreatModel dtm) {
+        
+        ThreatDescription metaModel;        
+        TransitiveEffectDescription  nodeTransEffect = null;
+        TransitiveEffectDescription  agentTransEffect = null;
+        TransitiveEffectDescription  transEffect = null;
+
+        AssetType affectedAssetType = dtm.getAssetType();
+        
+        //Get the event that the threat caused
+        EventDescription causedEvent = dtm.getThreatDescription().getEventThreatCauses();    
+        
+        //First, make sure there is a transitive effect to consider.
+        if (causedEvent.getTransitiveEffect() == null) { return; }
+        
+        //First, check to be sure that this asset isn't a member of another threat that causes the same event.
+        Iterator i = threatDescriptions.iterator();
+        while (i.hasNext()) {
+            
+            metaModel = (ThreatDescription)i.next();
+            //to be considered, the metaModel must match asset type & cause the same event as the threat that the asset was removed from
+            if ( !(metaModel.getAffectedAssetType().equals(affectedAssetType) &&  
+                  (metaModel.getEventThreatCauses().equals(causedEvent) ) ) ) {
+                continue; 
+            }
+
+            //OK, we have a possibility. If this threat contains the asset then just return without doing anything.
+            DefaultThreatModel threat = metaModel.getInstantiation();
+            //Look only for HOST threats
+            if (threat == null ) { continue; } // this threat has no members
+            
+            if (threat.containsAsset(atsi)) { //we found another threat with this asset, so do nothing
+                return;
+            }
+        }
+         
+        //OK, no other threats contain this asset. We need to inspect all transitive effects & remove its children
+        //from them.
+        
+            
+        transEffect = causedEvent.getTransitiveEffect();
+        TransitiveEffectModel tem = transEffect.getInstantiation();
+        if (tem == null) {
+            return; // this shouldn't occur, but we need to check for this.
+        }
+
+            
+        if (affectedAssetType.equals(AssetType.HOST)) { // then we have a potential indirect transEffect to look at
+                                                        //A host threat could have both node and agent trans effects
+            
+            Vector removedNodes = new Vector();
+
+            //Now, we need to see what assets the transEffect contains
+            Vector nodes = tem.getAssetList();
+            
+            //See if any of these have the asset as a host
+            i = nodes.iterator();
+            while (i.hasNext()) {
+             
+                AssetTechSpecInterface asset = (AssetTechSpecInterface)i.next();
+                if (asset.getHost().equals(atsi)) {
+                    removedNodes.add(asset); //found a node, add to list to remove
+                }                
+            }            
+
+            //Now remove the nodes
+            i = removedNodes.iterator();
+            while (i.hasNext()) {
+                AssetTechSpecInterface asset = (AssetTechSpecInterface)i.next();
+                tem.removeAsset(asset); 
+                if (logger.isDebugEnabled()) logger.debug("**Removed asset["+asset.getAssetID()+"] from transitiveEffect["+tem.getName()+"].");
+            }   
+            
+            //----------------------------------------------------------
+            //Now, see if there is a child transitive effect (on agents)
+            EventDescription childEvent = transEffect.getTransitiveEvent();
+            if (childEvent == null) { // then we'return done
+                return;
+            }
+            
+            TransitiveEffectDescription ted = childEvent.getTransitiveEffect();
+            TransitiveEffectModel childTEM = ted.getInstantiation();
+            if (childTEM == null) {
+                return; // this shouldn't occur, but we need to check for this.
+            }
+        
+            //Now, we need to see what assets the transEffect contains
+            Vector agents = childTEM.getAssetList();
+            Vector removedAgents = new Vector();
+            
+            //See if any of these have the asset as a host
+            i = agents.iterator();
+            while (i.hasNext()) {
+             
+                AssetTechSpecInterface asset = (AssetTechSpecInterface)i.next();
+                if (asset.getHost().equals(atsi)) {
+                    removedAgents.add(asset); //found an agent, add to list to remove
+                }                
+            }            
+
+            //Now remove the agents
+            i = removedAgents.iterator();
+            while (i.hasNext()) {
+                AssetTechSpecInterface asset = (AssetTechSpecInterface)i.next();
+                childTEM.removeAsset(asset); 
+                if (logger.isDebugEnabled()) logger.debug("**Removed asset["+asset.getAssetID()+"] from transitiveEffect["+tem.getName()+"].");
+            }   
+            
+        
+
+        
+        } else if (affectedAssetType.equals(AssetType.NODE)) { // then we have no potential indirect transEffect to look at
+                                                               //A node threat could only have an agent trans effect
+            
+            Vector removedAgents = new Vector();
+
+            //Now, we need to see what AGENT assets the transEffect contains
+            Vector agents = tem.getAssetList();
+            
+            //See if any of these have the asset as a host
+            i = agents.iterator();
+            while (i.hasNext()) {
+             
+                AssetTechSpecInterface asset = (AssetTechSpecInterface)i.next();
+                if (asset.getNode().equals(atsi)) {
+                    removedAgents.add(asset); //found an agent, add to list to remove
+                }                
+            }            
+
+            //Now remove the agents
+            i = removedAgents.iterator();
+            while (i.hasNext()) {
+                AssetTechSpecInterface asset = (AssetTechSpecInterface)i.next();
+                tem.removeAsset(asset); 
+                if (logger.isDebugEnabled()) logger.debug("**Removed asset["+asset.getAssetID()+"] from transitiveEffect["+tem.getName()+"].");
+            }            
+
+        
+        }
+        
+        
+        return;
+            
+    }
     
     
     /**
@@ -646,6 +857,9 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
             }
             threatDescriptions = threatDescriptionsSub.getCollection();
             if (logger.isDebugEnabled()) logger.debug("Got " + threatDescriptions.size() + " ThreatDescriptions from the blackboard.");
+            
+            //With new threats comes new transitive effects, so generate the list of all of them (for later use)
+            regenerateTransitiveEffectsList();
         }
         
         //Get the asset manager plugin
@@ -669,6 +883,43 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
         evaluateThreatAssetMembership();            
             
     }
+    
+    
+    /**
+     * Runs thru the list of all threats & extracts out all transitive effects up to three layers down. <b>This may need to change
+     * once/if the containment model changes.</b>
+     */
+    private void regenerateTransitiveEffectsList() {
+        
+        TransitiveEffectDescription  transEffect;
+        TransitiveEffectDescription  childTE;
+        TransitiveEffectDescription  grandchildTE;
+
+        ThreatDescription metaModel;
+       
+        //First get all transitive effects
+        Iterator i = threatDescriptions.iterator();
+        while (i.hasNext()) {
+            
+            metaModel = (ThreatDescription)i.next();
+            transEffect = metaModel.getEventThreatCauses().getTransitiveEffect();
+            if (transEffect == null ) { continue; } // no transitive effect to process
+            transEffects.put(transEffect.getUID(), transEffect); 
+
+            childTE = transEffect.getTransitiveEvent().getTransitiveEffect(); //this could be a node or agent TE
+            if (childTE != null ) { //see if there is a grandchild TE
+                transEffects.put(childTE.getUID(), childTE);                 
+                grandchildTE = childTE.getTransitiveEvent().getTransitiveEffect(); // this could only be an agent TE
+                if (grandchildTE != null ) { // then it must be agent typed
+                    transEffects.put(grandchildTE.getUID(), grandchildTE);           
+                }
+            }
+            
+        }
+        logger.info("Found "+transEffects.size()+" transitive effects associated with threats on the BB.");
+        
+    }
+    
 
     /** get our services */
     private void getServices() {
