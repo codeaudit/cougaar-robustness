@@ -136,6 +136,8 @@ private static int commStartDelaySeconds;
   private static boolean firstTime = true;
   private static String thisNode;
 
+private static long startTime = 0;
+
   private final LinkRanker linkRanker = new LinkRanker();
 
   private RTTService rttService;
@@ -160,7 +162,7 @@ private static int commStartDelaySeconds;
     maxUpgradeTries = Integer.valueOf(System.getProperty(s,"2")).intValue();
 
 s = "org.cougaar.message.transport.policy.adaptive.commStartDelaySeconds";
-commStartDelaySeconds = Integer.valueOf(System.getProperty(s,"60")).intValue();
+commStartDelaySeconds = Integer.valueOf(System.getProperty(s,"0")).intValue();
   } 
 
   public AdaptiveLinkSelectionPolicy ()
@@ -186,13 +188,12 @@ commStartDelaySeconds = Integer.valueOf(System.getProperty(s,"60")).intValue();
 
     thisNode = getRegistry().getIdentifier();
 
-//  HACK to attempt to get around nameserver/topology lookup problem
+//  HACK to attempt to get around nameserver/topology lookup problems
 
 if (commStartDelaySeconds > 0)
 {
-  log.warn ("Comm start delay: Sleeping for " +commStartDelaySeconds+ " seconds before doing any message sends");
-  try { Thread.sleep (commStartDelaySeconds*1000); } catch (Exception e) {}
-  commStartDelaySeconds = 0;
+  log.warn ("Comm start delay: Waiting for " +commStartDelaySeconds+ " seconds before allowing any message sends");
+  startTime = System.currentTimeMillis();
 }
   }
 
@@ -261,6 +262,12 @@ if (commStartDelaySeconds > 0)
   {
     debug = log.isDebugEnabled();
 
+//  HACK to attempt to get around nameserver/topology lookup problems
+
+if (commStartDelaySeconds > 0)
+{
+  if ((startTime + commStartDelaySeconds*1000) > now()) return null;
+}
     //  Return if things not right
 
     if (links == null || msg == null) return null;

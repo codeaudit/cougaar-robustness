@@ -205,6 +205,8 @@ public class AgentID implements java.io.Serializable
     boolean hadException = false;
     boolean timedOut = false;
 
+System.err.println ("starting timed topology lookup ("+callTimeout+" ms) for agent " +agent);
+
     while (true)
     {
       if (topoLookup.isFinished()) 
@@ -228,12 +230,12 @@ public class AgentID implements java.io.Serializable
     if (hadException || timedOut) 
     {
       entry = (TopologyEntry) getCachedTopologyLookup (agent);
-      //String s = (hadException ? "had exception" : "timed out");
-      //System.err.println ("timed topology lookup "+s+", using value from cache: " +entry);
+String s = (hadException ? "had exception" : "timed out");
+System.err.println ("timed topology lookup "+s+", using value from cache for agent "+agent+": " +entry);
     }
     else 
     {
-      //System.err.println ("timed topology lookup completed on time");
+System.err.println ("timed topology lookup completed on time for agent " +agent);
       cacheTopologyLookup (agent, entry);
     }
 
