@@ -33,17 +33,17 @@ chgrp asmt $1
 chmod +s $1
 cd $1
 
-#for package in $COUGAAR_PACKAGES
-#do
-  #wget http://www.alpine.bbn.com/~mthome/autobuild/$COUGAAR_VERS/latest_success/$package --output-document=zips/$package
-  #unzip -o zips/$package > /dev/null
-#done
+for package in $COUGAAR_PACKAGES
+do
+  wget http://www.alpine.bbn.com/~mthome/autobuild/$COUGAAR_VERS/latest_success/$package --output-document=zips/$package
+  unzip -o zips/$package > /dev/null
+done
 
-#for package in $UL_PACKAGES
-#do
-  #wget https://cvs.ultralog.net/dist/$package --http-user=TICCVS --http-passwd=T1CCVS --output-document=zips/$package
-  #unzip -o zips/$package > /dev/null
-#done
+for package in $UL_PACKAGES
+do
+  wget https://cvs.ultralog.net/dist/$package --http-user=TICCVS --http-passwd=T1CCVS --output-document=zips/$package
+  unzip -o zips/$package > /dev/null
+done
 
 for package in $FCSUA_PACKAGES
 do
