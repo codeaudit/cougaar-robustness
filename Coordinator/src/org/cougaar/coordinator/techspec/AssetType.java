@@ -35,7 +35,7 @@ import java.io.Serializable;
  */
 public class AssetType implements NotPersistable, Serializable {
 
-    public static final AssetType NETWORK = new AssetType("network", null);
+    //public static final AssetType NETWORK = new AssetType("network", null); //no separate network that would differentiate from enclave in 2004
     public static final AssetType ENCLAVE = new AssetType("enclave", null);
     public static final AssetType HOST = new AssetType("host", null);
     public static final AssetType NODE = new AssetType("node", null);
@@ -50,7 +50,11 @@ public class AssetType implements NotPersistable, Serializable {
         types.add(HOST);
         types.add(NODE);
         types.add(AGENT);
+        types.add(ENCLAVE);
+        types.add(VIRTUAL);
     }
+    
+    public Vector getAllTypes() { return types; }
     
     /**
      * @return The Asset Type whose name matches the string provided, ignoring case. If no match found, returns NULL.

@@ -30,6 +30,7 @@ import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.component.ServiceProvider;
 
 import java.util.Vector;
+import java.util.Collection;
 
 /*
  * Implements a service provider AND DiagnosisTechSpecService
@@ -101,6 +102,10 @@ public class DiagnosisTechSpecServiceProvider implements ServiceProvider {
             
             mgr.addCrossDiagnosis(dp);
          
+        }
+        
+        public Collection getAllDiagnosisTechSpecs() {
+            return mgr.getAllDiagnosisTechSpecs();
         }
         
     }

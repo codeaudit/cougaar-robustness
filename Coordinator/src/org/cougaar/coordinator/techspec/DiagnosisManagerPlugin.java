@@ -242,6 +242,15 @@ public class DiagnosisManagerPlugin extends ComponentPlugin implements NotPersis
     
     
     /**
+     *  @return all diagnoses. May want to return a clone to protect vector.
+     *
+     */
+    public Collection getAllDiagnosisTechSpecs() {
+     
+        return allDiagnoses.values(); // may want to clone so it isn't 
+    }
+    
+    /**
      * Add an DiagnosisTechSpec for a class. Targeted to testing
      */
     public void addTechSpec(String sensorType, DiagnosisTechSpecInterface a) {

@@ -27,6 +27,8 @@ package org.cougaar.coordinator.techspec;
 
 import org.cougaar.core.component.Service;
 
+import java.util.Collection;
+
 /**
  *
  * @author  Administrator
@@ -34,6 +36,7 @@ import org.cougaar.core.component.Service;
 public interface DiagnosisTechSpecService extends Service {
     
     public DiagnosisTechSpecInterface getDiagnosisTechSpec(String sensorType);    
+    public Collection getAllDiagnosisTechSpecs();    
     public void addDiagnosisTechSpec(String sensorType, DiagnosisTechSpecInterface dtsi);    
     public void addCrossDiagnosis(CrossDiagnosis dp);
    
