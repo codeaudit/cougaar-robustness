@@ -57,7 +57,7 @@ public class AssetContainer extends Hashtable
      * @throws BelievabilityException if there is no valid AssetID in the 
      *                                model.
      **/
-    public void addAssetModel( AssetModel asset_model ) 
+    public synchronized void addAssetModel( AssetModel asset_model ) 
      throws BelievabilityException {
 
      if ( asset_model == null ) return;
@@ -78,7 +78,7 @@ public class AssetContainer extends Hashtable
      * @throws BelievabilityException if there is no valid AssetID in the 
      *                                model.
      **/
-    public void removeAssetModel( AssetModel asset_model ) 
+    public synchronized void removeAssetModel( AssetModel asset_model ) 
      throws BelievabilityException {
 
      if ( asset_model == null ) return;
@@ -97,7 +97,7 @@ public class AssetContainer extends Hashtable
      * isn't such an AssetModel in the index
      * @param asset_id The AssetID for the asset you are concerned with
      **/
-    public AssetModel getAssetModel( AssetID asset_id ) {
+    public synchronized AssetModel getAssetModel( AssetID asset_id ) {
 
      if ( asset_id == null ) return null;
      else return (AssetModel) super.get( asset_id );

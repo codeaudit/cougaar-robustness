@@ -98,7 +98,7 @@ public class AssetModel extends Loggable
      * @throws BelievabilityException if there is a problem dealing
      *                                with the belief update trigger
      */
-    public void consumeUpdateTrigger( BeliefUpdateTrigger but )
+    public synchronized void consumeUpdateTrigger( BeliefUpdateTrigger but )
             throws BelievabilityException 
     {
 

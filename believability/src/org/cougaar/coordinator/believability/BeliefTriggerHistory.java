@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefTriggerHistory.java,v $
- * $Revision: 1.6 $
- * $Date: 2004-08-03 14:06:38 $
+ * $Revision: 1.7 $
+ * $Date: 2004-08-03 22:05:50 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -98,7 +98,7 @@ import org.cougaar.core.agent.service.alarm.Alarm;
  * an instance of this class: one for each of these.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.6 $Date: 2004-08-03 14:06:38 $
+ * @version $Revision: 1.7 $Date: 2004-08-03 22:05:50 $
  * @see BeliefTriggerManager
  */
 class BeliefTriggerHistory 
@@ -145,7 +145,7 @@ class BeliefTriggerHistory
      *
      * @param trigger The newly arriving trigger t be handled.
      */
-    void handleBeliefTrigger( BeliefUpdateTrigger trigger )
+    synchronized void handleBeliefTrigger( BeliefUpdateTrigger trigger )
             throws BelievabilityException
     {
         // Method implementation comments go here ...
