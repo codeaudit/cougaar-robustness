@@ -14,13 +14,8 @@ import org.cougaar.core.domain.RootFactory;
 import org.cougaar.tools.robustness.ma.plugins.ManagementAgentProperties;
 
 /**
- * <p>Title: ParameterModifierServlet</p>
- * <p>Description: This servlet enables host to change the parameters of one of the plugins:
- *                 HealthMOnitorPlugin, RestartLocatorPlugin and DecisionPlugin.</p>
- * <p>Copyright: Copyright (c) 2002</p>
- * <p>Company: </p>
- * @author unascribed
- * @version 1.0
+ * This servlet enables host to change the parameters of one of the plugins:
+ * HealthMOnitorPlugin, RestartLocatorPlugin and DecisionPlugin.</p>
  */
 public class ParameterModifierServlet extends BaseServletComponent implements BlackboardClient {
   private BlackboardService blackboard;
@@ -147,8 +142,8 @@ public class ParameterModifierServlet extends BaseServletComponent implements Bl
         ManagementAgentProperties newProp = ManagementAgentProperties.makeProps(packageName + pluginName, params);
         try{
           blackboard.openTransaction();
-          blackboard.publishRemove(prop);System.out.println("remove old props: " + prop);
-          blackboard.publishAdd(newProp);System.out.println("add new props: " + newProp);
+          blackboard.publishRemove(prop);//System.out.println("remove old props: " + prop);
+          blackboard.publishAdd(newProp);//System.out.println("add new props: " + newProp);
         }finally
         { blackboard.closeTransaction(); }
       }

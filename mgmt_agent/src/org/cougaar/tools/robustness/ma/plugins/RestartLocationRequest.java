@@ -71,7 +71,7 @@ public class RestartLocationRequest implements java.io.Serializable {
 
   /**
    * Returns current status of this request.
-   * @return
+   * @return Status of request
    */
   public int getStatus() {
     return this.status;
@@ -87,7 +87,7 @@ public class RestartLocationRequest implements java.io.Serializable {
 
   /**
    * Gets name of host selected for restarting/relocating agents.
-   * @return
+   * @return  Name of selected restart host
    */
   public String getHost() {
     return this.hostName;

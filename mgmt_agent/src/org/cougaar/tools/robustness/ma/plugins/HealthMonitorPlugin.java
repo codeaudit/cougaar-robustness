@@ -316,11 +316,9 @@ public class HealthMonitorPlugin extends SimplePlugin {
         }
       } else if (state.equals(HealthStatus.NORMAL)) {
         int hbStatus = hs.getHeartbeatStatus();
-        //System.out.println("hbStatus=" + hbStatus);
         switch (hbStatus) {
           case HealthStatus.HB_TIMEOUT:
             int pingStatus = hs.getPingStatus();
-            //System.out.println("PingStatus=" + pingStatus);
             switch (pingStatus) {
               case HealthStatus.UNDEFINED:
                 //log.debug("Heartbeat timeout: agent=" + hs.getAgentId());
@@ -329,7 +327,6 @@ public class HealthMonitorPlugin extends SimplePlugin {
                 doPing(hs.getAgentId());
                 break;
               case PingRequest.RECEIVED:
-                //System.out.println("HBFailureRate=" + hs.getFailureRate(heartbeatInterval));
                 if (!hs.hbFailureRateInSpec()) {
                   log.error("Exceeded Heartbeat timeout threshold: agent="
                     + hs.getAgentId());
@@ -515,7 +512,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
    * Determines if an agent has an associated HealthStatus object.
    * collection.
    * @param agentId
-   * @return
+   * @return  True if the agent is currently being monitored
    */
   private boolean hasHealthStatus(ClusterIdentifier agentId) {
     for (Iterator it = membersHealthStatus.iterator(); it.hasNext();) {

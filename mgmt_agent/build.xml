@@ -10,13 +10,14 @@
   <property environment="env"/>
   <property name="cougaar" value="${env.COUGAAR_INSTALL_PATH}"/>
   <property name="host" value="localhost"/>
+  <property name="packageDir" value="org/cougaar/tools/robustness"/>
 
   <!-- Define location of 3rd-party libraries -->
   <property name="lib" value="lib" />
 
   <!-- for JavaDoc -->
-  <property name="packageName" value="org.cougaar.tools.robustness.ma"/>
-  <property name="packageDir" value="org/cougaar/tools/robustness"/>
+  <property name="packageNames" value="org.cougaar.tools.robustness.ma.plugins,
+                                       org.cougaar.tools.robustness.ma.test"/>
 
   <!-- standard directories -->
   <property name="classes" value="classes"/>
@@ -93,7 +94,7 @@
   <!-- Generates javadoc -->
   <target name="javadoc" description="Creates JavaDoc documentation">
     <mkdir dir="doc/api"/>
-    <javadoc packagenames="${packageName}"
+    <javadoc packagenames="${packageNames}"
            sourcepath="src"
            destdir="doc/api"
            author="false"
@@ -101,13 +102,16 @@
            use="true"
            windowtitle="Ultralog Robustness"
            doctitle="Ultralog Robustness">
-      <group title="Robustness" packages="${packageName}"/>
+      <group title="Robustness" packages="${packageNames}"/>
       <classpath>
         <pathelement location="${basedir}/${classes}"/>
         <fileset dir="${cougaar}/lib">
           <include name="**/*.jar"/>
         </fileset>
         <fileset dir="${cougaar}/sys">
+          <include name="**/*.jar"/>
+        </fileset>
+        <fileset dir="./lib">
           <include name="**/*.jar"/>
         </fileset>
       </classpath>
@@ -168,11 +172,17 @@
       <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
       <classpath>
         <fileset dir="${cougaar}/lib">
-          <include name="bootstrap.jar"/>
-          <include name="core.jar"/>
+          <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="${cougaar}/sys">
+          <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="${lib}">
+          <include name="**/*.jar" />
         </fileset>
       </classpath>
       <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
+      <!-- <sysproperty key="org.cougaar.community.caching" value="off"/> -->
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
       <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
       <sysproperty key="org.cougaar.system.path" value="${lib}"/>
@@ -191,11 +201,17 @@
       <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
       <classpath>
         <fileset dir="${cougaar}/lib">
-          <include name="bootstrap.jar"/>
-          <include name="core.jar"/>
+          <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="${cougaar}/sys">
+          <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="${lib}">
+          <include name="**/*.jar" />
         </fileset>
       </classpath>
       <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
+      <!-- <sysproperty key="org.cougaar.community.caching" value="off"/> -->
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
       <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
       <sysproperty key="org.cougaar.system.path" value="${lib}"/>
@@ -214,11 +230,17 @@
       <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
       <classpath>
         <fileset dir="${cougaar}/lib">
-          <include name="bootstrap.jar"/>
-          <include name="core.jar"/>
+          <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="${cougaar}/sys">
+          <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="${lib}">
+          <include name="**/*.jar" />
         </fileset>
       </classpath>
       <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
+      <!-- <sysproperty key="org.cougaar.community.caching" value="off"/> -->
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
       <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
       <sysproperty key="org.cougaar.system.path" value="${lib}"/>
@@ -237,11 +259,17 @@
       <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
       <classpath>
         <fileset dir="${cougaar}/lib">
-          <include name="bootstrap.jar"/>
-          <include name="core.jar"/>
+          <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="${cougaar}/sys">
+          <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="${lib}">
+          <include name="**/*.jar" />
         </fileset>
       </classpath>
       <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
+      <!-- <sysproperty key="org.cougaar.community.caching" value="off"/> -->
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
       <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
       <sysproperty key="org.cougaar.core.persistence.enable" value="true"/>
@@ -265,11 +293,17 @@
       <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
       <classpath>
         <fileset dir="${cougaar}/lib">
-          <include name="bootstrap.jar"/>
-          <include name="core.jar"/>
+          <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="${cougaar}/sys">
+          <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="${lib}">
+          <include name="**/*.jar" />
         </fileset>
       </classpath>
       <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
+      <!-- <sysproperty key="org.cougaar.community.caching" value="off"/> -->
       <sysproperty key="org.cougaar.node.name" value="${host}-EmptyNode"/>
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
       <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
@@ -291,11 +325,17 @@
       <jvmarg value="-Xbootclasspath/p:${cougaar}/lib/javaiopatch.jar"/>
       <classpath>
         <fileset dir="${cougaar}/lib">
-          <include name="bootstrap.jar"/>
-          <include name="core.jar"/>
+          <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="${cougaar}/sys">
+          <include name="**/*.jar" />
+        </fileset>
+        <fileset dir="${lib}">
+          <include name="**/*.jar" />
         </fileset>
       </classpath>
       <sysproperty key="org.cougaar.core.logging.config.filename" value="debug.properties"/>
+      <!-- <sysproperty key="org.cougaar.community.caching" value="off"/> -->
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
       <sysproperty key="org.cougaar.workspace" value="${workspace}"/>
       <sysproperty key="org.cougaar.system.path" value="${lib}"/>

@@ -27,6 +27,7 @@ import org.cougaar.util.DBProperties;
 import org.cougaar.util.Parameters;
 import org.cougaar.util.ConfigFinder;
 
+/** Read a .csv file and load all it's contents to the database defined in cougaar.rc. */
 public class CsvFileLoader
 {
   private static final String QUERY_FILE = "DBInitializer.q";
@@ -146,7 +147,7 @@ public class CsvFileLoader
   public static void main(String[] args)
   {
     for(int i=0; i<args.length; i++)
-    {System.out.println("Loading " + args[i]);
+    {//System.out.println("Loading " + args[i]);
       new CsvFileLoader(args[i]);
     }
     //try{

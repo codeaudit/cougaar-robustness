@@ -142,7 +142,6 @@ public class HealthStatus implements
    *         HeartbeatFailureRateThreshold
    */
   protected boolean hbFailureRateInSpec() {
-    //System.out.println(failureRateData());
     return getFailureRate() < hbFailureRateThreshold;
   }
 
@@ -260,7 +259,6 @@ public class HealthStatus implements
       timeout = (Date)it.next();
       if (timeout.before(cutoff)) {
         it.remove();
-        //System.out.println("Removing timeout: agent=" + getAgentId());
       }
     }
   }
@@ -276,9 +274,6 @@ public class HealthStatus implements
     if (lateHeartbeats == 0) return 0.0f;
     float totalHeartbeats = hbWindow/hbFrequency;
     float rate = lateHeartbeats/totalHeartbeats;
-    //System.out.println("HBFailureRate Calc: lateHeartbeats=" + lateHeartbeats +
-    //  ", totalHeartbeats=" + totalHeartbeats +
-    //  ", rate=" + rate);
     return (rate > 1.0f ? 1.0f : rate);
   }
 
@@ -329,7 +324,7 @@ public class HealthStatus implements
 
   /**
    * Returns monitored agents current run state.
-   * @return
+   * @return Current run state for agent.
    */
   protected String getState() {
     return currentState;
