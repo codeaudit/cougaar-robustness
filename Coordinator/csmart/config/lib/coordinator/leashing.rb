@@ -66,6 +66,37 @@ module Cougaar
 
     end
 
+    class Leash < Cougaar::Action
+      PRIOR_STATES = []
+      DOCUMENTATION = Cougaar.document {
+        @description = "Stop Permitting Defense Actions.  This Action is reversed by Unleash."
+        @parameters = [
+	    {:messaging => "0 is no messages (the default), 1 is normal messages, 2 is verbose."}
+        ]
+        @example = "do_action 'Leash', 1" 
+	}
+    
+      def initialize(run, messaging=0)
+        super(run)
+        @messaging = messaging
+      end
+
+      def perform 
+        @run.society.each_agent do |agent|
+          if agent.name =~ /.*ARManager.*/
+	    @run.info_message "Leash found #{agent.name}" if @messaging >= 2
+            url = "#{agent.uri}/LeashDefenses?LeashDefenses=LeashDefenses"
+	    response, uri = Cougaar::Communications::HTTP.get(url)
+            raise "Could not connect to #{url}" unless response
+            Mgrs[agent.name] = agent
+            @run.info_message "Requested that "+agent.name+" Leash Defenses." if @messaging >= 1
+            Cougaar.logger.info "Leash requested at #{agent.name}"
+	  end
+        end
+      end
+
+    end
+
     class MonitorUnleash < Cougaar::Action
       PRIOR_STATES = ["SocietyLoaded"]
       DOCUMENTATION = Cougaar.document {
