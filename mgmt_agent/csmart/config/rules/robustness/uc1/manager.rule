@@ -35,7 +35,7 @@ communityViewerServlet     = "org.cougaar.community.util.CommunityViewerServlet"
 society.each_node do |node|
   # For testing 1AD-SMALL
   if node.name =~ /.*FWD-NODE.*/
-    node.add_agent("ARManager")
+    node.add_agent("1AD-SMALL-ARManager")
   end
   # For 1AD-FULL
   if node.name =~ /.*FWD-MGMT-NODE.*/
