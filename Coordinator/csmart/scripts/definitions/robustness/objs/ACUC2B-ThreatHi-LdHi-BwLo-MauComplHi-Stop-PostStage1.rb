@@ -140,10 +140,10 @@ include_scripts:
       - location: during_stage_1
       - verbose: 1
 
-  - script: $CIP/csmart/lib/coordinator/monitor_action_selection.rb 
-    parameters:
-      - location: during_stage_1
-      - verbose: 2
+#  - script: $CIP/csmart/lib/coordinator/monitor_action_selection.rb 
+#    parameters:
+#      - location: during_stage_1
+#      - verbose: 2
 
   - script: $CIP/csmart/lib/isat/stop_society.rb
     parameters:
