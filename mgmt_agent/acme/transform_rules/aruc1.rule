@@ -2,10 +2,17 @@
 # Rule to insert components required for
 # Adaptive Robustness Use-Case 1(ARUC1) defense
 # Add to : All Agents and Nodes (NodeAgents)
-#   plugin: org.cougaar.tools.robustness.sensors.PingServerPlugin
-# Add to : All Agents
+#   domain: org.cougaar.tools.robustness.sensors.SensorDomain
 #   plugin: org.cougaar.tools.robustness.sensors.HeartbeatServerPlugin
+#   plugin: org.cougaar.tools.robustness.sensors.PingServerPlugin
+#   plugin: org.cougaar.core.mobility.service.RootMobilityPlugin
+# Add to : All Agents
+#   domain: org.cougaar.tools.robustness.sensors.SensorDomain
+#   plugin: org.cougaar.tools.robustness.sensors.HeartbeatServerPlugin
+#   plugin: org.cougaar.tools.robustness.sensors.PingServerPlugin
+#   plugin: org.cougaar.core.mobility.service.RedirectMovePlugin
 # Add to : All robustness manager agents
+#   domain: org.cougaar.tools.robustness.sensors.SensorDomain
 #   plugin: org.cougaar.tools.robustness.sensors.HeartbeatRequesterPlugin
 #   plugin: org.cougaar.tools.robustness.sensors.PingRequesterPlugin
 #   plugin: org.cougaar.tools.robustness.ma.plugins.HealthMonitorPlugin
@@ -34,8 +41,16 @@ communityPlugin = "org.cougaar.community.CommunityPlugin"
 simple_servlet_comp = "org.cougaar.core.servlet.SimpleServletComponent"
 
 # Add components to robustness manager agents
+
+mgrNode = society.nodes['MANAGEMENT-NODE']
+mgrNode.add_agent('1AD-REAR-ARManager')
+mgrNode.add_agent('1AD-FWD-ARManager')
+mgrNode.add_agent('1AD-CONUS-ARManager')
+mgrNode.add_agent('1AD-TRANS-ARManager')
+
 society.each_agent do |agent|
-  if not String(agent.name).index("RobustnessManager") == nil
+  if not String(agent.name).index("ARManager") == nil
+        agent.classname = "org.cougaar.core.agent.SimpleAgent"
         agent.add_component do |c|
           c.name = agent.name + "|" + sensor_domain
           c.classname = sensor_domain
@@ -120,25 +135,4 @@ society.each_node_agent do |node_agent|
   node_agent.add_component do |c|
     c.classname = node_mobility_plugin
   end
-end
-
-# Add VM parameters to nodes
-society.each_node do |node|
-  node.classname = "org.cougaar.bootstrap.Bootstrapper"
-  prog_parameter = "org.cougaar.core.node.Node"
-  flag = "false"
-  node.each_prog_parameter do |prog|
-    flag = "true" if prog == prog_parameter
-  end
-  node.add_prog_parameter(prog_parameter) if flag == "false"
-  node.override_parameter("-Dorg.cougaar.node.name", node.name)
-  node.override_parameter("-Dorg.cougaar.core.agent.startTime", "08/10/2005")
-  node.override_parameter("-Dorg.cougaar.core.persistence.clear", "true")
-  node.override_parameter("-Dorg.cougaar.core.persistence.enable", "false")
-  node.override_parameter("-Dorg.cougaar.name.server", "localhost:8888:5555")
-  node.override_parameter("-Dorg.cougaar.planning.ldm.lps.ComplainingLP.level", "0")
-  node.override_parameter("-Duser.timezone", "GMT")
-  node.override_parameter("-Dorg.cougaar.core.node.InitializationComponent", "XML")
-  node.override_parameter("-Dorg.cougaar.core.agent.heartbeat", "false")
-  node.override_parameter("-Dorg.cougaar.core.agent.showTraffic", "false")
 end

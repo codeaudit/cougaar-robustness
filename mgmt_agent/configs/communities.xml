@@ -17,52 +17,21 @@
 ]>
 
 <Communities>
-  <Community Name="MiniTestConfig-COMM" >
-    <Attribute ID="CommunityType" Value="Robustness" />
-    <Attribute ID="CommunityManager" Value="Manager" />
-    <!-- Caution:  The following robustness parameters are set at relatively
-     small values for demonstration and test purposes.  These values may not
-     be appropriate for a deployed society.  -->
-    <Attribute ID="hbFreq" Value="10000" />
-    <Attribute ID="hbTimeout" Value="5000" />
-    <Attribute ID="hbPctLate" Value="50.0" />
-    <Attribute ID="pingRetries" Value="0" />
-    <Attribute ID="pingTimeout" Value="5000" />
-    <Entity Name="Manager" >
-      <Attribute ID="EntityType" Value="Agent" />
-      <Attribute ID="Role" Value="ManagementAgent" />
-      <Attribute ID="Role" Value="HealthReportConsumer" />
-    </Entity>
-    <Entity Name="3ID" >
-      <Attribute ID="EntityType" Value="Agent" />
-      <Attribute ID="Role" Value="Member" />
-    </Entity>
-    <Entity Name="3-69-ARBN" >
-      <Attribute ID="EntityType" Value="Agent" />
-      <Attribute ID="Role" Value="Member" />
-    </Entity>
-    <Entity Name="1BDE" >
-      <Attribute ID="EntityType" Value="Agent" />
-      <Attribute ID="Role" Value="Member" />
-    </Entity>
-    <Entity Name="MCCGlobalMode" >
-      <Attribute ID="EntityType" Value="Agent" />
-      <Attribute ID="Role" Value="Member" />
-    </Entity>
-    <Entity Name="MiniNode1" >
-      <Attribute ID="EntityType" Value="Agent" />
-      <Attribute ID="Role" Value="Member" />
-    </Entity>
-  </Community>
   <!--********************************************************
       *                                                      *
-      *  1 A D - E n c l a v e 1 - C O M M                   *
+      *  1 A D - R E A R - C O M M                           *
       *                                                      *
       ********************************************************-->
-  <Community Name="1AD-Enclave1-COMM" >
+  <Community Name="1AD-REAR-COMM" >
     <Attribute ID="CommunityType" Value="Robustness" />
-    <Attribute ID="CommunityManager" Value="1AD-Enclave1-RobustnessManager" />
-    <Entity Name="1AD-Enclave1-RobustnessManager" >
+    <Attribute ID="CommunityManager" Value="1AD-REAR-ARManager" />
+    <Attribute ID="hbFreq" Value="30000" />
+    <Attribute ID="hbTimeout" Value="30000" />
+    <Attribute ID="hbPctLate" Value="90.0" />
+    <Attribute ID="pingRetries" Value="0" />
+    <Attribute ID="pingTimeout" Value="30000" />
+    <Attribute ID="numAgents" Value="73" />
+    <Entity Name="1AD-REAR-ARManager" >
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="ManagementAgent" />
       <Attribute ID="Role" Value="HealthReportConsumer" />
@@ -367,13 +336,19 @@
   </Community>
   <!--********************************************************
       *                                                      *
-      *  1 A D - E n c l a v e 2 - C O M M                   *
+      *  1 A D - F W D - C O M M                             *
       *                                                      *
       ********************************************************-->
-  <Community Name="1AD-Enclave2-COMM" >
+  <Community Name="1AD-FWD-COMM" >
     <Attribute ID="CommunityType" Value="Robustness" />
-    <Attribute ID="CommunityManager" Value="1AD-Enclave2-RobustnessManager" />
-    <Entity Name="1AD-Enclave2-RobustnessManager" >
+    <Attribute ID="CommunityManager" Value="1AD-FWD-ARManager" />
+    <Attribute ID="hbFreq" Value="30000" />
+    <Attribute ID="hbTimeout" Value="30000" />
+    <Attribute ID="hbPctLate" Value="90.0" />
+    <Attribute ID="pingRetries" Value="0" />
+    <Attribute ID="pingTimeout" Value="30000" />
+    <Attribute ID="numAgents" Value="55" />
+    <Entity Name="1AD-FWD-ARManager" >
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="ManagementAgent" />
       <Attribute ID="Role" Value="HealthReportConsumer" />
@@ -607,19 +582,38 @@
   </Community>
   <!--********************************************************
       *                                                      *
-      *  1 A D - E n c l a v e 3 - C O M M                   *
+      *  1 A D - C O N U S - C O M M                         *
       *                                                      *
       ********************************************************-->
-  <Community Name="1AD-Enclave3-COMM" >
+  <Community Name="1AD-CONUS-COMM" >
     <Attribute ID="CommunityType" Value="Robustness" />
-    <Attribute ID="CommunityManager" Value="1AD-Enclave3-RobustnessManager" />
-    <Entity Name="1AD-Enclave3-RobustnessManager" >
+    <Attribute ID="CommunityManager" Value="1AD-CONUS-ARManager" />
+    <Attribute ID="hbFreq" Value="30000" />
+    <Attribute ID="hbTimeout" Value="30000" />
+    <Attribute ID="hbPctLate" Value="90.0" />
+    <Attribute ID="pingRetries" Value="0" />
+    <Attribute ID="pingTimeout" Value="30000" />
+    <Attribute ID="numAgents" Value="7" />
+    <Entity Name="1AD-CONUS-ARManager" >
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="ManagementAgent" />
       <Attribute ID="Role" Value="HealthReportConsumer" />
     </Entity>
     <!-- Node NCA-NODE -->
     <Entity Name="NCA" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <!-- Node CONUS-NODE -->
+    <Entity Name="DLAHQ" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="OSC" >
+      <Attribute ID="EntityType" Value="Agent" />
+      <Attribute ID="Role" Value="Member" />
+    </Entity>
+    <Entity Name="FORSCOM" >
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="Member" />
     </Entity>
@@ -640,13 +634,19 @@
   </Community>
   <!--********************************************************
       *                                                      *
-      *  1 A D - E n c l a v e 4 - C O M M                   *
+      *  1 A D - T R A N S - C O M M                         *
       *                                                      *
       ********************************************************-->
-  <Community Name="1AD-Enclave4-COMM" >
+  <Community Name="1AD-TRANS-COMM" >
     <Attribute ID="CommunityType" Value="Robustness" />
-    <Attribute ID="CommunityManager" Value="1AD-Enclave4-RobustnessManager" />
-    <Entity Name="1AD-Enclave4-RobustnessManager" >
+    <Attribute ID="CommunityManager" Value="1AD-TRANS-ARManager" />
+    <Attribute ID="hbFreq" Value="300000" />
+    <Attribute ID="hbTimeout" Value="300000" />
+    <Attribute ID="hbPctLate" Value="90.0" />
+    <Attribute ID="pingRetries" Value="0" />
+    <Attribute ID="pingTimeout" Value="300000" />
+    <Attribute ID="numAgents" Value="7" />
+    <Entity Name="1AD-TRANS-ARManager" >
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="ManagementAgent" />
       <Attribute ID="Role" Value="HealthReportConsumer" />
@@ -681,19 +681,6 @@
     </Entity>
     <!-- Node CONUSTRANS-NODE -->
     <Entity Name="CONUSGround" >
-      <Attribute ID="EntityType" Value="Agent" />
-      <Attribute ID="Role" Value="Member" />
-    </Entity>
-    <!-- Node CONUS-NODE -->
-    <Entity Name="DLAHQ" >
-      <Attribute ID="EntityType" Value="Agent" />
-      <Attribute ID="Role" Value="Member" />
-    </Entity>
-    <Entity Name="OSC" >
-      <Attribute ID="EntityType" Value="Agent" />
-      <Attribute ID="Role" Value="Member" />
-    </Entity>
-    <Entity Name="FORSCOM" >
       <Attribute ID="EntityType" Value="Agent" />
       <Attribute ID="Role" Value="Member" />
     </Entity>
