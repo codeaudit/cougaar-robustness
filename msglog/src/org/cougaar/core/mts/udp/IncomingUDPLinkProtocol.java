@@ -77,12 +77,13 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 
     datagramSocketSpecs = new DatagramSocketSpec[1];
     datagramSocketSpecs[0] = new DatagramSocketSpec (localhost, port);
+  }
 
-    //  Check if ShowTrafficAspect is loaded
-
+  public void load () 
+  {
+    super_load();
     String sta = "org.cougaar.core.mts.ShowTrafficAspect";
-//  showTraffic = (getAspectSupport().findAspect(sta) != null);
-//  showTraffic = (AspectSupportImpl.instance().findAspect(sta) != null);
+    showTraffic = (getAspectSupport().findAspect(sta) != null);
   }
 
   public String toString ()
@@ -346,7 +347,7 @@ loggingService is null here
             continue;
           }
 
-          if (showTraffic) System.err.print ("<S");
+          if (showTraffic) System.err.print ("<U");
 
           if (loggingService.isDebugEnabled()) 
           {

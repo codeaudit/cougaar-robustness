@@ -39,8 +39,6 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
   public static final String PROTOCOL_TYPE = "-UDP";
   public static final int    MAX_UDP_MSG_SIZE = 64*1024;
 
-  private static boolean showTraffic;
-
   private static final int protocolCost;
   private static final Object sendLock = new Object();
 
@@ -69,13 +67,6 @@ private int cnt = 0;
     {
       throw new RuntimeException ("Failure starting up " +this);
     }
-  }
-
-  public void load () 
-  {
-    super_load();
-    String sta = "org.cougaar.core.mts.ShowTrafficAspect";
-    showTraffic = (getAspectSupport().findAspect(sta) != null);
   }
 
   public String toString ()

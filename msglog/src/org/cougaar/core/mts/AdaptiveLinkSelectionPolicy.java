@@ -71,9 +71,6 @@ import java.util.*;
 
 import org.cougaar.core.mts.acking.*;
 import org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol;
-import org.cougaar.core.service.TopologyReaderService;
-import org.cougaar.core.service.TopologyEntry;
-import org.cougaar.core.component.ServiceBroker;
 
 
 /**
@@ -158,9 +155,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
     if (useRTTService)
     {
-      ServiceBroker sb = getServiceBroker();
-      Class rs = RTTService.class;
-      rttService = (RTTService) sb.getService (this, rs, null);
+      rttService = (RTTService) getServiceBroker().getService (this, RTTService.class, null);
     }
   }
 
@@ -259,11 +254,11 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
     if (doDebug)
     {
-      if (!MessageUtils.isNewMessage(msg)) debug ("Processing msg " +msgString);
+      if (!MessageUtils.isNewMessage(msg)) debug ("Processing " +msgString);
     }
 
     /**
-     **  Special case:  Message has passed it's send deadline so we just drop it
+     **  Special case:  Message has passed its send deadline so we just drop it
      **/
 
     if (MessageUtils.getSendDeadline (msg) < now())
@@ -350,7 +345,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
 // log INFO that msg num/seq is changing from/to
 
-        AgentID toAgent = getAgentID (targetAgent, true);
+        AgentID toAgent = AgentID.getAgentID (this, getServiceBroker(), targetAgent, true);
         MessageUtils.setToAgent (msg, toAgent);
 
         targetNode = toAgent.getNodeName();      
@@ -365,7 +360,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
 // fix as needed like above
 
-          AgentID toAgent = getAgentID (targetAgent, false);
+          AgentID toAgent = AgentID.getAgentID (this, getServiceBroker(), targetAgent, false);
           MessageUtils.setToAgent (msg, toAgent);
           targetNode = toAgent.getNodeName();
         }
@@ -388,7 +383,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     Arrays.sort (destLinks, linkRanker);
 
     DestinationLink topLink = destLinks[0];
-//debug ("\ntopLink = " +topLink.getProtocolClass());
+//debug ("\ntopLink = " +topLink.getProtocolClass().getName());
 
     //  HACK!
 
@@ -399,10 +394,9 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       
       Class linkClass = MessageAckingAspect.getLastSuccessfulLinkUsed (targetNode);
       DestinationLink link = pickLinkByClass (destLinks, linkClass);
-      if (link == null) link = topLink;  // just in case
+      if (link == null) link = topLink;  // last link may not be currently available
 
       if (doDebug) debug ("Chose link for traffic masking msg: " +msgString);
-
       return linkChoice (link, msg);
     }
 
@@ -416,10 +410,9 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       
       Class linkClass = MessageAckingAspect.getLastSuccessfulLinkUsed (targetNode);
       DestinationLink link = pickLinkByClass (destLinks, linkClass);
-      if (link == null) link = topLink;  // just in case
+      if (link == null) link = topLink;  // last link may not be currently available
 
       if (doDebug) debug ("Chose link for pure ack-ack msg: " +msgString);
-
       return linkChoice (link, msg);
     }
 
@@ -456,6 +449,8 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
             //  its already been done for us.  Update the latestDeadline for when we
             //  need to attempt to send this ack over another link.
 
+// TODO - new rtt with acking
+
             int roundtrip = MessageAckingAspect.getRoundtripTimeForAck (link, pureAck);
             if (roundtrip < 0) roundtrip = MessageAckingAspect.getBestRoundtripTimeForLink (link, targetNode);
 
@@ -474,7 +469,6 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
         MessageAckingAspect.addToPureAckSender ((PureAckMessage)msg);
 
         if (doDebug) debug ("Rescheduling pure ack msg: " +msgString);
-
         return blackHoleLink;  // msgs go in, but never come out!
       }
 
@@ -490,7 +484,6 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
           pureAck.addLinkSelection (link);
 
           if (doDebug) debug ("Chose link for pure ack msg: " +msgString);
-
           return linkChoice (link, msg);
         }
       }
@@ -498,7 +491,6 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       //  Final case: No untried links left - we are done sending pure ack
 
       if (doDebug) debug ("No need to send pure ack msg: " +msgString);
-
       return blackHoleLink;
     }
 
@@ -543,7 +535,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
         if (link == null)
         {
-          if (doDebug) debug ("Starting over with first choice for msg resend");
+          if (doDebug) debug ("Starting over with first link choice for msg resend");
           link = pickLinkByClass (destLinks, ack.getFirstLinkSelection());
           ack.clearLinkSelections();
         }
@@ -611,7 +603,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
       if (count == 0)
       {
-debug ("\n** trying OTHER LINKS");
+//debug ("\n** trying OTHER LINKS");
 
         //  Look for the highest ranking link left that still has a RTT of 0 (which means
         //  there are not enough samples to establish a RTT for the link/node combo).
@@ -625,7 +617,8 @@ debug ("\n** trying OTHER LINKS");
           }
         }
 
-        //  Otherwise, choose the link that was last chosen the longest ago
+        //  Otherwise, choose the link that was last chosen the longest ago that
+        //  can currently be chosen.
 
         DestinationLink oldestLink = topLink;
         long oldestTime = Long.MAX_VALUE;
@@ -635,6 +628,7 @@ debug ("\n** trying OTHER LINKS");
         for (Enumeration e=linkSelections.elements(); e.hasMoreElements(); )
         {
           LinkSelectionRecord rec = (LinkSelectionRecord) e.nextElement();
+          if (!isMemberOf (destLinks, rec.link)) continue;
 
           if (rec.selectionTime < oldestTime)
           {
@@ -675,11 +669,18 @@ debug ("\n** trying OTHER LINKS");
       {
         return linkChoice (setUpgradeChoice (lastChoice, upgrade, msg), msg);
       }
-      else  // not time or no upgrade available
+      else  // not yet time to upgrade or no upgrade available
       {
-        // Keep on keeping on with what we got for now
+        // Keep on keeping on with what we got for now, if it is still available
 
-        return linkChoice (setSteadyStateChoice (lastChoice, lastChoice.getLink(), msg), msg);
+        if (isMemberOf (destLinks, lastChoice.getLink()))
+        {
+          return linkChoice (setSteadyStateChoice (lastChoice, lastChoice.getLink(), msg), msg);
+        }
+        else // go ahead and jump to the top link
+        {
+          return linkChoice (setUpgradeChoice (lastChoice, topLink, msg), msg);
+        }
       }
     }
     
@@ -710,9 +711,17 @@ debug ("\n** trying OTHER LINKS");
       }
       else  // exceeded # of tries, or no upgrade available
       {
-        //  Go back to steady state
+        //  Go back to steady state, if we can
 
-        return linkChoice (setSteadyStateChoice (lastChoice, lastChoice.getSteadyStateLink(), msg), msg);
+        if (isMemberOf (destLinks, lastChoice.getSteadyStateLink()))
+        {
+          return linkChoice (setSteadyStateChoice (lastChoice, lastChoice.getSteadyStateLink(), msg), msg);
+        }
+        else
+        {
+          DestinationLink replacement = pickReplacementChoice (lastChoice, destLinks, msg);
+          return linkChoice (setReplacementChoice (lastChoice, replacement, msg), msg);
+        }
       }
     }
     else if (lastChoice.wasSteadyStateChoice())
@@ -747,6 +756,8 @@ debug ("\n** trying OTHER LINKS");
       return linkChoice (setReplacementChoice (lastChoice, replacement, msg), msg);
     }
   }
+
+//  TODO - need to guarantee the choices returned are members of links[]
 
   private DestinationLink pickUpgradeChoice (SelectionChoice lastChoice, DestinationLink links[], AttributedMessage msg)
   {
@@ -839,7 +850,7 @@ debug ("\n** trying OTHER LINKS");
       selectionHistory.put (targetNode, choice);
     }
 
-    if (doDebug) debug ("SteadyState selected: " +link.getProtocolClass());
+    if (doDebug) debug ("SteadyState selected: " +link.getProtocolClass().getName());
 
     return link;
   }
@@ -851,7 +862,7 @@ debug ("\n** trying OTHER LINKS");
     int msgNum = MessageUtils.getMessageNumber (msg);
     choice.makeUpgradeChoice (link, msgNum);
 
-    if (doDebug) debug ("Upgrade selected: " +link.getProtocolClass());
+    if (doDebug) debug ("Upgrade selected: " +link.getProtocolClass().getName());
 
     return link;
   }
@@ -863,7 +874,7 @@ debug ("\n** trying OTHER LINKS");
     int msgNum = MessageUtils.getMessageNumber (msg);
     choice.makeReplacementChoice (link, msgNum);
 
-    if (doDebug) debug ("Replacement selected: " +link.getProtocolClass());
+    if (doDebug) debug ("Replacement selected: " +link.getProtocolClass().getName());
 
     return link;
   }
@@ -1001,7 +1012,7 @@ debug ("\n** trying OTHER LINKS");
 
     public String toString ()
     {
-      return (link != null ? link.getProtocolClass().toString() : "null");
+      return (link != null ? link.getProtocolClass().getName() : "null");
     }
   }
 
@@ -1193,6 +1204,13 @@ debug ("\n** trying OTHER LINKS");
     return null;
   }
 
+  private boolean isMemberOf (DestinationLink links[], DestinationLink link)
+  {
+    if (links == null || link == null) return false;
+    for (int i=0; i<links.length; i++) if (links[i] == link) return true;
+    return false;
+  }
+
   private static String getLinkClassname (DestinationLink link)
   {
     return link.getProtocolClass().getName();
@@ -1221,19 +1239,7 @@ debug ("\n** trying OTHER LINKS");
 
   public static int getTransportID (Class transportClass)
   {
-/* 8.6.1
-    //  HACK as DestinationLinks aren't usable as indices
-
-    String n = transportClass.getName();
-
-         if (n.equals ("org.cougaar.core.mts.socket.OutgoingSocketLinkProtocol")) return 0;
-    else if (n.equals ("org.cougaar.core.mts.email.OutgoingEmailLinkProtocol")) return 1;
-    else if (n.equals ("org.cougaar.core.mts.NNTPLinkProtocol")) return 3;
-    else if (n.equals ("org.cougaar.core.mts.RMILinkProtocol")) return 4;
-    return -1;
-8.6.1 */
-
-    return transportClass.hashCode();  // 8.6.1
+    return transportClass.hashCode();
   }
 
   public static boolean isOutgoingTransport (String protocol)
@@ -1299,31 +1305,5 @@ debug ("\n** trying OTHER LINKS");
     else if (classname.equals("org.cougaar.lib.quo.CorbaLinkProtocol")) type = "corba";
 
     return type;
-  }
-
-  private AgentID getAgentID (MessageAddress agent, boolean refreshCache) throws NameLookupException
-  {
-    if (agent == null) return null;
-
-	ServiceBroker sb = getServiceBroker();
-    Class sc = TopologyReaderService.class;
-	TopologyReaderService topologySvc = (TopologyReaderService) sb.getService (this, sc, null);
-
-    TopologyEntry entry = null;
-
-    if (!refreshCache) entry = topologySvc.getEntryForAgent (agent.getAddress());
-    else entry = topologySvc.lookupEntryForAgent (agent.getAddress());
-
-    if (entry == null)
-    {
-      Exception e = new Exception ("Topology service blank on agent! : " +agent);
-      throw new NameLookupException (e);
-    }
-
-    String nodeName = entry.getNode();
-    String agentName = agent.toString();
-    String agentIncarnation = "" + entry.getIncarnation();
-
-    return new AgentID (nodeName, agentName, agentIncarnation);
   }
 }

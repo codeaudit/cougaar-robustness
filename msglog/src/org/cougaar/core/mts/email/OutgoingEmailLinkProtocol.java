@@ -120,7 +120,6 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
 
   private static boolean debug;
   private static boolean debugMail = false;
-  private static boolean showTraffic;
 
   private int protocolCost;
   private HashMap links;
@@ -162,13 +161,6 @@ System.err.println ("OutgoingEmailLinkProtocol: initialize called");
       System.err.println ("OutgoingEmailLinkProtocol: Registry not available!");
     }
     else System.err.println ("OutgoingEmailLinkProtocol: "+getRegistry().getIdentifier());
-  }
-
-  public void load () 
-  {
-    super_load();
-    String sta = "org.cougaar.core.mts.ShowTrafficAspect";
-    showTraffic = (getAspectSupport().findAspect(sta) != null);
   }
 
   public void setNameSupport (NameSupport nameSupport) 

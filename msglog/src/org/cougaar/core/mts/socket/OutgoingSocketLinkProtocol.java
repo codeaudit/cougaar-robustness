@@ -97,7 +97,6 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
   public static final String PROTOCOL_TYPE = "-socket";
 
   private static final boolean debug;
-  private static boolean showTraffic;
 
   private static final int protocolCost;
   private static final int connectTimeout;
@@ -133,13 +132,6 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
     {
       throw new RuntimeException ("Failure starting up OutgoingSocketLinkProtocol!");
     }
-  }
-
-  public void load () 
-  {
-    super_load();
-    String sta = "org.cougaar.core.mts.ShowTrafficAspect";
-    showTraffic = (getAspectSupport().findAspect(sta) != null);
   }
 
   public String toString ()

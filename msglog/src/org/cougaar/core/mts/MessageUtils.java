@@ -25,7 +25,6 @@
 package org.cougaar.core.mts;
 
 import org.cougaar.core.mts.acking.Ack;
-import org.cougaar.core.mts.acking.AgentID;
 import org.cougaar.core.mts.acking.PureAckMessage;
 import org.cougaar.core.mts.acking.PureAckAckMessage;
 
@@ -314,27 +313,27 @@ public final class MessageUtils
 
     if (isPureAckMessage (msg))
     {
-      specialType = "(PureAckMsg for Msg " +getSrcMsgNumber(msg)+ ")";
+      specialType = " (PureAckMsg for Msg " +getSrcMsgNumber(msg)+ ")";
     }
     else if (isPureAckAckMessage (msg))
     {
-      specialType = "(PureAckAckMsg for PureAckMsg " +getSrcMsgNumber(msg)+ ")";
+      specialType = " (PureAckAckMsg for PureAckMsg " +getSrcMsgNumber(msg)+ ")";
     }
     else if (isHeartbeatMessage (msg))
     {
-      specialType = "(HeartbeatMsg)";
+      specialType = " (HeartbeatMsg)";
     }
     else if (isPingMessage (msg))
     {
-      specialType = "(PingMsg)";
+      specialType = " (PingMsg)";
     }
     else if (isTrafficMaskingMessage (msg))
     {
-      specialType = "(TrafficMaskingMsg)";
+      specialType = " (TrafficMaskingMsg)";
     }
 
     String msgNum = (hasMessageNumber (msg) ? ""+getMessageNumber (msg) : "[]");
-    return "Msg " + msgNum + " " + specialType;
+    return "Msg " + msgNum + specialType;
   }
 
   public static String toString (AttributedMessage msg)

@@ -152,30 +152,15 @@ private boolean hasStartedUp = false;
       throw new RuntimeException ("Bad or missing property: " +s);
     }
 */
-/*
-    s = "org.cougaar.message.protocol.email.ignoreOldMessages";
-    ignoreOldMessages = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
-
-    if (ignoreOldMessages)
-    {
-      System.err.println ("FYI: " +this+ " is ignoring old messages.");
-
-      //  Check for a grace period 
-
-      s = "org.cougaar.message.protocol.email.oldMsgGracePeriod";
-      gracePeriod = Integer.valueOf(System.getProperty(s,"120000")).intValue();
-    }
-*/
     s = "org.cougaar.message.protocol.email.mailServerPollTimeSecs";
     mailServerPollTime = Integer.valueOf(System.getProperty(s,"5")).intValue();
+  }
 
-    //  Set showTraffic based on if ShowTrafficAspect is loaded
-
-    s = "org.cougaar.core.mts.ShowTrafficAspect";
-    // showTraffic = (AspectSupportImpl.instance().findAspect(s) != null);
-    // showTraffic = (getAspectSupport().findAspect(s) != null);
-
-showTraffic = true; // HACK!!!
+  public void load () 
+  {
+    super_load();
+    String sta = "org.cougaar.core.mts.ShowTrafficAspect";
+    showTraffic = (getAspectSupport().findAspect(sta) != null);
   }
 
   public DestinationLink getDestinationLink (MessageAddress destination) 
@@ -647,31 +632,12 @@ hasStartedUp = false;
       try
       {
         emailIn = new EmailInputStream (inbox, pollTime, cache);
-
         emailIn.setInfoDebug (debug);      // informative progress debug
         emailIn.setDebug (false);          // low-level debug
         emailIn.setDebugMail (debugMail);  // low-level mail debug
-
         emailIn.setFromFilter ("EmailStream#");
         emailIn.setSubjectFilter ("To: " + nodeID);
-
         emailIn.setPollTime (pollTime);
-/*
-        //  We get the date that the OutgoingEmailLinkProtocol was created
-        //  so we can detect messages that are responses for earlier incarnations
-        //  of this Node, and (for now) discard them.  Note we are making the 
-        //  (non-real-world) assumption that the clocks of all the Nodes are 
-        //  synchronized.  This is a temporary scheme to assist in testing and 
-        //  assessment, but is not meant for beyond that.  The grace period
-        //  allows some room for de-synchronization among the machines.  It needs
-        //  to be less than the time between tests.
-
-        if (ignoreOldMessages)
-        {        
-          Date bday = OutgoingEmailLinkProtocol.transportBirthday;
-          emailIn.ignoreOlderMessages (new Date (bday.getTime()-gracePeriod));
-        }
-*/
         return emailIn;
       }
       catch (Exception e) 

@@ -132,11 +132,6 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     socketSpecs = new SocketSpec[1];
     socketSpecs[0] = new SocketSpec (localhost, port);
 
-    //  Check if ShowTrafficAspect is loaded
-
-    String sta = "org.cougaar.core.mts.ShowTrafficAspect";
-//    showTraffic = (getAspectSupport().findAspect(sta) != null);
-//  showTraffic = (AspectSupportImpl.instance().findAspect(sta) != null);
 /*
     //  HACK!!!  See setNameSupport() as to why this is commented out 
 
@@ -147,6 +142,13 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
       throw new RuntimeException ("Problem starting IncomingSocketLinkProtocol");
     }
 */
+  }
+
+  public void load () 
+  {
+    super_load();
+    String sta = "org.cougaar.core.mts.ShowTrafficAspect";
+    showTraffic = (getAspectSupport().findAspect(sta) != null);
   }
 
   public String toString ()

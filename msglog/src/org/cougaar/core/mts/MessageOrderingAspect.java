@@ -26,17 +26,16 @@ package org.cougaar.core.mts;
 
 import java.util.*;
 
-import org.cougaar.core.mts.acking.AgentID;
-
 
 /**
- **  Enforce message ordering on incoming messages based on message 
- **  number contained in message number attribute.
+ **  Enforce message ordering on incoming messages based on the message 
+ **  number contained in the message number attribute.
  **/
 
 public class MessageOrderingAspect extends StandardAspect
 {
-  private static final Hashtable sequenceTable = new Hashtable();
+  private static final Hashtable numberSequenceTables = new Hashtable();
+  private static final String AGENT_INCOMING_SEQ_TABLE = "AgentIncomingMsgNumSequenceTable";
 
   public MessageOrderingAspect () 
   {}
@@ -67,9 +66,7 @@ public class MessageOrderingAspect extends StandardAspect
 
     public MessageAttributes deliverMessage (AttributedMessage msg) 
     {
-      //  Sanity checks
-
-// put in check that message numbering aspect is in?
+      //  Sanity check
 
       if (MessageUtils.hasMessageNumber (msg) == false)
       {
@@ -97,7 +94,7 @@ public class MessageOrderingAspect extends StandardAspect
       {
         //  Regular ordered messages
 
-        int nextNum = getNextMsgNumInSequence (msg);
+        int nextNum = getNextMessageNumber (msg);
 
         if (num < nextNum)
         {
@@ -110,7 +107,7 @@ public class MessageOrderingAspect extends StandardAspect
           //  We have a match!  
 
           doDelivery (msg);
-          setNextMsgNumInSequence (msg, nextNum+1);
+          setNextMessageNumber (msg, nextNum+1);
 
           //  Now see how many (if any) waiting messages can be delivered
 
@@ -126,12 +123,12 @@ public class MessageOrderingAspect extends StandardAspect
             for (int i=0; i<len; i++)
             {
               num = MessageUtils.getMessageNumber (msgs[i]);
-              nextNum = getNextMsgNumInSequence (msgs[i]);
+              nextNum = getNextMessageNumber (msgs[i]);
 
               if (num == nextNum) 
               {
                 doDelivery (msgs[i]);
-                setNextMsgNumInSequence (msgs[i], nextNum+1);
+                setNextMessageNumber (msgs[i], nextNum+1);
                 queue.remove (msgs[i]);
               }
               else break;
@@ -152,7 +149,7 @@ public class MessageOrderingAspect extends StandardAspect
       {
         //  Negative numbers are reserved for unordered but ackable messages
         //  such as acks and pings.  Acks are never delivered to agents but
-        //  pings are.
+        //  pings are (acks are filtered out in the acking aspect).
 
         doDelivery (msg);
         status = MessageAttributes.DELIVERY_STATUS_DELIVERED;
@@ -182,7 +179,7 @@ public class MessageOrderingAspect extends StandardAspect
       }
       else if (m2 == null) return -1;
 
-      //  Sort on message number
+      //  Sort on message number (lower numbers come first)
 
       int n1 = MessageUtils.getMessageNumber ((AttributedMessage) m1);
       int n2 = MessageUtils.getMessageNumber ((AttributedMessage) m2);
@@ -197,48 +194,104 @@ public class MessageOrderingAspect extends StandardAspect
     }
   }
 
-  //  We maintain a global table of sequence numbers as there are
-  //  other clients of this information within MTS besides us here.
-  //  WAIT - maybe not any longer - wait a bit and see how it turns
-  //  out - make private for now.
-
-  private static int getNextMsgNumInSequence (AttributedMessage msg)
+  private int getNextMessageNumber (AttributedMessage msg) 
   {
-    return getNextMsgNumInSequence (MessageUtils.getFromAgent(msg), MessageUtils.getToAgent(msg));
-  }
+    //  NOTE:  Positive message numbers start at 1, not 0.  This is because
+    //  some messages have negative message numbers (eg. acks, pings)
+    //  and there is no -0.  Messages with numbers 0 or less are unordered,
+    //  so we don't maintain anything on them here.
 
-  private static int getNextMsgNumInSequence (AgentID fromAgent, AgentID toAgent)
-  {
-    synchronized (sequenceTable)
+    AgentID fromAgent = MessageUtils.getFromAgent (msg);
+    MessageAddress agentAddr = MessageUtils.getOriginatorAgent (msg);
+    Hashtable agentTable = getAgentNumberSequenceTable (fromAgent, agentAddr);
+
+    if (agentTable == null) 
     {
-      String key = AgentID.makeSequenceID (fromAgent, toAgent);
-      Int num = (Int) sequenceTable.get (key);
-      if (num != null) return num.value;
+      //  HACK!  What to do here?
+
+      throw new RuntimeException (new MisdeliveredMessageException (msg));
+    }
+
+    synchronized (agentTable)
+    {
+      AgentID toAgent = MessageUtils.getToAgent (msg);
+      String key = toAgent.getNumberSequenceKey();
+      Int n = (Int) agentTable.get (key);
+      if (n != null) return n.value;
 
       //  Positive message numbers start at 1
 
-      setNextMsgNumInSequence (fromAgent, toAgent, 1);
+      setNextMessageNumber (msg, 1);
       return 1;
     }
   }
 
-  private static void setNextMsgNumInSequence (AttributedMessage msg, int msgNum)
+  private void setNextMessageNumber (AttributedMessage msg, int msgNum)
   {
-    setNextMsgNumInSequence (MessageUtils.getFromAgent(msg), MessageUtils.getToAgent(msg), msgNum);
-  }
+    AgentID fromAgent = MessageUtils.getFromAgent (msg);
+    MessageAddress agentAddr = MessageUtils.getOriginatorAgent (msg);
+    Hashtable agentTable = getAgentNumberSequenceTable (fromAgent, agentAddr);
 
-  private static void setNextMsgNumInSequence (AgentID fromAgent, AgentID toAgent, int msgNum)
-  {
-    synchronized (sequenceTable)
+    if (agentTable == null) 
     {
-      String key = AgentID.makeSequenceID (fromAgent, toAgent);
-      Int num = (Int) sequenceTable.get (key);
-      if (num == null) sequenceTable.put (key, new Int (msgNum));
-      else num.value = msgNum;
+      //  HACK!  What to do here?
+
+      throw new RuntimeException (new MisdeliveredMessageException (msg));
+    }
+  
+    synchronized (agentTable)
+    {
+      AgentID toAgent = MessageUtils.getToAgent (msg);
+      String key = toAgent.getNumberSequenceKey();
+      Int n = (Int) agentTable.get (key);
+      if (n == null) agentTable.put (key, new Int (msgNum));
+      else n.value = msgNum;
     }
   }
 
-  private static class Int  // because Java Integers are not mutable
+  private Hashtable getAgentNumberSequenceTable (AgentID agent, MessageAddress agentMsgAddr)
+  {
+    Hashtable agentTable;
+
+    synchronized (numberSequenceTables)
+    {
+      String key = agent.getNumberSequenceKey();
+      agentTable = (Hashtable) numberSequenceTables.get (key);
+
+      if (agentTable == null)
+      {
+        //  Try to get the table from the agent state
+
+        AgentState agentState = getRegistry().getAgentState (agentMsgAddr);
+        
+        if (agentState == null)
+        {
+          String s = "AgentState missing for agent " +agentMsgAddr;
+          loggingService.error (s);
+          return null;
+        }
+
+        synchronized (agentState)
+        {
+          agentTable = (Hashtable) agentState.getAttribute (AGENT_INCOMING_SEQ_TABLE);
+
+          if (agentTable == null)
+          {
+            agentTable = new Hashtable();
+            agentState.setAttribute (AGENT_INCOMING_SEQ_TABLE, agentTable);
+System.err.println ("creating new incoming seq num table for agent " +agentMsgAddr);
+          }        
+else System.err.println ("using incoming seq num table from AgentState for agent " +agentMsgAddr);
+        }
+
+        numberSequenceTables.put (key, agentTable);
+      }
+
+      return agentTable;
+    }
+  }
+
+  private static class Int  // for mutable int objects
   {
     public int value;
     public Int (int v) { value = v; }

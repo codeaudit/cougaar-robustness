@@ -69,7 +69,7 @@ public class ShowTrafficAspect extends StandardAspect
       throws UnregisteredNameException, NameLookupException, 
              CommFailureException, MisdeliveredMessageException
     {
-      MessageAttributes attrs = super.forwardMessage (message);
+      MessageAttributes attrs = link.forwardMessage (message);
 
       //  Print the traffic indicator here, after a successful send.
       //  If unsuccessful, an exception would be thrown above.
@@ -110,6 +110,7 @@ if (attr.equals (MessageAttributes.DELIVERY_STATUS_DELIVERED)) showTraffic (link
         else if (name.equals("org.cougaar.core.mts.RMILinkProtocol")) statusChar = 'R';                   //8.6.1
         else if (name.equals("org.cougaar.core.mts.email.OutgoingEmailLinkProtocol")) statusChar = 'E';   //8.6.1
         else if (name.equals("org.cougaar.core.mts.socket.OutgoingSocketLinkProtocol")) statusChar = 'S'; //8.6.1
+        else if (name.equals("org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol")) statusChar = 'U'; 
         else if (name.equals("org.cougaar.core.mts.NNTPLinkProtocol")) statusChar = 'N';                  //8.6.1
         else if (name.equals("org.cougaar.core.mts.SSLRMILinkProtocol")) statusChar = 'V';                //8.6.1
         else if (name.equals("org.cougaar.core.mts.SerializedRMILinkProtocol")) statusChar = 'Z';         //8.6.1
