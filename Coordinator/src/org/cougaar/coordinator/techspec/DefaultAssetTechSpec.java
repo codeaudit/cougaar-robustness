@@ -72,8 +72,6 @@ public class DefaultAssetTechSpec implements AssetTechSpecInterface, NotPersista
         this.rev = "1.0";
         this.uid = uid;
         this.assetID = new AssetID(assetName, type);
-        
-        
         properties = new Vector();
         superiors = new Hashtable();
         

@@ -185,8 +185,15 @@ logger.warn("!!!! **********************************************************");
                     //*** Handle a new agent
                     if ( newAgent )  {
 
-                        logger.debug("============>>> Saw new agent asset ["+agentName+"] with host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
+                        //Make sure we haven't seen this agent before we create a new one!
+                        agentAsset = DefaultAssetTechSpec.findAssetByID(new AssetID(agentName, AssetType.AGENT));
+                        if (agentAsset != null) {
+                            logger.debug("************************>>> Saw DUPLICATE agent asset ["+agentName+"] with host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
+                            continue;
+                        }                    
                         
+                        
+                        logger.debug("============>>> Saw new agent asset ["+agentName+"] with host/node info: hostName = "+hostName + "  nodeName = "+nodeName);
                         agentAsset = new DefaultAssetTechSpec( hostAsset, nodeAsset,  agentName, AssetType.AGENT, us.nextUID());
                         //Use NODE name to assign FWD / REAR property -- doing this also for nodes in getNode()
                         if (nodeName.startsWith("REAR")) {
@@ -432,8 +439,12 @@ logger.warn("!!!! **********************************************************");
         hostAsset = getHost(hostName);
         nodeAsset = getNode(hostAsset, nodeName);
 
-        agentAsset = new DefaultAssetTechSpec( hostAsset, nodeAsset,  agentName, AssetType.AGENT, us.nextUID());
-        queueChangeEvent(new AssetChangeEvent( agentAsset, AssetChangeEvent.NEW_ASSET));
+        //Make sure we haven't seen this agent before we create a new one!
+        agentAsset = DefaultAssetTechSpec.findAssetByID(new AssetID(agentName, AssetType.AGENT));
+        if (agentAsset == null) {
+            agentAsset = new DefaultAssetTechSpec( hostAsset, nodeAsset,  agentName, AssetType.AGENT, us.nextUID());
+            queueChangeEvent(new AssetChangeEvent( agentAsset, AssetChangeEvent.NEW_ASSET));
+        }
     }
     
     
