@@ -5,7 +5,7 @@
 <SensorType name="org.cougaar.coordinator.examples.RestartDefense.RestartDiagnosis" 
             sensesAssetType="Agent"
             sensesStateDimension="Liveness" 
-		sensorLatency="120000">
+		sensorLatency="30000">
     <PotentialDiagnoses>
         <Diagnosis name="Live" defaultValue="TRUE" />
         <Diagnosis name="Dead" />
