@@ -235,6 +235,7 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
      
         Diagnosis current;
         DiagRecord rec;
+
         
         //First look for rec
         synchronized(diagnoses) { //so 
@@ -292,6 +293,8 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
         
         public DiagRecord(Diagnosis t, int state, boolean isWrapper) {
 
+            
+            
             setDiagnosis(t, state, isWrapper);
             
             //Get the identifying properties of this Diagnosis
@@ -472,6 +475,7 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
                 //          }
                 out.close();
             } catch (java.io.IOException ie) { ie.printStackTrace(); }
+              catch (Exception e) { e.printStackTrace(); }
         }
         
         
@@ -592,8 +596,12 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
 
                 out.print("<TR>\n");
 
+
                 //Output the asset name
-                out.print("   <TD>"+ dr.getDiagnosis().getAssetName() +"</TD>\n");
+                String dName = "?";
+                if (dr.getDiagnosis() != null) { dName = dr.getDiagnosis().getAssetName(); }
+                else if (dr.getWrapper() != null) { dName = dr.getWrapper().getAssetName(); }
+                out.print("   <TD>"+ dName +"</TD>\n");
 
                 //Output the diagnosis name
                 out.print("   <TD>"+ dr.getName(useShortName) +"</TD>\n");
