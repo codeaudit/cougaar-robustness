@@ -6,7 +6,7 @@
 #          https://cvs.ultralog.net/ultralog/AspectConfiguration.  
 #          Changes made there must be propagated here.  
 #
-# Warning: org.cougaar.mts.std.LoopbackLinkProtocol should be loaded 
+# Warning: org.cougaar.mts.base.LoopbackLinkProtocol should be loaded 
 #          before all other protocols.       
 #
 # Warning: If deconfliction.rule is applied, it must be applied BEFORE this rule
@@ -32,8 +32,8 @@ nsta = "org.cougaar.mts.std.NameSupportTimeoutAspect"
 
 aspects = [mta, rsca, sta, sa, rsta, msha, maa, rtta, mna, moa]
 
-loopback = "org.cougaar.mts.std.LoopbackLinkProtocol"
-rmi      = "org.cougaar.mts.std.RMILinkProtocol"
+loopback = "org.cougaar.mts.base.LoopbackLinkProtocol"
+rmi      = "org.cougaar.mts.base.RMILinkProtocol"
 
 protocols = [loopback, rmi]
 
@@ -70,16 +70,16 @@ end
 
 society.each_node do |node|
     
-    node.override_parameter("-Dorg.cougaar.core.wp.server.expireTTD", 1200000)          #default=240000
+    #node.override_parameter("-Dorg.cougaar.core.wp.server.expireTTD", 1200000)          #default=240000
     #node.override_parameter("-Dorg.cougaar.core.wp.resolver.lease.renewRation", 0.75)  #default=0.75
-    node.override_parameter("-Dorg.cougaar.core.wp.server.successTTD", 450000)          #default=90000
-    node.override_parameter("-Dorg.cougaar.core.wp.server.failTTD", 150000)             #default=30000
+    #node.override_parameter("-Dorg.cougaar.core.wp.server.successTTD", 450000)          #default=90000
+    #node.override_parameter("-Dorg.cougaar.core.wp.server.failTTD", 150000)             #default=30000
 
-    node.override_parameter("-Dorg.cougaar.message.transport.aspects.RMISendTimeoutAspect.connectTimeout", "60000")
-    node.override_parameter("-Dorg.cougaar.message.transport.aspects.RMISendTimeoutAspect.readTimeout", "60000")
-    node.override_parameter("-Dorg.cougaar.message.transport.aspects.RMISendTimeoutAspect.writeTimeout", "60000")
+    #node.override_parameter("-Dorg.cougaar.message.transport.aspects.RMISendTimeoutAspect.connectTimeout", "60000")
+    #node.override_parameter("-Dorg.cougaar.message.transport.aspects.RMISendTimeoutAspect.readTimeout", "60000")
+    #node.override_parameter("-Dorg.cougaar.message.transport.aspects.RMISendTimeoutAspect.writeTimeout", "60000")
 
-    node.override_parameter("-Dorg.cougaar.message.transport.aspects.acking.resendMultiplier", 6)
+    #node.override_parameter("-Dorg.cougaar.message.transport.aspects.acking.resendMultiplier", 6)
 
     # I don't think this is needed anymore, but I'm keeping it just in case.
     # need this for disconnected nodes
