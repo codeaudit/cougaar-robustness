@@ -43,6 +43,12 @@ public interface ThreatAlert extends UniqueObject, Relay.Target {
   public int getSeverityLevel();
 
   /**
+   * Set ThreatAlert severity L=sevel.
+   * @param severityLevel
+   */
+  public void setSeverityLevel(int severityLevel);
+
+  /**
    * Get severity level associated with this alert.
    * @return SeverityLevel as String
    */
@@ -54,11 +60,17 @@ public interface ThreatAlert extends UniqueObject, Relay.Target {
    */
   public Date getCreationTime();
 
-  /**
+ /**
    * Get time that alert becomes active.
    * @return ThreatAlert activation time.
    */
   public Date getStartTime();
+
+  /**
+   * Set start time for alert.
+   * @param startTime
+   */
+  public void setStartTime(Date startTime);
 
   /**
    * Get time that alert expires.
@@ -67,9 +79,35 @@ public interface ThreatAlert extends UniqueObject, Relay.Target {
   public Date getExpirationTime();
 
   /**
+   * Set expiration time for alert.
+   * @param expirationTime
+   */
+  public void setExpirationTime(Date startTime);
+
+  /**
+   * Returns true if the alert is currently active.  An alert is active
+   * if startTime < currentTime < expirationTime;
+   * @return True if alert is active
+   */
+  public boolean isActive();
+
+  /**
+   * Returns true if the alert period has expired.  An alert is expired
+   * if currentTime > expirationTime;
+   * @return True if alert period has expired
+   */
+  public boolean isExpired();
+
+  /**
    * Get Assets that are affected by the alert.
    * @return Array of Assets affected by alert.
    */
   public Asset[] getAffectedAssets();
+
+  /**
+   * Add an asset that is affected by threat.
+   * @param asset Asset affected by threat
+   */
+  public void addAsset(Asset asset);
 
 }
