@@ -452,7 +452,7 @@ public class NewRobustnessController extends RobustnessControllerBase {
         initializeNodeStats();
       }
       if (thisAgent.equals(preferredLeader()) &&
-          !getLocation(thisAgent).equals(source)) {
+          !source.equals(getLocation(thisAgent))) {
         StatsEntry se = (StatsEntry) runStats.get(source);
         if (se.count >= 20) {
           StatCalc newSc = (StatCalc) nodeLatencyStats.get(source);
