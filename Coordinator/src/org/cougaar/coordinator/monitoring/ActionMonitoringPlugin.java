@@ -96,18 +96,21 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
             Action action = aw.getAction();
             ActionRecord latestResult = action.getValue();
             ActionPatience ap = findActionPatience(action);
+            if (logger.isDebugEnabled()) logger.debug(action.toString());
+            if (logger.isDebugEnabled()) if (ap != null) logger.debug(ap.toString()); else logger.debug("No ActionPatience Found");
             if (latestResult != null &&                      // null when action is not started
 		latestResult.getCompletionCode() != null) {  // null when action is not stopped
                 if ((latestResult.getCompletionCode().equals(Action.COMPLETED)) // make sure it completed correctly
                  && (latestResult.getStartTime() >= ap.getStartTime()))        // make sure it's a current action
                     {
                         ActionTimeoutAlarm alarm = (ActionTimeoutAlarm)monitoredActions.get(action);
+                        if (logger.isDebugEnabled()) logger.debug(monitoredActions.toString());
                         monitoredActions.remove(action);
-                        openTransaction();
                         ap.setResult(Action.COMPLETED);
-                        publishChange(new SuccessfulAction(action));
+                        SuccessfulAction sa = new SuccessfulAction(action);
+                        publishChange(sa);
+                        if (logger.isDebugEnabled()) logger.debug("Published a SuccessfulAction object: " + sa.toString());
                         publishChange(ap);
-                        closeTransaction();
                         alarm.cancel();
                     }
                 }
@@ -152,6 +155,7 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
         }
         alarm = new ActionTimeoutAlarm(ap);
         monitoredActions.put(ap.getAction(), alarm);
+        if (logger.isDebugEnabled()) logger.debug("Index after adding an Alarm:" + monitoredActions.toString());
         getAlarmService().addRealTimeAlarm(alarm);            
         }
 
@@ -179,6 +183,8 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
             openTransaction();
             ap.setResult(Action.FAILED);
             monitoredActions.remove(action);
+            if (logger.isDebugEnabled()) logger.debug("Alarm expired for: " + action.toString());
+            if (logger.isDebugEnabled()) logger.debug("Index after deleting alarm: " + monitoredActions.toString());
             publishChange(ap);
             closeTransaction();
         }

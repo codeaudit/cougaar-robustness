@@ -13,7 +13,7 @@
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="MEDIUM" />
-                <Time duration="10000" />
+                <Time duration="60000" />
             </OneTimeCost>
             <ContinuingCost>
                 <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
@@ -24,7 +24,7 @@
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="MEDIUM" />
-                <Time duration="10000" />
+                <Time duration="60000" />
             </OneTimeCost>
             <ContinuingCost>
                 <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
@@ -35,7 +35,7 @@
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="MEDIUM" />
-                <Time duration="10000" />
+                <Time duration="60000" />
             </OneTimeCost>
             <ContinuingCost>
                 <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
@@ -50,21 +50,21 @@
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="MEDIUM" />
-                <Time duration="10000" />
+                <Time duration="60000" />
             </OneTimeCost>
         </Transition>
         <Transition WhenActualStateIs="No" EndStateWillBe="No" IntermediateStateWillBe="No" >
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="MEDIUM" />
-                <Time duration="10000" />
+                <Time duration="60000" />
             </OneTimeCost>
         </Transition>
         <Transition WhenActualStateIs="Isolated" EndStateWillBe="No" IntermediateStateWillBe="Isolated" >
             <OneTimeCost>
                 <CPU intensity="MEDIUM" />
                 <Memory intensity="MEDIUM" />
-                <Time duration="10000" />
+                <Time duration="60000" />
             </OneTimeCost>
         </Transition>
     </Action>

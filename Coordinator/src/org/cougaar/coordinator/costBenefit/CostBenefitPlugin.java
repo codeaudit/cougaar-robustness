@@ -230,26 +230,25 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
 
     private double computeCostComponent(ActionCost.Cost thisCost, double memSize, double bandwidthSize) {
-        if (logger.isDebugEnabled()) logger.debug("In computeCostComponent: "+((thisCost!=null)?thisCost.toString():"NULL")+":"+memSize+":"+bandwidthSize);
         if (thisCost == null) return 0.0;  // no cost in this dimension
         double c = thisCost.getIntensity();
         if (!(thisCost.isAgentSizeAFactor()) || thisCost.isMessageSizeAFactor()) {
-            if (logger.isDebugEnabled()) logger.debug(thisCost+" yields: "+c);
             return c;
             }
         double outCost = 0.0;
         if (thisCost.isAgentSizeAFactor()) outCost = outCost + c * memSize;
         if (thisCost.isMessageSizeAFactor()) outCost = outCost + c * bandwidthSize;
-        if (logger.isDebugEnabled()) logger.debug(thisCost+" yields: "+outCost);
         return outCost;
     }
 
     private double computeStateBenefit(AssetState state, CostBenefitKnob knob) {
-        if(logger.isDebugEnabled()) logger.debug(state+":"+knob);
         if (state == null) return 0.0; // no such state - should only be for Intermediate state
-        else return (knob.getCompletenessWeight()*state.getRelativeMauCompleteness() 
+        double stateBenefit = 
+                knob.getCompletenessWeight()*state.getRelativeMauCompleteness() 
               + knob.getSecurityWeight()*state.getRelativeMauSecurity() 
-              + knob.getTimelinessWeight()*1.0);  // FIX - need a way to determine MauTimeliness (the 1.0 factor in the preceeding)
+              + knob.getTimelinessWeight()*1.0;  // FIX - need a way to determine MauTimeliness (the 1.0 factor in the preceeding)
+        if (logger.isDebugEnabled()) logger.debug("Benefit of state: " + state.toString() + " is " + stateBenefit);
+        return stateBenefit;
     }
 
    private VariantEvaluation createVariantEvaluation
@@ -276,7 +275,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                 startStateProb = currentStateDimensionEstimation.getProbability(startStateName);
                 AssetTransitionWithCost atwc = thisVariantDescription.getTransitionForState(startState);
                 if (atwc != null) { // the TechSpecs define a transition by this Variant for this state
-                    if (logger.isDebugEnabled()) logger.debug("Found a transition for: "+startStateName+", "+atwc.toString());
+                    if (logger.isDebugEnabled()) logger.debug("Found a transition for: "+ thisVariantDescription.name() + " for start state " + startStateName+" is "+atwc.toString());
                     startStateBenefit = computeStateBenefit(startState, knob);
                     intermediateStateBenefit = computeStateBenefit(atwc.getIntermediateValue(), knob);
                     endStateBenefit = computeStateBenefit(atwc.getEndValue(), knob);
@@ -293,7 +292,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                         predictedBenefit = predictedBenefit + startStateProb*(horizon*intermediateStateBenefit - horizon*startStateBenefit);
                         predictedCost = predictedCost + startStateProb*(horizon*aggregateCost(oneTimeCost, memorySize, bandwidthSize));
                         }
-                    if (logger.isDebugEnabled()) logger.debug("**** "+startStateName+":"+startStateProb+":"+horizon+":"+transitionTime+":"+predictedCost);
+                    if (logger.isDebugEnabled()) logger.debug("**** "+startStateName+", prob="+startStateProb+", E(B)="+predictedBenefit+", horizon="+horizon+", Time="+transitionTime+", E(C)="+predictedCost);
                     maxTransitionTime = Math.max(maxTransitionTime, transitionTime);
                     
                     }

@@ -599,7 +599,8 @@ public abstract class Action
     public String toString ( ) { return "<" + getClass().getName()+'@'+Integer.toHexString(hashCode())+":" + //this.getClass().getName()+ ":" + 
                                               this.getAssetType() + ":" + 
                                               this.getAssetName() + "=" + 
-                                              (this.getValue()!=null ? this.getValue().getAction():"NULL") + ">";
+                                              this.getPermittedValues() + "/" +
+                                              (this.getValue()!=null ? this.getValue().toString():"NULL") + ">";
     }
 
     public String dump() { return toString(); }
@@ -792,6 +793,23 @@ public abstract class Action
     
         private int val;
         protected CompletionCode(int i) { this.val = i; }
+        private int getVal() { return val; }
+
+        public String toString() {
+            switch (val)
+                { 
+                    case 1: return "Completed";
+                    case 2: return "Aborted";
+                    case 3: return "Failed";
+                    case 4: return "Ended_Unknown";
+                }
+                return null;
+        }
+
+        public boolean equals(CompletionCode cc) {
+            return (this.getVal() == cc.getVal());
+        }
+
     }
     
     

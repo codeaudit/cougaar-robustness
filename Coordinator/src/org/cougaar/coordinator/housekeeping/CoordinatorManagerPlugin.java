@@ -49,11 +49,14 @@ import org.cougaar.coordinator.ActionsWrapper;
 import org.cougaar.coordinator.Action;
 import org.cougaar.coordinator.ActionUtils;
 import org.cougaar.coordinator.costBenefit.CostBenefitEvaluation;
+import org.cougaar.coordinator.activation.ActionPatience;
 
 import org.cougaar.coordinator.ActionIndex;
 import org.cougaar.coordinator.DiagnosisIndex;
 import org.cougaar.coordinator.CostBenefitEvaluationIndex;
 import org.cougaar.coordinator.StateEstimationIndex;
+import org.cougaar.coordinator.ActionPatienceIndex;
+
 import org.cougaar.coordinator.believability.StateEstimation;
 
 import java.util.Iterator;
@@ -67,6 +70,7 @@ public class CoordinatorManagerPlugin extends DeconflictionPluginBase implements
     private IncrementalSubscription actionsWrapperSubscription;
     private IncrementalSubscription costBenefitEvaluationSubscription;   
     private IncrementalSubscription stateEstimationSubscription;   
+    private IncrementalSubscription actionPatienceSubscription;   
     private IndexKey key;
     private boolean indicesCreated = false;
         
@@ -86,6 +90,7 @@ public class CoordinatorManagerPlugin extends DeconflictionPluginBase implements
             publishAdd(new ActionIndex());
             publishAdd(new StateEstimationIndex());
             publishAdd(new CostBenefitEvaluationIndex());
+            publishAdd(new ActionPatienceIndex());
             if (logger.isDebugEnabled()) logger.debug("Created ALL BB Indices");
             indicesCreated = true;
             }
@@ -126,6 +131,13 @@ public class CoordinatorManagerPlugin extends DeconflictionPluginBase implements
             indexCostBenefitEvaluation(cbe, key);
         }
 
+        //Handle the addition of new ActionPatience(s)
+        for ( Iterator iter = actionPatienceSubscription.getAddedCollection().iterator();  
+          iter.hasNext() ; ) 
+        {
+            ActionPatience ap = (ActionPatience)iter.next();
+            indexActionPatience(ap, key);
+        }
 
 }
 
@@ -164,6 +176,8 @@ public class CoordinatorManagerPlugin extends DeconflictionPluginBase implements
         stateEstimationSubscription = 
         ( IncrementalSubscription ) getBlackboardService().subscribe( StateEstimation.pred );
 
+        actionPatienceSubscription = 
+        ( IncrementalSubscription ) getBlackboardService().subscribe( ActionPatience.pred );
 
 }
     

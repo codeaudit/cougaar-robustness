@@ -67,6 +67,7 @@ public class CostBenefitEvaluation implements NotPersistable {
     
     public String toString() {
         String result = "CBE for: " + assetID.toString()+"\n";
+        result = result + "Horizon: " + horizon + "\n";
         Iterator iter = getActionEvaluations().values().iterator();
         while (iter.hasNext()) {
             ActionEvaluation thisAction = (ActionEvaluation)iter.next();
