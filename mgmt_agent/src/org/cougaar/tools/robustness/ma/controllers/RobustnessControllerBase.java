@@ -129,7 +129,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
     logger = org.cougaar.core.logging.LoggingServiceWithPrefix.add(logger, agentId + ": ");
     eventService = (EventService) bs.getServiceBroker().getService(this, EventService.class, null);
     heartbeatHelper = new HeartbeatHelper(bs);
-    moveHelper = new MoveHelper(bs);
+    moveHelper = new MoveHelper(bs, model);
     pingHelper = new PingHelper(bs);
     restartHelper = new RestartHelper(bs);
     loadBalancer = new LoadBalancer(bs, this, model);

@@ -32,6 +32,7 @@ import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.service.SchedulerService;
 //import org.cougaar.core.service.ThreadService;
 import org.cougaar.core.service.UIDService;
+import org.cougaar.core.node.NodeIdentificationService;
 
 import org.cougaar.core.component.BindingSite;
 import org.cougaar.core.component.ServiceBroker;
@@ -52,6 +53,8 @@ import org.cougaar.core.agent.service.alarm.Alarm;
 import org.cougaar.core.util.UID;
 
 import org.cougaar.util.UnaryPredicate;
+
+import org.cougaar.tools.robustness.ma.CommunityStatusModel;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -96,6 +99,7 @@ public class MoveHelper extends BlackboardClientComponent {
   private List moveQueue = Collections.synchronizedList(new ArrayList());
   private Map movesInProcess = Collections.synchronizedMap(new HashMap());
   private List remoteMoveRequestQueue = Collections.synchronizedList(new ArrayList());
+  private List moveRequestRelayQueue = Collections.synchronizedList(new ArrayList());
 
   private WakeAlarm wakeAlarm;
 
@@ -105,6 +109,9 @@ public class MoveHelper extends BlackboardClientComponent {
   private UIDService uidService = null;
   protected EventService eventService;
   private List listeners = new ArrayList();
+  private MessageAddress nodeId;
+
+  private CommunityStatusModel model;
 
   // Subscription to AgentControl objects used by MobilityService
   private IncrementalSubscription agentControlSub;
@@ -134,8 +141,9 @@ public class MoveHelper extends BlackboardClientComponent {
  * Constructor requires BindingSite to initialize needed services.
  * @param bs
  */
-  public MoveHelper(BindingSite bs) {
+  public MoveHelper(BindingSite bs, CommunityStatusModel model) {
     this.setBindingSite(bs);
+    this.model = model;
     initialize();
     load();
     start();
@@ -161,6 +169,13 @@ public class MoveHelper extends BlackboardClientComponent {
         (DomainService) getServiceBroker().getService(this, DomainService.class, null);
     mobilityFactory = (MobilityFactory) ds.getFactory("mobility");
     uidService = (UIDService) getServiceBroker().getService(this, UIDService.class, null);
+    NodeIdentificationService nis = (NodeIdentificationService)getBindingSite().getServiceBroker().getService(
+      this, NodeIdentificationService.class, null);
+    if (nis != null) {
+      this.nodeId = nis.getMessageAddress();
+      getBindingSite().getServiceBroker().releaseService(this, NodeIdentificationService.class, nis);
+    }
+
     super.load();
   }
 
@@ -198,7 +213,21 @@ public class MoveHelper extends BlackboardClientComponent {
       if (hsm.getRequestType() == HealthMonitorRequest.MOVE) {
         String agentNames[] = hsm.getAgents();
         for (int i = 0; i < agentNames.length; i++) {
-          moveAgent(agentNames[i], hsm.getDestinationNode());
+          String orig = hsm.getOriginNode();
+          if (orig.equals("") || orig == null) {
+            orig = model.getLocation(agentNames[i]);
+          }
+          String dest = hsm.getDestinationNode();
+          if (dest.equals("") || dest == null) {
+            HashSet set = new HashSet();
+            set.add(hsm.getOriginNode());
+            dest = RestartDestinationLocator.getRestartLocation(agentNames[i], set);
+          }
+          if (orig.equals(nodeId.getAddress()))
+            moveAgent(agentNames[i], dest);
+          else {
+            moveAgent(agentNames[i], orig, dest, hsm.getCommunityName());
+          }
         }
       }
     }
