@@ -7,6 +7,7 @@ description: Kill REAR-ROB-MGMT-NODE, REAR-A-NODE, 1-CA-BN-C-NODE, 123-MSB-NODE,
 
 insert_after :during_stage_1 do
   wait_for "NodesPersistedFindProviders", "REAR-ROB-MGMT-NODE", "REAR-A-NODE", "1-CA-BN-C-NODE", "2-CA-BN-A-NODE", "123-MSB-NODE"
+  do_action "Sleep", 3.minutes
   do_action "InfoMessage", "##### Killing Nodes REAR-ROB-MGMT-NODE, REAR-A-NODE, 1-CA-BN-C-NODE, 2-CA-BN-A-NODE, 123-MSB-NODE #####"
   do_action "KillNodes", "REAR-ROB-MGMT-NODE", "REAR-A-NODE", "1-CA-BN-C-NODE", "2-CA-BN-A-NODE", "123-MSB-NODE"
 end

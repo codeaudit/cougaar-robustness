@@ -164,7 +164,6 @@
           <file path="csmart/lib/robustness/mic/small_kill_agents.rb"/>
           <file path="csmart/lib/robustness/mic/small_kill_mgr.rb"/>
           <file path="csmart/lib/robustness/mic/small_kill_w_mgr.rb"/>
-          <file path="csmart/lib/robustness/mic/ua_big_kill.rb"/>
           <file path="csmart/lib/robustness/mic/ua_big_kill_m.rb"/>
           <file path="csmart/lib/robustness/mic/ua_big_kill_s.rb"/>
           <file path="csmart/lib/robustness/mic/ua_kill.rb"/>
