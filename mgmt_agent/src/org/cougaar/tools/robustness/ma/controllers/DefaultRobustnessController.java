@@ -415,7 +415,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    * Send Community Ready event if all expected agents are found and active.
    */
   protected void checkCommunityReady() {
-    if (communityReady == false && agentsAndLocationsActive()) {
+    if (thisAgent.equals(preferredLeader()) &&
+        isLeader(thisAgent) &&
+        communityReady == false &&
+        agentsAndLocationsActive()) {
       communityReady = true;
       event("Community " + model.getCommunityName() + " Ready");
       RestartDestinationLocator.clearRestarts();
@@ -458,9 +461,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   public void leaderChange(String priorLeader, String newLeader) {
     logger.info("LeaderChange: prior=" + priorLeader + " new=" + newLeader);
-      if (isLeader(thisAgent) && isAgent(priorLeader)) {
-        newState(priorLeader, RESTART);
-      }
+    if (isLeader(thisAgent) && isAgent(priorLeader)) {
+      newState(priorLeader, RESTART);
+    }
+    checkCommunityReady();
   }
 
   /**
@@ -473,6 +477,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                 " new=" + newLocation);
     // If agent has moved off this node stop heartbeats
     if (thisAgent.equals(priorLocation)) stopHeartbeats(name);
+    checkCommunityReady();
   }
 
   /**
