@@ -322,10 +322,10 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 
                     // special code to activate/deactivate RMIAction in tandem with SecurityDefenseAction - a special case for ACUC #2B
                     if (thisAction.getClass().getName().equals("org.cougaar.core.security.coordinator.Security_Defense_Setting")) {
-                        Action rmiAction = findAction(thisAction.getAssetID(), "org.cougaar.robustness.dos.coordinator.RMIAction").getAction;
+                        Action rmiAction = findAction(thisAction.getAssetID(), "org.cougaar.robustness.dos.coordinator.RMIAction").getAction();
                         if (proposedVariant.getVariantName().equals("High")) {
                             String rmiVariantName = "Disabled";
-                            VariantEvaluation rmiVariant = getRmiVariantEvaluation(cbe, rmiVariantName);
+                            VariantEvaluation rmiVariant = getRmiVariantEvaluation(cbe, rmiAction, rmiVariantName);
                             if (rmiVariant != null && rmiAction != null && rmiAction.getValuesOffered().contains(rmiVariantName)) {
                                 if (logger.isInfoEnabled()) logger.info("Selected: " + rmiVariant.toString() + "for: " + rmiAction.getAssetID().toString());
                                 if (eventService.isEventEnabled()) eventService.event(agentId + " selected " + rmiAction.getClass().getName() + ":" + rmiVariant.getVariantName() + " for " + rmiAction.getAssetID());
@@ -343,7 +343,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
                         }
                         if(proposedVariant.getVariantName().equals("Low")) {
                             String rmiVariantName = "Enabled";
-                            VariantEvaluation rmiVariant = getRmiVariantEvaluation(cbe, rmiVariantName);
+                            VariantEvaluation rmiVariant = getRmiVariantEvaluation(cbe, rmiAction, rmiVariantName);
                             if (rmiVariant != null && rmiAction != null && rmiAction.getValuesOffered().contains(rmiVariantName)) {
                                 if (logger.isInfoEnabled()) logger.info("Selected: " + rmiVariant.toString() + "for: " + rmiAction.getAssetID().toString());
                                 if (eventService.isEventEnabled()) eventService.event(agentId + " selected " + rmiAction.getClass().getName() + ":" + rmiVariant.getVariantName() + " for " + rmiAction.getAssetID().toString());
@@ -396,8 +396,9 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 
     // a special method in support of controlling RMIAction in tandem with Security_Defense_Setting - for ACUC 2B
     // returns the VariantEValuation or null if not found
-    private VariantEvaluation getRmiVariantEvaluation(CostBenefitEvaluation cbe, String rmiVariantName) {
-        ActionEvaluation ae = cbe.getActionEvaluation("org.cougaar.robustness.dos.coordinator.RMIAction");
+    private VariantEvaluation getRmiVariantEvaluation(CostBenefitEvaluation cbe, ACtion rmiAction, String rmiVariantName) {
+        if (rmiAction == null) return null;
+        ActionEvaluation ae = cbe.getActionEvaluation(rmiAction);
         if (ae != null) return ae.getVariantEvaluation(rmiVariantName);
         else return null;
     }
