@@ -47,10 +47,12 @@ import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.coordinator.RobustnessManagerID;
+import org.cougaar.core.node.NodeControlService;
 
 public class DisconnectNodePlugin extends DisconnectPluginBase {
     
   private MessageAddress managerAddress;
+  private NodeControlService nodeControlService;
 
   //private IncrementalSubscription myOpModes;
   private IncrementalSubscription reconnectTimeSubscription;
@@ -72,6 +74,13 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
   
   public void load() {
       super.load();
+
+      // get the NodeService
+      this.nodeControlService = (NodeControlService)
+          getServiceBroker().getService(this, NodeControlService.class, null);
+      if (nodeControlService == null) {
+          throw new RuntimeException("Unable to obtain NodeControlService");
+      }
   }
   
   public void setupSubscriptions() {
@@ -223,6 +232,14 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
               if (iter2.hasNext()) { // should only be one
                   ReconnectTimeCondition rtc = (ReconnectTimeCondition)iter2.next();
                   rtc.setTime(new Double(Double.parseDouble(lrtc.getValue().toString())));
+                  //rtc.setAgents(localAgents);
+                  localAgents = new AgentVector();
+                  Set agentAddresses = nodeControlService.getRootContainer().getAgentAddresses();
+                  Iterator iter3 = agentAddresses.iterator();
+                  while (iter3.hasNext()) {
+                    String agentName = iter3.next().toString();
+                    localAgents.add(agentName);
+                  }
                   rtc.setAgents(localAgents);
                   getBlackboardService().publishChange(rtc);
                   if (logger.isDebugEnabled()) logger.debug("Set the Condition for "+rtc.toString());   

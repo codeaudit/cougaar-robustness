@@ -65,6 +65,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     private Hashtable activeDisconnects = new Hashtable();
     private RequestToDisconnectNodeSensorIndex requestToDisconnectNodeSensorIndex = new RequestToDisconnectNodeSensorIndex();
     private NodeDisconnectActuatorIndex nodeDisconnectActuatorIndex = new NodeDisconnectActuatorIndex();
+    private RequestToDisconnectAgentSensorIndex requestToDisconnectAgentSensorIndex = new RequestToDisconnectAgentSensorIndex();
 
     // Legal Diagnosis Values
     private final static String DISCONNECT_REQUEST = DisconnectConstants.DISCONNECT_REQUEST;
@@ -252,7 +253,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
             try {
                 if (time > 0.0) {
                     diag.setValue(DISCONNECT_REQUEST); // wants to disconnect
-                    OverdueAlarm overdueAlarm = new OverdueAlarm(diag, time > 60000.0 ? (time + lateReportingForgiveness) : (60000.0 + lateReportingForgiveness));  // Don't monitor for less than 60 sec
+                    OverdueAlarm overdueAlarm = new OverdueAlarm(diag, rtc.getAgents(), time > 60000.0 ? (time + lateReportingForgiveness) : (60000.0 + lateReportingForgiveness));  // Don't monitor for less than 60 sec
                     activeDisconnects.put(diag.getAssetID(), overdueAlarm);
                 //getAlarmService().addRealTimeAlarm(overdueAlarm);  do this after getting permission
                 }
@@ -295,30 +296,59 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     }
     
     private boolean handleNodeRequest(ReconnectTimeCondition rtc) {
-        
+
+        // Set the values of the Node Sensor & all Agent Sensors
         double time = ((Double)rtc.getValue()).doubleValue();
         Diagnosis diag = requestToDisconnectNodeSensorIndex.getDiagnosis(new AssetID(rtc.getAsset(), AssetType.findAssetType("Node")));
 
         try {
             if (time > 0.0) {
                 diag.setValue(DISCONNECT_REQUEST); // wants to disconnect
-                OverdueAlarm overdueAlarm = new OverdueAlarm(diag, time > 10000.0 ? (time + lateReportingForgiveness) : (10000.0 + lateReportingForgiveness));  // Don't monitor for less than 10 sec
+                OverdueAlarm overdueAlarm = new OverdueAlarm(diag, rtc.getAgents(), time > 10000.0 ? (time + lateReportingForgiveness) : (10000.0 + lateReportingForgiveness));  // Don't monitor for less than 10 sec
                 activeDisconnects.put(diag.getAssetID(), overdueAlarm);
             //getAlarmService().addRealTimeAlarm(overdueAlarm);  do this after getting permission
             }
             else {
                 diag.setValue(CONNECT_REQUEST); // not disconnected
             }
-            if (logger.isDebugEnabled()) logger.debug("DisconnectChange set "
-                +diag.getAssetID()+" "
-                +diag.getValue()+ " "+time
-                +" for the Coordinator");
-            blackboard.publishChange(diag);
-            return true;
         } catch (IllegalValueException e) {
             logger.error("Attempt to set: "+diag.toString()+" with illegal value "+e.toString());
+            return false;
         }
-        return false;
+
+        Iterator iter = rtc.getAgents().iterator();
+        while (iter.hasNext()) {
+            Diagnosis agentDiag = requestToDisconnectAgentSensorIndex.getDiagnosis(new AssetID(rtc.getAsset(), AssetType.findAssetType("Agent")));
+            try {
+                if (time > 0.0) {
+                    diag.setValue(DISCONNECT_REQUEST); // wants to disconnect
+                }
+                else {
+                    diag.setValue(CONNECT_REQUEST); // not disconnected
+                }
+            } catch (IllegalValueException e) {
+                logger.error("Attempt to set: "+diag.toString()+" with illegal value "+e.toString());
+                return false;
+            }
+        }
+
+        iter = rtc.getAgents().iterator();
+        while (iter.hasNext()) {
+        }
+
+        // If all Sensor settings succeeded, publish all the sensors
+        if (logger.isDebugEnabled()) logger.debug("DisconnectChange set "
+            +diag.getAssetID()+" "
+            +diag.getValue()+ " "+time
+            +" for the Coordinator");
+        blackboard.publishChange(diag);
+
+        iter = rtc.getAgents().iterator();
+        while (iter.hasNext()) {
+        }
+
+        
+        return true;
     }
 
 
@@ -361,20 +391,24 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         private long detonate;
         private boolean expired;
         Diagnosis diag;
+        AgentVector agentsAffected;
         
-        public OverdueAlarm(Diagnosis diag, double t) {
+        public OverdueAlarm(Diagnosis diag, AgentVector agentsAffected, double t) {
             detonate = System.currentTimeMillis() + (long) t;
             this.diag = diag;
-            if (logger.isDebugEnabled()) logger.debug("OverdueAlarm created : "+diag.getAssetID()+ " at time "+detonate + " for " + t + " seconds");
+            this.agentsAffected = agentsAffected;
+            if (logger.isDebugEnabled()) logger.debug("OverdueAlarm created : "+diag.getAssetID()+ " with agents " + agentsAffected.toString() + " at time "+detonate + " for " + t + " seconds");
         }
         
         public long getExpirationTime() {return detonate;
         }
+
+        public AgentVector getAgentsAffected() { return agentsAffected; }
         
         public void expire() {
             if (!expired) {
                 expired = true;
-                if (logger.isDebugEnabled()) logger.debug("Alarm expired for: " + diag.getAssetID()+" no longer legitimately Disconnected");
+                if (logger.isDebugEnabled()) logger.debug("Alarm expired for: " + diag.getAssetID() + " with agents " + agentsAffected + " no longer legitimately Disconnected");
                 if (eventService.isEventEnabled()) eventService.event(diag.getAssetID()+" is no longer legitimately Disconnected");
                 blackboard.openTransaction();
                 try {

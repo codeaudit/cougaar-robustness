@@ -39,6 +39,7 @@ import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.UIDService;
 import org.cougaar.core.service.AgentIdentificationService;
 import org.cougaar.core.node.NodeIdentificationService;
+import org.cougaar.core.node.NodeControlService;
 
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.blackboard.IncrementalSubscription;
@@ -90,7 +91,8 @@ public abstract class DisconnectPluginBase extends ServiceUserPluginBase {
       if (nodeIdentificationService == null) {
           throw new RuntimeException("Unable to obtain noe-id service");
       }
-      return true;
+
+    return true;
     }
     else if (logger.isDebugEnabled()) logger.warn(".haveServices - did NOT acquire services.");
     return false;
