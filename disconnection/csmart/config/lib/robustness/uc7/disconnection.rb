@@ -64,6 +64,30 @@ module Cougaar
       end
     end
 
+    class MonitorPlannedDisconnectExpired < Cougaar::Action
+      PRIOR_STATES = ["SocietyLoaded"]
+      DOCUMENTATION = Cougaar.document {
+        @description = "Print event when a disconnected node should have reconnected."
+        @parameters = [
+          {:node => "The disconnected node that should have reconnected."}
+        ]
+        @example = "do_action 'MonitorPlannedDisconnectExpired', 'FWD-C'"
+	}
+      def initialize(run, node=nil)
+        super(run)
+        @node = node
+      end
+      def perform
+        @run.comms.on_cougaar_event do |event|
+          #puts event.data
+          if (event.component=="DisconnectManagerPlugin") && (@node==nil || event.data.include?(@node+" no longer legitimately Disconnected"))
+            loop = false
+            puts event.data
+          end
+        end
+      end
+    end    
+
   end
 
   module States
@@ -118,12 +142,10 @@ module Cougaar
         ]
         @example = "wait_for 'PlannedDisconnectExpired', 'FWD-C', 3.minutes"
      }
-	      
      def initialize(run, node, timeout=2.minutes, &block)
        super(run, timeout, &block)
        @node = node
      end
-
      def process
         puts "Waiting " + @timeout.to_s + " seconds for node "+@node+"'s PlannedDisconnect to expire."
         loop = true
@@ -136,9 +158,40 @@ module Cougaar
           end
         end
       end
-      
       def unhandled_timeout
         puts "Timed out after "+@timeout.to_s+" seconds waiting for node "+@node+"'s PlannedDisconnect to expire."
+        @run.do_action "StopSociety" 
+        @run.do_action "StopCommunications"
+      end
+    end
+
+    class ReconnectConfirmed < Cougaar::State
+      PRIOR_STATES = ["SocietyLoaded"]
+      DOCUMENTATION = Cougaar.document {
+        @description = "Waits for Reconnected Node to receive confirmation of Reconnection from Robustness Manager."
+        @parameters = [
+          {:node => "The node that has reconnected."}
+        ]
+        @example = "wait_for 'ReconnectConfirmed', 'FWD-C'"
+	}
+      def initialize(run, node, timeout=2.minutes, &block)
+        super(run, timeout, &block)
+        @node = node
+      end
+      def perform
+        puts "Waiting " + @timeout.to_s + " seconds for confirmation of node "+@node+"'s Reconnection."
+	loop = true
+	while loop
+          event = @run.get_next_event
+          #puts event.data
+          if (event.component=="DisconnectNodePlugin") && (event.data.include?(@node+" has Reconnected")
+            loop = false
+            puts event.data
+          end
+        end
+      end
+      def unhandled_timeout
+        puts "Timed out after "+@timeout.to_s+" seconds waiting for confirmation of node "+@node+"'s Reconnection."
         @run.do_action "StopSociety" 
         @run.do_action "StopCommunications"
       end
