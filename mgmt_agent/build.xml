@@ -46,7 +46,7 @@
   </target>
 
   <target name="build" description="Compile all source and build jar file"
-          depends="init, compile, jar">
+          depends="init, compile, jar, manual">
   </target>
 
   <target name="compile" description="Compile source code">
