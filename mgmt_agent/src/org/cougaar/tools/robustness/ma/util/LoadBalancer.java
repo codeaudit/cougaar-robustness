@@ -60,8 +60,8 @@ import java.util.Iterator;
 public class LoadBalancer
     extends BlackboardClientComponent {
 
-  public static final int DEFAULT_SOLVER_MODE = LoadBalanceRequest.
-      SOLVER_MODE_BLEND_PFAIL_LOAD_BALANCE;
+  public static final int DEFAULT_SOLVER_MODE =
+      LoadBalanceRequest.SOLVER_MODE_BLEND_PFAIL_LOAD_BALANCE;
   public static final int DEFAULT_ANNEAL_TIME = -1;
   public static final boolean DEFAULT_HAMMING = true;
 
@@ -164,7 +164,9 @@ public class LoadBalancer
          it.hasNext(); ) {
       HealthMonitorRequest hsm = (HealthMonitorRequest) it.next();
       if (hsm.getRequestType() == HealthMonitorRequest.LOAD_BALANCE) {
-        doLoadBalance(true,
+        doLoadBalance(DEFAULT_SOLVER_MODE,
+                      DEFAULT_ANNEAL_TIME,
+                      true,
                       //Collections.EMPTY_LIST,
                       getNewNodes(),
                       //Collections.EMPTY_LIST,
@@ -205,11 +207,14 @@ public class LoadBalancer
    * @param leaveAsIsNodes
    * @param listener
    */
-  public void doLayout(int annealTime, boolean useHamming, List newNodes,
-                       List killedNodes, List leaveAsIsNodes,
+  public void doLayout(int                  solverMode,
+                       int                  annealTime,
+                       boolean              useHamming,
+                       List                 newNodes,
+                       List                 killedNodes,
+                       List                 leaveAsIsNodes,
                        LoadBalancerListener listener) {
     UID uid = uidService.nextUID();
-    int solverMode = DEFAULT_SOLVER_MODE;
     if (logger.isInfoEnabled()) {
       logger.info("getLayout:" +
                   " annealTime=" + annealTime +
@@ -222,7 +227,7 @@ public class LoadBalancer
     }
     LoadBalanceRequest loadBalReq =
         new UniqueLoadBalanceRequest(annealTime,
-                                     DEFAULT_SOLVER_MODE,
+                                     solverMode,
                                      useHamming,
                                      newNodes,
                                      killedNodes,
@@ -242,17 +247,21 @@ public class LoadBalancer
     List newNodes = Collections.EMPTY_LIST;
     List killedNodes = Collections.EMPTY_LIST;
     List leaveAsIsNodes = getExcludedNodes();
-    doLoadBalance(DEFAULT_HAMMING, newNodes, killedNodes, leaveAsIsNodes);
+    doLoadBalance(DEFAULT_SOLVER_MODE, DEFAULT_ANNEAL_TIME, DEFAULT_HAMMING, newNodes, killedNodes, leaveAsIsNodes);
   }
 
-  public void doLoadBalance(boolean useHamming, List newNodes, List killedNodes,
-                            List leaveAsIsNodes) {
+  public void doLoadBalance(int     solverMode,
+                            int     annealTime,
+                            boolean useHamming,
+                            List    newNodes,
+                            List    killedNodes,
+                            List    leaveAsIsNodes) {
     // submit request to EN plugin and send move requests to moveHelper
     //       upon receipt of EN response
     if (logger.isInfoEnabled()) {
       logger.info("doLoadBalance");
     }
-    doLayout(DEFAULT_ANNEAL_TIME, useHamming, newNodes, killedNodes,
+    doLayout(solverMode, annealTime, useHamming, newNodes, killedNodes,
              leaveAsIsNodes, new LoadBalancerListener() {
       public void layoutReady(Map layout) {
         moveAgents(layout);

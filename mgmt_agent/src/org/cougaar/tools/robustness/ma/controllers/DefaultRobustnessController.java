@@ -977,8 +977,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         };
         long annealTime = getLongAttribute(MINIMUM_ANNEAL_TIME_ATTRIBUTE,
                                            MINIMUM_ANNEAL_TIME);
+        long solverMode = getLongAttribute(LOAD_BALANCER_MODE_ATTRIBUTE,
+                                           DEFAULT_LOAD_BALANCER_MODE);
         if (logger.isDebugEnabled()) {
           logger.debug("doLayout:" +
+                       " solverMode=" + solverMode +
                        " annealTime=" + annealTime +
                        " newNodes=" + vacantNodes +
                        " deadNodes=" + deadNodes +
