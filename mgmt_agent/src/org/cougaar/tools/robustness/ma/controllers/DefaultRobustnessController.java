@@ -1159,7 +1159,6 @@ excludedNodes.addAll(getAdditionalExcludedNodes(deadNodeForRestart));
        if(time <= activetime) {
          if(logger.isDebugEnabled())
            logger.debug("last hearbeat of " + nodes[i] + " is before " + deadNode + ", put " + nodes[i] + " in excluded list");
-logger.info("===========last hearbeat of " + nodes[i] + " is before " + deadNode);
          excluded.add(nodes[i]);
        }
      }
