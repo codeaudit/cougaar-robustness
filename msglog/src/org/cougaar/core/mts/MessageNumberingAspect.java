@@ -185,9 +185,8 @@ public class MessageNumberingAspect extends StandardAspect
     //  number for un-ordered and un-acked messages, as well as local
     //  messages.  Negative message numbers start at -1.
 
-    AgentID fromAgent = MessageUtils.getFromAgent (msg);
     MessageAddress agentAddr = MessageUtils.getOriginatorAgent (msg);
-    Hashtable agentTable = getAgentNumberSequenceTable (fromAgent, agentAddr);
+    Hashtable agentTable = getMessageNumberTableForAgent (agentAddr);
   
     synchronized (agentTable)
     {
@@ -199,44 +198,34 @@ public class MessageNumberingAspect extends StandardAspect
     }
   }
 
-  private Hashtable getAgentNumberSequenceTable (AgentID agent, MessageAddress agentMsgAddr)
+  private Hashtable getMessageNumberTableForAgent (MessageAddress agentAddr)
     throws CommFailureException
   {
-    Hashtable agentTable;
+    //  Get agent state for the agent
 
-    synchronized (numberSequenceTables)
+    AgentState agentState = getRegistry().getAgentState (agentAddr);
+    
+    if (agentState == null)
     {
-      String key = agent.getNumberSequenceKey();
-      agentTable = (Hashtable) numberSequenceTables.get (key);
+      String s = "AgentState missing for agent " +agentAddr;
+      throw new CommFailureException (new Exception (s));
+    }
+
+    //  Get the number table from the agent state
+
+    synchronized (agentState)
+    {
+      Hashtable agentTable = (Hashtable) agentState.getAttribute (AGENT_OUTGOING_SEQ_TABLE);
 
       if (agentTable == null)
       {
-        //  Try to get the table from the agent state
+        //  If not in state, we create the table
 
-        AgentState agentState = getRegistry().getAgentState (agentMsgAddr);
-        
-        if (agentState == null)
-        {
-          String s = "AgentState missing for agent " +agentMsgAddr;
-          loggingService.error (s);
-          throw new CommFailureException (new Exception (s));
-        }
-
-        synchronized (agentState)
-        {
-          agentTable = (Hashtable) agentState.getAttribute (AGENT_OUTGOING_SEQ_TABLE);
-
-          if (agentTable == null)
-          {
-            agentTable = new Hashtable();
-            agentState.setAttribute (AGENT_OUTGOING_SEQ_TABLE, agentTable);
-System.err.println ("creating new outgoing msg num seq table for local agent " +agentMsgAddr);
-          }        
-else System.err.println ("using stored outgoing msg num seq table from AgentState for new local agent " +agentMsgAddr);
-        }
-
-        numberSequenceTables.put (key, agentTable);
-      }
+        agentTable = new Hashtable();
+        agentState.setAttribute (AGENT_OUTGOING_SEQ_TABLE, agentTable);
+System.err.println ("creating new outgoing msg num seq table for local agent " +agentAddr);
+      }        
+else System.err.println ("using stored outgoing msg num seq table for local agent " +agentAddr);
 
       return agentTable;
     }

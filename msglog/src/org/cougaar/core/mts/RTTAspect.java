@@ -68,7 +68,7 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
     startDelay = Integer.valueOf(System.getProperty(s,"2")).intValue();
 
     s = "org.cougaar.message.transport.aspects.rtt.percentChangeLimit";
-    percentChangeLimit = Float.valueOf(System.getProperty(s,"1.5")).floatValue();
+    percentChangeLimit = Float.valueOf(System.getProperty(s,"0.25")).floatValue();
 
     s = "org.cougaar.message.transport.aspects.rtt.changeLimitDelay";
     changeLimitDelay = Integer.valueOf(System.getProperty(s,"20")).intValue();
@@ -380,8 +380,8 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
       {
         //      samplePoolsize:  number of latest samples avg is calc from
         //          startDelay:  throw away initial samples (which may be wildly off)
-        //  percentChangeLimit:  limit the latest sample can change avg
-        //    changeLimitDelay:  how many samples before limit kicks in
+        //  percentChangeLimit:  limit the amount the latest sample can change avg
+        //    changeLimitDelay:  how many samples before change limit kicks in
 
         avgRTT = new RunningAverage (samplePoolsize, startDelay, percentChangeLimit, changeLimitDelay);
         table.put (key, avgRTT);

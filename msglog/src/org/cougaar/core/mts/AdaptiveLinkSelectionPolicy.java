@@ -203,12 +203,12 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
     if (msg != failedMsg && failedMsg != null) 
     {
-      //  How am I supposed to know which out of all the attributes 
-      //  set by aspects and protocol links to transfer over or not???
+      //  Transfer known persistent attributes
       
       if (MessageUtils.hasMessageNumber (failedMsg))
       {
-        //  Transfer known persistent attributes
+        //  HACK!  How am I supposed to know which out of all the attributes 
+        //  set by aspects and protocol links to transfer over or not???
 
         MessageUtils.setMessageType (msg, MessageUtils.getMessageType (failedMsg));
         MessageNumberingAspect.setMessageNumber (msg, MessageUtils.getMessageNumber (failedMsg));
@@ -216,6 +216,8 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
         MessageUtils.setToAgent (msg, MessageUtils.getToAgent (failedMsg)); 
         MessageUtils.setAck (msg, MessageUtils.getAck (failedMsg)); 
         MessageUtils.setMessageSize (msg, MessageUtils.getMessageSize (failedMsg)); 
+        MessageUtils.setSendDeadline (msg, MessageUtils.getSendDeadline (failedMsg)); 
+        MessageUtils.setSendTimeout (msg, MessageUtils.getSendTimeout (failedMsg)); 
       }
     }
 

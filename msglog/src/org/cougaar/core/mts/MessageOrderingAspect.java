@@ -201,9 +201,8 @@ public class MessageOrderingAspect extends StandardAspect
     //  and there is no -0.  Messages with numbers 0 or less are unordered,
     //  so we don't maintain anything on them here.
 
-    AgentID toAgent = MessageUtils.getToAgent (msg);
     MessageAddress agentAddr = MessageUtils.getTargetAgent (msg);
-    Hashtable agentTable = getAgentNumberSequenceTable (toAgent, agentAddr);
+    Hashtable agentTable = getMessageNumberTableForAgent (agentAddr);
 
     if (agentTable == null) 
     {
@@ -228,9 +227,8 @@ public class MessageOrderingAspect extends StandardAspect
 
   private void setNextMessageNumber (AttributedMessage msg, int msgNum)
   {
-    AgentID toAgent = MessageUtils.getToAgent (msg);
     MessageAddress agentAddr = MessageUtils.getTargetAgent (msg);
-    Hashtable agentTable = getAgentNumberSequenceTable (toAgent, agentAddr);
+    Hashtable agentTable = getMessageNumberTableForAgent (agentAddr);
 
     if (agentTable == null) 
     {
@@ -238,7 +236,7 @@ public class MessageOrderingAspect extends StandardAspect
 
       throw new RuntimeException (new MisdeliveredMessageException (msg));
     }
-  
+
     synchronized (agentTable)
     {
       AgentID fromAgent = MessageUtils.getFromAgent (msg);
@@ -249,43 +247,28 @@ public class MessageOrderingAspect extends StandardAspect
     }
   }
 
-  private Hashtable getAgentNumberSequenceTable (AgentID agent, MessageAddress agentMsgAddr)
+  private Hashtable getMessageNumberTableForAgent (MessageAddress agentAddr)
   {
-    Hashtable agentTable;
+    //  Get agent state for the agent (if we can)
 
-    synchronized (numberSequenceTables)
+    AgentState agentState = getRegistry().getAgentState (agentAddr);
+    if (agentState == null) return null;
+
+    //  Get the number table from the agent state
+
+    synchronized (agentState)
     {
-      String key = agent.getNumberSequenceKey();
-      agentTable = (Hashtable) numberSequenceTables.get (key);
+      Hashtable agentTable = (Hashtable) agentState.getAttribute (AGENT_INCOMING_SEQ_TABLE);
 
       if (agentTable == null)
       {
-        //  Try to get the table from the agent state
+        //  If not in state, we create the table
 
-        AgentState agentState = getRegistry().getAgentState (agentMsgAddr);
-        
-        if (agentState == null)
-        {
-          String s = "AgentState missing for agent " +agentMsgAddr;
-          loggingService.error (s);
-          return null;
-        }
-
-        synchronized (agentState)
-        {
-          agentTable = (Hashtable) agentState.getAttribute (AGENT_INCOMING_SEQ_TABLE);
-
-          if (agentTable == null)
-          {
-            agentTable = new Hashtable();
-            agentState.setAttribute (AGENT_INCOMING_SEQ_TABLE, agentTable);
-System.err.println ("creating new incoming msg num seq table for local agent " +agentMsgAddr);
-          }        
-else System.err.println ("using stored incoming msg num seq table from AgentState for new local agent " +agentMsgAddr);
-        }
-
-        numberSequenceTables.put (key, agentTable);
-      }
+        agentTable = new Hashtable();
+        agentState.setAttribute (AGENT_INCOMING_SEQ_TABLE, agentTable);
+System.err.println ("creating new incoming msg num seq table for local agent " +agentAddr);
+      }        
+else System.err.println ("using stored incoming msg num seq table for local agent " +agentAddr);
 
       return agentTable;
     }
