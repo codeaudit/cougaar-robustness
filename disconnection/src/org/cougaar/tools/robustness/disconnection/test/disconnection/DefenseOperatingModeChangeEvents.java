@@ -31,6 +31,7 @@ import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.service.EventService;
 
+
 public class DefenseOperatingModeChangeEvents extends ServiceUserPluginBase implements NotPersistable {
 
   private IncrementalSubscription opModes;
@@ -41,8 +42,8 @@ public class DefenseOperatingModeChangeEvents extends ServiceUserPluginBase impl
   };
 
   /**
-   * Prints out all new and changed DefenseOperatingModes to
-   * the logger and the event service.
+   * Prints out all DefenseOperatingModes to
+   * the logger or the event service if active.
    */
   public DefenseOperatingModeChangeEvents() {
     super(requiredServices);
@@ -112,12 +113,15 @@ public class DefenseOperatingModeChangeEvents extends ServiceUserPluginBase impl
             }
         }
  */        
-        for ( Iterator iter = opModes.getChangedCollection().iterator() ;  iter.hasNext() ; ) {
+        
+        for ( Iterator iter = opModes.getCollection().iterator() ;  iter.hasNext() ; ) {
             Object o = iter.next();
             if (o instanceof DefenseOperatingMode) {
-               logger.info("Saw DefenseOperatingMode: " + 
+                if (eventService == null) //log to logger
+                    logger.info("Saw DefenseOperatingMode: " + 
                             ((DefenseOperatingMode)o).getName() + "=" + ((DefenseOperatingMode)o).getValue());
-               eventService.event("DefenseOperatingMode: " + 
+                else
+                    eventService.event("DefenseOperatingMode: " + 
                             ((DefenseOperatingMode)o).getName() + "=" + ((DefenseOperatingMode)o).getValue());
             }
         }        
