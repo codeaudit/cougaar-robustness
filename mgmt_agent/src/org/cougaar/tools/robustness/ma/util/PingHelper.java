@@ -158,7 +158,12 @@ public class PingHelper extends BlackboardClientComponent {
   }
 
   public void ping(final String agentName, final long timeout, final PingListener pl) {
-    fireLater(new QueueEntry(MessageAddress.getMessageAddress(agentName), timeout, pl));
+    if (agentId.toString().equals(agentName)) {
+      pl.pingComplete(agentName, SUCCESS);  // Can't ping self, return SUCCESS
+    } else {
+      fireLater(new QueueEntry(MessageAddress.getMessageAddress(agentName),
+                               timeout, pl));
+    }
   }
 
   protected void fireLater(QueueEntry qe) {
