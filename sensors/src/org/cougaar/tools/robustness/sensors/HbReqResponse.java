@@ -23,22 +23,31 @@
 package org.cougaar.tools.robustness.sensors;
 
 import org.cougaar.core.util.UID;
+import org.cougaar.core.mts.MessageAddress;
 
 /**
  * The Response returned by the HeartbeatServerPlugin, containing the status.
  **/
 public final class HbReqResponse implements java.io.Serializable {
   private int status;
+  MessageAddress responder;
+
+  /**
+  * This status is for heartbeats, and isn't propagated to the HeartbeatRequest.
+  */
+  public static final int HEARTBEAT = -1;
 
   /**
    * @param status The status of the HeartbeatRequest 
    * (i.e. HeartbeatRequest.ACCEPTED, HeartbeatRequest.REFUSED)
    */
-  public HbReqResponse(int status) {
+  public HbReqResponse(MessageAddress responder, int status) {
+    this.responder = responder;
     switch (status) {
       // only these two values can be set by server
       case HeartbeatRequest.ACCEPTED:
       case HeartbeatRequest.REFUSED:
+      case HEARTBEAT:
         this.status = status;
         return;
       default:
@@ -60,6 +69,7 @@ public final class HbReqResponse implements java.io.Serializable {
       // only these two values can be set by server
       case HeartbeatRequest.ACCEPTED:
       case HeartbeatRequest.REFUSED:
+      case HEARTBEAT:
         this.status = status;
         return;
       default:
@@ -68,10 +78,35 @@ public final class HbReqResponse implements java.io.Serializable {
   }
 
   /**
+  * Get the MessageAddress of the responding agent.
+  */
+  public MessageAddress getResponder() { return responder; }
+
+  /**
+  * Set the MessageAddress of the responding agent.
+  */
+  public void setResponder(MessageAddress responder) { 
+    this.responder = responder; 
+  }
+
+  /**
+  * Convert the status code to a human-readable String.
+  */
+  public static String statusToString(int status) {
+    if (status == HEARTBEAT) {
+      return "HEARTBEAT";
+    } else {
+      return HeartbeatRequest.statusToString(status);
+    }
+  }
+
+  /**
   * Returns a String represention for a HbReqResponse.
   */
   public String toString() {
-    return "(HbReqResponse: status = " + HeartbeatRequest.statusToString(status);
+    return "(HbReqResponse:\n" +
+           "   responder = " + responder + "\n" +
+           "   status = " + statusToString(status) + ")";
   }
 
 }

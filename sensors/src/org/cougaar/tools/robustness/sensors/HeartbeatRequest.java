@@ -311,7 +311,7 @@ public class HeartbeatRequest implements UniqueObject
            "    status = " + statusToString(status) + "\n" +
            "    timeSent = " + timeSent + "\n" +
            "    timeReceived = " + timeReceived + "\n" +
-           "    roundTripTime = " + roundTripTime + ")";
+           "    roundTripTime = " + roundTripTime + "\n" + ")";
   }
 
 }

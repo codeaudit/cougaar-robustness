@@ -54,9 +54,9 @@ public class PingServerPlugin extends ComponentPlugin {
     Iterator iter = sub.getAddedCollection().iterator();
     while (iter.hasNext()) {
       Ping ping = (Ping)iter.next();
-      //MessageAddress myAddr = getBindingSite().getAgentIdentifier();
+      MessageAddress me = getBindingSite().getAgentIdentifier();
       System.out.println("PingServerPlugin.execute: received Ping = " + ping);
-      ping.updateResponse(null, "Got it!");
+      ping.updateResponse(me, "Got it!");
       bb.publishChange(ping);
       System.out.println("PingServerPlugin.execute: published changed Ping = " + ping);
     }

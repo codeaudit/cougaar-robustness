@@ -32,6 +32,8 @@ import org.cougaar.core.service.UIDService;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.blackboard.UniqueObjectSet;
 import java.util.Date;
+import java.util.Hashtable;
+import org.cougaar.core.agent.service.alarm.Alarm;
 
 /**
  * This Plugin receives HeartbeatRequests from the local Blackboard and
@@ -41,9 +43,42 @@ import java.util.Date;
 public class HeartbeatRequesterPlugin extends ComponentPlugin {
   private IncrementalSubscription heartbeatRequestSub;
   private IncrementalSubscription hbReqSub;
-  private IncrementalSubscription hbSub;
   private BlackboardService bb;
-  private UniqueObjectSet UIDtable;
+  private UniqueObjectSet reqTable;
+  private Hashtable hbTable;
+  private Hashtable reportTable;
+
+  private class SendHeathReportsAlarm implements Alarm {
+    private long detonate = -1;
+    private boolean expired = false;
+
+    public SendHeathReportsAlarm (long delay) {
+      detonate = delay + System.currentTimeMillis();
+    }
+
+    public long getExpirationTime () {
+      return detonate;
+    }
+
+    public void expire () {
+      if (!expired) {
+        bb.openTransaction();
+        prepareHealthReports();
+        bb.closeTransaction();
+        expired = true;
+      }
+    }
+
+    public boolean hasExpired () {
+      return expired;
+    }
+
+    public boolean cancel () {
+      if (!expired)
+        return expired = true;
+      return false;
+    }
+  }
 
   private UnaryPredicate HeartbeatRequestPred = new UnaryPredicate() {
     public boolean execute(Object o) {
@@ -57,17 +92,11 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     }
   };
 
-  private UnaryPredicate hbPred = new UnaryPredicate() {
-    public boolean execute(Object o) {
-      return (o instanceof Heartbeat);
-    }
-  };
-
   private void sendHbReq (HeartbeatRequest req) {
     MessageAddress source = getBindingSite().getAgentIdentifier();
     MessageAddress target = req.getTarget();
     UID reqUID = req.getUID();
-    UIDtable.add(req);
+    reqTable.add(req);
     req.setStatus(HeartbeatRequest.SENT);
     req.setTimeSent(new Date());
     HbReqContent content = new HbReqContent(reqUID, req.getReqTimeout(), req.getHbFrequency(), req.getHbTimeout());
@@ -81,57 +110,102 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
   private void updateHeartbeatRequest (HbReq hbReq) {
     HbReqContent content = (HbReqContent)hbReq.getContent();
     UID reqUID = content.getHeartbeatRequestUID();
-    HeartbeatRequest req = (HeartbeatRequest)UIDtable.findUniqueObject(reqUID);
+    HeartbeatRequest req = (HeartbeatRequest)reqTable.findUniqueObject(reqUID);
     Date timeReceived = new Date();
     req.setTimeReceived(timeReceived);
     HbReqResponse response = (HbReqResponse)hbReq.getResponse();
     req.setStatus(response.getStatus());
     req.setRoundTripTime(timeReceived.getTime() - req.getTimeSent().getTime());
     bb.publishChange(req);
-    bb.publishRemove(hbReq);
+    //bb.publishRemove(hbReq);
     System.out.println("HeartbeatRequesterPlugin.updateHeartbeatRequest: published changed HeartbeatRequest = " + req);
-    System.out.println("HeartbeatRequesterPlugin.updateHeartbeatRequest: removed HbReq = " + hbReq);
+    //System.out.println("HeartbeatRequesterPlugin.updateHeartbeatRequest: removed HbReq = " + hbReq);
+  }
+
+  private void prepareHealthReports() {
+    // process NEW and ACCEPTED HeartbeatRequests
+    long minFreq = Long.MAX_VALUE;  // milliseconds until next HeartbeatHealthReport should be sent
+    Iterator iter = heartbeatRequestSub.getCollection().iterator();
+    while (iter.hasNext()) {
+      HeartbeatRequest req = (HeartbeatRequest)iter.next();
+      int status = req.getStatus();
+      if (status == HeartbeatRequest.NEW) {
+        System.out.println("HeartbeatRequesterPlugin.execute: new HeartbeatRequest received = " + req);
+        sendHbReq(req);
+      } else if (status == HeartbeatRequest.ACCEPTED) {
+        // Is it time yet to send a health report for this request?
+        long freq = req.getHbFrequency();
+        long now = System.currentTimeMillis();
+        // Get time last report was sent from reportTable?
+        UID uid = req.getUID();
+        long lastReportTime = ((Date)reportTable.get(uid)).getTime();
+        long nextReportTime = (lastReportTime + freq);
+        if (now < nextReportTime) {  // not time yet, so just set the next wakeup time 
+          long timeUntilNextReport = nextReportTime - now;    
+          if (minFreq > timeUntilNextReport) minFreq = timeUntilNextReport;
+        } else {
+          // now is the time
+          if (minFreq > freq) minFreq = freq;
+          MessageAddress target = req.getTarget();  // change here for multiple targets
+          Date lastHbDate = (Date)hbTable.get(target);
+          long nextHbTime = lastHbDate.getTime() + freq;
+          long outOfSpec = now - nextHbTime;
+          float percentOutOfSpec = (float)outOfSpec / (float)freq;
+          // send report if requester wants report whether in or out or spec
+          // or if the heartbeat is enough out of spec
+          if ( req.getOnlyOutOfSpec() == false ||  
+               percentOutOfSpec > req.getPercentOutOfSpec() ) {
+            HeartbeatEntry [] entries = new HeartbeatEntry[1];
+            entries[0] = new HeartbeatEntry(target, lastHbDate, percentOutOfSpec);
+            HeartbeatHealthReport report = new HeartbeatHealthReport(entries);
+            bb.publishAdd(report);
+          }   
+        }                                                  
+      }
+    }
+    if (minFreq != Long.MAX_VALUE)
+      alarmService.addRealTimeAlarm(new SendHeathReportsAlarm(minFreq));
   }
 
   protected void setupSubscriptions() {
-    UIDtable = new UniqueObjectSet();
+    reqTable = new UniqueObjectSet();
+    hbTable = new Hashtable();
+    reportTable = new Hashtable();
     bb = getBlackboardService();
     heartbeatRequestSub = (IncrementalSubscription)bb.subscribe(HeartbeatRequestPred);
     hbReqSub = (IncrementalSubscription)bb.subscribe(hbReqPred);
-    hbSub = (IncrementalSubscription)bb.subscribe(hbPred);
   }
 
   protected void execute() {
-    // check for new HeartbeatRequests
-    Iterator iter = heartbeatRequestSub.getAddedCollection().iterator();
-    while (iter.hasNext()) {
-      HeartbeatRequest req = (HeartbeatRequest)iter.next();
-      System.out.println("HeartbeatRequesterPlugin.execute: new HeartbeatRequest received = " + req);
-      MessageAddress myAddr = getBindingSite().getAgentIdentifier();
-      if (req.getStatus() == HeartbeatRequest.NEW) {   
-        sendHbReq(req);
-      }
-    }
     // check for responses from HeartbeatServerPlugin
-    iter = hbReqSub.getChangedCollection().iterator();
+    // the first response will cause the status in the HeartbeatRequest to be updated
+    // all responses except REFUSED are considered heartbeats and are entered in hbTable
+    // Eventually, heartbeats won't show up this way, as they will be filtered in MTS,
+    // and fed into the Metrics Service and we will get them there.
+    Iterator iter = hbReqSub.getChangedCollection().iterator();
     while (iter.hasNext()) {
       HbReq hbReq = (HbReq)iter.next();
       System.out.println("HeartbeatRequesterPlugin.execute: changed HbReq received = " + hbReq);
       MessageAddress myAddr = getBindingSite().getAgentIdentifier();
       if (hbReq.getSource().equals(myAddr)) {
-        updateHeartbeatRequest(hbReq);
+        HbReqResponse response = (HbReqResponse)hbReq.getResponse();
+        int status = response.getStatus();
+        Date now = new Date();
+        switch (status) {
+          case HeartbeatRequest.ACCEPTED:
+            hbTable.put(response.getResponder(), now); // falls through
+            reportTable.put(((HbReqContent)hbReq.getContent()).getHeartbeatRequestUID(), now); // falls through
+          case HeartbeatRequest.REFUSED:
+            updateHeartbeatRequest(hbReq);
+            break;
+          case HbReqResponse.HEARTBEAT:
+            hbTable.put(response.getResponder(), now);
+          default:
+            throw new RuntimeException("illegal status = " + status);
+        }
       }
     }
-    // check for heartbeats from HeartbeatServerPlugin
-    // Eventually, these won't show up this way, as they will be filtered in MTS,
-    // and fed into the Metrics Service and we will get them there.
-    iter = hbSub.getChangedCollection().iterator();
-    while (iter.hasNext()) {
-      Heartbeat hb = (Heartbeat)iter.next();
-      System.out.println("HeartbeatRequesterPlugin.execute: Heartbeat received = " + hb);
-      MessageAddress myAddr = getBindingSite().getAgentIdentifier();
-      //updateHeartbeatTable(hb);
-    }
+    prepareHealthReports();
   }
 
   private UIDService UIDService;

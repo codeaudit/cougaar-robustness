@@ -25,13 +25,10 @@ package org.cougaar.tools.robustness.sensors;
 import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import java.util.Iterator;
-import java.util.Set;
 import org.cougaar.core.service.BlackboardService;
 import org.cougaar.util.UnaryPredicate;
+import org.cougaar.core.agent.service.alarm.Alarm;
 import org.cougaar.core.mts.MessageAddress;
-import org.cougaar.core.blackboard.UniqueObjectSet;
-import org.cougaar.core.util.UID;
-import org.cougaar.core.service.UIDService;
 
 /**
  * This Plugin requests for heartbeats (HbReq) and responds with
@@ -41,7 +38,6 @@ import org.cougaar.core.service.UIDService;
 public class HeartbeatServerPlugin extends ComponentPlugin {
   private IncrementalSubscription sub;
   private BlackboardService bb;
-  private UniqueObjectSet heartbeatTable;
 
   private UnaryPredicate hbReqPred = new UnaryPredicate() {
     public boolean execute(Object o) {
@@ -49,38 +45,81 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
     }
   };
 
+  private class ProcessHeartbeatsAlarm implements Alarm {
+    private long detonate = -1;
+    private boolean expired = false;
+
+    public ProcessHeartbeatsAlarm (long delay) {
+      detonate = delay + System.currentTimeMillis();
+    }
+
+    public long getExpirationTime () {
+      return detonate;
+    }
+
+    public void expire () {
+      if (!expired) 
+        processHeartbeats();
+      expired = true;
+    }
+
+    public boolean hasExpired () {
+      return expired;
+    }
+
+    public boolean cancel () {
+      if (!expired)
+        return expired = true;
+      return false;
+    }
+  }
+
+  private void processHeartbeats() {
+    bb.openTransaction();
+    execute();
+    bb.closeTransaction();
+  } 
+
   protected void setupSubscriptions() {
-    heartbeatTable = new UniqueObjectSet();
     bb = getBlackboardService();
     sub = (IncrementalSubscription)bb.subscribe(hbReqPred);
   }
 
   protected void execute() {
-    Iterator iter = sub.getAddedCollection().iterator();
+    long minFreq = Long.MAX_VALUE;  // milliseconds until next heartbeat should be sent
+    Iterator iter = sub.getCollection().iterator();
     while (iter.hasNext()) {
       HbReq req = (HbReq)iter.next();
-
       System.out.println("HeartbeatServerPlugin.execute: received HbReq = " + req);
-      req.updateResponse(null, new HbReqResponse(HeartbeatRequest.ACCEPTED));
-// TODO: add check for dup hb in table
-      MessageAddress myAddr = getBindingSite().getAgentIdentifier();
-      MessageAddress target = req.getSource();
-      Heartbeat hb = new Heartbeat(getUIDService().nextUID(), myAddr, target, null, null);
-      bb.publishChange(req);
-      System.out.println("HeartbeatServerPlugin.execute: published changed HbReq = " + req);
-      heartbeatTable.add(req);   
-      bb.publishChange(heartbeatTable);
+      HbReqContent content = (HbReqContent)req.getContent();
+      long now = System.currentTimeMillis();
+      long lastHb = content.getLastHbSent();
+      long freq = content.getHbFrequency();
+      // handle new request
+      if (lastHb == -1) {
+        if (minFreq > freq) minFreq = freq;
+        content.setLastHbSent(now);
+        req.updateContent(content, null);
+        MessageAddress me = getBindingSite().getAgentIdentifier();
+        req.updateResponse(me, new HbReqResponse(me, HeartbeatRequest.ACCEPTED));
+        bb.publishChange(req);
+        System.out.println("HeartbeatServerPlugin.execute: published changed HbReq = " + req);
+      } else {
+        // check if its time to send a heartbeat or not for this one
+        long nextHb = (lastHb + freq);
+        if (now >= nextHb) {   // its time for this one
+          if (minFreq > freq) minFreq = freq;
+          content.setLastHbSent(now);
+          bb.publishChange(req);
+          System.out.println("HeartbeatServerPlugin.execute: published changed HbReq = " + req);
+        } else {  // its not time yet for this one
+          long fromNow = nextHb - now;
+          if (minFreq > fromNow) minFreq = fromNow;
+        }
+      }
     }
-  }
-
-  private UIDService UIDService;
-   
-  public UIDService getUIDService() {
-      return this.UIDService;
-  }
-   
-  public void setUIDService(UIDService UIDService) {
-      this.UIDService = UIDService;
-  }
+    if (minFreq != Long.MAX_VALUE)
+      alarmService.addRealTimeAlarm(new ProcessHeartbeatsAlarm(minFreq));
+  } 
 
 }

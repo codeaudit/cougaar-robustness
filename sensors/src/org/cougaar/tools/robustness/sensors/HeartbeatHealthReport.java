@@ -27,7 +27,7 @@ import org.cougaar.tools.manager.ldm.report.HealthReportAdapter;
  * monitored agents, time last msg was received, and whether that
  * was in-spec or not, according to current HeartbeatRequests.
  **/
-public class HeartbeatHealthReport extends HealthReportAdapter {
+public class HeartbeatHealthReport implements java.io.Serializable {
   private HeartbeatEntry [] heartbeats;
 
   /**
