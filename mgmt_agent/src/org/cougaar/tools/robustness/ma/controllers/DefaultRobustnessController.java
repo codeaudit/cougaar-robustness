@@ -234,7 +234,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         if(getDeconflictHelper() != null) {
           newState(name, DECONFLICT);
         } else {
-          newState(name, RESTART);
+            newState(name, RESTART);
         }
       } else if (isNode(name) && thisAgent.equals(preferredLeader())) {
         removeFromCommunity(name);
@@ -513,6 +513,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     return hosts;
   }
 
+
   private boolean useGlobalSolver() {
     String solverModeAttr = model.getStringAttribute(SOLVER_MODE_ATTRIBUTE);
     return (solverModeAttr != null && solverModeAttr.equalsIgnoreCase("global"));
@@ -623,8 +624,12 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   public void leaderChange(String priorLeader, String newLeader) {
     logger.info("LeaderChange: prior=" + priorLeader + " new=" + newLeader);
     if (isLeader(thisAgent) && model.getCurrentState(preferredLeader()) == DEAD) {
-      logger.info("Restarting preferred leader");
-      newState(preferredLeader(), RESTART);
+      if(!isSingleNode(thisAgent)) {
+        logger.info("Restarting preferred leader");
+        newState(preferredLeader(), RESTART);
+      }else {
+        logger.debug("This node is the only active node, don't restart the leader");
+      }
     }
     checkCommunityReady();
   }
