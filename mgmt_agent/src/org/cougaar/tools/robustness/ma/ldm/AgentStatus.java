@@ -58,10 +58,9 @@ public class AgentStatus implements java.io.Serializable {
     this.status = status;
   }
 
-  //public String toString() {
-  //  return "name=" + name +
-  //         " status=" + Controller.statusToString(status);
-  //}
+  public String toString() {
+    return name + ":" + location + ":" + status;
+  }
 
   public String toXML() {
     return toXML("");
