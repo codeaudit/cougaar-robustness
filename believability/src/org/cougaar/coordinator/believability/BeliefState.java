@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefState.java,v $
- * $Revision: 1.6 $
- * $Date: 2004-06-21 22:36:16 $
+ * $Revision: 1.12 $
+ * $Date: 2004-07-02 23:34:03 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -34,7 +34,7 @@ import org.cougaar.coordinator.techspec.AssetStateDimension;
  * asset instance.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.6 $Date: 2004-06-21 22:36:16 $
+ * @version $Revision: 1.12 $Date: 2004-07-02 23:34:03 $
  * 
  *
  */
@@ -225,7 +225,7 @@ public class BeliefState implements Cloneable
                       "Asset type model param is NULL." );
 
         _asset_type_model = at_model;
-        
+
     }  // constructor BeliefState
 
     //************************************************************

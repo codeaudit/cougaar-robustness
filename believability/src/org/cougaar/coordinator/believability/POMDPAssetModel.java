@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetModel.java,v $
- * $Revision: 1.6 $
- * $Date: 2004-06-21 22:36:16 $
+ * $Revision: 1.9 $
+ * $Date: 2004-06-24 16:36:56 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.6 $Date: 2004-06-21 22:36:16 $
+ * @version $Revision: 1.9 $Date: 2004-06-24 16:36:56 $
  *
  */
 class POMDPAssetModel extends Model
@@ -147,9 +147,6 @@ class POMDPAssetModel extends Model
                     ( "POMDPAssetModel.createInitialBeliefState()",
                       "AssetType model is NULL" );
         
-        logDebug( "Creating POMDP initial belief for asset type: " 
-                  + _asset_type_model.getName() );
-        
         _initial_belief = new BeliefState( _asset_type_model );
         
         for ( int dim_idx = 0; 
@@ -162,6 +159,16 @@ class POMDPAssetModel extends Model
 
         }  // for dim_idx
 
+        // We want to make sure that at the time we create this we
+        // initialize it to the current system time.  This will give
+        // us a more reasonable interval when we compute the first
+        // update of this belief. 
+        //
+        _initial_belief.setTimestamp( System.currentTimeMillis() );
+
+        logDebug( "Creating POMDP initial belief for asset type: " 
+                  + _asset_type_model.getName() );
+        
     } // method createInitialBeliefState
 
     //************************************************************
@@ -182,6 +189,8 @@ class POMDPAssetModel extends Model
                     ( "POMDPModelManager.updateBeliefState()",
                       "NULL starting belief passed in." );
 
+        logDebug( "Belief before threats: " + start_belief.toString() );
+
         BeliefState next_belief = (BeliefState) start_belief.clone();
         
         // Set this to null to indicate that no diagnosis was
@@ -196,6 +205,15 @@ class POMDPAssetModel extends Model
         // state dimension by state dimnesion basis.
         //
         long start_time = start_belief.getTimestamp();
+
+        if ( start_time > end_time )
+        {
+            logWarning( "updateBeliefState(): Found a negative update interval."
+                     + "[ " + start_time + ", " + end_time + "]"
+                     + " for asset " + start_belief.getAssetID()
+                     + ". Ignoring threats." );
+            return next_belief;
+        }
 
         // Here we will be updating all the state dimensions.
         //

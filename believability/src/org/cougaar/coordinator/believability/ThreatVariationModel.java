@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/Attic/ThreatVariationModel.java,v $
- * $Revision: 1.4 $
- * $Date: 2004-06-21 22:36:17 $
+ * $Revision: 1.7 $
+ * $Date: 2004-06-24 16:36:56 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -37,7 +37,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * with tech spec package.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.4 $Date: 2004-06-21 22:36:17 $
+ * @version $Revision: 1.7 $Date: 2004-06-24 16:36:56 $
  *
  */
 class ThreatVariationModel extends Model
@@ -156,7 +156,9 @@ class ThreatVariationModel extends Model
         {
             throw new BelievabilityException
                     ( "ThreatRootModel.getEventProbability()",
-                      "NegativeInterval: " + nie.getMessage() );
+                      "NegativeInterval: threat=" 
+                      + getName() + ", start="
+                      + start_time + ", end=" + end_time );
         }
         
 

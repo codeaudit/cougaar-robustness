@@ -223,8 +223,17 @@ import java.sql.Timestamp;
           BeliefState current_belief_state = null;
           
           //Pass the BelievabilityDiagnosis to POMDPModelInterface
-          current_belief_state = _pmdp_mi.updateBeliefState(_apriori_state,bb_diagnosis);
-          
+
+          // FIXME: This is the old line:
+          //
+          //   current_belief_state = _pmdp_mi.updateBeliefState(_apriori_state,bb_diagnosis);
+          //
+          // This is the new one I *think* should be more correct:
+          //
+          current_belief_state = _pmdp_mi.updateBeliefState
+                  (getUnupdatedBeliefState(System.currentTimeMillis()),
+                   bb_diagnosis);
+
           //insert current belief state to believability queue
           insertBeliefState(current_belief_state, bb_diagnosis);
           

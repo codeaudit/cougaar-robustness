@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/AssetTypeDimensionModel.java,v $
- * $Revision: 1.5 $
- * $Date: 2004-06-22 01:35:25 $
+ * $Revision: 1.6 $
+ * $Date: 2004-06-22 04:02:12 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -43,7 +43,7 @@ import org.cougaar.coordinator.techspec.ThreatModelInterface;
  * corresponds to the tech-spec AssetSatteDimension objects.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.5 $Date: 2004-06-22 01:35:25 $
+ * @version $Revision: 1.6 $Date: 2004-06-22 04:02:12 $
  * @see AssetTypeModel
  * @see AssetStateDimension
  */

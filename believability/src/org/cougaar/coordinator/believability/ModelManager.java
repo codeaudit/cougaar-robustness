@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManager.java,v $
- * $Revision: 1.6 $
- * $Date: 2004-06-21 22:36:16 $
+ * $Revision: 1.7 $
+ * $Date: 2004-06-22 04:02:12 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -50,7 +50,7 @@ import org.cougaar.util.log.Logger;
  * and provides information via the ModelManagerInterface. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.6 $Date: 2004-06-21 22:36:16 $
+ * @version $Revision: 1.7 $Date: 2004-06-22 04:02:12 $
  *
  */
 public class ModelManager extends Loggable
@@ -234,7 +234,7 @@ public class ModelManager extends Loggable
         // for this sensor.  Try to add and/or fetch the model first.
         //
         AssetType asset_type = diag_ts.getAssetType();
-        AssetTypeModel asset_type_model = getOrAndAssetType( asset_type );
+        AssetTypeModel asset_type_model = getOrCreateAssetTypeModel( asset_type );
 
         if ( asset_type_model == null )
             return;
@@ -300,7 +300,7 @@ public class ModelManager extends Loggable
         // for this actuator.  Try to add and/or fetch the model first.
         //
         AssetType asset_type = actuator_ts.getAssetType();
-        AssetTypeModel asset_type_model = getOrAndAssetType( asset_type );
+        AssetTypeModel asset_type_model = getOrCreateAssetTypeModel( asset_type );
 
         if ( asset_type_model == null )
             return;
@@ -441,7 +441,7 @@ public class ModelManager extends Loggable
             AssetTypeModel at_model
                     = getAssetTypeModel( asset_ts.getAssetType() );
 
-             try
+            try
             {
                 at_model.handleThreatModelChange
                     ( threat_model, 
@@ -480,13 +480,38 @@ public class ModelManager extends Loggable
             }
             catch (BelievabilityException be)
             {
-                logError( "Problem removing threat applicability for: "
+                logError( "Problem removing threat applicability for added: "
                           + asset_id.getName() );
             }
 
         } // while asset list of removed assets
 
         asset_list = tm_change.getRemovedAssets();
+        enum = asset_list.elements();
+        while ( enum.hasMoreElements() )
+        { 
+            AssetTechSpecInterface asset_ts
+                    = (AssetTechSpecInterface) enum.nextElement();
+
+            AssetID asset_id = asset_ts.getAssetID();
+
+            AssetTypeModel at_model
+                    = getAssetTypeModel( asset_ts.getAssetType() );
+
+            try
+            {
+                at_model.handleThreatModelChange
+                    ( threat_model, 
+                      asset_id,
+                      AssetTypeModel.THREAT_CHANGE_REMOVE );
+            }
+            catch (BelievabilityException be)
+            {
+                logError( "Problem removing threat applicability for removed: "
+                          + asset_id.getName() );
+            }
+
+        } // while asset list of removed assets
 
     } // method handleThreatModelChange
 
@@ -518,7 +543,7 @@ public class ModelManager extends Loggable
      *
      * @param asset_type The asset type to be added.
      */
-    protected AssetTypeModel getOrAndAssetType( AssetType asset_type )
+    protected AssetTypeModel getOrCreateAssetTypeModel( AssetType asset_type )
     {
         if ( asset_type == null )
         {
@@ -558,7 +583,7 @@ public class ModelManager extends Loggable
 
         return at_model;
 
-    } // method getOrAndAssetType
+    } // method getOrCreateAssetTypeModel
 
     //************************************************************
     /**
@@ -631,7 +656,8 @@ public class ModelManager extends Loggable
         //
         AssetType asset_type 
                 = threat_mi.getThreatDescription().getAffectedAssetType();
-        AssetTypeModel asset_type_model = getOrAndAssetType( asset_type );
+        AssetTypeModel asset_type_model 
+                = getOrCreateAssetTypeModel( asset_type );
 
         if ( asset_type_model == null )
             return;
