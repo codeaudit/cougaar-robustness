@@ -3,6 +3,13 @@
   xsi:noNamespaceSchemaLocation='http:/www.cougaar.org/2003/society.xsd'>
   <host name='HOST1'>
     <facet enclave='SMALL'/>
+    <node name='SMALL-MGMT-NODE'>
+      <facet role='NameServer'/>
+      <facet role='AR-Management'/>
+    </node>
+  </host>
+  <host name='HOST2'>
+    <facet enclave='SMALL'/>
     <node name='FWD-NODE'>
       <facet role="NameServer"/>
       <agent name='1-35-ARBN.2-BDE.1-AD.ARMY.MIL'/>
@@ -24,7 +31,7 @@
       <agent name='DISCOM.1-AD.ARMY.MIL'/>
     </node>
   </host>
-  <host name='HOST2'>
+  <host name='HOST3'>
     <facet enclave='SMALL'/>
     <node name='REAR-NODE'>
       <agent name='1-27-FABN.5-CORPS.ARMY.MIL'/>
@@ -68,7 +75,7 @@
       <agent name='USEUCOM.MIL'/>
     </node>
   </host>
-  <host name='HOST3'>
+  <host name='HOST4'>
     <facet enclave='SMALL'/>
     <node name='EuroTRANSCOM-NODE'>
       <agent name='EuroTRANSCOM.TRANSCOM.MIL'/>
@@ -95,13 +102,6 @@
       <agent name='AmmoShipPacker.TRANSCOM.MIL'/>
       <agent name='AmmoConusGround.TRANSCOM.MIL'/>
       <agent name='AmmoTheaterGround.TRANSCOM.MIL'/>
-    </node>
-  </host>
-  <host name='HOST4'>
-    <facet enclave='SMALL'/>
-    <node name='SMALL-MGMT-NODE'>
-      <facet role='NameServer'/>
-      <facet role='AR-Management'/>
     </node>
   </host>
 </society>
