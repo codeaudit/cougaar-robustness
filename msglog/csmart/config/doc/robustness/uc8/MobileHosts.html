@@ -46,7 +46,7 @@ AVN-CO-NODE is running to the 1-UA network after the start of Stage
 1.&nbsp; An annotated version of that script follows, highlighting the
 significant items.<br>
 <br>
-<div style="margin-left: 40px;"><span
+<div style="margin-left: 40px;"><font size="-1"><span
  style="font-family: courier new,courier,monospace;">=begin experiment</span><br
  style="font-family: courier new,courier,monospace;">
 <br style="font-family: courier new,courier,monospace;">
@@ -57,9 +57,11 @@ Mobile Hosts (ARUC8) Test</span><br
  style="font-family: courier new,courier,monospace;">
 <span style="font-family: courier new,courier,monospace;">script:
 $CIP/csmart/scripts/definitions/<span
- style="font-weight: bold; color: rgb(204, 0, 0);">UR-BaselineTemplate-ExtOplan.rb&nbsp;
-<span style="color: rgb(0, 153, 0);"># note special template</span></span></span><br
- style="font-family: courier new,courier,monospace;">
+ style="font-weight: bold; color: rgb(204, 0, 0);">UR-BaselineTemplate-ExtOplan.rb&nbsp;<big>
+</big></span></span></font><big><font size="-1"><big><span
+ style="font-weight: bold; color: rgb(204, 0, 0);"><span
+ style="color: rgb(0, 153, 0);"># note special template</span></span></big></font></big><font
+ size="-1"><br style="font-family: courier new,courier,monospace;">
 <span style="font-family: courier new,courier,monospace;">parameters:</span><br
  style="font-family: courier new,courier,monospace;">
 <span style="font-family: courier new,courier,monospace;">&nbsp; -
@@ -68,17 +70,16 @@ run_count: 1</span><br
 <span style="font-family: courier new,courier,monospace;">&nbsp; -
 society_file: $CIP/csmart/config/societies/ua/<span
  style="font-weight: bold; color: rgb(204, 0, 0);">full-tc20-avn-162a208v.plugins.rb&nbsp;
-</span></span><span
- style="font-family: courier new,courier,monospace; color: rgb(0, 153, 0);"><span
- style="font-weight: bold;"># note special scciety definition</span></span><br
+</span></span></font><font size="-1"><big><span
+ style="color: rgb(0, 153, 0);"><span style="font-weight: bold;"># note
+special scciety definition</span></span></big></font><font size="-1"><br
  style="font-family: courier new,courier,monospace;">
 <span style="font-family: courier new,courier,monospace;">&nbsp; -
 layout_file: $CIP/operator/layouts/<span
  style="font-weight: bold; color: rgb(204, 0, 0);">UR-557-layout-1.xml&nbsp;
-</span></span><span
- style="font-family: courier new,courier,monospace; color: rgb(0, 153, 0);"><span
- style="font-weight: bold;"># note special layout</span></span><br
- style="font-family: courier new,courier,monospace;">
+</span></span></font><big><font size="-1" style="font-weight: bold;"><big><span
+ style="color: rgb(0, 153, 0);"># note special layout</span></big></font></big><font
+ size="-1"><br style="font-family: courier new,courier,monospace;">
 <span style="font-family: courier new,courier,monospace;">&nbsp; -
 archive_dir: $CIP/Logs</span><br
  style="font-family: courier new,courier,monospace;">
@@ -97,36 +98,39 @@ rules:</span><br style="font-family: courier new,courier,monospace;">
  style="font-family: courier new,courier,monospace;">
 <span
  style="font-family: courier new,courier,monospace; font-weight: bold; color: rgb(204, 0, 0);">&nbsp;&nbsp;&nbsp;
-- $CIP/csmart/config/rules/robustness/uc8 <span
- style="color: rgb(0, 153, 0);"># loads the MobileHostsAspect and sets
-some properties</span></span><br
- style="font-family: courier new,courier,monospace;">
+- $CIP/csmart/config/rules/robustness/uc8 </span></font><big
+ style="font-weight: bold;"><font size="-1"><big><span
+ style="color: rgb(204, 0, 0);"><span style="color: rgb(0, 153, 0);">#
+loads the MobileHostsAspect and sets some properties</span></span></big></font></big><font
+ size="-1"><br style="font-family: courier new,courier,monospace;">
 <br style="font-family: courier new,courier,monospace;">
 <span style="font-family: courier new,courier,monospace;">include_scripts:</span><br
  style="font-family: courier new,courier,monospace;">
 <span style="font-family: courier new,courier,monospace;">&nbsp; -
 script: $CIP/csmart/lib/isat/clearPnLogs.rb</span><br
  style="font-family: courier new,courier,monospace;">
-<span style="font-family: courier new,courier,monospace;">#&nbsp; -
-script: $CIP/csmart/lib/isat/datagrabber_include.rb</span><br
- style="font-family: courier new,courier,monospace;">
 <span style="font-family: courier new,courier,monospace;">&nbsp;<span
  style="font-weight: bold; color: rgb(204, 0, 0);"> - script:
-$CIP/csmart/lib/isat/initialize_network.rb&nbsp; <span
- style="color: rgb(0, 153, 0);"># sets the network up &amp; fixes after
-previous run</span><br>
+$CIP/csmart/lib/isat/initialize_network.rb&nbsp; </span></span></font><big
+ style="font-weight: bold;"><font size="-1"><big><span
+ style="color: rgb(204, 0, 0);"><span style="color: rgb(0, 153, 0);">#
+sets the network up &amp; fixes after previous run</span></span></big></font></big><font
+ size="-1"><span style="font-family: courier new,courier,monospace;"><span
+ style="font-weight: bold; color: rgb(204, 0, 0);"><br>
 &nbsp; - script:
-$CIP/csmart/lib/robustness/objs/monitor_mobile_hosts.rb&nbsp; <span
+$CIP/csmart/lib/robustness/objs/monitor_mobile_hosts.rb&nbsp; </span></span></font><big><font
+ size="-1"><big><span style="font-weight: bold; color: rgb(204, 0, 0);"><span
  style="color: rgb(0, 153, 0);"># (opt) prints msg when host move
-detected</span><br style="font-family: courier new,courier,monospace;">
-</span></span><span style="font-family: courier new,courier,monospace;"><span
- style="font-weight: bold; color: rgb(204, 0, 0);"><span
- style="color: rgb(0, 153, 0);"># moves the host on which node
-AVN-CO-NODE is running </span></span></span><span
+detected</span></span></big></font></big><font size="-1"><span
  style="font-family: courier new,courier,monospace;"><span
- style="font-weight: bold; color: rgb(204, 0, 0);"><span
- style="color: rgb(0, 153, 0);">to the 1-UA network after the start of
-Stage 1 planning</span></span></span><br>
+ style="font-weight: bold; color: rgb(204, 0, 0);"><br
+ style="font-family: courier new,courier,monospace;">
+</span></span></font><font size="-1" style="font-weight: bold;"><big><span
+ style="color: rgb(204, 0, 0);"><span style="color: rgb(0, 153, 0);">#
+moves the host on which node AVN-CO-NODE is running </span></span><span
+ style="color: rgb(204, 0, 0);"><span style="color: rgb(0, 153, 0);">to
+the 1-UA network after the start of Stage 1 planning</span></span></big></font><font
+ size="-1"><br>
 <span style="font-family: courier new,courier,monospace;"><span
  style="font-weight: bold; color: rgb(204, 0, 0);">- script:
 $CIP/csmart/lib/isat/migrate.rb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -151,11 +155,10 @@ parameters:</span><br
 - target_network: 1-UA</span><br
  style="font-family: courier new,courier,monospace;">
 <span style="font-family: courier new,courier,monospace;">&nbsp; -
-script: $CIP/csmart/lib/isat/stop_society.rb </span><span
- style="font-family: courier new,courier,monospace;"><span
- style="font-weight: bold; color: rgb(204, 0, 0);"><span
- style="color: rgb(0, 153, 0);"># stops run after Stage 1</span></span></span><br
- style="font-family: courier new,courier,monospace;">
+script: $CIP/csmart/lib/isat/stop_society.rb </span></font><big><font
+ size="-1"><big><span style="font-weight: bold; color: rgb(204, 0, 0);"><span
+ style="color: rgb(0, 153, 0);"># stops run after Stage 1</span></span></big></font></big><font
+ size="-1"><br style="font-family: courier new,courier,monospace;">
 <span style="font-family: courier new,courier,monospace;">&nbsp;&nbsp;&nbsp;
 parameters:</span><br
  style="font-family: courier new,courier,monospace;">
@@ -163,11 +166,10 @@ parameters:</span><br
 - stop_location: after_stage_1</span><br
  style="font-family: courier new,courier,monospace;">
 <span style="font-family: courier new,courier,monospace;">&nbsp; -
-script: $CIP/csmart/lib/isat/wait_for_ok.rb </span><span
- style="font-family: courier new,courier,monospace;"><span
- style="font-weight: bold; color: rgb(204, 0, 0);"><span
+script: $CIP/csmart/lib/isat/wait_for_ok.rb </span></font><big><font
+ size="-1"><big><span style="font-weight: bold; color: rgb(204, 0, 0);"><span
  style="color: rgb(0, 153, 0);"># waits for an ok at the end of Stage 1
-before stopping run</span></span></span><br
+before stopping run</span></span></big></font></big><font size="-1"><br
  style="font-family: courier new,courier,monospace;">
 <span style="font-family: courier new,courier,monospace;">&nbsp;&nbsp;&nbsp;
 parameters:</span><br
@@ -182,7 +184,7 @@ parameters:</span><br
 <span style="font-family: courier new,courier,monospace;">require
 'cougaar/scripting'</span><br
  style="font-family: courier new,courier,monospace;">
-<span style="font-family: courier new,courier,monospace;">Cougaar::ExperimentDefinition.register(__FILE__)</span><br>
+<span style="font-family: courier new,courier,monospace;">Cougaar::ExperimentDefinition.register(__FILE__)</span></font><br>
 </div>
 <u><b></b></u>
 <blockquote>
