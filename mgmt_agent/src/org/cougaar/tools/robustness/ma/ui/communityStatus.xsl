@@ -240,7 +240,7 @@ function getParent(el, pTagName) {
           <th style="width: 60px;" align="center" valign="middle"><xsl:text>Status</xsl:text></th>
           <th style="width: 60px;" align="center" valign="middle"><xsl:text>Vote</xsl:text></th>
           <th style="width: 60px;" align="center" valign="middle"><xsl:text>Last</xsl:text></th>
-          <th style="width: 60px;" align="center" valign="middle"><xsl:text>Expired</xsl:text></th>
+          <th style="width: 60px;" align="center" valign="middle"><xsl:text>Expires</xsl:text></th>
         </tr></thead>
         <tbody>
         <xsl:apply-templates select=".//node">
@@ -262,7 +262,7 @@ function getParent(el, pTagName) {
             <td style="width: 60px;" align="center" valign="middle"><xsl:text>AgentName</xsl:text></td>
             <td style="width: 60px;" align="center" valign="middle"><xsl:text>Status</xsl:text></td>
             <td style="width: 60px;" align="center" valign="middle"><xsl:text>Last</xsl:text></td>
-            <td style="width: 60px;" align="center" valign="middle"><xsl:text>Expired</xsl:text></td>
+            <td style="width: 60px;" align="center" valign="middle"><xsl:text>Expires</xsl:text></td>
             <td style="width: 60px;" align="center" valign="middle"><xsl:text>CurrentNode</xsl:text></td>
             <td style="width: 60px;" align="center" valign="middle"><xsl:text>PriorNode</xsl:text></td>
           </tr>
@@ -295,7 +295,7 @@ function getParent(el, pTagName) {
        </td>
        <td><xsl:value-of select="./status/@state" /></td>
        <td align="right"><xsl:value-of select="./status/@last" /></td>
-       <td><xsl:value-of select="./status/@expired" /></td>
+       <td><xsl:value-of select="./status/@expires" /></td>
        <td><xsl:value-of select="./location/@current" /></td>
        <td><xsl:value-of select="./location/@prior" /></td>
      </tr>
@@ -331,7 +331,7 @@ function getParent(el, pTagName) {
     <td><xsl:value-of select="./status/@state" /></td>
     <td><xsl:value-of select="./vote" /></td>
     <td><xsl:value-of select="./status/@last" /></td>
-    <td><xsl:value-of select="./status/@expired" /></td>
+    <td><xsl:value-of select="./status/@expires" /></td>
   </xsl:element>
 </xsl:template>
 
