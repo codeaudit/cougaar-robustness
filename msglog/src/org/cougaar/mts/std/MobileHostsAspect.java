@@ -152,6 +152,8 @@ public class MobileHostsAspect extends StandardAspect
 	    } else if (!addr.equals(myAddr) && host.equals(myHost)) {
 		if (log.isInfoEnabled())
 		    log.info("run: "+myHost+"'s address changed from "+myAddr+" to "+addr+".  Re-registering clients.");
+		if (eventSvc.isEventEnabled())
+		    eventSvc.event("IP Address of "+myHost+" changed from "+myAddr+" to "+addr);
 		myAddr = addr;
 		synchronized (clients) {
 		    Iterator iter = clients.iterator();
