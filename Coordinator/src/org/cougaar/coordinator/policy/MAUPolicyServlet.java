@@ -132,7 +132,7 @@ public class MAUPolicyServlet extends BaseServletComponent implements Blackboard
   }
   
   protected String getPath() {
-    return "/MAUPolicyServlet";
+    return "/MAUPolicy";
   }  
 
   // odd BlackboardClient method:
