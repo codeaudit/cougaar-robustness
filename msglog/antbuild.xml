@@ -41,6 +41,7 @@
 		<mkdir dir="staging/sys"/>
 		<antcall target="delete"/>
 		<antcall target="jar"/>
+		<signjar jar="${jar}" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
 		<move file="${jar}" todir="staging/lib"/>
 		<copy todir="staging/sys">
 			<fileset dir="sys/">
