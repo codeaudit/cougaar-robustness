@@ -702,6 +702,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
           long annealTime = pingTimeout > 0 ? pingTimeout / 1000 / 2 / 9 :
               LoadBalancer.DEFAULT_ANNEAL_TIME;
           logger.debug("Get restart destinations from LoadBalancer");
+          logger.info("doLayout:" +
+                      " annealTime=" + annealTime +
+                      " newNodes=" + newNodes +
+                      " deadNodes=" + deadNodes +
+                      " excludedNodes=" + excludedNodes);
           getLoadBalancer().doLayout( (int) annealTime,
                                      true,
                                      new ArrayList(newNodes),
