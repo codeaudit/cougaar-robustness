@@ -1,0 +1,44 @@
+###############################
+# Adds ACUC2B components
+# 
+
+ols = "org.cougaar.coordinator.sensors.load.OutsideLoadServlet"
+abs = "org.cougaar.coordinator.sensors.load.AvailableBandwidthServlet"
+
+plugins = [ols,abs]
+
+ltsp = "org.cougaar.coordinator.techspec.xml.LoadTechSpecsPlugin"
+
+techspecs = ['Load_EnclaveAssetStateDimensions.xml', 
+             'Load_Threats.xml', 
+             'Load_Events.xml', 
+             'Load_Sensors.xml']
+
+society.each_agent(true) do |agent|
+    if agent.name =~ /.*ARManager.*/
+        agent.add_components(plugins) 
+        found = false
+        agent.each_component do |c|
+            next unless c.classname == ltsp
+            techspecs.each do |ts|
+                c.add_argument(ts) unless c.has_argument?(ts)
+            end
+            c.name = c.comparison_name
+            found = true
+            break
+        end
+        unless found
+            agent.add_component do |c|
+                c.classname = ltsp
+                c.insertionpoint = 'Node.AgentManager.Agent.PluginManager.Plugin'
+                techspecs.each do |ts|
+                    c.add_argument(ts)
+                end
+            end
+        end
+    end
+end
+
+society.each_node do |node|
+    node.append_value_on_parameter("-Dorg.cougaar.config.path", "$COUGAAR_INSTALL_PATH/configs/coordinator/Load")
+end
