@@ -32,6 +32,7 @@ import org.apache.log4j.net.SocketAppender;
 import org.apache.log4j.spi.*;
 import java.util.Properties;
 import java.util.Enumeration;
+import org.apache.log4j.helpers.NullEnumeration;
 
 import java.io.ObjectOutputStream;
 
