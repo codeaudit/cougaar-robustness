@@ -60,7 +60,7 @@ import org.cougaar.tools.robustness.deconfliction.DefenseEnablingOperatingMode;
 import org.cougaar.tools.robustness.deconfliction.MonitoringEnablingOperatingMode;
 import org.cougaar.util.UnaryPredicate;
 
-public class LinkStatusSensor extends ComponentPlugin
+public class LinksStatusSensor extends ComponentPlugin
     implements Constants
 {
     private LoggingService log;
