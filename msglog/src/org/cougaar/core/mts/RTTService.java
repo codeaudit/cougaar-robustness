@@ -39,4 +39,6 @@ public interface RTTService extends Service
   public int getBestFullRTTForLink (DestinationLink link, String node);
   public void updateInbandRTT (DestinationLink sendLink, String node, int rtt);
   public void updateInbandRTT (String node, String recvLink, int rtt);
+  public void setMessageSendTime (AttributedMessage msg, long time);
+  public void setMessageReceiveTime (AttributedMessage msg, long time);
 }

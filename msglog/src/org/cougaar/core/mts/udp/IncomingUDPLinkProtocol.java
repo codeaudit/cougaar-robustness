@@ -58,6 +58,8 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
   private static final String messageDigestType;
   private static final int numInvalidMsgs;
   private static final int timeWindowSecs;
+  private static final int minPortNumber;
+  private static final int maxPortNumber;
 
   private static LoggingService log;
   private SocketClosingService socketCloser;
@@ -93,6 +95,12 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 
     s = "org.cougaar.message.protocol.udp.incoming.socketMoveTriggerTimeWindowSecs";
     timeWindowSecs = Integer.valueOf(System.getProperty(s,"10")).intValue();
+
+    s = "org.cougaar.message.protocol.udp.incoming.minPortNumber";
+    minPortNumber = Integer.valueOf(System.getProperty(s,"1024")).intValue();
+
+    s = "org.cougaar.message.protocol.udp.incoming.maxPortNumber";
+    maxPortNumber = Integer.valueOf(System.getProperty(s,"65536")).intValue();
   }
  
   public IncomingUDPLinkProtocol ()
@@ -301,7 +309,29 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
     
     public DatagramSocketListener (int port) throws IOException
     {
-      dsocket = new DatagramSocket (port);
+      //  Create a datagram socket at the specified port or at a random port
+
+      int tryN = 0;
+      int origPort = port;
+      dsocket = null;
+
+      while (dsocket == null)
+      {
+        tryN++;
+
+        if (origPort == 0) port = getRandomNumber (minPortNumber, maxPortNumber);
+        else if (tryN > 5) port = 0;  // let system decide
+
+        try
+        {
+          dsocket = new DatagramSocket (port);
+        }
+        catch (SocketException e)
+        {
+          // port most likely in use
+        }
+      }
+
       if (doDebug() || doInfo()) dsockString = datagramSocketToString (dsocket);
 
       //  We set our datagram packet buffer to the maximum possible size becase if a
@@ -312,6 +342,11 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
       packet = new DatagramPacket (buf, buf.length);
 
       moveTrigger = new EventWindow (numInvalidMsgs, timeWindowSecs*1000);
+    }
+
+    private int getRandomNumber (int min, int max)
+    {
+      return min + (int) Math.rint (Math.random() * (max-min));
     }
 
     public int getPort ()
@@ -449,17 +484,19 @@ public class IncomingUDPLinkProtocol extends IncomingLinkProtocol
 
           if (rttService != null)
           {
-/*
             String node = MessageUtils.getFromAgentNode (msg);
             String recvLink = IncomingUDPLinkProtocol.this.toString();
-            long sendTime = paam.getInbandAckSendTime();
+            sendTime = paam.getInbandAckSendTime();
             int rtt = ((int)(receiveTime - sendTime)) - paam.getInbandNodeTime();
             rttService.updateInbandRTT (node, recvLink, rtt);
-*/
           }
         }
         else
         {
+          //  Set receive time for RTT service
+
+          if (rttService != null) rttService.setMessageReceiveTime (msg, receiveTime);
+
           //  Deliver the message if it is non-null
 
           String msgString = null;

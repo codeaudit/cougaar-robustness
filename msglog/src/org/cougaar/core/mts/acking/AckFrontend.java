@@ -26,6 +26,8 @@
 package org.cougaar.core.mts.acking;
 
 import org.cougaar.core.mts.*;
+import org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol;
+import org.cougaar.core.mts.socket.OutgoingSocketLinkProtocol;
 import org.cougaar.core.service.LoggingService;
 
 import java.io.*;
@@ -95,7 +97,7 @@ class AckFrontend extends DestinationLinkDelegateImplBase
       MessageUtils.setAck (msg, ack);
       ack.addLinkSelection (link);  // the first selection (already made)
       ack.setResendMultiplier (MessageAckingAspect.resendMultiplier);
-     }
+    }
     else if (ack.isAck())
     {
       //  If the message has been acked already  we can just return success
@@ -110,7 +112,7 @@ class AckFrontend extends DestinationLinkDelegateImplBase
     //  Update various ack fields
 
     ack.setSendLink (link.getProtocolClass().getName());
-    ack.setRTT (getBestFullRTTForLink (link, toNode, msg));
+    ack.setRTT (getRTT (ack, link, toNode, msg));
 
     //  Set the specific acks in the message based on the ack type it contains
 
@@ -347,6 +349,32 @@ class AckFrontend extends DestinationLinkDelegateImplBase
   }
 
   //  Utility methods
+
+  private int getRTT (Ack ack, DestinationLink link, String node, AttributedMessage msg)
+  {
+    int rtt = getBestFullRTTForLink (link, node, msg);
+
+    //  HACK - need generic DestinationLink methods rather than protocol specific ones
+
+    if (ack.getSendLink().equals("org.cougaar.core.mts.udp.OutgoingUDPLinkProtocol"))
+    {
+      if (OutgoingUDPLinkProtocol.doInbandAcking())
+      {
+        int timeout = OutgoingUDPLinkProtocol.getSocketTimeout();
+        if (timeout > rtt) rtt = timeout;
+      }
+    }
+    else if (ack.getSendLink().equals("org.cougaar.core.mts.socket.OutgoingSocketLinkProtocol"))
+    {
+      if (OutgoingSocketLinkProtocol.doInbandAcking())
+      {
+        int timeout = OutgoingSocketLinkProtocol.getSocketTimeout();
+        if (timeout > rtt) rtt = timeout;
+      }
+    }
+
+    return rtt;
+  }
 
   private int getBestFullRTTForLink (DestinationLink link, String node, AttributedMessage msg)
   {

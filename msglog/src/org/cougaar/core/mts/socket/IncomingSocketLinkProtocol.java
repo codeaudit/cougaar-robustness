@@ -112,6 +112,8 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
   private static final int idleTimeout;
   private static final int numInvalidMsgs;
   private static final int timeWindowSecs;
+  private static final int minPortNumber;
+  private static final int maxPortNumber;
 
   private static LoggingService log;
   private SocketClosingService socketCloser;
@@ -177,6 +179,12 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
     s = "org.cougaar.message.protocol.socket.incoming.serverSocketMoveTriggerTimeWindowSecs";
     timeWindowSecs = Integer.valueOf(System.getProperty(s,"10")).intValue();
+
+    s = "org.cougaar.message.protocol.udp.incoming.minPortNumber";
+    minPortNumber = Integer.valueOf(System.getProperty(s,"1024")).intValue();
+
+    s = "org.cougaar.message.protocol.udp.incoming.maxPortNumber";
+    maxPortNumber = Integer.valueOf(System.getProperty(s,"65536")).intValue();
   }
  
   public IncomingSocketLinkProtocol ()
@@ -407,8 +415,35 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
     public ServerSocketListener (int port) throws IOException
     {
-      serverSock = new ServerSocket (port, backlog);
+      //  Create a server socket at the specified port or at a random port
+
+      int tryN = 0;
+      int origPort = port;
+      serverSock = null;
+
+      while (serverSock == null)
+      {
+        tryN++;
+
+        if (origPort == 0) port = getRandomNumber (minPortNumber, maxPortNumber);
+        else if (tryN > 5) port = 0;  // let system decide
+
+        try
+        {
+          serverSock = new ServerSocket (port, backlog);
+        }
+        catch (SocketException e)
+        {
+          // port most likely in use
+        }
+      }
+
       moveTrigger = new EventWindow (numInvalidMsgs, timeWindowSecs*1000);
+    }
+
+    private int getRandomNumber (int min, int max)
+    {
+      return min + (int) Math.rint (Math.random() * (max-min));
     }
 
     public int getPort ()
@@ -640,6 +675,10 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
             break;
           }
         }
+
+        //  Set receive time for RTT service
+
+        if (rttService != null) rttService.setMessageReceiveTime (msg, receiveTime);
 
         //  Deliver the message if we have one
 

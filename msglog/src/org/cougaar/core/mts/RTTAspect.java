@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 25 Oct 2002: Updates for setting times in protocols. (OBJS)
  * 21 Jul 2002: Created. (OBJS)
  */
 
@@ -49,6 +50,7 @@ import java.util.*;
 public class RTTAspect extends StandardAspect implements Serializable  // for embedded class
 {
   private static final String RTT_SEND_TIME = "RTT_SendTime";
+  private static final String RTT_RECV_TIME = "RTT_RecvTime";
   private static final String RTT_DATA =      "RTT_Data";
 
   private static final int c_samplePoolsize, n_samplePoolsize;
@@ -204,6 +206,16 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
     {
       updateRTT (node, recvLink, rtt);
     }
+
+    public void setMessageSendTime (AttributedMessage msg, long time)
+    {
+      setRTTSendTimeAttribute (msg, time);
+    }
+
+    public void setMessageReceiveTime (AttributedMessage msg, long time)
+    {
+      setRTTRecvTimeAttribute (msg, time);
+    }
   }
 
   //  Implementation
@@ -343,6 +355,28 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
     }
   }
 
+  private static void setRTTSendTimeAttribute (AttributedMessage msg, long time)
+  {
+    msg.setAttribute (RTT_SEND_TIME, new Long (time));
+  }
+
+  private static long getRTTSendTimeAttribute (AttributedMessage msg)
+  {
+    Long time = (Long) msg.getAttribute (RTT_SEND_TIME);
+    return (time != null ? time.longValue() : 0);
+  }
+
+  private static void setRTTRecvTimeAttribute (AttributedMessage msg, long time)
+  {
+    msg.setAttribute (RTT_RECV_TIME, new Long (time));
+  }
+
+  private static long getRTTRecvTimeAttribute (AttributedMessage msg)
+  {
+    Long time = (Long) msg.getAttribute (RTT_RECV_TIME);
+    return (time != null ? time.longValue() : 0);
+  }
+
   public static Vector getRTTDataAttribute (AttributedMessage msg)
   {
     return (Vector) msg.getAttribute (RTT_DATA);
@@ -395,8 +429,7 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
       //  the latest receptions are possibly later than the send time,
       //  resulting in negative node times in the calculations below.
 
-      long sendTime = now();
-      msg.setAttribute (RTT_SEND_TIME, new Long (sendTime));
+      setRTTSendTimeAttribute (msg, now());
 
       //  We now calculate the first half of the RTTs and store the results
       //  in the outgoing message.  On the other node these results will be
@@ -449,21 +482,19 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
 
       if (MessageUtils.isLocalMessage (msg)) return super.deliverMessage (msg, dest);
 
-      //  Record the receive time for the message.  Like with the send time above, kind
-      //  of a hack, but need BBN support to have link protocols set the receive time
-      //  at the time a message is actually received.  Again, on the other hand, 
-      //  travel time thru MTS can be considered a legitimate part of the RTT. 
+      //  Get/Set the receive time for the message
 
-      long receiveTime = now();
+      long receiveTime = getRTTRecvTimeAttribute (msg);
+      if (receiveTime == 0) receiveTime = now();
 
       //  Record this latest message reception
 
-      Long time = (Long) msg.getAttribute (RTT_SEND_TIME);
-      if (time == null) return deliverer.deliverMessage (msg, dest);  // missing data
+      long sendTime = getRTTSendTimeAttribute (msg);
+      if (sendTime == 0) return deliverer.deliverMessage (msg, dest);  // missing data
 
       String sendNode = MessageUtils.getFromAgentNode (msg);
       String sendLink = MessageUtils.getSendProtocolLink (msg);
-      long sendTime = time.longValue();
+
       recordLatestMessageReception (sendNode, sendLink, sendTime, receiveTime);     
 
       //  Now we turn around and view this received message as completing a

@@ -132,17 +132,21 @@ public class MessageSendHistoryAspect extends StandardAspect
       //  like in the message send history?
       
       //  If we got to this point, we assume the link has successfully
-      //  sent the message or otherwise thrown an exception.  
+      //  sent the message or otherwise thrown an exception.
 
-      //  HACK!!!  Are we really guaranteed this situation though?  What if the 
+      //  NOTE:  Are we really guaranteed this situation though?  What if the 
       //  message is stuck in a queue, or some other delayed send situation?
+
+      //  NOTE:  The acking message resender now resets the success flag if
+      //  the message is resent - ie. the message send was sucessful in its
+      //  first hop, but the lack of an ack back for the message indicates
+      //  a potential send problem with that transport.
       
       id = AdaptiveLinkSelectionPolicy.getTransportID (link.getProtocolClass());
-      num = MessageUtils.getMessageNumber (message);
       
       synchronized (recLock)
       {
-        rec = messageHistory.sends.get (id, num);
+        rec = messageHistory.sends.get (id, message);
         if (rec == null) rec = new MessageHistory.SendRecord (id, message);
       
         rec.sendTimestamp = sendTime;
@@ -150,8 +154,6 @@ public class MessageSendHistoryAspect extends StandardAspect
         rec.success = (exception == null);
       
         messageHistory.sends.put (rec);
-      
- // System.out.println ("SendHistory: msg " +num+ " send record =\n" + rec);
       }
 
       if (exception != null)
@@ -202,9 +204,27 @@ public class MessageSendHistoryAspect extends StandardAspect
     }
   }
 
+  public static float getPercentSuccessfulSendsByTransportID (int id)
+  {
+    return messageHistory.sends.getPercentSuccessfulSendsByTransportID (id);
+  }
+
+  public static boolean hasHistory (int id)
+  {
+    return messageHistory.sends.hasHistory (id);
+  }
+
   public static boolean wasLastSendSuccessful (int id)
   {
     return messageHistory.sends.lastSendSuccessfulByTransportID (id);
+  }
+
+  public static void registerSendFailure (AttributedMessage msg)
+  {
+    String sendLink = MessageUtils.getSendProtocolLink (msg);
+    int id = AdaptiveLinkSelectionPolicy.getTransportID (sendLink);
+    MessageHistory.SendRecord rec = messageHistory.sends.get (id, msg);
+    if (rec != null) rec.success = false;
   }
 
   private static long now ()

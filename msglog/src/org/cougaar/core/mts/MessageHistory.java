@@ -19,12 +19,13 @@
  * </copyright>
  *
  * CHANGE RECORD 
- * 18 Apr  2002: Update from Cougaar 9.0.0 to 9.1.x (OBJS)
- * 21 Mar  2002: Update from Cougaar 8.6.2.x to 9.0.0 (OBJS)
- * 29 Nov  2001: Change getting message number to MessageAckingAspect way. (OBJS)
- * 24 Sept 2001: Updated from Cougaar 8.4 to 8.4.1 (OBJS)
- * 18 Sept 2001: Updated from Cougaar 8.3.1 to 8.4 (OBJS)
- * 08 July 2001: Created. (OBJS)
+ * 01 Nov 2002: Cap the depth of history, add get percent successful sends. (OBJS)
+ * 18 Apr 2002: Update from Cougaar 9.0.0 to 9.1.x (OBJS)
+ * 21 Mar 2002: Update from Cougaar 8.6.2.x to 9.0.0 (OBJS)
+ * 29 Nov 2001: Change getting message number to MessageAckingAspect way. (OBJS)
+ * 24 Sep 2001: Updated from Cougaar 8.4 to 8.4.1 (OBJS)
+ * 18 Sep 2001: Updated from Cougaar 8.3.1 to 8.4 (OBJS)
+ * 08 Jul 2001: Created. (OBJS)
  */
 
 package org.cougaar.core.mts;
@@ -39,47 +40,40 @@ import java.util.*;
 
 class MessageHistory
 {
-  public static final sendsClass sends = new sendsClass();
-  public static final receivesClass receives = new receivesClass();
+  public static final int MAX_TRANSPORT_HISTORY = 5;
+  public static final int MAX_MESSAGE_HISTORY = 200;  // bit of a HACK
+
+  static final sendsClass sends = new sendsClass();
+  static final receivesClass receives = new receivesClass();
 
   public static class sendsClass
   {
-    private static final Hashtable numTable = new Hashtable();
+    private static final Hashtable msgTable = new Hashtable();
     private static final Hashtable idTable = new Hashtable();
     
     public static synchronized void put (MessageHistory.SendRecord rec)
     {
-      Integer key = new Integer (rec.messageNum);
-      Vector v = (Vector) numTable.get (key);
+      String mkey = rec.messageKey;
+      Vector v = (Vector) msgTable.get (mkey);
       if (v == null) v = new Vector();
       else if (v.contains (rec)) return;  // no duplicates
       v.add (rec);
-      numTable.put (key, v);
+      if (v.size() > MAX_MESSAGE_HISTORY) v.remove (0); // delete the oldest
+      msgTable.put (mkey, v);
 
-      key = new Integer (rec.transportID);
-      v = (Vector) idTable.get (key);
+      Integer tkey = new Integer (rec.transportID);
+      v = (Vector) idTable.get (tkey);
       if (v == null) v = new Vector();
       else if (v.contains (rec)) return;  // no duplicates
       v.add (rec);
-      idTable.put (key, v);
+      if (v.size() > MAX_TRANSPORT_HISTORY) v.remove (0); // delete the oldest
+      idTable.put (tkey, v);
     }
 
-    public boolean hasHistory (AttributedMessage m)
+    public static MessageHistory.SendRecord get (int id, AttributedMessage msg)
     {
-      int messageNum = getMessageNum (m);
-      Vector v = (Vector) numTable.get (new Integer (messageNum));
-      return (v != null && v.size() > 0);
-    }
+      MessageHistory.SendRecord[] recs = getByMessage (msg);
 
-    public static MessageHistory.SendRecord get (int id, AttributedMessage m)
-    {
-      int messageNum = getMessageNum (m);
-      return get (id, messageNum);
-    }
-
-    public static MessageHistory.SendRecord get (int id, int num)
-    {
-      MessageHistory.SendRecord[] recs = getByMessageNum (num);
       for (int i=0; i<recs.length; i++)
       {
         if (recs[i].transportID == id) return recs[i];
@@ -88,9 +82,10 @@ class MessageHistory
       return null;
     }
 
-    public static MessageHistory.SendRecord[] getByMessageNum (int num)
+    public static MessageHistory.SendRecord[] getByMessage (AttributedMessage msg)
     {
-      Vector v = (Vector) numTable.get (new Integer(num));
+      String mkey = getMessageKey (msg);
+      Vector v = (Vector) msgTable.get (mkey);
       if (v == null) return new MessageHistory.SendRecord[0];
       return (MessageHistory.SendRecord[]) v.toArray (new MessageHistory.SendRecord[v.size()]); 
     }
@@ -108,16 +103,17 @@ class MessageHistory
       return (v != null ? (MessageHistory.SendRecord) v.lastElement() : null);
     }
 
-    public static int countSuccessfulSends (AttributedMessage m)
+    public boolean hasHistory (AttributedMessage msg)
     {
-      int messageNum = getMessageNum (m);
-      return countSuccessfulSendsByMessageNum (messageNum);
+      String mkey = getMessageKey (msg);
+      Vector v = (Vector) msgTable.get (new Integer (mkey));
+      return (v != null && v.size() > 0);
     }
 
-    public static int countSuccessfulSendsByMessageNum (int num)
+    public static int countSuccessfulSendsByMessage (AttributedMessage msg)
     {
       int count = 0;
-      MessageHistory.SendRecord[] recs = getByMessageNum (num);
+      MessageHistory.SendRecord[] recs = getByMessage (msg);
 
       for (int i=0; i<recs.length; i++) 
       {
@@ -140,18 +136,29 @@ class MessageHistory
       return count;
     }      
 
-    public static boolean allSendsUnsuccessful (AttributedMessage m)
+    private static int getHistoryDepthByTransportID (int id)
     {
-      //  If there were no sends then return false
-
-      int messageNum = getMessageNum (m);
-      return allSendsUnsuccessfulByMessageNum (messageNum);
+      Vector v = (Vector) idTable.get (new Integer(id));
+      return (v != null ? v.size() : 0);
     }
 
-    public static boolean allSendsUnsuccessfulByMessageNum (int num)
+    public boolean hasHistory (int id)
+    {
+      return getHistoryDepthByTransportID (id) > 0;
+    }
+
+    public static float getPercentSuccessfulSendsByTransportID (int id)
+    {
+      int maxCount = getHistoryDepthByTransportID (id);
+      if (maxCount < 1) return 0.0f;
+      int numSuccess = countSuccessfulSendsByTransportID (id);
+      return ((float) numSuccess/(float) maxCount);
+    }
+
+    public static boolean allSendsUnsuccessfulByMessage (AttributedMessage msg)
     {
       int count = 0;
-      MessageHistory.SendRecord[] recs = getByMessageNum (num);
+      MessageHistory.SendRecord[] recs = getByMessage (msg);
 
       for (int i=0; i<recs.length; i++) 
       {
@@ -185,29 +192,31 @@ class MessageHistory
 
   public static class receivesClass
   {
-    private static final Hashtable numTable = new Hashtable();
+    private static final Hashtable msgTable = new Hashtable();
     private static final Hashtable idTable = new Hashtable();
     
     public static synchronized void put (MessageHistory.ReceiveRecord rec)
     {
-      Integer key = new Integer (rec.messageNum);
-      Vector v = (Vector) numTable.get (key);
+      String mkey = rec.messageKey;
+      Vector v = (Vector) msgTable.get (mkey);
       if (v == null) v = new Vector();
       else if (v.contains (rec)) return;  // no duplicates
       v.add (rec);
-      numTable.put (key, v);
+      if (v.size() > MAX_MESSAGE_HISTORY) v.remove (0); // delete the oldest
+      msgTable.put (mkey, v);
 
-      key = new Integer (rec.transportID);
-      v = (Vector) idTable.get (key);
+      Integer tkey = new Integer (rec.transportID);
+      v = (Vector) idTable.get (tkey);
       if (v == null) v = new Vector();
       else if (v.contains (rec)) return;  // no duplicates
       v.add (rec);
-      idTable.put (key, v);
+      if (v.size() > MAX_TRANSPORT_HISTORY) v.remove (0); // delete the oldest
+      idTable.put (tkey, v);
     }
 
-    public static MessageHistory.ReceiveRecord get (int id, int num)
+    public static MessageHistory.ReceiveRecord get (int id, AttributedMessage msg)
     {
-      MessageHistory.ReceiveRecord[] recs = getByMessageNum (num);
+      MessageHistory.ReceiveRecord[] recs = getByMessage (msg);
 
       for (int i=0; i<recs.length; i++)
       {
@@ -217,9 +226,10 @@ class MessageHistory
       return null;
     }
 
-    public static MessageHistory.ReceiveRecord[] getByMessageNum (int num)
+    public static MessageHistory.ReceiveRecord[] getByMessage (AttributedMessage msg)
     {
-      Vector v = (Vector) numTable.get (new Integer(num));
+      String mkey = getMessageKey (msg);
+      Vector v = (Vector) msgTable.get (mkey);
       if (v == null) return new MessageHistory.ReceiveRecord[0];
       return (MessageHistory.ReceiveRecord[]) v.toArray (new MessageHistory.ReceiveRecord[v.size()]); 
     }
@@ -235,7 +245,7 @@ class MessageHistory
   private static class BaseRecord
   {
     public int transportID;
-    public int messageNum;
+    public String messageKey;
     public boolean success;
   }
 
@@ -246,18 +256,18 @@ class MessageHistory
     public long sendTimestamp;
     public long abandonTimestamp;
 
-    public SendRecord (int transportID, AttributedMessage m)
+    public SendRecord (int transportID, AttributedMessage msg)
     {
       this.transportID = transportID;
-      messageNum = getMessageNum (m);
-      destination = m.getTarget();
+      messageKey = getMessageKey (msg);
+      destination = msg.getTarget();
     }
 
     public String toString ()
     {
       return "[" + "\n" +
              "      transportID= " + transportID + "\n" +
-             "       messageNum= " + messageNum + "\n" +
+             "       messageKey= " + messageKey + "\n" +
              "      destination= " + destination + "\n" +
              "   routeTimestamp= " + toDate (routeTimestamp) + "\n" +
              "    sendTimestamp= " + toDate (sendTimestamp) + "\n" +
@@ -276,7 +286,7 @@ class MessageHistory
     {
       return "[" + "\n" +
              "      transportID= " + transportID + "\n" +
-             "       messageNum= " + messageNum + "\n" +
+             "       messageKey= " + messageKey + "\n" +
              "      origination= " + origination + "\n" +
              " receiveTimestamp= " + toDate (receiveTimestamp) + "\n" +
              "          success= " + success + "\n" +
@@ -284,9 +294,9 @@ class MessageHistory
     }
   }
 
-  private static int getMessageNum (AttributedMessage msg)
+  private static String getMessageKey (AttributedMessage msg)
   {
-    return MessageUtils.getMessageNumber (msg);
+    return ""+ MessageUtils.getMessageNumber(msg) +"::"+ MessageUtils.getToAgent(msg);
   }
 
   private static long timeNow ()

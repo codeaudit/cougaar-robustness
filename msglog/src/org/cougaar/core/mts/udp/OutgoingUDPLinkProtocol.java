@@ -51,7 +51,6 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
   private static final String localhost;
   private static final int linkCost;
   private static final boolean doInbandAcking;
-  private static final boolean doInbandRTTUpdates;
   private static final boolean useMessageDigest;
   private static final String messageDigestType;
   private static final int socketTimeout;
@@ -71,13 +70,10 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
     localhost = System.getProperty (s, getLocalHost());
 
     s = "org.cougaar.message.protocol.udp.cost";  // one way
-    linkCost = Integer.valueOf(System.getProperty(s,"4000")).intValue();  // was 750
+    linkCost = Integer.valueOf(System.getProperty(s,"4000")).intValue();
 
     s = "org.cougaar.message.protocol.udp.doInbandAcking";
     doInbandAcking = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
-
-    s = "org.cougaar.message.protocol.udp.doInbandRTTUpdates";
-    doInbandRTTUpdates = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
 
     s = "org.cougaar.message.protocol.udp.useMessageDigest";
     useMessageDigest = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
@@ -113,10 +109,7 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
       if (socketCloser == null) log.error ("Cannot do socket timeouts - SocketClosingService not available!");
     }
 
-    if (doInbandRTTUpdates)
-    {
-      rttService = (RTTService) getServiceBroker().getService (this, RTTService.class, null);
-    }
+    rttService = (RTTService) getServiceBroker().getService (this, RTTService.class, null);
 
     if (startup() == false)
     {
@@ -236,6 +229,16 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
     return MAX_UDP_MSG_SIZE;
   }
 
+  public static boolean doInbandAcking ()
+  {
+    return doInbandAcking;
+  }
+
+  public static int getSocketTimeout ()
+  {
+    return socketTimeout;
+  }
+
   class UDPOutLink implements DestinationLink 
   {
     private MessageAddress destination;
@@ -343,10 +346,14 @@ public class OutgoingUDPLinkProtocol extends OutgoingLinkProtocol
    
     private synchronized boolean sendMessage (AttributedMessage msg, DatagramSocketSpec spec) throws Exception
     {
-      if (doDebug()) log.debug ("Sending " +MessageUtils.toString(msg));
-
       //  NOTE:  UDP is an unreliable communications protocol.  We just send the message
       //  on its way and maybe it gets there.  Acking will tell us if it does or not.
+
+      if (doDebug()) log.debug ("Sending " +MessageUtils.toString(msg));
+
+      //  Set message send time for RTT service (updates msg attribute)
+
+      if (rttService != null) rttService.setMessageSendTime (msg, now());  // closer than aspect to actual send
 
       //  Serialize the message into a byte array.  Depending on properties set, we possibly help
       //  insure message integrity via a message digest (eg an embedded MD5 hash of the message).

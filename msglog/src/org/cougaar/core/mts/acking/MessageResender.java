@@ -381,6 +381,7 @@ class MessageResender implements Runnable
 
           if (debug()) log.debug ("MessageResender: Resending " +MessageUtils.toString(msg));
           remove (msg);  // remove first to avoid race condition with send
+          MessageSendHistoryAspect.registerSendFailure (msg);  // since no ack
           aspect.sendMessage (msg);
 
           //  Start adding delay to resending this message if it keeps coming back around

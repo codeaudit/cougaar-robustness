@@ -168,7 +168,7 @@ Mobility issue: arriving agent is now local, msg was for it when it was on other
       {
         long mins = (now()-ack.getSendTime()) / (60*1000);
         String date = (new Date (ack.getSendTime())).toString();
-        log.warn ("AckBackend: Msg too old [" +mins+ "minutes: " +date+ "] (msg ignored): " +msgString);
+        log.warn ("AckBackend: Msg too old [" +mins+ " minutes: " +date+ "] (msg ignored): " +msgString);
       }
 
       throw new MisdeliveredMessageException (msg);

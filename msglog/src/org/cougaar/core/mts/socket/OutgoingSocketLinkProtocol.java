@@ -101,7 +101,6 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
 
   private static final int linkCost;
   private static final boolean doInbandAcking;
-  private static final boolean doInbandRTTUpdates;
   private static final boolean useMessageDigest;
   private static final String messageDigestType;
   private static final int socketTimeout;
@@ -123,9 +122,6 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
 
     s = "org.cougaar.message.protocol.socket.doInbandAcking";
     doInbandAcking = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
-
-    s = "org.cougaar.message.protocol.socket.doInbandRTTUpdates";
-    doInbandRTTUpdates = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
 
     s = "org.cougaar.message.protocol.socket.useMessageDigest";
     useMessageDigest = Boolean.valueOf(System.getProperty(s,"false")).booleanValue();
@@ -164,10 +160,7 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
       if (socketCloser == null) log.error ("Cannot do socket timeouts - SocketClosingService not available!");
     }
 
-    if (doInbandRTTUpdates)
-    {
-      rttService = (RTTService) getServiceBroker().getService (this, RTTService.class, null);
-    }
+    rttService = (RTTService) getServiceBroker().getService (this, RTTService.class, null);
 
     if (startup() == false)
     {
@@ -282,6 +275,16 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
     return link;
   }
 
+  public static boolean doInbandAcking ()
+  {
+    return doInbandAcking;
+  }
+
+  public static int getSocketTimeout ()
+  {
+    return socketTimeout;
+  }
+
   class SocketOutLink implements DestinationLink 
   {
     private MessageAddress destination;
@@ -391,6 +394,10 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
     private synchronized boolean sendMessage (AttributedMessage msg, SocketSpec spec) throws Exception
     {
       if (doDebug()) log.debug ("Sending " +MessageUtils.toString(msg));
+
+      //  Set message send time for RTT service (updates msg attribute)
+
+      if (rttService != null) rttService.setMessageSendTime (msg, now());  // closer than aspect to actual send
 
       //  Serialize the message into a byte array.  Depending on properties set, we possibly help
       //  insure message integrity via a message digest (eg an embedded MD5 hash of the message).

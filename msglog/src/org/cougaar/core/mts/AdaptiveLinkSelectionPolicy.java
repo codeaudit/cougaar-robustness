@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 30 Oct  2002: Improve link selection in face of send failures. (OBJS)
  * 18 Aug  2002: Various enhancements for Cougaar 9.4.1 (OBJS)
  * 25 Jul  2002: Added code to avoid UDP link if msg size too big. (OBJS)
  * 25 Jul  2002: Added getting RTT from RTT service. (OBJS)
@@ -122,6 +123,7 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
   private static final boolean createSocketClosingService;
   private static final int initialNodeTime;
   private static final int tryOtherLinksInterval;
+  private static final int minSteadyState;
   private static final int upgradeMetricMultiplier;
   private static final int maxUpgradeTries;
 
@@ -158,8 +160,11 @@ private static long startTime = 0;
     s = "org.cougaar.message.transport.policy.adaptive.initialNodeTime";
     initialNodeTime = Integer.valueOf(System.getProperty(s,"20000")).intValue();
 
-    s = "org.cougaar.message.transport.policy.adaptive.tryOtherLinksInterval";
+    s = "org.cougaar.message.transport.policy.adaptive.tryOtherLinksInterval"; // maxSteadyState for topLink
     tryOtherLinksInterval = Integer.valueOf(System.getProperty(s,"50")).intValue();
+
+    s = "org.cougaar.message.transport.policy.adaptive.minSteadyState";
+    minSteadyState = Integer.valueOf(System.getProperty(s,"4")).intValue();
 
     s = "org.cougaar.message.transport.policy.adaptive.upgradeMetricMultiplier";
     upgradeMetricMultiplier = Integer.valueOf(System.getProperty(s,"10")).intValue();
@@ -228,19 +233,7 @@ if (commStartDelaySeconds > 0)
       MessageUtils.setSendProtocolLink (msg, getName(link));
 
       Ack ack = MessageUtils.getAck (msg);
-
-      if (ack != null)
-      {
-        ack.setSendLink (getName (link));
-
-// With change of message resender, still do this here?
-
-        String targetNode = MessageUtils.getToAgentNode (msg);
-        int rtt = rttService.getBestFullRTTForLink (link, targetNode);
-        if (rtt <= 0) rtt = getLinkCost (link, msg);
-        ack.setRTT (rtt);
-        // MessageAckingAspect.dingTheMessageResender();  // calc new deadlines
-      }
+      if (ack != null) ack.setSendLink (getName (link));
 
       // if (showTraffic) showProgress (link);
 
@@ -727,6 +720,10 @@ if (commStartDelaySeconds > 0)
       }
     }
 
+/*
+
+was new, now old; should be deleted soon
+
     //  Special Case:  Message retrying (first send attempt generated an exception)
     //  or resending (message did not get an ack).  What's special here is that we avoid 
     //  (if possible) choosing any link that the message has already tried and actually
@@ -790,6 +787,7 @@ if (commStartDelaySeconds > 0)
       if (link != null) ack.addLinkSelection (link);
       return linkChoice (link, msg);
     }
+*/
 
     /**
      *  Main Selection Algorithm
@@ -837,8 +835,6 @@ if (commStartDelaySeconds > 0)
 
       //  We've used this link so many times in a row now, it may be time
       //  to consider other links that may have improved, or never been tried.
-
-//log.debug ("\n** COUNT= "+count);
 
       if (count == 0)
       {
@@ -893,18 +889,21 @@ if (commStartDelaySeconds > 0)
       //  Decide whether or not to try to upgrade.  An upgrade is by definition
       //  a higher ranking transport than we are currently using.
 
-      int numSends = lastChoice.getNumSteadyStateSends();
-      int sendMetric = getMetric (lastChoice.getSteadyStateLink(), msg);
-      int topMetric = getMetric (topLink, msg);
-
       DestinationLink upgrade = null;
+      int numSends = lastChoice.getNumSteadyStateSends();
 
-      if (numSends*sendMetric > upgradeMetricMultiplier*topMetric)
+      if (numSends >= minSteadyState)
       {
-        //  We've exceeded the metric of N (default 10) sends by the top link.
-        //  Time to think about a better route man.
+        int sendMetric = getMetric (lastChoice.getSteadyStateLink(), msg);
+        int topMetric = getMetric (topLink, msg);
 
-        upgrade = pickUpgradeChoice (lastChoice, destLinks, msg);
+        if (numSends*sendMetric > upgradeMetricMultiplier*topMetric)
+        {
+          //  We've exceeded the metric of N (default 10) sends by the top link.
+          //  Time to think about a better route man.
+
+          upgrade = pickUpgradeChoice (lastChoice, destLinks, msg);
+        }
       }
 
       if (upgrade != null)
@@ -1047,13 +1046,12 @@ if (commStartDelaySeconds > 0)
     {
       //  If we find the lastChoice steady state link in our list of tries, that is the
       //  signal that we have made a complete cycle, and it is time to start over again.
-      //  We will return null at this point to gain a delay in trying to send the message
+      //  We will return null at this point to cause a delay in trying to send the message
       //  again as it appears its destination is unreachable for now.
 
       lastChoice.clearReplacementTries();
-
-      //if (debug) log.debug ("Cycled thru links, injecting delay before next try"); 
-      //return null;
+      if (debug) log.debug ("Cycled thru links, injecting delay before next try"); 
+      return null;
     }
 
     //  Filter the given candidate links to those that have not been tried before and
@@ -1096,13 +1094,32 @@ if (commStartDelaySeconds > 0)
     //  a little deeper at other factors such as send successes and failures,
     //  or we could make a random selection, round robin, etc.
 
-    //  For now, we'll choose the highest ranked link.  So re-rank the links we have 
-    //  filtered and return the first one.
+    //  For now, we'll choose the highest ranked link that has the most successful
+    //  send history.  So re-rank the links we have filtered, find the most successful,
+    //  and return it.
 
     DestinationLink replacementLinks[] = (DestinationLink[]) v.toArray (new DestinationLink[v.size()]); 
     linkRanker.setMessage (msg);
     Arrays.sort (replacementLinks, linkRanker);
-    return replacementLinks[0];
+
+    float highestPercent = 0.0f;
+    int choice = 0;
+
+    for (int i=0; i<replacementLinks.length; i++)
+    {
+      int id = getTransportID (replacementLinks[i]);
+      float percent = MessageSendHistoryAspect.getPercentSuccessfulSendsByTransportID (id);
+
+      if (percent < 0.01f && !MessageSendHistoryAspect.hasHistory(id)) percent = 1.0f;  // favor unused links
+
+      if (percent > highestPercent)
+      {
+        highestPercent = percent;
+        choice = i;        
+      }
+    }
+    
+    return replacementLinks[choice];
   }
 
   private DestinationLink setSteadyStateChoice (SelectionChoice lastChoice, DestinationLink link, AttributedMessage msg)
@@ -1570,12 +1587,17 @@ if (commStartDelaySeconds > 0)
 
   public static int getTransportID (DestinationLink link)
   {
-    return getTransportID (link.getProtocolClass());
+    return getTransportID (link.getProtocolClass().getName());
   }
 
-  public static int getTransportID (Class transportClass)
+  public static int getTransportID (Class protocolClass)
   {
-    return transportClass.hashCode();
+    return getTransportID (protocolClass.getName());
+  }
+
+  public static int getTransportID (String protocolClassname)
+  {
+    return protocolClassname.hashCode();
   }
 
   public static String getLinkLetter (DestinationLink link)
