@@ -80,6 +80,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
 
     private boolean doInitialPing() {
+      if (model != null) {
+        String attrVal = model.getAttribute("DO_INITIAL_PINGS");
+        return (attrVal == null || attrVal.equalsIgnoreCase("True"));
+      }
       return true;
     }
 
