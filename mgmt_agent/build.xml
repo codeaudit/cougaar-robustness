@@ -485,17 +485,31 @@
     />
   </target>
 
-	<!-- Create Cougaar overlay zip file -->
-	<target name="create_cougaar_overlay">
-		<delete dir="staging"/>
-		<mkdir dir="staging/lib"/>
-    <mkdir dir="staging/configs/mic/"/>
-		<antcall target="init"/>
-		<antcall target="compile"/>
-		<antcall target="jar"/>
-		<move file="${lib}/${jar}" toDir="staging/lib"/>
-    <copy file="test/data/communities.xml" toDir="staging/configs/mic"/>
-		<zip zipfile="Robustness_mic_mgmt_agent_overlay.zip" basedir="staging"/>
-		<delete dir="staging"/>
-	</target>
+  <!-- Create Cougaar overlay zip file -->
+  <target name="create_cougaar_overlay">
+    <delete dir="staging"/>
+    <mkdir dir="staging/lib"/>
+    <mkdir dir="staging/robustness"/>
+    <mkdir dir="staging/robustness/bin"/>
+    <mkdir dir="staging/robustness/doc"/>
+    <mkdir dir="staging/robustness/configs"/>
+    <mkdir dir="staging/robustness/csmart"/>
+    <mkdir dir="staging/robustness/csmart/recipes"/>
+    <mkdir dir="staging/robustness/csmart/experiments"/>
+    <antcall target="init"/>
+    <antcall target="compile"/>
+    <antcall target="jar"/>
+    <move file="${lib}/${jar}" toDir="staging/lib"/>
+    <copy file="test/data/communities.xml" toDir="staging/robustness/configs"/>
+    <copy file="test/doc/AR-UC1-README.html" toDir="staging/robustness/doc"/>
+    <copy file="test/doc/AR-UC1-Setup.html" toDir="staging/robustness/doc"/>
+    <copy file="bin/**" toDir="staging/robustness/bin"/>
+    <copy file="configs/debug.properties" toDir="staging/robustness/configs"/>
+    <copy file="configs/recipeQueries.q" toDir="staging/robustness/configs"/>
+    <copy file="configs/recipes/**" toDir="staging/robustness/csmart/recipes"/>
+    <copy file="configs/experiments/**" toDir="staging/robustness/csmart/experiments"/>
+    <zip zipfile="Robustness_mic_mgmt_agent_overlay.zip" basedir="staging"/>
+    <delete dir="staging"/>
+  </target>
+
 </project>

@@ -444,8 +444,6 @@ public class HealthMonitorPlugin extends SimplePlugin implements
                                                 getAgentIdentifier().toString(),
                                                 this.getClass().getName(),
                                                 "Move succeeded: agent=" + hs.getAgentId());
-              } else {
-                log.info("Unknown HealthStatus value: value=" + hs.getStatus());
               }
               hs.setState(HealthStatus.NORMAL);
               hs.setStatus(HealthStatus.OK);
