@@ -79,15 +79,9 @@ public abstract class Action
     /** The possible values that getValue() can return */
     private Set possibleValues;
     
-    /** The possible values that getValue() can return -- cloned for dissemination to others */
-    //static protected Set possibleValuesCloned;
-
     /** TRUE if the class attributes have been initialized */
     private transient ServiceBroker serviceBroker = null;
         
-    /** The vector of all local ActionTechSpecs */
-    //static private Vector actionTechSpecs;
-    
     /** The ActionTechSpec for this action class */
     private transient ActionTechSpecInterface actionTechSpec = null;
 
@@ -126,9 +120,6 @@ public abstract class Action
     /** Logger */
     transient Logger logger = null;
     
-    /** ActionHistory of this action. What actions took place when. Populated from start/stop methods. */
-    //ActionHistory actionHistory = null;
-    
     /** Name of the asset that this object describes */
     private  String assetName = null;
 
@@ -144,10 +135,6 @@ public abstract class Action
     /** The values the action offers to perform */
     Set valuesOffered = null;
 
-    //static {
-    //    possibleValues = new LinkedHashSet(); //initialize
-    //}
-    
     /**
      * Creates an action instance for actions to be performed on the specified asset
      */
@@ -205,7 +192,7 @@ public abstract class Action
 	logger = Logging.getLogger(getClass());         
 	newPermittedValues = null;
 	nodeId = action.nodeId;
-	permittedValues = new HashSet(action.permittedValues);
+	permittedValues = new LinkedHashSet(action.permittedValues);
 	possibleValues = action.possibleValues;
 	prevAction = action.prevAction;
 	serviceBroker = null;
@@ -566,6 +553,7 @@ public abstract class Action
         Object o;
         Iterator i = values.iterator();
         permittedValues = new LinkedHashSet(); //eliminate chance that this method was called with permittedValues gotten from getPermittedValues().
+	newPermittedValues = permittedValues;  // to support case where ActionsWrapper is local and not relayed.
         while (i.hasNext()) {
             o = i.next();
             if ( possibleValues.contains(o) ) {
@@ -607,14 +595,42 @@ public abstract class Action
     /**
      * @return a string representing an instance of this class of the form "<classname:assetType:assetName=value>"
      */
-    public String toString ( ) { return "<" + getClass().getName()+'@'+Integer.toHexString(hashCode())+":" + //this.getClass().getName()+ ":" + 
-                                              this.getAssetType() + ":" + 
-                                              this.getAssetName() + "=" + 
-                                              this.getPermittedValues() + "/" +
-                                              (this.getValue()!=null ? this.getValue().toString():"NULL") + ">";
+    public String toString ( ) { return "<" + getClass().getName()+'@'+Integer.toHexString(hashCode())+":" +
+                                              assetType + ":" + 
+                                              assetName + "=" + 
+                                              permittedValues + "/" +
+                                              (lastAction != null ? lastAction.toString() : "NULL" ) + ">";
     }
 
-    public String dump() { return toString(); }
+    /**
+     * Returns a verbose pretty-printed representation for an Action.
+     */
+    public String dump() {
+	return "\n" +
+            "<"+getClass().getName()+'@'+Integer.toHexString(hashCode()) + "\n" +
+	    "   assetID = " + assetID + "\n" +
+	    "   assetName = " + assetName + "\n" +
+	    "   assetType = " + assetType + "\n" +
+	    "   assetStateDimensionName = " + assetStateDimensionName + "\n" +
+	    "   agentId = " + agentId + "\n" +
+	    "   nodeId = " + nodeId + "\n" +
+	    "   possibleValues = " + possibleValues + "\n" +
+	    "   valuesOffered = " + valuesOffered + "\n" +
+	    "   permittedValues = " + permittedValues + "\n" +
+	    "   newPermittedValues = " + newPermittedValues + "\n" +
+	    "   copyOfPermittedValues = " + copyOfPermittedValues + "\n" +
+	    "   lastAction = " + lastAction + "\n" +
+	    "   prevAction = " + prevAction + "\n" +
+//          "   actionTechSpec = " + actionTechSpec + "\n" +
+	    "   inited = " + inited + "\n" +
+	    "   isActionRelayManagerLoadedInThisAgent = " + isActionRelayManagerLoadedInThisAgent + "\n" +
+            "   wrapper = " + wrapper + "\n" +
+	    "   uid = " + uid + "\n" +
+	    "   source = " + getSource() + "\n" +
+	    "   targets = " + getTargets() + "\n" +
+	    "   content = " + getContent() + "\n" +
+	    "   response = " + getResponse() + ">";
+    }
     
    /** UniqueObject implementation */
     public org.cougaar.core.util.UID getUID() {

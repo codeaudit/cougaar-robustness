@@ -60,26 +60,4 @@ public class SampleAction extends Action
 	super.stop(completionCode);
     }
 
-    /**
-     * Returns a verbose pretty-printed representation for a SampleAction.
-     */
-    public String dump() {
-	return "\n" +
-            "<SampleAction:\n" +
-	    "   assetID = " + getAssetID() + "\n" +
-	    "   assetName = " + getAssetName() + "\n" +
-	    "   assetStateDimensionName = " + getAssetStateDimensionName() + "\n" +
-	    "   content = " + getContent() + "\n" +
-	    "   permittedValues = " + getPermittedValues() + "\n" +
-	    "   possibleValues = " + getPossibleValues() + "\n" +
-	    "   previousValue = " + getPreviousValue() + "\n" +
-	    "   response = " + getResponse() + "\n" +
-	    "   source = " + getSource() + "\n" +
-	    "   targets = " + getTargets() + "\n" +
-	    "   uid = " + getUID() + "\n" +
-	    "   value = " + getValue() + "\n" +
-	    "   valuesOffered = " + getValuesOffered() + "\n" +
-            "   wrapper = " + getWrapper() + ">";
-
-    }
 }

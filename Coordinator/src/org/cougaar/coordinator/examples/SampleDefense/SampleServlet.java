@@ -173,7 +173,7 @@ public class SampleServlet extends ComponentPlugin
 		    blackboard.closeTransaction();
 		}
 		String[] valuesOffered = request.getParameterValues("VALUESOFFERED");
-		if (valuesOffered != null && valuesOffered.length > 0) { //the user updated valuesOffered
+		if (valuesOffered != null) { 
                     HashSet hs = new HashSet();
                     for (int i=0; i<valuesOffered.length; i++) {
                         hs.add(valuesOffered[i]);
@@ -183,12 +183,14 @@ public class SampleServlet extends ComponentPlugin
 		    while (iter.hasNext()) {
 			SampleRawActuatorData data = (SampleRawActuatorData)iter.next();
 			if (data != null) {
-			    data.setCommand(SampleRawActuatorData.SET_VALUES_OFFERED);
-			    data.setValuesOffered(hs);
-			    blackboard.publishChange(data);
-			    valuesOfferedUpdated = true;
-			    if (log.isDebugEnabled()) 
-				log.debug(data + " changed."); 
+			    if (!hs.equals(data.getValuesOffered())) {
+				data.setCommand(SampleRawActuatorData.SET_VALUES_OFFERED);
+				data.setValuesOffered(hs);
+				blackboard.publishChange(data);
+				valuesOfferedUpdated = true;
+				if (log.isDebugEnabled()) 
+				    log.debug(data + " changed."); 
+			    }
 			    break; // there's only one SampleRawActuatorData object
 			}
 		    }

@@ -139,14 +139,25 @@ public class ActionsWrapper implements NotPersistable, Serializable, Relay.Sourc
     * Convert the given content and related information into a Target
     * that will be published on the target's blackboard. 
     **/
-    public Relay.Target create(
-        UID uid, 
-        MessageAddress source, 
-        Object content,
-        Token token) {
-	Action a = (Action)content;
+    public Relay.Target create(UID uid, 
+			       MessageAddress source, 
+			       Object content,
+			       Token token) {
+	// copy the content (the Action)
+	Action a = null;
+	try {
+	    Class c = content.getClass();
+	    Class [] classes = new Class[1];
+	    classes[0] = c;
+	    Object[] args = new Object[1];
+	    args[0] = (Action)content;
+	    Object o = c.getConstructor(classes).newInstance(args);
+	    a = (Action)o;
+	} catch (Exception e) {
+	    Logging.getLogger(getClass()).error("Error copying Action", e);
+	}
 	ActionsWrapper aw = 
-	    new ActionsWrapper((Action)content, source, null, uid);
+	    new ActionsWrapper(a, source, null, uid);
 	a.setWrapper(aw);
 	return aw;
     }
@@ -217,6 +228,22 @@ public class ActionsWrapper implements NotPersistable, Serializable, Relay.Sourc
 
     public String toString() {
 	return "<"+getClass().getName()+'@'+Integer.toHexString(hashCode())+":"+((Object)action).toString()+":"+source+":"+targets+":"+uid+">";
+    }
+
+    /**
+     * Returns a verbose pretty-printed representation for an Action.
+     */
+    public String dump() {
+	return "\n" +
+            "<"+getClass().getName()+'@'+Integer.toHexString(hashCode()) + "\n" +
+            "   action = " + action + "\n" +
+	    "   newPermittedValues = " + newPermittedValues + "\n" +
+	    "   isLocal = " + isLocal + "\n" +
+	    "   uid = " + uid + "\n" +
+	    "   source = " + source + "\n" +
+	    "   targets = " + targets + "\n" +
+	    "   content = " + getContent() + "\n" +
+	    "   response = " + getResponse() + ">";
     }
   
 }

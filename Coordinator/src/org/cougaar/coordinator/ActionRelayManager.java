@@ -240,21 +240,31 @@ public class ActionRelayManager extends MinimalPluginBase implements NotPersista
 	while (iter.hasNext()) {
 	    ActionsWrapper aw = (ActionsWrapper)iter.next();
 	    if (aw != null) {
+		Action a = aw.getAction();
+		if (logger.isDebugEnabled())logger.debug(agentId+",aw="+aw);
+		if (logger.isDetailEnabled())logger.detail(aw.dump());
+		if (logger.isDebugEnabled())logger.debug(agentId+",a="+a);
+		if (logger.isDetailEnabled())logger.detail(a.dump());
 		Set newPV = aw.getNewPermittedValues();
 		if (newPV != null) { // newPermittedValues is cleared after processing
-		    Action a = aw.getAction();
 		    Set oldPV = (Set)a.getPermittedValues();
 		    if (!newPV.equals(oldPV)) {
 			try {
 			    a.setPermittedValues(newPV);
 			    aw.clearNewPermittedValues();
-			    if (logger.isDebugEnabled())logger.debug("publishChange "+a);
+			    if (logger.isDebugEnabled())logger.debug(agentId+",publishChange "+a);
 			    if (logger.isDetailEnabled())logger.detail(a.dump());
 			    publishChange(a);
 			} catch (IllegalValueException e) {
 			    logger.error("Illegal permittedValues relayed from Coordinator = "+newPV);
 			}
 		    }
+		// handle case where ActionsWrapper is local
+		} else if (aw.getTargets().contains(aw.getSource()) &&
+			   a.getNewPermittedValues() != null) {  
+		    if (logger.isDebugEnabled())logger.debug(agentId+",publishChange "+a);
+		    if (logger.isDetailEnabled())logger.detail(a.dump());
+		    publishChange(a);
 		}
 	    }
 	}
