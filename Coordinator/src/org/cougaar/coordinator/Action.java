@@ -77,7 +77,7 @@ public abstract class Action
     //static protected Set possibleValuesCloned;
 
     /** TRUE if the class attributes have been initialized */
-    private ServiceBroker serviceBroker = null;
+    private transient ServiceBroker serviceBroker = null;
         
     /** The vector of all local ActionTechSpecs */
     //static private Vector actionTechSpecs;
@@ -86,7 +86,7 @@ public abstract class Action
     private transient ActionTechSpecInterface actionTechSpec = null;
 
     /** UID Service */
-    private UIDService uidService;
+    private transient UIDService uidService;
 
     /** 
      *  The address of the node agent. May change if the action is moved. 
