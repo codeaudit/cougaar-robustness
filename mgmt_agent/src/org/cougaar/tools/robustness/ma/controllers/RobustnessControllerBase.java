@@ -423,16 +423,18 @@ public abstract class RobustnessControllerBase implements
    */
   protected String attrsToXML(Attributes attrs, String indent) {
     StringBuffer sb = new StringBuffer(indent + "<attributes>\n");
-    try {
-      for (NamingEnumeration enum = attrs.getAll(); enum.hasMore();) {
-        Attribute attr = (Attribute)enum.next();
-        sb.append(indent + "  <attribute id=\"" + attr.getID() + "\" >\n");
-        for (NamingEnumeration enum1 = attr.getAll(); enum1.hasMore();) {
-          sb.append(indent + "    <value>" + enum1.next() + "</value>\n");
+    if (attrs != null) {
+      try {
+        for(NamingEnumeration enum = attrs.getAll(); enum.hasMore(); ) {
+          Attribute attr = (Attribute)enum.next();
+          sb.append(indent + "  <attribute id=\"" + attr.getID() + "\" >\n");
+          for(NamingEnumeration enum1 = attr.getAll(); enum1.hasMore(); ) {
+            sb.append(indent + "    <value>" + enum1.next() + "</value>\n");
+          }
+          sb.append(indent + "  </attribute>\n");
         }
-        sb.append(indent + "  </attribute>\n");
-      }
-    } catch (NamingException ne) {}
+      } catch(NamingException ne) {}
+    }
     sb.append(indent + "</attributes>\n");
     return sb.toString();
   }
