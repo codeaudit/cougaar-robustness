@@ -1,14 +1,15 @@
 #!/bin/sh
-#ACMEDIR='/usr/local/acme'
-ACMEDIR="$COUGAAR_INSTALL_PATH/csmart"
-WRKDIR=`pwd`
-RULESDIR="$WRKDIR/../../../rules/robustness/uc1"
+# Script for creating a new ACME XML society by applying a new host/node/agent
+# config to an existing XML society.  The script takes 3 inputs.  The first
+# is the path to the existing society config file, the second is the path to
+# the config file containing the new host/node/agent mapping, and the third
+# parameter is the name of the host designated as the name server.
+
+ACMEDIR="/shares/development/acme/csmart"
+#ACMEDIR="/shares/development/acme/install_set/current/csmart"
+RULESDIR="../../../rules/robustness/uc1"
 
 java -cp $COUGAAR_INSTALL_PATH/lib/ar_mic.jar org.cougaar.tools.robustness.ma.util.ACMEXmlTransformer $1 $2 tmp.xml aruc1.xsl
-
-cd $ACMEDIR/acme_scripting/bin
-ruby transform_society.rb -i $WRKDIR/tmp.xml -r $RULESDIR
-mv new-tmp.xml $WRKDIR/tmp1.xml
-cd $WRKDIR
-cat tmp1.xml | sed "s/localhost/$3/" > aruc1_society.xml
-rm tmp.xml tmp1.xml
+ruby $ACMEDIR/config/bin/transform_society.rb -i tmp.xml -r $RULESDIR
+cat new-tmp.xml | sed "s/localhost/$3/" | sed 's/jar=/jar/' > aruc1_society.xml
+rm new-tmp.xml 

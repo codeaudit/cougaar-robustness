@@ -47,6 +47,7 @@
       <xsl:attribute name="name">
         <xsl:value-of select="$currentAgent" />
       </xsl:attribute>
+      <xsl:attribute name="class">org.cougaar.core.agent.SimpleAgent</xsl:attribute>
     </agent>
   </xsl:if>
   <xsl:if test="not(contains($currentAgent, $managerAgent))">
