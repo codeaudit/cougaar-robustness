@@ -360,10 +360,13 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     Ack ack = MessageUtils.getAck (msg);
     if (ack != null) ack.setNumberOfLinkChoices (v.size());
 
-    //  No able outgoing links - bail
+    //  No able outgoing links
 
     if (v.size() == 0) return linkChoice (null, msg);
     
+//  Check for incorrect from node to detect resend msgs from newly arrived agent
+//  get new to node while at it probably  What about the acks in these msgs?
+
     //  Get the target node for the message.  If this message is a retry/resend, we try to
     //  get the latest uncached data because the target node may have changed and thus be
     //  the cause of our (real or apparent) send failure.
@@ -404,9 +407,9 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     //  Cannot continue past this point without knowing the name 
     //  of the target node for the message.
 
-    if (targetNode == null) return linkChoice (null, msg); // send will automatically be tried again later
+    if (targetNode == null) return linkChoice (null, msg);
 
-    //  Rank the links based on the chosen metric
+    //  Rank the links based on the chosen (via property) metric
 
     DestinationLink destLinks[] = (DestinationLink[]) v.toArray (new DestinationLink[v.size()]); 
     linkRanker.setMessage (msg);
@@ -415,105 +418,13 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     DestinationLink topLink = destLinks[0];
 //log.debug ("\ntopLink = " +geName(topLink));
 
-    //  Special Case:  Message retrying (first send attempt generated an exception)
-    //  or resending (message did not get an ack).  What's special here is that we avoid 
-    //  (if possible) choosing any link that the message has already tried and actually
-    //  or seemingly failed with.  
-
-    if (ack != null)
-    {
-      if (ack.getSendTry() > 0 || ack.getSendCount() > 0)
-      {
-        //  First try the last link successfully used to send a message to this destination
-
-        Class linkClass = MessageAckingAspect.getLastSuccessfulLinkUsed (targetNode);
-        DestinationLink link = pickLinkByClass (destLinks, linkClass);
-        boolean newLink = (link != null ? ack.addLinkSelection (link) : false); 
-
-        if (newLink)
-        {
-          if (debug) log.debug ("Chose last successful link for retry/resend of " +msgString);
-          return linkChoice (link, msg);
-        }
-
-        //  Otherwise choose the highest ranking transport link not yet chosen (if any)
-
-        link = null;
-
-        for (int i=0; i<destLinks.length; i++)
-        {
-          if (!ack.haveLinkSelection (destLinks[i])) 
-          {
-            link = destLinks[i];
-            break;
-          }
-        }
-
-        //  Tried them all
-
-        if (link == null)
-        {
-          if (ack.getSendCount() == 0)  // Retry
-          {
-            //  If we still don't have a choice at this point, we clear all our previous
-            //  selections and return null.  This allows the retry to slow down (there
-            //  will be an increasing delay with each null), and start the link selection
-            //  cycle anew when the message comes back thru again.
-
-            if (debug) log.debug ("Exhausted retry link choices; will cycle thru again after delay");
-            ack.clearLinkSelections();
-            link = null;
-          }
-          else  // Resend
-          {
-            //  Since resends are managed by the acking message resender, including their
-            //  timing with any delays, we start the link recycling now and don't induce
-            //  any extra delay here like with retries.
-
-            if (debug) log.debug ("Exhausted resend link choices; starting recycle now");
-            link = pickLinkByClass (destLinks, ack.getFirstLinkSelection());
-            if (link == null) link = topLink;
-            ack.clearLinkSelections();
-          }
-        }
-
-        if (link != null) ack.addLinkSelection (link);
-        return linkChoice (link, msg);
-      }   
-    }
-
-    //  Special Case:  Sending traffic masking messages.
-
-    if (MessageUtils.isTrafficMaskingMessage (msg))
-    {
-      //  Link selection for these messages is limited to whatever link was last used
-      //  successfully to its target node (if that link is currently available).
-      
-      Class linkClass = MessageAckingAspect.getLastSuccessfulLinkUsed (targetNode);
-      DestinationLink link = pickLinkByClass (destLinks, linkClass);
-      if (link == null) link = topLink;  // linkClass may not be currently available
-      return linkChoice (link, msg);
-    }
-
-    //  Special Case:  Sending pure acks-acks.
-
-    if (MessageUtils.isPureAckAckMessage (msg))
-    {
-      //  Link selection for these messages is limited to whatever link was last used
-      //  successfully to its target node (if that link is currently available).
-      
-      Class linkClass = MessageAckingAspect.getLastSuccessfulLinkUsed (targetNode);
-      DestinationLink link = pickLinkByClass (destLinks, linkClass);
-      if (link == null) link = topLink;  // linkClass may not be currently available
-      return linkChoice (link, msg);
-    }
-
-    //  Special Case:  Sending pure acks.  For pure ack messages we try all possible 
+    //  Special Case:  Sending pure ack messages.  For pure ack messages we try all possible 
     //  links until we run out or we determine we no longer need to send the pure ack.
 
     if (MessageUtils.isPureAckMessage (msg))
     {
       PureAck pureAck = (PureAck) ack;
+      if (debug) log.debug ("Chosing link for pure ack msg: " +msgString);
 
       //  First, add all the links that have now piggybacked the ack to our used list.
       //  If there are any, then we may not be needing to send a pure ack this time - we may
@@ -526,7 +437,6 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       for (int i=0; i<destLinks.length; i++)
       {
         link = destLinks[i];
-
         if (pureAck.haveLinkSelection (link)) continue;
 
         long lastSendTime = MessageAckingAspect.getLastSendTime (link, targetNode);
@@ -534,8 +444,6 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
         if (lastSendTime > pureAck.getAckSendableTime())
         {
           newLink = pureAck.addLinkSelection (link);
-
-// HACK - modify when pure acks are self-scheduling
 
           if (newLink)
           {
@@ -557,9 +465,11 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       {
         //  Reschedule the ack and don't send it now
 
+        if (debug) log.debug ("Rescheduling pure ack msg (new deadline=" +
+                              latestDeadline+ "): " +msgString);
+
         pureAck.setSendDeadline (latestDeadline);
         MessageAckingAspect.addToPureAckSender ((PureAckMessage)msg);
-        if (debug) log.debug ("Rescheduling pure ack msg: " +msgString);
         return blackHoleLink;  // msgs go in, but never come out!
       }
 
@@ -583,10 +493,115 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
       return blackHoleLink;
     }
 
+    //  Special Case:  Sending pure ack-acks.
+
+    if (MessageUtils.isPureAckAckMessage (msg))
+    {
+      //  Link selection for these messages is limited to whatever link was last used
+      //  successfully to its target node (if that link is currently available).
+
+// needs work!!
+      
+      Class linkClass = MessageAckingAspect.getLastSuccessfulLinkUsed (targetNode);
+      DestinationLink link = pickLinkByClass (destLinks, linkClass);
+      if (link == null) link = topLink;  // linkClass may not be currently available
+      return linkChoice (link, msg);
+    }
+
+    //  Special Case:  Sending traffic masking messages.
+
+    if (MessageUtils.isTrafficMaskingMessage (msg))
+    {
+      //  Link selection for these messages is limited to whatever link was last used
+      //  successfully to its target node (if that link is currently available).
+      //  This is just preliminary support for traffic masking messages.
+     
+      if (ack == null || (ack.getSendTry() == 0 && ack.getSendCount() == 0))
+      { 
+        Class linkClass = MessageAckingAspect.getLastSuccessfulLinkUsed (targetNode);
+        DestinationLink link = pickLinkByClass (destLinks, linkClass);
+        if (link == null) link = topLink;  // linkClass may not be currently available
+        return linkChoice (link, msg);
+      }
+      else
+      {
+        //  For now, if there are send failures, just drop masking messages
+
+        if (debug) log.debug ("Send failure with masking msg, dropping it: " +msgString);
+        return blackHoleLink;
+      }
+    }
+
+    //  Special Case:  Message retrying (first send attempt generated an exception)
+    //  or resending (message did not get an ack).  What's special here is that we avoid 
+    //  (if possible) choosing any link that the message has already tried and actually
+    //  or apparently failed with.  
+
+    if (ack != null && (ack.getSendTry() > 0 || ack.getSendCount() > 0))
+    {
+      //  First try the last link successfully used to send a message to this destination
+
+      Class linkClass = MessageAckingAspect.getLastSuccessfulLinkUsed (targetNode);
+      DestinationLink link = pickLinkByClass (destLinks, linkClass);
+      boolean newLink = (link != null ? ack.addLinkSelection (link) : false); 
+
+      if (newLink)
+      {
+        if (debug) log.debug ("Chose last successful link for retry/resend of " +msgString);
+        return linkChoice (link, msg);
+      }
+
+      //  Otherwise choose the highest ranking transport link not yet chosen (if any)
+
+      link = null;
+
+      for (int i=0; i<destLinks.length; i++)
+      {
+        if (!ack.haveLinkSelection (destLinks[i])) 
+        {
+          link = destLinks[i];
+          break;
+        }
+      }
+
+      //  Tried them all
+
+      if (link == null)
+      {
+        if (ack.getSendCount() == 0)  // Retry
+        {
+          //  If we still don't have a choice at this point, we clear all our previous
+          //  selections and return null.  This allows the retry to slow down (there
+          //  will be an increasing delay with each null), and start the link selection
+          //  cycle anew when the message comes back thru again.
+
+          if (debug) log.debug ("Exhausted retry link choices; will cycle thru again after delay");
+          ack.clearLinkSelections();
+          link = null;
+        }
+        else  // Resend
+        {
+          //  Since resends are managed by the acking message resender, including their
+          //  timing with any delays, we start the link recycling now and don't induce
+          //  any extra delay here like with retries.
+
+          if (debug) log.debug ("Exhausted resend link choices; starting recycle now");
+          link = pickLinkByClass (destLinks, ack.getFirstLinkSelection());
+          if (link == null) link = topLink;
+          ack.clearLinkSelections();
+        }
+      }
+
+      if (link != null) ack.addLinkSelection (link);
+      return linkChoice (link, msg);
+    }
+
     /**
+     *  Main Selection Algorithm
+     *
      *  Choose a link based on its metric, history of sending messages, and policy (tbd). The
-     *  algorithm here now is less advanced compared to what will be able to be done with a rich 
-     *  message history (incl. sends and receives) and the Cougaar Messaging Policy system.
+     *  algorithm here now could be extended with more message send & receive history, link
+     *  metric data, and Cougaar Policy.
     **/
 
     //  Get the last link choice made for the destination node for this message

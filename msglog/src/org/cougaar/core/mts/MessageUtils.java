@@ -40,6 +40,8 @@ public final class MessageUtils
   public static final String MSG_TYPE_HEARTBEAT = "MessageTypeHeartbeat";
   public static final String MSG_TYPE_PING = "MessageTypePing";
   public static final String MSG_TYPE_TMASK = "MessageTypeTrafficMasking";
+  public static final String MSG_TYPE_PURE_ACK = "MessageTypePureAck";
+  public static final String MSG_TYPE_PURE_ACK_ACK = "MessageTypePureAckAck";
   public static final String MSG_SEND_TIME = "MessageSendTime";
   public static final String MSG_SIZE = "MessageSize";
   public static final String SEND_TIMEOUT = "SendTimeout";
@@ -139,13 +141,13 @@ public final class MessageUtils
 
   public static String getMessageTypeLetter (AttributedMessage msg)
   {
-    if (isPureAckMessage(msg))        return "a";
-    if (isPureAckAckMessage(msg))     return "k";
     if (isRegularMessage(msg))        return "n";  // normal
     if (isLocalMessage(msg))          return "l";
     if (isHeartbeatMessage(msg))      return "h";
     if (isPingMessage(msg))           return "p";
     if (isTrafficMaskingMessage(msg)) return "t";
+    if (isPureAckMessage(msg))        return "a";
+    if (isPureAckAckMessage(msg))     return "k";
                                       return "?";  // unknown
   }
 
@@ -156,8 +158,8 @@ public final class MessageUtils
 
   public static boolean isLocalMessage (AttributedMessage msg)
   {
-    String mtype = getMessageType (msg);
-    return (mtype != null && mtype.equals (MSG_TYPE_LOCAL));
+    String type = getMessageType (msg);
+    return (type != null && type.equals (MSG_TYPE_LOCAL));
   }
 
   public static void setMessageTypeToLocal (AttributedMessage msg)
@@ -167,8 +169,8 @@ public final class MessageUtils
 
   public static boolean isHeartbeatMessage (AttributedMessage msg)
   {
-    String mtype = getMessageType (msg);
-    return (mtype != null && mtype.equals (MSG_TYPE_HEARTBEAT));
+    String type = getMessageType (msg);
+    return (type != null && type.equals (MSG_TYPE_HEARTBEAT));
   }
 
   public static void setMessageTypeToHeartbeat (AttributedMessage msg)
@@ -178,8 +180,8 @@ public final class MessageUtils
 
   public static boolean isPingMessage (AttributedMessage msg)
   {
-    String mtype = getMessageType (msg);
-    return (mtype != null && mtype.equals (MSG_TYPE_PING));
+    String type = getMessageType (msg);
+    return (type != null && type.equals (MSG_TYPE_PING));
   }
 
   public static void setMessageTypeToPing (AttributedMessage msg)
@@ -190,8 +192,8 @@ public final class MessageUtils
   public static boolean isTrafficMaskingMessage (AttributedMessage msg)
   {
 /*
-    String mtype = getMessageType (msg);
-    return (mtype != null && mtype.equals (MSG_TYPE_TMASK));
+    String type = getMessageType (msg);
+    return (type != null && type.equals (MSG_TYPE_TMASK));
 */
     Boolean fake = (Boolean) msg.getAttribute (FAKE);
     return (fake != null ? fake.booleanValue() : false);
@@ -202,14 +204,26 @@ public final class MessageUtils
     setMessageType (msg, MSG_TYPE_TMASK);
   }
 */
+  public static void setMessageTypeToPureAck (AttributedMessage msg)
+  {
+    setMessageType (msg, MSG_TYPE_PURE_ACK);
+  }
+
   public static boolean isPureAckMessage (AttributedMessage msg)
   {
-    return (msg.getClass() == PureAckMessage.class);
+    String type = getMessageType (msg);
+    return (type != null && type.equals (MSG_TYPE_PURE_ACK));
+  }
+
+  public static void setMessageTypeToPureAckAck (AttributedMessage msg)
+  {
+    setMessageType (msg, MSG_TYPE_PURE_ACK_ACK);
   }
 
   public static boolean isPureAckAckMessage (AttributedMessage msg)
   {
-    return (msg.getClass() == PureAckAckMessage.class);
+    String type = getMessageType (msg);
+    return (type != null && type.equals (MSG_TYPE_PURE_ACK_ACK));
   }
 
   public static boolean isSomePureAckMessage (AttributedMessage msg)
