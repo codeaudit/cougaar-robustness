@@ -119,7 +119,7 @@ public class TrafficAuditAspect3 extends StandardAspect implements AttributeCons
            "<ts>" + now() + "</ts>" +
            "<from>" + fromNode + "." + fromAgent + "." + fromIncarnation + "</from>" +
            "<to>" + toNode + "." + toAgent + "." + toIncarnation + "</to>" +
-           "<num>" + (Integer)msg.getAttribute(AUDIT_ATTRIBUTE) + "/<num>";
+           "<num>" + (Integer)msg.getAttribute(AUDIT_ATTRIBUTE) + " </num>";
   }
 
   private static long now () {
