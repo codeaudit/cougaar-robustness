@@ -26,6 +26,7 @@ import org.cougaar.tools.robustness.ma.util.CoordinatorHelper;
 import org.cougaar.tools.robustness.ma.util.CoordinatorHelperFactory;
 import org.cougaar.tools.robustness.ma.util.CoordinatorListener;
 import org.cougaar.tools.robustness.ma.util.HeartbeatListener;
+import org.cougaar.tools.robustness.ma.util.HeartbeatHelper;
 import org.cougaar.tools.robustness.ma.util.LoadBalancer;
 import org.cougaar.tools.robustness.ma.util.LoadBalancerListener;
 import org.cougaar.tools.robustness.ma.util.MoveHelper;
@@ -312,7 +313,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                     }
                   }
                 }
-              });
+              }, name);
             } else {
               removeFromCommunity(name);
             }
@@ -680,8 +681,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
   private void restartAgent(String name) {
     RestartDestinationLocator locator = getRestartLocator();
+Set excluded = getExcludedNodes();
+excluded.addAll(getAdditionalExcludedNodes(model.getLocation(name)));
     String dest =
-        locator.getRestartLocation(name, getExcludedNodes());
+        locator.getRestartLocation(name, excluded);
     if (logger.isInfoEnabled()) {
       logger.info("Restarting agent:" +
                   " agent=" + name +
@@ -957,7 +960,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    * request to EN4J.
    * @param lbl Listener method invoked after layout has been returned by EN4J
    */
-  private void getLayout(final LoadBalancerListener lbl) {
+  private void getLayout(final LoadBalancerListener lbl, String deadNodeForRestart) {
     synchronized (pendingLBRequests) {
       // Guard against overlapping doLayout requests
       if (loadBalanceInProcess) {
@@ -965,6 +968,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
       } else {
         loadBalanceInProcess = true;
         List excludedNodes = new ArrayList(getExcludedNodes());
+if(deadNodeForRestart != null)
+excludedNodes.addAll(getAdditionalExcludedNodes(deadNodeForRestart));
         List vacantNodes = getVacantNodes();
         // Update list of NEW nodes
         if (!vacantNodes.isEmpty()) {
@@ -982,7 +987,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
             loadBalanceInProcess = false;
             lbl.layoutReady(layout);
             if (!pendingLBRequests.isEmpty()) {
-              getLayout( (LoadBalancerListener) pendingLBRequests.remove(0));
+              getLayout( (LoadBalancerListener) pendingLBRequests.remove(0), null);
             }
           }
         };
@@ -1139,6 +1144,27 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
      summary.append(" UNKNOWN=" + agentsInUnknownState.length + arrayToString(agentsInUnknownState));
    }
    return summary.toString();
+ }
+
+ private Set getAdditionalExcludedNodes(String deadNode) {
+   Set excluded = new HashSet();
+   long deadtime = model.getTimestamp(deadNode);
+   long defaultTimeout = getLongAttribute(DEFAULT_TIMEOUT_ATTRIBUTE,
+                                              DEFAULT_TIMEOUT);
+   long activetime = deadtime - defaultTimeout * MS_PER_MIN;
+   String[] nodes = model.listEntries(model.NODE);
+   for(int i=0; i<nodes.length; i++) {
+     if(!nodes[i].equals(deadNode)) {
+       long time = model.getTimestamp(nodes[i]);
+       if(time <= activetime) {
+         if(logger.isDebugEnabled())
+           logger.debug("last hearbeat of " + nodes[i] + " is before " + deadNode + ", put " + nodes[i] + " in excluded list");
+logger.info("===========last hearbeat of " + nodes[i] + " is before " + deadNode);
+         excluded.add(nodes[i]);
+       }
+     }
+   }
+   return excluded;
  }
 
   private class StatsEntry {
