@@ -103,7 +103,8 @@ import org.cougaar.core.util.UID;
  * </PRE>
  */
 
-public class HealthMonitorPlugin extends SimplePlugin {
+public class HealthMonitorPlugin extends SimplePlugin implements
+  CommunityChangeListener {
 
   // Defines default values for configurable parameters.
   private static String defaultParams[][] = {
@@ -253,6 +254,8 @@ public class HealthMonitorPlugin extends SimplePlugin {
     // Get Roster for community to monitor
     if (communityToMonitor != null && communityToMonitor.length() > 0) {
       sendRosterRequest(communityToMonitor);
+      //communityService.addListener(this);
+      //processRosterChanges(communityService.getRoster(communityToMonitor));
     }
 
     // Start evaluation thread to periodically update and analyze the Health
@@ -264,6 +267,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
     startMsg.append("HealthMonitorPlugin started: agent=" + myAgent);
     startMsg.append(" " + paramsToString());
     log.info(startMsg.toString());
+
   }
 
   /**
@@ -367,6 +371,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
     }
 
     // Get CommunityRoster (and updates)
+
     for (Iterator it = communityRequests.getChangedCollection().iterator();
          it.hasNext();) {
       CommunityRequest req = (CommunityRequest)it.next();
@@ -379,6 +384,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
         processRosterChanges(roster);
       }
     }
+
 
   }
 
@@ -983,7 +989,7 @@ public class HealthMonitorPlugin extends SimplePlugin {
   }
 
   private boolean allNormalLastTime = false;
-
+  private Map previousStateMap = null;
 
   private String states[] = new String[]{"INITIAL", "NORMAL", "HEALTH_CHECK",
                                  "RESTART", "RESTART_COMPLETE", "FAILED_RESTART",
@@ -1000,30 +1006,44 @@ public class HealthMonitorPlugin extends SimplePlugin {
       List l = (List)stateMap.get(hs.getState());
       l.add(hs.getAgentId());
     }
-    int totalAgents = agents.size();
-    int agentsInNormalState = ((List)stateMap.get("NORMAL")).size();
-    if (agentsInNormalState == totalAgents) {
-      if(!allNormalLastTime) {
-        log.info("Total Agents Monitored: " + totalAgents +
-        " - All in NORMAL state");
-        allNormalLastTime = true;
-      }
-    } else {
-      allNormalLastTime = false;
-      log.info("Total Agents Monitored: " + totalAgents);
+    boolean changed = (previousStateMap == null);
+    if (previousStateMap != null) {
       for (Iterator it = stateMap.entrySet().iterator(); it.hasNext();) {
         Map.Entry me = (Map.Entry)it.next();
         String stateName = (String)me.getKey();
         List agentList = (List)me.getValue();
-        if (stateName.equals("NORMAL")) {
-          log.info("  - " + stateName + ": " + agentList.size());
-        } else {
-          if (agentList.size() > 0) {
+        List prevAgentList = (List)previousStateMap.get(stateName);
+        if (agentList.size() != prevAgentList.size() ||
+            !agentList.containsAll(prevAgentList)) {
+          changed = true;
+          break;
+        }
+      }
+    }
+    if (changed) {
+      int totalAgents = agents.size();
+      int agentsInNormalState = ((List)stateMap.get("NORMAL")).size();
+      if (agentsInNormalState == totalAgents) {
+        log.info("Total Agents Monitored: " + totalAgents +
+        " - All in NORMAL state");
+        allNormalLastTime = true;
+      } else {
+        log.info("Total Agents Monitored: " + totalAgents);
+        for (Iterator it = stateMap.entrySet().iterator(); it.hasNext();) {
+          Map.Entry me = (Map.Entry)it.next();
+          String stateName = (String)me.getKey();
+          List agentList = (List)me.getValue();
+          if (stateName.equals("NORMAL")) {
+            log.info("  - " + stateName + ": " + agentList.size());
+          } else {
+            if (agentList.size() > 0) {
             log.info("  - " + stateName + ": " + agentList.size() + " " + agentList);
+            }
           }
         }
       }
     }
+    previousStateMap = stateMap;
   }
 
   /**
@@ -1067,6 +1087,18 @@ public class HealthMonitorPlugin extends SimplePlugin {
    */
   private Date now() {
     return new Date();
+  }
+
+  public void communityChanged(CommunityChangeEvent cce) {
+    if (cce.getCommunityName().equals(communityToMonitor) &&
+        (cce.getType() == cce.ADD_ENTITY || cce.getType() == cce.REMOVE_ENTITY)) {
+      log.info("CommunityChangeEvent: " + cce);
+      processRosterChanges(communityService.getRoster(communityToMonitor));
+    }
+  }
+
+  public String getCommunityName() {
+    return communityToMonitor;
   }
 
   /**
