@@ -54,6 +54,7 @@ import org.cougaar.community.requests.CommunityRequest;
 import org.cougaar.community.requests.JoinCommunity;
 import org.cougaar.community.requests.SearchCommunity;
 
+import org.cougaar.tools.robustness.ma.RestartManagerConstants;
 import org.cougaar.tools.robustness.ma.controllers.RobustnessController;
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
 import org.cougaar.tools.robustness.ma.ldm.RelayAdapter;
@@ -90,25 +91,9 @@ import java.net.URI;
  *   6) Respond to status requests from ARServlet.
  * </pre>
  */
-public class NodeHealthMonitorPlugin extends ComponentPlugin {
+public class NodeHealthMonitorPlugin extends ComponentPlugin
+    implements RestartManagerConstants {
 
-  // Property used to define the name of a robustness community to monitor
-  public static final String COMMUNITY_PROP_NAME = "org.cougaar.tools.robustness.community";
-
-  // Defines attribute to use in selection of community to monitor
-  public static final String HEALTH_MONITOR_ROLE = "HealthMonitor";
-  public static final String COMMUNITY_TYPE =      "Robustness";
-
-  // Defines class to use for Robustness Controller
-  public static final String CONTROLLER_CLASS_PROPERTY =
-      "org.cougaar.tools.robustness.controller.classname";
-  public static final String DEFAULT_ROBUSTNESS_CONTROLLER_CLASSNAME =
-      "org.cougaar.tools.robustness.ma.controllers.DefaultRobustnessController";
-
-  // Defines how often status updates are broadcast to peers
-  public static final String STATUS_UPDATE_PROPERTY =
-      "org.cougaar.tools.robustness.update.interval";
-  public static final String DEFAULT_STATUS_UPDATE_INTERVAL = "30000";
   public static long updateInterval;
 
   // Info associated with this health monitor
@@ -148,7 +133,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
 
   // Join Robustness Community designated by startup parameter
   private void joinStartupCommunity() {
-    String initialCommunity = System.getProperty(COMMUNITY_PROP_NAME);
+    String initialCommunity = System.getProperty(COMMUNITY_PROPERTY);
     if (initialCommunity != null) {
       logger.debug("Joining community " + initialCommunity);
       UID joinRequestUID = uidService.nextUID();
@@ -232,12 +217,12 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin {
         joinStartupCommunity();
       }
       updateAndSendNodeStatus();
-      long tmp = getLongAttribute("UPDATE_INTERVAL", updateInterval);
+      long tmp = getLongAttribute(STATUS_UPDATE_ATTRIBUTE, updateInterval);
       if (tmp != updateInterval) {
         logger.info("Changing update interval: old=" + updateInterval + " new=" + tmp);
         updateInterval = tmp;
       }
-      wakeAlarm = new WakeAlarm(now() + getLongAttribute("UPDATE_INTERVAL", updateInterval));
+      wakeAlarm = new WakeAlarm(now() + getLongAttribute(STATUS_UPDATE_ATTRIBUTE, updateInterval));
       alarmService.addRealTimeAlarm(wakeAlarm);
     }
     // Get updates in monitored community
