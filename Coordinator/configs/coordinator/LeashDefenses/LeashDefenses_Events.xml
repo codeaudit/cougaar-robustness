@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE Events SYSTEM "EventDTD.dtd"  > 
+
+<Events>
+    <Event name="WantsToLeash" affectsAssetType="Enclave" affectsStateDimension="DefenseSuppression">
+        <DirectEffect>
+            <Transition WhenActualStateIs="*" EndStateWillBe="WantsToLeash" />
+        </DirectEffect>
+    </Event>
+    <Event name="WantsToUnleash" affectsAssetType="Enclave" affectsStateDimension="DefenseSuppression">
+        <DirectEffect>
+            <Transition WhenActualStateIs="*" EndStateWillBe="WantsToUnleash" />
+        </DirectEffect>
+    </Event>
+</Events>

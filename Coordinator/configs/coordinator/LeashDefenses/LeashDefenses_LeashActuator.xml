@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE ActuatorType SYSTEM "ActuatorTypeDTD.dtd">
+
+<ActuatorType name="org.cougaar.coordinator.unleashDefenses.LeashAction" 
+              affectsAssetType="Enclave" 
+              affectsStateDimension="DefenseSuppression" 
+              actionType="CORRECTIVE">
+
+    <Action name="Leash">
+        <Description value="Suppress all Defense Actions (except this one)" />
+        <Transition WhenActualStateIs="Leashed" EndStateWillBe="Leashed" IntermediateStateWillBe="Leashed" >
+            <OneTimeCost>
+                <CPU intensity="VERY_LOW" />
+                <Time duration="100" />
+            </OneTimeCost>
+        </Transition>
+        <Transition WhenActualStateIs="Unleashed" EndStateWillBe="Unleashed" IntermediateStateWillBe="Unleashed" >
+            <OneTimeCost>
+                <CPU intensity="VERY_LOW" />
+                <Time duration="100" />
+            </OneTimeCost>
+        </Transition>
+        <Transition WhenActualStateIs="WantsToLeash" EndStateWillBe="WantsToLeash" IntermediateStateWillBe="Leashed" >
+            <OneTimeCost>
+                <CPU intensity="VERY_LOW" />
+                <Time duration="100" />
+            </OneTimeCost>
+        </Transition>
+        <Transition WhenActualStateIs="WantsToUnleash" EndStateWillBe="WantsToUnleash" IntermediateStateWillBe="WantsToUnleash" >
+            <OneTimeCost>
+                <CPU intensity="VERY_LOW" />
+                <Time duration="100" />
+            </OneTimeCost>
+        </Transition>
+    </Action>
+
+    <Action name="Unleash">
+        <Description value="Make all Defenses under consideration for enabling " />
+        <Transition WhenActualStateIs="Leashed" EndStateWillBe="Leashed" IntermediateStateWillBe="Leashed" >
+            <OneTimeCost>
+                <CPU intensity="VERY_LOW" />
+                <Time duration="100" />
+            </OneTimeCost>
+        </Transition>
+        <Transition WhenActualStateIs="Unleashed" EndStateWillBe="Unleashed" IntermediateStateWillBe="Unleashed" >
+            <OneTimeCost>
+                <CPU intensity="VERY_LOW" />
+                <Time duration="100" />
+            </OneTimeCost>
+        </Transition>
+        <Transition WhenActualStateIs="WantsToLeash" EndStateWillBe="WantsToLeash" IntermediateStateWillBe="WantsToLeash" >
+            <OneTimeCost>
+                <CPU intensity="VERY_LOW" />
+                <Time duration="100" />
+            </OneTimeCost>
+        </Transition>
+        <Transition WhenActualStateIs="WantsToUnleash" EndStateWillBe="WantsToUnleash" IntermediateStateWillBe="Unleashed" >
+            <OneTimeCost>
+                <CPU intensity="VERY_LOW" />
+                <Time duration="100" />
+            </OneTimeCost>
+        </Transition>
+    </Action>
+
+</ActuatorType>

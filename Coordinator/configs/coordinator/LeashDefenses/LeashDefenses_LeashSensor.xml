@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE SensorType SYSTEM "SensorTypeDTD.dtd" >
+
+<SensorType name="org.cougaar.coordinator.leashDefenses.LeashRequestDiagnosis" 
+            sensesAssetType="Enclave"
+            sensesStateDimension="DefenseSuppression" 
+            sensorLatency="10">
+    <PotentialDiagnoses>
+        <Diagnosis name="LeashRequest" />
+        <Diagnosis name="UnleashRequest" />
+        <Diagnosis name="NoRequest" defaultValue="TRUE" />
+    </PotentialDiagnoses>
+    <Diagnoses>
+        <WhenActualStateIs name="WantsToUnleash" >
+            <WillDiagnoseAs name="UnleashRequest" withProbability="1.0" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="WantsToUnLeash" >
+            <WillDiagnoseAs name="LeashRequest" withProbability="1.0" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Leashed" >
+            <WillDiagnoseAs name="NoRequest" withProbability="1.0" />
+        </WhenActualStateIs >
+        <WhenActualStateIs name="Unleashed" >
+            <WillDiagnoseAs name="NoRequest" withProbability="1.0" />
+        </WhenActualStateIs >
+    </Diagnoses>
+</SensorType>
