@@ -365,7 +365,9 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
         double predictedBenefit = 0.0;
 
         AssetTransitionWithCost atwc = proposedVariantDescription.getTransitionForState("*");
-        long transitionTime = atwc.getOneTimeCost().getTimeCost();
+        long transitionTime;
+        if (atwc.getOneTimeCost()!=null) transitionTime = atwc.getOneTimeCost().getTimeCost();
+            else transtionTime = 0.0;
         ActionCost oneTimeCost = atwc.getOneTimeCost();
         ActionCost continuingCost = atwc.getContinuingCost();
 
