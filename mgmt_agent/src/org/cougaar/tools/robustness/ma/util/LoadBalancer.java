@@ -141,7 +141,10 @@ public class LoadBalancer extends BlackboardClientComponent {
     for (Iterator it = healthMonitorRequests.getAddedCollection().iterator(); it.hasNext(); ) {
       HealthMonitorRequest hsm = (HealthMonitorRequest) it.next();
       if (hsm.getRequestType() == HealthMonitorRequest.LOAD_BALANCE) {
-        doLoadBalance();
+        doLoadBalance(false,
+                      Collections.EMPTY_LIST,
+                      Collections.EMPTY_LIST,
+                      getExcludedNodes());
       }
     }
 
@@ -165,7 +168,7 @@ public class LoadBalancer extends BlackboardClientComponent {
     logger.info("doLoadBalance");
     List newNodes = Collections.EMPTY_LIST;
     List killedNodes = Collections.EMPTY_LIST;
-    List leaveAsIsNodes = model.search("(UseForRestarts=False)");
+    List leaveAsIsNodes = getExcludedNodes();
     doLoadBalance(DEFAULT_HAMMING, newNodes, killedNodes, leaveAsIsNodes);
     logger.debug("publishing LoadBalanceRequest");
   }
@@ -187,6 +190,10 @@ public class LoadBalancer extends BlackboardClientComponent {
                                leaveAsIsNodes);
     logger.debug("publishing LoadBalanceRequest");
     fireLater(loadBalReq);
+  }
+
+  protected List getExcludedNodes() {
+    return model.search("(UseForRestarts=False)");
   }
 
   protected void fireLater(LoadBalanceRequest lbr) {
