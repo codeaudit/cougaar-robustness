@@ -37,7 +37,6 @@ import org.cougaar.core.component.ServiceAvailableListener;
 import org.cougaar.core.component.ServiceAvailableEvent;
 
 import org.cougaar.core.agent.service.alarm.Alarm;
-import org.cougaar.core.util.UID;
 
 import org.cougaar.util.UnaryPredicate;
 
@@ -78,7 +77,7 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
 
   private IncrementalSubscription taSub; //subscirptions to threat alert
 
-  private List listeners = new ArrayList();
+  private List listeners = Collections.synchronizedList(new ArrayList());
 
   /**
    * ThreatAlertService Implementation.
@@ -124,7 +123,7 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
    * @param tal
    */
   public void removeListener(ThreatAlertListener tal) {
-    if(listeners.contains(tal))
+    if (listeners.contains(tal))
       listeners.remove(tal);
   }
 
@@ -403,7 +402,11 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
    * @param ta  New ThreatAlert
    */
   private void fireListenersForNewAlert(ThreatAlert ta) {
-    for(Iterator iter = listeners.iterator(); iter.hasNext();) {
+    List l = new ArrayList();
+    synchronized (listeners) {
+      l.addAll(listeners);
+    }
+    for(Iterator iter = l.iterator(); iter.hasNext();) {
       ThreatAlertListener listener = (ThreatAlertListener)iter.next();
       listener.newAlert(ta);
     }
@@ -423,7 +426,11 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
    * @param ta  Changed ThreatAlert
    */
   private void fireListenersForChangedAlert(ThreatAlert ta) {
-    for(Iterator iter = listeners.iterator(); iter.hasNext();) {
+    List l = new ArrayList();
+    synchronized (listeners) {
+      l.addAll(listeners);
+    }
+    for(Iterator iter = l.iterator(); iter.hasNext();) {
       ThreatAlertListener listener = (ThreatAlertListener)iter.next();
       listener.changedAlert(ta);
     }
@@ -434,7 +441,11 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
    * @param ta  Expired ThreatAlert
    */
   private void fireListenersForRemovedAlert(ThreatAlert ta) {
-    for(Iterator iter = listeners.iterator(); iter.hasNext();) {
+    List l = new ArrayList();
+    synchronized (listeners) {
+      l.addAll(listeners);
+    }
+    for(Iterator iter = l.iterator(); iter.hasNext();) {
       ThreatAlertListener listener = (ThreatAlertListener)iter.next();
       listener.removedAlert(ta);
     }
