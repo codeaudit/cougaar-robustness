@@ -10,5 +10,5 @@ CIP = ENV['CIP']
 $:.unshift File.join(CIP, 'csmart', 'config', 'lib')
 
 insert_after parameters[:location] do
-  do_action "Sleep", parameters[:period]
+  do_action "Sleep", eval(parameters[:period].to_s)
 end

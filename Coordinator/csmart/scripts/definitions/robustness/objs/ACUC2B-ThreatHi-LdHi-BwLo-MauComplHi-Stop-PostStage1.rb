@@ -104,29 +104,24 @@ include_scripts:
   - script: $CIP/csmart/lib/security/scripts/cleanup_society.rb
 #################################################################
 
-# - script: $CIP/csmart/lib/coordinator/set_threatcon.rb 
-#   parameters:
-#      - location: during_stage_1
-#      - value: High
-#      - verbose: 2
-
-#  - script: $CIP/csmart/lib/security/scripts/threatcon_level_change.rb
-
-  - script: $CIP/csmart/lib/coordinator/set_threatcon.rb
-    parameters:
-      - location: during_stage_1
-      - value: High
-      - verbose: 2
-
   - script: $CIP/csmart/lib/coordinator/set_available_bandwidth.rb 
     parameters:
       - location: during_stage_1
+      - enclave: UA
       - value: Low
       - verbose: 2
 
   - script: $CIP/csmart/lib/coordinator/set_outside_load.rb 
     parameters:
       - location: during_stage_1
+      - enclave: UA
+      - value: High
+      - verbose: 2
+
+  - script: $CIP/csmart/lib/coordinator/set_threatcon.rb
+    parameters:
+      - location: during_stage_1
+      - enclave: UA
       - value: High
       - verbose: 2
 

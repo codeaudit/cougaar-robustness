@@ -11,5 +11,5 @@ $:.unshift File.join(CIP, 'csmart', 'config', 'lib')
 require 'coordinator/acuc2b'
 
 insert_after parameters[:location] do
-  do_action "SetAvailableBandwidth", parameters[:value], parameters[:verbose]
+  do_action "SetAvailableBandwidth", parameters[:enclave], parameters[:value], parameters[:verbose]
 end
