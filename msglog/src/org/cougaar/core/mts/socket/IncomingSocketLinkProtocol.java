@@ -116,6 +116,8 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
   private static final int maxPortNumber;
 
   private static LoggingService log;
+  private static int RID;
+
   private SocketClosingService socketCloser;
   private RTTService rttService;
   private String nodeID;
@@ -540,13 +542,18 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
     }
   }
 
+  private synchronized static int getNextReceiveID ()  // for debugging purposes
+  {
+    return RID++;
+  }
+
   private class MessageInListener implements QuitableRunnable
   { 
     private Socket socket;
     private EventWindow serverSocketMoveTrigger;
     private BufferedInputStream socketIn;
     private BufferedOutputStream socketOut;
-    private String sockString;
+    private String sockString, rid;
     private boolean quitNow;
 
     public MessageInListener (Socket socket, EventWindow serverSocketMoveTrigger) throws IOException
@@ -593,14 +600,19 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
         {
           socket.setSoTimeout (firstMsg? firstMsgSoTimeout : subsequentMsgsSoTimeout);
           firstMsg = false;
+          scheduleSocketClose (socket, socketTimeout);
 
           //  Read a message
 
-          scheduleSocketClose (socket, socketTimeout);
-          if (doDebug()) log.debug ("Waiting for msg from " +sockString);
+          if (doDebug())
+          {  
+             rid = "r" +getNextReceiveID()+ " ";
+             log.debug (rid+ "Waiting for msg from " +sockString);
+          }
+
           msgBytes = MessageSerializationUtils.readByteArray (socketIn);
           receiveTime = now();
-          if (doDebug()) log.debug ("Waiting for msg done " +sockString);
+          if (doDebug()) log.debug (rid+ "Waiting for msg done " +sockString);
           unscheduleSocketClose (socket);
           if (showTraffic) System.err.print ("<S");
         }
@@ -609,7 +621,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
           //  Socket SO timeout (set above).  Socket is still good, but we will close
           //  it as a timeout has been reached.
 
-          if (doDebug()) log.debug ("Closing socket due to SO timeout: " +e);
+          if (doDebug()) log.debug (rid+ "Closing socket due to SO timeout: " +e);
           quitNow = true;
           break;
         }
@@ -619,7 +631,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
           //  If the OutgoingSocketLinkProtocol has oneSendPerConnection set to true, it will
           //  close its connection after each message send and this will happen all the time.
 
-          if (doDebug()) log.debug ("Remote socket closed: " +e);
+          if (doDebug()) log.debug (rid+ "Remote socket closed: " +e);
           quitNow = true;
           break;
         }
@@ -628,14 +640,14 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
           //  A non-Cougaar message.  We should not be getting these.  Counts towards the 
           //  server socket move trigger.
 
-          if (doDebug()) log.debug ("Non-Cougaar message received (msg ignored)");
+          if (doDebug()) log.debug (rid+ "Non-Cougaar message received (msg ignored)");
           serverSocketMoveTrigger.addEvent();            
           quitNow = true;
           break;
         }
         catch (DataIntegrityException e)
         {
-          if (doDebug()) log.debug ("Incomplete or damaged message received (msg ignored): "+e);
+          if (doDebug()) log.debug (rid+ "Incomplete or damaged message received (msg ignored): "+e);
           quitNow = true;
           break;
         }
@@ -643,7 +655,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
         { 
           //  Some other exception.  Prints the stack trace for more detail.
 
-          if (doDebug()) log.debug ("Terminating socket exception: " +stackTraceToString(e));
+          if (doDebug()) log.debug (rid+ "Terminating socket exception: " +stackTraceToString(e));
           quitNow = true;
           break;
         }
@@ -659,7 +671,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
         }
         catch (MessageDeserializationException e)
         {
-          if (doWarn()) log.warn ("Deserialization exception (msg ignored): " +e);
+          if (doWarn()) log.warn (rid+ "Deserialization exception (msg ignored): " +e);
           exception = e;
 
           //  Certain kinds of deserialization errors occur to invalid messages being
@@ -691,7 +703,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
             InetAddress addr = socket.getInetAddress();
             int port = socket.getPort();
             msgString = MessageUtils.toString (msg);
-            log.debug ("From " +addr+ ":" +port+ " read " +msgString);
+            log.debug (rid+ "From " +addr+ ":" +port+ " read " +msgString);
           }
 
           try
@@ -700,12 +712,12 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
           }
           catch (MisdeliveredMessageException e)
           { 
-            if (doDebug()) log.debug ("Delivery exception for " +msgString+ ": " +e);
+            if (doDebug()) log.debug (rid+ "Delivery exception for " +msgString+ ": " +e);
             exception = e;
           }
           catch (Exception e)
           { 
-            if (doDebug()) log.debug ("Exception delivering " +msgString+ ": " +stackTraceToString(e));
+            if (doDebug()) log.debug (rid+ "Exception delivering " +msgString+ ": " +stackTraceToString(e));
             exception = e;
           }
         }
@@ -720,10 +732,10 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
 
             byte[] ackBytes = createAck (msg, receiveTime, exception);
             scheduleSocketClose (socket, socketTimeout);
-            if (doDebug()) log.debug ("Sending ack thru " +sockString);
+            if (doDebug()) log.debug (rid+ "Sending ack thru " +sockString);
             sendTime = now();
             MessageSerializationUtils.writeByteArray (socketOut, ackBytes);
-            if (doDebug()) log.debug ("Sending ack done " +sockString);
+            if (doDebug()) log.debug (rid+ "Sending ack done " +sockString);
             unscheduleSocketClose (socket);
 
             //  See if we get an ack-ack back  
@@ -736,12 +748,12 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
             if (exception == null)
             {
               scheduleSocketClose (socket, socketTimeout);
-              if (doDebug()) log.debug ("Waiting for ack-ack from " +sockString);
+              if (doDebug()) log.debug (rid+ "Waiting for ack-ack from " +sockString);
               byte[] ackAckBytes = MessageSerializationUtils.readByteArray (socketIn);
               receiveTime = now();
-              if (doDebug()) log.debug ("Waiting for ack-ack done " +sockString);
+              if (doDebug()) log.debug (rid+ "Waiting for ack-ack done " +sockString);
               unscheduleSocketClose (socket);
-              PureAckAckMessage paam = processAckAck (ackAckBytes);
+              PureAckAckMessage paam = processAckAck (rid, ackAckBytes);
 
               //  Update inband RTT
 
@@ -755,7 +767,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
             }
             else
             {
-              if (doDebug()) log.debug ("Not waiting for ack-ack due to " +
+              if (doDebug()) log.debug (rid+ "Not waiting for ack-ack due to " +
                 "message reception exception " +sockString);
             }
           }
@@ -763,7 +775,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
           {
             //  Any acking that did not complete will be taken care of in later acking
 
-            if (doDebug()) log.debug ("Inband acking stopped for " +sockString+ ": " +e);
+            if (doDebug()) log.debug (rid+ "Inband acking stopped for " +sockString+ ": " +e);
             quitNow = true;
             break;
           }
@@ -773,7 +785,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
       //  Cleanup
 
       closeSocket();
-      if (doDebug()) log.debug ("End of msg in listener for " +sockString);
+      if (doDebug()) log.debug (rid+ "End of msg in listener for " +sockString);
     }
 
     private byte[] createAck (AttributedMessage msg, long receiveTime, Exception exception) throws Exception
@@ -791,7 +803,7 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
       return ackBytes;
     }
 
-    private PureAckAckMessage processAckAck (byte[] ackAckBytes) throws Exception
+    private PureAckAckMessage processAckAck (String rid, byte[] ackAckBytes) throws Exception
     {
       AttributedMessage msg = MessageSerializationUtils.readMessageFromByteArray (ackAckBytes);
       PureAckAckMessage paam = (PureAckAckMessage) msg;
@@ -822,9 +834,9 @@ public class IncomingSocketLinkProtocol extends IncomingLinkProtocol
           buf.append ("Got inband ack-ack:\n");
           if (sbuf != null) buf.append (sbuf);
           if (lbuf != null) buf.append ("\n"+lbuf);
-          log.debug (buf.toString());
+          log.debug (rid+buf.toString());
         }
-        else log.debug ("Got an empty inband ack-ack!");
+        else log.debug (rid+ "Got an empty inband ack-ack!");
       }
 
       if (specificAcks != null)

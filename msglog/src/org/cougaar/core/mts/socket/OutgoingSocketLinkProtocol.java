@@ -107,6 +107,8 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
   private static final int inbandAckSoTimeout;
   private static final boolean oneSendPerConnection;
 
+  private static int SID;
+
   private LoggingService log;
   private SocketClosingService socketCloser;
   private RTTService rttService;
@@ -285,12 +287,18 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
     return socketTimeout;
   }
 
+  private synchronized static int getNextSendID ()  // for debugging purposes
+  {
+    return SID++;
+  }
+
   class SocketOutLink implements DestinationLink 
   {
     private MessageAddress destination;
     private Socket socket;
     private OutputStream socketOut;
     private InputStream socketIn;
+    private String sid;
 
     public SocketOutLink (MessageAddress dest) 
     {
@@ -393,7 +401,11 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
 
     private synchronized boolean sendMessage (AttributedMessage msg, SocketSpec spec) throws Exception
     {
-      if (doDebug()) log.debug ("Sending " +MessageUtils.toString(msg));
+      if (doDebug()) 
+      {
+        sid = "s" +getNextSendID()+ " ";
+        log.debug (sid+ "Sending " +MessageUtils.toString(msg));
+      }
 
       //  Set message send time for RTT service (updates msg attribute)
 
@@ -423,9 +435,9 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
           {
             tryN = 2;  // only try once with a new socket
 
-            if (doDebug()) log.debug ("Creating socket to " +destination+ " with " +spec);
+            if (doDebug()) log.debug (sid+ "Creating socket to " +destination+ " with " +spec);
             socket = getSocket (spec);
-            if (doDebug()) log.debug ("Created socket " + (sockString = socket.toString()));
+            if (doDebug()) log.debug (sid+ "Created socket " + (sockString = socket.toString()));
 
             socketOut = new BufferedOutputStream (socket.getOutputStream());
             if (doInbandAcking) socketIn = new BufferedInputStream (socket.getInputStream());
@@ -433,10 +445,10 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
 
           //  Send the message
 
-          if (doDebug()) log.debug ("Sending " +msgBytes.length+ " byte msg thru " +sockString);
+          if (doDebug()) log.debug (sid+ "Sending " +msgBytes.length+ " byte msg thru " +sockString);
           sendTime = now();
           MessageSerializationUtils.writeByteArray (socketOut, msgBytes);
-          if (doDebug()) log.debug ("Sending " +msgBytes.length+ " byte msg done " +sockString);
+          if (doDebug()) log.debug (sid+ "Sending " +msgBytes.length+ " byte msg done " +sockString);
           break;  // success
         }
         catch (Exception e)
@@ -458,11 +470,11 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
         {
           //  See if we get an ack
 
-          if (doDebug()) log.debug ("Waiting for ack from " +sockString);
+          if (doDebug()) log.debug (sid+ "Waiting for ack from " +sockString);
           byte[] ackBytes = MessageSerializationUtils.readByteArray (socketIn);
           receiveTime = now();
-          if (doDebug()) log.debug ("Waiting for ack done " +sockString);
-          pam = processAck (ackBytes);
+          if (doDebug()) log.debug (sid+ "Waiting for ack done " +sockString);
+          pam = processAck (sid, ackBytes);
 
           //  Send an ack-ack
           //
@@ -472,9 +484,9 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
           if (!pam.hasReceptionException())
           {
             byte[] ackAckBytes = createAckAck (pam, receiveTime);
-            if (doDebug()) log.debug ("Sending ack-ack thru " +sockString);
+            if (doDebug()) log.debug (sid+ "Sending ack-ack thru " +sockString);
             MessageSerializationUtils.writeByteArray (socketOut, ackAckBytes);
-            if (doDebug()) log.debug ("Sending ack-ack done " +sockString);
+            if (doDebug()) log.debug (sid+ "Sending ack-ack done " +sockString);
           }
           else
           {
@@ -483,7 +495,7 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
             if (doWarn()) 
             {
               String node = pam.getReceptionNode();
-              log.warn ("Got reception exception from node " +node+ " " +sockString+ ": " +e);
+              log.warn (sid+ "Got reception exception from node " +node+ " " +sockString+ ": " +e);
             }
 
             throw e;
@@ -493,7 +505,7 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
         {
           //  Any acking that did not complete will be taken care of in later acking
 
-          if (doDebug()) log.debug ("Inband acking stopped for " +sockString+ ": " +e);
+          if (doDebug()) log.debug (sid+ "Inband acking stopped for " +sockString+ ": " +e);
 
           //  Selectively close the socket 
 
@@ -566,7 +578,7 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
       } 
     }
 
-    private PureAckMessage processAck (byte[] ackBytes) throws Exception
+    private PureAckMessage processAck (String sid, byte[] ackBytes) throws Exception
     {
       AttributedMessage msg = MessageSerializationUtils.readMessageFromByteArray (ackBytes);
       PureAckMessage pam = (PureAckMessage) msg;
@@ -582,7 +594,7 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
         {
           StringBuffer buf = new StringBuffer();
           AckList.printAcks (buf, "  latest", latestAcks);
-          log.debug ("Got inband ack:\n" +buf);
+          log.debug (sid+ "Got inband ack:\n" +buf);
         }
 
         for (Enumeration a=latestAcks.elements(); a.hasMoreElements(); )
@@ -591,7 +603,7 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
         String fromNode = MessageUtils.getFromAgentNode (pam);
         MessageAckingAspect.addReceivedAcks (fromNode, latestAcks);
       }
-      else if (doDebug()) log.debug ("Got empty inband ack!");
+      else if (doDebug()) log.debug (sid+ "Got empty inband ack!");
 
       return pam;
     }
