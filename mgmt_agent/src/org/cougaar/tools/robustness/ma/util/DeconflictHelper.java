@@ -81,6 +81,7 @@ public class DeconflictHelper extends BlackboardClientComponent {
   private ArrayList listeners = new ArrayList(); //store all deconflict listeners
   private ArrayList agentsObjs = new ArrayList(); //store all agents who need to publish deconflict objects
   private ArrayList opModeEnabled = new ArrayList(); //store all agents whose defense opmode is enabled
+  private List conditionEnabled = Collections.synchronizedList(new ArrayList()); //store all agents whose condition is true
 
   private List defenseOperatingModeQueue = new ArrayList(); //store all objects that need to be published into the blackboard.
   private List defenseConditionQueue = new ArrayList(); //store all conditions that need to be changed in the blackboard.
@@ -89,7 +90,8 @@ public class DeconflictHelper extends BlackboardClientComponent {
 
 /**
  * Constructor requires BindingSite to initialize needed services.
- * @param bs
+ * @param bs The binding site
+ * @param csm The community status model
  */
   public DeconflictHelper(BindingSite bs, CommunityStatusModel csm) {
     this.setBindingSite(bs);
@@ -204,9 +206,23 @@ public class DeconflictHelper extends BlackboardClientComponent {
       logger.info("get op mode: " + rme.getName() + "=" + rme.getValue());
     }*/
 
+    //conditionEnabled.clear();
+    List temp = new ArrayList();
+    Iterator it = conditionSubscription.getCollection().iterator();
+    while(it.hasNext()) {
+      RestartDefenseCondition rdc = (RestartDefenseCondition)it.next();
+      //if(rdc.getValue().toString().equalsIgnoreCase("true")) {
+        //if(rdc.getAssetType().equals(assetType))
+          temp.add(rdc);
+      //}
+    }
+    synchronized(conditionEnabled) {
+      conditionEnabled.clear();
+      conditionEnabled.addAll(temp);
+    }
 
     //check for change in our modes
-    Iterator it = opModeSubscription.getChangedCollection().iterator();
+    it = opModeSubscription.getChangedCollection().iterator();
     while(it.hasNext()) {
       RestartDefenseEnabler rde = (RestartDefenseEnabler)it.next();
       logger.debug("get opmode change: " + rde.getAsset() + " -- " + rde.getValue());
@@ -245,7 +261,7 @@ public class DeconflictHelper extends BlackboardClientComponent {
   /**
    * Is the defense opmode of given agent is enabled?
    * @param name Agent name
-   * @return
+   * @return A boolean value
    */
   public boolean isOpEnabled(String name) {
     return opModeEnabled.contains(name);
@@ -254,7 +270,7 @@ public class DeconflictHelper extends BlackboardClientComponent {
   /**
    * Set the defense opmode of given agent to disabled. Normally this method is
    * called when the agent is prove to be active.
-   * @param name
+   * @param name the agent name
    */
   public void opmodeDisabled(String name) {
     if(opModeEnabled.contains(name)) {
@@ -288,12 +304,20 @@ public class DeconflictHelper extends BlackboardClientComponent {
    * Modify the applicable condition value of given agent if current condition value
    * is not equals desired value.
    * @param name the agent name
-   * @param desiredValue The desired value.
+   * @return A boolean value
    */
   public boolean changeApplicabilityCondition(String name) {
     String condition = defenseName + ":" + name;
 
-    Iterator it = conditionSubscription.getCollection().iterator();
+    List l;
+    synchronized(conditionEnabled) {
+      l = new ArrayList(conditionEnabled);
+    }
+    //try{
+      //blackboard.openTransaction();
+      //col = blackboard.query(conditionSubscription);
+    //}finally {blackboard.closeTransactionDontReset();}
+    Iterator it = l.iterator();
     while(it.hasNext()) {
       RestartDefenseCondition rdc = (RestartDefenseCondition)it.next();
       if(rdc != null && rdc.getAssetType().equals(assetType) && rdc.getAsset().equals(name)) {
@@ -309,18 +333,6 @@ public class DeconflictHelper extends BlackboardClientComponent {
     }
     return false;
 
-    /*RestartDefenseCondition rdc = (RestartDefenseCondition)conditionService.getConditionByName(condition);
-    if (rdc != null) {
-      if(rdc.getValue().toString().equalsIgnoreCase("true"))
-        rdc.setValue(DefenseConstants.BOOL_FALSE);
-      else
-        rdc.setValue(DefenseConstants.BOOL_TRUE);
-      if (logger.isDebugEnabled())
-        logger.debug("** setRestartCondition - " + rdc.getName() + "=" + rdc.getValue());
-      defenseConditionQueue.add(rdc);
-    } else {
-      if (logger.isDebugEnabled()) logger.debug("** Cannot find condition object!");
-    }*/
   }
 
   public boolean isDefenseApplicable(String agentName) {
@@ -331,8 +343,19 @@ public class DeconflictHelper extends BlackboardClientComponent {
       if(rdc.getValue().toString().equalsIgnoreCase("true"))
         return true;
     }*/
-    if(conditionSubscription != null && conditionSubscription.getCollection() != null) {
-      Iterator it = conditionSubscription.getCollection().iterator();
+
+    List l;
+    synchronized(conditionEnabled) {
+      l = new ArrayList(conditionEnabled);
+    }
+
+    //Collection col;
+    //try{
+      //blackboard.openTransaction();
+      //col = blackboard.query(conditionSubscription);
+    //}finally {blackboard.closeTransactionDontReset();}
+    if(l != null) {
+      Iterator it = l.iterator();
       while (it.hasNext()) {
         RestartDefenseCondition rdc = (RestartDefenseCondition) it.next();
         if (rdc != null && rdc.getAssetType().equals(assetType) &&
@@ -340,6 +363,7 @@ public class DeconflictHelper extends BlackboardClientComponent {
           if (rdc.getValue().toString().equalsIgnoreCase("true"))
             return true;
         }
+
       }
     }
 
@@ -401,14 +425,6 @@ public class DeconflictHelper extends BlackboardClientComponent {
     }
   }
 
-  public void test() {
-    Iterator iter = opModeSubscription.getAddedCollection().iterator();
-    while(iter.hasNext()) {
-      RestartDefenseEnabler rme = (RestartDefenseEnabler)iter.next();
-      logger.debug("get op mode: " + rme.getName() + "=" + rme.getValue());
-    }
-  }
-
   // Timer for periodically stimulating execute() method to check/process
   // deconflict object queue
   private class WakeAlarm implements Alarm {
@@ -442,33 +458,30 @@ public class DeconflictHelper extends BlackboardClientComponent {
     public RestartDefenseEnabler(String assetType, String asset, String defenseName) {
       super (assetType, asset, defenseName);
     }
-    /*public RestartDefenseEnabler(String str) {
-      super(str);
-    }*/
   }
 
   public class RestartMonitoringEnabler extends MonitoringEnablingOperatingMode {
     public RestartMonitoringEnabler (String assetType, String asset, String defenseName) {
       super (assetType, asset, defenseName);
     }
-    /*public RestartMonitoringEnabler(String str) {
-      super(str);
-    }*/
   }
 
   public class RestartDefenseCondition extends DefenseApplicabilityBinaryCondition {
-    /*public RestartDefenseCondition(String name) {
-      super(name);
-    }*/
     public RestartDefenseCondition(String assetType, String asset, String defenseName, DefenseConstants.OMCStrBoolPoint pt) {
       super(assetType, asset, defenseName, pt);
     }
-    /*public RestartDefenseCondition(String str, DefenseConstants.OMCStrBoolPoint pt) {
-      super(str, pt);
-    }*/
     protected void setValue(DefenseConstants.OMCStrBoolPoint newValue) {
       super.setValue(newValue);
     }
   }
+
+ /* UnaryPredicate conditionSubscription = new UnaryPredicate() {
+        public boolean execute(Object o) {
+            if ( o instanceof RestartDefenseEnabler ) {
+                return true ;
+            }
+            return false ;
+        }
+  };*/
 
 }
