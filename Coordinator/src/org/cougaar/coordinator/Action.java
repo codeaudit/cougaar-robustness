@@ -77,7 +77,7 @@ public abstract class Action
     //static protected Set possibleValuesCloned;
 
     /** TRUE if the class attributes have been initialized */
-    static private ServiceBroker serviceBroker = null;
+    private ServiceBroker serviceBroker = null;
         
     /** The vector of all local ActionTechSpecs */
     //static private Vector actionTechSpecs;
@@ -86,17 +86,17 @@ public abstract class Action
     private transient ActionTechSpecInterface actionTechSpec = null;
 
     /** UID Service */
-    static private UIDService uidService;
+    private UIDService uidService;
 
     /** 
      *  The address of the node agent. May change if the action is moved. 
      *  Making this transient will cause the target to go to null when this object moves.
      *  So, we will need to check for null each time & lookup the local node if necessary.
      */
-    static transient private  MessageAddress nodeId;
+    transient private  MessageAddress nodeId;
     
     /** The address of this agent */
-    static private  MessageAddress agentId;
+    private  MessageAddress agentId;
 
     /** last action set by start() or stop() */
     ActionRecord lastAction = null;
