@@ -70,7 +70,7 @@ import javax.naming.directory.Attributes;
  * period.
  */
 public class CommunityStatusModel extends BlackboardClientComponent
-    implements NotPersistable {
+    implements NotPersistable, RestartManagerConstants {
 
   public static final int AGENT = 0;
   public static final int NODE  = 1;
@@ -80,13 +80,6 @@ public class CommunityStatusModel extends BlackboardClientComponent
   public static final int UNDEFINED = -1;
   public static final int INITIAL = 0;
   public static final int LOCATED = 1;
-
-  // Default state expiration
-  public static final int NEVER = -1;
-
-  // Community attribute designating the communities manager agent
-  public static final String MANAGER_ATTR = "RobustnessManager";
-  public static final String HEALTH_MONITOR = "HealthMonitor";
 
   // Services used
   private LoggingService logger;
@@ -374,7 +367,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
                        (expiration == NEVER ? "NEVER" :
                         Long.toString(expiration)));
         }
-        if (hasAttribute(se.attrs, "Role", HEALTH_MONITOR)) {
+        if (hasAttribute(se.attrs, ROLE_ATTRIBUTE, HEALTH_MONITOR_ROLE)) {
           electLeader();
         }
         queueChangeEvent(
@@ -550,7 +543,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
         queueChangeEvent(
             new CommunityStatusChangeEvent(changeFlags, se));
       }
-      if (hasAttribute(se.attrs, "Role", HEALTH_MONITOR)) {
+      if (hasAttribute(se.attrs, ROLE_ATTRIBUTE, HEALTH_MONITOR_ROLE)) {
         electLeader();
       }
     } else {
@@ -650,7 +643,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
       synchronized (statusMap) {
         communityAttrs = community.getAttributes();
         try {
-          Attribute attr = communityAttrs.get(MANAGER_ATTR);
+          Attribute attr = communityAttrs.get(ROBUSTNESS_MANAGER_ATTRIBUTE);
           if (attr != null)
             setPreferredLeader( (String) attr.get());
         } catch (NamingException ne) {}
@@ -661,7 +654,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
             if (!statusMap.containsKey(entity.getName())) {
               int type = AGENT;
               Attribute entityTypeAttr = entity.getAttributes().get(
-                  "EntityType");
+                  ENTITY_TYPE_ATTRIBUTE);
               if (entityTypeAttr != null && entityTypeAttr.contains("Node")) {
                 type = NODE;
               }
@@ -1030,7 +1023,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
         StatusEntry se = (StatusEntry)it.next();
         if (se != null &&
             se.attrs != null  &&
-            hasAttribute(se.attrs, "Role", HEALTH_MONITOR) &&
+            hasAttribute(se.attrs, ROLE_ATTRIBUTE, HEALTH_MONITOR_ROLE) &&
             !isExpired(se) &&
             se.currentState == normalState) {
           candidates.add(se.name);

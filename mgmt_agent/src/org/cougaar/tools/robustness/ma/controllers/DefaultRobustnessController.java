@@ -35,7 +35,7 @@ import org.cougaar.tools.robustness.ma.util.RestartHelper;
 import org.cougaar.tools.robustness.ma.util.RestartListener;
 import org.cougaar.tools.robustness.ma.util.RestartDestinationLocator;
 import org.cougaar.tools.robustness.ma.util.StatCalc;
-import org.cougaar.tools.robustness.ma.util.NodeLatencyStatistics;
+import org.cougaar.tools.robustness.ma.util.NodeStatistics;
 import org.cougaar.tools.robustness.ma.util.ServiceChecker;
 import org.cougaar.tools.robustness.ma.util.CheckServicesListener;
 
@@ -160,9 +160,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
         setExpiration(name, (int)getNodeStatusExpiration(name));
       } else if (isAgent(name)) {
         int nodeExpiration = (int)getNodeStatusExpiration(getLocation(name));
-        long updateInterval = getLongAttribute(STATUS_UPDATE_PROPERTY, DEFAULT_STATUS_UPDATE_INTERVAL);
-        int agentExpiration = nodeExpiration + (int)updateInterval * 2;
-        //int agentExpiration = (int)(nodeExpiration * 1.5);
+        int updateInterval = (int)getLongAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE, DEFAULT_STATUS_UPDATE_INTERVAL);
+        // Increase timeout for agents so they don't timeout before node
+        int agentExpiration = nodeExpiration + updateInterval * 60000 * 2;
         setExpiration(name, agentExpiration);
       }
     }
@@ -503,9 +503,9 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   private ServiceChecker serviceChecker;
 
   private Map runStats = new HashMap();
-  private NodeLatencyStatistics originalStats;
-  private NodeLatencyStatistics nodeLatencyStats;
-  private boolean collectNodeStats = false;
+  private NodeStatistics nodeStats;
+
+  private boolean autotuningEnabled = true;
   private boolean suppressPingsOnRestart = false;
   private int minimumHostsForManagerRestart = 2;
 
@@ -517,12 +517,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                          final CommunityStatusModel csm) {
     super.initialize(agentId, bs, csm);
     thisAgent = agentId.toString();
-    String propValue = System.getProperty(COLLECT_NODE_STATS_PROPERTY);
-    collectNodeStats = (propValue != null && propValue.equalsIgnoreCase("true"));
-    propValue = System.getProperty("org.cougaar.tools.robustness.deconfliction.leashOnRestart");
-    suppressPingsOnRestart =
-        (propValue != null && propValue.equalsIgnoreCase("true"));
-    propValue = System.getProperty("org.cougaar.tools.robustness.minHostsForMgrRestart", "2");
+    String propValue = System.getProperty(ENABLE_AUTOTUNING_PROPERTY);
+    autotuningEnabled = !(propValue != null && propValue.equalsIgnoreCase(DISABLED));
+    propValue = System.getProperty(LEASH_DEFENSES_ON_RESTART_PROPERTY);
+    suppressPingsOnRestart = (propValue != null && propValue.equalsIgnoreCase("true"));
+    propValue = System.getProperty(MIN_HOSTS_FOR_MGR_RESTART_PROPERTY, "2");
     if (propValue != null) {
       try {
         minimumHostsForManagerRestart = Integer.parseInt(propValue);
@@ -554,7 +553,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   private void updateStats(String source) {
     long updateInterval =
         getLongAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE,
-                         DEFAULT_STATUS_UPDATE_INTERVAL);
+                         DEFAULT_STATUS_UPDATE_INTERVAL) * 60000;
     long now = now();
     StatsEntry se = (StatsEntry) runStats.get(source);
     if (se == null) {
@@ -562,64 +561,58 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     } else {
       long elapsed = now - se.last;
       if (elapsed >= updateInterval) {  // filter bad events
-        long latency = elapsed - updateInterval;
-        if (latency > se.high) {
-          se.high = latency;
+        //long latency = elapsed - updateInterval;
+        if (elapsed > se.high) {
+          se.high = elapsed;
         }
-        collectNodeStats(source);
       }
       se.last = now;
       ++se.samples;
+      collectNodeStats(source);
     }
   }
 
-  private void collectNodeStats(String source) {
-    if (collectNodeStats) {
-      if (nodeLatencyStats == null) {initializeNodeStats();
+  private NodeStatistics getNodeStats() {
+    if (nodeStats == null) {
+      nodeStats = new NodeStatistics(model.getCommunityName());
+      nodeStats.load();
+      if (logger.isDetailEnabled()) {
+        logger.detail("initializeNodeStats: " + nodeStats.toXML());
       }
+    }
+    return nodeStats;
+  }
+
+  private void collectNodeStats(String source) {
+    if (autotuningEnabled) {
+      NodeStatistics ns = getNodeStats();
       if (isSentinel() &&
           !source.equals(getLocation(thisAgent))) {
         StatsEntry se = (StatsEntry) runStats.get(source);
-        if (se.samples >= MIN_SAMPLES) {
-          StatCalc newSc = (StatCalc) nodeLatencyStats.get(source);
-          if (se.samples == MIN_SAMPLES || // Take snapshot at MIN_SAMPLES
-              newSc == null ||
-              se.high > newSc.getHigh()) { // Record highs thereafter
-            if (originalStats.contains(source)) {
-              newSc = (StatCalc) originalStats.get(source).clone();
-              newSc.enter(se.high);
-              nodeLatencyStats.put(newSc);
-              saveNodeStats();
+        if (se.samples >= MINIMUM_AUTOTUNING_SAMPLES) {
+          StatCalc sc = (StatCalc)ns.get(source);
+          if (se.samples == MINIMUM_AUTOTUNING_SAMPLES || // Take snapshot at MIN_SAMPLES
+              sc == null ||
+              se.high > sc.getHigh()) { // Record highs thereafter
+            if (logger.isDebugEnabled()) {
+              logger.debug("Writing new stat entry:" +
+                          " node=" + source +
+                          " entry=" + se.high);
+            }
+            if (ns.containsOriginal(source)) {
+              sc = (StatCalc)ns.getOriginal(source).clone();
+              sc.enter(se.high);
+              ns.put(sc);
+              ns.save();
             } else {
-              newSc = new StatCalc(model.getCommunityName(), source);
-              newSc.enter(se.high);
-              nodeLatencyStats.put(newSc);
-              saveNodeStats();
+              sc = new StatCalc(model.getCommunityName(), source);
+              sc.enter(se.high);
+              ns.put(sc);
+              ns.save();
             }
           }
         }
       }
-    }
-  }
-
-  private void saveNodeStats() {
-    NodeLatencyStatistics all =
-        new NodeLatencyStatistics(model.getCommunityName(),
-                                  nodeLatencyStats.values());
-    for (Iterator it = originalStats.list().iterator(); it.hasNext();) {
-      String id = (String)it.next();
-      if (!all.contains(id)) all.put(originalStats.get(id));
-    }
-    all.save();
-  }
-
-  // load persisted node stats from file and make a copy
-  private void initializeNodeStats() {
-    originalStats = new NodeLatencyStatistics(model.getCommunityName());
-    nodeLatencyStats = new NodeLatencyStatistics(model.getCommunityName());
-    originalStats.load();
-    if (logger.isDetailEnabled()) {
-      logger.detail("initializeNodeStats: " + originalStats.toXML());
     }
   }
 
@@ -634,31 +627,30 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   private long getNodeStatusExpiration(String nodeName) {
 
     // Community-wide default values
-    long minimumExpiration = getLongAttribute("MINIMUM_EXPIRATION",
-                                              MINIMUM_EXPIRATION);
-    long defaultMean = getLongAttribute("DEFAULT_STATUS_LATENCY_MEAN",
-                                        DEFAULT_STATUS_LATENCY_MEAN);
-    long defaultStdDev = getLongAttribute("DEFAULT_STATUS_LATENCY_STDDEV",
-                                          DEFAULT_STATUS_LATENCY_STDDEV);
-    long updateInterval = getLongAttribute("STATUS_UPDATE_INTERVAL",
-                                           DEFAULT_STATUS_UPDATE_INTERVAL);
-    long restartConf = getLongAttribute("RESTART_CONFIDENCE",
-                                        DEFAULT_RESTART_CONFIDENCE);
+    long defaultTimeout = getLongAttribute(DEFAULT_TIMEOUT_ATTRIBUTE,
+                                              DEFAULT_TIMEOUT);
+    long commRestartAgressiveness = getLongAttribute(RESTART_AGGRESSIVENESS_ATTRIBUTE,
+                                        DEFAULT_RESTART_AGGRESSIVENESS);
+    long nodeRestartAgressiveness = getLongAttribute(nodeName, RESTART_AGGRESSIVENESS_ATTRIBUTE,
+                                        commRestartAgressiveness);
 
-    // Node-specific values; community defaults used if not available
-    long nodeMean = getLongAttribute(nodeName,
-                                     "STATUS_LATENCY_MEAN",
-                                     defaultMean);
-    long nodeStdDev = getLongAttribute(nodeName,
-                                       "STATUS_LATENCY_STDDEV",
-                                       defaultStdDev);
-
-    long expiration = updateInterval +
-                      nodeMean +
-                      (nodeStdDev * restartConf);
-    if (expiration < minimumExpiration) {
-      expiration = minimumExpiration;
+    NodeStatistics ns = getNodeStats();
+    StatCalc sc = ns.get(nodeName);
+    if (sc == null) { // Create new entry
+      sc = new StatCalc(model.getCommunityName(), nodeName);
+      long seed = defaultTimeout * 12000;
+      sc.enter(seed);
+      sc.enter(seed * 3);
+      ns.putOriginal(sc);
+      if (isSentinel()) {
+        ns.save();
+      }
     }
+
+    long mean = (long)sc.getMean();
+    long stddev = (long)sc.getStandardDeviation();
+    long expiration = mean + (stddev * nodeRestartAgressiveness);
+
     if (logger.isDebugEnabled()) {
       logger.debug("getNodeStateExpiration: node=" + nodeName + " expiration=" +
                   expiration);
@@ -718,13 +710,13 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   }
 
   private boolean useGlobalSolver() {
-    String solverModeAttr = model.getStringAttribute(SOLVER_MODE_ATTRIBUTE);
-    return (solverModeAttr != null && solverModeAttr.equalsIgnoreCase("global"));
+    String solverModeAttr = model.getStringAttribute(LOAD_BALANCER_ATTRIBUTE);
+    return (solverModeAttr != null && solverModeAttr.equalsIgnoreCase("External"));
   }
 
   private boolean autoLoadBalance() {
     String autoLoadBalanceAttr = model.getStringAttribute(AUTO_LOAD_BALANCE_ATTRIBUTE);
-    return (autoLoadBalanceAttr != null && autoLoadBalanceAttr.equalsIgnoreCase("true"));
+    return (autoLoadBalanceAttr != null && autoLoadBalanceAttr.equalsIgnoreCase(ENABLED));
   }
 
   private void removeFromCommunity(final String name) {
@@ -856,10 +848,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
     if (isLeader(thisAgent) && model.getCurrentState(preferredLeader()) == DEAD) {
       long pingTimeout = getLongAttribute(preferredLeader(),
-                                          PING_TIMEOUT_ATTRIBUTE,
-                                          DEFAULT_PING_TIMEOUT);
+                                          DEFAULT_TIMEOUT_ATTRIBUTE,
+                                          DEFAULT_TIMEOUT) * 60000;
       serviceChecker.checkServices(model.getCommunityName(),
-                                   "EssentialRestartService",
+                                   ESSENTIAL_RESTART_SERVICE_ATTRIBUTE,
                                    pingTimeout,
         new CheckServicesListener() {
           public void execute(String communityName,
@@ -935,7 +927,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     return getLongAttribute(EXPECTED_AGENTS_ATTRIBUTE, -1);  }
 
   private String preferredLeader() {
-    return model.getStringAttribute(model.MANAGER_ATTR);
+    return model.getStringAttribute(ROBUSTNESS_MANAGER_ATTRIBUTE);
   }
 
   private boolean isSentinel() {
@@ -983,7 +975,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
             }
           }
         };
-        long annealTime = getLongAttribute("MINIMUM_ANNEAL_TIME",
+        long annealTime = getLongAttribute(MINIMUM_ANNEAL_TIME_ATTRIBUTE,
                                            MINIMUM_ANNEAL_TIME);
         if (logger.isDebugEnabled()) {
           logger.debug("doLayout:" +

@@ -151,10 +151,10 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
       UID joinRequestUID = uidService.nextUID();
       myUIDs.add(joinRequestUID);
       Attributes memberAttrs = new BasicAttributes();
-      Attribute roles = new BasicAttribute("Role", "Member");
+      Attribute roles = new BasicAttribute(ROLE_ATTRIBUTE, "Member");
       roles.add(HEALTH_MONITOR_ROLE);
       memberAttrs.put(roles);
-      memberAttrs.put("EntityType", myType);
+      memberAttrs.put(ENTITY_TYPE_ATTRIBUTE, myType);
       memberAttrs.put("CanBeManager", "False");
        commSvc.joinCommunity(initialCommunity, myName, CommunityService.AGENT,
          memberAttrs, false, null, new CommunityResponseListener() {
@@ -204,7 +204,8 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
         (IncrementalSubscription)blackboard.subscribe(healthMonitorRequestPredicate);
 
     Collection communities = commSvc.searchCommunity(null,
-                                             "(CommunityType=Robustness)",
+                                             "(" + COMMUNITY_TYPE_ATTRIBUTE + "=" +
+                                             ROBUSTNESS_COMMUNITY_TYPE + ")",
                                              false,
                                              Community.COMMUNITIES_ONLY,
                                              null);
@@ -215,8 +216,8 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
       public String getCommunityName() { return null; }
       public void communityChanged(CommunityChangeEvent cce) {
         Attributes attrs = cce.getCommunity().getAttributes();
-        Attribute attr = attrs.get("CommunityType");
-        if (attr != null && attr.contains("Robustness")) {
+        Attribute attr = attrs.get(COMMUNITY_TYPE_ATTRIBUTE);
+        if (attr != null && attr.contains(ROBUSTNESS_COMMUNITY_TYPE)) {
            myCommunity = cce.getCommunityName();
            communityChanged = true;
         }
@@ -225,13 +226,13 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
 
     // Start timer to periodically check status of agents
     String updateIntervalStr =
-        System.getProperty(STATUS_UPDATE_PROPERTY,
+        System.getProperty(STATUS_UPDATE_INTERVAL_ATTRIBUTE,
                            Long.toString(DEFAULT_STATUS_UPDATE_INTERVAL));
     updateInterval = Long.parseLong(updateIntervalStr);
     if (logger.isDebugEnabled()) {
       logger.debug("updateInterval=" + updateInterval + " default=" + DEFAULT_STATUS_UPDATE_INTERVAL);
     }
-    wakeAlarm = new WakeAlarm(now() + updateInterval);
+    wakeAlarm = new WakeAlarm(now() + updateInterval * MS_PER_MIN);
     alarmService.addRealTimeAlarm(wakeAlarm);
     new ReaffiliationNotificationHandler(getBindingSite(), agentId);
   }
@@ -268,7 +269,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
         }
       }
       updateAndSendNodeStatus();
-      long tmp = getLongAttribute(CURRENT_STATUS_UPDATE_ATTRIBUTE, updateInterval);
+      long tmp = getLongAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE, updateInterval);
       if (tmp != updateInterval) {
         if (logger.isInfoEnabled()) {
           logger.info("Changing update interval: old=" + updateInterval +
@@ -279,7 +280,8 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
       if (model != null) {
         model.doPeriodicTasks();
       }
-      wakeAlarm = new WakeAlarm(now() + getLongAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE, updateInterval));
+      wakeAlarm = new WakeAlarm(now() +
+                                getLongAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE, updateInterval) * MS_PER_MIN);
       alarmService.addRealTimeAlarm(wakeAlarm);
     }
 
@@ -356,14 +358,14 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
    */
   private Set findHealthMonitorPeers(Community community) {
     Set targets = new HashSet();
-    Set entities = community.search("(Role=" + HEALTH_MONITOR_ROLE + ")",
+    Set entities = community.search("(" + ROLE_ATTRIBUTE + "=" + HEALTH_MONITOR_ROLE + ")",
                                     Community.AGENTS_ONLY);
     for (Iterator it1 = entities.iterator(); it1.hasNext(); ) {
       Entity entity = (Entity) it1.next();
       //targets.add(MessageAddress.getMessageAddress(entity.getName()));
       if (model != null && model.getType(entity.getName()) == model.NODE) {
         targets.add(getMessageAddressWithTimeout(entity.getName(),
-                                                 updateInterval));
+                                                 updateInterval * MS_PER_MIN));
       }
      }
     return targets;
@@ -390,7 +392,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
                       " attributes=" + attrsToString(community.getAttributes()));
         }
       }
-      long interval = model.getLongAttribute(CURRENT_STATUS_UPDATE_ATTRIBUTE);
+      long interval = model.getLongAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE);
       if (interval <= 0) { // Current status update interval not defined yet
         // Get default interval
         long newInterval = getLongAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE, updateInterval);
@@ -402,7 +404,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
           }
           changeAttributes(community,
                            null,
-                           new Attribute[]{new BasicAttribute(CURRENT_STATUS_UPDATE_ATTRIBUTE, Long.toString(newInterval))});
+                           new Attribute[]{new BasicAttribute(STATUS_UPDATE_INTERVAL_ATTRIBUTE, Long.toString(newInterval))});
         }
       }
       if (nodeStatusRelay == null &&
@@ -459,7 +461,7 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
     blackboard.publishAdd(model);
     String controllerClassname =
         System.getProperty(CONTROLLER_CLASS_PROPERTY,
-                           DEFAULT_ROBUSTNESS_CONTROLLER_CLASSNAME);
+                           DEFAULT_CONTROLLER_CLASSNAME);
     try {
       controller =
           (RobustnessController) Class.forName(controllerClassname).newInstance();

@@ -32,7 +32,8 @@ import java.util.Set;
 /**
  * Base class for robustness ThreatAlert handlers.
  */
-public abstract class RobustnessThreatAlertHandlerBase extends ThreatAlertHandlerBase {
+public abstract class RobustnessThreatAlertHandlerBase
+    extends ThreatAlertHandlerBase implements RestartManagerConstants {
 
   protected CommunityStatusModel model;
   protected RobustnessController controller;
@@ -100,7 +101,7 @@ public abstract class RobustnessThreatAlertHandlerBase extends ThreatAlertHandle
   }
 
   protected String preferredLeader() {
-    return model.getStringAttribute(model.MANAGER_ATTR);
+    return model.getStringAttribute(ROBUSTNESS_MANAGER_ATTRIBUTE);
   }
 
 }

@@ -554,6 +554,14 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
     return model.getLocation(name);
   }
 
+  protected boolean attributeDefined(String id) {
+    return model.hasAttribute(id);
+  }
+
+  protected boolean attributeDefined(String name, String id) {
+    return model.hasAttribute(name, id);
+  }
+
   /**
    * Get community attribute from model.
    * @param id  Attribute identifier
@@ -561,7 +569,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * @return Attribute value as a long
    */
   protected boolean getBooleanAttribute(String id, boolean defaultValue) {
-    if (model.hasAttribute(id)) {
+    if (attributeDefined(id)) {
       return model.getBooleanAttribute(id);
     } else {
       return defaultValue;
@@ -575,7 +583,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * @return Attribute value as a long
    */
   protected long getLongAttribute(String id, long defaultValue) {
-    if (model.hasAttribute(id)) {
+    if (attributeDefined(id)) {
       return model.getLongAttribute(id);
     } else {
       return defaultValue;
@@ -590,9 +598,9 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * @return Attribute value as a long
    */
   protected long getLongAttribute(String name, String id, long defaultValue) {
-    if (model.hasAttribute(name, id)) {
+    if (attributeDefined(name, id)) {
       return model.getLongAttribute(name, id);
-    } else if (model.hasAttribute(id)) {
+    } else if (attributeDefined(id)) {
       return model.getLongAttribute(id);
     } else {
       return defaultValue;
@@ -606,7 +614,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * @return Attribute value as a double
    */
   protected double getDoubleAttribute(String id, double defaultValue) {
-    if (model.hasAttribute(id)) {
+    if (attributeDefined(id)) {
       return model.getDoubleAttribute(id);
     } else {
       return defaultValue;
@@ -621,9 +629,9 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * @return Attribute value as a double
    */
   protected double getDoubleAttribute(String name, String id, double defaultValue) {
-    if (model.hasAttribute(name, id)) {
+    if (attributeDefined(name, id)) {
       return model.getDoubleAttribute(name, id);
-    } else if (model.hasAttribute(id)) {
+    } else if (attributeDefined(id)) {
       return model.getDoubleAttribute(id);
     } else {
       return defaultValue;
@@ -661,8 +669,8 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
                         final int stateOnSuccess,
                         final int stateOnFail) {
     long pingTimeout = getLongAttribute(agents[0],
-                                        PING_TIMEOUT_ATTRIBUTE,
-                                        DEFAULT_PING_TIMEOUT);
+                                        DEFAULT_TIMEOUT_ATTRIBUTE,
+                                        DEFAULT_TIMEOUT) * 60000;
     pingHelper.ping(agents, pingTimeout, new PingListener() {
       public void pingComplete(PingResult[] pr) {
         for (int i = 0; i < pr.length; i++) {
@@ -706,14 +714,14 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    */
   protected void startHeartbeats(String name) {
     long hbReqTimeout = getLongAttribute(name,
-                                         HEARTBEAT_REQUEST_TIMEOUT_ATTRIBUTE,
-                                         DEFAULT_HEARTBEAT_REQUEST_TIMEOUT);
+                                         DEFAULT_TIMEOUT_ATTRIBUTE,
+                                         DEFAULT_TIMEOUT) * 60000;
     long hbFreq = getLongAttribute(name,
                                    HEARTBEAT_FREQUENCY_ATTRIBUTE,
-                                   DEFAULT_HEARTBEAT_FREQUENCY);
-    long hbTimeout =getLongAttribute(name,
-                                     HEARTBEAT_TIMEOUT_ATTRIBUTE,
-                                     DEFAULT_HEARTBEAT_TIMEOUT);
+                                   DEFAULT_HEARTBEAT_FREQUENCY) * 60000;
+    long hbTimeout = getLongAttribute(name,
+                                     DEFAULT_TIMEOUT_ATTRIBUTE,
+                                     DEFAULT_TIMEOUT) * 60000;
     long hbPctOutofSpec = getLongAttribute(name,
                                            HEARTBEAT_PCT_OUT_OF_SPEC_ATTRIBUTE,
                                            DEFAULT_HEARTBEAT_PCT_OUT_OF_SPEC);
@@ -844,7 +852,7 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
    * @param stateName  State name
    */
   protected void setExpiration(String name, String stateName) {
-    long expiration = DEFAULT_EXPIRATION;
+    long expiration = DEFAULT_TIMEOUT * 60000;
     if (model.hasAttribute(name, stateName + "_EXPIRATION")) {
       expiration = model.getLongAttribute(name, stateName + "_EXPIRATION");
     } else if (model.hasAttribute(name, stateName + "_TIMEOUT")) {
