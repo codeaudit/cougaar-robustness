@@ -82,6 +82,9 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
     /** Set to true when the asset listener has been added */
     private boolean ADDED_ASSET_LISTENER = false;
 
+    /** Set to true when the TechSpecsLoadedCondition has been added */
+    private boolean TECHSPECS_ARE_LOADED = false;
+    
     /** The collection of threatDescriptions */
     private Collection threatDescriptions;
 
@@ -272,8 +275,10 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
                     //it was a member of.
                     for (Iterator it2 = removedAssets.iterator(); it2.hasNext(); ) {
                         asset = (DefaultAssetTechSpec )it2.next();
-                        if (logger.isDebugEnabled()) logger.debug("...Trying to remove "+asset.getName()+"["+asset.getAssetType().getName()+"] from all transitive effects.");
-                        removeAssetFromAllTransitiveEffects(asset);
+                        if (asset != null && (asset.getName() != null) && asset.getAssetType().getName() != null) {
+                            if (logger.isDebugEnabled()) logger.debug("...Trying to remove "+asset.getName()+"["+asset.getAssetType().getName()+"] from all transitive effects.");
+                            removeAssetFromAllTransitiveEffects(asset);
+                        }
                     }
                 }
 
@@ -827,6 +832,9 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
 
         threatDescriptionsSub =
         (IncrementalSubscription)blackboard.subscribe(threatDescriptionsPredicate);
+
+        techSpecsLoadedSub =
+        (IncrementalSubscription)blackboard.subscribe(techSpecsLoadedPredicate);
     }
 
     
@@ -848,6 +856,15 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
             } 
         }
 
+        //Now, see if the tech specs have been loaded...
+        if (!TECHSPECS_ARE_LOADED ) { // *** This should only execute once.
+            Collection temp = techSpecsLoadedSub.getAddedCollection();
+            Iterator it = temp.iterator(); 
+            if (it.hasNext()) { //then the TechSpecsLoadedCondition object was seen on the BB.
+                TECHSPECS_ARE_LOADED = true;
+            }
+        }
+        
         //Update the threatDescriptions collection if new ones were added
         if (threatDescriptionsSub.getAddedCollection().size() > 0) {
             if (threatDescriptions != null && threatDescriptions.size() > 0) {
@@ -862,26 +879,29 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
             regenerateTransitiveEffectsList();
         }
         
-        //Get the asset manager plugin
-        Collection assetMgrs = assetManagerSub.getAddedCollection();
-        Iterator it = assetMgrs.iterator(); 
-        if (it.hasNext() && !ADDED_ASSET_LISTENER ) { // *** This should only execute once.
-            AssetManagerPlugin aMgr = (AssetManagerPlugin)it.next();
-            logger.info("Found AssetManagerPlugin");
-            
-            //Subscribe to the AssetMgrPlugin's change listener. 
-            AssetChangeEvent currentAssets[] = aMgr.addChangeListener(myChangeListener);            
-            synchronized(changesToProcess) {
-                for (int i=0; i<currentAssets.length; i++) {
-                    changesToProcess.addElement(currentAssets[i]);
-                }
+        //Get the asset manager plugin & add a change listener
+        if (!ADDED_ASSET_LISTENER ) { 
+            Collection assetMgrs = assetManagerSub.getAddedCollection();
+            Iterator it = assetMgrs.iterator(); 
+            if (it.hasNext()) { 
+                AssetManagerPlugin aMgr = (AssetManagerPlugin)it.next();
+                logger.info("Found AssetManagerPlugin");
 
-            }
-            ADDED_ASSET_LISTENER = true;            
-        } 
+                //Subscribe to the AssetMgrPlugin's change listener. 
+                AssetChangeEvent currentAssets[] = aMgr.addChangeListener(myChangeListener);            
+                synchronized(changesToProcess) {
+                    for (int i=0; i<currentAssets.length; i++) {
+                        changesToProcess.addElement(currentAssets[i]);
+                    }
+
+                }
+                ADDED_ASSET_LISTENER = true;            
+            } 
+        }
         
-        evaluateThreatAssetMembership();            
-            
+        if (TECHSPECS_ARE_LOADED) { //don't process threat memberships until the tech specs have been loaded.
+            evaluateThreatAssetMembership();            
+        }        
     }
     
     
@@ -939,12 +959,19 @@ public class ThreatModelManagerPlugin extends ComponentPlugin {
             return (o instanceof AssetManagerPlugin);
         }
     };
-    
+        
 
     private IncrementalSubscription threatDescriptionsSub;
     private UnaryPredicate threatDescriptionsPredicate = new UnaryPredicate() {
         public boolean execute(Object o) {
             return (o instanceof ThreatDescription);
+        }
+    };
+
+    private IncrementalSubscription techSpecsLoadedSub;
+    private UnaryPredicate techSpecsLoadedPredicate = new UnaryPredicate() {
+        public boolean execute(Object o) {
+            return (o instanceof TechSpecsLoadedCondition);
         }
     };
     
