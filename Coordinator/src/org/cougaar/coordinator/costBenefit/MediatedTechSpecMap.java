@@ -105,8 +105,7 @@ public class MediatedTechSpecMap {
         if (actionName.equals("org.cougaar.mts.std.LinksEnablingAction")) 
             return diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.mts.std.AllLinksStatusDiagnosis").getStateDimension();
         if (actionName.equals("org.cougaar.core.security.coordinator.ThreatConAction")) 
-//sjf            return diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.core.security.coordinator.EffectiveSecurityDiagnosis").getStateDimension();
-            return diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.core.security.coordinator.ThreatConDiagnosis").getStateDimension();                 //sjf
+            return diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.core.security.coordinator.EffectiveSecurityDiagnosis").getStateDimension();
         if (actionName.equals("org.cougaar.robustness.dos.coordinator.CompressionAction")) 
             return diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.robustness.dos.coordinator.Effective_Bandwidth_Status").getStateDimension();
         if (actionName.equals("org.cougaar.robustness.dos.coordinator.AttackResetAction")) {
