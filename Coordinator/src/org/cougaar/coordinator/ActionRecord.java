@@ -60,7 +60,7 @@ public class ActionRecord implements NotPersistable, Serializable {
      public boolean hasCompleted() { return ( end_time > 0 ); }
 
      // dlw - added so we can check is an Action completed its setup & is currently working
-     public boolean isActive() { return ( completionCode.equals(Action.ACTIVE) ); }  
+     public boolean isActive() { return ( completionCode == null ? false : completionCode.equals(Action.ACTIVE) ); }  
      
      /**
       * @return the action that occurred
