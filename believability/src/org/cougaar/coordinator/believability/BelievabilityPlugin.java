@@ -182,7 +182,12 @@ public class BelievabilityPlugin
      * @param o The object to be published
      * @return true always
      **/
-    public boolean publishAdd( Object o ) {
+    public boolean publishAdd( Object o ) 
+    {
+        if ( logger.isDebugEnabled() )
+            logger.debug( "Publishing to blackboard: "
+                          + o.toString() );
+  
         getBlackboardService().publishAdd( o );
         return true;
     } // method publishAdd
@@ -558,7 +563,7 @@ public class BelievabilityPlugin
 
         if  (( num_change > 0 )
              && logger.isDetailEnabled() ) 
-            logger.detail ("Starting to process " + num_add 
+            logger.detail ("Starting to process " + num_change
                            + " CHANGE triggers." );
 
         for ( iter = _beliefUpdateTriggerSub.getChangedCollection().iterator();

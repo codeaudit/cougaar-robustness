@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetModel.java,v $
- * $Revision: 1.31 $
- * $Date: 2004-08-09 20:46:41 $
+ * $Revision: 1.32 $
+ * $Date: 2004-10-08 20:25:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.31 $Date: 2004-08-09 20:46:41 $
+ * @version $Revision: 1.32 $Date: 2004-10-08 20:25:41 $
  *
  */
 class POMDPAssetModel extends Model
@@ -47,6 +47,15 @@ class POMDPAssetModel extends Model
     private static final boolean USE_FAKE_TRIGGER_TIME = false;
 
     private static long FAKE_TIME_INCREMENT_MS = 300000;
+
+    // Trying to prevent error accumulations and bogus intervals for
+    // very small time intervals when computing the threat
+    // probabilities existed for a while, but may now not be necessary
+    // if the techspec code handles things properly.  For this reason,
+    // and in case we may want to add it back later, we use this to
+    // conditionally use the code that checks for such intervals. 
+    //
+    private static boolean WORRY_ABOUT_SMALL_INTERVALS = false;
 
     private static long _cur_fake_time = System.currentTimeMillis();
 
@@ -228,8 +237,6 @@ class POMDPAssetModel extends Model
             end_time = nextFakeTime(); 
         }
    
-        logDetail( "Belief before threats: " + start_belief.toString() );
-
         BeliefState next_belief = (BeliefState) start_belief.clone();
 
         // Set the cause of this update.
@@ -250,31 +257,55 @@ class POMDPAssetModel extends Model
 
         if ( start_time > end_time )
         {
-            logDebug( "updateBeliefStateForTime(): Found a negative update interval."
-                     + "[ " + start_time + ", " + end_time + "]"
-                     + " for asset " + start_belief.getAssetID()
-                     + ". Ignoring threats." );
-            return next_belief;
-        }
-
-        if ( (end_time - start_time) < SMALLEST_THREAT_INTERVAL_MS/2 )
-        {
-            logDetail( "updateBeliefStateForTime(): Found miniscule update interval."
+            logDebug( "updateBeliefStateForTime(): "
+                      + " Found a negative update interval."
                       + "[ " + start_time + ", " + end_time + "]"
                       + " for asset " + start_belief.getAssetID()
-                      + ". Rounding to zero and ignoring threats." );
+                      + ". Skipping threat update computation." );
             return next_belief;
         }
 
-        if ( (end_time - start_time) < SMALLEST_THREAT_INTERVAL_MS )
+        if ( start_time == end_time )
         {
-            logDetail( "updateBeliefStateForTime(): Found small update interval."
+            logDebug( "updateBeliefStateForTime(): Zero length interval."
                      + "[ " + start_time + ", " + end_time + "]"
                      + " for asset " + start_belief.getAssetID()
-                     + ". Rounding to " 
-                        + SMALLEST_THREAT_INTERVAL_MS + "." );
-            start_time = end_time - SMALLEST_THREAT_INTERVAL_MS;
+                     + ". Threats already accounted for." );
+            return next_belief;
         }
+
+        if ( WORRY_ABOUT_SMALL_INTERVALS )
+        {
+            if ( (end_time - start_time) < SMALLEST_THREAT_INTERVAL_MS/2 )
+            {
+                logDetail( "updateBeliefStateForTime(): "
+                           + " Found miniscule update interval."
+                           + "[ " + start_time + ", " + end_time + "]"
+                           + " for asset " + start_belief.getAssetID()
+                           + ". Assuming threats have been accounted for." );
+                return next_belief;
+            } // If small interval, rounding down
+            
+            if ( (end_time - start_time) < SMALLEST_THREAT_INTERVAL_MS )
+            {
+                logDetail( "updateBeliefStateForTime(): "
+                           + " Found small update interval."
+                           + "[ " + start_time + ", " + end_time + "]"
+                           + " for asset " + start_belief.getAssetID()
+                           + ". Rounding to " 
+                           + SMALLEST_THREAT_INTERVAL_MS + "." );
+                start_time = end_time - SMALLEST_THREAT_INTERVAL_MS;
+            } // If small interval, rounding up
+            
+        } // if WORRY_ABOUT_SMALL_INTERVALS
+        
+        logDetail( "updateBeliefStateForTime(): "
+                   + "Updating for all threats over interval."
+                   + "[ " + start_time + ", " + end_time + "]"
+                   + " for asset " + start_belief.getAssetID()
+                   + "." );
+        
+        logDetail( "Belief before threat update: " + start_belief.toString() );
 
          // Here we will be updating all the state dimensions.
         //
@@ -304,7 +335,7 @@ class POMDPAssetModel extends Model
 
         } // for dim_idx
 
-        logDetail( "Belief after threats: " + next_belief.toString() );
+        logDetail( "Belief after threat update: " + next_belief.toString() );
 
         return next_belief;
 

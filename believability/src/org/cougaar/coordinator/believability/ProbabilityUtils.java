@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ProbabilityUtils.java,v $
- * $Revision: 1.26 $
- * $Date: 2004-09-21 00:43:49 $
+ * $Revision: 1.27 $
+ * $Date: 2004-10-08 20:25:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -28,7 +28,7 @@ import java.util.Random;
  * Utilities for dealing with probabilities.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.26 $Date: 2004-09-21 00:43:49 $
+ * @version $Revision: 1.27 $Date: 2004-10-08 20:25:41 $
  */
 public class ProbabilityUtils
 {
@@ -396,7 +396,7 @@ public class ProbabilityUtils
         {
             buff.append( prefix + "Array " + k + ":\n" );
 
-            buff.append( arrayToString( a[k], prefix + "\t" ));
+            buff.append( arrayToString( a[k], prefix + "\n\t" ));
         }
 
         return buff.toString();

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/EventInstanceCollection.java,v $
- * $Revision: 1.20 $
- * $Date: 2004-09-27 16:29:57 $
+ * $Revision: 1.21 $
+ * $Date: 2004-10-08 20:25:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -28,7 +28,8 @@ import java.util.Iterator;
 
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.techspec.AssetTechSpecInterface;
-import org.cougaar.coordinator.techspec.DefaultAssetTechSpec;
+//sjf import org.cougaar.coordinator.techspec.DefaultAssetTechSpec;
+import org.cougaar.coordinator.techspec.AssetManagerPlugin; //sjf
 import org.cougaar.coordinator.techspec.EventDescription;
 
 /**
@@ -37,7 +38,7 @@ import org.cougaar.coordinator.techspec.EventDescription;
  * artifact of the nature of the threat and event objects). 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.20 $Date: 2004-09-27 16:29:57 $
+ * @version $Revision: 1.21 $Date: 2004-10-08 20:25:41 $
  *
  */
 class EventInstanceCollection extends Model
@@ -172,7 +173,8 @@ class EventInstanceCollection extends Model
         // This is the way to convert and IS into its techspec.
         //
         AssetTechSpecInterface asset_ts 
-                = DefaultAssetTechSpec.findAssetByID( asset_id );
+//sjf                = DefaultAssetTechSpec.findAssetByID( asset_id );
+	    = AssetManagerPlugin.getAssetTechSpec( asset_id ); //sjf
 
         if ( asset_ts == null )
         {

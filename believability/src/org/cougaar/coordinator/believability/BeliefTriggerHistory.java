@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefTriggerHistory.java,v $
- * $Revision: 1.16 $
- * $Date: 2004-08-09 20:46:41 $
+ * $Revision: 1.17 $
+ * $Date: 2004-10-08 20:25:41 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -89,7 +89,10 @@ import org.cougaar.core.agent.service.alarm.Alarm;
  *
  *   o Publish Delay Window - The time window maintained to account
  *             stop all immediate publications.  This helps with
- *             simultaneous and near-simultaneous events.
+ *             simultaneous and near-simultaneous events.  (NOTE: We
+ *             do not know for a fact this helps and had some evidence
+ *             on 9/24/2004 that this may be causing problems.  Due to
+ *             this, we conditionally use this based on a flag.)
  *
  *   o Publish Window - The time window maintained to ensure that we do
  *          not go too long without producing a belief update for an
@@ -99,7 +102,7 @@ import org.cougaar.core.agent.service.alarm.Alarm;
  * an instance of this class: one for each of these.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.16 $Date: 2004-08-09 20:46:41 $
+ * @version $Revision: 1.17 $Date: 2004-10-08 20:25:41 $
  * @see BeliefTriggerManager
  */
 class BeliefTriggerHistory 
@@ -111,6 +114,16 @@ class BeliefTriggerHistory
     // particular, it will maintain the diagnosis triggers during the
     // time window of the maximum sensor latency.
     //
+
+    // Originally added a 500ms delay to belief updating/state
+    // estimation publishing that might have been a misguided feature
+    // meant to avoid a problem that was not a problem.  Suspecting
+    // this was causing problems (9/24/2004), we wanted to take it out
+    // to see if this made the problems go away.  Using this flag in
+    // case we want to revert to using it again or testing to compare
+    // behaviors. 
+    //
+    static final boolean USE_DELAY_TIMER      = false;
 
     //------------------------------------------------------------
     // package interface
@@ -185,14 +198,8 @@ class BeliefTriggerHistory
         // or not rehydration or unleashing is happening, so we use
         // this opportunity to check those and arrange our internal
         // variables so that the right thing will happen when we do a
-        // belief update. Note that because we always delay publishing
-        // a little bit, the belief updating will happen after these
-        // events are complete, even though what we do needs to
-        // account for this.  COnversely, this handleBeliefTrigger()
-        // *is* called while these events are occurring, so now is the
-        // time to handle them in a way that will impact the
-        // subsequent belief state.
-        //
+        // belief update. 
+
         handleSpecialEvents();
 
         // First step is to add the trigger (no matter what type of
@@ -210,9 +217,10 @@ class BeliefTriggerHistory
         // upon the type of trigger we are seeing..
 
         // We only publish in response to a timer/alarm going off.
-        // However, there are three types of possible alarms that
+        // However, there are four types of possible alarms that
         // could trigger publishing: PublishDelayTimeTrigger,
-        // PublishIntervalTimeTrigger and SensorLatencyTimeTrigger.
+        // PublishIntervalTimeTrigger, ForceUpdateTimeTrigger and
+        // SensorLatencyTimeTrigger.
         //
         if ( trigger instanceof TimeUpdateTrigger )
         {
@@ -246,18 +254,30 @@ class BeliefTriggerHistory
 
         } // if an alarm trigger type occurs
 
-        // On actions, we always update the belief and publish it,
-        // though only after a short delay.
+        // On actions, we always update the belief and publish it.
         //
         if ( trigger instanceof BelievabilityAction )
         {
-            logDetail( "Action trigger. Starting publish delay timer for: "
-                       + _asset_id );
             
             // Note that if there is an existing delay alarm, this
             // routine will do nothing.
             //
-            startPublishDelayTimer();
+            if ( USE_DELAY_TIMER )
+            {
+                logDetail( "Action trigger. Starting publish delay timer for: "
+                           + _asset_id );
+                startPublishDelayTimer();
+            }
+            else
+            {
+                logDetail( "Action trigger "
+                           + trigger.getClass().getName()
+                           + ". Updating and publishing for asset "
+                           + _asset_id );
+                updateBeliefState( );
+                publishLatestBelief( );
+            }
+
             return;
         } // if action trigger
         
@@ -266,16 +286,27 @@ class BeliefTriggerHistory
         // should not wait until the end of the max sensor latency
         // period. Note that if there is only one sensor, this wil
         // return true on the first diagnosis addition and thus cause
-        // an immediate belief computation.  This uses a small delay
-        // for publishing in case the diagnosis arrives at the same
-        // time as an action.
+        // an immediate belief computation.  
         //
         if ( seenAllSensors() )
         {
-            logDetail( "Seen all sensors. Starting publish delay timer for: "
-                       + _asset_id );
-          
-            startPublishDelayTimer();
+
+            if ( USE_DELAY_TIMER )
+            {
+                logDetail( "Seen all sensors. "
+                           + "Starting publish delay timer for: "
+                           + _asset_id );
+                startPublishDelayTimer();
+            }
+            else
+            {
+                logDetail( "Seen all sensors. "
+                           + "Updating and publishing for asset "
+                           + _asset_id );
+                updateBeliefState( );
+                publishLatestBelief( );
+            }
+
             return;
          
         } // if seen all sensors
