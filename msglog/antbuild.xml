@@ -60,7 +60,7 @@
 			<fileset dir="operator/"/>
 		</copy>
 		<copy todir="staging/configs">
-			<fileset dir=configs/"/>
+			<fileset dir="configs/"/>
 		</copy>
 		<zip zipfile="AR_objs_msglog.zip" basedir="staging"/>
 		<delete dir="staging"/>
