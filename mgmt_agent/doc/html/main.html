@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Adaptive Robustness Management Agent</title><meta content="DocBook XSL Stylesheets V1.65.1" name="generator" /></head><body><div class="article" lang="en"><div class="titlepage"><div><div><h1 class="title"><a id="N10001" />Adaptive Robustness Management Agent</h1></div><div><div class="author"><h3 class="author"><span class="firstname">Ronald</span> <span class="surname">Snyder</span></h3><div class="affiliation"><div class="address"><p xmlns="http://www.w3.org/1999/xhtml"><span style="white-space: pre;">
+        <tt class="email">&lt;<a href="mailto:ron@mobile-intelligence.com">ron@mobile-intelligence.com</a>&gt;</tt>
+      </span></p></div></div></div></div><div><p class="releaseinfo" xmlns="http://www.w3.org/1999/xhtml">$Id: main.html,v 1.1 2004-08-26 18:55:26 rsnyder Exp $</p></div></div><div /><hr /></div><div class="toc" xmlns="http://www.w3.org/1999/xhtml"><p><b>Table of Contents</b></p><dl><dt><span class="sect1"><a href="#overview">Overview</a></span></dt><dt><span class="sect1"><a href="#required_overlays">Required Overlays</a></span></dt></dl></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="overview" />Overview</h2></div></div><div /></div><p xmlns="http://www.w3.org/1999/xhtml">
+    This document describes the setup and use of the <span class="emphasis"><em>Adaptive Robustness Agent
+    Liveness Defense</em></span> (a.k.a. AR-UC1 or simply "the sledgehammer
+    defense").  This defense provides components for detecting and
+    restarting dead agents.  The components may be deployed as a stand-alone
+    defense or configured as part of an integrated suite of robustness defenses.  In the
+    latter case a "Defense Coordinator" is used to mediate defense actions.
+  </p></div><div class="sect1" lang="en"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a id="required_overlays" />Required Overlays</h2></div></div><div /></div><p xmlns="http://www.w3.org/1999/xhtml">
+    The table below defines the minimal configuration required for the Agent
+    Liveness defense.  These overlays are provided in .zip archive files that are
+    installed by simply unzipping the files the top level directory of the Cougaar install path.
+    The overlays augment the capabilities provided by the Cougaar core components
+    and provide the essential jar files and configuration data for the
+    detection and restart of dead agents.
+  </p><div class="table"><a id="overlay_table_1" /><p class="title"><b>Table 1. Required Overlays</b></p><table summary="Required Overlays" border="1"><colgroup xmlns="http://www.w3.org/1999/xhtml"><col /><col /></colgroup><thead valign="middle"><tr><th align="center">Name</th><th align="center">Purpose</th></tr></thead><tfoot /><tbody valign="middle"><tr><td>MIC Mgmt Agent</td><td>Provides manager agent components for agent liveness</td></tr><tr><td>Objs Sensors</td><td>Provides Heartbeat and Ping sensors</td></tr></tbody></table></div></div></div></body></html>
