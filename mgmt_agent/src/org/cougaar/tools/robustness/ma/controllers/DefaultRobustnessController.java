@@ -73,11 +73,11 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
    */
   class InitialStateController extends StateControllerBase {
     public void enter(String name) {
-      if (!startupCompleted) {
+      /*if (!startupCompleted) {
         setExpiration(name, NEVER);
         logger.info("New state: agent=" + name + " state=INITIAL" +
                      " expiration=" + model.getStateExpiration(name));
-      }
+      }*/
       if (doInitialPing() && (
           isLeader(thisAgent) || isNode(name) || name.equals(preferredLeader()))) {
         doPing(name, DefaultRobustnessController.ACTIVE, DEAD);
