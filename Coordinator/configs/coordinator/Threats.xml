@@ -38,14 +38,14 @@
     </VulnerableAssets>
 
 </Threat>
+
 <Threat name="AgentVirus" affectsAssetType="Agent" causesEvent="AgentDeath" defaultEventLikelihoodProb="VERY_LOW" probIntervalInMins="1000">
 </Threat>
+
 <Threat name="NodeVirus" affectsAssetType="Node" causesEvent="NodeDeath" defaultEventLikelihoodProb="VERY_LOW" probIntervalInMins="1000">
 </Threat>
 
-<Threat name="Snooper" affectsAssetType="agent" causesEvent="MailRead" defaultEventLikelihoodProb="LOW" >
+<Threat name="Snooper" affectsAssetType="agent" causesEvent="MailRead" defaultEventLikelihoodProb="LOW" probIntervalInMins="1000">
 </Threat>
-
-
 
 </Threats>
