@@ -67,10 +67,11 @@ public class MediatedTechSpecMap {
             return initialProbVector;
         }
         if (compensatedStateDimension.getStateName().equals("Effective_Bandwidth_Status")) {
-            initialProbVector = new Vector(3);
-            initialProbVector.add(new StateProb("Low", 0.0));
-            initialProbVector.add(new StateProb("Moderate", 0.0));
-            initialProbVector.add(new StateProb("High", 0.0));
+            initialProbVector = new Vector(4);
+            initialProbVector.add(new StateProb("Normal", 0.0));
+            initialProbVector.add(new StateProb("Degraded-1", 0.0));
+            initialProbVector.add(new StateProb("Degraded-2", 0.0));
+            initialProbVector.add(new StateProb("Degraded-3", 0.0));
             return initialProbVector;
         }
         if (logger.isErrorEnabled()) logger.error("Could not map CompensatedStateDimension: " + compensatedStateDimension.getStateName());
