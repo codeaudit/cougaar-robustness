@@ -136,8 +136,6 @@ implements NotPersistable {
         }
         
         //********* Check for changes in our modes ************
-        
-        //We have one defense mode, so we only get the one from iter.next();
         iter = actionWrappersSubscription.getChangedCollection().iterator();
         if (iter == null) logger.debug("****nothing changed in the collection...");
         while (iter.hasNext()) {
@@ -145,6 +143,10 @@ implements NotPersistable {
             if (servlet != null) { servlet.changedActionsWrapper(a); }
             logger.debug("**** Saw changed ActionsWrapper["+ActionUtils.getAssetID((Action)a.getContent())+"], with ActionRecord = " + ((Action)a.getContent()).getValue());
         }
+
+        //Emit # of action wrappers on BB
+        int size = actionWrappersSubscription.getCollection().size();
+        logger.debug("[AgentId="+agentId+"]**** Total # of Action WRAPPER objects on BB right now = "+size);
         
     }
     
