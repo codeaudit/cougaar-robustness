@@ -483,9 +483,6 @@ public class CommunityStatusModel extends BlackboardClientComponent
                      " newState=" + se.currentState +
                      " priorState=" + se.priorState +
                      " expiration=" + se.expiration);
-        if (hasAttribute(se.attrs, "Role", HEALTH_MONITOR)) {
-          electLeader();
-        }
       }
       if (stateChange) {
         queueChangeEvent(
@@ -496,6 +493,9 @@ public class CommunityStatusModel extends BlackboardClientComponent
         queueChangeEvent(
             new CommunityStatusChangeEvent(CommunityStatusChangeEvent.
                                            LOCATION_CHANGE, se));
+      }
+      if (hasAttribute(se.attrs, "Role", HEALTH_MONITOR)) {
+        electLeader();
       }
     } else {
       logger.debug("No StatusEntry found: name=" + name);
@@ -596,7 +596,6 @@ public class CommunityStatusModel extends BlackboardClientComponent
                   "EntityType");
               if (entityTypeAttr != null && entityTypeAttr.contains("Node")) {
                 type = NODE;
-                electLeader();
               }
               StatusEntry se = new StatusEntry(entity.getName(), type,
                                                entity.getAttributes());
@@ -656,7 +655,6 @@ public class CommunityStatusModel extends BlackboardClientComponent
           }
         }
       }
-      electLeader();
     }
   }
 
@@ -985,15 +983,15 @@ public class CommunityStatusModel extends BlackboardClientComponent
       }
     }
     //logger.info("Status: leader=" + getLeader() + " expired=" + isExpired(getLeader()));
-    if (getLeader() == null ||
-        getCurrentState(getLeader()) == triggerState) {
+    //if (getLeader() == null ||
+    //    getCurrentState(getLeader()) == triggerState) {
       String currentLeader = getLeader();
       logger.debug("electLeader:" +
                   " leader=" + leader +
                   " leaderState=" + (currentLeader == null ? null : getCurrentState(currentLeader) +
                   " triggerState=" + triggerState));
       electLeader();
-    }
+    //}
   }
 
   private void findLocalAgents() {
