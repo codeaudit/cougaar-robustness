@@ -101,6 +101,14 @@ public class BelievabilityDiagnosis extends BeliefUpdateTrigger
 
 
     /**
+     * Diagnoses do not require immediate publication
+     **/
+    public boolean requiresImmediateForwarding() {
+        return false;
+    }
+
+
+    /**
      * Return the name of the sensor that made this diagnosis
      * @return 
      **/

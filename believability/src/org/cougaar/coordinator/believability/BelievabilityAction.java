@@ -56,7 +56,7 @@ class BelievabilityAction extends BeliefUpdateTrigger {
     public BelievabilityAction( Action action, ActionTechSpecInterface tech) 
     {
         super( action.getAssetID() );
-        _blackboard_action = action;
+        // _blackboard_action = action;
      _actuator_info = tech;
      _asset_id = action.getAssetID();
      _action_ts = action.getValue().getEndTime();
@@ -66,6 +66,7 @@ class BelievabilityAction extends BeliefUpdateTrigger {
          logWarning( "Action.getAssetStateDimensionName() returned NULL" );
 
      _actuator_name = tech.getName();
+     _action_record_string = action.getValue().toString();
      _action_status = action.getValue().getCompletionCodeString();
      _action_has_completed = action.getValue().hasCompleted();
      //_action_description = " ";
@@ -110,10 +111,10 @@ class BelievabilityAction extends BeliefUpdateTrigger {
     {
         try {
          logDetail( "Getting TriggerTimeStamp for action record :" 
-                    + _blackboard_action.getValue().toString() );
+                    + _action_record_string );
          return _action_ts; 
      } catch (Exception e){
-         logWarning( "Error getting Trigger Timestamp for the action record :" + _blackboard_action.getValue().toString());
+         logWarning( "Error getting Trigger Timestamp for the action record :" + _action_record_string );
          return 0;
      }
     } // method getTriggerTimestamp
@@ -134,11 +135,19 @@ class BelievabilityAction extends BeliefUpdateTrigger {
     } // method getStateDimensionName
     
     /**
+     * The belief state related to an action should be published immediately
+     **/
+    public boolean requiresImmediateForwarding() {
+        return true;
+    }
+
+
+    /**
      * A string value indicating the current status of the Believability action taken by the actuator.
      *@return status of BelievabilityAction 
      */
     public String getBelivabilityActionStatus(){
-     logDetail("Believability Action status for " + _asset_id.toString() + " is " + _blackboard_action.getValue().getCompletionCodeString());
+     logDetail("Believability Action status for " + _asset_id.toString() + " is " + _action_status );
       return _action_status;
     }
     /**
@@ -182,7 +191,8 @@ class BelievabilityAction extends BeliefUpdateTrigger {
     //---------------------------------------------------------------
 
     // The object where the action information came from
-    private Action _blackboard_action;
+    // This may change so we want to copy information out.
+    // private Action _blackboard_action;
     //private ActionTechSpecInterface _action_tech;
     private long _action_ts;
     private ActionTechSpecInterface _actuator_info;
@@ -190,6 +200,7 @@ class BelievabilityAction extends BeliefUpdateTrigger {
     private boolean _action_has_completed;
     private String _action_state_dim;
     private String _action_description;
+    private String _action_record_string;
     private String _actuator_name;
     private AssetID _asset_id;
 

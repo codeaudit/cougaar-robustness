@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/AssetTypeModel.java,v $
- * $Revision: 1.13 $
- * $Date: 2004-07-02 23:34:03 $
+ * $Revision: 1.14 $
+ * $Date: 2004-07-12 19:30:46 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -47,7 +47,7 @@ import org.cougaar.coordinator.techspec.ThreatModelChangeEvent;
  * be notified is there is a change.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.13 $Date: 2004-07-02 23:34:03 $
+ * @version $Revision: 1.14 $Date: 2004-07-12 19:30:46 $
  *
  */
 class AssetTypeModel extends Model
@@ -452,7 +452,8 @@ class AssetTypeModel extends Model
             throw new BelievabilityException
                     ( "AssetTypeModel.addSensorTypeModel()",
                       "Sensor has unknown state dimension : "
-                      + diag_ts.getStateDimension().getStateName() );
+                      + diag_ts.getStateDimension().getStateName()
+		      + "from asset type -- " + toString() );
 
        return _dim_model[dim_idx].addSensorTypeModel( diag_ts );
         
@@ -485,7 +486,8 @@ class AssetTypeModel extends Model
             throw new BelievabilityException
                     ( "AssetTypeModel.addActuatorTypeModel()",
                       "Actuator has unknown state dimension : "
-                      + action_ts.getStateDimension().getStateName() );
+                      + action_ts.getStateDimension().getStateName()
+                      + "from asset type -- " + toString() );
 
         return _dim_model[dim_idx].addActuatorTypeModel( action_ts );
         
@@ -521,7 +523,8 @@ class AssetTypeModel extends Model
             throw new BelievabilityException
                     ( "AssetTypeModel.addStressInstance()",
                       "Actuator has unknown state dimension : "
-                      + stress.getStateDimension().getStateName() );
+                      + stress.getStateDimension().getStateName() 
+		      + " from asset type -- " + toString() );
 
         _dim_model[dim_idx].addStressInstance( stress );
 
@@ -571,7 +574,8 @@ class AssetTypeModel extends Model
             throw new BelievabilityException
                     ( "AssetTypeModel.handleThreatModelChange()",
                       "Threat has unknown state dimension : "
-                      + state_dim_name );
+                      + state_dim_name 
+		      + "from asset type -- " + toString() );
         
         _dim_model[dim_idx].handleThreatModelChange( tm_change );
 

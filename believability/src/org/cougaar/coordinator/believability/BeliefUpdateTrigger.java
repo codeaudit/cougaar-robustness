@@ -37,7 +37,7 @@ import org.cougaar.coordinator.techspec.AssetType;
  * dimension.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.10 $Date: 2004-07-02 23:34:03 $
+ * @version $Revision: 1.11 $Date: 2004-07-12 19:30:46 $
  * @see BelievabilityDiagnosis
  * @see BelievabilityAction
  *
@@ -60,10 +60,15 @@ abstract class BeliefUpdateTrigger extends Loggable
 
 
     /**
-     * This routine should return the asset statew dimension name that
+     * This routine should return the asset state dimension name that
      * this trigger pertains to.
      */
     abstract String getStateDimensionName();
+
+    /**
+     * Returns true if the update trigger requires immediate publication
+     **/
+    abstract boolean requiresImmediateForwarding();
 
 
     /**
@@ -82,7 +87,7 @@ abstract class BeliefUpdateTrigger extends Loggable
      *
      * @return the AssetID for the affected asset
      */
-    public AssetID getAssetID() 
+    AssetID getAssetID() 
     { 
         return _asset_id; 
 
@@ -97,7 +102,7 @@ abstract class BeliefUpdateTrigger extends Loggable
      *
      * @param
      */
-    public BeliefUpdateTrigger( AssetID asset_id ) {
+    protected BeliefUpdateTrigger( AssetID asset_id ) {
         this._asset_id = asset_id;
     }  // constructor BeliefUpdateTrigger
 

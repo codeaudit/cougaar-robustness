@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/BeliefState.java,v $
- * $Revision: 1.12 $
- * $Date: 2004-07-02 23:34:03 $
+ * $Revision: 1.13 $
+ * $Date: 2004-07-12 19:30:46 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -34,7 +34,7 @@ import org.cougaar.coordinator.techspec.AssetStateDimension;
  * asset instance.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.12 $Date: 2004-07-02 23:34:03 $
+ * @version $Revision: 1.13 $Date: 2004-07-12 19:30:46 $
  * 
  *
  */
@@ -322,9 +322,10 @@ public class BeliefState implements Cloneable
 
     private AssetTypeModel _asset_type_model;
 
-    // This is the immediate diagnosis that gave rise to this belief
+    // This is the immediate trigger that gave rise to this belief
     // state.  If it is null, then that indicates this is the a priori
-    // belief for this asset.
+    // belief for this asset.  Otherwise, it is set to the handle that
+    // is sent in to the updateBelief() 
     //
     private BeliefUpdateTrigger _trigger;
 

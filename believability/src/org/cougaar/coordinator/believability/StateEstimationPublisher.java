@@ -54,26 +54,30 @@ public class StateEstimationPublisher extends Loggable {
 
     /**
      * Process a new BeliefState
-     * @param BeliefState belief_state
+     * @param belief_state The belief state to publish
+     * @param requires_immediate_forwarding true if the StateEstimation
+     *                  should be published on the blackboard immediately,
+     *                  otherwise false.
      **/
-    public void consumeBeliefState( BeliefState belief_state ) {
+    public void consumeBeliefState( BeliefState belief_state,
+				    boolean requires_immediate_forwarding ) {
      try {
          // Find the AssetStateInformation object, check, and maybe publish
          StateEstimation se = new StateEstimation ( belief_state,
-                                  _model_manager );
-      AssetID aid = se.getAssetID();
+						    _model_manager );
+	 AssetID aid = se.getAssetID();
 
          AssetStateInformation asi = 
-          (AssetStateInformation) _state_information.get( aid );
+	     (AssetStateInformation) _state_information.get( aid );
          if ( asi == null ) {
-          AssetType at = belief_state.getAssetType();
-          long max_latency = _model_manager.getMaxSensorLatency( at );
-          logDetail( "Making new AssetStateInformation for asset " + aid
-                 + " with latency " + max_latency );
+	     AssetType at = belief_state.getAssetType();
+	     long max_latency = _model_manager.getMaxSensorLatency( at );
+	     logDetail( "Making new AssetStateInformation for asset " + aid
+			+ " with latency " + max_latency );
              asi = new AssetStateInformation( aid, this, max_latency );
              _state_information.put( se.getAssetID(), asi );
          }
-         asi.checkPublish( se );
+         asi.checkPublish( se, requires_immediate_forwarding );
      }
      catch ( BelievabilityException be ) {
       logWarning( "Cannot publish belief state [" 
@@ -170,8 +174,8 @@ public class StateEstimationPublisher extends Loggable {
          _asset_id = asset_id;
          _publisher = publisher;
          _timer_length = timer_length;
-      if ( _timer_length >= STALE_SE_THRESHOLD )
-          _update_se_on_timeout = true;
+	 if ( _timer_length >= STALE_SE_THRESHOLD )
+	     _update_se_on_timeout = true;
      }
 
 
@@ -183,21 +187,25 @@ public class StateEstimationPublisher extends Loggable {
       * has fallen below a constant threshhold value, or if the timer
       * has expired indicating that there has been an interval of 
       * _max_diagnosis_latency from the arrival of the first diagnosis.
+      * Also returns true if requires_immediate_forwarding is set.
       **/
-
-     public synchronized void checkPublish( StateEstimation state_estimation ) 
+     public synchronized void checkPublish( StateEstimation state_estimation,
+                                            boolean requires_immediate_forwarding )
          throws BelievabilityException { 
 
          _last_se_created = state_estimation;
 
-         if ( checkUtilityChange( _last_se_published, 
-                      state_estimation ) ) {
-          publish( state_estimation );
+         if ( requires_immediate_forwarding ) 
+	     publish( state_estimation );
+
+         else if ( checkUtilityChange( _last_se_published, 
+				       state_estimation ) ) {
+	     publish( state_estimation );
          }
          else {
-          if ( ! isAlarmRunning() ) setAssetAlarm();
-          logDetail("Delaying StateEstimation publication for asset "
-                + state_estimation.getAssetID().toString() );
+	     if ( ! isAlarmRunning() ) setAssetAlarm();
+	     logDetail("Delaying StateEstimation publication for asset "
+		       + state_estimation.getAssetID().toString() );
          }
      }
 

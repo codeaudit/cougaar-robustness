@@ -25,7 +25,6 @@
 
 package org.cougaar.coordinator.believability;
 
-import org.cougaar.coordinator.Diagnosis;
 import org.cougaar.core.agent.service.alarm.Alarm;
 
 
@@ -72,11 +71,12 @@ import java.sql.Timestamp;
       * - set in constructor.
       */
       private double _max_window_length;
+      
       /**
-       * Diagnosis and BeliefState linkkedlist
-       */
-      private LinkedList _bst_queue;
-      private LinkedList _diag_queue;
+          * BeliefState and Diagnosis Queue
+     */
+      private Queues _b_d_q;
+      
       /**
       * Constructor, sets the length of window. AssetStateWindow is created from AssetModel
       * @param ast_model an instance of AssteModel which represents thresholds for an asset.
@@ -86,6 +86,7 @@ import java.sql.Timestamp;
           throws BelievabilityException {
          // Argument assignment
          try {
+          
           _se_pub = _se_publisher;
           _asset_id = ast_id;
           _asset_type = _asset_id.getType();
@@ -93,113 +94,38 @@ import java.sql.Timestamp;
           _pmdp_mi =  _pmdp_mif;
           _blv_plugin = blv_plugin;
        _initial_timestamp = bs_timestamp;
+       
          } catch (Exception e){
           throw new BelievabilityException("BeliefStateWindow - constructor","Argument assignment error");
          }
          // Get defualt BeliefState from POMDPModel, set it as first element of the linked list and apply a timer to it.
          // this try block can be in consumeDiagnosis
          try {
-          _apriori_state = _pmdp_mi.getInitialBeliefState(_asset_type);
-          _apriori_state.setAssetID(ast_id);  //set assetid for retrieved initial belief state
-       _apriori_state.setTimestamp(_initial_timestamp);
-          //Belief State queue
-          _bst_queue = new LinkedList();
-          _bst_queue.addFirst(_apriori_state);
-          //Diagosis queue
-          _diag_queue = new LinkedList();
-          _diag_queue.addFirst(null);
-          try {
-              this.publishBeliefState(_apriori_state);
-          } catch (BelievabilityException e){
-              logDebug("Error Publishing BeliefState" + e.getMessage());
-              throw new BelievabilityException("BeliefStateWindow - constructor","Error publishing to the StateEstimation Publisher " + e.getMessage());
+            _apriori_state = _pmdp_mi.getInitialBeliefState(_asset_type);
+            _apriori_state.setAssetID(ast_id);  //set assetid for retrieved initial belief state
+            _apriori_state.setTimestamp(_initial_timestamp);
+            try {
+                _b_d_q = new Queues(_apriori_state);
+                this.publishBeliefState(_apriori_state, false);
+            } catch (BelievabilityException e){
+                 logDebug("Error Publishing BeliefState" + e.getMessage());
+                 throw new BelievabilityException("BeliefStateWindow - constructor","Error publishing to the StateEstimation Publisher " + e.getMessage());
+            }
+     } catch (Exception e){
+           logDebug(e.getMessage());
+           throw new BelievabilityException("BeliefStateWindow - constructor","Error retrieving and/or publishing initial BeliefState " + e.getMessage());
+      }
+      // Set cougaar timer options.
+      try {
+       logDebug("Setting cougaar timer options for AssetID:" + _asset_id.toString());
+       if (! initiateTimer((long)_max_window_length)){
+            throw new BelievabilityException("BeliefStateWindow - constructor" , "Error setting timer");
           }
-         } catch (Exception e){
-          logDebug(e.getMessage());
-          throw new BelievabilityException("BeliefStateWindow - constructor","Error retrieving and/or publishing initial BeliefState " + e.getMessage());
-         }
-         // Set cougaar timer options.
-         try {
-          logDebug("Setting cougaar timer options for AssetID:" + _asset_id.toString());
-          if (! initiateTimer((long)_max_window_length)){
-              throw new BelievabilityException("BeliefStateWindow - constructor" , "Error setting timer");
-          }
-         } catch (Exception e){
-          throw new BelievabilityException("BeliefStateWindow - constructor" , "Error setting timer");
-         }
+      } catch (Exception e){
+           throw new BelievabilityException("BeliefStateWindow - constructor" , "Error setting timer");
+      }
      }
-     /**
-      * Constructor, sets the length of window. AssetStateWindow is created from AssetModel
-      * @param ast_model an instance of AssteModel which represents thresholds for an asset.
-      * @deprecated BeliefStateWindow constructor requires initial belief state timestamp as one of the arguments
-      * @see #BeliefStateWindow(AssetID, double,long, POMDPModelInterface, StateEstimationPublisher, BelievabilityPlugin)throws BelievabilityException
-      */
-     public BeliefStateWindow(AssetID ast_id, double max_diag_latency, POMDPModelInterface _pmdp_mif, 
-                         StateEstimationPublisher _se_publisher, BelievabilityPlugin blv_plugin)
-          throws BelievabilityException {
-         // Argument assignment
-         try {
-          _se_pub = _se_publisher;
-          _asset_id = ast_id;
-          _asset_type = _asset_id.getType();
-          _max_window_length = max_diag_latency;
-          _pmdp_mi =  _pmdp_mif;
-          _blv_plugin = blv_plugin;
-         } catch (Exception e){
-          throw new BelievabilityException("BeliefStateWindow - constructor","Argument assignment error");
-         }
-         // Get defualt BeliefState from POMDPModel, set it as first element of the linked list and apply a timer to it.
-         // this try block can be in consumeDiagnosis
-         try {
-          _apriori_state = _pmdp_mi.getInitialBeliefState(_asset_type);
-          _apriori_state.setAssetID(ast_id);  //set assetid for retrieved initial belief state
-          //Belief State queue
-          _bst_queue = new LinkedList();
-          _bst_queue.addFirst(_apriori_state);
-          //Diagosis queue
-          _diag_queue = new LinkedList();
-          _diag_queue.addFirst(null);
-          try {
-              this.publishBeliefState(_apriori_state);
-          } catch (BelievabilityException e){
-              logDebug("Error Publishing BeliefState" + e.getMessage());
-              throw new BelievabilityException("BeliefStateWindow - constructor","Error publishing to the StateEstimation Publisher " + e.getMessage());
-          }
-         } catch (Exception e){
-          logDebug(e.getMessage());
-          throw new BelievabilityException("BeliefStateWindow - constructor","Error retrieving and/or publishing initial BeliefState " + e.getMessage());
-         }
-         // Set cougaar timer options.
-         try {
-          logDebug("Setting cougaar timer options for AssetID:" + _asset_id.toString());
-          if (! initiateTimer((long)_max_window_length)){
-              throw new BelievabilityException("BeliefStateWindow - constructor" , "Error setting timer");
-          }
-         } catch (Exception e){
-          throw new BelievabilityException("BeliefStateWindow - constructor" , "Error setting timer");
-         }
-     }
-     
-     /**
-      * may require to accept AssetID as a parameter if/when the class becomes multithreaded
-      * State Estimation Publisher might ask BeliefStateWindow for an update on the current belief state 
-      * (Belief State window is per asset therefore no argument for the method). 
-      * StateEstimationPublisher may request BeliefState from BeliefStateWindow.
-      *@return BeliefState an updated BeliefState from POMDPModel interface
-      *@throws BelievabilityException
-      * 
-      */
-      public BeliefState getCurrentBeliefState() throws BelievabilityException {
-      //find out what is the current time
-      long cur_time = System.currentTimeMillis();
-      //Figure out the beliefstate closest to the current time
-      BeliefState cur_belief_state = getUnupdatedBeliefState(cur_time);
-      //Update belief state from POMDPModel
-      logDebug("getting updated belief state " + cur_belief_state.toString() + " from POMDPModel");
-      BeliefState c_b_s = _pmdp_mi.updateBeliefState(cur_belief_state,cur_time);
-      logDebug("Returning updated belief state " + c_b_s);
-      return c_b_s;
-     }
+
      /**
       *@return the length of AssetStateWindow
       *@throws BelievabilityException
@@ -222,87 +148,36 @@ import java.sql.Timestamp;
       * @throws BelievabilityException
       */
      public void closeWindow(AssetModel ast_model)throws BelievabilityException {
-     //null
-     }
-     
-     /**
-      * DiagnosisConsumer receives either the BelievabilityDiagnosis from the BlackBoard or BelievabilityAction from the Actuator(s).
-      * @param abstract BeliefUpdateTrigger is passed as an arguement from DiagnosisConsumer.
-      * @throws BelievabilityException
-      * @deprecated This api is replaced by { @link #consumeBelievabilityTrigger (BeliefUpdateTrigger bb_diagnosis)}
-      */
-     public void consumeBelievabilityDiagnosis (BeliefUpdateTrigger bb_diagnosis) throws BelievabilityException{
-      try {
-          //temporary--remove this 
-          //this.publishBeliefState(_apriori_state);
-          
-          BeliefState current_belief_state = null;
-          
-          //Pass the BelievabilityDiagnosis to POMDPModelInterface
-          current_belief_state = _pmdp_mi.updateBeliefState(_apriori_state,bb_diagnosis);
-          
-          //insert current belief state to believability queue
-          insertBeliefState(current_belief_state, bb_diagnosis);
-          
-          //remove the oldest belief state & publish current belief state
-          if (_bst_queue.size() != _diag_queue.size()) {
-           throw new BelievabilityException ("BeliefStateWindow.consumeBelievabilityDiagnosis","Diagnosis:BeliefState coordianation mismatched");
-          }
-          if (_bst_queue.size() > 1){
-               _bst_queue.removeFirst();
-               _diag_queue.removeFirst();
-          }
-          this.publishBeliefState(current_belief_state);
-      } catch (BelievabilityException be){
-          logDebug("Believability exception in consumeBelievabilityDiagnosis :" + be.getMessage());
-          throw new BelievabilityException ("BeliefStateWindow.consumeBelievabilityDiagnosis", be.getMessage());   
-      } catch (Exception e){
-          logDebug("General Error in consumeBelievabilityDiagnosis :" + e.getMessage());
-          throw new BelievabilityException ("BeliefStateWindow.consumeBelievabilityDiagnosis", e.getMessage());
-      }
+          //null
      }
       /**
       * @param abstract BeliefUpdateTrigger is passed as an arguement from DiagnosisConsumer.
       * DiagnosisConsumer receives either the BelievabilityDiagnosis from the BlackBoard or BelievabilityAction from the Actuator(s).
       * @throws BelievabilityException
       */
+    public BeliefState getCurrentBeliefState() throws BelievabilityException {
+         return _b_d_q.getCurrentBeliefState();
+    }
      public void consumeBeliefUpdateTrigger (BeliefUpdateTrigger bb_diagnosis) throws BelievabilityException{
       try {
-          //temporary--remove this 
-          //this.publishBeliefState(_apriori_state);
-          
+       
           BeliefState current_belief_state = null;
-          
-          //Pass the BelievabilityDiagnosis to POMDPModelInterface
-
-          // FIXME: This is the old line:
-          //
-          //   current_belief_state = _pmdp_mi.updateBeliefState(_apriori_state,bb_diagnosis);
-          //
-          // This is the new one I *think* should be more correct:
-          //
           current_belief_state = _pmdp_mi.updateBeliefState
-                  (getUnupdatedBeliefState(System.currentTimeMillis()),
+                  (_b_d_q.getUnupdatedBeliefState(System.currentTimeMillis()),
                    bb_diagnosis);
-
           //insert current belief state to believability queue
-          insertBeliefState(current_belief_state, bb_diagnosis);
-          
-          //remove the oldest belief state & publish current belief state
-          if (_bst_queue.size() != _diag_queue.size()) {
-           throw new BelievabilityException ("BeliefStateWindow.consumeBeliefUpdateTrigger","Diagnosis:BeliefState coordianation mismatched");
+          _b_d_q.insertBeliefState(current_belief_state, bb_diagnosis);
+          if (_b_d_q.getQueueSize() > 1){
+            _b_d_q.truncateQueue();
           }
-          if (_bst_queue.size() > 1){
-               _bst_queue.removeFirst();
-               _diag_queue.removeFirst();
-          }
-          this.publishBeliefState(current_belief_state);
+          this.publishBeliefState(current_belief_state,
+                      bb_diagnosis.requiresImmediateForwarding());
       } catch (BelievabilityException be){
           logDebug("Believability exception in consumeBeliefUpdateTrigger :" + be.getMessage());
           throw new BelievabilityException ("BeliefStateWindow.consumeBeliefUpdateTrigger", be.getMessage());   
       } catch (Exception e){
           logDebug("General Error in consumeBeliefUpdateTrigger :" + e.toString());
-
+          e.printStackTrace();
           throw new BelievabilityException ("BeliefStateWindow.consumeBeliefUpdateTrigger", e.getMessage());
       }
      }    
@@ -310,26 +185,27 @@ import java.sql.Timestamp;
      * Here the alarm has expired. Perform following set of actions
      * Check how many diagnosis & belief state estimation elements exist.
      * If there is more than one diagnosis/beliefstate pair, then discard all the pairs that have 
-     * time stamp earlier than current system time. 
+     * time stamp earlier than current system time.
+     * @param alarm_expired boolean value indicating if alarm has expired.
      */
       public void timerCallback (boolean alarm_expired) {
        try {
            //Check how many belief state estimation(s) exists.
            //logDebug("Timer called back!");
-           if (_bst_queue.size() <= 1){
+           if (_b_d_q.getQueueSize() <= 1){
             // do nothing??
            } else {
             //Check how many belief states have timestamp prior to current time.
             //Timestamp cur_time = new Timestamp(System.currentTimeMillis());
-            for (int i = 0; i < _bst_queue.size(); i++){
-                BeliefState temp_state = (BeliefState) _bst_queue.get(i);
-                BeliefUpdateTrigger temp_bb_diagnosis = (BeliefUpdateTrigger) _diag_queue.get(i);
+            for (int i = 0; i < _b_d_q.getQueueSize(); i++){
+                BeliefState temp_state = _b_d_q.getBeliefState(i);
+                BeliefUpdateTrigger temp_bb_diagnosis = (BeliefUpdateTrigger) _b_d_q.getDiagnosis(i);
                 if( a_alarm.getExpirationTime() < temp_state.getTimestamp()){
                  //If Belief State is timestamped later than current time then update the belief state, with the associated diagnosis.
                  //The belief state itself is of no use here because, the creation/updation of belief state is done based on diagnosis.
                  // no need for new belief state -- reuse temp_state
                  BeliefState current_belief_state = _pmdp_mi.updateBeliefState(temp_state,temp_bb_diagnosis);
-                 this.insertBeliefState(current_belief_state,temp_bb_diagnosis);
+                 _b_d_q.insertBeliefState(current_belief_state,temp_bb_diagnosis);
                 }
             }
            }
@@ -338,22 +214,17 @@ import java.sql.Timestamp;
            } else { logDebug ("Timer callback -- error re-initializing the timer for Asset_ID : " + _asset_id);}
        }
        catch (Exception e){
-           //_expired = false;
            logDebug ("Timer callback error for AssetID :" + _asset_id); 
-           // Cannot throw an exception here...
        }
     }
     public long getExpirationTime () {
-     return a_alarm.getExpirationTime();
+         return a_alarm.getExpirationTime();
     }
      private boolean initiateTimer(long duration){
          try{
           a_alarm = new AssetAlarm(duration,(CallbackInterface) this);
           _blv_plugin.setAlarm(a_alarm);
-
-//          logDebug("Alarm set for " + _max_window_length + " ms.");
-
-          return true;
+       return true;
          } catch (Exception e){
           logDebug("Errot setting Cougaar timer for AssetID:" + _asset_id.toString());
           return false;
@@ -364,35 +235,87 @@ import java.sql.Timestamp;
       * SEPublisher may or may not actuallly decide to publish the updated BeliefState
       * This method can be private
       */
-      public void publishBeliefState(BeliefState current_belief_state) throws BelievabilityException {
-      _se_pub.consumeBeliefState(current_belief_state);
+      public void publishBeliefState(BeliefState current_belief_state,
+                         boolean requiresImmediateForwarding)
+             throws BelievabilityException {
+      _se_pub.consumeBeliefState(current_belief_state, 
+                                 requiresImmediateForwarding);
      }
-     private BeliefState getUnupdatedBeliefState(long cur_time){
-      //truncate_position = how many elements in the _bst_queue are to be removed (from left), 
-      //because all these elements are timestamped before current time
-      //at truncate_position + 1 is most relevant BeliefState
-      int truncate_position = 0;
-      int queue_size = _bst_queue.size();
-      if (queue_size == 1){
+     
+     
+  private class Queues{
+      /**
+       * Diagnosis and BeliefState linkkedlist
+       */
+    private LinkedList _bst_queue;
+    private LinkedList _diag_queue;
+      
+    protected Queues(BeliefState apriori_st){
+       //Belief State queue
+          _bst_queue = new LinkedList();
+          _bst_queue.addFirst(apriori_st);
+          //Diagosis queue
+          _diag_queue = new LinkedList();
+          _diag_queue.addFirst(null);
+      }
+    protected BeliefState getUnupdatedBeliefState(long cur_time){
+           //truncate_position = how many elements in the _bst_queue are to be removed (from left), 
+           //because all these elements are timestamped before current time
+           //at truncate_position + 1 is most relevant BeliefState
+           int truncate_position = 0;
+           int queue_size = _bst_queue.size();
+           if (queue_size == 1){
+                logDebug("Returning the BeliefState");
+            return (BeliefState) _bst_queue.getFirst();
+           }
+           
+           for (int i = 0; i < queue_size; i++){
+            BeliefState temp_state = (BeliefState)_bst_queue.get(i);
+            if (temp_state.getTimestamp() < cur_time){
+             truncate_position = i;
+             break;
+            }
+           }
+           //remove the objects that are expired with respect to the current time.
+           //removeFirst method returns the objects --- make sure that all these objects are later set to null.
+           for (int j=0; j<truncate_position; j++){
+           truncateQueue();
+           }
           return (BeliefState) _bst_queue.getFirst();
-      }
-      for (int i = 0; i < queue_size; i++){
-          BeliefState temp_state = (BeliefState)_bst_queue.get(i);
-          if (temp_state.getTimestamp() < cur_time){
-           truncate_position = i;
-           break;
-          }
-      }
-      //remove the objects that are expired with respect to the current time.
-      //removeFirst method returns the objects --- make sure that all these objects are later set to null.
-      for (int j=0; j<truncate_position; j++){
+     }
+    
+     
+     /**
+      * may require to accept AssetID as a parameter if/when the class becomes multithreaded
+      * State Estimation Publisher might ask BeliefStateWindow for an update on the current belief state 
+      * (Belief State window is per asset therefore no argument for the method). 
+      * StateEstimationPublisher may request BeliefState from BeliefStateWindow.
+      *@return BeliefState an updated BeliefState from POMDPModel interface
+      *@throws BelievabilityException
+      * 
+      */
+      public BeliefState getCurrentBeliefState() throws BelievabilityException {
+           //find out what is the current time
+           long cur_time = System.currentTimeMillis();
+           //Figure out the beliefstate closest to the current time
+           BeliefState cur_belief_state = getUnupdatedBeliefState(cur_time);
+           //Update belief state from POMDPModel
+           logDebug("getting updated belief state " + cur_belief_state.toString() + " from POMDPModel");
+           BeliefState c_b_s = _pmdp_mi.updateBeliefState(cur_belief_state,cur_time);
+           logDebug("Returning updated belief state " + c_b_s);
+           return c_b_s;
+     }
+    protected void truncateQueue(){
+	//truncate BeliefState
           BeliefState temp_bs;
           temp_bs = (BeliefState) _bst_queue.removeFirst();
           temp_bs = null;
-      }
-     return (BeliefState) _bst_queue.getFirst(); 
+	  //truncate Diagnosis
+          BeliefUpdateTrigger temp_diag;
+          temp_diag = (BeliefUpdateTrigger) _diag_queue.removeFirst();
+          temp_diag = null;
      }
-     private void insertBeliefState(BeliefState current_belief_state, BeliefUpdateTrigger bb_diagnosis){
+    protected void insertBeliefState(BeliefState current_belief_state, BeliefUpdateTrigger bb_diagnosis){
       //Veirfy its placement in the queue based on the timestamp
       int insert_position = _bst_queue.size();
       for (int i = 0; i < insert_position; i++){
@@ -405,6 +328,26 @@ import java.sql.Timestamp;
       _diag_queue.add(insert_position,bb_diagnosis);
       _bst_queue.add(insert_position,current_belief_state); //Java linkedlist automatically shifts subsequent elements right  and adjusts respective indices
      }
+    protected int getQueueSize(){
+         return  _bst_queue.size();
+     }
+    protected BeliefState getBeliefState(int i) throws BelievabilityException {
+          try {
+               return (BeliefState) _bst_queue.get(i);
+          } catch (Exception e){
+               logDebug("Error getting BeliefState from the queue :" + e.toString());
+               throw new BelievabilityException ("BeliefStateWindow.Queues.getBeliefState", e.getMessage());
+          }
+     }
+     protected BeliefUpdateTrigger getDiagnosis(int i) throws BelievabilityException {
+          try {
+               return (BeliefUpdateTrigger) _diag_queue.get(i);
+          } catch (Exception e){
+               logDebug("Error getting Diagnosis from the queue :" + e.toString());
+               throw new BelievabilityException ("BeliefStateWindow.Queues.getDiagnosis", e.getMessage());              
+          }
+     }
+  }
  }
 
 

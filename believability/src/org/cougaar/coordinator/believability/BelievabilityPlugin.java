@@ -27,6 +27,7 @@ package org.cougaar.coordinator.believability;
 
 import org.cougaar.coordinator.DiagnosesWrapper;
 import org.cougaar.coordinator.Diagnosis;
+import org.cougaar.coordinator.leashDefenses.LeashRequestDiagnosis;
 import org.cougaar.coordinator.monitoring.SuccessfulAction;
 import org.cougaar.coordinator.Action;
 
@@ -68,7 +69,7 @@ public class BelievabilityPlugin
         implements NotPersistable 
 
 {
-    
+    public static final boolean IGNORE_LEASH_DIAGNOSIS = true;
 
     /** 
      * Creates a new instance of BelievabilityPlugin 
@@ -76,6 +77,7 @@ public class BelievabilityPlugin
     public BelievabilityPlugin() {
 
         super(requiredServices);
+
 
      // Initialize various classes
      _model_manager = new ModelManager();
@@ -139,7 +141,7 @@ public class BelievabilityPlugin
      * Method to queue an object for publication the next time execute() runs
      * @param obj The object to publish
      **/
-    public void queueForPublication( Object obj ) {
+    public synchronized void queueForPublication( Object obj ) {
         _publication_list.add( obj );
         getBlackboardService().signalClientActivity();
     }
@@ -190,6 +192,14 @@ public class BelievabilityPlugin
       * information that should have loaded during the load() phase.
       **/
     protected void setupSubscriptions() {
+
+	// Check for diagnosis leashing
+     if (IGNORE_LEASH_DIAGNOSIS) {
+	 if ( logger.isDebugEnabled() )
+	     logger.debug( "INITIAL LEASHING OF DIAGNOSES IS DISABLED" );
+	 _dc_enabled = true;
+	 _dc_enabled_new = true;
+     }
 
      // First read in sensor type and asset type information. The
      // asset types are found from the sensor types.
@@ -344,12 +354,19 @@ public class BelievabilityPlugin
          if (logger.isDetailEnabled() ) logger.detail ("UpdateTrigger ADD");
 
          try {
-          but = constructUpdateTrigger( (Object) iter.next() );
+	     // This is for leashing of diagnoses, to be sure that the
+	     // LeashRequestDiagnosis is propagated both when it enables
+	     // and when it disables the defense controller
+	     _dc_enabled_new = _dc_enabled;
 
-          // Check to see whether the defense controller is enabled at
-          // the moment
-          if (_dc_enabled) 
-              _trigger_consumer.consumeUpdateTrigger( but );
+	     but = constructUpdateTrigger( (Object) iter.next() );
+	     
+	     // Check to see whether the defense controller is enabled at
+	     // the moment
+	     if (_dc_enabled) 
+		 _trigger_consumer.consumeUpdateTrigger( but );
+
+	     _dc_enabled = _dc_enabled_new;
          }
          catch ( BelievabilityException be ) {
              if (logger.isWarnEnabled() ) 
@@ -364,13 +381,19 @@ public class BelievabilityPlugin
 
          if (logger.isDetailEnabled() ) logger.detail ("UpdateTrigger CHANGE");
          try {
-          but = constructUpdateTrigger( (Object) iter.next() );
+	     // This is for leashing of diagnoses, to be sure that the
+	     // LeashRequestDiagnosis is propagated both when it enables
+	     // and when it disables the defense controller
+	     _dc_enabled_new = _dc_enabled;
 
-          // Check to see whether the defense controller is enabled at
-          // the moment
-          if (_dc_enabled) 
-              _trigger_consumer.consumeUpdateTrigger( but );
+	     but = constructUpdateTrigger( (Object) iter.next() );
 
+	     // Check to see whether the defense controller is enabled at
+	     // the moment
+	     if (_dc_enabled) 
+		 _trigger_consumer.consumeUpdateTrigger( but );
+	     
+	     _dc_enabled = _dc_enabled_new;
          }
          catch ( BelievabilityException be ) {
              if ( logger.isWarnEnabled()) 
@@ -477,15 +500,6 @@ public class BelievabilityPlugin
     private ActionTechSpecService actionTSService = null;
 
 
-    /**
-     * Set whether or not the defense controller is enabled.
-     * This is used to prevent thrashing during startup.
-     **/
-    private void setDCEnabled( boolean dc_enabled ) {
-     _dc_enabled = dc_enabled;
-    }
-
-
     // Method to read in the sensor types. Used during setup.
     // Throws BelievabilityException if it has a problem finding the techspecs
     private void readInTechSpecInformation() throws BelievabilityException {
@@ -522,13 +536,25 @@ public class BelievabilityPlugin
 
     /**
      * Make a BeliefUpdateTrigger from the input object on the blackboard,
-     * copying out relevant information
+     * copying out relevant information. If this is a diagnosis leashing
+     * related diagnosis, then this also has the side effect of adjusting
+     * the propagation of diagnoses.
      **/
     private BeliefUpdateTrigger constructUpdateTrigger( Object o ) 
      throws BelievabilityException {
 
      if (o instanceof DiagnosesWrapper) {
          Diagnosis diag = ((DiagnosesWrapper) o).getDiagnosis();
+
+	 // First check for leashing of diagnoses
+	 if ( o instanceof LeashRequestDiagnosis ) {
+	     boolean is_stable =
+		 (! ( (LeashRequestDiagnosis)diag).areDefensesLeashed() );
+	     if ( is_stable ) _dc_enabled_new = true;
+	     else _dc_enabled_new = false;
+	 }
+
+	 // Now pass on diagnosis
          return new BelievabilityDiagnosis( diag );
      }
 
@@ -551,7 +577,11 @@ public class BelievabilityPlugin
 
 
     // Boolean saying whether this functionality is enabled or not.
-    private boolean _dc_enabled = true;
+    private boolean _dc_enabled = false;
+
+    // Flag to indicate what the new value of _dc_enabled should be at the
+    // end of the execute run
+    private boolean _dc_enabled_new = false;
 
     // The time the system started up.
     private long _system_start_time = System.currentTimeMillis();

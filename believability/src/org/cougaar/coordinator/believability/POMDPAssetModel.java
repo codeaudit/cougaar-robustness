@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetModel.java,v $
- * $Revision: 1.13 $
- * $Date: 2004-07-02 23:34:03 $
+ * $Revision: 1.14 $
+ * $Date: 2004-07-12 19:30:46 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.13 $Date: 2004-07-02 23:34:03 $
+ * @version $Revision: 1.14 $Date: 2004-07-12 19:30:46 $
  *
  */
 class POMDPAssetModel extends Model
@@ -44,9 +44,9 @@ class POMDPAssetModel extends Model
 
     // For testing purposes only.
     //
-    private static final boolean USE_FAKE_TRIGGER_TIME = false;
+    private static final boolean USE_FAKE_TRIGGER_TIME = true;
 
-    private static long FAKE_TIME_INCREMENT_MS = 600000;
+    private static long FAKE_TIME_INCREMENT_MS = 300000;
 
     private static long _cur_fake_time = System.currentTimeMillis();
 
@@ -227,10 +227,16 @@ class POMDPAssetModel extends Model
 
         BeliefState next_belief = (BeliefState) start_belief.clone();
         
-        // Set this to null to indicate that no diagnosis was
-        // responsible for this update.
+        // Set this to and object to indicate that no diagnosis/action
+        // was responsible for this update: it was timer based.  This
+        // will get overridden with the real trigger if this routine
+        // is called through the method:
         //
-        next_belief.setUpdateTrigger( null );
+        //     updateBeliefState( BeliefState, BeliefUpdateTrigger );
+        //
+        next_belief.setUpdateTrigger
+                ( new TimeUpdateTrigger( next_belief. getAssetID(),
+                                         end_time ));
 
         next_belief.setTimestamp( end_time );
 
@@ -323,10 +329,11 @@ class POMDPAssetModel extends Model
                       "NULL parameters(s) passed in." );
         
         // All state dimensions will be updated to the currrent
-        // diagnosis time, factoring in the state transitions due to
+        // trigger time, factoring in the state transitions due to
         // threats.  We do all this first, and then we will go back
         // and factor in the observation/action from the trigger for
-        // the lone state dimension that the trigger pertains to.
+        // the lone state dimension that the trigger pertains to (if
+        // this is a trigger based on diagnosis or action).
         //
 
         // This will create a new belief state with all state
@@ -343,6 +350,16 @@ class POMDPAssetModel extends Model
         // factor in the observation/diagnosis.
         //
         next_belief.setUpdateTrigger( trigger );
+
+        // For this case, we do not update any particular state
+        // dimension.
+        //
+        if ( trigger instanceof TimeUpdateTrigger )
+        {
+            logDetail( "Belief after time trigger: " 
+                       + next_belief.toString() );
+            return next_belief;
+        }
 
         // Next we need to find the state dimension that this diagnosis
         // is relevanmt to.
@@ -374,7 +391,8 @@ class POMDPAssetModel extends Model
                                                   trigger,
                                                   next_belief_dim );
 
-        logDetail( "Belief after trigger: " + next_belief.toString() );
+        logDetail( "Belief after diagnosis/action trigger: " 
+                   + next_belief.toString() );
 
         return next_belief;
 
