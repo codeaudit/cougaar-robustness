@@ -256,6 +256,7 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
     //These methods are called by the DiagnosisMonitorPlugin
     public void addDiagnosesWrapper(DiagnosesWrapper dw) {
         handleDiagnosis((Diagnosis)dw.getContent(), ADDED, true);
+        logger.debug("===> Added Diagnosis Wrapper to servlet.");
     }
     
     public void changedDiagnosesWrapper(DiagnosesWrapper dw) {
@@ -264,6 +265,7 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
 
     public void addDiagnosis(Diagnosis d) {
         handleDiagnosis(d, ADDED, false);
+        logger.debug("===> Added Diagnosis to servlet.");
     }
     
     public void changedDiagnosis(Diagnosis d) {
