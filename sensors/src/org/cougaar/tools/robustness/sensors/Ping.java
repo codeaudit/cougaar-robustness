@@ -111,6 +111,10 @@ public class Ping implements Relay.Source, Relay.Target, XMLizable
 
     private SimpleRelayFactory() {}
 
+    /**
+    * Convert the given content and related information into a Target
+    * that will be published on the target's blackboard. 
+    **/
     public Relay.Target create(
         UID uid, 
         MessageAddress source, 
@@ -125,10 +129,16 @@ public class Ping implements Relay.Source, Relay.Target, XMLizable
     }
   };
 
+  /**
+  * Get a factory for creating the target. 
+  **/
   public TargetFactory getTargetFactory() {
     return SimpleRelayFactory.INSTANCE;
   }
 
+  /**
+  * Update the source with the new response.
+  **/
   public int updateResponse(MessageAddress t, Object response) {
     // assert response != null
     if (!(response.equals(this.response))) {
@@ -140,14 +150,23 @@ public class Ping implements Relay.Source, Relay.Target, XMLizable
 
   // Relay.Target implementation
 
+  /**
+  * Get the address of the Agent holding the Source copy of this Relay. 
+  */
   public MessageAddress getSource() {
     return source;
   }
 
+  /**
+  * Get the current Response for this target. 
+  */
   public Object getResponse() {
     return response;
   }
 
+  /**
+  * Update the target with the new content.
+  */
   public int updateContent(Object content, Token token) {
     // assert content != null
     if (!(content.equals(this.content))) {
@@ -157,11 +176,16 @@ public class Ping implements Relay.Source, Relay.Target, XMLizable
     return NO_CHANGE;
   }
 
-  // XMLizable method for UI, other clients
+  /**
+  * XMLizable method for UI, other clients
+  */
   public org.w3c.dom.Element getXML(org.w3c.dom.Document doc) {
     return XMLize.getPlanObjectXML(this, doc);
   }
 
+  /**
+  * Returns true if this object's UID equals the argument's UID.
+  */
   public boolean equals(Object o) {
     if (o == this) {
       return true;
@@ -173,10 +197,16 @@ public class Ping implements Relay.Source, Relay.Target, XMLizable
     }
   }
 
+  /**
+  * Returns a hash code based on this object's UID.
+  */
   public int hashCode() {
     return uid.hashCode();
   }
 
+  /**
+  * Returns a String represention for this object.
+  */
   public String toString() {
     return "(Ping: " + uid + ", " + source + ", " + target + ", " + content + ", " + response + ")";
   }

@@ -67,6 +67,9 @@ public final class HbReqResponse implements java.io.Serializable {
     }
   }
 
+  /**
+  * Returns a String represention for a HbReqResponse.
+  */
   public String toString() {
     return "(HbReqResponse: status = " + HeartbeatRequest.statusToString(status);
   }

@@ -33,18 +33,28 @@ public final class PingContent implements java.io.Serializable {
   private long timeout;
 
   /**
-   * @param pingReqUID UID of the PingRequest object.  
-   *   Used by PingRequesterPlugin to match up Ping replies with PingRequests
+   * @param pingReqUID UID of the PingRequest object,   
+   *  used by PingRequesterPlugin to match up Ping replies with PingRequests
    * @param timeout milliseconds to wait before timing out ping
    */
   public PingContent(UID pingReqUID, long timeout) {
     this.pingReqUID = pingReqUID;
     this.timeout = timeout;
   }
-
+  
+  /**
+  * Get the UID of the PingRequest that requested this Ping.
+  */
   public UID getPingReqUID() { return pingReqUID; }
+
+  /**
+  * Get the milliseconds to wait before timing out this Ping.
+  */
   public long getTimeout() { return timeout; }
 
+  /**
+  * Returns a String representation for this object.
+  */
   public String toString() {
     return "(PingContent: " + pingReqUID + ", " + timeout + ")";
   }

@@ -47,16 +47,24 @@ public class SensorDomain extends DomainAdapter {
     return SENSORS_NAME;
   }
 
+  /**
+   * default constructor 
+   */
   public SensorDomain() {
     super();
-
   }
 
+  /**
+   * initialize method from GenericStateModelAdapter
+   **/
   public void initialize() {
     super.initialize();
     Constants.Role.init();    // Insure that our Role constants are initted
   }
 
+  /**
+   * load method from GenericStateModelAdapter
+   **/
   public void load() {
     super.load();
   }

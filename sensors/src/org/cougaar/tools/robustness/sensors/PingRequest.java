@@ -98,6 +98,10 @@ public class PingRequest implements UniqueObject
   * Get the address of the Agent that sent this request.
   */
   public MessageAddress getSource() { return source; }
+
+  /**
+  * Set the address of the Agent that sent this request.
+  */
   public void setSource(MessageAddress addr) { source = addr; }
 
   /**
@@ -114,26 +118,45 @@ public class PingRequest implements UniqueObject
   * Get the status of the request (i.e. NEW, SENT, RECEIVED, FAILED).
   */
   public int getStatus() { return status; }
+
+  /**
+  * Set the status of the request (i.e. NEW, SENT, RECEIVED, FAILED).
+  */
   public void setStatus(int status) { this.status = status; }
 
   /**
   * Get the time that the Ping was sent to the target Agent.
   */
   public Date getTimeSent() { return timeSent; }
+
+  /**
+  * Set the time that the Ping was sent to the target Agent.
+  */
   public void setTimeSent(Date timeSent) { this.timeSent = timeSent; }
 
   /**
   * Get the time that the response was received from the target Agent.
   */
   public Date getTimeReceived() { return timeReceived; }
+
+  /**
+  * Set the time that the response was received from the target Agent.
+  */
   public void setTimeReceived(Date timeReceived) { this.timeReceived = timeReceived; }
 
   /**
   * Get the number of milliseconds between sending the Ping and receiving a response.
   */
   public long getRoundTripTime() { return roundTripTime; }
+
+  /**
+  * Set the number of milliseconds between sending the Ping and receiving a response.
+  */
   public void setRoundTripTime(long roundTripTime) { this.roundTripTime = roundTripTime; }
 
+  /**
+  * Returns a String representation for this object.
+  */
   public String toString() {
     return "(PingRequest: " + uid 
                      + ", " + source 
