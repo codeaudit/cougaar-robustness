@@ -1,0 +1,153 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>Adaptive Robustness Use Case 1 (AR-UC1) Setup</title>
+  <meta http-equiv="content-type"
+ content="text/html; charset=ISO-8859-1">
+</head>
+<body>
+<h1>Adaptive Robustness Use Case 1 Setup</h1>
+This document provides instructions for configuring a Cougaar society to
+demonstrate/test Adaptive Robustness (AR) Use Case 1 (AR-UC1) components.
+&nbsp;Use Case 1 involves the detection and restart of agents that have been
+lost due to a computer or node failure. &nbsp;These instructions are based
+on the use of a modified version of the SMALL-1AD-TRANS society that is distributed
+with CSMART. &nbsp;With minor variation most of these instructions are also
+applicable to the setup of the the TINY and FULL versions of the standard
+1AD sociieties.<br>
+<h2>1. &nbsp;Obtain Required software</h2>
+<h3>a. &nbsp;Cougaar</h3>
+Cougaar version 9.4.1.2 or greater is required.<br>
+<h3>b. &nbsp;Adaptive Robustness JAR files</h3>
+Obtain the JAR files for the following modules from the Ultralog CVS repository
+and copy to the COUGAAR_INSTALL_PATH/lib directory.<br>
+<br>
+1. &nbsp;Robustness/OBJS/Sensors<br>
+2. &nbsp;Robustness/MIC/Mgmt_Agent <br>
+<h3>c. &nbsp;AR Use Case 1 CSMART Recipes</h3>
+A number of CSMART recipes are used to configure the standard 1AD societies
+for AR-UC1 demonstration and testing. &nbsp;The recipes listed below can
+be obtained from the test/data/recipes directory in the Robustness/MIC/Mgmt_Agent
+module or overlay. &nbsp;These recipes should be imported into the CSMART
+database.<br>
+<br>
+1. &nbsp;HeartbeatServerPlugin-export.sql<br>
+2. &nbsp;PingServerPlugin-export.sql<br>
+3. &nbsp;SensorDomain-export.sql<br>
+4. &nbsp;RobustnessManagementAgents-export.sql<br>
+<br>
+In addition to the recipes listed above, the file "recipeQueries.q" in the
+test/data directory must be copied to the COUGAAR_INSTALL_PART/configs/common
+directory. &nbsp;This file contains a couple unique database queries that
+are used by the AR recipes.<br>
+<h3>d. &nbsp;AR Use Case 1 CSMART Experiment</h3>
+The following CSMART experiment is provided in the test/data/experiments
+directory in the Robustness/MIC/Mgmt_Agent module. &nbsp;This experiment
+modifies the standard SMALL-1AD-TRANS experiment to define communities and
+agent allocations suitable for running AR-UC1 tests. &nbsp;This experiment
+should be imported into the CSMART database.<br>
+<br>
+- &nbsp;SMALL-1AD-TRANS-AR-export<br>
+<br>
+This experiment contains 58 agents in 4 robustness communities. &nbsp;The
+allocation of agents to communities is as follows:<br>
+<br>
+<table cellpadding="2" cellspacing="2" border="1" width="300">
+  <tbody>
+    <tr>
+      <td valign="top">1AD-Enclave1-COMM<br>
+      </td>
+      <td valign="top">32 Agents<br>
+      </td>
+    </tr>
+    <tr>
+      <td valign="top">1AD-Enclave2-COMM<br>
+      </td>
+      <td valign="top">15 Agents<br>
+      </td>
+    </tr>
+    <tr>
+      <td valign="top">1AD-Enclave3-COMM<br>
+      </td>
+      <td valign="top">1 Agent<br>
+      </td>
+    </tr>
+    <tr>
+      <td valign="top">1AD-Enclave4-COMM<br>
+      </td>
+      <td valign="top">10 Agents<br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+<br>
+Each community (enclave} has a management agent that is responsible for monitoring
+the community members and restarting them as necessary. &nbsp;The management
+agent is given a name like "1AD-Enclave1-RobustnessManager". &nbsp;The name
+must be unique and must end with the string "RobustnessManager".<br>
+<h2>2. &nbsp;Modify Experiment Configuration</h2>
+Using the CSMART Experiment Builder tool update the SMALL-1AD-TRANS-AR-export
+experiment to reflect the local environment.<br>
+<h3>a. &nbsp;Allocate nodes to hosts<br>
+</h3>
+The SMALL-1AD-TRANS-AR-export experiment is currently configured to run 23
+nodes on 5 computers. &nbsp;Depending on the availability of local resources
+this step may simply involve the re-allocation of the existing nodes to 5
+computers in the local enviroment. &nbsp;While it is not normally recommended
+that more than 1 node be allocated to a host, this 5 computer configuration
+defines a number of relatively small nodes for each host. &nbsp;This is done
+to mimic the agent-node allocation in the TICs FULL-1AD society and also
+to provide multiple nodes to kill for various UC1 test scenarios. &nbsp;If
+the computers to be used for the society are not capable of running this
+number of JVMs the agents in the FWD-X and REAR-X nodes could be consolidated
+into single ENCLAVE1 and ENCLAVE2 nodes. Similarily the agents in the AIR-NODE,
+CONUS-NODE, CONTRANS-NODE, SEA-NODE, THEATERTRANS-NODE, and TRANSCOM-NODE
+nodes could be combined to form a singe ENCLAVE4 node. <br>
+<br>
+<h3>b. &nbsp;Specify restart nodes</h3>
+Each robustness community in the SMALL-1AD-TRANS-AR-export experiment designates
+a specific node for restarting dead agents. &nbsp;By default this node is
+named something like "Enclave1-RestartNode". &nbsp;The designation of restart
+nodes for a community is performed using a community level attribute. &nbsp;This
+attribute is found by going to the "Community" tab in the CSMART Experiment
+Builder tool. &nbsp;Select the appropriate community from the community list.
+&nbsp;The community name will be something like "1AD-Enclave1-COMM".<br>
+<br>
+1. &nbsp;Changing the restart node &nbsp;- &nbsp;To change the name of the
+restart node simply modify the ATTRIBUTE_VALUE associated with the existing
+RestartNode id.<br>
+2. &nbsp;Deleting the restart node &nbsp;- &nbsp;To delete the restart node
+right click on the existing attribute entry and select "delete" from the
+pop-up menu. &nbsp;If a robustness community does not specify a &nbsp;restart
+node the Management Agent will consider any node currently used by a commuity
+member as a possible destination for a restarted agent.<br>
+3. &nbsp;Adding restart nodes &nbsp;- &nbsp;The default experiment specifies
+1 restart node for each restart community. &nbsp;However, multiple restrart
+nodes may be designated. &nbsp;To add additional nodes right click on the
+community name from the community list pane and select "Add Attribute" from
+the pop-up menu. &nbsp;Then add "RestartNode" to the new ATTRIBUTE_ID and
+the name of the node to the ATTRIBUTE_VALUE field. &nbsp;When multiple restart
+nodes are specified the Management Agent will consider all of these as possible
+destinations for a restarted agent. &nbsp;The actual node selected will be
+the one with the fewest number of running agents.<br>
+<h2>3. &nbsp;Run Society</h2>
+Once the required software has been installed and configured the experiment
+can be executed using the CSMART Experiment Controller tool. &nbsp;Using
+the Experiment Controller run the experiment configured from step 2 above.
+&nbsp;Monitor the log messages from 4 management agent nodes (named 1AD-EnclaveX-RobustnessManager).
+&nbsp;As the society is starting each management agent will detect the existence
+of the community members that it is monitoring and will log an INFO message
+"Adding XXXX" where XXXX is the name of the agent to be monitored. &nbsp;Periodically
+each management agent will log a summary message indicating the total number
+of agents being monitored and the current state of each. &nbsp;All agents
+should transition to the NORMAL state within a few minutes of startup. &nbsp;The
+NORMAL state indicates that the management agent was successful in starting
+the monitored agents HeartbeatServer. &nbsp;At this point individual nodes
+can be killed via the Control-&gt;Kill menu item in a nodes console window.
+&nbsp;When a node is killed the management agent will log various warning
+and error messages indicating heartbeat and ping failures. &nbsp;Eventually
+the dead agents will be retarted on a restart node. &nbsp;If the restart
+is successful, a log message "Reacquired XXXX" will be generated where XXXX
+is the name of the agent that was restarted.<br>
+</body>
+</html>
