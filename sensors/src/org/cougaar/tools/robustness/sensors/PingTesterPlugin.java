@@ -75,9 +75,9 @@ public class PingTesterPlugin extends ComponentPlugin {
       timeout = Long.parseLong((String)iter.next());
     }
     PingRequest req = sensorFactory.newPingRequest(source, target, timeout);
-    bb.publishAdd(req);
     if (log.isInfoEnabled()) 
-      log.info("PingTesterPlugin.setupSubscriptions: added PingRequest = " + req);
+      log.info("setupSubscriptions: publishAdd PingRequest = " + req);
+    bb.publishAdd(req);
   }
 
   protected void execute () {
@@ -85,42 +85,47 @@ public class PingTesterPlugin extends ComponentPlugin {
     while (iter.hasNext()) {
       PingRequest req = (PingRequest)iter.next();
       if (log.isInfoEnabled()) 
-        log.info("PingTesterPlugin.execute: received changed PingRequest = " + req);
+        log.info("execute: received changed PingRequest = " + req);
       MessageAddress myAddr = getAgentIdentifier();
       if (req.getSource().equals(myAddr)) {
         int status = req.getStatus();
 	  switch (status) {
           case PingRequest.NEW:
             if (log.isInfoEnabled()) 
-              log.info("PingTesterPlugin.execute: status = NEW, ignored.");
+              log.info("execute: status = NEW, ignored.");
             break;
           case PingRequest.SENT:
             if (log.isInfoEnabled()) 
-              log.info("PingTesterPlugin.execute: status = SENT, ignored.");
+              log.info("execute: status = SENT, ignored.");
             break;
           case PingRequest.RECEIVED:
             if (log.isInfoEnabled()) {
-              log.info("PingTesterPlugin.execute: status = RECEIVED.");
-              log.info("PingTesterPlugin.execute: timeSent = " + req.getTimeSent());
-              log.info("PingTesterPlugin.execute: timeReceived = " + req.getTimeReceived());
-              log.info("PingTesterPlugin.execute: roundTripTime = " + req.getRoundTripTime());
-              log.info("PingTesterPlugin.execute: timeSent = " + req.getTimeSent());
+              log.info("execute: status = RECEIVED.");
+              log.info("execute: timeSent = " + req.getTimeSent());
+              log.info("execute: timeReceived = " + req.getTimeReceived());
+              log.info("execute: roundTripTime = " + req.getRoundTripTime());
+              log.info("execute: timeSent = " + req.getTimeSent());
             }
+            if (log.isInfoEnabled()) 
+              log.info("execute: publishRemove PingRequest = " + req);
             bb.publishRemove(req); 
             break;
           case PingRequest.FAILED:
             if (log.isInfoEnabled()) {
-              log.info("PingTesterPlugin.execute: status = FAILED.");
-              log.info("PingTesterPlugin.execute: timeSent = " + req.getTimeSent());
-              log.info("PingTesterPlugin.execute: timeReceived = " + req.getTimeReceived());
-              log.info("PingTesterPlugin.execute: roundTripTime = " + req.getRoundTripTime());
-              log.info("PingTesterPlugin.execute: timeSent = " + req.getTimeSent());
+              log.info("execute: status = FAILED.");
+              log.info("execute: timeSent = " + req.getTimeSent());
+              log.info("execute: timeReceived = " + req.getTimeReceived());
+              log.info("execute: roundTripTime = " + req.getRoundTripTime());
+              log.info("execute: timeSent = " + req.getTimeSent());
             }
+            if (log.isInfoEnabled()) 
+              log.info("execute: publishRemove PingRequest = " + req);
             bb.publishRemove(req); 
             break;
           default:
-            if (log.isInfoEnabled()) 
-              log.info("PingTesterPlugin.execute: illegal status = " + req.getStatus());
+            if (log.isInfoEnabled()) {
+              log.info("execute: illegal status = " + req.getStatus());
+              log.info("execute: publishRemove PingRequest = " + req); }
             bb.publishRemove(req); 
         }
       }

@@ -61,11 +61,11 @@ public class PingServerPlugin extends ComponentPlugin {
       if (ping.getTargets() == Collections.EMPTY_SET) {  // make sure I'm the target, not the source
         MessageAddress me = getAgentIdentifier();
         if (log.isDebugEnabled()) 
-          log.debug("PingServerPlugin.execute: received Ping = " + ping);
+          log.debug("execute: received added Ping = " + ping);
         ping.updateResponse(me, "Got it!");
-        bb.publishChange(ping);
         if (log.isDebugEnabled()) 
-          log.debug("PingServerPlugin.execute: published changed Ping = " + ping);
+          log.debug("execute: publishChange Ping = " + ping);
+        bb.publishChange(ping);
       }
     }
   }

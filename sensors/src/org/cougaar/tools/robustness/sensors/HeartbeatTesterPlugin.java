@@ -113,9 +113,9 @@ public class HeartbeatTesterPlugin extends ComponentPlugin {
                                                              heartbeatTimeout,   
                                                              onlyOutOfSpec,
                                                              percentOutOfSpec);
-    bb.publishAdd(req);
     if (log.isInfoEnabled()) 
-      log.info("\nHeartbeatTesterPlugin.setupSubscriptions: added HeartbeatRequest = " + req);
+      log.info("setupSubscriptions: publishAdd HeartbeatRequest = " + req);
+    bb.publishAdd(req);
   }
 
   protected void execute () {
@@ -126,34 +126,34 @@ public class HeartbeatTesterPlugin extends ComponentPlugin {
       MessageAddress myAddr = getAgentIdentifier();
       if (req.getSource().equals(myAddr)) {
         if (log.isInfoEnabled()) 
-          log.info("\nHeartbeatTesterPlugin.execute: received changed HeartbeatRequest = " + req);
+          log.info("execute: received changed HeartbeatRequest = " + req);
         int status = req.getStatus();
 	  switch (status) {
           case HeartbeatRequest.NEW:
             if (log.isInfoEnabled()) 
-              log.info("HeartbeatTesterPlugin.execute: status = NEW, ignored.");
+              log.info("execute: status = NEW, ignored.");
             break;
           case HeartbeatRequest.SENT:
             if (log.isInfoEnabled()) 
-              log.info("HeartbeatTesterPlugin.execute: status = SENT, ignored.");
+              log.info("execute: status = SENT, ignored.");
             break;
           case HeartbeatRequest.ACCEPTED:
             if (log.isInfoEnabled()) 
-              log.info("HeartbeatTesterPlugin.execute: status = ACCEPTED.");
+              log.info("execute: status = ACCEPTED.");
             break;
           case HeartbeatRequest.REFUSED:
             if (log.isInfoEnabled()) 
-              log.info("HeartbeatTesterPlugin.execute: status = REFUSED, removed.");
+              log.info("execute: status = REFUSED, removed.");
             bb.publishRemove(req); 
             break;
           case HeartbeatRequest.FAILED:
             if (log.isInfoEnabled()) 
-              log.info("HeartbeatTesterPlugin.execute: status = FAILED, removed.");
+              log.info("execute: status = FAILED, removed.");
             bb.publishRemove(req); 
             break;
           default:
             if (log.isInfoEnabled()) 
-              log.info("HeartbeatTesterPlugin.execute: illegal status = " + req.getStatus() + ", removed.");
+              log.info("execute: illegal status = " + req.getStatus() + ", removed.");
             bb.publishRemove(req); 
         }
       }
@@ -163,7 +163,7 @@ public class HeartbeatTesterPlugin extends ComponentPlugin {
     while (iter.hasNext()) {
       HeartbeatHealthReport rpt = (HeartbeatHealthReport)iter.next();
       if (log.isInfoEnabled()) 
-        log.info("\nHeartbeatTesterPlugin.execute: received HeartbeatHealthReport = " + rpt);
+        log.info("execute: received HeartbeatHealthReport = " + rpt);
       bb.publishRemove(rpt);
     }
   }

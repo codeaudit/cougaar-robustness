@@ -109,7 +109,7 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
     while (iter.hasNext()) {
       HbReq req = (HbReq)iter.next();
       if (log.isDebugEnabled()) 
-        log.debug("\nHeartbeatServerPlugin.processHeartbeats: processing HbReq = " + req);
+        log.debug("processHeartbeats: processing HbReq = " + req);
       HbReqContent content = (HbReqContent)req.getContent();
       HbReqResponse response = (HbReqResponse)req.getResponse();
       if (response == null) break; // a new HbReq not yet processed by execute
@@ -132,9 +132,9 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
           }
           response.setLastHbSent(now);
           req.updateResponse(me, response);
-          bb.publishChange(req);
           if (log.isDebugEnabled()) 
-            log.debug("\nHeartbeatServerPlugin.processHeartbeats: published changed HbReq = " + req);
+            log.debug("processHeartbeats: publishChange HbReq = " + req);
+          bb.publishChange(req);
         }
       }
     }
@@ -176,16 +176,16 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
     while (iter.hasNext()) {
       HbReq req = (HbReq)iter.next();
       if (log.isDebugEnabled()) 
-        log.debug("\nHeartbeatServerPlugin.execute: received new HbReq = " + req);
+        log.debug("execute: received added HbReq = " + req);
       HbReqContent content = (HbReqContent)req.getContent();
       long now = System.currentTimeMillis();
       long freq = content.getHbFrequency();
       if (minFreq > freq) minFreq = freq;
       MessageAddress me = getAgentIdentifier();
       req.updateResponse(me, new HbReqResponse(me, HeartbeatRequest.ACCEPTED, now, now));
-      bb.publishChange(req);
       if (log.isDebugEnabled()) 
-        log.debug("\nHeartbeatServerPlugin.execute: published changed HbReq = " + req);
+        log.debug("execute: publishChange HbReq = " + req);
+      bb.publishChange(req);
     } 
     if (minFreq != Long.MAX_VALUE) {
       if (nextAlarm != null) nextAlarm.cancel();

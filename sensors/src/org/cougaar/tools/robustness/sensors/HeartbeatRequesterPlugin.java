@@ -122,16 +122,15 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
         while (iter.hasNext()) {
           HbReq hbReq = (HbReq)iter.next();
           if (hbReq.getUID().equals(hbReqUID)) {
+            if (log.isDebugEnabled())
+              log.debug("fail: publishRemove HbReq = " + hbReq);
             bb.publishRemove(hbReq);
-            if (log.isDebugEnabled()) {
-              log.debug("\nremoved HbReq = " + hbReq);
-            }
           }
         } 
+        if (log.isDebugEnabled()) 
+          log.debug("fail: publishChange HeartbeatRequest = " + req);
         bb.publishChange(req);
         bb.closeTransaction();
-        if (log.isDebugEnabled()) 
-          log.debug("\npublished changed HeartbeatRequest = " + req);
       }
     }
   }
@@ -157,9 +156,9 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     HbReqResponse response = (HbReqResponse)hbReq.getResponse();
     req.setStatus(response.getStatus());
     req.setRoundTripTime(timeReceived.getTime() - req.getTimeSent().getTime());
-    bb.publishChange(req);
     if (log.isDebugEnabled())  
-      log.debug("\nHeartbeatRequesterPlugin.updateHeartbeatRequest: published changed HeartbeatRequest = " + req);
+      log.debug("updateHeartbeatRequest: publishChange HeartbeatRequest = " + req);
+    bb.publishChange(req);
   }
 
   // produce HeartbeatHealthReports from ACCEPTED HeartbeatRequests
@@ -209,10 +208,9 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
           if ((entries != null) && (entries.size() > 0)) {
             HeartbeatEntry[] entryArray = (HeartbeatEntry[])entries.toArray(new HeartbeatEntry[entries.size()]);
             HeartbeatHealthReport report = new HeartbeatHealthReport(entryArray);
-            bb.publishAdd(report);
             if (log.isDebugEnabled()) 
-              log.debug("\nHeartbeatRequesterPlugin.prepareHealthReports:" +
-                               " published new HeartbeatHealthReport = " + report);
+              log.debug("prepareHealthReports: publishAdd HeartbeatHealthReport = " + report);
+            bb.publishAdd(report);
           }   
         }    
       }
@@ -241,16 +239,17 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     Iterator iter = heartbeatRequestSub.getRemovedCollection().iterator();
     while (iter.hasNext()) {
       HeartbeatRequest req = (HeartbeatRequest)iter.next();
+      if (log.isDebugEnabled()) 
+        log.debug("execute: received removed HeartbeatRequest = " + req);
       reqTable.remove(req);
       UID hbReqUID = req.getHbReqUID();
       Iterator iter2 = hbReqSub.getCollection().iterator();
       while (iter2.hasNext()) {
         HbReq hbReq = (HbReq)iter2.next();
         if (hbReq.getUID().equals(hbReqUID)) {
+          if (log.isDebugEnabled())
+            log.debug("execute: publishRemove HbReq = " + hbReq);
           bb.publishRemove(hbReq);
-          if (log.isDebugEnabled()) {
-            log.debug("\nremoved HbReq = " + hbReq);
-          }
         }
       } 
     }
@@ -263,7 +262,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     while (iter.hasNext()) {
       HbReq hbReq = (HbReq)iter.next();
       if (log.isDebugEnabled()) 
-        log.debug("\nHeartbeatRequesterPlugin.execute: changed HbReq received = " + hbReq);
+        log.debug("execute: received changed HbReq = " + hbReq);
       MessageAddress myAddr = getAgentIdentifier();
       if (hbReq.getSource().equals(myAddr)) {
         HbReqResponse response = (HbReqResponse)hbReq.getResponse();
@@ -311,7 +310,7 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
       int status = req.getStatus();
       if (status == HeartbeatRequest.NEW) {
         if (log.isDebugEnabled()) 
-          log.debug("\nHeartbeatRequesterPlugin.prepareHealthReports: new HeartbeatRequest received = " + req);
+          log.debug("execute: received added HeartbeatRequest = " + req);
         MessageAddress source = getAgentIdentifier();
         Set targets = req.getTargets();
         UID reqUID = req.getUID();
@@ -329,13 +328,13 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
                                 targets, 
                                 content, 
                                 null);
+        if (log.isDebugEnabled())
+          log.debug("execute: publishAdd HbReq = " + hbReq);
         bb.publishAdd(hbReq);
+        if (log.isDebugEnabled())
+          log.debug("execute: publishChange HeartbeatRequest = " + req);
         bb.publishChange(req);
-        if (log.isDebugEnabled()) {
-          log.debug("\npublished new HbReq = " + hbReq);
-          log.debug("\npublished changed HeartbeatRequest = " + req);
-        }
-        // temp hack to timeout a request
+
         alarmService.addRealTimeAlarm(new HeartbeatRequestTimeout(req.getReqTimeout(),reqUID));
       }
     }

@@ -102,25 +102,37 @@ public class HeartbeatTesterMICPlugin extends ComponentPlugin {
   }
 
   private void killAndRestart(long startAfter){
-    bb.openTransaction();
-      Iterator iter = reqSub.getCollection().iterator();
-      while (iter.hasNext()) {
-        HeartbeatRequest req = (HeartbeatRequest)iter.next();
-        bb.publishRemove(req);
-      }
-    bb.closeTransaction();
-    log.info("\nKill and restart all Monitored Nodes now.");
-    log.info("\nWaiting for " + startAfter + " ms.");
+    log.info("killAndRestart:                                Kill all Monitored Nodes now.");
+    log.info("killAndRestart:                                Waiting for " + startAfter + " ms.");
     try {
       Thread.sleep(startAfter);
     } catch (InterruptedException e) {
       e.printStackTrace();
       System.exit(-1);
     }
-    log.info("\nRe-requesting Heartbeats now.");
+    log.info("killAndRestart:                                Restart all Monitored Nodes now.");
+    log.info("killAndRestart:                                Waiting for " + startAfter + " ms.");
+    try {
+      Thread.sleep(startAfter);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+      System.exit(-1);
+    }
+/* No need to remove and re-request heartbeats.  Cougaar does it for you.
+    log.info("killAndRestart:                                Removing all HeartbeatRequests now.");
+    bb.openTransaction();
+      Iterator iter = reqSub.getCollection().iterator();
+      while (iter.hasNext()) {
+        HeartbeatRequest req = (HeartbeatRequest)iter.next();
+        log.info("killAndRestart: publishRemove HeartbeatRequest = " + req);
+        bb.publishRemove(req);
+      }
+    bb.closeTransaction();
+    log.info("killAndRestart:                                Re-requesting Heartbeats now.");
     bb.openTransaction();
       processParms();
     bb.closeTransaction();
+*/
   }
 
   private void processParms() {
@@ -144,9 +156,9 @@ public class HeartbeatTesterMICPlugin extends ComponentPlugin {
                                                                heartbeatTimeout,   
                                                                onlyOutOfSpec,
                                                                percentOutOfSpec);
-      bb.publishAdd(req);
       if (log.isInfoEnabled()) 
-        log.info("\nAdded HeartbeatRequest = " + req);
+        log.info("processParms: publishAdd HeartbeatRequest = " + req);
+      bb.publishAdd(req);
     }
     alarmService.addRealTimeAlarm(new KillAndRestart(killAfter,restartAfter));
   }
@@ -171,34 +183,34 @@ public class HeartbeatTesterMICPlugin extends ComponentPlugin {
       MessageAddress myAddr = getAgentIdentifier();
       if (req.getSource().equals(myAddr)) {
         if (log.isInfoEnabled()) 
-          log.info("\nreceived changed HeartbeatRequest = \n" + req);
+          log.info("execute: received changed HeartbeatRequest = " + req);
         int status = req.getStatus();
 	  switch (status) {
           case HeartbeatRequest.NEW:
             if (log.isInfoEnabled()) 
-              log.info("\nstatus = NEW, ignored.");
+              log.info("execute: status = NEW, ignored.");
             break;
           case HeartbeatRequest.SENT:
             if (log.isInfoEnabled()) 
-              log.info("\nstatus = SENT, ignored.");
+              log.info("execute: status = SENT, ignored.");
             break;
           case HeartbeatRequest.ACCEPTED:
             if (log.isInfoEnabled()) 
-              log.info("\nstatus = ACCEPTED.");
+              log.info("execute: status = ACCEPTED.");
             break;
           case HeartbeatRequest.REFUSED:
             if (log.isInfoEnabled()) 
-              log.info("\nstatus = REFUSED, removed.");
+              log.info("execute: status = REFUSED, removed.");
             bb.publishRemove(req); 
             break;
           case HeartbeatRequest.FAILED:
             if (log.isInfoEnabled()) 
-              log.info("\nstatus = FAILED, removed.");
+              log.info("execute: status = FAILED, removed.");
             bb.publishRemove(req); 
             break;
           default:
             if (log.isInfoEnabled()) 
-              log.info("\nillegal status = " + req.getStatus() + ", removed.");
+              log.info("execute: illegal status = " + req.getStatus() + ", removed.");
             bb.publishRemove(req); 
         }
       }
@@ -207,8 +219,9 @@ public class HeartbeatTesterMICPlugin extends ComponentPlugin {
     iter = reportSub.getAddedCollection().iterator();
     while (iter.hasNext()) {
       HeartbeatHealthReport rpt = (HeartbeatHealthReport)iter.next();
-      if (log.isInfoEnabled()) 
-        log.info("\nReceived HeartbeatHealthReport = \n" + rpt);
+      if (log.isInfoEnabled()) {
+        log.info("execute: received added HeartbeatHealthReport = " + rpt);
+        log.info("execute: publishRemove HeartbeatHealthReport = " + rpt); }
       bb.publishRemove(rpt);
     }
   }

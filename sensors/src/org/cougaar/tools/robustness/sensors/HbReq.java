@@ -44,7 +44,7 @@ import org.cougaar.core.persist.NotPersistable;
  * A Heartbeat Request Relay, the Blackboard object that is passed
  * between HeartbeatRequesterPlugin to HeartbeatServerPlugin.
  **/
-public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersistable //, MsglogAttributes
+public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersistable
 {
   private UID uid;
   private MessageAddress source;
@@ -96,7 +96,7 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersista
           if (content instanceof HbReqContent) {
             long timeout = ((HbReqContent)content).getReqTimeout();
             if (timeout > 0) {
-              attrs.setAttribute(MessageUtils.SEND_TIMEOUT, new Integer((int)timeout));  // change msglog to avoid this cast
+              attrs.setAttribute(MessageUtils.SEND_TIMEOUT, new Integer((int)timeout));
             }
           }
         } catch (Exception e) {
@@ -287,7 +287,7 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersista
       if (content instanceof HbReqContent) {
         long timeout = ((HbReqContent)content).getHbTimeout();
         if (timeout > 0) {
-          attrs.setAttribute(MessageUtils.SEND_TIMEOUT, new Integer((int)timeout));  // change msglog to avoid this cast
+          attrs.setAttribute(MessageUtils.SEND_TIMEOUT, new Integer((int)timeout));
         }
       }
     } catch (Exception e) {

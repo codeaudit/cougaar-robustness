@@ -68,13 +68,12 @@ public class PingRequesterPlugin extends ComponentPlugin {
     req.setTimeSent(new Date());
     PingContent content = new PingContent(reqUID, req.getTimeout());
     Ping ping = new Ping(getUIDService().nextUID(), source, target, content, null);
+    if (log.isDebugEnabled())
+      log.debug("sendPing: publishAdd Ping = " + ping);
     bb.publishAdd(ping);
+    if (log.isDebugEnabled())
+      log.debug("sendPing: publishChange PingRequest = " + req);
     bb.publishChange(req);
-    if (log.isDebugEnabled()) {
-      log.debug("PingRequesterPlugin.sendPing: published new Ping = " + ping);
-      log.debug("PingRequesterPlugin.sendPing: published changed PingRequest = " + req);
-    }
-    // temp hack to timeout a request
     alarmService.addRealTimeAlarm(new PingRequestTimeout(req.getTimeout(),reqUID));
   }
 
@@ -86,12 +85,13 @@ public class PingRequesterPlugin extends ComponentPlugin {
     req.setTimeReceived(timeReceived);
     req.setStatus(PingRequest.RECEIVED);
     req.setRoundTripTime(timeReceived.getTime() - req.getTimeSent().getTime());
+    if (log.isDebugEnabled())
+      log.debug("updatePingRequest: publishChange PingRequest = " + req);
     bb.publishChange(req);
+    if (log.isDebugEnabled())
+      log.debug("updatePingRequest: publishRemove Ping = " + ping);
     bb.publishRemove(ping);
-    if (log.isDebugEnabled()) {
-      log.debug("PingRequesterPlugin.updatePingRequest: published changed PingRequest = " + req);
-      log.debug("PingRequesterPlugin.updatePingRequest: removed Ping = " + ping);
-    }
+
   }
 
   protected void setupSubscriptions() {
@@ -109,7 +109,7 @@ public class PingRequesterPlugin extends ComponentPlugin {
     while (iter.hasNext()) {
       PingRequest req = (PingRequest)iter.next();
       if (log.isDebugEnabled()) 
-        log.debug("PingRequesterPlugin.execute: new PingRequest received = " + req);
+        log.debug("execute: added PingRequest received = " + req);
       //MessageAddress myAddr = getAgentIdentifier();
       if (req.getStatus() == PingRequest.NEW) {   
         sendPing(req);
@@ -120,7 +120,7 @@ public class PingRequesterPlugin extends ComponentPlugin {
     while (iter.hasNext()) {
       Ping ping = (Ping)iter.next();
       if (log.isDebugEnabled()) 
-        log.debug("PingRequesterPlugin.execute: changed Ping received = " + ping);
+        log.debug("execute: changed Ping received = " + ping);
       MessageAddress myAddr = getAgentIdentifier();
       if (ping.getSource().equals(myAddr)) {
         updatePingRequest(ping);
@@ -169,10 +169,10 @@ public class PingRequesterPlugin extends ComponentPlugin {
     if (req.getStatus() == PingRequest.SENT) {
       bb.openTransaction();
       req.setStatus(PingRequest.FAILED);
+      if (log.isDebugEnabled()) 
+        log.debug("fail: publishChange PingRequest = " + req);
       bb.publishChange(req);
       bb.closeTransaction();
-      if (log.isDebugEnabled()) 
-        log.debug("\nPingRequesterPlugin.fail: published changed PingRequest = " + req);
     }
   }
 
