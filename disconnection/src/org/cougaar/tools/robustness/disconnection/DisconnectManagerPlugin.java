@@ -840,6 +840,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
 
         public void handleExpiration() {
             if (logger.isDebugEnabled()) logger.debug("RequestAlarm expired for: " + rr.toString() + ". Request denied");
+            if (eventService.isEventEnabled()) eventService.event(rr.getNodeID()+" permission Denied");
             denyPermissions(rr);
             cancel();
         }
