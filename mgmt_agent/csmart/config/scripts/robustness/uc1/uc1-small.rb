@@ -57,17 +57,7 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
 
   # After CommunityReady event is received wait for persistence
   wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
-
-  # Action "PublishThreatAlert" has five parameters:
-  #   community name,
-  #   role in the community,
-  #   alert level(select from: max, high, medium, low, min, undefined),
-  #   alert duration, and
-  #   assets
-  assets = Hash['node'=>'TRANS-NODE', 'node'=>'FWD-NODE']
-  do_action "PublishThreatAlert", "1AD-SMALL-COMM", "HealthMonitor", "min", 10.minutes, assets
-
-  do_action "Sleep", 5.minutes
+  do_action "Sleep", 3.minutes
 
   # Kill node that does not contain robustness manager
   do_action "SaveHostOfNode", "1AD-SMALL-COMM", "TRANS-NODE"
@@ -76,11 +66,9 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
   # Wait for restarts to complete
   wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
 
-  #do_action "PublishThreatAlert", "1AD-SMALL-COMM", "Medium", 5.minutes, "FWD-NODE"
-
   # Add an empty node to community
   do_action "AddNode", "NewNode1", "1AD-SMALL-COMM"
-  do_action "Sleep", 5.minutes
+  do_action "Sleep", 3.minutes
 
   # Kill node that contains robustness manager
   do_action "SaveHostOfNode", "1AD-SMALL-COMM", "FWD-NODE"
