@@ -701,7 +701,7 @@ if (debug) log.debug("cost =" + cost);
     if (MessageUtils.isPureAckMessage (msg))
     {
       PureAck pureAck = (PureAck) ack;
-      if (debug) log.debug ("Chosing link for pure ack msg: " +msgString);
+      if (debug) log.debug ("Choosing link for pure ack msg: " +msgString);
 
       //  First, add all the links that have now piggybacked the ack to our used list.
       //  If there are any, then we may not be needing to send a pure ack this time - we may

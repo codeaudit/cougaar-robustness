@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 09 Jun 2003: Added removeLinkSelection in support of in-band White Pages access.  (104B)
  * 05 Aug 2002: Revamped in light of new RTT service. (OBJS)
  * 23 Apr 2002: Split out from MessageAckingAspect. (OBJS)
  */
@@ -279,6 +280,16 @@ public class Ack implements Serializable
       boolean addit = (haveLinkSelection (link) == false);
       if (addit) linksUsed.add (link.getProtocolClass());
       return addit;
+    }
+  }
+
+  //104B
+  public void removeLinkSelection (DestinationLink link)
+  {
+    synchronized (linksUsed)
+    {
+      if (haveLinkSelection(link))
+        linksUsed.remove(link.getProtocolClass());
     }
   }
 

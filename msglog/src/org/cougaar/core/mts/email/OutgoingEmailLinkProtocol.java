@@ -62,6 +62,13 @@ import java.security.MessageDigest;
 import org.cougaar.core.mts.*;
 import org.cougaar.core.service.LoggingService;
 
+import org.cougaar.core.component.ServiceBroker; //104B
+import org.cougaar.core.service.wp.WhitePagesService; //104B
+import org.cougaar.core.service.wp.AddressEntry; //104B
+import org.cougaar.core.service.wp.Callback; //104B
+import org.cougaar.core.service.wp.Request; //104B
+import org.cougaar.core.service.wp.Response; //104B
+
 /**
  * OutgoingEmailLinkProtocol is a LinkProtocol which sends 
  * Cougaar messages via the SMTP protocol.
@@ -137,6 +144,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
   private Hashtable uriCache;
   private HashMap links;
   private MailBox outboxes[];
+  private WhitePagesService wp;
 
   static
   {
@@ -174,7 +182,14 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
 
     if (log.isInfoEnabled()) log.info ("Creating " + this);
 
-    MailMan.setServiceBroker (getServiceBroker());
+    ServiceBroker sb = getServiceBroker();
+
+    //104B
+    wp = (WhitePagesService)sb.getService(this, 
+                                          WhitePagesService.class, 
+                                          null);
+
+    MailMan.setServiceBroker(sb);
     MailMan.setSmtpSocketTimeout (socketTimeout);
     MailMan.setSmtpDebug (showMailServerInteraction);
 
@@ -298,10 +313,31 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
   //104B
   private URI lookupEmailAddress (MessageAddress address) throws NameLookupException
   {
-    synchronized (uriCache) {
+    URI uri = null;   
+    String agentName = address.getAddress();             
 
-      URI uri = null;   
-      String agentName = address.getAddress();             
+    //check the WP cache first
+    try {
+      if (log.isDebugEnabled())
+        log.debug("Calling wp.get("+agentName+","+PROTOCOL_TYPE+",-1)");
+      AddressEntry ae = wp.get(agentName, PROTOCOL_TYPE, -1); 
+      if (log.isDebugEnabled())
+        log.debug("ae="+ae);
+      if (ae != null) {
+        uri = ae.getURI();
+        if (uri != null) {
+          if (log.isDebugEnabled())
+            log.debug("found addr "+uri+" for Agent "+agentName+" in WP cache");
+          return uri;
+        }
+      }
+    } catch (Exception e) {
+      if (log.isDebugEnabled())
+        log.debug("CACHE_ONLY WP lookup of addr for Agent "+agentName+" threw exception", e);
+      throw new NameLookupException(e);
+    }
+
+    synchronized (uriCache) {
 
       // get the callback table entry for this agent
       CbTblEntry cbte = (CbTblEntry)uriCache.get(agentName);
@@ -433,8 +469,12 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
       throws NameLookupException, UnregisteredNameException,
              CommFailureException, MisdeliveredMessageException
     {
+if (log.isDebugEnabled()) log.debug("Enter forwardMessage("+MessageUtils.toString(msg)+")", new Throwable());
+//if (log.isDebugEnabled()) log.debug("raw msg = "+msg.getRawMessage(), new Throwable());
+
+
       //  Dump our cached data on message send retries
-      if (MessageUtils.getSendTry (msg) > 2) dumpCachedData(destination);  //104B changed to 2 because of wp callback
+      if (MessageUtils.getSendTry (msg) > 3) dumpCachedData(destination);  //104B changed to 3 because of wp callback
 
       //  Get emailing info for destination
     
@@ -444,6 +484,8 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
       {
         String s = "No Email Address found for " + destination;
         if (log.isWarnEnabled()) log.warn (s);
+if (log.isDebugEnabled()) log.debug("Exit forwardMessage("+MessageUtils.toString(msg)+")");
+//if (log.isDebugEnabled()) log.debug("raw msg = "+msg.getRawMessage());
         throw new NameLookupException (new Exception (s));
       }
 
@@ -468,14 +510,18 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
       {
         dumpCachedData(destination); //104B
         Exception e = (save==null ? new Exception ("email sendMessage unsuccessful") : save);
+if (log.isDebugEnabled()) log.debug("Exit forwardMessage("+MessageUtils.toString(msg)+")");
+//if (log.isDebugEnabled()) log.debug("raw msg = "+msg.getRawMessage());
         throw new CommFailureException (e);
       }
 
       //  Successful send
 
-	  MessageAttributes successfulSend = new SimpleMessageAttributes();
+      MessageAttributes successfulSend = new SimpleMessageAttributes();
       String status = MessageAttributes.DELIVERY_STATUS_DELIVERED;
-	  successfulSend.setAttribute (MessageAttributes.DELIVERY_ATTRIBUTE, status);
+      successfulSend.setAttribute (MessageAttributes.DELIVERY_ATTRIBUTE, status);
+if (log.isDebugEnabled()) log.debug("Exit forwardMessage("+MessageUtils.toString(msg)+")");
+//if (log.isDebugEnabled()) log.debug("raw msg = "+msg.getRawMessage());
       return successfulSend;
     }
    

@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 09 Jun 2003: Don't count WP failure as a link use, because WP callbacks cause them to be frequent. (104B)
  * 22 Apr 2003: Added Event when message sent. (102B)
  * 18 Aug 2002: Mucho changes to support Cougaar 9.2+ and agent mobility. (OBJS)
  * 23 Apr 2002: Split out from MessageAckingAspect. (OBJS)
@@ -288,6 +289,10 @@ class AckFrontend extends DestinationLinkDelegateImplBase
       if (log.isDebugEnabled()) log.debug ("Failure sending " +msgString+ ":\n" +e);
 
       ack.decrementSendCount();  // didn't actually send
+
+      //104B Don't count WP failure as a link use, because callbacks cause them to be frequent
+      if ((e instanceof UnregisteredNameException) || (e instanceof NameLookupException))
+        ack.removeLinkSelection(link);
 
       if (ack.getSendCount() == 0) 
       {
