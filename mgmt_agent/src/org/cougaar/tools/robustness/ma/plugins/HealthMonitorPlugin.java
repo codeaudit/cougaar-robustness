@@ -811,10 +811,11 @@ public class HealthMonitorPlugin extends SimplePlugin implements
                          activePingFrequency);
     // Get agent attributes from community service and set any agent-specific
     // parameters
+    StringBuffer sb = new StringBuffer();
+/*
     Attributes attrs =
       communityService.getEntityAttributes(communityToMonitor, agentId.toString());
     NamingEnumeration enum = attrs.getAll();
-    StringBuffer sb = new StringBuffer();
     try {
       while (enum.hasMoreElements()) {
         Attribute attr = (Attribute)enum.nextElement();
@@ -853,6 +854,7 @@ public class HealthMonitorPlugin extends SimplePlugin implements
     } catch (Exception ex) {
       log.error("Exception parsing agent health monitor parameters, " + ex);
     }
+*/
     if (log.isInfoEnabled()) {
       log.info("Adding " + hs.getAgentId() +
         (sb.length() > 0 ? " (" + sb.toString().trim() + ")" : ""));

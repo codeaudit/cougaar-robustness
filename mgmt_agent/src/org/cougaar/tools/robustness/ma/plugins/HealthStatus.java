@@ -713,10 +713,12 @@ public class HealthStatus implements
     //log.debug("SetState: agent=" + agentId + " state=" + state);
     currentState = state;
 
+/*
     ModificationItem mods[] = new ModificationItem[1];
     mods[0] = new ModificationItem(DirContext.REPLACE_ATTRIBUTE,
       new BasicAttribute("RunState", currentState));
     commSvc.modifyEntityAttributes(communityName, agentId.toString(), mods);
+*/
 
   }
 
@@ -726,9 +728,9 @@ public class HealthStatus implements
    */
   public String getState() {
 
-    //return currentState;
+    return currentState;
 
-
+/*
     try {
       Attributes attrs =
         commSvc.getEntityAttributes(communityName, agentId.toString());
@@ -754,6 +756,7 @@ public class HealthStatus implements
       ex.printStackTrace();
       return new String();
     }
+*/
 
   }
 
