@@ -18,6 +18,7 @@ include_scripts:
   - script: $CIP/csmart/lib/robustness/objs/planned_disconnect.rb
     parameters:
       - location: starting_stage
+      - start_delay: 60
       - wait_location: after_stage
       - nodes: ["UA-FSB-A-NODE", "UA-FSB-C-NODE"]
       - planned_disconnect: 12.minutes

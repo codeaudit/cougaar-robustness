@@ -45,6 +45,7 @@ include_scripts:
   - script: $CIP/csmart/lib/robustness/objs/planned_disconnect_with_node_kill.rb
     parameters:
       - location: during_stage_1
+      - start_delay: 60
       - wait_location: after_stage_1
       - nodes: ["UA-FSB-A-NODE", "UA-FSB-C-NODE"]
       - nodes_to_kill: ["UA-ROB-MGMT-NODE"]
