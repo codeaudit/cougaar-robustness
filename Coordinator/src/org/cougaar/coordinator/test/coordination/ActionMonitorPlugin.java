@@ -93,8 +93,7 @@ implements NotPersistable {
         (LoggingService) getServiceBroker().getService(this, LoggingService.class, null);        
 
         
-         logger.debug("****)))))))))))))))))&&&&&&&&&&&&&&&&&*************** ActionMonitorPlugin loaded on "+agentId);
-        
+         logger.debug("ActionMonitorPlugin loaded on "+agentId);
         
         //logger.debug("setupSubscriptions called.");
         
