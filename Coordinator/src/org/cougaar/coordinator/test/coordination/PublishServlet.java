@@ -164,6 +164,7 @@ public class PublishServlet extends BaseServletComponent implements BlackboardCl
         blackboard.publishAdd(this);
         blackboard.closeTransaction();
 
+/*  commented out - these services are not used in this servlet - sjf
         //call tech spec service & add action tech spec        
         // **********************************************get the tect spec service
         ActionTechSpecService ActionTechSpecService =
@@ -182,6 +183,7 @@ public class PublishServlet extends BaseServletComponent implements BlackboardCl
         } else {
 //            DiagnosisTechSpecService.addDiagnosisTechSpec("org.cougaar.coordinator.test.coordination.TestDiagnosis", new TestDiagnosisTechSpec());
         }
+*/
         
     }
     
