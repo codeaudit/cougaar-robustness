@@ -17,6 +17,7 @@
  */
 package org.cougaar.tools.robustness.ma;
 
+import org.cougaar.tools.robustness.ma.RestartManagerConstants;
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
 import org.cougaar.tools.robustness.ma.StatusChangeListener;
 import org.cougaar.tools.robustness.ma.CommunityStatusChangeEvent;
@@ -38,7 +39,10 @@ import javax.naming.directory.BasicAttribute;
  * ThreatAlert handler to respond to threats of imminent loss of a host
  * computer.
  */
-public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase {
+public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
+  implements RestartManagerConstants {
+
+  public static final int ALERT_LEVEL_FOR_VACATE = ThreatAlert.HIGH_SEVERITY;
 
   public HostLossThreatAlertHandler(BindingSite          bs,
                                     MessageAddress       agentId,
@@ -50,12 +54,13 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
   public void newAlert(ThreatAlert ta) {
     if (ta instanceof HostLossThreatAlert) {
       logger.info("Received new HostLossThreatAlert: " + ta);
-      if (agentId.toString().equals(preferredLeader())) {
+      if (agentId.toString().equals(preferredLeader()) && ta.isActive()) {
         Set affectedNodes = getAffectedNodes(ta.getAffectedAssets());
-        if (ta.getSeverityLevel() >= ThreatAlert.MEDIUM_SEVERITY) {
+        if (ta.getSeverityLevel() >= ALERT_LEVEL_FOR_VACATE) {
           vacate(affectedNodes);
+        } else {
+          adjustRobustnessParameters(ta, affectedAgents(affectedNodes));
         }
-        adjustRobustnessParameters(ta, affectedAgents(affectedNodes));
       }
     }
   }
@@ -63,23 +68,38 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
   public void changedAlert(ThreatAlert ta) {
     if (ta instanceof HostLossThreatAlert) {
       logger.info("Received changed HostLossThreatAlert: " + ta);
+      if (agentId.toString().equals(preferredLeader()) && ta.isActive()) {
+        Set affectedNodes = getAffectedNodes(ta.getAffectedAssets());
+        if (ta.getSeverityLevel() >= ALERT_LEVEL_FOR_VACATE) {
+          vacate(affectedNodes);
+        } else {
+          adjustRobustnessParameters(ta, affectedAgents(affectedNodes));
+        }
+      }
     }
   }
 
   public void removedAlert(ThreatAlert ta) {
     if (ta instanceof HostLossThreatAlert) {
       logger.info("Received removed HostLossThreatAlert: " + ta);
-      LoadBalancerListener lbl = new LoadBalancerListener() {
-        public void layoutReady(Map layout) {
-          controller.getLoadBalancer().moveAgents(layout);
+      if (agentId.toString().equals(preferredLeader()) && ta.isExpired()) {
+        Set affectedNodes = getAffectedNodes(ta.getAffectedAssets());
+        if (ta.getSeverityLevel() >= ALERT_LEVEL_FOR_VACATE) {
+          LoadBalancerListener lbl = new LoadBalancerListener() {
+            public void layoutReady(Map layout) {
+              controller.getLoadBalancer().moveAgents(layout);
+            }
+          };
+          controller.getLoadBalancer().doLayout(LoadBalancer.DEFAULT_ANNEAL_TIME,
+                                                true,
+                                                new ArrayList(affectedNodes),
+                                                Collections.EMPTY_LIST,
+                                                new ArrayList(getExcludedNodes()),
+                                                lbl);
+        } else {
+          adjustRobustnessParameters(ta, affectedAgents(affectedNodes));
         }
-      };
-      Set vacatedNodes = getAffectedNodes(ta.getAffectedAssets());
-      controller.getLoadBalancer().doLayout(true,
-                                            new ArrayList(vacatedNodes),
-                                            Collections.EMPTY_LIST,
-                                            new ArrayList(getExcludedNodes()),
-                                            lbl);
+      }
     }
   }
 
@@ -91,13 +111,6 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
   private void vacate(final Set nodesToVacate) {
     final Set agentsToMove = affectedAgents(nodesToVacate);
     logger.info("Vacating nodes: " + nodesToVacate);
-    /*for (Iterator it = nodesToVacate.iterator(); it.hasNext(); ) {
-      String nodeName = (String) it.next();
-      String agentsOnNode[] = model.entitiesAtLocation(nodeName);
-      for (int i = 0; i < agentsOnNode.length; i++) {
-        agentsToMove.add(agentsOnNode[i]);
-      }
-    }*/
     model.addChangeListener(new StatusChangeListener() {
       public void statusChanged(CommunityStatusChangeEvent[] csce) {
         for (int i = 0; i < csce.length; i++) {
@@ -108,29 +121,18 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
             if (agentsToMove.isEmpty()) {
               logger.info("Vacate nodes complete: nodes=" + nodesToVacate);
               model.removeChangeListener(this);
-              //logger.info("Starting Load Balancer");
-              //controller.getLoadBalancer().doLoadBalance();
             }
           }
         }
       }
     });
-    /*List moveList = new ArrayList(agentsToMove);
-    for (Iterator it1 = moveList.iterator(); it1.hasNext(); ) {
-      String agentToMove = (String) it1.next();
-      String dest =
-          RestartDestinationLocator.getRestartLocation(agentToMove,
-          nodesToVacate);
-      logger.debug("Move agent: agent=" + agentToMove + " dest=" + dest);
-      moveHelper.moveAgent(agentToMove, model.getLocation(agentToMove), dest,
-                           model.getCommunityName());
-    }*/
     LoadBalancerListener lbl = new LoadBalancerListener() {
       public void layoutReady(Map layout) {
         controller.getLoadBalancer().moveAgents(layout);
       }
     };
-    controller.getLoadBalancer().doLayout(true,
+    controller.getLoadBalancer().doLayout(LoadBalancer.DEFAULT_ANNEAL_TIME,
+                                          true,
                                           Collections.EMPTY_LIST,
                                           new ArrayList(nodesToVacate),
                                           new ArrayList(getExcludedNodes()),
@@ -143,9 +145,15 @@ public class HostLossThreatAlertHandler extends RobustnessThreatAlertHandlerBase
    */
   protected void adjustRobustnessParameters(ThreatAlert ta, Set affectedAgents) {
     logger.info("Adjusting robustness parameters: threatLevel=" + ta.getSeverityLevelAsString());
-    Attribute mods[] =
-        new Attribute[] {new BasicAttribute("UPDATE_INTERVAL", "15000")};
-    changeAttributes(model.getCommunityName(), null, mods);
+    long newStatusUpdateInterval = model.getLongAttribute(STATUS_UPDATE_ATTRIBUTE);
+    if (newStatusUpdateInterval > 0) {
+      if (ta.isActive()) {
+        newStatusUpdateInterval = newStatusUpdateInterval / 2;
+      }
+      Attribute mods[] =
+          new Attribute[] {new BasicAttribute(CURRENT_STATUS_UPDATE_ATTRIBUTE, Long.toString(newStatusUpdateInterval))};
+      changeAttributes(model.getCommunityName(), null, mods);
+    }
   }
 
   protected Set getAffectedNodes(Asset[] affectedAssets) {
