@@ -19,33 +19,13 @@
 # </copyright>
 #
 
-module UltraLog
-
-  class Operator
-  
-    # fashioned after clear_pnlogs in $CIP/csmart/acme_scripting/src/lib/ultralog/operator.rb
-    def flush_mail
-      send_command('flush_mail', 10)
-    end
-
-  end
-
-end
-
-# fashioned after clear_pnlogs in $CIP/csmart/acme_service/src/plugins/acme_tic_operator/operator.rb
-#register_command("flush_mail", "Flush inboxes") do |message, command|
-  #result = "\n"
-  #result += call_cmd('cd $CIP/operator; ./flushmail.csh')
-  #message.reply.set_body(result).send
-#end
-
 module Cougaar
 
   module Actions
 
     # fashioned after ClearPersistenceAndLogs in $CIP/csmart/acme_scripting/src/lib/ultralog/operator.rb
     class FlushMail < Cougaar::Action
-      PRIOR_STATES = ['OperatorServiceConnected']
+      PRIOR_STATES = ['OperatorServiceConnected','CommunicationsRunning']
       DOCUMENTATION = Cougaar.document {
         @description = "Flushes the inboxes for all Nodes in this society."
         @example = "do_action 'FlushMail'"
@@ -54,19 +34,20 @@ module Cougaar
         super(run)
       end
       def perform
+        operator = @run['operator']
+        cip = operator.test.strip
+        op_host = @run.society.get_service_host('operator') 
         @run.society.each_node do |node|
-          puts "flushing email to " + node.name
+          #puts "flushing email to " + node.name
           inbox_param = "-Dorg.cougaar.message.protocol.email.inboxes." + node.name + "="
-          puts "looking for inbox_param = " + inbox_param
+          #puts "looking for inbox_param = " + inbox_param
           node.parameters.each do |param|
-            puts "comparing param = " + param
+            #puts "comparing param = " + param
             if param[0...(inbox_param.size)]==inbox_param
-              puts "found param = " + param
+              #puts "found param = " + param
               uri = param[inbox_param.size..-1]
               puts "flushing email at " + uri
-              operator = @run['operator']
-              operator.flush_mail
-              #puts "result = " + result
+              @run.comms.new_message(op_host).set_body("command[rexec]#{cip}/operator/flushmail.csh #{cip} #{uri}").request(30) 
             end
           end
         end

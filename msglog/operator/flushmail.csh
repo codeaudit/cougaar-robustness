@@ -1,3 +1,3 @@
 #!/bin/tcsh 
-java -classpath $CIP/lib/msglog.jar:$CIP/sys/mail.jar:$CIP/sys/activation.jar:$CIP/lib/util.jar org.cougaar.core.mts.email.FlushMail $1 $2
+/usr/java/j2sdk1.4.1/bin/java -classpath $1/lib/msglog.jar:$1/sys/mail.jar:$1/sys/activation.jar:$1/lib/util.jar org.cougaar.core.mts.email.FlushMail $2 $3
 
