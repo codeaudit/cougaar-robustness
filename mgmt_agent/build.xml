@@ -236,12 +236,16 @@
          <include name="ping.rb" />
       </fileset>
     </copy>
+    <copy toDir="staging/csmart/config/rules/robustness/communities">
+      <fileset dir="csmart/config/rules/robustness/communities">
+         <include name="community.rule" />
+      </fileset>
+    </copy>
     <copy toDir="staging/csmart/config/rules/robustness/uc1">
       <fileset dir="csmart/config/rules/robustness/uc1">
          <include name="aruc1.rule" />
          <include name="manager.rule" />
          <include name="deconfliction.rule" />
-         <include name="robustness_community.rule" />
       </fileset>
     </copy>
     <copy toDir="staging/robustness/configs/mic-local">
