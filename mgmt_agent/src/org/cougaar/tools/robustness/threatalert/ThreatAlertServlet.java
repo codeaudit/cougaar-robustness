@@ -238,7 +238,7 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
     }
 
     //send the object directly
-    if(target.equals("agentId")) {
+    if(target.equals(agentId)) {
       if(log.isInfoEnabled()) {
         log.info("publish ThreatAlert " + tai.toString());
       }
@@ -252,7 +252,7 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
       RelayAdapter taiRelay = new RelayAdapter(agentId, tai, tai.getUID());
       taiRelay.addTarget(target);
       if (log.isInfoEnabled()) {
-        log.info("publish ThreadAlert, remote agent is " + target.toString() +
+        log.info("publish ThreatAlert, remote agent is " + target.toString() +
                  " " + tai.toString());
       }
       try {

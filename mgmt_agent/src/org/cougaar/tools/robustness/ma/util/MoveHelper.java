@@ -216,7 +216,7 @@ public class MoveHelper extends BlackboardClientComponent {
     }
   }
 
-  protected void moveAgent(String agentName, String destNode) {
+  private void moveAgent(String agentName, String destNode) {
     logger.debug("moveAgent: agent=" + agentName + " dest=" + destNode);
     moveQueue.add(new MoveQueueEntry(SimpleMessageAddress.getSimpleMessageAddress(agentName),
                                      agentId,

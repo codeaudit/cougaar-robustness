@@ -35,6 +35,8 @@ import org.cougaar.core.component.BindingSite;
  */
 public interface RobustnessController extends StatusChangeListener {
 
+  public BindingSite getBindingSite();
+
   /**
    * Initialize controller.
    * @param thisAgent  Name of host agent

@@ -19,6 +19,8 @@ package org.cougaar.tools.robustness.ma.controllers;
 
 import org.cougaar.tools.robustness.ma.CommunityStatusModel;
 import org.cougaar.tools.robustness.ma.controllers.*;
+import org.cougaar.tools.robustness.ma.util.DeconflictHelper;
+import org.cougaar.tools.robustness.ma.util.DeconflictListener;
 import org.cougaar.tools.robustness.ma.util.HeartbeatListener;
 import org.cougaar.tools.robustness.ma.util.MoveHelper;
 import org.cougaar.tools.robustness.ma.util.MoveListener;
@@ -27,10 +29,14 @@ import org.cougaar.tools.robustness.ma.util.PingListener;
 import org.cougaar.tools.robustness.ma.util.RestartHelper;
 import org.cougaar.tools.robustness.ma.util.RestartListener;
 import org.cougaar.tools.robustness.ma.util.RestartDestinationLocator;
-import org.cougaar.tools.robustness.ma.util.DeconflictHelper;
-import org.cougaar.tools.robustness.ma.util.DeconflictListener;
+import org.cougaar.tools.robustness.ma.util.ThreatAlertHandler;
+
+import org.cougaar.tools.robustness.threatalert.*;
 
 import org.cougaar.core.component.BindingSite;
+import org.cougaar.core.component.ServiceBroker;
+import org.cougaar.core.component.ServiceAvailableListener;
+import org.cougaar.core.component.ServiceAvailableEvent;
 
 import java.util.*;
 
@@ -223,7 +229,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     { addRestartListener(this); }
     public void enter(String name) {
       if (isLeader(thisAgent) && isAgent(name)) {
-        String dest = RestartDestinationLocator.getRestartLocation(name);
+        String dest = RestartDestinationLocator.getRestartLocation(name, Collections.EMPTY_SET);
         logger.info("Restart agent:" +
                     " agent=" + name +
                     " origin=" + getLocation(name) +
@@ -372,7 +378,6 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     }
   }
 
-
   /**
    * Initializes services and loads state controller classes.
    */
@@ -391,6 +396,26 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     addController(DECONFLICT,     "DECONFLICT", new DeconflictStateController());
     RestartDestinationLocator.setCommunityStatusModel(csm);
     RestartDestinationLocator.setLoggingService(logger);
+    ServiceBroker sb = bs.getServiceBroker();
+    if (sb.hasService(ThreatAlertService.class)) {
+      initThreatAlertListener();
+    } else {
+      sb.addServiceListener(new ServiceAvailableListener() {
+        public void serviceAvailable(ServiceAvailableEvent sae) {
+          if (sae.getService().equals(ThreatAlertService.class)) {
+            initThreatAlertListener();
+          }
+        }
+      });
+    }
+  }
+
+  private void initThreatAlertListener() {
+    logger.debug("Initializing ThreatAlertListener");
+    ServiceBroker sb = getBindingSite().getServiceBroker();
+    ThreatAlertService tas =
+      (ThreatAlertService) sb.getService(this, ThreatAlertService.class, null);
+    tas.addListener(new ThreatAlertHandler(thisAgent, this, model));
   }
 
   boolean communityReady = false;

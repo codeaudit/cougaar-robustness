@@ -144,9 +144,9 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
    * @param role
    */
   public void sendAlert(ThreatAlert ta, String community, String role) {
-    AttributeBasedAddress target = AttributeBasedAddress.getAttributeBasedAddress(
-        community, "Role", role);
-    if(target.equals("agentId")) {
+    AttributeBasedAddress target =
+        AttributeBasedAddress.getAttributeBasedAddress(community, "Role", role);
+    if(target.equals(agentId)) {
       if(log.isInfoEnabled()) {
         log.info("publish ThreatAlert " + ta.toString());
       }
@@ -160,7 +160,7 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
       RelayAdapter taiRelay = new RelayAdapter(agentId, ta, ta.getUID());
       taiRelay.addTarget(target);
       if (log.isInfoEnabled()) {
-        log.info("publish ThreadAlert, remote agent is " + target.toString() +
+        log.info("publish ThreatAlert, remote agent is " + target.toString() +
                  " " + ta.toString());
       }
       try {

@@ -28,34 +28,40 @@ public class RestartDestinationLocator {
     logger = ls;
   }
 
-  public static String getRestartLocation(String agent) {
+  public static String getRestartLocation(String agent, Set excludedNodes) {
     if(selectedNodes.containsKey(agent)) {
       LinkedList nodes = (LinkedList)selectedNodes.get(agent);
       if(nodes.size() > 0) {
         return (String) nodes.removeFirst();
-      }
-      else {
+      } else {
         selectedNodes.remove(agent);
         return null;
       }
     }
 
-    String candidateNodes[] =
+    String activeNodes[] =
         model.listEntries(model.NODE, DefaultRobustnessController.ACTIVE);
+    Set candidateNodes = new HashSet();
+    for (int i = 0; i < activeNodes.length; i++) {
+      if (!excludedNodes.contains(activeNodes[i])) {
+          candidateNodes.add(activeNodes[i]);
+      }
+    }
     int numAgents = 0;
     String selectedNode = null;
     Hashtable temp = new Hashtable();
-    for (int i = 0; i < candidateNodes.length; i++) {
-      int agentsOnNode = model.agentsOnNode(candidateNodes[i]).length;
+    for (Iterator it = candidateNodes.iterator(); it.hasNext();) {
+      String candidate = (String)it.next();
+      int agentsOnNode = model.agentsOnNode(candidate).length;
       if(logger.isDebugEnabled())
-        logger.debug("agents on node: " + candidateNodes[i] + "  " + agentsOnNode);
-      if(restartAgents.containsKey(candidateNodes[i])){
-        int restarts = Integer.parseInt((String)(restartAgents.get(candidateNodes[i])));
+        logger.debug("agents on node: " + candidate + "  " + agentsOnNode);
+      if(restartAgents.containsKey(candidate)){
+        int restarts = Integer.parseInt((String)(restartAgents.get(candidate)));
         agentsOnNode += restarts;
       }
-      temp.put(candidateNodes[i], Integer.toString(agentsOnNode));
+      temp.put(candidate, Integer.toString(agentsOnNode));
       if (selectedNode == null || agentsOnNode < numAgents) {
-        selectedNode = candidateNodes[i];
+        selectedNode = candidate;
         numAgents = agentsOnNode;
       }
     }

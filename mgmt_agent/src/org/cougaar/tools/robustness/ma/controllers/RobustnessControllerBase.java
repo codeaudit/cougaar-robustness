@@ -151,6 +151,10 @@ public abstract class RobustnessControllerBase
     controllers.put(new Integer(state), new ControllerEntry(state, stateName, sc));
   }
 
+  public BindingSite getBindingSite() {
+    return bindingSite;
+  }
+
   /**
    * Get reference to controllers move helper.
    */
