@@ -1,5 +1,5 @@
-#######################################################################
-# Adds MsgLog properties to nodes in three different enclaves
+#######################################################
+# Adds MsgLog properties to nodes in different enclaves
 #
 # Warning: This rule has laydown-specific info in it.
 #
@@ -39,8 +39,8 @@ aspects = "org.cougaar.core.mts.RMISocketControlAspect," +
 #         "org.cougaar.core.mts.ShowTrafficAspect," + 
 
 
-protocols = "org.cougaar.core.mts.RMILinkProtocol," +
-            "org.cougaar.core.mts.LoopbackLinkProtocol," +
+protocols = "org.cougaar.core.mts.LoopbackLinkProtocol," +
+            "org.cougaar.core.mts.RMILinkProtocol," +
             "org.cougaar.core.mts.email.OutgoingEmailLinkProtocol," +
             "org.cougaar.core.mts.email.IncomingEmailLinkProtocol"
 
