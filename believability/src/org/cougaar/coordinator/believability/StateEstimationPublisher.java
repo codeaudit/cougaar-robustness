@@ -47,17 +47,33 @@ public class StateEstimationPublisher extends Loggable {
      * @param BeliefState belief_state
      **/
     public void consumeBeliefState( BeliefState belief_state ) {
-     //*** FIXME Just pass it on for now
-     try {
-         logDebug( "StateEstimationPublisher: creating StateEstimation" );
-         StateEstimation se = 
-          new StateEstimation ( belief_state, _model_manager );
-         _plugin.publishAdd( se );
-         logDebug( "StateEstimationPublisher: published StateEstimation" );
-     }
-     catch ( BelievabilityException be ) {
-         System.out.println(" ***** StateEstimationPublisher -- fix !!!");
-     }
+
+
+        //*** FIXME: Ignore passed in belief sttae and just generates a
+        // random belief state for now to allow David to continue action
+        // selection testing until we get full belief update in place. 
+        //
+        try {
+            POMDPModelInterface pomdp_model = _model_manager.getPOMDPModel();
+            
+            BeliefState random_belief 
+                    = pomdp_model.getRandomBeliefState
+                    ( belief_state.getAssetType() );
+
+            random_belief.setDiagnosis( belief_state.getDiagnosis() );
+            random_belief.setAssetID( belief_state.getAssetID() );
+            random_belief.setTimestamp( belief_state.getTimestamp() );
+
+            logDebug( "Ramdom belief state: " + random_belief.toString() );
+            
+            StateEstimation se =
+                    new StateEstimation ( random_belief, _model_manager );
+            if ( forwardStateP() ) _plugin.publishAdd( se );
+            logDebug( "StateEstimationPublisher: published StateEstimation" );
+        }
+        catch ( BelievabilityException be ) {
+            System.out.println(" ***** StateEstimationPublisher -- fix !!!");
+        }
     }
 
     /**

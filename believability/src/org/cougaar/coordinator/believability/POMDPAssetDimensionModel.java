@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetDimensionModel.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-05-20 21:39:49 $
+ * $Revision: 1.2 $
+ * $Date: 2004-05-28 20:01:17 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -21,6 +21,8 @@
 
 package org.cougaar.coordinator.believability;
 
+import java.util.Random;
+
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.techspec.AssetType;
 
@@ -29,7 +31,7 @@ import org.cougaar.coordinator.techspec.AssetType;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.1 $Date: 2004-05-20 21:39:49 $
+ * @version $Revision: 1.2 $Date: 2004-05-28 20:01:17 $
  *
  */
 class POMDPAssetDimensionModel extends Model
@@ -164,6 +166,48 @@ class POMDPAssetDimensionModel extends Model
 
     } // method updateBeliefState
 
+    //************************************************************
+    /**
+     * Constructs a random belief state for this asset type.
+     *
+     */
+    BeliefStateDimension getRandomBeliefState( )
+            throws BelievabilityException
+    {
+        if ( _asset_type_model == null )
+            throw new BelievabilityException
+                    ( "POMDPAssetDimensionModel.getRandomBeliefState()",
+                      "Asset model is NULL" );
+        
+        logDebug( "\tCreating POMDP random belief for dimension: " 
+                  + _asset_type_model.getStateDimName( _dim_idx ) );
+
+        int num_vals = _asset_type_model.getNumStateDimValues( _dim_idx );
+        
+        if ( num_vals < 0 )
+            throw new BelievabilityException
+                    ( "POMDPAssetDimensionModel.getRandomBeliefState()",
+                      "Asset model returning zero values" );
+
+        double[] belief_prob = new double[num_vals];
+        
+        double total = 0.0;
+        for ( int idx = 0; idx < num_vals; idx++ )
+        {
+            belief_prob[idx] = _rand.nextDouble();
+            total += belief_prob[idx];
+        }
+
+        // Normalize
+        for ( int idx = 0; idx < num_vals; idx++ )
+            belief_prob[idx] /= total;
+        
+        return new BeliefStateDimension( _asset_type_model,
+                                         _dim_idx,
+                                         belief_prob );
+
+    } // method  getRandomBeliefState
+
     //------------------------------------------------------------
     // private interface
     //------------------------------------------------------------
@@ -174,5 +218,8 @@ class POMDPAssetDimensionModel extends Model
     private int _dim_idx;
 
     private BeliefStateDimension _initial_belief;
+
+    
+    private static Random _rand = new Random();
 
 } // class POMDPAssetDimensionModel

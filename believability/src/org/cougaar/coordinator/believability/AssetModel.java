@@ -28,9 +28,6 @@ package org.cougaar.coordinator.believability;
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.techspec.AssetType;
 
-import org.cougaar.util.log.Logging;
-import org.cougaar.util.log.Logger;
-
 import java.util.Enumeration;
 import java.util.Vector;
 
@@ -43,7 +40,7 @@ import java.util.Vector;
  *
  * @author Misty Nodine
  */
-public class AssetModel extends Object {
+public class AssetModel extends Loggable {
 
     //------------------------------------------------------------
     // public interface
@@ -69,9 +66,6 @@ public class AssetModel extends Object {
 	_model_manager = model_manager;
 	_se_publisher = se_publisher;
 
-	// Create a logger to send things to.
-	_logger = Logging.getLogger(this.getClass().getName());
-
 	POMDPModelInterface pmif = model_manager.getPOMDPModel();
 	
 	try {
@@ -84,7 +78,7 @@ public class AssetModel extends Object {
 				       se_publisher );
 	}
 	catch( BelievabilityException be ) {
-	    if ( _logger.isDebugEnabled() ) _logger.debug( be.getMessage() );
+	    logDebug( be.getMessage() );
 	}
     } // constructor AssetModel
 
@@ -151,7 +145,4 @@ public class AssetModel extends Object {
 
     // Length of diagnosis window, in milliseconds
     private long _max_diagnosis_latency = 0;
-
-    // Logger interface
-    private Logger _logger;
 } // class AssetModel

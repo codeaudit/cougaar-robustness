@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/Attic/POMDPModelManager.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-05-20 21:39:49 $
+ * $Revision: 1.2 $
+ * $Date: 2004-05-28 20:01:17 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -32,7 +32,7 @@ import org.cougaar.coordinator.techspec.AssetType;
  * manage and access them all. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.1 $Date: 2004-05-20 21:39:49 $
+ * @version $Revision: 1.2 $Date: 2004-05-28 20:01:17 $
  */
 public class POMDPModelManager 
         extends Loggable implements POMDPModelInterface
@@ -166,6 +166,34 @@ public class POMDPModelManager
                                               time );
 
     } // method updateBeliefState
+
+    //------------------------------------------------------------
+    // package interface
+    //------------------------------------------------------------
+
+    //************************************************************
+    /**
+     * Get a random belief state consistent with the asset type sent
+     * in.
+     *
+     * @param asset_type The type of the asset
+     * @return A new belief states set to random values, or null if
+     * something goes wrong.  
+     *
+     */
+    public BeliefState getRandomBeliefState( AssetType asset_type )
+            throws BelievabilityException
+    {
+        if ( asset_type == null )
+            throw new BelievabilityException
+                    ( "POMDPModelManager.getRandomBeliefState()",
+                      "NULL asset type passed in." );
+
+        POMDPAssetModel pomdp_model = getModel( asset_type );
+        
+        return pomdp_model.getRandomBeliefState();
+
+    } // method getRandomBeliefState
 
     //------------------------------------------------------------
     // protected interface

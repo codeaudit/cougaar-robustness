@@ -70,4 +70,13 @@ public interface POMDPModelInterface
                                           long time )
             throws BelievabilityException;
 
+    /**
+     * Get a belief state with arbitrary assigned probabilities.
+     *
+     * @param asset_type The type of the asset
+     *
+     */
+    public BeliefState getRandomBeliefState( AssetType asset_type )
+            throws BelievabilityException;
+
 } // class POMDPModelInterface

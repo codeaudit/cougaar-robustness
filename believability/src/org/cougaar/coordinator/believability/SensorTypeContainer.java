@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/Attic/SensorTypeContainer.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-05-20 21:39:49 $
+ * $Revision: 1.2 $
+ * $Date: 2004-05-28 20:01:17 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -28,7 +28,7 @@ import java.util.Hashtable;
  * models.  
  *
  * @author Tony Cassandra
- * @version $Revision: 1.1 $Date: 2004-05-20 21:39:49 $
+ * @version $Revision: 1.2 $Date: 2004-05-28 20:01:17 $
  * 
  *
  */

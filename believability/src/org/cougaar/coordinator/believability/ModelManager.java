@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/ModelManager.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-05-20 21:39:49 $
+ * $Revision: 1.2 $
+ * $Date: 2004-05-28 20:01:17 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -21,6 +21,8 @@
 
 package org.cougaar.coordinator.believability;
 
+import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
@@ -33,6 +35,8 @@ import org.cougaar.coordinator.techspec.AssetType;
 import org.cougaar.coordinator.techspec.DiagnosisProbability;
 import org.cougaar.coordinator.techspec.DiagnosisProbability.DiagnoseAs;
 import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
+import org.cougaar.coordinator.techspec.EventDescription;
+import org.cougaar.coordinator.techspec.ThreatDescription;
 import org.cougaar.coordinator.techspec.ThreatModelInterface;
 
 import org.cougaar.util.log.Logging;
@@ -44,10 +48,10 @@ import org.cougaar.util.log.Logger;
  * and provides information via the ModelManagerInterface. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.1 $Date: 2004-05-20 21:39:49 $
+ * @version $Revision: 1.2 $Date: 2004-05-28 20:01:17 $
  *
  */
-public class ModelManager 
+public class ModelManager extends Loggable
         implements ModelManagerInterface
 {
 
@@ -64,7 +68,7 @@ public class ModelManager
      */
     public ModelManager( )
     {
-        _logger = Logging.getLogger(this.getClass().getName());
+        super();
     }  // constructor ModelManager
 
     //************************************************************
@@ -83,8 +87,7 @@ public class ModelManager
                                          AssetStateDimension state_dim )
             throws BelievabilityException
     {
-         if ( _logger.isDebugEnabled() )
-            _logger.debug( "==== getAssetUtilities() ====" );
+        logDebug( "==== getAssetUtilities() ====" );
 
         AssetTypeModel at_model 
                 = _asset_type_container.get( asset_type.getName() );
@@ -170,8 +173,7 @@ public class ModelManager
             throws BelievabilityException
     {
 
-        if ( _logger.isDebugEnabled() )
-            _logger.debug( "==== getMaxSensorLatency() ====" );
+        logDebug( "==== getMaxSensorLatency() ====" );
 
         AssetTypeModel at_model 
                 = _asset_type_container.get( asset_type.getName() );
@@ -215,74 +217,52 @@ public class ModelManager
      */
     public void addSensorType( DiagnosisTechSpecInterface diag_ts )
     {
-        SensorTypeModel s_model;
+        logDebug( "Starting call to: addSensorType()" );
 
-        if ( _logger.isDebugEnabled() )
-            _logger.debug( "Starting call to: addSensorType()" );
-
+        // DO not make the assumption that the asset type model exists
+        // for this sensor.  Try to add and/or fetch the model first.
+        //
         AssetType asset_type = diag_ts.getAssetType();
         AssetTypeModel asset_type_model = addAssetType( asset_type );
 
-        if ( _logger.isDebugEnabled() )
-            _logger.debug( "==== Add Sensor Type ====" );
+        if ( asset_type_model == null )
+            return;
+
+        logDebug( "==== Add Sensor Type ====" );
         
         if ( diag_ts == null )
         {
-            _logger.error( "NULL found for DiagnosisTechSpecInterface.");
+            logError( "NULL found for DiagnosisTechSpecInterface.");
             return;
         }
 
-        // A few cases to be handled:
-        //
-        //   o Brand new (first time seen) sensor type
-        //   o Sensor type already exists, but is not valid
-        //   o Sensor type already exists and is valid
-        //
-        // We handle the two lattrer cases the same way.
-
-        s_model = _sensor_type_container.get( diag_ts.getName() );
+        SensorTypeModel s_model 
+                = _sensor_type_container.get( diag_ts.getName() );
         
-        if ( s_model == null )
+        if ( s_model != null )
         {
-            try
-            {
-                s_model = new SensorTypeModel( diag_ts,
-                                               asset_type_model );
+            logError( "Trying to add duplicate SensorTypeModel: "
+                      +  diag_ts.getName() );
+            return;
+        }
 
-                _sensor_type_container.add( s_model );
-                
-                if ( _logger.isDebugEnabled() )
-                    _logger.debug( "Added New SensorTypeModel:\n" 
-                                   + s_model.toString() );
-                
-            }
-            catch (BelievabilityException be)
-            {
-                _logger.error( "Cannot add SensorTypeModel: "
-                               + be.getMessage() );
-                return;
-            }
-        } // if this sensor type does not exist
-
-        else
+        try
         {
-            try
-            {
-                s_model.updateContents( diag_ts, asset_type_model );
+            s_model = new SensorTypeModel( diag_ts,
+                                           asset_type_model );
+            
+            _sensor_type_container.add( s_model );
+            
+            logDebug( "Added New SensorTypeModel:\n" 
+                      + s_model.toString() );
                 
-                if ( _logger.isDebugEnabled() )
-                    _logger.debug( "Updating invalid SensorTypeModel:\n"
-                                   + s_model.toString() );
-            }
-            catch (BelievabilityException be)
-            {
-                _logger.error( "Problem updating SensorTypeModel.");
-                return;
-            }
-
-        } // if model exists, but not valid
-
-        return;
+        }
+        catch (BelievabilityException be)
+        {
+            logError( "Cannot add SensorTypeModel "
+                      +  diag_ts.getName() + ": " + be.getMessage() );
+            return;
+        }
 
     } // method addSensorType
 
@@ -292,14 +272,55 @@ public class ModelManager
      *
      * @param threat_model Threat type to be added
      */
-    public void addThreatType( ThreatModelInterface threat_model )
+    public void addThreatType( ThreatModelInterface threat_ts )
     {
-        if ( _logger.isDebugEnabled() )
-            _logger.debug( "==== Add Threat Type ====" );
+        logDebug( "addThreatType() called" );
 
-        if ( _logger.isDebugEnabled() ) 
-            _logger.debug( "** NOT IMPLEMENTED ** addThreatType()" );
+        if ( threat_ts == null )
+        {
+            logError( "addThreatType() sent NULL ThreatModelInterface. " );
+            return;
+        }
+
+        createThreatTypeModel( threat_ts.getThreatDescription() );
+
     } // method addThreatModel
+
+    //************************************************************
+    /**
+     * Adding a new threat description to the local models
+     *
+     * @param threat_desc Threat description to be added
+     */
+    public void addThreatDescription( ThreatDescription threat_desc )
+    {
+        logDebug( "addThreatDescription() called" );
+
+        if ( threat_desc == null )
+        {
+            logError( "addThreatDescription() sent NULL ThreatDescription. " );
+            return;
+        }
+
+        if ( CREATE_THREAT_MODEL_FROM_DESCRIPTIONS )
+            createThreatTypeModel( threat_desc );
+
+    } // method addThreatDescription
+
+    //************************************************************
+    /**
+     * Adding a new event description to the local models
+     *
+     * @deprecated We can now get at the EventDesciptions directly 
+     * from the ThreatDescriptions, so this is no longer needed and
+     * actually does nothing. 
+     * @param event_desc Event description to be added
+     */
+    public void addEventDescription( EventDescription event_desc )
+    {
+        // Deprecated: do nothing now.
+
+    } // method addEventDescription
 
     //************************************************************
     /**
@@ -309,14 +330,9 @@ public class ModelManager
      */
     public void addActuatorType( ActionTechSpecInterface actuator_ts )
     {
-        if ( _logger.isDebugEnabled() )
-            _logger.debug( "==== Add Actuator Type ====" );
+        logDebug( "==== Add Actuator Type ====" );
 
-        // FIXME: We will not be using this in the short term, so this
-        // does nothing right now.
-        //
-        if ( _logger.isDebugEnabled() ) 
-            _logger.debug( "** NOT IMPLEMENTED ** addActuatorType()" );
+        logDebug( "** NOT IMPLEMENTED ** addActuatorType()" );
 
     } // method addActuatorType
 
@@ -332,11 +348,9 @@ public class ModelManager
      */ 
     public void updateSensorType( DiagnosisTechSpecInterface diag_ts )
     {
-        if ( _logger.isDebugEnabled() )
-            _logger.debug( "==== Update Sensor Type ====" );
+        logDebug( "==== Update Sensor Type ====" );
 
-        if ( _logger.isDebugEnabled() ) 
-            _logger.debug( "** NOT IMPLEMENTED ** updateSensorType()" );
+        logDebug( "** NOT IMPLEMENTED ** updateSensorType()" );
 
     } // method updateSensorType
 
@@ -347,12 +361,35 @@ public class ModelManager
      */
     public void updateThreatType( ThreatModelInterface threat_model )
     {
-        if ( _logger.isDebugEnabled() )
-            _logger.debug( "==== Update Threat Type ====" );
+        logDebug( "==== Update Threat Type ====" );
 
-        if ( _logger.isDebugEnabled() ) 
-            _logger.debug( "** NOT IMPLEMENTED ** updateThreatType()" );
+        logDebug( "** NOT IMPLEMENTED ** updateThreatType()" );
     } // method updateThreatType
+
+    //************************************************************
+    /**
+     * docs here...
+     */
+    public void updateThreatDescription( ThreatDescription threat_ts )
+    {
+        logDebug( "==== Update Threat Description ====" );
+
+        logDebug( "** NOT IMPLEMENTED ** updateThreatDescription()" );
+    } // method updateThreatDescription
+
+    //************************************************************
+    /**
+     * Updating a new event description in the local models
+     *
+     * @deprecated We can now get at the EventDesciptions directly 
+     * from the ThreatDescriptions, so this is no longer needed and
+     * actually does nothing. 
+     * @param event_desc Event description to be added
+     */
+    public void updateEventDescription( EventDescription event_desc )
+    {
+        // Deprecated.
+    } // method updateEventDescription
 
     //************************************************************
     /**
@@ -360,11 +397,9 @@ public class ModelManager
      */
     public void updateActuatorType( ActionTechSpecInterface actuator_ts )
     {
-        if ( _logger.isDebugEnabled() )
-            _logger.debug( "==== Update Actuator Type ====" );
+        logDebug( "==== Update Actuator Type ====" );
 
-        if ( _logger.isDebugEnabled() ) 
-            _logger.debug( "** NOT IMPLEMENTED ** updateActuatorType()" );
+        logDebug( "** NOT IMPLEMENTED ** updateActuatorType()" );
     } // method updateActuatorType
 
     //--------------------
@@ -381,28 +416,9 @@ public class ModelManager
      */
     public void removeSensorType( DiagnosisTechSpecInterface diag_ts )
     {
-        if ( _logger.isDebugEnabled() )
-            _logger.debug( "==== Remove Sensor Type ====" );
+        logDebug( "==== Remove Sensor Type ====" );
 
-        SensorTypeModel model 
-                = _sensor_type_container.get( diag_ts.getName() );
-        
-        if ( model == null )
-        {
-            _logger.error( "Cannot find SensorTypeModel.");
-            return;
-        }
-
-        try
-        {
-            _sensor_type_container.remove( model );
-     
-        }
-        catch (BelievabilityException be)
-        {
-            _logger.error( "Cannot remove SensorTypeModel.");
-            return;
-        }
+        logDebug( "** NOT IMPLEMENTED ** removeSensorType()" );
 
     } // method removeSensorType
 
@@ -413,12 +429,35 @@ public class ModelManager
      */
     public void removeThreatType( ThreatModelInterface threat_model )
     {
-        if ( _logger.isDebugEnabled() )
-            _logger.debug( "==== Remove Threat Type ====" );
+        logDebug( "==== Remove Threat Type ====" );
 
-        if ( _logger.isDebugEnabled() ) 
-            _logger.debug( "** NOT IMPLEMENTED ** removeThreatType()" );
+        logDebug( "** NOT IMPLEMENTED ** removeThreatType()" );
     } // method removeThreatModel
+
+    //************************************************************
+    /**
+     * docs here...
+     */
+    public void removeThreatDescription( ThreatDescription threat_ts )
+    {
+        logDebug( "==== Remove Threat Description ====" );
+
+        logDebug( "** NOT IMPLEMENTED ** removeThreatDescription()" );
+    } // method removeThreatDescription
+
+    //************************************************************
+    /**
+     * Removing a new event description from the local models
+     *
+     * @deprecated We can now get at the EventDesciptions directly 
+     * from the ThreatDescriptions, so this is no longer needed and
+     * actually does nothing. 
+     * @param event_desc Event description to be added
+     */
+    public void removeEventDescription( EventDescription event_desc )
+    {
+        // Deprecated
+    } // method removeEventDescription
 
     //************************************************************
     /**
@@ -426,11 +465,9 @@ public class ModelManager
      */
     public void removeActuatorType( ActionTechSpecInterface actuator_ts )
     {
-        if ( _logger.isDebugEnabled() )
-            _logger.debug( "==== Remove Actuator Type ====" );
+        logDebug( "==== Remove Actuator Type ====" );
 
-        if ( _logger.isDebugEnabled() ) 
-            _logger.debug( "** NOT IMPLEMENTED ** removeActuatorType()" );
+        logDebug( "** NOT IMPLEMENTED ** removeActuatorType()" );
     } // method removeActuatorType
 
     //************************************************************
@@ -465,81 +502,45 @@ public class ModelManager
     //************************************************************
     /**
      * Adds a new asset type to the local model.  If this asset type
-     * already exists, then nothing is done.  To change asset type
+     * already exists, then that model is returns.  To change asset type
      * information use the 'updateAssetType'
      *
      * @param asset_type The asset type to be added.
      */
     protected AssetTypeModel addAssetType( AssetType asset_type )
     {
-        AssetTypeModel at_model;
-
-        if ( _logger.isDebugEnabled() )
-            _logger.debug( "==== Add Asset Type ====" );
-
         if ( asset_type == null )
         {
-            _logger.error( "NULL found for asset_type.");
+            logError( "NULL found for asset_type.");
             return null;
         }
 
-        // A few cases to be handled:
-        //
-        //   o Brand new (first time seen) asset type
-        //   o Asset type already exists, but is not valid
-        //   o Asset type already exists and is valid
-
-        at_model = _asset_type_container.get( asset_type.getName() );
+        AssetTypeModel at_model 
+                = _asset_type_container.get( asset_type.getName() );
         
-        if ( at_model == null )
+        if ( at_model != null )
         {
-            try
-            {
-                at_model = new AssetTypeModel( asset_type );
-                
-                _asset_type_container.add( at_model );
+            logDebug( "Asset model found: " + at_model.getName() );
+            return at_model;
+        }
 
-                if ( _logger.isDebugEnabled() )
-                    _logger.debug( "Added New AssetTypeModel:\n"
-                                   + at_model.toString() );
+        logDebug( "==== Add Asset Type ====" );
+
+        try
+        {
+            at_model = new AssetTypeModel( asset_type );
+                
+            _asset_type_container.add( at_model );
+
+            logDebug( "Added New AssetTypeModel:\n"
+                      + at_model.toString() );
             
-            }
-            catch (BelievabilityException be)
-            {
-                _logger.error( "Cannot add AssetTypeModel.");
-                return null;
-            }
-
-        } // if this asset type does not exist
-
-        else if ( ! at_model.isValid())
+        }
+        catch (BelievabilityException be)
         {
-            if ( _logger.isDebugEnabled() )
-                _logger.debug( "Updating invalid AssetTypeModel" );
-
-            try
-            {
-                at_model.updateContents( asset_type );
-                
-                if ( _logger.isDebugEnabled() )
-                    _logger.debug( "Updated AssetTypeModel:\n"
-                                   + at_model.toString() );
-            }
-            catch (BelievabilityException be)
-            {
-                _logger.error( "Problem updating AssetTypeModel.");
-                return null;
-            }
-
-        } // if model exists, but not valid
-
-        // Else (third case) asset model exists and is valid so we can
-        // just return it.
-        else
-        {
-
-            if ( _logger.isDebugEnabled() )
-                _logger.debug( "Using existing valid AssetTypeModel");
+            logError( "Cannot add AssetTypeModel "
+                      +  asset_type.getName() + ": " + be.getMessage() );
+            return null;
         }
 
         return at_model;
@@ -554,11 +555,9 @@ public class ModelManager
      */ 
     protected void updateAssetType( AssetType asset_type )
     {
-        if ( _logger.isDebugEnabled() )
-            _logger.debug( "==== Update Asset Type ====" );
+        logDebug( "==== Update Asset Type ====" );
 
-        if ( _logger.isDebugEnabled() ) 
-            _logger.debug( "** NOT IMPLEMENTED ** updateAssetType()" );
+        logDebug( "** NOT IMPLEMENTED ** updateAssetType()" );
 
     } // method updateAssetType
 
@@ -572,28 +571,9 @@ public class ModelManager
      */
     protected void removeAssetType( AssetType asset_type )
     {
-        if ( _logger.isDebugEnabled() )
-            _logger.debug( "==== Remove Asset Type ====" );
+        logDebug( "==== Remove Asset Type ====" );
 
-        AssetTypeModel model 
-                = _asset_type_container.get( asset_type.getName() );
-        
-        if ( model == null )
-        {
-            _logger.error( "Cannot find AssetTypeModel.");
-            return;
-        }
-
-        try
-        {
-            _asset_type_container.remove( model );
-     
-        }
-        catch (BelievabilityException be)
-        {
-            _logger.error( "Cannot remove AssetTypeModel.");
-            return;
-        }
+        logDebug( "** NOT IMPLEMENTED ** removeAssetType()" );
 
     } // method removeAssetStateDimension
 
@@ -601,20 +581,77 @@ public class ModelManager
     // private interface
     //------------------------------------------------------------
 
-    // For logging debug, warning and error messages to the cougaar
-    // logging system
+    // This is a flag to control whether or not we should create the
+    // local threat models from threat descriptions.  If true, then
+    // the instant we see a matching threat and event desciption pair,
+    // we will create the local ThreatTypeModel.  If false, then we
+    // will only create the local model when a ThreatModelInterface
+    // object is added.
     //
-    Logger _logger;
+    private static final boolean CREATE_THREAT_MODEL_FROM_DESCRIPTIONS = true;
 
     // These are the local models this class manages.
     //
-    AssetTypeContainer _asset_type_container = new AssetTypeContainer();
-    SensorTypeContainer _sensor_type_container = new SensorTypeContainer();
-    ThreatTypeContainer _threat_type_container = new ThreatTypeContainer();
-
-    MAUWeightModel _mau_weight_model = new MAUWeightModel();
+    private AssetTypeContainer _asset_type_container = new AssetTypeContainer();
+    private SensorTypeContainer _sensor_type_container = new SensorTypeContainer();
+    private ThreatTypeContainer _threat_type_container = new ThreatTypeContainer();
+    private MAUWeightModel _mau_weight_model = new MAUWeightModel();
     
-    POMDPModelManager _pomdp_manager = new POMDPModelManager(this);
+    private POMDPModelManager _pomdp_manager = new POMDPModelManager(this);
+
+    //************************************************************
+    /**
+     * Creates a new threat model from a threat description, which
+     * must have a valid event description contined in it.
+     *
+     * @param threat_desc The threat description to add.
+     */
+    private void createThreatTypeModel( ThreatDescription threat_desc )
+    {
+        // Method implementation comments go here ...
+        logDebug( "Starting call to: createThreatTypeModel()" );
+
+        // Do not make the assumption that the asset type model
+        // exists.  First attempt to add, or simply retrieve the asset
+        // model.  
+        //
+        AssetType asset_type = threat_desc.getAffectedAssetType();
+        AssetTypeModel asset_type_model = addAssetType( asset_type );
+
+        if ( asset_type_model == null )
+            return;
+
+        logDebug( "==== Add Threat Type ====" );
+
+       ThreatTypeModel threat_model
+               = _threat_type_container.get( threat_desc.getName() );
+        
+        if ( threat_model != null )
+        {
+            logError( "Trying to add duplicate ThreatModel: " 
+                      + threat_desc.getName() );
+            return;
+        }
+
+        try
+        {
+            threat_model = new ThreatTypeModel( threat_desc, 
+                                                asset_type_model );
+            
+            _threat_type_container.add( threat_model );
+
+            logDebug( "Added New ThreatTypeModel:\n"
+                      + threat_model.toString() );
+            
+        }
+        catch (BelievabilityException be)
+        {
+            logError( "Cannot add ThreatTypeModel "
+                      + threat_desc.getName() + ": " + be.getMessage() );
+            return;
+        }
+
+    } // method createThreatTypeModel
 
     //------------------------------------------------------------
     // Test code section
@@ -626,7 +663,7 @@ public class ModelManager
     AssetType _test_asset_type;
     void testInitialBeliefStates()
     {
-        _logger.debug( "\n==== TESTING INITIAL BELIEF STATES ====\n" );
+        logDebug( "\n==== TESTING INITIAL BELIEF STATES ====\n" );
 
         try
         {
@@ -634,12 +671,12 @@ public class ModelManager
                     = _pomdp_manager.getInitialBeliefState
                     ( _test_asset_type );
             
-            _logger.debug( "Initial Belief:\n"
+            logDebug( "Initial Belief:\n"
                            + initial_belief.toString() );
         }
         catch (BelievabilityException be)
         {
-            _logger.error( "Initial Belief Exception: "
+            logError( "Initial Belief Exception: "
                            + be.getMessage() );
    
         }

@@ -28,9 +28,10 @@ package org.cougaar.coordinator.believability;
 import org.cougaar.coordinator.DiagnosesWrapper;
 import org.cougaar.coordinator.Diagnosis;
 
-import org.cougaar.coordinator.techspec.AssetTechSpecInterface;
 import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
 import org.cougaar.coordinator.techspec.DiagnosisTechSpecService;
+import org.cougaar.coordinator.techspec.EventDescription;
+import org.cougaar.coordinator.techspec.ThreatDescription;
 import org.cougaar.coordinator.techspec.ThreatModelInterface;
 
 import java.util.Collection;
@@ -108,7 +109,7 @@ public class BelievabilityPlugin
      * @return true always
      **/
     public boolean publishChange( Object o ) {
-     getBlackboardService().publishChange( o );
+	getBlackboardService().publishChange( o );
         return true;
     } // method publishChange
 
@@ -119,7 +120,7 @@ public class BelievabilityPlugin
      * @return true always
      **/
     public boolean publishRemove( Object o ) {
-     getBlackboardService().publishRemove( o );
+	getBlackboardService().publishRemove( o );
         return true;
     } // method publishRemove
     
@@ -154,7 +155,13 @@ public class BelievabilityPlugin
 	 ( new UnaryPredicate() 
 	     {
 		 public boolean execute(Object o) {
-		     if ( o instanceof ThreatModelInterface) {
+		     if ( o instanceof ThreatModelInterface ) {
+			 return true ;
+		     }
+		     if ( o instanceof ThreatDescription ) {
+			 return true ;
+		     }
+		     if ( o instanceof EventDescription ) {
 			 return true ;
 		     }
 		     return false ;
@@ -167,25 +174,15 @@ public class BelievabilityPlugin
 	 ( new UnaryPredicate() 
 	     {
 		 public boolean execute(Object o) {
-		     if ( o instanceof Diagnosis ) {
+		     if ( o instanceof DiagnosesWrapper ) {
 			 return true ;
+		     }
+		     if ( o instanceof Diagnosis ) {
+			 return false ;
 		     }
 		     return false ;
 		 }
 	     }) ;
-     
-     //     _diagnosisSub 
-     //	 = ( IncrementalSubscription ) 
-     //	 getBlackboardService().subscribe
-     //	 ( new UnaryPredicate() 
-     //	     {
-     //		 public boolean execute(Object o) {
-     //		     if ( o instanceof DiagnosesWrapper ) {
-     //			 return true ;
-     //		     }
-     //		     return false ;
-     //		 }
-     //	     }) ;
      
     } // method setupSubscriptions
 
@@ -211,7 +208,6 @@ public class BelievabilityPlugin
 
         handleThreatModel();
 	handleDiagnosis();
-	//        handleiagnosisWrapper();
 
     } // method execute
 
@@ -236,8 +232,13 @@ public class BelievabilityPlugin
         for ( Iterator iter = _threatModelSub.getAddedCollection().iterator();
               iter.hasNext() ; ) 
         {
-            threat_ts = (ThreatModelInterface) iter.next(); 
-	    _model_manager.addThreatType( threat_ts );
+	    Object o = iter.next();
+	    if ( o instanceof ThreatModelInterface )
+		_model_manager.addThreatType( (ThreatModelInterface) o );
+	    if ( o instanceof ThreatDescription )
+		_model_manager.addThreatDescription( (ThreatDescription) o );
+	    if ( o instanceof EventDescription )
+		_model_manager.addEventDescription( (EventDescription) o );
         } // for ADD ThreatModelInterface
 
 
@@ -245,16 +246,26 @@ public class BelievabilityPlugin
         for ( Iterator iter = _threatModelSub.getChangedCollection().iterator();  
            iter.hasNext() ; ) 
         {
-            threat_ts = (ThreatModelInterface) iter.next(); 
-	    _model_manager.updateThreatType( threat_ts );
+	    Object o = iter.next();
+	    if ( o instanceof ThreatModelInterface )
+		_model_manager.updateThreatType( (ThreatModelInterface) o );
+	    if ( o instanceof ThreatDescription )
+		_model_manager.updateThreatDescription( (ThreatDescription) o );
+	    if ( o instanceof EventDescription )
+		_model_manager.updateEventDescription( (EventDescription) o );
         } // for CHANGE ThreatModelInterface
         
         //------- REMOVE ThreatModelInterface
         for ( Iterator iter = _threatModelSub.getRemovedCollection().iterator();  
            iter.hasNext() ; ) 
         {
-            threat_ts = (ThreatModelInterface) iter.next(); 
-	    _model_manager.removeThreatType( threat_ts );
+	    Object o = iter.next();
+	    if ( o instanceof ThreatModelInterface )
+		_model_manager.removeThreatType( (ThreatModelInterface) o );
+	    if ( o instanceof ThreatDescription )
+		_model_manager.removeThreatDescription( (ThreatDescription) o );
+	    if ( o instanceof EventDescription )
+		_model_manager.removeEventDescription( (EventDescription) o );
         } // for REMOVE ThreatModelInterface
     } // method handleThreatModel
 
@@ -264,9 +275,8 @@ public class BelievabilityPlugin
      *
      * This routine checks and handle BB events for DiagnosesWrapper
      **/
-    private void handleDiagnosisWrapper()
+    private void handleDiagnosis()
     {
-        DiagnosesWrapper dw = null;
 	Diagnosis diag = null;
 
         // Diagnoses are published to the blackboard. Each sensor has
@@ -275,124 +285,60 @@ public class BelievabilityPlugin
 	// The Believability plugin receives a wrapped version of this
 	// object on the blackboard, when something changes.
 	
-	// ------- ADD DiagnosesWrapper
+	// ------- ADD DiagnosesWrapper or Diagnosis
 	// Update the belief state for each asset
 	for ( Iterator iter = _diagnosisSub.getAddedCollection().iterator();  
               iter.hasNext() ; ) {
-         if (logger.isDebugEnabled() ) logger.debug ("Diagnosis ADD");
+	    if (logger.isDebugEnabled() ) logger.debug ("Diagnosis ADD");
 
-         try {
-          dw = (DiagnosesWrapper) iter.next(); 
-	  diag = dw.getDiagnosis();
+	    try {
+		Object o = iter.next();
+		if ( o instanceof DiagnosesWrapper ) 
+		    diag = ((DiagnosesWrapper)o).getDiagnosis();
+		else diag = (Diagnosis) o;
+	     
+		// Check to see whether the defense controller is enabled at
+		// the moment
+		if ( _dc_enabled ) _diagnosis_consumer.consumeDiagnosis( diag );
+	    }
+	    catch ( BelievabilityException be ) {
+		logger.warn( "Problem processing added diagnosis "
+			     + be.getMessage() );
+	    }
+	} // iterator for ADD Diagnosis
 
-          // Check to see whether the defense controller is enabled at
-          // the moment
-          if ( _dc_enabled ) _diagnosis_consumer.consumeDiagnosis( diag );
-         }
-         catch ( BelievabilityException be ) {
-          logger.warn( "Problem processing added diagnosis "
-                 + be.getMessage() );
-         }
-     } // iterator for ADD DiagnosesWrapper
+	// ------- CHANGE DiagnosesWrapper or Diagnosis
+	// This indicates some new diagnosis information has been asserted.
+	for ( Iterator iter = _diagnosisSub.getChangedCollection().iterator();
+	      iter.hasNext() ; ) {
 
-     // ------- CHANGE DiagnosesWrapper
-     // DiagnosesWrapper objects have changed.
-     // This indicates some new diagnosis information has been asserted.
-     for ( Iterator iter = _diagnosisSub.getChangedCollection().iterator();
-           iter.hasNext() ; ) {
+	    if (logger.isDebugEnabled() ) logger.debug ("Diagnosis CHANGE");
 
-         if (logger.isDebugEnabled() ) logger.debug ("Diagnosis CHANGE");
-
-         try {
-          dw = (DiagnosesWrapper) iter.next(); 
-	  diag = dw.getDiagnosis();
-
-          // Check to see whether the defense controller is enabled at
-          // the moment
-          if ( _dc_enabled ) _diagnosis_consumer.consumeDiagnosis( diag );
-         }
-         catch ( BelievabilityException be ) {
-          logger.warn( "Problem processing updated diagnosis "
-                 + be.getMessage() );
-         }
-     } // iterator for CHANGE DiagnosesWrapper
+	    try {
+		Object o = iter.next();
+		if ( o instanceof DiagnosesWrapper ) 
+		    diag = ((DiagnosesWrapper)o).getDiagnosis();
+		else diag = (Diagnosis) o;
+	     
+		// Check to see whether the defense controller is enabled at
+		// the moment
+		if ( _dc_enabled ) _diagnosis_consumer.consumeDiagnosis( diag );
+	    }
+	    catch ( BelievabilityException be ) {
+		logger.warn( "Problem processing updated diagnosis "
+			     + be.getMessage() );
+	    }
+	} // iterator for CHANGE Diagnosis
         
-     // ----- REMOVE DiagnosesWrapper
-     // The DiagnosesWrapper has been removed successfully,
-     // we do nothing with this since it is controlled elsewhere, and
-     // we have already processed it.
-     for ( Iterator iter = _diagnosisSub.getRemovedCollection().iterator(); 
-	   iter.hasNext() ; ) {
-	 dw = (DiagnosesWrapper) iter.next(); 
-         // do absolutely nothing
-     } // for REMOVE DiagnosesWrapper
-	
-    } // method handleDiagnosisWrapper
-
-    /**
-     * Invoked via execute() in response to some Blackboard activity.
-     *
-     * This routine checks and handle BB events for Diagnosis
-     **/
-    private void handleDiagnosis()
-    {
-        Diagnosis diag = null;
-
-        // Diagnoses are published to the blackboard. Each sensor has
-	// a Diagnosis object on the blackboard that it either asserts
-	// periodically or asserts when some value changes (or both).
-	// The Believability plugin receives a wrapped version of this
-	// object on the blackboard, when something changes.
-	
-	// ------- ADD Diagnosis
-	// Update the belief state for each asset
-	for ( Iterator iter = _diagnosisSub.getAddedCollection().iterator();  
-              iter.hasNext() ; ) {
-         if (logger.isDebugEnabled() ) logger.debug ("Diagnosis ADD");
-
-         try {
-	     diag = (Diagnosis) iter.next(); 
-
-          // Check to see whether the defense controller is enabled at
-          // the moment
-          if ( _dc_enabled ) _diagnosis_consumer.consumeDiagnosis( diag );
-         }
-         catch ( BelievabilityException be ) {
-          logger.warn( "Problem processing added diagnosis "
-                 + be.getMessage() );
-         }
-     } // iterator for ADD Diagnosis
-
-     // ------- CHANGE Diagnosis
-     // Diagnosis objects have changed.
-     // This indicates some new diagnosis information has been asserted.
-     for ( Iterator iter = _diagnosisSub.getChangedCollection().iterator();
-           iter.hasNext() ; ) {
-
-         if (logger.isDebugEnabled() ) logger.debug ("Diagnosis CHANGE");
-
-         try {
-          diag = (Diagnosis) iter.next(); 
-
-          // Check to see whether the defense controller is enabled at
-          // the moment
-          if ( _dc_enabled ) _diagnosis_consumer.consumeDiagnosis( diag );
-         }
-         catch ( BelievabilityException be ) {
-          logger.warn( "Problem processing updated diagnosis "
-                 + be.getMessage() );
-         }
-     } // iterator for CHANGE Diagnosis
-        
-     // ----- REMOVE Diagnosis
-     // The Diagnosis has been removed successfully,
-     // we do nothing with this since it is controlled elsewhere, and
-     // we have already processed it.
-     for ( Iterator iter = _diagnosisSub.getRemovedCollection().iterator(); 
-	   iter.hasNext() ; ) {
-	 diag = (Diagnosis) iter.next(); 
-         // do absolutely nothing
-     } // for REMOVE Diagnosis
+	// ----- REMOVE DiagnosesWrapper or Diagnosis
+	// The DiagnosesWrapper has been removed successfully,
+	// we do nothing with this since it is controlled elsewhere, and
+	// we have already processed it.
+	for ( Iterator iter = _diagnosisSub.getRemovedCollection().iterator(); 
+	      iter.hasNext() ; ) {
+	    Object o = iter.next(); 
+	    // do absolutely nothing
+	} // for REMOVE DiagnosesWrapper
 	
     } // method handleDiagnosis
 

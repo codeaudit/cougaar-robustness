@@ -148,10 +148,6 @@ public class StateDimensionEstimation
 
     } // method toString
 
-    // FIXME: Added this just to make OBJS code happy, this issue need
-    // to be resolved. 
-    //
-    public Enumeration getStateNames() { return null; }
 
     /**
      * Convert this belief state to an array.

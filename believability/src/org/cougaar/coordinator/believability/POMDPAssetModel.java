@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/POMDPAssetModel.java,v $
- * $Revision: 1.1 $
- * $Date: 2004-05-20 21:39:49 $
+ * $Revision: 1.2 $
+ * $Date: 2004-05-28 20:01:17 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -30,7 +30,7 @@ import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
  * given asset type. 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.1 $Date: 2004-05-20 21:39:49 $
+ * @version $Revision: 1.2 $Date: 2004-05-28 20:01:17 $
  *
  */
 class POMDPAssetModel extends Model
@@ -279,7 +279,7 @@ class POMDPAssetModel extends Model
         // Next we need to find the state dimension that this diagnosis
         // is relevanmt to.
         DiagnosisTechSpecInterface diag_ts = diagnosis.getDiagnosisTechSpec();
-        String state_dim_name = diag_ts.getStateDimension();
+        String state_dim_name = diag_ts.getStateDimension().getStateName();
 
         // First, fetch the appropriate POMDP model for this dimension...
         POMDPAssetDimensionModel pomdp_model_dim
@@ -301,6 +301,34 @@ class POMDPAssetModel extends Model
         return next_belief;
 
     } // method updateBeliefState
+
+    //************************************************************
+    /**
+     * Get a random belief state consistent with the asset type of
+     * this model.  
+     *
+     * @return A new belief states set to random values, or null if
+     * something goes wrong.  
+     *
+     */
+    BeliefState getRandomBeliefState( )
+            throws BelievabilityException
+    {
+        BeliefState rand_belief = new BeliefState( _asset_type_model );
+
+        for ( int dim_idx = 0; 
+              dim_idx < _dimension_pomdp_model.length; 
+              dim_idx++ )
+        {
+            
+            rand_belief.addBeliefStateDimension
+                    ( _dimension_pomdp_model[dim_idx].getRandomBeliefState());
+
+        }  // for dim_idx
+
+        return rand_belief;
+
+    } // method getRandomBeliefState
 
     //------------------------------------------------------------
     // private interface

@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/SensorTypeModel.java,v $
- * $Revision: 1.2 $
- * $Date: 2004-05-20 21:39:49 $
+ * $Revision: 1.3 $
+ * $Date: 2004-05-28 20:01:17 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -37,7 +37,7 @@ import org.cougaar.core.util.UID;
  * needs concerning a SensorType (from the tech specs). 
  *
  * @author Tony Cassandra
- * @version $Revision: 1.2 $Date: 2004-05-20 21:39:49 $
+ * @version $Revision: 1.3 $Date: 2004-05-28 20:01:17 $
  *
  */
 class SensorTypeModel extends Model
@@ -66,8 +66,6 @@ class SensorTypeModel extends Model
                      AssetTypeModel asset_type_model )
             throws BelievabilityException
     {
-        _asset_type_model = asset_type_model;
-
         updateContents( diag_ts, asset_type_model );
         
         // If all goes well, add this sensory model to the asset type
@@ -84,7 +82,10 @@ class SensorTypeModel extends Model
      * Resets this objects internal values to be those form the given
      * sensor info.
      *
-     * @param asset_type The source of information for this model
+     * @param diag_ts The diagnosis tech spec from which we get sensor
+     * information 
+     * @param asset_type_model The asset type model for the asset that
+     * this sensor will be sensing.
      */
     void updateContents( DiagnosisTechSpecInterface diag_ts,
                          AssetTypeModel asset_type_model )
@@ -138,7 +139,7 @@ class SensorTypeModel extends Model
     {
         for ( int obs_idx = 0; obs_idx < _obs_names.length; obs_idx++ )
         {
-            if ( _obs_names[obs_idx].equals( obs_name ))
+            if ( _obs_names[obs_idx].equalsIgnoreCase( obs_name ))
                 return obs_idx;
         } // for dim_idx
 
@@ -169,17 +170,18 @@ class SensorTypeModel extends Model
     {
         StringBuffer buff = new StringBuffer();
 
-        buff.append( "\tSensor Type Name:" + _name + "\n" );
-        buff.append( "\tSensor UID:" + _uid  + "\n");
-        buff.append( "\tSensor Latency:" + _latency  + "\n");
-        buff.append( "\tState Dimension:" + _state_dim_name  + "\n");
+        buff.append( "\tSensor Type Name: " + _name + "\n" );
+        buff.append( "\tSensor UID: " + _uid  + "\n");
+        buff.append( "\tSensor Latency: " + _latency  + "\n");
+        buff.append( "\tAsset Type: " + _asset_type_model.getName()  + "\n");
+        buff.append( "\tState Dimension: " + _state_dim_name  + "\n");
 
         buff.append( "\tPossible values [" );
         for ( int obs_idx = 0; obs_idx <  _obs_names.length; obs_idx++ )
         {
             buff.append( " " + _obs_names[obs_idx] );
         }
-        buff.append( "\n" );
+        buff.append( " ]\n" );
 
         for ( int state_idx = 0; 
               state_idx < _asset_type_model.getNumStateDimValues
@@ -284,27 +286,29 @@ class SensorTypeModel extends Model
         setValidity( false );
 
         this._diag_ts = diag_ts;
+        this._asset_type_model = asset_type_model;
 
         _name = diag_ts.getName();
         _uid = diag_ts.getUID();
         _latency = diag_ts.getLatency();
-        _state_dim_name = diag_ts.getStateDimension();
+        _state_dim_name = diag_ts.getStateDimension().getStateName();
 
         if ( ! asset_type_model.isValidStateDimName( _state_dim_name ))
             throw new BelievabilityException
-                    ( "SensorTypeModel.setContents()",
-                      "Sensor state dimension doesn't match asset." );
+                    ( "SensorTypeModel.setContents(" + _name + ")",
+                      "Sensor state dimension doesn't match asset:"
+                      + _state_dim_name );
 
         Set obs_set = diag_ts.getPossibleValues();
 
         if ( obs_set == null )
             throw new BelievabilityException
-                    ( "SensorTypeModel.setContents()",
+                    ( "SensorTypeModel.setContents(" + _name + ")",
                       "NULL found when retrieving diagnosis name set." );
         
         if ( obs_set.size() == 0 )
             throw new BelievabilityException
-                    ( "SensorTypeModel.setContents()",
+                    ( "SensorTypeModel.setContents(" + _name + ")",
                       "Empty diagnosis name set." );
         
         _obs_names = new String[obs_set.size()];
@@ -326,18 +330,19 @@ class SensorTypeModel extends Model
 
          if ( diag_prob_list == null )
             throw new BelievabilityException
-                    ( "SensorTypeModel.setContents()",
+                    ( "SensorTypeModel.setContents(" + _name + ")",
                       "NULL found for diagnosis probabilities." );
         
         if ( diag_prob_list.size() == 0 )
             throw new BelievabilityException
-                    ( "SensorTypeModel.setContents()",
+                    ( "SensorTypeModel.setContents(" + _name + ")",
                       "Empty diagnosis probability vector." );
 
         if ( diag_prob_list.size() != num_state_values )
             throw new BelievabilityException
-                    ( "SensorTypeModel.setContents()",
-                      "Too few/many probabilities for state values." );
+                    ( "SensorTypeModel.setContents(" + _name + ")",
+                      "Too few/many probabilities for state values: "
+                      + diag_prob_list.size() + " != " +  num_state_values );
 
         Iterator diag_prob_iter = diag_prob_list.iterator();
         while( diag_prob_iter.hasNext() )
@@ -345,7 +350,7 @@ class SensorTypeModel extends Model
             DiagnosisProbability obs_prob
                     = (DiagnosisProbability) diag_prob_iter.next();
 
-            String actual_state = obs_prob.getActualState();
+            String actual_state = obs_prob.getActualState().getName();
 
             int state_idx
                     = asset_type_model.getStateDimValueIndex( _state_dim_name,
@@ -353,20 +358,23 @@ class SensorTypeModel extends Model
 
             if ( state_idx < 0 )
                 throw new BelievabilityException
-                        ( "SensorTypeModel.setContents()",
-                          "Bad asset state value found." );
+                        ( "SensorTypeModel.setContents(" + _name + ")",
+                          "Bad asset state value found: "
+                          + _state_dim_name + ":" + actual_state );
 
             Vector diag_as_list = obs_prob.getProbabilities();
 
             if ( diag_as_list == null )
                 throw new BelievabilityException
-                        ( "SensorTypeModel.setContents()",
-                          "NULL found for diagnosis probability vector." );
+                        ( "SensorTypeModel.setContents(" + _name + ")",
+                          "NULL found for diagnosis probability vector: "
+                          + _state_dim_name + ":" + actual_state );
             
             if ( diag_as_list.size() == 0 )
                 throw new BelievabilityException
-                        ( "SensorTypeModel.setContents()",
-                          "Empty diagnosis probability vector found." );
+                        ( "SensorTypeModel.setContents(" + _name + ")",
+                          "Empty diagnosis probability vector found: "
+                          + _state_dim_name + ":" + actual_state );
 
             double obs_prob_sum = 0.0;
 
@@ -375,14 +383,16 @@ class SensorTypeModel extends Model
             {
                 DiagnoseAs diag_as = (DiagnoseAs) diag_as_iter.next();
 
-                String obs_name = diag_as.getDiagnosisValue();
+                String obs_name = diag_as.getDiagnosisValue().getName();
 
                 int obs_idx = getObsNameIndex( obs_name );
 
                 if ( obs_idx < 0 )
                     throw new BelievabilityException
-                            ( "SensorTypeModel.setContents()",
-                              "Bad diagnosis value found: " + obs_name );
+                            ( "SensorTypeModel.setContents(" + _name + ")",
+                              "Bad diagnosis value found: " + obs_name 
+                              + " for " 
+                              + _state_dim_name + ":" + actual_state );
 
                 double prob = diag_as.getProbability();
 
@@ -394,9 +404,10 @@ class SensorTypeModel extends Model
 
             if ( ! Precision.isEqual( obs_prob_sum, 1.0 ))
                 throw new BelievabilityException
-                        ( "SensorTypeModel.setContents()",
+                        ( "SensorTypeModel.setContents(" + _name + ")",
                           "Observation probabilities do not sum to 1.0. (sum="
-                          + obs_prob_sum + ")" );
+                          + obs_prob_sum + ") for "
+                          + _state_dim_name + ":" + actual_state );
 
         } // while diag_prob_iter
 

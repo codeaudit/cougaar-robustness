@@ -32,17 +32,12 @@ import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.techspec.AssetType;
 import org.cougaar.coordinator.techspec.DiagnosisTechSpecInterface;
 
-import org.cougaar.util.log.Logging;
-import org.cougaar.util.log.Logger;
-
-
 /**
  * The class that contains a local copy of pertinent information
  * related to the diagosis.
  * @author Misty Nodine
  */
-public class BelievabilityDiagnosis
-{
+public class BelievabilityDiagnosis extends Loggable {
 
     /**
      * Constructor, from a diagnosis on the blackboard
@@ -155,9 +150,6 @@ public class BelievabilityDiagnosis
 
     // The type of the affected asset
     private AssetType _asset_type;
-
-    // Logger for error messages
-    private Logger _logger;
 
 } // class BelievabilityDiagnosis
 

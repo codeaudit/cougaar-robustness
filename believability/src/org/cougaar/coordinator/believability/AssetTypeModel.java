@@ -7,8 +7,8 @@
  *
  *<RCS_KEYWORD>
  * $Source: /opt/rep/cougaar/robustness/believability/src/org/cougaar/coordinator/believability/AssetTypeModel.java,v $
- * $Revision: 1.2 $
- * $Date: 2004-05-20 21:39:49 $
+ * $Revision: 1.3 $
+ * $Date: 2004-05-28 20:01:17 $
  *</RCS_KEYWORD>
  *
  *<COPYRIGHT>
@@ -42,7 +42,7 @@ import org.cougaar.coordinator.techspec.AssetType;
  * be notified is there is a change.
  *
  * @author Tony Cassandra
- * @version $Revision: 1.2 $Date: 2004-05-20 21:39:49 $
+ * @version $Revision: 1.3 $Date: 2004-05-28 20:01:17 $
  * 
  *
  */
@@ -99,6 +99,24 @@ class AssetTypeModel extends Model
                     setValidity( false );
 
             } // while sensor_iter
+
+            // Now we need to verify that any threat models we have
+            // monitoring this asset are still consistent with the
+            // update asset state contents.
+            Enumeration threat_enum = _threat_model_set.elements();
+            while ( threat_enum.hasMoreElements() )
+            {
+                ThreatTypeModel t_model
+                        = (ThreatTypeModel) threat_enum.nextElement();
+
+                // If any of the threats are not consistent, then this
+                // model is no longer valid.
+                //
+                if ( ! t_model.isStillConsistent())
+                    setValidity( false );
+
+            } // while sensor_iter
+
         } // try
 
         // Whether or not an exception is thrown, we want to notify
@@ -147,7 +165,7 @@ class AssetTypeModel extends Model
    
         for ( int dim_idx = 0; dim_idx < _state_dim_name.length; dim_idx++ )
         {
-            if ( _state_dim_name[dim_idx].equals( state_dim_name ))
+            if ( _state_dim_name[dim_idx].equalsIgnoreCase( state_dim_name ))
                 return _utilities[dim_idx];
         } // for dim_idx
 
@@ -156,6 +174,57 @@ class AssetTypeModel extends Model
                   "Unreckognized state dimension name." );
 
     } // method getUtilities
+
+    //************************************************************
+    /**
+     * Retrieve the AssetStateDimension object for the given named
+     * asset state dimension.  
+     *
+     * @param state_dim_name The state dimension name
+     * @return the matching state dimension or null if not found
+     */
+    AssetStateDimension getAssetStateDimension( String state_dim_name )
+    {
+        return _asset_type.findStateDimension( state_dim_name );
+    } // method getAssetStateDimension
+
+    //************************************************************
+    /**
+     * Retrieve the AssetState object for the given named
+     * asset state dimension and state value.  
+     *
+     * @param state_dim_name The state dimension name
+     * @param state_val_name The state value name
+     * @return the matching state or null if not found
+     */
+    AssetState getAssetState( String state_dim_name, String state_val_name )
+    {
+        AssetStateDimension state_dim
+                = getAssetStateDimension( state_dim_name );
+
+        if ( state_dim == null )
+            return null;
+
+        return state_dim.findAssetState( state_val_name );
+
+    } // method getAssetState
+
+    //************************************************************
+    /**
+     * Retrieve the AssetState object for the given named
+     * asset state dimension and state value.  
+     *
+     * @param state_dim_name The state dimension name
+     * @param state_val_idx The positional index of a state value
+     * @return the matching state or null if not found
+     */
+    AssetState getAssetState( String state_dim_name, int state_val_idx )
+    {
+        return getAssetState( state_dim_name,
+                              getStateDimValueName( state_dim_name,
+                                                    state_val_idx ) );
+
+    } // method getAssetState
 
     //************************************************************
     /**
@@ -174,7 +243,7 @@ class AssetTypeModel extends Model
         
         for ( int dim_idx = 0; dim_idx < _state_dim_name.length; dim_idx++ )
         {
-            if ( _state_dim_name[dim_idx].equals( state_dim_name ))
+            if ( _state_dim_name[dim_idx].equalsIgnoreCase( state_dim_name ))
                 return dim_idx;
         } // for dim_idx
 
@@ -279,7 +348,8 @@ class AssetTypeModel extends Model
               val_idx < _possible_states[dim_idx].length;
               val_idx++ )
         {
-            if ( _possible_states[dim_idx][val_idx].equals( default_state ))
+            if ( _possible_states[dim_idx][val_idx].equalsIgnoreCase
+                 ( default_state ))
                 return val_idx;
         } // for val_idx
            
@@ -343,7 +413,8 @@ class AssetTypeModel extends Model
               val_idx < _possible_states[dim_idx].length; 
               val_idx++ )
         {
-            if ( _possible_states[dim_idx][val_idx].equals( state_dim_value ))
+            if ( _possible_states[dim_idx][val_idx].equalsIgnoreCase
+                 ( state_dim_value ))
                 return val_idx;
         } // for dim_idx
 
@@ -363,7 +434,7 @@ class AssetTypeModel extends Model
      * invalid. 
      */
     boolean isValidStateDimValueName( String state_dim_name,
-                                             String state_dim_value ) 
+                                      String state_dim_value ) 
     {
         return getStateDimValueIndex( state_dim_name,
                                       state_dim_value ) >= 0;
@@ -417,7 +488,7 @@ class AssetTypeModel extends Model
      * if the state dimension of index is not found. 
      */
     String getStateDimValueName( String state_dim_name,
-                                        int val_idx ) 
+                                 int val_idx ) 
     {
         int dim_idx = getStateDimIndex( state_dim_name );
 
@@ -452,6 +523,29 @@ class AssetTypeModel extends Model
                                s_model );
 
         s_model.addObserver( this );
+        
+    } // method addSensorTypeModel
+
+    //************************************************************
+    /**
+     * Adds a threat type model to this asset. Keep track of them and
+     * also add this asset model as an observer of changes to the
+     * threat model. 
+     *
+     * @param t_model The threat type model to be added and monitored
+     */
+    void addThreatTypeModel( ThreatTypeModel t_model )
+            throws BelievabilityException
+    {
+        if ( t_model == null )
+            throw new BelievabilityException
+                    ( "AssetTypeModel.addThreatTypeModel()",
+                      "Cannot add null threat type model" );
+
+        _threat_model_set.put( t_model.getName(),
+                               t_model );
+
+        t_model.addObserver( this );
         
     } // method addSensorTypeModel
 
@@ -601,6 +695,11 @@ class AssetTypeModel extends Model
     // dimensions of this asset.  
     //
     private Hashtable _sensor_model_set = new Hashtable();
+
+    // Contains all the threat type models that affect the state
+    // dimensions of this asset.  
+    //
+    private Hashtable _threat_model_set = new Hashtable();
 
     //************************************************************
     /**

@@ -28,7 +28,6 @@ package org.cougaar.coordinator.believability;
 import org.cougaar.coordinator.techspec.AssetID;
 
 import org.cougaar.core.agent.service.alarm.Alarm;
-import org.cougaar.util.log.Logger;
 
 
 /**
@@ -36,7 +35,7 @@ import org.cougaar.util.log.Logger;
  * diagnosis periods.
  **/
 
-public class AssetAlarm implements Alarm {
+public class AssetAlarm extends Loggable implements Alarm {
         
     /**
      * Constructor. Starts the alarm
@@ -51,11 +50,8 @@ public class AssetAlarm implements Alarm {
 	_start_time = System.currentTimeMillis();
 	_expiration_time = _start_time + alarm_period;
 
-	if (_logger.isInfoEnabled())
-	    _logger.info("Asset alarm set for asset " 
-			 + _asset_id.toString() 
-			 + " for time "
-			 + _expiration_time );
+	logInfo( "Asset alarm set for asset " + _asset_id.toString() 
+		 + " for time " + _expiration_time );
     }
 
         
@@ -75,10 +71,7 @@ public class AssetAlarm implements Alarm {
 
 	if ( _expired ) return;
 	_expired = true;
-	if (_logger.isInfoEnabled()) 
-	    _logger.info("Alarm expired for: " 
-			 + _asset_id.toString());
-
+	logInfo( "Alarm expired for: " + _asset_id.toString());
 	_callback.timerCallback( _asset_id, true );
     }
 
@@ -107,9 +100,7 @@ public class AssetAlarm implements Alarm {
 
 	// Otherwise cancel everything.
 	_canceled = true;
-	if (_logger.isInfoEnabled()) 
-	    _logger.info("Alarm canceled for: " 
-			 + _asset_id.toString());
+	logInfo( "Alarm canceled for: " + _asset_id.toString() );
 
 	_callback.timerCallback( _asset_id, false );
 	return true;
@@ -133,8 +124,5 @@ public class AssetAlarm implements Alarm {
 
     // An indicator that the alarm has expired.
     private boolean _expired = false;
-
-    // Private logger for error messages
-    private Logger _logger;
 } // end class AssetAlarm
 

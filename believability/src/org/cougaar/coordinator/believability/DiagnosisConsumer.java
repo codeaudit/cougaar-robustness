@@ -27,16 +27,14 @@ package org.cougaar.coordinator.believability;
 
 import org.cougaar.coordinator.Diagnosis;
 
-import org.cougaar.util.log.Logging;
-import org.cougaar.util.log.Logger;
-
 import java.util.Hashtable;
 
 /**
  * Used to accept new diagnoses from the blackboard
  * and take the appropriate action.
  */
-public class DiagnosisConsumer implements DiagnosisConsumerInterface {
+public class DiagnosisConsumer extends Loggable
+    implements DiagnosisConsumerInterface {
 
     /**
      * Constructor
@@ -53,9 +51,6 @@ public class DiagnosisConsumer implements DiagnosisConsumerInterface {
 
 	// Set up the asset containter
 	_asset_container = new AssetContainer();
-
-	// Create a logger to send things to.
-	_logger = Logging.getLogger(this.getClass().getName());
     }
 
 
@@ -117,9 +112,6 @@ public class DiagnosisConsumer implements DiagnosisConsumerInterface {
 
     // The asset container for all of the asset models.
     private AssetContainer _asset_container;
-
-    // Logger interface
-    private Logger _logger;
 
 } // class DiagnosisConsumer
 
