@@ -505,10 +505,12 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
                     +" for the Coordinator");
             blackboard.publishChange(diag);
             AssetID assetID = new AssetID(rtc.getAsset(), AssetType.findAssetType("Node"));
-            NodeStatusRecord nsr = (NodeStatusRecord)nodeStatus.get(assetID);
-            nsr.setReconnectTime(0.0);
-            nsr.setDiagnosis(request);
-            blackboard.publishChange(nodeStatus);
+               /* now handling all NSR updates in propagatePermissions()
+               NodeStatusRecord nsr = (NodeStatusRecord)nodeStatus.get(assetID);
+               nsr.setReconnectTime(0.0);
+               nsr.setDiagnosis(request);
+               blackboard.publishChange(nodeStatus);
+               */
             DisconnectAction Action = disconnectActionIndex.getAction(assetID);
             Action.setValuesOffered(whichToOffer);
             if (logger.isDebugEnabled()) logger.debug(Action.dump());
