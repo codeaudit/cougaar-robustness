@@ -504,47 +504,60 @@ class MessageResender implements Runnable
   }
 */
   
-  // used to change AgentID and resequence messages queued for an agent that has since restarted   //102B
-  void handleMessagesToRestartedAgent(AgentID fromAgent, AgentID oldToAgent, AgentID newToAgent) 
-      throws org.cougaar.core.mts.NameLookupException, org.cougaar.core.mts.CommFailureException
-  {
-    if (debug()) 
-      log.debug("MessageResender: enter dequeueMessages("+fromAgent+","+oldToAgent+","+newToAgent+")");
-    synchronized(queue) {
-      MessageAddress originator = MessageAddress.getMessageAddress(fromAgent.getAgentName());
-      AgentState agentState = aspect.getAgentState(originator);
-      if (agentState != null) {
-        synchronized (agentState) {
-          Vector msgs = (Vector)agentState.getAttribute(MessageAckingAspect.SENT_BUT_NOT_ACKED_MSGS);
-          if (msgs != null) { 
-            // sort them by msg num
-            Collections.sort(msgs, MsgNumSort.getInstance());
-            Iterator i = msgs.iterator();
-            while (i.hasNext()) {
-              AttributedMessage msg = (AttributedMessage)i.next();
-              if (msg != null &&
-                  MessageUtils.getToAgent(msg).equals(oldToAgent) && 
-                  !aspect.hasMessageBeenAcked(msg)) {
-		// change AgentID and renumber messages
-                MessageUtils.setToAgent(msg, newToAgent);
-                if (messageNumberingService == null) {
-                  ServiceBroker sb = aspect.getServiceBroker();
-                  messageNumberingService = 
-                    (MessageNumberingService)sb.getService(this, MessageNumberingService.class, null);
-                }
-                messageNumberingService.renumberMessage(msg);
-                if (debug()) 
-                  log.debug("MessageResender: dequeued msg: " +MessageUtils.toString(msg));
-              }
-            }
-            offerNewResendDeadline(0);
-          }
-        }
-      }
+    // used to change AgentID and resequence messages queued for an agent that has since restarted   //102B
+    void handleMessagesToRestartedAgent(AgentID fromAgent, AgentID oldToAgent, AgentID newToAgent) 
+	throws org.cougaar.core.mts.NameLookupException, org.cougaar.core.mts.CommFailureException
+    {
+	if (debug()) 
+	    log.debug("MessageResender: enter dequeueMessages("+fromAgent+","+oldToAgent+","+newToAgent+")");
+	synchronized(queue) {
+	    MessageAddress originator = MessageAddress.getMessageAddress(fromAgent.getAgentName());
+	    AgentState agentState = aspect.getAgentState(originator);
+	    if (agentState != null) {
+		synchronized (agentState) {
+		    Vector msgs = (Vector)agentState.getAttribute(MessageAckingAspect.SENT_BUT_NOT_ACKED_MSGS);
+		    if (msgs != null) { 
+			// sort them by msg num
+			Collections.sort(msgs, MsgNumSort.getInstance());
+			Iterator i = msgs.iterator();
+			while (i.hasNext()) {
+			    AttributedMessage msg = (AttributedMessage)i.next();
+			    if (msg != null) {
+				AgentID toAgent = MessageUtils.getToAgent(msg);
+				if (toAgent != null) {
+				    if (toAgent.equals(oldToAgent)) {
+					if (!aspect.hasMessageBeenAcked(msg)) {
+					    // change AgentID and renumber messages
+					    MessageUtils.setToAgent(msg, newToAgent);
+					    if (messageNumberingService == null) {
+						ServiceBroker sb = aspect.getServiceBroker();
+						messageNumberingService = 
+						    (MessageNumberingService)sb.getService(this, MessageNumberingService.class, null);
+					    }
+					    messageNumberingService.renumberMessage(msg);
+					    if (debug())
+						log.debug("MessageResender: dequeued msg: " +MessageUtils.toString(msg));
+					}
+				    }
+				} else {
+				    if (log.isInfoEnabled())
+					log.info("MessageResender: null toAgent on msg " + 
+						  MessageUtils.toString(msg) + 
+                                                  " in AgentState for " + originator);
+				}
+			    } else {
+				if (log.isInfoEnabled())
+				    log.info("MessageResender: null msg in AgentState for " + originator);
+			    }
+			}
+			offerNewResendDeadline(0);
+		    }
+		}
+	    }
+	}
+	if (debug()) 
+	    log.debug("MessageResender: exit dequeueMessages("+fromAgent+","+oldToAgent+","+newToAgent+")");
     }
-    if (debug()) 
-      log.debug("MessageResender: exit dequeueMessages("+fromAgent+","+oldToAgent+","+newToAgent+")");
-  }
   
   //102B
   private static class MsgNumSort implements Comparator {
