@@ -8,7 +8,7 @@ $:.unshift File.join(CIP, 'csmart', 'config', 'lib')
 require 'cougaar/scripting'
 require 'ultralog/scripting'
 require 'robustness/uc1/aruc1_actions_and_states'
-require 'robustness/uc1/deconfliction'
+require 'robustness/uc9/deconfliction'
 
 HOSTS_FILE = Ultralog::OperatorUtils::HostManager.new.get_hosts_file
 
@@ -23,8 +23,11 @@ Cougaar.new_experiment("ARUC1_Kill_1_Node").run(1) {
   do_action "TransformSociety", false,
     "#{RULES}/isat",
     "#{RULES}/logistics",
-    "#{RULES}/robustness",
-    "#{RULES}/robustness/uc1",
+    "#{RULES}/robustness/manager.rule",
+    "#{RULES}/robustness/uc1/manager.rule",
+    "#{RULES}/robustness/uc1/aruc1.rule",
+    "#{RULES}/robustness/uc1/mic.rule",
+    "#{RULES}/robustness/uc9/deconfliction.rule",
     "#{RULES}/metrics/basic",
     "#{RULES}/metrics/sensors"
 
@@ -39,7 +42,7 @@ Cougaar.new_experiment("ARUC1_Kill_1_Node").run(1) {
 
   do_action "DeployCommunitiesFile"
 
-  do_action "DisableDeconfliction"
+  #do_action "DisableDeconfliction"
 
   do_action "ConnectOperatorService"
   do_action "ClearPersistenceAndLogs"
@@ -56,6 +59,15 @@ Cougaar.new_experiment("ARUC1_Kill_1_Node").run(1) {
     end
   end
 
+  #wait_for "Command", "ok"
+
+  wait_for  "GLSConnection", true
+  wait_for  "NextOPlanStage"
+  do_action "Sleep", 30.seconds
+  do_action "PublishNextStage"
+
+  do_action "UnleashDefenses"
+
   # After CommunityReady event is received wait for persistence
   wait_for "CommunitiesReady", ["1AD-REAR-COMM"]
   do_action "Sleep", 5.minutes
@@ -66,13 +78,6 @@ Cougaar.new_experiment("ARUC1_Kill_1_Node").run(1) {
   # Wait for agent restart to complete
   wait_for "CommunitiesReady", ["1AD-REAR-COMM"]
   do_action "Sleep", 10.minutes
-
-  #wait_for "Command", "ok"
-
-  wait_for  "GLSConnection", true
-  wait_for  "NextOPlanStage"
-  do_action "Sleep", 30.seconds
-  do_action "PublishNextStage"
 
   wait_for  "SocietyQuiesced"  do
     wait_for  "Command", "shutdown"

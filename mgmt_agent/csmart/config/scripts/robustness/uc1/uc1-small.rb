@@ -8,7 +8,7 @@ $:.unshift File.join(CIP, 'csmart', 'config', 'lib')
 require 'cougaar/scripting'
 require 'ultralog/scripting'
 require 'robustness/uc1/aruc1_actions_and_states'
-require 'robustness/uc1/deconfliction'
+require 'robustness/uc9/deconfliction'
 
 HOSTS_FILE = Ultralog::OperatorUtils::HostManager.new.get_hosts_file
 
@@ -23,8 +23,11 @@ Cougaar.new_experiment("ARUC1_Complete").run(1) {
   do_action "TransformSociety", false,
     "#{RULES}/isat",
     "#{RULES}/logistics",
-    "#{RULES}/robustness",
-    "#{RULES}/robustness/uc1",
+    "#{RULES}/robustness/manager.rule",
+    "#{RULES}/robustness/uc1/manager.rule",
+    "#{RULES}/robustness/uc1/aruc1.rule",
+    "#{RULES}/robustness/uc1/mic.rule",
+    "#{RULES}/robustness/uc9/deconfliction.rule",
     "#{RULES}/metrics/basic",
     "#{RULES}/metrics/sensors"
 
@@ -39,7 +42,7 @@ Cougaar.new_experiment("ARUC1_Complete").run(1) {
 
   do_action "DeployCommunitiesFile"
 
-  do_action "DisableDeconfliction"
+  #do_action "DisableDeconfliction"
 
   do_action "ConnectOperatorService"
   do_action "ClearPersistenceAndLogs"
@@ -56,46 +59,7 @@ Cougaar.new_experiment("ARUC1_Complete").run(1) {
     end
   end
 
-  # After CommunityReady event is received wait for persistence
-  wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
-  do_action "Sleep", 5.minutes
-
-  # Kill node that does not contain robustness manager
-  do_action "SaveHostOfNode", "1AD-SMALL-COMM", "TRANS-NODE"
-  do_action "KillNodes", "TRANS-NODE"
-
-  # Wait for restarts to complete
-  wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
-
-  # Add an empty node to community
-  do_action "AddNode", "NewNode1", "1AD-SMALL-COMM"
-  do_action "Sleep", 3.minutes
-
-  # Kill node that contains robustness manager
-  do_action "SaveHostOfNode", "1AD-SMALL-COMM", "FWD-NODE"
-  do_action "KillNodes", "FWD-NODE"
-
-  # Wait for restarts to complete
-  wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
-
-  # Add another empty node to community
-  do_action "AddNode", "NewNode2", "1AD-SMALL-COMM"
-  do_action "Sleep", 5.minutes
-
-  # Kill last of original nodes
-  do_action "SaveHostOfNode", "1AD-SMALL-COMM", "REAR-NODE"
-  do_action "KillNodes", "REAR-NODE"
-
-  # Wait for restarts to complete
-  wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
-
-  # Add another empty node to community
-  do_action "AddNode", "NewNode3", "1AD-SMALL-COMM"
-  do_action "Sleep", 5.minutes
-
-  # Load balance community
-  do_action "LoadBalancer", "1AD-SMALL-COMM"
-  wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
+  do_action "UnleashDefenses"
 
   #wait_for "Command", "ok"
 
@@ -103,6 +67,47 @@ Cougaar.new_experiment("ARUC1_Complete").run(1) {
   wait_for  "NextOPlanStage"
   do_action "Sleep", 30.seconds
   do_action "PublishNextStage"
+
+  # After CommunityReady event is received wait for persistence
+  wait_for "CommunitiesReady", ["SMALL-COMM"]
+  do_action "Sleep", 5.minutes
+
+  # Kill node that does not contain robustness manager
+  do_action "SaveHostOfNode", "SMALL-COMM", "TRANS-NODE"
+  do_action "KillNodes", "TRANS-NODE"
+
+  # Wait for restarts to complete
+  wait_for "CommunitiesReady", ["SMALL-COMM"]
+
+  # Add an empty node to community
+  do_action "AddNode", "NewNode1", "SMALL-COMM"
+  do_action "Sleep", 3.minutes
+
+  # Kill node that contains robustness manager
+  do_action "SaveHostOfNode", "SMALL-COMM", "FWD-NODE"
+  do_action "KillNodes", "FWD-NODE"
+
+  # Wait for restarts to complete
+  wait_for "CommunitiesReady", ["SMALL-COMM"]
+
+  # Add another empty node to community
+  do_action "AddNode", "NewNode2", "SMALL-COMM"
+  do_action "Sleep", 5.minutes
+
+  # Kill last of original nodes
+  do_action "SaveHostOfNode", "SMALL-COMM", "REAR-NODE"
+  do_action "KillNodes", "REAR-NODE"
+
+  # Wait for restarts to complete
+  wait_for "CommunitiesReady", ["SMALL-COMM"]
+
+  # Add another empty node to community
+  do_action "AddNode", "NewNode3", "SMALL-COMM"
+  do_action "Sleep", 5.minutes
+
+  # Load balance community
+  do_action "LoadBalancer", "SMALL-COMM"
+  wait_for "CommunitiesReady", ["SMALL-COMM"]
 
   wait_for  "SocietyQuiesced"  do
     wait_for  "Command", "shutdown"

@@ -9,8 +9,8 @@ require 'cougaar/scripting'
 require 'ultralog/scripting'
 require 'robustness/uc2/msglog'
 require 'robustness/uc1/aruc1_actions_and_states'
-require 'robustness/uc1/deconfliction'
 require 'robustness/uc7/disconnection'
+require 'robustness/uc9/deconfliction'
 
 HOSTS_FILE = Ultralog::OperatorUtils::HostManager.new.get_hosts_file
 
@@ -25,8 +25,11 @@ Cougaar.new_experiment("ARUC1_Planned_Disconnect").run(1) {
   do_action "TransformSociety", false,
     "#{RULES}/isat",
     "#{RULES}/logistics",
-    "#{RULES}/robustness",
-    "#{RULES}/robustness/uc1",
+    "#{RULES}/robustness/manager.rule",
+    "#{RULES}/robustness/uc1/manager.rule",
+    "#{RULES}/robustness/uc1/aruc1.rule",
+    "#{RULES}/robustness/uc1/mic.rule",
+    "#{RULES}/robustness/uc9/deconfliction.rule",
     "#{RULES}/metrics/basic",
     "#{RULES}/metrics/sensors",
     "#{RULES}/robustness/uc9/deconfliction.rule",
@@ -65,6 +68,8 @@ Cougaar.new_experiment("ARUC1_Planned_Disconnect").run(1) {
   wait_for  "NextOPlanStage"
   do_action "Sleep", 30.seconds
   do_action "PublishNextStage"
+
+  do_action "UnleashDefenses"
 
 # Deconfliction start
   do_action "Sleep", 30.seconds

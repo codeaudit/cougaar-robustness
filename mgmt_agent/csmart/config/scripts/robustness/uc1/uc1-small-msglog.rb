@@ -8,7 +8,7 @@ $:.unshift File.join(CIP, 'csmart', 'config', 'lib')
 require 'cougaar/scripting'
 require 'ultralog/scripting'
 require 'robustness/uc1/aruc1_actions_and_states'
-require 'robustness/uc1/deconfliction'
+require 'robustness/uc9/deconfliction'
 
 HOSTS_FILE = Ultralog::OperatorUtils::HostManager.new.get_hosts_file
 
@@ -23,8 +23,11 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
   do_action "TransformSociety", false,
     "#{RULES}/isat",
     "#{RULES}/logistics",
-    "#{RULES}/robustness",
-    "#{RULES}/robustness/uc1",
+    "#{RULES}/robustness/manager.rule",
+    "#{RULES}/robustness/uc1/manager.rule",
+    "#{RULES}/robustness/uc1/aruc1.rule",
+    "#{RULES}/robustness/uc1/mic.rule",
+    "#{RULES}/robustness/uc9/deconfliction.rule",
     "#{RULES}/metrics/basic",
     "#{RULES}/metrics/sensors"
 
@@ -39,7 +42,7 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
 
   do_action "DeployCommunitiesFile"
 
-  do_action "DisableDeconfliction"
+  #do_action "DisableDeconfliction"
 
   do_action "ConnectOperatorService"
   do_action "ClearPersistenceAndLogs"
@@ -56,13 +59,20 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
     end
   end
 
+  wait_for  "GLSConnection", true
+  wait_for  "NextOPlanStage"
+  do_action "Sleep", 30.seconds
+  do_action "PublishNextStage"
+
+  do_action "UnleashDefenses"
+
   # After CommunityReady event is received wait for persistence
-  wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
+  wait_for "CommunitiesReady", ["SMALL-COMM"]
   do_action "Sleep", 1.minutes
 
   do_action "KillAgents", "1-35-ARBN", "GlobalAir" # should restart immediatly
   do_action "Sleep", 2.minutes
-  wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
+  wait_for "CommunitiesReady", ["SMALL-COMM"]
 
   do_action "StartPlannedDisconnect", "TRANS-NODE", "500"
   do_action "Sleep", 1.minutes
@@ -71,12 +81,7 @@ Cougaar.new_experiment("UC1_Small_1AD_Tests").run(1) {
   do_action "Sleep", 4.minutes
 
   # Wait for restarts to complete
-  wait_for "CommunitiesReady", ["1AD-SMALL-COMM"]
-
-  wait_for  "GLSConnection", true
-  wait_for  "NextOPlanStage"
-  do_action "Sleep", 30.seconds
-  do_action "PublishNextStage"
+  wait_for "CommunitiesReady", ["SMALL-COMM"]
 
   wait_for  "SocietyQuiesced"  do
     wait_for  "Command", "shutdown"
