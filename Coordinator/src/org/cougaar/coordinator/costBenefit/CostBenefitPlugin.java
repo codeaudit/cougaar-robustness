@@ -1,6 +1,6 @@
 package org.cougaar.coordinator.costBenefit;
 
-/*  
+/*
  * CostBenefitPlugin.java
  *
  * Created on July 8, 2003, 4:09 PM
@@ -8,11 +8,11 @@ package org.cougaar.coordinator.costBenefit;
  *  Copyright 2003 Object Services and Consulting, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
  *  and the Defense Logistics Agency (DLA).
- * 
+ *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
- * 
+ *
  *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
  *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
  *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
@@ -62,68 +62,76 @@ import java.util.Set;
  */
 public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPersistable {
 
-//    private ActionTechSpecService ActionTechSpecService;    
-    private IncrementalSubscription stateEstimationSubscription;    
+//    private ActionTechSpecService ActionTechSpecService;
+    private IncrementalSubscription stateEstimationSubscription;
 //    private IncrementalSubscription threatModelSubscription;
     private IncrementalSubscription knobSubscription;
     private IncrementalSubscription diagnosesWrapperSubscription;
 
-    
+
     private Hashtable actions;
-    
+
     public static final String CALC_METHOD = "SIMPLE";
     public CostBenefitKnob knob;
-    
-    /** 
-      * Creates a new instance of CostBenefitPlugin 
+
+    /**
+      * Creates a new instance of CostBenefitPlugin
       */
     public CostBenefitPlugin() {
         super();
-        
+
     }
-         
+
 
     /**
      * Called from outside. Should contain plugin initialization code.
      */
     public void load() {
-        super.load();        
-        actions = new Hashtable(10);        
+        super.load();
+        actions = new Hashtable(10);
         knob = new CostBenefitKnob();
     }
-    
+
 
 
     protected void execute() {
-        
+
         Iterator iter;
 
         // If the control Knob has been changed (by the PolicyPlugin), grab the new settings for use in the CB computations
         iter = knobSubscription.getChangedCollection().iterator();
-        if (iter.hasNext()) 
-        {        
+        if (iter.hasNext())
+        {
             knob = (CostBenefitKnob) iter.next();
         }
-        
+
         //Handle the addition of new StateEstimations
-        iter = stateEstimationSubscription.getAddedCollection().iterator(); 
-        while(iter.hasNext()) 
+        iter = stateEstimationSubscription.getAddedCollection().iterator();
+        while(iter.hasNext())
         {
             StateEstimation se = (StateEstimation)iter.next();
             if (logger.isInfoEnabled()) logger.info(se.toString());
 
+/*  removed 9/22/04 dlw
             //  this was the old way of doing thngs - it caused Selction to see changes that were part of processing an old situation rather than new information
             // Clean up the old SE & CBE if they exist
+
             CostBenefitEvaluation old_cbe = findCostBenefitEvaluation(se.getAssetID());
             if (old_cbe != null) {
                 StateEstimation old_se = old_cbe.getStateEstimation();
                 publishRemove(old_se);
                 publishRemove(old_cbe);
                 }
-            CostBenefitEvaluation cbe = createCostBenefitEvaluation(se, knob);
-            if (logger.isInfoEnabled()) logger.info("CostBenefitEvaluation created: "+cbe.toString());
-            publishAdd(cbe);
-            
+*/
+			// If there is an existing CBE, ignore this SE, because otherwise we might oveerrun the selection process
+            CostBenefitEvaluation old_cbe = findCostBenefitEvaluation(se.getAssetID());
+            if (old_cbe == null) {
+            	CostBenefitEvaluation cbe = createCostBenefitEvaluation(se, knob);
+            	if (logger.isInfoEnabled()) logger.info("CostBenefitEvaluation created: "+cbe.toString());
+            	publishAdd(cbe);
+			}
+			else if (logger.isInfoEnabled()) logger.info("Discarding SE for: " + se.getAssetID() + " still processng last one.");
+
 
 /*
             // ignore new SE's if still processing an old one
@@ -140,14 +148,14 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
              //   publishRemove(se);
             }
 */
-  
-        }           
+
+        }
     }
-    
-    /** 
+
+    /**
       * Sets up local subscriptions - in this case for the control Knob containing the default settings
       */
-    protected void setupSubscriptions() { 
+    protected void setupSubscriptions() {
         super.setupSubscriptions();
 
         diagnosesWrapperSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe( new UnaryPredicate() {
@@ -159,18 +167,18 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
             }
         }) ;
 
-        stateEstimationSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(StateEstimation.pred);    
+        stateEstimationSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(StateEstimation.pred);
         // threatModelSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(ThreatModel.pred);
         knobSubscription = ( IncrementalSubscription ) getBlackboardService().subscribe(CostBenefitKnob.pred);
         publishAdd(knob);
     }
-    
+
 
     private CostBenefitEvaluation createCostBenefitEvaluation(StateEstimation se, CostBenefitKnob knob) {
 
         AssetID assetID = se.getAssetID();
         if (logger.isDebugEnabled()) logger.debug("Looking for actions for "+assetID);
-        CostBenefitEvaluation cbe = 
+        CostBenefitEvaluation cbe =
                 new CostBenefitEvaluation(assetID, knob.getHorizon(), se);
 
         Collection actions = findActionCollection(assetID);
@@ -188,7 +196,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
             Action thisAction = thisActionWrapper.getAction();
 
             try {
-                //call tech spec service & get action tech spec  
+                //call tech spec service & get action tech spec
                 ActionTechSpecInterface atsi = (ActionTechSpecInterface) actionTechSpecService.getActionTechSpec(thisAction.getClass().getName());
                 if (atsi == null) {
                     throw (new TechSpecNotFoundException( "Cannot find Action Tech Spec for "+ thisAction.getClass().getName() ));
@@ -198,7 +206,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                     AssetStateDimension asd = atsi.getStateDimension();
                     if (logger.isDebugEnabled()) logger.debug("This CORRECTIVE Action: "+thisAction+":"+atsi+":"+asd);
 
-                    try { 
+                    try {
                         // Get the StateDimensionEstimation for the dimension the Action applies to - Throws an exception if SDE not found
                         StateDimensionEstimation currentEstimatedStateDimension = se.getStateDimensionEstimation(asd);
                         //if (logger.isDebugEnabled()) logger.debug("Current ESD: "+((currentEstimatedStateDimension==null)?"null":"cesd="+currentEstimatedStateDimension.toString()));
@@ -214,12 +222,12 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                         // Get the TechSpec data for all the Variants
                         Collection variantDescriptions = atsi.getActions();
                         // iterate thru all offered Variants of this Action
-                        Iterator variantIter = variantDescriptions.iterator();                    
+                        Iterator variantIter = variantDescriptions.iterator();
                         while (variantIter.hasNext()) {
                             // Get TechSpec for this Variant
                             ActionDescription thisVariantDescription = (ActionDescription) variantIter.next();
                             // Add an entry to the current Action containing the information about this Variant
-                            thisActionEvaluation.addVariantEvaluation(createCorrectiveVariantEvaluation(assetID, asd, currentEstimatedStateDimension, thisVariantDescription, knob)); 
+                            thisActionEvaluation.addVariantEvaluation(createCorrectiveVariantEvaluation(assetID, asd, currentEstimatedStateDimension, thisVariantDescription, knob));
                         }
                     }
                     catch (BelievabilityException e) {
@@ -233,7 +241,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                     AssetStateDimension compensatedStateDimension = diagnosisTechSpecService.getDiagnosisTechSpec("org.cougaar.mts.std.AllLinksStatusDiagnosis").getStateDimension();
                     if (logger.isDebugEnabled()) logger.debug("This COMPENSATORY Action: "+thisAction+":"+atsi+":"+actionStateDimension+":"+baseStateDimension+":"+compensatedStateDimension);
 
-                    try { 
+                    try {
                         // Get the StateDimensionEstimation for the base dimension the Action applies to - Throws an exception if SDE not found
                         StateDimensionEstimation currentEstimatedBaseStateDimension = se.getStateDimensionEstimation(baseStateDimension);
                         // create the Action container that will hold the evaluations of all offered Variants
@@ -244,18 +252,18 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                          * Selection will down-select to only the offered variants
                          * We compute for all variants because the set of offered variants may change during the process of addressing a problem
                          */
-                         
+
                         double benefitOfStayingTheSame;
                         if (thisAction.getValue() != null) { // Compute the benefit of what we are doing NOW, so we an compute the differential benefit of doing soemthing different
                             ActionDescription currentVariant = atsi.getActionDescriptionForValue(thisAction, thisAction.getValue().getAction());
                             if (logger.isDebugEnabled()) logger.debug("currentVariant: " + currentVariant.toString());
                             benefitOfStayingTheSame = createCompensatoryVariantEvaluation
-                                                                   (currentVariant, 
-                                                                    baseStateDimension, 
-                                                                    currentEstimatedBaseStateDimension,  
+                                                                   (currentVariant,
+                                                                    baseStateDimension,
+                                                                    currentEstimatedBaseStateDimension,
                                                                     compensatedStateDimension,
                                                                     0.0,
-                                                                    knob).getPredictedBenefit(); 
+                                                                    knob).getPredictedBenefit();
                         }
                         else { // nothing has been started yet (initialization)
                             benefitOfStayingTheSame = 0.0;
@@ -264,19 +272,19 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                         // Get the TechSpec data for all the Variants
                         Collection variantDescriptions = atsi.getActions();
                         // iterate thru all offered Variants of this Action
-                        Iterator variantIter = variantDescriptions.iterator();                    
+                        Iterator variantIter = variantDescriptions.iterator();
                         while (variantIter.hasNext()) {
                             // Get TechSpec for this Variant
                             ActionDescription thisVariantDescription = (ActionDescription) variantIter.next();
                             // Add an entry to the current Action containing the information about this Variant
                             thisActionEvaluation.addVariantEvaluation(createCompensatoryVariantEvaluation
-                                       (thisVariantDescription, 
-                                        baseStateDimension, 
-                                        currentEstimatedBaseStateDimension,  
+                                       (thisVariantDescription,
+                                        baseStateDimension,
+                                        currentEstimatedBaseStateDimension,
                                         compensatedStateDimension,
                                         benefitOfStayingTheSame,
                                         knob)
-                            ); 
+                            );
                         }
                     }
                     catch (BelievabilityException e) {
@@ -318,9 +326,9 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
     private double computeStateBenefit(AssetState state, CostBenefitKnob knob) {
         if (state == null) return 0.0; // no such state - should only be for Intermediate state
-        double stateBenefit = 
-                knob.getCompletenessWeight()*state.getRelativeMauCompleteness() 
-              + knob.getSecurityWeight()*state.getRelativeMauSecurity() 
+        double stateBenefit =
+                knob.getCompletenessWeight()*state.getRelativeMauCompleteness()
+              + knob.getSecurityWeight()*state.getRelativeMauSecurity()
               + knob.getTimelinessWeight()*1.0;  // FIX - need a way to determine MauTimeliness (the 1.0 factor in the preceeding)
         if (logger.isDetailEnabled()) logger.detail("Benefit of state: " + state.toString() + " is " + stateBenefit);
         return stateBenefit;
@@ -376,7 +384,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                         }
                     if (logger.isDebugEnabled()) logger.debug("**** Cumlative Benefit: " + predictedBenefit);
                     maxTransitionTime = Math.max(maxTransitionTime, transitionTime);
-                    
+
                     }
                }
             catch (BelievabilityException e) {
@@ -390,12 +398,12 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
     }
 
     private VariantEvaluation createCompensatoryVariantEvaluation(ActionDescription thisVariantDescription,
-                                                                  AssetStateDimension baseStateDimension, 
-                                                                  StateDimensionEstimation currentEstimatedBaseStateDimension, 
+                                                                  AssetStateDimension baseStateDimension,
+                                                                  StateDimensionEstimation currentEstimatedBaseStateDimension,
                                                                   AssetStateDimension compensatedStateDimension,
                                                                   double benefitOfStayingTheSame,
                                                                   CostBenefitKnob knob) {
-      
+
         double predictedCost = 0.0;
         double predictedBenefit = 0.0;
 
@@ -413,14 +421,14 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
             double startStateProb = 0.0;
             try {
                startStateProb = currentEstimatedBaseStateDimension.getProbability(startStateName);
-            } 
-            catch (BelievabilityException e) { 
+            }
+            catch (BelievabilityException e) {
                 logger.error(e.toString());
             }
-            
+
             Vector v = mapCompensation(startStateName, thisVariantDescription.name());
             if (logger.isDebugEnabled()) logger.debug(thisVariantDescription.name() +" for " + startStateName + "----"+v.toString());
-            accumulateProbs(cumulativeProbVector, v, startStateProb);            
+            accumulateProbs(cumulativeProbVector, v, startStateProb);
         }
         if (logger.isDebugEnabled()) logger.debug("Cumulative Compensated Prob Vector: " + cumulativeProbVector.toString());
 
@@ -545,7 +553,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
         Iterator iter = cumulative.iterator();
         while (iter.hasNext()) {
             StateProb thisState = (StateProb)iter.next();
-            benefit = benefit + thisState.getProb() * computeStateBenefit(compensatedStateDimension.findAssetState(thisState.getStateName()), knob);            
+            benefit = benefit + thisState.getProb() * computeStateBenefit(compensatedStateDimension.findAssetState(thisState.getStateName()), knob);
         }
         return benefit;
     }
@@ -557,7 +565,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
         public StateProb(String stateName, double prob) {
             this.stateName = stateName;
-            this.prob = prob;    
+            this.prob = prob;
         }
 
         public String getStateName() { return stateName; }
@@ -568,7 +576,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
     }
 
-    
+
 
 
 }
