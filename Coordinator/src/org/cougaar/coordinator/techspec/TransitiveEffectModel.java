@@ -64,8 +64,8 @@ public class TransitiveEffectModel implements  NotPersistable  {
     /** The vector containing a list of all assets this transitiveEffect is concerned about */
     private Vector assets;
         
-    /** All of the DamageDistributions */
-    private EventProbability eventProbability = null;
+    /** Probability */
+    private float eventProbability = 0;
       
     /** TransitiveEffectVulnerabilityFilter */
     private TransitiveEffectVulnerabilityFilter filter;
@@ -158,13 +158,12 @@ public class TransitiveEffectModel implements  NotPersistable  {
     
     
     /**
-     * @return the likelihood that this transitiveEffect will occur. Returns 0 if there are no likelihoods defined, or
-     * if end < = start. 
+     * @return the likelihood that this transitiveEffect will occur. Returns 0 if there are no likelihoods defined
      */
-    public double getTransitiveEffectLikelihood(long start, long end) throws NegativeIntervalException {
+    public float getTransitiveEffectLikelihood() {
 
-        //First get the transitiveEffect probability intervals (EventProbabilityInterval) over this time. 
-        return eventProbability.computeIntervalProbability(start, end);
+        //First get the transitiveEffect probability. 
+        return eventProbability;
         
     }
     

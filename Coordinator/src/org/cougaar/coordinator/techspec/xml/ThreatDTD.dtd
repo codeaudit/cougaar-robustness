@@ -19,6 +19,7 @@
 <!ELEMENT EventLikelihood  EMPTY>
 <!ATTLIST EventLikelihood
     probability ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH | ALWAYS ) 'NONE'
+    probIntervalInMins CDATA #REQUIRED
 >
 
 <!ELEMENT ClockInterval  EMPTY>
@@ -26,6 +27,7 @@
     intervalStart CDATA #REQUIRED
     durationHrs CDATA #REQUIRED
     probability ( NONE | VERY_LOW | LOW | MEDIUM | HIGH | VERY_HIGH | ALWAYS ) 'NONE'
+    probIntervalInMins CDATA #REQUIRED
 >
 
 <!ELEMENT Term >
@@ -47,14 +49,14 @@
 >
 
 <!-- Example
-<Threat name="Bomb" affectsAssetType="Host" causesEvent="HostDeath" defaultEventLikelihoodProb="NONE" />
+<Threat name="Bomb" affectsAssetType="Host" causesEvent="HostDeath" defaultEventLikelihoodProb="NONE" probIntervalInMins=1000 />
 
     <VulnerableAssets>
         <AssetFilter>
             <Term propName="location" propValue="HiWay" op="=" />
         </AssetFilter >
         <EventLikelihoodInterval>
-            <ClockInterval intervalStart="1800" durationHrs="12" probability="VERY_LOW" />
+            <ClockInterval intervalStart="1800" durationHrs="12" probability="VERY_LOW" probIntervalInMins=1000 />
         </EventLikelihoodInterval>
     </VulnerableAssets>
 
@@ -63,8 +65,8 @@
             <Term propName="location" propValue="OffRoad" op="=" />
         </AssetFilter>
         <EventLikelihoodInterval>
-            <ClockInterval intervalStart="1800" durationHrs="12" probability="MEDIUM" />
-            <ClockInterval intervalStart="1800" durationHrs="12" probability="LOW" />
+            <ClockInterval intervalStart="1800" durationHrs="12" probability="MEDIUM" probIntervalInMins=1000 />
+            <ClockInterval intervalStart="1800" durationHrs="12" probability="LOW" probIntervalInMins=1000 />
         </EventLikelihoodInterval>
     </VulnerableAssets>
 

@@ -52,7 +52,8 @@ public class EventProbabilityInterval implements NotPersistable {
     private int intervalLength = 0;
     private float prob = 0;
     private float minuteProbOfNotOccuring = 0;
-    
+    private int probInterval;
+
     private int oid; //used by the servlet gui
     private ClockInterval[] clockIntervals;
     
@@ -70,13 +71,17 @@ public class EventProbabilityInterval implements NotPersistable {
      * over some clock period. startTime should be in the range from 0001-2400 (24 hr clock). intervalLength
      * (in HOURS) should be less than 24 hours & the interval must not overlap itself.
      */
-    public EventProbabilityInterval(int startHr, int startMin, int intervalLength, float probability) {
+    public EventProbabilityInterval(int startHr, int startMin, int intervalLength, float probability, int interval) {
 
         this.startHr = startHr;
         this.startMin = startMin;
         this.intervalLength = intervalLength;
         this.prob = probability;
-        this.minuteProbOfNotOccuring = (float) java.lang.Math.pow((1.0-prob), 1d/60d );
+        
+        //the probInterval(th) root of the probability = the prob. of occurring in one minute
+        this.minuteProbOfNotOccuring = (float)java.lang.Math.pow((1.0-prob), (1d/((double)probInterval) ) );
+//        this.minuteProbOfNotOccuring = (float) java.lang.Math.pow((1.0-prob), 1d/60d );
+        this.probInterval = interval;
         
         logger = Logging.getLogger(this.getClass().getName());
         
@@ -95,13 +100,14 @@ public class EventProbabilityInterval implements NotPersistable {
     }
 
     /** Creates a new instance of EventProbabilityInterval that is ALWAYS applicable (infinite interval) */
-    public EventProbabilityInterval(float probability) {
+    public EventProbabilityInterval(float probability, int interval) {
 
         this.prob = probability;
-        this.minuteProbOfNotOccuring = (float)java.lang.Math.pow((1.0-prob), 1d/60d );
+        this.probInterval = interval;
+        this.minuteProbOfNotOccuring = (float)java.lang.Math.pow((1.0-prob), (1d/((double)probInterval) ) );
         
         logger = Logging.getLogger(this.getClass().getName());
-        if (logger.isDebugEnabled()) { logger.debug(">>EventProbabilityInterval static init(): -- probOfOccurring="+prob+", minuteProbOfNotOccuring="+minuteProbOfNotOccuring); }
+        if (logger.isDebugEnabled()) { logger.debug(">>EventProbabilityInterval static init(): -- probOfOccurring="+prob+" in "+probInterval+" minutes, minuteProbOfNotOccuring="+minuteProbOfNotOccuring); }
         
     }
 

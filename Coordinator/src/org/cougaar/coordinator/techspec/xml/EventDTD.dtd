@@ -45,7 +45,7 @@
         <CausesEvent name=”NodeDeath” assetType=”Node”/>
         <VulnerableAssets>
             <ContainmentFilter eventAssetContainerName=”Node” >
-            <EventLikelihood probability=“ALWAYS” />
+            <EventLikelihood probability=“VERY_HIGH” />
         </VulnerableAssets>
     </TransitiveEffect> 
 </Event>

@@ -53,7 +53,7 @@ public class ThreatDescription implements NotPersistable {
     private ThreatVulnerabilityFilter filter = null;
     
     /** Creates a new instance of ThreatDescription  -- it has no filter other than asset type */
-    public ThreatDescription(String name, AssetType affectsAssetType, String causesEvent, float defaultEventLikelihoodProb) {
+    public ThreatDescription(String name, AssetType affectsAssetType, String causesEvent, float defaultEventLikelihoodProb, int probInterval) {
         
         this.name = name;
         this.affectsAssetType = affectsAssetType;
@@ -63,7 +63,7 @@ public class ThreatDescription implements NotPersistable {
         //Create an ALWAYS interval if the defaultEventLikelihoodProb > 0
         if (defaultEventLikelihoodProb > 0.0) {
             eventProbability = new EventProbability();
-            eventProbability.addInterval(new EventProbabilityInterval(defaultEventLikelihoodProb));
+            eventProbability.addInterval(new EventProbabilityInterval(defaultEventLikelihoodProb, probInterval));
         } 
         this.filter = null;
     }

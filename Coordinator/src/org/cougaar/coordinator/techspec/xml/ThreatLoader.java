@@ -103,13 +103,29 @@ public class ThreatLoader extends XMLLoader {
         String assetType = element.getAttribute("affectsAssetType");
         String causesEvent = element.getAttribute("causesEvent");
         String defaultProbStr = element.getAttribute("defaultEventLikelihoodProb"); //string
+        String defaultProbInterval = element.getAttribute("probIntervalInMins"); //string
+
+        if (threatName == null || threatName.length()==0 || assetType == null || assetType.length() == 0 || causesEvent == null || causesEvent.length() == 0) {
+            logger.error("Threat XML Error threat ["+threatName+"]- exception parsing - threat name, assetType, or causesEvent was NULL. Ignoring.");
+            return threats;
+        }
         
         //Convert probability String to a float.
+        int probInt = 0;
         float fProb = 0;
         if (probabilityMap != null) {
             Float f = (Float) probabilityMap.get(defaultProbStr);
             if (f != null) {
                 fProb = f.floatValue();
+            }
+            
+            if (fProb > 0) { //don't process if fProb = 0
+                try {
+                    probInt = Integer.parseInt(defaultProbInterval);
+                } catch (Exception e) {
+                    logger.error("Threat XML Error threat ["+threatName+"]- exception parsing default probability interval: "+defaultProbInterval+", Ignoring.", e);
+                    return threats;                
+                }
             }
         }
             
@@ -118,18 +134,18 @@ public class ThreatLoader extends XMLLoader {
         //what to do when assetType is null? - create it, process it later?
         if (affectsAssetType == null) {
             logger.warn("Threat XML Error - affectsAssetType unknown: "+assetType);
-            return null;
+            return threats;
         }
 
         if (us == null) {
             logger.warn("Threat XML Error - UIDService is null!");
-            return null;
+            return threats;
         }
         
         UID uid = us.nextUID();
 
         //Create default threat
-        ThreatDescription threat = new ThreatDescription( threatName, affectsAssetType, causesEvent, fProb );
+        ThreatDescription threat = new ThreatDescription( threatName, affectsAssetType, causesEvent, fProb, probInt );
 /*        
         try {
             double prob = threat.getEventProbability().computeIntervalProbability(System.currentTimeMillis(), System.currentTimeMillis()+600000);
