@@ -40,6 +40,7 @@
 	<target name="create_cougaar_overlay">
 		<mkdir dir="staging/lib"/>
 		<mkdir dir="staging/sys"/>
+		<mkdir dir="staging/csmart"/>
 		<antcall target="delete"/>
 		<antcall target="jar"/>
 		<signjar jar="${jar}" keystore="/home/build/signingCA_keystore" alias="privileged" storepass="keystore"/>
@@ -50,6 +51,9 @@
 			<fileset dir="sys/">
 				<include name="*.jar"/>
 			</fileset>
+		</copy>
+		<copy todir="staging/csmart/">
+			<fileset dir="csmart/"/>
 		</copy>
 		<zip zipfile="AR_objs_msglog.zip" basedir="staging"/>
 		<delete dir="staging"/>
