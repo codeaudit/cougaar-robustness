@@ -59,7 +59,7 @@ public interface AssetTechSpecInterface extends TechSpecRootInterface {
     /**
      * @return expanded name - "type:name"
      */
-    public String getExpandedName();
+    public AssetID getAssetID();
     
     /**
      * @return Set the new host & node for this agent
