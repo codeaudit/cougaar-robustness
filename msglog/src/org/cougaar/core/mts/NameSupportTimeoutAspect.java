@@ -105,12 +105,14 @@ public class NameSupportTimeoutAspect extends StandardAspect
       if (doDebug()) debug ("Finshed calling unregisterAgentInNameServer() returned");
     }
 
+/* registerMTS dropped in 1043
     public void registerMTS (MessageAddress address) 
     {
       if (doDebug()) debug ("registerMTS() called: address=" +address);
       nameSupport.registerMTS (address);
       if (doDebug()) debug ("registerMTS() returned");
     }
+*/
 
     public Iterator lookupMulticast (MulticastMessageAddress address) 
     {  
