@@ -2,44 +2,27 @@
 # Adds Coordinator test components to all agents (incl. node agents) in society
 # 
 
+bms  = "org.cougaar.coordinator.believability.BeliefMonitorServlet"
 awmp = "org.cougaar.coordinator.test.coordination.ActionsWrapperMonitorPlugin"
 dwmp = "org.cougaar.coordinator.test.coordination.DiagnosesWrapperMonitorPlugin"
 amp  = "org.cougaar.coordinator.test.coordination.ActionMonitorPlugin"
 ams  = "org.cougaar.coordinator.test.coordination.ActionMonitorServlet"
 dmp  = "org.cougaar.coordinator.test.coordination.DiagnosisMonitorPlugin"
 dms  = "org.cougaar.coordinator.test.coordination.DiagnosisMonitorServlet"
-ps   = "org.cougaar.coordinator.test.coordination.PublishServlet"
 ttms = "org.cougaar.coordinator.test.coordination.ThreatnTransEffectMembershipServlet"
 
-plugins = [awmp,dwmp,amp,ams,dmp,dms,ps,ttms]
+mgr_only_plugins = [bms]
+plugins = [awmp,dwmp,amp,ams,dmp,dms,ttms]
 
 ltsp = "org.cougaar.coordinator.techspec.xml.LoadTechSpecsPlugin"
 
-# TechSpecs
-aasd = 'AgentAssetStateDimensions.xml'
-nasd = 'NodeAssetStateDimensions.xml'
-hasd = 'HostAssetStateDimensions.xml'
-easd = 'EnclaveAssetStateDimensions.xml'
-t    = 'Threats.xml'
-e    = 'Events.xml'
-
-# Sensors TechSpecs
-acs  = 'AgentCommSensors.xml'
-tss  = 'ThrashingSuppressionSensor.xml'
-
-# Actuator TechSpecs
-ra   = 'RestartActuator.xml'
-fca  = 'FakeCommActuator.xml'
-
-# Cross Diagnosis TechSpecs
-cd   = 'CrossDiagnosis.xml'
-
-mgr_techspecs   = [aasd,nasd,hasd,easd,t,e,acs,tss,ra,fca,cd]
-node_techspecs = [aasd,nasd,hasd,easd,t,e,acs,tss,ra,fca]
+mgr_techspecs   = []
+node_techspecs = []
 
 society.each_agent(true) do |agent|
     agent.add_components(plugins)
     if agent.name =~ /.*ARManager.*/
+	agent.add_components(mgr_only_plugins)
         found = false
         agent.each_component do |c|
             next unless c.classname == ltsp

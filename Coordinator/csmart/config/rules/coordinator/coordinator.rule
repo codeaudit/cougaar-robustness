@@ -17,15 +17,6 @@ tmmp = "org.cougaar.coordinator.techspec.ThreatModelManagerPlugin"
 ltsp = "org.cougaar.coordinator.techspec.xml.LoadTechSpecsPlugin"
 
 # TechSpecs
-#aasd = 'AgentAssetStateDimensions.xml'
-#nasd = 'NodeAssetStateDimensions.xml'
-#hasd = 'HostAssetStateDimensions.xml'
-#easd = 'EnclaveAssetStateDimensions.xml'
-#t    = 'Threats.xml'
-#e    = 'Events.xml'
-
-#mgr_techspecs = [aasd,nasd,hasd,easd,t,e]
-#node_techspecs = [aasd,nasd,hasd,easd,    t,e]
 mgr_techspecs = []
 node_techspecs = []
 
