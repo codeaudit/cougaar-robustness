@@ -76,6 +76,8 @@ public class TransitiveEffectModel implements  NotPersistable  {
     /** Logger for debugging */
     private static Logger logger;
 
+    private TransitiveEffectDescription  td;
+    
     static {
         logger = Logging.getLogger(TransitiveEffectModel.class);
     }        
@@ -88,6 +90,8 @@ public class TransitiveEffectModel implements  NotPersistable  {
      */
     public TransitiveEffectModel(TransitiveEffectDescription td, UID uid) {
 
+        this.td = td;
+        
         this.assets = new Vector(20,40);
         this.name = td.getTransitiveEventName();
         this.uid = uid;
@@ -105,6 +109,9 @@ public class TransitiveEffectModel implements  NotPersistable  {
      */
     //public TransitiveEffectType getTransitiveEffectType() { return threatType; }
        
+
+    TransitiveEffectDescription getTransitiveEffectDescription() { return td; }
+
     
     /**
      * @return the list of assets that the transitiveEffect cares about.
