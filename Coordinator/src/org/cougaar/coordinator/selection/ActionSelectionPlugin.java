@@ -167,7 +167,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 
       //********* Process Actions that have Responded ***********
       if (logger.isDebugEnabled()) logger.debug("Ready to Process Action Responses");
-      iter = actionPatienceSubscription.getAddedCollection().iterator();
+      iter = actionPatienceSubscription.getChangedCollection().iterator();
       // Mark the resolution of all the Actions that just reported back (for now it will just be one Action)
       while (iter.hasNext()) {
           ActionPatience ap = (ActionPatience)iter.next();
