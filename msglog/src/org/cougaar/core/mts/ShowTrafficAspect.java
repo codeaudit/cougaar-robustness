@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2001-2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 20 Mar  2003: Removed call to System.err. (OBJS)
  * 21 Mar  2002: Update from Cougaar 8.6.2.x to 9.0.0 (OBJS)
  * 20 Nov  2001: Cougaar 8.6.1 compatibility changes (marked 8.6.1) (OBJS)
  * 27 Oct  2001: Created. (OBJS)
@@ -118,7 +119,7 @@ if (attr.equals (MessageAttributes.DELIVERY_STATUS_DELIVERED)) showTraffic (link
         else if (name.equals("org.cougaar.lib.quo.CorbaLinkProtocol")) statusChar = 'C';                  //8.6.1
         else statusChar = '?';                                                                            //8.6.1
 
-        System.err.print (">"+statusChar);
+        System.out.print(">"+statusChar);
       } 
       catch (Exception e) { e.printStackTrace(); }
     }

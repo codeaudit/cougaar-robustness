@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2001 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2002-2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 20 Mar 2003: Commented out printAcks(String,Vector). (OBJS)
  * 29 May 2002: Created. (OBJS)
  */
 
@@ -103,13 +104,15 @@ public class AckList extends NumberList
 
     return null;
   }
-
+ 
+/* //102B
   public static void printAcks (String tag, Vector acks)
   {
     StringBuffer buf = new StringBuffer();
     printAcks (buf, tag, acks);
     System.err.print (buf.toString());
   }
+*/
 
   public static void printAcks (StringBuffer buf, String tag, Vector acks)
   {
