@@ -1,0 +1,19 @@
+<?xml encoding="UTF-8" ?>
+
+<!-- Created by Administrator on July 5, 2004, 10:55 AM -->
+
+<!ELEMENT Map (Mapping+)>
+
+<!ELEMENT Mapping EMPTY>
+<!ATTLIST Mapping
+    name CDATA #REQUIRED
+    value CDATA #REQUIRED
+>
+
+
+<!-- * <Map>
+ *   <Mapping name="LOW" value="0"/>
+ *   <Mapping name="MEDIUM" value="1"/>
+ *   ...
+ * </Map> 
+-->
