@@ -36,6 +36,9 @@ import org.cougaar.core.mobility.MoveTicket;
 
 import org.cougaar.core.util.UID;
 
+import org.cougaar.util.CougaarEvent;
+import org.cougaar.util.CougaarEventType;
+
 import org.cougaar.util.UnaryPredicate;
 
 /**
@@ -304,6 +307,10 @@ public class DecisionPlugin extends SimplePlugin {
 
         // Update agents status object
         HealthStatus hs = getHealthStatus(agentAddr);
+        CougaarEvent.postComponentEvent(CougaarEventType.START,
+                                        getAgentIdentifier().toString(),
+                                        this.getClass().getName(),
+                                        "Restarting agent: agent=" + hs.getAgentId());
         hs.setLastRestartAttempt(new Date());
         hs.setState(HealthStatus.RESTART);
         hs.setStatus(HealthStatus.DEAD);

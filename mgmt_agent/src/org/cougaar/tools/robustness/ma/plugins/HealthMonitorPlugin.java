@@ -51,6 +51,8 @@ import org.cougaar.core.thread.Schedulable;
 import org.cougaar.core.service.community.*;
 import org.cougaar.community.*;
 
+import org.cougaar.util.CougaarEvent;
+import org.cougaar.util.CougaarEventType;
 import org.cougaar.util.UnaryPredicate;
 import org.cougaar.core.util.UID;
 
@@ -421,10 +423,6 @@ public class HealthMonitorPlugin extends SimplePlugin implements
           sendHeartbeatRequest(hs);
         } else {
           switch (hs.getHeartbeatRequestStatus()) {
-            //case HealthStatus.UNDEFINED:
-            //  log.info("Sending HeartbeatRequest to agent '" + hs.getAgentId() + "'");
-            //  sendHeartbeatRequest(hs);
-            //  break;
             case HeartbeatRequest.NEW:
             case HeartbeatRequest.SENT:
               if (elapsedTime(hs.getHeartbeatRequestTime(), now()) > (hs.getHbReqTimeout() * 2)) {
@@ -434,10 +432,20 @@ public class HealthMonitorPlugin extends SimplePlugin implements
               break;
             case HeartbeatRequest.ACCEPTED:
               log.debug("HeartbeatRequest ACCEPTED: agent=" + hs.getAgentId());
-              if (hs.getStatus() == HealthStatus.RESTARTED)
+              if (hs.getStatus() == HealthStatus.RESTARTED) {
                 log.info("Reacquired agent: agent=" + hs.getAgentId());
-              if (hs.getStatus() == HealthStatus.MOVED)
+                CougaarEvent.postComponentEvent(CougaarEventType.END,
+                                                getAgentIdentifier().toString(),
+                                                this.getClass().getName(),
+                                                "Restart succeeded: agent=" + hs.getAgentId());
+              }
+              if (hs.getStatus() == HealthStatus.MOVED) {
                 log.info("Move complete: agent=" + hs.getAgentId());
+                CougaarEvent.postComponentEvent(CougaarEventType.END,
+                                                getAgentIdentifier().toString(),
+                                                this.getClass().getName(),
+                                                "Move succeeded: agent=" + hs.getAgentId());
+              }
               hs.setState(HealthStatus.NORMAL);
               hs.setStatus(HealthStatus.OK);
               hs.setHeartbeatStatus(HealthStatus.HB_NORMAL);
@@ -534,8 +542,6 @@ public class HealthMonitorPlugin extends SimplePlugin implements
                   + hs.getAgentId());
                 doHealthCheck(hs, HealthStatus.DEGRADED);
               } else {
-                // Re-request heartbeats in case agent has been moved
-                //hs.setState(HealthStatus.INITIAL);
                 hs.setHeartbeatStatus(HealthStatus.HB_NORMAL);
               }
             }
@@ -638,7 +644,10 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       } else if (state.equals(HealthStatus.FAILED_RESTART)) {
         if (!state.equals(hs.getPriorState())) {
           log.error("Agent restart failed: agent=" + hs.getAgentId());
-
+          CougaarEvent.postComponentEvent(CougaarEventType.END,
+                                          getAgentIdentifier().toString(),
+                                          this.getClass().getName(),
+                                          "Restart failed: agent=" + hs.getAgentId());
         } else {
           int pingStatus = hs.getPingStatus();
           switch (pingStatus) {
@@ -674,6 +683,10 @@ public class HealthMonitorPlugin extends SimplePlugin implements
       } else if (state.equals(HealthStatus.FAILED_MOVE)) {
         // Move failed resume normal monitoring
         log.warn("Agent move failed: agent=" + hs.getAgentId());
+        CougaarEvent.postComponentEvent(CougaarEventType.END,
+                                        getAgentIdentifier().toString(),
+                                        this.getClass().getName(),
+                                        "Move failed: agent=" + hs.getAgentId());
         hs.setState(HealthStatus.NORMAL);
         hs.setHeartbeatStatus(HealthStatus.HB_NORMAL);
       //************************************************************************

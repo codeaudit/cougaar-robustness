@@ -41,6 +41,9 @@ import org.cougaar.core.mobility.ldm.AgentControl;
 
 import org.cougaar.util.UnaryPredicate;
 
+import org.cougaar.util.CougaarEvent;
+import org.cougaar.util.CougaarEventType;
+
 import org.cougaar.core.util.UID;
 
 
@@ -182,6 +185,12 @@ public class VacatePlugin extends SimplePlugin {
               if (hs != null) hs.setState(HealthStatus.MOVE);
               publishChange(hs);
               bbs.publishAdd(ac);
+              CougaarEvent.postComponentEvent(CougaarEventType.START,
+                                              getAgentIdentifier().toString(),
+                                              this.getClass().getName(),
+                                              "Moving agent:" +
+                                              " agent=" + hs.getAgentId() +
+                                              " destNode=" + newNodeName);
               log.info("Moving agent: agent=" + agent + " destHost=" + destHost +
                 " destNode=" + newNodeName);
               log.debug("Published AgentControl: " + ac);
