@@ -113,18 +113,18 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
             StateEstimation se = (StateEstimation)iter.next();
             if (logger.isInfoEnabled()) logger.info(se.toString());
 
-            // If there is an existing CBE, ignore this SE, because otherwise we might oveerrun the selection process
+            // If there is an existing CBE, ignore cache SE for possible future use, because otherwise we might over-run the selection process
             CostBenefitEvaluation old_cbe = findCostBenefitEvaluation(se.getAssetID());
             if (old_cbe == null) {
             	CostBenefitEvaluation cbe = createCostBenefitEvaluation(se, knob);
             	if (logger.isInfoEnabled()) logger.info("CostBenefitEvaluation created: "+cbe.toString());
             	publishAdd(cbe);
-	      }
-		else {
-	            pendingSEs.put(se.getAssetID(), se);
-                  if (logger.isInfoEnabled()) logger.info("Caching SE for: " + se.getAssetID() + " for possible future use.  Still processing last one.");
+	    }
+	    else {
+	        pendingSEs.put(se.getAssetID(), se);
+                if (logger.isInfoEnabled()) logger.info("Caching SE for: " + se.getAssetID() + " for possible future use.  Still processing last one.");
             }
-		publishRemove(se);
+            publishRemove(se);
         }
 
         //Handle CompletedSelections - if FAILED & have an existing SE, try again with the new SE
@@ -137,12 +137,12 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
             AssetID assetID = sc.getAssetID();
             StateEstimation se = (StateEstimation) pendingSEs.remove(assetID);
 
-		if ((se != null) && !sc.successfulP()) {
-          		CostBenefitEvaluation cbe = createCostBenefitEvaluation(se, knob);
-           		if (logger.isInfoEnabled()) logger.info("CostBenefitEvaluation created: "+cbe.toString());
-           		publishAdd(cbe);
-	      }
-		publishRemove(sc);
+	    if ((se != null) && !sc.successfulP()) {
+                  CostBenefitEvaluation cbe = createCostBenefitEvaluation(se, knob);
+           	  if (logger.isInfoEnabled()) logger.info("CostBenefitEvaluation created: "+cbe.toString());
+           	  publishAdd(cbe);
+	    }
+            publishRemove(sc);
         }
     }
 
