@@ -222,7 +222,7 @@ public abstract class Diagnosis
             throw new RuntimeException("Unable to obtain node-id service");
         }
         nodeId = nodeIdService.getMessageAddress();
-        serviceBroker.releaseService(this, NodeIdentificationService.class, agentIdService);
+        serviceBroker.releaseService(this, NodeIdentificationService.class, nodeIdService);
         if (nodeId == null) {
             throw new RuntimeException(
             "Unable to obtain agent id");
