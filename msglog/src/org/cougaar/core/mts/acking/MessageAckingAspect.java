@@ -51,6 +51,8 @@ public class MessageAckingAspect extends StandardAspect
   static final float   ackAckPlacingFactor;
   static final int     messageAgeWindowInMinutes;
 
+static final boolean skipIncarnationCheck;
+
   static MessageResender messageResender;
   static PureAckSender pureAckSender;
   static PureAckAckSender pureAckAckSender;
@@ -94,6 +96,10 @@ public class MessageAckingAspect extends StandardAspect
 
     s = "org.cougaar.message.transport.aspects.acking.msgAgeWindowInMinutes";
     messageAgeWindowInMinutes = Integer.valueOf(System.getProperty(s,"30")).intValue();
+
+s = "org.cougaar.message.transport.aspects.acking.skipIncarnationCheck";
+skipIncarnationCheck = Boolean.valueOf(System.getProperty(s,"true")).booleanValue();
+
   }
 
   public MessageAckingAspect () 

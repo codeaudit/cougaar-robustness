@@ -123,6 +123,8 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
   private static final int upgradeMetricMultiplier;
   private static final int maxUpgradeTries;
 
+private static int commStartDelaySeconds;
+
   private static DestinationLink loopbackLink;
   private static DestinationLink blackHoleLink = new BlackHoleDestinationLink();
 
@@ -156,6 +158,9 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
 
     s = "org.cougaar.message.transport.policy.adaptive.maxUpgradeTries";
     maxUpgradeTries = Integer.valueOf(System.getProperty(s,"2")).intValue();
+
+s = "org.cougaar.message.transport.policy.adaptive.commStartDelaySeconds";
+commStartDelaySeconds = Integer.valueOf(System.getProperty(s,"60")).intValue();
   } 
 
   public AdaptiveLinkSelectionPolicy ()
@@ -180,6 +185,15 @@ public class AdaptiveLinkSelectionPolicy extends AbstractLinkSelectionPolicy
     showTraffic = (getAspectSupport().findAspect(sta) != null);
 
     thisNode = getRegistry().getIdentifier();
+
+//  HACK to attempt to get around nameserver/topology lookup problem
+
+if (commStartDelaySeconds > 0)
+{
+  log.warn ("Comm start delay: Sleeping for " +commStartDelaySeconds+ " seconds before doing any message sends");
+  try { Thread.sleep (commStartDelaySeconds*1000); } catch (Exception e) {}
+  commStartDelaySeconds = 0;
+}
   }
 
   public String toString ()

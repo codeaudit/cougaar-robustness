@@ -487,16 +487,15 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
     }
   }
 
-  private class Averages
+  private class NodeTimeAverage
   {
-    public RunningAverage commRTT;
-    public RunningAverage nodeTme;
+    public RunningAverage nodeTime;
     public long lastNodeTime;
 
-    public Averages (RunningAverage comm, RunningAverage node)
+    public NodeTimeAverage (RunningAverage nodeTime, long lastNodeTime)
     {
-      commRTT = comm;
-      nodeTme = node;
+      this.nodeTime = nodeTime;
+      this.lastNodeTime = lastNodeTime;
     }
   }
 
@@ -505,39 +504,53 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
   {
     synchronized (roundtripTable)
     {
-      String key = sendLink +"-"+ node;
-      Hashtable table = (Hashtable) roundtripTable.get (key);
+      //  Update commRTT
 
-      if (table == null)
+      String key = sendLink +"-"+ node;
+      Hashtable commTable = (Hashtable) roundtripTable.get (key);
+
+      if (commTable == null)
       {
-        table = new Hashtable();
-        roundtripTable.put (key, table);
+        commTable = new Hashtable();
+        roundtripTable.put (key, commTable);
       }
 
       key = receiveLink;
-      Averages avgs = (Averages) table.get (key);
+      RunningAverage commRTT = (RunningAverage) commTable.get (key);
 
-      if (avgs == null)
+      if (commRTT == null)
       {
         //      samplePoolsize:  number of latest samples avg is calc from
         //          startDelay:  throw away initial samples (which may be wildly off)
         //  percentChangeLimit:  limit the amount the latest sample can change avg
         //    changeLimitDelay:  how many samples before change limit kicks in
 
-        RunningAverage commRTT = new RunningAverage (c_samplePoolsize, c_startDelay, c_percentChangeLimit, c_changeLimitDelay);
-        RunningAverage nodeTme = new RunningAverage (n_samplePoolsize, n_startDelay, n_percentChangeLimit, n_changeLimitDelay);
+        commRTT = new RunningAverage (c_samplePoolsize, c_startDelay, c_percentChangeLimit, c_changeLimitDelay);
 
         int initialCommRTT = getInitialCommRTT (sendLink, receiveLink);
         if (initialCommRTT > 0)  commRTT.setAverage (initialCommRTT);
-        if (initialNodeTime > 0) nodeTme.setAverage (initialNodeTime);
-
-        avgs = new Averages (commRTT, nodeTme);
-        table.put (key, avgs);
+ 
+        commTable.put (key, commRTT);
       }
 
-      if (rtt >= 0) avgs.commRTT.add (rtt);  // 0 RTTs are possible (ie. RTTs < 1 millisecond)
+      if (rtt >= 0) commRTT.add (rtt);  // 0 RTTs are possible (ie. RTTs < 1 millisecond)
 
-      if (receiveTime > avgs.lastNodeTime)   // only the latest once (no virtuals skewing)
+      //  Update nodeTime
+
+      key = node;
+      NodeTimeAverage nodeTimeAvg = (NodeTimeAverage) roundtripTable.get (key);
+
+      if (nodeTimeAvg == null)
+      {
+        RunningAverage nt = new RunningAverage (n_samplePoolsize, n_startDelay, n_percentChangeLimit, n_changeLimitDelay);
+
+        if (initialNodeTime > 0) nt.setAverage (initialNodeTime);
+
+        nodeTimeAvg = new NodeTimeAverage (nt, 0);
+        roundtripTable.put (key, nodeTimeAvg);
+      }
+
+      if (receiveTime > nodeTimeAvg.lastNodeTime)  // only the latest once (no virtuals skewing)
       {
         //  Only first-response-to-latest-send node times used; earlier receive times 
         //  and later send times are "virtual" in a way, and only suitable for calculating 
@@ -545,9 +558,11 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
         //  to reach us may not be the first to leave the sending node, but that is ok, as
         //  that is the real "response" time that we are looking for.
 
-        avgs.nodeTme.add (nodeTime);
-        avgs.lastNodeTime = receiveTime;  
+        nodeTimeAvg.nodeTime.add (nodeTime);
+        nodeTimeAvg.lastNodeTime = receiveTime;  
       }
+
+      //  Show running averages
 
       if (loggingService.isDebugEnabled())
       {
@@ -557,17 +572,16 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
         buf.append ("\n      node= " +node);
         buf.append ("\n  recvLink= " +receiveLink);
 
-        int commLast = (int) avgs.commRTT.getLastSample();
-        int commAvg = (int) Math.rint (avgs.commRTT.getAverage());
-        int nodeLast = (int) avgs.nodeTme.getLastSample();
-        int nodeAvg = (int) Math.rint (avgs.nodeTme.getAverage());
+        int commLast = (int) commRTT.getLastSample();
+        int commAvg = (int) Math.rint (commRTT.getAverage());
+        int nodeLast = (int) nodeTimeAvg.nodeTime.getLastSample();
+        int nodeAvg = (int) Math.rint (nodeTimeAvg.nodeTime.getAverage());
 
         String b11 = blank1 (commLast, nodeLast);  String b12 = blank1 (commAvg, nodeAvg);
         String b21 = blank2 (commLast, nodeLast);  String b22 = blank2 (commAvg, nodeAvg);
 
         buf.append ("\n   commRTT= " +b11+commLast+ " avg= " +b12+commAvg);
         buf.append ("\n  nodeTime= " +b21+nodeLast+ " avg= " +b22+nodeAvg + "\n");
-//buf.append ("commRTT percent filled = " +avgs.commRTT.percentFilled() +"\n");
         loggingService.debug (buf.toString());
       }
     }    
@@ -585,8 +599,8 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
 
       for (Enumeration e=table.elements(); e.hasMoreElements(); )
       {
-        Averages avgs = (Averages) e.nextElement();
-        if (avgs.commRTT.isStartDelaySatisfied()) return true;
+        RunningAverage commRTT = (RunningAverage) e.nextElement();
+        if (commRTT.isStartDelaySatisfied()) return true;
       }
       
       return false;
@@ -602,10 +616,10 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
       if (table == null) return false;
 
       key = receiveLink;
-      Averages avgs = (Averages) table.get (key);
-      if (avgs == null) return false;
+      RunningAverage commRTT = (RunningAverage) table.get (key);
+      if (commRTT == null) return false;
 
-      return avgs.commRTT.isStartDelaySatisfied();
+      return commRTT.isStartDelaySatisfied();
     }
   }
 
@@ -623,8 +637,8 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
 
       for (Enumeration e=table.elements(); e.hasMoreElements(); )
       {
-        Averages avgs = (Averages) e.nextElement();
-        float pf = avgs.commRTT.percentFilled();
+        RunningAverage commRTT = (RunningAverage) e.nextElement();
+        float pf = commRTT.percentFilled();
         if (pf > highestPF) highestPF = pf;
       }
       
@@ -641,10 +655,10 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
       if (table == null) return 0.0f;
 
       key = receiveLink;
-      Averages avgs = (Averages) table.get (key);
-      if (avgs == null) return 0.0f;
+      RunningAverage commRTT = (RunningAverage) table.get (key);
+      if (commRTT == null) return 0.0f;
 
-      return avgs.commRTT.percentFilled();
+      return commRTT.percentFilled();
     }
   }
 
@@ -716,18 +730,26 @@ public class RTTAspect extends StandardAspect implements Serializable  // for em
     {
       String sendLink = getName (link);
       String key = sendLink +"-"+ node;
-      Hashtable table = (Hashtable) roundtripTable.get (key);
+      Hashtable commTable = (Hashtable) roundtripTable.get (key);
 
-      if (table != null)
+      if (commTable != null)
       {
         //  Go through the table and find the smallest non-zero average roundtrip time
 
         int rtt, smallestRTT = Integer.MAX_VALUE;
-      
-        for (Enumeration e=table.elements(); e.hasMoreElements(); )
+        double nodeTime = 0.0;
+
+        if (includeNodeTime)
         {
-          Averages avgs = (Averages) e.nextElement();
-          rtt = (int) (avgs.commRTT.getAverage() + (includeNodeTime ? avgs.nodeTme.getAverage() : 0.0));
+          key = node;
+          NodeTimeAverage nodeTimeAvg = (NodeTimeAverage) roundtripTable.get (key);
+          if (nodeTimeAvg != null) nodeTime = nodeTimeAvg.nodeTime.getAverage();
+        }
+
+        for (Enumeration e=commTable.elements(); e.hasMoreElements(); )
+        {
+          RunningAverage commRTT = (RunningAverage) e.nextElement();
+          rtt = (int) (commRTT.getAverage() + nodeTime);
           if (rtt > 0 && rtt < smallestRTT) smallestRTT = rtt;
         }
 

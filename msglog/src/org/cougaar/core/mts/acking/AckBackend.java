@@ -199,6 +199,8 @@ Mobility issue: arriving agent is now local, msg was for it when it was on other
     //   if sched, need nack vs. pure nack
     //   a pure nack has no msg num - it is not acked?
 
+if (!MessageAckingAspect.skipIncarnationCheck || ack.getSendLink().equals("org.cougaar.core.mts.email.OutgoingEmailLinkProtocol"))
+{
     if (!isLatestAgentIncarnation (MessageUtils.getFromAgent (msg), MessageUtils.getOriginatorAgent (msg)))
     {
       if (log.isInfoEnabled()) 
@@ -212,6 +214,11 @@ Mobility issue: arriving agent is now local, msg was for it when it was on other
         log.info ("AckBackend: Msg has out of date (or unknown) recipient (msg ignored): " +msgString);
       return success;
     }
+}
+else
+{
+  if (log.isInfoEnabled()) log.info ("Skipping incarnation check!");
+}
 
     //  At this point we feel the received message is probably ok, so now we deliver
     //  it and record its reception while making sure that it is not a message we have 

@@ -60,6 +60,13 @@ public class AgentID implements java.io.Serializable
     this.agentIncarnation = agentIncarnation;
   }
 
+  public AgentID (TopologyEntry entry)
+  {
+    this.nodeName = entry.getNode();
+    this.agentName = entry.getAgent();
+    this.agentIncarnation = "" + entry.getIncarnation();
+  }
+
   public AgentID (AgentID aid)
   {
     this.nodeName = aid.nodeName;
@@ -174,6 +181,14 @@ public class AgentID implements java.io.Serializable
   {
     if (agent == null) return null;
 
+    //  If we are not to refresh the nameserver cache, try our own local cache first
+
+    if (!refreshCache)
+    {
+      TopologyEntry entry = (TopologyEntry) getCachedTopologyLookup (agent);
+      if (entry != null) return new AgentID (entry);
+    }
+
     //  Make the topology lookup call in another thread
 
     TopologyReaderService svc = getTopologyReaderService (requestor, sb);
@@ -228,11 +243,7 @@ public class AgentID implements java.io.Serializable
       throw new NameLookupException (e);
     }
 
-    String nodeName = entry.getNode();
-    String agentName = agent.toString();
-    String agentIncarnation = "" + entry.getIncarnation();
-
-    return new AgentID (nodeName, agentName, agentIncarnation);
+    return new AgentID (entry);
   }
 
   private static class TopologyLookup implements Runnable
