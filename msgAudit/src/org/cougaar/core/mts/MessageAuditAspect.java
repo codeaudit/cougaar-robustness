@@ -425,8 +425,6 @@ public class MessageAuditAspect extends StandardAspect implements AttributeConst
       
       String type = (String) msg.getAttribute (org.cougaar.core.mts.Constants.MSG_TYPE);
       if ( type == null ) { // no idea what type so do not filter.
-          msg.setAttribute (org.cougaar.core.mts.Constants.MSG_TYPE, 
-                            org.cougaar.core.mts.Constants.MSG_TYPE_UNKNOWN);
           return false;
       }
       

@@ -173,18 +173,22 @@ public class ProblemMessageManager {
      */
     private void resolveCurrentList() {
         
+        //First extract all of the LogPointEntries
+        Vector toRetry = new Vector(problems.size());
         for (int i=0; i<problems.size(); i++) {
             ProblemMessage pm = (ProblemMessage)problems.get(i);
             boolean isFrom = pm.isFrom();
             Vector list = pm.getLPEList();
             for (int j=0; j<list.size(); j++) {             
-                LogPointEntry lpe = (LogPointEntry)list.get(j);
-                this.handleProblemMessage(lpe);
-                problems.remove(lpe);
-                problemsGUI.incAutoResolvedCount();
+                toRetry.add(list.get(j));
             }
             problems.remove(i);// remove after processing
-        }                    
+        }            
+        //Now requeue for processing
+        for (int k=0; k<toRetry.size(); k++) {             
+            LogPointEntry lpe = (LogPointEntry)toRetry.get(k);
+            addProblemMessage(lpe);
+        }
     }
     
     
@@ -202,9 +206,9 @@ public class ProblemMessageManager {
     public void applyChanges(Vector _v) {
      
         EventQueueProcessor eqp = auditor.getQueueProcessor();
-        if (eqp == null)
+        if (eqp == null) {
             System.out.println("******************** eqp is NULL!");
-        
+        }
         Iterator mods = _v.iterator();
         while (mods.hasNext()) {
             ProblemMessage pm = (ProblemMessage)mods.next();
