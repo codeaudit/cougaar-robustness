@@ -4,9 +4,9 @@
 
 <Events>
 
-<Event name="LostOnlyDirectPaths" affectsAssetType="Agent" affectsStateDimension="UnmediatedConnectionStatus">
+<Event name="LostDirectPaths" affectsAssetType="Agent" affectsStateDimension="UnmediatedConnectionStatus">
     <DirectEffect>
-        <Transition WhenActualStateIs="*" EndStateWillBe=OnlyIndirectPathExists" />
+        <Transition WhenActualStateIs="*" EndStateWillBe="OnlyIndirectPathExists" />
     </DirectEffect>
 </Event>
 
