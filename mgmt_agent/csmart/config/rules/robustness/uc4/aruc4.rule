@@ -22,6 +22,9 @@ society.each_agent do |agent|
     agent.add_component do |c|
       c.classname = security_alert_plugin
     end
+    agent.add_component do |c|
+      c.classname = "org.cougaar.tools.robustness.ma.ui.IAOMServlet"
+    end
   end
   # add to all agents
   agent.add_component do |c|

@@ -91,9 +91,11 @@ public class SecurityAlertPlugin extends ComponentPlugin {
 
   public void execute() {
     Collection requests = opModes.getAddedCollection();
-    requests.addAll(opModes.getAddedCollection());
+    requests.addAll(opModes.getChangedCollection());
     for (Iterator it = requests.iterator(); it.hasNext();) {
-      generateSecurityAlert((InterAgentOperatingMode)it.next());
+      //generateSecurityAlert((InterAgentOperatingMode)it.next());
+      InterAgentOperatingMode iaom = (InterAgentOperatingMode)it.next();
+      generateSecurityAlert(iaom);
     }
   }
 
@@ -102,7 +104,10 @@ public class SecurityAlertPlugin extends ComponentPlugin {
    * @param iaom
    */
   private void generateSecurityAlert(InterAgentOperatingMode iaom) {
-    if (iaom.getValue().equals("HIGH")) {
+    Comparable level = iaom.getValue();
+    OMCRangeList allowedValues = iaom.getAllowedValues();
+    if (level.compareTo(allowedValues.getMax()) == 0) {
+    //if (iaom.getValue().equals("HIGH")) {
       if (securityAlert == null) {
         securityAlert = new SecurityAlert(SecurityAlert.HIGH_SEVERITY);
         tas.sendAlert(securityAlert, getCommunity(), "HealthMonitor");

@@ -54,6 +54,21 @@ module Cougaar
         end
      end
    end
+   
+   class PublishInterAgentOperatingMode < Cougaar::Action
+      def initialize(run, agent, level)
+        super(run)
+	@myAgent = agent
+	@myLevel = level
+      end
+      def perform
+        @run.society.each_agent do |agent|
+	  if agent.name == @myAgent
+	    result, uri = Cougaar::Communications::HTTP.get(agent.uri+"/iaom?target=#{@myAgent}&level=#{@myLevel}")
+	  end
+	end
+      end
+    end
 
   end
 
