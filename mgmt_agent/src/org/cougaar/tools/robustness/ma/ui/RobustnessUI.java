@@ -1033,7 +1033,8 @@ public class RobustnessUI extends JPanel
                 String restartNode = (String)attr.get();
                 //find parent host of this node
                 String host = (String)publishRequest("getParentHost", restartNode, null, null);
-                restartHosts.put(host, restartNode);
+		if (host != null)
+                  restartHosts.put(host, restartNode);
                }
                else
                {
@@ -1041,7 +1042,8 @@ public class RobustnessUI extends JPanel
                  {
                    String restartNode = (String)subattrs.next();
                    String host = (String)publishRequest("getParentHost", restartNode, null, null);
-                   restartHosts.put(host, restartNode);
+		   if (host != null)
+                     restartHosts.put(host, restartNode);
                  }
                }
              }
