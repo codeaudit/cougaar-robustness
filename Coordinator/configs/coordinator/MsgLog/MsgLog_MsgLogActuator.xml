@@ -5,7 +5,7 @@
 <ActuatorType name="org.cougaar.coordinator.test.defense.MsgLogActuator" 
               affectsAssetType="Agent" 
               affectsStateDimension="MsgLogSetting" 
-              actionType="Compensatory">
+              actionType="COMPENSATORY">
 
     <Action name="Suppress_Communications">
         <Description value="Suppresses attempts to communicate" />
@@ -23,7 +23,7 @@
                 <Time duration="100" />
             </OneTimeCost>
             <ContinuingCost>
-                <Bandwidth intensity="LOW" bandwidthSIzeFactor="TRUE" />
+                <Bandwidth intensity="LOW" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
     </Action>
@@ -35,8 +35,8 @@
                 <Time duration="100" />
             </OneTimeCost>
             <ContinuingCost>
-                <Bandwidth intensity="LOW" bandwidthSIzeFactor="TRUE" />
-	          <CPU intensity="LOW" bandwidthSIzeFactor="TRUE" />
+                <Bandwidth intensity="LOW" msgSizeFactor="TRUE" />
+	          <CPU intensity="LOW" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
     </Action>
@@ -48,8 +48,8 @@
                 <Time duration="1000" />
             </OneTimeCost>
             <ContinuingCost>
-                <Bandwidth intensity="MEDIUM" bandwidthSIzeFactor="TRUE" />
-	          <CPU intensity="MEDIUM" bandwidthSIzeFactor="TRUE" />
+                <Bandwidth intensity="MEDIUM" msgSizeFactor="TRUE" />
+	          <CPU intensity="MEDIUM" msgSizeFactor="TRUE" />
             </ContinuingCost>
         </Transition>
     </Action>
