@@ -42,9 +42,9 @@ public interface RestartManagerConstants {
   public static final String LOAD_BALANCER_ATTRIBUTE           = "LoadBalancer";
   public static final String LOAD_BALANCER_MODE_ATTRIBUTE      = "LoadBalancerMode";
   public static final String AUTO_LOAD_BALANCE_ATTRIBUTE       = "AutoLoadBalance";
-  public static final String MINIMUM_ANNEAL_TIME_ATTRIBUTE     = "MinimumAnnealTime";
-  // Minimum value for EN4J annealTime parameter
-  public static final int MINIMUM_ANNEAL_TIME                  = 10;
+  public static final String ANNEAL_TIME_ATTRIBUTE             = "AnnealTime";
+  // Value for EN4J annealTime parameter
+  public static final int ANNEAL_TIME                          = 10;
 
   public static final String USE_FOR_RESTARTS_ATTRIBUTE        = "UseForRestarts";
   public static final String EXPECTED_AGENTS_ATTRIBUTE         = "NumberOfAgents";
