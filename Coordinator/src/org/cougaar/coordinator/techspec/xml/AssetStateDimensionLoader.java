@@ -91,7 +91,8 @@ public class AssetStateDimensionLoader extends XMLLoader {
                     boolean added = assetType.addStateDimension(asd);
                     states.add(asd);
                     if (!added) {
-                        logger.warn("Tried to add duplicate state dimention: "+asd.toString());
+                        if (logger.isInfoEnabled())
+			    logger.info("Tried to add duplicate state dimension: "+asd.toString());
                         continue;
                     }
                 }
