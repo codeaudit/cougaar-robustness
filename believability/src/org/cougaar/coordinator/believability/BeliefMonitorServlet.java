@@ -281,7 +281,7 @@ public class BeliefMonitorServlet extends ComponentPlugin
      
      public void doGet(HttpServletRequest request, HttpServletResponse response) {
             
-         int refreshRate = 10000;
+         int refreshRate = 60000;
          String refreshError = null;
 
          response.setContentType("text/html");
