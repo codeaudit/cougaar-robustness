@@ -158,7 +158,7 @@ public class LoadBalancer extends BlackboardClientComponent {
     String enSociety = getXmlForEN(society);
     CougaarSociety cs = loadSocietyFromXML(enSociety);
     LoadBalanceRequest loadBalReq = new LoadBalanceRequest(cs);
-    logger.debug("publish add LoadBalanceRequest of " + agentId);
+    logger.debug("publishing LoadBalanceRequest");
     blackboard.publishAdd(loadBalReq);
     return cs;
   }
