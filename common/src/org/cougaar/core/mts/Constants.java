@@ -37,7 +37,6 @@ public final class Constants
     public static final String MSG_TYPE_PING =         "MessageTypePing";
     public static final String MSG_TYPE_PURE_ACK =     "MessageTypePureAck";
     public static final String MSG_TYPE_PURE_ACK_ACK = "MessageTypePureAckAck";
-    public static final String MSG_TYPE_UNKNOWN =      "MessageTypeUnknown";
     public static final String MSG_TYPE_TRAFFIC_MASK = "MessageTypeTrafficMasking";
 
     public static final String AUDIT_ATTRIBUTE_NUMSEQ = "AuditSeqNum"; 
