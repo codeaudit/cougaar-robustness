@@ -79,28 +79,28 @@ public class DiagnosisTechSpecServiceProvider implements ServiceProvider {
         /**
          * @return the DiagnosisTechSpec for this class, and NULL if not found.
          */
-        public DiagnosisTechSpecInterface getDiagnosisTechSpec(Class cls) {
+        public DiagnosisTechSpecInterface getDiagnosisTechSpec(String sensorType) {
             
-            return mgr.getTechSpec(cls);
-            
-        }
-
-        /**
-         * Add a DiagnosisTechSpec for a class, meant for testing 
-         */
-        public void addDiagnosisTechSpec(String cls, DiagnosisTechSpecInterface d) {
-            
-            mgr.addTechSpec(cls, d);
+            return mgr.getTechSpec(sensorType);
             
         }
 
         /**
          * Add a DiagnosisTechSpec for a class, meant for testing 
          */
-        public void addCrossDiagnosis(CrossDiagnosis dp) {
+        public void addDiagnosisTechSpec(String sensorType, DiagnosisTechSpecInterface dtsi) {
             
-            crossProbs.add(dp);
+             mgr.addTechSpec(sensorType, dtsi);
             
+        }
+
+        /**
+         * Add a CrossDiagnosis for a class
+         */
+        public void addCrossDiagnosis(CrossDiagnosis cd) {
+            
+            mgr.addCrossDiagnosis(cd);
+         
         }
         
     }

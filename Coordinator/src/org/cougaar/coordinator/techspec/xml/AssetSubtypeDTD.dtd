@@ -1,0 +1,13 @@
+<?xml encoding="UTF-8" ?>
+
+<!-- Created by Administrator on March 24, 2004, 10:11 AM -->
+
+<!ELEMENT AssetSubtype>
+
+<!ATTLIST AssetSubtype
+    newType CDATA #REQUIRED
+    superType CDATA #REQUIRED
+>
+<!-- Example
+<AssetSubtype newType=”Room” superType=”VirtualAsset” />
+-->

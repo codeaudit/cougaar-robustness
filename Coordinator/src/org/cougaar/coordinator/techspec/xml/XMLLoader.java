@@ -158,9 +158,7 @@ public abstract class XMLLoader extends ComponentPlugin implements NotPersistabl
                 }
             }
             
-        } else {
-            logger.error("UNKNOWN XML TAG = "+ tag + ".  Cannot process.");
-        }
+        } //else it's a text Node, so don't process.
         
     }
     

@@ -74,6 +74,7 @@ public class DiagnosisManagerPlugin extends ComponentPlugin implements NotPersis
     private Hashtable allDiagnoses;
     private Vector newDiagnoses;
     private Vector fileParams = null;
+    private Vector crossProbs;
     
     /** The Max latency of all defenses. Used to throttle the TimedDiagnosisPlugin via its knob
      *  ***ASSUMES ONLY ONE MONITORING LEVEL PER DEFENSE!!! ***
@@ -87,7 +88,7 @@ public class DiagnosisManagerPlugin extends ComponentPlugin implements NotPersis
         
         fileParams = new Vector();
         
-        Iterator iter = getParameters().iterator ();
+        Iterator iter = getParameters().iterator();
         if (iter.hasNext()) {
             fileParams.add( (String) iter.next() );
         }
@@ -100,36 +101,36 @@ public class DiagnosisManagerPlugin extends ComponentPlugin implements NotPersis
         //**** Iterator thru all of the fileParams & load the deserialized objects into
         // allDiagnoses indexed by class/file name (minus ".xml" suffix).
         if (fileParams == null) { return; }
-
+        
         File f;
         DiagnosisTechSpecInterface diagnosis = null;
         Iterator i = fileParams.iterator();
         while (i.hasNext()) {
-        
-            String name = (String)i.next(); 
+            
+            String name = (String)i.next();
             
             try {
-    
-    /////            DiagnosisXMLParser parser = new DiagnosisXMLParser (us);
-
-                f = getConfigFinder().locateFile((String)i.next()); 
+                
+                /////            DiagnosisXMLParser parser = new DiagnosisXMLParser (us);
+                
+                f = getConfigFinder().locateFile((String)i.next());
                 if (!f.exists()) { //look
                     logger.warn("*** Did not find Diagnosis XML file in = " + f.getAbsolutePath());
                     logger.error("**** CANNOT FIND Diagnosis XML file!");
                     return;
                 }
                 //logger.debug("path for Diagnosis XML file = " + f.getAbsolutePath());
-
-    /////            parser.parse(new InputSource(new FileInputStream(f)));
-
-    /////            diagnosis = parser.getParsedDiagnosis();
-                allDiagnoses.put(name, diagnosis); 
+                
+                /////            parser.parse(new InputSource(new FileInputStream(f)));
+                
+                /////            diagnosis = parser.getParsedDiagnosis();
+                allDiagnoses.put(name, diagnosis);
                 newDiagnoses.add(diagnosis);
-
+                
             } catch (Exception e) {
                 logger.error("Exception while importing Diagnosis!",e);
             }
-
+            
             logger.debug("Imported "+allDiagnoses.size()+" Diagnoses!");
             
         }
@@ -146,7 +147,7 @@ public class DiagnosisManagerPlugin extends ComponentPlugin implements NotPersis
         getServices();
         allDiagnoses = new Hashtable(100);
         newDiagnoses = new Vector();
-        
+        crossProbs = new Vector();
     }
     
     
@@ -166,7 +167,7 @@ public class DiagnosisManagerPlugin extends ComponentPlugin implements NotPersis
     }
     
     /**
-     * Unload the DiagnosisTechSpecService 
+     * Unload the DiagnosisTechSpecService
      */
     public void unload() {
         // revoke our service
@@ -199,8 +200,8 @@ public class DiagnosisManagerPlugin extends ComponentPlugin implements NotPersis
                 Iterator i = newDiagnoses.iterator();
                 while (i.hasNext() ) {
                     this.blackboard.publishAdd((DiagnosisTechSpecInterface)i.next());
-                }            
-
+                }
+                
                 //Now empty the vector since we've added them
                 newDiagnoses.clear();
             }
@@ -215,32 +216,60 @@ public class DiagnosisManagerPlugin extends ComponentPlugin implements NotPersis
      *
      * @return NULL if the DiagnosisTechSpec cannot be found.
      */
-    DiagnosisTechSpecInterface getTechSpec(Class cls) {
-    
-        DiagnosisTechSpecInterface dts = (DiagnosisTechSpecInterface)allDiagnoses.get( cls.getName() );
+    DiagnosisTechSpecInterface getTechSpec(String sensorType) {
+        
+        DiagnosisTechSpecInterface dts = (DiagnosisTechSpecInterface)allDiagnoses.get( sensorType );
         if (dts == null) {
             
             //Tech Spec is not loaded...
             //... try finding it, parsing it, putting it in allDiagnoses, and returning it.
-
+            
             //Now add it to newDiagnoses so it gets published to the BB
             synchronized(newDiagnoses) {
-                    //add to new Diagnoses
+                //add to new Diagnoses
             }
         }
         
         return dts; //even if null
     }
-
-
+    
+    
     /**
      * Add an DiagnosisTechSpec for a class. Targeted to testing
      */
-    public void addTechSpec(String cls, DiagnosisTechSpecInterface a) {
-
-        allDiagnoses.put(cls, a); 
-        newDiagnoses.add(a);
-
+    public void addTechSpec(String sensorType, DiagnosisTechSpecInterface a) {
+        
+        synchronized(this) {
+            allDiagnoses.put(sensorType, a);
+            newDiagnoses.add(a);
+        }
+        
+        //Look for cross diagnoses & add
+        for (Iterator i=crossProbs.iterator(); i.hasNext(); ) {
+            
+            CrossDiagnosis cd = (CrossDiagnosis) i.next();
+            if (cd.getSensorName().equalsIgnoreCase(sensorType)) {
+                a.addCrossDiagnosisProbability(cd);
+                crossProbs.remove(cd);
+            }            
+        }        
+    }
+    
+    
+    /**
+     * Add a DiagnosisTechSpec for a class, meant for testing
+     */
+    public void addCrossDiagnosis(CrossDiagnosis cd) {
+        
+        DiagnosisTechSpecInterface dts = null;
+        synchronized(this) {
+            dts = getTechSpec(cd.getSensorName());
+        }
+        if (dts != null) {
+            dts.addCrossDiagnosisProbability(cd);
+        } else {
+            crossProbs.add(cd);
+        }
     }
     
 }

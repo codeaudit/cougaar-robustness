@@ -1,17 +1,16 @@
 /*
- * CrossDiagnosis.java
+ * ContainmentFilter.java
  *
- * Created on March 25, 2004, 3:09 PM
+ * Created on March 26, 2004, 4:24 PM
  * <copyright>
  *  Copyright 2003 Object Services and Consulting, Inc.
- *  Copyright 2001-2003 Mobile Intelligence Corp
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA)
  *  and the Defense Logistics Agency (DLA).
- *
+ * 
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the Cougaar Open Source License as published by
  *  DARPA on the Cougaar Open Source Website (www.cougaar.org).
- *
+ * 
  *  THE COUGAAR SOFTWARE AND ANY DERIVATIVE SUPPLIED BY LICENSOR IS
  *  PROVIDED 'AS IS' WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
  *  IMPLIED, INCLUDING (BUT NOT LIMITED TO) ALL IMPLIED WARRANTIES OF
@@ -26,42 +25,23 @@
 
 package org.cougaar.coordinator.techspec;
 
-import java.util.Vector;
-
 /**
  *
  * @author  Administrator
  */
-public class CrossDiagnosis {
+public class ContainmentFilter {
     
-    private String sensorName;
-    private String isAffectedByStateDimension;
-    private Vector probs;
+    private String eventAssetContainerName;
     
-    /** Creates a new instance of CrossDiagnosis */
-    public CrossDiagnosis(String name, String affectedState) {
+    /** Creates a new instance of ContainmentFilter */
+    public ContainmentFilter(String eventAssetContainerName) {
         
-        sensorName = name;
-        isAffectedByStateDimension = affectedState;
-        probs = new Vector();
+        this.eventAssetContainerName = eventAssetContainerName;
     }
-
-    /** @return the cross diagnosis sensor type */
-    public String getSensorName() { return sensorName; }
     
-    /** @return the cross diagnosis affected dimension */
-    public String getAffectedDimension() { return isAffectedByStateDimension; }
-    
-    /** Add a cross diagnosis probability */
-    public void addProbability(DiagnosisProbability dp) {
-     
-        probs.add(dp);
-    }
-
-    /** @return the cross diagnosis probabilities */
-    public Vector getProbabilities() {
-     
-        return probs;
-    }
+    /**
+     * @return the container name for this filter
+     */
+    public String getContainerName() { return eventAssetContainerName; }
     
 }

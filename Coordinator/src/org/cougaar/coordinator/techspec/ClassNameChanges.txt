@@ -1,0 +1,3 @@
+
+StateValue -> AssetState
+AssetStateDescriptor -> AssetStateDimension

@@ -1,0 +1,13 @@
+<?xml encoding="UTF-8" ?>
+
+<!-- Created by Administrator on March 24, 2004, 10:13 AM -->
+
+<!ELEMENT VirtualAsset>
+
+<!ATTLIST VirtualAsset
+    assetName CDATA #REQUIRED
+    assetType CDATA #REQUIRED
+>
+<!-- Example
+<VirtualAsset name=”ComputerRoom” type=”Room” />
+-->

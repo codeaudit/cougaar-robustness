@@ -46,6 +46,7 @@ public class DiagnosisTechSpecImpl implements DiagnosisTechSpecInterface  {
     UID uid;
     String revision = "0";
     Vector probabilities = null;
+    Vector crossProbabilities;
     
     /** Creates a new instance of DiagnosisTechSpecImpl */
     public DiagnosisTechSpecImpl(String name, UID uid) {
@@ -56,6 +57,7 @@ public class DiagnosisTechSpecImpl implements DiagnosisTechSpecInterface  {
         this.threatTypes = new Vector();
         this.uid = uid;
         this.probabilities = new Vector();
+        this.crossProbabilities = new Vector();
         
     }
     
@@ -166,6 +168,20 @@ public class DiagnosisTechSpecImpl implements DiagnosisTechSpecInterface  {
              }             
         }        
         return s;
+    }
+    
+    /** @return the CrossDiagnosisProbabilities
+     *
+     */
+    public Vector getCrossDiagnosisProbabilities() {
+        return crossProbabilities;
+    }
+    
+    /** add a CrossDiagnosisProbability
+     *
+     */
+    public void addCrossDiagnosisProbability(CrossDiagnosis cd) {
+        crossProbabilities.add(cd);
     }
     
 }

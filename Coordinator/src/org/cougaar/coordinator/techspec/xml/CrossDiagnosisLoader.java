@@ -111,7 +111,7 @@ public class CrossDiagnosisLoader extends XMLLoader {
         //1. Create a new AssetType instance &
         String sensorType = element.getAttribute("sensorType");
         String affectedBy = element.getAttribute("isAffectedByStateDimension");
-                   
+        
         CrossDiagnosis crossD = new CrossDiagnosis( sensorType, affectedBy);
 
         //Create a SensorType
@@ -126,8 +126,7 @@ public class CrossDiagnosisLoader extends XMLLoader {
             } //else, likely a text element - ignore            
         }
 
-//        diagnosisTechSpecService.a
-
+        diagnosisTechSpecService.addCrossDiagnosis(crossD);
         
         logger.debug("Added new Cross Diagnosis for sensor: \n"+sensorType.toString() );
             

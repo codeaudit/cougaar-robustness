@@ -251,7 +251,7 @@ public abstract class Diagnosis
         }        
       
         //call tech spec service & get action tech spec        
-        diagnosisTechSpec = (DiagnosisTechSpecInterface) DiagnosisTechSpecService.getDiagnosisTechSpec(this.getClass());
+        diagnosisTechSpec = (DiagnosisTechSpecInterface) DiagnosisTechSpecService.getDiagnosisTechSpec(this.getClass().getName());
         if (diagnosisTechSpec == null) {
             throw new TechSpecNotFoundException("Cannot find Diagnosis Tech Spec for "+ this.getClass().getName() );
         }        

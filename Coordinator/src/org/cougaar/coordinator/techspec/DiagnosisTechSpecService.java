@@ -33,8 +33,8 @@ import org.cougaar.core.component.Service;
  */
 public interface DiagnosisTechSpecService extends Service {
     
-    public DiagnosisTechSpecInterface getDiagnosisTechSpec(Class cls);    
-    public void addDiagnosisTechSpec(String cls, DiagnosisTechSpecInterface dtsi);    
+    public DiagnosisTechSpecInterface getDiagnosisTechSpec(String sensorType);    
+    public void addDiagnosisTechSpec(String sensorType, DiagnosisTechSpecInterface dtsi);    
     public void addCrossDiagnosis(CrossDiagnosis dp);
    
 }

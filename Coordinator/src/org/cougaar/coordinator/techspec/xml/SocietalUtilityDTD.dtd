@@ -1,0 +1,10 @@
+<?xml encoding="UTF-8" ?>
+
+<!-- Created by Administrator on March 24, 2004, 9:48 AM -->
+
+<!ELEMENT SocietalUtility (RelativeValuation+)>
+
+<!ATTLIST RelativeValuation
+    assetType CDATA #REQUIRED
+    societalUtility CDATA #REQUIRED
+>
