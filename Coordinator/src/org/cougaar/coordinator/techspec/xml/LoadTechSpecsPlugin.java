@@ -278,13 +278,17 @@ public class LoadTechSpecsPlugin extends ServiceUserPluginBase implements NotPer
         //Now, process the tech specs in the desired order.
         processTechSpecs();
         
-        cleanup();
     }
     
     //Publish the events & threats
     public void setupSubscriptions() {
         eventLoader.publishEvents(blackboard, eventDescriptions);
         threatLoader.publishThreats(blackboard);        
+        //Announce tech specs
+        blackboard.publishAdd(new TechSpecsLoadedCondition());
+
+        //Now set attrs to null to allow garbage collecting of loader attrs.
+        cleanup();
     }
     
 
