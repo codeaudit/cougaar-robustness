@@ -48,8 +48,8 @@ include_scripts:
       - wait_location: after_stage_1
       - nodes: ["FSB-CO-HQ-CIC-NODE", "FSB-DISTRO-FWD-EVAC-NODE"]
       - nodes_to_kill: ["1-UA-ROB-MGMT-NODE"]
-      - planned_disconnect: 12.minutes
-      - actual_disconnect: 25.minutes
+      - planned_disconnect: 4.minutes
+      - actual_disconnect: 4.minutes
       - timeout: 30.minutes
       - verbose: 2
   - script: $CIP/csmart/lib/coordinator/unleash_defenses.rb 
