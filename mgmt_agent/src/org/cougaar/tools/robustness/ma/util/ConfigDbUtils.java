@@ -517,12 +517,11 @@ public class ConfigDbUtils {
   private static String getAssemblyIDFromArgument(String args)
   {
     String assemblyID = "";
-    if(args.substring(0, args.indexOf("=")).equals("assembly"))
+    if(args.substring(0, args.indexOf("=")).equals("assembly")) {
         assemblyID = args.substring(args.indexOf("=")+1, args.length());
-    else if(args.substring(0, args.indexOf("=")).equals("experiment"))
+    } else if(args.substring(0, args.indexOf("=")).equals("experiment")) {
         assemblyID = getAssemblyID(args.substring(args.indexOf("=")+1, args.length()));
-    else
-    {
+    } else {
         log.error("Invalid arguments. Type 'help' to get help.");
         System.exit(0);
     }
@@ -573,12 +572,12 @@ public class ConfigDbUtils {
   {
     if(args.length == 0)
     {
-      System.out.println("No parameters. Type '-h' to get help.");
+      log.info("No parameters. Type '-h' to get help.");
       System.exit(0);
     }
     else if(args[0].equals("-h"))
     {
-      System.out.println(
+      log.info(
         "  help                                display this help and exit\n" +
         "  export file=XmlFileName assembly=assemblyID         create an xml file from community associated with assemblyID\n" +
         "  export file=XmlFileName experiment=experimentName   create an xml file from community associated with experiment\n" +
@@ -612,7 +611,7 @@ public class ConfigDbUtils {
     }
     else
     {
-      System.out.println("Invalid operation. Type 'help' for help.");
+      log.info("Invalid operation. Type 'help' for help.");
       System.exit(0);
     }
   }
