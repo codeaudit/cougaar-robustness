@@ -78,13 +78,23 @@ public class SendTimeoutAspect extends StandardAspect
              CommFailureException, MisdeliveredMessageException
     {
       if (timeoutp == true) {
+          
+          String s = null;  
+          if (loggingService.isDebugEnabled()) {
+            s = MessageUtils.getMessageNumber(msg) + "."
+                + (MessageUtils.getAck(msg).getSendCount()+1) + " "
+                + MessageUtils.getMessageTypeLetter(msg) + "("
+                + (MessageUtils.getAck(msg).isSomePureAck() ? String.valueOf(MessageUtils.getSrcMsgNumber(msg)) : "") + ") "
+                + MessageUtils.toAltShortSequenceID(msg) + " via "   
+                + AdaptiveLinkSelectionPolicy.getLinkType(link.getProtocolClass().getName());
+            loggingService.debug("forwardMessage: enter " + s);
+          }
        
           // Forward the message in another thread so we can timeout on it here
 
           Object sem = new Object();
 
           // shallow copy the AttributedMessage
-          //AttributedMessage msgCopy = new AttributedMessage(msg); 
           AttributedMessage msgCopy; 
 
           if (msg instanceof PureAckAckMessage) msgCopy = new PureAckAckMessage((PureAckAckMessage)msg);
@@ -99,24 +109,38 @@ public class SendTimeoutAspect extends StandardAspect
             msgCopy,
             RTTAspect.cloneRTTData(RTTAspect.getRTTDataAttribute(msg))); 
 
-          ForwardMessageThread t = new ForwardMessageThread(msgCopy,link,sem);
+          ForwardMessageThread t = new ForwardMessageThread(msgCopy,link,sem,s);
           //Schedulable thread = threadService.getThread(this, t, "SendTimeoutAspect");
           Thread thread = new Thread(t, "SendTimeoutAspect");
-          //thread.setPriority(7);
+          if (loggingService.isDebugEnabled())
+           loggingService.debug("forwardMessage: starting thread " + s);
           thread.start();
+          int timeout = (fastp ? fastTimeout : slowTimeout);
           synchronized (sem) {
+            if (loggingService.isDebugEnabled())
+              loggingService.debug("forwardMessage: about to wait " + s);
             try {
-              sem.wait(fastp ? fastTimeout : slowTimeout);
+              sem.wait(timeout);
             } catch (InterruptedException e) {
-	      e.printStackTrace();
+              if (loggingService.isDebugEnabled()) {
+                loggingService.debug("forwardMessage: got exception " + s);
+	          e.printStackTrace();
+              }
               throw new CommFailureException(e);
             }
           }
  
-          if (t.isDone()) return t.getAttributes();
+          if (t.isDone()) {
+            if (loggingService.isDebugEnabled())
+              loggingService.debug("forwardMessage: completed normally " + s);
+            return t.getAttributes();
+          }
           if (t.isException()) {
             Exception ex = t.getException();
-//System.out.println("\nSendTimeoutAspect: got exception = " + ex);
+            if (loggingService.isDebugEnabled()) {
+              loggingService.debug("forwardMessage: got exception " + s);
+              ex.printStackTrace();
+            }
             if (ex instanceof UnregisteredNameException) 
               throw (UnregisteredNameException)ex;
             if (ex instanceof NameLookupException) 
@@ -127,18 +151,9 @@ public class SendTimeoutAspect extends StandardAspect
               throw (MisdeliveredMessageException)ex;
             throw new CommFailureException(ex);
           }
-          //Ack ack = MessageUtils.getAck(msgCopy);
-          //String srcMsgNum = (ack.isSomePureAck()) ? MessageUtils.getSrcMsgNumber(msgCopy).t : "") + ") "
-
-          String s = 
-            "SendTimeoutAspect: Timeout sending msg " 
-            + MessageUtils.getMessageNumber(msgCopy) + "."
-            + (MessageUtils.getAck(msgCopy).getSendCount()+1) + " "
-            + MessageUtils.getMessageTypeLetter(msgCopy) + "("
-            + (MessageUtils.getAck(msgCopy).isSomePureAck() ? String.valueOf(MessageUtils.getSrcMsgNumber(msgCopy)) : "") + ") "
-            + MessageUtils.toAltShortSequenceID(msgCopy) + " via "   
-            + AdaptiveLinkSelectionPolicy.getLinkType(link.getProtocolClass().getName());
-          throw new CommFailureException(new Exception(s));
+          if (loggingService.isDebugEnabled())
+            loggingService.debug("forwardMessage: timed out " + s);
+          throw new CommFailureException(new Exception("SendTimeoutAspect.forwardMessage: Timeout sending msg " + s));
       } else {
           return link.forwardMessage(msg);
       }
@@ -152,23 +167,37 @@ public class SendTimeoutAspect extends StandardAspect
     private MessageAttributes attrs;
     private Exception ex;
     private Object sem;
+    private String s;
 
-    public ForwardMessageThread (AttributedMessage msg, DestinationLink link, Object sem) {
+    public ForwardMessageThread (AttributedMessage msg, DestinationLink link, Object sem, String s) {
       this.msg = msg;
       this.link = link;
       attrs = null;
       ex = null;
       this.sem = sem;
+      this.s = s;
     }
     public void run () {
+      try {
+        if (loggingService.isDebugEnabled())
+          loggingService.debug("run: about to forwardMessage " + s);
+        attrs = link.forwardMessage(msg);
+        if (loggingService.isDebugEnabled())
+          loggingService.debug("run: got result " + s);
+      } catch (Exception e) {
+        if (loggingService.isDebugEnabled())
+          loggingService.debug("run: got exception " + s);
+        e.printStackTrace();
+        ex = e;
+      }
+      if (loggingService.isDebugEnabled())
+        loggingService.debug("run: about to synchronize " + s);
       synchronized (sem) {
-        try {
-          attrs = link.forwardMessage(msg);
-        } catch (Exception e) {
-	    e.printStackTrace();
-          ex = e;
-        }
+        if (loggingService.isDebugEnabled())
+          loggingService.debug("run: about to notify " + s);
         sem.notify();
+        if (loggingService.isDebugEnabled())
+          loggingService.debug("run: about to exit " + s);
       }
     }
     protected MessageAttributes getAttributes() {

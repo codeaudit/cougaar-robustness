@@ -130,6 +130,7 @@ public class ManagedNameSupportAspect extends StandardAspect
       AddressLookup addressLookup = new AddressLookup (nameSupport, address, transportType);
       String name = "AddressLookup_" +address+ "," + transportType;
       Schedulable thread = threadService().getThread (this, addressLookup, name);
+      if (doDebug()) debug ("starting thread to lookup name " + name);
       thread.start();
 
       //  Wait till we get the address lookup or we time out
