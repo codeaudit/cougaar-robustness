@@ -28,8 +28,12 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Iterator;
 import java.io.ByteArrayOutputStream;
+import java.lang.reflect.Constructor;
 import org.cougaar.core.relay.*;
 import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.mts.MessageAttributes;
+import org.cougaar.core.mts.SimpleMessageAttributes;
+import org.cougaar.core.mts.MessageUtils;
 import org.cougaar.core.util.UID;
 import org.cougaar.core.util.XMLizable;
 import org.cougaar.core.util.XMLize;
@@ -40,7 +44,7 @@ import org.cougaar.core.persist.NotPersistable;
  * A Heartbeat Request Relay, the Blackboard object that is passed
  * between HeartbeatRequesterPlugin to HeartbeatServerPlugin.
  **/
-public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersistable
+public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersistable //, MsglogAttributes
 {
   private UID uid;
   private MessageAddress source;
@@ -66,7 +70,42 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersista
     this.source = source;
     this.content = content;
     this.response = response;
-    this.targets = ((targets == null) ? Collections.EMPTY_SET : new HashSet(targets));
+    //this.targets = ((targets == null) ? Collections.EMPTY_SET : new HashSet(targets));
+    // add attributes to targets
+    if (targets == null) {
+      this.targets = Collections.EMPTY_SET;
+    } else {
+      this.targets = new HashSet();
+      Iterator iter = targets.iterator();
+      while (iter.hasNext()) {
+        MessageAddress addr = (MessageAddress)iter.next();
+        MessageAttributes attrs = addr.getQosAttributes();
+        try {
+          if (attrs == null) {
+            Class[] classes = new Class[2];
+            classes[0] = MessageAttributes.class;
+            classes[1] = String.class;
+            Constructor x = addr.getClass().getConstructor(classes);
+            attrs = new SimpleMessageAttributes();
+            String addrStr = addr.getAddress();
+            Object[] args = new Object[2];
+            args[0] = attrs;
+            args[1] = addrStr;
+            addr = (MessageAddress)x.newInstance(args);
+          }
+          if (content instanceof HbReqContent) {
+            long timeout = ((HbReqContent)content).getReqTimeout();
+            if (timeout > 0) {
+              attrs.setAttribute(MessageUtils.SEND_TIMEOUT, new Integer((int)timeout));  // change msglog to avoid this cast
+            }
+          }
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+        this.targets.add(addr);
+        //System.out.println("\n\nMessageAttributes are " + attrs + "\n");
+      }
+    }
   }
 
   // Unique Object implementation
@@ -144,6 +183,10 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersista
   * Update the source with the new response.
   */
   public int updateResponse(MessageAddress t, Object response) {
+    this.response = response;
+    return Relay.RESPONSE_CHANGE;
+  }
+/*
     // assert response != null
     if (!(response.equals(this.response))) {
       this.response = response;
@@ -151,6 +194,7 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersista
     }
     return Relay.NO_CHANGE;
   }
+*/
 
   // Relay.Target implementation
 
@@ -220,5 +264,36 @@ public class HbReq implements Relay.Source, Relay.Target, XMLizable, NotPersista
            "   content = " + content + "\n" +
            "   response = " + response + ")";
   }
+
+  /** 
+  * Convert this into a Heartbeat.
+  */
+  public void convertToHeartbeat() {
+    MessageAttributes attrs = source.getQosAttributes();
+    try {
+      if (attrs == null) {
+        Class[] classes = new Class[2];
+        classes[0] = MessageAttributes.class;
+        classes[1] = String.class;
+        Constructor x = source.getClass().getConstructor(classes);
+        attrs = new SimpleMessageAttributes();
+        String addrStr = source.getAddress();
+        Object[] args = new Object[2];
+        args[0] = attrs;
+        args[1] = addrStr;
+        source = (MessageAddress)x.newInstance(args);
+      }
+      attrs.setAttribute(MessageUtils.MSG_TYPE, MessageUtils.MSG_TYPE_HEARTBEAT);
+      if (content instanceof HbReqContent) {
+        long timeout = ((HbReqContent)content).getHbTimeout();
+        if (timeout > 0) {
+          attrs.setAttribute(MessageUtils.SEND_TIMEOUT, new Integer((int)timeout));  // change msglog to avoid this cast
+        }
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+
 }
 

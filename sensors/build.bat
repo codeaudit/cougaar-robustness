@@ -29,11 +29,13 @@ rem compile the code
 if not exist lib mkdir lib
 set LIBPATHS=%COUGAAR_INSTALL_PATH%\lib\bootstrap.jar
 set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\core.jar
+rem set LIBPATHS=%COUGAAR_INSTALL_PATH%\lib\core.jar
 set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\util.jar
-set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\build.jar
-set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\glm.jar
-set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\sys\servlet.jar
+rem set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\build.jar
+rem set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\glm.jar
+rem set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\sys\servlet.jar
 set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\manager.jar
+set LIBPATHS=%LIBPATHS%;%COUGAAR_INSTALL_PATH%\lib\Robustness_objs_msglog.jar
 
 set FILES=src\org\cougaar\tools\robustness\sensors\*.java
 if exist tutorial\assets set FILES=%FILES% tutorial\assets\*.java

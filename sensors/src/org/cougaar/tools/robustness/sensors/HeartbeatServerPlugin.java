@@ -126,8 +126,10 @@ public class HeartbeatServerPlugin extends ComponentPlugin {
         if (lastHbDue > lastHbSent) {   // its time for this one
           MessageAddress me = getAgentIdentifier();
           response.setResponder(me);
-
-          response.setStatus(HbReqResponse.HEARTBEAT);
+          if (response.getStatus() != HbReqResponse.HEARTBEAT) {
+            response.setStatus(HbReqResponse.HEARTBEAT);
+            req.convertToHeartbeat();
+          }
           response.setLastHbSent(now);
           req.updateResponse(me, response);
           bb.publishChange(req);
