@@ -12,10 +12,11 @@ require 'robustness/uc7/disconnection'
 
 verb = parameters[:verbose]
 
-insert_before parameters[:wait_location] do
-  timeout = eval(parameters[:timeout].to_s)
-  wait_for "PlannedDisconnectCompleted", timeout, verb
-end
+# moved to planned_disconnect_completed
+#insert_before parameters[:wait_location] do
+#  timeout = eval(parameters[:timeout].to_s)
+#  wait_for "PlannedDisconnectCompleted", timeout, verb
+#end
 
 insert_after parameters[:location] do
   planned = eval(parameters[:planned_disconnect].to_s)
