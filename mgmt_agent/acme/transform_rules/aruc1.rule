@@ -1,0 +1,136 @@
+####################################################
+# Rule to insert components required for
+# Adaptive Robustness Use-Case 1(ARUC1) defense
+# Add to : All Agents and Nodes (NodeAgents)
+#   plugin: org.cougaar.tools.robustness.sensors.PingServerPlugin
+# Add to : All Agents
+#   plugin: org.cougaar.tools.robustness.sensors.HeartbeatServerPlugin
+# Add to : All robustness manager agents
+#   plugin: org.cougaar.tools.robustness.sensors.HeartbeatRequesterPlugin
+#   plugin: org.cougaar.tools.robustness.sensors.PingRequesterPlugin
+#   plugin: org.cougaar.tools.robustness.ma.plugins.HealthMonitorPlugin
+#   plugin: org.cougaar.tools.robustness.ma.plugins.DecisionPlugin
+#   plugin: org.cougaar.tools.robustness.ma.plugins.RestartLocatorPlugin
+#   plugin: org.cougaar.tools.robustness.ma.plugins.VacatePlugin
+#   plugin: org.cougaar.tools.robustness.ma.ui.ParameterModifierServlet
+#   plugin: org.cougaar.tools.robustness.ma.ui.ARServlet
+
+sensor_domain = "org.cougaar.tools.robustness.sensors.SensorDomain"
+ping_server_plugin = "org.cougaar.tools.robustness.sensors.PingServerPlugin"
+hb_server_plugin = "org.cougaar.tools.robustness.sensors.HeartbeatServerPlugin"
+hb_requester_plugin = "org.cougaar.tools.robustness.sensors.HeartbeatRequesterPlugin"
+ping_requester_plugin = "org.cougaar.tools.robustness.sensors.PingRequesterPlugin"
+health_monitor_plugin = "org.cougaar.tools.robustness.ma.plugins.HealthMonitorPlugin"
+decision_plugin = "org.cougaar.tools.robustness.ma.plugins.DecisionPlugin"
+restart_locator_plugin = "org.cougaar.tools.robustness.ma.plugins.RestartLocatorPlugin"
+vacate_plugin = "org.cougaar.tools.robustness.ma.plugins.VacatePlugin"
+param_mod_servlet = "org.cougaar.tools.robustness.ma.ui.ParameterModifierServlet"
+ar_servlet = "org.cougaar.tools.robustness.ma.ui.ARServlet"
+
+communityPlugin = "org.cougaar.community.CommunityPlugin"
+simple_servlet_comp = "org.cougaar.core.servlet.SimpleServletComponent"
+
+# Add robustness manager nodes and agents
+names = [["1AD-Enclave1-RobustnessManagerNode", "1AD-Enclave1-RobustnessManager"], 
+         ["1AD-Enclave2-RobustnessManagerNode", "1AD-Enclave2-RobustnessManager"],
+         ["1AD-Enclave3-RobustnessManagerNode", "1AD-Enclave3-RobustnessManager"],
+         ["1AD-Enclave4-RobustnessManagerNode", "1AD-Enclave4-RobustnessManager"]]
+names.each do |newNode, newAgent|
+  society.each_host do |host|
+    host.add_node (newNode) do |node|
+      node.classname = "org.cougaar.bootstrap.Bootstrapper"
+      node.add_prog_parameter("org.cougaar.core.node.Node")
+      node.add_parameter("-Dorg.cougaar.node.name=" + newNode)
+      node.add_parameter("-Dorg.cougaar.core.agent.startTime=08/10/2005")
+      node.add_parameter("-Dorg.cougaar.core.persistence.clear=true")
+      node.add_parameter("-Dorg.cougaar.core.persistence.enable=false")
+      node.add_parameter("-Dorg.cougaar.name.server=localhost:8888:5555")
+      node.add_parameter("-Dorg.cougaar.planning.ldm.lps.ComplainingLP.level=0")
+      node.add_parameter("-Dorg.cougaar.core.agent.heartbeat=false")
+      node.add_parameter("-Dorg.cougaar.core.agent.showTraffic=false")
+      node.add_parameter("-Duser.timezone=GMT")
+      node.add_parameter("-Dorg.cougaar.core.node.InitializationComponent=XML")
+      node.add_agent(newAgent) do |agent|
+        agent.add_component do |c|
+          c.name = newAgent + "|" + sensor_domain
+          c.classname = sensor_domain
+          c.priority = "COMPONENT"
+          c.insertionpoint = "Node.AgentManager.Agent.DomainManager.Domain"
+          c.add_argument("sensors")
+        end
+        agent.add_component do |c|
+          c.classname = hb_requester_plugin
+        end
+        agent.add_component do |c|
+          c.classname = ping_requester_plugin
+        end
+        agent.add_component do |c|
+          c.classname = ping_server_plugin
+        end
+        agent.add_component do |c|
+          c.classname = hb_server_plugin
+        end
+        agent.add_component do |c|
+          c.classname = health_monitor_plugin
+        end
+        agent.add_component do |c|
+          c.classname = decision_plugin
+        end
+        agent.add_component do |c|
+          c.classname = restart_locator_plugin
+        end
+        agent.add_component do |c|
+          c.classname = vacate_plugin
+        end
+        agent.add_component do |c|
+          c.classname = param_mod_servlet
+        end
+        agent.add_component do |c|
+          c.classname = ar_servlet
+        end
+        agent.add_component do |c|
+          c.classname = communityPlugin 
+        end
+      end
+    end
+  end
+end
+
+# Add components to Agents
+society.each_agent do |agent|
+  agent.add_component do |c|
+    c.name = agent.name + "|" + sensor_domain
+    c.classname = sensor_domain
+    c.priority = "COMPONENT"
+    c.insertionpoint = "Node.AgentManager.Agent.DomainManager.Domain"
+    c.add_argument("sensors")
+  end
+  agent.add_component do |c|
+    c.classname = ping_server_plugin
+  end
+  agent.add_component do |c|
+    c.classname = hb_server_plugin
+  end
+end
+
+# Add components to Nodes
+society.each_node_agent do |node_agent|
+  node_agent.add_component do |c|
+    c.name = node_agent.name + "|" + sensor_domain
+    c.classname = sensor_domain
+    c.priority = "COMPONENT"
+    c.insertionpoint = "Node.AgentManager.Agent.DomainManager.Domain"
+    c.add_argument("sensors")
+  end
+  node_agent.add_component do |c|
+    c.classname = ping_server_plugin
+  end
+  node_agent.add_component do |c|
+    c.classname = hb_server_plugin
+  end
+end
+
+society.each_node do |node|
+  node.override_parameter("-Dorg.cougaar.core.agent.heartbeat", "false")
+  node.override_parameter("-Dorg.cougaar.core.agent.showTraffic", "false")
+end
