@@ -204,7 +204,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
                   " preferredLeader=" + thisAgent.equals(preferredLeader()) +
                   " isAgent=" + isAgent(name));
       communityReady = false; // For ACME Community Ready Events
-      if (isAgent(name) && canRestartAgent(name)) {
+      //if (isAgent(name) && canRestartAgent(name)) {
+      if (thisAgent.equals(preferredLeader())) {
         // Interface point for Deconfliction
         // If Ok'd by Deconflictor set state to RESTART
         if(getDeconflictHelper() != null) {
@@ -251,7 +252,8 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
 
     public void expired(String name) {
       logger.debug("Expired Status:" + " agent=" + name + " state=DEAD");
-      if (isLeader(thisAgent) && isAgent(name)) {
+      //if (isAgent(name) && canRestartAgent(name)) {
+      if (thisAgent.equals(preferredLeader())) {
         if(getDeconflictHelper() != null) {
           newState(name, DECONFLICT);
         } else {
@@ -275,7 +277,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   class RestartStateController extends StateControllerBase implements RestartListener {
     { addRestartListener(this); }
     public void enter(String name) {
-      //if (isAgent(name) && canRestartAgent(name)) {
+      if (isAgent(name) && canRestartAgent(name)) {
         String dest = RestartDestinationLocator.getRestartLocation(name, getExcludedNodes());
         logger.info("Restart agent:" +
                     " agent=" + name +
@@ -295,7 +297,7 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
             RestartDestinationLocator.restartOneAgent(dest);
           }
         }
-      //}
+      }
     }
 
     public void expired(String name) {
@@ -459,7 +461,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
   }
 
   private boolean canRestartAgent(String name) {
-    return thisAgent.equals(preferredLeader());
+    String preferredLeader = preferredLeader();
+    return thisAgent.equals(preferredLeader()) ||
+        (isLeader(thisAgent) && name.equals(preferredLeader) &&
+        model.getCurrentState(preferredLeader) == DEAD);
     //return thisAgent.equals(preferredLeader()) ||
     // isLeader(thisAgent) && name.equals(preferredLeader());
   }
