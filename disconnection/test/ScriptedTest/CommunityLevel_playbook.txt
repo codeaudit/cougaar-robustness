@@ -1,2 +1,125 @@
-PlannedDisconnect.UnscheduledDisconnect.Node.NodeA == TRUE 
+//PLAYS FOR "NodeA" 
+
+// Combine local conditions to set the DefenseApplicable condition for the Coordinator
+
+(PlannedDisconnect.UnscheduledDisconnect.Node.NodeA == TRUE)
+	: PlannedDisconnect.Applicable.Node.NodeA = TRUE;
+
+(PlannedDisconnect.ScheduledDisconnect.Node.NodeA == TRUE)
+	: PlannedDisconnect.Applicable.Node.NodeA = TRUE;
+
+
+(PlannedDisconnect.ScheduledDisconnect.Node.NodeA == FALSE) & 
+(PlannedDisconnect.UnscheduledDisconnect.Node.NodeA == FALSE)
+	: PlannedDisconnect.Applicable.Node.NodeA = FALSE;
+
+
+
+// Coordinator logic says this Defense always gets to do what it wants
+
+PlannedDisconnect.Applicable.Node.NodeA == TRUE 
+	: PlannedDisconnect.Defense.Node.NodeA = ENABLED
+	: PlannedDisconnect.Monitoring.Node.NodeA = ENABLED;
+
+PlannedDisconnect.Applicable.Node.NodeA == FALSE 
+	: PlannedDisconnect.Defense.Node.NodeA = DISABLED
+	: PlannedDisconnect.Monitoring.Node.NodeA = DISABLED;
+
+
+
+// Transfer OpModes back to the right Defense instances
+
+(PlannedDisconnect.Monitoring.Node.NodeA == ENABLED)  &
+(PlannedDisconnect.UnscheduledDisconnect.Node.NodeA == TRUE) & 
+(PlannedDisconnect.UnscheduledReconnectTime.Node.NodeA > 0)
+	: [agent.NodeA]PlannedDisconnect.NodeMonitoring.Node.NodeA = DISABLED
+	: PlannedDisconnect.NodeMonitoring.Node.NodeA = ENABLED;
+
+(PlannedDisconnect.Monitoring.Node.NodeA == ENABLED) &
+(PlannedDisconnect.ScheduledDisconnect.Node.NodeA == TRUE) & 
+(PlannedDisconnect.ScheduledReconnectTime.Node.NodeA > 0)
+	: [agent.NodeA]PlannedDisconnect.NodeMonitoring.Node.NodeA = DISABLED
+	: PlannedDisconnect.ManagerMonitoring.Node.NodeA = ENABLED;
+
+(PlannedDisconnect.Monitoring.Node.NodeA == DISABLED)
+	: PlannedDisconnect.ManagerMonitoring.Node.NodeA = DISABLED
+	: [agent.NodeA]PlannedDisconnect.NodeMonitoring.Node.NodeA = DISABLED;
+
+(PlannedDisconnect.ScheduledReconnectTime.Node.NodeA == 0)
+	: PlannedDisconnect.ManagerMonitoring.Node.NodeA = DISABLED;
+
+(PlannedDisconnect.UnscheduledReconnectTime.Node.NodeA == 0)
+	: PlannedDisconnect.NodeMonitoring.NodeA = DISABLED;
+
+(PlannedDisconnect.Defense.Node.NodeA == ENABLED)
+	: PlannedDisconnect.ManagerDefense.Node.NodeA = ENABLED
 	: [agent.NodeA]PlannedDisconnect.NodeDefense.Node.NodeA = ENABLED;
+
+(PlannedDisconnect.Defense.Node.NodeA == DISABLED)
+	: PlannedDisconnect.ManagerDefense.Node.NodeA = DISABLED
+	: [agent.NodeA]PlannedDisconnect.NodeDefense.Node.NodeA = DISABLED;
+
+
+
+
+//PLAYS FOR "NodeB" 
+
+// Combine local conditions to set the DefenseApplicable condition for the Coordinator
+
+(PlannedDisconnect.UnscheduledDisconnect.Node.NodeB == TRUE)
+	: PlannedDisconnect.Applicable.Node.NodeB = TRUE;
+
+(PlannedDisconnect.ScheduledDisconnect.Node.NodeB == TRUE)
+	: PlannedDisconnect.Applicable.Node.NodeB = TRUE;
+
+
+(PlannedDisconnect.ScheduledDisconnect.Node.NodeB == FALSE) & 
+(PlannedDisconnect.UnscheduledDisconnect.Node.NodeB == FALSE)
+	: PlannedDisconnect.Applicable.Node.NodeB = FALSE;
+
+
+
+// Coordinator logic says this Defense always gets to do what it wants
+
+PlannedDisconnect.Applicable.Node.NodeB == TRUE 
+	: PlannedDisconnect.Defense.Node.NodeB = ENABLED
+	: PlannedDisconnect.Monitoring.Node.NodeB = ENABLED;
+
+PlannedDisconnect.Applicable.Node.NodeB == FALSE 
+	: PlannedDisconnect.Defense.Node.NodeB = DISABLED
+	: PlannedDisconnect.Monitoring.Node.NodeB = DISABLED;
+
+
+
+// Transfer OpModes back to the right Defense instances
+
+(PlannedDisconnect.Monitoring.Node.NodeB == ENABLED)  &
+(PlannedDisconnect.UnscheduledDisconnect.Node.NodeB == TRUE) & 
+(PlannedDisconnect.UnscheduledReconnectTime.Node.NodeB > 0)
+	: [agent.NodeB]PlannedDisconnect.NodeMonitoring.Node.NodeB = DISABLED
+	: PlannedDisconnect.NodeMonitoring.Node.NodeB = ENABLED;
+
+(PlannedDisconnect.Monitoring.Node.NodeB == ENABLED) &
+(PlannedDisconnect.ScheduledDisconnect.Node.NodeB == TRUE) & 
+(PlannedDisconnect.ScheduledReconnectTime.Node.NodeB > 0)
+	: [agent.NodeB]PlannedDisconnect.NodeMonitoring.Node.NodeB = DISABLED
+	: PlannedDisconnect.ManagerMonitoring.Node.NodeB = ENABLED;
+
+(PlannedDisconnect.Monitoring.Node.NodeB == DISABLED)
+	: PlannedDisconnect.ManagerMonitoring.Node.NodeB = DISABLED
+	: [agent.NodeB]PlannedDisconnect.NodeMonitoring.Node.NodeB = DISABLED;
+
+(PlannedDisconnect.ScheduledReconnectTime.Node.NodeB == 0)
+	: PlannedDisconnect.ManagerMonitoring.Node.NodeB = DISABLED;
+
+(PlannedDisconnect.UnscheduledReconnectTime.Node.NodeB == 0)
+	: PlannedDisconnect.NodeMonitoring.NodeB = DISABLED;
+
+(PlannedDisconnect.Defense.Node.NodeB == ENABLED)
+	: PlannedDisconnect.ManagerDefense.Node.NodeB = ENABLED
+	: [agent.NodeB]PlannedDisconnect.NodeDefense.Node.NodeB = ENABLED;
+
+(PlannedDisconnect.Defense.Node.NodeB == DISABLED)
+	: PlannedDisconnect.ManagerDefense.Node.NodeB = DISABLED
+	: [agent.NodeB]PlannedDisconnect.NodeDefense.Node.NodeB = DISABLED;
+
