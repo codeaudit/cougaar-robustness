@@ -199,11 +199,11 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
     public void execute() {
     
         if (logger.isDebugEnabled()) logger.debug("Entering ** execute() **");
-        if (logger.isDebugEnabled()) logger.debug("RTC's: " + reconnectTimeConditionSubscription.toString());
+        if (logger.isDetailEnabled()) logger.detail("RTC's: " + reconnectTimeConditionSubscription.toString());
         if (logger.isDebugEnabled()) logger.debug("Added RTC's: " + reconnectTimeConditionSubscription.getAddedCollection().toString());
         if (logger.isDebugEnabled()) logger.debug("Changed RTC's: " + reconnectTimeConditionSubscription.getChangedCollection().toString());
 
-        if (logger.isDebugEnabled()) logger.debug("OpModes's: " + blackboard.query(DisconnectDefenseAgentEnabler.pred).toString());
+        if (logger.isDetailEnabled()) logger.detail("OpModes's: " + blackboard.query(DisconnectDefenseAgentEnabler.pred).toString());
        
 
         Iterator iter;
@@ -631,28 +631,12 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         DisconnectDefenseAgentEnabler enabler = DisconnectDefenseAgentEnabler.findOnBlackboard(rr.getNodeID().getType().toString(), rr.getNodeID().getName().toString(), blackboard);
         String request = rr.getRequest();
         AssetID nodeID = rr.getNodeID();
-        // tell the Coord that all Actions have stopped FAILED
-        Iterator iter = rr.getOriginalActions().iterator();
-        while (iter.hasNext()) {
-            DisconnectAction action = (DisconnectAction)iter.next();
-            try {
-                action.start(request);
-                action.stop(Action.FAILED);
-                action.setValuesOffered(NULL_SET); // remove offers - this has the added effect that the action will be considered by the Coord to be irrecocable
-                blackboard.publishChange(action);
-            } catch (IllegalValueException e) {
-                logger.error("Attempt to start: "+action.dump()+" with illegal value "+e.toString());
-                return false;
-            } catch (NoStartedActionException e) {
-                logger.error("Attempt to stop: "+action.dump()+" with illegal value "+e.toString());
-                return false;
-            }
-        }
+
         if (enabler != null) {
             enabler.setValue(request.equals(ALLOW_DISCONNECT) ? "DISABLED" : "ENABLED");  // Tell the node it can NOT do what it requested
             blackboard.publishChange(enabler);
             // change the Diagnosis back to its value before the denied request
-            iter = rr.getOriginalDiagnoses().iterator();
+            Iterator iter = rr.getOriginalDiagnoses().iterator();
             while (iter.hasNext()) {
                 Diagnosis diag = (Diagnosis)iter.next();
                 try {
@@ -839,7 +823,7 @@ public class DisconnectManagerPlugin extends DisconnectPluginBase {
         }
 
         public void handleExpiration() {
-            if (logger.isDebugEnabled()) logger.debug("RequestAlarm expired for: " + rr.toString() + ". Request denied");
+            if (logger.isInfoEnabled()) logger.info("RequestAlarm expired for: " + rr.toString() + ". Request denied");
             if (eventService.isEventEnabled()) eventService.event(rr.getNodeID()+" is denied permission to " + rr.getRequest()==ALLOW_DISCONNECT?DISCONNECT_REQUEST:CONNECT_REQUEST);
             denyPermissions(rr);
             cancel();
