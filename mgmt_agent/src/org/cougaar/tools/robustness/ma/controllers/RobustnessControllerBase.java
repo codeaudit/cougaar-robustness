@@ -39,6 +39,11 @@ import java.util.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+
 /**
  * Robustness controller base class (for sledgehammer use case).  Dispatches
  * state controllers in response to raw events received from
@@ -412,6 +417,26 @@ public abstract class RobustnessControllerBase implements
     return summary.toString();
   }
 
+
+  /**
+   * Creates an XML representation of an Attribute set.
+   */
+  protected String attrsToXML(Attributes attrs, String indent) {
+    StringBuffer sb = new StringBuffer(indent + "<attributes>\n");
+    try {
+      for (NamingEnumeration enum = attrs.getAll(); enum.hasMore();) {
+        Attribute attr = (Attribute)enum.next();
+        sb.append(indent + "  <attribute id=\"" + attr.getID() + "\" >\n");
+        for (NamingEnumeration enum1 = attr.getAll(); enum1.hasMore();) {
+          sb.append(indent + "    <value>" + enum1.next() + "</value>\n");
+        }
+        sb.append(indent + "  </attribute>\n");
+      }
+    } catch (NamingException ne) {}
+    sb.append(indent + "</attributes>\n");
+    return sb.toString();
+  }
+
   protected void setExpiration(String name, String stateName) {
     String propertyName = stateName + "_EXPIRATION";
     long expiration = DEFAULT_EXPIRATION;
@@ -451,23 +476,31 @@ public abstract class RobustnessControllerBase implements
 
 
   public String agentStatusToXML(String indent, String agentName) {
-    return indent + "<agent" +
-        " name=\"" + agentName + "\"" +
-        " status=\"" + stateName(model.getCurrentState(agentName)) + "\"" +
-        " node=\"" + model.getLocation(agentName) + "\"" +
+    StringBuffer sb = new StringBuffer();
+    sb.append(indent + "<agent name=\"" + agentName + "\" >\n");
+    sb.append(indent + "  <status " +
+        " state=\"" + stateName(model.getCurrentState(agentName)) + "\"" +
         " last=\"" + df.format(model.getTimestamp(agentName)) + "\"" +
-        " expired=\"" + model.isExpired(agentName) + "\"" +
-        " />";
+        " expired=\"" + model.isExpired(agentName) + "\" >\n");
+    sb.append(indent + "  <location " +
+        " current=\"" + model.getLocation(agentName) + "\"" +
+        " prior=\"" + "" + "\" >\n");
+    sb.append(attrsToXML(model.getAttributes(agentName), indent + "  "));
+    sb.append(indent + "</agent>\n");
+    return sb.toString();
   }
 
   public String nodeStatusToXML(String indent, String nodeName) {
-    return indent + "<node" +
-        " name=\"" + nodeName + "\"" +
-        " status=\"" + stateName(model.getCurrentState(nodeName)) + "\"" +
-        " vote=\"" + model.getLeaderVote(nodeName) + "\"" +
+    StringBuffer sb = new StringBuffer();
+    sb.append(indent + "<node name=\"" + nodeName + "\" >\n");
+    sb.append(indent + "<vote>" + model.getLeaderVote(nodeName) + "</vote>\n");
+    sb.append(indent + "  <status " +
+        " state=\"" + stateName(model.getCurrentState(nodeName)) + "\"" +
         " last=\"" + df.format(model.getTimestamp(nodeName)) + "\"" +
-        " expired=\"" + model.isExpired(nodeName) + "\"" +
-        " />";
+        " expired=\"" + model.isExpired(nodeName) + "\" >\n");
+    sb.append(attrsToXML(model.getAttributes(nodeName), indent + "  "));
+    sb.append(indent + "</node>\n");
+    return sb.toString();
   }
 
   public static String arrayToString(String[] strArray) {

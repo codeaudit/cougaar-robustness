@@ -24,13 +24,23 @@
        orignode.value = node;
        orignode.readOnly = true;
        var destinationnode = document.forms.myForm1.destinationnode;
+       var selected = false;
        for(var i=0; i &lt; destinationnode.length; i++) {
          //destinationnode.remove(i);
          var value = destinationnode.options[i].text;
-         if(node == value)
+         if(node == value) {
            destinationnode.options[i].disabled = true;
-         else
+           destinationnode.options[i].selected = false;
+         }
+         else {
            destinationnode.options[i].disabled = false;
+           if(selected == false) {
+               destinationnode.options[i].selected = true;
+               selected = true;
+           }
+           else
+               destinationnode.options[i].selected = false;
+         }
        }
      }
 
@@ -54,13 +64,14 @@
          <input type="submit" name="showcommunity" value="Show Community Data" />
         </td></form>
         <form name="lbForm"><td align="left" bgcolor="white">
-          <xsl:element name="input">
+          <input type="submit" name="loadBalance" value="Load Balance" />
+          <!--<xsl:element name="input">
             <xsl:attribute name="type">submit</xsl:attribute>
             <xsl:attribute name="name">loadBalance</xsl:attribute>
             <xsl:attribute name="value">Load Balance</xsl:attribute>
-          </xsl:element>
+          </xsl:element>-->
         </td></form>
-        <td />
+        <td width="65%" />
       </tr>
   </table>
   <h2>Create a request:</h2>
@@ -108,10 +119,11 @@
            <xsl:attribute name="size">20</xsl:attribute>
            <xsl:attribute name="value">
              <xsl:if test="$hasticket>0">
-               <xsl:value-of select=".//origNode" />
+               <xsl:variable name="mobileAgent"><xsl:value-of select=".//CurrentTicket/mobileAgent" /></xsl:variable>
+               <xsl:value-of select=".//agent[@name=$mobileAgent]/location/@current" />
              </xsl:if>
              <xsl:if test="not($hasticket>0)">
-               <xsl:value-of select=".//agent[1]/@node" />
+               <xsl:value-of select=".//agent[1]/location/@current" />
              </xsl:if>
            </xsl:attribute>
          </xsl:element>
@@ -129,16 +141,29 @@
            <xsl:if test="$op=$remove">
                <xsl:attribute name="disabled">true</xsl:attribute>
            </xsl:if>
-          <xsl:variable name="currentnode"><xsl:value-of select=".//agent[1]/@node" /></xsl:variable>
-          <xsl:variable name="destNode"><xsl:value-of select=".//destNode" /></xsl:variable>
+          <xsl:variable name="currentnode"><xsl:value-of select=".//agent[1]/location/@current" /></xsl:variable>
           <xsl:for-each select=".//node">
              <xsl:variable name="node"><xsl:value-of select="@name" /></xsl:variable>
              <xsl:element name="option">
-               <xsl:if test="$node=$currentnode">
-                 <xsl:attribute name="disabled">true</xsl:attribute>
+               <xsl:if test="$hasticket>0">
+                 <xsl:variable name="mobileAgent"><xsl:value-of select="//CurrentTicket/mobileAgent" /></xsl:variable>
+                 <xsl:variable name="mobilenode"><xsl:value-of select="//agent[@name=$mobileAgent]/location/@current" /></xsl:variable>
+                 <xsl:if test="$node=$mobilenode">
+                    <xsl:attribute name="disabled">true</xsl:attribute>
+                 </xsl:if>
+                 <xsl:if test="not($node=$mobilenode)">
+		    <xsl:attribute name="distabled">false</xsl:attribute>
+                    <xsl:attribute name="selected">selected</xsl:attribute>
+                 </xsl:if>
                </xsl:if>
-               <xsl:if test="$currentnode=$destNode">
-                 <xsl:attribute name="selected">selected</xsl:attribute>
+               <xsl:if test="not($hasticket>0)">
+                 <xsl:if test="$node=$currentnode">
+                   <xsl:attribute name="disabled">true</xsl:attribute>
+                 </xsl:if>
+                 <xsl:if test="not($node=$currentnode)">
+                   <xsl:attribute name="disabled">false</xsl:attribute>
+                   <xsl:attribute name="selected">selected</xsl:attribute>
+                 </xsl:if>
                </xsl:if>
                <xsl:value-of select="$node" />
              </xsl:element>
@@ -179,7 +204,7 @@
   <xsl:variable name="name"><xsl:value-of select="@name" /></xsl:variable>
   <xsl:element name="option">
       <xsl:attribute name="label">
-         <xsl:value-of select="@node" />
+         <xsl:value-of select="./location/@current" />
       </xsl:attribute>
       <xsl:if test="$name=$select">
         <xsl:attribute name="selected">selected</xsl:attribute>

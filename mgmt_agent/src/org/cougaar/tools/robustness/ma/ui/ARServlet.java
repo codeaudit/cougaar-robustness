@@ -40,13 +40,13 @@ import javax.xml.transform.stream.*;
  * This servlet provides robustness community information.
  */
 public class ARServlet extends BaseServletComponent implements BlackboardClient{
-  private BlackboardService bb;
-  private LoggingService log;
-  private UIDService uidService;
-  private DomainService domain;
-  private MessageAddress agentId;
-  private MessageAddress nodeId;
-  private MobilityFactory mobilityFactory;
+  private BlackboardService bb; //blackboard service
+  private LoggingService log; //logging service provide debug information
+  private UIDService uidService; //uid service
+  private DomainService domain; //domain service provides mobility factory
+  private MessageAddress agentId; //what is current agent
+  private MessageAddress nodeId; //what is current node
+  private MobilityFactory mobilityFactory; //used to to agents mobility
 
   /**
    * Hard-coded servlet path.
@@ -55,6 +55,9 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     return "/ar";
   }
 
+  /**
+   * Load the servlet and get necessary services.
+   */
   public void load() {
     // get the logging service
     log =  (LoggingService) serviceBroker.getService(this, LoggingService.class, null);
@@ -62,10 +65,16 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     super.load();
   }
 
+  /**
+   * Add blackboard service to this servlet
+   */
   public void setBlackboardService(BlackboardService blackboard) {
     this.bb = blackboard;
   }
 
+  /**
+   * Add domain service to this servlet
+   */
   public void setDomainService(DomainService domain) {
     this.domain = domain;
     if (domain == null) {
@@ -127,7 +136,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
   }
 
   private String currentCommunityXML = ""; //xml of current displayed community
-  //parameters of current poeration
+  //parameters of current operation
   private String operation = "", mobileAgent = "", origNode = "", destNode = ""; //forceRestart = "";
   private class Worker
   {
@@ -135,9 +144,8 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     private HttpServletResponse response;
     private PrintWriter out;
     private String action = "", format = "", dest="";
-    //private List communities = new ArrayList();
-    private String robustnessCommunity = "";
-    private String lastop="", lastma="", laston="", lastdn="", method=""; //lastfs="";
+    private String robustnessCommunity = ""; //current community
+    private String lastop="", lastma="", laston="", lastdn=""; //lastfs="";
 
     public void execute(HttpServletRequest req, HttpServletResponse res)
       throws IOException, ServletException
@@ -180,6 +188,10 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
             }
             if(name.equals("node")) //show this community using a remote node
               nodeId = SimpleMessageAddress.getSimpleMessageAddress(value);
+            if(name.equals("agent")) {
+              action = "showAgent";
+              dest = value;
+            }
             if(name.equals("control")) //show community control page
             {
               action = "control";
@@ -205,8 +217,6 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
             if(name.equals("loadBalance")) {
               action = "loadBalance";
             }
-           // if(name.equals("method"))
-             // method = value;
           }
         };
       // visit the URL parameters
@@ -224,18 +234,18 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
         controlCommunity(format, robustnessCommunity);
       else if(command.equals("Move") || command.equals("Remove")) {
         if(operation.equals(lastop) && mobileAgent.equals(lastma) && origNode.equals(laston)
-          && destNode.equals(lastdn))// && forceRestart.equals(lastfs))
+          && destNode.equals(lastdn)) {// && forceRestart.equals(lastfs))
+          currentCommunityXML = displayStatus(robustnessCommunity);
           writeSuccess(format); //this is just for refresh, don't do a publishAdd.
+        }
         else {
           try {
-             /*if(method.equals("MoveTicket")) {
-              AgentControl ac = createAgentControl(command);
-              addAgentControl(ac);
-             }
-             else*/
-            if(command.equals("Move"))
+            if(command.equals("Move")) {
+              //AgentControl ac = createAgentControl(command);
+              //addAgentControl(ac);
               publishHealthMonitorMove(robustnessCommunity);
-            else {
+            }
+            else { //publish remove tickets to remove agents
               AgentControl ac = createAgentControl(command);
               addAgentControl(ac);
             }
@@ -243,6 +253,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
             writeFailure(e);
             return;
           }
+          currentCommunityXML = displayStatus(robustnessCommunity);
           writeSuccess(format);
         }
       }
@@ -267,6 +278,9 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
         log.debug("current community status xml: \n" + currentCommunityXML);
         loadBalance(robustnessCommunity);
         writeSuccess(format);
+      }
+      else if(command.equals("showAgent")) {
+        showAgentAttributes(format, value);
       }
     }
 
@@ -345,7 +359,6 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
         writeNullResult();
         return;
       }
-      //String xml = currentCommunityXML;
       currentCommunityXML = xml;
       if(format.equals("xml"))
         out.write(xml);
@@ -356,6 +369,23 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
       }
     }
 
+    private void showAgentAttributes(String format, String agent) {
+      String xml = currentCommunityXML;
+      int start = xml.indexOf("<agent name=\"" + agent);
+      int end = xml.indexOf("</agent>", start);
+      xml = xml.substring(start, end+9);
+      if(format.equals("xml"))
+        out.write(xml);
+      else {
+        out.print(getHTMLFromXML(xml, "agentAttributes.xsl"));
+      }
+    }
+
+    /**
+     * This method is used when user try to load 'community control' page. It will
+     * list all agent mobility tickets in blackboard.
+     * @param format
+     */
     private void writeSuccess(String format){
       Collection col = queryAgentControls();
       String xml;
@@ -363,7 +393,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
         xml = getAgentControlXML(col);
       }
       else
-        xml = currentCommunityXML;
+        xml = getAgentControlXML(null);
       if(format.equals("xml"))
         out.write(xml);
       else {
@@ -372,6 +402,9 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
       }
     }
 
+    /**
+     * Show exception or error message.
+     */
     private void writeFailure(Exception e) throws IOException {
         // select response message
         response.setContentType("text/html");
@@ -399,6 +432,11 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
       }
   }
 
+  /**
+   * Create agent control for current operation.
+   * @param op "Move" or "Remove"
+   * @return
+   */
   private AgentControl createAgentControl(String op) {
     boolean isForceRestart = false;
     MessageAddress mobileAgentAddr = MessageAddress.getMessageAddress(mobileAgent);
@@ -447,6 +485,10 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     return ac;
   }
 
+  /**
+   * Publish add given agent control to blackboard.
+   * @param ac
+   */
   private void addAgentControl(AgentControl ac) {
     try {
       bb.openTransaction();
@@ -457,6 +499,10 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     }
   }
 
+  /**
+   * Publish remove an agent control from blackboard.
+   * @param ac
+   */
   private void removeAgentControl(AgentControl ac) {
     try {
       bb.openTransaction();
@@ -466,6 +512,10 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     }
   }
 
+  /**
+   * How many mobility tickets in blackboard?
+   * @return the collection of all agent controls
+   */
   private Collection queryAgentControls() {
     Collection ret = null;
     try {
@@ -477,6 +527,11 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     return ret;
   }
 
+  /**
+   * Get the agent control with given uid from blackboard.
+   * @param uid the identity of agent control
+   * @return the agent control
+   */
   private AgentControl queryAgentControl(final UID uid) {
     if (uid == null) {
       throw new IllegalArgumentException("null uid");
@@ -501,6 +556,10 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     return ret;
   }
 
+  /**
+   * Load balance of given community.
+   * @param communityName
+   */
   private void loadBalance(String communityName) {
     HealthMonitorRequest hmr =
         new HealthMonitorRequestImpl(agentId,
@@ -531,7 +590,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
       hmrRa.addTarget(target);
       if (log.isInfoEnabled()) {
         log.info("publishing HealthMonitorRequest: " +
-                 hmr.getRequestTypeAsString());
+                 hmr.getRequestTypeAsString() + ", remote node is " + target.getAddress());
       }
       try {
         bb.openTransaction();
@@ -544,7 +603,7 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
   }
 
   /**
-   * Get all robustness communities from whit page service and save them in a list.
+   * Get the robustness community of this agent.
    * @return the list of all community names
    */
   private String getRobustnessCommunity() {
@@ -588,6 +647,11 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
     return html;
   }
 
+  /**
+   * Get complete status xml string of given community.
+   * @param communityName
+   * @return
+   */
   private String displayStatus(String communityName) {
       HealthMonitorRequest hmr =
           new HealthMonitorRequestImpl(agentId,
@@ -639,34 +703,40 @@ public class ARServlet extends BaseServletComponent implements BlackboardClient{
         }
         hmrResp = (HealthMonitorResponse)hmrRa.getResponse();
       }
-if(hmrResp.getStatus() == hmrResp.FAIL)
-  log.error("try to get health monitor response: " + hmrResp.getStatusAsString());
+
+      if(hmrResp.getStatus() == hmrResp.FAIL)
+        log.error("try to get health monitor response: " + hmrResp.getStatusAsString());
       return (String)hmrResp.getContent();
     }
 
   private String getAgentControlXML(Collection acs) {
     StringBuffer sb = new StringBuffer();
-    sb.append("<AgentControls>\n");
-    for(Iterator it = acs.iterator(); it.hasNext();) {
-      AgentControl ac = (AgentControl)it.next();
-      sb.append("  <AgentControl>\n");
-      sb.append("    <UID>" + ac.getUID() + "</UID>\n");
-      sb.append("    <Ticket>\n");
-      String str = ac.getAbstractTicket().toString();
-      str.replaceAll("<", "");
-      str.replaceAll(">", "");
-      sb.append("    " + str + "\n");
-      sb.append("    </Ticket>\n");
-      sb.append("    <Status>");
-      int status = ac.getStatusCode();
-      if (status == AgentControl.NONE)
-        sb.append("In progress");
-      else
-        sb.append(ac.getStatusCodeAsString());
-      sb.append("</Status>\n");
-      sb.append("  </AgentControl>\n");
+    if(acs != null) {
+      sb.append("<AgentControls>\n");
+      for (Iterator it = acs.iterator(); it.hasNext(); ) {
+        AgentControl ac = (AgentControl) it.next();
+        sb.append("  <AgentControl>\n");
+        sb.append("    <UID>" + ac.getUID() + "</UID>\n");
+        sb.append("    <Ticket>\n");
+        String str = ac.getAbstractTicket().toString();
+        int index1 = str.indexOf("<");
+        if (index1 >= 0) {
+          int index2 = str.indexOf(">");
+          str = str.substring(0, index1) + str.substring(index2 + 1, str.length());
+        }
+        sb.append("    " + str + "\n");
+        sb.append("    </Ticket>\n");
+        sb.append("    <Status>");
+        int status = ac.getStatusCode();
+        if (status == AgentControl.NONE)
+          sb.append("In progress");
+        else
+          sb.append(ac.getStatusCodeAsString());
+        sb.append("</Status>\n");
+        sb.append("  </AgentControl>\n");
+      }
+      sb.append("</AgentControls>\n");
     }
-    sb.append("</AgentControls>\n");
 
     int index = currentCommunityXML.indexOf("</community>");
     String xml = currentCommunityXML.substring(0, index);

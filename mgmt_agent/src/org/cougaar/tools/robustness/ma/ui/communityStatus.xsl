@@ -12,6 +12,7 @@
       <xsl:value-of select="$community" />
     </title>
     <style type="text/css">
+       table {empty-cells: show;}
        tr  {background: window;}
        td  {color: windowtext; font: menu;}
 
@@ -260,9 +261,10 @@ function getParent(el, pTagName) {
           <tr valign="middle">
             <td style="width: 60px;" align="center" valign="middle"><xsl:text>AgentName</xsl:text></td>
             <td style="width: 60px;" align="center" valign="middle"><xsl:text>Status</xsl:text></td>
-            <td style="width: 60px;" align="center" valign="middle"><xsl:text>Node</xsl:text></td>
             <td style="width: 60px;" align="center" valign="middle"><xsl:text>Last</xsl:text></td>
             <td style="width: 60px;" align="center" valign="middle"><xsl:text>Expired</xsl:text></td>
+            <td style="width: 60px;" align="center" valign="middle"><xsl:text>CurrentNode</xsl:text></td>
+            <td style="width: 60px;" align="center" valign="middle"><xsl:text>PriorNode</xsl:text></td>
           </tr>
         </thead>
         <tbody>
@@ -282,11 +284,20 @@ function getParent(el, pTagName) {
   <xsl:for-each select="//agent">
      <xsl:sort select="@name" />
      <tr>
-       <td><xsl:value-of select="@name" /></td>
-       <td><xsl:value-of select="@status" /></td>
-       <td><xsl:value-of select="@node" /></td>
-       <td align="right"><xsl:value-of select="@last" /></td>
-       <td><xsl:value-of select="@expired" /></td>
+       <td>
+         <xsl:element name="a">
+           <xsl:attribute name="href">
+              <xsl:text>./ar?agent=</xsl:text>
+              <xsl:value-of select="@name" />
+           </xsl:attribute>
+           <xsl:value-of select="@name" />
+         </xsl:element>
+       </td>
+       <td><xsl:value-of select="./status/@state" /></td>
+       <td align="right"><xsl:value-of select="./status/@last" /></td>
+       <td><xsl:value-of select="./status/@expired" /></td>
+       <td><xsl:value-of select="./location/@current" /></td>
+       <td><xsl:value-of select="./location/@prior" /></td>
      </tr>
    </xsl:for-each>
 </xsl:template>
@@ -317,10 +328,10 @@ function getParent(el, pTagName) {
           <xsl:value-of select="@name" />
       </xsl:element>
     </td>
-    <td><xsl:value-of select="@status" /></td>
-    <td><xsl:value-of select="@vote" /></td>
-    <td><xsl:value-of select="@last" /></td>
-    <td><xsl:value-of select="@expired" /></td>
+    <td><xsl:value-of select="./status/@state" /></td>
+    <td><xsl:value-of select="./vote" /></td>
+    <td><xsl:value-of select="./status/@last" /></td>
+    <td><xsl:value-of select="./status/@expired" /></td>
   </xsl:element>
 </xsl:template>
 
