@@ -21,6 +21,10 @@
 
 package org.cougaar.tools.robustness.ma;
 
+/**
+ * Listener for changes in CommunityStatusModel.  Change events are generated
+ *
+ */
 public interface StatusChangeListener {
 
   public void statusChanged(CommunityStatusChangeEvent[] csce);
