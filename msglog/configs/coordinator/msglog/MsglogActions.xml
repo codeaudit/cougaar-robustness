@@ -45,7 +45,7 @@
         </Transition>
     </Action>
 
-    <Action name="Disabled">
+    <Action name="Disable">
         <Description value="Shuts off Comm attempts" />
         <Transition WhenActualStateIs="*" EndStateWillBe="Disabled" IntermediateStateWillBe="Disabled" >
             <OneTimeCost>
