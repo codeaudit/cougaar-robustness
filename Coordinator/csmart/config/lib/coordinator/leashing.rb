@@ -51,17 +51,35 @@ module Cougaar
       end
 
       def perform 
+	started = 0
+	@run['FinishedUnleashed'] = {}
+        @run.society.each_agent do |agent|
+          if agent.name =~ /.*ARManager.*/
+	    @run.info_message "Unleash found #{agent.name} on #{agent.node.name}" if @messaging >= 2
+            started = started + 1
+	  end
+        end
+        @run.comms.on_cougaar_event do |event|
+          if event.data.include?("Finished Handling Unleashing")
+            node = event.node
+            @run['FinishedUnleashed'][node] = node
+            @run.info_message "Defenses Unleashed on "+node if @messaging >= 1
+          end
+        end
         @run.society.each_agent do |agent|
           if agent.name =~ /.*ARManager.*/
 	    @run.info_message "Unleash found #{agent.name}" if @messaging >= 2
             url = "#{agent.uri}/LeashDefenses?UnleashDefenses=UnleashDefenses"
 	    response, uri = Cougaar::Communications::HTTP.get(url)
             raise "Could not connect to #{url}" unless response
-            Mgrs[agent.name] = agent
-            @run.info_message "Requested that "+agent.name+" Unleash Defenses." if @messaging >= 1
+            @run.info_message "Requested that "+agent.name+" on "+agent.node.name+" Unleash Defenses." if @messaging >= 1
             Cougaar.logger.info "Unleash requested at #{agent.name}"
 	  end
         end
+        while @run['FinishedUnleashed'].length < started
+          next
+        end
+        @run.info_message "All Robustness Managers have Unleashed Defenses." if @messaging >= 1
       end
 
     end
@@ -147,6 +165,36 @@ module Cougaar
       end
       
     end
+
+    class UnleashOnSubsequentRestarts < Cougaar::Action
+      PRIOR_STATES = []
+      DOCUMENTATION = Cougaar.document {
+        @description = "Unleash Defenses on subsequent Restarts. Intended to be called after Unleash."
+        @parameters = [
+	    {:messaging => "0 is no messages (the default), 1 is normal messages, 2 is verbose."}
+        ]
+        @example = "do_action 'UnleashOnSubsequentRestarts'" 
+	}
+    
+      def initialize(run, messaging=0)
+        super(run)
+        @messaging = messaging
+      end
+
+      def perform 
+        @run.society.each_node do |node|
+	    @run.info_message "UnleashOnSubsequentRestarts found #{node.name}" if @messaging >= 2
+            url = "#{node.uri}/LeashOnRestart?UnleashOnRestart=UnleashOnRestart"
+	    response, uri = Cougaar::Communications::HTTP.get(url)
+            raise "Could not connect to #{url}" unless response
+            @run.info_message "Requested that "+node.name+" Unleash Defenses on Subsequent Restarts." if @messaging >= 2
+            Cougaar.logger.info "UnleashOnSubsequentRestarts requested at #{node.name}"
+        end
+      end
+
+    end
+
+
 
   end
 

@@ -10,8 +10,7 @@ CIP = ENV['CIP']
 $:.unshift File.join(CIP, 'csmart', 'config', 'lib')
 require 'coordinator/leashing'
 
-insert_after :during_stage_1 do
-  do_action "MonitorUnleash", 1
-  do_action "Unleash", 1
-  wait_for "Unleashed", 1
+insert_after parameters[:location] do
+  do_action "Unleash", parameters[:verbose]
+  do_action "UnleashOnSubsequentRestarts", parameters[:verbose]
 end
