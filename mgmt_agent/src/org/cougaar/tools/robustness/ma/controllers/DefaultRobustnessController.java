@@ -505,6 +505,10 @@ public class DefaultRobustnessController extends RobustnessControllerBase {
     autotuningEnabled = !(propValue != null && propValue.equalsIgnoreCase(DISABLED));
     propValue = System.getProperty(LEASH_DEFENSES_ON_RESTART_PROPERTY);
     suppressPingsOnRestart = (propValue != null && propValue.equalsIgnoreCase("true"));
+    if (logger.isInfoEnabled()) {
+      logger.info(LEASH_DEFENSES_ON_RESTART_PROPERTY + "=" + propValue +
+                  " suppressPingsOnRestart=" + suppressPingsOnRestart);
+    }
     propValue = System.getProperty(MIN_HOSTS_FOR_MGR_RESTART_PROPERTY, "2");
     if (propValue != null) {
       try {

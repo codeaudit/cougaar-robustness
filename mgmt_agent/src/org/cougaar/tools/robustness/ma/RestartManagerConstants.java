@@ -79,7 +79,7 @@ public interface RestartManagerConstants {
   // System properties
   public static final String ENABLE_DECONFLICTION_PROPERTY = "org.cougaar.tools.robustness.restart.deconfliction";
   public static final String ENABLE_AUTOTUNING_PROPERTY = "org.cougaar.tools.robustness.autotuning";
-  public static final String LEASH_DEFENSES_ON_RESTART_PROPERTY = "org.cougaar.tools.robustness.deconfliction.leashOnRestart";
+  public static final String LEASH_DEFENSES_ON_RESTART_PROPERTY = "org.cougaar.coordinator.leashOnRestart";
   public static final String MIN_HOSTS_FOR_MGR_RESTART_PROPERTY = "org.cougaar.tools.robustness.minHostsForMgrRestart";
 
   // Some propety values
