@@ -16,13 +16,14 @@ threatalert_service = "org.cougaar.tools.robustness.threatalert.ThreatAlertServi
 reaffiliation_servlet = "org.cougaar.tools.robustness.threatalert.ReaffiliationServlet"
 reaffiliation_plugin = "org.cougaar.tools.robustness.ma.plugins.ReaffiliationPlugin"
 node_health_monitor = "org.cougaar.tools.robustness.ma.plugins.NodeHealthMonitorPlugin"
+community_viewer = "org.cougaar.community.util.CommunityViewerServlet"
 
 # Boeing components
 load_balancer  	    ="org.cougaar.robustness.exnihilo.plugin.EN4JPlugin"
 
 managerPluginsToAdd = [hb_requester, ping_requester, node_health_monitor, ar_servlet, load_balancer]
-agentPluginsToAdd   = [hb_server, ping_server, threatalert_service, reaffiliation_plugin]
-nodePluginsToAdd    = [hb_requester, ping_requester, ping_server, node_health_monitor, ar_servlet, threatalert_service, reaffiliation_servlet]
+agentPluginsToAdd   = [hb_server, ping_server, threatalert_service, reaffiliation_plugin, community_viewer]
+nodePluginsToAdd    = [hb_requester, ping_requester, ping_server, node_health_monitor, ar_servlet, threatalert_service, reaffiliation_servlet, community_viewer]
 
 # Add components to all Agents
 society.each_agent do |agent|
