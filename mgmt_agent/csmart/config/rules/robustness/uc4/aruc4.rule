@@ -5,9 +5,10 @@
 
 threatalert_service = "org.cougaar.tools.robustness.threatalert.ThreatAlertServiceComponent"
 threatalert_servlet = "org.cougaar.tools.robustness.threatalert.ThreatAlertServlet"
+persistence_control_plugin = "org.cougaar.tools.robustness.ma.plugins.PersistenceControlPlugin"
 
 #
-# Add components to management agents
+# Add components to agents
 #
 society.each_agent do |agent|
   if agent.name =~ /.*ARManager.*/          # only apply to robustness managers
@@ -17,6 +18,10 @@ society.each_agent do |agent|
     agent.add_component do |c|
       c.classname = threatalert_servlet
     end
+  end
+  # add to all agents
+  agent.add_component do |c|
+    c.classname = persistence_control_plugin
   end
 end
 

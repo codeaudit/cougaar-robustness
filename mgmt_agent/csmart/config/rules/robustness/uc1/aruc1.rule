@@ -21,10 +21,11 @@ node_health_monitor_plugin = "org.cougaar.tools.robustness.ma.plugins.NodeHealth
 #
 # Infrastructure components
 #
-wp_servlet                 = "org.cougaar.core.wp.WhitePagesServlet"
-node_mobility_plugin       = "org.cougaar.core.mobility.service.RootMobilityPlugin"
-agent_mobility_plugin      = "org.cougaar.core.mobility.service.RedirectMovePlugin"
-communityPlugin            = "org.cougaar.community.CommunityPlugin"
+# Added by default ACME rules
+# wp_servlet                 = "org.cougaar.core.wp.WhitePagesServlet"
+# node_mobility_plugin       = "org.cougaar.core.mobility.service.RootMobilityPlugin"
+# agent_mobility_plugin      = "org.cougaar.core.mobility.service.RedirectMovePlugin"
+# communityPlugin            = "org.cougaar.community.CommunityPlugin"
 communityViewerServlet     = "org.cougaar.community.util.CommunityViewerServlet"
 
 # Add components to all Agents

@@ -23,9 +23,10 @@ Cougaar.new_experiment("Kill_1_agent").run(1) {
   do_action "TransformSociety", false,
     "#{RULES}/isat",
     "#{RULES}/logistics",
+    "#{RULES}/robustness"
     "#{RULES}/robustness/uc1"
 
-  do_action "TransformSociety", false, "#{RULES}/robustness"
+  do_action "TransformSociety", false, "#{RULES}/robustness/communities"
 
   # for debugging
   #do_action "SaveCurrentSociety", "mySociety.xml"
