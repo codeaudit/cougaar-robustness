@@ -1,7 +1,4 @@
 /*
- *
- * @author Steve Ford - OBJS
- *
  * <copyright>
  *  Copyright 2003 Object Services and Consulting, Inc.
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
@@ -173,8 +170,10 @@ public class RobustnessManagerFinderPlugin extends ComponentPlugin
 				log.debug(agentId+
 					  ": execute: RobustnessManager "+mgrAgentName+" found.");
 			    bb.publishAdd(mgr);
-			    commSvc.removeListener(listener);
-			    listener = null;
+			    if (listener != null) {
+				commSvc.removeListener(listener);
+				listener = null;
+			    }
 			} else {
 			    if (log.isDebugEnabled()) 
 				log.debug(agentId+
