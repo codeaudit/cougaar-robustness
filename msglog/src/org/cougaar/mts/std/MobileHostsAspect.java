@@ -160,6 +160,11 @@ public class MobileHostsAspect extends StandardAspect
 			if (log.isInfoEnabled())
 			    log.info("run: Unregistering client "+client);
 			registry.unregisterClient(client);
+			try {
+			    System.setProperty("java.rmi.server.hostname",myAddr);
+			} catch (Exception e) {
+			    log.error("run: ERROR calling System.setProperty(\"java.rmi.server.hostname\","+myAddr+")",e);
+			}
 			if (log.isInfoEnabled())
 			    log.info("run: Registering client "+client);		
 			registry.registerClient(client);
