@@ -190,6 +190,10 @@ public abstract class DeconflictionPluginBase extends ServiceUserPluginBase {
         getBlackboardService().closeTransaction();
     }
 
+    public void signalClientActivity() {
+        getBlackboardService().signalClientActivity();
+    }
+
 
     // Access to Indices
           

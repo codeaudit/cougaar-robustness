@@ -59,6 +59,7 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
     private IncrementalSubscription pluginControlSubscription;
     
     private Hashtable monitoredActions;
+    private boolean somethingExpired = false;
         
  
     /** 
@@ -77,6 +78,16 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
     
 
     protected void execute() {
+
+        if (somethingExpired) {
+            Iterator iter = monitoredActions.values().iterator();
+            while (iter.hasNext()) {
+                ActionTimeoutAlarm thisAlarm = (ActionTimeoutAlarm)iter.next();
+                thisAlarm.handleExpiration();
+            }
+        }
+        somethingExpired = false;
+            
 
         //***************************************************SelectedActions
         //Handle the addition of new ActionPatience for SelectedActions
@@ -180,18 +191,24 @@ public class ActionMonitoringPlugin extends DeconflictionPluginBase implements N
         public long getExpirationTime () {
             return detonate;
         }
-        
+
         public void expire () {
-            openTransaction();
+            expired = true;
+            somethingExpired = true;
+            signalClientActivity(); 
+        }
+
+        public void handleExpiration() {
             ap.setResult(Action.FAILED);
             monitoredActions.remove(action);
             if (logger.isDebugEnabled()) logger.debug("Alarm expired for: " + action.toString());
             if (logger.isDebugEnabled()) logger.debug("Index after deleting alarm: " + monitoredActions.toString());
             publishChange(ap);
-            closeTransaction();
         }
+
         public boolean hasExpired () {return expired;
         }
+
         public boolean cancel () {
             if (!expired)
                 return expired = true;
