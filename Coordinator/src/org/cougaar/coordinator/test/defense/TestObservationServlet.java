@@ -27,8 +27,9 @@
 package org.cougaar.coordinator.test.defense;
 //org.cougaar.coordinator.test.defense.TestObservationServlet
 //import org.cougaar.coordinator.DefenseApplicabilityConditionSnapshot;
-//import org.cougaar.coordinator.costBenefit.CostBenefitDiagnosis;
-//import org.cougaar.coordinator.techspec.DefaultDefenseTechSpec;
+
+import org.cougaar.coordinator.costBenefit.CostBenefitEvaluation;
+
 
 import java.io.PrintWriter;
 import java.io.IOException;
@@ -206,16 +207,20 @@ public class TestObservationServlet extends BaseServletComponent
     Vector activeCostBenefits = new Vector();
     Vector oldCostBenefits = new Vector();
     
-   // public void addCostBenefitDiagnosis(CostBenefitDiagnosis cbd) {
+
+    public void addCostBenefitEvaluation(CostBenefitEvaluation cbd) {
 
    //     activeCostBenefits.addElement(cbd);
-    //}
+    //
+}
 
     
-    //public void updateDefenseStatus(CostBenefitDiagnosis cbd, String defenseName, String status) {
+
+    public void updateDefenseStatus(CostBenefitEvaluation cbd, String defenseName, String status) {
+
 /*
-        CostBenefitDiagnosis.DefenseBenefit defenses[] = cbd.getDefenses();
-        CostBenefitDiagnosis.DefenseBenefit def;
+        CostBenefitEvaluation.DefenseBenefit defenses[] = cbd.getDefenses();
+        CostBenefitEvaluation.DefenseBenefit def;
         
         boolean found = false;
         for (int i=0; i<defenses.length; i++) {
@@ -231,9 +236,11 @@ public class TestObservationServlet extends BaseServletComponent
            logger.debug("No defense "+defenseName+" found to update status to "+status);   
         }
  */
-    //}
+    //
+    }
 
-//    public void updateCostBenefitStatus(CostBenefitDiagnosis cbd, String status) {
+
+    public void updateCostBenefitStatus(CostBenefitEvaluation cbd, String status) {
 /*
         //If done, move to old CBD vector
         if (status.equalsIgnoreCase("SUCCEEDED") || status.equalsIgnoreCase("FAILED") || status.startsWith("COMPLETED")) {
@@ -243,12 +250,14 @@ public class TestObservationServlet extends BaseServletComponent
         
         cbd.setStatus(status);
  */
-  //  }
+  //  
+    }
     
-   // public void setTimeout(CostBenefitDiagnosis cbd, String defenseName, long l) {
+
+    public void setTimeout(CostBenefitEvaluation cbd, String defenseName, long l) {
         /*
-        CostBenefitDiagnosis.DefenseBenefit defenses[] = cbd.getDefenses();
-        CostBenefitDiagnosis.DefenseBenefit def;
+        CostBenefitEvaluation.DefenseBenefit defenses[] = cbd.getDefenses();
+        CostBenefitEvaluation.DefenseBenefit def;
         
         for (int i=0; i<defenses.length; i++) {
             def = defenses[i];
@@ -258,12 +267,14 @@ public class TestObservationServlet extends BaseServletComponent
             }
         }
         */
-    //}
+    //
+    }
     
-//    public void updateDefenseOutcome(CostBenefitDiagnosis cbd, String defenseName, String outcome) {
+
+    public void updateDefenseOutcome(CostBenefitEvaluation cbd, String defenseName, String outcome) {
 /*
-        CostBenefitDiagnosis.DefenseBenefit defenses[] = cbd.getDefenses();
-        CostBenefitDiagnosis.DefenseBenefit def;
+        CostBenefitEvaluation.DefenseBenefit defenses[] = cbd.getDefenses();
+        CostBenefitEvaluation.DefenseBenefit def;
         
         for (int i=0; i<defenses.length; i++) {
             def = defenses[i];
@@ -273,7 +284,8 @@ public class TestObservationServlet extends BaseServletComponent
             }
         }
         */
- //   }
+ //  
+    }
     
 
   private class MyServlet extends HttpServlet {
@@ -367,12 +379,12 @@ public class TestObservationServlet extends BaseServletComponent
         out.println("</html>");
       }
       
-      /** Emit data for the given CostBenefitDiagnosis vector
+      /** Emit data for the given CostBenefitEvaluation vector
        *
        */      
       private boolean emitData(PrintWriter out, Vector vector, boolean isOld) {
 /*
-         CostBenefitDiagnosis cbd = null;
+         CostBenefitEvaluation cbd = null;
          boolean emittedData = false;
          Iterator i = vector.iterator(); 
          if (i.hasNext()) {
@@ -382,7 +394,7 @@ public class TestObservationServlet extends BaseServletComponent
          
          while (i.hasNext()) {          
 
-              cbd = (CostBenefitDiagnosis)i.next();
+              cbd = (CostBenefitEvaluation)i.next();
               String stat = (cbd.getStatus() == null) ? "NONE" : cbd.getStatus();
               out.println("<h2><font color=\"#0C15FE\">CostBenefit Diagnosis for "+cbd.getAssetName()+"</font></h2>");
               out.println("<p>Status = "+stat);
@@ -403,8 +415,8 @@ public class TestObservationServlet extends BaseServletComponent
                 out.print("   <TH>Outcome [t(a->c)]  </TH>");            
                 out.print("</TR>");
 
-              CostBenefitDiagnosis.DefenseBenefit defenses[] = cbd.getDefenses();
-              CostBenefitDiagnosis.DefenseBenefit def;
+              CostBenefitEvaluation.DefenseBenefit defenses[] = cbd.getDefenses();
+              CostBenefitEvaluation.DefenseBenefit def;
 
 
               if (defenses != null && defenses.length > 0) {
