@@ -665,7 +665,9 @@ public class CommunityStatusModel extends BlackboardClientComponent
    * @return Array of names
    */
   public String[] listAllEntries() {
-    return (String[])statusMap.keySet().toArray(new String[0]);
+    synchronized (statusMap) {
+      return (String[]) statusMap.keySet().toArray(new String[0]);
+    }
   }
 
   /**
