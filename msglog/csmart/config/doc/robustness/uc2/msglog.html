@@ -3,383 +3,437 @@
 <head>
   <title>ACME Automation for Adaptive Robustness Use Case #2 - Rolling Partition
 Experiment - OBJS MsgLog</title>
-             
+                    
   <meta http-equiv="content-type"
  content="text/html; charset=ISO-8859-1">
-       
+           
   <meta name="author" content="Steve Ford">
 </head>
   <body>
-  <big>ACME Automation for Adaptive Robustness Use Case #2 - Rolling Partition
+   <big>ACME Automation for Adaptive Robustness Use Case #2 - Rolling Partition 
  Experiment - OBJS MsgLog</big><br>
-<br>
-MsgLog requires the following overlays be loaded:<br>
-<br>
-<table>
-  <tbody>
-    <tr>
-      <td align="center" width="20"> 17 </td>
-  <td> Robustness </td>
-  <td> <a href="https://cvs.ultralog.net/dist/AR_objs_msglog.zip">Objs Msglog</a> 
-      </td>
-  <td> B10_4_1 </td>
-  <td> 03:22 PM on Monday July 14 </td>
-  <td align="right"> &nbsp;&nbsp;&nbsp;623 KB </td>
-  </tr>
-      <tr>
-  <td align="center" width="20"> 19 </td>
-  <td> Robustness </td>
-  <td> <a
- href="https://cvs.ultralog.net/dist/AR_objs_common_INT_0306.zip">Objs Common
-INT_0306</a> </td>
-  <td> B10_4_1 </td>
-  <td> 03:22 PM on Monday July 14 </td>
-  <td align="right"> &nbsp;&nbsp;&nbsp;&nbsp;19 KB</td>
-    </tr>
-  </tbody>
-</table>
-<br>
-To add MsgLog to a society:  
-<blockquote>Transformation rule<br>
-  </blockquote>
+ <br>
+<u><b>Overlays:</b></u>
+<blockquote> MsgLog requires the following overlays be loaded:</blockquote>
+  
+<blockquote>
+  <table>
+   <tbody>
+     <tr>
+          <td> Robustness </td>
+   <td> <a
+ href="https://cvs.ultralog.net/dist/AR_objs_msglog_HEAD_B10_4_5.zip">Objs
+Msglog</a>        </td>
+   <td><a
+ href="https://cvs.ultralog.net/dist/AR_objs_msglog_HEAD_B10_4_5.zip">https://cvs.ultralog.net/dist/AR_objs_msglog_HEAD_B10_4_5.zip</a>
+        </td>
+         </tr>
+       <tr>
+      <td> Robustness </td>
+   <td> <a
+ href="https://cvs.ultralog.net/dist/AR_objs_common_HEAD_B10_4_5.zip">Objs
+Common</a> </td>
+   <td>  <a
+ href="https://cvs.ultralog.net/dist/AR_objs_common_HEAD_B10_4_5.zip">https://cvs.ultralog.net/dist/AR_objs_common_HEAD_B10_4_5.zip<br>
+        </a></td>
+           </tr>
    
-<blockquote>      
-  <blockquote>At the moment, the rule to add msglog to  a society must be
-modified to be run concurrently on more than one society at the TIC, as all
-societies at the TIC share the same set of email servers.</blockquote>
-       
-  <blockquote>The current MsgLog rule is at <b>csmart/config/rules/robustness/uc2/msglog.rule</b>
-in the msglog overlay. &nbsp;It is set up to run on socC. &nbsp;<br>
-    <br>
-To run it on another society, change the range of <b>mailusers</b> on different
-societies (e.g. <b>socA</b>, <b>socB</b>, <b>socC</b>). &nbsp;At present,
-there are <b>45</b> users defined on each of the<b> five</b> mail server
-(on <b>sa007</b>, <b>sb007</b>, <b>sc007</b>, <b>sv007</b>, and <b>sv008</b>)
-and less than <b>15</b> nodes per enclave.&nbsp; I normally assign users
-    <b>1-15</b> to <b>socA</b>, <b>16-30</b> to <b>socB</b>, and <b>31-45</b>
-to <b>socC</b>.&nbsp; If more nodes are added, more users will have to be
-defined, and these ranges will have to change.<br>
-    <br>
-The rule uses the <b>smtp</b> facet from <b>$CIP/operator/s*-hosts.xml</b>
-to identify the available mail servers. &nbsp;The following entries (in bold)
-should be added to that file if they are not present already: &nbsp; There
-must be at least the same number of mail servers defined as enclaves or email
-can't be used and UC2 won't work. &nbsp;Also, delete the smtp facet from
-any other host (it might be present on the file server (e.g. <b>sc007-utb</b>);
-delete it from that host so that email isn't sent over the UTB).<tt><br>
-   </tt>
-    <blockquote><tt><b>&lt;host name='sa007'&gt;</b></tt><br>
-      <tt><b>&nbsp; &lt;facet service="smtp"/&gt;</b></tt><br>
-      <tt><b> &lt;/host&gt;</b></tt><br>
-      <tt><b>&lt;host name='sb007'&gt;</b></tt><br>
-      <tt><b>&nbsp;&nbsp;&lt;facet service="smtp"/&gt;</b></tt><br>
-      <tt><b> &lt;/host&gt;</b></tt><br>
-      <tt><b>&lt;host name='sc007'&gt;</b></tt><br>
-      <tt><b>&nbsp; &lt;facet service="smtp"/&gt;</b></tt><br>
-      <tt><b>&lt;/host&gt;</b></tt><br>
-      <tt><b>&lt;host name='sv007'&gt;</b></tt><br>
-      <tt><b>&nbsp; &lt;facet service="smtp"/&gt;</b></tt><br>
-      <tt><b>&lt;/host&gt;</b></tt><br>
-      <tt><b>&lt;host name='sv008'&gt;</b></tt><br>
-      <tt><b>&nbsp; &lt;facet service="smtp"/&gt;</b></tt><br>
-      <tt><b>&lt;/host&gt;</b></tt></blockquote>
-    <b>msglog.rule</b> uses the <b>smtp</b> facet (see above) and the <b>enclave</b>
-facet (from <b>$CIP/operator/1ad-layout-10_4_1.xml)</b> to allocate one email
-server per enclave and assign one inbox and one outbox for each node of the
-following form:<br>
-  </blockquote>
-  <ul>
-    <ul>
-      <li><tt>-Dorg.cougaar.message.protocol.email.inboxes.<b>NCA-NODE</b>=pop3://node<b>5</b>:passwd@<b>sa007</b>:110</tt></li>
-    </ul>
-    <ul>
-      <li><tt>-Dorg.cougaar.message.protocol.email.outboxes.<b>NCA-NODE</b>=smtp://node<b>5</b>:passwd@<b>sa007</b>:25</tt></li>
-    </ul>
-  </ul>
-  <blockquote>          
-    <ul>
-                   
-    </ul>
-                        Mail servers are assigned to the enclaves in order<b>. 
-        </b>&nbsp;If the enclaves represent physical networks, the mail server 
-physically located in an enclave should be assigned to that enclave. &nbsp;This
-may necessitate reordering the smtp hosts in <b>s*-hosts.xml</b>.<br>
-    <br>
-We have installed         <b>Apache James 2.1.2</b> (<a
- href="http://james.apache.org">http://james.apache.org )</a> on <b>sa007</b>, 
-        <b>sb007</b>, <b>sc007, sv007</b>, and <b>sv008</b>. &nbsp;This version
-of MsgLog has only been tested with this version of Apache James.<br>
-    <br>
-James is supposed to be started when the server reboots, but I've noticed
-it not running at times. &nbsp;To check if James is running on a machine,
-    <b>ssh</b> to the machine and execute the following:<br>
-    <blockquote><b>ps -efw | grep james</b><br>
-    </blockquote>
-If its not there, login as <b>root</b>, and start it as follows:<br>
-    <blockquote><b>/var/OBJS/james-2.1.1/bin/run.sh &amp;</b><br>
-    </blockquote>
-If Apache James needs to be set up on another machine, some configuration 
-is required, and I have not documented it. &nbsp;Contact         <a
- href="mailto:ford@objs.com">ford@objs.com</a> for help.<br>
-  </blockquote>
-  <blockquote>Also, this rule sets link selection <b>policy</b>,<b> </b>MTS
-    <b>aspects</b>, and link <b>protocols</b>, which will override any previous
-settings:             
-    <ul>
-                
-      <ul>
-               
-      </ul>
-        
-    </ul>
-    <ul>
-      <li><b>policy</b> specifies the LinkSelectionPolicy to be used. &nbsp;MsgLog
- requires <b>org.cougaar.core.mts.AdaptiveLinkSelectionPolicy</b>.</li>
-    </ul>
-  </blockquote>
-  <ul>
-        
-  </ul>
-  <blockquote>
-    <ul>
-      <li><b>aspects</b> specifies the MTS Aspects to be loaded. &nbsp;Note
- that MsgLog's Aspects are<b> order-dependent</b>. &nbsp;MsgLog aspects should 
- be loaded in the order that they appear in the msglog rules. At this point, 
- it is not known how MsgLog interacts with the aspects of other use cases, 
- except for the <b>HeartbeatPiggybackerAspect</b>, which is used in AR-UC1,
- and should be loaded after other MsgLog aspects. &nbsp;Because this rule
-specifies the ordered list of aspects via a java property, it will replace
-any pre-existing aspect list in the society to which the rule is applied.
-So, if there are Aspects or Protocols necessary to support other Use Cases,
-they should be added to the definitions of <b>aspects</b> in the msglog rule
-(and removed from other rules). &nbsp;While aspects can be loaded as components
-instead of properties, I have trouble verifying which have been loaded in
-what order when loaded that way, so I prefer this method.</li>
-    </ul>
-  </blockquote>
-  <ul>
-        
-  </ul>
-  <blockquote>
-    <ul>
-      <li><b>protocols</b> specifies the MTS Link Protocols to be loaded.
- &nbsp;Note that protocols are<b> not order-dependent</b>. &nbsp;For AR-UC2,
- we load the <b>LoopbackLinkProtocol</b>, <b>RMILinkProtocol</b>, and <b>OutgoingEmailLinkProtocol</b>
- &amp; <b>IncomingEmailLinkProtocol</b>. &nbsp;For AS-UC3, we also load <b>SSLRMILinkProtocol</b>.
- &nbsp;Cougaar messaging performance and robustness is improved if&nbsp;
-        <b>OutgoingSocketLinkProtocol          </b>&amp;<b> IncomingSocketLinkProtocol</b>
-and <b>OutgoingUDPLinkProtocol          </b>&amp; are loaded, but AR-UC2's
- reaction time is slowed down with these additional protocols also loaded
-in the current implementation, as they all outperform email, so we are not
-loading them at present. &nbsp;A future release will address this problem.
-(<b>Note:</b> &nbsp;the Socket and UDP link protocols do not yet support
-in-band WhitePages access, so do not use them yet). &nbsp; As with      
-  <b>aspects</b>, our rule specifies <b>protocols</b> via a java property,
- which will replace any pre-existing aspect list in the society to which
-the  rule is applied. So, if there are Protocols necessary to support other
-Use  Cases, they should be added to the definitions of <b>protocols</b> in
-the  msglog rule (and removed from other rules).  &nbsp;While protocols can
-be loaded as components instead of properties without  any ordering issues,
-its still easier to verify which have been loaded when  loaded with this
-method.</li>
-    </ul>
-Also, <b>user.home</b> is required to be set to some readable directory  to
-avoid a security exception when JavaMail tries to read <b>.mailcap</b>.<br>
-    <br>
-MsgLog is primarily self-tuning, but still has tons of tuning parameters
-represented by java properties, some of which may need to be tweaked at some
-point, esp. those related to detecting disconnected NICs. At present, we
-only set the following:</blockquote>
-  <ul>
-                               
-    <ul>
-          <li><tt>-Dorg.cougaar.message.protocol.email.incoming.socketTimeout=20000</tt>&nbsp;
- This was required to keep CONUS pop3 connections from timing out receiving
- very large (5MB+) email messages from TRANSCOM agents. &nbsp;It was timing
- out at the default of 10000ms.</li>
-               
-    </ul>
-  </ul>
-  <blockquote>
-    <ul>
-           
-    </ul>
-    </blockquote>
-  <blockquote></blockquote>
- </blockquote>
- To run the Rolling Partition Experiment:<br>
+    </tbody> 
+  </table>
+  <br>
+If Deconfliction is desired, also load the following overlays:</blockquote>
  
-<blockquote>Actions and States<br>
-       
-  <blockquote>For the AR-UC2 Rolling Partition Experiment, we use four ACME
- Actions. &nbsp;<br>
-      <br>
-  We use <b>DisableNetworkInterfaces</b> and <b>EnableNetworkInterfaces</b>,
- to disable and enable the default interface (eth0) alternately on a pair
-of Cougaar Nodes on the running society. &nbsp;These two actions are part
-of ACME and are defined in <b>csmart/acme_scripting/src/lib/ultralog/stressors.rb</b>.
- &nbsp;Both of these actions take an argument, the name of the Cougaar Node
- whose host's default interface should be disabled/enabled.<br>
-      <br>
-  We also provide an action to monitor MsgLog's response, <b>MonitorProtocolSelection</b>,
- defined in <b>csmart/config/lib/robustness/uc2/msglog.rb, </b>to detect
-and  display the data string from the Cougaar Event that we emit when we
-switch  protocols. &nbsp;It looks like:<br>
-           
-    <blockquote><b>Switch from org.cougaar.core.mts.RMILinkProtocol to org.cougaar.core.mts.OutgoingEmailProtocol
- for messages from FWD-B to FWD-C</b><br>
-      </blockquote>
-  The action takes two arguments, the name of the destination node (<b>FWD-C</b>
- above) and new protocol to be used for messages to that node <b>(org.cougaar.core.mts.OutgoingEmailProtocol</b>
- above). &nbsp;With such arguments, Events will be printed when any node
-switches  from any protocol to <b>Email</b> for messages to <b>FWD-C</b>.
-&nbsp;If the protocol argument is omitted or nil, all protocol switches for
-messages to the destination node will be printed. &nbsp;If the first argument
-is nil,  protocol switches for messages to any node will be printed. &nbsp;If
-both  arguments are omitted or nil, all protocol switches will be printed,
-regardless  of destination or protocol.<br>
-    <br>
-We define the action <b>FlushMail</b> in <b>csmart/config/lib/robustness/uc2/flushmail.rb</b>.
-&nbsp;This action is generally called after <b>ConnectOperatorService</b>
-in a run script to clear all old messages from prior runs from inboxes. &nbsp;If
-this is not called, MsgLog will read and discard the old messages at startup,
-but this is a waste of resources. &nbsp;This action<br>
-depends on the script <b>operator/flushmail.csh</b> which also is loaded
-from the msglog overlay. &nbsp;As it runs as root, you might have to change
-its file permissions for it to work properly:<br>
-    <blockquote><b>chmod +x $CIP/operator/flushmail.csh<br>
-      </b></blockquote>
-      We also define an ACME State in <b>csmart/config/lib/robustness/uc2/msglog.rb</b>,
- &nbsp;<b>SwitchProtocols, </b>which can be used to <b>wait_for</b> a protocol
- switch after disabling or enabling an interface. &nbsp;It takes three arguments,
- node, protocol, and timeout. &nbsp;The first two are as described above.
-&nbsp;The third defaults to 1 minute, at which point the wait is over and
-the run can be ended or continued. &nbsp;We haven't found <b>SwitchProtocols</b>
-as useful as <b>MonitorProtocolSelection</b>, as Events are not emitted if
-no switch is made, and no switch is necessary when an interface is disabled
-if Email is already in use, which it may be the case for several reasons.
-&nbsp;It may still be using Email because of an earlier disconnect. &nbsp;It
-may be trying out Email to see how it performs, which is done periodically
-to calculate comparative performance metrics. Or it may be using Email because
-a previous message send failed, or ack was late, or performed poorly, on
-another protocol, though not necessarily as the result of disabling an interface.
-    <br>
-    </blockquote>
-  Run Script<br>
-       
-  <blockquote><b>csmart/config/scripts/robustness/uc2/RunUC2.rb</b> is a
-sample run script for the Rolling Partition Experiment on socC with AR-UC1
-(Sledgehammer) active but not killing any nodes. &nbsp;Its a copy of the
-default run script with the addition of the actions described above. &nbsp;To
-run AR-UC2 without AR-UC1 loaded, just delete the lines flagged (*) below.
-    <br>
-    <br>
-This line is added to locate the msglog actions:<br>
-    <blockquote><b>$:.unshift File.join(CIP, 'csmart', 'config', 'lib')<br>
-      </b></blockquote>
-This line is added so that the transform can iterate over the enclaves.
-    <blockquote><b>require 'ultralog/enclaves'</b><br>
-    </blockquote>
-*Add this line to load UC1's actions (delete it if not running with UC1's
-defense active):<br>
-    <blockquote><b>require 'robustness/uc1/aruc1_actions_and_states'<br>
-      </b></blockquote>
-Add these lines to load the actions:<br>
-    <blockquote><b>require 'robustness/uc2/msglog'<br>
-require 'robustness/uc2/flushmail'<br>
-      </b></blockquote>
-*This line applies UC1's transformation rule (delete it if not running with
-UC1's defense active):<br>
-    <blockquote><b>"#{RULES}/robustness/uc1",</b></blockquote>
-And this one applies MsgLog's rule:<br>
+<blockquote>
+  <table>
+    <tbody>
+      <tr>
+   <td> Robustness </td>
+   <td> <a
+ href="https://cvs.ultralog.net/dist/AR_objs_deconfliction_HEAD_B10_4_5.zip">Objs 
+deconfliction</a> </td>
+   <td><a
+ href="https://cvs.ultralog.net/dist/AR_objs_deconfliction_HEAD_B10_4_5.zip">https://cvs.ultralog.net/dist/AR_objs_deconfliction_HEAD_B10_4_5.zip</a></td>
+            </tr>
+                               <tr>
+      <td> Robustness </td>
+   <td> <a
+ href="https://cvs.ultralog.net/dist/AR_common_HEAD_B10_4_5.zip">Robustness 
+common</a> </td>
+   <td><a
+ href="https://cvs.ultralog.net/dist/AR_common_HEAD_B10_4_5.zip">https://cvs.ultralog.net/dist/AR_common_HEAD_B10_4_5.zip</a></td>
+         </tr>
+    </tbody>
+  </table>
+  <br>
+See <a
+ href="https://cvs.ultralog.net/ultralog/AdaptiveRobustnessUseCase9">https://cvs.ultralog.net/ultralog/AdaptiveRobustnessUseCase9</a>
+for more information about configuring for Deconfliction.<br>
+</blockquote>
+<u><b>Transformation Rules:</b></u> 
+<blockquote>To add MsgLog only (without Deconfliction) to a society, apply
+the following rule to the society:<br>
+  <br>
+  <b> $CIP/csmart/config/rules/robustness/uc2/base_msglog.rule</b>
+  <blockquote>This rule sets link selection <b>policy</b>,<b> </b>MTS   
+ <b>aspects</b>, and link <b>protocols</b>:                             
   </blockquote>
-  <blockquote>
-    <blockquote><b>"#{RULES}/robustness/uc2/msglog.rule"</b><br>
+  <ul>
+    <li><b>policy</b> specifies the LinkSelectionPolicy to be used. &nbsp;MsgLog 
+ requires <b>org.cougaar.core.mts.AdaptiveLinkSelectionPolicy</b>.</li>
+  </ul>
     </blockquote>
-This line was added to delete all old messages from the inboxes.<br>
-    <blockquote><b>do_action "FlushMail"</b><br>
+          
+<blockquote>        
+  <ul>
+    <li><b>aspects</b> specifies the MTS Aspects to be loaded. &nbsp;Note 
+ that MsgLog's Aspects are<b> order-dependent</b>. &nbsp;MsgLog aspects should
+  be loaded in the order specified in this rule, the authoritative source
+of which is <a
+ href="https://cvs.ultralog.net/ultralog/AspectConfiguration">https://cvs.ultralog.net/ultralog/AspectConfiguration</a>.
+At this point,   it is not completely known how MsgLog interacts with the
+aspects of other use cases. &nbsp;</li>
+  </ul>
     </blockquote>
-Once <b>PublishNextStage</b> has been done, we:<b><br>
-      </b>          
-    <blockquote><tt><b>do_action "MonitorProtocolSelection", "FWD-B", "org.cougaar.core.mts.email.OutgoingEmailLinkProtocol"<br>
-  do_action "MonitorProtocolSelection", "FWD-C", "org.cougaar.core.mts.email.OutgoingEmailLinkProtocol"</b></tt><br>
-      </blockquote>
-  &nbsp;This starts monitoring for switched to <b>Email</b> for messages
-to      <b>FWD-B</b> and <b>FWD-C</b>.<br>
-      <br>
-  We then alternately disable FWD-B's interface, wait 20 seconds, disable 
-FWD-C's interface, enable FWD-B's interface, wait 20 seconds, disable FWD-B's 
-interface, enable FWD-C's interface, wait 20 seconds, and continue the cycle, 
-so           
-    <blockquote><b><tt>do_action "DisableNetworkInterfaces", "FWD-B"<br>
-  do_action "GenericAction" do |run|<br>
-  &nbsp; sleep 20.seconds<br>
-  end<br>
-  do_action "DisableNetworkInterfaces", "FWD-C"<br>
-  do_action "EnableNetworkInterfaces", &nbsp;"FWD-B"<br>
-  do_action "GenericAction" do |run|<br>
-  &nbsp; sleep 20.seconds<br>
-  end<br>
-  do_action "DisableNetworkInterfaces", "FWD-B"<br>
-  do_action "EnableNetworkInterfaces", &nbsp;"FWD-C"<br>
-  do_action "GenericAction" do |run|</tt></b><tt><b><br>
-  &nbsp; sleep 20.seconds</b><br>
-        <b>end</b><br>
-        <b>do_action "DisableNetworkInterfaces", "FWD-C"</b><br>
-        <b>do_action "EnableNetworkInterfaces", &nbsp;"FWD-B"</b><br>
-        <b>do_action "GenericAction" do |run|</b><br>
-        <b>&nbsp; sleep 20.seconds</b><br>
-        <b>end</b></tt><br>
-      </blockquote>
-  The objective here is to not have FWD-B and FWD-C connected to the network
- at the same time, so that their only means of communications between each
- other is via intermediaries, the Email server(s). &nbsp;<br>
-      <br>
-  Be careful not to leave an interface disabled when ending the cycle or
-ending  the experiment. &nbsp;Cougaar will not complete normally without
-being able  to communicate with a node at least occasionally, and the next
-run will not  start properly with an interface disabled. &nbsp;To enable
-both interfaces,  do the following:<br>
-           
-    <blockquote>&nbsp;<b>do_action "EnableNetworkInterfaces", "FWD-B", "FWD-C"</b><br>
-      </blockquote>
-    </blockquote>
-       
-  <blockquote>Placement of the stresses after<b> <b>PublishNextStage</b></b>,
-setting  the sleep at 20 seconds, and the choice of nodes to disconnect,
-can be varied.  &nbsp;These choices were made because there are a lot of
-messages sent right  after&nbsp;<b>PublishNextStage</b>, the rollover to
-Email should be able to occur  in 20 seconds, and I guessed correctly that
-these two nodes in the same enclave  might send each other messages. &nbsp;The
-same behavior should be observed  at other points during a run, but, obviously,
-if no messages are being transported,  no protocol switch will occur. &nbsp;There
-is a lower bound on the amount  of time required to switch protocols. &nbsp;It
-should vary from a couple of seconds to ten or so, depending on the performance
-and load of nodes and servers and network, and on MsgLog's tuning. &nbsp;By
-default, for instance, nodes check their inbox for email every 5 seconds.
-&nbsp;There is also a much fuzzier upper bound. &nbsp;If nodes are disconnected
-for too long, the logistics application might fall back to predictors, which
-will affect the result. Or, other defenses might kick in. &nbsp;AR-UC1, for
-instance, might conclude that the node is dead and restart all its agents
-elsewhere. &nbsp;This is a case for Deconfliction, coming in the next release.<br>
-    <br>
-The script <b>csmart/config/scripts/robustness/uc2/RunUC1.rb</b> runs AR-UC1
-(Sledgehammer) with MsgLog loaded and active, killing a node but not disconnecting
-any. This is a compatibility test for MsgLog and AR-UC1.<br>
-    <br>
-At present, there are compatibility problems with Adaptive Security (debugging
-is underway), and compatibility with AR-UC3 (DOS) has not been tested.<br>
+                  
+<blockquote>
+  <ul>
+    <li><b>protocols</b> specifies the basic MTS Link Protocols to be loaded,
+      <b>LoopbackLinkProtocol</b> and <b>RMILinkProtocol</b>.&nbsp; &nbsp;
+    </li>
+  </ul>
+</blockquote>
+<blockquote>If adding MsgLog + Deconconfliction, apply the following rules
+in this order:<br>
+  <br>
+   <b>$CIP/csmart/config/rules/robustness/manager.rule</b><br>
+   <b>$CIP/csmart/config/rules/robustness/uc9/deconfliction.rule<br>
+$CIP/csmart/config/rules/robustness/uc2/deconfliction.rule</b><br>
+  <b> $CIP/csmart/config/rules/robustness/uc2/base_msglog.rule</b><br>
+  <br>
+Email transport is optional, but normally should be loaded (it requires email
+servers be configured, so its sometimes handy to be able to test without
+it). &nbsp;To add support for Email message transport, load the following
+rule. This rule loads <b>OutgoingEmailLinkProtocol</b>  &amp; <b>IncomingEmailLinkProtocol</b>.
+&nbsp;See the next section for how to configure this rule and your email
+servers.<br>
+  <br>
+  <b>$CIP/csmart/config/rules/robustness/uc2/email.rule </b>&nbsp;<br>
+  <br>
+  <b>Note about other protocols:</b> <br>
+AR-UC3 also loads <b>SSLRMILinkProtocol</b>.  &nbsp;Cougaar messaging performance
+and robustness is improved if&nbsp;         <b>OutgoingSocketLinkProtocol
+         </b>&amp;<b> IncomingSocketLinkProtocol</b> and <b>OutgoingUDPLinkProtocol
+         </b>&amp; <b>IncomingUDPLinkProtocol</b> are loaded, but AR-UC2's 
+ reaction time is slowed down with these additional protocols also loaded 
+in the current implementation, as they all outperform email, so we are not 
+loading them at present. &nbsp;A future release will address this problem. 
+(<b>Note:</b> &nbsp;the Socket and UDP link protocols do not yet support in-band
+WhitePages access, so do not use them yet).<br>
+</blockquote>
+<u><b>Configuring Email:</b></u><br>
+        
+<blockquote>         At the moment, the rule to add email message transport
+to  a society must be modified to be run concurrently on more than one society
+at the TIC, as all societies at the TIC share the same set of email servers. 
+          The current <b>email.rule</b> is set up to run on socC. &nbsp;<br>
+  <br>
+To run it on another society, change the range of <b>mailusers</b> on different 
+societies (e.g. <b>socA</b>, <b>socB</b>, <b>socC</b>). &nbsp;At present, 
+there are <b>45</b> users defined on each of the<b> five</b> mail server (on
+  <b>sa007</b>, <b>sb007</b>, <b>sc007</b>, <b>sv007</b>, and <b>sv008</b>) 
+and less than <b>15</b> nodes per enclave.&nbsp; I normally assign users 
+   <b>1-15</b> to <b>socA</b>, <b>16-30</b> to <b>socB</b>, and <b>31-45</b> 
+to <b>socC</b>.&nbsp; If more nodes are added, more users will have to be 
+defined, and these ranges will have to change.<br>
+  <br>
+ The rule uses the <b>smtp</b> facet from <b>$CIP/operator/s*-hosts.xml</b> 
+to identify the available mail servers. &nbsp;The following entries (in <b>bold</b>) 
+should be added to that file if they are not present already: &nbsp; There 
+must be at least the same number of mail servers defined as enclaves or email 
+can't be used and UC2 won't work. &nbsp;Also, delete the smtp facet from any
+other host (it might be present on the file server (e.g. <b>sc007-utb</b>); 
+delete it from that host so that email isn't sent over the UTB).<br>
+  <tt>    </tt>
+  <blockquote>     </blockquote>
+  <tt><b>&lt;host name='sa007'&gt;</b></tt><br>
+       <tt><b>&nbsp; &lt;facet service="smtp"/&gt;</b></tt><br>
+       <tt><b> &lt;/host&gt;</b></tt><br>
+       <tt><b>&lt;host name='sb007'&gt;</b></tt><br>
+       <tt><b>&nbsp;&nbsp;&lt;facet service="smtp"/&gt;</b></tt><br>
+       <tt><b> &lt;/host&gt;</b></tt><br>
+       <tt><b>&lt;host name='sc007'&gt;</b></tt><br>
+       <tt><b>&nbsp; &lt;facet service="smtp"/&gt;</b></tt><br>
+       <tt><b>&lt;/host&gt;</b></tt><br>
+       <tt><b>&lt;host name='sv007'&gt;</b></tt><br>
+       <tt><b>&nbsp; &lt;facet service="smtp"/&gt;</b></tt><br>
+       <tt><b>&lt;/host&gt;</b></tt><br>
+       <tt><b>&lt;host name='sv008'&gt;</b></tt><br>
+       <tt><b>&nbsp; &lt;facet service="smtp"/&gt;</b></tt><br>
+       <tt><b>&lt;/host&gt;</b></tt><br>
+  <blockquote>     </blockquote>
+  <b>email.rule</b> uses the <b>smtp</b> facet (see above) and the <b>enclave</b> 
+facet (from <b>$CIP/operator/1ad-layout.xml)</b> to allocate one email server
+per enclave and assign one inbox and one outbox for each node of the following
+form:<br>
    </blockquote>
- </blockquote>
-  Send questions or comments to:<br>
-      <br>
-      <tt>Steve Ford</tt><br>
- <tt> OBJS</tt><br>
- <tt>     </tt><tt><a href="mailto:ford@objs.com">ford@objs.com</a></tt><br>
-      <tt>610 345 0448</tt> 
-<blockquote>      
-  <blockquote>    </blockquote>
+   
+<ul>
+     
+  <ul>
+       <li><tt>-Dorg.cougaar.message.protocol.email.inboxes.<b>NCA-NODE</b>=pop3://node<b>5</b>:passwd@<b>sa007</b>:110</tt></li>
+     
+  </ul>
+     
+  <ul>
+       <li><tt>-Dorg.cougaar.message.protocol.email.outboxes.<b>NCA-NODE</b>=smtp://node<b>5</b>:passwd@<b>sa007</b>:25</tt></li>
+     
+  </ul>
+   
+</ul>
+<blockquote>   
+  <blockquote>               
+    <ul>
+                         
+    </ul>
   </blockquote>
+                         Mail servers are assigned to the enclaves in order<b>.
+         </b>&nbsp;If the enclaves represent physical networks, the mail
+server  physically located in an enclave should be assigned to that enclave.
+&nbsp;This may necessitate reordering the smtp hosts in <b>s*-hosts.xml</b>.<br>
+     <br>
+ We have installed         <b>Apache James 2.1.2</b> (<a
+ href="http://james.apache.org">http://james.apache.org )</a> on <b>sa007</b>,
+         <b>sb007</b>, <b>sc007, sv007</b>, and <b>sv008</b>. &nbsp;This
+version of MsgLog has only been tested with this version of Apache James.<br>
+  <br>
+James is supposed to be started when the server reboots, but I've noticed 
+it not running at times. &nbsp;To check if James is running on a machine, 
+    <b>ssh</b> to the machine and execute the following:<br>
+  <blockquote>     </blockquote>
+  <blockquote><b>ps -efw | grep james</b><br>
+  </blockquote>
+If its not there, login as <b>root</b>, and start it as follows:<br>
+     
+  <blockquote><b>/var/OBJS/james-2.1.1/bin/run.sh &amp;</b><br>
+     </blockquote>
+ If Apache James needs to be set up on another machine, some configuration
+ is required. &nbsp;The easiest way is just to copy an existing installation
+to the new machine and modify the host names and ip addresses in the config
+file <b>/var/OBJS/james-2.1.1/apps/james/SAR-INF/config.xml</b> for the new
+machine. Contact         <a href="mailto:ford@objs.com">ford@objs.com</a>
+for help.<br>
+   </blockquote>
+   
+<blockquote>
+  <ul>
+     
+  </ul>
+ Also, <b>user.home</b> is required to be set to some readable directory
+ to avoid a security exception when JavaMail tries to read <b>.mailcap</b>.<br>
+     <br>
+ MsgLog is primarily self-tuning, but still has tons of tuning parameters 
+represented by java properties, some of which may need to be tweaked at some 
+point, esp. those related to detecting disconnected NICs. At present, we only
+set the following:</blockquote>
+   
+<ul>
+                                     
+  <ul>
+           <li><tt>-Dorg.cougaar.message.protocol.email.incoming.socketTimeout=20000</tt>&nbsp; 
+ This was required to keep CONUS pop3 connections from timing out receiving 
+ very large (5MB+) email messages from TRANSCOM agents. &nbsp;It was timing 
+ out at the default of 10000ms.</li>
+                     
+  </ul>
+   
+</ul>
+<blockquote>   
+  <blockquote>     
+    <ul>
+                 
+    </ul>
+     </blockquote>
+   
+  <blockquote></blockquote>
+  </blockquote>
+<b><u>  Running the Rolling Partition Experiment:</u></b><br>
+   
+<blockquote>Actions and States<br>
+           
+  <blockquote>For the AR-UC2 Rolling Partition Experiment, we use four ACME 
+ Actions. &nbsp;<br>
+       <br>
+   We use <b>DisableNetworkInterfaces</b> and <b>EnableNetworkInterfaces</b>, 
+ to disable and enable the default interface (eth0) alternately on a pair 
+of Cougaar Nodes on the running society. &nbsp;These two actions are part 
+of ACME and are defined in <b>csmart/acme_scripting/src/lib/ultralog/stressors.rb</b>. 
+ &nbsp;Both of these actions take an argument, the name of the Cougaar Node 
+ whose host's default interface should be disabled/enabled.<br>
+       <br>
+   We also provide an action to monitor MsgLog's response, <b>MonitorProtocolSelection</b>, 
+ defined in <b>csmart/config/lib/robustness/uc2/msglog.rb, </b>to detect and
+ display the data string from the Cougaar Event that we emit when we switch
+ protocols. &nbsp;It looks like:<br>
+                 
+    <blockquote><b>Switch from org.cougaar.core.mts.RMILinkProtocol to org.cougaar.core.mts.OutgoingEmailProtocol 
+ for messages from FWD-B to FWD-C</b><br>
+       </blockquote>
+   The action takes two arguments, the name of the destination node (<b>FWD-C</b> 
+ above) and new protocol to be used for messages to that node <b>(org.cougaar.core.mts.OutgoingEmailProtocol</b> 
+ above). &nbsp;With such arguments, Events will be printed when any node switches
+ from any protocol to <b>Email</b> for messages to <b>FWD-C</b>. &nbsp;If
+the protocol argument is omitted or nil, all protocol switches for messages
+to the destination node will be printed. &nbsp;If the first argument is nil,
+ protocol switches for messages to any node will be printed. &nbsp;If both
+ arguments are omitted or nil, all protocol switches will be printed, regardless
+ of destination or protocol.<br>
+     <br>
+ We define the action <b>FlushMail</b> in <b>csmart/config/lib/robustness/uc2/flushmail.rb</b>. 
+&nbsp;This action is generally called after <b>ConnectOperatorService</b> 
+in a run script to clear all old messages from prior runs from inboxes. &nbsp;If 
+this is not called, MsgLog will read and discard the old messages at startup, 
+but this is a waste of resources. &nbsp;This action<br>
+ depends on the script <b>operator/flushmail.csh</b> which also is loaded 
+from the msglog overlay. &nbsp;As it runs as root, you might have to change 
+its file permissions for it to work properly:<br>
+     
+    <blockquote><b>chmod +x $CIP/operator/flushmail.csh<br>
+       </b></blockquote>
+       We also define an ACME State in <b>csmart/config/lib/robustness/uc2/msglog.rb</b>, 
+ &nbsp;<b>SwitchProtocols, </b>which can be used to <b>wait_for</b> a protocol 
+ switch after disabling or enabling an interface. &nbsp;It takes three arguments, 
+ node, protocol, and timeout. &nbsp;The first two are as described above. 
+&nbsp;The third defaults to 1 minute, at which point the wait is over and 
+the run can be ended or continued. &nbsp;We haven't found <b>SwitchProtocols</b> 
+as useful as <b>MonitorProtocolSelection</b>, as Events are not emitted if 
+no switch is made, and no switch is necessary when an interface is disabled 
+if Email is already in use, which it may be the case for several reasons. 
+&nbsp;It may still be using Email because of an earlier disconnect. &nbsp;It 
+may be trying out Email to see how it performs, which is done periodically 
+to calculate comparative performance metrics. Or it may be using Email because 
+a previous message send failed, or ack was late, or performed poorly, on another
+protocol, though not necessarily as the result of disabling an interface. 
+    <br>
+     </blockquote>
+   Run Script<br>
+           
+  <blockquote><b>csmart/config/scripts/robustness/uc2/RunUC2.rb</b> is a sample
+run script for the Rolling Partition Experiment on socC with AR-UC1 (Sledgehammer)
+active but not killing any nodes. &nbsp;Its a copy of the default run script
+with the addition of the actions described above. &nbsp;To run AR-UC2 without
+AR-UC1 loaded, just delete the lines flagged (*) below.     <br>
+     <br>
+ This line is added to locate the msglog actions:<br>
+     
+    <blockquote><b>$:.unshift File.join(CIP, 'csmart', 'config', 'lib')<br>
+       </b></blockquote>
+ This line is added so that the transform can iterate over the enclaves. 
+   
+    <blockquote><b>require 'ultralog/enclaves'</b><br>
+     </blockquote>
+ *Add this line to load UC1's actions (delete it if not running with UC1's 
+defense active):<br>
+     
+    <blockquote><b>require 'robustness/uc1/aruc1_actions_and_states'<br>
+       </b></blockquote>
+ Add these lines to load the actions:<br>
+     
+    <blockquote><b>require 'robustness/uc2/msglog'<br>
+ require 'robustness/uc2/flushmail'<br>
+       </b></blockquote>
+ *This line applies UC1's transformation rule (delete it if not running with 
+UC1's defense active):<br>
+     
+    <blockquote><b>"#{RULES}/robustness/uc1",</b></blockquote>
+ And this one applies MsgLog's rule:<br>
+   </blockquote>
+   
+  <blockquote>     
+    <blockquote><b>"#{RULES}/robustness/uc2/msglog.rule"</b><br>
+     </blockquote>
+ This line was added to delete all old messages from the inboxes.<br>
+     
+    <blockquote><b>do_action "FlushMail"</b><br>
+     </blockquote>
+ Once <b>PublishNextStage</b> has been done, we:<b><br>
+       </b>               
+    <blockquote><tt><b>do_action "MonitorProtocolSelection", "FWD-B", "org.cougaar.core.mts.email.OutgoingEmailLinkProtocol"<br>
+   do_action "MonitorProtocolSelection", "FWD-C", "org.cougaar.core.mts.email.OutgoingEmailLinkProtocol"</b></tt><br>
+       </blockquote>
+   &nbsp;This starts monitoring for switched to <b>Email</b> for messages 
+to      <b>FWD-B</b> and <b>FWD-C</b>.<br>
+       <br>
+   We then alternately disable FWD-B's interface, wait 20 seconds, disable
+ FWD-C's interface, enable FWD-B's interface, wait 20 seconds, disable FWD-B's
+ interface, enable FWD-C's interface, wait 20 seconds, and continue the cycle,
+ so                
+    <blockquote><b><tt>do_action "DisableNetworkInterfaces", "FWD-B"<br>
+   do_action "GenericAction" do |run|<br>
+   &nbsp; sleep 20.seconds<br>
+   end<br>
+   do_action "DisableNetworkInterfaces", "FWD-C"<br>
+   do_action "EnableNetworkInterfaces", &nbsp;"FWD-B"<br>
+   do_action "GenericAction" do |run|<br>
+   &nbsp; sleep 20.seconds<br>
+   end<br>
+   do_action "DisableNetworkInterfaces", "FWD-B"<br>
+   do_action "EnableNetworkInterfaces", &nbsp;"FWD-C"<br>
+   do_action "GenericAction" do |run|</tt></b><tt><b><br>
+   &nbsp; sleep 20.seconds</b><br>
+         <b>end</b><br>
+         <b>do_action "DisableNetworkInterfaces", "FWD-C"</b><br>
+         <b>do_action "EnableNetworkInterfaces", &nbsp;"FWD-B"</b><br>
+         <b>do_action "GenericAction" do |run|</b><br>
+         <b>&nbsp; sleep 20.seconds</b><br>
+         <b>end</b></tt><br>
+       </blockquote>
+   The objective here is to not have FWD-B and FWD-C connected to the network 
+ at the same time, so that their only means of communications between each 
+ other is via intermediaries, the Email server(s). &nbsp;<br>
+       <br>
+   Be careful not to leave an interface disabled when ending the cycle or 
+ending  the experiment. &nbsp;Cougaar will not complete normally without being
+able  to communicate with a node at least occasionally, and the next run
+will not  start properly with an interface disabled. &nbsp;To enable both
+interfaces,  do the following:<br>
+                 
+    <blockquote>&nbsp;<b>do_action "EnableNetworkInterfaces", "FWD-B", "FWD-C"</b><br>
+       </blockquote>
+     </blockquote>
+           
+  <blockquote>Placement of the stresses after<b> <b>PublishNextStage</b></b>, 
+setting  the sleep at 20 seconds, and the choice of nodes to disconnect, can
+be varied.  &nbsp;These choices were made because there are a lot of messages
+sent right  after&nbsp;<b>PublishNextStage</b>, the rollover to Email should
+be able to occur  in 20 seconds, and I guessed correctly that these two nodes
+in the same enclave  might send each other messages. &nbsp;The same behavior
+should be observed  at other points during a run, but, obviously, if no messages
+are being transported,  no protocol switch will occur. &nbsp;There is a lower
+bound on the amount  of time required to switch protocols. &nbsp;It should
+vary from a couple of seconds to ten or so, depending on the performance and
+load of nodes and servers and network, and on MsgLog's tuning. &nbsp;By default,
+for instance, nodes check their inbox for email every 5 seconds. &nbsp;There
+is also a much fuzzier upper bound. &nbsp;If nodes are disconnected for too
+long, the logistics application might fall back to predictors, which will
+affect the result. Or, other defenses might kick in. &nbsp;AR-UC1, for instance,
+might conclude that the node is dead and restart all its agents elsewhere.
+&nbsp;This is a case for Deconfliction, coming in the next release.<br>
+     <br>
+ The script <b>csmart/config/scripts/robustness/uc2/RunUC1.rb</b> runs AR-UC1 
+(Sledgehammer) with MsgLog loaded and active, killing a node but not disconnecting 
+any. This is a compatibility test for MsgLog and AR-UC1.<br>
+    </blockquote>
+  </blockquote>
+   Send questions or comments to:<br>
+       <br>
+       <tt>Steve Ford</tt><br>
+  <tt> OBJS</tt><br>
+  <tt>     </tt><tt><a href="mailto:ford@objs.com">ford@objs.com</a></tt><br>
+       <tt>610 345 0448</tt>  
+<blockquote>         
+  <blockquote>    </blockquote>
+   </blockquote>
+   <br>
   <br>
  <br>
 </body>
