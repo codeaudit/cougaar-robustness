@@ -1,0 +1,87 @@
+######################################
+# Adds Msglog's Coordinator components
+#
+# Warning: Aspects have order dependencies as encoded below by order numbers.
+#          The authoritative source for the order numbers is 
+#          https://cvs.ultralog.net/ultralog/AspectConfiguration.  
+#          Changes made there must be propagated here.  
+#
+
+leac = "org.cougaar.mts.std.LinksEnablingActuator"
+lss  = "org.cougaar.mts.std.LinksStatusSensor"
+ltsp = "org.cougaar.coordinator.techspec.xml.LoadTechSpecsPlugin"
+msp  = "org.cougaar.mts.std.MsglogStatisticsPlugin"
+
+msha = [340, "org.cougaar.mts.std.MessageSendHistoryAspect"]
+mna  = [370, "org.cougaar.mts.std.MessageNumberingAspect"]
+leas = [375, "org.cougaar.mts.std.LinksEnablingAspect"]
+
+aspects = [msha, leas, mna]
+
+node_plugins = [msp]
+mgr_plugins  = [lss, leac]
+
+techspecs = ['MsglogAgentAssetStateDimensions.xml',
+             'MsglogDiagnoses.xml', 
+             'MsglogActions.xml', 
+             'MsglogThreats.xml', 
+             'MsglogEvents.xml']
+
+# add plugins and techspecs to ARManager agents
+society.each_agent do |agent|
+    if agent.name =~ /.*ARManager.*/
+        agent.add_components(mgr_plugins)
+        found = false
+        agent.each_component do |c|
+            next unless c.classname == ltsp
+            techspecs.each do |ts|
+                c.add_argument(ts) unless c.has_argument?(ts)
+            end
+            c.name = c.comparison_name
+            found = true
+            break
+        end
+        unless found
+            agent.add_component do |c|
+                c.classname = ltsp
+                c.insertionpoint = 'Node.AgentManager.Agent.PluginManager.Plugin'
+                techspecs.each do |ts|
+                    c.add_argument(ts)
+                end
+            end
+        end
+    end
+end
+
+
+# add plugins, aspects and techspecs to each node
+society.each_node do |node|
+    node.append_value_on_parameter("-Dorg.cougaar.config.path", "$COUGAAR_INSTALL_PATH/configs/coordinator/msglog")
+    node.add_components(node_plugins)
+    aspects.each { |aspect| 
+        node.add_component do |c|
+            c.order = aspect[0]
+            c.classname = aspect[1]
+            c.insertionpoint = "Node.AgentManager.Agent.MessageTransport.Aspect"
+        end
+    }
+    found = false
+    node.each_component do |c|
+        next unless c.classname == ltsp
+        techspecs.each do |ts|
+            c.add_argument(ts) unless c.has_argument?(ts)
+        end
+        c.name = c.comparison_name
+        found = true
+        break
+    end
+    unless found
+        node.add_component do |c|
+            c.classname = ltsp
+            c.insertionpoint = 'Node.AgentManager.Agent.PluginManager.Plugin'
+            techspecs.each do |ts|
+                c.add_argument(ts)
+            end
+        end
+    end
+end
