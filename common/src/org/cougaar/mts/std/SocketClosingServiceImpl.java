@@ -40,6 +40,8 @@ import org.cougaar.core.service.LoggingService;
 
 public class SocketClosingServiceImpl implements SocketClosingService, ServiceProvider
 {
+  private static final String WRITE_TIMEOUT = 
+    "org.cougaar.message.transport.aspects.RMISendTimeoutAspect.writeTimeout";
   private static SocketCloser socketCloser = null;
   private LoggingService log;
 
@@ -232,7 +234,8 @@ public class SocketClosingServiceImpl implements SocketClosingService, ServicePr
 
         if (queue.size() > 30)  // control buildup
         {
-          if (minCloseDeadline-now() > 5000) offerNewCloseDeadline (0);
+          int period = Integer.valueOf(System.getProperty(WRITE_TIMEOUT,"300000")).intValue();
+          if (minCloseDeadline-now() > period) offerNewCloseDeadline (0);
         }
       }
     }
@@ -280,7 +283,7 @@ public class SocketClosingServiceImpl implements SocketClosingService, ServicePr
           catch (Exception e) 
           {
             s += ": " + stackTraceToString (e);
-            log.error (s);
+            if (log.isErrorEnabled()) log.error(s);
           }
         }
         catch (Exception e)
@@ -290,92 +293,61 @@ public class SocketClosingServiceImpl implements SocketClosingService, ServicePr
       }
     }
 
-    private void doRun () 
-    {
-      int len;
-
-      while (true) 
-      {
-        //  Wait until we have some new sockets or we have timed out to 
-        //  re-examine old sockets.
-
-        synchronized (queue) 
-        {
-          while (true)
-          {
-            //  Check how long to wait before we need to satisfy a close deadline
-
-            long waitTime = 0;  // 0 = wait till notify (or interrupt)
-
-            if (queue.size() > 0)
-            {
-              waitTime = minCloseDeadline - now();
-              if (waitTime <= 0) { minCloseDeadline = 0;  break; }
-            }
-
-            //  Wait until timeout, notify, or interrupt
-
-            try { queue.wait (waitTime); } catch (Exception e) {}
-          }
-
-          sockets = (SocketRecord[]) queue.toArray (sockets);  // try array reuse
-          len = queue.size();
-          if (len > 1) Arrays.sort (sockets, 0, len, deadlineSort);
-        }
-
-        //  Check if it is time to close any sockets
-
-        if (len > 0 && debug()) 
-        {
-          log.debug ("SocketCloser: reviewing queue (" +len+ " socket" +(len==1? ")" : "s)"));
-        }
-
-        synchronized (queue)
-        {
-          //  Prune already closed sockets
-
-          for (int i=0; i<len; i++)
-          {
-            if (sockets[i].socket.isNull() || sockets[i].socket.isClosed()) 
-            {
-              remove (sockets[i]);
-              sockets[i] = null;
-            }
-          } 
-        }
-
-        for (int i=0; i<len; i++) if (sockets[i] != null)
-        {
-          SocketRecord sr = sockets[i];
-          long closeDeadline = sr.deadline;
-          long timeLeft = closeDeadline - now();
-
-          if (debug()) log.debug ("SocketCloser: timeLeft=" +timeLeft+ "  " +sr);
-
-          if (timeLeft <= 0)
-          {
-            //  Time to close the socket
-
-            if (!sr.socket.isClosed())
-            {
-              if (debug()) log.debug ("SocketCloser: Closing " +sr);
-              try { sr.socket.close(); } catch (Exception e) {}
-            }
-
-            remove (sr);
-          }
-          else 
-          {
-            //  Since the deadlines are time-ordered no other closings will (thread
-            //  willing) occur in this go round, so we can quit if we want to.
-
-            offerNewCloseDeadline (closeDeadline);
-            if (!debug()) break;  // quit if not showing queue review
-          }
-        }
-
-        Arrays.fill (sockets, null);  // release references
-      }
+    private void doRun () {
+	int len;
+	while (true) {
+	    //  Wait until we have some new sockets or we have timed out to 
+	    //  re-examine old sockets.
+	    synchronized (queue) {
+		while (true) {
+		    //  Check how long to wait before we need to satisfy a close deadline
+		    long waitTime = 0;  // 0 = wait till notify (or interrupt)
+		    if (queue.size() > 0) {
+			waitTime = minCloseDeadline - now();
+			if (waitTime <= 0) { minCloseDeadline = 0;  break; }
+		    }
+		    //  Wait until timeout, notify, or interrupt
+		    try { queue.wait (waitTime); } catch (Exception e) {}
+		}
+		sockets = (SocketRecord[]) queue.toArray (sockets);  // try array reuse
+		len = queue.size();
+		if (len > 1) Arrays.sort (sockets, 0, len, deadlineSort);
+	    }
+	    //  Check if it is time to close any sockets
+	    if (len > 0 && debug()) {
+		log.debug ("SocketCloser: reviewing queue (" +len+ " socket" +(len==1? ")" : "s)"));
+	    }
+	    synchronized (queue) {
+		//  Prune already closed sockets
+		for (int i=0; i<len; i++) {
+		    if (sockets[i].socket.isNull() || sockets[i].socket.isClosed()) {
+			remove (sockets[i]);
+			sockets[i] = null;
+		    }
+		} 
+	    }
+	    for (int i=0; i<len; i++) if (sockets[i] != null) {
+		SocketRecord sr = sockets[i];
+		long closeDeadline = sr.deadline;
+		long timeLeft = closeDeadline - now();
+		if (debug()) log.debug ("SocketCloser: timeLeft=" +timeLeft+ "  " +sr);
+		if (timeLeft <= 0) {
+		    //  Time to close the socket
+		    if (!sr.socket.isClosed()) {
+			if (log.isShoutEnabled())
+			    log.shout("SocketCloser: Closing " +sr);
+			try { sr.socket.close(); } catch (Exception e) {}
+		    }
+		    remove (sr);
+		} else {
+		    //  Since the deadlines are time-ordered no other closings will (thread
+		    //  willing) occur in this go round, so we can quit if we want to.
+		    offerNewCloseDeadline (closeDeadline);
+		    if (!debug()) break;  // quit if not showing queue review
+		}
+	    }
+	    Arrays.fill (sockets, null);  // release references
+	}
     }
 
     private class DeadlineSort implements Comparator
