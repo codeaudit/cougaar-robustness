@@ -70,8 +70,11 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
 
   private Map myRelays = Collections.synchronizedMap(new HashMap());
 
-  //save all alerts and their alarms. The alarm is used to remove the alert when it is expired.
-  private List alertAlarms = Collections.synchronizedList(new ArrayList());
+  //List of alarms for alerts that are waiting to expire
+  private List expirationAlarms = Collections.synchronizedList(new ArrayList());
+
+  //List of alarms for alerts that are waiting to to be activated
+  private List activationAlarms = Collections.synchronizedList(new ArrayList());
 
   private IncrementalSubscription taSub; //subscirptions to threat alert
 
@@ -339,16 +342,31 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
       cancelThreatAlert((ThreatAlert)it.next());
     }
 
-    // Get Expired alerts.  Notify listeners and remove artifacts
-    if(!alertAlarms.isEmpty()) {
+    // Get newly activated alerts.  Notify listeners by firing changedAlert callback
+    if(!activationAlarms.isEmpty()) {
       List tempAlarms = new ArrayList();
-      synchronized(alertAlarms) {
-        tempAlarms.addAll(alertAlarms);
+      synchronized(activationAlarms) {
+        tempAlarms.addAll(activationAlarms);
       }
       for (Iterator it = tempAlarms.iterator(); it.hasNext(); ) {
         ThreatAlertAlarm alarm = (ThreatAlertAlarm) it.next();
         if (alarm.hasExpired()) {
-          alertAlarms.remove(alarm);
+          activationAlarms.remove(alarm);
+          fireListenersForChangedAlert(alarm.getThreatAlert());
+        }
+      }
+    }
+
+    // Get Expired alerts.  Notify listeners and remove artifacts
+    if(!expirationAlarms.isEmpty()) {
+      List tempAlarms = new ArrayList();
+      synchronized(expirationAlarms) {
+        tempAlarms.addAll(expirationAlarms);
+      }
+      for (Iterator it = tempAlarms.iterator(); it.hasNext(); ) {
+        ThreatAlertAlarm alarm = (ThreatAlertAlarm) it.next();
+        if (alarm.hasExpired()) {
+          expirationAlarms.remove(alarm);
           cancelThreatAlert(alarm.getThreatAlert());
         }
       }
@@ -357,10 +375,20 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
 
   // Add new alert
   private void addThreatAlert(ThreatAlert ta) {
+    long now = System.currentTimeMillis();
     currentThreatAlerts.put(ta.getUID(), ta);
-    ThreatAlertAlarm alarm = new ThreatAlertAlarm(ta);
-    alarmService.addRealTimeAlarm(alarm);
-    alertAlarms.add(alarm);
+    // Add activation alarm
+    if (now < ta.getStartTime().getTime()) {
+      ThreatAlertAlarm alarm = new ThreatAlertAlarm(ta, ta.getStartTime().getTime());
+      alarmService.addRealTimeAlarm(alarm);
+      activationAlarms.add(alarm);
+    }
+    // Add expiration alarm
+    if (now < ta.getExpirationTime().getTime()) {
+      ThreatAlertAlarm alarm = new ThreatAlertAlarm(ta, ta.getExpirationTime().getTime());
+      alarmService.addRealTimeAlarm(alarm);
+      expirationAlarms.add(alarm);
+    }
     fireListenersForNewAlert(ta);
   }
 
@@ -434,8 +462,8 @@ public class ThreatAlertServiceImpl extends BlackboardClientComponent implements
     private boolean expired = false;
     private ThreatAlert ta;
 
-    public ThreatAlertAlarm(ThreatAlert ta) {
-      expirationTime = ta.getExpirationTime().getTime();
+    public ThreatAlertAlarm(ThreatAlert ta, long alarmExpiration) {
+      expirationTime = alarmExpiration;
       this.ta = ta;
     }
 
