@@ -86,7 +86,7 @@ public class ReconnectTimeCondition extends DefenseTimeCondition
     }
 
     public String toString() {
-        return this.getAsset()+ " with agents: " + this.getAgents();
+        return this.getAsset()+ " with agents: " + this.getAgents() + " and value " + getValue();
     }
     
      public int updateContent(Object content, Relay.Token token) {

@@ -63,6 +63,7 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
   private IncrementalSubscription managerAddressSubscription;
     
   private long reconnectInterval;
+  private boolean noChangesYet = true;
 
   private AgentVector localAgents = new AgentVector();
   
@@ -169,8 +170,8 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
 
           // create conditions & opmodes for the NodeAgent
           createLocalCondition(getNodeID(), getNodeAddress(), managerAddress);
-          createConditionsAndOpModes("Node", getNodeID(), getNodeAddress(), managerAddress);   // so we can disconnect the Node
-          addAgent(getNodeID());  // so the Node Agent is also visble
+          createRemoteCondition("Node", getNodeID(), getNodeAddress(), managerAddress);   // so we can disconnect the Node
+          createRemoteOpMode("Node", getNodeID(), getNodeAddress(), managerAddress);   // so we can disconnect the Node
      
           //********** Check for new agents on the node **********
           // create conditions for all the agents that reported BEFORE we found the ManagerAgent Address
@@ -191,20 +192,6 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
       }
 
       
-      //********* Check for changes in our modes ************
-      
-      //We have defense modes for all agents
-      iter = defenseModeSubscription.getChangedCollection().iterator();
-      while (iter.hasNext()) {
-          DisconnectDefenseAgentEnabler dmode = (DisconnectDefenseAgentEnabler)iter.next();
-          if (dmode != null) {
-              if (logger.isDebugEnabled()) logger.debug("Saw: "+
-                 dmode.getClass()+":"+
-                 dmode.getName() + " set to " + dmode.getValue());
-          }
-      };
-
-      
       //We have one local time condition, so we only get the one from iter.next();
       // This was set by the DisconnectServlet for the Node
       iter = localReconnectTimeSubscription.getChangedCollection().iterator();
@@ -221,59 +208,49 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
               if (lrtc != null) {
                     reconnectInterval = (long) Double.parseDouble(lrtc.getValue().toString());
               }
-              // set the ReconnectTimeCondition for each agent on the node
               if (eventService.isEventEnabled()) {
-                  if (reconnectInterval >= 0L)
+                  if (reconnectInterval > 0L)
                     eventService.event("Requesting to Disconnect Node: "+getNodeID());
                   else
                     eventService.event("Requesting to Connect Node: "+getNodeID());   
               }
-              Iterator iter2 = reconnectTimeSubscription.iterator();
-              if (iter2.hasNext()) { // should only be one
-                  ReconnectTimeCondition rtc = (ReconnectTimeCondition)iter2.next();
-                  rtc.setTime(new Double(Double.parseDouble(lrtc.getValue().toString())));
-                  //rtc.setAgents(localAgents);
-                  localAgents = new AgentVector();
-                  Set agentAddresses = nodeControlService.getRootContainer().getAgentAddresses();
-                  Iterator iter3 = agentAddresses.iterator();
-                  while (iter3.hasNext()) {
-                    String agentName = iter3.next().toString();
-                    localAgents.add(agentName);
-                  }
-                  rtc.setAgents(localAgents);
-                  getBlackboardService().publishChange(rtc);
-                  if (logger.isDebugEnabled()) logger.debug("Set the Condition for "+rtc.toString());   
-              }
+              ReconnectTimeCondition rtc = ReconnectTimeCondition.findOnBlackboard("Node", getNodeID(),  blackboard);
+              rtc.setTime(new Double(Double.parseDouble(lrtc.getValue().toString())));
+              rtc.setAgents(localAgents);
+              getBlackboardService().publishChange(rtc);
+              if (logger.isDebugEnabled()) logger.debug("Set the Condition for "+rtc.toString());   
           }
       }
-      
-      // announce changes to the defenseEnabler as Cougaar Events to allow actual disconnection from ACME
-      // need to iterate thru the modes to find the one for the Node Agent
+
+      //********* Check for changes in our mode - there is only one ************
       iter = defenseModeSubscription.getChangedCollection().iterator();
       while (iter.hasNext()) {
+          if (noChangesYet) {
+                noChangesYet = false;
+                if (logger.isDebugEnabled()) logger.debug("Ignoring the initial Change due to handshaking");
+                return;  // ignore opmode changes due to handshaking
+          }
           DisconnectDefenseAgentEnabler dmode = (DisconnectDefenseAgentEnabler)iter.next();
-          if (dmode != null) {
-              if (dmode.getExpandedName().equals("Node:"+getNodeID())) {
-                  String defenseMode = dmode.getValue().toString();
-                  if (eventService.isEventEnabled()) {
-                      if (defenseMode.equals("ENABLED")) {
-                          eventService.event(getNodeID()+" plans to Disconnect for "+reconnectInterval+" sec");
-                      }
-                      else if (defenseMode.equals("DISABLED")){
-                          eventService.event(getNodeID()+" has Reconnected");
-                      }
+          if (logger.isDebugEnabled()) logger.debug("Saw: "+
+             dmode.getClass()+":"+
+             dmode.getName() + " changed to " + dmode.getValue());          
+          if (dmode.getExpandedName().equals("Node:"+getNodeID())) {
+              String defenseMode = dmode.getValue().toString();
+              if (eventService.isEventEnabled()) {
+                  if (defenseMode.equals("ENABLED")) {
+                      eventService.event(getNodeID()+" plans to Disconnect for "+reconnectInterval+" sec");
+                  }
+                  else if (defenseMode.equals("DISABLED")){
+                      eventService.event(getNodeID()+" has Reconnected");
                   }
               }
           }
           // ACK that the Node has seen the action value
-          Iterator iter2 = reconnectTimeSubscription.iterator();
-          if (iter2.hasNext()) { // should only be one
-              ReconnectTimeCondition rtc = (ReconnectTimeCondition)iter2.next();
-              rtc.setTime(new Double(-1.0));
-              rtc.setAgents(localAgents);
-              getBlackboardService().publishChange(rtc);
-              if (logger.isDebugEnabled()) logger.debug("Set the (ACK) Condition for "+rtc.toString());   
-          }          
+          ReconnectTimeCondition rtc = ReconnectTimeCondition.findOnBlackboard("Node", getNodeID(),  blackboard);
+          rtc.setTime(new Double(-1.0));
+          rtc.setAgents(localAgents);
+          getBlackboardService().publishChange(rtc);
+          if (logger.isDebugEnabled()) logger.debug("Set the (ACK) Condition for "+rtc.toString());   
       };
 
   }
@@ -284,7 +261,7 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
           LocalReconnectTimeCondition lrtc =
              new LocalReconnectTimeCondition("Node", assetID);
           lrtc.setUID(getUIDService().nextUID());
-          lrtc.setSourceAndTarget(localAddress, remoteAddress);
+          //lrtc.setSourceAndTarget(localAddress, remoteAddress);
 
           getBlackboardService().publishAdd(lrtc);
           
@@ -292,33 +269,45 @@ public class DisconnectNodePlugin extends DisconnectPluginBase {
     }
         
 
-    private void createConditionsAndOpModes(String assetType, String assetID, MessageAddress localAddress, MessageAddress remoteAddress) {
-        // Make the remote condition & opmodes (used for agents & the node agent)
+    private void createRemoteCondition(String assetType, String assetID, MessageAddress localAddress, MessageAddress remoteAddress) {
+        // Make the remote condition 
 
         ReconnectTimeCondition rtc = new ReconnectTimeCondition(assetType, assetID);
         rtc.setUID(getUIDService().nextUID());
         rtc.setSourceAndTarget(localAddress, remoteAddress);
-        rtc.setAgents(localAgents);
+        getBlackboardService().publishAdd(rtc);
+        if (logger.isDebugEnabled()) logger.debug("Created Condition for "+localAddress+":"+assetID); 
+    }
+    
+    private void createRemoteOpMode(String assetType, String assetID, MessageAddress localAddress, MessageAddress remoteAddress) {
+        // Make the remote opmode
 
         DisconnectDefenseAgentEnabler dde = new DisconnectDefenseAgentEnabler(assetType, assetID);
         dde.setUID(getUIDService().nextUID());
         dde.setSourceAndTarget(localAddress, remoteAddress);
-
-        getBlackboardService().publishAdd(rtc);
         getBlackboardService().publishAdd(dde);
-
-        if (logger.isDebugEnabled()) logger.debug("Created Conditions & OpModes for "+localAddress+":"+assetID); 
+        if (logger.isDebugEnabled()) logger.debug("Created OpMode for "+localAddress+":"+assetID); 
     }
-    
+
     
     private void removeAgent(String agentName) {
-        localAgents.remove(agentName);        
+        localAgents.remove(agentName); 
+        removeRemoteCondition("Agent", agentName);
         if (logger.isDebugEnabled()) logger.debug("Removed entry for departing agent "+agentName); 
     }
 
     private void addAgent(String agentName) {
         localAgents.add(agentName);
+        createRemoteCondition("Agent", agentName, getNodeAddress(), managerAddress); // to let the DisconnectManager know the agent exists
         if (logger.isDebugEnabled()) logger.debug("Added arriving agent "+agentName); 
     }
     
+    private void removeRemoteCondition(String assetType, String assetID) {
+        // Find and remove the ReconnectTimeCondition - used when agents depart the node
+        
+        ReconnectTimeCondition rtc = ReconnectTimeCondition.findOnBlackboard(assetType, assetID, getBlackboardService());        
+        if (rtc != null) blackboard.publishRemove(rtc);        
+        if (logger.isDebugEnabled()) logger.debug("Removed Condition for departing agent "+assetID); 
+    }
+
 }

@@ -41,6 +41,8 @@ public class DisconnectConstants {
     public final static String DISCONNECT_REQUEST = "Disconnect_Request";
     public final static String CONNECT_REQUEST = "Connect_Request";
     public final static String TARDY = "Tardy";
+    public final static String DISCONNECTED = "Disconnected";
+    public final static String CONNECTED = "Connected";
 
     // The Possible Actions
     public final static String ALLOW_DISCONNECT = "Allow_Disconnect";
