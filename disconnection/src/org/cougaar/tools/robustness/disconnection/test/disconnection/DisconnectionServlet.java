@@ -272,28 +272,35 @@ public class DisconnectionServlet extends BaseServletComponent
 
       if (reconnectTime > 0) {
           cond.setValue(DefenseConstants.BOOL_TRUE);
-          out.println("<center><h2>"+MY_APPLICABILITY_CONDITION_NAME+nodeID+" set to TRUE</h2></center><br>" );                                        
+          out.println("<center><h2>*"+MY_APPLICABILITY_CONDITION_NAME+nodeID+" set to TRUE</h2></center><br>" );                                        
       }
       else {
           cond.setValue(DefenseConstants.BOOL_FALSE);
-          out.println("<center><h2>"+MY_APPLICABILITY_CONDITION_NAME+nodeID+" set to FALSE</h2></center><br>" );                                        
+          out.println("<center><h2>*"+MY_APPLICABILITY_CONDITION_NAME+nodeID+" set to FALSE</h2></center><br>" );                                        
       }
       rtc.setValue(new Double(reconnectTime));
       out.println("<center><h2>"+MY_RECONNECT_TIME_NAME+nodeID+" set to "+reconnectTime+"</h2></center><br>" );                                        
-
+out.println("***********************************************");
+      System.out.println("********************Pushing servlet changes to BB.");
       blackboard.openTransaction();
       blackboard.publishChange(cond);
       blackboard.publishChange(rtc);
       blackboard.closeTransaction();
+      System.out.println("********************Pushing servlet changes to BB: Done!");
 
       if (logger.isDebugEnabled()) {
+          System.out.println("********************logging enabled!");
           logger.debug(MY_APPLICABILITY_CONDITION_NAME+nodeID+" set to "+ cond.getValue());
           logger.debug(MY_RECONNECT_TIME_NAME+nodeID+" set to "+ rtc.getValue());
-      }
+      } else
+          System.out.println("********************logging NOT enabled!");
       if (eventService.isEventEnabled()) {
+          System.out.println("********************eventService enabled!");
           eventService.event(MY_APPLICABILITY_CONDITION_NAME+nodeID+" set to "+ cond.getValue());
           eventService.event(MY_RECONNECT_TIME_NAME+nodeID+" set to "+ rtc.getValue());
-      }
+      } else 
+          System.out.println("********************eventService NOT enabled!");
+          
           
   }
   
