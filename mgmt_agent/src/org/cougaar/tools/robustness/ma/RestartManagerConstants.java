@@ -22,12 +22,13 @@ package org.cougaar.tools.robustness.ma;
  */
 public interface RestartManagerConstants {
 
-  public static final String PERSISTENCE_INTERVAL_ATTRIBUTE = "PERSISTENCE_INTERVAL";
-  public static final String SOLVER_MODE_ATTRIBUTE          = "SOLVER_MODE";
-  public static final String AUTO_LOAD_BALANCE_ATTRIBUTE    = "AUTO_LOAD_BALANCE";
-  public static final String COMMUNITY_BUSY_ATTRIBUTE       = "COMMUNITY_BUSY_THRESHOLD";
-  public static final String NODE_BUSY_ATTRIBUTE            = "NODE_BUSY_THRESHOLD";
-  public static final String STATUS_UPDATE_ATTRIBUTE        = "STATUS_UPDATE_INTERVAL";
+  public static final String PERSISTENCE_INTERVAL_ATTRIBUTE  = "PERSISTENCE_INTERVAL";
+  public static final String SOLVER_MODE_ATTRIBUTE           = "SOLVER_MODE";
+  public static final String AUTO_LOAD_BALANCE_ATTRIBUTE     = "AUTO_LOAD_BALANCE";
+  public static final String COMMUNITY_BUSY_ATTRIBUTE        = "COMMUNITY_BUSY_THRESHOLD";
+  public static final String NODE_BUSY_ATTRIBUTE             = "NODE_BUSY_THRESHOLD";
+  public static final String STATUS_UPDATE_ATTRIBUTE         = "STATUS_UPDATE_INTERVAL";
+  public static final String CURRENT_STATUS_UPDATE_ATTRIBUTE = "CURRENT_STATUS_UPDATE_INTERVAL";
   public static final String PERSISTENCE_INTERVAL_THREATCON_HIGH_COEFFICIENT = "PERSISTENCE_INTERVAL_THREATCON_HIGH_COEFFICIENT";
   public static final String STATUS_UPDATE_INTERVAL_THREATCON_HIGH_COEFFICIENT = "STATUS_UPDATE_INTERVAL_THREATCON_HIGH_COEFFICIENT";
 
