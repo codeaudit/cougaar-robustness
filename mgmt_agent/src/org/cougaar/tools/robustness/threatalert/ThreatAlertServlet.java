@@ -255,25 +255,32 @@ public class ThreatAlertServlet extends BaseServletComponent implements Blackboa
       }
     }
     ThreatAlert ta = makeThreatAlert(alertClass, level, start, expire, assets);
-    String role;
-    if (conditions.containsKey("inputrole")) {
-      role = (String)conditions.get("inputrole");
-    } else {
-      role = (String) conditions.get("selectrole");
-    }
-    String community;
-    if (conditions.containsKey("inputcommunity")) {
-      community = (String)conditions.get("inputcommunity");
-    } else {
-      community = (String) conditions.get("selectcommunity");
-    }
     Object content;
     if (conditions.containsKey("content")) {
       content = conditions.get("content");
       ta.setContent(content);
     }
-    threatAlertService.sendAlert(ta, community, role);
 
+    if (conditions.containsKey("inputagent")) {
+      String agent = (String)conditions.get("inputagent");
+      threatAlertService.sendAlert(ta, agent);
+    }
+    else {
+      String role;
+      if (conditions.containsKey("inputrole")) {
+        role = (String)conditions.get("inputrole");
+      } else {
+        role = (String) conditions.get("selectrole");
+      }
+      String community;
+      if (conditions.containsKey("inputcommunity")) {
+        community = (String)conditions.get("inputcommunity");
+      } else {
+        community = (String) conditions.get("selectcommunity");
+      }
+
+      threatAlertService.sendAlert(ta, community, role);
+    }
   }
 
   /**
