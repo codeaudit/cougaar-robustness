@@ -88,6 +88,8 @@ public class SensorTypeLoader extends XMLLoader {
         String type = element.getAttribute("sensesAssetType");
         String stateDim = element.getAttribute("sensesStateDimension");
         String lat = element.getAttribute("sensorLatency"); //int msec
+        String policy = element.getAttribute("reportingPolicy"); 
+
         
         try {
             
@@ -114,7 +116,7 @@ public class SensorTypeLoader extends XMLLoader {
                 return null;
             }
             UID uid = us.nextUID();
-            DiagnosisTechSpecImpl sensor = new DiagnosisTechSpecImpl( sensorName, uid, sensesAssetType, asd, latency);
+            DiagnosisTechSpecImpl sensor = new DiagnosisTechSpecImpl( sensorName, uid, sensesAssetType, asd, latency, policy);
             
             //Create a SensorType
             Element e;

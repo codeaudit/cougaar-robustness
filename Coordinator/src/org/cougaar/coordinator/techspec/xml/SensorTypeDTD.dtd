@@ -9,6 +9,7 @@
     sensesAssetType CDATA #REQUIRED
     sensesStateDimension CDATA #REQUIRED
     sensorLatency CDATA #REQUIRED
+    reportingPolicy ( SNAPSHOT | ALWAYS_CURRENT ) 'SNAPSHOT'
 >
 
 <!ELEMENT PotentialDiagnoses (Diagnosis+) >

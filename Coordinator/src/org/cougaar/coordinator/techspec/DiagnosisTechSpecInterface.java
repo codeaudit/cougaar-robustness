@@ -36,6 +36,10 @@ import org.cougaar.core.util.UID;
  */
 public interface DiagnosisTechSpecInterface extends TechSpecRootInterface {
 
+    static final int SNAPSHOT = 1;
+    static final int ALWAYS_CURRENT = 2;
+    
+    
     /** @return a user-readable name for this TechSpec
      *
      */
@@ -61,6 +65,10 @@ public interface DiagnosisTechSpecInterface extends TechSpecRootInterface {
     /** @return the latency -- the time it takes this sensor to diagnose/notice & report a problem, in milliseconds.
      */
     public int getLatency();    
+    
+    /** @return the reportingPolicy -- either SNAPSHOT | ALWAYS_CURRENT
+     */
+    public int getReportingPolicy();
     
     /** @return the vector of monitoring levels that this sensor supports
      *

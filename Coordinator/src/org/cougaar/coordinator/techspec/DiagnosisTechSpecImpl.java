@@ -51,9 +51,10 @@ public class DiagnosisTechSpecImpl implements DiagnosisTechSpecInterface  {
     AssetStateDimension stateDim;
     int latency;
     String defaultValue = null;
+    int reportingPolicy = -1;
     
     /** Creates a new instance of DiagnosisTechSpecImpl */
-    public DiagnosisTechSpecImpl(String name, UID uid, AssetType type, AssetStateDimension stateDim, int latency) {
+    public DiagnosisTechSpecImpl(String name, UID uid, AssetType type, AssetStateDimension stateDim, int latency, String reportingPolicy) {
 
         this.name = name;
         this.levels = new Vector();        
@@ -65,6 +66,14 @@ public class DiagnosisTechSpecImpl implements DiagnosisTechSpecInterface  {
         this.assetType = type;
         this.stateDim = stateDim;
         this.latency = latency;
+        if (reportingPolicy.equals("SNAPSHOT")) {
+            this.reportingPolicy = DiagnosisTechSpecInterface.SNAPSHOT;
+        } else if (reportingPolicy.equals("ALWAYS_CURRENT")) {
+            this.reportingPolicy = DiagnosisTechSpecInterface.ALWAYS_CURRENT;
+        } else {
+            ;//error -- should NOT occur!
+        }
+            
     }
     
     /** @return the asset type that the sensor is watching.
@@ -83,6 +92,12 @@ public class DiagnosisTechSpecImpl implements DiagnosisTechSpecInterface  {
      */
     public int getLatency() {
         return latency;
+    }
+
+    /** @return the reportingPolicy -- either SNAPSHOT | ALWAYS_CURRENT
+     */
+    public int getReportingPolicy() {
+        return reportingPolicy;
     }
     
     /** @return the vector of monitoring levels that this sensor supports
@@ -187,7 +202,8 @@ public class DiagnosisTechSpecImpl implements DiagnosisTechSpecInterface  {
     
     public String toString() {
      
-        String s = "Sensor ["+this.getName()+"], uid="+this.getUID()+",  default value= "+ this.defaultValue+"\n";
+        String policy = (this.reportingPolicy == DiagnosisTechSpecInterface.ALWAYS_CURRENT) ? "ALWAYS_CURRENT" : "SNAPSHOT";
+        String s = "Sensor ["+this.getName()+"], uid="+this.getUID()+",  default value= "+ this.defaultValue+",reportingPolicy="+policy+"\n";
         Iterator i = this.getDiagnosisProbabilities().iterator();
         while (i.hasNext()) {
              DiagnosisProbability dp = (DiagnosisProbability)i.next();
