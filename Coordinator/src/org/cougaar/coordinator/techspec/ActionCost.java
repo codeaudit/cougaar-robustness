@@ -56,7 +56,7 @@ public class ActionCost {
     public Cost getBandwidthCost() { return bandwidth; }
     public Cost getCPUCost() { return cpu; }
     public Cost getMemoryCost() { return memory; }
-    public int getTimCost() { return time; }
+    public int getTimeCost() { return time; }
     
     public String toString() {
      
