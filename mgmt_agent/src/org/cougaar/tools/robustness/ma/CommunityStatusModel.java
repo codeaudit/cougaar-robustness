@@ -336,9 +336,9 @@ public class CommunityStatusModel extends BlackboardClientComponent
         se.expiration = expiration;
         logger.debug("setCurrentState" +
                      " agent=" + name +
-                     " newState=" + se.currentState +
-                     " priorState=" + se.priorState +
-                     " expiration=" + expiration);
+                     " newState=" + controller.stateName(se.currentState) +
+                     " priorState=" + controller.stateName(se.priorState) +
+                     " expiration=" + (expiration == NEVER ? "NEVER" : Long.toString(expiration)));
         if (hasAttribute(se.attrs, "Role", HEALTH_MONITOR)) {
           electLeader();
         }
@@ -652,8 +652,8 @@ public class CommunityStatusModel extends BlackboardClientComponent
             setLocation(agentName, thisAgent);
           } else {
             setLocation(agentName, as[i].getLocation());
+            setCurrentState(agentName, as[i].getStatus());
           }
-          setCurrentState(agentName, as[i].getStatus());
         }
       }
       electLeader();
