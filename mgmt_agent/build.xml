@@ -18,6 +18,8 @@
   <property name="persistenceEnabled" value="false"/>
   <property name="persistenceInterval" value="30000"/>
   <property name="packageDir" value="org/cougaar/tools/robustness"/>
+  <property name="file" value="communities.xml" />
+  <property name="assembly" value="COMM-DEFAULT_CONFIG" />
 
   <!-- Define location of 3rd-party libraries -->
   <property name="lib" value="lib" />
@@ -124,31 +126,11 @@
     </javadoc>
   </target>
 
-  <!-- initializes community tables in configdb from xmlfile -->
-  <target name="xmltodb" depends="xmltocsv, csvimport"
-          description="Convert community XML file to CSV and import into config db">
-  </target>
-
-  <!-- Converts a Community XML file to CSV files suitable for db import -->
-  <target name="xmltocsv" description="Converts a community xml file to CSV files">
+  <!-- Imports community descriptions into Configuration database from xml file-->
+  <target name="dbimport">
     <java dir="${basedir}" fork="yes"
-      classname="org.cougaar.tools.robustness.ma.test.XmlToCsv">
+      classname="org.cougaar.tools.robustness.ma.util.ConfigDbUtils">
       <classpath>
-        <pathelement location="${lib}/${jar}"/>
-        <fileset dir="${cougaar}/sys">
-          <include name="**/*.jar"/>
-        </fileset>
-      </classpath>
-      <arg line="test/data/communities.xml"/>
-    </java>
-  </target>
-
-  <!-- Imports community CSV files into configuration database -->
-  <target name="csvimport" description="Imports community CSV files into config db">
-    <java dir="${basedir}" fork="yes"
-      classname="org.cougaar.tools.robustness.ma.test.CsvFileLoader">
-      <classpath>
-        <pathelement location="${lib}/${jar}"/>
         <fileset dir="${cougaar}/lib">
           <include name="**/*.jar"/>
         </fileset>
@@ -156,9 +138,27 @@
           <include name="**/*.jar"/>
         </fileset>
       </classpath>
+      <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;$$CWD/test/configs/common;$$INSTALL/configs/common"/>
       <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
-      <sysproperty key="org.cougaar.config.path" value="$$INSTALL/configs/common;$$CWD/test/data;$$CWD/test/configs/common"/>
-      <arg line="community_attribute.csv community_entity_attribute.csv"/>
+      <arg line="import file=${file} experiment=${experiment} db=replace"/>
+    </java>
+  </target>
+
+  <!-- Exports community descriptions from Configuration database to xml file-->
+  <target name="dbexport">
+    <java dir="${basedir}" fork="yes"
+      classname="org.cougaar.tools.robustness.ma.util.ConfigDbUtils">
+      <classpath>
+        <fileset dir="${cougaar}/lib">
+          <include name="**/*.jar"/>
+        </fileset>
+        <fileset dir="${cougaar}/sys">
+          <include name="**/*.jar"/>
+        </fileset>
+      </classpath>
+      <sysproperty key="org.cougaar.config.path" value="$$CWD/test/data;$$CWD/test/configs/common;$$INSTALL/configs/common"/>
+      <sysproperty key="org.cougaar.install.path" value="${cougaar}"/>
+      <arg line="export file=${file} assembly=${assembly}"/>
     </java>
   </target>
 

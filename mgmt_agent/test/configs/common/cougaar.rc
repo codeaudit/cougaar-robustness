@@ -3,38 +3,38 @@ driver.oracle=oracle.jdbc.driver.OracleDriver
 driver.postgresql=org.postgresql.Driver
 
 # core database
-org.cougaar.database=jdbc:mysql://net3/cougaar
+org.cougaar.database=jdbc:mysql://DELL8200/cougaar
 org.cougaar.database.user=ul_user
 org.cougaar.database.password=
 
 # oplan database
-oplan.test.database=jdbc:mysql://net3/cougaar
+oplan.test.database=jdbc:mysql://DELL8200/cougaar
 oplan.test.database.user=
 oplan.test.database.password=
 
 # blackjack
-blackjack.database=jdbc:mysql://net3/cougaar
+blackjack.database=jdbc:mysql://DELL8200/cougaar
 blackjack.database.user=ul_user
 blackjack.database.password=
 
 # blackjack8
-blackjack8.database=jdbc:mysql://net3/cougaar
+blackjack8.database=jdbc:mysql://DELL8200/cougaar
 blackjack8.database.user=ul_user
 blackjack8.database.password=
 
 # icis
-icis.database=jdbc:mysql://net3/cougaar
+icis.database=jdbc:mysql://DELL8200/cougaar
 icis.database.user=ul_user
 icis.database.password=
 
 # generic database expander
-generic.database.expander.database=jdbc:mysql://net3/cougaar
+generic.database.expander.database=jdbc:mysql://DELL8200/cougaar
 generic.database.expander.user=ul_user
 generic.database.expander.password=
 generic.database.expander.expansion_table=construction_expansion
 
 # configuration database
-org.cougaar.configuration.database=jdbc:mysql://net3/cougaar
+org.cougaar.configuration.database=jdbc:mysql://DELL8200/cougaar
 org.cougaar.configuration.user=ul_user
 org.cougaar.configuration.password=
 
@@ -46,7 +46,7 @@ org.cougaar.web.keypass=Password
 
 # datagrabber database configuration
 # On the next line, DATAGRABBER_DBNAME is typically "Grabber" but can be anything you like.
-org.cougaar.domain.mlm.ui.grabber.config.DBConfig.connectionURL=jdbc:mysql://net3/Grabber
+org.cougaar.domain.mlm.ui.grabber.config.DBConfig.connectionURL=jdbc:mysql://DELL8200/Grabber
 org.cougaar.domain.mlm.ui.grabber.config.DBConfig.user=ul_user
 org.cougaar.domain.mlm.ui.grabber.config.DBConfig.password=
 org.cougaar.domain.mlm.ui.grabber.config.DBConfig.syntax=MySQL
