@@ -44,7 +44,7 @@ public class AgentData {
         name = _name;
         logPointMgmt = _logpointmgmt;
         agentMgmt = _agentMgmt;
-        msgVector = new Vector(100);
+        msgVector = new Vector(1000);
         
         msgListGUI = new AgentMessageList(this);
 
@@ -76,7 +76,7 @@ public class AgentData {
             }
             //Increase size of msgVector if needed
             if ( seq >= msgVector.size() ) {
-                msgVector.setSize(seq+20); //increment by 20 instead of 1 at a time
+                msgVector.setSize(seq+50); //increment by 20 instead of 1 at a time
             }
 
             Message msg = (Message) msgVector.elementAt(seq);
