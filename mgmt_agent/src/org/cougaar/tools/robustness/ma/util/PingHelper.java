@@ -64,9 +64,6 @@ import java.util.Iterator;
 
 public class PingHelper extends BlackboardClientComponent {
 
-  public static final int SUCCESS = 0;
-  public static final int FAIL = 1;
-
   public static final long MAX_CONCURRENT_PINGS = -1;
 
   //private Map myUIDs = new HashMap();
@@ -143,33 +140,45 @@ public class PingHelper extends BlackboardClientComponent {
       int status = pr.getStatus();
       switch (status) {
         case PingRequest.RECEIVED:
-          logger.debug("PingAgent:" +
-                      " agent=" + pr.getTarget().toString() +
-                      " status=SUCCESS");
-          ((PingListener)pingsInProcess.remove(pr.getUID())).
-              pingComplete(pr.getTarget().toString(), SUCCESS, pr.getRoundTripTime());
+          pingComplete(pr.getUID(), pr.getTarget(), PingResult.SUCCESS, pr.getRoundTripTime());
           blackboard.publishRemove(pr);
-          pingsInProcess.remove(pr.getUID());
           break;
         case PingRequest.FAILED:
-          logger.debug("PingAgent:" +
-                      " agent=" + pr.getTarget().toString() +
-                      " status=FAIL");
-          ((PingListener)pingsInProcess.get(pr.getUID())).
-              pingComplete(pr.getTarget().toString(), FAIL, pr.getRoundTripTime());
-          pingsInProcess.remove(pr.getUID());
+          pingComplete(pr.getUID(), pr.getTarget(), PingResult.FAIL, pr.getRoundTripTime());
           break;
       }
     }
   }
 
-  public void ping(final String agentName, final long timeout, final PingListener pl) {
-    if (agentId.toString().equals(agentName)) {
-      pl.pingComplete(agentName, SUCCESS, 0l);  // Can't ping self, return SUCCESS
-    } else {
-      queuePing(new QueueEntry(MessageAddress.getMessageAddress(agentName),
-                               timeout, pl));
+  public void ping(String[] agentNames, final long timeout, final PingListener pl) {
+    if (logger.isDebugEnabled()) {
+      Set agentsToPing = new HashSet();
+      for (int i = 0; i < agentNames.length; i++) agentsToPing.add(agentNames[i]);
+      logger.debug("ping: agents=" + agentsToPing + " timeout=" + timeout);
     }
+    queuePing(new QueueEntry(agentNames, timeout, pl));
+  }
+
+  private void pingComplete(UID uid, MessageAddress agent, int status, long roundTripTime) {
+    QueueEntry qe = (QueueEntry)pingsInProcess.remove(uid);
+    qe.pingResults.add(new PingResult(agent.toString(), status, roundTripTime));
+    qe.agentsToPing.remove(agent);
+    if (qe.agentsToPing.isEmpty()) {
+      logger.debug("pingsComplete:" + qe.pingResults);
+      qe.listener.pingComplete((PingResult[])qe.pingResults.toArray(new PingResult[0]));
+    }
+  }
+
+  public boolean pingInProcess(String agentName) {
+    List activePings = new ArrayList();
+    synchronized (pingsInProcess) {
+      activePings.addAll(pingsInProcess.values());
+    }
+    for (Iterator it = activePings.iterator(); it.hasNext();) {
+      QueueEntry activePing = (QueueEntry)it.next();
+      if (activePing.agentsToPing.contains(MessageAddress.getMessageAddress(agentName))) return true;
+    }
+    return false;
   }
 
   protected void queuePing(QueueEntry qe) {
@@ -187,22 +196,34 @@ public class PingHelper extends BlackboardClientComponent {
            pingsInProcess.size() < MAX_CONCURRENT_PINGS) &&
            !pingQueue.isEmpty()) {
       QueueEntry qe = (QueueEntry) pingQueue.remove(0);
-      PingRequest pr = sensorFactory.newPingRequest(agentId,
-          qe.agent,
-          qe.timeout);
-      pingsInProcess.put(pr.getUID(), qe.listener);
-      logger.debug("sendPing: " + pr);
-      blackboard.publishAdd(pr);
+      MessageAddress agentsToPing[] = (MessageAddress[]) qe.agentsToPing.
+          toArray(new MessageAddress[0]);
+      for (int i = 0; i < agentsToPing.length; i++) {
+        PingRequest pr = sensorFactory.newPingRequest(agentId,
+            agentsToPing[i],
+            qe.timeout);
+        pingsInProcess.put(pr.getUID(), qe);
+        //logger.debug("sendPing: " + pr);
+        if (agentsToPing[i].equals(agentId)) { // Can't ping self, report success
+          pingComplete(pr.getUID(), agentsToPing[i], PingResult.SUCCESS, 0l);
+        } else {
+          blackboard.publishAdd(pr);
+        }
+      }
     }
   }
 
 
   static class QueueEntry {
-    MessageAddress agent;
     long timeout;
+    PingResult pr[];
     PingListener listener;
-    QueueEntry(MessageAddress agent, long to, PingListener l) {
-      this.agent = agent;
+    Set agentsToPing = new HashSet();
+    List pingResults = new ArrayList();
+    QueueEntry(String agentNames[], long to, PingListener l) {
+      for (int i = 0; i < agentNames.length; i++) {
+        agentsToPing.add(MessageAddress.getMessageAddress(agentNames[i]));
+      }
       this.timeout = to;
       this.listener = l;
     }

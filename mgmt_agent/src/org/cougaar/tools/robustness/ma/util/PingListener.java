@@ -22,6 +22,6 @@ package org.cougaar.tools.robustness.ma.util;
 
 public interface PingListener {
 
-  public void pingComplete(String agentName, int status, long roundTripTime);
+  public void pingComplete(PingResult[] results);
 
 }

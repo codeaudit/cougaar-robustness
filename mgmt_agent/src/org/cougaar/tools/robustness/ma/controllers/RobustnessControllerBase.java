@@ -25,6 +25,7 @@ import org.cougaar.tools.robustness.ma.CommunityStatusChangeEvent;
 import org.cougaar.tools.robustness.ma.util.HeartbeatHelper;
 import org.cougaar.tools.robustness.ma.util.HeartbeatListener;
 import org.cougaar.tools.robustness.ma.util.PingHelper;
+import org.cougaar.tools.robustness.ma.util.PingResult;
 import org.cougaar.tools.robustness.ma.util.PingListener;
 import org.cougaar.tools.robustness.ma.util.RestartHelper;
 import org.cougaar.tools.robustness.ma.util.RestartListener;
@@ -559,27 +560,31 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
   }
 
   /**
-   * Ping an agent and update current state based on result.
-   * @param name            Agent to ping
+   * Ping one or more agents and update current state based on result.
+   * @param agents          Agents to ping
    * @param stateOnSuccess  New state if ping succeeds
    * @param stateOnFail     New state if ping fails
    */
-  protected void doPing(String name,
+  protected void doPing(String[] agents,
                         final int stateOnSuccess,
                         final int stateOnFail) {
-    long pingTimeout = getLongAttribute(name, "PING_TIMEOUT", PING_TIMEOUT);
-    pingHelper.ping(name, pingTimeout, new PingListener() {
-      public void pingComplete(String name, int status, long time) {
-        logger.debug("Ping:" +
-                     " agent=" + name +
-                     " state=" + stateName(model.getCurrentState(name)) +
-                     " result=" + (status == PingHelper.SUCCESS ? "SUCCESS" : "FAIL") +
-                     (status == PingHelper.SUCCESS ? "" : " newState=" + stateName(stateOnFail)));
-        if (status == PingHelper.SUCCESS) {
-          newState(name, stateOnSuccess);
-          pingStats.enter(time);
-        } else {
-          newState(name, stateOnFail);
+    long pingTimeout = getLongAttribute(agents[0], "PING_TIMEOUT", PING_TIMEOUT);
+    pingHelper.ping(agents, pingTimeout, new PingListener() {
+      public void pingComplete(PingResult[] pr) {
+        for (int i = 0; i < pr.length; i++) {
+          logger.debug("Ping:" +
+                       " agent=" + pr[i].getName() +
+                       " state=" + stateName(model.getCurrentState(pr[i].getName())) +
+                       " result=" +
+                       (pr[i].getStatus() == PingResult.SUCCESS ? "SUCCESS" : "FAIL") +
+                       (pr[i].getStatus() == PingResult.SUCCESS ? "" :
+                        " newState=" + stateName(stateOnFail)));
+          if (pr[i].getStatus() == PingResult.SUCCESS) {
+            newState(pr[i].getName(), stateOnSuccess);
+            pingStats.enter(pr[i].getRoundTripTime());
+          } else {
+            newState(pr[i].getName(), stateOnFail);
+          }
         }
       }
     });
