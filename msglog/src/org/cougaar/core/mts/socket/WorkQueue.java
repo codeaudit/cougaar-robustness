@@ -1,6 +1,6 @@
 /*
  * <copyright>
- *  Copyright 2002 Object Services and Consulting, Inc. (OBJS),
+ *  Copyright 2002-2003 Object Services and Consulting, Inc. (OBJS),
  *  under sponsorship of the Defense Advanced Research Projects Agency (DARPA).
  * 
  *  This program is free software; you can redistribute it and/or modify
@@ -19,6 +19,7 @@
  * </copyright>
  *
  * CHANGE RECORD 
+ * 16 Apr 2003: Handle "Array index out of range: 0" in run method. (tagged 102B)
  * 02 Oct 2002: Created. (OBJS)
  */
 
@@ -209,8 +210,9 @@ public class WorkQueue
             else if (quitNow) return;
           }
 
-          r = (Runnable) queue.remove (0);
-
+          //102B r = (Runnable) queue.remove (0);
+          r = (queue.isEmpty() ? null : (Runnable)queue.remove(0));
+          
           if (r != null)
           {
             if (doDebug()) log.debug ("WorkQueue: Got work: " +this);
