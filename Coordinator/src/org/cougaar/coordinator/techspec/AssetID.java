@@ -25,12 +25,15 @@
 
 package org.cougaar.coordinator.techspec;
 
+import org.cougaar.core.persist.NotPersistable;
+import java.io.Serializable;
+
 /**
  * A class to identify an asset.
  *
  * @author Paul Pazandak, OBJS
  */
-public class AssetID {
+public class AssetID  implements NotPersistable, Serializable {
     
     AssetType type;
     String name;

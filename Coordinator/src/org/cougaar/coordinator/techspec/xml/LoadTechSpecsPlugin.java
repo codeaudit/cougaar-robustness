@@ -56,6 +56,9 @@ import org.cougaar.core.persist.NotPersistable;
 
 import org.w3c.dom.*;
 
+import org.cougaar.core.component.ServiceBroker;
+import org.cougaar.core.node.NodeControlService;
+
 /**
  * This class is used to import techspecs from xml files.
  *
@@ -95,6 +98,8 @@ public class LoadTechSpecsPlugin extends ServiceUserPluginBase implements NotPer
     
     ActionTechSpecServiceProvider atssp;
     DiagnosisTechSpecServiceProvider dtssp;
+
+    ServiceBroker rootsb; //root service broker -- used to add services to the society
     
     public LoadTechSpecsPlugin() {
         super(requiredServices);   
@@ -123,14 +128,6 @@ public class LoadTechSpecsPlugin extends ServiceUserPluginBase implements NotPer
         sensors = new Vector(3,3);
         events = new Vector(3,3);
         utilities = new Vector(3,3);
-
-        // create and advertise our service
-        this.dtssp = new DiagnosisTechSpecServiceProvider();
-        getServiceBroker().addService(DiagnosisTechSpecService.class, dtssp);
-        
-        // create and advertise our service
-        this.atssp = new ActionTechSpecServiceProvider();
-        getServiceBroker().addService(ActionTechSpecService.class, atssp);
         
     }
     
@@ -148,20 +145,39 @@ public class LoadTechSpecsPlugin extends ServiceUserPluginBase implements NotPer
             //    throw new RuntimeException("Unable to obtain LoggingService");
             //}
 
+            NodeControlService ncs = (NodeControlService)
+                getServiceBroker().getService(this, NodeControlService.class, null);
+            if (ncs != null) {
+                rootsb = ncs.getRootServiceBroker();
+                getServiceBroker().releaseService(this, NodeControlService.class, ncs);
+            } else {
+                logger.error("Unable to obtain NodeControlService");
+            }
+
             diagnosisTechSpecService =
             (DiagnosisTechSpecService) getServiceBroker().getService(this, DiagnosisTechSpecService.class, null);
             if (diagnosisTechSpecService == null) {
-                throw new RuntimeException(
+                logger.error(
                 "Unable to obtain DiagnosisTechSpecService");
             } 
-            
+
             actionTechSpecService =
             (ActionTechSpecService) getServiceBroker().getService(this, ActionTechSpecService.class, null);
             if (actionTechSpecService == null) {
-                throw new RuntimeException(
+                logger.error(
                 "Unable to obtain ActionTechSpecService");
             } 
 
+
+            // create and advertise our service
+             this.dtssp = new DiagnosisTechSpecServiceProvider();
+             rootsb.addService(DiagnosisTechSpecService.class, dtssp);
+
+             // create and advertise our service
+             this.atssp = new ActionTechSpecServiceProvider();
+             rootsb.addService(ActionTechSpecService.class, atssp);
+
+             
             return true;
 //        }
 //        else if (logger.isDebugEnabled()) logger.error(".haveServices - at least one service not available!");

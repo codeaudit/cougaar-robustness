@@ -25,12 +25,14 @@
 package org.cougaar.coordinator;
 
 import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.core.persist.NotPersistable;
+import java.io.Serializable;
 
 /**
  *
  * @author  Administrator
  */
-public class DiagnosesRelayManagerKnob {
+public class DiagnosesRelayManagerKnob  implements NotPersistable, Serializable {
     
     private boolean shouldRelay;
     private MessageAddress coordinator;

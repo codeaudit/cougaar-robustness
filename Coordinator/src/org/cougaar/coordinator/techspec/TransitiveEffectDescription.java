@@ -7,6 +7,8 @@
 package org.cougaar.coordinator.techspec;
 
 import org.cougaar.core.util.UID;
+import org.cougaar.core.persist.NotPersistable;
+import java.io.Serializable;
 
 
 /**
@@ -16,7 +18,7 @@ import org.cougaar.core.util.UID;
  *
  * @author  Administrator
  */
-public class TransitiveEffectDescription {
+public class TransitiveEffectDescription  implements NotPersistable, Serializable {
 
     
     private String transitiveEventName = null; 
