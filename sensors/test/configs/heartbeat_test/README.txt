@@ -31,7 +31,6 @@ hearbeat arrives in 11 seconds it is late, but won't be reported.  If a
 heartbeat hasn't arrived in 15 seconds, it will be reported.
 
 Caveats:
-  - the timeouts aren't implemented yet, so won't return FAILURE.
   - doesn't use UDP yet
   - only supports one target per request at the moment
   - haven't tested with ABA

@@ -56,11 +56,9 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     public SendHealthReportsAlarm (long delay) {
       detonate = delay + System.currentTimeMillis();
     }
-
     public long getExpirationTime () {
       return detonate;
     }
-
     public void expire () {
       if (!expired) {
         bb.openTransaction();
@@ -69,11 +67,9 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
         expired = true;
       }
     }
-
     public boolean hasExpired () {
       return expired;
     }
-
     public boolean cancel () {
       if (!expired)
         return expired = true;
@@ -81,6 +77,43 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
     }
   }
 
+  // temporary implementation of HeartbeatRequest timeout.
+  // will be replaced by MTS-based implementation.
+  private class HeartbeatRequestTimeout implements Alarm {
+    private long detonate = -1;
+    private boolean expired = false;
+    private UID reqUID;
+
+    public HeartbeatRequestTimeout (long timeout, UID reqUID) {
+      detonate = timeout + System.currentTimeMillis();
+      this.reqUID = reqUID;
+    }
+    public long getExpirationTime () {return detonate;
+    }
+    public void expire () {
+      if (!expired) {
+        fail(reqUID);
+        expired = true;}
+    }
+    public boolean hasExpired () {return expired;
+    }
+    public boolean cancel () {
+      if (!expired)
+        return expired = true;
+      return false;}
+  }
+
+  private void fail(UID reqUID) {
+    HeartbeatRequest req = (HeartbeatRequest)reqTable.findUniqueObject(reqUID);
+    if (req.getStatus() == HeartbeatRequest.SENT) {
+      bb.openTransaction();
+      req.setStatus(HeartbeatRequest.FAILED);
+      bb.publishChange(req);
+      bb.closeTransaction();
+      System.out.println("\nHeartbeatRequesterPlugin.fail: published changed HeartbeatRequest = " + req);
+    }
+  }
+    
   private UnaryPredicate HeartbeatRequestPred = new UnaryPredicate() {
     public boolean execute(Object o) {
       return (o instanceof HeartbeatRequest);
@@ -242,6 +275,8 @@ public class HeartbeatRequesterPlugin extends ComponentPlugin {
         bb.publishChange(req);
         System.out.println("\nHeartbeatRequesterPlugin.execute: published new HbReq = " + hbReq);
         System.out.println("\nHeartbeatRequesterPlugin.execute: published changed HeartbeatRequest = " + req);
+        // temp hack to timeout a request
+        alarmService.addRealTimeAlarm(new HeartbeatRequestTimeout(req.getReqTimeout(),reqUID));
       }
     }
   }
