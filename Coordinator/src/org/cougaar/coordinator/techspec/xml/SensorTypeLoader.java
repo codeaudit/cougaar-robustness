@@ -115,7 +115,6 @@ public class SensorTypeLoader extends XMLLoader {
             }
             UID uid = us.nextUID();
             DiagnosisTechSpecImpl sensor = new DiagnosisTechSpecImpl( sensorName, uid, sensesAssetType, asd, latency);
-            diagnosisTechSpecService.addDiagnosisTechSpec( sensorName, sensor );
             
             //Create a SensorType
             Element e;
@@ -128,6 +127,9 @@ public class SensorTypeLoader extends XMLLoader {
                     parseDiagnoses(e, sensor);
                 } //else, likely a text element - ignore
             }
+
+            //Add diagnosis to service
+            diagnosisTechSpecService.addDiagnosisTechSpec( sensorName, sensor );
             
             logger.debug("Added new Sensor: \n"+sensor.toString() );
             

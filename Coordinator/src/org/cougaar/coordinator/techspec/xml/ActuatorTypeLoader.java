@@ -154,7 +154,6 @@ public class ActuatorTypeLoader extends XMLLoader {
         }
         UID uid = us.nextUID();
         ActionTechSpecImpl actuator = new ActionTechSpecImpl( actuatorName, uid, affectsAssetType, asd, actionTypeInt);
-        actionTechSpecService.addActionTechSpec( actuatorName, actuator );
         
         //Create an ActuatorType
         Element e;
@@ -165,6 +164,9 @@ public class ActuatorTypeLoader extends XMLLoader {
             } //else, likely a text element - ignore
         }
 
+        //Add action to service
+        actionTechSpecService.addActionTechSpec( actuatorName, actuator );
+        
         logger.debug("Added new Actuator: \n"+actuator.toString() );
         return null;
     }
