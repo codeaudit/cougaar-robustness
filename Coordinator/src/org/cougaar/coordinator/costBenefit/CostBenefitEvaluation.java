@@ -52,6 +52,8 @@ public class CostBenefitEvaluation implements NotPersistable {
     private Hashtable actionEvaluations;
     private SortedSet orderedEvaluations = null;
     private int openActions = 0;
+    private int numSelectedActions = 0;
+    private int numCompletedActions = 0;
         
     /** Creates a new instance of CostBenefitDiagnosis */
     protected CostBenefitEvaluation(AssetID assetID, long horizon, StateEstimation se) {
@@ -70,6 +72,13 @@ public class CostBenefitEvaluation implements NotPersistable {
     public ActionEvaluation getActionEvaluation(Action action) { return (ActionEvaluation)actionEvaluations.get(action); }
     public int numOpenActions() { return openActions; }
     public void setNumOpenActions(int n) { openActions = n; }
+
+    public void actionSelected() { numSelectedActions++; }
+    public void actionRetracted() { numSelectedActions--; }
+    public void actionCompleted() { numCompletedActions++; }
+    public boolean noOutstandingSelectionsP() {
+        return (numSelectedActions == numCompletedActions)?true:false; 
+    }
 
     public void setOrderedEvaluations(SortedSet orderedEvaluations) { this.orderedEvaluations = orderedEvaluations; }
     public SortedSet getOrderedEvaluations() { return orderedEvaluations; }

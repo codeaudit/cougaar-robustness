@@ -39,6 +39,7 @@ import org.cougaar.coordinator.costBenefit.ActionEvaluation;
 import org.cougaar.coordinator.costBenefit.VariantEvaluation;
 
 import org.cougaar.coordinator.techspec.AssetID;
+import org.cougaar.coordinator.techspec.AssetType;
 import org.cougaar.coordinator.techspec.ActionTechSpecInterface;
 
 
@@ -52,6 +53,8 @@ import java.util.Hashtable;
 import java.util.Collection;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.List;
+import java.util.LinkedList;
 
 import org.cougaar.core.agent.service.alarm.Alarm;
 import org.cougaar.core.blackboard.IncrementalSubscription;
@@ -213,21 +216,27 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
               if (ap.getResult().equals(Action.FAILED)) {
                   if (logger.isInfoEnabled()) logger.info("For: " + action.getAssetID().toString() + ", " + variantAttempted.toString() + " failed - Try something else.  Failed action no longer permitted w/o re-authorization.");
                   ve.setFailed();
+                  cbe.actionRetracted();
                   selectActions(cbe, knob);  // try to find a new action
                   publishAdd(new RetractedActions(action, cbe));
               }
               else if (ap.getResult().equals(Action.COMPLETED)) {
                   if (logger.isInfoEnabled()) logger.info("For: " + action.getAssetID().toString() + ", " + variantAttempted.toString() + " succeeded - Nothing more to do.  Completed action no longer permitted w/o re-authorization.");
                   publishAdd(new RetractedActions(action, cbe));
-                  if (logger.isInfoEnabled()) logger.info("Sucess in processing: " + cbe.dumpAvailableVariants());
-                  publishRemove(cbe);
+                  cbe.actionCompleted();
+                  if (cbe.noOutstandingSelectionsP()) { // everything selected was already ACTIVE
+                      if (logger.isInfoEnabled()) logger.info("Done processing: " + cbe.dumpAvailableVariants());
+                      publishRemove(cbe);        
+                  }
               }
               else if (ap.getResult().equals(Action.ACTIVE)) {
                   if (logger.isInfoEnabled()) logger.info("For: " + action.getAssetID().toString() + ", " + variantAttempted.toString() + " is active - Other actions may be pending.");
-                  //publishAdd(new RetractedActions(action));
-                  if (logger.isInfoEnabled()) logger.info("Success in processing: " + cbe.dumpAvailableVariants());
-                  publishRemove(cbe);
-              }
+                  cbe.actionCompleted();
+                  if (cbe.noOutstandingSelectionsP()) { // everything selcetd was already ACTIVE
+                      if (logger.isInfoEnabled()) logger.info("Done processing: " + cbe.dumpAvailableVariants());
+                      publishRemove(cbe);        
+                  }
+                }
               else logger.error("Unhandled Action result: " + ap.getResult().toString());
           }
       }
@@ -268,10 +277,11 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
   }
 
   private double getCurrentEnclaveResources() {
-    // now uses a stipulated value based on an AVailableResourcesDiagnosis if present, else 65% avail for defenses
+    // now uses a stipulated value based on an OutsideLoadDiagnosis if present, else 65% avail for defenses
     Iterator iter = outsideLoadDiagnosisSubscription.iterator();
     if (iter.hasNext()) {
        OutsideLoadDiagnosis diag = (OutsideLoadDiagnosis) iter.next();
+       if (diag.getValue() == null) return 65.0;
        if (diag.getValue().equals("None")) return 65.0;
        if (diag.getValue().equals("Moderate")) return 55.0;
        if (diag.getValue().equals("High")) return 45.0;
@@ -282,8 +292,146 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
   }
 
 
-  
   private void selectActions(CostBenefitEvaluation cbe, ActionSelectionKnob knob) {
+    if (cbe.getAssetID().getType().equals(AssetType.ENCLAVE)) selectEnclaveActions(cbe, knob);
+    else selectNonEnclaveActions(cbe, knob);
+  }
+
+ 
+
+  private void selectEnclaveActions(CostBenefitEvaluation cbe, ActionSelectionKnob knob) {
+    SelectionCollection sc = pickActionCollection(getCurrentEnclaveResources(), new LinkedList(cbe.getActionEvaluations().values()));
+    Iterator iter = sc.iterator();
+    if (logger.isInfoEnabled()) logger.info("Available resources = " + getCurrentEnclaveResources());
+    while (iter.hasNext()) {
+        cbe.actionSelected();
+        VariantEvaluation thisVariantEvaluation = (VariantEvaluation) iter.next();
+        Action thisAction = thisVariantEvaluation.getActionEvaluation().getAction();
+        String thisVariant = thisVariantEvaluation.getVariantName();
+        Set permittedVariants = new HashSet();  
+
+
+        if (logger.isInfoEnabled()) logger.info("Selected: " + thisVariantEvaluation + "for: " + cbe.getAssetID().toString());
+        if (eventService.isEventEnabled()) eventService.event(agentId + " selected " + thisAction.getClass().getName() + ":" + thisVariant + " for " + cbe.getAssetID().toString());
+        if ((!thisAction.getPermittedValues().contains(thisVariant))
+                && (thisAction.getValue() == null  
+                    || !thisAction.getValue().getAction().equals(thisVariant)
+                    || !thisAction.getValue().isActive())) {
+            permittedVariants.add(thisVariantEvaluation);
+            publishAdd(new SelectedAction(thisAction, permittedVariants, Math.round(knob.getPatienceFactor()*thisVariantEvaluation.getExpectedTransitionTime()), cbe));
+            if (logger.isInfoEnabled()) logger.info("Enabling: " + thisVariant + "for: " + thisAction.getAssetID().toString());
+        }
+        else {
+            cbe.actionCompleted();
+        }
+
+                    // special code to activate/deactivate RMIAction in tandem with ThreatConAction - a special case for ACUC #2B
+                    if (thisAction.getClass().getName().equals("org.cougaar.core.security.coordinator.ThreatConAction")) {
+                        ActionsWrapper aw = findAction(thisAction.getAssetID(), "org.cougaar.robustness.dos.coordinator.RMIAction");
+                        if (aw != null) {
+                            Action rmiAction = aw.getAction();
+                            if (thisVariant.equals("HighSecurity")) {
+                                String rmiVariantName = "Disabled";
+                                VariantEvaluation rmiVariant = getRmiVariantEvaluation(cbe, rmiAction, rmiVariantName);
+                                if (rmiVariant != null && rmiAction != null && rmiAction.getValuesOffered().contains(rmiVariantName)) {
+                                    if (logger.isInfoEnabled()) logger.info("Selected: " + rmiVariant.toString() + "for: " + rmiAction.getAssetID().toString());
+                                    if (eventService.isEventEnabled()) eventService.event(agentId + " selected " + rmiAction.getClass().getName() + ":" + rmiVariant.getVariantName() + " for " + rmiAction.getAssetID());
+                                    Set rmiPermittedVariants = new HashSet();  
+                                    if ((!rmiAction.getPermittedValues().contains(rmiVariant.getVariantName()))
+                                        && (thisAction.getValue() == null  
+                                            || !thisAction.getValue().getAction().equals(thisVariant)
+                                            || !thisAction.getValue().isActive())) {
+                                        permittedVariants.add(thisVariant);
+                                        cbe.actionSelected();
+                                        publishAdd(new SelectedAction(thisAction, permittedVariants, Math.round(knob.getPatienceFactor()*thisVariantEvaluation.getExpectedTransitionTime()), cbe));
+                                        if (logger.isInfoEnabled()) logger.info("Enabling: " + thisVariant + "for: " + thisAction.getAssetID().toString());
+                                    }
+                                }
+                                else if (eventService.isEventEnabled()) eventService.event(rmiVariantName + " was not offered");
+                            }
+                            if(thisVariant.equals("LowSecurity")) {
+                                String rmiVariantName = "Enabled";
+                                VariantEvaluation rmiVariant = getRmiVariantEvaluation(cbe, rmiAction, rmiVariantName);
+                                if (rmiVariant != null && rmiAction != null && rmiAction.getValuesOffered().contains(rmiVariantName)) {
+                                    if (logger.isInfoEnabled()) logger.info("Selected: " + rmiVariant.toString() + "for: " + rmiAction.getAssetID().toString());
+                                    if (eventService.isEventEnabled()) eventService.event(agentId + " selected " + rmiAction.getClass().getName() + ":" + rmiVariant.getVariantName() + " for " + rmiAction.getAssetID().toString());
+                                    Set rmiPermittedVariants = new HashSet();  
+                                    if ((!rmiAction.getPermittedValues().contains(rmiVariant.getVariantName()))
+                                        && (thisAction.getValue() == null  
+                                            || !thisAction.getValue().getAction().equals(thisVariant)
+                                            || !thisAction.getValue().isActive())) {
+                                        permittedVariants.add(thisVariantEvaluation);
+                                        cbe.actionSelected();
+                                        publishAdd(new SelectedAction(thisAction, permittedVariants, Math.round(knob.getPatienceFactor()*thisVariantEvaluation.getExpectedTransitionTime()), cbe));
+                                        if (logger.isInfoEnabled()) logger.info("Enabling: " + thisVariant + "for: " + thisAction.getAssetID().toString());
+                                    }
+                                 }
+                                 else if (eventService.isEventEnabled()) eventService.event(rmiVariantName + " was not offered");
+                            }
+                        }
+                        else {
+                            if (logger.isInfoEnabled()) logger.info("RMIAction not found");
+                        }
+                    }
+
+
+
+    }
+
+      if (sc == null) { // could not find anything useful to do
+        if (logger.isInfoEnabled()) logger.info("Done processing: " + cbe.dumpAvailableVariants());
+        publishRemove(cbe);
+    }
+    if (cbe.noOutstandingSelectionsP()) { // everything selcetd was already ACTIVE
+        if (logger.isInfoEnabled()) logger.info("Done processing: " + cbe.dumpAvailableVariants());
+        publishRemove(cbe);  
+    }
+  }
+
+
+  private SelectionCollection pickActionCollection(double availableResources, List remainingActions) {
+      ActionEvaluation thisActionEvaluation = (ActionEvaluation) remainingActions.get(0);
+      VariantEvaluation bestVariant = null;
+      VariantEvaluation thisVariant;
+      double bestBenefitSoFar = -99999999.0;
+      if (remainingActions.size() > 1) {
+          Iterator variantIter = thisActionEvaluation.getVariantEvaluations().values().iterator();
+          SelectionCollection bestCollectionSoFar = null;
+          while (variantIter.hasNext()) {
+             thisVariant = (VariantEvaluation) variantIter.next();
+             if (thisVariant.getPredictedCostPerTimeUnit() <= availableResources) {
+                 SelectionCollection sc = pickActionCollection(availableResources - thisVariant.getPredictedCostPerTimeUnit(), remainingActions.subList(1,remainingActions.size()));
+                 sc.add(thisVariant);
+                 if (sc.getTotalBenefit() >= bestBenefitSoFar) {
+                     bestBenefitSoFar = sc.getTotalBenefit();
+                     bestCollectionSoFar = sc;
+                 }
+             }
+          }
+          return bestCollectionSoFar;
+      }
+      else {
+          Iterator variantIter = thisActionEvaluation.getVariantEvaluations().values().iterator();
+          while (variantIter.hasNext()) {
+             thisVariant = (VariantEvaluation) variantIter.next();
+             if (thisVariant.getPredictedCostPerTimeUnit() <= availableResources  &&  thisVariant.getPredictedBenefit() >= bestBenefitSoFar) {
+                 bestBenefitSoFar = thisVariant.getPredictedBenefit();
+                 bestVariant = thisVariant;
+             }
+          }
+          if (bestVariant == null) return null;
+          else {
+             SelectionCollection sc = new SelectionCollection();
+             sc.add(bestVariant);
+             return sc;
+          }
+      } 
+
+  }
+
+
+  
+  private void selectNonEnclaveActions(CostBenefitEvaluation cbe, ActionSelectionKnob knob) {
 
     rankAvailableActions(cbe, knob);
     
@@ -321,9 +469,10 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
             if (logger.isDebugEnabled()) logger.debug(proposedVariant + " doesNotConflict: " + thisActionEvaluation.doesNotConflict(proposedVariant, alreadyActiveActions, alreadySelectedVariants));
             if (thisActionEvaluation.doesNotConflict(proposedVariant, alreadyActiveActions, alreadySelectedVariants)) {
                 if ((proposedVariant.getPredictedCostPerTimeUnit() <= resourcePercentageRemaining) &&
-                        (proposedVariant.getPredictedBenefit() > 0.0) || (thisActionEvaluation.mustSelectOne())) {
+                        ((proposedVariant.getPredictedBenefit() > 0.0) || (thisActionEvaluation.mustSelectOne()))) {
                     pickedSomeVariant = true;
                     alreadySelectedVariants.add(proposedVariant);
+                    cbe.actionSelected();
                     proposedVariant.setChosen();
                     resourcePercentageRemaining = resourcePercentageRemaining - proposedVariant.getPredictedCostPerTimeUnit();
                     if (logger.isInfoEnabled()) logger.info("Selected: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString() + ", % resources left " + resourcePercentageRemaining);
@@ -336,14 +485,17 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
                         publishAdd(new SelectedAction(thisAction, permittedVariants, Math.round(knob.getPatienceFactor()*proposedVariant.getExpectedTransitionTime()), cbe));
                         if (logger.isInfoEnabled()) logger.info("Enabling: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString());
                     }
+                    else {
+                        cbe.actionCompleted();
+                    }
 
 
-                    // special code to activate/deactivate RMIAction in tandem with SecurityDefenseAction - a special case for ACUC #2B
+                    // special code to activate/deactivate RMIAction in tandem with ThreatConAction - a special case for ACUC #2B
                     if (thisAction.getClass().getName().equals("org.cougaar.core.security.coordinator.ThreatConAction")) {
                         ActionsWrapper aw = findAction(thisAction.getAssetID(), "org.cougaar.robustness.dos.coordinator.RMIAction");
                         if (aw != null) {
                             Action rmiAction = aw.getAction();
-                            if (proposedVariant.getVariantName().equals("High")) {
+                            if (proposedVariant.getVariantName().equals("HighSecurity")) {
                                 String rmiVariantName = "Disabled";
                                 VariantEvaluation rmiVariant = getRmiVariantEvaluation(cbe, rmiAction, rmiVariantName);
                                 if (rmiVariant != null && rmiAction != null && rmiAction.getValuesOffered().contains(rmiVariantName)) {
@@ -355,13 +507,14 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
                                             || !thisAction.getValue().getAction().equals(proposedVariant.getVariantName())
                                             || !thisAction.getValue().isActive())) {
                                         permittedVariants.add(proposedVariant);
+                                        cbe.actionSelected();
                                         publishAdd(new SelectedAction(thisAction, permittedVariants, Math.round(knob.getPatienceFactor()*proposedVariant.getExpectedTransitionTime()), cbe));
                                         if (logger.isInfoEnabled()) logger.info("Enabling: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString());
                                     }
                                 }
                                 else if (eventService.isEventEnabled()) eventService.event(rmiVariantName + " was not offered");
                             }
-                            if(proposedVariant.getVariantName().equals("Low")) {
+                            if(proposedVariant.getVariantName().equals("LowSecurity")) {
                                 String rmiVariantName = "Enabled";
                                 VariantEvaluation rmiVariant = getRmiVariantEvaluation(cbe, rmiAction, rmiVariantName);
                                 if (rmiVariant != null && rmiAction != null && rmiAction.getValuesOffered().contains(rmiVariantName)) {
@@ -373,6 +526,7 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
                                             || !thisAction.getValue().getAction().equals(proposedVariant.getVariantName())
                                             || !thisAction.getValue().isActive())) {
                                         permittedVariants.add(proposedVariant);
+                                        cbe.actionSelected();
                                         publishAdd(new SelectedAction(thisAction, permittedVariants, Math.round(knob.getPatienceFactor()*proposedVariant.getExpectedTransitionTime()), cbe));
                                         if (logger.isInfoEnabled()) logger.info("Enabling: " + proposedVariant.toString() + "for: " + thisAction.getAssetID().toString());
                                     }
@@ -393,6 +547,10 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
         if (logger.isInfoEnabled()) logger.info("Done processing: " + cbe.dumpAvailableVariants());
         publishRemove(cbe);
     }
+    if (cbe.noOutstandingSelectionsP()) { // everything selcetd was already ACTIVE
+        if (logger.isInfoEnabled()) logger.info("Done processing: " + cbe.dumpAvailableVariants());
+        publishRemove(cbe);  
+    }      
   }
 
   private Set findActiveActions(CostBenefitEvaluation cbe) {
@@ -405,12 +563,12 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
 	    Action thisAction = thisWrapper.getAction();
 	    if ((thisAction.getValue() != null && thisAction.getValue().isActive()) 
                     && (thisAction.getValuesOffered()==null 
-                              || (thisAction.getValuesOffered().size()==1 && thisAction.getValuesOffered().contains(thisAction.getValue().getAction())))) {
+                              || (thisAction.getValuesOffered().size()>=1 && thisAction.getValuesOffered().contains(thisAction.getValue().getAction())))) {
 		activeActions.add(thisAction);
 	    }
 	}
     }
-    if (logger.isInfoEnabled()) logger.info("Active Actions: " + activeActions.toString());
+    if (logger.isInfoEnabled()) logger.info("Active Actions for: " + cbe.getAssetID().toString() + " are " + activeActions.toString());
     return activeActions;
   }
 
@@ -453,6 +611,21 @@ public class ActionSelectionPlugin extends DeconflictionPluginBase
         return Double.parseDouble(param.substring(prefix.length()));
         }
     else return dflt;
+  }
+
+  private class SelectionCollection extends HashSet{
+    
+     private double totalBenefit = 0;
+
+     protected SelectionCollection() {}
+
+     protected void add(VariantEvaluation variant) {
+         totalBenefit = totalBenefit + variant.getPredictedBenefit();
+         super.add(variant);
+     }
+
+     protected double getTotalBenefit() { return totalBenefit; }
+
   }
 
 

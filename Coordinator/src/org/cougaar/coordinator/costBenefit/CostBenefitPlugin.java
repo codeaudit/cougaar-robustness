@@ -102,6 +102,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
         if (iter.hasNext())
         {
             knob = (CostBenefitKnob) iter.next();
+            if (logger.isDebugEnabled()) logger.debug("CostBenefitKnob has changed to: "+knob.toString());
         }
 
 
@@ -361,7 +362,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
         }
 
-        return new VariantEvaluation(thisVariantDescription, thisActionEvaluation, predictedCost, predictedCost/horizon, predictedBenefit, maxTransitionTime);
+        return new VariantEvaluation(thisVariantDescription, thisActionEvaluation, predictedCost, predictedCost/horizon, predictedBenefit, predictedBenefit/horizon, maxTransitionTime);
     }
 
     private VariantEvaluation createCompensatoryVariantEvaluation(ActionDescription proposedVariantDescription,
@@ -419,7 +420,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
                          + (knob.horizon-transitionTime)*aggregateCost(continuingCost);
         }
 
-        return new VariantEvaluation(proposedVariantDescription, thisActionEvaluation, predictedCost, predictedCost/knob.getHorizon(), predictedBenefit, transitionTime);
+        return new VariantEvaluation(proposedVariantDescription, thisActionEvaluation, predictedCost, predictedCost/knob.getHorizon(), predictedBenefit, predictedBenefit/knob.getHorizon(), transitionTime);
     }
 
 
@@ -440,8 +441,9 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
             if (cumulativeProbVector.size() != mappingVector.size()) {
                 logger.error("Bad Compensatory TechSpecs");
             }
-            for (int i=0; i < mappingVector.size()-1; i++) {
+            for (int i=0; i < mappingVector.size(); i++) {
                 ((StateProb)cumulativeProbVector.elementAt(i)).setProb(((StateProb)cumulativeProbVector.elementAt(i)).getProb() + baseStateProb * ((StateProb)mappingVector.elementAt(i)).getProb());
+                if (logger.isDebugEnabled()) logger.debug(baseStateName + "=" + baseStateProb +", " + mappingVector.toString() + ", " + cumulativeProbVector.toString());
             }
         }
         return cumulativeProbVector;

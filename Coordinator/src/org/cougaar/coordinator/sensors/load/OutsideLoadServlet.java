@@ -57,8 +57,12 @@ import org.cougaar.core.service.LoggingService;
 import org.cougaar.util.log.Logger;
 import java.util.Collection;
 import java.util.Iterator;
+import org.cougaar.coordinator.RobustnessManagerID;
+import org.cougaar.util.UnaryPredicate;
 
 public class OutsideLoadServlet extends BaseServletComponent implements BlackboardClient {
+
+    // Note - This servlet should only be loaded into the AR Manager agent
 
     // Predefined Load Ranges
     public static final String NONE = "None";
@@ -67,6 +71,8 @@ public class OutsideLoadServlet extends BaseServletComponent implements Blackboa
 
     private BlackboardService blackboard = null;
     private Logger logger = null;
+
+    private String arManager;
   
   
   protected Servlet createServlet() {
@@ -152,7 +158,15 @@ public class OutsideLoadServlet extends BaseServletComponent implements Blackboa
             sendData(out);
             if (diag == null) {
                 try { 
-                    diag = new OutsideLoadDiagnosis("LOCAL", serviceBroker);
+                    Collection c2 = blackboard.query(arManagerPred);
+                    Iterator iter2 = c2.iterator();
+                    if (iter2.hasNext()) { 
+                        arManager = ((RobustnessManagerID)iter2.next()).getMessageAddress().toString();
+                        diag = new OutsideLoadDiagnosis(arManager , serviceBroker);
+                    }
+                    else {
+                        if (logger.isInfoEnabled()) logger.info("Cannot find ARManager name - so do not know Enclave name");
+                    }
                 }
                 catch (TechSpecNotFoundException e) {
                     logger.error(e.toString());
@@ -164,19 +178,19 @@ public class OutsideLoadServlet extends BaseServletComponent implements Blackboa
                     diag.setValue(NONE);
                     out.println("<center><h2>Outside Load Changed to None </h2></center><br>" );
                     blackboard.publishChange(diag); 
-                    if (logger.isInfoEnabled()) logger.info("Outside Load Changed to None");
+                    if (logger.isInfoEnabled()) logger.info("Outside Load Changed to None for enclave " + arManager);
                 }
                 else if (moderate != null) {
                     diag.setValue(MODERATE);
                     out.println("<center><h2>Outside Load Changed to Moderate</h2></center><br>" );
                     blackboard.publishChange(diag); 
-                    if (logger.isInfoEnabled()) logger.info("Outside Load Changed to Moderate");
+                    if (logger.isInfoEnabled()) logger.info("Outside Load Changed to Moderate for enclave " + arManager);
                 }
                 else if (high != null) {
                     diag.setValue(HIGH);
                     out.println("<center><h2>Outside Load Changed to High</h2></center><br>" );
                     blackboard.publishChange(diag); 
-                    if (logger.isInfoEnabled()) logger.info("Outside Load Changed to High");
+                    if (logger.isInfoEnabled()) logger.info("Outside Load Changed to High for enclave " + arManager);
                 }
             }
             catch (IllegalValueException e) {
@@ -193,7 +207,7 @@ public class OutsideLoadServlet extends BaseServletComponent implements Blackboa
 
 
       /**
-       * Output page with MAU Preference choices
+       * Output page with Stipulated Outside Load choices
        */
       private void sendData(PrintWriter out) {
         out.println("<html><head></head><body>");
@@ -204,7 +218,7 @@ public class OutsideLoadServlet extends BaseServletComponent implements Blackboa
 
       private void writeButtons(PrintWriter out) {
 
-        out.print("<h2><center>LeashDefensesServlet");
+        out.print("<h2><center>OutsideLoadServlet");
         out.print(
                   "</center></h2>\n"+
                   "<form name=\"myForm\" method=\"get\" >" );
@@ -215,4 +229,14 @@ public class OutsideLoadServlet extends BaseServletComponent implements Blackboa
 
       }
   }
+
+
+    private static final UnaryPredicate arManagerPred = new UnaryPredicate() {
+            public boolean execute(Object o) {
+                if ( o instanceof org.cougaar.coordinator.RobustnessManagerID ) {
+                    return true ;
+                }
+                return false ;
+            }
+        };
 }

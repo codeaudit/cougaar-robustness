@@ -26,6 +26,7 @@ public class VariantEvaluation implements Comparable {
     private double predictedCost;
     private double predictedCostPerTimeUnit;
     private double predictedBenefit;
+    private double predictedBenefitPerTimeUnit;
     private boolean chosen = false;
     private boolean active = false;
     private boolean failed = false;
@@ -37,6 +38,7 @@ public class VariantEvaluation implements Comparable {
                              double predictedCost,
                              double predictedCostPerTimeUnit,
                              double predictedBenefit,
+                             double predicetdBenefitPerTimeUnit,
                              long expectedTransitionTime) {
 
         this.variantDescription = variantDescription;
@@ -44,6 +46,7 @@ public class VariantEvaluation implements Comparable {
         this.predictedCost = predictedCost;
         this.predictedCostPerTimeUnit = predictedCostPerTimeUnit;
         this.predictedBenefit = predictedBenefit;
+        this.predictedBenefitPerTimeUnit = predictedBenefitPerTimeUnit;
         this.expectedTransitionTime = expectedTransitionTime;
 
     }
@@ -53,6 +56,7 @@ public class VariantEvaluation implements Comparable {
     public double getPredictedCost() { return predictedCost; }
     public double getPredictedCostPerTimeUnit() { return predictedCostPerTimeUnit; }
     public double getPredictedBenefit() { return predictedBenefit; }
+    public double getPredictedBenefitPerTimeUnit() { return predictedBenefitPerTimeUnit; }
     public double getBenefitToCostRatio() {
         if (predictedCost == 0.0) return predictedBenefit;
         else return predictedBenefit/predictedCost;
@@ -74,7 +78,7 @@ public class VariantEvaluation implements Comparable {
 
     
     public String toString() {
-        return "      "+variantDescription.name().toString()+", Cost="+predictedCost+", Benefit="+predictedBenefit+", Time="+expectedTransitionTime+", Benefit/Cost="+getBenefitToCostRatio()+", Chosen?: " + chosenP() +", Active?: " + activeP() +", Failed?: " + failedP() +" \n";
+        return "      "+variantDescription.name().toString()+", Cost="+predictedCost+", Cost/T="+predictedCostPerTimeUnit+", Benefit="+predictedBenefit+", Benefit/T="+predictedBenefitPerTimeUnit+", Time="+expectedTransitionTime+", Benefit/Cost="+getBenefitToCostRatio()+", Chosen?: " + chosenP() +", Active?: " + activeP() +", Failed?: " + failedP() +" \n";
     }
 
     public int compareTo(java.lang.Object obj) {

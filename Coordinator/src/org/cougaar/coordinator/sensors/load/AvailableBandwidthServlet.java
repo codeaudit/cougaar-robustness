@@ -57,8 +57,13 @@ import org.cougaar.core.service.LoggingService;
 import org.cougaar.util.log.Logger;
 import java.util.Collection;
 import java.util.Iterator;
+import org.cougaar.coordinator.RobustnessManagerID;
+import org.cougaar.util.UnaryPredicate;
+
 
 public class AvailableBandwidthServlet extends BaseServletComponent implements BlackboardClient {
+
+    // Note - this servlet should only be loaded into an AR Manager agent
 
     // Predefined Load Ranges
     public static final String LOW = "Low";
@@ -68,6 +73,8 @@ public class AvailableBandwidthServlet extends BaseServletComponent implements B
     private BlackboardService blackboard = null;
     private Logger logger = null;
   
+    private String arManager;
+
   
   protected Servlet createServlet() {
     // create inner class
@@ -152,7 +159,15 @@ public class AvailableBandwidthServlet extends BaseServletComponent implements B
             sendData(out);
             if (diag == null) {
                 try { 
-                    diag = new AvailableBandwidthDiagnosis("LOCAL", serviceBroker);
+                    Collection c2 = blackboard.query(arManagerPred);
+                    Iterator iter2 = c2.iterator();
+                    if (iter2.hasNext()) { 
+                        arManager = ((RobustnessManagerID)iter2.next()).getMessageAddress().toString();
+                        diag = new AvailableBandwidthDiagnosis(arManager , serviceBroker);
+                    }
+                    else {
+                        if (logger.isInfoEnabled()) logger.info("Cannot find ARManager name - so do not know Enclave name");
+                    }
                 }
                 catch (TechSpecNotFoundException e) {
                     logger.error(e.toString());
@@ -164,19 +179,19 @@ public class AvailableBandwidthServlet extends BaseServletComponent implements B
                     diag.setValue(LOW);
                     out.println("<center><h2>Available Bandwidth Changed to Low </h2></center><br>" );
                     blackboard.publishChange(diag); 
-                    if (logger.isInfoEnabled()) logger.info("Available Bandwidth Changed to Low");
+                    if (logger.isInfoEnabled()) logger.info("Available Bandwidth Changed to Low for enclave " + getBlackboardClientName());
                 }
                 else if (moderate != null) {
                     diag.setValue(MODERATE);
                     out.println("<center><h2>Available Bandwidth Changed to Moderate</h2></center><br>" );
                     blackboard.publishChange(diag); 
-                    if (logger.isInfoEnabled()) logger.info("Available Bandwidth Changed to Moderate");
+                    if (logger.isInfoEnabled()) logger.info("Available Bandwidth Changed to Moderate for enclave " + getBlackboardClientName());
                 }
                 else if (high != null) {
                     diag.setValue(HIGH);
                     out.println("<center><h2>Available Bandwidth Changed to High</h2></center><br>" );
                     blackboard.publishChange(diag); 
-                    if (logger.isInfoEnabled()) logger.info("Available Bandwidth Changed to High");
+                    if (logger.isInfoEnabled()) logger.info("Available Bandwidth Changed to High for enclave " + getBlackboardClientName());
                 }
             }
             catch (IllegalValueException e) {
@@ -215,4 +230,13 @@ public class AvailableBandwidthServlet extends BaseServletComponent implements B
 
       }
   }
+
+    private static final UnaryPredicate arManagerPred = new UnaryPredicate() {
+            public boolean execute(Object o) {
+                if ( o instanceof org.cougaar.coordinator.RobustnessManagerID ) {
+                    return true ;
+                }
+                return false ;
+            }
+        };
 }

@@ -211,7 +211,7 @@ public class MAUPolicyServlet extends BaseServletComponent implements Blackboard
 
       private void writeButtons(PrintWriter out) {
 
-        out.print("<h2><center>LeashDefensesServlet");
+        out.print("<h2><center>MAUPolicyServlet");
         out.print(
                   "</center></h2>\n"+
                   "<form name=\"myForm\" method=\"get\" >" );
