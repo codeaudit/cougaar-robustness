@@ -46,7 +46,7 @@
   </target>
 
   <target name="build" description="Compile all source and build jar file"
-          depends="init, compile, jar, manual">
+          depends="init, compile, jar">
   </target>
 
   <target name="compile" description="Compile source code">
@@ -173,6 +173,9 @@
       </classpath>
     </javadoc>
   </target>
+
+  <!-- Generate documentation -->
+  <target name="doc" depends="manual" description="Generate documentation"/>
 
   <!-- Generates user manual -->
   <target name="manual" depends="html, fo, pdf" description="Create user manual"/>
