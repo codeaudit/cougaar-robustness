@@ -346,7 +346,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
    */
   public long getTimestamp(String name) {
     if (name != null && statusMap.containsKey(name)) {
-      return ( (StatusEntry) statusMap.get(name)).timestamp;
+      return ((StatusEntry) statusMap.get(name)).timestamp;
     } else {
       return -1;
     }
@@ -365,6 +365,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
         se.priorState = se.currentState;
         se.currentState = state;
         se.expiration = expiration;
+        setTimestamp(name);
         if (logger.isDebugEnabled() && controller != null) {
           logger.debug("setCurrentState" +
                        " agent=" + name +
@@ -427,7 +428,7 @@ public class CommunityStatusModel extends BlackboardClientComponent
    */
   public void setTimestamp(String name) {
     StatusEntry se = (StatusEntry)statusMap.get(name);
-      se.timestamp = now();
+    se.timestamp = now();
   }
 
   /**
