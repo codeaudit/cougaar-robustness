@@ -106,7 +106,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
 
 
         // Handle the removal (by completion) of old CBEs
-        iter = cbeSubscription.getRemovedCollection().iterator;
+        iter = cbeSubscription.getRemovedCollection().iterator();
         while (iter.hasNext()) {
             // no longer processing, so remove from hashtable so we will process new SEs on this asset
             CostBenefitEvaluation cbe = (CostBenefitEvaluation) iter.next();
@@ -122,7 +122,7 @@ public class CostBenefitPlugin extends DeconflictionPluginBase implements NotPer
             if (logger.isInfoEnabled()) logger.info(se.toString());
 
             // If there is an existing CBE, ignore this SE, because otherwise we might oveerrun the selection process
-            CostBenefitEvaluation old_cbe = activeCBEs.get(se.getAssetID());
+            CostBenefitEvaluation old_cbe = (CostBenefitEvaluation)activeCBEs.get(se.getAssetID());
             if (old_cbe == null) {
             	CostBenefitEvaluation cbe = createCostBenefitEvaluation(se, knob);
             	if (logger.isInfoEnabled()) logger.info("CostBenefitEvaluation created: "+cbe.toString());
