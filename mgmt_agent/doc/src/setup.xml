@@ -1,4 +1,7 @@
-<sect1 id="required_overlays">
+<sect1 id="setup">
+  <title>Setup</title>
+
+<sect2 id="required_overlays">
   <title>Required Overlays</title>
   <para>
     The table below defines the minimal configuration required for the Agent
@@ -29,4 +32,32 @@
       </tbody>
       </tgroup>
     </table>
+</sect2>
+
+<sect2 id="optional_overlays">
+  <title>Optional Overlays</title>
+  <para>
+  </para>
+    <table id="overlay_table_2">
+      <title>Required Overlays</title>
+      <tgroup cols="2" pgwide="0">
+      <colspec colnum="1" colwidth="1.5in" />
+      <thead valign="middle">
+        <row>
+          <entry align="center">Name</entry><entry align="center">Purpose</entry>
+        </row>
+      </thead>
+      <tfoot>
+      </tfoot>
+      <tbody valign="middle">
+        <row>
+          <entry>OBJS Coordinator</entry><entry>Defense coordinator components
+            for mediating multiple defenses.</entry>
+        </row>
+        <row>
+        </row>
+      </tbody>
+      </tgroup>
+    </table>
+</sect2>
 </sect1>
