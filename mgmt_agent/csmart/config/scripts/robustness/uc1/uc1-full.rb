@@ -73,7 +73,7 @@ Cougaar.new_experiment("ARUC1_Complete").run(1) {
   do_action "SaveHostOfNode", "1AD-REAR-COMM", "REAR-A"
   do_action "KillNodes", "REAR-A"
   # Wait for restarts to complete
-  wait_for "CommunitiesReady", ["REAR-COMM"]
+  wait_for "CommunitiesReady", ["1AD-REAR-COMM"]
   # Add an empty node to community
   do_action "AddNode", "REAR-NEW-1", "1AD-REAR-COMM"
   do_action "Sleep", 3.minutes
