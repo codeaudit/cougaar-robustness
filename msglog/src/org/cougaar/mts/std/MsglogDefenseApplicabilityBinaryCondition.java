@@ -22,11 +22,8 @@
 
 package org.cougaar.mts.std;
 
-import org.cougaar.core.adaptivity.OMCPoint;
-import org.cougaar.core.adaptivity.OMCRangeList;
-import org.cougaar.core.adaptivity.SensorCondition;
-import org.cougaar.tools.robustness.deconfliction.DefenseConstants;
-import org.cougaar.tools.robustness.deconfliction.DefenseApplicabilityBinaryCondition;
+import org.cougaar.tools.robustness.disconnection.InternalConditionsAndOpModes.DefenseApplicabilityBinaryCondition;
+import org.cougaar.tools.robustness.disconnection.InternalConditionsAndOpModes.DefenseConstants;
 
 public class MsglogDefenseApplicabilityBinaryCondition 
     extends DefenseApplicabilityBinaryCondition

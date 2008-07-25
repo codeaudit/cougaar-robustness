@@ -171,9 +171,9 @@ public class LogEventWrapper {
             if (eventData == null) {
                 return out + stringified + "/>";
             }
-            Enumeration enum = eventData.propertyNames();
-            while (enum.hasMoreElements()) {
-                String key = (String) enum.nextElement();
+            Enumeration en = eventData.propertyNames();
+            while (en.hasMoreElements()) {
+                String key = (String) en.nextElement();
                 String val = (String)eventData.getProperty(key);
                 out = out + key + "=" + val + " ";
             }

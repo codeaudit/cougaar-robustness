@@ -248,10 +248,10 @@ public class LinksStatusSensor extends ComponentPlugin
 		if (stats != null) {
 		    Hashtable aeht = (Hashtable)stats.elementAt(1);
 		    if (aeht != null) {
-			Enumeration enum = aeht.elements();
-			while (enum.hasMoreElements()) {
+			Enumeration enumeration = aeht.elements();
+			while (enumeration.hasMoreElements()) {
 			    MessageHistory.AgentEntry ae = 
-				(MessageHistory.AgentEntry)enum.nextElement();
+				(MessageHistory.AgentEntry)enumeration.nextElement();
 			    if (ae.timestamp >= notTooOld) {
 				aeV.add(ae);
 			    }
@@ -286,10 +286,10 @@ public class LinksStatusSensor extends ComponentPlugin
 		    rmiSends=0; sfSends=0; altSends=0; allSends=0;
 		    rmiSuccesses=0; sfSuccesses=0; altSuccesses=0; allSuccesses=0;
 		}
-		Enumeration enum = ae.protocolTbl.elements();
-		while (enum.hasMoreElements()) {
+		Enumeration enumeration = ae.protocolTbl.elements();
+		while (enumeration.hasMoreElements()) {
 		    MessageHistory.ProtocolEntry pe = 
-			(MessageHistory.ProtocolEntry)enum.nextElement();
+			(MessageHistory.ProtocolEntry)enumeration.nextElement();
 		    char prot = pe.linkLetter;
 		    allSends = allSends + pe.successes;
 		    allSuccesses = allSuccesses + pe.successes;

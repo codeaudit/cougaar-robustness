@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/mtsstd"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/core"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/util"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/common"/>
+	<classpathentry kind="lib" path="sys/activation.jar"/>
+	<classpathentry kind="lib" path="sys/mail.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/mtslinks"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/Coordinator"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/disconnection"/>
+	<classpathentry kind="output" path="tmp/classes"/>
+</classpath>

@@ -29,9 +29,11 @@ import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Properties;
+
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
-import org.cougaar.core.adaptivity.OMCPoint;
+
+import org.cougaar.coordinator.MonitoringEnablingOperatingMode;
 import org.cougaar.core.blackboard.IncrementalSubscription;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.mts.MessageAddress;
@@ -39,10 +41,14 @@ import org.cougaar.core.plugin.ComponentPlugin;
 import org.cougaar.core.qos.metrics.Constants;
 import org.cougaar.core.qos.metrics.Metric;
 import org.cougaar.core.qos.metrics.MetricImpl;
+import org.cougaar.core.qos.metrics.MetricNotificationQualifier;
 import org.cougaar.core.qos.metrics.MetricsService;
 import org.cougaar.core.qos.metrics.MetricsUpdateService;
-import org.cougaar.core.qos.metrics.MetricNotificationQualifier;
 import org.cougaar.core.service.BlackboardService;
+import org.cougaar.core.service.ConditionService;
+import org.cougaar.core.service.LoggingService;
+import org.cougaar.core.service.OperatingModeService;
+import org.cougaar.core.service.UIDService;
 import org.cougaar.core.service.community.Community;
 import org.cougaar.core.service.community.CommunityChangeEvent;
 import org.cougaar.core.service.community.CommunityChangeListener;
@@ -50,13 +56,8 @@ import org.cougaar.core.service.community.CommunityResponse;
 import org.cougaar.core.service.community.CommunityResponseListener;
 import org.cougaar.core.service.community.CommunityService;
 import org.cougaar.core.service.community.Entity;
-import org.cougaar.core.service.ConditionService;
-import org.cougaar.core.service.LoggingService;
-import org.cougaar.core.service.OperatingModeService;
-import org.cougaar.core.service.UIDService;
-import org.cougaar.tools.robustness.deconfliction.DefenseConstants;
-import org.cougaar.tools.robustness.deconfliction.DefenseEnablingOperatingMode;
-import org.cougaar.tools.robustness.deconfliction.MonitoringEnablingOperatingMode;
+import org.cougaar.tools.robustness.disconnection.InternalConditionsAndOpModes.DefenseConstants;
+import org.cougaar.tools.robustness.disconnection.InternalConditionsAndOpModes.DefenseEnablingOperatingMode;
 import org.cougaar.util.UnaryPredicate;
 
 public class MsglogPlugin extends ComponentPlugin
@@ -563,23 +564,24 @@ public class MsglogPlugin extends ComponentPlugin
 	    super.setValue(value);}
 	public String toString() { return "MsglogEnablingOpMode:"+super.toString();}
     }
+    
     public class MsglogMonitoringOpMode 
-	extends MonitoringEnablingOperatingMode {
+            extends MonitoringEnablingOperatingMode {
         private String agent;
-	public MsglogMonitoringOpMode(String assetType,
-				      String asset,
-				      String defenseName) {
-	    super(assetType, asset, defenseName);
-	    agent = asset;
-	} 
-	public MsglogMonitoringOpMode(String agent) {
-	    this("Agent", agent, "Msglog");
-//	    this("Agent", agent, "BackwardDefense");
-	} 
-	public String getAgent() { return agent;}
-	public void setValue(Comparable value) {
-	    super.setValue(value);}
-	public String toString() { return "MsglogMonitoringOpMode:"+super.toString();}
+        public MsglogMonitoringOpMode(String assetType,
+                                      String asset,
+                                      String defenseName) {
+            super(assetType, asset, defenseName);
+            agent = asset;
+        } 
+        public MsglogMonitoringOpMode(String agent) {
+            this("Agent", agent, "Msglog");
+//          this("Agent", agent, "BackwardDefense");
+        } 
+        public String getAgent() { return agent;}
+        public void setValue(Comparable value) {
+            super.setValue(value);}
+        public String toString() { return "MsglogMonitoringOpMode:"+super.toString();}
     }
 
 }
