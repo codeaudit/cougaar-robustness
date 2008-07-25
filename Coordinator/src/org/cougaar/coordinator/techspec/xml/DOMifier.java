@@ -41,7 +41,7 @@ import java.io.FileInputStream;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 
-import org.apache.crimson.jaxp.*;
+// import org.apache.crimson.jaxp.*;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.SAXException;
@@ -66,18 +66,21 @@ public class DOMifier implements ErrorHandler, EntityResolver  {
     public DOMifier(ConfigFinder configFinder) {
         
         logger = Logging.getLogger(this.getClass().getName());
-
-        DocumentBuilderFactory factory = DocumentBuilderFactoryImpl.newInstance();
-        //Can customize factory before getting domBuilder.
-        factory.setValidating(true);
         
-        try {
-            domBuilder = factory.newDocumentBuilder();
-            domBuilder.setErrorHandler(this);
-            domBuilder.setEntityResolver(this);
-        } catch (ParserConfigurationException pce) {
-            logger.error("Could not create domBuilder: " + pce.toString() );
-        }
+// FIXME:  Get the jar with DocumentBuilderFactory or use another xml parser
+//
+//        DocumentBuilderFactory factory = DocumentBuilderFactoryImpl.newInstance();
+//        //Can customize factory before getting domBuilder.
+//        factory.setValidating(true);
+//        
+//        try {
+//            domBuilder = factory.newDocumentBuilder();
+//            domBuilder.setErrorHandler(this);
+//            domBuilder.setEntityResolver(this);
+//        } catch (ParserConfigurationException pce) {
+//            logger.error("Could not create domBuilder: " + pce.toString() );
+//        }
+        
         this.configFinder = configFinder;
     }
     

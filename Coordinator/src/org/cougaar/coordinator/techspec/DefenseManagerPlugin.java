@@ -31,9 +31,6 @@ package org.cougaar.coordinator.techspec;
 
 //import org.cougaar.coordinator.timedDiagnosis.TimedDiagnosisKnob;
 
-import org.cougaar.tools.robustness.ma.CommunityStatusModel;
-import org.cougaar.tools.robustness.ma.StatusChangeListener;
-import org.cougaar.tools.robustness.ma.CommunityStatusChangeEvent;
 
 import org.cougaar.core.plugin.ComponentPlugin;
 

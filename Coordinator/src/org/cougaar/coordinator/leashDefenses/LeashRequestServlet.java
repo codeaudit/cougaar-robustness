@@ -104,7 +104,7 @@ public class LeashRequestServlet extends BaseServletComponent implements Blackbo
   public static final String EXPIRE = "expire";
   
   private BlackboardService blackboard = null;
-  private Logger logger = null;
+  private LoggingService logger = null;
   
   
   protected Servlet createServlet() {

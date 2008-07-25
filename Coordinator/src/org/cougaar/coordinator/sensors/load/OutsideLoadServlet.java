@@ -75,7 +75,7 @@ public class OutsideLoadServlet extends BaseServletComponent implements Blackboa
     public static final String HIGH = "High";
 
     private BlackboardService blackboard = null;
-    private Logger logger = null;
+    private LoggingService logger = null;
 
     private String arManager;
   

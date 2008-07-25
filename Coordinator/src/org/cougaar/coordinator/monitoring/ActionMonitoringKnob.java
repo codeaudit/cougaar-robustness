@@ -29,7 +29,7 @@
  */
 
 
-package src.org.cougaar.coordinator.monitoring;
+package org.cougaar.coordinator.monitoring;
 
 /**
  *  Used to control aspects of the Defense Monitoring plugin

@@ -53,7 +53,6 @@ import org.cougaar.util.UnaryPredicate;
 import org.cougaar.coordinator.housekeeping.IndexKey;
 
 import org.cougaar.coordinator.costBenefit.CostBenefitEvaluation;
-import org.cougaar.coordinator.believability.StateEstimation;
 import org.cougaar.coordinator.techspec.AssetID;
 import org.cougaar.coordinator.activation.ActionPatience;
 

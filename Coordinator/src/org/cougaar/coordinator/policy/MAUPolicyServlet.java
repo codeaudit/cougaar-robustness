@@ -82,7 +82,7 @@ public class MAUPolicyServlet extends BaseServletComponent implements Blackboard
     public static final String HIGH_COMPLETENESS = "HighCompleteness";
 
     private BlackboardService blackboard = null;
-    private Logger logger = null;
+    private LoggingService logger = null;
   
   
   protected Servlet createServlet() {

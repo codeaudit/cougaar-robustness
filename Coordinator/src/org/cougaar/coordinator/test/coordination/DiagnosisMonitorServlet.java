@@ -90,7 +90,7 @@ public class DiagnosisMonitorServlet extends BaseServletComponent implements Bla
     //private DecimalFormat nf = new DecimalFormat(LONG_NUM_FORMAT);
     private EventService eventService = null;
     private BlackboardService blackboard = null;
-    private Logger logger = null;
+    private LoggingService logger = null;
     
     private MessageAddress agentId = null;
 

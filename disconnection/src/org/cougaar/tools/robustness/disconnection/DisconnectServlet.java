@@ -31,41 +31,20 @@
  
 package org.cougaar.tools.robustness.disconnection;
 
-import org.cougaar.tools.robustness.disconnection.InternalConditionsAndOpModes.*;
-
-import java.lang.reflect.Constructor;
-
 import java.io.PrintWriter;
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.StreamTokenizer;
-
-import java.util.Comparator;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Iterator;
-import java.util.TreeSet;
 
 import javax.servlet.Servlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.cougaar.core.servlet.ComponentServlet;
-
-import org.cougaar.core.component.ServiceBroker;
-import org.cougaar.core.service.BlackboardService;
-import org.cougaar.core.node.NodeIdentificationService;
 import org.cougaar.core.blackboard.BlackboardClient;
-import org.cougaar.core.mts.MessageAddress;
-
-import org.cougaar.core.servlet.BaseServletComponent;
-import org.cougaar.planning.servlet.BlackboardServletComponent;
-
-import org.cougaar.core.service.LoggingService;
-import org.cougaar.util.log.Logger;
+import org.cougaar.core.node.NodeIdentificationService;
+import org.cougaar.core.service.BlackboardService;
 import org.cougaar.core.service.EventService;
+import org.cougaar.core.service.LoggingService;
+import org.cougaar.core.servlet.BaseServletComponent;
+import org.cougaar.tools.robustness.disconnection.InternalConditionsAndOpModes.LocalReconnectTimeCondition;
 
 
 public class DisconnectServlet extends BaseServletComponent
@@ -78,7 +57,7 @@ public class DisconnectServlet extends BaseServletComponent
   public static final String EXPIRE = "expire";
   
   private BlackboardService blackboard = null;
-  private Logger logger = null;
+  private LoggingService logger = null;
   private EventService eventService = null;
   
   private String assetType = "Node";

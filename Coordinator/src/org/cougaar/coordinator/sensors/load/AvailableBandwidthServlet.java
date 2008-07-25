@@ -76,7 +76,7 @@ public class AvailableBandwidthServlet extends BaseServletComponent implements B
     public static final String HIGH = "High";
 
     private BlackboardService blackboard = null;
-    private Logger logger = null;
+    private LoggingService logger = null;
   
     private String arManager;
 

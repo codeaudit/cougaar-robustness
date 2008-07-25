@@ -92,7 +92,7 @@ public class DeconflictionServlet extends BaseServletComponent
   private UIDService uidService = null;
   private EventService eventService = null;
   private BlackboardService blackboard = null;
-  private Logger logger = null;
+  private LoggingService logger = null;
   
   private MessageAddress agentId = null;
   

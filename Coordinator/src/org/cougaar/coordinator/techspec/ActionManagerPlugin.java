@@ -33,33 +33,15 @@ package org.cougaar.coordinator.techspec;
 
 //import org.cougaar.coordinator.timedDiagnosis.TimedDiagnosisKnob;
 
-import org.cougaar.tools.robustness.ma.CommunityStatusModel;
-import org.cougaar.tools.robustness.ma.StatusChangeListener;
-import org.cougaar.tools.robustness.ma.CommunityStatusChangeEvent;
-
-import org.cougaar.core.plugin.ComponentPlugin;
-
-import org.cougaar.core.service.LoggingService;
-
-import org.cougaar.core.service.UIDService;
-
-import org.cougaar.core.service.LoggingService;
-import org.cougaar.util.log.Logging;
-import org.cougaar.util.log.Logger;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Vector;
-import java.util.Hashtable;
-import java.util.ArrayList;
-
-import org.xml.sax.InputSource;
 import java.io.File;
-import java.io.FileInputStream;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Vector;
 
 import org.cougaar.core.persist.NotPersistable;
+import org.cougaar.core.plugin.ComponentPlugin;
+import org.cougaar.core.service.LoggingService;
+import org.cougaar.core.service.UIDService;
 
 /**
  *

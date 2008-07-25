@@ -444,7 +444,7 @@ public class LoadTechSpecsPlugin extends ServiceUserPluginBase implements NotPer
 
         if (us != null) {
             getServiceBroker().releaseService(
-            this, UIDService.class, logger);
+            this, UIDService.class, us);
             us = null;
         }
         

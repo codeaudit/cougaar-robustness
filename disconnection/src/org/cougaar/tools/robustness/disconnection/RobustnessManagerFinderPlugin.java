@@ -153,9 +153,9 @@ public class RobustnessManagerFinderPlugin extends ComponentPlugin
 		}
 	    } else {
 		try {
-		    NamingEnumeration enum = mgrs.getAll();
-		    while (enum.hasMore()) {
-			Object obj = enum.next();
+		    NamingEnumeration enumeration = mgrs.getAll();
+		    while (enumeration.hasMore()) {
+			Object obj = enumeration.next();
 			if (obj == null) {
 			    if (log.isErrorEnabled()) 
 				log.error(agentId+

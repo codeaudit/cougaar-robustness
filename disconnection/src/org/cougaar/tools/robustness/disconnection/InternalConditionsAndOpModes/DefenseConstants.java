@@ -62,6 +62,10 @@ public class DefenseConstants {
     public static final OMCPoint[] DEF_VALUE_LIST = {DEF_PEND, DEF_PENDTIME, DEF_PREPARE, DISCONNECT_ALLOWED, DISCONNECT_DENIED, CONNECT_ALLOWED, CONNECT_DENIED};
     public static final OMCRangeList DEF_RANGELIST = new OMCRangeList (DEF_VALUE_LIST);
     
+    // XXX: Dummy values referenced by msglog
+    public static final OMCPoint DEF_ENABLED = new OMCStrMonPoint("DEF_ENABLED");
+    public static final OMCPoint DEF_DISABLED = new OMCStrMonPoint("DEF_DISABLED");
+    
     
     
     /** tiny helper class for Operating Modes */
