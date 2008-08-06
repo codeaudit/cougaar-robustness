@@ -356,7 +356,7 @@ public class OutgoingSocketLinkProtocol extends OutgoingLinkProtocol
       return (addressKnown(destination) ? linkCost : Integer.MAX_VALUE);
     }
 
-    public boolean isValid () 
+    public boolean isValid (AttributedMessage message) 
     {
       return true;
     }

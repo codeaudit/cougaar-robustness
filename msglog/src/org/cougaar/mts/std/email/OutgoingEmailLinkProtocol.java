@@ -468,7 +468,7 @@ public class OutgoingEmailLinkProtocol extends OutgoingLinkProtocol
       return (addressKnown(destination) ? protocolCost : Integer.MAX_VALUE);
     }
 
-    public boolean isValid () 
+    public boolean isValid (AttributedMessage message) 
     {
       return true;
     }

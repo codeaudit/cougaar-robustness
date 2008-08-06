@@ -118,7 +118,7 @@ public class LinksEnablingAspect extends StandardAspect
 	}
 	
 	//TODO: Change ALSP to use isValid rather than cost()
-	public boolean isValid()
+	public boolean isValid(AttributedMessage message)
 	{
 	    // Return false if messaging is disabled to the target agent. 
 	    // This causes the LinkSelectionPolicy to not select a link.
@@ -131,7 +131,7 @@ public class LinksEnablingAspect extends StandardAspect
 		    return false;
 		} 
 	    }
-	    return super.isValid();
+	    return super.isValid(message);
 	}
 	
     }

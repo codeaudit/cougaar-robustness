@@ -93,7 +93,7 @@ public abstract class IncomingLinkProtocol extends LinkProtocol
       return Integer.MAX_VALUE;
     }
 
-    public boolean isValid () 
+    public boolean isValid (AttributedMessage message) 
     {
       return true;
     }
