@@ -45,6 +45,7 @@ import org.cougaar.util.StateModelException;
 import org.cougaar.util.GenericStateModel;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.ListIterator;
 
 public class RMISendTimeoutAspect extends StandardAspect 
@@ -128,7 +129,7 @@ public class RMISendTimeoutAspect extends StandardAspect
 
       // set up write timeout
       int writeTimeout = Integer.valueOf(System.getProperty(WRITE_TIMEOUT,"10000")).intValue();
-      ArrayList soclist = null;                                            //102B
+      List<Socket> soclist = null;                                            //102B
       if (writeTimeout > 0 && socCloseSvc != null && socCtlSvc != null) {
         MessageAddress addr = getDestination();
         soclist = socCtlSvc.getSocket(addr);                               //102B
