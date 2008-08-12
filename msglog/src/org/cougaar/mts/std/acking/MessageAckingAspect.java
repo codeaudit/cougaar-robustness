@@ -34,6 +34,7 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Vector;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.component.ServiceProvider;
@@ -1069,18 +1070,17 @@ public class MessageAckingAspect extends StandardAspect
   // copied from MTImpl
   public void decacheDestinationLink(MessageAddress sender) {
       // Find the DestinationLinks for this address and force a decache.
-      ArrayList links = getRegistry().getDestinationLinks(sender);
+      List<DestinationLink> links = getRegistry().getDestinationLinks(sender);
       if (links != null) {
-	  Iterator itr = links.iterator();
-	  while (itr.hasNext()) {
-	      Object next = itr.next();
-	      if (next instanceof OutgoingEmailLinkProtocol.EmailOutLink) {
-		  OutgoingEmailLinkProtocol.EmailOutLink link = (OutgoingEmailLinkProtocol.EmailOutLink) next;
+          for (DestinationLink link : links) {
+	      if (link instanceof OutgoingEmailLinkProtocol.EmailOutLink) {
+		  OutgoingEmailLinkProtocol.EmailOutLink elink = 
+		      (OutgoingEmailLinkProtocol.EmailOutLink) link;
 		  if (link.getDestination().equals(sender)) {
 		      if (loggingService.isDebugEnabled())
 			  loggingService.debug("Decaching reference for " +
 					       sender);
-		      link.incarnationChanged();
+		      elink.incarnationChanged();
 		      return;
 		  }
 	      }
