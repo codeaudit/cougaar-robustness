@@ -37,6 +37,7 @@ import java.util.Iterator;
 import java.util.Hashtable;
 import java.util.Vector;
 import org.cougaar.core.mts.MessageAddress;
+import org.cougaar.mts.base.AttributedMessage;
 import org.cougaar.util.log.Logger;
 import org.cougaar.util.log.Logging;
 

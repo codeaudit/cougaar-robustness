@@ -29,8 +29,9 @@ package org.cougaar.mts.std.acking;
 import java.io.Serializable;
 import java.util.Enumeration;
 import java.util.Vector;
+
+import org.cougaar.mts.base.AttributedMessage;
 import org.cougaar.mts.base.DestinationLink;
-import org.cougaar.mts.std.AttributedMessage;
 import org.cougaar.mts.std.MessageUtils;
 
 /**

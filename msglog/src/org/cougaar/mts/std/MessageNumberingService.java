@@ -22,6 +22,7 @@
 package org.cougaar.mts.std;
 
 import org.cougaar.core.component.Service;
+import org.cougaar.mts.base.AttributedMessage;
 import org.cougaar.mts.base.CommFailureException;
 
 public interface MessageNumberingService extends Service

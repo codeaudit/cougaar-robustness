@@ -24,7 +24,7 @@
 
 package org.cougaar.mts.std.acking;
 
-import org.cougaar.mts.std.AttributedMessage;
+import org.cougaar.mts.base.AttributedMessage;
 import org.cougaar.mts.std.MessageUtils;
 
 //  Child of Ack

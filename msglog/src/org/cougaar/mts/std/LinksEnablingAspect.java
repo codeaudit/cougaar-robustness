@@ -36,6 +36,7 @@ import org.cougaar.core.qos.metrics.Metric;
 import org.cougaar.core.qos.metrics.MetricsService;
 import org.cougaar.core.service.EventService;
 import org.cougaar.core.service.LoggingService;
+import org.cougaar.mts.base.AttributedMessage;
 import org.cougaar.mts.base.DestinationLink;
 import org.cougaar.mts.base.DestinationLinkDelegateImplBase;
 import org.cougaar.mts.base.MessageDeliverer;

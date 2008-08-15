@@ -33,7 +33,7 @@ package org.cougaar.mts.std.socket;
 
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.mts.MessageAttributes;
-import org.cougaar.mts.std.AttributedMessage;
+import org.cougaar.mts.base.AttributedMessage;
 import org.cougaar.mts.base.CommFailureException;
 import org.cougaar.mts.base.DestinationLink;
 import org.cougaar.mts.base.LinkProtocol;

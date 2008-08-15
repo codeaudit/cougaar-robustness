@@ -35,6 +35,7 @@ import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.mts.MessageAttributes;
 import org.cougaar.core.mts.SimpleMessageAttributes;
 import org.cougaar.core.service.LoggingService;
+import org.cougaar.mts.base.AttributedMessage;
 import org.cougaar.mts.base.MisdeliveredMessageException;
 import org.cougaar.mts.base.StandardAspect;
 import org.cougaar.mts.base.ReceiveLink;

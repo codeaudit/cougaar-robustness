@@ -27,8 +27,8 @@ package org.cougaar.mts.std.acking;
 
 import java.util.Enumeration;
 import org.cougaar.core.service.LoggingService;
+import org.cougaar.mts.base.AttributedMessage;
 import org.cougaar.mts.std.AgentID;
-import org.cougaar.mts.std.AttributedMessage;
 import org.cougaar.mts.std.MessageUtils;
 
 class MessageIntegrity

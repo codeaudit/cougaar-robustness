@@ -25,6 +25,7 @@
 package org.cougaar.mts.std;
 
 import org.cougaar.core.component.Service;
+import org.cougaar.mts.base.AttributedMessage;
 import org.cougaar.mts.base.DestinationLink;
 
 public interface RTTService extends Service

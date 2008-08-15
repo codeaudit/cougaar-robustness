@@ -88,6 +88,7 @@ import org.cougaar.core.service.EventService;
 import org.cougaar.core.wp.WhitePagesMessage;
 import org.cougaar.mts.std.acking.MessageAckingService;
 import org.cougaar.mts.base.AbstractLinkSelectionPolicy;
+import org.cougaar.mts.base.AttributedMessage;
 import org.cougaar.mts.base.CommFailureException;
 import org.cougaar.mts.base.DestinationLink;
 import org.cougaar.mts.base.MisdeliveredMessageException;

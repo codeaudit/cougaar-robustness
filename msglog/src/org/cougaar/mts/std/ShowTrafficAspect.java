@@ -29,6 +29,7 @@ package org.cougaar.mts.std;
 
 import java.util.HashMap;
 import org.cougaar.core.mts.MessageAttributes;
+import org.cougaar.mts.base.AttributedMessage;
 import org.cougaar.mts.base.DestinationLink;
 import org.cougaar.mts.base.DestinationLinkDelegateImplBase;
 import org.cougaar.mts.base.StandardAspect;

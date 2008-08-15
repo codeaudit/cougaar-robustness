@@ -29,9 +29,9 @@ import com.objs.surveyor.probemeister.probe.GenericArgumentArray;
 import org.cougaar.core.component.ServiceBroker;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.service.LoggingService;
+import org.cougaar.mts.base.AttributedMessage;
 import org.cougaar.mts.base.UnregisteredNameException;
 import org.cougaar.mts.std.AgentID;
-import org.cougaar.mts.std.AttributedMessage;
 import org.cougaar.mts.std.Constants;
 import org.cougaar.util.log.*;
 

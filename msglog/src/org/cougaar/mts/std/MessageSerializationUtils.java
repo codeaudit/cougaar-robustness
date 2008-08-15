@@ -42,6 +42,8 @@ import java.security.DigestInputStream;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 
+import org.cougaar.mts.base.AttributedMessage;
+
 /**
  * Collection of utility serialization/deserialization methods
  */

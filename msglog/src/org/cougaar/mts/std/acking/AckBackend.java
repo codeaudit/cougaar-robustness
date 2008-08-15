@@ -36,6 +36,7 @@ import org.cougaar.core.service.LoggingService;
 import org.cougaar.core.mts.MessageAddress;
 import org.cougaar.core.mts.MessageAttributes;
 import org.cougaar.core.mts.SimpleMessageAttributes;
+import org.cougaar.mts.base.AttributedMessage;
 import org.cougaar.mts.base.MessageDeliverer;
 import org.cougaar.mts.base.MessageDelivererDelegateImplBase;
 import org.cougaar.mts.base.CommFailureException;
@@ -44,7 +45,6 @@ import org.cougaar.mts.base.NameLookupException;
 import org.cougaar.mts.base.UnregisteredNameException;
 import org.cougaar.mts.std.AdaptiveLinkSelectionPolicy;
 import org.cougaar.mts.std.AgentID;
-import org.cougaar.mts.std.AttributedMessage;
 import org.cougaar.mts.std.MessageUtils;
 
 class AckBackend extends MessageDelivererDelegateImplBase 
