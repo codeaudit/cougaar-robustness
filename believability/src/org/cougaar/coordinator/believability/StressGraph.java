@@ -239,15 +239,15 @@ class StressGraph extends Model
         buff.append( "\nStress Graph: num nodes = " 
                      + _nodes_by_object.size() + "\n" );
 
-        Enumeration enum = _nodes_by_object.elements();
-        while( enum.hasMoreElements() )
+        Enumeration enm = _nodes_by_object.elements();
+        while( enm.hasMoreElements() )
         {
             StressInstance stress 
-                    = (StressInstance) enum.nextElement();
+                    = (StressInstance) enm.nextElement();
 
             buff.append( stress.toString( "\t" ) + "\n" );
             
-        } // while enum
+        } // while enm
 
         return buff.toString();
 

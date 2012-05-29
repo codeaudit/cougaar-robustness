@@ -786,17 +786,17 @@ public class NodeHealthMonitorPlugin extends ComponentPlugin
   protected String attrsToString(Attributes attrs) {
     StringBuffer sb = new StringBuffer("[");
     try {
-      for (NamingEnumeration enum = attrs.getAll(); enum.hasMore();) {
-        Attribute attr = (Attribute)enum.next();
+      for (NamingEnumeration enm = attrs.getAll(); enm.hasMore();) {
+        Attribute attr = (Attribute)enm.next();
         sb.append(attr.getID() + "=(");
-        for (NamingEnumeration enum1 = attr.getAll(); enum1.hasMore();) {
-          sb.append((String)enum1.next());
-          if (enum1.hasMore())
+        for (NamingEnumeration enm1 = attr.getAll(); enm1.hasMore();) {
+          sb.append((String)enm1.next());
+          if (enm1.hasMore())
             sb.append(",");
           else
             sb.append(")");
         }
-        if (enum.hasMore()) sb.append(",");
+        if (enm.hasMore()) sb.append(",");
       }
       sb.append("]");
     } catch (NamingException ne) {}

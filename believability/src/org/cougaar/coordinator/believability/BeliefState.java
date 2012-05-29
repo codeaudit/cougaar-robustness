@@ -155,16 +155,16 @@ public class BeliefState implements Cloneable
     public BeliefStateDimension getBeliefStateDimension
             ( String state_dim_name )
     {
-        Enumeration belief_dim_enum = _belief_dimensions.elements();
-        while( belief_dim_enum.hasMoreElements() )
+        Enumeration belief_dim_enm = _belief_dimensions.elements();
+        while( belief_dim_enm.hasMoreElements() )
         {
             BeliefStateDimension belief_dim
-                    = (BeliefStateDimension) belief_dim_enum.nextElement();
+                    = (BeliefStateDimension) belief_dim_enm.nextElement();
 
             if ( belief_dim.getName().equalsIgnoreCase( state_dim_name ))
                 return belief_dim;
 
-        } // while belief_dim_enum
+        } // while belief_dim_enm
 
         return null;
     }
@@ -186,15 +186,15 @@ public class BeliefState implements Cloneable
                      + "\n\tProbabilities: "
                      + "\n" );
         
-        Enumeration belief_dim_enum = _belief_dimensions.elements();
-        while( belief_dim_enum.hasMoreElements() )
+        Enumeration belief_dim_enm = _belief_dimensions.elements();
+        while( belief_dim_enm.hasMoreElements() )
         {
             BeliefStateDimension belief_dim
-                    = (BeliefStateDimension) belief_dim_enum.nextElement();
+                    = (BeliefStateDimension) belief_dim_enm.nextElement();
 
             buff.append( "\t\t" + belief_dim.toString() + "\n" );
 
-        } // while belief_dim_enum
+        } // while belief_dim_enm
         
         return buff.toString();
 
@@ -265,14 +265,14 @@ public class BeliefState implements Cloneable
     {
         _asset_id = aid; 
         
-        Enumeration enum = _belief_dimensions.elements();
-        while ( enum.hasMoreElements() )
+        Enumeration enm = _belief_dimensions.elements();
+        while ( enm.hasMoreElements() )
         {
             BeliefStateDimension belief_dim 
-                    = (BeliefStateDimension) enum.nextElement();
+                    = (BeliefStateDimension) enm.nextElement();
 
             belief_dim.setAssetID( aid );
-        } // while enum
+        } // while enm
 
     } // method setAssetID
 
@@ -289,15 +289,15 @@ public class BeliefState implements Cloneable
      */
     void blurProbabilities( double blur_factor )
     {
-        Enumeration belief_dim_enum = _belief_dimensions.elements();
-        while( belief_dim_enum.hasMoreElements() )
+        Enumeration belief_dim_enm = _belief_dimensions.elements();
+        while( belief_dim_enm.hasMoreElements() )
         {
             BeliefStateDimension belief_dim
-                    = (BeliefStateDimension) belief_dim_enum.nextElement();
+                    = (BeliefStateDimension) belief_dim_enm.nextElement();
 
             belief_dim.blurProbabilities( blur_factor );
 
-        } // while belief_dim_enum
+        } // while belief_dim_enm
 
     } // method blurProbabilities
 
@@ -318,16 +318,16 @@ public class BeliefState implements Cloneable
             belief._trigger = _trigger;
             belief._timestamp = _timestamp;
 
-            Enumeration belief_dim_enum = _belief_dimensions.elements();
-            while( belief_dim_enum.hasMoreElements() )
+            Enumeration belief_dim_enm = _belief_dimensions.elements();
+            while( belief_dim_enm.hasMoreElements() )
             {
                 BeliefStateDimension belief_dim
-                        = (BeliefStateDimension) belief_dim_enum.nextElement();
+                        = (BeliefStateDimension) belief_dim_enm.nextElement();
 
                 belief.addBeliefStateDimension
                         ( (BeliefStateDimension) belief_dim.clone() );
 
-            } // while belief_dim_enum
+            } // while belief_dim_enm
 
             return belief;
 

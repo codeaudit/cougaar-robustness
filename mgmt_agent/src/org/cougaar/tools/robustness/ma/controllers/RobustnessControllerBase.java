@@ -806,11 +806,11 @@ public abstract class RobustnessControllerBase extends BlackboardClientComponent
     StringBuffer sb = new StringBuffer(indent + "<attributes>\n");
     if (attrs != null) {
       try {
-        for (NamingEnumeration enum = attrs.getAll(); enum.hasMore(); ) {
-          Attribute attr = (Attribute)enum.next();
+        for (NamingEnumeration enm = attrs.getAll(); enm.hasMore(); ) {
+          Attribute attr = (Attribute)enm.next();
           sb.append(indent + "  <attribute id=\"" + attr.getID() + "\" >\n");
-          for (NamingEnumeration enum1 = attr.getAll(); enum1.hasMore(); ) {
-            sb.append(indent + "    <value>" + enum1.next() + "</value>\n");
+          for (NamingEnumeration enm1 = attr.getAll(); enm1.hasMore(); ) {
+            sb.append(indent + "    <value>" + enm1.next() + "</value>\n");
           }
           sb.append(indent + "  </attribute>\n");
         }

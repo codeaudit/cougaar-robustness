@@ -470,7 +470,7 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
         public void run () {
             
             HeartbeatData hbdata = null;
-            Enumeration enum = null;
+            Enumeration enm = null;
             long newDeadline = 0;
             long currentTime = 0;
             long sleepTime = 0;
@@ -485,10 +485,10 @@ public class HeartbeatPiggybackerAspect extends StandardAspect
                         //Now, search for the soonest deadline time
                         currentTime = now();
                         //Search list for time deadlines
-                        enum = waitingHeartbeats.elements();
-                        while (enum.hasMoreElements()) {
+                        enm = waitingHeartbeats.elements();
+                        while (enm.hasMoreElements()) {
                             newDeadline = 0;
-                            hbdata = (HeartbeatData)enum.nextElement();
+                            hbdata = (HeartbeatData)enm.nextElement();
                             long dltime = hbdata.getQueueDeliverBy();
                             if (dltime <= currentTime) { //deliver now!
                                 if (log.isDebugEnabled()) 

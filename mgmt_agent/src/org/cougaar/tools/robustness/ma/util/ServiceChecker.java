@@ -230,9 +230,9 @@ public class ServiceChecker {
     Attribute attr = attrs.get(id);
     if (attr != null) {
       try {
-        NamingEnumeration enum = attr.getAll();
-        while (enum.hasMore()) {
-          values.add(enum.next());
+        NamingEnumeration enm = attr.getAll();
+        while (enm.hasMore()) {
+          values.add(enm.next());
         }
       } catch (NamingException ne) {
       }

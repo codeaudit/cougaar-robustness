@@ -85,10 +85,10 @@ class EventInstanceCollection extends Model
         buff.append( "\tTotal events = " 
                      + _event_instance_hash.size() + "\n");
 
-        Enumeration enum = _event_instance_hash.elements();
-        while( enum.hasMoreElements() )
+        Enumeration enm = _event_instance_hash.elements();
+        while( enm.hasMoreElements() )
         {
-            EventInstanceModel event = (EventInstanceModel) enum.nextElement();
+            EventInstanceModel event = (EventInstanceModel) enm.nextElement();
 
             buff.append( event.toString( "\t" ));
         } // while iter
@@ -329,11 +329,11 @@ class EventInstanceCollection extends Model
 
         // Fill out the arrays by looping over each event.
         //
-        Enumeration event_enum = _event_instance_hash.elements();
-        for ( int idx = 0; event_enum.hasMoreElements(); idx++ )
+        Enumeration event_enm = _event_instance_hash.elements();
+        for ( int idx = 0; event_enm.hasMoreElements(); idx++ )
         {
             EventInstanceModel event 
-                    = (EventInstanceModel) event_enum.nextElement();
+                    = (EventInstanceModel) event_enm.nextElement();
 
             event_trans[idx] = event.getEventTransitionMatrix();
 
